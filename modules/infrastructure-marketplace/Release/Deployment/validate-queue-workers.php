@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Verification\QueueWorkerVerifier;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Verification\QueueWorkerVerifier;
 
 $pdo = DatabaseConnectionFactory::createPdo();
 $result = (new QueueWorkerVerifier($pdo))->verify();

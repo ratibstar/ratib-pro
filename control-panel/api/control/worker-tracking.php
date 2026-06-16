@@ -202,7 +202,7 @@ function control_tracking_agency_mysqli_for_country(mysqli $control, int $countr
 }
 
 /**
- * mysqli that has the Ratib Pro `workers` table (agency program DB).
+ * mysqli that has the RATEB Pro `workers` table (agency program DB).
  * Control panel often sets $GLOBALS['conn'] to control_panel DB only — no `workers` there.
  */
 function control_tracking_workers_mysqli(): ?mysqli
@@ -547,7 +547,7 @@ $canManage = hasControlPermission(CONTROL_PERM_GOVERNMENT)
 
 try {
     $controlPdo = getControlDB();
-    ratibEnsureWorkerTrackingSchema($controlPdo);
+    ratebEnsureWorkerTrackingSchema($controlPdo);
 
     $action = trim((string) ($_GET['action'] ?? 'latest'));
     $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 400;

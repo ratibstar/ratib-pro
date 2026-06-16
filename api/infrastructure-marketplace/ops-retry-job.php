@@ -17,12 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Compliance\AdminActionHistory;
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Compliance\AdminActionHistory;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 try {
     $payload = json_decode((string) (file_get_contents('php://input') ?: '{}'), true);

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Config;
+namespace RATEB\InfrastructureMarketplace\Config;
 
 /**
  * Declarative route and admin nav metadata. Wire into app routers/menus when enabling the module.
@@ -19,7 +19,7 @@ final class ModuleRegistry
             [
                 'method' => 'GET',
                 'pattern' => '/api/infrastructure-marketplace/health.php',
-                'handler' => 'Ratib\\InfrastructureMarketplace\\Controllers\\HealthController::handle',
+                'handler' => 'RATEB\\InfrastructureMarketplace\\Controllers\\HealthController::handle',
                 'auth' => 'optional',
             ],
             [

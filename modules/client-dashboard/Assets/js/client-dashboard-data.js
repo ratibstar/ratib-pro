@@ -1,4 +1,4 @@
-window.RatibClientDashboardData = window.RatibClientDashboardData || {};
+window.RATEBClientDashboardData = window.RATEBClientDashboardData || {};
 
 (function (api) {
     /**
@@ -51,4 +51,4 @@ window.RatibClientDashboardData = window.RatibClientDashboardData || {};
         }
         return out;
     };
-})(window.RatibClientDashboardData);
+})(window.RATEBClientDashboardData);

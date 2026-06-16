@@ -32,7 +32,7 @@ try {
     $limit = max(100, min(50000, $limit));
 
     $pdo = getControlDB();
-    ratibEnsureWorkerTrackingSchema($pdo);
+    ratebEnsureWorkerTrackingSchema($pdo);
     $pdo->beginTransaction();
     try {
         $copy = $pdo->prepare(

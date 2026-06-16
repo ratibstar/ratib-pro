@@ -30,7 +30,7 @@ if (!is_array($input)) {
 $action = isset($input['action']) ? strtolower(trim((string) $input['action'])) : '';
 
 try {
-    require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
+    require_once __DIR__ . '/../includes/rateb-barcode-login-pair.php';
 
     if ($action === 'create') {
         $context = [
@@ -41,7 +41,7 @@ try {
             'agency_name' => trim((string) ($input['agency_name'] ?? '')),
             'control' => !empty($input['control']) ? 1 : 0,
         ];
-        $created = ratib_barcode_pair_create($context);
+        $created = rateb_barcode_pair_create($context);
         if (empty($created['ok'])) {
             pair_json(['success' => false, 'message' => $created['message'] ?? 'Failed'], 500);
         }
@@ -53,7 +53,7 @@ try {
         if (strlen($token) !== 32) {
             pair_json(['success' => true, 'status' => 'pending']);
         }
-        $poll = ratib_barcode_pair_poll($token);
+        $poll = rateb_barcode_pair_poll($token);
         if (empty($poll['ok'])) {
             pair_json(['success' => true, 'status' => 'expired']);
         }
@@ -62,7 +62,7 @@ try {
 
     if ($action === 'submit') {
         require_once __DIR__ . '/../includes/config.php';
-        require_once __DIR__ . '/../includes/ratib-barcode-login-auth.php';
+        require_once __DIR__ . '/../includes/rateb-barcode-login-auth.php';
 
         $token = preg_replace('/[^a-f0-9]/', '', strtolower((string) ($input['token'] ?? '')));
         $barcode = trim((string) ($input['barcode'] ?? ''));
@@ -72,7 +72,7 @@ try {
         if ($barcode === '') {
             pair_json(['success' => false, 'message' => 'No barcode scanned'], 400);
         }
-        $pair = ratib_barcode_pair_read($token);
+        $pair = rateb_barcode_pair_read($token);
         if ($pair === null) {
             pair_json(['success' => false, 'message' => 'Session expired. Scan the QR on your computer again.'], 410);
         }
@@ -80,12 +80,12 @@ try {
             pair_json(['success' => false, 'message' => 'This session is no longer waiting.'], 409);
         }
         $ctx = is_array($pair['context'] ?? null) ? $pair['context'] : [];
-        require_once __DIR__ . '/../includes/ratib-qr-login.php';
-        $auth = ratib_qr_login_authenticate_payload($barcode, $ctx, $token);
+        require_once __DIR__ . '/../includes/rateb-qr-login.php';
+        $auth = rateb_qr_login_authenticate_payload($barcode, $ctx, $token);
         if (empty($auth['ok']) || !is_array($auth['session'] ?? null)) {
             pair_json(['success' => false, 'message' => $auth['message'] ?? 'Login failed'], 401);
         }
-        if (!ratib_barcode_pair_approve($token, $auth['session'])) {
+        if (!rateb_barcode_pair_approve($token, $auth['session'])) {
             pair_json(['success' => false, 'message' => 'Could not complete login'], 500);
         }
         pair_json(['success' => true, 'message' => 'OK — return to your computer.']);

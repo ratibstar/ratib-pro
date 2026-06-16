@@ -116,7 +116,7 @@ class TenantLoader
         }
         $stmt->close();
 
-        // Try subdomain as code: sa.ratib.sa → code 'sa'
+        // Try subdomain as code: sa.rateb.sa → code 'sa'
         $subdomain = self::extractSubdomain($host);
         if ($subdomain !== '') {
             $stmt = $conn->prepare(
@@ -152,7 +152,7 @@ class TenantLoader
     }
 
     /**
-     * Extract subdomain from host. sa.ratib.sa → sa, ae.domain.com → ae
+     * Extract subdomain from host. sa.rateb.sa → sa, ae.domain.com → ae
      */
     private static function extractSubdomain(string $host): string
     {

@@ -17,13 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Lifecycle\InfrastructureServiceLifecycleManager;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
-use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Lifecycle\InfrastructureServiceLifecycleManager;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
 
 try {
     $raw = file_get_contents('php://input');

@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Observability\ProviderEventLogger;
-use Ratib\InfrastructureMarketplace\Security\Secrets\ProviderSecretCipher;
+use RATEB\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Observability\ProviderEventLogger;
+use RATEB\InfrastructureMarketplace\Security\Secrets\ProviderSecretCipher;
 
 $checks = [];
 
@@ -19,10 +19,10 @@ try {
 }
 
 $requiredTables = [
-    'ratib_infra_provider_activations',
-    'ratib_infra_provider_secrets',
-    'ratib_infra_provider_events',
-    'ratib_infra_audit_entries',
+    'rateb_infra_provider_activations',
+    'rateb_infra_provider_secrets',
+    'rateb_infra_provider_events',
+    'rateb_infra_audit_entries',
 ];
 foreach ($requiredTables as $table) {
     $exists = SchemaHelpers::tableExists($pdo, $table);
@@ -34,8 +34,8 @@ foreach ($requiredTables as $table) {
 }
 
 $indexOk = false;
-if (SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_events')) {
-    $idx = $pdo->query("SHOW INDEX FROM ratib_infra_provider_events WHERE Key_name = 'idx_ratib_infra_provider_events_provider'");
+if (SchemaHelpers::tableExists($pdo, 'rateb_infra_provider_events')) {
+    $idx = $pdo->query("SHOW INDEX FROM rateb_infra_provider_events WHERE Key_name = 'idx_rateb_infra_provider_events_provider'");
     $indexOk = $idx instanceof \PDOStatement && $idx->fetch(\PDO::FETCH_ASSOC) !== false;
 }
 $checks[] = ['name' => 'provider_events_indexes', 'status' => $indexOk ? 'PASS' : 'WARN', 'detail' => $indexOk ? 'ok' : 'expected index missing'];
@@ -59,7 +59,7 @@ if (InfraEnvBootstrap::hasSecretKey()) {
 $checks[] = ['name' => 'secret_encryption', 'status' => $encryptOk ? 'PASS' : 'WARN', 'detail' => $encryptDetail];
 
 $eventsWriteOk = false;
-if (SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_events')) {
+if (SchemaHelpers::tableExists($pdo, 'rateb_infra_provider_events')) {
     try {
         $logger = new ProviderEventLogger($pdo);
         $rid = 'verify-' . bin2hex(random_bytes(4));
@@ -70,11 +70,11 @@ if (SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_events')) {
             'duration_ms' => 1,
             'payload' => ['probe' => true],
         ]);
-        $stmt = $pdo->prepare('SELECT id FROM ratib_infra_provider_events WHERE request_id = :rid LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id FROM rateb_infra_provider_events WHERE request_id = :rid LIMIT 1');
         $stmt->execute(['rid' => $rid]);
         $eventsWriteOk = $stmt->fetchColumn() !== false;
         if ($eventsWriteOk) {
-            $pdo->prepare('DELETE FROM ratib_infra_provider_events WHERE request_id = :rid')->execute(['rid' => $rid]);
+            $pdo->prepare('DELETE FROM rateb_infra_provider_events WHERE request_id = :rid')->execute(['rid' => $rid]);
         }
     } catch (\Throwable $e) {
         $eventsWriteOk = false;
@@ -83,8 +83,8 @@ if (SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_events')) {
 $checks[] = ['name' => 'provider_events_write', 'status' => $eventsWriteOk ? 'PASS' : 'FAIL', 'detail' => $eventsWriteOk ? 'ok' : 'insert_failed'];
 
 $plaintextLeak = false;
-if (SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_secrets')) {
-    $stmt = $pdo->query('SELECT encrypted_value FROM ratib_infra_provider_secrets ORDER BY id DESC LIMIT 5');
+if (SchemaHelpers::tableExists($pdo, 'rateb_infra_provider_secrets')) {
+    $stmt = $pdo->query('SELECT encrypted_value FROM rateb_infra_provider_secrets ORDER BY id DESC LIMIT 5');
     if ($stmt instanceof \PDOStatement) {
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             if (!is_array($row)) {

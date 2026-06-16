@@ -197,8 +197,8 @@ final class QueryGateway
             }
         }
 
-        if (function_exists('ratib_app_default_db_connection')) {
-            $conn = ratib_app_default_db_connection();
+        if (function_exists('rateb_app_default_db_connection')) {
+            $conn = rateb_app_default_db_connection();
             if ($conn instanceof PDO || $conn instanceof mysqli) {
                 return $conn;
             }

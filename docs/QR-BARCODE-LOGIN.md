@@ -28,7 +28,7 @@ Scanning the **computer** QR with the **in-app camera** on the scan page shows a
 ### iPhone Camera on the badge
 
 - **Before step 1:** Camera may show *“No usable data”* if the QR is plain text — use the flow below after deploy.
-- **After step 1:** Badge QR is an **HTTPS link** (`/login/badge?d=…`). Camera opens Safari and signs in the PC (requires `ratib_pair` cookie set on step 2).
+- **After step 1:** Badge QR is an **HTTPS link** (`/login/badge?d=…`). Camera opens Safari and signs in the PC (requires `rateb_pair` cookie set on step 2).
 - **In-app scanner:** On the scan page, tap **Start camera** and point at the badge QR on another screen (laptop admin UI is OK).
 
 ---
@@ -37,8 +37,8 @@ Scanning the **computer** QR with the **in-app camera** on the scan page shows a
 
 | Format | Example | Use |
 |--------|---------|-----|
-| **Secure (preferred)** | `RATIBLOGIN:` + 64 hex chars | Stored hashed in `users.qr_login_token`; issued via API |
-| **Badge URL (QR encoding)** | `https://rateb.sa/login/badge?d=RATIBLOGIN%3A…` | What badge QRs encode (iOS Camera friendly) |
+| **Secure (preferred)** | `RATEBLOGIN:` + 64 hex chars | Stored hashed in `users.qr_login_token`; issued via API |
+| **Badge URL (QR encoding)** | `https://rateb.sa/login/badge?d=RATEBLOGIN%3A…` | What badge QRs encode (iOS Camera friendly) |
 | **Legacy reference** | `R000013USR` | Display / 1D barcode only — **not** for scanning (old bug fixed) |
 | **Pairing session** | 32-char hex `token` query on scan URL | Links phone to desktop poll |
 
@@ -68,14 +68,14 @@ Scanning the **computer** QR with the **in-app camera** on the scan page shows a
 | `poll` | `token` | `{ success, status: pending \| approved \| expired }` |
 | `submit` | `token`, barcode payload | Legacy direct submit (pair flow prefers `qr-login`) |
 
-Pair storage: temp files under `sys_get_temp_dir()/ratib_barcode_pairs` and/or table `login_barcode_pairs`.
+Pair storage: temp files under `sys_get_temp_dir()/rateb_barcode_pairs` and/or table `login_barcode_pairs`.
 
 ### `POST /api/qr-login.php`
 
 | Action | Auth | Purpose |
 |--------|------|---------|
 | `validate` | Public (rate-limited) | Validate badge; if `pair_token` set, approve pair for desktop |
-| `issue` | Logged-in admin | Issue new `RATIBLOGIN` token for a user |
+| `issue` | Logged-in admin | Issue new `RATEBLOGIN` token for a user |
 | `revoke` | Logged-in admin | Revoke user QR token |
 
 Validate body example:
@@ -83,7 +83,7 @@ Validate body example:
 ```json
 {
   "action": "validate",
-  "qr_payload": "RATIBLOGIN:…",
+  "qr_payload": "RATEBLOGIN:…",
   "pair_token": "32-char-hex",
   "country_id": 0,
   "agency_id": 0
@@ -102,9 +102,9 @@ Error codes: `invalid`, `pairing_qr`, `expired`, `revoked`, `replay`, `rate_limi
 |------|------|
 | `pages/login.php` | Barcode method; desktop pairing panel; consumes `?barcode_pair=` |
 | `js/login.js` | Creates pair, renders pairing QR, polls until approved |
-| `pages/login-scan.php` | Phone scanner page; sets `ratib_pair` cookie (10 min) |
+| `pages/login-scan.php` | Phone scanner page; sets `rateb_pair` cookie (10 min) |
 | `js/login-scan.js` | html5-qrcode wrapper usage; classifies pairing vs badge |
-| `js/ratib-qr-scanner.js` | Camera lifecycle, throttle, rear camera |
+| `js/rateb-qr-scanner.js` | Camera lifecycle, throttle, rear camera |
 | `css/qr-scan.css` | Mobile scan UI |
 | `pages/login-badge.php` | Landing when iPhone Camera opens badge URL |
 | `pages/system-settings.php` | Login barcode modal markup |
@@ -115,10 +115,10 @@ Error codes: `invalid`, `pairing_qr`, `expired`, `revoked`, `replay`, `rate_limi
 
 | File | Role |
 |------|------|
-| `includes/ratib-qr-login.php` | Token issue/validate, audit, rate limits, `ratib_qr_login_badge_url()` |
-| `includes/ratib-barcode-login-pair.php` | Pair create / approve / poll / consume |
-| `includes/ratib-barcode-login-auth.php` | Session build; legacy barcode auth |
-| `includes/ratib-user-login-barcode.php` | Legacy `R000…` reference codes |
+| `includes/rateb-qr-login.php` | Token issue/validate, audit, rate limits, `rateb_qr_login_badge_url()` |
+| `includes/rateb-barcode-login-pair.php` | Pair create / approve / poll / consume |
+| `includes/rateb-barcode-login-auth.php` | Session build; legacy barcode auth |
+| `includes/rateb-user-login-barcode.php` | Legacy `R000…` reference codes |
 | `api/qr-login.php` | QR API front controller |
 | `api/login-barcode-pair.php` | Pair API front controller |
 | `api/settings/settings-api.php` | `ensure_login_barcode` for Users table |
@@ -128,7 +128,7 @@ Error codes: `invalid`, `pairing_qr`, `expired`, `revoked`, `replay`, `rate_limi
 | File | Role |
 |------|------|
 | `includes/config.php` | API exceptions: `/api/login-barcode-pair`, `/api/qr-login` |
-| `public/ratib-build.txt` | Build marker (fast deploy baseline) |
+| `public/rateb-build.txt` | Build marker (fast deploy baseline) |
 | `sql/migrations/20260522_qr_login_enterprise.sql` | Optional columns + `qr_login_audit` |
 
 **Not deployed by default:** `Designed/`, `.cursor/`, secrets.
@@ -137,7 +137,7 @@ Error codes: `invalid`, `pairing_qr`, `expired`, `revoked`, `replay`, `rate_limi
 
 ## Database
 
-Auto-migrated on use (`ratib_qr_login_ensure_schema`):
+Auto-migrated on use (`rateb_qr_login_ensure_schema`):
 
 **`users` columns**
 
@@ -159,7 +159,7 @@ Auto-migrated on use (`ratib_qr_login_ensure_schema`):
 1. **System Settings → Users**
 2. Click **Barcode** on a user row (or “Show barcode”)
 3. Modal loads `ensure_login_barcode` → issues secure token + shows QR
-4. QR encodes **`https://…/login/badge?d=RATIBLOGIN:…`** (not the `R000…` line)
+4. QR encodes **`https://…/login/badge?d=RATEBLOGIN:…`** (not the `R000…` line)
 5. **Open in new tab** → `pages/user-login-barcode.php` for print
 
 Refresh barcode after deploy if QRs still show old plain-text payloads.
@@ -179,7 +179,7 @@ sequenceDiagram
     API-->>PC: token
     PC->>PC: Show QR (scan URL + token)
     Phone->>Phone: Camera opens /login/scan?token=
-    Phone->>Phone: Set cookie ratib_pair
+    Phone->>Phone: Set cookie rateb_pair
     Phone->>QR: validate(qr_payload, pair_token)
     QR->>API: pair approve(session)
     PC->>API: poll(token)
@@ -198,7 +198,7 @@ sequenceDiagram
 | Poll 400 loop | `pairToken` cleared before poll | Keep token in closure |
 | Phone page unstyled | Relative `../css` paths | Absolute `asset()` paths |
 | Invalid QR on phone | Scanned **pairing** QR in step 3 | Client + server `pairing_qr` detection |
-| Google search for `R000…` | Badge QR encoded reference ID | QR uses `RATIBLOGIN` or badge URL |
+| Google search for `R000…` | Badge QR encoded reference ID | QR uses `RATEBLOGIN` or badge URL |
 | iPhone “No usable data” | Plain-text QR | Badge URL `/login/badge?d=` |
 | Modal wrong QR | `renderLoginBarcodeInModal` used legacy code | `qr_payload` for QR; ref for label only |
 
@@ -206,7 +206,7 @@ sequenceDiagram
 
 ## Deploy checklist
 
-After pushing to `main`, fast deploy uploads changed files under `pages/`, `js/`, `css/`, `api/`, `includes/`, `.htaccess`, `public/ratib-build.txt`.
+After pushing to `main`, fast deploy uploads changed files under `pages/`, `js/`, `css/`, `api/`, `includes/`, `.htaccess`, `public/rateb-build.txt`.
 
 Verify on production:
 
@@ -236,7 +236,7 @@ Verify on production:
 - Secure tokens are one-time use per validation window (replay guard on `last_qr_scan_at`).
 - Tokens stored hashed; plain token only in QR at issue time.
 - Rate limiting per IP on validate.
-- Pair tokens expire (~minutes); cookie `ratib_pair` HttpOnly, 10 minutes.
+- Pair tokens expire (~minutes); cookie `rateb_pair` HttpOnly, 10 minutes.
 - `issue` / `revoke` require authenticated admin session.
 
 ---
@@ -266,11 +266,11 @@ Persistent personal QR credentials — like a workforce badge, not a one-time pa
 ### Token format (signed, no PII)
 
 ```
-RATIBLOGIN:{64_hex_random}.{8_hex_hmac}
+RATEBLOGIN:{64_hex_random}.{8_hex_hmac}
 ```
 
 - Stored in DB: SHA-256 hash in `users.qr_login_token` (same as `qr_login_token_hash` in specs)
-- QR encodes HTTPS URL: `/login/badge?d=RATIBLOGIN:…`
+- QR encodes HTTPS URL: `/login/badge?d=RATEBLOGIN:…`
 - No user ID, email, role, or permissions in QR
 
 ### DB columns (`users`)
@@ -317,8 +317,8 @@ RATIBLOGIN:{64_hex_random}.{8_hex_hmac}
 
 | File | Role |
 |------|------|
-| `includes/ratib-qr-workforce-identity.php` | PIN, trust, persistent token, metrics |
-| `includes/ratib-qr-login.php` | Core validate/issue (extended) |
+| `includes/rateb-qr-workforce-identity.php` | PIN, trust, persistent token, metrics |
+| `includes/rateb-qr-login.php` | Core validate/issue (extended) |
 | `js/workforce-access.js` | Admin workforce panel |
 | `css/workforce-access.css` | Enterprise admin styling |
 | `pages/workforce-badge.php` | Printable badge |

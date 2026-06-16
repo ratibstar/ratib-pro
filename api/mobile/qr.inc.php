@@ -295,21 +295,21 @@ function rateb_mobile_qr_issue_partner_jwt(PDO $pdo, int $agencyId): array
 }
 
 /**
- * Bridge legacy RATIBLOGIN badges to mobile JWT (no PIN flow on mobile).
+ * Bridge legacy RATEBLOGIN badges to mobile JWT (no PIN flow on mobile).
  *
  * @return array{success:bool,token?:string,role?:string,user_id?:int,username?:string,email?:string,user?:array<string,mixed>,message?:string,code?:string}
  */
 function rateb_mobile_qr_try_legacy_badge(string $payload): array
 {
-    if (!str_starts_with($payload, 'RATIBLOGIN:')) {
+    if (!str_starts_with($payload, 'RATEBLOGIN:')) {
         return ['success' => false, 'message' => 'Not a legacy badge.', 'code' => 'skip'];
     }
 
     require_once __DIR__ . '/../../includes/config.php';
-    require_once __DIR__ . '/../../includes/ratib-qr-login.php';
-    require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+    require_once __DIR__ . '/../../includes/rateb-qr-login.php';
+    require_once __DIR__ . '/../../includes/rateb-qr-workforce-identity.php';
 
-    $auth = ratib_qr_login_authenticate_payload($payload, ['skip_pin' => true, 'trust_device' => false], null);
+    $auth = rateb_qr_login_authenticate_payload($payload, ['skip_pin' => true, 'trust_device' => false], null);
     if (!empty($auth['needs_pin'])) {
         return [
             'success' => false,

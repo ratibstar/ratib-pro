@@ -1,21 +1,21 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Workers;
+namespace RATEB\InfrastructureMarketplace\Workers;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Compliance\TenantIsolationCompliance;
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Observability\ProviderEventBus;
-use Ratib\InfrastructureMarketplace\Provisioning\Execution\ProvisioningExecutionEngine;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\Queue\DatabaseQueueDispatcher;
-use Ratib\InfrastructureMarketplace\Services\ProviderRegistry;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Compliance\TenantIsolationCompliance;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Observability\ProviderEventBus;
+use RATEB\InfrastructureMarketplace\Provisioning\Execution\ProvisioningExecutionEngine;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\Queue\DatabaseQueueDispatcher;
+use RATEB\InfrastructureMarketplace\Services\ProviderRegistry;
 
 final class InfrastructureProvisioningWorker
 {
@@ -31,7 +31,7 @@ final class InfrastructureProvisioningWorker
     public static function main(): void
     {
         require_once __DIR__ . '/bootstrap.php';
-        $name = getenv('RATIB_INFRA_WORKER_NAME');
+        $name = getenv('RATEB_INFRA_WORKER_NAME');
         $default = 'infra-worker-' . substr(sha1((string) gethostname() . ':' . (string) getmypid()), 0, 8);
         $worker = new self(is_string($name) && $name !== '' ? $name : $default);
         $worker->run();
@@ -119,7 +119,7 @@ final class InfrastructureProvisioningWorker
             $elapsedMs = (microtime(true) - $loopStart) * 1000;
             $metrics->markLatencyMs('worker_loop', $elapsedMs, (string) ($row['public_id'] ?? ''));
 
-            if (memory_get_usage(true) > (int) (getenv('RATIB_INFRA_WORKER_MEMORY_MAX') ?: 268435456)) {
+            if (memory_get_usage(true) > (int) (getenv('RATEB_INFRA_WORKER_MEMORY_MAX') ?: 268435456)) {
                 $events->structuredLog('warn', 'Worker stopping due to memory threshold', ['worker' => $this->workerName]);
                 $this->shouldStop = true;
             }
@@ -148,7 +148,7 @@ final class InfrastructureProvisioningWorker
 
     private function heartbeat(\PDO $pdo, InfrastructureMetrics $metrics): void
     {
-        $sql = 'INSERT INTO ratib_infra_worker_heartbeats (worker_name, heartbeat_at, memory_bytes)
+        $sql = 'INSERT INTO rateb_infra_worker_heartbeats (worker_name, heartbeat_at, memory_bytes)
                 VALUES (:worker_name, NOW(), :memory_bytes)
                 ON DUPLICATE KEY UPDATE heartbeat_at = NOW(), memory_bytes = VALUES(memory_bytes)';
         $stmt = $pdo->prepare($sql);

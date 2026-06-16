@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Infrastructure;
+namespace RATEB\InfrastructureMarketplace\Infrastructure;
 
 /**
  * Schema introspection without prepared SHOW TABLES (unsupported with native MySQL prepares).

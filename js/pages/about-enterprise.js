@@ -7,7 +7,7 @@
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function initReveal() {
-    var nodes = document.querySelectorAll('[data-ratib-reveal]');
+    var nodes = document.querySelectorAll('[data-rateb-reveal]');
     if (!nodes.length) return;
 
     if (prefersReduced || typeof IntersectionObserver === 'undefined') {
@@ -22,7 +22,7 @@
         entries.forEach(function (entry) {
           if (!entry.isIntersecting) return;
           var el = entry.target;
-          var delay = parseInt(el.getAttribute('data-ratib-delay') || '0', 10);
+          var delay = parseInt(el.getAttribute('data-rateb-delay') || '0', 10);
           window.setTimeout(function () {
             el.classList.add('is-visible');
           }, delay);
@@ -39,7 +39,7 @@
 
   function initArchSync() {
     var cards = document.querySelectorAll('[data-layer-card]');
-    var svgNodes = document.querySelectorAll('.ratib-about-arch__node[data-layer]');
+    var svgNodes = document.querySelectorAll('.rateb-about-arch__node[data-layer]');
     if (!cards.length || !svgNodes.length) return;
 
     function activate(id) {
@@ -57,7 +57,7 @@
       });
     });
 
-    var stack = document.querySelector('.ratib-about-arch__stack');
+    var stack = document.querySelector('.rateb-about-arch__stack');
     if (stack) {
       stack.addEventListener('mouseleave', function () {
         cards.forEach(function (c) {
@@ -106,7 +106,7 @@
 
   document.addEventListener('click', function (ev) {
     var a = ev.target.closest('a[href*="#"]');
-    if (!a || a.closest('[data-ratib-profile-nav]') || a.hasAttribute('data-ratib-profile-nav')) {
+    if (!a || a.closest('[data-rateb-profile-nav]') || a.hasAttribute('data-rateb-profile-nav')) {
       return;
     }
     var href = a.getAttribute('href') || '';
@@ -137,15 +137,15 @@
     var profile = (window.location.origin || '') + '/profile/#company-profile';
     document
       .querySelectorAll(
-        '.ratib-nav__brand-profile, .ratib-nav__link--about, .ratib-nav__go-profile, [data-ratib-profile-nav], .ratib-footer-link--about'
+        '.rateb-nav__brand-profile, .rateb-nav__link--about, .rateb-nav__go-profile, [data-rateb-profile-nav], .rateb-footer-link--about'
       )
       .forEach(function (a) {
         a.setAttribute('href', profile);
         a.classList.add('is-current');
         a.setAttribute('aria-current', 'page');
       });
-    document.querySelectorAll('.ratib-nav__platform-links .ratib-nav__link').forEach(function (a) {
-      if (!a.classList.contains('ratib-nav__link--about')) {
+    document.querySelectorAll('.rateb-nav__platform-links .rateb-nav__link').forEach(function (a) {
+      if (!a.classList.contains('rateb-nav__link--about')) {
         a.classList.remove('is-current');
         a.removeAttribute('aria-current');
       }
@@ -154,9 +154,9 @@
 
   function initMetricJitter() {
     if (prefersReduced) return;
-    var values = document.querySelectorAll('.ratib-about-metric__value[data-ratib-count]');
+    var values = document.querySelectorAll('.rateb-about-metric__value[data-rateb-count]');
     values.forEach(function (el) {
-      var base = parseFloat(el.getAttribute('data-ratib-count') || '0');
+      var base = parseFloat(el.getAttribute('data-rateb-count') || '0');
       if (!base) return;
       var text = (el.textContent || '').trim();
       var suffix = text.replace(/[\d.]+/, '');
@@ -174,7 +174,7 @@
 
   function initEventStream() {
     if (prefersReduced) return;
-    var stream = document.querySelector('.ratib-about-event-stream');
+    var stream = document.querySelector('.rateb-about-event-stream');
     if (!stream) return;
 
     var events = [
@@ -187,13 +187,13 @@
 
     window.setInterval(function () {
       if (document.hidden) return;
-      var row = stream.querySelector('.ratib-about-event');
+      var row = stream.querySelector('.rateb-about-event');
       if (!row) return;
       var e = events[idx % events.length];
       idx += 1;
       var clone = row.cloneNode(true);
-      clone.className = 'ratib-about-event ratib-about-event--' + e.cls;
-      clone.innerHTML = '<span class="ratib-mono">' + e.text + '</span>';
+      clone.className = 'rateb-about-event rateb-about-event--' + e.cls;
+      clone.innerHTML = '<span class="rateb-mono">' + e.text + '</span>';
       stream.insertBefore(clone, stream.firstChild);
       while (stream.children.length > 4) {
         stream.removeChild(stream.lastChild);
@@ -202,7 +202,7 @@
   }
 
   function initJumpNavActive() {
-    var links = document.querySelectorAll('.ratib-about-jump a[href^="#"]');
+    var links = document.querySelectorAll('.rateb-about-jump a[href^="#"]');
     var sections = [];
     links.forEach(function (a) {
       var id = a.getAttribute('href').slice(1);
@@ -230,8 +230,8 @@
   }
 
   function initGalleryLightbox() {
-    if (window.RatibGalleryLightbox && typeof window.RatibGalleryLightbox.init === 'function') {
-      window.RatibGalleryLightbox.init();
+    if (window.RATEBGalleryLightbox && typeof window.RATEBGalleryLightbox.init === 'function') {
+      window.RATEBGalleryLightbox.init();
     }
   }
 

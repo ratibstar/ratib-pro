@@ -3,7 +3,7 @@
  * Served from project-root /css/control/ (same pattern as system.css) — asset('css/control/...').
  * Scoped so Bootstrap cards on other pages stay unchanged.
  */
-.ratib-site-content-editor {
+.rateb-site-content-editor {
     --rsce-bg: #0f1419;
     --rsce-surface: #151b24;
     --rsce-elevated: #1a2230;
@@ -14,7 +14,7 @@
     --rsce-accent-dim: rgba(139, 92, 246, 0.15);
 }
 
-.ratib-site-content-editor.ratib-site-content-editor--dark {
+.rateb-site-content-editor.rateb-site-content-editor--dark {
     color: var(--rsce-text);
     background: var(--rsce-bg);
     border-radius: 12px;
@@ -22,7 +22,7 @@
     margin: -0.5rem -0.25rem 0;
 }
 
-.ratib-site-content-editor--dark .ratib-site-content-intro {
+.rateb-site-content-editor--dark .rateb-site-content-intro {
     background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.08));
     border: 1px solid var(--rsce-border);
     border-radius: 10px;
@@ -30,39 +30,39 @@
     margin-bottom: 1.25rem;
 }
 
-.ratib-site-content-editor--dark .ratib-site-content-intro strong {
+.rateb-site-content-editor--dark .rateb-site-content-intro strong {
     color: var(--rsce-text);
 }
 
-.ratib-site-content-editor--dark .ratib-site-content-intro code,
-.ratib-site-content-editor--dark .text-muted {
+.rateb-site-content-editor--dark .rateb-site-content-intro code,
+.rateb-site-content-editor--dark .text-muted {
     color: var(--rsce-muted) !important;
 }
 
-.ratib-site-content-editor--dark .alert {
+.rateb-site-content-editor--dark .alert {
     border-radius: 10px;
     border-width: 1px;
 }
 
-.ratib-site-content-editor--dark .alert-warning {
+.rateb-site-content-editor--dark .alert-warning {
     background: rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.35);
     color: #fcd34d;
 }
 
-.ratib-site-content-editor--dark .alert-success {
+.rateb-site-content-editor--dark .alert-success {
     background: rgba(34, 197, 94, 0.12);
     border-color: rgba(34, 197, 94, 0.35);
     color: #86efac;
 }
 
-.ratib-site-content-editor--dark .alert-danger {
+.rateb-site-content-editor--dark .alert-danger {
     background: rgba(239, 68, 68, 0.12);
     border-color: rgba(239, 68, 68, 0.35);
     color: #fca5a5;
 }
 
-.ratib-site-content-editor--dark details.ratib-site-content-details {
+.rateb-site-content-editor--dark details.rateb-site-content-details {
     background: var(--rsce-surface);
     border: 1px solid var(--rsce-border);
     border-radius: 10px;
@@ -70,7 +70,7 @@
     overflow: hidden;
 }
 
-.ratib-site-content-editor--dark details.ratib-site-content-details summary {
+.rateb-site-content-editor--dark details.rateb-site-content-details summary {
     cursor: pointer;
     list-style: none;
     padding: 0.85rem 1.1rem;
@@ -82,11 +82,11 @@
     user-select: none;
 }
 
-.ratib-site-content-editor--dark details.ratib-site-content-details summary::-webkit-details-marker {
+.rateb-site-content-editor--dark details.rateb-site-content-details summary::-webkit-details-marker {
     display: none;
 }
 
-.ratib-site-content-editor--dark details.ratib-site-content-details summary::before {
+.rateb-site-content-editor--dark details.rateb-site-content-details summary::before {
     content: "\f078";
     font-family: "Font Awesome 6 Free";
     font-weight: 900;
@@ -97,44 +97,44 @@
     transition: transform 0.15s ease;
 }
 
-.ratib-site-content-editor--dark details.ratib-site-content-details[open] summary::before {
+.rateb-site-content-editor--dark details.rateb-site-content-details[open] summary::before {
     transform: rotate(-180deg);
 }
 
-.ratib-site-content-editor--dark details.ratib-site-content-details .ratib-site-content-details__body {
+.rateb-site-content-editor--dark details.rateb-site-content-details .rateb-site-content-details__body {
     padding: 1rem 1.1rem 1.15rem;
 }
 
-.ratib-site-content-editor--dark .form-label {
+.rateb-site-content-editor--dark .form-label {
     color: var(--rsce-muted);
     font-size: 0.8rem;
     font-weight: 500;
     margin-bottom: 0.35rem;
 }
 
-.ratib-site-content-editor--dark .form-control {
+.rateb-site-content-editor--dark .form-control {
     background: var(--rsce-bg);
     border: 1px solid var(--rsce-border);
     color: var(--rsce-text);
     border-radius: 8px;
 }
 
-.ratib-site-content-editor--dark .form-control:focus {
+.rateb-site-content-editor--dark .form-control:focus {
     background: #0c1016;
     border-color: rgba(139, 92, 246, 0.55);
     color: var(--rsce-text);
     box-shadow: 0 0 0 3px var(--rsce-accent-dim);
 }
 
-.ratib-site-content-editor--dark .form-control::placeholder {
+.rateb-site-content-editor--dark .form-control::placeholder {
     color: rgba(148, 163, 184, 0.45);
 }
 
-.ratib-site-content-editor--dark textarea.form-control {
+.rateb-site-content-editor--dark textarea.form-control {
     min-height: auto;
 }
 
-.ratib-site-content-editor--dark .ratib-site-content-actions {
+.rateb-site-content-editor--dark .rateb-site-content-actions {
     position: sticky;
     bottom: 0;
     z-index: 5;
@@ -143,27 +143,27 @@
     background: linear-gradient(to top, var(--rsce-bg) 70%, transparent);
 }
 
-.ratib-site-content-editor--dark .ratib-site-content-actions .btn-primary {
+.rateb-site-content-editor--dark .rateb-site-content-actions .btn-primary {
     background: linear-gradient(135deg, #7c3aed, #6366f1);
     border: none;
 }
 
-.ratib-site-content-editor--dark .ratib-site-content-actions .btn-outline-secondary {
+.rateb-site-content-editor--dark .rateb-site-content-actions .btn-outline-secondary {
     border-color: var(--rsce-border);
     color: var(--rsce-muted);
 }
 
-.ratib-site-content-editor--dark .ratib-site-content-actions .btn-outline-secondary:hover {
+.rateb-site-content-editor--dark .rateb-site-content-actions .btn-outline-secondary:hover {
     background: var(--rsce-elevated);
     color: var(--rsce-text);
 }
 
-.module-content .ratib-site-content-editor--dark + * {
+.module-content .rateb-site-content-editor--dark + * {
     margin-top: 0;
 }
 
-/* English-labelled upload row (see ratib_control_site_content_render_slot_file_field) */
-.ratib-site-content-editor--dark .ratib-fake-file-inputgroup .ratib-fake-file-label {
+/* English-labelled upload row (see rateb_control_site_content_render_slot_file_field) */
+.rateb-site-content-editor--dark .rateb-fake-file-inputgroup .rateb-fake-file-label {
     display: flex;
     align-items: center;
     font-size: 0.8rem;

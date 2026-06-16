@@ -7,15 +7,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/site-content-profile-data.php';
 
-if (!function_exists('ratib_site_content_public_page_links')) {
+if (!function_exists('rateb_site_content_public_page_links')) {
     /**
      * @return list<array{label:string,path:string}>
      */
-    function ratib_site_content_public_page_links(): array
+    function rateb_site_content_public_page_links(): array
     {
         $root = '';
-        if (function_exists('ratib_public_site_base_url')) {
-            $root = rtrim(ratib_public_site_base_url(), '/');
+        if (function_exists('rateb_public_site_base_url')) {
+            $root = rtrim(rateb_public_site_base_url(), '/');
         }
 
         return [
@@ -28,13 +28,13 @@ if (!function_exists('ratib_site_content_public_page_links')) {
     }
 }
 
-if (!function_exists('ratib_site_content_defaults_public_pages')) {
+if (!function_exists('rateb_site_content_defaults_public_pages')) {
     /**
      * Keys for public pages other than home.* (home stays in site-content-home-data.php).
      *
      * @return array<string, string>
      */
-    function ratib_site_content_defaults_public_pages(): array
+    function rateb_site_content_defaults_public_pages(): array
     {
         return [
             'public.contact.phone' => '+966 599 863 868',
@@ -101,14 +101,14 @@ if (!function_exists('ratib_site_content_defaults_public_pages')) {
             'profile.section.cor.eyebrow' => 'Multi-corridor fabric',
             'profile.section.cor.title' => 'Multi-country operations',
             'profile.section.cor.sub' => 'Worker-sending markets on one orchestration core—with country-scoped governance and expanding corridors.',
-            'profile.image.hero' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.hero', 'public/cms-bundle-about.png') : 'scmedia:cms-profile-image-hero.png',
-            'profile.image.ops' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.ops', 'public/cms-bundle-about.png') : 'scmedia:cms-profile-image-ops.png',
-            'profile.image.workers' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.workers', 'public/cms-bundle-workers.svg') : 'scmedia:cms-profile-image-workers.svg',
-            'profile.image.telemetry' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.telemetry', 'public/cms-bundle-gov-tracking.png') : 'scmedia:cms-profile-image-telemetry.png',
-            'profile.image.accounting' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.accounting', 'public/cms-bundle-finance.svg') : 'scmedia:cms-profile-image-accounting.svg',
-            'profile.image.control' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.control', 'public/cms-bundle-gov-control-v2.png') : 'scmedia:cms-profile-image-control.png',
-            'profile.image.partners' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.partners', 'public/cms-bundle-about.png') : 'scmedia:cms-profile-image-partners.png',
-            'profile.image.pipeline' => function_exists('ratib_site_content_profile_media_default') ? ratib_site_content_profile_media_default('profile.image.pipeline', 'public/cms-bundle-pipeline.svg') : 'scmedia:cms-profile-image-pipeline.svg',
+            'profile.image.hero' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.hero', 'public/cms-bundle-about.png') : 'scmedia:cms-profile-image-hero.png',
+            'profile.image.ops' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.ops', 'public/cms-bundle-about.png') : 'scmedia:cms-profile-image-ops.png',
+            'profile.image.workers' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.workers', 'public/cms-bundle-workers.svg') : 'scmedia:cms-profile-image-workers.svg',
+            'profile.image.telemetry' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.telemetry', 'public/cms-bundle-gov-tracking.png') : 'scmedia:cms-profile-image-telemetry.png',
+            'profile.image.accounting' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.accounting', 'public/cms-bundle-finance.svg') : 'scmedia:cms-profile-image-accounting.svg',
+            'profile.image.control' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.control', 'public/cms-bundle-gov-control-v2.png') : 'scmedia:cms-profile-image-control.png',
+            'profile.image.partners' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.partners', 'public/cms-bundle-about.png') : 'scmedia:cms-profile-image-partners.png',
+            'profile.image.pipeline' => function_exists('rateb_site_content_profile_media_default') ? rateb_site_content_profile_media_default('profile.image.pipeline', 'public/cms-bundle-pipeline.svg') : 'scmedia:cms-profile-image-pipeline.svg',
             'profile.image.hero.alt' => 'RATEB agency workspace — workforce systems of record and SLA views',
             'profile.image.ops.alt' => 'Agency dashboard with workforce and agent views',
             'profile.image.workers.alt' => 'Worker records — lifecycle and documents',
@@ -155,15 +155,15 @@ if (!function_exists('ratib_site_content_defaults_public_pages')) {
     }
 }
 
-if (!function_exists('ratib_site_content_public_editor_groups')) {
+if (!function_exists('rateb_site_content_public_editor_groups')) {
     /**
      * Full Public site content editor — all public pages, homepage last.
      *
      * @return list<array<string, mixed>>
      */
-    function ratib_site_content_public_editor_groups(): array
+    function rateb_site_content_public_editor_groups(): array
     {
-        $links = ratib_site_content_public_page_links();
+        $links = rateb_site_content_public_page_links();
         $mapHtml = '<ul class="mb-0 ps-3">';
         foreach ($links as $l) {
             $mapHtml .= '<li><a href="' . htmlspecialchars($l['path'], ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($l['label'], ENT_QUOTES, 'UTF-8') . '</a></li>';
@@ -179,8 +179,8 @@ if (!function_exists('ratib_site_content_public_editor_groups')) {
             ],
         ];
 
-        $profileGroups = function_exists('ratib_site_content_profile_editor_groups')
-            ? ratib_site_content_profile_editor_groups()
+        $profileGroups = function_exists('rateb_site_content_profile_editor_groups')
+            ? rateb_site_content_profile_editor_groups()
             : [];
 
         $publicOnly = [
@@ -233,7 +233,7 @@ if (!function_exists('ratib_site_content_public_editor_groups')) {
             [
                 'id' => 'opproof-platform-screens',
                 'title' => 'Operational proof — platform screenshots (below government)',
-                'intro' => 'Optional overrides for the six cards below government on /profile. <strong>Leave empty</strong> to reuse the distinct workspace screenshots above. Clear any field that still shows the old generic <code>about-ratib-command.png</code> for every card.',
+                'intro' => 'Optional overrides for the six cards below government on /profile. <strong>Leave empty</strong> to reuse the distinct workspace screenshots above. Clear any field that still shows the old generic <code>about-rateb-command.png</code> for every card.',
                 'fields' => [
                     ['key' => 'opproof.image.pipeline', 'label' => 'Workforce pipeline', 'type' => 'media_image'],
                     ['key' => 'opproof.image.ops', 'label' => 'Operations dashboard', 'type' => 'media_image'],
@@ -290,8 +290,8 @@ if (!function_exists('ratib_site_content_public_editor_groups')) {
         ];
 
         $homeGroups = [];
-        if (function_exists('ratib_site_content_home_editor_groups_core')) {
-            $homeGroups = ratib_site_content_home_editor_groups_core();
+        if (function_exists('rateb_site_content_home_editor_groups_core')) {
+            $homeGroups = rateb_site_content_home_editor_groups_core();
         }
         foreach ($homeGroups as &$hg) {
             $t = (string) ($hg['title'] ?? '');

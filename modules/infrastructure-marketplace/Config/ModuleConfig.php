@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Config;
+namespace RATEB\InfrastructureMarketplace\Config;
 
-use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+use RATEB\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 /**
  * Reads module flags from environment. No provider credentials or URLs are stored here.
@@ -60,7 +60,7 @@ final class ModuleConfig
         if ($override !== null) {
             return self::boolFromMixed($override, false);
         }
-        $v = getenv('RATIB_INFRA_MARKETPLACE_ENABLED');
+        $v = getenv('RATEB_INFRA_MARKETPLACE_ENABLED');
 
         return $v !== false && $v !== '' && !in_array(strtolower((string) $v), ['0', 'false', 'off', 'no'], true);
     }
@@ -71,7 +71,7 @@ final class ModuleConfig
         if (is_string($override) && trim($override) !== '') {
             return strtolower(trim($override));
         }
-        $d = getenv('RATIB_INFRA_QUEUE_DRIVER');
+        $d = getenv('RATEB_INFRA_QUEUE_DRIVER');
 
         return $d !== false && $d !== '' ? strtolower(trim((string) $d)) : 'sync';
     }
@@ -85,7 +85,7 @@ final class ModuleConfig
         if (is_array($override)) {
             return $override;
         }
-        $raw = getenv('RATIB_INFRA_PROVIDER_BINDINGS');
+        $raw = getenv('RATEB_INFRA_PROVIDER_BINDINGS');
         if ($raw === false || $raw === '') {
             return [];
         }
@@ -103,7 +103,7 @@ final class ModuleConfig
                 return $o;
             }
         }
-        $v = getenv('RATIB_INFRA_QUEUE_MAX_ATTEMPTS');
+        $v = getenv('RATEB_INFRA_QUEUE_MAX_ATTEMPTS');
         $n = is_string($v) ? (int) $v : 5;
         return $n > 0 ? $n : 5;
     }
@@ -114,13 +114,13 @@ final class ModuleConfig
         if (is_string($override) && trim($override) !== '') {
             return strtoupper(trim($override));
         }
-        $v = getenv('RATIB_INFRA_QUEUE_DEAD_STATE');
+        $v = getenv('RATEB_INFRA_QUEUE_DEAD_STATE');
         return is_string($v) && trim($v) !== '' ? strtoupper(trim($v)) : 'DEAD_LETTER';
     }
 
     public static function workerLockTtlSeconds(): int
     {
-        $v = getenv('RATIB_INFRA_LOCK_TTL_SECONDS');
+        $v = getenv('RATEB_INFRA_LOCK_TTL_SECONDS');
         $n = is_string($v) ? (int) $v : 180;
         return $n > 0 ? $n : 180;
     }
@@ -131,7 +131,7 @@ final class ModuleConfig
         if (is_string($override) && trim($override) !== '') {
             return rtrim(trim($override), '/');
         }
-        $v = getenv('RATIB_INFRA_CPANEL_BASE_URL');
+        $v = getenv('RATEB_INFRA_CPANEL_BASE_URL');
         return is_string($v) && trim($v) !== '' ? rtrim(trim($v), '/') : null;
     }
 
@@ -141,7 +141,7 @@ final class ModuleConfig
         if (is_string($override) && trim($override) !== '') {
             return trim($override);
         }
-        $v = getenv('RATIB_INFRA_CPANEL_USERNAME');
+        $v = getenv('RATEB_INFRA_CPANEL_USERNAME');
         return is_string($v) && trim($v) !== '' ? trim($v) : null;
     }
 
@@ -151,11 +151,11 @@ final class ModuleConfig
         if (is_string($override) && trim($override) !== '') {
             return self::normalizeSecret(trim($override));
         }
-        $lazy = SecretManager::withDefaultProvidersLazy()->getSecret('RATIB_INFRA_CPANEL', 'API_TOKEN');
+        $lazy = SecretManager::withDefaultProvidersLazy()->getSecret('RATEB_INFRA_CPANEL', 'API_TOKEN');
         if (is_string($lazy) && $lazy !== '') {
             return self::normalizeSecret($lazy);
         }
-        $v = getenv('RATIB_INFRA_CPANEL_API_TOKEN');
+        $v = getenv('RATEB_INFRA_CPANEL_API_TOKEN');
 
         return is_string($v) && trim($v) !== '' ? self::normalizeSecret(trim($v)) : null;
     }
@@ -166,7 +166,7 @@ final class ModuleConfig
         if (is_string($override) && trim($override) !== '') {
             return strtoupper(trim($override));
         }
-        $v = getenv('RATIB_INFRA_DEFAULT_CURRENCY');
+        $v = getenv('RATEB_INFRA_DEFAULT_CURRENCY');
         return is_string($v) && trim($v) !== '' ? strtoupper(trim($v)) : 'USD';
     }
 
@@ -179,7 +179,7 @@ final class ModuleConfig
                 return $o;
             }
         }
-        $v = getenv('RATIB_INFRA_QUEUE_PRESSURE_THRESHOLD');
+        $v = getenv('RATEB_INFRA_QUEUE_PRESSURE_THRESHOLD');
         $n = is_string($v) ? (int) $v : 2000;
         return $n > 100 ? $n : 2000;
     }
@@ -190,7 +190,7 @@ final class ModuleConfig
         if ($override !== null) {
             return self::boolFromMixed($override, false);
         }
-        $v = getenv('RATIB_INFRA_EXECUTION_KILL_SWITCH');
+        $v = getenv('RATEB_INFRA_EXECUTION_KILL_SWITCH');
         return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
     }
 
@@ -200,7 +200,7 @@ final class ModuleConfig
         if ($override !== null) {
             return self::boolFromMixed($override, false);
         }
-        $v = getenv('RATIB_INFRA_DRY_RUN');
+        $v = getenv('RATEB_INFRA_DRY_RUN');
         return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
     }
 
@@ -227,7 +227,7 @@ final class ModuleConfig
         if (is_array($row) && array_key_exists('live', $row)) {
             return self::boolFromMixed($row['live'], false);
         }
-        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper($pk) . '_LIVE');
+        $v = getenv('RATEB_INFRA_PROVIDER_' . strtoupper($pk) . '_LIVE');
 
         return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
     }
@@ -239,7 +239,7 @@ final class ModuleConfig
         if (is_array($row) && array_key_exists('sandbox', $row)) {
             return self::boolFromMixed($row['sandbox'], true);
         }
-        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper($pk) . '_SANDBOX');
+        $v = getenv('RATEB_INFRA_PROVIDER_' . strtoupper($pk) . '_SANDBOX');
         if (!is_string($v) || trim($v) === '') {
             // Namecheap can stay intentionally disabled in production until credentials are ready.
             if ($pk === 'namecheap' || $pk === 'cloudflare_dns') {
@@ -295,11 +295,11 @@ final class ModuleConfig
         if ($secretKey === null) {
             return null;
         }
-        $fromStore = SecretManager::withDefaultProvidersLazy()->getSecret('RATIB_INFRA_NAMECHEAP', $secretKey);
+        $fromStore = SecretManager::withDefaultProvidersLazy()->getSecret('RATEB_INFRA_NAMECHEAP', $secretKey);
         if (is_string($fromStore) && $fromStore !== '') {
             return self::normalizeSecret($fromStore);
         }
-        $envName = 'RATIB_INFRA_NAMECHEAP_' . $secretKey;
+        $envName = 'RATEB_INFRA_NAMECHEAP_' . $secretKey;
         $v = getenv($envName);
 
         return is_string($v) && trim($v) !== '' ? self::normalizeSecret(trim($v)) : null;
@@ -321,7 +321,7 @@ final class ModuleConfig
             $parts = array_map(static fn(string $x): int => (int) trim($x), explode(',', $override));
             return array_values(array_filter($parts, static fn(int $x): bool => $x > 0));
         }
-        $v = getenv('RATIB_INFRA_TENANT_ALLOWLIST');
+        $v = getenv('RATEB_INFRA_TENANT_ALLOWLIST');
         if (!is_string($v) || trim($v) === '') {
             return [];
         }
@@ -338,7 +338,7 @@ final class ModuleConfig
                 return $o;
             }
         }
-        $v = getenv('RATIB_INFRA_WORKER_MAX_LOOP_JOBS');
+        $v = getenv('RATEB_INFRA_WORKER_MAX_LOOP_JOBS');
         $n = is_string($v) ? (int) $v : 1000;
         return $n > 0 ? $n : 1000;
     }

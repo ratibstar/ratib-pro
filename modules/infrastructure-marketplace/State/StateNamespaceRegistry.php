@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\State;
+namespace RATEB\InfrastructureMarketplace\State;
 
-use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
+use RATEB\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
 
 /**
  * Enforces separation between queue (job), commerce (subscription/sellable), and provisioning phase vocabulary.
@@ -24,11 +24,11 @@ final class StateNamespaceRegistry
         'TRANSFERRED',
     ];
 
-    /** Ownership overlay on ratib_tenant_resources — literals distinct from commerce plan states where ambiguous. */
+    /** Ownership overlay on rateb_tenant_resources — literals distinct from commerce plan states where ambiguous. */
     private const OWNERSHIP_STATES = ['OWNED', 'UNCLAIMED', 'DISABLED', 'PENDING_LINK'];
 
     /**
-     * Provisioning **phase** labels for high-level orchestration (not ratib_infra_provisioning_jobs.status).
+     * Provisioning **phase** labels for high-level orchestration (not rateb_infra_provisioning_jobs.status).
      * Note: WAITING_EXTERNAL overlaps the queue literal in this codebase — disambiguate with context or use WAITING_PROVIDER.
      */
     private const PROVISIONING_PHASES = [
@@ -121,7 +121,7 @@ final class StateNamespaceRegistry
             return [];
         }
         if ($s === 'WAITING_EXTERNAL') {
-            return ['Ambiguous: WAITING_EXTERNAL is used as ratib_infra_provisioning_jobs.status (queue namespace). Prefer WAITING_PROVIDER for non-queue provisioning phases.'];
+            return ['Ambiguous: WAITING_EXTERNAL is used as rateb_infra_provisioning_jobs.status (queue namespace). Prefer WAITING_PROVIDER for non-queue provisioning phases.'];
         }
         $warnings[] = 'Unknown provisioning_phase: ' . $state;
         if (in_array($s, self::COMMERCE_STATES, true)) {

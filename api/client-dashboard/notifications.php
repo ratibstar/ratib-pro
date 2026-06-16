@@ -20,11 +20,11 @@ require_once dirname(__DIR__, 2) . '/includes/permissions.php';
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Notifications/NotificationEngine.php';
 
-ratib_client_dashboard_api_require_access();
+rateb_client_dashboard_api_require_access();
 
 $conn = isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli ? $GLOBALS['conn'] : null;
 
-$pack = Ratib_ClientDashboard_NotificationEngine::buildForHttp($conn);
+$pack = RATEB_ClientDashboard_NotificationEngine::buildForHttp($conn);
 
 echo json_encode(
     array_merge(

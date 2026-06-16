@@ -17,8 +17,8 @@ Shift public surfaces from **positioning language** to **operational proof**: di
 
 | File | Role |
 |------|------|
-| `includes/ratib-operational-proof-data.php` | Diagrams, screenshots, workflows, global disclaimer |
-| `includes/ratib-operational-proof-render.php` | Renders `#operational-proof` section |
+| `includes/rateb-operational-proof-data.php` | Diagrams, screenshots, workflows, global disclaimer |
+| `includes/rateb-operational-proof-render.php` | Renders `#operational-proof` section |
 | `css/pages/operational-proof.css` | Calm grid layouts, sample badges |
 
 ### Diagram assets (`assets/images/diagrams/`)

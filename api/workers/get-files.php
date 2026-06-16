@@ -8,7 +8,7 @@ header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
+require_once __DIR__ . '/../../includes/rateb_uploads_base.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     http_response_code(401);

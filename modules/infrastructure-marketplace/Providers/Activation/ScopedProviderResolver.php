@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Providers\Activation;
+namespace RATEB\InfrastructureMarketplace\Providers\Activation;
 
 final class ScopedProviderResolver
 {

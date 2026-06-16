@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Billing\Listeners;
+namespace RATEB\InfrastructureMarketplace\Billing\Listeners;
 
-use Ratib\InfrastructureMarketplace\Billing\Contracts\InfrastructureBillingSettlementHookInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
-use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
+use RATEB\InfrastructureMarketplace\Billing\Contracts\InfrastructureBillingSettlementHookInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use RATEB\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
 
 /**
  * Non-invasive settlement listener: callable from existing payment success hooks without modifying payment internals.

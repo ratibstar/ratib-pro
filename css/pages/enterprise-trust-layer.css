@@ -15,28 +15,28 @@
 }
 
 /* Typography & density (home + enterprise pages) */
-body.ratib-saas-home .ratib-section__title,
-body.ratib-arch-page .ratib-about-title,
-body.ratib-trust-page .ratib-about-title,
-body.ratib-proc-page .ratib-about-title {
+body.rateb-saas-home .rateb-section__title,
+body.rateb-arch-page .rateb-about-title,
+body.rateb-trust-page .rateb-about-title,
+body.rateb-proc-page .rateb-about-title {
   letter-spacing: -0.025em;
   font-weight: 800;
   line-height: 1.15;
 }
 
-body.ratib-saas-home .ratib-section__sub,
-body.ratib-saas-home .ratib-hero__lead {
+body.rateb-saas-home .rateb-section__sub,
+body.rateb-saas-home .rateb-hero__lead {
   line-height: 1.58;
   max-width: 42rem;
 }
 
-.ratib-eyebrow--enterprise {
+.rateb-eyebrow--enterprise {
   color: var(--ent-accent-strong) !important;
   letter-spacing: 0.14em;
   font-size: 0.7rem;
 }
 
-.ratib-mono-ops {
+.rateb-mono-ops {
   font-family: var(--ent-mono);
   font-size: 0.72rem;
   letter-spacing: 0.06em;
@@ -44,7 +44,7 @@ body.ratib-saas-home .ratib-hero__lead {
 }
 
 /* Subtle title accent — replace loud marketing gradient on home */
-body.ratib-saas-home .ratib-text-gradient {
+body.rateb-saas-home .rateb-text-gradient {
   background: none;
   -webkit-background-clip: unset;
   background-clip: unset;
@@ -52,15 +52,15 @@ body.ratib-saas-home .ratib-text-gradient {
   border-bottom: 2px solid rgba(148, 163, 184, 0.45);
 }
 
-body.ratib-saas-home .ratib-final-cta__bg {
+body.rateb-saas-home .rateb-final-cta__bg {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, transparent 100%);
 }
 
-body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
+body.rateb-saas-home .rateb-analytics-card .rateb-metric__val.rateb-live-nudge {
   animation: none;
 }
 
-.ratib-dash__illus {
+.rateb-dash__illus {
   margin: 0.25rem 0 0;
   font-size: 0.62rem;
   color: #64748b;
@@ -69,7 +69,7 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   text-transform: uppercase;
 }
 
-.ratib-analytics__illus {
+.rateb-analytics__illus {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.65rem;
@@ -80,14 +80,14 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
 }
 
 /* Hero enterprise strip */
-.ratib-ent-hero-strip {
+.rateb-ent-hero-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   margin: 1rem 0 1.1rem;
 }
 
-.ratib-ent-hero-strip__item {
+.rateb-ent-hero-strip__item {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -99,31 +99,31 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   background: rgba(15, 23, 42, 0.55);
 }
 
-.ratib-ent-hero-strip__item .ratib-mono-tag {
+.rateb-ent-hero-strip__item .rateb-mono-tag {
   color: #94a3b8;
   font-size: 0.62rem;
 }
 
 /* Enterprise trust section */
-.ratib-ent-trust {
+.rateb-ent-trust {
   padding: var(--ent-section-gap) 0;
   border-top: 1px solid var(--ent-border);
   border-bottom: 1px solid var(--ent-border);
   background: rgba(12, 18, 32, 0.65);
 }
 
-.ratib-ent-trust__head {
+.rateb-ent-trust__head {
   margin-bottom: 1.25rem;
 }
 
-.ratib-ent-indicators {
+.rateb-ent-indicators {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
   margin-bottom: 1.35rem;
 }
 
-.ratib-ent-indicator {
+.rateb-ent-indicator {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -136,45 +136,45 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   border-radius: 3px;
 }
 
-.ratib-ent-indicator i {
+.rateb-ent-indicator i {
   color: #94a3b8;
   font-size: 0.7rem;
 }
 
-.ratib-ent-grid {
+.rateb-ent-grid {
   display: grid;
   gap: 0.85rem;
   margin-bottom: 0.85rem;
 }
 
 @media (min-width: 960px) {
-  .ratib-ent-grid--primary,
-  .ratib-ent-grid--diagrams {
+  .rateb-ent-grid--primary,
+  .rateb-ent-grid--diagrams {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-.ratib-ent-panel {
+.rateb-ent-panel {
   padding: 1rem 1.1rem;
   border: 1px solid var(--ent-border);
   border-radius: 6px;
   background: var(--ent-bg-panel);
 }
 
-.ratib-ent-panel__title {
+.rateb-ent-panel__title {
   margin: 0 0 0.35rem;
   color: var(--ent-accent-strong);
 }
 
-.ratib-ent-panel__sub,
-.ratib-ent-panel__note {
+.rateb-ent-panel__sub,
+.rateb-ent-panel__note {
   margin: 0 0 0.75rem;
   font-size: 0.86rem;
   line-height: 1.48;
   color: var(--ent-muted);
 }
 
-.ratib-ent-panel__link {
+.rateb-ent-panel__link {
   display: inline-block;
   margin-top: 0.65rem;
   font-size: 0.8rem;
@@ -183,12 +183,12 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   text-decoration: none;
 }
 
-.ratib-ent-panel__link:hover {
+.rateb-ent-panel__link:hover {
   text-decoration: underline;
 }
 
 /* Layer stack */
-.ratib-ent-layer-stack {
+.rateb-ent-layer-stack {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -197,7 +197,7 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   gap: 0.3rem;
 }
 
-.ratib-ent-layer {
+.rateb-ent-layer {
   display: grid;
   grid-template-columns: 2.5rem 1fr;
   grid-template-rows: auto auto;
@@ -208,64 +208,64 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   border-radius: 0 4px 4px 0;
 }
 
-.ratib-ent-layer__order {
+.rateb-ent-layer__order {
   grid-row: 1 / 3;
   align-self: center;
   color: var(--ent-accent-strong);
 }
 
-.ratib-ent-layer__name {
+.rateb-ent-layer__name {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--ent-ink);
 }
 
-.ratib-ent-layer__desc {
+.rateb-ent-layer__desc {
   grid-column: 2;
   font-size: 0.72rem;
   color: var(--ent-muted);
 }
 
 /* Orchestration flow */
-.ratib-ent-orchestration {
+.rateb-ent-orchestration {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.ratib-ent-orchestration__step {
+.rateb-ent-orchestration__step {
   padding: 0.5rem 0.65rem;
   border: 1px solid var(--ent-border);
   border-radius: 4px;
   background: rgba(30, 41, 59, 0.4);
 }
 
-.ratib-ent-orchestration__step span:first-child {
+.rateb-ent-orchestration__step span:first-child {
   display: block;
   color: #64748b;
   margin-bottom: 0.15rem;
 }
 
-.ratib-ent-orchestration__step strong {
+.rateb-ent-orchestration__step strong {
   display: block;
   font-size: 0.82rem;
   color: var(--ent-ink);
 }
 
-.ratib-ent-orchestration__step span:last-child {
+.rateb-ent-orchestration__step span:last-child {
   display: block;
   font-size: 0.75rem;
   color: var(--ent-muted);
 }
 
-.ratib-ent-orchestration__arrow {
+.rateb-ent-orchestration__arrow {
   text-align: center;
   color: #475569;
   font-size: 0.75rem;
 }
 
 /* Topology */
-.ratib-ent-topology {
+.rateb-ent-topology {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -273,13 +273,13 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   margin-bottom: 0.5rem;
 }
 
-.ratib-ent-topology__row {
+.rateb-ent-topology__row {
   width: 100%;
   max-width: 16rem;
   text-align: center;
 }
 
-.ratib-ent-topology__row span {
+.rateb-ent-topology__row span {
   display: block;
   padding: 0.4rem 0.5rem;
   font-size: 0.72rem;
@@ -290,37 +290,37 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   background: rgba(30, 41, 59, 0.45);
 }
 
-.ratib-ent-topology__row--split,
-.ratib-ent-topology__row--data {
+.rateb-ent-topology__row--split,
+.rateb-ent-topology__row--data {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.35rem;
   max-width: 100%;
 }
 
-.ratib-ent-topology__row--data {
+.rateb-ent-topology__row--data {
   grid-template-columns: repeat(3, 1fr);
 }
 
-.ratib-ent-topology__row--core span {
+.rateb-ent-topology__row--core span {
   border-color: rgba(148, 163, 184, 0.35);
   background: rgba(51, 65, 85, 0.55);
   font-weight: 600;
 }
 
-.ratib-ent-topology__v {
+.rateb-ent-topology__v {
   width: 2px;
   height: 0.65rem;
   background: rgba(100, 116, 139, 0.6);
 }
 
-.ratib-ent-topology__v--core {
+.rateb-ent-topology__v--core {
   height: 0.85rem;
   width: 3px;
 }
 
 /* Governance list */
-.ratib-ent-gov-list {
+.rateb-ent-gov-list {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -328,33 +328,33 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   gap: 0.45rem;
 }
 
-.ratib-ent-gov-list li {
+.rateb-ent-gov-list li {
   display: grid;
   gap: 0.15rem;
   padding: 0.45rem 0;
   border-bottom: 1px solid var(--ent-border);
 }
 
-.ratib-ent-gov-list li:last-child {
+.rateb-ent-gov-list li:last-child {
   border-bottom: none;
 }
 
-.ratib-ent-gov-list__k {
+.rateb-ent-gov-list__k {
   color: var(--ent-accent-strong);
 }
 
-.ratib-ent-gov-list__v {
+.rateb-ent-gov-list__v {
   font-size: 0.82rem;
   line-height: 1.4;
   color: var(--ent-muted);
 }
 
 /* Telemetry flow */
-.ratib-ent-panel--telemetry {
+.rateb-ent-panel--telemetry {
   margin-bottom: 0.85rem;
 }
 
-.ratib-ent-telemetry-flow {
+.rateb-ent-telemetry-flow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -362,7 +362,7 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   margin-bottom: 0.5rem;
 }
 
-.ratib-ent-telemetry-flow__node {
+.rateb-ent-telemetry-flow__node {
   padding: 0.35rem 0.55rem;
   font-size: 0.72rem;
   font-family: var(--ent-mono);
@@ -372,13 +372,13 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   background: rgba(30, 41, 59, 0.45);
 }
 
-.ratib-ent-telemetry-flow__sep {
+.rateb-ent-telemetry-flow__sep {
   color: #475569;
   font-size: 0.8rem;
 }
 
 /* Audit block */
-.ratib-ent-audit-block {
+.rateb-ent-audit-block {
   display: grid;
   gap: 0.85rem;
   padding: 1rem 1.1rem;
@@ -389,25 +389,25 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
 }
 
 @media (min-width: 768px) {
-  .ratib-ent-audit-block {
+  .rateb-ent-audit-block {
     grid-template-columns: 1.2fr 0.8fr;
     align-items: start;
   }
 }
 
-.ratib-ent-audit-block h3 {
+.rateb-ent-audit-block h3 {
   margin: 0 0 0.35rem;
   color: var(--ent-accent-strong);
 }
 
-.ratib-ent-audit-block p {
+.rateb-ent-audit-block p {
   margin: 0;
   font-size: 0.86rem;
   line-height: 1.5;
   color: var(--ent-muted);
 }
 
-.ratib-ent-audit-block__list {
+.rateb-ent-audit-block__list {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -417,38 +417,38 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
 }
 
 /* Enterprise CTA bar */
-.ratib-ent-cta-bar {
+.rateb-ent-cta-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   padding-top: 0.5rem;
 }
 
-.ratib-ent-cta-bar .ratib-btn--ghost {
+.rateb-ent-cta-bar .rateb-btn--ghost {
   border: 1px solid var(--ent-border);
   color: var(--ent-muted);
   background: transparent;
 }
 
 /* Final CTA enterprise grid */
-.ratib-final-cta--enterprise .ratib-final-cta__actions {
+.rateb-final-cta--enterprise .rateb-final-cta__actions {
   max-width: 52rem;
 }
 
-.ratib-final-cta--enterprise .ratib-btn--ghost {
+.rateb-final-cta--enterprise .rateb-btn--ghost {
   border: 1px solid var(--ent-border);
   color: var(--ent-muted);
 }
 
 /* Footer enterprise column */
-.ratib-footer-col--enterprise .ratib-footer-enterprise__nav-link {
+.rateb-footer-col--enterprise .rateb-footer-enterprise__nav-link {
   font-size: 0.88rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ratib-ent-indicator,
-  .ratib-ent-layer,
-  .ratib-ent-panel {
+  .rateb-ent-indicator,
+  .rateb-ent-layer,
+  .rateb-ent-panel {
     transition: none;
   }
 }

@@ -2,10 +2,10 @@
 # Run on server (cPanel Terminal): bash scripts/check-public-html-perms.sh
 # Or: bash ~/public_html/scripts/check-public-html-perms.sh
 
-HOME_DIR="${HOME:-/home/outratib}"
-WEB="${RATIB_PUBLIC_HTML:-${HOME_DIR}/public_html}"
+HOME_DIR="${HOME:-/home/admin}"
+WEB="${RATEB_PUBLIC_HTML:-${HOME_DIR}/public_html}"
 
-echo "ratib-perms-check (shell)"
+echo "rateb-perms-check (shell)"
 echo "home=${HOME_DIR}"
 echo "public_html=${WEB}"
 echo ""

@@ -1,7 +1,7 @@
 -- 008_provider_secrets_and_events.sql
 -- Additive provider security + observability layer.
 
-CREATE TABLE IF NOT EXISTS `ratib_infra_provider_secrets` (
+CREATE TABLE IF NOT EXISTS `rateb_infra_provider_secrets` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `provider_scope` VARCHAR(64) NOT NULL,
   `secret_key` VARCHAR(128) NOT NULL,
@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS `ratib_infra_provider_secrets` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_ratib_infra_provider_secret_scope` (`provider_scope`, `secret_key`, `tenant_id`, `agency_id`),
-  KEY `idx_ratib_infra_provider_secret_active` (`provider_scope`, `is_active`)
+  UNIQUE KEY `uniq_rateb_infra_provider_secret_scope` (`provider_scope`, `secret_key`, `tenant_id`, `agency_id`),
+  KEY `idx_rateb_infra_provider_secret_active` (`provider_scope`, `is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `ratib_infra_provider_events` (
+CREATE TABLE IF NOT EXISTS `rateb_infra_provider_events` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `provider_type` VARCHAR(32) NOT NULL,
   `provider_code` VARCHAR(64) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `ratib_infra_provider_events` (
   `payload_json` JSON DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_ratib_infra_provider_events_provider` (`provider_type`, `provider_code`, `event_name`),
-  KEY `idx_ratib_infra_provider_events_created` (`created_at`),
-  KEY `idx_ratib_infra_provider_events_scope` (`tenant_id`, `agency_id`, `status`)
+  KEY `idx_rateb_infra_provider_events_provider` (`provider_type`, `provider_code`, `event_name`),
+  KEY `idx_rateb_infra_provider_events_created` (`created_at`),
+  KEY `idx_rateb_infra_provider_events_scope` (`tenant_id`, `agency_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

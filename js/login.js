@@ -114,8 +114,8 @@ document.addEventListener('DOMContentLoaded', function () {
         barcodePairQr.innerHTML = '';
         const img = document.createElement('img');
         var pairSize = 190;
-        if (typeof ratibQrImageUrl === 'function') {
-            img.src = ratibQrImageUrl(scanUrl, pairSize);
+        if (typeof ratebQrImageUrl === 'function') {
+            img.src = ratebQrImageUrl(scanUrl, pairSize);
         } else {
             img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + pairSize + 'x' + pairSize
                 + '&margin=18&ecc=H&color=000000&bgcolor=ffffff&data=' + encodeURIComponent(scanUrl);
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function pollPairToken(token) {
-        const cfg = window.RATIB_LOGIN_PAIR || {};
+        const cfg = window.RATEB_LOGIN_PAIR || {};
         const apiPair = cfg.apiPair || '/api/login-barcode-pair.php';
         try {
             const json = await apiPost(apiPair, { action: 'poll', token: token });
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function trustedApiPayload() {
-        const cfg = window.RATIB_LOGIN_PAIR || {};
+        const cfg = window.RATEB_LOGIN_PAIR || {};
         return {
             action: 'trusted_check',
             country_id: cfg.countryId || 0,
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function startDesktopBarcodePair() {
-        const cfg = window.RATIB_LOGIN_PAIR || {};
+        const cfg = window.RATEB_LOGIN_PAIR || {};
         const apiPair = cfg.apiPair || '/api/login-barcode-pair.php';
         let scanBase = cfg.scanPage || 'login-scan.php';
         if (scanBase.indexOf('http') !== 0) {
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 barcodeMobileHint.classList.remove('d-none');
                 barcodeMobileHint.classList.add('d-block');
             }
-            const cfg = window.RATIB_LOGIN_PAIR || {};
+            const cfg = window.RATEB_LOGIN_PAIR || {};
             const scanLink = document.getElementById('barcode-mobile-scan-link');
             if (scanLink) {
                 let scanBase = cfg.scanPage || '/login/scan';

@@ -51,7 +51,7 @@
     var lines = [];
     if (total === 0) {
       lines.push('No capability matrices yet (no enabled provider rows for this tenant scope).');
-      lines.push('Use “Database activations” below or insert into ratib_infra_provider_activations.');
+      lines.push('Use “Database activations” below or insert into rateb_infra_provider_activations.');
       lines.push('');
     }
     lines.push(JSON.stringify(caps || {}, null, 2));

@@ -15,43 +15,43 @@ if (!headers_sent()) {
     header('CDN-Cache-Control: no-store');
 }
 
-require_once __DIR__ . '/../includes/ratib-public-base-url.php';
-$baseUrl = ratib_public_site_base_url();
+require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+$baseUrl = rateb_public_site_base_url();
 
-require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-require_once __DIR__ . '/../includes/ratib-about-profile-data.php';
-require_once __DIR__ . '/../includes/ratib-about-sections.php';
+require_once __DIR__ . '/../includes/rateb-home-public-nav-bootstrap.php';
+require_once __DIR__ . '/../includes/rateb-about-profile-data.php';
+require_once __DIR__ . '/../includes/rateb-about-sections.php';
 
-$about = ratib_about_profile_config($baseUrl);
-$ratibAboutPageActive = true;
+$about = rateb_about_profile_config($baseUrl);
+$ratebAboutPageActive = true;
 // Keep platform pills on /profile/ anchors — not home.php#platform (that felt like "opening home").
-$ratibHomeNavHrefPrefix = function_exists('ratib_public_profile_nav_prefix')
-    ? ratib_public_profile_nav_prefix($baseUrl)
+$ratebHomeNavHrefPrefix = function_exists('rateb_public_profile_nav_prefix')
+    ? rateb_public_profile_nav_prefix($baseUrl)
     : rtrim($baseUrl, '/') . '/profile/';
 
-$ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
-clearstatcache(true, $ratibAboutCssPath);
-$ratibAboutCssQuery = (int) (@filemtime($ratibAboutCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ . '-c' . $ratibChromeBundleHash;
+$ratebAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
+clearstatcache(true, $ratebAboutCssPath);
+$ratebAboutCssQuery = (int) (@filemtime($ratebAboutCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-' . $ratebHomePhpMtime . $ratebHomeAssetExtraQ . '-c' . $ratebChromeBundleHash;
 
-$ratibAboutJsPath = __DIR__ . '/../js/pages/about-enterprise.js';
-clearstatcache(true, $ratibAboutJsPath);
-$ratibAboutJsQuery = (int) (@filemtime($ratibAboutJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratebAboutJsPath = __DIR__ . '/../js/pages/about-enterprise.js';
+clearstatcache(true, $ratebAboutJsPath);
+$ratebAboutJsQuery = (int) (@filemtime($ratebAboutJsPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
 
-$ratibOpBuildMarker = '';
-$ratibOpBuildPath = __DIR__ . '/../public/ratib-build.txt';
-if (is_file($ratibOpBuildPath)) {
-    $ratibOpBuildMarker = trim((string) file_get_contents($ratibOpBuildPath));
+$ratebOpBuildMarker = '';
+$ratebOpBuildPath = __DIR__ . '/../public/rateb-build.txt';
+if (is_file($ratebOpBuildPath)) {
+    $ratebOpBuildMarker = trim((string) file_get_contents($ratebOpBuildPath));
 }
 
-$ratibGalleryLbJsPath = __DIR__ . '/../js/pages/ratib-gallery-lightbox.js';
-clearstatcache(true, $ratibGalleryLbJsPath);
-$ratibGalleryLbJsQuery = (int) (@filemtime($ratibGalleryLbJsPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
+$ratebGalleryLbJsPath = __DIR__ . '/../js/pages/rateb-gallery-lightbox.js';
+clearstatcache(true, $ratebGalleryLbJsPath);
+$ratebGalleryLbJsQuery = (int) (@filemtime($ratebGalleryLbJsPath) ?: time()) . '-' . $ratebHomeUiRev . ($ratebOpBuildMarker !== '' ? '-' . $ratebOpBuildMarker : '');
 
-$ratibOpCompactJsPath = __DIR__ . '/../js/pages/ratib-op-proof-compact.js';
-clearstatcache(true, $ratibOpCompactJsPath);
-$ratibOpCompactJsQuery = (int) (@filemtime($ratibOpCompactJsPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
-$ratibMarketingFocusedJsPath = __DIR__ . '/../js/pages/ratib-marketing-focused.js';
-$ratibMarketingFocusedJsQuery = (int) (@filemtime($ratibMarketingFocusedJsPath) ?: time()) . '-' . $ratibHomeUiRev;
+$ratebOpCompactJsPath = __DIR__ . '/../js/pages/rateb-op-proof-compact.js';
+clearstatcache(true, $ratebOpCompactJsPath);
+$ratebOpCompactJsQuery = (int) (@filemtime($ratebOpCompactJsPath) ?: time()) . '-' . $ratebHomeUiRev . ($ratebOpBuildMarker !== '' ? '-' . $ratebOpBuildMarker : '');
+$ratebMarketingFocusedJsPath = __DIR__ . '/../js/pages/rateb-marketing-focused.js';
+$ratebMarketingFocusedJsQuery = (int) (@filemtime($ratebMarketingFocusedJsPath) ?: time()) . '-' . $ratebHomeUiRev;
 
 $metaTitle = (string) ($about['meta']['title'] ?? 'About RATEB');
 $metaDesc = (string) ($about['meta']['description'] ?? '');
@@ -61,9 +61,9 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 <head>
     <meta charset="UTF-8">
     <?php
-    require_once __DIR__ . '/../includes/ratib-profile-force-same-tab.php';
-    ratib_emit_profile_force_same_tab($baseUrl);
-    ratib_home_nav_emit_sync_guard_style();
+    require_once __DIR__ . '/../includes/rateb-profile-force-same-tab.php';
+    rateb_emit_profile_force_same_tab($baseUrl);
+    rateb_home_nav_emit_sync_guard_style();
     ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
@@ -78,34 +78,34 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <?php ratib_home_public_nav_emit_stylesheets($baseUrl); ?>
+    <?php rateb_home_public_nav_emit_stylesheets($baseUrl); ?>
     <?php
-    $ratibOverlayGuardPath = __DIR__ . '/../includes/ratib-overlay-dismiss-guard.php';
-    if (is_file($ratibOverlayGuardPath)) {
-        require_once $ratibOverlayGuardPath;
+    $ratebOverlayGuardPath = __DIR__ . '/../includes/rateb-overlay-dismiss-guard.php';
+    if (is_file($ratebOverlayGuardPath)) {
+        require_once $ratebOverlayGuardPath;
     }
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratebAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
-    $ratibOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
-    $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
+    $ratebOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
+    $ratebOpCssQuery = (int) (@filemtime($ratebOpCssPath) ?: time()) . '-' . $ratebHomeUiRev . ($ratebOpBuildMarker !== '' ? '-' . $ratebOpBuildMarker : '');
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratebOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
-    $ratibMarketingFocusedCssPath = __DIR__ . '/../css/pages/home-marketing-focused.css';
-    $ratibMarketingFocusedCssQuery = (int) (@filemtime($ratibMarketingFocusedCssPath) ?: time()) . '-' . $ratibHomeUiRev;
+    $ratebMarketingFocusedCssPath = __DIR__ . '/../css/pages/home-marketing-focused.css';
+    $ratebMarketingFocusedCssQuery = (int) (@filemtime($ratebMarketingFocusedCssPath) ?: time()) . '-' . $ratebHomeUiRev;
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratebMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
-    <?php if (function_exists('ratib_marketing_emit_focused_rescue_css')) {
-        ratib_marketing_emit_focused_rescue_css();
+    <?php if (function_exists('rateb_marketing_emit_focused_rescue_css')) {
+        rateb_marketing_emit_focused_rescue_css();
     } ?>
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
         'name' => 'RATEB — Recruitment Automation & Telemetry Enterprise Base',
         'url' => $baseUrl . '/profile',
-        'logo' => $baseUrl . '/assets/ratib-logo.svg',
+        'logo' => $baseUrl . '/assets/rateb-logo.svg',
         'description' => $metaDesc,
         'address' => [
             '@type' => 'PostalAddress',
@@ -121,28 +121,28 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>
-<body class="ratib-saas-home ratib-about-page <?php echo htmlspecialchars(ratib_public_marketing_density_body_class(), ENT_QUOTES, 'UTF-8'); ?>" data-ratib-about="1" data-ratib-marketing-density="<?php echo htmlspecialchars(ratib_public_marketing_density(), ENT_QUOTES, 'UTF-8'); ?>">
+<body class="rateb-saas-home rateb-about-page <?php echo htmlspecialchars(rateb_public_marketing_density_body_class(), ENT_QUOTES, 'UTF-8'); ?>" data-rateb-about="1" data-rateb-marketing-density="<?php echo htmlspecialchars(rateb_public_marketing_density(), ENT_QUOTES, 'UTF-8'); ?>">
 
 <?php
-include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
-$ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
+include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
+$ratebMarketingHomeUrl = rateb_public_marketing_home_url($baseUrl);
 ?>
 
-<div class="ratib-profile-distinct-banner" role="status" data-ratib-profile-distinct="1">
-    <div class="ratib-about-container ratib-profile-distinct-banner__inner">
-        <span class="ratib-profile-distinct-banner__badge" aria-hidden="true">Company profile</span>
-        <p class="ratib-profile-distinct-banner__text">Full <strong>RATEB Company</strong> profile — platform identity, contact, mission, and services below.</p>
-        <a class="ratib-profile-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
+<div class="rateb-profile-distinct-banner" role="status" data-rateb-profile-distinct="1">
+    <div class="rateb-about-container rateb-profile-distinct-banner__inner">
+        <span class="rateb-profile-distinct-banner__badge" aria-hidden="true">Company profile</span>
+        <p class="rateb-profile-distinct-banner__text">Full <strong>RATEB Company</strong> profile — platform identity, contact, mission, and services below.</p>
+        <a class="rateb-profile-distinct-banner__link" href="<?php echo htmlspecialchars($ratebMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
     </div>
 </div>
 
-<main class="ratib-about-main" id="main">
-    <nav class="ratib-about-jump" aria-label="On this page">
-        <div class="ratib-about-container ratib-about-jump__inner">
+<main class="rateb-about-main" id="main">
+    <nav class="rateb-about-jump" aria-label="On this page">
+        <div class="rateb-about-container rateb-about-jump__inner">
             <a href="#company-profile">Company</a>
-            <?php if (!ratib_public_marketing_is_focused()) { ?>
+            <?php if (!rateb_public_marketing_is_focused()) { ?>
             <a href="#platform-overview">Platform</a>
-            <a href="#what-is-ratib">Capabilities</a>
+            <a href="#what-is-rateb">Capabilities</a>
             <a href="#architecture">Architecture</a>
             <a href="#government-oversight">Government</a>
             <a href="#operational-proof">Operational proof</a>
@@ -152,32 +152,32 @@ $ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
             <a href="#finance">Finance</a>
             <a href="#corridors">Corridors</a>
             <?php } else { ?>
-            <a href="<?php echo htmlspecialchars(ratib_public_marketing_home_url($baseUrl, [], '#programs'), ENT_QUOTES, 'UTF-8'); ?>">Pricing</a>
+            <a href="<?php echo htmlspecialchars(rateb_public_marketing_home_url($baseUrl, [], '#programs'), ENT_QUOTES, 'UTF-8'); ?>">Pricing</a>
             <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>">Architecture</a>
             <?php } ?>
             <a href="#contact-cta">Contact</a>
         </div>
     </nav>
-    <?php ratib_about_render_sections($about, $baseUrl); ?>
+    <?php rateb_about_render_sections($about, $baseUrl); ?>
 
-    <?php require __DIR__ . '/../includes/ratib-gallery-lightbox-markup.php'; ?>
+    <?php require __DIR__ . '/../includes/rateb-gallery-lightbox-markup.php'; ?>
 </main>
 
-<?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
+<?php include __DIR__ . '/../includes/rateb-home-public-footer.php'; ?>
 
 <?php
-$ratibProfileGuardJsAbout = __DIR__ . '/../js/pages/ratib-profile-nav-guard.js';
-clearstatcache(true, $ratibProfileGuardJsAbout);
-$ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout) ?: time());
+$ratebProfileGuardJsAbout = __DIR__ . '/../js/pages/rateb-profile-nav-guard.js';
+clearstatcache(true, $ratebProfileGuardJsAbout);
+$ratebProfileGuardQAbout = (string) (int) (@filemtime($ratebProfileGuardJsAbout) ?: time());
 ?>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-profile-nav-guard.js?v=<?php echo htmlspecialchars($ratibProfileGuardQAbout, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-gallery-lightbox.js?v=<?php echo htmlspecialchars($ratibGalleryLbJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-op-proof-compact.js?v=<?php echo htmlspecialchars($ratibOpCompactJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-marketing-focused.js?v=<?php echo htmlspecialchars($ratibMarketingFocusedJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-profile-nav-guard.js?v=<?php echo htmlspecialchars($ratebProfileGuardQAbout, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratebMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-gallery-lightbox.js?v=<?php echo htmlspecialchars($ratebGalleryLbJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-op-proof-compact.js?v=<?php echo htmlspecialchars($ratebOpCompactJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratebAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-marketing-focused.js?v=<?php echo htmlspecialchars($ratebMarketingFocusedJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php
-$ratibPublicChatSkipCss = true;
+$ratebPublicChatSkipCss = true;
 require_once __DIR__ . '/../includes/chat-widget-public-footer.php';
 ?>
 </body>

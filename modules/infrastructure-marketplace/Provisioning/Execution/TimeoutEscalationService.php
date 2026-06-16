@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\Execution;
+namespace RATEB\InfrastructureMarketplace\Provisioning\Execution;
 
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 
 final class TimeoutEscalationService
 {
@@ -19,7 +19,7 @@ final class TimeoutEscalationService
     public function escalateStuckRunning(int $minutes): int
     {
         $stmt = $this->pdo->prepare(
-            "UPDATE ratib_infra_provisioning_jobs
+            "UPDATE rateb_infra_provisioning_jobs
              SET status = 'RECONCILING', reconcile_required = 1, updated_at = NOW()
              WHERE status = 'RUNNING'
                AND updated_at < DATE_SUB(NOW(), INTERVAL :minutes MINUTE)"

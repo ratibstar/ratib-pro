@@ -34,9 +34,9 @@ if (!defined('BASE_URL')) {
     define('BASE_URL', '');
 }
 
-$ratibCleanUrl = __DIR__ . '/../includes/ratib-clean-url.php';
-if (is_file($ratibCleanUrl)) {
-    require_once $ratibCleanUrl;
+$ratebCleanUrl = __DIR__ . '/../includes/rateb-clean-url.php';
+if (is_file($ratebCleanUrl)) {
+    require_once $ratebCleanUrl;
 }
 
 // Helper functions (wrap in function_exists so safe if includes/config.php was already loaded)
@@ -62,8 +62,8 @@ if (!function_exists('apiUrl')) {
 if (!function_exists('pageUrl')) {
     function pageUrl($page) {
         $base = rtrim((string) getBaseUrl(), '/');
-        $page = function_exists('ratib_clean_page_segment')
-            ? ratib_clean_page_segment((string) $page)
+        $page = function_exists('rateb_clean_page_segment')
+            ? rateb_clean_page_segment((string) $page)
             : ltrim((string) $page, '/');
 
         return ($base !== '' ? $base : '') . '/pages/' . $page;

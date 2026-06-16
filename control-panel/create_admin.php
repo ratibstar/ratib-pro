@@ -59,7 +59,7 @@ try {
 } catch (Throwable $e) {
     $error = $e->getMessage();
     if (strpos($error, 'Access denied') !== false) {
-        $error .= ' — Fix: In cPanel → MySQL® Databases, add user "' . (defined('DB_USER') ? DB_USER : '') . '" to database "' . (defined('CONTROL_PANEL_DB_NAME') ? CONTROL_PANEL_DB_NAME : 'outratib_control_panel_db') . '" with ALL PRIVILEGES. Or create a new user (e.g. outratib_cp), add it to that database, then set CONTROL_DB_USER and CONTROL_DB_PASS in control-panel/config/env.php on the server.';
+        $error .= ' — Fix: In cPanel → MySQL® Databases, add user "' . (defined('DB_USER') ? DB_USER : '') . '" to database "' . (defined('CONTROL_PANEL_DB_NAME') ? CONTROL_PANEL_DB_NAME : 'admin_control_panel_db') . '" with ALL PRIVILEGES. Or create a new user (e.g. admin_cp), add it to that database, then set CONTROL_DB_USER and CONTROL_DB_PASS in control-panel/config/env.php on the server.';
     }
 }
 

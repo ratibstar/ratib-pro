@@ -27,7 +27,7 @@ Hardening **is deployed** (503 on JWT validate). Secret deployment **is not effe
 |-------|--------|
 | Default production secret removed | **PASS** — not in codebase |
 | Dev-only fallback | **PASS** — `rateb-mobile-dev-only-not-for-production`, localhost only |
-| Fail-closed on `*.ratib.sa` without secret | **PASS** — returns 503 |
+| Fail-closed on `*.rateb.sa` without secret | **PASS** — returns 503 |
 | Secret never in JSON responses | **PASS** |
 | `.env` bridge allowlist includes `MOBILE_AUTH_SECRET` | **PASS** in repo (`config/env/load.php`) — **must be deployed to server** |
 

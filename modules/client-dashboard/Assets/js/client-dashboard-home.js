@@ -2,15 +2,15 @@
     function statusClass(st) {
         var s = String(st || '').toLowerCase();
         var map = {
-            pending: 'ratib-status--pending',
-            processing: 'ratib-status--processing',
-            active: 'ratib-status--active',
-            suspended: 'ratib-status--suspended',
-            failed: 'ratib-status--failed',
-            cancelled: 'ratib-status--cancelled',
-            canceled: 'ratib-status--cancelled',
+            pending: 'rateb-status--pending',
+            processing: 'rateb-status--processing',
+            active: 'rateb-status--active',
+            suspended: 'rateb-status--suspended',
+            failed: 'rateb-status--failed',
+            cancelled: 'rateb-status--cancelled',
+            canceled: 'rateb-status--cancelled',
         };
-        return map[s] || 'ratib-status--neutral';
+        return map[s] || 'rateb-status--neutral';
     }
 
     function el(id) {
@@ -42,7 +42,7 @@
         var list = Array.isArray(rows) ? rows : [];
         if (!list.length) {
             var empty = document.createElement('div');
-            empty.className = 'ratib-cp-empty';
+            empty.className = 'rateb-cp-empty';
             empty.textContent = 'No recent orders.';
             ul.appendChild(empty);
             return;
@@ -67,7 +67,7 @@
 
             var right = document.createElement('span');
             right.className =
-                'ratib-status ' + statusClass(String(r.status));
+                'rateb-status ' + statusClass(String(r.status));
 
             right.textContent = String(r.status || '');
 
@@ -130,7 +130,7 @@
     }
 
     function stripSkeleton() {
-        document.querySelectorAll('.ratib-cp-skeleton').forEach(function (n) {
+        document.querySelectorAll('.rateb-cp-skeleton').forEach(function (n) {
             n.classList.add('d-none');
         });
         fillEl('rcp-loading-state', '');
@@ -146,15 +146,15 @@
         var apiBase =
             (apiBaseEl && apiBaseEl.getAttribute('data-api-base')) || '';
 
-        if (typeof RatibClientActions.configure === 'function') {
-            RatibClientActions.configure(apiBase);
+        if (typeof RATEBClientActions.configure === 'function') {
+            RATEBClientActions.configure(apiBase);
         }
 
-        if (typeof RatibClientActions.installDefaultQuickActions === 'function') {
-            RatibClientActions.installDefaultQuickActions('#rcp-quick-actions');
+        if (typeof RATEBClientActions.installDefaultQuickActions === 'function') {
+            RATEBClientActions.installDefaultQuickActions('#rcp-quick-actions');
         }
 
-        RatibClientDashboardData.fetchJson(
+        RATEBClientDashboardData.fetchJson(
             apiBase + '/client-dashboard/snapshot.php'
         )
             .then(function (data) {

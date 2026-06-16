@@ -6,7 +6,7 @@ declare(strict_types=1);
  * No App\Core\Autoloader — build global-ai-v7.
  */
 header('Content-Type: application/json; charset=utf-8');
-header('X-Ratib-Global-AI-Build: global-ai-v7');
+header('X-RATEB-Global-AI-Build: global-ai-v7');
 
 if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
     http_response_code(405);
@@ -32,11 +32,11 @@ try {
         throw new RuntimeException('Could not find includes/config.php');
     }
 
-    $apiSession = $root . '/api/core/ratib_api_session.inc.php';
+    $apiSession = $root . '/api/core/rateb_api_session.inc.php';
     if (is_file($apiSession)) {
         require_once $apiSession;
-        if (function_exists('ratib_api_pick_session_name')) {
-            ratib_api_pick_session_name();
+        if (function_exists('rateb_api_pick_session_name')) {
+            rateb_api_pick_session_name();
         }
     }
     require_once $root . '/includes/config.php';
@@ -63,12 +63,12 @@ try {
         $payload = [];
     }
 
-    $coreFile = $root . '/includes/ratib_global_ai_workflow_core.php';
+    $coreFile = $root . '/includes/rateb_global_ai_workflow_core.php';
     if (!is_file($coreFile)) {
-        throw new RuntimeException('includes/ratib_global_ai_workflow_core.php missing — upload it with this file', 503);
+        throw new RuntimeException('includes/rateb_global_ai_workflow_core.php missing — upload it with this file', 503);
     }
     require_once $coreFile;
-    echo json_encode(ratib_global_ai_workflow_core($payload), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    echo json_encode(rateb_global_ai_workflow_core($payload), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 } catch (Throwable $e) {
     $code = (int) $e->getCode();
     if (!in_array($code, [401, 403, 404], true)) {

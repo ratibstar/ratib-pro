@@ -21,43 +21,43 @@
   --r-surface-hover: rgba(255, 255, 255, 0.05);
   --r-border: rgba(255, 255, 255, 0.08);
   --r-border-hover: rgba(255, 255, 255, 0.12);
-  --ratib-public-header-h: 88px;
-  --ratib-profile-banner-h: 0px;
+  --rateb-public-header-h: 88px;
+  --rateb-profile-banner-h: 0px;
 }
 
-body.ratib-about-page {
-  --ratib-profile-banner-h: 52px;
+body.rateb-about-page {
+  --rateb-profile-banner-h: 52px;
 }
 
 /* ── Background: atmospheric, not a spotlight ── */
-.ratib-saas-bg__gradient {
+.rateb-saas-bg__gradient {
   background:
     radial-gradient(ellipse 75% 42% at 50% -18%, rgba(107, 127, 212, 0.045), transparent 62%),
     radial-gradient(ellipse 45% 30% at 100% 0%, rgba(124, 107, 184, 0.025), transparent),
     linear-gradient(180deg, #060a12 0%, #0b1019 48%, #060a12 100%);
 }
 
-.ratib-saas-bg__grid {
+.rateb-saas-bg__grid {
   opacity: 0.035;
   animation: none;
   mask-image: radial-gradient(ellipse 65% 55% at 50% 28%, black 8%, transparent 72%);
 }
 
-.ratib-saas-bg__orb {
+.rateb-saas-bg__orb {
   filter: blur(120px);
   opacity: 0.06;
   animation: none;
 }
 
-.ratib-saas-bg__orb--a {
+.rateb-saas-bg__orb--a {
   background: rgba(107, 127, 212, 0.12);
 }
 
-.ratib-saas-bg__orb--b {
+.rateb-saas-bg__orb--b {
   background: rgba(124, 107, 184, 0.08);
 }
 
-.ratib-saas-bg::after {
+.rateb-saas-bg::after {
   opacity: 0.35;
   filter: blur(96px);
   background: rgba(34, 211, 238, 0.06);
@@ -65,29 +65,29 @@ body.ratib-about-page {
 }
 
 /* ── Topbar ── */
-.ratib-topbar {
+.rateb-topbar {
   background: rgba(8, 12, 20, 0.94);
   backdrop-filter: blur(16px) saturate(1.05);
   box-shadow: none;
 }
 
-.ratib-topbar::after {
+.rateb-topbar::after {
   display: none;
 }
 
-.ratib-topbar__link[href^="tel:"],
-.ratib-topbar__link[href*="customer-portal"] {
+.rateb-topbar__link[href^="tel:"],
+.rateb-topbar__link[href*="customer-portal"] {
   color: var(--r-muted-soft);
 }
 
-.ratib-topbar__link[href^="tel:"]:hover,
-.ratib-topbar__link[href*="customer-portal"]:hover {
+.rateb-topbar__link[href^="tel:"]:hover,
+.rateb-topbar__link[href*="customer-portal"]:hover {
   color: var(--r-text-soft);
   background: var(--r-surface-hover);
   box-shadow: none;
 }
 
-.ratib-topbar__wa {
+.rateb-topbar__wa {
   color: #8fb89e;
   font-weight: 500;
   background: var(--r-surface);
@@ -95,63 +95,63 @@ body.ratib-about-page {
   box-shadow: none;
 }
 
-.ratib-topbar__wa:hover {
+.rateb-topbar__wa:hover {
   color: #b0cfc0;
   border-color: var(--r-border-hover);
   transform: none;
 }
 
-.ratib-live-dot {
+.rateb-live-dot {
   box-shadow: 0 0 3px rgba(52, 211, 153, 0.25);
   animation: none;
 }
 
-.ratib-topbar__lang {
+.rateb-topbar__lang {
   background: var(--r-surface);
   border: 1px solid var(--r-border);
 }
 
-.ratib-lang--active {
+.rateb-lang--active {
   color: var(--r-text-soft);
 }
 
 /* ── Header shell ── */
-.ratib-public-header-pin {
+.rateb-public-header-pin {
   background: rgba(6, 10, 18, 0.97);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.ratib-nav-shell {
+.rateb-nav-shell {
   background: rgba(8, 12, 20, 0.9);
   backdrop-filter: blur(20px) saturate(1.02);
   border-bottom: 1px solid var(--r-border);
   box-shadow: none;
 }
 
-.ratib-nav-shell.is-scrolled {
+.rateb-nav-shell.is-scrolled {
   background: rgba(6, 10, 18, 0.97);
   border-bottom-color: rgba(255, 255, 255, 0.07);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
 }
 
-.ratib-nav-shell__inner {
+.rateb-nav-shell__inner {
   min-height: 60px;
   padding-block: 0.6rem;
   gap: 0.6rem 0.75rem;
 }
 
 @media (min-width: 1100px) {
-  .ratib-nav-shell__inner {
+  .rateb-nav-shell__inner {
     align-items: center;
     padding-block: 0.6rem;
   }
 }
 
-/* Brand row: see css/pages/ratib-public-nav-brand.css (single source of truth) */
+/* Brand row: see css/pages/rateb-public-nav-brand.css (single source of truth) */
 
 /* ── Navigation: one color system, one accent when open ── */
-.ratib-mega-nav__trigger,
-.ratib-mega-nav__flat {
+.rateb-mega-nav__trigger,
+.rateb-mega-nav__flat {
   border: 1px solid transparent;
   background: transparent;
   box-shadow: none;
@@ -159,28 +159,28 @@ body.ratib-about-page {
 }
 
 @media (min-width: 1100px) {
-  .ratib-nav-shell .ratib-nav__menu {
+  .rateb-nav-shell .rateb-nav__menu {
     column-gap: 0.08rem;
   }
 
-  .ratib-nav-shell .ratib-mega-nav__list {
+  .rateb-nav-shell .rateb-mega-nav__list {
     gap: 0.04rem 0.06rem;
   }
 
-  .ratib-nav-shell .ratib-mega-nav__trigger,
-  .ratib-nav-shell .ratib-mega-nav__flat {
+  .rateb-nav-shell .rateb-mega-nav__trigger,
+  .rateb-nav-shell .rateb-mega-nav__flat {
     padding: 0.4rem 0.5rem;
     font-size: 0.9375rem;
   }
 
-  .ratib-nav-shell .ratib-mega-nav__signin {
+  .rateb-nav-shell .rateb-mega-nav__signin {
     padding: 0.4rem 0.65rem;
     font-size: 0.9rem;
   }
 }
 
-.ratib-mega-nav__trigger-label,
-.ratib-mega-nav__flat-label {
+.rateb-mega-nav__trigger-label,
+.rateb-mega-nav__flat-label {
   display: inline-block;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -194,49 +194,49 @@ body.ratib-about-page {
   filter: none;
 }
 
-.ratib-mega-nav__trigger:hover,
-.ratib-mega-nav__trigger:focus-visible,
-.ratib-mega-nav__flat:hover,
-.ratib-mega-nav__flat:focus-visible {
+.rateb-mega-nav__trigger:hover,
+.rateb-mega-nav__trigger:focus-visible,
+.rateb-mega-nav__flat:hover,
+.rateb-mega-nav__flat:focus-visible {
   background: var(--r-surface-hover);
   border-color: var(--r-border);
   box-shadow: none;
 }
 
-.ratib-mega-nav__trigger:hover .ratib-mega-nav__trigger-label,
-.ratib-mega-nav__flat:hover .ratib-mega-nav__flat-label {
+.rateb-mega-nav__trigger:hover .rateb-mega-nav__trigger-label,
+.rateb-mega-nav__flat:hover .rateb-mega-nav__flat-label {
   color: var(--r-text);
 }
 
-.ratib-mega-nav__li--mega.is-open .ratib-mega-nav__trigger {
+.rateb-mega-nav__li--mega.is-open .rateb-mega-nav__trigger {
   background: var(--r-accent-soft);
   border-color: var(--r-accent-border);
   box-shadow: none;
 }
 
-.ratib-mega-nav__li--mega.is-open .ratib-mega-nav__trigger-label {
+.rateb-mega-nav__li--mega.is-open .rateb-mega-nav__trigger-label {
   color: #d4cff0;
 }
 
-.ratib-mega-nav__chev {
+.rateb-mega-nav__chev {
   font-size: 0.55rem;
   opacity: 0.55;
   color: var(--r-muted);
 }
 
-.ratib-mega-nav__signin {
+.rateb-mega-nav__signin {
   border: 1px solid var(--r-border);
   background: var(--r-surface);
   color: var(--r-text-soft);
   box-shadow: none;
 }
 
-.ratib-mega-nav__signin i {
+.rateb-mega-nav__signin i {
   color: var(--r-muted);
   font-size: 0.85em;
 }
 
-.ratib-mega-nav__signin span {
+.rateb-mega-nav__signin span {
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--r-text-soft);
@@ -246,25 +246,25 @@ body.ratib-about-page {
   background-clip: border-box;
 }
 
-.ratib-mega-nav__signin:hover {
+.rateb-mega-nav__signin:hover {
   background: var(--r-surface-hover);
   border-color: var(--r-border-hover);
   color: var(--r-text);
 }
 
-.ratib-mega-nav__signin:hover span {
+.rateb-mega-nav__signin:hover span {
   color: var(--r-text);
 }
 
 /* Mega panels — matte glass */
-.ratib-mega-nav__panel-inner {
+.rateb-mega-nav__panel-inner {
   border: 1px solid var(--r-border);
   background: rgba(12, 16, 28, 0.97);
   backdrop-filter: blur(24px) saturate(1.1);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
 }
 
-.ratib-mega-nav__col-heading {
+.rateb-mega-nav__col-heading {
   color: var(--r-muted);
   font-size: 0.7rem;
   font-weight: 700;
@@ -275,34 +275,34 @@ body.ratib-about-page {
   background-clip: border-box;
 }
 
-.ratib-mega-nav__card {
+.rateb-mega-nav__card {
   border: 1px solid var(--r-border);
   background: var(--r-surface);
   box-shadow: none;
   border-radius: 10px;
 }
 
-.ratib-mega-nav__card:hover {
+.rateb-mega-nav__card:hover {
   background: var(--r-surface-hover);
   border-color: var(--r-border-hover);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
   transform: none;
 }
 
-.ratib-mega-nav__card-icon {
+.rateb-mega-nav__card-icon {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--r-border);
   color: var(--r-muted);
   box-shadow: none;
 }
 
-.ratib-mega-nav__card:hover .ratib-mega-nav__card-icon {
+.rateb-mega-nav__card:hover .rateb-mega-nav__card-icon {
   color: #c4b8e8;
   border-color: var(--r-accent-border);
   background: var(--r-accent-soft);
 }
 
-.ratib-mega-nav__card-title {
+.rateb-mega-nav__card-title {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--r-text-soft);
@@ -312,18 +312,18 @@ body.ratib-about-page {
   background-clip: border-box;
 }
 
-.ratib-mega-nav__card:hover .ratib-mega-nav__card-title {
+.rateb-mega-nav__card:hover .rateb-mega-nav__card-title {
   color: var(--r-text);
 }
 
-.ratib-mega-nav__card-desc {
+.rateb-mega-nav__card-desc {
   font-size: 0.78rem;
   color: var(--r-muted-soft);
   line-height: 1.45;
 }
 
 /* Partner login — subdued trust CTA */
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost {
   padding: 0.5rem 1rem 0.5rem 0.48rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -333,7 +333,7 @@ body.ratib-about-page {
   box-shadow: none;
 }
 
-.ratib-nav__partner-icon {
+.rateb-nav__partner-icon {
   width: 2rem;
   height: 2rem;
   border-radius: 8px;
@@ -343,11 +343,11 @@ body.ratib-about-page {
   box-shadow: none;
 }
 
-.ratib-nav__partner-label {
+.rateb-nav__partner-label {
   color: inherit;
 }
 
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost:hover {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost:hover {
   color: var(--r-text);
   border-color: var(--r-border-hover);
   background: var(--r-surface-hover);
@@ -355,13 +355,13 @@ body.ratib-about-page {
   transform: none;
 }
 
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost:hover .ratib-nav__partner-icon {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost:hover .rateb-nav__partner-icon {
   border-color: var(--r-border-hover);
   box-shadow: none;
 }
 
 /* Legacy platform pills */
-.ratib-nav-shell .ratib-nav__platform-links .ratib-nav__link {
+.rateb-nav-shell .rateb-nav__platform-links .rateb-nav__link {
   border: 1px solid var(--r-border);
   background: transparent;
   color: var(--r-text-soft);
@@ -369,15 +369,15 @@ body.ratib-about-page {
   box-shadow: none;
 }
 
-.ratib-nav-shell .ratib-nav__platform-links .ratib-nav__icon,
-.ratib-nav__platform-links .ratib-nav__link:nth-child(n) .ratib-nav__icon {
+.rateb-nav-shell .rateb-nav__platform-links .rateb-nav__icon,
+.rateb-nav__platform-links .rateb-nav__link:nth-child(n) .rateb-nav__icon {
   background: rgba(255, 255, 255, 0.04);
   color: var(--r-muted);
   box-shadow: none;
 }
 
 /* ── Buttons ── */
-.ratib-btn--primary {
+.rateb-btn--primary {
   background: linear-gradient(180deg, #7d72b8 0%, #6a5f9e 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
@@ -385,18 +385,18 @@ body.ratib-about-page {
   font-weight: 500;
 }
 
-.ratib-btn--primary::after {
+.rateb-btn--primary::after {
   display: none;
 }
 
-.ratib-btn--primary:hover {
+.rateb-btn--primary:hover {
   background: linear-gradient(180deg, #8a80c4 0%, #756aa8 100%);
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22), 0 10px 28px rgba(0, 0, 0, 0.22);
   color: #fff;
 }
 
-.ratib-btn--outline {
+.rateb-btn--outline {
   border: 1px solid var(--r-border-hover);
   background: transparent;
   color: var(--r-text-soft);
@@ -405,7 +405,7 @@ body.ratib-about-page {
   font-weight: 500;
 }
 
-.ratib-btn--outline:hover {
+.rateb-btn--outline:hover {
   background: var(--r-surface-hover);
   border-color: rgba(255, 255, 255, 0.16);
   color: var(--r-text);
@@ -413,29 +413,29 @@ body.ratib-about-page {
   box-shadow: none;
 }
 
-.ratib-btn--ghost {
+.rateb-btn--ghost {
   border-color: var(--r-border);
   color: var(--r-muted);
   font-weight: 500;
 }
 
-.ratib-btn--ghost:hover {
+.rateb-btn--ghost:hover {
   color: var(--r-text-soft);
   background: var(--r-surface-hover);
   transform: none;
 }
 
 /* ── Hero: hierarchy + breathing room ── */
-.ratib-hero {
+.rateb-hero {
   padding-top: clamp(4rem, 9vw, 7rem);
   padding-bottom: clamp(3.5rem, 8vw, 6rem);
 }
 
-.ratib-hero__grid {
+.rateb-hero__grid {
   gap: clamp(3rem, 6vw, 5rem);
 }
 
-.ratib-eyebrow {
+.rateb-eyebrow {
   color: var(--r-muted);
   letter-spacing: 0.12em;
   font-weight: 500;
@@ -443,22 +443,22 @@ body.ratib-about-page {
   margin-bottom: 1.5rem;
 }
 
-.ratib-hero__title {
+.rateb-hero__title {
   margin-bottom: 0.5rem;
   line-height: 1.1;
 }
 
-.ratib-hero__title .ratib-brand-full--hero {
+.rateb-hero__title .rateb-brand-full--hero {
   gap: 0.32em 0.4em;
 }
 
-.ratib-hero__title .ratib-brand-full--hero .ratib-brand-letter,
-.ratib-hero__title .ratib-brand-full--hero .ratib-brand-full__word {
+.rateb-hero__title .rateb-brand-full--hero .rateb-brand-letter,
+.rateb-hero__title .rateb-brand-full--hero .rateb-brand-full__word {
   animation: none;
   filter: saturate(0.88) brightness(1.02);
 }
 
-.ratib-hero__lead {
+.rateb-hero__lead {
   font-size: 1.125rem;
   line-height: 1.7;
   max-width: 40rem;
@@ -468,13 +468,13 @@ body.ratib-about-page {
   font-weight: 400;
 }
 
-.ratib-hero__bullets {
+.rateb-hero__bullets {
   gap: 0.75rem;
   margin-top: 2.25rem;
   margin-bottom: 2.75rem;
 }
 
-.ratib-hero__bullets li {
+.rateb-hero__bullets li {
   padding: 0.85rem 1.1rem;
   border-radius: 10px;
   border: 1px solid var(--r-border);
@@ -485,15 +485,15 @@ body.ratib-about-page {
   font-weight: 400;
 }
 
-.ratib-hero__bullets li:hover {
+.rateb-hero__bullets li:hover {
   border-color: var(--r-border-hover);
   background: var(--r-surface-hover);
   transform: none;
   box-shadow: none;
 }
 
-.ratib-hero__bullets i,
-.ratib-hero__bullets li:nth-child(n) i {
+.rateb-hero__bullets i,
+.rateb-hero__bullets li:nth-child(n) i {
   width: 1.85rem;
   height: 1.85rem;
   border-radius: 8px;
@@ -503,57 +503,57 @@ body.ratib-about-page {
   box-shadow: none;
 }
 
-.ratib-hero__actions {
+.rateb-hero__actions {
   gap: 0.85rem;
   margin-top: 0.25rem;
 }
 
 /* ── Sections & cards ── */
-.ratib-main > .ratib-section + .ratib-section {
+.rateb-main > .rateb-section + .rateb-section {
   margin-top: 0;
 }
 
-.ratib-section {
+.rateb-section {
   padding-top: clamp(3.5rem, 7vw, 5.5rem);
   padding-bottom: clamp(3.5rem, 7vw, 5.5rem);
 }
 
-.ratib-section__title {
+.rateb-section__title {
   font-weight: 600;
   color: #e8edf4;
   letter-spacing: -0.02em;
 }
 
-.ratib-section__sub {
+.rateb-section__sub {
   color: var(--r-muted-soft);
   font-size: 1rem;
   line-height: 1.65;
   font-weight: 400;
 }
 
-.ratib-trust-card,
-.ratib-feature-card,
-.ratib-how__step,
-.ratib-pricing-card,
-.ratib-analytics-card {
+.rateb-trust-card,
+.rateb-feature-card,
+.rateb-how__step,
+.rateb-pricing-card,
+.rateb-analytics-card {
   border-color: var(--r-border);
   background: var(--r-surface);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
-.ratib-trust-card:hover,
-.ratib-feature-card:hover {
+.rateb-trust-card:hover,
+.rateb-feature-card:hover {
   border-color: var(--r-border-hover);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transform: none;
 }
 
-.ratib-marketing-expand-bar {
+.rateb-marketing-expand-bar {
   border-bottom: 1px solid var(--r-border);
   background: transparent;
 }
 
-.ratib-marketing-expand-bar__btn {
+.rateb-marketing-expand-bar__btn {
   border: 1px solid var(--r-border);
   background: var(--r-surface);
   color: var(--r-text-soft);
@@ -561,60 +561,60 @@ body.ratib-about-page {
   font-weight: 500;
 }
 
-.ratib-marketing-expand-bar__btn:hover {
+.rateb-marketing-expand-bar__btn:hover {
   background: var(--r-surface-hover);
   border-color: var(--r-border-hover);
 }
 
 /* Profile page: keep secondary nav */
-.ratib-arch-distinct-banner,
-.ratib-trust-distinct-banner,
-.ratib-proc-distinct-banner {
+.rateb-arch-distinct-banner,
+.rateb-trust-distinct-banner,
+.rateb-proc-distinct-banner {
   display: none !important;
 }
 
-body.ratib-about-page .ratib-profile-distinct-banner,
-body.ratib-about-page .ratib-about-jump {
+body.rateb-about-page .rateb-profile-distinct-banner,
+body.rateb-about-page .rateb-about-jump {
   display: block;
 }
 
-body.ratib-about-page::before {
+body.rateb-about-page::before {
   height: 2px;
   background: linear-gradient(90deg, rgba(139, 126, 200, 0.5), rgba(107, 127, 212, 0.35));
   opacity: 0.7;
 }
 
-body.ratib-about-page .ratib-about-hero__glow,
-body.ratib-about-page .ratib-about-shot--glow {
+body.rateb-about-page .rateb-about-hero__glow,
+body.rateb-about-page .rateb-about-shot--glow {
   opacity: 0.25;
   filter: blur(48px);
 }
 
-body.ratib-about-page .ratib-about-btn--primary {
+body.rateb-about-page .rateb-about-btn--primary {
   background: linear-gradient(180deg, #7d72b8 0%, #6a5f9e 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-body.ratib-about-page .ratib-about-btn--primary:hover {
+body.rateb-about-page .rateb-about-btn--primary:hover {
   background: linear-gradient(180deg, #8a80c4 0%, #756aa8 100%);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
   transform: translateY(-1px);
 }
 
-body.ratib-about-page .ratib-about-btn--outline {
+body.rateb-about-page .rateb-about-btn--outline {
   border-color: var(--r-border-hover);
   background: transparent;
   color: var(--r-text-soft);
 }
 
-body.ratib-about-page .ratib-about-gradient {
+body.rateb-about-page .rateb-about-gradient {
   border-color: var(--r-border);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
 @media (max-width: 1099px) {
-  .ratib-nav-shell .ratib-nav__menu.is-open {
+  .rateb-nav-shell .rateb-nav__menu.is-open {
     background: rgba(8, 12, 20, 0.98);
     border: 1px solid var(--r-border);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
@@ -622,8 +622,8 @@ body.ratib-about-page .ratib-about-gradient {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ratib-hero__title .ratib-brand-full--hero .ratib-brand-letter,
-  .ratib-hero__title .ratib-brand-full--hero .ratib-brand-full__word {
+  .rateb-hero__title .rateb-brand-full--hero .rateb-brand-letter,
+  .rateb-hero__title .rateb-brand-full--hero .rateb-brand-full__word {
     filter: none;
   }
 }

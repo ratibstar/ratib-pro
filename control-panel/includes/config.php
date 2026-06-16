@@ -11,22 +11,22 @@ if (defined('CONTROL_CONFIG_LOADED')) {
     return;
 }
 
-$ratibCompatEarly = dirname(__DIR__, 2) . '/includes/ratib-php74-compat.php';
-if (is_file($ratibCompatEarly)) {
-    require_once $ratibCompatEarly;
+$ratebCompatEarly = dirname(__DIR__, 2) . '/includes/rateb-php74-compat.php';
+if (is_file($ratebCompatEarly)) {
+    require_once $ratebCompatEarly;
 }
 
 require_once __DIR__ . '/../config/env.php';
-$ratibCleanUrl = dirname(__DIR__, 2) . '/includes/ratib-clean-url.php';
-if (is_file($ratibCleanUrl)) {
-    require_once $ratibCleanUrl;
+$ratebCleanUrl = dirname(__DIR__, 2) . '/includes/rateb-clean-url.php';
+if (is_file($ratebCleanUrl)) {
+    require_once $ratebCleanUrl;
 }
 require_once __DIR__ . '/../core/bootstrap.php';
 require_once __DIR__ . '/control/request-url.php';
 
 // Session: use separate session name for control panel; path / so cookies reach /api/control/* (not only /pages/...)
 if (session_status() === PHP_SESSION_NONE) {
-    session_name('ratib_control');
+    session_name('rateb_control');
     $sessSecure = control_request_is_https();
     if (PHP_VERSION_ID >= 70300) {
         session_set_cookie_params([
@@ -59,8 +59,8 @@ if (!function_exists('asset')) {
 if (!function_exists('pageUrl')) {
     function pageUrl($page) {
         $base = rtrim((string) getBaseUrl(), '/');
-        $page = function_exists('ratib_clean_page_segment')
-            ? ratib_clean_page_segment((string) $page)
+        $page = function_exists('rateb_clean_page_segment')
+            ? rateb_clean_page_segment((string) $page)
             : ltrim((string) $page, '/');
         $prefix = ($base !== '' ? $base : '');
 
@@ -269,4 +269,4 @@ if ($useOwnProgram && isset($GLOBALS['control_conn'])) {
 
 define('CONTROL_CONFIG_LOADED', true);
 
-// Global AI HTML patch is for public Ratib pages only (PHP 7.4 + output buffering).
+// Global AI HTML patch is for public RATEB pages only (PHP 7.4 + output buffering).

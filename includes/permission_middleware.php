@@ -32,8 +32,8 @@ function checkPermission($required_permission, $return_json = false) {
             echo json_encode(['error' => 'Authentication required', 'code' => 'AUTH_REQUIRED']);
             exit;
         } else {
-            $loginUrl = function_exists('ratib_post_logout_login_url')
-                ? ratib_post_logout_login_url()
+            $loginUrl = function_exists('rateb_post_logout_login_url')
+                ? rateb_post_logout_login_url()
                 : pageUrl('login.php');
             header('Location: ' . $loginUrl);
             exit;

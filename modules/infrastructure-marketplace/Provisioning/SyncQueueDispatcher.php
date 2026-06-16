@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning;
+namespace RATEB\InfrastructureMarketplace\Provisioning;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\QueueDispatcherInterface;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\QueueDispatcherInterface;
 
 /**
  * Default no-op queue: returns synthetic id only. Replace with resilient queue adapter later.

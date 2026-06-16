@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_HostingAdapter
+final class RATEB_ClientDashboard_HostingAdapter
 {
     /**
      * @return list<array<string, mixed>>
      */
-    public function fetchNormalized(Ratib_ClientDashboard_AdapterContext $ctx): array
+    public function fetchNormalized(RATEB_ClientDashboard_AdapterContext $ctx): array
     {
         try {
             $conn = $ctx->conn;
@@ -35,11 +35,11 @@ final class Ratib_ClientDashboard_HostingAdapter
      */
     private function tryHostingServices(mysqli $conn): ?array
     {
-        $chk = @$conn->query("SHOW TABLES LIKE 'ratib_client_services'");
+        $chk = @$conn->query("SHOW TABLES LIKE 'rateb_client_services'");
         if (!$chk || $chk->num_rows === 0) {
             return null;
         }
-        $r = @$conn->query("SELECT service_id, type, provider, status, billing_state, health_state, renewal_state, quick_actions_json, infrastructure_binding FROM ratib_client_services WHERE type IN ('hosting','vps','email','ssl') ORDER BY service_id ASC LIMIT 100");
+        $r = @$conn->query("SELECT service_id, type, provider, status, billing_state, health_state, renewal_state, quick_actions_json, infrastructure_binding FROM rateb_client_services WHERE type IN ('hosting','vps','email','ssl') ORDER BY service_id ASC LIMIT 100");
         if (!$r) {
             return null;
         }

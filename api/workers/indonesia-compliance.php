@@ -14,7 +14,7 @@ require_once __DIR__ . '/indonesia-compliance-helper.php';
 try {
     $db = Database::getInstance();
     $pdo = $db->getConnection();
-    ratib_indonesia_compliance_ensure_schema($pdo);
+    rateb_indonesia_compliance_ensure_schema($pdo);
 
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $input = $method === 'POST'
@@ -36,7 +36,7 @@ try {
 
     if ($action === 'update_stage') {
         $targetStage = (string)($input['status_stage'] ?? '');
-        $check = ratib_indonesia_can_move_to_stage($pdo, $worker, $targetStage);
+        $check = rateb_indonesia_can_move_to_stage($pdo, $worker, $targetStage);
         if (!$check['allowed']) {
             sendResponse([
                 'success' => false,
@@ -55,15 +55,15 @@ try {
     }
 
     $validation = validateWorkerForDeployment($workerId, $pdo);
-    $documents = ratib_indonesia_document_statuses($pdo, $workerId, $worker);
+    $documents = rateb_indonesia_document_statuses($pdo, $workerId, $worker);
 
     sendResponse([
         'success' => true,
         'data' => [
             'worker_id' => $workerId,
-            'is_indonesia_worker' => ratib_indonesia_is_worker($worker),
+            'is_indonesia_worker' => rateb_indonesia_is_worker($worker),
             'status_stage' => $worker['status_stage'] ?? 'registered',
-            'stages' => ratib_indonesia_worker_stages(),
+            'stages' => rateb_indonesia_worker_stages(),
             'documents' => $documents,
             'validation' => $validation,
         ],

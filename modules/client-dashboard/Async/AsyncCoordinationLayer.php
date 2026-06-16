@@ -4,15 +4,15 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_AsyncCoordinationLayer
+final class RATEB_ClientDashboard_AsyncCoordinationLayer
 {
-    private const TABLE = 'ratib_client_hub_jobs';
+    private const TABLE = 'rateb_client_hub_jobs';
 
     /**
      * @param array<string, mixed> $meta
      * @return array{job_id: string|null, state: string, provider: string}
      */
-    public static function enqueue(?mysqli $conn, string $verb, string $targetId, Ratib_ClientDashboard_TenantScope $tenant, string $correlationId, array $meta = []): array
+    public static function enqueue(?mysqli $conn, string $verb, string $targetId, RATEB_ClientDashboard_TenantScope $tenant, string $correlationId, array $meta = []): array
     {
         $jobId = 'local:' . bin2hex(random_bytes(6));
 

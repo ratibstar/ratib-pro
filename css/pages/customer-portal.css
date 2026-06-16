@@ -4,14 +4,14 @@
  */
 /* Customer portal — public registration status / login (pages/customer-portal.php) */
 :root {
-  --ratib-pink: #e94560;
-  --ratib-yellow: #f1c40f;
-  --ratib-dark: #2c3e50;
-  --ratib-darker: #1a252f;
+  --rateb-pink: #e94560;
+  --rateb-yellow: #f1c40f;
+  --rateb-dark: #2c3e50;
+  --rateb-darker: #1a252f;
 }
 
 body {
-  background: var(--ratib-darker);
+  background: var(--rateb-darker);
   color: #fff;
   min-height: 100vh;
   font-family:
@@ -40,7 +40,7 @@ body {
 .portal-header h1 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  color: var(--ratib-yellow);
+  color: var(--rateb-yellow);
 }
 .status-badge {
   display: inline-block;
@@ -181,11 +181,11 @@ body {
   color: #fff;
 }
 .portal-btn-primary {
-  background: var(--ratib-pink);
+  background: var(--rateb-pink);
   border: none;
 }
 .portal-link-accent {
-  color: var(--ratib-yellow);
+  color: var(--rateb-yellow);
 }
 .portal-message-box {
   background: rgba(0, 0, 0, 0.2);

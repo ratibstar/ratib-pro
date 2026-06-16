@@ -1,4 +1,4 @@
-window.RatibClientActions = window.RatibClientActions || {};
+window.RATEBClientActions = window.RATEBClientActions || {};
 
 (function (svc) {
     var ACTIONS_URL = '';
@@ -26,7 +26,7 @@ window.RatibClientActions = window.RatibClientActions || {};
         }
 
         try {
-            return await RatibClientDashboardData.fetchJson(ACTIONS_URL, {
+            return await RATEBClientDashboardData.fetchJson(ACTIONS_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -35,7 +35,7 @@ window.RatibClientActions = window.RatibClientActions || {};
                 }),
             });
         } catch (e) {
-            console.warn('RatibClientActions', e); // eslint-disable-line no-console
+            console.warn('RATEBClientActions', e); // eslint-disable-line no-console
             return {
                 ok: false,
                 message: 'offline_or_unauthorized_stub',
@@ -96,4 +96,4 @@ window.RatibClientActions = window.RatibClientActions || {};
             svc.configure(b);
         }
     })();
-})(window.RatibClientActions);
+})(window.RATEBClientActions);

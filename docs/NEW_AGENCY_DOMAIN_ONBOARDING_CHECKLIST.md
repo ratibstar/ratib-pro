@@ -11,8 +11,8 @@ Use this checklist when onboarding a new custom agency domain (example: `https:/
 
 ## 2) cPanel Hosting Setup
 
-- [ ] Add domain in cPanel (Addon Domain or Alias) on the same Ratib hosting account.
-- [ ] Document root points to the same Ratib project root.
+- [ ] Add domain in cPanel (Addon Domain or Alias) on the same Rateb hosting account.
+- [ ] Document root points to the same Rateb project root.
 - [ ] SSL is installed and valid for `https://www.domain.com`.
 
 ## 3) Pre-check URLs

@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_RecoveryLayer
+final class RATEB_ClientDashboard_RecoveryLayer
 {
     /**
      * @param array<string, mixed> $snapshot
@@ -38,7 +38,7 @@ final class Ratib_ClientDashboard_RecoveryLayer
             'replayable_actions' => $replayables,
             'reconcile_suggestions' => $reconcile,
             'recent_async_jobs' => $jobs,
-            'note' => 'Connect workers to ratib_client_hub_jobs for automatic replay.',
+            'note' => 'Connect workers to rateb_client_hub_jobs for automatic replay.',
         ];
     }
 }

@@ -9,7 +9,7 @@
 
 | # | Area | Change |
 |---|------|--------|
-| 1 | **JWT/QR secret** | `bootstrap.php` — production hosts (`*.ratib.sa`) **fail closed** with HTTP 503 `config_error` if `MOBILE_AUTH_SECRET` missing; dev localhost keeps non-production fallback only |
+| 1 | **JWT/QR secret** | `bootstrap.php` — production hosts (`*.rateb.sa`) **fail closed** with HTTP 503 `config_error` if `MOBILE_AUTH_SECRET` missing; dev localhost keeps non-production fallback only |
 | 2 | **Secret logging** | `error_log('CRITICAL: MOBILE_AUTH_SECRET is not configured…')` — secret value never logged or returned |
 | 3 | **Env wiring** | `config/env/rateb_sa.php` — loads `MOBILE_AUTH_SECRET` from `.env` into `define()` when set |
 | 4 | **Tenant isolation** | New `api/mobile/tenant.inc.php` — country/agency scope from JWT claims only |
@@ -32,7 +32,7 @@
 
 | Finding | Severity | Resolution |
 |---------|----------|------------|
-| Default JWT secret in production | **Critical** | Production returns 503; no default secret on `*.ratib.sa` |
+| Default JWT secret in production | **Critical** | Production returns 503; no default secret on `*.rateb.sa` |
 | Company workers global read | **High** | Tenant scope enforced from JWT/user `country_id` |
 | Company cases global read | **High** | Tenant scope on cases/workers/agents |
 | Worker match by email cross-tenant | **Medium** | Tenant filter on `rateb_mobile_resolve_worker()` |
@@ -45,7 +45,7 @@
 | **`MOBILE_AUTH_SECRET` not set on server** | **Critical** | Add to production `.env` before pilot; rotate if old default was ever used |
 | Staff with `country_id = 0` | **Medium** | Returns **empty** worker/case lists (fail-safe); assign country to pilot users |
 | No DB column for tenant on workers/agents | **Medium** | Deploy returns 503 `config_error` — verify schema has `workers.country_id` or `agents.tenant_id` |
-| QR legacy `RATIBLOGIN:` bridge | **Low** | PIN badges rejected on mobile; legacy path still exists server-side |
+| QR legacy `RATEBLOGIN:` bridge | **Low** | PIN badges rejected on mobile; legacy path still exists server-side |
 | CORS `Access-Control-Allow-Origin: *` | **Low** | Acceptable for mobile API; review if cookie-based auth added later |
 | Android release uses debug signing | **High** (Play Store) | Create upload keystore + `key.properties` before Play upload |
 
@@ -79,7 +79,7 @@
 
 ### Play Console
 
-- [ ] Create app entry (package `com.ratib.rateb_mobile`)
+- [ ] Create app entry (package `com.rateb.rateb_mobile`)
 - [ ] Upload AAB to **Internal testing** track first
 - [ ] Complete Data safety form (camera, network, account data)
 - [ ] Add privacy policy URL (required)

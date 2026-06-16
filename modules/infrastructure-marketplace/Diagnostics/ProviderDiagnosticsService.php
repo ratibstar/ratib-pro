@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Diagnostics;
+namespace RATEB\InfrastructureMarketplace\Diagnostics;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
-use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class ProviderDiagnosticsService
 {
@@ -92,7 +92,7 @@ final class ProviderDiagnosticsService
         if ($this->providerDisabled('dns') || $this->providerFlagsDisableExecution('cloudflare_dns')) {
             return $this->withTiming(['name' => 'cloudflare_connectivity', 'status' => 'PASS', 'message' => 'disabled_provider', 'request_id' => $requestId], $started);
         }
-        $token = $secret->getSecret('RATIB_INFRA_CLOUDFLARE', 'API_TOKEN') ?? getenv('RATIB_INFRA_CLOUDFLARE_API_TOKEN');
+        $token = $secret->getSecret('RATEB_INFRA_CLOUDFLARE', 'API_TOKEN') ?? getenv('RATEB_INFRA_CLOUDFLARE_API_TOKEN');
         if (!is_string($token) || trim($token) === '') {
             return $this->withTiming(['name' => 'cloudflare_connectivity', 'status' => 'WARN', 'message' => 'credentials_missing', 'request_id' => $requestId], $started);
         }

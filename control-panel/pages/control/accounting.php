@@ -4,7 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/pages/control/accounting.php`.
  */
 /**
- * Control Panel - Accounting (control-panel data only, no Ratib Pro)
+ * Control Panel - Accounting (control-panel data only, no RATEB Pro)
  * Uses: control_accounting_transactions, control_support_payments, control_registration_requests
  */
 require_once __DIR__ . '/../../includes/config.php';

@@ -5723,14 +5723,14 @@ class ModernForms {
             document.head.appendChild(s);
         });
         const qrImgSrc = (() => {
-            const existing = document.querySelector('script[src*="ratib-qr-image.js"]');
+            const existing = document.querySelector('script[src*="rateb-qr-image.js"]');
             if (existing && existing.src) {
                 return existing.src.split('?')[0];
             }
             const base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
-            return base + '/js/ratib-qr-image.js';
+            return base + '/js/rateb-qr-image.js';
         })();
-        const qrImgReady = (typeof ratibRenderQrImage === 'function')
+        const qrImgReady = (typeof ratebRenderQrImage === 'function')
             ? Promise.resolve()
             : loadScript(qrImgSrc);
         this._loginBarcodeLibsLoading = Promise.all([
@@ -5756,10 +5756,10 @@ class ModernForms {
         const ref = String(legacyRef || '').trim();
         const rawPayload = String(qrPayload || '').trim() || ref;
         let scanValue = rawPayload;
-        if (rawPayload && /^RATIBLOGIN:/i.test(rawPayload) && typeof window !== 'undefined' && window.location) {
+        if (rawPayload && /^RATEBLOGIN:/i.test(rawPayload) && typeof window !== 'undefined' && window.location) {
             const q = new URLSearchParams();
             q.set('d', rawPayload);
-            const wf = window.RATIB_WORKFORCE_CTX || {};
+            const wf = window.RATEB_WORKFORCE_CTX || {};
             const params = new URLSearchParams(window.location.search || '');
             const agencyId = parseInt(wf.agencyId, 10) || parseInt(params.get('agency_id'), 10) || 0;
             const countryId = parseInt(wf.countryId, 10) || parseInt(params.get('country_id'), 10) || 0;
@@ -5789,17 +5789,17 @@ class ModernForms {
         }
         if (ref) {
             codeEl.textContent = 'Reference ID: ' + ref + (qrPayload ? ' (scan the QR above — not this line)' : '');
-        } else if (/^RATIBLOGIN:/i.test(scanValue)) {
+        } else if (/^RATEBLOGIN:/i.test(scanValue)) {
             codeEl.textContent = 'Secure login badge (scan QR above)';
         } else {
             codeEl.textContent = scanValue;
         }
-        if (typeof ratibRenderQrImage === 'function') {
-            ratibRenderQrImage(qrHost, scanValue, 280);
-        } else if (typeof ratibQrImageUrl === 'function') {
+        if (typeof ratebRenderQrImage === 'function') {
+            ratebRenderQrImage(qrHost, scanValue, 280);
+        } else if (typeof ratebQrImageUrl === 'function') {
             const img = document.createElement('img');
-            img.className = 'ratib-qr-image';
-            img.src = ratibQrImageUrl(scanValue, 280);
+            img.className = 'rateb-qr-image';
+            img.src = ratebQrImageUrl(scanValue, 280);
             img.width = 280;
             img.height = 280;
             img.alt = 'Login badge QR';

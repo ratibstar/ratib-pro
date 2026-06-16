@@ -4,7 +4,7 @@
 config/ngenius.secrets.php
 config/infra.secrets.php
 config/env/infra.secrets.php
-storage/.ratib_infra_local_secret_key
+storage/.rateb_infra_local_secret_key
 
 # Environment variants
 .env.*
@@ -18,14 +18,14 @@ dist/
 build/
 
 # Runtime-selected upload root (server-specific; do not commit)
-storage/.ratib_effective_upload_root
+storage/.rateb_effective_upload_root
 # Homepage CMS snapshot (generated on control-panel save; server-local)
-storage/ratib_site_content_home.json
-uploads/ratib_cms_cache/ratib_site_content_home.json
+storage/rateb_site_content_home.json
+uploads/rateb_cms_cache/rateb_site_content_home.json
 storage/infrastructure-marketplace/runtime-overrides.json
 storage/infrastructure-marketplace/runtime-overrides.lock
 storage/infrastructure-marketplace/runtime-config-audit.jsonl
-storage/infrastructure-marketplace/.ratib_infra_secret_key
+storage/infrastructure-marketplace/.rateb_infra_secret_key
 
 # Logs, cache, temp
 logs/

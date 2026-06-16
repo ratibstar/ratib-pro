@@ -48,12 +48,12 @@ if (!function_exists('control_control_api_base_url')) {
     }
 }
 
-if (!function_exists('control_ratib_pro_public_base_url')) {
+if (!function_exists('control_rateb_pro_public_base_url')) {
     /**
-     * URL origin for shared Ratib Pro static files (css/, js/) when the control panel lives under a subpath
+     * URL origin for shared RATEB Pro static files (css/, js/) when the control panel lives under a subpath
      * (e.g. /control-panel). Those assets are served from the parent app root, not under /control-panel/.
      */
-    function control_ratib_pro_public_base_url(): string
+    function control_rateb_pro_public_base_url(): string
     {
         if (!function_exists('control_request_origin_base')) {
             return '';
@@ -68,8 +68,8 @@ if (!function_exists('control_ratib_pro_public_base_url')) {
             $stripped = substr($origin, 0, -strlen($base));
             return $stripped !== '' ? rtrim($stripped, '/') : $origin;
         }
-        if (defined('RATIB_PRO_URL') && RATIB_PRO_URL !== '') {
-            return rtrim((string) RATIB_PRO_URL, '/');
+        if (defined('RATEB_PRO_URL') && RATEB_PRO_URL !== '') {
+            return rtrim((string) RATEB_PRO_URL, '/');
         }
         if (defined('SITE_URL') && SITE_URL !== '') {
             return rtrim((string) SITE_URL, '/');
@@ -78,15 +78,15 @@ if (!function_exists('control_ratib_pro_public_base_url')) {
     }
 }
 
-if (!function_exists('control_ratib_pro_asset_url')) {
+if (!function_exists('control_rateb_pro_asset_url')) {
     /**
-     * Absolute URL to a file under the Ratib Pro project root (e.g. css/hr.js) with cache-bust query.
+     * Absolute URL to a file under the RATEB Pro project root (e.g. css/hr.js) with cache-bust query.
      * Resolves filesystem path from this file: includes/control → repo root is three levels up.
      */
-    function control_ratib_pro_asset_url(string $relativePath): string
+    function control_rateb_pro_asset_url(string $relativePath): string
     {
         $relativePath = ltrim($relativePath, '/');
-        $pub = control_ratib_pro_public_base_url();
+        $pub = control_rateb_pro_public_base_url();
         $repoRoot = dirname(__DIR__, 3);
         $fs = $repoRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
         $v = is_file($fs) ? filemtime($fs) : time();

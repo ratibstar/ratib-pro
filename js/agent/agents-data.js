@@ -1545,7 +1545,7 @@ const agentManager = {
         }
 
         // Get the base path for CSS file
-        const basePath = window.location.origin + '/ratibprogram';
+        const basePath = window.location.origin + '/ratebprogram';
         const agentCssPath = `${basePath}/css/agent/agent.css`;
 
         printWindow.document.write(`

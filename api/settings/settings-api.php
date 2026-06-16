@@ -107,7 +107,7 @@ class SettingsAPI {
                         require_once dirname(dirname(__DIR__)) . '/includes/config.php';
                     }
                     $host = defined('DB_HOST') ? DB_HOST : 'localhost';
-                    $dbname = defined('DB_NAME') ? DB_NAME : 'outratib_out';
+                    $dbname = defined('DB_NAME') ? DB_NAME : 'admin_out';
                     $user = defined('DB_USER') ? DB_USER : '';
                     $pass = defined('DB_PASS') ? DB_PASS : '';
                     $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
@@ -2016,7 +2016,7 @@ class SettingsAPI {
     }
 
     /**
-     * Logged-in country (Ratib Pro session). Used to list/edit only users for this country.
+     * Logged-in country (RATEB Pro session). Used to list/edit only users for this country.
      */
     private function usersSessionCountryId(): int
     {
@@ -2359,7 +2359,7 @@ class SettingsAPI {
             return;
         }
         $this->ensureColumnsExist();
-        $helper = __DIR__ . '/../../includes/ratib-user-login-barcode.php';
+        $helper = __DIR__ . '/../../includes/rateb-user-login-barcode.php';
         if (!is_file($helper)) {
             sendResponse(['success' => false, 'message' => 'Barcode helper missing'], 500);
             return;
@@ -2370,11 +2370,11 @@ class SettingsAPI {
             sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
             return;
         }
-        if (!function_exists('ratib_user_ensure_login_barcode')) {
+        if (!function_exists('rateb_user_ensure_login_barcode')) {
             sendResponse(['success' => false, 'message' => 'Barcode helper unavailable'], 500);
             return;
         }
-        $result = ratib_user_ensure_login_barcode($mysqli, $userId);
+        $result = rateb_user_ensure_login_barcode($mysqli, $userId);
         if (empty($result['ok'])) {
             sendResponse([
                 'success' => false,
@@ -2384,10 +2384,10 @@ class SettingsAPI {
         }
         $qrPayload = '';
         $qrExpires = '';
-        require_once __DIR__ . '/../../includes/ratib-qr-login.php';
-        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
-        if (function_exists('ratib_qr_login_ensure_persistent_token')) {
-            $issued = ratib_qr_login_ensure_persistent_token($mysqli, $userId, false);
+        require_once __DIR__ . '/../../includes/rateb-qr-login.php';
+        require_once __DIR__ . '/../../includes/rateb-qr-workforce-identity.php';
+        if (function_exists('rateb_qr_login_ensure_persistent_token')) {
+            $issued = rateb_qr_login_ensure_persistent_token($mysqli, $userId, false);
             if (!empty($issued['ok'])) {
                 if (!empty($issued['qr_payload'])) {
                     $qrPayload = (string) $issued['qr_payload'];
@@ -2398,8 +2398,8 @@ class SettingsAPI {
                 return;
             }
         }
-        $wfStatus = function_exists('ratib_qr_workforce_status')
-            ? ratib_qr_workforce_status($mysqli, $userId)
+        $wfStatus = function_exists('rateb_qr_workforce_status')
+            ? rateb_qr_workforce_status($mysqli, $userId)
             : [];
         sendResponse([
             'success' => true,
@@ -2408,8 +2408,8 @@ class SettingsAPI {
                 'username' => (string) ($result['username'] ?? ''),
                 'qr_payload' => $qrPayload,
                 'qr_expires_at' => $qrExpires,
-                'badge_url' => ($qrPayload !== '' && function_exists('ratib_qr_login_badge_url'))
-                    ? ratib_qr_login_badge_url($qrPayload, ratib_qr_login_badge_tenant_context())
+                'badge_url' => ($qrPayload !== '' && function_exists('rateb_qr_login_badge_url'))
+                    ? rateb_qr_login_badge_url($qrPayload, rateb_qr_login_badge_tenant_context())
                     : '',
                 'workforce' => $wfStatus,
             ],
@@ -2422,13 +2422,13 @@ class SettingsAPI {
             return;
         }
         $userId = (int) $id;
-        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        require_once __DIR__ . '/../../includes/rateb-qr-workforce-identity.php';
         $mysqli = $GLOBALS['conn'] ?? null;
         if (!($mysqli instanceof mysqli)) {
             sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
             return;
         }
-        sendResponse(['success' => true, 'data' => ratib_qr_workforce_status($mysqli, $userId)]);
+        sendResponse(['success' => true, 'data' => rateb_qr_workforce_status($mysqli, $userId)]);
     }
 
     public function workforceQrGenerate($id, $input = []) {
@@ -2449,7 +2449,7 @@ class SettingsAPI {
             return;
         }
         $userId = (int) $id;
-        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        require_once __DIR__ . '/../../includes/rateb-qr-workforce-identity.php';
         $mysqli = $GLOBALS['conn'] ?? null;
         if (!($mysqli instanceof mysqli)) {
             sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
@@ -2457,7 +2457,7 @@ class SettingsAPI {
         }
         $enabled = !empty($input['enabled']);
         $pin = isset($input['pin']) ? (string) $input['pin'] : null;
-        $res = ratib_qr_pin_set($mysqli, $userId, $pin, $enabled);
+        $res = rateb_qr_pin_set($mysqli, $userId, $pin, $enabled);
         sendResponse(['success' => !empty($res['ok']), 'message' => $res['message'] ?? ''], !empty($res['ok']) ? 200 : 400);
     }
 
@@ -2467,13 +2467,13 @@ class SettingsAPI {
             return;
         }
         $userId = (int) $id;
-        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        require_once __DIR__ . '/../../includes/rateb-qr-workforce-identity.php';
         $mysqli = $GLOBALS['conn'] ?? null;
         if (!($mysqli instanceof mysqli)) {
             sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
             return;
         }
-        $ok = ratib_qr_login_set_enabled($mysqli, $userId, !empty($input['enabled']));
+        $ok = rateb_qr_login_set_enabled($mysqli, $userId, !empty($input['enabled']));
         sendResponse(['success' => $ok, 'message' => $ok ? 'Saved.' : 'Failed.'], $ok ? 200 : 500);
     }
 
@@ -2484,13 +2484,13 @@ class SettingsAPI {
         }
         $userId = (int) $id;
         $deviceId = (int) ($input['device_id'] ?? 0);
-        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        require_once __DIR__ . '/../../includes/rateb-qr-workforce-identity.php';
         $mysqli = $GLOBALS['conn'] ?? null;
         if (!($mysqli instanceof mysqli)) {
             sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
             return;
         }
-        $ok = ratib_qr_trusted_device_revoke($mysqli, $userId, $deviceId);
+        $ok = rateb_qr_trusted_device_revoke($mysqli, $userId, $deviceId);
         sendResponse(['success' => $ok, 'message' => $ok ? 'Device revoked.' : 'Not found.'], $ok ? 200 : 404);
     }
 
@@ -2505,23 +2505,23 @@ class SettingsAPI {
             return;
         }
         $this->ensureColumnsExist();
-        require_once __DIR__ . '/../../includes/ratib-user-login-barcode.php';
-        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        require_once __DIR__ . '/../../includes/rateb-user-login-barcode.php';
+        require_once __DIR__ . '/../../includes/rateb-qr-workforce-identity.php';
         $mysqli = $GLOBALS['conn'] ?? null;
         if (!($mysqli instanceof mysqli)) {
             sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
             return;
         }
-        ratib_user_ensure_login_barcode($mysqli, $userId);
+        rateb_user_ensure_login_barcode($mysqli, $userId);
         if ($mode === 'revoke') {
-            $ok = ratib_qr_login_revoke_token($mysqli, $userId);
-            sendResponse(['success' => $ok, 'data' => ratib_qr_workforce_status($mysqli, $userId)], $ok ? 200 : 500);
+            $ok = rateb_qr_login_revoke_token($mysqli, $userId);
+            sendResponse(['success' => $ok, 'data' => rateb_qr_workforce_status($mysqli, $userId)], $ok ? 200 : 500);
             return;
         }
         if ($mode === 'regenerate') {
-            $issued = ratib_qr_login_issue_token($mysqli, $userId, 0, true);
+            $issued = rateb_qr_login_issue_token($mysqli, $userId, 0, true);
         } else {
-            $issued = ratib_qr_login_ensure_persistent_token($mysqli, $userId, false);
+            $issued = rateb_qr_login_ensure_persistent_token($mysqli, $userId, false);
         }
         if (empty($issued['ok'])) {
             sendResponse(['success' => false, 'message' => $issued['message'] ?? 'Failed'], 500);
@@ -2533,8 +2533,8 @@ class SettingsAPI {
             'data' => [
                 'qr_payload' => $payload ?: null,
                 'expires_at' => $issued['expires_at'] ?? null,
-                'badge_url' => $payload !== '' ? ratib_qr_login_badge_url($payload, ratib_qr_login_badge_tenant_context()) : null,
-                'workforce' => ratib_qr_workforce_status($mysqli, $userId),
+                'badge_url' => $payload !== '' ? rateb_qr_login_badge_url($payload, rateb_qr_login_badge_tenant_context()) : null,
+                'workforce' => rateb_qr_workforce_status($mysqli, $userId),
             ],
         ]);
     }
@@ -2551,15 +2551,15 @@ class SettingsAPI {
         if (!($mysqli instanceof mysqli)) {
             return null;
         }
-        $helper = __DIR__ . '/../../includes/ratib-user-login-barcode.php';
+        $helper = __DIR__ . '/../../includes/rateb-user-login-barcode.php';
         if (!is_file($helper)) {
             return null;
         }
         require_once $helper;
-        if (!function_exists('ratib_user_ensure_login_barcode')) {
+        if (!function_exists('rateb_user_ensure_login_barcode')) {
             return null;
         }
-        $result = ratib_user_ensure_login_barcode($mysqli, $userId);
+        $result = rateb_user_ensure_login_barcode($mysqli, $userId);
         return !empty($result['ok']) ? (string) ($result['barcode'] ?? '') : null;
     }
 

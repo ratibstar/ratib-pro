@@ -8,8 +8,8 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

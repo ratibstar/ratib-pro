@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Observability;
+namespace RATEB\InfrastructureMarketplace\Observability;
 
 /**
  * Lightweight DB-backed throttling to avoid provider event spam and retry-storm logging.
@@ -25,16 +25,16 @@ final class ProviderFailureThrottle
         $status = strtolower(trim($status));
 
         if ($eventName === 'health_check') {
-            $limit = $this->envInt('RATIB_INFRA_HEALTH_LOG_MAX_PER_MINUTE', 12);
+            $limit = $this->envInt('RATEB_INFRA_HEALTH_LOG_MAX_PER_MINUTE', 12);
             return $this->recentCount($providerCode, $eventName, 1) < $limit;
         }
 
         if (in_array($status, ['failed', 'error', 'retry', 'degraded'], true)) {
-            $limit = $this->envInt('RATIB_INFRA_FAILURE_LOG_MAX_PER_MINUTE', 30);
+            $limit = $this->envInt('RATEB_INFRA_FAILURE_LOG_MAX_PER_MINUTE', 30);
             return $this->recentCount($providerCode, $eventName, 1) < $limit;
         }
 
-        $limit = $this->envInt('RATIB_INFRA_EVENT_LOG_MAX_PER_MINUTE', 90);
+        $limit = $this->envInt('RATEB_INFRA_EVENT_LOG_MAX_PER_MINUTE', 90);
         return $this->recentCount($providerCode, $eventName, 1) < $limit;
     }
 
@@ -43,9 +43,9 @@ final class ProviderFailureThrottle
         if (!$this->eventsTableReady() || trim($jobPublicId) === '') {
             return true;
         }
-        $windowSec = $this->envInt('RATIB_INFRA_WORKER_FAILURE_LOG_WINDOW_SEC', 300);
-        $maxInWindow = $this->envInt('RATIB_INFRA_WORKER_FAILURE_LOG_MAX', 5);
-        $sql = 'SELECT COUNT(*) FROM ratib_infra_provider_events
+        $windowSec = $this->envInt('RATEB_INFRA_WORKER_FAILURE_LOG_WINDOW_SEC', 300);
+        $maxInWindow = $this->envInt('RATEB_INFRA_WORKER_FAILURE_LOG_MAX', 5);
+        $sql = 'SELECT COUNT(*) FROM rateb_infra_provider_events
                 WHERE provider_code = :provider_code
                   AND event_name IN ("retries","failures")
                   AND created_at >= DATE_SUB(NOW(), INTERVAL :window_sec SECOND)
@@ -61,7 +61,7 @@ final class ProviderFailureThrottle
 
     private function recentCount(string $providerCode, string $eventName, int $minutes): int
     {
-        $sql = 'SELECT COUNT(*) FROM ratib_infra_provider_events
+        $sql = 'SELECT COUNT(*) FROM rateb_infra_provider_events
                 WHERE provider_code = :provider_code
                   AND event_name = :event_name
                   AND created_at >= DATE_SUB(NOW(), INTERVAL :minutes MINUTE)';
@@ -82,7 +82,7 @@ final class ProviderFailureThrottle
             return $ready;
         }
         try {
-            $stmt = $this->pdo->query("SHOW TABLES LIKE 'ratib_infra_provider_events'");
+            $stmt = $this->pdo->query("SHOW TABLES LIKE 'rateb_infra_provider_events'");
             $ready = $stmt instanceof \PDOStatement && $stmt->fetchColumn() !== false;
         } catch (\Throwable $e) {
             $ready = false;

@@ -13,7 +13,7 @@ require_once __DIR__ . '/EventRepository.php';
  */
 final class EventMetricsAggregator
 {
-    private const APC_PREFIX = 'ratib_evm:';
+    private const APC_PREFIX = 'rateb_evm:';
 
     /** @var array<string, int> */
     private static array $localMinute = [];

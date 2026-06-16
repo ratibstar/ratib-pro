@@ -8,7 +8,7 @@ require_once __DIR__ . '/../api/core/ensure-global-partnerships-schema.php';
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
-ratibEnsureGlobalPartnershipsSchema($conn);
+ratebEnsureGlobalPartnershipsSchema($conn);
 
 if (!empty($_GET['token'])) {
     $tok = trim((string) $_GET['token']);
@@ -35,7 +35,7 @@ if (!empty($_GET['token'])) {
     exit;
 }
 
-if (!ratib_partner_portal_session_is_valid()) {
+if (!rateb_partner_portal_session_is_valid()) {
     header('Location: ' . pageUrl('partner-portal-login.php'));
     exit;
 }

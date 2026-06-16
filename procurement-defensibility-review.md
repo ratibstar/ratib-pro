@@ -1,6 +1,6 @@
-# Procurement defensibility review — RATIB public enterprise pages
+# Procurement defensibility review — RATEB public enterprise pages
 
-**Audience:** Enterprise procurement, legal, and security reviewers evaluating RATIB as a software vendor.
+**Audience:** Enterprise procurement, legal, and security reviewers evaluating RATEB as a software vendor.
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Claim | Basis | Public wording |
 |-------|--------|----------------|
-| Saudi legal entity | Stated company name; CR/VAT on request | `ratib-procurement-legal-data.php`, profile |
+| Saudi legal entity | Stated company name; CR/VAT on request | `rateb-procurement-legal-data.php`, profile |
 | Multi-agency tenancy | Architectural design: shared app, separate DBs | Architecture, security, procurement pages |
 | TLS, RBAC, audit history | Platform design features | Security trust center |
 | No SOC2/ISO unless contracted | Explicit disclaimer | Security hero + procurement notice |
@@ -67,7 +67,7 @@
 
 ## Questions a reviewer should be able to answer after reading
 
-1. **What does RATIB sell?** Multi-agency workforce program software (workflows, records, field support, finance, governance).
+1. **What does RATEB sell?** Multi-agency workforce program software (workflows, records, field support, finance, governance).
 2. **How is data separated?** Platform configuration vs per-agency program databases.
 3. **What is not claimed?** Government partnership, SOC2/ISO, live production metrics on marketing pages.
 4. **How to engage?** `info@rateb.sa`, architecture/security review paths.

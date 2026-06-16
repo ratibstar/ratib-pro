@@ -48,7 +48,7 @@ final class ControlCenterAccess
             }
             return self::ADMIN;
         }
-        if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user()) {
+        if (function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user()) {
             $rid = (int) ($_SESSION['role_id'] ?? 0);
             $tr = strtolower((string) ($_SESSION['tenant_role'] ?? ''));
             if ($rid === 1 || $tr === 'super_admin') {
@@ -75,7 +75,7 @@ final class ControlCenterAccess
         if (self::authIsSuperAdminSafe()) {
             return true;
         }
-        if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user()) {
+        if (function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user()) {
             return true;
         }
         return false;
@@ -97,8 +97,8 @@ final class ControlCenterAccess
         if (self::authIsSuperAdminSafe()) {
             return true;
         }
-        $hasProgram = function_exists('ratib_program_session_is_valid_user')
-            ? ratib_program_session_is_valid_user()
+        $hasProgram = function_exists('rateb_program_session_is_valid_user')
+            ? rateb_program_session_is_valid_user()
             : (!empty($_SESSION['logged_in']) && (int) ($_SESSION['user_id'] ?? 0) > 0);
         if ($hasProgram) {
             $roleId = (int) ($_SESSION['role_id'] ?? 0);

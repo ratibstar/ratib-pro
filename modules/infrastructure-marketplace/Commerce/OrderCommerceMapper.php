@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Commerce;
+namespace RATEB\InfrastructureMarketplace\Commerce;
 
-use Ratib\InfrastructureMarketplace\Catalog\CatalogRepository;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Catalog\CatalogRepository;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 /**
  * Canonical read/mapping between orders, catalog SKU, commerce plans/products, and provisioning hints.
@@ -21,7 +21,7 @@ final class OrderCommerceMapper
     }
 
     /**
-     * @param array<string, mixed> $order ratib_infra_orders row
+     * @param array<string, mixed> $order rateb_infra_orders row
      * @return array<string, mixed>|null plan row or null
      */
     public function mapOrderToPlan(array $order, TenantContext $tenant): ?array
@@ -155,7 +155,7 @@ final class OrderCommerceMapper
         $notes = [];
         $sku = trim((string) ($order['sku'] ?? ''));
         if ($sku === '' || $plan === null) {
-            $notes[] = 'legacy_path: order sku not bound to ratib_infra_plans (catalog-only or pre-Phase2).';
+            $notes[] = 'legacy_path: order sku not bound to rateb_infra_plans (catalog-only or pre-Phase2).';
         }
         if ($plan !== null && strtoupper(trim((string) ($plan['plan_code'] ?? ''))) !== strtoupper($sku)) {
             $notes[] = 'legacy_path: plan_code differs from order sku (mapping table recommended).';
@@ -192,7 +192,7 @@ final class OrderCommerceMapper
     private function detectDuplicatePlanCodesGlobally(string $planCode): int
     {
         try {
-            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM ratib_infra_plans WHERE plan_code = :c');
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM rateb_infra_plans WHERE plan_code = :c');
             $stmt->execute(['c' => $planCode]);
 
             return (int) $stmt->fetchColumn();

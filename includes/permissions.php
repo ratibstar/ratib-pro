@@ -4,7 +4,7 @@
  * AR: يدير سلوك الملفات المشتركة للإعدادات والمساعدات وأجزاء التخطيط في `includes/permissions.php`.
  */
 /**
- * Permissions System for Ratibprogram
+ * Permissions System for RATEBprogram
  * This file contains all permission-related functions
  */
 
@@ -36,7 +36,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
     }
 }
 
-if (!function_exists('ratib_users_primary_key_column')) {
+if (!function_exists('rateb_users_primary_key_column')) {
     /**
      * Some tenant DBs use `users.id` instead of `users.user_id`. save_user_permissions.php already
      * resolves the PK; permission checks must use the same column or user-specific JSON is never read
@@ -45,7 +45,7 @@ if (!function_exists('ratib_users_primary_key_column')) {
      * @param mysqli|PDO $conn
      * @return 'user_id'|'id'
      */
-    function ratib_users_primary_key_column($conn): string
+    function rateb_users_primary_key_column($conn): string
     {
         if ($conn instanceof mysqli) {
             static $cache = [];
@@ -146,7 +146,7 @@ function hasPermission($permission) {
             $columnExists = $checkStmt->num_rows > 0;
             
             if ($columnExists) {
-                $pk = ratib_users_primary_key_column($conn);
+                $pk = rateb_users_primary_key_column($conn);
                 $stmt = $conn->prepare("SELECT permissions FROM users WHERE `{$pk}` = ?");
                 $stmt->bind_param("i", $_SESSION['user_id']);
                 $stmt->execute();
@@ -265,7 +265,7 @@ function getUserPermissions() {
             $columnExists = $checkStmt->num_rows > 0;
             
             if ($columnExists) {
-                $pk = ratib_users_primary_key_column($conn);
+                $pk = rateb_users_primary_key_column($conn);
                 $stmt = $conn->prepare("SELECT permissions FROM users WHERE `{$pk}` = ?");
                 $stmt->bind_param("i", $_SESSION['user_id']);
                 $stmt->execute();
@@ -394,7 +394,7 @@ function getUserRole() {
 function checkPermissionOrShowUnauthorized($permission) {
     if (!hasPermission($permission)) {
         http_response_code(403);
-        $_SESSION['ratib_popup_error'] = 'Not authorized.';
+        $_SESSION['rateb_popup_error'] = 'Not authorized.';
         header('Location: ' . pageUrl('dashboard.php'));
         exit;
     }

@@ -3,7 +3,7 @@
  * Worker tracking schema in control DB.
  * Safe to call multiple times.
  */
-function ratibEnsureWorkerTrackingSchema(PDO $conn): void
+function ratebEnsureWorkerTrackingSchema(PDO $conn): void
 {
     static $done = false;
     if ($done) {

@@ -25,8 +25,8 @@ if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_PASS')) {
     die('Config not loaded. Check config/env.');
 }
 
-// DirectAdmin: admin_bangladesh, admin_ethiopia, … (legacy outratib_* kept as fallback)
-$countryDbs = ratib_all_country_database_names();
+// DirectAdmin: admin_bangladesh, admin_ethiopia, … (legacy admin_* kept as fallback)
+$countryDbs = rateb_all_country_database_names();
 
 $host = DB_HOST;
 $user = DB_USER;

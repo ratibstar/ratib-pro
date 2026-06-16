@@ -6,9 +6,9 @@
                 'MFA policy: enforce for privileged roles (adapter-ready).';
         }
         var btn = document.getElementById('rcp-revoke-sessions');
-        if (btn && window.RatibClientActions && RatibClientActions.dispatch) {
+        if (btn && window.RATEBClientActions && RATEBClientActions.dispatch) {
             btn.addEventListener('click', function () {
-                RatibClientActions.dispatch('suspend', {
+                RATEBClientActions.dispatch('suspend', {
                     targetId: 'other_sessions',
                 });
             });

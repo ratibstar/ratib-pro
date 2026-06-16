@@ -9,8 +9,8 @@ if (!defined('APP_NAME')) {
     require_once __DIR__ . '/config.php';
 }
 $ppTitle = isset($pageTitle) ? (string) $pageTitle : 'Partner portal';
-$ppUseHomeChrome = !empty($ratibPartnerPortalHomeChrome);
-$ppBodyClass = $ppUseHomeChrome ? 'partner-portal-body ratib-saas-home' : 'partner-portal-body';
+$ppUseHomeChrome = !empty($ratebPartnerPortalHomeChrome);
+$ppBodyClass = $ppUseHomeChrome ? 'partner-portal-body rateb-saas-home' : 'partner-portal-body';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,16 +18,16 @@ $ppBodyClass = $ppUseHomeChrome ? 'partner-portal-body ratib-saas-home' : 'partn
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($ppTitle, ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars(defined('APP_NAME') ? APP_NAME : 'RATEB', ENT_QUOTES, 'UTF-8'); ?></title>
-    <?php if ($ppUseHomeChrome && isset($ratibHomeUiRev)): ?>
-    <?php if (function_exists('ratib_home_nav_emit_sync_guard_style')) {
-        ratib_home_nav_emit_sync_guard_style();
+    <?php if ($ppUseHomeChrome && isset($ratebHomeUiRev)): ?>
+    <?php if (function_exists('rateb_home_nav_emit_sync_guard_style')) {
+        rateb_home_nav_emit_sync_guard_style();
     } ?>
-    <meta name="ratib-home-ui-rev" content="<?php echo htmlspecialchars((string) $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="rateb-home-ui-rev" content="<?php echo htmlspecialchars((string) $ratebHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <?php
-    if (function_exists('ratib_home_public_nav_emit_stylesheets') && isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '') {
-        ratib_home_public_nav_emit_stylesheets($baseUrl);
+    if (function_exists('rateb_home_public_nav_emit_stylesheets') && isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '') {
+        rateb_home_public_nav_emit_stylesheets($baseUrl);
     }
     ?>
     <?php endif; ?>
@@ -41,20 +41,20 @@ $ppBodyClass = $ppUseHomeChrome ? 'partner-portal-body ratib-saas-home' : 'partn
         }
     }
     ?>
-    <?php if (!empty($ratibPartnerPortalNavFallbackCss)): ?>
-    <style id="ratib-nav-css-fallback">
+    <?php if (!empty($ratebPartnerPortalNavFallbackCss)): ?>
+    <style id="rateb-nav-css-fallback">
       /* Layout-only rescue — platform pills only; no fixed icon sizes (!important blocked compact nav CSS). */
-      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
-      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important}
-      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__glyph{display:block!important}
-      .ratib-nav__partner-login{display:inline-flex!important;align-items:center!important;gap:.45rem!important}
-      .ratib-nav__partner-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.2rem!important;height:2.2rem!important}
+      #ratebNavMenu .rateb-nav__platform-links .rateb-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
+      #ratebNavMenu .rateb-nav__platform-links .rateb-nav__icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important}
+      #ratebNavMenu .rateb-nav__platform-links .rateb-nav__glyph{display:block!important}
+      .rateb-nav__partner-login{display:inline-flex!important;align-items:center!important;gap:.45rem!important}
+      .rateb-nav__partner-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.2rem!important;height:2.2rem!important}
     </style>
     <?php endif; ?>
 </head>
 <body class="<?php echo htmlspecialchars($ppBodyClass, ENT_QUOTES, 'UTF-8'); ?>"<?php
-if ($ppUseHomeChrome && isset($ratibHomeUiRev) && isset($ratibHomePhpMtime)) {
-    echo ' data-ratib-home-layout="partner-portal-login" data-ratib-home-ui-rev="' . htmlspecialchars((string) $ratibHomeUiRev, ENT_QUOTES, 'UTF-8') . '" data-ratib-deploy="' . htmlspecialchars((string) $ratibHomePhpMtime . '-' . (string) $ratibHomeUiRev, ENT_QUOTES, 'UTF-8') . '"';
+if ($ppUseHomeChrome && isset($ratebHomeUiRev) && isset($ratebHomePhpMtime)) {
+    echo ' data-rateb-home-layout="partner-portal-login" data-rateb-home-ui-rev="' . htmlspecialchars((string) $ratebHomeUiRev, ENT_QUOTES, 'UTF-8') . '" data-rateb-deploy="' . htmlspecialchars((string) $ratebHomePhpMtime . '-' . (string) $ratebHomeUiRev, ENT_QUOTES, 'UTF-8') . '"';
 }
 ?>>
 <div class="partner-portal-shell">

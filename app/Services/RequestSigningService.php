@@ -20,7 +20,7 @@ final class RequestSigningService
         }
         $secret = (string) (getenv('GOV_REQUEST_SIGNING_SECRET') ?: '');
         if ($secret === '') {
-            // Browser/session flows (e.g. Global AI from Ratib Pro) cannot send HMAC headers until the secret
+            // Browser/session flows (e.g. Global AI from RATEB Pro) cannot send HMAC headers until the secret
             // is configured. Treat as signing disabled instead of HTTP 500 so staff workflows still run.
             error_log('RequestSigningService: GOV_REQUEST_SIGNING_SECRET is empty; skipping HMAC enforcement for ' . $action);
             return;

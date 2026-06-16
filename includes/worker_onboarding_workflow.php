@@ -13,7 +13,7 @@ use App\Repositories\WorkflowRepository;
 /**
  * Locate repo root by walking up until app/Core/Autoloader.php exists.
  */
-function ratib_worker_platform_project_root(string $entryDir): string
+function rateb_worker_platform_project_root(string $entryDir): string
 {
     $dir = realpath($entryDir) ?: $entryDir;
     for ($i = 0; $i < 12; $i++) {
@@ -31,7 +31,7 @@ function ratib_worker_platform_project_root(string $entryDir): string
     throw new RuntimeException('Could not locate app/Core/Autoloader.php from ' . $entryDir);
 }
 
-function ratib_worker_platform_register_autoloader(string $projectRoot): void
+function rateb_worker_platform_register_autoloader(string $projectRoot): void
 {
     $autoloaderFile = $projectRoot . '/app/Core/Autoloader.php';
     if (!is_file($autoloaderFile)) {
@@ -45,11 +45,11 @@ function ratib_worker_platform_register_autoloader(string $projectRoot): void
 }
 
 /**
- * Resolve user for workflow: Ratib Pro session or control-panel gov session (same as ai-lookup).
+ * Resolve user for workflow: RATEB Pro session or control-panel gov session (same as ai-lookup).
  *
  * @return array<string, mixed>
  */
-function ratib_workflow_resolve_user(AccessMiddleware $access): array
+function rateb_workflow_resolve_user(AccessMiddleware $access): array
 {
     try {
         return $access->resolveCurrentUser();
@@ -85,7 +85,7 @@ function ratib_workflow_resolve_user(AccessMiddleware $access): array
 /**
  * Global AI worker onboarding workflow (session auth, tenant DB).
  */
-function ratib_run_worker_onboarding_workflow(string $entryDir): void
+function rateb_run_worker_onboarding_workflow(string $entryDir): void
 {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -95,22 +95,22 @@ function ratib_run_worker_onboarding_workflow(string $entryDir): void
         return;
     }
 
-    $apiSession = dirname(__DIR__) . '/api/core/ratib_api_session.inc.php';
+    $apiSession = dirname(__DIR__) . '/api/core/rateb_api_session.inc.php';
     if (is_file($apiSession)) {
         require_once $apiSession;
-        if (function_exists('ratib_api_pick_session_name')) {
-            ratib_api_pick_session_name();
+        if (function_exists('rateb_api_pick_session_name')) {
+            rateb_api_pick_session_name();
         }
     }
 
     try {
-        $projectRoot = ratib_worker_platform_project_root($entryDir);
-        ratib_worker_platform_register_autoloader($projectRoot);
+        $projectRoot = rateb_worker_platform_project_root($entryDir);
+        rateb_worker_platform_register_autoloader($projectRoot);
         $projectRoot = WorkerPlatformBootstrap::init($entryDir);
         require_once $projectRoot . '/app/Core/ensure_worker_platform_schema.php';
 
         $config = require $projectRoot . '/config/worker_tracking.php';
-        $config['db'] = WorkerPlatformBootstrap::ratibDatabaseConfig();
+        $config['db'] = WorkerPlatformBootstrap::ratebDatabaseConfig();
 
         ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
         $container = Application::boot($config);
@@ -128,7 +128,7 @@ function ratib_run_worker_onboarding_workflow(string $entryDir): void
         $access = $container->get(AccessMiddleware::class);
         /** @var SecurityMiddleware $security */
         $security = $container->get(SecurityMiddleware::class);
-        $user = ratib_workflow_resolve_user($access);
+        $user = rateb_workflow_resolve_user($access);
         if (empty($user['control_session'])) {
             $security->enforce($user, 'workflow.worker_onboarding', $rawBody);
             $access->handle(

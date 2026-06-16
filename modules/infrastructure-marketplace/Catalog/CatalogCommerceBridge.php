@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Catalog;
+namespace RATEB\InfrastructureMarketplace\Catalog;
 
 /**
  * Read-only bridge from legacy catalog rows to commerce-shaped views.
- * Does not INSERT into ratib_infra_products / plans (non-destructive).
+ * Does not INSERT into rateb_infra_products / plans (non-destructive).
  */
 final class CatalogCommerceBridge
 {
@@ -15,7 +15,7 @@ final class CatalogCommerceBridge
     }
 
     /**
-     * @param array<string, mixed> $catalogRow from ratib_infra_catalog_items
+     * @param array<string, mixed> $catalogRow from rateb_infra_catalog_items
      * @return array<string, mixed> synthetic product (not persisted)
      */
     public function mapCatalogItemToProduct(array $catalogRow): array
@@ -25,7 +25,7 @@ final class CatalogCommerceBridge
         $tenantId = isset($catalogRow['tenant_id']) ? (int) $catalogRow['tenant_id'] : null;
 
         return [
-            '_source' => 'ratib_infra_catalog_items',
+            '_source' => 'rateb_infra_catalog_items',
             '_synthetic' => true,
             'product_code' => 'legacy_catalog:' . $sku,
             'product_type' => $this->inferProductType($catalogRow),
@@ -59,7 +59,7 @@ final class CatalogCommerceBridge
         $sku = (string) ($catalogRow['sku'] ?? '');
 
         return [
-            '_source' => 'ratib_infra_catalog_items',
+            '_source' => 'rateb_infra_catalog_items',
             '_synthetic' => true,
             'plan_code' => 'legacy_catalog_plan:' . $sku,
             'display_name' => (string) ($catalogRow['title'] ?? $sku),
@@ -118,8 +118,8 @@ final class CatalogCommerceBridge
             'count' => count($mapped),
             'items' => $mapped,
             'notes' => [
-                'Views are synthetic until rows are optionally mirrored into ratib_infra_products / ratib_infra_plans.',
-                'Never delete or rewrite ratib_infra_catalog_items from this bridge.',
+                'Views are synthetic until rows are optionally mirrored into rateb_infra_products / rateb_infra_plans.',
+                'Never delete or rewrite rateb_infra_catalog_items from this bridge.',
             ],
         ];
     }

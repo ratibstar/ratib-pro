@@ -16,8 +16,8 @@ require_once __DIR__ . '/payment_api_throwable_polyfill.php';
  *
  * Skip PHP session: not needed for JSON payment APIs and avoids session save path / header issues.
  */
-if (!defined('RATIB_ENV_NO_SESSION')) {
-    define('RATIB_ENV_NO_SESSION', true);
+if (!defined('RATEB_ENV_NO_SESSION')) {
+    define('RATEB_ENV_NO_SESSION', true);
 }
 
 try {

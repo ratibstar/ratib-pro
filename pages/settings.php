@@ -5,7 +5,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
-// Stay on Ratib Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
+// Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
 
 $pageTitle = "System Settings";
 $pageCss = asset('css/settings.css');

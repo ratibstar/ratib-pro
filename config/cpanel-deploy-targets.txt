@@ -1,8 +1,8 @@
 # Live web roots for https://rateb.sa — sync script always targets public_html first.
-/home/outratib/public_html
-/home/outratib/domains/rateb.sa/public_html
-/home/outratib/rateb.sa/public_html
+/home/admin/public_html
+/home/admin/domains/rateb.sa/public_html
+/home/admin/rateb.sa/public_html
 # Git checkout (do not serve directly; rsync copies FROM repo TO public_html above)
-/home/outratib/repositories/ratib-pro
+/home/admin/repositories/rateb-pro
 # DirectAdmin — https://rateb.sa
 /home/admin/domains/rateb.sa/public_html

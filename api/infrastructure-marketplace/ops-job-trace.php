@@ -17,9 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('ops-job-trace', ControlSecurityGuard::TIER_CONTROL_VIEW);
 

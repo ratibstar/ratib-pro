@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Lifecycle;
+namespace RATEB\InfrastructureMarketplace\Lifecycle;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
-use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use RATEB\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
 
 final class InfrastructureServiceLifecycleManager
 {

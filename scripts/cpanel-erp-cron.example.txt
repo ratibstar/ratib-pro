@@ -2,7 +2,7 @@
 # Cron → Add New Cron Job
 
 # Every 15 minutes: queue worker, expiry alerts, low-stock alerts
-*/15 * * * * /usr/local/bin/php /home/outratib/public_html/rateb-erp/bin/erp-cron.php >> /home/outratib/logs/erp-cron.log 2>&1
+*/15 * * * * /usr/local/bin/php /home/admin/public_html/rateb-erp/bin/erp-cron.php >> /home/admin/logs/erp-cron.log 2>&1
 
 # Daily at 02:00: database backup
-0 2 * * * /usr/local/bin/php /home/outratib/public_html/rateb-erp/bin/erp-backup.php >> /home/outratib/logs/erp-backup.log 2>&1
+0 2 * * * /usr/local/bin/php /home/admin/public_html/rateb-erp/bin/erp-backup.php >> /home/admin/logs/erp-backup.log 2>&1

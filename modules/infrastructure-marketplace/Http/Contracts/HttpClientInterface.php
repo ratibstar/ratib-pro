@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Http\Contracts;
+namespace RATEB\InfrastructureMarketplace\Http\Contracts;
 
 interface HttpClientInterface
 {

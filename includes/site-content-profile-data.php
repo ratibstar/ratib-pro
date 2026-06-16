@@ -4,22 +4,22 @@
  */
 declare(strict_types=1);
 
-if (!function_exists('ratib_site_content_profile_media_default')) {
-    function ratib_site_content_profile_media_default(string $contentKey, string $bundledRel): string
+if (!function_exists('rateb_site_content_profile_media_default')) {
+    function rateb_site_content_profile_media_default(string $contentKey, string $bundledRel): string
     {
-        if (function_exists('ratib_site_content_media_default_token')) {
-            return ratib_site_content_media_default_token($contentKey, $bundledRel);
+        if (function_exists('rateb_site_content_media_default_token')) {
+            return rateb_site_content_media_default_token($contentKey, $bundledRel);
         }
 
         return $bundledRel;
     }
 }
 
-if (!function_exists('ratib_site_content_defaults_profile')) {
+if (!function_exists('rateb_site_content_defaults_profile')) {
     /**
      * @return array<string, string>
      */
-    function ratib_site_content_defaults_profile(): array
+    function rateb_site_content_defaults_profile(): array
     {
         $govLead = 'RATEB includes a government-aligned control surface for labor oversight demonstrations: inspectors record findings, violations and blacklist rules gate deployments, supervisors open the tracking map with geofences, and field teams onboard workers to the mobile program via QR credentials—all scoped to the active agency database with role-based access.';
         $govPoints = implode("\n", [
@@ -41,15 +41,15 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
             'profile.gov.title' => 'Inspections, violations, geospatial telemetry, and worker mobilization',
             'profile.gov.lead' => $govLead,
             'profile.gov.points' => $govPoints,
-            'profile.gov.image.control' => ratib_site_content_profile_media_default('profile.gov.image.control', 'public/cms-bundle-gov-control-v2.png'),
-            'profile.gov.image.inspections' => ratib_site_content_profile_media_default('profile.gov.image.inspections', 'public/cms-bundle-gov-inspections.png'),
-            'profile.gov.image.tracking' => ratib_site_content_profile_media_default('profile.gov.image.tracking', 'public/cms-bundle-gov-tracking.png'),
-            'profile.gov.image.onboarding' => ratib_site_content_profile_media_default('profile.gov.image.onboarding', 'public/cms-bundle-gov-onboarding.png'),
-            'profile.diagram.workflow' => ratib_site_content_profile_media_default('profile.diagram.workflow', 'public/cms-bundle-diagram-workflow.svg'),
-            'profile.diagram.onboarding' => ratib_site_content_profile_media_default('profile.diagram.onboarding', 'public/cms-bundle-diagram-onboarding.svg'),
-            'profile.diagram.deployment' => ratib_site_content_profile_media_default('profile.diagram.deployment', 'public/cms-bundle-diagram-deployment.svg'),
-            'profile.diagram.tenant' => ratib_site_content_profile_media_default('profile.diagram.tenant', 'public/cms-bundle-diagram-tenant.svg'),
-            'profile.diagram.events' => ratib_site_content_profile_media_default('profile.diagram.events', 'public/cms-bundle-diagram-events.svg'),
+            'profile.gov.image.control' => rateb_site_content_profile_media_default('profile.gov.image.control', 'public/cms-bundle-gov-control-v2.png'),
+            'profile.gov.image.inspections' => rateb_site_content_profile_media_default('profile.gov.image.inspections', 'public/cms-bundle-gov-inspections.png'),
+            'profile.gov.image.tracking' => rateb_site_content_profile_media_default('profile.gov.image.tracking', 'public/cms-bundle-gov-tracking.png'),
+            'profile.gov.image.onboarding' => rateb_site_content_profile_media_default('profile.gov.image.onboarding', 'public/cms-bundle-gov-onboarding.png'),
+            'profile.diagram.workflow' => rateb_site_content_profile_media_default('profile.diagram.workflow', 'public/cms-bundle-diagram-workflow.svg'),
+            'profile.diagram.onboarding' => rateb_site_content_profile_media_default('profile.diagram.onboarding', 'public/cms-bundle-diagram-onboarding.svg'),
+            'profile.diagram.deployment' => rateb_site_content_profile_media_default('profile.diagram.deployment', 'public/cms-bundle-diagram-deployment.svg'),
+            'profile.diagram.tenant' => rateb_site_content_profile_media_default('profile.diagram.tenant', 'public/cms-bundle-diagram-tenant.svg'),
+            'profile.diagram.events' => rateb_site_content_profile_media_default('profile.diagram.events', 'public/cms-bundle-diagram-events.svg'),
             'profile.gov.caption.control' => 'Labor monitoring console—violations, blacklist, worker alerts, and inspection tabs in one place.',
             'profile.gov.caption.inspections' => 'Inspection history with status badges, inspector attribution, and agency-scoped rows.',
             'profile.gov.caption.tracking' => 'Tracking map—geofences, playback, and filters for tenant, agency, and country.',
@@ -58,17 +58,17 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
     }
 }
 
-if (!function_exists('ratib_site_content_profile_editor_groups')) {
+if (!function_exists('rateb_site_content_profile_editor_groups')) {
     /**
      * Shown first in Public site content editor (company profile + government screenshots).
      *
      * @return list<array<string, mixed>>
      */
-    function ratib_site_content_profile_editor_groups(): array
+    function rateb_site_content_profile_editor_groups(): array
     {
         $profileUrl = '/profile/';
-        if (function_exists('ratib_public_site_base_url')) {
-            $profileUrl = rtrim(ratib_public_site_base_url(), '/') . '/profile/';
+        if (function_exists('rateb_public_site_base_url')) {
+            $profileUrl = rtrim(rateb_public_site_base_url(), '/') . '/profile/';
         }
 
         return [
@@ -148,23 +148,23 @@ if (!function_exists('ratib_site_content_profile_editor_groups')) {
     }
 }
 
-if (!function_exists('ratib_site_content_profile_flat')) {
+if (!function_exists('rateb_site_content_profile_flat')) {
     /**
      * Resolved profile CMS values (DB + defaults).
      *
      * @return array<string, string>
      */
-    function ratib_site_content_profile_flat(): array
+    function rateb_site_content_profile_flat(): array
     {
-        if (!function_exists('ratib_site_content_fetch_key_values')) {
+        if (!function_exists('rateb_site_content_fetch_key_values')) {
             require_once __DIR__ . '/site-content.php';
         }
-        $def = ratib_site_content_defaults_profile();
-        if (!function_exists('ratib_site_content_fetch_key_values')) {
+        $def = rateb_site_content_defaults_profile();
+        if (!function_exists('rateb_site_content_fetch_key_values')) {
             return $def;
         }
         $keys = array_keys($def);
-        $live = ratib_site_content_fetch_key_values($keys);
+        $live = rateb_site_content_fetch_key_values($keys);
         $out = [];
         foreach ($def as $k => $fallback) {
             $out[$k] = array_key_exists($k, $live) ? (string) $live[$k] : (string) $fallback;

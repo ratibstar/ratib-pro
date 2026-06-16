@@ -20,7 +20,7 @@
      * @param {function(string):void} options.onScan
      * @param {function(string,string):void} [options.onStatus]
      */
-    function RatibQrScanner(options) {
+    function RATEBQrScanner(options) {
         this.elementId = options.elementId;
         this.onScan = options.onScan;
         this.onStatus = options.onStatus || function () {};
@@ -31,14 +31,14 @@
         this.submitted = false;
     }
 
-    RatibQrScanner.prototype.setStatus = function (message, type) {
+    RATEBQrScanner.prototype.setStatus = function (message, type) {
         if (this.submitted) {
             return;
         }
         this.onStatus(message, type || 'info');
     };
 
-    RatibQrScanner.prototype.stop = async function () {
+    RATEBQrScanner.prototype.stop = async function () {
         this.starting = false;
         if (!this.scanner) {
             return;
@@ -57,7 +57,7 @@
         }
     };
 
-    RatibQrScanner.prototype.handleDecode = function (text) {
+    RATEBQrScanner.prototype.handleDecode = function (text) {
         var value = String(text || '').trim();
         if (value.length < 4) {
             return;
@@ -73,11 +73,11 @@
         this.onScan(value);
     };
 
-    RatibQrScanner.prototype.lock = function () {
+    RATEBQrScanner.prototype.lock = function () {
         this.submitted = true;
     };
 
-    RatibQrScanner.prototype.start = async function () {
+    RATEBQrScanner.prototype.start = async function () {
         if (this.scanner || this.starting) {
             return;
         }
@@ -139,9 +139,9 @@
         }
     };
 
-    RatibQrScanner.prototype.resetSubmit = function () {
+    RATEBQrScanner.prototype.resetSubmit = function () {
         this.submitted = false;
     };
 
-    global.RatibQrScanner = RatibQrScanner;
+    global.RATEBQrScanner = RATEBQrScanner;
 })(typeof window !== 'undefined' ? window : this);

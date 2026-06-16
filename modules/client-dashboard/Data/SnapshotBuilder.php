@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_SnapshotBuilder
+final class RATEB_ClientDashboard_SnapshotBuilder
 {
     /**
      * @param mysqli|null $conn
@@ -13,7 +13,7 @@ final class Ratib_ClientDashboard_SnapshotBuilder
     public static function build(?mysqli $conn): array
     {
         require_once dirname(__DIR__) . '/Data/FallbackPayloads.php';
-        $base = Ratib_ClientDashboard_FallbackPayloads::homeSnapshotEnvelope();
+        $base = RATEB_ClientDashboard_FallbackPayloads::homeSnapshotEnvelope();
         $widgets = $base['widgets'];
         $source = 'fallback';
 

@@ -9,7 +9,7 @@
  * Run from browser: https://rateb.sa/config/run_option_a_setup.php
  * Or from CLI: php config/run_option_a_setup.php
  *
- * BEFORE: Ensure outratib_out user has privileges on ALL country databases (cPanel).
+ * BEFORE: Ensure admin_out user has privileges on ALL country databases (cPanel).
  */
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -64,17 +64,17 @@ $r->free();
 
 // 3. Map country_id -> database (use main DB credentials for all)
 $countryDbs = [
-    1 => 'outratib_bangladesh',
-    2 => 'outratib_ethiopia',
-    3 => 'outratib_indonesia',
-    4 => 'outratib_kenya',
-    5 => 'outratib_nepal',
-    6 => 'outratib_nigeria',
-    7 => 'outratib_philippines',
-    8 => 'outratib_rwanda',
-    9 => 'outratib_sri_lanka',
-    10 => 'outratib_thailand',
-    11 => 'outratib_uganda',
+    1 => 'admin_bangladesh',
+    2 => 'admin_ethiopia',
+    3 => 'admin_indonesia',
+    4 => 'admin_kenya',
+    5 => 'admin_nepal',
+    6 => 'admin_nigeria',
+    7 => 'admin_philippines',
+    8 => 'admin_rwanda',
+    9 => 'admin_sri_lanka',
+    10 => 'admin_thailand',
+    11 => 'admin_uganda',
 ];
 
 // 4. Run DELETE in each country database

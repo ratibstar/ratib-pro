@@ -12,12 +12,12 @@ require_once dirname(__DIR__, 2) . '/modules/client-dashboard/bootstrap.php';
 // control login + dashboard permission in client-platform-bootstrap.php.
 if (!empty($_SESSION['control_logged_in'])) {
     $script = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
-    $isControlClientWrapper = (function_exists('ratib_client_dashboard_is_control_wrapper_active')
-            && ratib_client_dashboard_is_control_wrapper_active())
+    $isControlClientWrapper = (function_exists('rateb_client_dashboard_is_control_wrapper_active')
+            && rateb_client_dashboard_is_control_wrapper_active())
         || preg_match('#/control-panel/pages/control/client-[^/]+\.php$#i', $script) === 1;
     if ($isControlClientWrapper) {
         return;
     }
 }
 
-ratib_client_dashboard_require_access();
+rateb_client_dashboard_require_access();

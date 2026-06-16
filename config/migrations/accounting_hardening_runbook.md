@@ -27,7 +27,7 @@ This runbook covers full rollout for accounting security/integrity hardening.
 
 1. Confirm maintenance window and approvers.
 2. Backup database:
-   - `outratib_control_panel_db`
+   - `admin_control_panel_db`
 3. Backup code / create release tag.
 4. Ensure you can run emergency rollback SQL and redeploy previous code.
 
@@ -36,7 +36,7 @@ This runbook covers full rollout for accounting security/integrity hardening.
 Run this first in production:
 
 ```sql
-USE outratib_control_panel_db;
+USE admin_control_panel_db;
 
 SELECT reference, COUNT(*) AS cnt
 FROM control_journal_entries
@@ -118,7 +118,7 @@ HAVING COUNT(*) > 1;
 Only if necessary and if you confirmed no duplicate refs:
 
 ```sql
-USE outratib_control_panel_db;
+USE admin_control_panel_db;
 ALTER TABLE control_journal_entries
   DROP INDEX uq_control_journal_entries_reference;
 ```

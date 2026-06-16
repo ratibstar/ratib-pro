@@ -40,8 +40,8 @@ if ($dbHost === '' || $dbPort === '' || $dbName === '' || $dbUser === '') {
         $dbHost = $dbHost !== '' ? $dbHost : (defined('DB_HOST') ? (string) DB_HOST : '');
         $dbPort = $dbPort !== '' ? $dbPort : (defined('DB_PORT') ? (string) DB_PORT : '3306');
         if ($dbName === '') {
-            if (defined('RATIB_PRO_DB_NAME') && (string) RATIB_PRO_DB_NAME !== '') {
-                $dbName = (string) RATIB_PRO_DB_NAME;
+            if (defined('RATEB_PRO_DB_NAME') && (string) RATEB_PRO_DB_NAME !== '') {
+                $dbName = (string) RATEB_PRO_DB_NAME;
             } elseif (defined('DB_NAME')) {
                 $dbName = (string) DB_NAME;
             }
@@ -68,7 +68,7 @@ $dsn = sprintf(
     'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
     $dbHost !== '' ? $dbHost : '127.0.0.1',
     $dbPort !== '' ? $dbPort : '3306',
-    $dbName !== '' ? $dbName : 'outratib_out'
+    $dbName !== '' ? $dbName : 'admin_out'
 );
 $dbUser = $dbUser !== '' ? $dbUser : 'root';
 

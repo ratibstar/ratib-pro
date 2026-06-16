@@ -3,7 +3,7 @@
  * Government Labor Monitoring — schema (per-tenant DB alongside workers).
  * Safe to call multiple times per request (guarded by static flag).
  */
-function ratibEnsureGovernmentLaborSchema(PDO $conn): void
+function ratebEnsureGovernmentLaborSchema(PDO $conn): void
 {
     static $done = false;
     if ($done) {

@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 
 $pdo = null;
 try {

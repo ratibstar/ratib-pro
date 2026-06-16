@@ -3,12 +3,12 @@ require_once __DIR__ . '/_auth.inc.php';
 $RCP_SECTION = 'orders';
 $RCP_HEADING = 'Orders center';
 $RCP_SUBHEADING = 'Enterprise table with filters, paging, and bulk bridge hooks.';
-$RCP_EXTRA_JS = [ratib_client_dashboard_asset_url('js/client-dashboard-orders.js')];
+$RCP_EXTRA_JS = [rateb_client_dashboard_asset_url('js/client-dashboard-orders.js')];
 require __DIR__ . '/_common-start.inc.php';
 ?>
-            <div id="rcp-orders-page" class="ratib-cp-board" data-page="1">
-                <div class="ratib-cp-table-wrap" role="region" aria-label="Orders table">
-                    <div class="ratib-cp-toolbar" role="search">
+            <div id="rcp-orders-page" class="rateb-cp-board" data-page="1">
+                <div class="rateb-cp-table-wrap" role="region" aria-label="Orders table">
+                    <div class="rateb-cp-toolbar" role="search">
                         <label>
                             Search
                             <input id="rcp-filter-q" type="search" placeholder="ID or product" autocomplete="off">
@@ -38,8 +38,8 @@ require __DIR__ . '/_common-start.inc.php';
                         <button type="button" id="rcp-reset-filter" class="secondary">Reset</button>
                         <button type="button" id="rcp-bulk-apply">Bulk suspend (selected)</button>
                     </div>
-                    <div class="ratib-cp-table-scroll">
-                        <table class="ratib-cp-table" role="table" aria-describedby="rcp-orders-caption">
+                    <div class="rateb-cp-table-scroll">
+                        <table class="rateb-cp-table" role="table" aria-describedby="rcp-orders-caption">
                             <caption id="rcp-orders-caption" class="visually-hidden">Client orders</caption>
                             <thead>
                                 <tr>
@@ -56,7 +56,7 @@ require __DIR__ . '/_common-start.inc.php';
                             <tbody id="rcp-orders-tbody"></tbody>
                         </table>
                     </div>
-                    <div class="ratib-cp-pagination" role="navigation" aria-label="Pagination">
+                    <div class="rateb-cp-pagination" role="navigation" aria-label="Pagination">
                         <span id="rcp-pager-meta" class="rcp-muted-span me-auto"></span>
                         <button type="button" id="rcp-prev">Previous</button>
                         <button type="button" id="rcp-next">Next</button>

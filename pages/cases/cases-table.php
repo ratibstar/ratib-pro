@@ -6,7 +6,7 @@
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/permissions.php';
 
-// Stay on Ratib Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
+// Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {

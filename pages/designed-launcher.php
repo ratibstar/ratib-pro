@@ -23,7 +23,7 @@ if (!preg_match('#^(.*)/pages/designed-launcher\.php$#i', $script, $m)) {
 
 $targetPath = $prefix . '/public/index.php';
 $q = $_GET;
-$q['ratib_designed'] = '1';
+$q['rateb_designed'] = '1';
 $query = http_build_query($q);
 
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
@@ -34,7 +34,7 @@ $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
 
 if ($host === '') {
     @header('Content-Type: text/plain; charset=UTF-8');
-    echo "HTTP_HOST missing. Open manually: /public/index.php?ratib_designed=1\n";
+    echo "HTTP_HOST missing. Open manually: /public/index.php?rateb_designed=1\n";
     exit;
 }
 

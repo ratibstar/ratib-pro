@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Domains\Search;
+namespace RATEB\InfrastructureMarketplace\Domains\Search;
 
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Registrars\Search\RegistrarSearchAggregator;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Registrars\Search\RegistrarSearchAggregator;
 
 final class DomainSearchService
 {

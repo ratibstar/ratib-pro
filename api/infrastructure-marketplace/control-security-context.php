@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('control-security-context', ControlSecurityGuard::TIER_CONTROL_VIEW);
 

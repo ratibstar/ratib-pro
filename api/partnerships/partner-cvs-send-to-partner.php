@@ -42,7 +42,7 @@ try {
     }
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
     $ctl = new PartnerAgencyWorkerDocSharesController($conn);
     $result = $ctl->addAllFileSharesForWorkersToPartner($partnerAgencyId, $workerIds);
     cvsSendJson(['success' => true, 'message' => 'Shares updated', 'data' => $result]);

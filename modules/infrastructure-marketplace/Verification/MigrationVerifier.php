@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Verification;
+namespace RATEB\InfrastructureMarketplace\Verification;
 
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 
 final class MigrationVerifier
 {
@@ -20,20 +20,20 @@ final class MigrationVerifier
     public function verify(): array
     {
         $requiredTables = [
-            'ratib_infra_catalog_items',
-            'ratib_infra_provider_bindings',
-            'ratib_infra_provisioning_jobs',
-            'ratib_infra_job_logs',
-            'ratib_infra_worker_heartbeats',
-            'ratib_infra_audit_entries',
-            'ratib_infra_secret_refs',
-            'ratib_infra_provider_activations',
-            'ratib_infra_provider_secrets',
-            'ratib_infra_provider_events',
-            'ratib_infra_orders',
-            'ratib_infra_domain_search_cache',
-            'ratib_infra_domain_search_rate',
-            'ratib_infra_services',
+            'rateb_infra_catalog_items',
+            'rateb_infra_provider_bindings',
+            'rateb_infra_provisioning_jobs',
+            'rateb_infra_job_logs',
+            'rateb_infra_worker_heartbeats',
+            'rateb_infra_audit_entries',
+            'rateb_infra_secret_refs',
+            'rateb_infra_provider_activations',
+            'rateb_infra_provider_secrets',
+            'rateb_infra_provider_events',
+            'rateb_infra_orders',
+            'rateb_infra_domain_search_cache',
+            'rateb_infra_domain_search_rate',
+            'rateb_infra_services',
         ];
 
         $missing = [];
@@ -44,11 +44,11 @@ final class MigrationVerifier
         }
 
         $optionalPhase2 = [
-            'ratib_infra_products',
-            'ratib_infra_plans',
-            'ratib_infra_plan_features',
-            'ratib_infra_pricing',
-            'ratib_tenant_resources',
+            'rateb_infra_products',
+            'rateb_infra_plans',
+            'rateb_infra_plan_features',
+            'rateb_infra_pricing',
+            'rateb_tenant_resources',
         ];
         $missingOptional = [];
         foreach ($optionalPhase2 as $table) {
@@ -68,9 +68,9 @@ final class MigrationVerifier
             'updated_by',
         ];
         $providerSchemaMissing = [];
-        if (SchemaHelpers::tableExists($this->pdo, 'ratib_infra_provider_activations')) {
+        if (SchemaHelpers::tableExists($this->pdo, 'rateb_infra_provider_activations')) {
             foreach ($providerSchemaColumns as $column) {
-                if (!SchemaHelpers::columnExists($this->pdo, 'ratib_infra_provider_activations', $column)) {
+                if (!SchemaHelpers::columnExists($this->pdo, 'rateb_infra_provider_activations', $column)) {
                     $providerSchemaMissing[] = $column;
                 }
             }

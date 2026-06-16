@@ -16,9 +16,9 @@ $isControlSuperAdminUi = strtolower(trim((string) ($_SESSION['control_username']
 
 // EN: URL helper functions for safe “open agency” behavior and SSO query composition.
 // AR: دوال مساعدة لبناء روابط "فتح الوكالة" بشكل آمن وتكوين معاملات SSO.
-if (!function_exists('agency_site_url_invalid_for_ratib_pro_open')) {
-    /** True if stored site_url must not be used for “Open” into Ratib Pro (e.g. points at this control panel). */
-    function agency_site_url_invalid_for_ratib_pro_open($url) {
+if (!function_exists('agency_site_url_invalid_for_rateb_pro_open')) {
+    /** True if stored site_url must not be used for “Open” into RATEB Pro (e.g. points at this control panel). */
+    function agency_site_url_invalid_for_rateb_pro_open($url) {
         $u = trim((string) $url);
         if ($u === '') {
             return true;
@@ -55,16 +55,16 @@ if (!function_exists('agency_build_open_sso_url')) {
 if (!function_exists('agency_open_site_url_is_different_host')) {
     /**
      * Use stored site_url for “Open” only when it points at another host (real custom domain).
-     * If site_url shares the same host as RATIB_PRO_URL, the path is often wrong (e.g. all rows set to /bangladesh/),
+     * If site_url shares the same host as RATEB_PRO_URL, the path is often wrong (e.g. all rows set to /bangladesh/),
      * so we prefer /{country_slug}/ built from control_countries instead.
      */
-    function agency_open_site_url_is_different_host($ratibBase, $siteUrl) {
-        $ratibBase = trim((string) $ratibBase);
+    function agency_open_site_url_is_different_host($ratebBase, $siteUrl) {
+        $ratebBase = trim((string) $ratebBase);
         $siteUrl = trim((string) $siteUrl);
-        if ($ratibBase === '' || $siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
+        if ($ratebBase === '' || $siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
             return false;
         }
-        $h1 = @parse_url(rtrim($ratibBase, '/'), PHP_URL_HOST);
+        $h1 = @parse_url(rtrim($ratebBase, '/'), PHP_URL_HOST);
         $h2 = @parse_url($siteUrl, PHP_URL_HOST);
         if (!$h1 || !$h2) {
             return false;
@@ -484,37 +484,37 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                         <?php
                             $cid = isset($r['country_id']) ? (int)$r['country_id'] : 0;
                             $cslug = isset($countrySlugMap[$cid]) ? trim($countrySlugMap[$cid]) : '';
-                            // Base for Ratib Pro root and country slug
-                            $ratibBase = rtrim(defined('RATIB_PRO_URL') ? RATIB_PRO_URL : (defined('SITE_URL') ? SITE_URL : ''), '/');
-                            if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) {
+                            // Base for RATEB Pro root and country slug
+                            $ratebBase = rtrim(defined('RATEB_PRO_URL') ? RATEB_PRO_URL : (defined('SITE_URL') ? SITE_URL : ''), '/');
+                            if ($ratebBase === '' && isset($_SERVER['HTTP_HOST'])) {
                                 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                                $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
+                                $ratebBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
                             }
                             // Country root → dashboard.php (see root .htaccess); config seeds tenant DB + control SSO when control session is present.
                             $openQs = 'control=1&agency_id=' . (int)$r['id'];
                             $siteBaseRaw = trim((string)($r['site_url'] ?? ''));
                             $hasSiteUrlFormat = $siteBaseRaw !== '' && preg_match('/^https?:\/\/.+/i', $siteBaseRaw);
-                            $useStoredSiteForOpen = $hasSiteUrlFormat && !agency_site_url_invalid_for_ratib_pro_open($siteBaseRaw);
+                            $useStoredSiteForOpen = $hasSiteUrlFormat && !agency_site_url_invalid_for_rateb_pro_open($siteBaseRaw);
                             $openUrl = '';
                             $openViaRemoteSiteUrl = false;
-                            if ($useStoredSiteForOpen && agency_open_site_url_is_different_host($ratibBase, $siteBaseRaw)) {
+                            if ($useStoredSiteForOpen && agency_open_site_url_is_different_host($ratebBase, $siteBaseRaw)) {
                                 $openUrl = agency_build_open_sso_url($siteBaseRaw, (int)$r['id']);
                                 if ($openUrl !== '') {
                                     $openViaRemoteSiteUrl = true;
                                 }
                             }
                             if ($openUrl === '') {
-                                if ($cslug !== '' && $ratibBase !== '') {
-                                    $openUrl = rtrim($ratibBase, '/') . '/' . rawurlencode($cslug) . '/?' . $openQs;
-                                } elseif ($ratibBase !== '') {
-                                    $openUrl = rtrim($ratibBase, '/') . '/pages/dashboard.php?' . $openQs;
+                                if ($cslug !== '' && $ratebBase !== '') {
+                                    $openUrl = rtrim($ratebBase, '/') . '/' . rawurlencode($cslug) . '/?' . $openQs;
+                                } elseif ($ratebBase !== '') {
+                                    $openUrl = rtrim($ratebBase, '/') . '/pages/dashboard.php?' . $openQs;
                                 } else {
                                     $openUrl = pageUrl('control/dashboard.php') . '?' . $openQs;
                                 }
                             }
                             $openTitle = $openViaRemoteSiteUrl
                                 ? 'Open agency program (custom site URL)'
-                                : (($cslug !== '' && $ratibBase !== '') ? ('Open platform (' . $cslug . ')') : 'Open platform');
+                                : (($cslug !== '' && $ratebBase !== '') ? ('Open platform (' . $cslug . ')') : 'Open platform');
                         ?><?php if ($openUrl !== ''): ?>
                         <a href="<?php echo htmlspecialchars($openUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="<?php echo htmlspecialchars($openTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">Open</a>
                         <?php else: ?>

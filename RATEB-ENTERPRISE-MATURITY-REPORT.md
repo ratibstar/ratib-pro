@@ -28,7 +28,7 @@ RATEB now presents as **Workforce Program Infrastructure** with a procurement-gr
 - **Government & Workforce Program Operations** (`/government-workforce-operations/`) — ministries, labor programs, inspections, blacklist handling, audit replay.
 - **Category ownership** — hero, meta, schema, and footer reinforce *Workforce Program Infrastructure* (not CRM / staffing SaaS).
 - **Design system lock** — `css/rateb-enterprise-tokens.css` (colors, glass, chips, spacing, typography, shadows).
-- **JSON-LD** — Organization + SoftwareApplication on home; Organization on trust/government pages (`includes/ratib-enterprise-schema.php`).
+- **JSON-LD** — Organization + SoftwareApplication on home; Organization on trust/government pages (`includes/rateb-enterprise-schema.php`).
 
 ### Remaining (non-blocking)
 
@@ -78,7 +78,7 @@ RATEB now presents as **Workforce Program Infrastructure** with a procurement-gr
 | `Help Center` (strings in long builtin JS tutorials) | Historical article bodies | Gradual content migration; UI title → **Operational Knowledge Base** |
 | `Client login` | Top bar (customer portal) | Rename to *Program workspace login* when portal UX is scoped |
 | `Demo` | Footer / CTA | Enterprise buyers expect *brief* / *walkthrough* — consider copy pass |
-| `ratib_*` PHP constants / `rateb.sa` | Backward compatibility | Intentional — not user-facing brand |
+| `rateb_*` PHP constants / `rateb.sa` | Backward compatibility | Intentional — not user-facing brand |
 | Hosting / domain mega-nav items | Marketplace module cross-sell | Separate product line; not core workforce positioning |
 
 **Score: 88/100** — Public chrome and help UI aligned; deep builtin tutorial HTML still contains legacy phrases in places.
@@ -155,9 +155,9 @@ CMS sanitizer forces fresh defaults for `home.topbar.ops_line`, analytics sample
 
 ## Post-deploy verification
 
-1. Purge LiteSpeed: `/pages/ratib-purge-cache.php?ratib_purge_lscache=1&key=ratib-deploy-sync-2026`
+1. Purge LiteSpeed: `/pages/rateb-purge-cache.php?rateb_purge_lscache=1&key=rateb-deploy-sync-2026`
 2. Hard refresh home with `?v=rateb-enterprise-hardening-final-20260521`
-3. Optional DB sync: `/pages/ratib-cms-rebrand-apply.php`
+3. Optional DB sync: `/pages/rateb-cms-rebrand-apply.php`
 4. Confirm URLs:
    - https://rateb.sa/enterprise-trust/
    - https://rateb.sa/government-workforce-operations/
@@ -174,4 +174,4 @@ CMS sanitizer forces fresh defaults for `home.topbar.ops_line`, analytics sample
 - Includes: trust hub, schema, mega-nav, footer, chrome, nav-bootstrap, CMS defaults, rebrand sanitizer
 - Assets: `rateb-enterprise-tokens.css`, `enterprise-trust-hub.css`, `home-public.css`
 - SEO: `public/sitemap.xml`, `public/robots.txt`
-- Deploy: `scripts/github-cpanel-fileman-deploy-core.py`, `public/ratib-build.txt`
+- Deploy: `scripts/github-cpanel-fileman-deploy-core.py`, `public/rateb-build.txt`

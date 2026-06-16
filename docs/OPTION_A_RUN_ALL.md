@@ -7,7 +7,7 @@ Everything is set up. Follow these steps:
 ## Before You Start
 
 1. **Re-import** the SQL file into the small databases (ethiopia, indonesia, kenya, etc.) so they have full data.
-2. **Grant access**: In cPanel → MySQL Databases, add user `outratib_out` to **all** country databases with ALL PRIVILEGES.
+2. **Grant access**: In cPanel → MySQL Databases, add user `admin_out` to **all** country databases with ALL PRIVILEGES.
 
 ---
 
@@ -27,7 +27,7 @@ Everything is set up. Follow these steps:
 ### Option 2: From command line (SSH)
 
 ```bash
-cd /path/to/ratibprogram
+cd /path/to/ratebprogram
 php config/run_option_a_setup.php
 ```
 
@@ -43,7 +43,7 @@ In phpMyAdmin, for each database run the matching line from:
 
 `config/migrations/option_a_01_delete_per_country.sql`
 
-### Step 2: UPDATE (in outratib_out)
+### Step 2: UPDATE (in admin_out)
 
 Run the full contents of:
 

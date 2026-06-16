@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_AdapterResult
+final class RATEB_ClientDashboard_AdapterResult
 {
     /** @var bool */
     public $ok;

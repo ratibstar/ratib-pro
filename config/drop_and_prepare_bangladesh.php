@@ -4,7 +4,7 @@
  * AR: يدير سلوك إعدادات النظام وتهيئة التشغيل في `config/drop_and_prepare_bangladesh.php`.
  */
 /**
- * Drop all tables in outratib_bangladesh, then you can import fresh.
+ * Drop all tables in admin_bangladesh, then you can import fresh.
  * Run: https://rateb.sa/config/drop_and_prepare_bangladesh.php
  */
 error_reporting(E_ALL);
@@ -17,7 +17,7 @@ if (!defined('DB_HOST') || !defined('DB_NAME')) {
     die('Config not loaded.');
 }
 
-$targetDb = 'outratib_bangladesh';
+$targetDb = 'admin_bangladesh';
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, '', DB_PORT ?? 3306);
 $conn->set_charset('utf8mb4');
 

@@ -208,12 +208,12 @@ if ($base === false || trim($base) === '') {
 }
 echo <<<TXT
 
-Set cookie ratib_control from your browser after login (DevTools → Application → Cookies),
+Set cookie rateb_control from your browser after login (DevTools → Application → Cookies),
 or use browser-only testing instead.
 
 Example (replace SESSION and host):
 
-  curl -s -b "ratib_control=YOUR_SESSION_ID" \\
+  curl -s -b "rateb_control=YOUR_SESSION_ID" \\
     "{$base}/api/control/worker-tracking.php?action=health&control=1"
 
 Country-only operators get rows only for tenants in their allowed countries; global operators see all (unless they filter with ?country=).

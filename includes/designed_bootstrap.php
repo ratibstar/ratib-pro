@@ -10,7 +10,7 @@ declare(strict_types=1);
  * Serve the Designed app when REQUEST_URI is under /Designed/…
  * Project root is one level above includes/.
  */
-function ratib_serve_designed_if_requested(): void
+function rateb_serve_designed_if_requested(): void
 {
     $uri = $_SERVER['REQUEST_URI'] ?? '/';
     $path = parse_url($uri, PHP_URL_PATH) ?: '/';
@@ -72,7 +72,7 @@ function ratib_serve_designed_if_requested(): void
  * Run Designed from pages/designed-launcher.php — no URL rewriting required.
  * Use this when /Designed/ returns 404 (Apache/LiteSpeed rewrite not applied).
  */
-function ratib_run_designed_launcher(): void
+function rateb_run_designed_launcher(): void
 {
     $root = dirname(__DIR__);
     $app = $root . DIRECTORY_SEPARATOR . 'Designed' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'index.php';

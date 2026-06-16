@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_Action_Suspend implements Ratib_ClientDashboard_Action_Interface
+final class RATEB_ClientDashboard_Action_Suspend implements RATEB_ClientDashboard_Action_Interface
 {
-    public function execute(Ratib_ClientDashboard_Action_Context $ctx): array
+    public function execute(RATEB_ClientDashboard_Action_Context $ctx): array
     {
         return [
             'ok' => true,

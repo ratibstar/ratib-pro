@@ -181,12 +181,12 @@
                 setStatus('Scanner library failed to load. Use manual entry below or refresh.', 'error');
                 return;
             }
-            if (typeof RatibQrScanner === 'undefined') {
+            if (typeof RATEBQrScanner === 'undefined') {
                 setStatus('Scanner script missing. Use manual entry below or refresh.', 'error');
                 return;
             }
             if (!scanner) {
-                scanner = new RatibQrScanner({
+                scanner = new RATEBQrScanner({
                     elementId: 'qr-scan-viewport',
                     throttleMs: 1200,
                     onScan: submitPayload,

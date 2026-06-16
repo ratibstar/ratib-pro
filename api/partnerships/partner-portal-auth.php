@@ -5,8 +5,8 @@
 ob_start();
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -39,7 +39,7 @@ try {
     }
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
 
     if ($usernameLogin !== '' && $passwordLogin !== '') {
         $isNumericId = ctype_digit($usernameLogin);
@@ -74,8 +74,8 @@ try {
             }
             if ($selected !== null) {
                 session_regenerate_id(true);
-                if (function_exists('ratib_partner_portal_clear')) {
-                    ratib_partner_portal_clear();
+                if (function_exists('rateb_partner_portal_clear')) {
+                    rateb_partner_portal_clear();
                 }
                 $_SESSION['partner_portal_logged_in'] = true;
                 $_SESSION['partner_portal_agency_id'] = (int) ($selected['id'] ?? 0);

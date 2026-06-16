@@ -3,13 +3,13 @@
  * Extends about-enterprise.css tokens and components.
  */
 
-body.ratib-trust-page {
+body.rateb-trust-page {
   --r-bg-deep: #0a0e1a;
   --r-bg: #111827;
 }
 
 /* Distinct banner */
-.ratib-trust-distinct-banner {
+.rateb-trust-distinct-banner {
   position: relative;
   z-index: 50;
   margin: 0;
@@ -19,14 +19,14 @@ body.ratib-trust-page {
   box-shadow: 0 8px 32px rgba(15, 76, 129, 0.22);
 }
 
-.ratib-trust-distinct-banner__inner {
+.rateb-trust-distinct-banner__inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.65rem 1rem;
 }
 
-.ratib-trust-distinct-banner__badge {
+.rateb-trust-distinct-banner__badge {
   flex-shrink: 0;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
@@ -39,7 +39,7 @@ body.ratib-trust-page {
   border: 1px solid rgba(147, 197, 253, 0.55);
 }
 
-.ratib-trust-distinct-banner__text {
+.rateb-trust-distinct-banner__text {
   flex: 1 1 14rem;
   margin: 0;
   font-size: 0.88rem;
@@ -47,11 +47,11 @@ body.ratib-trust-page {
   color: #bae6fd;
 }
 
-.ratib-trust-distinct-banner__text strong {
+.rateb-trust-distinct-banner__text strong {
   color: #fff;
 }
 
-.ratib-trust-distinct-banner__link {
+.rateb-trust-distinct-banner__link {
   flex-shrink: 0;
   font-size: 0.82rem;
   font-weight: 600;
@@ -64,36 +64,36 @@ body.ratib-trust-page {
   transition: background 0.2s, color 0.2s;
 }
 
-.ratib-trust-distinct-banner__link:hover {
+.rateb-trust-distinct-banner__link:hover {
   color: #fff;
   background: rgba(59, 130, 246, 0.45);
 }
 
-.ratib-trust-main {
+.rateb-trust-main {
   position: relative;
   z-index: 1;
 }
 
 /* Hero */
-.ratib-trust-hero {
+.rateb-trust-hero {
   padding: 2.25rem 0 2.5rem;
   border-bottom: 1px solid var(--about-border, rgba(255, 255, 255, 0.09));
   background: linear-gradient(180deg, rgba(15, 76, 129, 0.14) 0%, transparent 70%);
 }
 
-.ratib-trust-hero__grid {
+.rateb-trust-hero__grid {
   display: grid;
   gap: 1.75rem;
   align-items: start;
 }
 
 @media (min-width: 900px) {
-  .ratib-trust-hero__grid {
+  .rateb-trust-hero__grid {
     grid-template-columns: 1.15fr 0.85fr;
   }
 }
 
-.ratib-trust-hero__title {
+.rateb-trust-hero__title {
   margin: 0 0 0.75rem;
   font-size: clamp(1.85rem, 4vw, 2.65rem);
   font-weight: 800;
@@ -102,7 +102,7 @@ body.ratib-trust-page {
   color: #fff;
 }
 
-.ratib-trust-hero__lead {
+.rateb-trust-hero__lead {
   margin: 0 0 1rem;
   font-size: 1.02rem;
   line-height: 1.6;
@@ -110,7 +110,7 @@ body.ratib-trust-page {
   max-width: 42rem;
 }
 
-.ratib-trust-disclaimer {
+.rateb-trust-disclaimer {
   margin: 0;
   padding: 0.65rem 0.85rem;
   border-radius: 10px;
@@ -122,30 +122,30 @@ body.ratib-trust-page {
   max-width: 42rem;
 }
 
-.ratib-trust-hero__aside {
+.rateb-trust-hero__aside {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
-.ratib-trust-status-strip {
+.rateb-trust-status-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
 
-.ratib-trust-hero__panel {
+.rateb-trust-hero__panel {
   padding: 1rem 1.1rem;
 }
 
-.ratib-trust-hero__panel-kicker {
+.rateb-trust-hero__panel-kicker {
   margin: 0 0 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: #67e8f9;
 }
 
-.ratib-trust-hero__panel-list {
+.rateb-trust-hero__panel-list {
   margin: 0;
   padding-left: 1.1rem;
   font-size: 0.88rem;
@@ -154,40 +154,40 @@ body.ratib-trust-page {
 }
 
 /* Section accents */
-.ratib-trust-section--security {
+.rateb-trust-section--security {
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.06) 0%, transparent 100%);
 }
 
-.ratib-trust-section--governance {
+.rateb-trust-section--governance {
   background: linear-gradient(180deg, rgba(139, 92, 246, 0.06) 0%, transparent 100%);
 }
 
-.ratib-trust-section--isolation {
+.rateb-trust-section--isolation {
   background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
 }
 
 /* Data isolation diagram */
-.ratib-trust-isolation {
+.rateb-trust-isolation {
   display: grid;
   gap: 1.5rem;
   margin-top: 1.25rem;
 }
 
 @media (min-width: 960px) {
-  .ratib-trust-isolation {
+  .rateb-trust-isolation {
     grid-template-columns: 0.9fr 1.1fr;
     align-items: start;
   }
 }
 
-.ratib-trust-isolation__diagram {
+.rateb-trust-isolation__diagram {
   padding: 1.25rem;
   border-radius: var(--about-radius, 16px);
   border: 1px solid var(--about-border, rgba(255, 255, 255, 0.09));
   background: rgba(17, 24, 39, 0.75);
 }
 
-.ratib-trust-isolation__tier {
+.rateb-trust-isolation__tier {
   padding: 0.85rem 1rem;
   border-radius: 12px;
   text-align: center;
@@ -197,20 +197,20 @@ body.ratib-trust-page {
   border: 1px solid rgba(147, 197, 253, 0.35);
 }
 
-.ratib-trust-isolation__connector {
+.rateb-trust-isolation__connector {
   width: 2px;
   height: 1.25rem;
   margin: 0.5rem auto;
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.8), rgba(16, 185, 129, 0.6));
 }
 
-.ratib-trust-isolation__tenants {
+.rateb-trust-isolation__tenants {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
 }
 
-.ratib-trust-isolation__tenant {
+.rateb-trust-isolation__tenant {
   padding: 0.65rem 0.35rem;
   border-radius: 10px;
   text-align: center;
@@ -221,18 +221,18 @@ body.ratib-trust-page {
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
-.ratib-trust-isolation__cards {
+.rateb-trust-isolation__cards {
   display: grid;
   gap: 0.65rem;
 }
 
-.ratib-trust-isolation__card h3 {
+.rateb-trust-isolation__card h3 {
   margin: 0 0 0.35rem;
   font-size: 0.95rem;
   color: #fff;
 }
 
-.ratib-trust-isolation__card p {
+.rateb-trust-isolation__card p {
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.5;
@@ -240,24 +240,24 @@ body.ratib-trust-page {
 }
 
 /* Procurement CTAs */
-.ratib-trust-section--procurement {
+.rateb-trust-section--procurement {
   padding-bottom: 3rem;
   background: linear-gradient(180deg, transparent 0%, rgba(15, 76, 129, 0.12) 100%);
 }
 
-.ratib-trust-procurement {
+.rateb-trust-procurement {
   display: grid;
   gap: 1rem;
   margin-top: 1.25rem;
 }
 
 @media (min-width: 900px) {
-  .ratib-trust-procurement {
+  .rateb-trust-procurement {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.ratib-trust-procurement__card {
+.rateb-trust-procurement__card {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -265,7 +265,7 @@ body.ratib-trust-page {
   min-height: 100%;
 }
 
-.ratib-trust-procurement__icon {
+.rateb-trust-procurement__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -277,13 +277,13 @@ body.ratib-trust-page {
   background: rgba(59, 130, 246, 0.18);
 }
 
-.ratib-trust-procurement__card h3 {
+.rateb-trust-procurement__card h3 {
   margin: 0;
   font-size: 1rem;
   color: #fff;
 }
 
-.ratib-trust-procurement__card p {
+.rateb-trust-procurement__card p {
   margin: 0;
   flex: 1;
   font-size: 0.88rem;
@@ -291,41 +291,41 @@ body.ratib-trust-page {
   color: var(--about-muted, #94a3b8);
 }
 
-.ratib-trust-procurement__card .ratib-about-btn {
+.rateb-trust-procurement__card .rateb-about-btn {
   align-self: flex-start;
   margin-top: auto;
 }
 
-.ratib-trust-procurement__wa {
+.rateb-trust-procurement__wa {
   margin: 1.25rem 0 0;
   text-align: center;
   font-size: 0.8rem;
   color: var(--about-muted, #94a3b8);
 }
 
-.ratib-trust-procurement__wa a {
+.rateb-trust-procurement__wa a {
   color: #93c5fd;
   text-decoration: none;
 }
 
-.ratib-trust-procurement__wa a:hover {
+.rateb-trust-procurement__wa a:hover {
   text-decoration: underline;
 }
 
 /* Reveal (shared with about-enterprise.js pattern) */
-[data-ratib-reveal] {
+[data-rateb-reveal] {
   opacity: 0;
   transform: translateY(14px);
   transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
-[data-ratib-reveal].is-visible {
+[data-rateb-reveal].is-visible {
   opacity: 1;
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-ratib-reveal] {
+  [data-rateb-reveal] {
     opacity: 1;
     transform: none;
     transition: none;

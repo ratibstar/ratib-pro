@@ -17,13 +17,13 @@ $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 
-require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-$ratibHomeNavHrefPrefix = function_exists('ratib_public_nav_marketing_home_prefix')
-    ? ratib_public_nav_marketing_home_prefix($baseUrl)
+require_once __DIR__ . '/../includes/rateb-home-public-nav-bootstrap.php';
+$ratebHomeNavHrefPrefix = function_exists('rateb_public_nav_marketing_home_prefix')
+    ? rateb_public_nav_marketing_home_prefix($baseUrl)
     : $baseUrl . '/pages/home.php';
-$ratibHomeHeaderPartnerIsCurrent = true;
-$ratibPartnerPortalHomeChrome = true;
-$ratibPartnerPortalNavFallbackCss = true;
+$ratebHomeHeaderPartnerIsCurrent = true;
+$ratebPartnerPortalHomeChrome = true;
+$ratebPartnerPortalNavFallbackCss = true;
 
 $pageTitle = 'Partner portal sign-in';
 $v = time();
@@ -37,13 +37,13 @@ $pageCss = [
     asset('css/partner-portal.css') . '?v=' . $v,
 ];
 $pageJs = [
-    asset('js/pages/ratib-home-nav-chrome.js') . '?v=' . $ratibHomePublicCssQuery,
+    asset('js/pages/rateb-home-nav-chrome.js') . '?v=' . $ratebHomePublicCssQuery,
     asset('js/partnerships/partner-portal-login.js') . '?v=' . $v,
 ];
 include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
 
-<?php include __DIR__ . '/../includes/ratib-home-public-chrome-top.php'; ?>
+<?php include __DIR__ . '/../includes/rateb-home-public-chrome-top.php'; ?>
 
 <div class="partner-portal-wrap partner-portal-login-page agency-detail-page partner-portal-login-page--home-chrome">
     <div class="partner-portal-login-wrap">
@@ -75,10 +75,10 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     </div>
 </div>
 
-<?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
+<?php include __DIR__ . '/../includes/rateb-home-public-footer.php'; ?>
 
 <?php
-$ratibPublicChatSkipCss = true;
+$ratebPublicChatSkipCss = true;
 require_once __DIR__ . '/../includes/chat-widget-public-footer.php';
 ?>
 <?php include __DIR__ . '/../includes/partner-portal-footer.php'; ?>

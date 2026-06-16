@@ -32,7 +32,7 @@ final class WorkerPlatformBootstrap
     }
 
     /**
-     * Register autoloader, helpers, and Ratib Pro session (includes/config.php) when present.
+     * Register autoloader, helpers, and RATEB Pro session (includes/config.php) when present.
      */
     public static function init(string $entryDir): string
     {
@@ -52,11 +52,11 @@ final class WorkerPlatformBootstrap
             require_once $root . '/app/Core/ErrorTracker.php';
         }
 
-        $apiSession = $root . '/api/core/ratib_api_session.inc.php';
+        $apiSession = $root . '/api/core/rateb_api_session.inc.php';
         if (is_file($apiSession)) {
             require_once $apiSession;
-            if (function_exists('ratib_api_pick_session_name')) {
-                ratib_api_pick_session_name();
+            if (function_exists('rateb_api_pick_session_name')) {
+                rateb_api_pick_session_name();
             }
         }
 
@@ -71,11 +71,11 @@ final class WorkerPlatformBootstrap
     }
 
     /**
-     * Same tenant database as Ratib Pro pages/API (agency DB when ?agency_id= / control SSO).
+     * Same tenant database as RATEB Pro pages/API (agency DB when ?agency_id= / control SSO).
      *
      * @return array{host:string,port:int,database:string,username:string,password:string,charset:string}
      */
-    public static function ratibDatabaseConfig(): array
+    public static function ratebDatabaseConfig(): array
     {
         $agencyDb = $GLOBALS['agency_db'] ?? null;
         if (is_array($agencyDb) && !empty($agencyDb['db'])) {
@@ -92,8 +92,8 @@ final class WorkerPlatformBootstrap
         return [
             'host' => defined('DB_HOST') ? (string) DB_HOST : '127.0.0.1',
             'port' => defined('DB_PORT') ? (int) DB_PORT : 3306,
-            'database' => defined('RATIB_PRO_DB_NAME') && (string) RATIB_PRO_DB_NAME !== ''
-                ? (string) RATIB_PRO_DB_NAME
+            'database' => defined('RATEB_PRO_DB_NAME') && (string) RATEB_PRO_DB_NAME !== ''
+                ? (string) RATEB_PRO_DB_NAME
                 : (defined('DB_NAME') ? (string) DB_NAME : ''),
             'username' => defined('DB_USER') ? (string) DB_USER : '',
             'password' => defined('DB_PASS') ? (string) DB_PASS : '',

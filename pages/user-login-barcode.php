@@ -2,11 +2,11 @@
 declare(strict_types=1);
 
 /**
- * Employee login badge — secure RATIBLOGIN QR + legacy reference code.
+ * Employee login badge — secure RATEBLOGIN QR + legacy reference code.
  */
 require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/ratib-user-login-barcode.php';
-require_once __DIR__ . '/../includes/ratib-qr-login.php';
+require_once __DIR__ . '/../includes/rateb-user-login-barcode.php';
+require_once __DIR__ . '/../includes/rateb-qr-login.php';
 
 if (!isset($_SESSION['user_id'], $_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ' . pageUrl('login.php'));
@@ -25,7 +25,7 @@ if (!($conn instanceof mysqli)) {
     exit;
 }
 
-$result = ratib_user_ensure_login_barcode($conn, $targetUserId);
+$result = rateb_user_ensure_login_barcode($conn, $targetUserId);
 $legacyCode = $result['ok'] ? (string) ($result['barcode'] ?? '') : '';
 $username = (string) ($result['username'] ?? '');
 $error = $result['ok'] ? '' : (string) ($result['message'] ?? 'Barcode unavailable.');
@@ -33,7 +33,7 @@ $error = $result['ok'] ? '' : (string) ($result['message'] ?? 'Barcode unavailab
 $qrPayload = '';
 $qrExpires = '';
 if ($error === '' && $targetUserId > 0) {
-    $issued = ratib_qr_login_issue_token($conn, $targetUserId);
+    $issued = rateb_qr_login_issue_token($conn, $targetUserId);
     if (!empty($issued['ok'])) {
         $qrPayload = (string) ($issued['qr_payload'] ?? '');
         $qrExpires = (string) ($issued['expires_at'] ?? '');
@@ -96,20 +96,20 @@ $pageTitle = $username !== '' ? ('Login badge — ' . $username) : 'Login badge'
         </div>
     </div>
 
-    <link rel="stylesheet" href="<?php echo function_exists('asset') ? asset('css/ratib-qr-image.css') : '/css/ratib-qr-image.css'; ?>">
+    <link rel="stylesheet" href="<?php echo function_exists('asset') ? asset('css/rateb-qr-image.css') : '/css/rateb-qr-image.css'; ?>">
     <?php if ($qrPayload !== ''): ?>
-    <script src="<?php echo function_exists('asset') ? asset('js/ratib-qr-image.js') : '/js/ratib-qr-image.js'; ?>"></script>
+    <script src="<?php echo function_exists('asset') ? asset('js/rateb-qr-image.js') : '/js/rateb-qr-image.js'; ?>"></script>
     <script>
     (function () {
         var value = <?php echo json_encode(
-            $qrPayload !== '' && function_exists('ratib_qr_login_badge_url')
-                ? ratib_qr_login_badge_url($qrPayload, ratib_qr_login_badge_tenant_context())
+            $qrPayload !== '' && function_exists('rateb_qr_login_badge_url')
+                ? rateb_qr_login_badge_url($qrPayload, rateb_qr_login_badge_tenant_context())
                 : $qrPayload,
             JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         ); ?>;
         var host = document.getElementById('badge-qr');
-        if (host && typeof ratibRenderQrImage === 'function') {
-            ratibRenderQrImage(host, value, 300);
+        if (host && typeof ratebRenderQrImage === 'function') {
+            ratebRenderQrImage(host, value, 300);
         }
     })();
     </script>

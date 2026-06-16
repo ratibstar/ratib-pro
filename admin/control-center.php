@@ -35,9 +35,9 @@ function isControlCenterSuperAdmin(): bool
         return true;
     }
 
-    // Ratib app-session admin compatibility (when opening control-center directly).
-    $hasValidProgramSession = function_exists('ratib_program_session_is_valid_user')
-        ? ratib_program_session_is_valid_user()
+    // RATEB app-session admin compatibility (when opening control-center directly).
+    $hasValidProgramSession = function_exists('rateb_program_session_is_valid_user')
+        ? rateb_program_session_is_valid_user()
         : (!empty($_SESSION['logged_in']) && (int) ($_SESSION['user_id'] ?? 0) > 0);
     if ($hasValidProgramSession) {
         $roleId = (int) ($_SESSION['role_id'] ?? 0);
@@ -967,7 +967,7 @@ function ccBackupStorageDir(): string
     if (defined('CONTROL_CENTER_BACKUP_DIR') && is_string(CONTROL_CENTER_BACKUP_DIR) && CONTROL_CENTER_BACKUP_DIR !== '') {
         return rtrim(CONTROL_CENTER_BACKUP_DIR, '/\\');
     }
-    return rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'ratib_cc_backup';
+    return rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'rateb_cc_backup';
 }
 
 function ccResolveTenantBackupFile(string $basename): ?string
@@ -1084,7 +1084,7 @@ function ccAssertTenantDataPlaneActive(PDO $controlPdo, int $tenantId): void
 function ccGetTenantDbById(int $tenantId)
 {
     if ($tenantId <= 0) {
-        return ratib_app_default_db_connection();
+        return rateb_app_default_db_connection();
     }
     if (!class_exists('TenantDatabaseManager', false)) {
         require_once __DIR__ . '/../api/core/TenantDatabaseManager.php';

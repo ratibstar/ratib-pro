@@ -243,7 +243,7 @@ function sendTapEmail($to, $subject, $htmlBody) {
     }
     
     // Fallback: Use basic PHP mail() or PHPMailer if available
-    $fromEmail = defined('SMTP_FROM_EMAIL') ? constant('SMTP_FROM_EMAIL') : 'noreply@ratibprogram.com';
+    $fromEmail = defined('SMTP_FROM_EMAIL') ? constant('SMTP_FROM_EMAIL') : 'noreply@ratebprogram.com';
     $fromName = defined('SMTP_FROM_NAME') ? constant('SMTP_FROM_NAME') : 'RATEB';
     
     // Try PHPMailer if available

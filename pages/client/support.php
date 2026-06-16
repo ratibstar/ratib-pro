@@ -11,18 +11,18 @@ if ($supportAgencyId > 0) {
 }
 $supportKnowledgeBaseUrl = $supportControlMode
     ? (rtrim((string) getBaseUrl(), '/') . '/control-panel/pages/control/help-center.php?' . http_build_query($supportQuery))
-    : ratib_nav_url('help-center.php');
+    : rateb_nav_url('help-center.php');
 require __DIR__ . '/_common-start.inc.php';
 ?>
-            <div class="ratib-cp-split">
-                <section class="ratib-cp-card">
+            <div class="rateb-cp-split">
+                <section class="rateb-cp-card">
                     <div class="d-flex gap-3 flex-wrap mb-3">
-                        <button type="button" class="ratib-cp-pillbtn" onclick="RatibClientActions.openTicket();">Compose ticket</button>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars($supportKnowledgeBaseUrl, ENT_QUOTES, 'UTF-8'); ?>">Knowledge base</a>
+                        <button type="button" class="rateb-cp-pillbtn" onclick="RATEBClientActions.openTicket();">Compose ticket</button>
+                        <a class="rateb-cp-pillbtn" href="<?php echo htmlspecialchars($supportKnowledgeBaseUrl, ENT_QUOTES, 'UTF-8'); ?>">Knowledge base</a>
                     </div>
                     <h2>Lifecycle</h2>
-                    <div class="ratib-cp-table-scroll">
-                        <table class="ratib-cp-table">
+                    <div class="rateb-cp-table-scroll">
+                        <table class="rateb-cp-table">
                             <thead>
                                 <tr>
                                     <th scope="col">Ticket</th>
@@ -34,23 +34,23 @@ require __DIR__ . '/_common-start.inc.php';
                             <tbody>
                                 <tr>
                                     <td>SUP-1044</td>
-                                    <td><span class="ratib-status ratib-status--failed">P1</span></td>
+                                    <td><span class="rateb-status rateb-status--failed">P1</span></td>
                                     <td>VPS · cx31</td>
-                                    <td><span class="ratib-status ratib-status--processing">Engineering</span></td>
+                                    <td><span class="rateb-status rateb-status--processing">Engineering</span></td>
                                 </tr>
                                 <tr>
                                     <td>SUP-1040</td>
-                                    <td><span class="ratib-status ratib-status--pending">P3</span></td>
+                                    <td><span class="rateb-status rateb-status--pending">P3</span></td>
                                     <td>Billing</td>
-                                    <td><span class="ratib-status ratib-status--active">Resolved</span></td>
+                                    <td><span class="rateb-status rateb-status--active">Resolved</span></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </section>
-                <section class="ratib-cp-card">
+                <section class="rateb-cp-card">
                     <h2>Timeline</h2>
-                    <div class="ratib-cp-timeline" role="list">
+                    <div class="rateb-cp-timeline" role="list">
                         <article><strong>Customer update</strong><br><span class="rcp-muted-span">Template ready for chat bridge</span></article>
                         <article><strong>Provider note</strong><br><span class="rcp-muted-span">Infra marketplace hooks</span></article>
                     </div>

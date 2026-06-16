@@ -232,7 +232,7 @@ final class MigrationService
         Database::disconnect();
         $candidates = function_exists('rateb_erp_database_candidates')
             ? rateb_erp_database_candidates()
-            : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'outratib_rateb-erp'];
+            : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'admin_rateb-erp'];
         $last = null;
         foreach ($candidates as $dbName) {
             try {

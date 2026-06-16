@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Tenants;
+namespace RATEB\InfrastructureMarketplace\Tenants;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\State\StateNamespaceRegistry;
 
 /**
- * Overlay ownership for tenant resources (additive to ratib_infra_services).
+ * Overlay ownership for tenant resources (additive to rateb_infra_services).
  */
 final class TenantResourceManager
 {
@@ -32,7 +32,7 @@ final class TenantResourceManager
         if ($type === '' || $rid === '') {
             throw new \InvalidArgumentException('resource_type and resource_id required.');
         }
-        $sql = 'INSERT INTO ratib_tenant_resources (
+        $sql = 'INSERT INTO rateb_tenant_resources (
             tenant_id, agency_id, resource_type, resource_id,
             commerce_product_id, commerce_plan_id, ownership_state, linked_graph_node, metadata_json, created_at, updated_at
         ) VALUES (
@@ -64,7 +64,7 @@ final class TenantResourceManager
         $id = (int) $this->pdo->lastInsertId();
         if ($id === 0) {
             $sel = $this->pdo->prepare(
-                'SELECT id FROM ratib_tenant_resources WHERE tenant_id = :t AND resource_type = :ty AND resource_id = :rid LIMIT 1'
+                'SELECT id FROM rateb_tenant_resources WHERE tenant_id = :t AND resource_type = :ty AND resource_id = :rid LIMIT 1'
             );
             $sel->execute(['t' => $tenantId, 'ty' => $type, 'rid' => $rid]);
             $id = (int) ($sel->fetchColumn() ?: 0);
@@ -87,11 +87,11 @@ final class TenantResourceManager
     {
         if ($ownershipState !== null) {
             $stmt = $this->pdo->prepare(
-                'SELECT * FROM ratib_tenant_resources WHERE tenant_id = :t AND ownership_state = :o ORDER BY id ASC'
+                'SELECT * FROM rateb_tenant_resources WHERE tenant_id = :t AND ownership_state = :o ORDER BY id ASC'
             );
             $stmt->execute(['t' => $tenantId, 'o' => StateNamespaceRegistry::normalize($ownershipState)]);
         } else {
-            $stmt = $this->pdo->prepare('SELECT * FROM ratib_tenant_resources WHERE tenant_id = :t ORDER BY id ASC');
+            $stmt = $this->pdo->prepare('SELECT * FROM rateb_tenant_resources WHERE tenant_id = :t ORDER BY id ASC');
             $stmt->execute(['t' => $tenantId]);
         }
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -105,7 +105,7 @@ final class TenantResourceManager
     public function find(int $tenantId, string $resourceType, string $resourceId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM ratib_tenant_resources WHERE tenant_id = :t AND resource_type = :ty AND resource_id = :rid LIMIT 1'
+            'SELECT * FROM rateb_tenant_resources WHERE tenant_id = :t AND resource_type = :ty AND resource_id = :rid LIMIT 1'
         );
         $stmt->execute(['t' => $tenantId, 'ty' => $resourceType, 'rid' => $resourceId]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -125,7 +125,7 @@ final class TenantResourceManager
         ?string $correlationId = null
     ): array {
         $warnings = StateNamespaceRegistry::validateOwnershipState(StateNamespaceRegistry::normalize($toState));
-        $stmt = $this->pdo->prepare('UPDATE ratib_tenant_resources SET ownership_state = :s, updated_at = NOW() WHERE id = :id');
+        $stmt = $this->pdo->prepare('UPDATE rateb_tenant_resources SET ownership_state = :s, updated_at = NOW() WHERE id = :id');
         $stmt->execute(['s' => StateNamespaceRegistry::normalize($toState), 'id' => $id]);
         $this->audit->appendImmutable('tenant_resource_ownership', [
             'actor' => $actor,

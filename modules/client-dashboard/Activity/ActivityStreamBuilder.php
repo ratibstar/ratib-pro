@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ActivityStreamBuilder
+final class RATEB_ClientDashboard_ActivityStreamBuilder
 {
     /**
      * @return list<array<string, mixed>>
@@ -12,9 +12,9 @@ final class Ratib_ClientDashboard_ActivityStreamBuilder
         require_once dirname(__DIR__) . '/Adapters/AdapterContext.php';
         require_once dirname(__DIR__) . '/Adapters/OrdersAdapter.php';
 
-        $obs = new Ratib_ClientDashboard_ObservabilityHub();
-        $ctx = Ratib_ClientDashboard_AdapterContext::fromSession($conn, $obs);
-        $orders = (new Ratib_ClientDashboard_OrdersAdapter())->fetchNormalized($ctx);
+        $obs = new RATEB_ClientDashboard_ObservabilityHub();
+        $ctx = RATEB_ClientDashboard_AdapterContext::fromSession($conn, $obs);
+        $orders = (new RATEB_ClientDashboard_OrdersAdapter())->fetchNormalized($ctx);
 
         return (new self())->build($ctx, $orders);
     }
@@ -23,7 +23,7 @@ final class Ratib_ClientDashboard_ActivityStreamBuilder
      * @param list<array<string, mixed>> $orders
      * @return list<array<string, mixed>>
      */
-    public function build(Ratib_ClientDashboard_AdapterContext $ctx, array $orders): array
+    public function build(RATEB_ClientDashboard_AdapterContext $ctx, array $orders): array
     {
         $events = [];
 

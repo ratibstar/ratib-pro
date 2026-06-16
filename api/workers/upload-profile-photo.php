@@ -9,7 +9,7 @@
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../utils/response.php';
 
-function ratib_ensure_personal_photo_column_mediumtext(PDO $conn): void
+function rateb_ensure_personal_photo_column_mediumtext(PDO $conn): void
 {
     try {
         $stmt = $conn->query("SHOW COLUMNS FROM workers LIKE 'personal_photo_url'");
@@ -103,7 +103,7 @@ try {
     if ($storedValue === '') {
         // Fallback: inline data URL (works even when uploads are not writable).
         $storageMode = 'inline';
-        ratib_ensure_personal_photo_column_mediumtext($conn);
+        rateb_ensure_personal_photo_column_mediumtext($conn);
 
         $raw = @file_get_contents($file['tmp_name']);
         if ($raw === false || $raw === '') {

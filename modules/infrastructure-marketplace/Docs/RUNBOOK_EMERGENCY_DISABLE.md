@@ -4,7 +4,7 @@ Purpose:
 - Immediately stop risky provider operations while preserving existing SaaS/payment flows.
 
 Steps:
-1) Set `RATIB_INFRA_EXECUTION_KILL_SWITCH=1`.
+1) Set `RATEB_INFRA_EXECUTION_KILL_SWITCH=1`.
 2) Call `POST /api/infrastructure-marketplace/provider-activation.php` with:
    - `action=emergency_disable`
    - `provider_type` in (`hosting`, `registrar`, `dns`, `ssl`)

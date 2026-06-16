@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Catalog\API;
+namespace RATEB\InfrastructureMarketplace\Catalog\API;
 
-use Ratib\InfrastructureMarketplace\Catalog\CatalogRepository;
-use Ratib\InfrastructureMarketplace\Catalog\Presentation\CatalogPresenter;
-use Ratib\InfrastructureMarketplace\Catalog\Pricing\PricingEngine;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Reseller\AgencyResellerPolicy;
+use RATEB\InfrastructureMarketplace\Catalog\CatalogRepository;
+use RATEB\InfrastructureMarketplace\Catalog\Presentation\CatalogPresenter;
+use RATEB\InfrastructureMarketplace\Catalog\Pricing\PricingEngine;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Reseller\AgencyResellerPolicy;
 
 final class CatalogController
 {

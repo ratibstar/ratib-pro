@@ -54,7 +54,7 @@ jobs:
           CPANEL_USER: ${{ secrets.CPANEL_USER }}
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
-          CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
+          CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/public_html' }}
           CPANEL_DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.infra_only == 'true' && 'list' || (github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && 'critical' || 'fast') }}
           RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
         run: |
@@ -97,13 +97,13 @@ jobs:
           # Bypass LiteSpeed HTML cache before register/home probes.
           LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
-            "${SITE}/public/ratib-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
+            "${SITE}/public/rateb-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
           if ! echo "$LIVE_BUILD" | grep -q 'rateb-'; then
             LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' \
-              "${SITE}/pages/ratib-rebrand-status.php" 2>/dev/null | sed -n 's/^build=//p' | head -1 | tr -d '\r\n' || true)"
+              "${SITE}/pages/rateb-rebrand-status.php" 2>/dev/null | sed -n 's/^build=//p' | head -1 | tr -d '\r\n' || true)"
           fi
           P="$(code "${SITE}/profile/")"
-          G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
+          G="$(code "${SITE}/js/pages/rateb-profile-nav-guard.js")"
           H="$(code "${SITE}/home")"
           HLEG="$(code "${SITE}/pages/home.php")"
           REG="${SITE}/home?open=register&plan=gold&years=1&_deploy_verify=1"
@@ -135,8 +135,8 @@ jobs:
             "${HOME_URL}" 2>/dev/null | head -c 250000 || true)"
           BRAND_FAIL=0
           # Use grep <<< "$var" (not echo "$var" | grep) — large HTML + grep -q closes the pipe early → SIGPIPE noise.
-          if grep -qi 'Ratib Company' <<< "$HOME_RAW"; then
-            echo "::error::home still contains Ratib Company"
+          if grep -qi 'RATEB Company' <<< "$HOME_RAW"; then
+            echo "::error::home still contains RATEB Company"
             BRAND_FAIL=1
           fi
           if grep -q 'Workforce Intelligence</span>' <<< "$HOME_RAW"; then
@@ -147,7 +147,7 @@ jobs:
             echo "::error::home still shows Software Foundation legal line"
             BRAND_FAIL=1
           fi
-          if grep -qE 'Telemetry Enterprise Base|ratib-brand-full__word--w3' <<< "$HOME_RAW"; then
+          if grep -qE 'Telemetry Enterprise Base|rateb-brand-full__word--w3' <<< "$HOME_RAW"; then
             echo "hero_expansion=ok"
           else
             echo "::error::home hero missing Telemetry Enterprise Base expansion"
@@ -157,16 +157,16 @@ jobs:
             echo "::error::/home wrongly routed as country slug (check .htaccess home rule order)"
             BRAND_FAIL=1
           fi
-          if grep -q 'ratib-public-header-pin' <<< "$HOME_RAW"; then
+          if grep -q 'rateb-public-header-pin' <<< "$HOME_RAW"; then
             echo "header_pin_markup=ok"
           else
-            echo "::error::home missing ratib-public-header-pin (sticky header chrome)"
+            echo "::error::home missing rateb-public-header-pin (sticky header chrome)"
             BRAND_FAIL=1
           fi
           if [ -n "$LIVE_BUILD" ]; then
             echo "rebrand_build_marker=ok"
           else
-            echo "::warning::ratib-build.txt empty or unreachable; verify HTML rebrand= comment matches git"
+            echo "::warning::rateb-build.txt empty or unreachable; verify HTML rebrand= comment matches git"
           fi
           [ "$BRAND_FAIL" -eq 1 ] && exit 1
           REGISTER_OK=0
@@ -184,7 +184,7 @@ jobs:
               exit 1
             fi
             if grep -qi '<!DOCTYPE' <<< "$BODY"; then
-              if grep -q 'register-section-hidden ratib-register-wrap' <<< "$BODY"; then
+              if grep -q 'register-section-hidden rateb-register-wrap' <<< "$BODY"; then
                 echo "::error::register section still hidden with open=register (deploy home.php?)"
                 exit 1
               fi

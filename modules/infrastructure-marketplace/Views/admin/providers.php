@@ -2,33 +2,33 @@
 declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
-$ratibInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
-if (is_file($ratibInfraControlPanelConfig)) {
-    require_once $ratibInfraControlPanelConfig;
+$ratebInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
+if (is_file($ratebInfraControlPanelConfig)) {
+    require_once $ratebInfraControlPanelConfig;
 }
 ControlSecurityGuard::ensureInfraCsrfSessionToken();
-$ratibInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
+$ratebInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
 
-$ratibAdminControlCss = '/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-control.css';
-$ratibAdminControlCssPath = dirname(__DIR__, 2) . '/Assets/css/infrastructure-admin-control.css';
-$ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($ratibAdminControlCssPath) : '1';
+$ratebAdminControlCss = '/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-control.css';
+$ratebAdminControlCssPath = dirname(__DIR__, 2) . '/Assets/css/infrastructure-admin-control.css';
+$ratebAdminControlV = is_file($ratebAdminControlCssPath) ? (string) @filemtime($ratebAdminControlCssPath) : '1';
 ?>
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <?php if ($ratibInfraAdminCsrf !== ''): ?>
-    <meta name="infra-control-csrf" content="<?php echo htmlspecialchars($ratibInfraAdminCsrf, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if ($ratebInfraAdminCsrf !== ''): ?>
+    <meta name="infra-control-csrf" content="<?php echo htmlspecialchars($ratebInfraAdminCsrf, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
     <title>Infrastructure Provider Management</title>
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace-exposure.css">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratibAdminControlCss, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo htmlspecialchars($ratibAdminControlV, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratebAdminControlCss, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo htmlspecialchars($ratebAdminControlV, ENT_QUOTES, 'UTF-8'); ?>">
 </head>
-<body class="ratib-infra-marketplace-scope ratib-infra-marketplace-view ratib-infra-admin-embed">
+<body class="rateb-infra-marketplace-scope rateb-infra-marketplace-view rateb-infra-admin-embed">
 <main class="infra-market-wrap infra-control-page">
     <div class="infra-control-hero infra-providers-hero">
         <h1>Provider management</h1>
@@ -49,12 +49,12 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
     </div>
 
     <article class="infra-market-card infra-control-full infra-providers-form" style="margin-top: 1rem;">
-        <h3>Database activations (<code>ratib_infra_provider_activations</code>)</h3>
+        <h3>Database activations (<code>rateb_infra_provider_activations</code>)</h3>
         <p class="infra-domain-lead">Enable/disable rows and fix <strong>provider_class</strong> (concrete PHP class, e.g. Namecheap adapter).</p>
         <pre id="infra-provider-activations" class="infra-code-block">Loading…</pre>
         <h4 class="infra-market-card__subhead">Upsert activation</h4>
         <form id="infra-provider-upsert-form">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($ratibInfraAdminCsrf, ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($ratebInfraAdminCsrf, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="infra-field-grid infra-field-grid--2">
                 <div class="infra-field">
                     <label for="provider_type">Type</label>
@@ -71,7 +71,7 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
                 </div>
                 <div class="infra-field" style="grid-column: 1 / -1;">
                     <label for="provider_class">Class</label>
-                    <input id="provider_class" name="provider_class" type="text" required value="Ratib\InfrastructureMarketplace\Registrars\Adapters\NamecheapRegistrarAdapter">
+                    <input id="provider_class" name="provider_class" type="text" required value="RATEB\InfrastructureMarketplace\Registrars\Adapters\NamecheapRegistrarAdapter">
                 </div>
                 <div class="infra-field">
                     <label for="priority_weight">Priority</label>

@@ -4,12 +4,12 @@
 
 - **API**
   - `api/control/get_permissions_groups.php` – now self-contained (no dependency on `api/settings/get_permissions_groups.php`).
-  - `api/control/settings-api.php` – returns a JSON stub so no 500 when system settings API is called (full API requires copying `api/settings/` from Ratib Pro if needed).
+  - `api/control/settings-api.php` – returns a JSON stub so no 500 when system settings API is called (full API requires copying `api/settings/` from Rateb Pro if needed).
 
 - **Missing pages**
-  - `pages/control-registration-requests.php` – copied from Ratib Pro (embedded table view).
-  - `pages/control-support-chats.php` – copied from Ratib Pro (embedded support chats).
-  - `pages/system-settings.php` – stub that explains system settings are in Ratib Pro and optionally links to `RATIB_PRO_URL`.
+  - `pages/control-registration-requests.php` – copied from Rateb Pro (embedded table view).
+  - `pages/control-support-chats.php` – copied from Rateb Pro (embedded support chats).
+  - `pages/system-settings.php` – stub that explains system settings are in Rateb Pro and optionally links to `RATEB_PRO_URL`.
 
 - **Wrong URLs**
   - Login redirects use `pageUrl('login.php')` (no `?control=1`).
@@ -24,16 +24,16 @@
 ## Optional after upload
 
 1. **Full system settings**  
-   Copy from Ratib Pro: `api/settings/settings-api.php` and any files it includes into `api/settings/`. Then remove the stub in `api/control/settings-api.php` and include the real logic.
+   Copy from Rateb Pro: `api/settings/settings-api.php` and any files it includes into `api/settings/`. Then remove the stub in `api/control/settings-api.php` and include the real logic.
 
 2. **HR / Accounting iframes**  
-   Stub pages `pages/dashboard-hr.php` and `pages/dashboard-accounting.php` are included; they show a message and link to Ratib Pro. For full HR/Accounting UI, copy the real pages from Ratib Pro.
+   Stub pages `pages/dashboard-hr.php` and `pages/dashboard-accounting.php` are included; they show a message and link to Rateb Pro. For full HR/Accounting UI, copy the real pages from Rateb Pro.
 
-3. **RATIB_PRO_URL**  
-   In `config/env.php`, define `RATIB_PRO_URL` (e.g. `https://rateb.sa`) so “My Own Pro” and “Open Ratib Pro” links work.
+3. **RATEB_PRO_URL**  
+   In `config/env.php`, define `RATEB_PRO_URL` (e.g. `https://rateb.sa`) so “My Own Pro” and “Open Rateb Pro” links work.
 
 4. **Database**  
-   Use the same control DB as Ratib Pro (e.g. run `config/migrations/separate_control_panel_db/` from Ratib Pro if needed).
+   Use the same control DB as Rateb Pro (e.g. run `config/migrations/separate_control_panel_db/` from Rateb Pro if needed).
 
 5. **logs/**  
    Ensure `logs/` exists and is writable (or change `error_log` in `includes/config.php`).

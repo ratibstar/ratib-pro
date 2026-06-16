@@ -71,9 +71,9 @@ try {
         if ($worker) {
             try {
                 require_once __DIR__ . '/../../../includes/government-labor.php';
-                $alerts = ratib_government_worker_alerts_pdo($conn, $workerId);
+                $alerts = rateb_government_worker_alerts_pdo($conn, $workerId);
                 $worker['government_alerts'] = $alerts;
-                $worker['government_deploy_blocked'] = ratib_government_deploy_block_reason_pdo($conn, $workerId) !== null;
+                $worker['government_deploy_blocked'] = rateb_government_deploy_block_reason_pdo($conn, $workerId) !== null;
             } catch (Throwable $e) {
                 $worker['government_alerts'] = [];
                 $worker['government_deploy_blocked'] = false;

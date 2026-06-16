@@ -15,7 +15,7 @@ header('Content-Type: application/json; charset=UTF-8');
 // AR: التحقق من الجلسة، حفظ الصلاحيات، ثم إضافة سجل تاريخ للتتبع.
 try {
     $isControl = !empty($_SESSION['control_logged_in']);
-    $isAppUser = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user();
+    $isAppUser = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user();
     if (!$isControl && !$isAppUser) {
         echo json_encode(['success' => false, 'message' => 'Admin not logged in']);
         exit;

@@ -6,19 +6,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MIG_DIR="${ROOT}/modules/infrastructure-marketplace/Migrations"
 
-DB_HOST="${RATIB_INFRA_MYSQL_HOST:-127.0.0.1}"
-DB_PORT="${RATIB_INFRA_MYSQL_PORT:-3306}"
-DB_USER="${RATIB_INFRA_MYSQL_USER:-}"
-DB_NAME="${RATIB_INFRA_MYSQL_DB:-${CONTROL_PANEL_DB_NAME:-outratib_control_panel_db}}"
+DB_HOST="${RATEB_INFRA_MYSQL_HOST:-127.0.0.1}"
+DB_PORT="${RATEB_INFRA_MYSQL_PORT:-3306}"
+DB_USER="${RATEB_INFRA_MYSQL_USER:-}"
+DB_NAME="${RATEB_INFRA_MYSQL_DB:-${CONTROL_PANEL_DB_NAME:-admin_control_panel_db}}"
 
 if [[ -z "${DB_USER}" ]]; then
-  echo "Set RATIB_INFRA_MYSQL_USER (and password via RATIB_INFRA_MYSQL_PASS or prompt)." >&2
+  echo "Set RATEB_INFRA_MYSQL_USER (and password via RATEB_INFRA_MYSQL_PASS or prompt)." >&2
   exit 1
 fi
 
 MYSQL=(mysql -h"${DB_HOST}" -P"${DB_PORT}" -u"${DB_USER}" "${DB_NAME}")
-if [[ -n "${RATIB_INFRA_MYSQL_PASS:-}" ]]; then
-  export MYSQL_PWD="${RATIB_INFRA_MYSQL_PASS}"
+if [[ -n "${RATEB_INFRA_MYSQL_PASS:-}" ]]; then
+  export MYSQL_PWD="${RATEB_INFRA_MYSQL_PASS}"
 fi
 
 ORDER=(

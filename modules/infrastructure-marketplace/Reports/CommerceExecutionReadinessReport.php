@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Reports;
+namespace RATEB\InfrastructureMarketplace\Reports;
 
-use Ratib\InfrastructureMarketplace\Commerce\OrderCommerceMapper;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Lifecycle\LifecycleBindingCoordinator;
-use Ratib\InfrastructureMarketplace\Resources\ResourceRelationshipGraph;
-use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
+use RATEB\InfrastructureMarketplace\Commerce\OrderCommerceMapper;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Lifecycle\LifecycleBindingCoordinator;
+use RATEB\InfrastructureMarketplace\Resources\ResourceRelationshipGraph;
+use RATEB\InfrastructureMarketplace\State\StateNamespaceRegistry;
 
 /**
  * Phase 3 execution readiness — additive checks, warnings-first.
@@ -39,13 +39,13 @@ final class CommerceExecutionReadinessReport
         }
 
         $tables = [
-            'ratib_infra_orders',
-            'ratib_infra_plans',
-            'ratib_infra_products',
-            'ratib_tenant_resources',
-            'ratib_infra_provisioning_jobs',
-            'ratib_infra_audit_entries',
-            'ratib_infra_provider_activations',
+            'rateb_infra_orders',
+            'rateb_infra_plans',
+            'rateb_infra_products',
+            'rateb_tenant_resources',
+            'rateb_infra_provisioning_jobs',
+            'rateb_infra_audit_entries',
+            'rateb_infra_provider_activations',
         ];
         $tableStatus = [];
         foreach ($tables as $t) {
@@ -79,14 +79,14 @@ final class CommerceExecutionReadinessReport
             'generated_at' => gmdate('c'),
             '1_new_files' => $fileOk,
             '2_order_mapping_integrity' => [
-                'OrderCommerceMapper resolves sku → plan_code → ratib_infra_plans or visible catalog.',
+                'OrderCommerceMapper resolves sku → plan_code → rateb_infra_plans or visible catalog.',
                 'tables' => [
-                    'ratib_infra_orders' => $tableStatus['ratib_infra_orders'] ?? 'unknown',
-                    'ratib_infra_plans' => $tableStatus['ratib_infra_plans'] ?? 'unknown',
+                    'rateb_infra_orders' => $tableStatus['rateb_infra_orders'] ?? 'unknown',
+                    'rateb_infra_plans' => $tableStatus['rateb_infra_plans'] ?? 'unknown',
                 ],
             ],
             '3_provisioning_intent_integrity' => [
-                'Intent is DTO + audit; not a replacement for ratib_infra_provisioning_jobs.',
+                'Intent is DTO + audit; not a replacement for rateb_infra_provisioning_jobs.',
                 'files' => $fileOk['Provisioning/ProvisioningIntent.php'] ?? false,
             ],
             '4_lifecycle_synchronization' => $lifecycleProbe,
@@ -100,11 +100,11 @@ final class CommerceExecutionReadinessReport
             ],
             '7_provider_binding_readiness' => [
                 'ProviderExecutionBinder uses ProviderRegistry + ProviderActivationRegistry.',
-                'activations_table' => $tableStatus['ratib_infra_provider_activations'] ?? 'unknown',
+                'activations_table' => $tableStatus['rateb_infra_provider_activations'] ?? 'unknown',
             ],
             '8_ownership_consistency' => [
-                'TenantResourceManager + ratib_tenant_resources overlay.',
-                'tenant_resources_table' => $tableStatus['ratib_tenant_resources'] ?? 'unknown',
+                'TenantResourceManager + rateb_tenant_resources overlay.',
+                'tenant_resources_table' => $tableStatus['rateb_tenant_resources'] ?? 'unknown',
             ],
             '9_drift_detection_readiness' => [
                 'LifecycleBindingCoordinator + ResourceRelationshipGraph activationTopologicalOrder().',
@@ -163,13 +163,13 @@ final class CommerceExecutionReadinessReport
         try {
             $m = new OrderCommerceMapper(
                 $pdo,
-                new \Ratib\InfrastructureMarketplace\Catalog\CatalogRepository($pdo),
-                new \Ratib\InfrastructureMarketplace\Commerce\PlanRepository($pdo),
-                new \Ratib\InfrastructureMarketplace\Commerce\ProductRepository($pdo)
+                new \RATEB\InfrastructureMarketplace\Catalog\CatalogRepository($pdo),
+                new \RATEB\InfrastructureMarketplace\Commerce\PlanRepository($pdo),
+                new \RATEB\InfrastructureMarketplace\Commerce\ProductRepository($pdo)
             );
 
             return [
-                'sku_compat_sample' => $m->resolveSkuCompatibility('nonexistent-sku-test', new \Ratib\InfrastructureMarketplace\Domain\TenantContext(1, null)),
+                'sku_compat_sample' => $m->resolveSkuCompatibility('nonexistent-sku-test', new \RATEB\InfrastructureMarketplace\Domain\TenantContext(1, null)),
             ];
         } catch (\Throwable $e) {
             return 'ERROR:' . $e->getMessage();
@@ -204,7 +204,7 @@ if (PHP_SAPI === 'cli') {
         require_once dirname(__DIR__) . '/bootstrap.php';
         $pdo = null;
         try {
-            $pdo = \Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
+            $pdo = \RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
         } catch (\Throwable $e) {
             fwrite(STDERR, 'Note: ' . $e->getMessage() . "\n");
         }

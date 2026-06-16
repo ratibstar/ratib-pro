@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Infrastructure;
+namespace RATEB\InfrastructureMarketplace\Infrastructure;
 
 /**
- * Loads RATIB_INFRA_* from config/infra.secrets.php and writable storage/ratib_uploads fallback.
+ * Loads RATEB_INFRA_* from config/infra.secrets.php and writable storage/rateb_uploads fallback.
  */
 final class InfraEnvBootstrap
 {
@@ -68,11 +68,11 @@ final class InfraEnvBootstrap
 
     public static function hasSecretKey(): bool
     {
-        $v = getenv('RATIB_INFRA_SECRET_KEY');
+        $v = getenv('RATEB_INFRA_SECRET_KEY');
         if (is_string($v) && trim($v) !== '') {
             return true;
         }
-        $v2 = getenv('RATIB_INFRA_PROVIDER_SECRET_KEY');
+        $v2 = getenv('RATEB_INFRA_PROVIDER_SECRET_KEY');
 
         return is_string($v2) && trim($v2) !== '';
     }
@@ -83,11 +83,11 @@ final class InfraEnvBootstrap
 
         return $candidates[0] ?? ($root . DIRECTORY_SEPARATOR . 'storage'
             . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
-            . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key');
+            . DIRECTORY_SEPARATOR . '.rateb_infra_secret_key');
     }
 
     /**
-     * Same writable roots as runtime-overrides (uploads / parent ratib_infra / storage).
+     * Same writable roots as runtime-overrides (uploads / parent rateb_infra / storage).
      *
      * @return list<string>
      */
@@ -96,38 +96,38 @@ final class InfraEnvBootstrap
         $out = [
             $root . DIRECTORY_SEPARATOR . 'storage'
                 . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
-                . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key',
+                . DIRECTORY_SEPARATOR . '.rateb_infra_secret_key',
         ];
 
-        $uploadsHelper = $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'ratib_uploads_base.php';
+        $uploadsHelper = $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'rateb_uploads_base.php';
         if (is_file($uploadsHelper)) {
             require_once $uploadsHelper;
-            if (function_exists('ratib_uploads_base_dir')) {
-                $base = ratib_uploads_base_dir();
+            if (function_exists('rateb_uploads_base_dir')) {
+                $base = rateb_uploads_base_dir();
                 if (is_string($base) && $base !== '') {
                     $out[] = rtrim($base, DIRECTORY_SEPARATOR)
                         . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
-                        . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key';
+                        . DIRECTORY_SEPARATOR . '.rateb_infra_secret_key';
                 }
             }
-            if (function_exists('ratib_uploads_candidate_base_dirs')) {
-                foreach (ratib_uploads_candidate_base_dirs(false) as $base) {
+            if (function_exists('rateb_uploads_candidate_base_dirs')) {
+                foreach (rateb_uploads_candidate_base_dirs(false) as $base) {
                     if (!is_string($base) || $base === '') {
                         continue;
                     }
                     $out[] = rtrim($base, DIRECTORY_SEPARATOR)
                         . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
-                        . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key';
+                        . DIRECTORY_SEPARATOR . '.rateb_infra_secret_key';
                 }
             }
         }
 
         $parent = dirname($root);
         if ($parent !== '' && $parent !== '.' && $parent !== $root) {
-            $out[] = $parent . DIRECTORY_SEPARATOR . 'ratib_infra' . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key';
+            $out[] = $parent . DIRECTORY_SEPARATOR . 'rateb_infra' . DIRECTORY_SEPARATOR . '.rateb_infra_secret_key';
         }
 
-        $fromEnv = getenv('RATIB_INFRA_SECRET_KEY_FILE');
+        $fromEnv = getenv('RATEB_INFRA_SECRET_KEY_FILE');
         if (is_string($fromEnv) && trim($fromEnv) !== '') {
             array_unshift($out, trim($fromEnv));
         }
@@ -214,7 +214,7 @@ final class InfraEnvBootstrap
         if (!self::isLocalDevHost()) {
             return;
         }
-        $path = $root . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . '.ratib_infra_local_secret_key';
+        $path = $root . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . '.rateb_infra_local_secret_key';
         if (!is_file($path)) {
             $dir = dirname($path);
             if (!is_dir($dir)) {
@@ -242,9 +242,9 @@ final class InfraEnvBootstrap
         if ($raw === '') {
             return;
         }
-        putenv('RATIB_INFRA_SECRET_KEY=' . $raw);
-        $_ENV['RATIB_INFRA_SECRET_KEY'] = $raw;
-        $_SERVER['RATIB_INFRA_SECRET_KEY'] = $raw;
+        putenv('RATEB_INFRA_SECRET_KEY=' . $raw);
+        $_ENV['RATEB_INFRA_SECRET_KEY'] = $raw;
+        $_SERVER['RATEB_INFRA_SECRET_KEY'] = $raw;
     }
 
     private static function tryWriteConfigSecretFile(string $target): bool
@@ -264,7 +264,7 @@ final class InfraEnvBootstrap
             . "declare(strict_types=1);\n\n"
             . "/** Auto-generated — do not commit. */\n"
             . "return [\n"
-            . "    'RATIB_INFRA_SECRET_KEY' => '" . $key . "',\n"
+            . "    'RATEB_INFRA_SECRET_KEY' => '" . $key . "',\n"
             . "];\n";
 
         if (@file_put_contents($target, $contents, LOCK_EX) === false) {

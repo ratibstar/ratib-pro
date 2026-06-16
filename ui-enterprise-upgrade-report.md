@@ -7,7 +7,7 @@
 
 ## Objective
 
-Make RATIB feel **enterprise**, **sovereign-grade**, **operational**, and **procurement-ready** — not startup SaaS or generic CRM marketing.
+Make RATEB feel **enterprise**, **sovereign-grade**, **operational**, and **procurement-ready** — not startup SaaS or generic CRM marketing.
 
 ---
 
@@ -15,7 +15,7 @@ Make RATIB feel **enterprise**, **sovereign-grade**, **operational**, and **proc
 
 | File | Purpose |
 |------|---------|
-| `includes/ratib-enterprise-trust-home.php` | Home enterprise section: layers, orchestration flow, topology, governance, telemetry path, audit block, CTAs |
+| `includes/rateb-enterprise-trust-home.php` | Home enterprise section: layers, orchestration flow, topology, governance, telemetry path, audit block, CTAs |
 | `css/pages/enterprise-trust-layer.css` | Shared trust visuals, typography density, restrained overrides (gradient, final CTA, live metric jitter) |
 
 ---
@@ -26,11 +26,11 @@ Make RATIB feel **enterprise**, **sovereign-grade**, **operational**, and **proc
 |------|---------|
 | `pages/home.php` | Enterprise section after `#platform`; hero strip + enterprise CTAs; final CTA quartet; API mailto; analytics illustrative label |
 | `includes/site-content-home-data.php` | `home.ent.*` copy keys; enterprise CTAs; footer enterprise column labels; final CTA buttons |
-| `includes/ratib-home-public-footer.php` | New **Enterprise** column (Security, Architecture, Procurement, Operations & SLA); Legal simplified |
+| `includes/rateb-home-public-footer.php` | New **Enterprise** column (Security, Architecture, Procurement, Operations & SLA); Legal simplified |
 | `pages/security-compliance.php` | Loads `enterprise-trust-layer.css` |
 | `pages/architecture.php` | Loads `enterprise-trust-layer.css` |
 | `pages/procurement-legal.php` | Loads `enterprise-trust-layer.css` |
-| `.htaccess` | `RATIB_NOCACHE` for `enterprise-trust-layer.css` |
+| `.htaccess` | `RATEB_NOCACHE` for `enterprise-trust-layer.css` |
 
 ---
 
@@ -77,7 +77,7 @@ Legal column retains service registration and `info@rateb.sa`.
 
 - Hero title gradient replaced with understated underline accent
 - Final CTA background gradients reduced
-- Removed `ratib-live-nudge` animation on analytics metric
+- Removed `rateb-live-nudge` animation on analytics metric
 - Added explicit **illustrative sample metrics** disclaimer
 - No new fake counters or certification badges
 
@@ -91,7 +91,7 @@ Legal column retains service registration and `info@rateb.sa`.
 
 ## Verification
 
-- [x] PHP lint: `home.php`, `ratib-enterprise-trust-home.php`
+- [x] PHP lint: `home.php`, `rateb-enterprise-trust-home.php`
 - [ ] Visual QA on home + footer grid at mobile/desktop
 - [ ] Purge LiteSpeed cache after deploy
 

@@ -17,10 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Catalog\API\CatalogController;
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Catalog\API\CatalogController;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('catalog', ControlSecurityGuard::TIER_PUBLIC_READ);
 

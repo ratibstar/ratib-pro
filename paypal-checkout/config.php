@@ -142,7 +142,7 @@ function paypalApiRequest($endpoint, $method = 'GET', $data = null) {
     $headers = [
         'Content-Type: application/json',
         'Authorization: Bearer ' . $token,
-        'PayPal-Request-Id: ' . uniqid('ratib_', true),
+        'PayPal-Request-Id: ' . uniqid('rateb_', true),
     ];
     
     curl_setopt_array($ch, [

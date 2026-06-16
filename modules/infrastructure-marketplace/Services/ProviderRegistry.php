@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Services;
+namespace RATEB\InfrastructureMarketplace\Services;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\DnsProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\HostingProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\RegistrarProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\SslProviderInterface;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\DnsProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\HostingProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\RegistrarProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\SslProviderInterface;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
 
 /**
- * Resolves interface implementations from RATIB_INFRA_PROVIDER_BINDINGS JSON (class names only).
+ * Resolves interface implementations from RATEB_INFRA_PROVIDER_BINDINGS JSON (class names only).
  */
 final class ProviderRegistry
 {
@@ -41,7 +41,7 @@ final class ProviderRegistry
     }
 
     /**
-     * Prefer runtime/env bindings, then fill missing roles from ratib_infra_provider_activations.
+     * Prefer runtime/env bindings, then fill missing roles from rateb_infra_provider_activations.
      */
     public static function fromEnvironmentOrActivationTable(\PDO $pdo, ?int $tenantId = null, ?int $agencyId = null): self
     {

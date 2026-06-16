@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Global AI workflow without App\Core (fixes Autoloader not found on stale production).
  */
-function ratib_worker_onboarding_standalone_run(): void
+function rateb_worker_onboarding_standalone_run(): void
 {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -32,11 +32,11 @@ function ratib_worker_onboarding_standalone_run(): void
             throw new RuntimeException('Could not locate includes/config.php');
         }
 
-        $apiSession = $root . '/api/core/ratib_api_session.inc.php';
+        $apiSession = $root . '/api/core/rateb_api_session.inc.php';
         if (is_file($apiSession)) {
             require_once $apiSession;
-            if (function_exists('ratib_api_pick_session_name')) {
-                ratib_api_pick_session_name();
+            if (function_exists('rateb_api_pick_session_name')) {
+                rateb_api_pick_session_name();
             }
         }
 
@@ -91,7 +91,7 @@ function ratib_worker_onboarding_standalone_run(): void
             'passport_number' => $passport,
         ]);
 
-        $workflowId = ratib_global_ai_record_workflow($agencyPdo, $workerId, $payload);
+        $workflowId = rateb_global_ai_record_workflow($agencyPdo, $workerId, $payload);
         if ($workflowId === null || $workflowId <= 0) {
             throw new RuntimeException('Could not record workflow.', 503);
         }

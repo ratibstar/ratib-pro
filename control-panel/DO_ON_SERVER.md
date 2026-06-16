@@ -11,15 +11,15 @@ Upload from your PC to the server (same paths):
 
 In **cPanel → MySQL® Databases**:
 
-- Under **Add User To Database**, select user **outratib_out** and database **outratib_control_panel_db**, then **Add**.
+- Under **Add User To Database**, select user **admin_out** and database **admin_control_panel_db**, then **Add**.
 - On the next screen, tick **ALL PRIVILEGES** and click **Make Changes**.
 
 If that user still gets "Access denied":
 
 - Create a **new MySQL user** (e.g. username `cpanel_cp`, strong password).
-- Add that user to **outratib_control_panel_db** with **ALL PRIVILEGES**.
+- Add that user to **admin_control_panel_db** with **ALL PRIVILEGES**.
 - Edit **control-panel/config/env.php** on the server and set:
-  - `DB_USER` = that new user’s full name (e.g. `outratib_cpanel_cp`)
+  - `DB_USER` = that new user’s full name (e.g. `admin_cpanel_cp`)
   - `DB_PASS` = that user’s password
 
 ## 3. Optional: remove helper files from the server

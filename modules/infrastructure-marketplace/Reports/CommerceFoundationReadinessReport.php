@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Reports;
+namespace RATEB\InfrastructureMarketplace\Reports;
 
-use Ratib\InfrastructureMarketplace\Catalog\CatalogCommerceBridge;
-use Ratib\InfrastructureMarketplace\Catalog\CatalogRepository;
-use Ratib\InfrastructureMarketplace\Commerce\ProductRepository;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Schema\SchemaAliasMap;
-use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
+use RATEB\InfrastructureMarketplace\Catalog\CatalogCommerceBridge;
+use RATEB\InfrastructureMarketplace\Catalog\CatalogRepository;
+use RATEB\InfrastructureMarketplace\Commerce\ProductRepository;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Schema\SchemaAliasMap;
+use RATEB\InfrastructureMarketplace\State\StateNamespaceRegistry;
 
 /**
  * Validates Phase 2 readiness: files, schema presence, namespace sanity (warnings, not hard failures).
@@ -43,13 +43,13 @@ final class CommerceFoundationReadinessReport
         }
 
         $tables = [
-            'ratib_infra_products',
-            'ratib_infra_plans',
-            'ratib_infra_plan_features',
-            'ratib_infra_pricing',
-            'ratib_tenant_resources',
-            'ratib_infra_catalog_items',
-            'ratib_infra_provisioning_jobs',
+            'rateb_infra_products',
+            'rateb_infra_plans',
+            'rateb_infra_plan_features',
+            'rateb_infra_pricing',
+            'rateb_tenant_resources',
+            'rateb_infra_catalog_items',
+            'rateb_infra_provisioning_jobs',
         ];
         $tableStatus = [];
         foreach ($tables as $t) {
@@ -72,7 +72,7 @@ final class CommerceFoundationReadinessReport
             'ambiguous_WAITING_EXTERNAL' => StateNamespaceRegistry::validateProvisioningPhase('WAITING_EXTERNAL'),
         ];
 
-        $aliasWarnings = SchemaAliasMap::compatibilityWarningsFor('ratib_infra_catalog_item');
+        $aliasWarnings = SchemaAliasMap::compatibilityWarningsFor('rateb_infra_catalog_item');
 
         $bridgeSample = 'SKIPPED_NO_PDO';
         if ($pdo !== null) {
@@ -87,7 +87,7 @@ final class CommerceFoundationReadinessReport
         }
 
         $commerceRepoProbe = 'SKIPPED_NO_PDO';
-        if ($pdo !== null && ($tableStatus['ratib_infra_products'] ?? '') === 'PRESENT') {
+        if ($pdo !== null && ($tableStatus['rateb_infra_products'] ?? '') === 'PRESENT') {
             try {
                 $pr = new ProductRepository($pdo);
                 $commerceRepoProbe = ['product_rows' => count($pr->listActive())];
@@ -115,15 +115,15 @@ final class CommerceFoundationReadinessReport
                 'Email / Websites / AI — explicitly excluded here.',
             ],
             '7_recommended_phase3_preparation' => [
-                'Add optional ratib_infra_order_line_items referencing plan_id without breaking ratib_infra_orders payload_json.',
+                'Add optional rateb_infra_order_line_items referencing plan_id without breaking rateb_infra_orders payload_json.',
                 'Introduce read API versioning only additively (new query params).',
             ],
             '8_architectural_hazards' => [
-                'ratib_infra_services.lifecycle_state default QUEUED reads like queue vocabulary — treat as service lifecycle, not job queue.',
+                'rateb_infra_services.lifecycle_state default QUEUED reads like queue vocabulary — treat as service lifecycle, not job queue.',
             ],
             '9_unresolved_legacy_conflicts' => $aliasWarnings,
             '10_rollback_safety' => [
-                'Rollback: DROP TABLE ratib_tenant_resources, ratib_infra_pricing, ratib_infra_plan_features, ratib_infra_plans, ratib_infra_products in reverse dependency order only if no FK references from production data; prefer feature flags to disable commerce reads first.',
+                'Rollback: DROP TABLE rateb_tenant_resources, rateb_infra_pricing, rateb_infra_plan_features, rateb_infra_plans, rateb_infra_products in reverse dependency order only if no FK references from production data; prefer feature flags to disable commerce reads first.',
             ],
             'table_status' => $tableStatus,
             'namespace_sample_warnings' => $namespaceSamples,
@@ -154,7 +154,7 @@ if (PHP_SAPI === 'cli') {
         require_once dirname(__DIR__) . '/bootstrap.php';
         $pdo = null;
         try {
-            $pdo = \Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
+            $pdo = \RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
         } catch (\Throwable $e) {
             fwrite(STDERR, 'Note: ' . $e->getMessage() . "\n");
         }

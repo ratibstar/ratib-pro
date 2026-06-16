@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Audit\Deployment;
+namespace RATEB\InfrastructureMarketplace\Audit\Deployment;
 
 final class DeploymentAuditReporter
 {
@@ -18,7 +18,7 @@ final class DeploymentAuditReporter
     public function record(string $releaseId, string $environment, array $prelaunchReport): int
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO ratib_infra_deployment_audits
+            'INSERT INTO rateb_infra_deployment_audits
              (release_id, environment, prelaunch_status, prelaunch_score, matrix_json, snapshot_json, created_at)
              VALUES
              (:release_id, :environment, :prelaunch_status, :prelaunch_score, :matrix_json, :snapshot_json, NOW())'
@@ -41,7 +41,7 @@ final class DeploymentAuditReporter
     {
         $stmt = $this->pdo->prepare(
             'SELECT id, release_id, environment, prelaunch_status, prelaunch_score, created_at
-             FROM ratib_infra_deployment_audits
+             FROM rateb_infra_deployment_audits
              ORDER BY id DESC
              LIMIT :lim'
         );

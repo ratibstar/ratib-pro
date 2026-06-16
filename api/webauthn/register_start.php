@@ -15,12 +15,12 @@ try {
     
     // Determine if this is login-based registration (username provided without admin session)
     $isLoginRegistration = !$targetUserId && $username
-        && (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user());
+        && (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user());
     
     // If it's login registration, we don't need admin session
     // For admin panel registration, check if admin is logged in (app or control panel)
     if (!$isLoginRegistration && $targetUserId) {
-        $isAppAdmin = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user();
+        $isAppAdmin = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user();
         $isControlAdmin = !empty($_SESSION['control_logged_in']);
         if (!$isAppAdmin && !$isControlAdmin) {
             echo json_encode(['success' => false, 'message' => 'Admin not logged in']);
@@ -75,7 +75,7 @@ try {
         // Fall back to session user (admin registering themselves)
         // Only require admin session if not doing login registration
         if (!$isLoginRegistration) {
-            if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
+            if (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user()) {
                 echo json_encode(['success' => false, 'message' => 'Admin not logged in']);
                 exit;
             }
@@ -118,7 +118,7 @@ try {
         'publicKey' => [
             'challenge' => base64_encode($challenge),
             'rp' => [
-                'name' => 'Ratibprogram',
+                'name' => 'RATEBprogram',
                 'id' => $rpId
             ],
             'user' => [

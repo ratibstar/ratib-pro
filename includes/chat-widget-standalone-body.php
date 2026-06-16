@@ -24,7 +24,7 @@ $appRoot = preg_replace('#/pages$#', '', $dir);
 if ($appRoot === $dir) {
     $appRoot = '';
 }
-$ratibChatBase = rtrim($scheme . '://' . $host . ($appRoot === '/' ? '' : $appRoot), '/');
+$ratebChatBase = rtrim($scheme . '://' . $host . ($appRoot === '/' ? '' : $appRoot), '/');
 
 $builtinPath = __DIR__ . '/../js/help-center/help-center-builtin-content.js';
 $chatJsPath = __DIR__ . '/../js/chat-widget.js';
@@ -62,6 +62,6 @@ $chatJsV = file_exists($chatJsPath) ? filemtime($chatJsPath) : time();
         </div>
     </div>
 </div>
-<script>window.RATIB_BASE_URL = <?php echo json_encode($ratibChatBase); ?>;</script>
+<script>window.RATEB_BASE_URL = <?php echo json_encode($ratebChatBase); ?>;</script>
 <script src="<?php echo htmlspecialchars(asset('js/help-center/help-center-builtin-content.js')); ?>?v=<?php echo (int) $builtinV; ?>"></script>
 <script src="<?php echo htmlspecialchars(asset('js/chat-widget.js')); ?>?v=<?php echo (int) $chatJsV; ?>"></script>

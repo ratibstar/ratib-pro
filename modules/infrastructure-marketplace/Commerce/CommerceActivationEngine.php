@@ -1,22 +1,22 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Commerce;
+namespace RATEB\InfrastructureMarketplace\Commerce;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Catalog\CatalogRepository;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Execution\ExecutionSafetyLayer;
-use Ratib\InfrastructureMarketplace\Ordering\OrderRepository;
-use Ratib\InfrastructureMarketplace\Providers\ProviderExecutionBinder;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningIntentFactory;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
-use Ratib\InfrastructureMarketplace\Resources\ResourceIdentityManager;
-use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
-use Ratib\InfrastructureMarketplace\Services\ProviderRegistry;
-use Ratib\InfrastructureMarketplace\Tenants\TenantResourceManager;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Catalog\CatalogRepository;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Execution\ExecutionSafetyLayer;
+use RATEB\InfrastructureMarketplace\Ordering\OrderRepository;
+use RATEB\InfrastructureMarketplace\Providers\ProviderExecutionBinder;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningIntentFactory;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use RATEB\InfrastructureMarketplace\Resources\ResourceIdentityManager;
+use RATEB\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
+use RATEB\InfrastructureMarketplace\Services\ProviderRegistry;
+use RATEB\InfrastructureMarketplace\Tenants\TenantResourceManager;
 
 /**
  * PAYMENT_CONFIRMED-style orchestration: validate → map commerce → identity → ownership overlay → intent → enqueue → plan commerce hints.

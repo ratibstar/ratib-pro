@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Domain;
+namespace RATEB\InfrastructureMarketplace\Domain;
 
 /**
  * Carries tenant / agency identifiers for provisioning and billing correlation.

@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_PolicyEngine
+final class RATEB_ClientDashboard_PolicyEngine
 {
     /** @var array<string, mixed> */
     private $policy;
@@ -26,7 +26,7 @@ final class Ratib_ClientDashboard_PolicyEngine
             'allowed_actions' => null,
         ];
 
-        $env = getenv('RATIB_CLIENT_HUB_POLICY_JSON');
+        $env = getenv('RATEB_CLIENT_HUB_POLICY_JSON');
         if (is_string($env) && $env !== '') {
             $j = json_decode($env, true);
             if (is_array($j)) {

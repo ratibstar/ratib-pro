@@ -6,16 +6,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/ratib-public-base-url.php';
-require_once __DIR__ . '/../includes/ratib-public-cms.php';
+require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+require_once __DIR__ . '/../includes/rateb-public-cms.php';
 
-$baseUrl = ratib_public_site_base_url();
+$baseUrl = rateb_public_site_base_url();
 $pack = isset($_GET['pack']) ? trim((string) $_GET['pack']) : 'index';
 
 $packs = [
     'profile' => [
         'title' => 'RATEB — Executive Company Profile',
-        'subtitle' => ratib_brand_expansion(),
+        'subtitle' => rateb_brand_expansion(),
         'body' => 'RATEB is enterprise workforce program infrastructure for regulated, cross-border recruitment programs. Dashboard, workforce tracking, compliance checkpoints, and finance-grade events on one multi-tenant stack.',
     ],
     'architecture' => [
@@ -69,7 +69,7 @@ $p = $packs[$pack];
     </style>
 </head>
 <body>
-    <p class="tag no-print">Print → Save as PDF · <?php echo htmlspecialchars(ratib_brand_category(), ENT_QUOTES, 'UTF-8'); ?></p>
+    <p class="tag no-print">Print → Save as PDF · <?php echo htmlspecialchars(rateb_brand_category(), ENT_QUOTES, 'UTF-8'); ?></p>
     <h1><?php echo htmlspecialchars($p['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
     <h2><?php echo htmlspecialchars($p['subtitle'], ENT_QUOTES, 'UTF-8'); ?></h2>
     <p><?php echo htmlspecialchars($p['body'], ENT_QUOTES, 'UTF-8'); ?></p>

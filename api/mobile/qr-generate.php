@@ -40,7 +40,7 @@ try {
     }
 
     $pdo = Database::getInstance()->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($pdo);
+    ratebEnsureGlobalPartnershipsSchema($pdo);
 
     if ($accountType === 'partner') {
         $check = $pdo->prepare(

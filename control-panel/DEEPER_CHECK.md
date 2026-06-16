@@ -1,4 +1,4 @@
-# Deeper check report – Ratib Control Panel (standalone)
+# Deeper check report – Rateb Control Panel (standalone)
 
 This document summarizes a deeper check of flows, APIs, sessions, DB usage, and edge cases.
 
@@ -6,7 +6,7 @@ This document summarizes a deeper check of flows, APIs, sessions, DB usage, and 
 
 ## 1. Session and auth
 
-- **Session name:** `ratib_control` (set in `includes/config.php`). No conflict with Ratib Pro.
+- **Session name:** `rateb_control` (set in `includes/config.php`). No conflict with Rateb Pro.
 - **Session keys:** `control_logged_in`, `control_user_id`, `control_username`, `control_full_name`, `control_permissions`, `control_agency_id`, `control_country_id`, etc. Refreshed from `control_admin_permissions` on each request when logged in.
 - **Login:** `pages/login.php` uses POST to self; no `login.js` (no webauthn). Redirect after login: `pageUrl('control/dashboard.php')`.
 - **All control APIs** under `api/control/` require `$_SESSION['control_logged_in']` (or `IS_CONTROL_PANEL` + same). `get-current-user-permissions.php` returns permissions when logged in, `success: false` when not.
@@ -30,7 +30,7 @@ This document summarizes a deeper check of flows, APIs, sessions, DB usage, and 
 - **Connections:** `config.php` sets `$GLOBALS['control_conn']` to the control DB (`CONTROL_PANEL_DB_NAME`). On agency switch (`?agency_id=...`), `$GLOBALS['conn']` is switched to the selected agency DB; otherwise `$GLOBALS['conn'] = $GLOBALS['control_conn']`.
 - **APIs:** Control-only APIs use `$ctrl = $GLOBALS['control_conn']`. Agency-scoped APIs (e.g. `country-users-api.php`) require `agency_id`, then connect to that agency’s DB; they do not use `$GLOBALS['conn']` for the main list.
 - **get-users-per-country.php:** Uses `$ctrl` only; connects per-agency inside the loop. No use of default `$conn` for user listing.
-- **Tables:** All APIs that need tables run `SHOW TABLES LIKE '...'` (and sometimes `SHOW COLUMNS`) and return JSON errors when missing. Schema in `ratibprogram/config/migrations/separate_control_panel_db/02_create_tables.sql` includes `control_registration_requests.updated_at` and `control_agencies.country_id`, `base_url`, etc., consistent with API usage.
+- **Tables:** All APIs that need tables run `SHOW TABLES LIKE '...'` (and sometimes `SHOW COLUMNS`) and return JSON errors when missing. Schema in `ratebprogram/config/migrations/separate_control_panel_db/02_create_tables.sql` includes `control_registration_requests.updated_at` and `control_agencies.country_id`, `base_url`, etc., consistent with API usage.
 
 ---
 
@@ -45,7 +45,7 @@ This document summarizes a deeper check of flows, APIs, sessions, DB usage, and 
 
 - **Login → Dashboard:** Login posts to self, sets session, redirects to `pageUrl('control/dashboard.php')`.
 - **Select country/agency:** `select-country.php` → `select-agency.php` → `?agency_id=...` handled in config → redirect to `pageUrl('control/dashboard.php')`. Sidebar “Select Country” → `pageUrl('select-country.php')`.
-- **Menu links:** All point to `pageUrl('control/...')` or `pageUrl('select-country.php')`, `pageUrl('logout.php')`, `pageUrl('system-settings.php')`. No `?control=1` in internal navigation (only where linking out to Ratib Pro, e.g. RATIB_PRO_URL).
+- **Menu links:** All point to `pageUrl('control/...')` or `pageUrl('select-country.php')`, `pageUrl('logout.php')`, `pageUrl('system-settings.php')`. No `?control=1` in internal navigation (only where linking out to Rateb Pro, e.g. RATEB_PRO_URL).
 - **Logout:** `pageUrl('logout.php')` then redirect to `pageUrl('login.php')?message=logged_out`.
 
 ---
@@ -55,7 +55,7 @@ This document summarizes a deeper check of flows, APIs, sessions, DB usage, and 
 - **No agency selected:** Config redirects to `pageUrl('select-country.php')` when appropriate (excluding login, select, dashboard, api, logout).
 - **country-users:** Requires permission; API requires `agency_id` and returns an error if missing. Page uses country select then agency/users; no silent wrong-DB use.
 - **Empty countries/agencies:** APIs return `list: []` / `countries: []`; pages handle empty state.
-- **RATIB_PRO_URL not set:** Sidebar “My Own Pro” and stub pages (home, HR, accounting, system-settings) can show stub message or `#`; documented in README/UPLOAD_CHECKLIST.
+- **RATEB_PRO_URL not set:** Sidebar “My Own Pro” and stub pages (home, HR, accounting, system-settings) can show stub message or `#`; documented in README/UPLOAD_CHECKLIST.
 - **Login page:** Does not load `login.js`; no webauthn. No `/api/control/webauthn/` endpoints in standalone (intentional).
 
 ---
@@ -63,7 +63,7 @@ This document summarizes a deeper check of flows, APIs, sessions, DB usage, and 
 ## 7. Files and includes
 
 - Every `require_once`/`include` in the control panel project points to an existing file.
-- `asset()` and `pageUrl()` used consistently; no leftover Ratib Pro–only paths in critical paths.
+- `asset()` and `pageUrl()` used consistently; no leftover Rateb Pro–only paths in critical paths.
 - **IS_CONTROL_PANEL:** Defined in `config/env.php` and in several API scripts; all control APIs that check it are consistent.
 
 ---
@@ -76,10 +76,10 @@ This document summarizes a deeper check of flows, APIs, sessions, DB usage, and 
 
 ## 9. Optional follow-ups
 
-- Copy full `api/settings/` from Ratib Pro if full system settings are needed (settings-api is currently a stub).
+- Copy full `api/settings/` from Rateb Pro if full system settings are needed (settings-api is currently a stub).
 - Ensure `logs/` exists and is writable for `config.php` error_log.
 - Run DB migrations (`01_create_database.sql`, `02_create_tables.sql`) if the control DB is new.
-- Set `RATIB_PRO_URL` in `config/env.php` if you want “My Own Pro” and stub links to open Ratib Pro.
+- Set `RATEB_PRO_URL` in `config/env.php` if you want “My Own Pro” and stub links to open Rateb Pro.
 
 ---
 

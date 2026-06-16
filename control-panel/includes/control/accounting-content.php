@@ -5,7 +5,7 @@
  */
 /**
  * Control Panel Accounting – Professional Accounting System style
- * Uses only control panel data (no Ratib Pro)
+ * Uses only control panel data (no RATEB Pro)
  */
 require_once __DIR__ . '/request-url.php';
 require_once __DIR__ . '/../../../includes/tenant-rollout-flags.php';

@@ -6,13 +6,13 @@ declare(strict_types=1);
  *
  * @return int|null workflow id
  */
-function ratib_global_ai_record_workflow(PDO $agencyPdo, int $workerId, array $payload): ?int
+function rateb_global_ai_record_workflow(PDO $agencyPdo, int $workerId, array $payload): ?int
 {
     if ($workerId <= 0) {
         return null;
     }
 
-    ratib_global_ai_ensure_workflow_schema($agencyPdo);
+    rateb_global_ai_ensure_workflow_schema($agencyPdo);
 
     $context = [
         'worker_id' => $workerId,
@@ -52,7 +52,7 @@ function ratib_global_ai_record_workflow(PDO $agencyPdo, int $workerId, array $p
     return $workflowId;
 }
 
-function ratib_global_ai_ensure_workflow_schema(PDO $db): void
+function rateb_global_ai_ensure_workflow_schema(PDO $db): void
 {
     $db->exec(
         "CREATE TABLE IF NOT EXISTS workflows (
@@ -72,7 +72,7 @@ function ratib_global_ai_ensure_workflow_schema(PDO $db): void
 /**
  * Open agency PDO for tenant_id via control_agencies (used by tracking onboarding fallback).
  */
-function ratib_global_ai_agency_pdo_for_tenant(PDO $controlPdo, int $tenantId): ?PDO
+function rateb_global_ai_agency_pdo_for_tenant(PDO $controlPdo, int $tenantId): ?PDO
 {
     if ($tenantId <= 0) {
         return null;
@@ -109,7 +109,7 @@ function ratib_global_ai_agency_pdo_for_tenant(PDO $controlPdo, int $tenantId): 
             ]
         );
     } catch (Throwable $e) {
-        error_log('ratib_global_ai_agency_pdo_for_tenant: ' . $e->getMessage());
+        error_log('rateb_global_ai_agency_pdo_for_tenant: ' . $e->getMessage());
         return null;
     }
 }

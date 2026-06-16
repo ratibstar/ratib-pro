@@ -99,8 +99,8 @@ Architecture (/architecture/)
 ## File reference (implementation)
 
 ```
-includes/ratib-operational-proof-data.php    # source of truth
-includes/ratib-operational-proof-render.php  # renderer
+includes/rateb-operational-proof-data.php    # source of truth
+includes/rateb-operational-proof-render.php  # renderer
 css/pages/operational-proof.css
 assets/images/diagrams/*.svg
 ```

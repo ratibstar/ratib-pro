@@ -6,7 +6,7 @@
 if (!defined('APP_NAME')) {
     require_once __DIR__ . '/config.php';
 }
-require_once __DIR__ . '/ratib-public-cms.php';
+require_once __DIR__ . '/rateb-public-cms.php';
 $globalAiButtonPath = __DIR__ . '/../app/UI/GlobalAIButton.php';
 if (PHP_VERSION_ID >= 70000 && is_file($globalAiButtonPath)) {
     require_once $globalAiButtonPath;
@@ -38,7 +38,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="password-manager" content="disabled">
     <meta name="google-password-manager" content="disabled">
-    <title><?php echo (isset($pageTitle) ? $pageTitle : 'Default Title'); ?> | <?php echo htmlspecialchars(ratib_brand_full_title(), ENT_QUOTES, 'UTF-8'); ?></title>
+    <title><?php echo (isset($pageTitle) ? $pageTitle : 'Default Title'); ?> | <?php echo htmlspecialchars(rateb_brand_full_title(), ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%235a4a6a'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23d4c4e4' font-size='18' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E" type="image/svg+xml">
     <?php
     $navCssDisk = __DIR__ . '/../css/nav.css';
@@ -64,9 +64,9 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     <?php $globalAiCssPath = __DIR__ . '/../css/global-ai-action.css'; $globalAiCssV = is_file($globalAiCssPath) ? filemtime($globalAiCssPath) : time(); ?>
     <link rel="stylesheet" href="<?php echo asset('css/global-ai-action.css'); ?>?v=<?php echo (int) $globalAiCssV; ?>">
     <?php
-    $ratibOverlayGuardPath = __DIR__ . '/ratib-overlay-dismiss-guard.php';
-    if (is_file($ratibOverlayGuardPath)) {
-        require_once $ratibOverlayGuardPath;
+    $ratebOverlayGuardPath = __DIR__ . '/rateb-overlay-dismiss-guard.php';
+    if (is_file($ratebOverlayGuardPath)) {
+        require_once $ratebOverlayGuardPath;
     }
     ?>
     
@@ -91,7 +91,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     <!-- JavaScript Configuration - Passed via data attributes -->
-    <?php $ratibControlProBridge = ratib_control_pro_bridge(); ?>
+    <?php $ratebControlProBridge = rateb_control_pro_bridge(); ?>
     <div id="app-config" 
          data-base-path="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
          data-base-url="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
@@ -99,7 +99,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
          data-control-api-path="<?php echo htmlspecialchars(getBaseUrl() . '/api/control', ENT_QUOTES, 'UTF-8'); ?>"
          data-site-url="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>"
          data-company-name="<?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>"
-         data-control-pro-bridge="<?php echo $ratibControlProBridge ? '1' : '0'; ?>"
+         data-control-pro-bridge="<?php echo $ratebControlProBridge ? '1' : '0'; ?>"
          data-agency-id="<?php echo (int) ($_SESSION['agency_id'] ?? 0); ?>"
          data-country-id="<?php echo (int) ($_SESSION['country_id'] ?? 0); ?>"
          data-country-name="<?php echo htmlspecialchars((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')), ENT_QUOTES, 'UTF-8'); ?>"
@@ -110,13 +110,13 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     $headerConfigJsV = is_file($headerConfigJsPath) ? filemtime($headerConfigJsPath) : time();
     $globalAiJsPath = __DIR__ . '/../js/utils/global-ai-action.js';
     $globalAiJsV = is_file($globalAiJsPath) ? filemtime($globalAiJsPath) : time();
-    $ratibGlobalAiApi = htmlspecialchars(rtrim((string) (function_exists('getBaseUrl') ? getBaseUrl() : ''), '/') . '/api/workers/global-ai-run.php', ENT_QUOTES, 'UTF-8');
+    $ratebGlobalAiApi = htmlspecialchars(rtrim((string) (function_exists('getBaseUrl') ? getBaseUrl() : ''), '/') . '/api/workers/global-ai-run.php', ENT_QUOTES, 'UTF-8');
     ?>
-    <script id="ratib-global-ai-fetch-v7">
+    <script id="rateb-global-ai-fetch-v7">
     (function () {
-        if (window.__ratibGlobalAiFetchV7) return;
-        window.__ratibGlobalAiFetchV7 = 1;
-        var RUN_URL = '<?php echo $ratibGlobalAiApi; ?>';
+        if (window.__ratebGlobalAiFetchV7) return;
+        window.__ratebGlobalAiFetchV7 = 1;
+        var RUN_URL = '<?php echo $ratebGlobalAiApi; ?>';
         var orig = window.fetch;
         window.fetch = function (url, opts) {
             var u = typeof url === 'string' ? url : (url && url.url) || '';
@@ -161,7 +161,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
 </head>
 
 <?php
-$bodyClassList = ['ratib-app'];
+$bodyClassList = ['rateb-app'];
 if (basename($_SERVER['PHP_SELF']) == 'agent.php') {
     $bodyClassList[] = 'agent-page';
 }
@@ -200,14 +200,14 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             </div>
         </div>
         <?php
-        $ratibNavScriptBase = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '.php');
-        $ratibNavActivePage = isset($ratibNavActive) ? (string) $ratibNavActive : '';
-        if ($ratibNavActivePage === '' && $ratibNavScriptBase !== '') {
-            $ratibNavActivePage = $ratibNavScriptBase;
+        $ratebNavScriptBase = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '.php');
+        $ratebNavActivePage = isset($ratebNavActive) ? (string) $ratebNavActive : '';
+        if ($ratebNavActivePage === '' && $ratebNavScriptBase !== '') {
+            $ratebNavActivePage = $ratebNavScriptBase;
         }
-        $ratibNavLinkClass = static function (string $pageKey) use ($ratibNavActivePage): string {
+        $ratebNavLinkClass = static function (string $pageKey) use ($ratebNavActivePage): string {
             $class = 'nav-item nav-link';
-            if ($ratibNavActivePage !== '' && $ratibNavActivePage === $pageKey) {
+            if ($ratebNavActivePage !== '' && $ratebNavActivePage === $pageKey) {
                 $class .= ' active';
             }
 
@@ -215,58 +215,58 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
         };
         ?>
         <div class="nav-items">
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_dashboard">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_dashboard">
                 <i class="nav-icon fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_agents">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_agents">
                 <i class="nav-icon fas fa-users"></i>
                 <span>Agent</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('subagent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_subagents">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('subagent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_subagents">
                 <i class="nav-icon fas fa-user-friends"></i>
                 <span>SubAgent</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('Worker.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_workers">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('Worker.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_workers">
                 <i class="nav-icon fas fa-tools"></i>
                 <span>Workforce</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_partner_agencies,view_workers">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_partner_agencies,view_workers">
                 <i class="nav-icon fas fa-globe"></i>
                 <span>Partner Agencies</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('cases/cases-table.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_cases">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('cases/cases-table.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_cases">
                 <i class="nav-icon fas fa-clipboard-list"></i>
                 <span>Cases</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_chart_accounts">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_chart_accounts">
                 <i class="nav-icon fas fa-dollar-sign"></i>
                 <span>Accounting</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('hr.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_hr_dashboard">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('hr.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_hr_dashboard">
                 <i class="nav-icon fas fa-user-tie"></i>
                 <span>HR</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_reports">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_reports">
                 <i class="nav-icon fas fa-chart-bar"></i>
                 <span>Reports</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratibNavLinkClass('contact'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_contacts">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratebNavLinkClass('contact'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_contacts">
                 <i class="nav-icon fas fa-phone"></i>
                 <span>Contact</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('communications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratibNavLinkClass('communications'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="communication_view">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('communications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratebNavLinkClass('communications'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="communication_view">
                 <i class="nav-icon fas fa-comments"></i>
                 <span>Communications</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratibNavLinkClass('notifications'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratebNavLinkClass('notifications'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications">
                 <i class="nav-icon fas fa-bell"></i>
                 <span>Notifications</span>
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
             </a>
             <?php
-            if (!function_exists('ratib_public_marketing_home_register_url')) {
-                require_once __DIR__ . '/ratib-public-base-url.php';
+            if (!function_exists('rateb_public_marketing_home_register_url')) {
+                require_once __DIR__ . '/rateb-public-base-url.php';
             }
             $registerProRoot = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : rtrim((string) getBaseUrl(), '/');
             $registerProExtra = [];
@@ -277,26 +277,26 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             } elseif ($registerProCountryName !== '') {
                 $registerProExtra['country_name'] = $registerProCountryName;
             }
-            $registerProUrl = ratib_public_marketing_home_register_url($registerProRoot, 'gold', 1, $registerProExtra);
+            $registerProUrl = rateb_public_marketing_home_register_url($registerProRoot, 'gold', 1, $registerProExtra);
             ?>
             <a href="<?php echo htmlspecialchars($registerProUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="nav-item nav-link nav-register-pro" title="Gold / Platinum registration on the marketing site">
                 <i class="nav-icon fas fa-external-link-alt"></i>
                 <span>Register Pro</span>
             </a>
-            <?php if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user() && isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1): ?>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="manage_settings">
+            <?php if (function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user() && isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1): ?>
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="manage_settings">
                 <i class="nav-icon fas fa-cog"></i>
                 <span>System Settings</span>
             </a>
             <?php endif; ?>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link nav-help-center">
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link nav-help-center">
                 <i class="nav-icon fas fa-question-circle"></i>
                 <span>Help & Learning Center</span>
             </a>
         </div>
     </nav>
 
-    <a href="<?php echo htmlspecialchars(ratib_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-topbar-logout" title="Logout" aria-label="Logout">
+    <a href="<?php echo htmlspecialchars(rateb_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="rateb-topbar-logout" title="Logout" aria-label="Logout">
         <i class="fas fa-sign-out-alt"></i>
         <span>Logout</span>
     </a>

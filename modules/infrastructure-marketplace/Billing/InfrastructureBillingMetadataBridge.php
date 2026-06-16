@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Billing;
+namespace RATEB\InfrastructureMarketplace\Billing;
 
 final class InfrastructureBillingMetadataBridge
 {

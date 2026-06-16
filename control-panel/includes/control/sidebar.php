@@ -47,15 +47,15 @@ $clientPlatformActiveKey = control_client_platform_active_key();
             }
             ?>
             <?php
-            $ratibPublicProfileUrl = '';
-            if (function_exists('control_ratib_pro_public_base_url')) {
-                $ratibPublicProfileUrl = rtrim((string) control_ratib_pro_public_base_url(), '/') . '/profile/';
+            $ratebPublicProfileUrl = '';
+            if (function_exists('control_rateb_pro_public_base_url')) {
+                $ratebPublicProfileUrl = rtrim((string) control_rateb_pro_public_base_url(), '/') . '/profile/';
             }
             ?>
             <li class="sidebar-section"><span class="section-label">Public site</span></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'site-content.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings" title="Marketing home, company profile, architecture, security, procurement"><i class="fas fa-globe"></i><span>Public site content</span></a></li>
-            <?php if ($ratibPublicProfileUrl !== '') { ?>
-            <li><a href="<?php echo htmlspecialchars($ratibPublicProfileUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-building"></i><span>Company profile (live)</span></a></li>
+            <?php if ($ratebPublicProfileUrl !== '') { ?>
+            <li><a href="<?php echo htmlspecialchars($ratebPublicProfileUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-building"></i><span>Company profile (live)</span></a></li>
             <?php } ?>
             <li class="sidebar-section"><span class="section-label">Client Platform</span></li>
             <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'hub') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-chart-pie"></i><span>Client Hub</span></a></li>

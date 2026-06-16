@@ -3,9 +3,9 @@
  * EN: Handles API endpoint/business logic in `api/core/api-permission-helper.php`.
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/core/api-permission-helper.php`.
  */
-// Must run before any session_start() so Ratib Pro + control SSO see ratib_control session (GET or cookie).
-require_once __DIR__ . '/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+// Must run before any session_start() so RATEB Pro + control SSO see rateb_control session (GET or cookie).
+require_once __DIR__ . '/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

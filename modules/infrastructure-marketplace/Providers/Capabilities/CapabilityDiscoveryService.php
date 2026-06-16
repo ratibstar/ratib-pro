@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Providers\Capabilities;
+namespace RATEB\InfrastructureMarketplace\Providers\Capabilities;
 
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
 
 final class CapabilityDiscoveryService
 {

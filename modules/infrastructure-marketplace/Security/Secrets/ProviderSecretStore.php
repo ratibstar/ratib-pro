@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Security\Secrets;
+namespace RATEB\InfrastructureMarketplace\Security\Secrets;
 
 final class ProviderSecretStore
 {
@@ -28,7 +28,7 @@ final class ProviderSecretStore
             throw new \RuntimeException('providerScope and secretKey are required.');
         }
         $enc = $this->cipher->encrypt($plainValue);
-        $sql = 'INSERT INTO ratib_infra_provider_secrets
+        $sql = 'INSERT INTO rateb_infra_provider_secrets
                 (provider_scope, secret_key, encrypted_value, tenant_id, agency_id, is_active, updated_by, created_at, updated_at)
                 VALUES
                 (:provider_scope, :secret_key, :encrypted_value, :tenant_id, :agency_id, 1, :updated_by, NOW(), NOW())
@@ -60,7 +60,7 @@ final class ProviderSecretStore
             return null;
         }
         $sql = 'SELECT encrypted_value
-                FROM ratib_infra_provider_secrets
+                FROM rateb_infra_provider_secrets
                 WHERE provider_scope = :provider_scope
                   AND secret_key = :secret_key
                   AND is_active = 1

@@ -1,11 +1,11 @@
-# Ratib Control Panel (Standalone)
+# Rateb Control Panel (Standalone)
 
-Standalone control panel extracted from Ratib Pro. Manages countries, agencies, registration requests, support chats, accounting, HR, and control admins.
+Standalone control panel extracted from Rateb Pro. Manages countries, agencies, registration requests, support chats, accounting, HR, and control admins.
 
 ## Structure
 
 ```
-ratib-control-panel/
+rateb-control-panel/
 ├── index.php              # Entry point → redirects to login or dashboard
 ├── config/
 │   └── env.php            # Environment (DB, SITE_URL, etc.)
@@ -38,17 +38,17 @@ ratib-control-panel/
 
 ## Setup
 
-1. **Database**: Use the same `control_panel_db` (or `outratib_control_panel_db`) as Ratib Pro. Run migrations from `ratibprogram/config/migrations/separate_control_panel_db/` if needed.
+1. **Database**: Use the same `control_panel_db` (or `admin_control_panel_db`) as Rateb Pro. Run migrations from `ratebprogram/config/migrations/separate_control_panel_db/` if needed.
 
 2. **Environment**: Edit `config/env.php` or set env vars:
    - `CONTROL_PANEL_DB_NAME` – control database name
    - `CONTROL_DB_HOST`, `CONTROL_DB_USER`, `CONTROL_DB_PASS`
-   - `CONTROL_SITE_URL` – e.g. `https://control.ratib.sa`
+   - `CONTROL_SITE_URL` – e.g. `https://control.rateb.sa`
    - `CONTROL_BASE_URL` – base path if in subfolder (e.g. `/control-panel`)
 
 3. **Web server**: Point document root to this folder, or use a subfolder and set `BASE_URL` accordingly.
 
-4. **RATIB_PRO_URL** (optional): In `config/env.php`, define `RATIB_PRO_URL` for the "My Own Pro" sidebar link to open Ratib Pro with `?control=1&own=1`.
+4. **RATEB_PRO_URL** (optional): In `config/env.php`, define `RATEB_PRO_URL` for the "My Own Pro" sidebar link to open Rateb Pro with `?control=1&own=1`.
 
 ## URLs (no ?control=1 needed – always control mode)
 

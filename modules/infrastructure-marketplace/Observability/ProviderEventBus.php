@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Observability;
+namespace RATEB\InfrastructureMarketplace\Observability;
 
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 
 /**
  * Non-blocking facade for provider event logging.

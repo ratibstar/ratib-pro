@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ServiceRegistry
+final class RATEB_ClientDashboard_ServiceRegistry
 {
     /**
      * @param list<array<string, mixed>> $hostingRows
@@ -64,7 +64,7 @@ final class Ratib_ClientDashboard_ServiceRegistry
             [
                 'service_id' => 'email:bundle:1',
                 'type' => 'email',
-                'provider' => 'ratib-mail',
+                'provider' => 'rateb-mail',
                 'status' => 'active',
                 'billing_state' => 'paid',
                 'health_state' => 'healthy',

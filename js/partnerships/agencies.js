@@ -320,15 +320,15 @@
     /** After Worker.php close via history.back() (bfcache-friendly) */
     const tryReopenWorkersSentFromSession = () => {
         try {
-            const raw = sessionStorage.getItem('ratib_reopen_workers_sent');
+            const raw = sessionStorage.getItem('rateb_reopen_workers_sent');
             if (!raw) return;
             const o = JSON.parse(raw);
             if (!o || typeof o.partnerId === 'undefined') return;
             if (o.t && Date.now() - Number(o.t) > 120000) {
-                sessionStorage.removeItem('ratib_reopen_workers_sent');
+                sessionStorage.removeItem('rateb_reopen_workers_sent');
                 return;
             }
-            sessionStorage.removeItem('ratib_reopen_workers_sent');
+            sessionStorage.removeItem('rateb_reopen_workers_sent');
             const pid = parseInt(String(o.partnerId), 10);
             if (!Number.isFinite(pid) || pid <= 0) return;
             const row = allRows.find((r) => String(r.id) === String(pid));

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Resources;
+namespace RATEB\InfrastructureMarketplace\Resources;
 
 /**
  * In-memory relationship graph for infrastructure resources (no provider coupling).

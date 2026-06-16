@@ -94,7 +94,7 @@ The public site now presents a **layered trust narrative**: marketing home → i
 
 ## Recommendations (future, out of scope)
 
-1. Add `sample console` label on `ratib-ops__panel`  
+1. Add `sample console` label on `rateb-ops__panel`  
 2. Link Operations & SLA footer to procurement page SLA section when written  
 3. Optional `about.php` include of slim trust strip for profile visitors  
 4. Host one-page PDF “Enterprise overview” linked from procurement CTAs  

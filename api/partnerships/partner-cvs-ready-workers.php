@@ -27,7 +27,7 @@ try {
     enforceApiPermission('partnerships', 'view');
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
     $ctl = new PartnerAgencyWorkerDocSharesController($conn);
     cvsReadyJson(['success' => true, 'data' => ['workers' => $ctl->listFullReadyWorkers()]]);
 } catch (Throwable $e) {

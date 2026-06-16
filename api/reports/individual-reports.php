@@ -81,7 +81,7 @@ class IndividualReportsAPI {
         if ($stored[0] === '/' && strncmp($stored, '/uploads/', strlen('/uploads/')) === 0) {
             return $root . str_replace('/', DIRECTORY_SEPARATOR, $stored);
         }
-        // Absolute path (Linux /home/... or stored realpath from ratib_uploads_base_dir)
+        // Absolute path (Linux /home/... or stored realpath from rateb_uploads_base_dir)
         if ($stored[0] === '/' && is_file($stored)) {
             return $stored;
         }
@@ -116,7 +116,7 @@ class IndividualReportsAPI {
         if (!$ok) {
             error_log('entity_documents CREATE TABLE: ' . $this->conn->error);
         }
-        // Widen path column on older installs (absolute paths from ratib_uploads_base_dir may exceed 1024).
+        // Widen path column on older installs (absolute paths from rateb_uploads_base_dir may exceed 1024).
         @$this->conn->query('ALTER TABLE entity_documents MODIFY COLUMN file_path VARCHAR(2048) NOT NULL');
         return $ok;
     }
@@ -773,10 +773,10 @@ class IndividualReportsAPI {
         $this->ensureEntityDocumentsTable();
 
         try {
-            require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
-            $base = ratib_uploads_base_dir();
+            require_once __DIR__ . '/../../includes/rateb_uploads_base.php';
+            $base = rateb_uploads_base_dir();
             $absDir = $base . DIRECTORY_SEPARATOR . 'entity_documents';
-            ratib_uploads_ensure_dir($absDir);
+            rateb_uploads_ensure_dir($absDir);
         } catch (Throwable $e) {
             error_log('Individual Reports uploadDocument (dir): ' . $e->getMessage());
             echo ApiResponse::error(

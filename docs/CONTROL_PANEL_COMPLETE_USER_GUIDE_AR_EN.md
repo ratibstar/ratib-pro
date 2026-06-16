@@ -1,4 +1,4 @@
-# Ratib Control Panel - Complete User Guide (AR/EN)
+# Rateb Control Panel - Complete User Guide (AR/EN)
 
 > Version: 1.2  
 > Audience: Control Panel Operators, Country Admins, Super Admin
@@ -8,7 +8,7 @@
 ## 1) Overview | نظرة عامة
 
 ### EN
-Ratib Control Panel is the central administration portal for managing:
+Rateb Control Panel is the central administration portal for managing:
 - Countries
 - Agencies
 - Country users
@@ -304,7 +304,7 @@ Permission model basics:
 |-----|----------------|
 | **Control** | Change runtime settings: module on/off, dry-run, queues, tenant allowlist, provider execution overrides, Namecheap fields stored in the runtime file; save changes; use diagnostic shortcuts (often new tab). |
 | **Dashboard** | Monitor live operations: health, queues, workers, jobs, readiness/warnings. **Start here** when something fails to provision or the module misbehaves. |
-| **Providers** | Read provider health/capability JSON and manage database activations (`ratib_infra_provider_activations`) for registrar/DNS/SSL adapter classes. |
+| **Providers** | Read provider health/capability JSON and manage database activations (`rateb_infra_provider_activations`) for registrar/DNS/SSL adapter classes. |
 
 **Typical flows:** rollout or policy change → **Control**, then confirm on **Dashboard**. Incident → **Dashboard** first; if adapters look inactive, open **Providers**; change **Control** only when configuration must be updated.
 

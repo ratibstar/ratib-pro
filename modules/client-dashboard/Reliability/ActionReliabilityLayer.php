@@ -4,15 +4,15 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ActionReliabilityLayer
+final class RATEB_ClientDashboard_ActionReliabilityLayer
 {
-    private const TABLE = 'ratib_client_hub_idempotency';
+    private const TABLE = 'rateb_client_hub_idempotency';
 
     /**
      * @param array<string, mixed> $input
      * @return array<string, mixed>|null Cached prior response to replay verbatim.
      */
-    public static function tryReplay(?mysqli $conn, Ratib_ClientDashboard_TenantScope $tenant, string $verb, string $targetId, array $input): ?array
+    public static function tryReplay(?mysqli $conn, RATEB_ClientDashboard_TenantScope $tenant, string $verb, string $targetId, array $input): ?array
     {
         $key = isset($input['idempotency_key']) ? trim((string) $input['idempotency_key']) : '';
         if ($key === '' || !$conn instanceof mysqli) {
@@ -52,7 +52,7 @@ final class Ratib_ClientDashboard_ActionReliabilityLayer
     /**
      * @param array<string, mixed> $response
      */
-    public static function remember(?mysqli $conn, Ratib_ClientDashboard_TenantScope $tenant, string $verb, string $targetId, array $input, array $response): void
+    public static function remember(?mysqli $conn, RATEB_ClientDashboard_TenantScope $tenant, string $verb, string $targetId, array $input, array $response): void
     {
         $key = isset($input['idempotency_key']) ? trim((string) $input['idempotency_key']) : '';
         if ($key === '' || !$conn instanceof mysqli) {

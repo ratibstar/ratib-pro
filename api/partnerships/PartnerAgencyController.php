@@ -227,8 +227,8 @@ class PartnerAgencyController
 
         $row = $this->find($id);
         $public = $this->toPublicRow($row);
-        if ($magicTokenForLink !== null && function_exists('ratib_partner_portal_magic_link_url')) {
-            $public['portal_magic_link'] = ratib_partner_portal_magic_link_url($magicTokenForLink);
+        if ($magicTokenForLink !== null && function_exists('rateb_partner_portal_magic_link_url')) {
+            $public['portal_magic_link'] = rateb_partner_portal_magic_link_url($magicTokenForLink);
         }
 
         return $public;

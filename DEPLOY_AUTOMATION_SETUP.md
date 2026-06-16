@@ -43,23 +43,23 @@ Create these keys:
 
 **Required (cPanel Git API):**
 
-- `CPANEL_HOST` — hostname only, e.g. `server.ratib.sa` (not `https://`)
-- `CPANEL_USER` — e.g. `outratib`
+- `CPANEL_HOST` — hostname only, e.g. `server.rateb.sa` (not `https://`)
+- `CPANEL_USER` — e.g. `admin`
 - `CPANEL_API_TOKEN` — cPanel → **Manage API Tokens** → create token with Version Control
-- `CPANEL_REPO_ROOT` — exact path from cPanel → **Git Version Control** → your repo, e.g. `/home/outratib/repositories/ratib-pro` **or** `/home/outratib/public_html` if git lives in docroot
+- `CPANEL_REPO_ROOT` — exact path from cPanel → **Git Version Control** → your repo, e.g. `/home/admin/repositories/rateb-pro` **or** `/home/admin/public_html` if git lives in docroot
 
 **Strongly recommended (direct upload to live site — fixes “green but not on site”):**
 
 - `CPANEL_SFTP_HOST` — usually same as `CPANEL_HOST` or server IP
-- `CPANEL_SFTP_USER` — usually `outratib` (defaults to `CPANEL_USER` if omitted)
+- `CPANEL_SFTP_USER` — usually `admin` (defaults to `CPANEL_USER` if omitted)
 - `CPANEL_SFTP_PASSWORD` — cPanel account password or SFTP-only password
-- `CPANEL_SFTP_REMOTE_DIR` — `/home/outratib/public_html/` (trailing slash)
+- `CPANEL_SFTP_REMOTE_DIR` — `/home/admin/public_html/` (trailing slash)
 
 Optional:
 
 - `CPANEL_PORT` — default `2083`
 - `CPANEL_SITE_URL` — default `https://rateb.sa`
-- `RATIB_DEPLOY_SYNC_KEY` — only if PHP curl deploy is enabled on server (usually fails; use SFTP instead)
+- `RATEB_DEPLOY_SYNC_KEY` — only if PHP curl deploy is enabled on server (usually fails; use SFTP instead)
 
 ## 4) How deployment works
 
@@ -76,13 +76,13 @@ Then verify in GitHub -> `Actions` (deploy step must be green; verify step check
 Flow:
 
 1. GitHub Actions calls cPanel **VersionControl/update** + **VersionControlDeployment/create** (git pull + `.cpanel.yml`).
-2. `.cpanel.yml` runs `scripts/cpanel-deploy-sync.sh`, which **must** sync the git checkout to **`/home/outratib/public_html`** (live docroot for `rateb.sa`).
-3. If secret `RATIB_DEPLOY_SYNC_KEY` is set, Actions also calls `https://rateb.sa/ratib-profile-check.php?deploy=1&key=...` as a fallback.
-4. Verify step reads `ratib-profile-check.php` on the live site for `brand-profile` / `company-profile.php`.
+2. `.cpanel.yml` runs `scripts/cpanel-deploy-sync.sh`, which **must** sync the git checkout to **`/home/admin/public_html`** (live docroot for `rateb.sa`).
+3. If secret `RATEB_DEPLOY_SYNC_KEY` is set, Actions also calls `https://rateb.sa/rateb-profile-check.php?deploy=1&key=...` as a fallback.
+4. Verify step reads `rateb-profile-check.php` on the live site for `brand-profile` / `company-profile.php`.
 
-**Important:** The workflow now **fails** unless the live site shows the same `public/ratib-build.txt` marker as GitHub. Green only means `public_html` was actually updated.
+**Important:** The workflow now **fails** unless the live site shows the same `public/rateb-build.txt` marker as GitHub. Green only means `public_html` was actually updated.
 
-If git is in `/home/outratib/repositories/ratib-pro`, `.cpanel.yml` must rsync to `/home/outratib/public_html`. If that path is wrong, add **SFTP secrets** so GitHub uploads straight to `public_html`.
+If git is in `/home/admin/repositories/rateb-pro`, `.cpanel.yml` must rsync to `/home/admin/public_html`. If that path is wrong, add **SFTP secrets** so GitHub uploads straight to `public_html`.
 
 ## 5) cPanel one-time check
 
@@ -90,9 +90,9 @@ In cPanel → **Git Version Control**:
 
 - Repository path = same as GitHub secret `CPANEL_REPO_ROOT`
 - Click **Update from Remote**, then **Deploy HEAD Commit**
-- Open `https://rateb.sa/pages/ratib-deploy-status.txt` — should show a recent timestamp after deploy
+- Open `https://rateb.sa/pages/rateb-deploy-status.txt` — should show a recent timestamp after deploy
 
-Live docroot (confirmed): `/home/outratib/public_html`
+Live docroot (confirmed): `/home/admin/public_html`
 
 ## 6) Notes
 

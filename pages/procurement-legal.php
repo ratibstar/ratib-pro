@@ -16,30 +16,30 @@ if (!headers_sent()) {
     header('CDN-Cache-Control: no-store');
 }
 
-require_once __DIR__ . '/../includes/ratib-public-base-url.php';
-$baseUrl = ratib_public_site_base_url();
+require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+$baseUrl = rateb_public_site_base_url();
 
-require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-require_once __DIR__ . '/../includes/ratib-procurement-legal-data.php';
-require_once __DIR__ . '/../includes/ratib-procurement-legal-sections.php';
+require_once __DIR__ . '/../includes/rateb-home-public-nav-bootstrap.php';
+require_once __DIR__ . '/../includes/rateb-procurement-legal-data.php';
+require_once __DIR__ . '/../includes/rateb-procurement-legal-sections.php';
 
-$proc = ratib_procurement_legal_config($baseUrl);
-$ratibProcPageActive = true;
-$ratibHomeNavHrefPrefix = function_exists('ratib_public_nav_marketing_home_prefix')
-    ? ratib_public_nav_marketing_home_prefix($baseUrl)
+$proc = rateb_procurement_legal_config($baseUrl);
+$ratebProcPageActive = true;
+$ratebHomeNavHrefPrefix = function_exists('rateb_public_nav_marketing_home_prefix')
+    ? rateb_public_nav_marketing_home_prefix($baseUrl)
     : rtrim($baseUrl, '/') . '/pages/home.php';
 
-$ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
-clearstatcache(true, $ratibAboutCssPath);
-$ratibAboutCssQuery = (int) (@filemtime($ratibAboutCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ . '-c' . $ratibChromeBundleHash;
+$ratebAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
+clearstatcache(true, $ratebAboutCssPath);
+$ratebAboutCssQuery = (int) (@filemtime($ratebAboutCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-' . $ratebHomePhpMtime . $ratebHomeAssetExtraQ . '-c' . $ratebChromeBundleHash;
 
-$ratibProcCssPath = __DIR__ . '/../css/pages/procurement-legal.css';
-clearstatcache(true, $ratibProcCssPath);
-$ratibProcCssQuery = (int) (@filemtime($ratibProcCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratebProcCssPath = __DIR__ . '/../css/pages/procurement-legal.css';
+clearstatcache(true, $ratebProcCssPath);
+$ratebProcCssQuery = (int) (@filemtime($ratebProcCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
 
-$ratibProcJsPath = __DIR__ . '/../js/pages/procurement-legal.js';
-clearstatcache(true, $ratibProcJsPath);
-$ratibProcJsQuery = (int) (@filemtime($ratibProcJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratebProcJsPath = __DIR__ . '/../js/pages/procurement-legal.js';
+clearstatcache(true, $ratebProcJsPath);
+$ratebProcJsQuery = (int) (@filemtime($ratebProcJsPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
 
 $metaTitle = (string) ($proc['meta']['title'] ?? 'Procurement & Legal — RATEB');
 $metaDesc = (string) ($proc['meta']['description'] ?? '');
@@ -51,9 +51,9 @@ $root = rtrim($baseUrl, '/');
 <head>
     <meta charset="UTF-8">
     <?php
-    require_once __DIR__ . '/../includes/ratib-profile-force-same-tab.php';
-    ratib_emit_profile_force_same_tab($baseUrl);
-    ratib_home_nav_emit_sync_guard_style();
+    require_once __DIR__ . '/../includes/rateb-profile-force-same-tab.php';
+    rateb_emit_profile_force_same_tab($baseUrl);
+    rateb_home_nav_emit_sync_guard_style();
     ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
@@ -69,15 +69,15 @@ $root = rtrim($baseUrl, '/');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <?php ratib_home_public_nav_emit_stylesheets($baseUrl); ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/procurement-legal.css?v=<?php echo htmlspecialchars($ratibProcCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php rateb_home_public_nav_emit_stylesheets($baseUrl); ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratebAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/procurement-legal.css?v=<?php echo htmlspecialchars($ratebProcCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
-    $ratibEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
-    clearstatcache(true, $ratibEntCssPath);
-    $ratibEntCssQuery = (int) (@filemtime($ratibEntCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+    $ratebEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
+    clearstatcache(true, $ratebEntCssPath);
+    $ratebEntCssQuery = (int) (@filemtime($ratebEntCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratibEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratebEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'WebPage',
@@ -96,30 +96,30 @@ $root = rtrim($baseUrl, '/');
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>
-<body class="ratib-saas-home ratib-proc-page" data-ratib-proc="1" style="background:#0c0f14 !important">
+<body class="rateb-saas-home rateb-proc-page" data-rateb-proc="1" style="background:#0c0f14 !important">
 
 <?php
-include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
-$ratibMarketingHomeUrl = function_exists('ratib_public_marketing_home_url')
-    ? ratib_public_marketing_home_url($baseUrl)
+include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
+$ratebMarketingHomeUrl = function_exists('rateb_public_marketing_home_url')
+    ? rateb_public_marketing_home_url($baseUrl)
     : rtrim($baseUrl, '/') . '/pages/home.php';
 ?>
 
-<div class="ratib-proc-distinct-banner" role="status">
-    <div class="ratib-about-container ratib-proc-distinct-banner__inner">
-        <span class="ratib-proc-distinct-banner__badge" aria-hidden="true">Procurement</span>
-        <p class="ratib-proc-distinct-banner__text">Formal reference for government buyers, enterprise procurement, international partners, and compliance reviewers.</p>
-        <div class="ratib-proc-distinct-banner__links">
-            <a class="ratib-proc-distinct-banner__link" href="<?php echo htmlspecialchars($root . '/security-compliance/', ENT_QUOTES, 'UTF-8'); ?>">Security</a>
-            <a class="ratib-proc-distinct-banner__link" href="<?php echo htmlspecialchars($root . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>">Architecture</a>
-            <a class="ratib-proc-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Home</a>
+<div class="rateb-proc-distinct-banner" role="status">
+    <div class="rateb-about-container rateb-proc-distinct-banner__inner">
+        <span class="rateb-proc-distinct-banner__badge" aria-hidden="true">Procurement</span>
+        <p class="rateb-proc-distinct-banner__text">Formal reference for government buyers, enterprise procurement, international partners, and compliance reviewers.</p>
+        <div class="rateb-proc-distinct-banner__links">
+            <a class="rateb-proc-distinct-banner__link" href="<?php echo htmlspecialchars($root . '/security-compliance/', ENT_QUOTES, 'UTF-8'); ?>">Security</a>
+            <a class="rateb-proc-distinct-banner__link" href="<?php echo htmlspecialchars($root . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>">Architecture</a>
+            <a class="rateb-proc-distinct-banner__link" href="<?php echo htmlspecialchars($ratebMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Home</a>
         </div>
     </div>
 </div>
 
-<main class="ratib-proc-main" id="main">
-    <nav class="ratib-about-jump" aria-label="On this page">
-        <div class="ratib-about-container ratib-about-jump__inner">
+<main class="rateb-proc-main" id="main">
+    <nav class="rateb-about-jump" aria-label="On this page">
+        <div class="rateb-about-container rateb-about-jump__inner">
             <a href="#top">Overview</a>
             <a href="#company-identity">Identity</a>
             <a href="#enterprise-engagement">Engagement</a>
@@ -130,13 +130,13 @@ $ratibMarketingHomeUrl = function_exists('ratib_public_marketing_home_url')
             <a href="#contact-escalation">Contact</a>
         </div>
     </nav>
-    <?php ratib_procurement_legal_render_sections($proc); ?>
+    <?php rateb_procurement_legal_render_sections($proc); ?>
 </main>
 
-<?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
+<?php include __DIR__ . '/../includes/rateb-home-public-footer.php'; ?>
 
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/procurement-legal.js?v=<?php echo htmlspecialchars($ratibProcJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratebMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/procurement-legal.js?v=<?php echo htmlspecialchars($ratebProcJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php require_once __DIR__ . '/../includes/chat-widget-public-footer.php'; ?>
 </body>
 </html>

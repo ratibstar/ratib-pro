@@ -29,7 +29,7 @@ try {
 
 $userId = (int)$_SESSION['user_id'];
 
-function ratibTableExists(mysqli $conn, string $table): bool
+function ratebTableExists(mysqli $conn, string $table): bool
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     if ($table === '') {
@@ -43,7 +43,7 @@ function ratibTableExists(mysqli $conn, string $table): bool
     return $ok;
 }
 
-function ratibColumnExists(mysqli $conn, string $table, string $column): bool
+function ratebColumnExists(mysqli $conn, string $table, string $column): bool
 {
     $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
     $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
@@ -61,27 +61,27 @@ function ratibColumnExists(mysqli $conn, string $table, string $column): bool
 /**
  * @return array{inserted:int, skipped:int, errors:string[]}
  */
-function ratibBackfillVoucherTable(mysqli $conn, string $table, string $entityType, int $userId): array
+function ratebBackfillVoucherTable(mysqli $conn, string $table, string $entityType, int $userId): array
 {
     $out = ['inserted' => 0, 'skipped' => 0, 'errors' => []];
     $allowed = ['payment_vouchers', 'receipt_vouchers', 'payment_receipts'];
-    if (!in_array($table, $allowed, true) || !ratibTableExists($conn, $table) || !ratibTableExists($conn, 'entry_approval')) {
+    if (!in_array($table, $allowed, true) || !ratebTableExists($conn, $table) || !ratebTableExists($conn, 'entry_approval')) {
         return $out;
     }
-    if (!ratibColumnExists($conn, $table, 'journal_entry_id')) {
+    if (!ratebColumnExists($conn, $table, 'journal_entry_id')) {
         return $out;
     }
 
-    $numCol = ratibColumnExists($conn, $table, 'voucher_number') ? 'voucher_number' : (ratibColumnExists($conn, $table, 'receipt_number') ? 'receipt_number' : null);
-    $dateCol = ratibColumnExists($conn, $table, 'voucher_date') ? 'voucher_date' : (ratibColumnExists($conn, $table, 'payment_date') ? 'payment_date' : null);
+    $numCol = ratebColumnExists($conn, $table, 'voucher_number') ? 'voucher_number' : (ratebColumnExists($conn, $table, 'receipt_number') ? 'receipt_number' : null);
+    $dateCol = ratebColumnExists($conn, $table, 'voucher_date') ? 'voucher_date' : (ratebColumnExists($conn, $table, 'payment_date') ? 'payment_date' : null);
     if (!$numCol || !$dateCol) {
         $out['errors'][] = "Table {$table}: missing voucher number / date column";
         return $out;
     }
 
-    $hasStatus = ratibColumnExists($conn, $table, 'status');
-    $hasPosting = ratibColumnExists($conn, $table, 'posting_status');
-    $hasIsPosted = ratibColumnExists($conn, $table, 'is_posted');
+    $hasStatus = ratebColumnExists($conn, $table, 'status');
+    $hasPosting = ratebColumnExists($conn, $table, 'posting_status');
+    $hasIsPosted = ratebColumnExists($conn, $table, 'is_posted');
 
     if ($table === 'payment_receipts' && $hasStatus) {
         $postedSql = "v.status IN ('Cleared','Deposited','Posted')";
@@ -101,28 +101,28 @@ function ratibBackfillVoucherTable(mysqli $conn, string $table, string $entityTy
         $postedSql = '1=1';
     }
 
-    $hasEntityType = ratibColumnExists($conn, 'entry_approval', 'entity_type');
-    $hasEntityId = ratibColumnExists($conn, 'entry_approval', 'entity_id');
-    $hasCc = ratibColumnExists($conn, 'entry_approval', 'cost_center_id');
-    $hasDebit = ratibColumnExists($conn, 'entry_approval', 'debit_amount');
-    $hasCredit = ratibColumnExists($conn, 'entry_approval', 'credit_amount');
-    $hasApprBy = ratibColumnExists($conn, 'entry_approval', 'approved_by');
-    $hasApprAt = ratibColumnExists($conn, 'entry_approval', 'approved_at');
+    $hasEntityType = ratebColumnExists($conn, 'entry_approval', 'entity_type');
+    $hasEntityId = ratebColumnExists($conn, 'entry_approval', 'entity_id');
+    $hasCc = ratebColumnExists($conn, 'entry_approval', 'cost_center_id');
+    $hasDebit = ratebColumnExists($conn, 'entry_approval', 'debit_amount');
+    $hasCredit = ratebColumnExists($conn, 'entry_approval', 'credit_amount');
+    $hasApprBy = ratebColumnExists($conn, 'entry_approval', 'approved_by');
+    $hasApprAt = ratebColumnExists($conn, 'entry_approval', 'approved_at');
 
     $amtExpr = '0';
-    if (ratibColumnExists($conn, $table, 'amount')) {
+    if (ratebColumnExists($conn, $table, 'amount')) {
         $amtExpr = 'v.amount';
-    } elseif (ratibColumnExists($conn, $table, 'total_amount')) {
+    } elseif (ratebColumnExists($conn, $table, 'total_amount')) {
         $amtExpr = 'v.total_amount';
     }
-    $createdBySql = ratibColumnExists($conn, $table, 'created_by')
+    $createdBySql = ratebColumnExists($conn, $table, 'created_by')
         ? 'COALESCE(v.created_by, ' . (int)$userId . ')'
         : (string)(int)$userId;
 
     $sql = "
         SELECT v.id, v.`{$numCol}` AS vnum, v.`{$dateCol}` AS vdate, {$amtExpr} AS vamt,
                COALESCE(NULLIF(TRIM(v.currency), ''), 'SAR') AS vcur,
-               " . (ratibColumnExists($conn, $table, 'cost_center_id') ? 'v.cost_center_id' : 'NULL') . " AS cost_center_id,
+               " . (ratebColumnExists($conn, $table, 'cost_center_id') ? 'v.cost_center_id' : 'NULL') . " AS cost_center_id,
                {$createdBySql} AS created_by_u,
                v.journal_entry_id AS je_id,
                je.entry_number AS je_entry_number,
@@ -261,9 +261,9 @@ function ratibBackfillVoucherTable(mysqli $conn, string $table, string $entityTy
 
 $summary = [
     'success' => true,
-    'payment_vouchers' => ratibBackfillVoucherTable($conn, 'payment_vouchers', 'payment_voucher', $userId),
-    'receipt_vouchers' => ratibBackfillVoucherTable($conn, 'receipt_vouchers', 'receipt_voucher', $userId),
-    'payment_receipts' => ratibBackfillVoucherTable($conn, 'payment_receipts', 'receipt_voucher', $userId),
+    'payment_vouchers' => ratebBackfillVoucherTable($conn, 'payment_vouchers', 'payment_voucher', $userId),
+    'receipt_vouchers' => ratebBackfillVoucherTable($conn, 'receipt_vouchers', 'receipt_voucher', $userId),
+    'payment_receipts' => ratebBackfillVoucherTable($conn, 'payment_receipts', 'receipt_voucher', $userId),
 ];
 
 $summary['total_inserted'] = $summary['payment_vouchers']['inserted'] + $summary['receipt_vouchers']['inserted'] + $summary['payment_receipts']['inserted'];

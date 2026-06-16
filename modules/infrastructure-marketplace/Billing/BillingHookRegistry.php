@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Billing;
+namespace RATEB\InfrastructureMarketplace\Billing;
 
-use Ratib\InfrastructureMarketplace\Billing\Contracts\InfrastructureBillingSettlementHookInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Billing\Contracts\InfrastructureBillingSettlementHookInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 /**
  * Collects optional settlement hooks — wire from payment webhook handlers when ready without replacing them.

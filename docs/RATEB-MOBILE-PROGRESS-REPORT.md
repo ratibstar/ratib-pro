@@ -123,7 +123,7 @@ Your latest screenshot shows:
 ## How to run locally
 
 ```powershell
-cd C:\Users\انا\Desktop\ratibprogram\rateb_mobile
+cd C:\Users\انا\Desktop\ratebprogram\rateb_mobile
 flutter pub get
 flutter run -d web-server --web-port=8090 --web-hostname=127.0.0.1 `
   --dart-define=RATEB_API_BASE_URL=https://rateb.sa/api

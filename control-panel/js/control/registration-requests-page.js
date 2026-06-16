@@ -467,7 +467,7 @@
         document.getElementById('approveDbPort').value = 3306;
         document.getElementById('approveDbUser').value = '';
         document.getElementById('approveDbPass').value = '';
-        document.getElementById('approveDbName').value = 'outratib_out';
+        document.getElementById('approveDbName').value = 'admin_out';
         if (approveModal) approveModal.show();
     }
 

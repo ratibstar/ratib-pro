@@ -651,7 +651,7 @@ SELECT 1 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_analytics WHERE id = 1);
 
 INSERT INTO rateb_cms_contact_settings (email, phone, address_en, address_ar, working_hours_en, working_hours_ar, social_json)
-SELECT 'info@ratib.sa', '+966 11 000 0000', 'Riyadh, Saudi Arabia', 'الرياض، المملكة العربية السعودية',
+SELECT 'info@rateb.sa', '+966 11 000 0000', 'Riyadh, Saudi Arabia', 'الرياض، المملكة العربية السعودية',
        'Sun–Thu 9:00–18:00', 'الأحد–الخميس ٩:٠٠–١٨:٠٠',
        JSON_OBJECT('linkedin','https://linkedin.com','twitter','https://twitter.com')
 FROM DUAL

@@ -14,7 +14,7 @@
  *
  * Bootstrap: works if either (a) includes/config.php already defined DB_* and
  * CONTROL_PANEL_DB_NAME, or (b) environment variables DB_HOST, DB_USER, DB_PASS,
- * DB_PORT (optional), CONTROL_PANEL_DB_NAME (optional, default outratib_control_panel_db).
+ * DB_PORT (optional), CONTROL_PANEL_DB_NAME (optional, default admin_control_panel_db).
  *
  * Test (CLI), after exporting DB_* and a valid tenant id:
  *   php -r "require 'api/core/TenantDatabaseManager.php'; var_dump(TenantDatabaseManager::pdoForTenantId(1)->query('SELECT 1')->fetchColumn());"
@@ -221,6 +221,6 @@ final class TenantDatabaseManager
         if ($e !== false && $e !== '') {
             return (string) $e;
         }
-        return 'outratib_control_panel_db';
+        return 'admin_control_panel_db';
     }
 }

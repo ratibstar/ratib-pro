@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Providers;
+namespace RATEB\InfrastructureMarketplace\Providers;
 
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningIntent;
-use Ratib\InfrastructureMarketplace\Services\ProviderRegistry;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningIntent;
+use RATEB\InfrastructureMarketplace\Services\ProviderRegistry;
 
 /**
  * Binds intents to provider resolution targets without invoking adapters.
@@ -44,9 +44,9 @@ final class ProviderExecutionBinder
             $targetParts[] = $role . ':' . ($code !== '' ? $code : 'binding');
         }
         if ($targetParts === []) {
-            $warnings[] = 'No provider roles resolved from ProviderRegistry (check RATIB_INFRA_PROVIDER_BINDINGS).';
+            $warnings[] = 'No provider roles resolved from ProviderRegistry (check RATEB_INFRA_PROVIDER_BINDINGS).';
         }
-        $sb = getenv('RATIB_INFRA_PROVIDER_SANDBOX');
+        $sb = getenv('RATEB_INFRA_PROVIDER_SANDBOX');
         $sandbox = is_string($sb) && in_array(strtolower(trim($sb)), ['1', 'true', 'yes', 'on'], true);
         if ($sandbox) {
             $warnings[] = 'Sandbox/provider flag overlay active — verify live compatibility before production execution.';

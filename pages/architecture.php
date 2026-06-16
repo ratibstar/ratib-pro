@@ -16,36 +16,36 @@ if (!headers_sent()) {
     header('CDN-Cache-Control: no-store');
 }
 
-require_once __DIR__ . '/../includes/ratib-public-base-url.php';
-$baseUrl = ratib_public_site_base_url();
+require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+$baseUrl = rateb_public_site_base_url();
 
-require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-$ratibArchDataPath = __DIR__ . '/../includes/ratib-architecture-data.php';
-$ratibArchSectionsPath = __DIR__ . '/../includes/ratib-architecture-sections.php';
-if (!is_file($ratibArchDataPath) || !is_file($ratibArchSectionsPath)) {
-    header('Location: ' . ratib_public_marketing_home_url($baseUrl, ['density' => 'full'], '#enterprise-infrastructure'), true, 302);
+require_once __DIR__ . '/../includes/rateb-home-public-nav-bootstrap.php';
+$ratebArchDataPath = __DIR__ . '/../includes/rateb-architecture-data.php';
+$ratebArchSectionsPath = __DIR__ . '/../includes/rateb-architecture-sections.php';
+if (!is_file($ratebArchDataPath) || !is_file($ratebArchSectionsPath)) {
+    header('Location: ' . rateb_public_marketing_home_url($baseUrl, ['density' => 'full'], '#enterprise-infrastructure'), true, 302);
     exit;
 }
-require_once $ratibArchDataPath;
-require_once $ratibArchSectionsPath;
+require_once $ratebArchDataPath;
+require_once $ratebArchSectionsPath;
 
-$arch = ratib_architecture_config($baseUrl);
-$ratibArchPageActive = true;
-$ratibHomeNavHrefPrefix = function_exists('ratib_public_nav_marketing_home_prefix')
-    ? ratib_public_nav_marketing_home_prefix($baseUrl)
+$arch = rateb_architecture_config($baseUrl);
+$ratebArchPageActive = true;
+$ratebHomeNavHrefPrefix = function_exists('rateb_public_nav_marketing_home_prefix')
+    ? rateb_public_nav_marketing_home_prefix($baseUrl)
     : rtrim($baseUrl, '/') . '/pages/home.php';
 
-$ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
-clearstatcache(true, $ratibAboutCssPath);
-$ratibAboutCssQuery = (int) (@filemtime($ratibAboutCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ . '-c' . $ratibChromeBundleHash;
+$ratebAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
+clearstatcache(true, $ratebAboutCssPath);
+$ratebAboutCssQuery = (int) (@filemtime($ratebAboutCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-' . $ratebHomePhpMtime . $ratebHomeAssetExtraQ . '-c' . $ratebChromeBundleHash;
 
-$ratibArchCssPath = __DIR__ . '/../css/pages/architecture.css';
-clearstatcache(true, $ratibArchCssPath);
-$ratibArchCssQuery = (int) (@filemtime($ratibArchCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratebArchCssPath = __DIR__ . '/../css/pages/architecture.css';
+clearstatcache(true, $ratebArchCssPath);
+$ratebArchCssQuery = (int) (@filemtime($ratebArchCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
 
-$ratibArchJsPath = __DIR__ . '/../js/pages/architecture.js';
-clearstatcache(true, $ratibArchJsPath);
-$ratibArchJsQuery = (int) (@filemtime($ratibArchJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratebArchJsPath = __DIR__ . '/../js/pages/architecture.js';
+clearstatcache(true, $ratebArchJsPath);
+$ratebArchJsQuery = (int) (@filemtime($ratebArchJsPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
 
 $metaTitle = (string) ($arch['meta']['title'] ?? 'Platform Architecture — RATEB');
 $metaDesc = (string) ($arch['meta']['description'] ?? '');
@@ -56,9 +56,9 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/architecture/';
 <head>
     <meta charset="UTF-8">
     <?php
-    require_once __DIR__ . '/../includes/ratib-profile-force-same-tab.php';
-    ratib_emit_profile_force_same_tab($baseUrl);
-    ratib_home_nav_emit_sync_guard_style();
+    require_once __DIR__ . '/../includes/rateb-profile-force-same-tab.php';
+    rateb_emit_profile_force_same_tab($baseUrl);
+    rateb_home_nav_emit_sync_guard_style();
     ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
@@ -74,20 +74,20 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/architecture/';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <?php ratib_home_public_nav_emit_stylesheets($baseUrl); ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/architecture.css?v=<?php echo htmlspecialchars($ratibArchCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php rateb_home_public_nav_emit_stylesheets($baseUrl); ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratebAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/architecture.css?v=<?php echo htmlspecialchars($ratebArchCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
-    $ratibOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
-    $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev;
+    $ratebOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
+    $ratebOpCssQuery = (int) (@filemtime($ratebOpCssPath) ?: time()) . '-' . $ratebHomeUiRev;
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratebOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
-    $ratibEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
-    clearstatcache(true, $ratibEntCssPath);
-    $ratibEntCssQuery = (int) (@filemtime($ratibEntCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+    $ratebEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
+    clearstatcache(true, $ratebEntCssPath);
+    $ratebEntCssQuery = (int) (@filemtime($ratebEntCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratibEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratebEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'TechArticle',
@@ -109,28 +109,28 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/architecture/';
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>
-<body class="ratib-saas-home ratib-arch-page" data-ratib-arch="1" style="background:#080c14 !important">
+<body class="rateb-saas-home rateb-arch-page" data-rateb-arch="1" style="background:#080c14 !important">
 
 <?php
-include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
-$ratibMarketingHomeUrl = function_exists('ratib_public_marketing_home_url')
-    ? ratib_public_marketing_home_url($baseUrl)
+include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
+$ratebMarketingHomeUrl = function_exists('rateb_public_marketing_home_url')
+    ? rateb_public_marketing_home_url($baseUrl)
     : rtrim($baseUrl, '/') . '/pages/home.php';
-$ratibSecurityUrl = rtrim($baseUrl, '/') . '/security-compliance/';
+$ratebSecurityUrl = rtrim($baseUrl, '/') . '/security-compliance/';
 ?>
 
-<div class="ratib-arch-distinct-banner" role="status">
-    <div class="ratib-about-container ratib-arch-distinct-banner__inner">
-        <span class="ratib-arch-distinct-banner__badge" aria-hidden="true">Architecture</span>
-        <p class="ratib-arch-distinct-banner__text">Platform architecture documentation for <strong>RATEB</strong> workforce program operations — technical briefing, not a product landing page.</p>
-        <a class="ratib-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratibSecurityUrl, ENT_QUOTES, 'UTF-8'); ?>">Security center</a>
-        <a class="ratib-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home</a>
+<div class="rateb-arch-distinct-banner" role="status">
+    <div class="rateb-about-container rateb-arch-distinct-banner__inner">
+        <span class="rateb-arch-distinct-banner__badge" aria-hidden="true">Architecture</span>
+        <p class="rateb-arch-distinct-banner__text">Platform architecture documentation for <strong>RATEB</strong> workforce program operations — technical briefing, not a product landing page.</p>
+        <a class="rateb-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratebSecurityUrl, ENT_QUOTES, 'UTF-8'); ?>">Security center</a>
+        <a class="rateb-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratebMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home</a>
     </div>
 </div>
 
-<main class="ratib-arch-main" id="main">
-    <nav class="ratib-about-jump" aria-label="On this page">
-        <div class="ratib-about-container ratib-about-jump__inner">
+<main class="rateb-arch-main" id="main">
+    <nav class="rateb-about-jump" aria-label="On this page">
+        <div class="rateb-about-container rateb-about-jump__inner">
             <a href="#top">Overview</a>
             <a href="#architecture-overview">Context</a>
             <a href="#layered-control-plane">Layers</a>
@@ -143,19 +143,19 @@ $ratibSecurityUrl = rtrim($baseUrl, '/') . '/security-compliance/';
             <a href="#operational-proof">Diagrams</a>
         </div>
     </nav>
-    <?php ratib_architecture_render_sections($arch, $baseUrl); ?>
+    <?php rateb_architecture_render_sections($arch, $baseUrl); ?>
     <?php
-    ratib_operational_proof_render($baseUrl, [
+    rateb_operational_proof_render($baseUrl, [
         'title' => 'Reference diagrams & workflows',
         'sub' => 'Illustrative models for technical review—complement the sections above.',
     ], ['screenshots' => false]);
     ?>
 </main>
 
-<?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
+<?php include __DIR__ . '/../includes/rateb-home-public-footer.php'; ?>
 
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/architecture.js?v=<?php echo htmlspecialchars($ratibArchJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratebMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/architecture.js?v=<?php echo htmlspecialchars($ratebArchJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php require_once __DIR__ . '/../includes/chat-widget-public-footer.php'; ?>
 </body>
 </html>

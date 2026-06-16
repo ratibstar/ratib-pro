@@ -3,25 +3,25 @@
 ## Bangladesh
 
 ### Issues found
-1. **Typo in database name**: Some files used `outratib_bangladish` (wrong) instead of `outratib_bangladesh` (correct).
+1. **Typo in database name**: Some files used `admin_bangladish` (wrong) instead of `admin_bangladesh` (correct).
 2. **`control_agencies`**: May point to the wrong database name.
-3. **Access denied**: The `outratib_out` user may not have access to `outratib_bangladesh`.
+3. **Access denied**: The `admin_out` user may not have access to `admin_bangladesh`.
 
 ### Fixes applied in code
-- `drop_and_prepare_bangladesh.php` now uses `outratib_bangladesh`.
-- APIs try fallbacks: `outratib_bangladish` → `outratib_bangladesh` → `outratib_out` (main DB).
+- `drop_and_prepare_bangladesh.php` now uses `admin_bangladesh`.
+- APIs try fallbacks: `admin_bangladish` → `admin_bangladesh` → `admin_out` (main DB).
 
 ### What you should do
-1. **Run in `outratib_out` (phpMyAdmin):**
+1. **Run in `admin_out` (phpMyAdmin):**
    ```sql
-   UPDATE control_agencies SET db_name = 'outratib_bangladesh' WHERE db_name = 'outratib_bangladish';
+   UPDATE control_agencies SET db_name = 'admin_bangladesh' WHERE db_name = 'admin_bangladish';
    ```
 
 2. **In cPanel → MySQL Databases:**
-   - Create `outratib_bangladesh` if it does not exist.
-   - Add user `outratib_out` to `outratib_bangladesh` with ALL PRIVILEGES.
+   - Create `admin_bangladesh` if it does not exist.
+   - Add user `admin_out` to `admin_bangladesh` with ALL PRIVILEGES.
 
-3. **If the database was created as `outratib_bangladish`:** Either rename it to `outratib_bangladesh` in cPanel, or keep `control_agencies` pointing to `outratib_bangladish` (the code will still try it as a fallback).
+3. **If the database was created as `admin_bangladish`:** Either rename it to `admin_bangladesh` in cPanel, or keep `control_agencies` pointing to `admin_bangladish` (the code will still try it as a fallback).
 
 ---
 
@@ -29,14 +29,14 @@
 
 ### Issues found
 1. **Duplicate slugs**: `control_countries` can have both `sri_lanka` and `sri-lanka`, causing Sri Lanka to appear twice.
-2. **Access denied**: Same as Bangladesh – `outratib_out` may not have access to `outratib_sri_lanka`.
+2. **Access denied**: Same as Bangladesh – `admin_out` may not have access to `admin_sri_lanka`.
 
 ### Fixes applied in code
 - API deduplicates countries by slug (Sri Lanka appears only once).
-- APIs use main DB (`outratib_out`) as fallback when `outratib_sri_lanka` connection fails.
+- APIs use main DB (`admin_out`) as fallback when `admin_sri_lanka` connection fails.
 
 ### What you should do
-1. **Remove duplicate Sri Lanka (run in `outratib_out`):**
+1. **Remove duplicate Sri Lanka (run in `admin_out`):**
    ```sql
    -- Step 1: Get the ID of sri-lanka (the duplicate)
    -- SELECT id FROM control_countries WHERE slug = 'sri-lanka';
@@ -48,8 +48,8 @@
    (If you get a foreign key error, update control_agencies first in phpMyAdmin.)
 
 2. **In cPanel → MySQL Databases:**
-   - Create `outratib_sri_lanka` if it does not exist.
-   - Add user `outratib_out` to `outratib_sri_lanka` with ALL PRIVILEGES.
+   - Create `admin_sri_lanka` if it does not exist.
+   - Add user `admin_out` to `admin_sri_lanka` with ALL PRIVILEGES.
 
 ---
 
@@ -57,8 +57,8 @@
 
 | Step | Bangladesh | Sri Lanka |
 |------|------------|-----------|
-| Database exists? | `outratib_bangladesh` | `outratib_sri_lanka` |
-| User has access? | Add `outratib_out` in cPanel | Same |
-| `control_agencies.db_name` | `outratib_bangladesh` | `outratib_sri_lanka` |
+| Database exists? | `admin_bangladesh` | `admin_sri_lanka` |
+| User has access? | Add `admin_out` in cPanel | Same |
+| `control_agencies.db_name` | `admin_bangladesh` | `admin_sri_lanka` |
 | Fix typo in DB | Run `fix_bangladesh_db_name.sql` | N/A |
 | Remove duplicate | N/A | Run SQL above |

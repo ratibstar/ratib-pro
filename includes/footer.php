@@ -80,15 +80,15 @@
         <?php
         // EN: Build cache-busted versions for assistant scripts.
         // AR: توليد أرقام نسخة (cache-busting) لملفات المساعد.
-        $ratibBase = getBaseUrl();
-        $ratibBase = ($ratibBase !== '' && $ratibBase !== null) ? ('/' . ltrim($ratibBase, '/')) : '';
-        $ratibRoot = dirname(__DIR__);
-        $hcBuiltinPath = $ratibRoot . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'help-center' . DIRECTORY_SEPARATOR . 'help-center-builtin-content.js';
-        $chatWidgetPath = $ratibRoot . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'chat-widget.js';
+        $ratebBase = getBaseUrl();
+        $ratebBase = ($ratebBase !== '' && $ratebBase !== null) ? ('/' . ltrim($ratebBase, '/')) : '';
+        $ratebRoot = dirname(__DIR__);
+        $hcBuiltinPath = $ratebRoot . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'help-center' . DIRECTORY_SEPARATOR . 'help-center-builtin-content.js';
+        $chatWidgetPath = $ratebRoot . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'chat-widget.js';
         $vHcBuiltin = is_file($hcBuiltinPath) ? filemtime($hcBuiltinPath) : time();
         $vChatWidget = is_file($chatWidgetPath) ? filemtime($chatWidgetPath) : time();
         ?>
-        <script>window.RATIB_BASE_URL = window.location.origin + <?php echo json_encode($ratibBase); ?>;</script>
+        <script>window.RATEB_BASE_URL = window.location.origin + <?php echo json_encode($ratebBase); ?>;</script>
         <script src="<?php echo asset('js/help-center/help-center-builtin-content.js'); ?>?v=<?php echo (int) $vHcBuiltin; ?>"></script>
         <script src="<?php echo asset('js/chat-widget.js'); ?>?v=<?php echo (int) $vChatWidget; ?>"></script>
     </body>

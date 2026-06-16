@@ -31,7 +31,7 @@ foreach ($invoices as $i) { $invoiceTotal += (float)($i['amount'] ?? 0); }
 $approvalPending = count(array_filter($approvals, function ($a) { return strtolower(trim($a['status'] ?? '')) === 'pending'; }));
 $approvalApproved = count(array_filter($approvals, function ($a) { return strtolower(trim($a['status'] ?? '')) === 'approved'; }));
 
-// Same report titles as Ratib Pro (getReportName) for Financial Reports modal
+// Same report titles as RATEB Pro (getReportName) for Financial Reports modal
 $cpAccReportTitles = [
     'trial-balance' => 'Trial Balance',
     'income-statement' => 'Income Statement',
@@ -1377,7 +1377,7 @@ if (!empty($countries) && is_array($countries)) {
     </div>
 </div>
 
-<!-- Financial Reports Modal (Ratib Pro style: summary + category filters + report cards grid) -->
+<!-- Financial Reports Modal (RATEB Pro style: summary + category filters + report cards grid) -->
 <div id="reportsModal" class="cp-acc-modal" role="dialog" aria-labelledby="reportsModalTitle" lang="en" translate="no" dir="ltr">
     <div class="cp-acc-modal-content cp-acc-modal-lg">
         <div class="cp-acc-modal-header">
@@ -1519,7 +1519,7 @@ if (!empty($countries) && is_array($countries)) {
                 </tbody><tfoot><tr class="report-totals-row"><td colspan="2">TOTALS</td><td><?php echo number_format(array_sum(array_column($chartAccounts ?? [], 'balance')), 2); ?></td></tr></tfoot></table></div>
                 <div class="cp-acc-report-pagination"><span>Showing 1 to <?php echo min(10, $totalAccounts); ?> of <?php echo $totalAccounts; ?> entries</span><div class="nav"><button class="btn btn-sm btn-outline-secondary" disabled>Previous</button><button class="btn btn-sm btn-primary">1</button><button class="btn btn-sm btn-outline-secondary">Next</button></div></div>
             </div>
-            <!-- Cash Flow Report (Ratib: cash-flow) -->
+            <!-- Cash Flow Report (RATEB: cash-flow) -->
             <div id="report-cash-flow" class="cp-acc-report-panel">
                 <div class="report-period"><i class="fas fa-calendar-alt"></i> Period: <?php echo $reportStartDate; ?> to <?php echo $reportEndDate; ?></div>
                 <div class="cp-acc-report-status-cards">
@@ -1678,7 +1678,7 @@ if (!empty($countries) && is_array($countries)) {
                 </tbody><tfoot><tr class="report-totals-row"><td colspan="5">TOTALS</td><td>0.00</td><td>0.00</td><td><?php echo $currencyLabel; ?> 0.00</td></tr></tfoot></table></div>
                 <div class="cp-acc-report-pagination"><span>Showing 0 to <?php echo count($recentTransactions); ?> of <?php echo count($recentTransactions); ?> entries</span><div class="nav"><button class="btn btn-sm btn-outline-secondary" disabled>Previous</button><button class="btn btn-sm btn-primary">1</button><button class="btn btn-sm btn-outline-secondary">Next</button></div></div>
             </div>
-            <!-- Chart of Accounts (Ratib: chart-of-accounts-report) -->
+            <!-- Chart of Accounts (RATEB: chart-of-accounts-report) -->
             <div id="report-chart-of-accounts-report" class="cp-acc-report-panel">
                 <div class="report-period"><i class="fas fa-calendar-alt"></i> As of: <?php echo $reportAsOfDate; ?></div>
                 <div class="cp-acc-report-status-cards">

@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/support-chat-agency-unread.php`.
  */
 /**
- * Ratib Pro: unread live-support chat count for the logged-in agency (by session country).
+ * RATEB Pro: unread live-support chat count for the logged-in agency (by session country).
  * Used by main app navbar badge (not the control panel session).
  */
 ini_set('display_errors', 0);
@@ -41,7 +41,7 @@ if ($countryId < 1) {
     jsonOut(['success' => true, 'unread' => 0]);
 }
 
-$conn = ratib_support_chat_db();
+$conn = rateb_support_chat_db();
 if (!$conn instanceof mysqli || $conn->connect_errno) {
     jsonOut(['success' => true, 'unread' => 0]);
 }

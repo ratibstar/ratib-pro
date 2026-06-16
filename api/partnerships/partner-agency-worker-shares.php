@@ -25,7 +25,7 @@ try {
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
     $ctl = new PartnerAgencyWorkerDocSharesController($conn);
 
     $partnerAgencyId = (int) ($_GET['partner_agency_id'] ?? $_POST['partner_agency_id'] ?? 0);

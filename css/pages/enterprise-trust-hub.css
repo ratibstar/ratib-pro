@@ -1,63 +1,63 @@
-.ratib-eth-hero {
+.rateb-eth-hero {
     padding: var(--rateb-space-xl, 2.25rem) 0 var(--rateb-space-lg, 1.5rem);
 }
-.ratib-eth-hero__title {
+.rateb-eth-hero__title {
     font-size: clamp(1.75rem, 4vw, 2.35rem);
     font-weight: 800;
     margin: 0.5rem 0;
     color: var(--rateb-text, #e8edf7);
 }
-.ratib-eth-hero__lead {
+.rateb-eth-hero__lead {
     max-width: 52rem;
     color: var(--rateb-text-muted, #94a3b8);
     line-height: 1.55;
 }
-.ratib-eth-hero__chips {
+.rateb-eth-hero__chips {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: 1rem;
 }
-.ratib-eth-pillar {
+.rateb-eth-pillar {
     margin: 0 auto var(--rateb-space-lg, 1.5rem);
     max-width: 1120px;
     padding: var(--rateb-space-lg, 1.5rem);
 }
-.ratib-eth-pillar__head {
+.rateb-eth-pillar__head {
     display: flex;
     gap: 1rem;
     align-items: flex-start;
 }
-.ratib-eth-pillar__icon {
+.rateb-eth-pillar__icon {
     font-size: 1.35rem;
     color: var(--rateb-brand, #a855f7);
 }
-.ratib-eth-pillar__title {
+.rateb-eth-pillar__title {
     margin: 0;
     font-size: 1.35rem;
 }
-.ratib-eth-pillar__lead {
+.rateb-eth-pillar__lead {
     margin: 0.35rem 0 0;
     color: var(--rateb-text-muted, #94a3b8);
 }
-.ratib-eth-pillar__list {
+.rateb-eth-pillar__list {
     margin: 1rem 0 0;
     padding-left: 1.2rem;
     color: var(--rateb-text, #e8edf7);
     line-height: 1.6;
 }
-.ratib-eth-pillar__link a {
+.rateb-eth-pillar__link a {
     color: var(--rateb-accent, #38bdf8);
 }
-.ratib-eth-cta {
+.rateb-eth-cta {
     padding: var(--rateb-space-xl, 2.25rem) 0 3rem;
 }
-.ratib-eth-cta .rateb-glass-panel {
+.rateb-eth-cta .rateb-glass-panel {
     padding: var(--rateb-space-lg, 1.5rem);
     max-width: 1120px;
     margin: 0 auto;
 }
-.ratib-eth-cta__actions {
+.rateb-eth-cta__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.65rem;

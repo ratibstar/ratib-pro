@@ -164,9 +164,9 @@ if (!empty($_SESSION['control_logged_in'])) {
     <link rel="stylesheet" href="<?php echo asset('css/login.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/login-control.css'); ?>?v=<?php echo time(); ?>">
     <?php
-    $ratibOverlayGuardPath = __DIR__ . '/../../includes/ratib-overlay-dismiss-guard.php';
-    if (is_file($ratibOverlayGuardPath)) {
-        require_once $ratibOverlayGuardPath;
+    $ratebOverlayGuardPath = __DIR__ . '/../../includes/rateb-overlay-dismiss-guard.php';
+    if (is_file($ratebOverlayGuardPath)) {
+        require_once $ratebOverlayGuardPath;
     }
     ?>
 </head>

@@ -4,7 +4,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
-if (!ratib_partner_portal_session_is_valid()) {
+if (!rateb_partner_portal_session_is_valid()) {
     header('Location: ' . pageUrl('partner-portal-login.php'));
     exit;
 }

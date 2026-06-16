@@ -4,7 +4,7 @@
 
 ### 1. Database Schema
 - ✅ **Payment Fields Migration**: `config/control_registration_requests_add_payment_fields.sql` created
-- ⚠️ **Action Required**: Run the SQL migration on `outratib_out` database to add:
+- ⚠️ **Action Required**: Run the SQL migration on `admin_out` database to add:
   - `payment_status` ENUM('unpaid', 'paid', 'pending', 'failed')
   - `payment_method` VARCHAR(50)
   - Index on `payment_status`
@@ -39,7 +39,7 @@
 **Run Database Migration**:
 ```sql
 -- File: config/control_registration_requests_add_payment_fields.sql
--- Database: outratib_out
+-- Database: admin_out
 -- This adds payment tracking columns to the registration table
 ```
 

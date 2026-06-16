@@ -27,7 +27,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/support_chat_db.php';
 mysqli_report(MYSQLI_REPORT_OFF);
 
-$isAppAdmin = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user()
+$isAppAdmin = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user()
     && (int) ($_SESSION['role_id'] ?? 0) === 1;
 $isControlLogged = !empty($_SESSION['control_logged_in']);
 if (!$isAppAdmin && !$isControlLogged) {
@@ -43,7 +43,7 @@ function jsonOut($data) {
     exit;
 }
 
-$conn = ratib_support_chat_db();
+$conn = rateb_support_chat_db();
 if (!$conn || !$conn instanceof mysqli) {
     jsonOut(['success' => false, 'message' => 'Support chat DB not configured']);
 }
@@ -61,7 +61,7 @@ try {
     $conn->begin_transaction();
 
     $chatId = null;
-    if (ratib_support_chat_has_context_columns($conn)) {
+    if (rateb_support_chat_has_context_columns($conn)) {
         if ($countryName === '' && $countryId > 0) $countryName = 'Country #' . $countryId;
         if ($agencyName === '' && $agencyId > 0) $agencyName = 'Agency #' . $agencyId;
 

@@ -15,9 +15,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit;
 }
 if (!hasPermission('view_partner_agencies') && !hasPermission('view_workers')) {
-    header('Location: ' . ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
+    header('Location: ' . rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
     exit;
 }
 
-header('Location: ' . ratib_nav_url('partner-agencies.php'), true, 302);
+header('Location: ' . rateb_nav_url('partner-agencies.php'), true, 302);
 exit;

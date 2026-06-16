@@ -7,8 +7,8 @@
 function showModal($permission) {
     $userId = isset($_SESSION["user_id"]) ? $_SESSION["user_id"] : 0;
     $roleId = isset($_SESSION["role_id"]) ? $_SESSION["role_id"] : 0;
-    $dashboardUrl = function_exists('ratib_country_dashboard_url')
-        ? ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0))
+    $dashboardUrl = function_exists('rateb_country_dashboard_url')
+        ? rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0))
         : "../pages/dashboard.php";
     
     echo "<!DOCTYPE html>";

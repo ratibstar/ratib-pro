@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/includes/site-content.php';
 require dirname(__DIR__) . '/includes/site-content-home-data.php';
-require dirname(__DIR__) . '/includes/ratib-public-cms.php';
-require dirname(__DIR__) . '/includes/ratib-operational-proof-data.php';
+require dirname(__DIR__) . '/includes/rateb-public-cms.php';
+require dirname(__DIR__) . '/includes/rateb-operational-proof-data.php';
 
-$def = ratib_site_content_defaults_home();
-$groups = ratib_site_content_public_editor_groups();
+$def = rateb_site_content_defaults_home();
+$groups = rateb_site_content_public_editor_groups();
 
 $editorKeys = [];
 $dups = [];
@@ -52,7 +52,7 @@ foreach ($def as $k => $v) {
     }
     if (str_starts_with($v, 'scmedia:')) {
         $name = substr($v, 8);
-        $fs = dirname(__DIR__) . '/uploads/ratib_cms_media/' . $name;
+        $fs = dirname(__DIR__) . '/uploads/rateb_cms_media/' . $name;
         if (!is_file($fs)) {
             $missingImages[] = "$k => $v";
         }
@@ -65,7 +65,7 @@ foreach ($def as $k => $v) {
     }
 }
 
-$cfg = ratib_operational_proof_config('');
+$cfg = rateb_operational_proof_config('');
 echo "Editor keys: " . count($editorKeys) . PHP_EOL;
 echo "Defaults: " . count($def) . PHP_EOL;
 echo "Duplicate editor keys: " . count(array_unique($dups)) . PHP_EOL;

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Commerce;
+namespace RATEB\InfrastructureMarketplace\Commerce;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\State\StateNamespaceRegistry;
 
 /**
  * Customer-facing commerce lifecycle for plans/products metadata — does not touch queue workers.
@@ -57,7 +57,7 @@ final class ProductLifecycleManager
     }
 
     /**
-     * Updates ratib_infra_plans.commerce_state only (additive column already on plans table).
+     * Updates rateb_infra_plans.commerce_state only (additive column already on plans table).
      *
      * @return list<string> warnings
      */
@@ -70,7 +70,7 @@ final class ProductLifecycleManager
         ?string $traceId = null
     ): array {
         $warnings = $this->assertCommerceTransition($fromState, $toState);
-        $stmt = $this->pdo->prepare('SELECT id, commerce_state FROM ratib_infra_plans WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, commerce_state FROM rateb_infra_plans WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $planId]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!is_array($row)) {
@@ -86,7 +86,7 @@ final class ProductLifecycleManager
         if ($this->hasBlockingWarnings($warnings)) {
             return $warnings;
         }
-        $upd = $this->pdo->prepare('UPDATE ratib_infra_plans SET commerce_state = :s, updated_at = NOW() WHERE id = :id');
+        $upd = $this->pdo->prepare('UPDATE rateb_infra_plans SET commerce_state = :s, updated_at = NOW() WHERE id = :id');
         $upd->execute(['s' => StateNamespaceRegistry::normalize($toState), 'id' => $planId]);
 
         $this->audit->appendImmutable('commerce_plan_lifecycle', [

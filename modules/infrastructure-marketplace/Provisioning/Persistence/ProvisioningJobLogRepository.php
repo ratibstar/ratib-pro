@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\Persistence;
+namespace RATEB\InfrastructureMarketplace\Provisioning\Persistence;
 
 final class ProvisioningJobLogRepository
 {
@@ -17,7 +17,7 @@ final class ProvisioningJobLogRepository
      */
     public function append(int $jobId, string $level, string $message, array $context = []): void
     {
-        $sql = 'INSERT INTO ratib_infra_job_logs (job_id, level, message, context_json, created_at)
+        $sql = 'INSERT INTO rateb_infra_job_logs (job_id, level, message, context_json, created_at)
                 VALUES (:job_id, :level, :message, :context_json, NOW())';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
@@ -35,8 +35,8 @@ final class ProvisioningJobLogRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT l.level, l.message, l.context_json, l.created_at
-             FROM ratib_infra_job_logs l
-             INNER JOIN ratib_infra_provisioning_jobs j ON j.id = l.job_id
+             FROM rateb_infra_job_logs l
+             INNER JOIN rateb_infra_provisioning_jobs j ON j.id = l.job_id
              WHERE j.public_id = :public_id
              ORDER BY l.id DESC
              LIMIT :lim'

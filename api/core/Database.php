@@ -44,7 +44,7 @@ class Database {
                 $host = $agencyDb['host'] ?? 'localhost';
                 $port = (int)($agencyDb['port'] ?? 3306);
                 $db   = $agencyDb['db'];
-                $user = $agencyDb['user'] ?? (defined('DB_USER') ? DB_USER : 'outratib_out');
+                $user = $agencyDb['user'] ?? (defined('DB_USER') ? DB_USER : 'admin_out');
                 $pass = $agencyDb['pass'] ?? (defined('DB_PASS') ? DB_PASS : '');
                 $dsn  = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
             } else {
@@ -52,8 +52,8 @@ class Database {
                     require_once __DIR__ . '/../../includes/config.php';
                 }
                 $host = defined('DB_HOST') ? DB_HOST : 'localhost';
-                $db   = defined('DB_NAME') ? DB_NAME : 'outratib_out';
-                $user = defined('DB_USER') ? DB_USER : 'outratib_out';
+                $db   = defined('DB_NAME') ? DB_NAME : 'admin_out';
+                $user = defined('DB_USER') ? DB_USER : 'admin_out';
                 $pass = defined('DB_PASS') ? DB_PASS : '';
                 $dsn  = "mysql:host=$host;dbname=$db;charset=utf8mb4";
             }

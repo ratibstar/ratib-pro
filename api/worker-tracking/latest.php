@@ -27,7 +27,7 @@ try {
     $tenantId = (int) $tenantId;
 
     $controlPdo = getControlDB();
-    ratibEnsureWorkerTrackingSchema($controlPdo);
+    ratebEnsureWorkerTrackingSchema($controlPdo);
 
     $workerId = isset($_GET['worker_id']) ? (int) $_GET['worker_id'] : 0;
     $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 200;

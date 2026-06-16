@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 
 try {
     $isControl = !empty($_SESSION['control_logged_in']);
-    $isAppUser = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user();
+    $isAppUser = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user();
     if (!$isControl && !$isAppUser) {
         echo json_encode(['success' => false, 'message' => 'Admin not logged in']);
         exit;

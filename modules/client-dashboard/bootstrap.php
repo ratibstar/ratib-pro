@@ -4,39 +4,39 @@
  */
 declare(strict_types=1);
 
-if (!defined('RATIB_CLIENT_DASHBOARD_ROOT')) {
-    define('RATIB_CLIENT_DASHBOARD_ROOT', __DIR__);
+if (!defined('RATEB_CLIENT_DASHBOARD_ROOT')) {
+    define('RATEB_CLIENT_DASHBOARD_ROOT', __DIR__);
 }
 
-if (!function_exists('ratib_client_dashboard_page_url')) {
-    function ratib_client_dashboard_page_url(string $page): string
+if (!function_exists('rateb_client_dashboard_page_url')) {
+    function rateb_client_dashboard_page_url(string $page): string
     {
         return pageUrl('client/' . ltrim($page, '/'));
     }
 }
 
-if (!function_exists('ratib_client_dashboard_is_control_wrapper_active')) {
-    function ratib_client_dashboard_is_control_wrapper_active(): bool
+if (!function_exists('rateb_client_dashboard_is_control_wrapper_active')) {
+    function rateb_client_dashboard_is_control_wrapper_active(): bool
     {
-        return defined('RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE') && RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE;
+        return defined('RATEB_CLIENT_CONTROL_WRAPPER_ACTIVE') && RATEB_CLIENT_CONTROL_WRAPPER_ACTIVE;
     }
 }
 
-if (!function_exists('ratib_client_dashboard_public_site_base_url')) {
+if (!function_exists('rateb_client_dashboard_public_site_base_url')) {
     /**
      * Prefix for URLs to site-root `/modules/...` and other assets.
      *
      * When Client Hub renders inside `/control-panel/...`, BASE_URL/`getBaseUrl()` often point at the
      * control subpath — those requests 404 because static/module files remain at the public app root.
      */
-    function ratib_client_dashboard_public_site_base_url(): string
+    function rateb_client_dashboard_public_site_base_url(): string
     {
-        if (!ratib_client_dashboard_is_control_wrapper_active()) {
+        if (!rateb_client_dashboard_is_control_wrapper_active()) {
             return rtrim((string) getBaseUrl(), '/');
         }
 
-        if (function_exists('control_ratib_pro_public_base_url')) {
-            $pub = rtrim((string) control_ratib_pro_public_base_url(), '/');
+        if (function_exists('control_rateb_pro_public_base_url')) {
+            $pub = rtrim((string) control_rateb_pro_public_base_url(), '/');
             if ($pub !== '') {
                 return $pub;
             }
@@ -50,20 +50,20 @@ if (!function_exists('ratib_client_dashboard_public_site_base_url')) {
     }
 }
 
-if (!function_exists('ratib_client_dashboard_asset_url')) {
-    function ratib_client_dashboard_asset_url(string $relativeWithinAssets): string
+if (!function_exists('rateb_client_dashboard_asset_url')) {
+    function rateb_client_dashboard_asset_url(string $relativeWithinAssets): string
     {
         $relativeWithinAssets = ltrim($relativeWithinAssets, '/');
-        $disk = RATIB_CLIENT_DASHBOARD_ROOT . '/Assets/' . $relativeWithinAssets;
+        $disk = RATEB_CLIENT_DASHBOARD_ROOT . '/Assets/' . $relativeWithinAssets;
         $mtime = @filemtime($disk);
         $v = ($mtime !== false) ? $mtime : time();
-        $root = ratib_client_dashboard_public_site_base_url();
+        $root = rateb_client_dashboard_public_site_base_url();
         return $root . '/modules/client-dashboard/Assets/' . $relativeWithinAssets . '?v=' . (int) $v;
     }
 }
 
-if (!function_exists('ratib_client_dashboard_has_control_context')) {
-    function ratib_client_dashboard_has_control_context(): bool
+if (!function_exists('rateb_client_dashboard_has_control_context')) {
+    function rateb_client_dashboard_has_control_context(): bool
     {
         if (empty($_SESSION['control_logged_in'])) {
             return false;
@@ -81,12 +81,12 @@ if (!function_exists('ratib_client_dashboard_has_control_context')) {
     }
 }
 
-if (!function_exists('ratib_client_dashboard_context_url')) {
-    function ratib_client_dashboard_context_url(string $page, string $extraQuery = ''): string
+if (!function_exists('rateb_client_dashboard_context_url')) {
+    function rateb_client_dashboard_context_url(string $page, string $extraQuery = ''): string
     {
         $page = ltrim($page, '/');
-        if (!ratib_client_dashboard_is_control_wrapper_active()) {
-            return ratib_nav_url('client/' . $page, $extraQuery);
+        if (!rateb_client_dashboard_is_control_wrapper_active()) {
+            return rateb_nav_url('client/' . $page, $extraQuery);
         }
 
         $map = [
@@ -112,22 +112,22 @@ if (!function_exists('ratib_client_dashboard_context_url')) {
             return control_client_platform_wrapper_url($section, $extraQuery);
         }
 
-        return ratib_nav_url('client/' . $page, $extraQuery);
+        return rateb_nav_url('client/' . $page, $extraQuery);
     }
 }
 
-if (!function_exists('ratib_client_dashboard_can_access')) {
-    function ratib_client_dashboard_can_access(): bool
+if (!function_exists('rateb_client_dashboard_can_access')) {
+    function rateb_client_dashboard_can_access(): bool
     {
         // Control-panel wrappers (client-hub.php, client-services.php, …) already gate
         // access via requireControlPermission; do not require program login or agency_id.
-        if (ratib_client_dashboard_is_control_wrapper_active() && !empty($_SESSION['control_logged_in'])) {
+        if (rateb_client_dashboard_is_control_wrapper_active() && !empty($_SESSION['control_logged_in'])) {
             return true;
         }
-        if (ratib_client_dashboard_has_control_context()) {
+        if (rateb_client_dashboard_has_control_context()) {
             return true;
         }
-        if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
+        if (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user()) {
             return false;
         }
         if (!function_exists('hasPermission')) {
@@ -140,17 +140,17 @@ if (!function_exists('ratib_client_dashboard_can_access')) {
     }
 }
 
-if (!function_exists('ratib_client_dashboard_require_access')) {
-    function ratib_client_dashboard_require_access(): void
+if (!function_exists('rateb_client_dashboard_require_access')) {
+    function rateb_client_dashboard_require_access(): void
     {
-        if (ratib_client_dashboard_can_access()) {
+        if (rateb_client_dashboard_can_access()) {
             return;
         }
         if (!empty($_SESSION['control_logged_in'])) {
             http_response_code(403);
             exit('Client platform access denied for this control session.');
         }
-        if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
+        if (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user()) {
             $qs = [];
             if (!empty($_GET['country_slug'])) {
                 $qs[] = 'country_slug=' . rawurlencode((string) $_GET['country_slug']);
@@ -168,8 +168,8 @@ if (!function_exists('ratib_client_dashboard_require_access')) {
     }
 }
 
-if (!function_exists('ratib_client_dashboard_api_deny')) {
-    function ratib_client_dashboard_api_deny(): void
+if (!function_exists('rateb_client_dashboard_api_deny')) {
+    function rateb_client_dashboard_api_deny(): void
     {
         if (!headers_sent()) {
             http_response_code(401);
@@ -180,30 +180,30 @@ if (!function_exists('ratib_client_dashboard_api_deny')) {
     }
 }
 
-if (!function_exists('ratib_client_dashboard_api_require_access')) {
-    function ratib_client_dashboard_api_require_access(): void
+if (!function_exists('rateb_client_dashboard_api_require_access')) {
+    function rateb_client_dashboard_api_require_access(): void
     {
-        if (!ratib_client_dashboard_can_access()) {
-            ratib_client_dashboard_api_deny();
+        if (!rateb_client_dashboard_can_access()) {
+            rateb_client_dashboard_api_deny();
         }
     }
 }
 
-if (!function_exists('ratib_client_dashboard_marketplace_href')) {
-    function ratib_client_dashboard_marketplace_href(): string
+if (!function_exists('rateb_client_dashboard_marketplace_href')) {
+    function rateb_client_dashboard_marketplace_href(): string
     {
-        return ratib_client_dashboard_context_url('domains.php', 'catalog=1');
+        return rateb_client_dashboard_context_url('domains.php', 'catalog=1');
     }
 }
 
-if (!function_exists('ratib_client_dashboard_nav_sections')) {
+if (!function_exists('rateb_client_dashboard_nav_sections')) {
     /**
      * @return list<array{key:string,label:string,icon:string,href:string,children?:array<int,array{key:string,label:string,href:string}>}>
      */
-    function ratib_client_dashboard_nav_sections(): array
+    function rateb_client_dashboard_nav_sections(): array
     {
         $u = static function (string $p): string {
-            return htmlspecialchars(ratib_client_dashboard_context_url($p), ENT_QUOTES, 'UTF-8');
+            return htmlspecialchars(rateb_client_dashboard_context_url($p), ENT_QUOTES, 'UTF-8');
         };
 
         return [

@@ -4,13 +4,13 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
-if (!function_exists('ratib_partner_portal_session_is_valid') || !ratib_partner_portal_session_is_valid()) {
+if (!function_exists('rateb_partner_portal_session_is_valid') || !rateb_partner_portal_session_is_valid()) {
     header('Location: ' . pageUrl('partner-portal-login.php'));
     exit;
 }
 
 $workerId = (int) ($_GET['worker_id'] ?? 0);
-$partnerAgencyId = function_exists('ratib_partner_portal_agency_id') ? (int) ratib_partner_portal_agency_id() : 0;
+$partnerAgencyId = function_exists('rateb_partner_portal_agency_id') ? (int) rateb_partner_portal_agency_id() : 0;
 if ($workerId <= 0 || $partnerAgencyId <= 0) {
     http_response_code(400);
     echo 'Bad request';
@@ -23,7 +23,7 @@ require_once __DIR__ . '/../api/partnerships/PartnerAgencyWorkerDocSharesControl
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
-ratibEnsureGlobalPartnershipsSchema($conn);
+ratebEnsureGlobalPartnershipsSchema($conn);
 $sh = new PartnerAgencyWorkerDocSharesController($conn);
 
 if (!$sh->partnerHasShareForWorker($partnerAgencyId, $workerId)) {

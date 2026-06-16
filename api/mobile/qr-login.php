@@ -10,10 +10,10 @@ require_once __DIR__ . '/cors.php';
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/qr.inc.php';
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
 require_once __DIR__ . '/../../includes/config.php';
 
-ratib_api_pick_session_name();
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -33,10 +33,10 @@ try {
     }
 
     $pdo = Database::getInstance()->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($pdo);
+    ratebEnsureGlobalPartnershipsSchema($pdo);
 
-    // Legacy workforce badges (RATIBLOGIN:…)
-    if (str_starts_with($payload, 'RATIBLOGIN:')) {
+    // Legacy workforce badges (RATEBLOGIN:…)
+    if (str_starts_with($payload, 'RATEBLOGIN:')) {
         $legacy = rateb_mobile_qr_try_legacy_badge($payload);
         if (!empty($legacy['success'])) {
             rateb_mobile_json($legacy);

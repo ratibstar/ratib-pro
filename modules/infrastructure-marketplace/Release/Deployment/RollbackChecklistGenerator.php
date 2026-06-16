@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Release\Deployment;
+namespace RATEB\InfrastructureMarketplace\Release\Deployment;
 
 final class RollbackChecklistGenerator
 {
@@ -11,7 +11,7 @@ final class RollbackChecklistGenerator
     public function generate(string $releaseId): array
     {
         return [
-            'Set RATIB_INFRA_EXECUTION_KILL_SWITCH=1',
+            'Set RATEB_INFRA_EXECUTION_KILL_SWITCH=1',
             'Pause worker supervisors for infrastructure worker only',
             'Capture queue snapshot via /api/infrastructure-marketplace/ops-queue.php',
             'Capture provider activation snapshot via /api/infrastructure-marketplace/providers.php',

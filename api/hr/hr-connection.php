@@ -4,21 +4,21 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/hr/hr-connection.php`.
  */
 /**
- * HR API connection: main Ratib Pro DB by default; isolated CONTROL_PANEL_DB when ?control=1.
+ * HR API connection: main RATEB Pro DB by default; isolated CONTROL_PANEL_DB when ?control=1.
  */
 function hr_api_is_control_request(): bool
 {
     return isset($_GET['control']) && (string)$_GET['control'] === '1';
 }
 
-/** Accounting / global history only apply to Ratib Pro HR, not control-panel HR. */
-function hr_api_writes_ratib_artifacts(): bool
+/** Accounting / global history only apply to RATEB Pro HR, not control-panel HR. */
+function hr_api_writes_rateb_artifacts(): bool
 {
     return !hr_api_is_control_request();
 }
 
 /**
- * Control HR (?control=1): only ratib_control + control_logged_in.
+ * Control HR (?control=1): only rateb_control + control_logged_in.
  * Avoids api-permission-helper / permissions.php / mysqli bootstrap that can fatally break API JSON.
  */
 function hr_api_require_control_panel_auth(): void
@@ -27,8 +27,8 @@ function hr_api_require_control_panel_auth(): void
         return;
     }
     if (session_status() === PHP_SESSION_NONE) {
-        require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-        ratib_api_pick_session_name();
+        require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+        rateb_api_pick_session_name();
         session_start();
     }
     if (empty($_SESSION['control_logged_in'])) {
@@ -47,7 +47,7 @@ function hr_api_require_control_panel_auth(): void
     }
 }
 
-/** Ratib Pro HR only — control requests must call hr_api_require_control_panel_auth() instead. */
+/** RATEB Pro HR only — control requests must call hr_api_require_control_panel_auth() instead. */
 function hr_api_enforce_employees_permission(string $action): void
 {
     if (hr_api_is_control_request()) {
@@ -105,7 +105,7 @@ function hr_api_get_connection(): PDO
         $cacheKey = $want;
         return $cached;
     }
-    // Ratib Pro PDO: Database::__construct loads includes/config.php, which require_once's config/env/load.php
+    // RATEB Pro PDO: Database::__construct loads includes/config.php, which require_once's config/env/load.php
     // first (session ini + session_start + host env), then mysqli + SINGLE_URL_MODE → $GLOBALS['agency_db'].
     require_once __DIR__ . '/../core/Database.php';
     $cached = Database::getInstance()->getConnection();

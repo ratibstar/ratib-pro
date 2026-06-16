@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Hosting\Adapters;
+namespace RATEB\InfrastructureMarketplace\Hosting\Adapters;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Hosting\Contracts\HostingProvisioningInterface;
-use Ratib\InfrastructureMarketplace\Hosting\DTOs\HostingOperationResult;
-use Ratib\InfrastructureMarketplace\Hosting\DTOs\HostingUsageSnapshot;
-use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
-use Ratib\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
-use Ratib\InfrastructureMarketplace\Observability\ProviderEventBus;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
-use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Hosting\Contracts\HostingProvisioningInterface;
+use RATEB\InfrastructureMarketplace\Hosting\DTOs\HostingOperationResult;
+use RATEB\InfrastructureMarketplace\Hosting\DTOs\HostingUsageSnapshot;
+use RATEB\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
+use RATEB\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
+use RATEB\InfrastructureMarketplace\Observability\ProviderEventBus;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use RATEB\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class CpanelWhmAdapter implements HostingProvisioningInterface
 {
@@ -204,7 +204,7 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
         unset($tenant);
         $base = ModuleConfig::cpanelWhmBaseUrl();
         $user = ModuleConfig::cpanelWhmUsername();
-        $token = $this->secrets->getSecret('RATIB_INFRA_CPANEL', 'API_TOKEN') ?? ModuleConfig::cpanelWhmToken();
+        $token = $this->secrets->getSecret('RATEB_INFRA_CPANEL', 'API_TOKEN') ?? ModuleConfig::cpanelWhmToken();
         if ($base === null || $user === null || $token === null) {
             throw new \RuntimeException('Missing cPanel/WHM credentials in environment.');
         }

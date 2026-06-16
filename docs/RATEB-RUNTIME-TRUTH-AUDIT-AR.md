@@ -1,6 +1,6 @@
 # RATEB — Forensic + Runtime Truth Model
 
-**المستودع:** `ratibprogram` فقط (لا يوجد مجلد `ratibsrar`)  
+**المستودع:** `ratebprogram` فقط (لا يوجد مجلد `ratebsrar`)  
 **التاريخ:** 2026-05-24  
 **المنهج:** قراءة `.htaccess`، نقاط الدخول، `require/include`، وفحص أنماط الجلسة/الصلاحيات داخل الملفات — **بدون افتراضات تشغيلية خارج الكود**.
 
@@ -14,7 +14,7 @@
 |--------|------|--------|
 | Apache rewrite | `.htaccess` | قواعد صريحة لـ marketing/trust/login؛ ثم `DirectoryIndex public/index.php index.php` |
 | Front controller | `public/index.php` | Designed، `/` → `index.php`، `/profile` → `pages/about.php`، fallback 404 |
-| Root index | `index.php` | `includes/config.php` → إن `ratib_program_session_is_valid_user()` → dashboard وإلا marketing home |
+| Root index | `index.php` | `includes/config.php` → إن `rateb_program_session_is_valid_user()` → dashboard وإلا marketing home |
 | API | `/api/**/*.php` | **ملف مباشر** (لا router مركزي legacy)؛ استثناء `public/worker-platform.php` + `api/v1/*/index.php` |
 
 **ملاحظة runtime:** أي ملف PHP موجود تحت `api/` أو `pages/` يمكن استدعاؤه مباشرة إذا كان على الخادم، حتى بدون قاعدة في `.htaccess`.
@@ -34,7 +34,7 @@
 | `/government-workforce-operations/` | `pages/government-workforce-operations.php` | **Public** |
 | `/enterprise-pack/` | `pages/enterprise-pack.php` | **Public** |
 | `/{country}/login` | `pages/login.php?country_slug=` | **Public** — يضبط `$_SESSION` عند POST ناجح (سطر ~1098+) |
-| `/login/scan` | `pages/login-scan.php` | **Public** — يتطلب `token` pair صالح للcookie `ratib_pair` |
+| `/login/scan` | `pages/login-scan.php` | **Public** — يتطلب `token` pair صالح للcookie `rateb_pair` |
 | `/{country}/login/scan` | `pages/login-scan.php` | **Public** (نفس الملف) |
 | `/{country}/workforce/scan` | `pages/login-scan.php?mode=checkin` | **Public** |
 | `/login/badge` | `pages/login-badge.php` | **Public** — landing لـ badge URL |
@@ -59,13 +59,13 @@
 | `user-login-barcode.php`, `workforce-badge.php` | `logged_in` | `:11–12` |
 | `help-center.php` | `logged_in` | `:8` |
 | `contact.php` | `logged_in` | `:12` |
-| `partner-portal*.php` (عدة) | `ratib_program_session_is_valid_user()` | مثال `partner-agencies.php:10` |
-| `pages/client/*` | `pages/client/_auth.inc.php` → `ratib_client_dashboard_require_access()` | `:23` |
+| `partner-portal*.php` (عدة) | `rateb_program_session_is_valid_user()` | مثال `partner-agencies.php:10` |
+| `pages/client/*` | `pages/client/_auth.inc.php` → `rateb_client_dashboard_require_access()` | `:23` |
 | `login.php`, `login-scan.php`, `login-badge.php` | **Public** (مع منطق pair/token) | — |
 | `home.php`, `about.php`, trust pages | **Public** | — |
 | `test-config.php` | **Public** + `display_errors=1` | `:11–14` |
-| `ratib-purge-cache.php` | **Key** `ratib-deploy-sync-2026` | `:8–13` |
-| `ratib-sync-from-github.php` | **Key** + `run=1` | `:11–16` |
+| `rateb-purge-cache.php` | **Key** `rateb-deploy-sync-2026` | `:8–13` |
+| `rateb-sync-from-github.php` | **Key** + `run=1` | `:11–16` |
 
 ---
 
@@ -75,7 +75,7 @@
 
 | Endpoint | الملف | الدالة/الإجراء | Auth |
 |----------|------|----------------|------|
-| `POST /api/login-barcode-pair.php` | `api/login-barcode-pair.php` | `action`: `create`/`poll`/`submit` → `ratib_barcode_pair_*()` | **Public** — `SYSTEM_ENDPOINT`; لا session (`:11–12`) |
+| `POST /api/login-barcode-pair.php` | `api/login-barcode-pair.php` | `action`: `create`/`poll`/`submit` → `rateb_barcode_pair_*()` | **Public** — `SYSTEM_ENDPOINT`; لا session (`:11–12`) |
 | `POST /api/qr-login.php` | `api/qr-login.php` | `validate`/`submit`/`validate_pin`/`trusted_*`/`issue`/`revoke` | **Public** لـ validate/trusted؛ **Auth** لـ `metrics` (`:236`) و `issue`/`revoke` (`:250`) |
 | `POST /api/workers/core/create.php` | `api/workers/core/create.php` | `enforceApiPermission('workers','create')` | **Auth + RBAC** `:38` |
 | `GET /api/workers/get.php` | `api/workers/get.php` | `enforceApiPermission('workers','get')` | **Auth + RBAC** `:36` |
@@ -166,18 +166,18 @@ pages/Worker.php (UI)
 ```
 pages/login.php + js/login.js
   → POST api/login-barcode-pair.php (create/poll)
-      → includes/ratib-barcode-login-pair.php
-          → temp files sys_get_temp_dir()/ratib_barcode_pairs OR DB login_barcode_pairs
+      → includes/rateb-barcode-login-pair.php
+          → temp files sys_get_temp_dir()/rateb_barcode_pairs OR DB login_barcode_pairs
   → pages/login-scan.php (phone)
-      → cookie ratib_pair
+      → cookie rateb_pair
       → js/login-scan.js → POST api/qr-login.php (validate)
           → includes/config.php
-          → includes/ratib-qr-login.php
-              → includes/ratib-user-login-barcode.php
-              → includes/ratib-barcode-login-auth.php
-          → includes/ratib-qr-workforce-identity.php
-          → ratib_qr_login_authenticate_payload() → users table (mysqli $GLOBALS['conn'] or resolved)
-          → ratib_barcode_pair_approve() → desktop poll in js/login.js
+          → includes/rateb-qr-login.php
+              → includes/rateb-user-login-barcode.php
+              → includes/rateb-barcode-login-auth.php
+          → includes/rateb-qr-workforce-identity.php
+          → rateb_qr_login_authenticate_payload() → users table (mysqli $GLOBALS['conn'] or resolved)
+          → rateb_barcode_pair_approve() → desktop poll in js/login.js
   → DB: users (qr_login_token cols), qr_login_audit (sql/migrations/20260522_qr_login_enterprise.sql)
 ```
 
@@ -192,7 +192,7 @@ mobile-app/assets/js/app.js (fetch)
       → api/core/Database.php → PDO app tenant
       → getControlDB() → control PDO
       → admin/core/EventBus.php, GeofenceEngine.php, …
-      → tables: worker_tracking_devices, location storage (via ratibEnsureWorkerTrackingSchema)
+      → tables: worker_tracking_devices, location storage (via ratebEnsureWorkerTrackingSchema)
 ```
 
 **مصدر tenant:** `TenantExecutionContext::getTenantId()` أو `HTTP_X_TENANT_ID` أو payload `tenant_id` (`update-location.php:99–110`).
@@ -205,7 +205,7 @@ mobile-app/assets/js/app.js (fetch)
 control-panel/pages/control/infrastructure.php
   → api/infrastructure-marketplace/*.php
       → modules/infrastructure-marketplace/bootstrap.php
-          → Ratib\InfrastructureMarketplace\* autoload
+          → Rateb\InfrastructureMarketplace\* autoload
       → Workers/InfrastructureProvisioningWorker.php (CLI/cron documented in Docs/)
 ```
 
@@ -219,7 +219,7 @@ pages/client/dashboard.php
       → pages/client/_auth.inc.php
           → includes/config.php
           → modules/client-dashboard/bootstrap.php
-              → ratib_client_dashboard_require_access()
+              → rateb_client_dashboard_require_access()
   → api/client-dashboard/snapshot.php (via JS — 5 files under api/client-dashboard/)
 ```
 
@@ -231,7 +231,7 @@ pages/client/dashboard.php
 |-----|----------|----------|
 | `$GLOBALS['conn']` | `includes/config.php:1205+` | `permissions.php`, QR auth, login pages, diagnostics |
 | `$GLOBALS['control_conn']` | `control-panel/includes/config.php:103` | control-panel APIs |
-| `$GLOBALS['ratib_public_nav_on_marketing_home']` | `pages/home.php:10` | nav includes |
+| `$GLOBALS['rateb_public_nav_on_marketing_home']` | `pages/home.php:10` | nav includes |
 | `$GLOBALS['worker_platform_event_dispatcher']` | `public/worker-platform.php:23` | app listeners |
 
 ---
@@ -298,7 +298,7 @@ pages/client/dashboard.php
 [API] api/workers/core/create.php
   → enforceApiPermission('workers','create')
   → api/workers/workflow-engine.php
-      → ratib_workflow_ensure_schema(PDO)  → tables workflow_definitions, workflow_stages, …
+      → rateb_workflow_ensure_schema(PDO)  → tables workflow_definitions, workflow_stages, …
       → stage keys: identity, passport, police, medical, … (workflow-engine.php:9–22)
   → PDO Database::getInstance() → INSERT workers (tenant DB)
   ↓
@@ -319,24 +319,24 @@ pages/client/dashboard.php
 ```
 1. Desktop: pages/login.php + js/login.js
    POST api/login-barcode-pair.php {action:create}
-   → ratib_barcode_pair_create() [includes/ratib-barcode-login-pair.php]
+   → rateb_barcode_pair_create() [includes/rateb-barcode-login-pair.php]
    → returns token → QR on screen
 
 2. Phone: GET /login/scan?token=… → pages/login-scan.php
-   → ratib_barcode_pair_read(token)
-   → setcookie('ratib_pair', token, 600s)
+   → rateb_barcode_pair_read(token)
+   → setcookie('rateb_pair', token, 600s)
 
 3. Phone scan badge:
    POST api/qr-login.php {action:validate, qr_payload, pair_token}
-   → ratib_qr_login_authenticate_payload() [includes/ratib-qr-login.php]
-   → reads users.qr_login_token / RATIBLOGIN: prefix
-   → ratib_qr_login_audit() → qr_login_audit table
-   → ratib_barcode_pair_approve() [pair.php]
-   → optional ratib_qr_login_apply_session() if no pair
+   → rateb_qr_login_authenticate_payload() [includes/rateb-qr-login.php]
+   → reads users.qr_login_token / RATEBLOGIN: prefix
+   → rateb_qr_login_audit() → qr_login_audit table
+   → rateb_barcode_pair_approve() [pair.php]
+   → optional rateb_qr_login_apply_session() if no pair
 
 4. Desktop: js/login.js polls api/login-barcode-pair.php {action:poll}
    → status approved → redirect with barcode_pair query
-   → pages/login.php consumes pair → session (ratib-barcode-login-auth.php)
+   → pages/login.php consumes pair → session (rateb-barcode-login-auth.php)
 ```
 
 **Session keys (من login.php grep):** `logged_in`, `user_id`, `agency_id`, …
@@ -399,15 +399,15 @@ Cached in SW: mobile-app/sw.js:35 (/api/worker-tracking/)
 
 | Endpoint / Page | ملف | تصنيف | خطورة |
 |-----------------|------|--------|--------|
-| QR validate | `api/qr-login.php` action validate | **Public** | P1 — by design؛ rate limit in `ratib-qr-login.php` |
+| QR validate | `api/qr-login.php` action validate | **Public** | P1 — by design؛ rate limit in `rateb-qr-login.php` |
 | Pair create/poll | `api/login-barcode-pair.php` | **Public** | P2 |
 | Registration | `api/registration-request.php` | **Public** | P2 — comment rate limit by IP |
 | N-Genius health | `api/ngenius-health.php` | **Public** | P2 |
 | HR debug | `api/hr/debug-query.php` | **Public** (no gate in header) | **P0** |
 | Test config | `pages/test-config.php` | **Public** + errors | **P0** |
 | Clear all data | `api/admin/clear_all_data.php` | **Admin** | P0 if session compromised |
-| Purge cache | `pages/ratib-purge-cache.php` | **Shared key** | P1 |
-| Sync github | `pages/ratib-sync-from-github.php` | **Shared key** | P1 |
+| Purge cache | `pages/rateb-purge-cache.php` | **Shared key** | P1 |
+| Sync github | `pages/rateb-sync-from-github.php` | **Shared key** | P1 |
 | Worker tracking POST | `api/worker-tracking/update-location.php` | **Token/tenant** not session | P1–P2 |
 | Journal entries | `api/accounting/journal-entries.php` | **RBAC** | P3 |
 | Worker create | `api/workers/core/create.php` | **RBAC** | P3 |
@@ -428,9 +428,9 @@ Cached in SW: mobile-app/sw.js:35 (/api/worker-tracking/)
 | Mechanism | File |
 |-----------|------|
 | Agency session | `pages/login.php` sets `$_SESSION['logged_in']` |
-| API session pick | `api/core/ratib_api_session.inc.php` |
+| API session pick | `api/core/rateb_api_session.inc.php` |
 | Regenerate ID | `core/Auth.php:116`, `control-panel/core/Auth.php:36` |
-| QR apply session | `ratib_qr_login_apply_session()` in `includes/ratib-qr-login.php` |
+| QR apply session | `rateb_qr_login_apply_session()` in `includes/rateb-qr-login.php` |
 | Control SSO | `includes/config.php` (control=1&agency_id=) referenced in login.php:11 |
 
 ---
@@ -481,7 +481,7 @@ Monorepo PHP/MySQL يجمع:
 | Debug/test endpoints in tree | §3.4 |
 | `tests/` — 8 files; integration = file existence only | `tests/Integration/EndpointsTest.php` |
 | `coreai/agent/README.md` placeholder | agent folder |
-| Public ops pages with static key | `ratib-deploy-sync-2026` |
+| Public ops pages with static key | `rateb-deploy-sync-2026` |
 
 ---
 

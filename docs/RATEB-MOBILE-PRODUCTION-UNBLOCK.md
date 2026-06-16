@@ -30,7 +30,7 @@
 | Check | Status |
 |-------|--------|
 | Default production secret `rateb-mobile-change-me-in-production` | **Removed** |
-| Dev-only fallback | `rateb-mobile-dev-only-not-for-production` — **only when NOT `*.ratib.sa`** |
+| Dev-only fallback | `rateb-mobile-dev-only-not-for-production` — **only when NOT `*.rateb.sa`** |
 | Production fail-closed | `rateb_mobile_config_error()` → **503**, logs CRITICAL, **never exposes secret** |
 | Invalid password login | **401** without calling `issue_token` (misleading health signal) |
 | Any Bearer / JWT operation on `rateb.sa` without secret | **503 `config_error`** (expected today) |
@@ -159,7 +159,7 @@ curl -sS -w "\nHTTP %{http_code}\n" \
 | **Edge** | `Server: nginx` on `rateb.sa` |
 | **Hosting** | cPanel deploy scripts in repo (`scripts/github-cpanel-fileman-deploy-core.py`, `cpanel-deploy-sync.sh`) |
 | **PHP** | PHP 8.x compatible; PHP-FPM or LiteSpeed common on cPanel |
-| **Env loading** | `config/env/load.php` → `ratib_env_load_bridge_dotenv()` reads project-root `.env` |
+| **Env loading** | `config/env/load.php` → `rateb_env_load_bridge_dotenv()` reads project-root `.env` |
 | **Host profile** | `config/env/rateb_sa.php` for `rateb.sa` |
 
 ### Load order for mobile login
@@ -196,7 +196,7 @@ cors.php → bootstrap.php (functions) → includes/config.php
 
 Mobile isolation uses JWT `country_id` / agency `sub` — see `api/mobile/tenant.inc.php`.
 
-Run on **`outratib_out`** (or active tenant DB) in phpMyAdmin:
+Run on **`admin_out`** (or active tenant DB) in phpMyAdmin:
 
 ### Schema checks
 

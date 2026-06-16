@@ -44,7 +44,7 @@ if (isset($MODULE_PERMISSIONS['cost_centers'])) {
 /**
  * Allocate next CC##### code from live DB (avoids stale client / duplicate POST).
  */
-function ratib_allocate_next_cost_center_code(mysqli $conn): string
+function rateb_allocate_next_cost_center_code(mysqli $conn): string
 {
     $maxFromDb = 0;
     $res = $conn->query('SELECT code FROM cost_centers');
@@ -219,7 +219,7 @@ try {
 
         $serverAssigned = !empty($data['server_assigned_code']);
         if ($serverAssigned) {
-            $code = ratib_allocate_next_cost_center_code($conn);
+            $code = rateb_allocate_next_cost_center_code($conn);
         } else {
             $code = trim($data['code'] ?? '');
             if ($code === '') {

@@ -82,7 +82,7 @@ try {
     }
 
     $controlPdo = getControlDB();
-    ratibEnsureWorkerTrackingSchema($controlPdo);
+    ratebEnsureWorkerTrackingSchema($controlPdo);
     if ($tenantId <= 0) {
         sos_json(['success' => false, 'error' => 'Tenant context missing', 'message' => 'Tenant context missing'], 400);
     }

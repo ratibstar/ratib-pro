@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Registrars\Search;
+namespace RATEB\InfrastructureMarketplace\Registrars\Search;
 
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
 
 final class RegistrarSearchAggregator
 {
@@ -63,7 +63,7 @@ final class RegistrarSearchAggregator
     {
         if ($this->activations === null) {
             return [[
-                'provider_class' => 'Ratib\\InfrastructureMarketplace\\Registrars\\Adapters\\NamecheapRegistrarAdapter',
+                'provider_class' => 'RATEB\\InfrastructureMarketplace\\Registrars\\Adapters\\NamecheapRegistrarAdapter',
                 'priority_weight' => 100,
             ]];
         }

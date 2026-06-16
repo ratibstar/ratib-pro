@@ -1,13 +1,13 @@
 # Enterprise Trust Gap Analysis
 
 **Date:** 2026-05-18  
-**Scope:** Public enterprise trust surfaces for RATIB (marketing home, profile, procurement, security, architecture)
+**Scope:** Public enterprise trust surfaces for RATEB (marketing home, profile, procurement, security, architecture)
 
 ---
 
 ## Executive summary
 
-RATIB now exposes a **four-page enterprise trust cluster** aimed at different reviewer personas. Remaining gaps are mostly **evidence artifacts** (downloadable packs, signed attestations) and **operational proof** (status, DPA templates) — not additional marketing copy.
+RATEB now exposes a **four-page enterprise trust cluster** aimed at different reviewer personas. Remaining gaps are mostly **evidence artifacts** (downloadable packs, signed attestations) and **operational proof** (status, DPA templates) — not additional marketing copy.
 
 | Page | Primary persona | Trust job |
 |------|-----------------|-----------|
@@ -71,7 +71,7 @@ Priority ordered by procurement impact:
 
 | Field | Source of truth | Status |
 |-------|-----------------|--------|
-| Legal name | `ratib-about-profile-data.php` / procurement data | Aligned |
+| Legal name | `rateb-about-profile-data.php` / procurement data | Aligned |
 | Email | `info@rateb.sa` | Aligned across public surfaces |
 | Phone | +966 599 863 868 | Aligned |
 | CR | NDA on request | Consistent, not over-claimed |

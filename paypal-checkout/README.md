@@ -1,6 +1,6 @@
 # PayPal Checkout Integration - Secure Implementation
 
-Complete PayPal REST API v2 integration for Ratib Program with backend order creation and capture.
+Complete PayPal REST API v2 integration for Rateb Program with backend order creation and capture.
 
 ## 🔒 Security Features
 

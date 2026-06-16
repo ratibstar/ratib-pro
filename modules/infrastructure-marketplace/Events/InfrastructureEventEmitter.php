@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Events;
+namespace RATEB\InfrastructureMarketplace\Events;
 
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
 
 /**
  * Bridges to core emitEvent(...) when present; prefix CONTROL_* aligns with EventBus allowances.

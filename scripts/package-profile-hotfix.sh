@@ -1,25 +1,25 @@
 #!/bin/bash
-# Build dist/ratib-profile-hotfix.zip for manual cPanel upload (extract into site docroot).
+# Build dist/rateb-profile-hotfix.zip for manual cPanel upload (extract into site docroot).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-OUT="${ROOT}/dist/ratib-profile-hotfix.zip"
+OUT="${ROOT}/dist/rateb-profile-hotfix.zip"
 mkdir -p dist
 MANIFEST=(
-  includes/ratib-home-public-nav-sync.php
-  includes/ratib-home-public-chrome-top.php
-  includes/ratib-home-public-nav-bootstrap.php
-  includes/ratib-about-profile-data.php
-  includes/ratib-about-sections.php
-  includes/ratib-mega-nav-config.php
-  includes/ratib-mega-nav-resolve.php
-  includes/ratib-mega-nav-render.php
+  includes/rateb-home-public-nav-sync.php
+  includes/rateb-home-public-chrome-top.php
+  includes/rateb-home-public-nav-bootstrap.php
+  includes/rateb-about-profile-data.php
+  includes/rateb-about-sections.php
+  includes/rateb-mega-nav-config.php
+  includes/rateb-mega-nav-resolve.php
+  includes/rateb-mega-nav-render.php
   pages/home.php
   pages/about.php
   pages/company-profile.php
   pages/deploy-root.php
-  public/ratib-build.txt
-  js/pages/ratib-mega-nav.js
+  public/rateb-build.txt
+  js/pages/rateb-mega-nav.js
   js/pages/home-page.js
   css/pages/home-public.css
   css/pages/about-enterprise.css

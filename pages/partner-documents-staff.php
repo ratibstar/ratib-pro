@@ -5,14 +5,14 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/permissions.php';
 
-// Stay on Ratib Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
+// Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
 
-if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
+if (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user()) {
     header('Location: ' . pageUrl('login.php'));
     exit;
 }
 if (!hasPermission('view_partner_agencies') && !hasPermission('view_workers')) {
-    header('Location: ' . ratib_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
+    header('Location: ' . rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
     exit;
 }
 
@@ -63,7 +63,7 @@ $pageJs = [asset('js/partnerships/partner-portal-documents.js') . '?v=' . $v];
 include __DIR__ . '/../includes/header.php';
 ?>
 <script>
-window.RATIB_PARTNER_DOCS_STAFF = {
+window.RATEB_PARTNER_DOCS_STAFF = {
     partner_agency_id: <?php echo (int) $partnerAgencyId; ?>,
     highlight_worker_ids: <?php echo json_encode($highlightWorkerIds, JSON_UNESCAPED_UNICODE); ?>,
     worker_profile_extra_query: <?php echo json_encode($extraWorkerQueryStr, JSON_UNESCAPED_UNICODE); ?>,

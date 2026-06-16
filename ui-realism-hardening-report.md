@@ -22,8 +22,8 @@
 | Profile distinct banner | Purple gradient + glow shadow | Flat slate bar, no shadow |
 | Hero glow | Blue/violet dual radial | Single muted slate radial |
 | Page label badge | Violet glow box-shadow | None |
-| `.ratib-about-gradient` | Bright gradient text | Slate text + subtle underline |
-| `.ratib-about-shot--glow` | 60px blue glow | Simple drop shadow |
+| `.rateb-about-gradient` | Bright gradient text | Slate text + subtle underline |
+| `.rateb-about-shot--glow` | 60px blue glow | Simple drop shadow |
 | Arch layer SVG | Animated pulsing dots, violet gradient stroke | Static dots, `#475569` stroke |
 | Arch card hover | Blue glow shadow | Border only, no glow |
 | Profile nav current pill | Violet gradient + glow | Flat slate fill |
@@ -40,14 +40,14 @@
 
 | Element | Before | After |
 |---------|--------|-------|
-| `.ratib-pill--live` | Green live-stream styling | Muted slate (when used) |
-| Ops section | No disclaimer style | `.ratib-ops__disclaimer` mono line |
+| `.rateb-pill--live` | Green live-stream styling | Muted slate (when used) |
+| Ops section | No disclaimer style | `.rateb-ops__disclaimer` mono line |
 
 ### `css/pages/operational-proof.css` (new)
 
 - Neutral borders `#475569`  
 - No gradients on cards  
-- `.ratib-op-sample` uppercase mono badges  
+- `.rateb-op-sample` uppercase mono badges  
 
 ---
 

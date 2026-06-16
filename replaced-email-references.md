@@ -6,12 +6,12 @@ Target canonical email:
 
 ## Replacements Applied
 
-- `includes/ratib-home-public-footer.php`
-  - `mailto:ratibstar@gmail.com` -> `mailto:info@rateb.sa`
+- `includes/rateb-home-public-footer.php`
+  - `mailto:ratebstar@gmail.com` -> `mailto:info@rateb.sa`
   - Visible footer email text updated to `info@rateb.sa`
-- `includes/ratib-about-profile-data.php`
+- `includes/rateb-about-profile-data.php`
   - Company profile contact email updated to `info@rateb.sa`
-- `includes/ratib-about-sections.php`
+- `includes/rateb-about-sections.php`
   - "Talk to Solutions Team" mailto updated to `info@rateb.sa`
 - `pages/about.php`
   - Schema.org `Organization` `contactPoint.email` updated to `info@rateb.sa`
@@ -23,7 +23,7 @@ Target canonical email:
 ## Validation
 
 - Public-facing search scope (`pages/`, `includes/`, `js/`, `public/`) no longer contains:
-  - `ratibstar@gmail.com`
+  - `ratebstar@gmail.com`
   - fallback Gmail contact strings
   - hardcoded legacy public contact Gmail references
 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\SSL\Validation;
+namespace RATEB\InfrastructureMarketplace\SSL\Validation;
 
 final class DnsValidationPreparation
 {

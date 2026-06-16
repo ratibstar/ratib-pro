@@ -34,7 +34,7 @@ def _write_ssh_key() -> str:
         raise SystemExit("DEPLOY_SSH_PRIVATE_KEY (or SSH_PRIVATE_KEY) required")
     if "\\n" in key and "\n" not in key:
         key = key.replace("\\n", "\n")
-    fd, path = tempfile.mkstemp(prefix="ratib-deploy-key-", suffix=".pem")
+    fd, path = tempfile.mkstemp(prefix="rateb-deploy-key-", suffix=".pem")
     os.close(fd)
     with open(path, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(key)
@@ -146,7 +146,7 @@ def _rsync_files(core, files: list[str], remote_base: str, key_path: str) -> tup
     if not existing:
         return 0, 0
 
-    fd, list_path = tempfile.mkstemp(prefix="ratib-deploy-files-", suffix=".txt")
+    fd, list_path = tempfile.mkstemp(prefix="rateb-deploy-files-", suffix=".txt")
     os.close(fd)
     try:
         with open(list_path, "w", encoding="utf-8") as handle:

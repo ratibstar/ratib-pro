@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Observability;
+namespace RATEB\InfrastructureMarketplace\Observability;
 
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 
 final class InfrastructureMetrics
 {

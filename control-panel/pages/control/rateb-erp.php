@@ -53,7 +53,7 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
 <?php } elseif ($erpInstalled && !$dbTest['ok']) { ?>
 <div class="alert alert-danger mb-4">
     <strong><i class="fas fa-database me-1"></i> صلاحيات قاعدة البيانات</strong><br>
-    المستخدم <code><?php echo htmlspecialchars(defined('DB_USER') ? (string) DB_USER : 'outratib_out', ENT_QUOTES, 'UTF-8'); ?></code>
+    المستخدم <code><?php echo htmlspecialchars(defined('DB_USER') ? (string) DB_USER : 'admin_out', ENT_QUOTES, 'UTF-8'); ?></code>
     لا يستطيع الاتصال بقاعدة <code><?php echo htmlspecialchars((string) $dbTest['db'], ENT_QUOTES, 'UTF-8'); ?></code>.<br>
     في cPanel → MySQL® Databases → Add User To Database → ALL PRIVILEGES.<br>
     <span class="small text-muted"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></span>

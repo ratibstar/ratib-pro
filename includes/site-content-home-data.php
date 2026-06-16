@@ -1,36 +1,36 @@
 <?php
 /**
  * Public homepage (pages/home.php) — default copy keys + control-panel editor layout.
- * Keys are flat strings stored in ratib_site_content.content_key.
+ * Keys are flat strings stored in rateb_site_content.content_key.
  */
 require_once __DIR__ . '/site-content-home-slots.php';
-require_once __DIR__ . '/ratib-public-cms.php';
+require_once __DIR__ . '/rateb-public-cms.php';
 require_once __DIR__ . '/site-content-profile-data.php';
 require_once __DIR__ . '/site-content-public-data.php';
 
-if (!function_exists('ratib_site_content_public_source_resolved')) {
+if (!function_exists('rateb_site_content_public_source_resolved')) {
     /**
-     * Effective RATIB_SITE_CONTENT_PUBLIC_SOURCE (getenv + host-profile constant). Lowercase token.
+     * Effective RATEB_SITE_CONTENT_PUBLIC_SOURCE (getenv + host-profile constant). Lowercase token.
      */
-    function ratib_site_content_public_source_resolved(): string
+    function rateb_site_content_public_source_resolved(): string
     {
-        $g = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
+        $g = getenv('RATEB_SITE_CONTENT_PUBLIC_SOURCE');
         if ($g !== false && trim((string) $g) !== '') {
             return strtolower(trim((string) $g));
         }
-        if (defined('RATIB_CMS_HOME_PUBLIC_SOURCE') && (string) RATIB_CMS_HOME_PUBLIC_SOURCE !== '') {
-            return strtolower(trim((string) RATIB_CMS_HOME_PUBLIC_SOURCE));
+        if (defined('RATEB_CMS_HOME_PUBLIC_SOURCE') && (string) RATEB_CMS_HOME_PUBLIC_SOURCE !== '') {
+            return strtolower(trim((string) RATEB_CMS_HOME_PUBLIC_SOURCE));
         }
 
         return '';
     }
 }
 
-if (!function_exists('ratib_site_content_defaults_home')) {
+if (!function_exists('rateb_site_content_defaults_home')) {
     /**
      * @return array<string, string>
      */
-    function ratib_site_content_defaults_home(): array
+    function rateb_site_content_defaults_home(): array
     {
         /* Header platform strip — six primary links; legacy keys kept for CMS rows still in DB. */
         $nav = [
@@ -76,8 +76,8 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.nav.cta_partner'] = 'Partner Login';
 
         $d['home.hero.eyebrow'] = 'Enterprise Workforce Operations Platform';
-        $d['home.hero.lead'] = function_exists('ratib_brand_hero_lead')
-            ? ratib_brand_hero_lead()
+        $d['home.hero.lead'] = function_exists('rateb_brand_hero_lead')
+            ? rateb_brand_hero_lead()
             : 'Operational visibility, provider coordination, and enterprise workforce management — on one platform for cross-border programs.';
         $d['home.hero.title_before'] = 'RATEB';
         $d['home.hero.title_gradient'] = 'Recruitment Automation & Telemetry Enterprise Base';
@@ -386,7 +386,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.footer.strip.1'] = 'documented SLA posture · operational reviews';
         $d['home.footer.strip.2'] = 'API gateway · rate limits · idempotent writes';
         $d['home.footer.strip.3'] = 'orchestrator · audit · replay-safe logs';
-        $d['home.footer.copyright_suffix'] = function_exists('ratib_brand_footer_legal_line') ? ratib_brand_footer_legal_line() : 'RATEB';
+        $d['home.footer.copyright_suffix'] = function_exists('rateb_brand_footer_legal_line') ? rateb_brand_footer_legal_line() : 'RATEB';
         $d['home.footer.location'] = 'Riyadh, Saudi Arabia';
 
         $d['home.footer.link.platform.overview'] = 'Platform overview';
@@ -407,20 +407,20 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.chat.title'] = 'RATEB Assistant';
         $d['home.chat.subtitle'] = 'Help guides & live support';
 
-        if (function_exists('ratib_site_content_defaults_profile')) {
-            $d = array_merge($d, ratib_site_content_defaults_profile());
+        if (function_exists('rateb_site_content_defaults_profile')) {
+            $d = array_merge($d, rateb_site_content_defaults_profile());
         }
-        if (function_exists('ratib_site_content_defaults_public_pages')) {
-            $d = array_merge($d, ratib_site_content_defaults_public_pages());
+        if (function_exists('rateb_site_content_defaults_public_pages')) {
+            $d = array_merge($d, rateb_site_content_defaults_public_pages());
         }
 
         return $d;
     }
 }
 
-if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
+if (!function_exists('rateb_site_content_home_flat_overlay_live_db')) {
     /**
-     * After reading JSON/blob snapshot, merge any rows found in ratib_site_content on top.
+     * After reading JSON/blob snapshot, merge any rows found in rateb_site_content on top.
      * Prevents stale cache files (written when DB was down or from another path) from masking live CMS data.
      *
      * @param array<string, string> $base
@@ -428,16 +428,16 @@ if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
      *
      * @return array<string, string>
      */
-    function ratib_site_content_home_flat_overlay_live_db(array $base, array $defaults): array
+    function rateb_site_content_home_flat_overlay_live_db(array $base, array $defaults): array
     {
-        if (!function_exists('ratib_site_content_fetch_key_values') || !function_exists('ratib_site_content_db')) {
+        if (!function_exists('rateb_site_content_fetch_key_values') || !function_exists('rateb_site_content_db')) {
             return $base;
         }
-        ratib_site_content_db(true);
-        if (!ratib_site_content_db()) {
+        rateb_site_content_db(true);
+        if (!rateb_site_content_db()) {
             return $base;
         }
-        $rows = ratib_site_content_fetch_key_values(array_keys($defaults));
+        $rows = rateb_site_content_fetch_key_values(array_keys($defaults));
         $out = $base;
         foreach ($defaults as $k => $def) {
             if (array_key_exists($k, $rows)) {
@@ -445,27 +445,27 @@ if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
 
                 continue;
             }
-            // Same rule as ratib_site_content_home_flat_from_db: never trust stale cache for a key if the row exists.
+            // Same rule as rateb_site_content_home_flat_from_db: never trust stale cache for a key if the row exists.
             $fb = $base[$k] ?? $def;
-            $out[$k] = ratib_site_content_get($k, $fb);
+            $out[$k] = rateb_site_content_get($k, $fb);
         }
 
         return $out;
     }
 }
 
-if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
+if (!function_exists('rateb_site_content_home_ensure_header_nav_labels')) {
     /**
-     * After ratib_site_content_home_flat(): ensure compact header nav keys exist (mega menu + short platform strip).
+     * After rateb_site_content_home_flat(): ensure compact header nav keys exist (mega menu + short platform strip).
      *
      * @param array<string, string> $flat
      */
-    function ratib_site_content_home_ensure_header_nav_labels(array &$flat): void
+    function rateb_site_content_home_ensure_header_nav_labels(array &$flat): void
     {
-        if (!function_exists('ratib_site_content_defaults_home')) {
+        if (!function_exists('rateb_site_content_defaults_home')) {
             return;
         }
-        $def = ratib_site_content_defaults_home();
+        $def = rateb_site_content_defaults_home();
         $navKeys = [
             'home.nav.about',
             'home.nav.platform',
@@ -503,7 +503,7 @@ if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
     }
 }
 
-if (!function_exists('ratib_site_content_home_flat')) {
+if (!function_exists('rateb_site_content_home_flat')) {
     /**
      * Resolved key => value for homepage (DB overrides defaults).
      *
@@ -513,12 +513,12 @@ if (!function_exists('ratib_site_content_home_flat')) {
      *
      * @return array<string, string>
      */
-    function ratib_site_content_home_flat(bool $mergeLegacyMedia = true): array
+    function rateb_site_content_home_flat(bool $mergeLegacyMedia = true): array
     {
         // Do not use a cross-request static cache here: PHP-FPM workers would keep the first resolution
         // (often stale JSON / defaults when MySQL was briefly unreachable) for the worker lifetime even
         // after DB access and GRANTs are fixed — making the homepage appear "stuck" forever until restart.
-        $defaults = ratib_site_content_defaults_home();
+        $defaults = rateb_site_content_defaults_home();
 
         $applyHomeCache = static function (array $cached, array $defaults): array {
             $out = $defaults;
@@ -531,55 +531,55 @@ if (!function_exists('ratib_site_content_home_flat')) {
             return $out;
         };
 
-        $rebrandFile = __DIR__ . '/ratib-site-content-rebrand-sanitize.php';
+        $rebrandFile = __DIR__ . '/rateb-site-content-rebrand-sanitize.php';
         if (is_file($rebrandFile)) {
             require_once $rebrandFile;
         }
 
         $finalizeHomeFlat = static function (array $base) use ($mergeLegacyMedia, $defaults): array {
-            if ($mergeLegacyMedia && function_exists('ratib_site_content_home_merge_legacy_media_into_values')) {
-                $base = ratib_site_content_home_merge_legacy_media_into_values($base);
+            if ($mergeLegacyMedia && function_exists('rateb_site_content_home_merge_legacy_media_into_values')) {
+                $base = rateb_site_content_home_merge_legacy_media_into_values($base);
             }
-            if (function_exists('ratib_site_content_rebrand_sanitize_flat')) {
-                $base = ratib_site_content_rebrand_sanitize_flat($base, $defaults);
+            if (function_exists('rateb_site_content_rebrand_sanitize_flat')) {
+                $base = rateb_site_content_rebrand_sanitize_flat($base, $defaults);
             }
 
             return $base;
         };
 
-        // Optional env (see .env.example): RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only
+        // Optional env (see .env.example): RATEB_SITE_CONTENT_PUBLIC_SOURCE=db_only
         // Skips disk/DB-blob JSON fallbacks so a stale snapshot cannot mask CMS rows — only live SELECT + per-key reads.
-        // Uses ratib_site_content_public_source_resolved() so config/env/rateb_sa.php constant works when putenv is stripped.
-        $srcEffective = function_exists('ratib_site_content_public_source_resolved')
-            ? ratib_site_content_public_source_resolved()
+        // Uses rateb_site_content_public_source_resolved() so config/env/rateb_sa.php constant works when putenv is stripped.
+        $srcEffective = function_exists('rateb_site_content_public_source_resolved')
+            ? rateb_site_content_public_source_resolved()
             : '';
         $dbOnlyFallback = ($srcEffective === 'db_only');
 
         // Optional: skip only JSON files on disk (lighter than db_only). Truthy: 1, true, yes, on.
-        $skipDiskJsonRaw = getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE');
+        $skipDiskJsonRaw = getenv('RATEB_SITE_CONTENT_SKIP_DISK_JSON_CACHE');
         $skipDiskJson = $skipDiskJsonRaw !== false
             && in_array(strtolower(trim((string) $skipDiskJsonRaw)), ['1', 'true', 'yes', 'on'], true);
 
         // 1) Live database rows (same source as the CMS). Always wins when MySQL is reachable so stale JSON/snapshot
         //    cannot hide fresh saves.
-        if (function_exists('ratib_site_content_home_flat_from_db')) {
-            $live = ratib_site_content_home_flat_from_db($defaults);
+        if (function_exists('rateb_site_content_home_flat_from_db')) {
+            $live = rateb_site_content_home_flat_from_db($defaults);
             if ($live !== null) {
                 return $finalizeHomeFlat($live);
             }
         }
 
         // 2) DB snapshot row (single blob; used when row-level SELECT is not available).
-        if (!$dbOnlyFallback && function_exists('ratib_site_content_home_snapshot_db_read')) {
-            $rawDb = ratib_site_content_home_snapshot_db_read();
+        if (!$dbOnlyFallback && function_exists('rateb_site_content_home_snapshot_db_read')) {
+            $rawDb = rateb_site_content_home_snapshot_db_read();
             if ($rawDb !== null && $rawDb !== '') {
                 $cached = json_decode($rawDb, true);
                 if (is_array($cached)) {
                     $merged = $applyHomeCache($cached, $defaults);
 
                     return $finalizeHomeFlat(
-                        function_exists('ratib_site_content_home_flat_overlay_live_db')
-                            ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
+                        function_exists('rateb_site_content_home_flat_overlay_live_db')
+                            ? rateb_site_content_home_flat_overlay_live_db($merged, $defaults)
                             : $merged
                     );
                 }
@@ -591,7 +591,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
             $out = [];
             $hasAnyDbValue = false;
             foreach ($defaults as $key => $defaultVal) {
-                $val = ratib_site_content_get($key, $defaultVal);
+                $val = rateb_site_content_get($key, $defaultVal);
                 $out[$key] = $val;
                 if ((string) $val !== (string) $defaultVal) {
                     $hasAnyDbValue = true;
@@ -604,11 +604,11 @@ if (!function_exists('ratib_site_content_home_flat')) {
             }
         }
 
-        $path = function_exists('ratib_site_content_public_cache_path_for_read')
-            ? ratib_site_content_public_cache_path_for_read()
+        $path = function_exists('rateb_site_content_public_cache_path_for_read')
+            ? rateb_site_content_public_cache_path_for_read()
             : null;
-        if ($path === null && function_exists('ratib_site_content_public_cache_path')) {
-            $legacy = ratib_site_content_public_cache_path();
+        if ($path === null && function_exists('rateb_site_content_public_cache_path')) {
+            $legacy = rateb_site_content_public_cache_path();
             $path = is_readable($legacy) ? $legacy : null;
         }
         if ($path !== null && $path !== '') {
@@ -620,8 +620,8 @@ if (!function_exists('ratib_site_content_home_flat')) {
                         $merged = $applyHomeCache($cached, $defaults);
 
                         return $finalizeHomeFlat(
-                            function_exists('ratib_site_content_home_flat_overlay_live_db')
-                                ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
+                            function_exists('rateb_site_content_home_flat_overlay_live_db')
+                                ? rateb_site_content_home_flat_overlay_live_db($merged, $defaults)
                                 : $merged
                         );
                     }
@@ -631,18 +631,18 @@ if (!function_exists('ratib_site_content_home_flat')) {
 
         $out = [];
         foreach ($defaults as $key => $defaultVal) {
-            $out[$key] = ratib_site_content_get($key, $defaultVal);
+            $out[$key] = rateb_site_content_get($key, $defaultVal);
         }
 
         return $finalizeHomeFlat($out);
     }
 }
 
-if (!function_exists('ratib_site_content_home_nl_lines')) {
+if (!function_exists('rateb_site_content_home_nl_lines')) {
     /**
      * @return list<string>
      */
-    function ratib_site_content_home_nl_lines(string $text): array
+    function rateb_site_content_home_nl_lines(string $text): array
     {
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $lines = array_map('trim', explode("\n", $text));
@@ -653,13 +653,13 @@ if (!function_exists('ratib_site_content_home_nl_lines')) {
     }
 }
 
-if (!function_exists('ratib_site_content_home_editor_groups_core')) {
+if (!function_exists('rateb_site_content_home_editor_groups_core')) {
     /**
      * Homepage-only editor sections (prefixed "Homepage ·" when merged into public editor).
      *
      * @return list<array<string, mixed>>
      */
-    function ratib_site_content_home_editor_groups_core(): array
+    function rateb_site_content_home_editor_groups_core(): array
     {
         return [
             [
@@ -1014,19 +1014,19 @@ if (!function_exists('ratib_site_content_home_editor_groups_core')) {
     }
 }
 
-if (!function_exists('ratib_site_content_home_editor_groups')) {
+if (!function_exists('rateb_site_content_home_editor_groups')) {
     /**
      * Full public site editor (profile, trust pages, homepage, …).
      *
      * @return list<array<string, mixed>>
      */
-    function ratib_site_content_home_editor_groups(): array
+    function rateb_site_content_home_editor_groups(): array
     {
-        if (function_exists('ratib_site_content_public_editor_groups')) {
-            return ratib_site_content_public_editor_groups();
+        if (function_exists('rateb_site_content_public_editor_groups')) {
+            return rateb_site_content_public_editor_groups();
         }
 
-        return ratib_site_content_home_editor_groups_core();
+        return rateb_site_content_home_editor_groups_core();
     }
 }
 

@@ -1,7 +1,7 @@
-# Ratib Program - Complete User Training Guide
+# Rateb Program - Complete User Training Guide
 ## Step-by-Step Guide for End Users
 
-**Welcome to Ratib Program!** This guide will teach you everything you need to know to use the system effectively.
+**Welcome to Rateb Program!** This guide will teach you everything you need to know to use the system effectively.
 
 ---
 
@@ -29,7 +29,7 @@
 ### Step 1: Logging In
 
 1. **Open your web browser** (Chrome, Firefox, or Edge recommended)
-2. **Navigate to** your Ratib Program URL (provided by your administrator)
+2. **Navigate to** your Rateb Program URL (provided by your administrator)
 3. **You will see the login page** with:
    - Username field (top)
    - Password field (below username)
@@ -987,7 +987,7 @@ Use this checklist to track your learning:
 
 ## 🎉 Congratulations!
 
-You've completed the Ratib Program User Training Guide! You now know how to:
+You've completed the Rateb Program User Training Guide! You now know how to:
 
 ✅ Navigate the system  
 ✅ Manage workers, agents, and subagents  
@@ -1012,7 +1012,7 @@ You've completed the Ratib Program User Training Guide! You now know how to:
 
 ---
 
-**Happy Using Ratib Program! 🚀**
+**Happy Using Rateb Program! 🚀**
 
 *For technical support or questions, contact your system administrator.*
 

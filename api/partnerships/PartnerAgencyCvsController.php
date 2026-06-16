@@ -2,7 +2,7 @@
 /**
  * CV / document files attached to a partner agency (shown on partner portal).
  */
-require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
+require_once __DIR__ . '/../../includes/rateb_uploads_base.php';
 require_once __DIR__ . '/PartnerAgencyWorkerDocSharesController.php';
 
 class PartnerAgencyCvsController
@@ -17,9 +17,9 @@ class PartnerAgencyCvsController
 
     /**
      * Root folder for partner agency CV files (under …/partner_agency_cvs/{agencyId}/).
-     * Override with define('RATIB_UPLOADS_BASE', '/absolute/path') or env RATIB_UPLOADS_BASE.
+     * Override with define('RATEB_UPLOADS_BASE', '/absolute/path') or env RATEB_UPLOADS_BASE.
      * If project uploads/ exists but is not writable (typical on shared hosting), uses
-     * {parent of project}/ratib_uploads when that can be created and written.
+     * {parent of project}/rateb_uploads when that can be created and written.
      */
     public static function uploadsBaseDir(): string
     {
@@ -28,7 +28,7 @@ class PartnerAgencyCvsController
 
     private static function resolveUploadsBaseDir(): string
     {
-        return ratib_uploads_base_dir();
+        return rateb_uploads_base_dir();
     }
 
     public static function agencyCvDir(int $agencyId): string
@@ -72,7 +72,7 @@ class PartnerAgencyCvsController
             if (!is_writable($path)) {
                 throw new RuntimeException(
                     'Directory is not writable: ' . $path
-                    . ' — fix permissions (e.g. chmod 775 or chown to the PHP user), or set RATIB_UPLOADS_BASE'
+                    . ' — fix permissions (e.g. chmod 775 or chown to the PHP user), or set RATEB_UPLOADS_BASE'
                     . ' in config/env to an absolute path outside public_html that the server can write.'
                 );
             }

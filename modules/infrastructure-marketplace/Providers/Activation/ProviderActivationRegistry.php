@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Providers\Activation;
+namespace RATEB\InfrastructureMarketplace\Providers\Activation;
 
 final class ProviderActivationRegistry
 {
@@ -18,7 +18,7 @@ final class ProviderActivationRegistry
     public function activeForScope(string $providerType, ?int $tenantId, ?int $agencyId): array
     {
         $sql = 'SELECT *
-                FROM ratib_infra_provider_activations
+                FROM rateb_infra_provider_activations
                 WHERE provider_type = :provider_type
                   AND is_enabled = 1
                   AND (tenant_id IS NULL OR tenant_id <=> :tenant_id)
@@ -41,7 +41,7 @@ final class ProviderActivationRegistry
     public function setEnabled(int $activationId, bool $enabled, string $adminActor): void
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_provider_activations
+            'UPDATE rateb_infra_provider_activations
              SET is_enabled = :is_enabled, updated_at = NOW(), updated_by = :updated_by
              WHERE id = :id'
         );
@@ -62,7 +62,7 @@ final class ProviderActivationRegistry
         bool $enabled,
         string $adminActor
     ): void {
-        $sql = 'INSERT INTO ratib_infra_provider_activations
+        $sql = 'INSERT INTO rateb_infra_provider_activations
                 (provider_type, provider_code, provider_class, tenant_id, agency_id, priority_weight, is_enabled, created_at, updated_at, updated_by)
                 VALUES
                 (:provider_type, :provider_code, :provider_class, :tenant_id, :agency_id, :priority_weight, :is_enabled, NOW(), NOW(), :updated_by)
@@ -88,7 +88,7 @@ final class ProviderActivationRegistry
     public function emergencyDisableByType(string $providerType, string $adminActor): int
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_provider_activations
+            'UPDATE rateb_infra_provider_activations
              SET is_enabled = 0, updated_at = NOW(), updated_by = :updated_by
              WHERE provider_type = :provider_type'
         );
@@ -108,7 +108,7 @@ final class ProviderActivationRegistry
     {
         try {
             $stmt = $this->pdo->query(
-                'SELECT * FROM ratib_infra_provider_activations ORDER BY provider_type ASC, priority_weight DESC, id ASC'
+                'SELECT * FROM rateb_infra_provider_activations ORDER BY provider_type ASC, priority_weight DESC, id ASC'
             );
             $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
 
@@ -121,7 +121,7 @@ final class ProviderActivationRegistry
     public function deleteById(int $id): bool
     {
         try {
-            $stmt = $this->pdo->prepare('DELETE FROM ratib_infra_provider_activations WHERE id = :id');
+            $stmt = $this->pdo->prepare('DELETE FROM rateb_infra_provider_activations WHERE id = :id');
 
             return $stmt !== false && $stmt->execute(['id' => $id]);
         } catch (\Throwable $e) {

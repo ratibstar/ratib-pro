@@ -9,8 +9,8 @@ require_once '../api/core/ensure-global-partnerships-schema.php';
 require_once '../api/partnerships/PartnerAgencyController.php';
 require_once '../api/partnerships/DeploymentController.php';
 // Do not redirect ?control=1&agency_id= here: includes/config.php resolves the tenant DB and may
-// run control-to-program SSO (ratib_control_panel_try_program_sso). A redirect to the control panel
-// would skip Ratib Pro entirely (Manage Agencies "Open" must land on this dashboard).
+// run control-to-program SSO (rateb_control_panel_try_program_sso). A redirect to the control panel
+// would skip RATEB Pro entirely (Manage Agencies "Open" must land on this dashboard).
 
 // Check if user is logged in (must be a real `users` row: positive user_id)
 if (!isset($_SESSION['user_id']) || (int) $_SESSION['user_id'] < 1
@@ -30,8 +30,8 @@ if (!isset($_SESSION['user_id']) || (int) $_SESSION['user_id'] < 1
     } else {
         // Expired session refresh: rebuild the correct /{country}/login URL from the
         // persistent login cookies so the user can sign back in (no "Country not found").
-        header('Location: ' . (function_exists('ratib_post_logout_login_url')
-            ? ratib_post_logout_login_url()
+        header('Location: ' . (function_exists('rateb_post_logout_login_url')
+            ? rateb_post_logout_login_url()
             : pageUrl('login.php')));
     }
     exit;
@@ -79,10 +79,10 @@ $pageJs = [
     asset('js/unified-history.js') . "?v=" . $unifiedHistoryVersion,
     asset('js/dashboard.js') . "?v=" . time()
 ];
-$ratibPopupError = '';
-if (!empty($_SESSION['ratib_popup_error'])) {
-    $ratibPopupError = (string) $_SESSION['ratib_popup_error'];
-    unset($_SESSION['ratib_popup_error']);
+$ratebPopupError = '';
+if (!empty($_SESSION['rateb_popup_error'])) {
+    $ratebPopupError = (string) $_SESSION['rateb_popup_error'];
+    unset($_SESSION['rateb_popup_error']);
 }
 
 // Country / agency context (for control and normal logins)
@@ -104,7 +104,7 @@ if (($sessionCountryId > 0 || $sessionAgencyId > 0) && isset($conn) && $conn ins
             if (!$chk || $chk->num_rows === 0) continue;
             // Prefer specific agency_id from session so we show the exact agency user logged into
             if ($sessionAgencyId > 0) {
-                $susp = ratib_control_agency_active_fragment($tryConn, null);
+                $susp = rateb_control_agency_active_fragment($tryConn, null);
                 $stmt = $tryConn->prepare(
                     "SELECT a.name, a.country_id, c.name AS country_name
                      FROM control_agencies a
@@ -150,7 +150,7 @@ if (($sessionCountryId > 0 || $sessionAgencyId > 0) && isset($conn) && $conn ins
             if ($currentAgencyName !== null && $currentAgencyName !== '') break;
             // Fallback: first agency for current country
             if ($sessionCountryId > 0) {
-                $susp = ratib_control_agency_active_fragment($tryConn, null);
+                $susp = rateb_control_agency_active_fragment($tryConn, null);
                 $stmt = $tryConn->prepare("SELECT name FROM control_agencies WHERE country_id = ? AND is_active = 1 AND {$susp} ORDER BY id ASC LIMIT 1");
                 if ($stmt) {
                     $stmt->bind_param("i", $sessionCountryId);
@@ -294,7 +294,7 @@ try {
             $pdo = Database::getInstance()->getConnection();
         }
         if ($pdo instanceof PDO) {
-            ratibEnsureGlobalPartnershipsSchema($pdo);
+            ratebEnsureGlobalPartnershipsSchema($pdo);
             $partnershipController = new PartnerAgencyController($pdo);
             $deploymentController = new DeploymentController($pdo);
             $partnershipStats = $partnershipController->stats();
@@ -782,9 +782,9 @@ try {
 
 include '../includes/header.php';
 ?>
-<?php if ($ratibPopupError !== ''): ?>
+<?php if ($ratebPopupError !== ''): ?>
 <style>
-    @keyframes ratibPopupShake {
+    @keyframes ratebPopupShake {
         0%, 100% { transform: translateX(-50%); }
         15% { transform: translateX(calc(-50% - 6px)); }
         30% { transform: translateX(calc(-50% + 6px)); }
@@ -793,13 +793,13 @@ include '../includes/header.php';
         75% { transform: translateX(calc(-50% - 3px)); }
     }
 </style>
-<div id="ratibPopupErrorToast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;min-width:380px;max-width:92vw;padding:16px 22px;border-radius:12px;background:#b91c1c;color:#fff;box-shadow:0 12px 28px rgba(127,29,29,.45);font-size:18px;font-weight:700;line-height:1.35;text-align:center;border:2px solid #fecaca;letter-spacing:.2px;animation:ratibPopupShake .45s ease-in-out 0s 2;">
+<div id="ratebPopupErrorToast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;min-width:380px;max-width:92vw;padding:16px 22px;border-radius:12px;background:#b91c1c;color:#fff;box-shadow:0 12px 28px rgba(127,29,29,.45);font-size:18px;font-weight:700;line-height:1.35;text-align:center;border:2px solid #fecaca;letter-spacing:.2px;animation:ratebPopupShake .45s ease-in-out 0s 2;">
     <i class="fas fa-triangle-exclamation" style="margin-right:8px;"></i>
-    <?php echo htmlspecialchars($ratibPopupError, ENT_QUOTES, 'UTF-8'); ?>
+    <?php echo htmlspecialchars($ratebPopupError, ENT_QUOTES, 'UTF-8'); ?>
 </div>
 <script>
     (function () {
-        var toast = document.getElementById('ratibPopupErrorToast');
+        var toast = document.getElementById('ratebPopupErrorToast');
         if (!toast) return;
         setTimeout(function () {
             toast.style.transition = 'opacity 200ms ease';
@@ -824,7 +824,7 @@ include '../includes/header.php';
             <?php endif; ?>
             <div class="header-bar">
                 <div class="logo-section">
-                    <div class="ratib-dashboard-banner">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</div>
+                    <div class="rateb-dashboard-banner">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</div>
                     <div class="flashing-text" id="flashingText">Welcome Back</div>
                 </div>
                 <div class="header-bar-right">
@@ -838,7 +838,7 @@ include '../includes/header.php';
             <div class="main-content">
                 <div class="system-grid" role="navigation" aria-label="System modules">
             <!-- Agents Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_agents" tabindex="0" role="button" aria-label="Agents - Total: <?php echo $agentStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_agents" tabindex="0" role="button" aria-label="Agents - Total: <?php echo $agentStats['total'] ?? 0; ?>">
                 <h2>👥 Agents</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalAgents"><?php echo $agentStats['total'] ?? 0; ?></span></p>
@@ -853,7 +853,7 @@ include '../includes/header.php';
             </div>
 
             <!-- SubAgents Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('subagent.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_subagents" tabindex="0" role="button" aria-label="SubAgents - Total: <?php echo $subAgentStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('subagent.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_subagents" tabindex="0" role="button" aria-label="SubAgents - Total: <?php echo $subAgentStats['total'] ?? 0; ?>">
                 <h2>👤 SubAgents</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalSubAgents"><?php echo $subAgentStats['total'] ?? 0; ?></span></p>
@@ -868,7 +868,7 @@ include '../includes/header.php';
             </div>
 
             <!-- Workers Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('Worker.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_workers" tabindex="0" role="button" aria-label="Workers - Total: <?php echo $workerStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('Worker.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_workers" tabindex="0" role="button" aria-label="Workers - Total: <?php echo $workerStats['total'] ?? 0; ?>">
                 <h2>👷 Workers</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalWorkers"><?php echo $workerStats['total'] ?? 0; ?></span></p>
@@ -882,7 +882,7 @@ include '../includes/header.php';
                 </div>
             </div>
 
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_partner_agencies,view_workers" tabindex="0" role="button" aria-label="Partnerships - Total agencies: <?php echo $partnershipStats['total_agencies'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_partner_agencies,view_workers" tabindex="0" role="button" aria-label="Partnerships - Total agencies: <?php echo $partnershipStats['total_agencies'] ?? 0; ?>">
                 <h2>🌍 Partnerships</h2>
                 <div class="status-info">
                     <p class="count">Total Agencies: <span><?php echo $partnershipStats['total_agencies'] ?? 0; ?></span></p>
@@ -891,7 +891,7 @@ include '../includes/header.php';
                 </div>
             </div>
 
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_partner_agencies,view_workers" tabindex="0" role="button" aria-label="Deployed workers - Total abroad: <?php echo $deploymentStats['total_abroad'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_partner_agencies,view_workers" tabindex="0" role="button" aria-label="Deployed workers - Total abroad: <?php echo $deploymentStats['total_abroad'] ?? 0; ?>">
                 <h2>✈️ Deployed Workers</h2>
                 <div class="status-info">
                     <p class="count">Total Abroad: <span><?php echo $deploymentStats['total_abroad'] ?? 0; ?></span></p>
@@ -902,7 +902,7 @@ include '../includes/header.php';
             </div>
 
             <!-- Cases Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('cases/cases-table.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_cases" tabindex="0" role="button" aria-label="Cases - Total: <?php echo $caseStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('cases/cases-table.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_cases" tabindex="0" role="button" aria-label="Cases - Total: <?php echo $caseStats['total'] ?? 0; ?>">
                 <h2>📋 Cases</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalCases"><?php echo $caseStats['total'] ?? 0; ?></span></p>
@@ -918,7 +918,7 @@ include '../includes/header.php';
             </div>
 
             <!-- HR System Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('hr.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_hr_dashboard" tabindex="0" role="button" aria-label="HR System - Total: <?php echo $hrStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('hr.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_hr_dashboard" tabindex="0" role="button" aria-label="HR System - Total: <?php echo $hrStats['total'] ?? 0; ?>">
                 <h2>👔 HR System</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalHR"><?php echo $hrStats['total'] ?? 0; ?></span></p>
@@ -933,7 +933,7 @@ include '../includes/header.php';
             </div>
 
             <!-- Accounting Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_chart_accounts" tabindex="0" role="button" aria-label="Professional Accounting System">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_chart_accounts" tabindex="0" role="button" aria-label="Professional Accounting System">
                 <h2>💰 Accounting</h2>
                 <div class="status-info">
                     <p class="count">Invoices: <span id="totalInvoices"><?php echo $accountingStats['invoices'] ?? 0; ?></span></p>
@@ -949,7 +949,7 @@ include '../includes/header.php';
             </div>
 
             <!-- Reports Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_reports" tabindex="0" role="button" aria-label="Reports - Total: <?php echo $reportsStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_reports" tabindex="0" role="button" aria-label="Reports - Total: <?php echo $reportsStats['total'] ?? 0; ?>">
                 <h2>📈 Reports</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalReports"><?php echo $reportsStats['total'] ?? 0; ?></span></p>
@@ -964,7 +964,7 @@ include '../includes/header.php';
             </div>
 
             <!-- Contact Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_contacts" tabindex="0" role="button" aria-label="Contact - Total: <?php echo $contactStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_contacts" tabindex="0" role="button" aria-label="Contact - Total: <?php echo $contactStats['total'] ?? 0; ?>">
                 <h2>📞 Contact</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalContacts"><?php echo $contactStats['total'] ?? 0; ?></span></p>
@@ -980,7 +980,7 @@ include '../includes/header.php';
 
             <?php if (false): /* control panel removed */ ?>
             <!-- Settings Card - Control Panel Only -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="System Settings - Total: <?php echo $settingsStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="System Settings - Total: <?php echo $settingsStats['total'] ?? 0; ?>">
                 <h2>⚙️ System Settings</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalSettings"><?php echo $settingsStats['total'] ?? 0; ?></span></p>
@@ -999,7 +999,7 @@ include '../includes/header.php';
 
             <?php if (false): /* control panel removed */ ?>
             <!-- Visa Management Card - Control Panel Only -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="Visa Management - Total: <?php echo $visaStats['total'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="Visa Management - Total: <?php echo $visaStats['total'] ?? 0; ?>">
                 <h2>🛂 Visa Management</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalVisas"><?php echo $visaStats['total'] ?? 0; ?></span></p>
@@ -1015,7 +1015,7 @@ include '../includes/header.php';
             <?php endif; ?>
 
             <!-- Notifications Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications" tabindex="0" role="button" aria-label="Notifications - New: <?php echo $notificationStats['new'] ?? 0; ?>">
+            <div class="system-card" data-href="<?php echo htmlspecialchars(rateb_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications" tabindex="0" role="button" aria-label="Notifications - New: <?php echo $notificationStats['new'] ?? 0; ?>">
                 <h2>🔔 Notifications</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalNotifications"><?php echo $notificationStats['total'] ?? 0; ?></span></p>

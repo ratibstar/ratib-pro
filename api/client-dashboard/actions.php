@@ -14,7 +14,7 @@ require_once dirname(__DIR__, 2) . '/includes/config.php';
 require_once dirname(__DIR__, 2) . '/includes/permissions.php';
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/bootstrap.php';
 
-ratib_client_dashboard_api_require_access();
+rateb_client_dashboard_api_require_access();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -46,7 +46,7 @@ if ($verb === '' || !in_array($verb, $accepted, true)) {
 
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Actions/ActionDispatcher.php';
 
-$out = Ratib_ClientDashboard_Action_Dispatcher::dispatch($verb, $targetId, $data);
+$out = RATEB_ClientDashboard_Action_Dispatcher::dispatch($verb, $targetId, $data);
 echo json_encode(
     array_merge(
         [

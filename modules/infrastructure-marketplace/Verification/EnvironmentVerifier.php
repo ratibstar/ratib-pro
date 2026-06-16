@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Verification;
+namespace RATEB\InfrastructureMarketplace\Verification;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class EnvironmentVerifier
 {
@@ -23,8 +23,8 @@ final class EnvironmentVerifier
             || ($dryRun && $queueDriver === 'sync');
         $allowlistReady = ModuleConfig::rolloutTenantAllowlist() !== [] || !$moduleEnabled || $dryRun;
         $hasNamecheap = $this->hasNamecheapCredentials($secret);
-        $hasCloudflare = $secret->getSecret('RATIB_INFRA_CLOUDFLARE', 'API_TOKEN') !== null
-            || (is_string(getenv('RATIB_INFRA_CLOUDFLARE_API_TOKEN')) && trim((string) getenv('RATIB_INFRA_CLOUDFLARE_API_TOKEN')) !== '');
+        $hasCloudflare = $secret->getSecret('RATEB_INFRA_CLOUDFLARE', 'API_TOKEN') !== null
+            || (is_string(getenv('RATEB_INFRA_CLOUDFLARE_API_TOKEN')) && trim((string) getenv('RATEB_INFRA_CLOUDFLARE_API_TOKEN')) !== '');
         $hasCpanel = ModuleConfig::cpanelWhmUsername() !== null && ModuleConfig::cpanelWhmToken() !== null;
 
         $checks[] = $this->check('module_enabled', $moduleEnabled, 'Module is disabled.');

@@ -66,9 +66,9 @@ final class TenantResolverMiddleware
         if (!defined('REQUEST_TENANT_ID')) {
             define('REQUEST_TENANT_ID', $tenantId);
         }
-        $_SERVER['RATIB_REQUEST_TENANT_ID'] = (string) $tenantId;
+        $_SERVER['RATEB_REQUEST_TENANT_ID'] = (string) $tenantId;
 
-        $GLOBALS['RATIB_REQUEST_CONTEXT'] = array(
+        $GLOBALS['RATEB_REQUEST_CONTEXT'] = array(
             'tenant_id' => $tenantId,
             'tenant_domain' => $host,
         );
@@ -81,7 +81,7 @@ final class TenantResolverMiddleware
         if (defined('REQUEST_TENANT_ID')) {
             return (int) REQUEST_TENANT_ID;
         }
-        $srv = (string) ($_SERVER['RATIB_REQUEST_TENANT_ID'] ?? '');
+        $srv = (string) ($_SERVER['RATEB_REQUEST_TENANT_ID'] ?? '');
         if ($srv !== '' && ctype_digit($srv)) {
             return (int) $srv;
         }
@@ -167,8 +167,8 @@ final class TenantResolverMiddleware
     }
 }
 
-if (!function_exists('ratib_request_tenant_id')) {
-    function ratib_request_tenant_id(): ?int
+if (!function_exists('rateb_request_tenant_id')) {
+    function rateb_request_tenant_id(): ?int
     {
         if (class_exists('TenantExecutionContext', false) && TenantExecutionContext::isInitialized()) {
             return TenantExecutionContext::getTenantId();
@@ -177,21 +177,21 @@ if (!function_exists('ratib_request_tenant_id')) {
     }
 }
 
-if (!function_exists('ratib_request_context')) {
+if (!function_exists('rateb_request_context')) {
     /**
      * @return array{tenant_id?: int, tenant_domain?: string}|null
      */
-    function ratib_request_context(): ?array
+    function rateb_request_context(): ?array
     {
         if (class_exists('TenantExecutionContext', false) && TenantExecutionContext::isInitialized()) {
             $tid = TenantExecutionContext::getTenantId();
             if ($tid !== null && $tid > 0) {
-                $domain = (string) ($GLOBALS['RATIB_REQUEST_CONTEXT']['tenant_domain'] ?? '');
+                $domain = (string) ($GLOBALS['RATEB_REQUEST_CONTEXT']['tenant_domain'] ?? '');
                 return ['tenant_id' => $tid, 'tenant_domain' => $domain];
             }
         }
-        if (!empty($GLOBALS['RATIB_REQUEST_CONTEXT']) && is_array($GLOBALS['RATIB_REQUEST_CONTEXT'])) {
-            return $GLOBALS['RATIB_REQUEST_CONTEXT'];
+        if (!empty($GLOBALS['RATEB_REQUEST_CONTEXT']) && is_array($GLOBALS['RATEB_REQUEST_CONTEXT'])) {
+            return $GLOBALS['RATEB_REQUEST_CONTEXT'];
         }
         return null;
     }

@@ -8,8 +8,8 @@
  * Include from config.php if you want global handling.
  */
 
-if (!function_exists('ratib_exception_handler')) {
-    function ratib_exception_handler(Throwable $e) {
+if (!function_exists('rateb_exception_handler')) {
+    function rateb_exception_handler(Throwable $e) {
         error_log('Uncaught exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
         if (defined('DEBUG_MODE') && DEBUG_MODE) {
             throw $e;
@@ -25,8 +25,8 @@ if (!function_exists('ratib_exception_handler')) {
     }
 }
 
-if (!function_exists('ratib_error_handler')) {
-    function ratib_error_handler($severity, $message, $file, $line) {
+if (!function_exists('rateb_error_handler')) {
+    function rateb_error_handler($severity, $message, $file, $line) {
         if (!(error_reporting() & $severity)) {
             return false;
         }

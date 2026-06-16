@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Write-mode tests are disabled unless --allow-write is provided.
  *
  * Usage:
- *   php tools/runtime-smoke-country-tracking.php --base="http://localhost/ratibprogram/control-panel/api/control"
+ *   php tools/runtime-smoke-country-tracking.php --base="http://localhost/ratebprogram/control-panel/api/control"
  *   php tools/runtime-smoke-country-tracking.php --base="https://example.com/control-panel/api/control" --allow-write
  */
 

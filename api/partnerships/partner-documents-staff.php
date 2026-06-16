@@ -41,7 +41,7 @@ try {
 
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
 
     $pa = new PartnerAgencyController($conn);
     try {

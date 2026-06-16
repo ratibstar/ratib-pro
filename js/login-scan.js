@@ -1,8 +1,8 @@
 /**
- * Login / workforce QR scan page — RatibQrScanner + qr-login API + PIN.
+ * Login / workforce QR scan page — RATEBQrScanner + qr-login API + PIN.
  */
 document.addEventListener('DOMContentLoaded', function () {
-    var cfg = window.RATIB_QR_SCAN || {};
+    var cfg = window.RATEB_QR_SCAN || {};
     var pairToken = cfg.pairToken || '';
     var apiQr = cfg.apiQr || '/api/qr-login.php';
     var statusEl = document.getElementById('qr-scan-status');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var pendingChallenge = '';
     var scanComplete = false;
     var hintTimer = null;
-    var mobileStore = (typeof window !== 'undefined' && window.RatibMobileBadgeStore) || null;
+    var mobileStore = (typeof window !== 'undefined' && window.RATEBMobileBadgeStore) || null;
     var savedBadgeUsed = false;
     var skipAutoSaved = false;
 
@@ -201,13 +201,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isPairingQr(v)) {
             return { kind: 'pairing', payload: v };
         }
-        if (/^RATIBLOGIN:/i.test(v)) {
+        if (/^RATEBLOGIN:/i.test(v)) {
             return { kind: 'badge', payload: v };
         }
         if (/^R\d{5,}/i.test(v) && v.length <= 32) {
             return { kind: 'badge', payload: v };
         }
-        if (v.indexOf('RATIBLOGIN') >= 0) {
+        if (v.indexOf('RATEBLOGIN') >= 0) {
             return { kind: 'badge', payload: v };
         }
         return { kind: 'badge', payload: v };
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleSuccess(json, payload, scanValue) {
-        if (payload && /^RATIBLOGIN:/i.test(String(payload))) {
+        if (payload && /^RATEBLOGIN:/i.test(String(payload))) {
             saveBadgeOnPhone(payload, scanValue, { username: json && json.username ? json.username : '' });
         }
         showPinPanel(false);
@@ -382,12 +382,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    if (typeof RatibQrScanner === 'undefined') {
+    if (typeof RATEBQrScanner === 'undefined') {
         setStatus('Scanner failed to load. Refresh the page.', 'error');
         return;
     }
 
-    scanner = new RatibQrScanner({
+    scanner = new RATEBQrScanner({
         elementId: 'qr-scan-viewport',
         throttleMs: 1200,
         onScan: submitPayload,

@@ -2,13 +2,13 @@
 
 **Date:** 2026-05-18  
 **Canonical URL:** `/architecture/`  
-**Purpose:** CTO/procurement technical briefing for RATIB as layered workforce program orchestration infrastructure.
+**Purpose:** CTO/procurement technical briefing for RATEB as layered workforce program orchestration infrastructure.
 
 ---
 
 ## Summary
 
-A dedicated enterprise architecture page documents the RATIB control plane as seven explicit layers, with topology diagrams, event-flow blocks, and deployment model visuals. Tone and density follow infrastructure platform documentation — not a startup landing page. No fabricated metrics or certification claims.
+A dedicated enterprise architecture page documents the RATEB control plane as seven explicit layers, with topology diagrams, event-flow blocks, and deployment model visuals. Tone and density follow infrastructure platform documentation — not a startup landing page. No fabricated metrics or certification claims.
 
 ---
 
@@ -17,10 +17,10 @@ A dedicated enterprise architecture page documents the RATIB control plane as se
 | File | Role |
 |------|------|
 | `pages/architecture.php` | Page template, SEO, JSON-LD `TechArticle`, chrome, jump nav |
-| `includes/ratib-architecture-data.php` | Structured content for all eight sections + briefing CTA |
-| `includes/ratib-architecture-sections.php` | Renderers: hero stack, layer cards, isolation topology, event flow, deployment diagram |
+| `includes/rateb-architecture-data.php` | Structured content for all eight sections + briefing CTA |
+| `includes/rateb-architecture-sections.php` | Renderers: hero stack, layer cards, isolation topology, event flow, deployment diagram |
 | `css/pages/architecture.css` | Technical briefing layout (teal accent, mono labels, layer stack, topology) |
-| `js/pages/architecture.js` | Scroll reveal for `data-ratib-reveal` |
+| `js/pages/architecture.js` | Scroll reveal for `data-rateb-reveal` |
 
 ---
 
@@ -29,9 +29,9 @@ A dedicated enterprise architecture page documents the RATIB control plane as se
 | File | Change |
 |------|------|
 | `.htaccess` | Rewrites + LiteSpeed/cache bypass for `/architecture` |
-| `includes/ratib-mega-nav-resolve.php` | `architecture` → `/architecture/` |
-| `includes/ratib-mega-nav-config.php` | Company panel link |
-| `includes/ratib-home-public-footer.php` | Legal column link |
+| `includes/rateb-mega-nav-resolve.php` | `architecture` → `/architecture/` |
+| `includes/rateb-mega-nav-config.php` | Company panel link |
+| `includes/rateb-home-public-footer.php` | Legal column link |
 | `includes/site-content-home-data.php` | CMS key `home.footer.link.legal.architecture` |
 
 ---
@@ -77,7 +77,7 @@ Hero anchor: `#top`. Briefing block at page end (no anchor in jump nav).
 
 ## SEO
 
-- **Title:** Platform Architecture — RATIB  
+- **Title:** Platform Architecture — RATEB  
 - **Description:** Layered orchestration, isolation, events, telemetry, finance, governance, deployment  
 - **Canonical:** `{baseUrl}/architecture/`  
 - **JSON-LD:** `TechArticle` with organization author/publisher  
@@ -94,9 +94,9 @@ Hero anchor: `#top`. Briefing block at page end (no anchor in jump nav).
 
 ## Design System
 
-- Base: `home-public.css`, `ratib-mega-nav.css`, `about-enterprise.css`  
+- Base: `home-public.css`, `rateb-mega-nav.css`, `about-enterprise.css`  
 - Page: `architecture.css` — darker base (`#080c14`), teal accent, square badges, dense mono labels  
-- Body class: `ratib-arch-page`  
+- Body class: `rateb-arch-page`  
 
 ---
 

@@ -10,17 +10,17 @@ declare(strict_types=1);
  * Tables for N-Genius agency registration only — NOT generic shop `orders`
  * (avoids CREATE IF NOT EXISTS skipping when another `orders` table already exists).
  */
-if (!defined('RATIB_NGENIUS_ORDERS_TABLE')) {
-    define('RATIB_NGENIUS_ORDERS_TABLE', 'ngenius_reg_orders');
+if (!defined('RATEB_NGENIUS_ORDERS_TABLE')) {
+    define('RATEB_NGENIUS_ORDERS_TABLE', 'ngenius_reg_orders');
 }
-if (!defined('RATIB_NGENIUS_PAYMENTS_TABLE')) {
-    define('RATIB_NGENIUS_PAYMENTS_TABLE', 'ngenius_reg_payments');
+if (!defined('RATEB_NGENIUS_PAYMENTS_TABLE')) {
+    define('RATEB_NGENIUS_PAYMENTS_TABLE', 'ngenius_reg_payments');
 }
 
 /**
  * Whether a column exists on the current schema (SHOW COLUMNS — works when information_schema is restricted).
  */
-function ratib_payment_orders_column_exists(PDO $pdo, string $table, string $column): bool
+function rateb_payment_orders_column_exists(PDO $pdo, string $table, string $column): bool
 {
     $table = str_replace(['`', "\0"], '', $table);
     $column = str_replace(['`', "\0", '%', '_'], '', $column);
@@ -48,11 +48,11 @@ function ratib_payment_orders_column_exists(PDO $pdo, string $table, string $col
 /**
  * ADD COLUMN only when missing. Omits AFTER … so legacy tables without intermediate columns still migrate.
  */
-function ratib_payment_orders_add_column_if_missing(PDO $pdo, string $table, string $column, string $columnSqlTail): void
+function rateb_payment_orders_add_column_if_missing(PDO $pdo, string $table, string $column, string $columnSqlTail): void
 {
     $table = str_replace('`', '', $table);
     $column = str_replace('`', '', $column);
-    if (ratib_payment_orders_column_exists($pdo, $table, $column)) {
+    if (rateb_payment_orders_column_exists($pdo, $table, $column)) {
         return;
     }
     try {
@@ -71,8 +71,8 @@ function ratib_payment_orders_add_column_if_missing(PDO $pdo, string $table, str
  */
 function payment_ensure_ngenius_tables($pdo): void
 {
-    $orders = RATIB_NGENIUS_ORDERS_TABLE;
-    $payments = RATIB_NGENIUS_PAYMENTS_TABLE;
+    $orders = RATEB_NGENIUS_ORDERS_TABLE;
+    $payments = RATEB_NGENIUS_PAYMENTS_TABLE;
 
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS `{$orders}` (
@@ -103,20 +103,20 @@ function payment_ensure_ngenius_tables($pdo): void
     );
 
     // Backfill schema for existing installs (no IF NOT EXISTS — unsupported on many MySQL/MariaDB builds).
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'plan_key', "VARCHAR(32) NOT NULL DEFAULT ''");
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'years', 'SMALLINT UNSIGNED NOT NULL DEFAULT 1');
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'subtotal', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00');
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'tax_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00');
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'total_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00');
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'control_request_id', 'INT UNSIGNED NULL DEFAULT NULL');
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'ngenius_order_id', 'VARCHAR(128) NULL DEFAULT NULL');
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'reg_agency_name', "VARCHAR(255) NOT NULL DEFAULT ''");
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'reg_agency_id', "VARCHAR(64) NOT NULL DEFAULT ''");
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'reg_country_id', 'INT NOT NULL DEFAULT 0');
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'reg_country_name', "VARCHAR(255) NOT NULL DEFAULT ''");
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'reg_contact_phone', "VARCHAR(64) NOT NULL DEFAULT ''");
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'reg_desired_site_url', "VARCHAR(512) NOT NULL DEFAULT ''");
-    ratib_payment_orders_add_column_if_missing($pdo, $orders, 'reg_notes', 'TEXT NULL');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'plan_key', "VARCHAR(32) NOT NULL DEFAULT ''");
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'years', 'SMALLINT UNSIGNED NOT NULL DEFAULT 1');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'subtotal', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'tax_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'total_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'control_request_id', 'INT UNSIGNED NULL DEFAULT NULL');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'ngenius_order_id', 'VARCHAR(128) NULL DEFAULT NULL');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'reg_agency_name', "VARCHAR(255) NOT NULL DEFAULT ''");
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'reg_agency_id', "VARCHAR(64) NOT NULL DEFAULT ''");
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'reg_country_id', 'INT NOT NULL DEFAULT 0');
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'reg_country_name', "VARCHAR(255) NOT NULL DEFAULT ''");
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'reg_contact_phone', "VARCHAR(64) NOT NULL DEFAULT ''");
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'reg_desired_site_url', "VARCHAR(512) NOT NULL DEFAULT ''");
+    rateb_payment_orders_add_column_if_missing($pdo, $orders, 'reg_notes', 'TEXT NULL');
 
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS `{$payments}` (

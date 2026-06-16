@@ -5,28 +5,28 @@ Objective: strengthen trust posture and procurement readiness on public marketin
 ## Preferred Identity Baseline
 
 - Legal identity: `Rateb Software Foundation for Information Technology`
-- Short form: `RATIB`
+- Short form: `RATEB`
 - Positioning: `Enterprise workforce program infrastructure`
 
 ## Public Surface Identity Updates
 
 - Legal identity and profile metadata aligned in:
-  - `includes/ratib-about-profile-data.php`
+  - `includes/rateb-about-profile-data.php`
   - `pages/about.php`
   - `pages/company-profile.php`
 - Brand short-form alignment in public nav/header scripts:
-  - `includes/ratib-home-public-chrome-top.php`
-  - `includes/ratib-home-public-nav-sync.php`
-  - `js/pages/ratib-mega-nav.js`
+  - `includes/rateb-home-public-chrome-top.php`
+  - `includes/rateb-home-public-nav-sync.php`
+  - `js/pages/rateb-mega-nav.js`
 - Company/mega-nav enterprise descriptors updated:
-  - `includes/ratib-mega-nav-config.php`
+  - `includes/rateb-mega-nav-config.php`
 
 ## Positioning and Terminology Normalization
 
 - Removed weak wording patterns from public-facing copy where found:
   - "Recruitment records" -> "Workforce records" (`pages/home.php`)
-  - "Recruitment OS" style phrasing -> orchestration/workforce infrastructure language (`includes/site-content-home-data.php`, `includes/ratib-mega-nav-config.php`)
-  - "Recruitment CRM with a GPS plugin" -> "A lightweight CRM with a basic map plugin" (`includes/ratib-about-profile-data.php`)
+  - "Recruitment OS" style phrasing -> orchestration/workforce infrastructure language (`includes/site-content-home-data.php`, `includes/rateb-mega-nav-config.php`)
+  - "Recruitment CRM with a GPS plugin" -> "A lightweight CRM with a basic map plugin" (`includes/rateb-about-profile-data.php`)
 - Strengthened terminology:
   - "Orchestration platform"
   - "Operations control plane"
@@ -38,11 +38,11 @@ Objective: strengthen trust posture and procurement readiness on public marketin
 - Schema.org organization contact email aligned:
   - `pages/about.php`
 - OpenGraph/meta-aligned profile identity copy updated via shared profile data:
-  - `includes/ratib-about-profile-data.php`
+  - `includes/rateb-about-profile-data.php`
 
 ## Public Consistency Notes
 
-- Capitalization normalized to emphasize `RATIB` as short-form brand on public chrome.
+- Capitalization normalized to emphasize `RATEB` as short-form brand on public chrome.
 - Spacing/punctuation retained in existing house style; no structural layout redesign performed.
 - Sovereign/compliance language remains consistent with existing procurement posture phrases:
   - "sovereign-grade"

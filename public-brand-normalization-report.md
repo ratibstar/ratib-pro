@@ -10,33 +10,33 @@
 ## Files Updated
 
 - `includes/partner-portal-marketing-strip.php`
-- `includes/ratib-about-profile-data.php`
-- `includes/ratib-about-sections.php`
-- `includes/ratib-home-public-chrome-top.php`
-- `includes/ratib-home-public-footer.php`
-- `includes/ratib-home-public-nav-sync.php`
-- `includes/ratib-mega-nav-config.php`
+- `includes/rateb-about-profile-data.php`
+- `includes/rateb-about-sections.php`
+- `includes/rateb-home-public-chrome-top.php`
+- `includes/rateb-home-public-footer.php`
+- `includes/rateb-home-public-nav-sync.php`
+- `includes/rateb-mega-nav-config.php`
 - `includes/site-content-home-data.php`
 - `includes/views/agency-suspension.php`
 - `js/chat-widget.js`
-- `js/pages/ratib-mega-nav.js`
+- `js/pages/rateb-mega-nav.js`
 - `pages/about.php`
 - `pages/company-profile.php`
 - `pages/customer-portal.php`
 - `pages/home.php`
-- `pages/ratib-which-page.php`
+- `pages/rateb-which-page.php`
 
 ## Normalization Outcomes
 
 - Canonical public contact email standardized to `info@rateb.sa`.
 - Legal identity copy aligned to `Rateb Software Foundation for Information Technology` where legal/company context is shown.
-- Public short-form brand usage aligned to `RATIB` in navigation/chrome contexts.
+- Public short-form brand usage aligned to `RATEB` in navigation/chrome contexts.
 - Weak terminology replaced with enterprise infrastructure language in core marketing copy.
 - Telemetry/infrastructure/governance phrasing strengthened for procurement audiences.
 
 ## Terminology Quality Pass
 
-- Capitalization: normalized (`RATIB` short form used consistently on core public chrome).
+- Capitalization: normalized (`RATEB` short form used consistently on core public chrome).
 - Spacing/punctuation: retained and normalized to existing style where text was touched.
 - SLA/infrastructure posture: kept explicit in existing trust and operations blocks.
 - Sovereign/governance language: preserved and made more consistent in profile/positioning text.

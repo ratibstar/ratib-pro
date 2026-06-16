@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_FallbackPayloads
+final class RATEB_ClientDashboard_FallbackPayloads
 {
     /**
      * @return array<string, mixed>

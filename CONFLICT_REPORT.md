@@ -57,7 +57,7 @@ No duplicate class definitions across `app/Modules/`.
 
 **Assessment:** `app.css` uses BEM (e.g. `.card--financial`). Legacy CSS uses Bootstrap patterns (e.g. `.btn-primary`). Loading both can cause conflicts on shared pages.
 
-**Recommendation:** Ensure pages load only the CSS they need. Use distinct class prefixes for new components (e.g. `ratib-dashboard`).
+**Recommendation:** Ensure pages load only the CSS they need. Use distinct class prefixes for new components (e.g. `rateb-dashboard`).
 
 ---
 

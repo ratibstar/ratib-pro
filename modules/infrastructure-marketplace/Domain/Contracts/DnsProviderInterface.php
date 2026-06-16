@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Domain\Contracts;
+namespace RATEB\InfrastructureMarketplace\Domain\Contracts;
 
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 interface DnsProviderInterface
 {

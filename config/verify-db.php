@@ -13,7 +13,7 @@ ini_set('display_errors', 1);
 header('Content-Type: text/plain; charset=utf-8');
 
 $host = '127.0.0.1';
-$user = 'outratib_out';
+$user = 'admin_out';
 $pass = '9s%BpMr1]dfb';
 $port = 3306;
 
@@ -26,7 +26,7 @@ $conn->set_charset("utf8mb4");
 
 echo "Connected to MySQL. Checking databases...\n\n";
 
-$dbs = ['outratib_control', 'outratib_ctrl', 'outratib_outratib_ctrl', 'outratib_outratib_control'];
+$dbs = ['admin_control', 'admin_ctrl', 'admin_admin_ctrl', 'admin_admin_control'];
 foreach ($dbs as $db) {
     $r = @$conn->query("SELECT COUNT(*) as c FROM `" . $conn->real_escape_string($db) . "`.control_admins");
     if ($r) {

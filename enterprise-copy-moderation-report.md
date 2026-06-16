@@ -5,7 +5,7 @@
 
 ---
 
-## Company profile (`includes/ratib-about-profile-data.php`)
+## Company profile (`includes/rateb-about-profile-data.php`)
 
 | # | Original | Revised | Rationale |
 |---|----------|---------|-----------|
@@ -24,11 +24,11 @@
 | 13 | Telemetry Layer title | Field operations layer | Aligns layer name with moderated copy |
 | 14 | Finance-grade (is_infrastructure) | Finance module linked to placements | Defensible scope |
 
-## Profile template (`includes/ratib-about-sections.php`)
+## Profile template (`includes/rateb-about-sections.php`)
 
 | # | Original | Revised | Rationale |
 |---|----------|---------|-----------|
-| 15 | RATIB control plane (hero) | RATIB operations platform | Headline credibility |
+| 15 | RATEB control plane (hero) | RATEB operations platform | Headline credibility |
 | 16 | production surface (figcaption) | sample screenshot | Honest marketing asset label |
 | 17 | Layered control plane | Platform layers | Architecture without cosplay |
 | 18 | Operations control plane (ops) | Agency workspace | What buyers actually buy |
@@ -56,7 +56,7 @@
 | 35 | Mission-critical programs | High-volume programs | Tier naming without contractor tone |
 | 36 | finance-grade operations (footer) | integrated finance | Shorter, defensible |
 
-## Home UI (`pages/home.php`, `ratib-enterprise-trust-home.php`)
+## Home UI (`pages/home.php`, `rateb-enterprise-trust-home.php`)
 
 | # | Original | Revised | Rationale |
 |---|----------|---------|-----------|
@@ -66,7 +66,7 @@
 | 40 | Control plane · tenant DBs (L1) | Platform config · tenant DBs | Diagram clarity |
 | 41 | (new) dash illustrative line | Sample workspace UI · illustrative metrics | Matches analytics disclaimer |
 
-## Security (`includes/ratib-security-compliance-data.php`)
+## Security (`includes/rateb-security-compliance-data.php`)
 
 | # | Original | Revised | Rationale |
 |---|----------|---------|-----------|
@@ -77,7 +77,7 @@
 | 46 | mission-critical programs | high-volume programs | See above |
 | 47 | Workforce telemetry intelligence | Field operations monitoring | Trust center appropriate tone |
 
-## Architecture (`includes/ratib-architecture-data.php`)
+## Architecture (`includes/rateb-architecture-data.php`)
 
 | # | Original | Revised | Rationale |
 |---|----------|---------|-----------|
@@ -91,7 +91,7 @@
 | 55 | Anti-spoof logic | Signal validation | Feature honesty |
 | 56 | Geofence intelligence | Geofence rules | Removes “intelligence” suffix |
 
-## Procurement (`includes/ratib-procurement-legal-data.php` + sections)
+## Procurement (`includes/rateb-procurement-legal-data.php` + sections)
 
 | # | Original | Revised | Rationale |
 |---|----------|---------|-----------|

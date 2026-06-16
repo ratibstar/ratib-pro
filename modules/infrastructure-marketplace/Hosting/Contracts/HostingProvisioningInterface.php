@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Hosting\Contracts;
+namespace RATEB\InfrastructureMarketplace\Hosting\Contracts;
 
-use Ratib\InfrastructureMarketplace\Domain\Contracts\HostingProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\HostingProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 interface HostingProvisioningInterface extends HostingProviderInterface
 {

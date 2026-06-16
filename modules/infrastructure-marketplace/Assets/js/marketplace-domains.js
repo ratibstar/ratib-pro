@@ -7,7 +7,7 @@
   var hint = document.getElementById('infra-domain-search-hint');
   if (!form || !input || !results) return;
 
-  var apiRoot = typeof window.RATIB_INFRA_API_ROOT === 'string' ? window.RATIB_INFRA_API_ROOT : '';
+  var apiRoot = typeof window.RATEB_INFRA_API_ROOT === 'string' ? window.RATEB_INFRA_API_ROOT : '';
 
   function esc(s) {
     var d = document.createElement('div');

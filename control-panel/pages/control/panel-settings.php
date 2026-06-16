@@ -36,7 +36,7 @@ if ($platformRootUrl === '' && isset($_SERVER['HTTP_HOST'])) {
 }
 $platformProgramUrl = $platformRootUrl !== '' ? ($platformRootUrl . '/pages/dashboard.php') : null;
 ?>
-<div class="control-settings-intro control-settings-ratib-program">
+<div class="control-settings-intro control-settings-rateb-program">
     <strong><i class="fas fa-cog me-2"></i>Main Platform Program Settings</strong>
     <p class="mb-2">Manage users, visa types, and operational settings for <strong><?php echo htmlspecialchars($agencyName); ?></strong> in the main platform workspace.</p>
     <?php if ($platformProgramUrl): ?>

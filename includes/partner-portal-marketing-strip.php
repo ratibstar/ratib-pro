@@ -1,6 +1,6 @@
 <?php
 /**
- * Public Ratib strip for partner portal pages — top contact line + brand (EN).
+ * Public RATEB strip for partner portal pages — top contact line + brand (EN).
  * Full marketing nav links intentionally omitted so partners stay focused on portal tasks.
  */
 if (!function_exists('pageUrl')) {
@@ -27,8 +27,8 @@ $ppCustomerPortal = htmlspecialchars(pageUrl('customer-portal.php'), ENT_QUOTES,
         </a>
     </div>
     <div class="header-center">
-        <a href="<?php echo $ppHome; ?>" class="logo" aria-label="Ratib Home">
-            <img src="<?php echo htmlspecialchars(asset('assets/ratib-logo.svg?v=6'), ENT_QUOTES, 'UTF-8'); ?>" alt="RATEB — Recruitment Automation & Telemetry Enterprise Base">
+        <a href="<?php echo $ppHome; ?>" class="logo" aria-label="RATEB Home">
+            <img src="<?php echo htmlspecialchars(asset('assets/rateb-logo.svg?v=6'), ENT_QUOTES, 'UTF-8'); ?>" alt="RATEB — Recruitment Automation & Telemetry Enterprise Base">
         </a>
         <div class="tagline">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</div>
     </div>

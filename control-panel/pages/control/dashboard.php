@@ -163,8 +163,8 @@ if (function_exists('hasControlPermission') && (
         require_once __DIR__ . '/../../../api/core/Database.php';
         require_once __DIR__ . '/../../../includes/government-labor.php';
         $govPdo = Database::getInstance()->getConnection();
-        ratibEnsureGovernmentLaborSchema($govPdo);
-        $govWidgetData = ratib_government_dashboard_summary_pdo($govPdo);
+        ratebEnsureGovernmentLaborSchema($govPdo);
+        $govWidgetData = rateb_government_dashboard_summary_pdo($govPdo);
     } catch (Throwable $e) {
         $govWidgetData = null;
     }
@@ -232,11 +232,11 @@ if (!empty($_SESSION['control_popup_error'])) {
     </div>
     <?php endif; ?>
     <?php $fullBase = rtrim((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . preg_replace('#/pages/[^?]*.*$#', '', $_SERVER['REQUEST_URI'] ?? ''), '/'); ?>
-    <?php $ratibBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/'); if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) { $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http'; $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST']; } ?>
+    <?php $ratebBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/'); if ($ratebBase === '' && isset($_SERVER['HTTP_HOST'])) { $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http'; $ratebBase = $scheme . '://' . $_SERVER['HTTP_HOST']; } ?>
     <?php $clientPlatformLinks = control_client_platform_links(); ?>
     <!-- EN: Server-to-client bootstrap for control dashboard scripts (API endpoints + base URLs). -->
     <!-- AR: تمرير إعدادات الخادم إلى سكربتات لوحة التحكم (مسارات API وروابط الأساس). -->
-<div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url-base="<?php echo htmlspecialchars($agenciesUrlWithControl); ?>" data-country-users-url-base="<?php echo htmlspecialchars($countryUsersUrlWithControl); ?>" data-ratib-base="<?php echo htmlspecialchars($ratibBase); ?>" data-tenant-self-test-url="<?php echo htmlspecialchars(rtrim($fullBase, '/') . '/api/diagnostics/tenant-isolation-self-test.php'); ?>" data-tenant-all-self-test-interval-ms="300000"></div>
+<div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url-base="<?php echo htmlspecialchars($agenciesUrlWithControl); ?>" data-country-users-url-base="<?php echo htmlspecialchars($countryUsersUrlWithControl); ?>" data-rateb-base="<?php echo htmlspecialchars($ratebBase); ?>" data-tenant-self-test-url="<?php echo htmlspecialchars(rtrim($fullBase, '/') . '/api/diagnostics/tenant-isolation-self-test.php'); ?>" data-tenant-all-self-test-interval-ms="300000"></div>
     <div id="app-config" data-base-url="<?php echo htmlspecialchars($fullBase, ENT_QUOTES, 'UTF-8'); ?>" data-api-base="<?php echo htmlspecialchars($fullBase . '/api', ENT_QUOTES, 'UTF-8'); ?>" data-control-api-path="<?php echo htmlspecialchars($fullBase . '/api/control', ENT_QUOTES, 'UTF-8'); ?>" data-control="1" class="hidden"></div>
     
     <!-- EN: Top header with support alerts, account identity, and logout action. -->
@@ -245,7 +245,7 @@ if (!empty($_SESSION['control_popup_error'])) {
     <header class="control-header">
         <div class="header-left">
             <h1><i class="fas fa-cog"></i> Control Panel</h1>
-            <span class="header-subtitle header-subtitle-ratib">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</span>
+            <span class="header-subtitle header-subtitle-rateb">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</span>
         </div>
         <div class="header-right">
             <div class="header-alerts" id="headerAlerts" data-permission="control_support_chats,view_control_support">
@@ -261,7 +261,7 @@ if (!empty($_SESSION['control_popup_error'])) {
                     <a href="<?php echo pageUrl('control/support-chats.php'); ?>?control=1" class="header-alert-footer">Open Support Chats</a>
                 </div>
             </div>
-            <a href="<?php echo htmlspecialchars(rtrim($ratibBase !== '' ? $ratibBase : $fullBase, '/') . '/coreai/index.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" title="Open CoreAI">
+            <a href="<?php echo htmlspecialchars(rtrim($ratebBase !== '' ? $ratebBase : $fullBase, '/') . '/coreai/index.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" title="Open CoreAI">
                 <i class="fas fa-robot"></i>
                 <span>CoreAI</span>
             </a>
@@ -415,7 +415,7 @@ if (!empty($_SESSION['control_popup_error'])) {
                         <i class="fas fa-chart-line"></i>
                         <span>View Reports</span>
                     </a>
-                    <a href="<?php echo htmlspecialchars(rtrim($ratibBase !== '' ? $ratibBase : $fullBase, '/') . '/admin/control-center.php#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings,control_dashboard">
+                    <a href="<?php echo htmlspecialchars(rtrim($ratebBase !== '' ? $ratebBase : $fullBase, '/') . '/admin/control-center.php#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings,control_dashboard">
                         <i class="fas fa-diagram-project"></i>
                         <span>Rollout Control</span>
                     </a>
@@ -423,7 +423,7 @@ if (!empty($_SESSION['control_popup_error'])) {
                         <i class="fas fa-shield-halved"></i>
                         <span>Open SOC Dashboard</span>
                     </a>
-                    <a href="<?php echo htmlspecialchars(rtrim($ratibBase !== '' ? $ratibBase : $fullBase, '/') . '/mobile-app/index.php', ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer">
+                    <a href="<?php echo htmlspecialchars(rtrim($ratebBase !== '' ? $ratebBase : $fullBase, '/') . '/mobile-app/index.php', ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer">
                         <i class="fas fa-location-crosshairs"></i>
                         <span>Open Tracker View</span>
                     </a>

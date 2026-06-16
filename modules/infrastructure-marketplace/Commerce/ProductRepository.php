@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Commerce;
+namespace RATEB\InfrastructureMarketplace\Commerce;
 
 /**
- * PDO access for ratib_infra_products (additive commerce layer).
+ * PDO access for rateb_infra_products (additive commerce layer).
  */
 final class ProductRepository
 {
@@ -16,7 +16,7 @@ final class ProductRepository
      */
     public function listActive(): array
     {
-        $sql = 'SELECT * FROM ratib_infra_products WHERE active = 1 ORDER BY id ASC';
+        $sql = 'SELECT * FROM rateb_infra_products WHERE active = 1 ORDER BY id ASC';
         $stmt = $this->pdo->query($sql);
         if ($stmt === false) {
             return [];
@@ -31,7 +31,7 @@ final class ProductRepository
      */
     public function findByProductCode(string $code): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_products WHERE product_code = :c LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM rateb_infra_products WHERE product_code = :c LIMIT 1');
         $stmt->execute(['c' => $code]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -43,7 +43,7 @@ final class ProductRepository
      */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_products WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM rateb_infra_products WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -73,7 +73,7 @@ final class ProductRepository
             throw new \InvalidArgumentException('No columns for insert.');
         }
         $placeholders = array_map(static fn (string $c): string => ':' . $c, $fields);
-        $sql = 'INSERT INTO ratib_infra_products (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO rateb_infra_products (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 

@@ -57,13 +57,13 @@ startControlLayout('Select Country', [], []);
     <?php else: ?>
         <div class="country-grid">
             <?php
-            $ratibBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
-            if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) {
+            $ratebBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+            if ($ratebBase === '' && isset($_SERVER['HTTP_HOST'])) {
                 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
+                $ratebBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
             }
             foreach ($countries as $c):
-                $cardUrl = $ratibBase . '/' . $c['slug'] . '/login';
+                $cardUrl = $ratebBase . '/' . $c['slug'] . '/login';
             ?>
                 <a href="<?php echo htmlspecialchars($cardUrl); ?>" class="country-card" target="_blank" rel="noopener noreferrer">
                     <h3><?php echo htmlspecialchars($c['name']); ?></h3>

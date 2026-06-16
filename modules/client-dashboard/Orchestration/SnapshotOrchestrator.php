@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_SnapshotOrchestrator
+final class RATEB_ClientDashboard_SnapshotOrchestrator
 {
     /**
      * @param mysqli|null $conn
@@ -30,50 +30,50 @@ final class Ratib_ClientDashboard_SnapshotOrchestrator
         require_once dirname(__DIR__) . '/Security/ClientSecuritySnapshotBuilder.php';
         require_once dirname(__DIR__) . '/Governance/GovernanceFacade.php';
 
-        $obs = new Ratib_ClientDashboard_ObservabilityHub();
+        $obs = new RATEB_ClientDashboard_ObservabilityHub();
         $obs->setCorrelationId(bin2hex(random_bytes(8)));
-        $ctx = Ratib_ClientDashboard_AdapterContext::fromSession($conn, $obs);
+        $ctx = RATEB_ClientDashboard_AdapterContext::fromSession($conn, $obs);
 
-        $base = Ratib_ClientDashboard_SnapshotBuilder::build($conn);
+        $base = RATEB_ClientDashboard_SnapshotBuilder::build($conn);
         $widgets = $base['widgets'];
 
         $t0 = microtime(true);
-        $ordersAdapter = new Ratib_ClientDashboard_OrdersAdapter();
+        $ordersAdapter = new RATEB_ClientDashboard_OrdersAdapter();
         $orders = $ordersAdapter->fetchNormalized($ctx);
         $obs->recordAdapterTiming('orders', (microtime(true) - $t0) * 1000.0);
 
         $t0 = microtime(true);
-        $billingAdapter = new Ratib_ClientDashboard_BillingAdapter();
+        $billingAdapter = new RATEB_ClientDashboard_BillingAdapter();
         $billingRaw = $billingAdapter->fetchNormalized($ctx);
         $obs->recordAdapterTiming('billing', (microtime(true) - $t0) * 1000.0);
 
         $t0 = microtime(true);
-        $domainsAdapter = new Ratib_ClientDashboard_DomainsAdapter();
+        $domainsAdapter = new RATEB_ClientDashboard_DomainsAdapter();
         $domainPack = $domainsAdapter->fetchNormalized($ctx);
         $obs->recordAdapterTiming('domains', (microtime(true) - $t0) * 1000.0);
 
         $t0 = microtime(true);
-        $hostingAdapter = new Ratib_ClientDashboard_HostingAdapter();
+        $hostingAdapter = new RATEB_ClientDashboard_HostingAdapter();
         $hostingRows = $hostingAdapter->fetchNormalized($ctx);
         $obs->recordAdapterTiming('hosting', (microtime(true) - $t0) * 1000.0);
 
         $t0 = microtime(true);
-        $infraAdapter = new Ratib_ClientDashboard_InfrastructureAdapter();
+        $infraAdapter = new RATEB_ClientDashboard_InfrastructureAdapter();
         $infra = $infraAdapter->fetchAwareness($ctx);
         $obs->recordAdapterTiming('infrastructure', (microtime(true) - $t0) * 1000.0);
 
-        $registry = new Ratib_ClientDashboard_ServiceRegistry();
+        $registry = new RATEB_ClientDashboard_ServiceRegistry();
         $services = $registry->merge($hostingRows, $domainPack['domains'] ?? []);
 
-        $billingSync = (new Ratib_ClientDashboard_BillingSyncService())->synthesize($billingRaw, $orders);
+        $billingSync = (new RATEB_ClientDashboard_BillingSyncService())->synthesize($billingRaw, $orders);
 
-        $subscription = (new Ratib_ClientDashboard_SubscriptionStateEngine())->evaluate($billingSync, $services);
+        $subscription = (new RATEB_ClientDashboard_SubscriptionStateEngine())->evaluate($billingSync, $services);
 
-        $health = (new Ratib_ClientDashboard_ServiceHealthLayer())->summarize($services, $infra);
+        $health = (new RATEB_ClientDashboard_ServiceHealthLayer())->summarize($services, $infra);
 
-        $activity = (new Ratib_ClientDashboard_ActivityStreamBuilder())->build($ctx, $orders);
+        $activity = (new RATEB_ClientDashboard_ActivityStreamBuilder())->build($ctx, $orders);
 
-        $notifications = (new Ratib_ClientDashboard_NotificationEngine())->build(
+        $notifications = (new RATEB_ClientDashboard_NotificationEngine())->build(
             $ctx,
             $billingRaw,
             $orders,
@@ -81,7 +81,7 @@ final class Ratib_ClientDashboard_SnapshotOrchestrator
             $infra
         );
 
-        $security = (new Ratib_ClientDashboard_ClientSecuritySnapshotBuilder())->build($ctx);
+        $security = (new RATEB_ClientDashboard_ClientSecuritySnapshotBuilder())->build($ctx);
 
         /* Enrich legacy widgets (backward compatible) */
         $widgets['active_services_count'] = count($services);
@@ -127,7 +127,7 @@ final class Ratib_ClientDashboard_SnapshotOrchestrator
         $base['observability'] = $obs->snapshotSlice();
 
         try {
-            return Ratib_ClientDashboard_GovernanceFacade::mergeSnapshot(
+            return RATEB_ClientDashboard_GovernanceFacade::mergeSnapshot(
                 $base,
                 $ctx,
                 $obs,
@@ -151,7 +151,7 @@ final class Ratib_ClientDashboard_SnapshotOrchestrator
         }
     }
 
-    private static function resolveSource(string $legacy, Ratib_ClientDashboard_ObservabilityHub $obs): string
+    private static function resolveSource(string $legacy, RATEB_ClientDashboard_ObservabilityHub $obs): string
     {
         $slice = $obs->snapshotSlice();
         if (!empty($slice['degraded_flags'])) {

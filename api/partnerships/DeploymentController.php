@@ -176,7 +176,7 @@ class DeploymentController
         }
 
         require_once __DIR__ . '/../../includes/government-labor.php';
-        $govBlock = ratib_government_deploy_block_reason_pdo($this->conn, $workerId);
+        $govBlock = rateb_government_deploy_block_reason_pdo($this->conn, $workerId);
         if ($govBlock !== null) {
             throw new InvalidArgumentException($govBlock);
         }

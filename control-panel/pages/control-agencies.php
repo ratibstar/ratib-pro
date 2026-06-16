@@ -230,15 +230,15 @@ echo htmlspecialchars($cname ?: '-');
                                 <?php
                                     $cidOpen = isset($r['country_id']) ? (int)$r['country_id'] : 0;
                                     $cslug = isset($countrySlugMap[$cidOpen]) ? trim($countrySlugMap[$cidOpen]) : '';
-                                    $ratibBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
-                                    if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) {
+                                    $ratebBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+                                    if ($ratebBase === '' && isset($_SERVER['HTTP_HOST'])) {
                                         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                                        $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
+                                        $ratebBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
                                     }
                                     $openQs = 'control=1&agency_id=' . (int)$r['id'];
-                                    $openUrl = ($cslug !== '' && $ratibBase !== '')
-                                        ? $ratibBase . '/' . $cslug . '/?' . $openQs
-                                        : (($ratibBase !== '') ? ($ratibBase . '/pages/dashboard.php?' . $openQs) : (pageUrl('control/dashboard.php') . '?' . $openQs));
+                                    $openUrl = ($cslug !== '' && $ratebBase !== '')
+                                        ? $ratebBase . '/' . $cslug . '/?' . $openQs
+                                        : (($ratebBase !== '') ? ($ratebBase . '/pages/dashboard.php?' . $openQs) : (pageUrl('control/dashboard.php') . '?' . $openQs));
                                 ?><a href="<?php echo htmlspecialchars($openUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" data-permission="control_agencies,open_control_agency">Open</a>
                                 <a href="<?php echo !empty($_GET['embedded']) ? pageUrl('control/agencies.php') : ''; ?>?country_id=<?php echo (int)($r['country_id'] ?? 0); ?>&search=<?php echo urlencode($search); ?>" class="btn btn-sm btn-outline-info" <?php echo !empty($_GET['embedded']) ? 'target="_parent"' : ''; ?>>View</a>
                                 <button type="button" class="btn btn-sm btn-outline-warning btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,edit_control_agency">Edit</button>

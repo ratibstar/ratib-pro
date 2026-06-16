@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_NotificationEngine
+final class RATEB_ClientDashboard_NotificationEngine
 {
     /**
      * Standalone API entry (reuses adapters; partial-failure safe).
@@ -17,12 +17,12 @@ final class Ratib_ClientDashboard_NotificationEngine
         require_once dirname(__DIR__) . '/Adapters/DomainsAdapter.php';
         require_once dirname(__DIR__) . '/Adapters/InfrastructureAdapter.php';
 
-        $obs = new Ratib_ClientDashboard_ObservabilityHub();
-        $ctx = Ratib_ClientDashboard_AdapterContext::fromSession($conn, $obs);
-        $billing = (new Ratib_ClientDashboard_BillingAdapter())->fetchNormalized($ctx);
-        $orders = (new Ratib_ClientDashboard_OrdersAdapter())->fetchNormalized($ctx);
-        $domainPack = (new Ratib_ClientDashboard_DomainsAdapter())->fetchNormalized($ctx);
-        $infra = (new Ratib_ClientDashboard_InfrastructureAdapter())->fetchAwareness($ctx);
+        $obs = new RATEB_ClientDashboard_ObservabilityHub();
+        $ctx = RATEB_ClientDashboard_AdapterContext::fromSession($conn, $obs);
+        $billing = (new RATEB_ClientDashboard_BillingAdapter())->fetchNormalized($ctx);
+        $orders = (new RATEB_ClientDashboard_OrdersAdapter())->fetchNormalized($ctx);
+        $domainPack = (new RATEB_ClientDashboard_DomainsAdapter())->fetchNormalized($ctx);
+        $infra = (new RATEB_ClientDashboard_InfrastructureAdapter())->fetchAwareness($ctx);
 
         return (new self())->build(
             $ctx,
@@ -41,7 +41,7 @@ final class Ratib_ClientDashboard_NotificationEngine
      * @return array{items: list<array<string, mixed>>, unread_count: int, grouped: array<string, list<array<string, mixed>>>}
      */
     public function build(
-        Ratib_ClientDashboard_AdapterContext $ctx,
+        RATEB_ClientDashboard_AdapterContext $ctx,
         array $billing,
         array $orders,
         array $domainAlerts,
@@ -131,19 +131,19 @@ final class Ratib_ClientDashboard_NotificationEngine
     /**
      * @return list<array<string, mixed>>
      */
-    private function loadStored(Ratib_ClientDashboard_AdapterContext $ctx): array
+    private function loadStored(RATEB_ClientDashboard_AdapterContext $ctx): array
     {
         $conn = $ctx->conn;
         if (!$conn instanceof mysqli) {
             return [];
         }
         try {
-            $chk = @$conn->query("SHOW TABLES LIKE 'ratib_client_hub_notifications'");
+            $chk = @$conn->query("SHOW TABLES LIKE 'rateb_client_hub_notifications'");
             if (!$chk || $chk->num_rows === 0) {
                 return [];
             }
             $uid = $ctx->userId;
-            $stmt = @$conn->prepare('SELECT id, kind, severity, title, body, read_at, created_at FROM ratib_client_hub_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50');
+            $stmt = @$conn->prepare('SELECT id, kind, severity, title, body, read_at, created_at FROM rateb_client_hub_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50');
             if (!$stmt) {
                 return [];
             }

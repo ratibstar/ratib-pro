@@ -7,12 +7,12 @@ require_once __DIR__ . '/../api/core/ensure-government-labor-schema.php';
 /**
  * @return string|null Block reason, or null if deployment is allowed
  */
-function ratib_government_deploy_block_reason_pdo(PDO $conn, int $workerId): ?string
+function rateb_government_deploy_block_reason_pdo(PDO $conn, int $workerId): ?string
 {
     if ($workerId <= 0) {
         return null;
     }
-    ratibEnsureGovernmentLaborSchema($conn);
+    ratebEnsureGovernmentLaborSchema($conn);
     $st = $conn->prepare(
         "SELECT reason FROM gov_blacklist
          WHERE entity_type = 'worker' AND entity_id = ? AND status = 'active' LIMIT 1"
@@ -28,12 +28,12 @@ function ratib_government_deploy_block_reason_pdo(PDO $conn, int $workerId): ?st
 /**
  * @return array<int, array{type:string,message:string,severity:string}>
  */
-function ratib_government_worker_alerts_pdo(PDO $conn, int $workerId): array
+function rateb_government_worker_alerts_pdo(PDO $conn, int $workerId): array
 {
     if ($workerId <= 0) {
         return [];
     }
-    ratibEnsureGovernmentLaborSchema($conn);
+    ratebEnsureGovernmentLaborSchema($conn);
     $alerts = [];
 
     $st = $conn->prepare(
@@ -85,9 +85,9 @@ function ratib_government_worker_alerts_pdo(PDO $conn, int $workerId): array
  *
  * @return array{totals:array,alerts:array<int,array<string,mixed>>}
  */
-function ratib_government_dashboard_summary_pdo(PDO $conn): array
+function rateb_government_dashboard_summary_pdo(PDO $conn): array
 {
-    ratibEnsureGovernmentLaborSchema($conn);
+    ratebEnsureGovernmentLaborSchema($conn);
     $totals = [
         'violations' => 0,
         'blacklist_active' => 0,

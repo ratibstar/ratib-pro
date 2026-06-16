@@ -1,9 +1,9 @@
-# RATEB / ratibprogram — Forensic Repository Inventory Audit
+# RATEB / ratebprogram — Forensic Repository Inventory Audit
 
 **Date:** 2026-05-24  
 **Method:** Read-only filesystem scan and file content inspection  
-**Scope requested:** `ratibprogram` / `ratibsrar`  
-**Scope observed:** `c:\Users\انا\Desktop\ratibprogram` only — **no folder named `ratibsrar` exists** on disk (Desktop search returned 0 matches).
+**Scope requested:** `ratebprogram` / `ratebsrar`  
+**Scope observed:** `c:\Users\انا\Desktop\ratebprogram` only — **no folder named `ratebsrar` exists** on disk (Desktop search returned 0 matches).
 
 **Rules applied:** No code modified. Statements below cite observed paths, file counts, or verbatim patterns from files.
 
@@ -99,7 +99,7 @@
 **Dependencies (visible in requires):**
 - Most endpoints: `require_once '../../includes/config.php'` or `api/core/api-permission-helper.php`
 - Permission map: `api/core/module-permissions.php`
-- Session bootstrap: `api/core/ratib_api_session.inc.php`
+- Session bootstrap: `api/core/rateb_api_session.inc.php`
 
 ---
 
@@ -128,7 +128,7 @@
 ### 2.3 `modules/client-dashboard/` (52 files)
 
 **Example structure:**
-- `bootstrap.php` — defines `RATIB_CLIENT_DASHBOARD_ROOT`, URL helpers
+- `bootstrap.php` — defines `RATEB_CLIENT_DASHBOARD_ROOT`, URL helpers
 - `Adapters/` — Billing, Domains, Hosting, Infrastructure, Orders
 - `Actions/` — Renew, Upgrade, Suspend, RetryPayment
 - `Policy/PolicyEngine.php`, `Orchestration/SnapshotOrchestrator.php`
@@ -143,7 +143,7 @@
 ### 2.4 `modules/infrastructure-marketplace/` (203 files)
 
 **Example structure:**
-- `bootstrap.php` — autoload `Ratib\InfrastructureMarketplace\` namespace
+- `bootstrap.php` — autoload `Rateb\InfrastructureMarketplace\` namespace
 - `Provisioning/ProvisioningOrchestrator.php`, `Workers/InfrastructureProvisioningWorker.php`
 - `Registrars/Adapters/NamecheapRegistrarAdapter.php`
 - `Hosting/Adapters/CpanelWhmAdapter.php`
@@ -180,7 +180,7 @@
 | Partner | `partner-portal.php`, `partner-portal-login.php`, `partner-agencies.php`, `partner-cvs-control.php` |
 | Public / trust | `home.php`, `about.php`, `enterprise-trust.php`, `security-compliance.php`, `architecture.php`, `procurement-legal.php`, `government-workforce-operations.php`, `enterprise-pack.php` |
 | Client | `client/dashboard.php`, `client/marketplace.php`, … (18 files) |
-| Ops utilities | `ratib-sync-from-github.php`, `ratib-purge-cache.php`, `ratib-fix-perms.php`, `test-config.php`, `test-error.php`, `deploy-root.php`, `tenant-test.php` |
+| Ops utilities | `rateb-sync-from-github.php`, `rateb-purge-cache.php`, `rateb-fix-perms.php`, `test-config.php`, `test-error.php`, `deploy-root.php`, `tenant-test.php` |
 
 **Routing:** `.htaccess` maps clean URLs to `pages/*.php` (e.g. `/home` → `pages/home.php`, `/{country}/login` → `pages/login.php?country_slug=…`).
 
@@ -194,8 +194,8 @@
 |-------|---------------|
 | Config bootstrap | `config.php` (loads `config/env/load.php`, sets `$GLOBALS['conn']`) |
 | Permissions | `permissions.php`, `permission_middleware.php`, `modal_permissions.php` |
-| QR / barcode login | `ratib-qr-login.php`, `ratib-barcode-login-pair.php`, `ratib-barcode-login-auth.php`, `ratib-qr-workforce-identity.php`, `ratib-user-login-barcode.php` |
-| Public nav/CMS | `ratib-home-public-nav-bootstrap.php`, `site-content.php`, `ratib-public-cms.php` |
+| QR / barcode login | `rateb-qr-login.php`, `rateb-barcode-login-pair.php`, `rateb-barcode-login-auth.php`, `rateb-qr-workforce-identity.php`, `rateb-user-login-barcode.php` |
+| Public nav/CMS | `rateb-home-public-nav-bootstrap.php`, `site-content.php`, `rateb-public-cms.php` |
 | Payments | `ngenius.php`, `payment_api_bootstrap.php` |
 | Multi-tenant | `bootstrap_multi_tenant.php`, `TenantLoader.php`, `control_lookup_conn.php` |
 | Partner portal | `partner-portal-header.php`, `partner-portal-nav.php` |
@@ -260,7 +260,7 @@
 |------|------|
 | Login page | `pages/login.php` — queries `control_countries` / agency picklist; uses `$GLOBALS['conn']` |
 | Config bootstrap | `includes/config.php` — comment lines 43–50 describe per-country DB via `$GLOBALS['conn']` |
-| Session validity helper | referenced in root `index.php`: `ratib_program_session_is_valid_user()` |
+| Session validity helper | referenced in root `index.php`: `rateb_program_session_is_valid_user()` |
 | Session regenerate | `core/Auth.php` line 116 area: `session_regenerate_id(true)` on login |
 | Control panel login | `control-panel/pages/login.php` sets `control_logged_in` session (used in `control-panel/index.php`) |
 
@@ -276,10 +276,10 @@
 | Desktop login UI | `pages/login.php` + `js/login.js` |
 | Pair API | `api/login-barcode-pair.php` |
 | Validate/issue API | `api/qr-login.php` |
-| Pair logic | `includes/ratib-barcode-login-pair.php` |
-| Token/audit logic | `includes/ratib-qr-login.php` |
-| Workforce identity | `includes/ratib-qr-workforce-identity.php` |
-| Session completion | `includes/ratib-barcode-login-auth.php` |
+| Pair logic | `includes/rateb-barcode-login-pair.php` |
+| Token/audit logic | `includes/rateb-qr-login.php` |
+| Workforce identity | `includes/rateb-qr-workforce-identity.php` |
+| Session completion | `includes/rateb-barcode-login-auth.php` |
 | Phone scan page | `pages/login-scan.php` + `js/login-scan.js` + `css/qr-scan.css` |
 | Badge landing | `pages/login-badge.php` |
 | Printable badge | `pages/user-login-barcode.php` |
@@ -290,7 +290,7 @@
 
 **JS calls (from `js/login.js`):** `POST /api/login-barcode-pair.php`, `POST /api/qr-login.php`.
 
-**Data flow (from `docs/QR-BARCODE-LOGIN.md` + file names):** Desktop `js/login.js` creates pair token → phone opens `login-scan.php` → scans badge → `api/qr-login.php` validate → pair approved → desktop session via `ratib-barcode-login-auth.php` / `?barcode_pair=` on login page.
+**Data flow (from `docs/QR-BARCODE-LOGIN.md` + file names):** Desktop `js/login.js` creates pair token → phone opens `login-scan.php` → scans badge → `api/qr-login.php` validate → pair approved → desktop session via `rateb-barcode-login-auth.php` / `?barcode_pair=` on login page.
 
 ---
 
@@ -422,7 +422,7 @@
 | Item | Path |
 |------|------|
 | API | `api/global-ai-run.php`, `api/workers/global-ai-run.php` |
-| Include | `includes/global_ai_run.php`, `includes/ratib_global_ai_workflow_core.php` |
+| Include | `includes/global_ai_run.php`, `includes/rateb_global_ai_workflow_core.php` |
 | Workspace | `coreai/` |
 
 ---
@@ -462,7 +462,7 @@ Browser → /control-panel/... → control-panel/includes/config.php → control
 |-----------|---------------|
 | Per-request agency DB | `includes/config.php` comments 43–50; `$GLOBALS['conn']` |
 | Agency resolver from URL | `config/env/agency_resolver.php` — reads `control_agencies` columns `db_host`, `db_user`, `db_pass`, `db_name` |
-| Control DB name | `CONTROL_PANEL_DB_NAME` default `outratib_control_panel_db` in `config/env/rateb_sa.php` line 24 |
+| Control DB name | `CONTROL_PANEL_DB_NAME` default `admin_control_panel_db` in `config/env/rateb_sa.php` line 24 |
 | PDO tenant manager | `api/core/TenantDatabaseManager.php` — reads tenant creds from control DB table `tenants`; throws if tenant switch mid-request |
 | Single URL mode | `define('SINGLE_URL_MODE', true)` in `config/env/rateb_sa.php` line 27 |
 | Country slug routing | `.htaccess` line 84: `/{country}/` → `pages/dashboard.php?country_slug=$1` |
@@ -491,7 +491,7 @@ Both layers share `includes/config.php` and MySQL; no evidence of full migration
 | `config/env/rateb_sa.php` line 22 | `define('DB_PASS', ... ?: '9s%BpMr1]dfb');` |
 | `config/env/default.php` line 16 | `define('DB_PASS', '9s%BpMr1]dfb');` |
 | `config/env/bangladesh_rateb_sa.php` line 15 | `define('DB_PASS', '9s%BpMr1]dfb');` |
-| `config/env/rateb_sa.php` lines 21–23 | Default `DB_USER` `outratib_out`, `DB_NAME` `outratib_out` |
+| `config/env/rateb_sa.php` lines 21–23 | Default `DB_USER` `admin_out`, `DB_NAME` `admin_out` |
 | `config/env/ngenius.secrets.php` | Keys present with empty string values (`NGENIUS_API_KEY`, `NGENIUS_API_SECRET`) |
 
 Env override path exists via `getenv('DB_PASS')` in `rateb_sa.php` before fallback.
@@ -510,7 +510,7 @@ Env override path exists via `getenv('DB_PASS')` in `rateb_sa.php` before fallba
 
 - Session-based for legacy API (`enforceApiPermission`, `checkPermission`)
 - Control panel session bypass in `enforceApiPermission` when `control_logged_in` set
-- `api/qr-login.php` — public JSON endpoint with `SYSTEM_ENDPOINT` define; uses `ratib-qr-login.php` validation (rate limits referenced in docs, not re-verified line-by-line here)
+- `api/qr-login.php` — public JSON endpoint with `SYSTEM_ENDPOINT` define; uses `rateb-qr-login.php` validation (rate limits referenced in docs, not re-verified line-by-line here)
 
 ### 5.4 Exposed debug / dev / ops endpoints (file paths)
 
@@ -524,15 +524,15 @@ Env override path exists via `getenv('DB_PASS')` in `rateb_sa.php` before fallba
 | `api/admin/clear_all_data.php` | Destructive; gated by admin session |
 | `admin/debug-dashboard.php` | Exists; `OBSERVABILITY_DASHBOARD_ENABLED` true in `rateb_sa.php` |
 | `admin/dev/event-load-test.php`, `validate-observability.php` | Under `admin/dev/` |
-| `pages/ratib-sync-from-github.php` | Gated by `?run=1&key=ratib-deploy-sync-2026` (lines 11–16) |
-| `pages/ratib-purge-cache.php` | Gated by same key string (lines 8–13) |
-| `pages/ratib-fix-perms.php` | Exists (ops utility) |
-| `pages/ratib-copy-from-repo.php` | Referenced by sync redirect |
+| `pages/rateb-sync-from-github.php` | Gated by `?run=1&key=rateb-deploy-sync-2026` (lines 11–16) |
+| `pages/rateb-purge-cache.php` | Gated by same key string (lines 8–13) |
+| `pages/rateb-fix-perms.php` | Exists (ops utility) |
+| `pages/rateb-copy-from-repo.php` | Referenced by sync redirect |
 | `pages/deploy-root.php`, `tenant-test.php` | Exist in pages listing |
 
 ### 5.5 Session handling
 
-- `api/core/ratib_api_session.inc.php` + `ratib_api_pick_session_name()` loaded before `session_start()` in permission helper
+- `api/core/rateb_api_session.inc.php` + `rateb_api_pick_session_name()` loaded before `session_start()` in permission helper
 - `session_regenerate_id(true)` in `core/Auth.php` and `control-panel/core/Auth.php` (grep hits)
 - Partner portal: `pages/partner-portal.php` line 25 `session_regenerate_id(true)`
 
@@ -623,7 +623,7 @@ No test files found under paths for:
 | Root redirect | `index.php` → marketing home or country dashboard if session valid |
 | Apache rewrite hub | `.htaccess` → `pages/*`, `public/index.php`, static assets |
 | Public front controller | `public/index.php` |
-| Build marker | `public/ratib-build.txt` |
+| Build marker | `public/rateb-build.txt` |
 | Webhooks | `public/webhooks/dispatch.php` |
 | Worker platform JSON | `public/worker-platform.php` |
 | Workflow public | `public/workflows/worker-onboarding/index.php` |
@@ -671,7 +671,7 @@ No test files found under paths for:
 | Risk | Evidence |
 |------|----------|
 | DB password in git-tracked env fallbacks | `config/env/rateb_sa.php:22`, `default.php:16`, `bangladesh_rateb_sa.php:15` |
-| Shared static ops key | `ratib-deploy-sync-2026` in `pages/ratib-sync-from-github.php:11`, `pages/ratib-purge-cache.php:9` |
+| Shared static ops key | `rateb-deploy-sync-2026` in `pages/rateb-sync-from-github.php:11`, `pages/rateb-purge-cache.php:9` |
 | Diagnostic page exposes config | `pages/test-config.php` prints `DB_HOST`, enables `display_errors` |
 | HR debug API may leak employee rows | `api/hr/debug-query.php` returns employee records as JSON; no auth in first 50 lines |
 | Destructive admin API exists | `api/admin/clear_all_data.php` — deletes business data when `confirm=1` and admin session |

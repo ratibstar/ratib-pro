@@ -13,12 +13,12 @@
  *                     'connect_host','connect_port','connect_user','connect_pass' => actual DSN used] or null on failure
  */
 
-if (!function_exists('ratib_ensure_minimal_ratib_pro_schema')) {
+if (!function_exists('rateb_ensure_minimal_rateb_pro_schema')) {
     /**
      * New tenant DBs (empty cPanel database) often have no tables. Create minimal roles + users so login and
      * Country Users API work without a manual SQL import.
      */
-    function ratib_ensure_minimal_ratib_pro_schema(mysqli $conn): void
+    function rateb_ensure_minimal_rateb_pro_schema(mysqli $conn): void
     {
         try {
             @$conn->query(
@@ -61,7 +61,7 @@ if (!function_exists('ratib_ensure_minimal_ratib_pro_schema')) {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
             );
         } catch (Throwable $e) {
-            error_log('ratib_ensure_minimal_ratib_pro_schema: ' . $e->getMessage());
+            error_log('rateb_ensure_minimal_rateb_pro_schema: ' . $e->getMessage());
         }
     }
 }
@@ -109,7 +109,7 @@ function getAgencyDbConnection($agency, $countryId = 0) {
         $connectErr = $e->getMessage();
     }
 
-    // Resolve country slug for canonical DB names (outratib_{slug}) before retrying with main creds on a bad db_name.
+    // Resolve country slug for canonical DB names (admin_{slug}) before retrying with main creds on a bad db_name.
     $slugRaw = trim((string)($agency['country_slug'] ?? ''));
     if ($slugRaw === '' && $countryId > 0 && function_exists('get_control_lookup_conn')) {
         $lk = get_control_lookup_conn();
@@ -135,11 +135,11 @@ function getAgencyDbConnection($agency, $countryId = 0) {
         $norm = strtolower(preg_replace('/[^a-z0-9_-]+/i', '', str_replace([' ', '.'], '_', $slugRaw)));
         $norm = str_replace('-', '_', $norm);
         $slugCandidates = [];
-        if ($norm !== '' && function_exists('ratib_country_database_candidates')) {
-            $slugCandidates = ratib_country_database_candidates($norm);
+        if (function_exists('rateb_country_database_candidates')) {
+            $slugCandidates = rateb_country_database_candidates($norm);
         } elseif ($norm !== '') {
             $slugCandidates[] = 'admin_' . $norm;
-            $slugCandidates[] = 'outratib_' . $norm;
+            $slugCandidates[] = 'admin_' . $norm;
         }
         $slugCandidates = array_unique(array_filter($slugCandidates));
         foreach ($slugCandidates as $altDb) {
@@ -198,13 +198,13 @@ function getAgencyDbConnection($agency, $countryId = 0) {
         if ($isBangladesh) {
             $alts = [];
             foreach (['bangladish', 'bangladesh'] as $slug) {
-                foreach ((function_exists('ratib_country_database_candidates') ? ratib_country_database_candidates($slug) : ['admin_' . $slug, 'outratib_' . $slug]) as $db) {
+                foreach ((function_exists('rateb_country_database_candidates') ? rateb_country_database_candidates($slug) : ['admin_' . $slug, 'admin_' . $slug]) as $db) {
                     $alts[] = [$db, $dbHost, $dbUser, $dbPass];
                 }
             }
         } elseif ($isSriLanka) {
             $alts = [];
-            foreach ((function_exists('ratib_country_database_candidates') ? ratib_country_database_candidates('sri_lanka') : ['admin_sri_lanka', 'outratib_sri_lanka', 'outratib_sri Lanka']) as $db) {
+            foreach ((function_exists('rateb_country_database_candidates') ? rateb_country_database_candidates('sri_lanka') : ['admin_sri_lanka', 'admin_sri_lanka', 'admin_sri Lanka']) as $db) {
                 $alts[] = [$db, $dbHost, $dbUser, $dbPass];
             }
         }
@@ -253,7 +253,7 @@ function getAgencyDbConnection($agency, $countryId = 0) {
     }
     $GLOBALS['__agency_db_connect_error'] = '';
     $conn->set_charset('utf8mb4');
-    ratib_ensure_minimal_ratib_pro_schema($conn);
+    rateb_ensure_minimal_rateb_pro_schema($conn);
     $useCountryFilter = ($dbName === (defined('DB_NAME') ? DB_NAME : '')) && $countryId > 0;
     return [
         'conn' => $conn,

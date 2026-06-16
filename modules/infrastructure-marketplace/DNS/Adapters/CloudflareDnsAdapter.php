@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\DNS\Adapters;
+namespace RATEB\InfrastructureMarketplace\DNS\Adapters;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\DnsProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
-use Ratib\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
-use Ratib\InfrastructureMarketplace\Observability\ProviderEventBus;
-use Ratib\InfrastructureMarketplace\Security\Rollout\ProviderRolloutPolicy;
-use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\DnsProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
+use RATEB\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
+use RATEB\InfrastructureMarketplace\Observability\ProviderEventBus;
+use RATEB\InfrastructureMarketplace\Security\Rollout\ProviderRolloutPolicy;
+use RATEB\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class CloudflareDnsAdapter implements DnsProviderInterface
 {
@@ -232,7 +232,7 @@ final class CloudflareDnsAdapter implements DnsProviderInterface
      */
     private function headers(): array
     {
-        $token = $this->secrets->getSecret('RATIB_INFRA_CLOUDFLARE', 'API_TOKEN') ?? getenv('RATIB_INFRA_CLOUDFLARE_API_TOKEN');
+        $token = $this->secrets->getSecret('RATEB_INFRA_CLOUDFLARE', 'API_TOKEN') ?? getenv('RATEB_INFRA_CLOUDFLARE_API_TOKEN');
         if (!is_string($token) || trim($token) === '') {
             throw new \RuntimeException('Cloudflare API token is missing.');
         }
@@ -244,7 +244,7 @@ final class CloudflareDnsAdapter implements DnsProviderInterface
 
     private function apiBase(): string
     {
-        $base = getenv('RATIB_INFRA_CLOUDFLARE_API_BASE');
+        $base = getenv('RATEB_INFRA_CLOUDFLARE_API_BASE');
         if (is_string($base) && trim($base) !== '') {
             return rtrim(trim($base), '/');
         }

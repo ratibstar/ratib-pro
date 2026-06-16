@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/hr/stats.php`.
  */
 if (isset($_GET['control']) && (string)$_GET['control'] === '1') {
-    session_name('ratib_control');
+    session_name('rateb_control');
 }
 require_once __DIR__ . '/hr-api-bootstrap.inc.php';
 error_reporting(E_ALL);

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Security;
+namespace RATEB\InfrastructureMarketplace\Security;
 
 /**
  * Simple fixed-window rate limiter (per-IP / per-user buckets) using temp files + flock.
@@ -13,7 +13,7 @@ final class ControlPlaneRateLimiter
         if ($maxHits <= 0) {
             return true;
         }
-        $dir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'ratib-infra-rl';
+        $dir = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'rateb-infra-rl';
         if (!is_dir($dir) && !@mkdir($dir, 0700, true) && !is_dir($dir)) {
             return true;
         }

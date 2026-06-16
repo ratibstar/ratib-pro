@@ -5,8 +5,8 @@
 ob_start();
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -30,11 +30,11 @@ try {
     if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         ppProfileJson(['success' => false, 'message' => 'Method not allowed'], 405);
     }
-    if (!function_exists('ratib_partner_portal_session_is_valid') || !ratib_partner_portal_session_is_valid()) {
+    if (!function_exists('rateb_partner_portal_session_is_valid') || !rateb_partner_portal_session_is_valid()) {
         ppProfileJson(['success' => false, 'message' => 'Partner portal session required'], 401);
     }
 
-    $aid = function_exists('ratib_partner_portal_agency_id') ? (int) ratib_partner_portal_agency_id() : 0;
+    $aid = function_exists('rateb_partner_portal_agency_id') ? (int) rateb_partner_portal_agency_id() : 0;
     if ($aid <= 0) {
         ppProfileJson(['success' => false, 'message' => 'Invalid session'], 401);
     }
@@ -47,7 +47,7 @@ try {
 
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
 
     $ctl = new PartnerAgencyController($conn);
     $updated = $ctl->updatePartnerPortalProfile($aid, $input);

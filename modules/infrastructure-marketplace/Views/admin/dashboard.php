@@ -3,39 +3,39 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
-$ratibInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
-if (is_file($ratibInfraControlPanelConfig)) {
-    require_once $ratibInfraControlPanelConfig;
+$ratebInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
+if (is_file($ratebInfraControlPanelConfig)) {
+    require_once $ratebInfraControlPanelConfig;
 }
 ControlSecurityGuard::ensureInfraCsrfSessionToken();
-$ratibInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
-$ratibInfraEmbed = isset($_GET['embed']) && (string) $_GET['embed'] === '1';
-$ratibAdminControlCss = '/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-control.css';
-$ratibAdminControlCssPath = dirname(__DIR__, 2) . '/Assets/css/infrastructure-admin-control.css';
-$ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($ratibAdminControlCssPath) : '1';
+$ratebInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
+$ratebInfraEmbed = isset($_GET['embed']) && (string) $_GET['embed'] === '1';
+$ratebAdminControlCss = '/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-control.css';
+$ratebAdminControlCssPath = dirname(__DIR__, 2) . '/Assets/css/infrastructure-admin-control.css';
+$ratebAdminControlV = is_file($ratebAdminControlCssPath) ? (string) @filemtime($ratebAdminControlCssPath) : '1';
 ?>
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <?php if ($ratibInfraAdminCsrf !== ''): ?>
-    <meta name="infra-control-csrf" content="<?php echo htmlspecialchars($ratibInfraAdminCsrf, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if ($ratebInfraAdminCsrf !== ''): ?>
+    <meta name="infra-control-csrf" content="<?php echo htmlspecialchars($ratebInfraAdminCsrf, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
     <title>Infrastructure Marketplace Dashboard</title>
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-dashboard.css">
-    <?php if ($ratibInfraEmbed): ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratibAdminControlCss, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo htmlspecialchars($ratibAdminControlV, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if ($ratebInfraEmbed): ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratebAdminControlCss, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo htmlspecialchars($ratebAdminControlV, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
 </head>
-<body class="ratib-infra-marketplace-scope ratib-infra-admin-page<?php echo $ratibInfraEmbed ? ' ratib-infra-embed' : ''; ?>">
+<body class="rateb-infra-marketplace-scope rateb-infra-admin-page<?php echo $ratebInfraEmbed ? ' rateb-infra-embed' : ''; ?>">
 <main class="infra-admin-wrap">
     <header class="infra-admin-header">
-        <h1><?php echo $ratibInfraEmbed ? 'Infrastructure operations' : 'Infrastructure Marketplace'; ?></h1>
-        <?php if ($ratibInfraEmbed): ?>
+        <h1><?php echo $ratebInfraEmbed ? 'Infrastructure operations' : 'Infrastructure Marketplace'; ?></h1>
+        <?php if ($ratebInfraEmbed): ?>
         <p>Queue, providers, catalog, workers, and readiness — embedded view.</p>
         <?php else: ?>
         <p>Operational status, provisioning queue, provider readiness, and catalog visibility.</p>

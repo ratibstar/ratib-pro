@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Billing;
+namespace RATEB\InfrastructureMarketplace\Billing;
 
 final class InfrastructureBillingSynchronizer
 {
@@ -19,7 +19,7 @@ final class InfrastructureBillingSynchronizer
      */
     public function buildProvisioningInvoiceLink(string $orderPublicId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_orders WHERE public_id = :public_id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM rateb_infra_orders WHERE public_id = :public_id LIMIT 1');
         $stmt->execute(['public_id' => $orderPublicId]);
         $order = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!is_array($order)) {

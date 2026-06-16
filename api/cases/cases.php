@@ -59,9 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Same session as Ratib Pro pages / SSO (ratib_control cookie or ?control=1)
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+// Same session as RATEB Pro pages / SSO (rateb_control cookie or ?control=1)
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

@@ -29,7 +29,7 @@
     padding-top: 0.35rem;
 }
 
-.partner-portal-body.ratib-saas-home .partner-portal-shell {
+.partner-portal-body.rateb-saas-home .partner-portal-shell {
     position: relative;
     z-index: 10;
     display: flex;
@@ -39,7 +39,7 @@
 }
 
 /* Full-bleed marketing footer (counteract shell horizontal padding) */
-.partner-portal-body.ratib-saas-home .partner-portal-shell > .ratib-footer-enterprise {
+.partner-portal-body.rateb-saas-home .partner-portal-shell > .rateb-footer-enterprise {
     margin-left: -1rem;
     margin-right: -1rem;
     width: calc(100% + 2rem);
@@ -931,7 +931,7 @@
     min-width: 14rem;
 }
 
-.partner-portal-ratib-wordmark {
+.partner-portal-rateb-wordmark {
     display: block;
     font-size: clamp(1.35rem, 3.4vw, 2rem);
     font-weight: 800;
@@ -940,7 +940,7 @@
     letter-spacing: -0.02em;
 }
 
-.partner-portal-ratib-sub {
+.partner-portal-rateb-sub {
     display: block;
     margin-top: 0.38rem;
     font-size: clamp(0.72rem, 1.15vw, 0.88rem);
@@ -991,7 +991,7 @@
         width: 100%;
     }
 
-    .partner-portal-ratib-sub {
+    .partner-portal-rateb-sub {
         margin-left: 0;
     }
 }

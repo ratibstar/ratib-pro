@@ -1,6 +1,6 @@
 # Full review: what to upload and what to delete on the server
 
-Use this list so the server matches your current project: **upload** the control panel folder and the new redirect, then **delete** the old control-panel paths that used to live in the Ratib Pro root.
+Use this list so the server matches your current project: **upload** the control panel folder and the new redirect, then **delete** the old control-panel paths that used to live in the Rateb Pro root.
 
 ---
 
@@ -9,7 +9,7 @@ Use this list so the server matches your current project: **upload** the control
 You can zip the control panel and upload **one file** instead of 74.
 
 **1. Create the zip (on your PC)**  
-- Open your project folder: `ratibprogram`.  
+- Open your project folder: `ratebprogram`.  
 - Select these **two** items: **`control.php`** (file) and **`control-panel`** (folder).  
 - Right‑click → **Send to → Compressed (zipped) folder**.  
 - Name it e.g. `control-panel-upload.zip`.
@@ -30,7 +30,7 @@ You can zip the control panel and upload **one file** instead of 74.
 
 ## Part 1 — UPLOAD (74 items: 1 at root + 73 in control-panel)
 
-Upload these from your local `ratibprogram` to the server in the **same relative paths**.  
+Upload these from your local `ratebprogram` to the server in the **same relative paths**.  
 Check off each line as you upload.
 
 ### At project root (1 file)
@@ -156,7 +156,7 @@ Upload the **entire** `control-panel` folder. Below is the full file list so you
 | 68 | `control-panel/pages/control/system-settings.php` |
 | 69 | `control-panel/pages/control/control-panel-settings.php` |
 | 70 | `control-panel/pages/control/control-panel-users.php` |
-| 71 | `control-panel/pages/control/ratib-pro-users.php` |
+| 71 | `control-panel/pages/control/rateb-pro-users.php` |
 | 72 | `control-panel/pages/control/super-admin-tenants.php` |
 | 73 | `control-panel/pages/control/README.md` |
 
@@ -166,7 +166,7 @@ Upload the **entire** `control-panel` folder. Below is the full file list so you
 
 ## Part 2 — DELETE from server (old control panel paths)
 
-These paths **no longer exist** in the Ratib Pro project because the control panel was moved into `control-panel/`. Delete them on the server so the server matches your cleaned project. Remove files first, then empty folders.
+These paths **no longer exist** in the Rateb Pro project because the control panel was moved into `control-panel/`. Delete them on the server so the server matches your cleaned project. Remove files first, then empty folders.
 
 ### Complete list of all files to delete (copy-paste reference)
 
@@ -187,7 +187,7 @@ pages/control/admins.php
 pages/control/countries.php
 pages/control/control-panel-settings.php
 pages/control/super-admin-tenants.php
-pages/control/ratib-pro-users.php
+pages/control/rateb-pro-users.php
 pages/control/country-users.php
 pages/control/control-panel-users.php
 pages/control/system-settings.php
@@ -219,7 +219,7 @@ includes/control/sidebar.php
 includes/control/layout-wrapper.php
 ```
 
-**Optional (delete if present):** `config/env/control_ratib_sa.php`, any `config/env/control*.php`, any `config/control_*.sql`, and folders `css/control/`, `js/control/` at site root.
+**Optional (delete if present):** `config/env/control_rateb_sa.php`, any `config/env/control*.php`, any `config/control_*.sql`, and folders `css/control/`, `js/control/` at site root.
 
 **Order:** Delete the files above first, then remove the empty folders: `pages/control/`, `api/control/`, `includes/control/`.
 
@@ -235,8 +235,8 @@ includes/control/layout-wrapper.php
 | 4 | `pages/control-support-chats.php` | Now only in `control-panel/pages/`. |
 | 5 | `pages/select-country.php` | Now only in `control-panel/pages/`. |
 | 6 | `pages/select-agency.php` | Now only in `control-panel/pages/`. |
-| 7 | `includes/control-config.php` | Control config; removed from Ratib Pro. |
-| 8 | `includes/control-sidebar.php` | Control sidebar; removed from Ratib Pro. |
+| 7 | `includes/control-config.php` | Control config; removed from Rateb Pro. |
+| 8 | `includes/control-sidebar.php` | Control sidebar; removed from Rateb Pro. |
 | 9 | `includes/control-permissions.php` | Now only in `control-panel/includes/`. |
 | 10 | `includes/control_pending_reg_alert.php` | Now only in `control-panel/includes/`. |
 
@@ -254,7 +254,7 @@ Delete the **entire** folder. After deleting files inside, remove the empty fold
 
 | # | Server path | When to delete |
 |---|-------------|----------------|
-| 14 | `config/env/control_ratib_sa.php` | If you had a control-specific env file. |
+| 14 | `config/env/control_rateb_sa.php` | If you had a control-specific env file. |
 | 15 | `config/env/control*.php` | Any other `config/env/control*.php` files. |
 | 16 | `config/control_*.sql` | Any control SQL scripts in `config/`. |
 | 17 | `css/control/` | Only if you had control-only CSS at **root** (not inside control-panel). |
@@ -262,9 +262,9 @@ Delete the **entire** folder. After deleting files inside, remove the empty fold
 
 ---
 
-## Part 3 — Updated Ratib Pro files (upload these to the server)
+## Part 3 — Updated Rateb Pro files (upload these to the server)
 
-These files were **modified** to remove control panel logic from the main app. Upload them from your local `ratibprogram` to the server (same paths) so the server has the cleaned Ratib Pro version.
+These files were **modified** to remove control panel logic from the main app. Upload them from your local `ratebprogram` to the server (same paths) so the server has the cleaned Rateb Pro version.
 
 ### Complete list (all paths relative to site root)
 
@@ -297,7 +297,7 @@ api/permissions/save_user_permissions.php
 ## Summary
 
 - **Upload:** `control.php` + the full `control-panel/` folder so the control panel runs from `control-panel/`.
-- **Delete:** The old control paths listed in Part 2 so the server no longer has control panel code mixed in the Ratib Pro root.
-- **Upload (updated):** The 19 Ratib Pro files in Part 3 so the server has the version with control panel logic removed.
+- **Delete:** The old control paths listed in Part 2 so the server no longer has control panel code mixed in the Rateb Pro root.
+- **Upload (updated):** The 19 Rateb Pro files in Part 3 so the server has the version with control panel logic removed.
 
 After this, the control panel is only under `control-panel/`, and opening `control.php` will redirect to it.

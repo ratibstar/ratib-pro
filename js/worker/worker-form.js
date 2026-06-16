@@ -25,13 +25,13 @@ const debugForm = {
     info: (...args) => window.DEBUG_MODE && console.info('[Worker-Form]', ...args)
 };
 
-function ratibWorkerSiteBase() {
+function ratebWorkerSiteBase() {
     const el = document.getElementById('app-config');
     const base = (el && el.getAttribute('data-base-url')) || document.documentElement.getAttribute('data-base-url') || '';
     return String(base || '').replace(/\/+$/, '');
 }
 
-function ratibCountriesCitiesControlSuffix() {
+function ratebCountriesCitiesControlSuffix() {
     const el = document.getElementById('app-config');
     if (!el) return '';
     if (el.getAttribute('data-control') === '1' || el.getAttribute('data-control-pro-bridge') === '1') {
@@ -287,8 +287,8 @@ const EXPORT_HTML_CSS = `
 
 document.addEventListener('DOMContentLoaded', function() {
     function getCountryProfile() {
-        if (typeof window.RATIB_COUNTRY_PROFILE === 'string' && window.RATIB_COUNTRY_PROFILE.trim()) {
-            return window.RATIB_COUNTRY_PROFILE.trim().toLowerCase();
+        if (typeof window.RATEB_COUNTRY_PROFILE === 'string' && window.RATEB_COUNTRY_PROFILE.trim()) {
+            return window.RATEB_COUNTRY_PROFILE.trim().toLowerCase();
         }
         const config = document.getElementById('app-config');
         const text = [
@@ -369,8 +369,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 travel: 'Travel & Departure'
             }
         };
-        const labelsOverride = window.RATIB_COUNTRY_PROFILE_CONFIG && window.RATIB_COUNTRY_PROFILE_CONFIG.labels
-            ? window.RATIB_COUNTRY_PROFILE_CONFIG.labels
+        const labelsOverride = window.RATEB_COUNTRY_PROFILE_CONFIG && window.RATEB_COUNTRY_PROFILE_CONFIG.labels
+            ? window.RATEB_COUNTRY_PROFILE_CONFIG.labels
             : null;
         const labels = labelsOverride || labelsByProfile[profile] || labelsByProfile.default;
         const labelTargets = [
@@ -387,10 +387,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getCountrySpecificRequirements(profile) {
-        if (window.RATIB_COUNTRY_PROFILE_CONFIG
-            && Array.isArray(window.RATIB_COUNTRY_PROFILE_CONFIG.requirements)
-            && window.RATIB_COUNTRY_PROFILE_CONFIG.requirements.length > 0) {
-            return window.RATIB_COUNTRY_PROFILE_CONFIG.requirements.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+        if (window.RATEB_COUNTRY_PROFILE_CONFIG
+            && Array.isArray(window.RATEB_COUNTRY_PROFILE_CONFIG.requirements)
+            && window.RATEB_COUNTRY_PROFILE_CONFIG.requirements.length > 0) {
+            return window.RATEB_COUNTRY_PROFILE_CONFIG.requirements.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
         }
         // Core identity only — document row fields (ID, passport, police, etc.) stay optional; see applyCountrySpecificRequirements.
         const common = [
@@ -996,7 +996,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return null;
         }
     }
-    window.ratibGetPartnerDocumentsStaffReturnUrl = getPartnerDocumentsStaffReturnUrl;
+    window.ratebGetPartnerDocumentsStaffReturnUrl = getPartnerDocumentsStaffReturnUrl;
 
     /**
      * Return to staff Documents & CVs: prefer history.back() (bfcache = instant) + sessionStorage
@@ -1020,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const nm = u.searchParams.get('return_partner_documents_worker_name') || '';
                     if (wid > 0 && aid > 0) {
                         sessionStorage.setItem(
-                            'ratib_pp_reopen_worker_modal_v1',
+                            'rateb_pp_reopen_worker_modal_v1',
                             JSON.stringify({
                                 workerId: wid,
                                 workerName: nm,
@@ -1039,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.assign(href);
         return true;
     }
-    window.ratibNavigatePartnerDocumentsStaffReturn = navigatePartnerDocumentsStaffReturn;
+    window.ratebNavigatePartnerDocumentsStaffReturn = navigatePartnerDocumentsStaffReturn;
 
     // Function to actually close the form (called after confirmation)
     function performClose() {
@@ -1099,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (useHistoryBack) {
                 try {
                     sessionStorage.setItem(
-                        'ratib_reopen_workers_sent',
+                        'rateb_reopen_workers_sent',
                         JSON.stringify({ partnerId: returnPartnerAgencyId, t: Date.now() })
                     );
                 } catch (e) {
@@ -1501,7 +1501,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const loadWorkerJson = async () => {
             const timestamp = new Date().getTime();
             const randomId = Math.random().toString(36).substring(7);
-            const basePath = window.WORKERS_API || '/ratibprogram/api/workers';
+            const basePath = window.WORKERS_API || '/ratebprogram/api/workers';
             const apiUrl = `${basePath}/core/get.php?id=${workerId}&t=${timestamp}&r=${randomId}&workerId=${workerId}`;
             debugForm.log('Fetching worker data from:', apiUrl);
             const response = await fetch(apiUrl, {
@@ -2047,9 +2047,9 @@ document.addEventListener('DOMContentLoaded', function() {
         await openEditWorkerForm(workerId, true);
     }
     
-    let _ratibAgentsListCache = null;
-    let _ratibAgentsListCachedAt = 0;
-    const RATIB_AGENTS_CACHE_MS = 120000;
+    let _ratebAgentsListCache = null;
+    let _ratebAgentsListCachedAt = 0;
+    const RATEB_AGENTS_CACHE_MS = 120000;
 
     // Function to load agents and subagents into dropdowns
     async function loadAgentsAndSubagents() {
@@ -2057,15 +2057,15 @@ document.addEventListener('DOMContentLoaded', function() {
             debugForm.log('Loading agents, subagents, and countries...');
             
             const agentSelect = document.getElementById('agent_id');
-            const apiBase = window.API_BASE || '/ratibprogram/api';
+            const apiBase = window.API_BASE || '/ratebprogram/api';
             let agents = null;
 
             if (
                 agentSelect
-                && _ratibAgentsListCache
-                && Date.now() - _ratibAgentsListCachedAt < RATIB_AGENTS_CACHE_MS
+                && _ratebAgentsListCache
+                && Date.now() - _ratebAgentsListCachedAt < RATEB_AGENTS_CACHE_MS
             ) {
-                agents = _ratibAgentsListCache;
+                agents = _ratebAgentsListCache;
                 debugForm.log('✅ Agents reused from cache:', agents.length);
             } else {
                 const agentResponse = await fetch(`${apiBase}/agents/get.php?limit=1000`);
@@ -2091,8 +2091,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             agentIds.add(id);
                             return true;
                         });
-                        _ratibAgentsListCache = agents;
-                        _ratibAgentsListCachedAt = Date.now();
+                        _ratebAgentsListCache = agents;
+                        _ratebAgentsListCachedAt = Date.now();
                     } else {
                         debugForm.warn('Agent data structure issue:', agentData);
                         agents = [];
@@ -2851,7 +2851,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             subagentSelect.innerHTML = '<option value="">Select Subagent</option>';
                 debugForm.log('Loading subagents for agent ID:', agentId);
-                const apiBase = window.API_BASE || '/ratibprogram/api';
+                const apiBase = window.API_BASE || '/ratebprogram/api';
                 debugForm.log('API URL:', `${apiBase}/subagents/get.php?agent_id=${agentId}`);
             const response = await fetch(`${apiBase}/subagents/get.php?agent_id=${agentId}`);
             debugForm.log('Response status:', response.status);
@@ -2989,7 +2989,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.testSubagentsAPI = async function(agentId) {
         debugForm.log('Testing subagents API for agent ID:', agentId);
         try {
-            const apiBase = window.API_BASE || '/ratibprogram/api';
+            const apiBase = window.API_BASE || '/ratebprogram/api';
             const response = await fetch(`${apiBase}/subagents/get.php?agent_id=${agentId}`);
             const data = await response.json();
             debugForm.log('Raw API response:', data);
@@ -3020,9 +3020,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!countrySelect) return;
         
         try {
-            const baseUrl = ratibWorkerSiteBase();
+            const baseUrl = ratebWorkerSiteBase();
             const timestamp = new Date().getTime();
-            const url = `${baseUrl}/api/admin/get_countries_cities.php?action=countries&_t=${timestamp}${ratibCountriesCitiesControlSuffix()}`;
+            const url = `${baseUrl}/api/admin/get_countries_cities.php?action=countries&_t=${timestamp}${ratebCountriesCitiesControlSuffix()}`;
             
             debugForm.log('[Worker] Loading countries from:', url);
             
@@ -3094,8 +3094,8 @@ document.addEventListener('DOMContentLoaded', function() {
         citySelect.innerHTML = '<option value="">Loading cities...</option>';
         
         try {
-            const baseUrl = ratibWorkerSiteBase();
-            const url = `${baseUrl}/api/admin/get_countries_cities.php?action=cities&country=${encodeURIComponent(country)}${ratibCountriesCitiesControlSuffix()}`;
+            const baseUrl = ratebWorkerSiteBase();
+            const url = `${baseUrl}/api/admin/get_countries_cities.php?action=cities&country=${encodeURIComponent(country)}${ratebCountriesCitiesControlSuffix()}`;
             
             const response = await fetch(url, {
                 method: 'GET',

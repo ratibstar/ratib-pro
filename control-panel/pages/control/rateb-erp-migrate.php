@@ -57,7 +57,7 @@ startControlLayout('نظام رتب ERP — إعداد قاعدة البيانا
     <strong><i class="fas fa-database me-2"></i>Database setup</strong>
     — Creates all <code>rateb_*</code> tables in the dedicated ERP database
     <code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>
-    (not the control panel DB). In cPanel → MySQL®, add user <code><?php echo htmlspecialchars(defined('DB_USER') ? (string) DB_USER : 'outratib_out', ENT_QUOTES, 'UTF-8'); ?></code>
+    (not the control panel DB). In cPanel → MySQL®, add user <code><?php echo htmlspecialchars(defined('DB_USER') ? (string) DB_USER : 'admin_out', ENT_QUOTES, 'UTF-8'); ?></code>
     to database <code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code> with ALL PRIVILEGES.
 </p>
 
@@ -104,7 +104,7 @@ startControlLayout('نظام رتب ERP — إعداد قاعدة البيانا
                 <td><?php echo (int) ($erpD['duplicate_role_slugs'] ?? 0); ?></td>
             </tr>
             <tr>
-                <td><code><?php echo htmlspecialchars((string) ($cpD['db'] ?? 'outratib_control_panel_db'), ENT_QUOTES, 'UTF-8'); ?></code> <span class="badge bg-secondary">CP</span></td>
+                <td><code><?php echo htmlspecialchars((string) ($cpD['db'] ?? 'admin_control_panel_db'), ENT_QUOTES, 'UTF-8'); ?></code> <span class="badge bg-secondary">CP</span></td>
                 <td><?php echo !empty($cpD['ok']) ? '<span class="text-success">OK</span>' : '<span class="text-warning">—</span>'; ?></td>
                 <td><?php echo (int) ($cpD['rateb_tables'] ?? 0); ?></td>
                 <td><?php echo (int) ($cpD['permissions'] ?? 0); ?></td>
@@ -124,7 +124,7 @@ startControlLayout('نظام رتب ERP — إعداد قاعدة البيانا
 <?php } ?>
 
 <?php if ($installed && !$dbTest['ok']) {
-    $dbUser = defined('DB_USER') ? (string) DB_USER : 'outratib_out';
+    $dbUser = defined('DB_USER') ? (string) DB_USER : 'admin_out';
     $dbName = control_rateb_erp_db_name();
     ?>
 <div class="alert alert-danger">
@@ -137,8 +137,8 @@ startControlLayout('نظام رتب ERP — إعداد قاعدة البيانا
         <li>اختر <strong>ALL PRIVILEGES</strong> → <strong>Make Changes</strong></li>
         <li>أعد تحميل صفحة تسجيل الدخول</li>
     </ol>
-    <p class="small mb-1"><strong>بديل:</strong> أنشئ مستخدماً جديداً <code>outratib_erp</code> واربطه بالقاعدة فقط، ثم أضف في <code>.env</code>:</p>
-    <pre class="rateb-erp-migrate-log mb-0">RATEB_ERP_DB_USER=outratib_erp
+    <p class="small mb-1"><strong>بديل:</strong> أنشئ مستخدماً جديداً <code>admin_erp</code> واربطه بالقاعدة فقط، ثم أضف في <code>.env</code>:</p>
+    <pre class="rateb-erp-migrate-log mb-0">RATEB_ERP_DB_USER=admin_erp
 RATEB_ERP_DB_PASS=your_password
 RATEB_ERP_DB_NAME=<?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?></pre>
     <?php if (($dbTest['error'] ?? '') !== '') { ?>

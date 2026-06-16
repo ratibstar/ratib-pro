@@ -3,16 +3,16 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Config\RuntimeOverrideStore;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
-use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Config\RuntimeOverrideStore;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
-$ratibInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
-if (is_file($ratibInfraControlPanelConfig)) {
-    require_once $ratibInfraControlPanelConfig;
+$ratebInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
+if (is_file($ratebInfraControlPanelConfig)) {
+    require_once $ratebInfraControlPanelConfig;
 } elseif (session_status() !== PHP_SESSION_ACTIVE) {
-    session_name('ratib_control');
+    session_name('rateb_control');
     @session_start();
 }
 
@@ -22,19 +22,19 @@ $infraControlCsrfToken = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
 $bindings = ModuleConfig::providerBindings();
 $allowlist = ModuleConfig::rolloutTenantAllowlist();
 
-$ratibRt = RuntimeOverrideStore::read();
-$ratibPf = is_array($ratibRt['provider_flags'] ?? null) ? $ratibRt['provider_flags'] : [];
-$ratibPfSel = static function (array $pf, string $provider, string $mode): string {
+$ratebRt = RuntimeOverrideStore::read();
+$ratebPf = is_array($ratebRt['provider_flags'] ?? null) ? $ratebRt['provider_flags'] : [];
+$ratebPfSel = static function (array $pf, string $provider, string $mode): string {
     if (!isset($pf[$provider][$mode])) {
         return '';
     }
     return !empty($pf[$provider][$mode]) ? '1' : '0';
 };
-$ratibNcRt = is_array($ratibRt['registrar_secrets']['namecheap'] ?? null) ? $ratibRt['registrar_secrets']['namecheap'] : [];
+$ratebNcRt = is_array($ratebRt['registrar_secrets']['namecheap'] ?? null) ? $ratebRt['registrar_secrets']['namecheap'] : [];
 
-$ratibAdminControlCss = '/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-control.css';
-$ratibAdminControlCssPath = dirname(__DIR__, 2) . '/Assets/css/infrastructure-admin-control.css';
-$ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($ratibAdminControlCssPath) : '1';
+$ratebAdminControlCss = '/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-control.css';
+$ratebAdminControlCssPath = dirname(__DIR__, 2) . '/Assets/css/infrastructure-admin-control.css';
+$ratebAdminControlV = is_file($ratebAdminControlCssPath) ? (string) @filemtime($ratebAdminControlCssPath) : '1';
 ?>
 <!doctype html>
 <html lang="en">
@@ -47,9 +47,9 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
     <title>Infrastructure Control Center</title>
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace-exposure.css">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratibAdminControlCss, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo htmlspecialchars($ratibAdminControlV, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratebAdminControlCss, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo htmlspecialchars($ratebAdminControlV, ENT_QUOTES, 'UTF-8'); ?>">
 </head>
-<body class="ratib-infra-marketplace-scope ratib-infra-marketplace-view ratib-infra-admin-embed">
+<body class="rateb-infra-marketplace-scope rateb-infra-marketplace-view rateb-infra-admin-embed">
 <main class="infra-market-wrap infra-control-page">
     <div class="infra-control-hero">
         <h1>Infrastructure Control Center</h1>
@@ -59,7 +59,7 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
     <div class="infra-control-layout">
         <article class="infra-market-card infra-control-form-card">
             <h3>Apply runtime controls</h3>
-            <p class="infra-form-hint">Persists to <code>/storage/infrastructure-marketplace/runtime-overrides.json</code> (override via <code>RATIB_INFRA_RUNTIME_OVERRIDES_PATH</code>)</p>
+            <p class="infra-form-hint">Persists to <code>/storage/infrastructure-marketplace/runtime-overrides.json</code> (override via <code>RATEB_INFRA_RUNTIME_OVERRIDES_PATH</code>)</p>
             <form id="infra-runtime-controls-form" method="post" action="/api/infrastructure-marketplace/control-update.php">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($infraControlCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="source" value="ui">
@@ -119,7 +119,7 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
 
                 <div class="infra-form-section">
                     <h4 class="infra-market-card__subhead">Provider execution (panel overrides)</h4>
-                    <p class="infra-domain-lead">Optional overrides for env-based <code>RATIB_INFRA_PROVIDER_*</code> flags. Choose <strong>Inherit</strong> to use server environment only.</p>
+                    <p class="infra-domain-lead">Optional overrides for env-based <code>RATEB_INFRA_PROVIDER_*</code> flags. Choose <strong>Inherit</strong> to use server environment only.</p>
                     <table class="infra-flags-table">
                         <thead>
                             <tr>
@@ -136,8 +136,8 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
                                 'letsencrypt_ssl' => "Let’s Encrypt (SSL)",
                             ];
                             foreach ($pfProviders as $pkey => $plabel) {
-                                $sl = $ratibPfSel($ratibPf, $pkey, 'live');
-                                $ss = $ratibPfSel($ratibPf, $pkey, 'sandbox');
+                                $sl = $ratebPfSel($ratebPf, $pkey, 'live');
+                                $ss = $ratebPfSel($ratebPf, $pkey, 'sandbox');
                                 ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($plabel, ENT_QUOTES, 'UTF-8'); ?></td>
@@ -167,7 +167,7 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
                     <div class="infra-field-grid infra-field-grid--2">
                         <div class="infra-field">
                             <label for="nc_api_user">API user</label>
-                            <input id="nc_api_user" type="text" name="nc_api_user" value="<?php echo htmlspecialchars((string) ($ratibNcRt['api_user'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
+                            <input id="nc_api_user" type="text" name="nc_api_user" value="<?php echo htmlspecialchars((string) ($ratebNcRt['api_user'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
                         </div>
                         <div class="infra-field">
                             <label for="nc_api_key">API key</label>
@@ -175,11 +175,11 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
                         </div>
                         <div class="infra-field">
                             <label for="nc_username">Username</label>
-                            <input id="nc_username" type="text" name="nc_username" value="<?php echo htmlspecialchars((string) ($ratibNcRt['username'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
+                            <input id="nc_username" type="text" name="nc_username" value="<?php echo htmlspecialchars((string) ($ratebNcRt['username'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
                         </div>
                         <div class="infra-field">
                             <label for="nc_client_ip">Client IP (allowlisted)</label>
-                            <input id="nc_client_ip" type="text" name="nc_client_ip" value="<?php echo htmlspecialchars((string) ($ratibNcRt['client_ip'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
+                            <input id="nc_client_ip" type="text" name="nc_client_ip" value="<?php echo htmlspecialchars((string) ($ratebNcRt['client_ip'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
                         </div>
                     </div>
                 </div>

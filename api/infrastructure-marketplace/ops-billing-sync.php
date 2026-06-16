@@ -17,10 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Billing\InfrastructureBillingMetadataBridge;
-use Ratib\InfrastructureMarketplace\Billing\InfrastructureBillingSynchronizer;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Billing\InfrastructureBillingMetadataBridge;
+use RATEB\InfrastructureMarketplace\Billing\InfrastructureBillingSynchronizer;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('ops-billing-sync', ControlSecurityGuard::TIER_CONTROL_VIEW);
 

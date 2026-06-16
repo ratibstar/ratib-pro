@@ -1,6 +1,6 @@
 <?php
 /**
- * POST: create / resolve chart-of-accounts row for a partner agency (Ratib Pro GL).
+ * POST: create / resolve chart-of-accounts row for a partner agency (RATEB Pro GL).
  */
 ob_start();
 header('Content-Type: application/json');
@@ -36,7 +36,7 @@ try {
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
-ratibEnsureGlobalPartnershipsSchema($conn);
+ratebEnsureGlobalPartnershipsSchema($conn);
 $controller = new PartnerAgencyController($conn);
 
 $raw = json_decode((string) file_get_contents('php://input'), true) ?: [];

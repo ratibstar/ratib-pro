@@ -4,7 +4,7 @@
 (function (global) {
     'use strict';
 
-    var STORAGE_PREFIX = 'ratib_wf_qr_';
+    var STORAGE_PREFIX = 'rateb_wf_qr_';
 
     function apiPath() {
         if (typeof getSettingsApiPathModernForms === 'function') {
@@ -43,7 +43,7 @@
     }
 
     function tenantContext() {
-        const cfg = global.RATIB_WORKFORCE_CTX || {};
+        const cfg = global.RATEB_WORKFORCE_CTX || {};
         const params = new URLSearchParams(global.location.search || '');
         return {
             agencyId: parseInt(cfg.agencyId, 10) || parseInt(params.get('agency_id'), 10) || 0,
@@ -59,7 +59,7 @@
         if (/^https?:\/\//i.test(payload)) {
             return payload;
         }
-        if (/^RATIBLOGIN:/i.test(payload) && global.location && global.location.origin) {
+        if (/^RATEBLOGIN:/i.test(payload) && global.location && global.location.origin) {
             const q = new URLSearchParams();
             q.set('d', payload);
             const tenant = tenantContext();
@@ -82,9 +82,9 @@
             return;
         }
         const opts = options || {};
-        qrHost.classList.add('ratib-qr-host--readable');
+        qrHost.classList.add('rateb-qr-host--readable');
         if (!payload) {
-            qrHost.classList.remove('ratib-qr-host--readable');
+            qrHost.classList.remove('rateb-qr-host--readable');
             if (opts.activeCredential) {
                 qrHost.innerHTML = '<p class="wf-meta mb-0">Credential is active. Click <strong>Regenerate</strong> to display a new QR, or use <strong>Print badge</strong>.</p>';
             } else {
@@ -101,10 +101,10 @@
         // tight quiet zone so the QR has fewer, larger modules — otherwise it is too dense for a
         // phone camera to detect off a screen (the short login pairing URL does not have this issue).
         const qrOpts = { ecc: 'L', margin: 4 };
-        if (typeof global.ratibRenderQrImage === 'function') {
-            global.ratibRenderQrImage(qrHost, scanValue, size, qrOpts);
+        if (typeof global.ratebRenderQrImage === 'function') {
+            global.ratebRenderQrImage(qrHost, scanValue, size, qrOpts);
         } else {
-            qrHost.innerHTML = '<img class="ratib-qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size='
+            qrHost.innerHTML = '<img class="rateb-qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size='
                 + size + 'x' + size + '&margin=4&ecc=L&color=000000&bgcolor=ffffff&data='
                 + encodeURIComponent(scanValue) + '" width="' + size + '" height="' + size + '" alt="QR">';
         }
@@ -346,7 +346,7 @@
         },
 
         downloadPng() {
-            const img = document.querySelector('#wf-qr-host .ratib-qr-image');
+            const img = document.querySelector('#wf-qr-host .rateb-qr-image');
             if (!img || !img.src) {
                 global.alert('Generate QR first.');
                 return;
@@ -410,7 +410,7 @@
         },
 
         downloadFullscreenPng() {
-            const img = document.querySelector('#wf-qr-fullscreen-host .ratib-qr-image');
+            const img = document.querySelector('#wf-qr-fullscreen-host .rateb-qr-image');
             if (!img || !img.src) {
                 global.alert('Generate QR first.');
                 return;

@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\SSL\Adapters;
+namespace RATEB\InfrastructureMarketplace\SSL\Adapters;
 
-use Ratib\InfrastructureMarketplace\Domain\Contracts\SslProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
-use Ratib\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
-use Ratib\InfrastructureMarketplace\Observability\ProviderEventBus;
-use Ratib\InfrastructureMarketplace\Security\Rollout\ProviderRolloutPolicy;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\SslProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
+use RATEB\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
+use RATEB\InfrastructureMarketplace\Observability\ProviderEventBus;
+use RATEB\InfrastructureMarketplace\Security\Rollout\ProviderRolloutPolicy;
 
 final class LetsEncryptSslAdapter implements SslProviderInterface
 {
@@ -94,7 +94,7 @@ final class LetsEncryptSslAdapter implements SslProviderInterface
 
     private function directoryUrl(): string
     {
-        $custom = getenv('RATIB_INFRA_LE_ACME_DIRECTORY');
+        $custom = getenv('RATEB_INFRA_LE_ACME_DIRECTORY');
         if (is_string($custom) && trim($custom) !== '') {
             return trim($custom);
         }

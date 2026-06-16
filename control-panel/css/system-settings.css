@@ -18,5 +18,5 @@
 .control-settings-card .btn-secondary { background: rgba(255,255,255,0.1); color: var(--control-text); }
 .control-settings-card .btn-secondary:hover { background: rgba(255,255,255,0.2); color: var(--control-text); }
 .control-settings-intro { color: var(--control-muted); margin-bottom: 2rem; padding: 1rem; background: rgba(15, 52, 96, 0.3); border-radius: 8px; border-left: 4px solid var(--control-accent); }
-.control-settings-ratib-program { border-left-color: #0d9488; background: rgba(13, 148, 136, 0.15); margin-bottom: 1rem; }
+.control-settings-rateb-program { border-left-color: #0d9488; background: rgba(13, 148, 136, 0.15); margin-bottom: 1rem; }
 .control-settings-footer-note { color: var(--control-muted); font-size: 0.9rem; margin-top: 1.5rem; }

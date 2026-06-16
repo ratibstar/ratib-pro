@@ -12,7 +12,7 @@ require_once __DIR__ . '/EventRepository.php';
  */
 final class EventAnomalyDetector
 {
-    private const APC_THROTTLE_PREFIX = 'ratib_ano_th:';
+    private const APC_THROTTLE_PREFIX = 'rateb_ano_th:';
 
     private static function allowDbProbe(string $probeKey, int $ttlSeconds = 4): bool
     {

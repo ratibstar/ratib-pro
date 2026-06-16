@@ -11,7 +11,7 @@ Single codebase, single database, 12 countries with complete data isolation. Des
 countries (id, name, code, domain, status, sort_order, created_at, updated_at)
 ```
 - **code**: Subdomain (sa, ae, eg)
-- **domain**: Full host (sa.ratib.sa)
+- **domain**: Full host (sa.rateb.sa)
 - **status**: active | inactive
 
 ### Business Tables
@@ -34,8 +34,8 @@ Run `config/migrations/multi_tenant_001_countries.sql` in phpMyAdmin.
 
 | Host              | Country Code |
 |-------------------|--------------|
-| sa.ratib.sa       | sa           |
-| ae.ratib.sa       | ae           |
+| sa.rateb.sa       | sa           |
+| ae.rateb.sa       | ae           |
 | bangladesh.rateb.sa | bd   |
 
 **TenantLoader.php** extracts subdomain from `$_SERVER['HTTP_HOST']` and:
@@ -107,7 +107,7 @@ $sql = "UPDATE users SET name = ? WHERE $where";
 ## 6. Folder Structure (Recommended)
 
 ```
-ratibprogram/
+ratebprogram/
 ├── config/
 │   ├── env/                    # Per-host config (existing)
 │   └── migrations/             # SQL migrations
@@ -131,7 +131,7 @@ ratibprogram/
 When moving one country to its own hosting:
 
 1. **Database**: Create new DB, export that country's data
-2. **Config**: Add env file `config/env/sa.ratib.sa.php` with that country's DB_*
+2. **Config**: Add env file `config/env/sa.rateb.sa.php` with that country's DB_*
 3. **Code**: No changes. TenantLoader + CountryFilter work the same
 4. **Connection**: `load.php` → env defines DB_* → `config.php` uses it
 

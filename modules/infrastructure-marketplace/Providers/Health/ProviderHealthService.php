@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Providers\Health;
+namespace RATEB\InfrastructureMarketplace\Providers\Health;
 
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
 
 final class ProviderHealthService
 {

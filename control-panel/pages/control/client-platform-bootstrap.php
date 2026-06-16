@@ -29,8 +29,8 @@ if (!isset($_GET['agency_id']) && !empty($_SESSION['control_agency_id'])) {
     $_GET['agency_id'] = (string) ((int) $_SESSION['control_agency_id']);
 }
 
-if (!defined('RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE')) {
-    define('RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE', true);
+if (!defined('RATEB_CLIENT_CONTROL_WRAPPER_ACTIVE')) {
+    define('RATEB_CLIENT_CONTROL_WRAPPER_ACTIVE', true);
 }
 
 require_once dirname(__DIR__, 3) . '/includes/config.php';
@@ -40,8 +40,8 @@ $effectiveCountryId = (int) ($_SESSION['control_country_id'] ?? 0);
 $tenantConn = $GLOBALS['conn'] ?? null;
 if ($effectiveAgencyId > 0
     && $tenantConn instanceof mysqli
-    && function_exists('ratib_control_panel_try_program_sso')) {
-    ratib_control_panel_try_program_sso($tenantConn, $effectiveAgencyId, $effectiveCountryId);
+    && function_exists('rateb_control_panel_try_program_sso')) {
+    rateb_control_panel_try_program_sso($tenantConn, $effectiveAgencyId, $effectiveCountryId);
 }
 
 $targetFile = dirname(__DIR__, 3) . '/pages/client/' . ltrim($clientPlatformTargetPage, '/');

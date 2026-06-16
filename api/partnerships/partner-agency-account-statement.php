@@ -1,6 +1,6 @@
 <?php
 /**
- * GET: partner agency account statement from main journal / chart (Ratib Pro GL) — staff session.
+ * GET: partner agency account statement from main journal / chart (RATEB Pro GL) — staff session.
  */
 ob_start();
 header('Content-Type: application/json');
@@ -32,7 +32,7 @@ try {
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
-ratibEnsureGlobalPartnershipsSchema($conn);
+ratebEnsureGlobalPartnershipsSchema($conn);
 $controller = new PartnerAgencyController($conn);
 
 $pid = (int) ($_GET['partner_agency_id'] ?? 0);

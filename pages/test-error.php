@@ -23,7 +23,7 @@ try {
     echo "Step 2: load.php OK\n";
     echo "  DB_NAME=" . (defined('DB_NAME') ? DB_NAME : 'NOT SET') . "\n";
     echo "  SITE_URL=" . (defined('SITE_URL') ? SITE_URL : 'NOT SET') . "\n";
-    echo "  (Ratib Pro only)\n";
+    echo "  (RATEB Pro only)\n";
 } catch (Throwable $e) {
     echo "Step 2 FAILED: " . $e->getMessage() . "\n";
     echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n";

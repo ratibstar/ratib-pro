@@ -83,7 +83,7 @@ RewriteRule ^([a-z0-9_-]+)/login/badge/?$ /pages/login-badge.php?country_slug=$1
 RewriteCond %{REQUEST_URI} !^/(control-panel|rateb-erp|pages|api|public|Designed|js|css|assets|tap-payments|home|profile|architecture|security-compliance|procurement-legal|enterprise-trust|government-workforce-operations|enterprise-pack)(/|$) [NC]
 RewriteRule ^([a-z0-9_-]+)/?$ /pages/dashboard.php?country_slug=$1 [L,QSA]
 
-# Country-prefixed Ratib pages: /philippines/pages/dashboard → /pages/dashboard?country_slug=philippines (QSA keeps control=, agency_id=)
+# Country-prefixed RATEB pages: /philippines/pages/dashboard → /pages/dashboard?country_slug=philippines (QSA keeps control=, agency_id=)
 # Must NOT match /control-panel/pages/... or /css/pages/... (css was mistaken for country_slug).
 RewriteCond %{REQUEST_URI} !^/control-panel/ [NC]
 RewriteCond %{REQUEST_URI} !^/(css|js|assets|modules|public|api|Designed|tap-payments|admin)/ [NC]
@@ -210,42 +210,42 @@ RewriteRule ^home/?$ /home?v=rateb-nav-ia-v5-home-profile-20260524 [R=302,L,QSA]
     Header set X-XSS-Protection "1; mode=block"
 
     # Bypass cache for home page + its JS/CSS + program preview SVGs (paths may include subdir installs).
-    SetEnvIf Request_URI "/home" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/home\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/about\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/security-compliance" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/security-compliance\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/architecture" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/architecture\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/procurement-legal" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/procurement-legal\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/enterprise-trust" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/enterprise-trust\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/government-workforce-operations" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/government-workforce-operations\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/enterprise-pack" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/enterprise-pack\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/profile" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/company-profile\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "ratib-chrome-bust\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/ratib-which-page\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/pages/ratib-purge-cache\.php" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/js/pages/home-page\.js" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/js/pages/about-enterprise\.js" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/css/pages/home-public\.css" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/css/pages/about-enterprise\.css" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/css/pages/security-compliance\.css" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/js/pages/security-compliance\.js" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/css/pages/architecture\.css" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/js/pages/architecture\.js" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/css/pages/procurement-legal\.css" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/css/pages/enterprise-trust-layer\.css" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/js/pages/procurement-legal\.js" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "/assets/images/program-preview" RATIB_NOCACHE=1
-    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, private" env=RATIB_NOCACHE
-    Header set Pragma "no-cache" env=RATIB_NOCACHE
-    Header set Expires "0" env=RATIB_NOCACHE
-    Header set Surrogate-Control "no-store" env=RATIB_NOCACHE
+    SetEnvIf Request_URI "/home" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/home\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/about\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/security-compliance" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/security-compliance\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/architecture" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/architecture\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/procurement-legal" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/procurement-legal\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/enterprise-trust" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/enterprise-trust\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/government-workforce-operations" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/government-workforce-operations\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/enterprise-pack" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/enterprise-pack\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/profile" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/company-profile\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "rateb-chrome-bust\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/rateb-which-page\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/rateb-purge-cache\.php" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/home-page\.js" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/about-enterprise\.js" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/home-public\.css" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/about-enterprise\.css" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/security-compliance\.css" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/security-compliance\.js" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/architecture\.css" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/architecture\.js" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/procurement-legal\.css" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/enterprise-trust-layer\.css" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/procurement-legal\.js" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "/assets/images/program-preview" RATEB_NOCACHE=1
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, private" env=RATEB_NOCACHE
+    Header set Pragma "no-cache" env=RATEB_NOCACHE
+    Header set Expires "0" env=RATEB_NOCACHE
+    Header set Surrogate-Control "no-store" env=RATEB_NOCACHE
 </IfModule>
 
 # php_value / php_flag in .htaccess breaks PHP-FPM, LiteSpeed LSAPI, and many cPanel PHP handlers → HTTP 500 for EVERY PHP hit.

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Registrars\Lifecycle;
+namespace RATEB\InfrastructureMarketplace\Registrars\Lifecycle;
 
 final class DomainLifecycleManager
 {

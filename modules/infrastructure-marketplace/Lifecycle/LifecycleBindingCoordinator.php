@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Lifecycle;
+namespace RATEB\InfrastructureMarketplace\Lifecycle;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
-use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
+use RATEB\InfrastructureMarketplace\State\StateNamespaceRegistry;
 
 /**
  * Correlates parallel lifecycles without merging enums (namespace-tagged snapshots).

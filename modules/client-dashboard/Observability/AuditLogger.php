@@ -4,9 +4,9 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_AuditLogger
+final class RATEB_ClientDashboard_AuditLogger
 {
-    private const TABLE = 'ratib_client_hub_audit';
+    private const TABLE = 'rateb_client_hub_audit';
 
     /**
      * @param array<string, mixed> $payload

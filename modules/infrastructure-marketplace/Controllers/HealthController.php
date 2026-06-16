@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Controllers;
+namespace RATEB\InfrastructureMarketplace\Controllers;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
 
 final class HealthController
 {

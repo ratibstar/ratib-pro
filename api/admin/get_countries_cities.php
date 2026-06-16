@@ -10,15 +10,15 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../../logs/api_errors.log');
 
-// Session name must be set in config/env/load.php (ratib_control cookie / ?control=1) BEFORE session_start().
+// Session name must be set in config/env/load.php (rateb_control cookie / ?control=1) BEFORE session_start().
 // Calling session_start() here first locks PHP to the default session name → empty $_SESSION → 401 for SSO users.
 require_once dirname(__DIR__, 2) . '/includes/config.php';
 
 header('Content-Type: application/json');
 
-$isAppLogged = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user();
+$isAppLogged = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user();
 $isControlLogged = !empty($_SESSION['control_logged_in']);
-$isControlBridge = function_exists('ratib_control_pro_bridge') && ratib_control_pro_bridge();
+$isControlBridge = function_exists('rateb_control_pro_bridge') && rateb_control_pro_bridge();
 if (!$isAppLogged && !$isControlLogged && !$isControlBridge) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Not authenticated']);
@@ -28,7 +28,7 @@ if (!$isAppLogged && !$isControlLogged && !$isControlBridge) {
 /**
  * When recruitment_countries has a country but no city rows, return common cities (Gulf recruitment).
  */
-function ratib_fallback_cities_for_country(string $country): array
+function rateb_fallback_cities_for_country(string $country): array
 {
     $key = strtolower(trim($country));
     static $map = [
@@ -308,7 +308,7 @@ try {
         }
         
         if (count($cities) === 0 && $requestedCountry) {
-            $cities = ratib_fallback_cities_for_country($requestedCountry);
+            $cities = rateb_fallback_cities_for_country($requestedCountry);
         }
         
         // If no cities found, return empty array (not an error)

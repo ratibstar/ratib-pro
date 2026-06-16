@@ -5,12 +5,12 @@
 require_once '../includes/config.php';
 require_once '../includes/permissions.php';
 
-if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
+if (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user()) {
     header('Location: ' . pageUrl('login.php'));
     exit;
 }
 if (!hasPermission('view_partner_agencies') && !hasPermission('view_workers')) {
-    header('Location: ' . ratib_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
+    header('Location: ' . rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
     exit;
 }
 
@@ -26,7 +26,7 @@ $pageJs = [
 ];
 include '../includes/header.php';
 
-$listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8');
+$listHref = htmlspecialchars(rateb_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8');
 ?>
 
 <div class="main-content partnerships-page agency-detail-page" dir="ltr" lang="en">

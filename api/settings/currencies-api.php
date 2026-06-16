@@ -126,8 +126,8 @@ function currencies_api_normalize_row($row)
 // EN: Authorize caller, ensure currencies table/seeds, then return normalized currency list.
 // AR: التحقق من هوية المستخدم، ضمان جدول العملات وبذوره، ثم إرجاع قائمة موحدة.
 try {
-    require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-    ratib_api_pick_session_name();
+    require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+    rateb_api_pick_session_name();
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }

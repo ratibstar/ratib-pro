@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Http\Clients;
+namespace RATEB\InfrastructureMarketplace\Http\Clients;
 
-use Ratib\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
-use Ratib\InfrastructureMarketplace\Http\Contracts\HttpResponse;
+use RATEB\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
+use RATEB\InfrastructureMarketplace\Http\Contracts\HttpResponse;
 
 final class CurlHttpClient implements HttpClientInterface
 {

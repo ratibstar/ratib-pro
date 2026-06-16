@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Infrastructure;
+namespace RATEB\InfrastructureMarketplace\Infrastructure;
 
 final class DatabaseConnectionFactory
 {
     public static function createPdo(): \PDO
     {
-        $dsn = getenv('RATIB_INFRA_DB_DSN');
-        $user = getenv('RATIB_INFRA_DB_USER');
-        $pass = getenv('RATIB_INFRA_DB_PASS');
+        $dsn = getenv('RATEB_INFRA_DB_DSN');
+        $user = getenv('RATEB_INFRA_DB_USER');
+        $pass = getenv('RATEB_INFRA_DB_PASS');
 
         if (is_string($dsn) && trim($dsn) !== '') {
             return self::connect($dsn, (string) $user, (string) $pass);
@@ -49,13 +49,13 @@ final class DatabaseConnectionFactory
     }
 
     /**
-     * Legacy PDO dbname: ratib_infra_* are stored on the control panel database (CONTROL_PANEL_DB_NAME,
-     * default outratib_control_panel_db) — same as other control-scoped data. Override with RATIB_INFRA_DB_NAME
-     * or RATIB_INFRA_DB_DSN when you need a different schema (e.g. workers on a dedicated host).
+     * Legacy PDO dbname: rateb_infra_* are stored on the control panel database (CONTROL_PANEL_DB_NAME,
+     * default admin_control_panel_db) — same as other control-scoped data. Override with RATEB_INFRA_DB_NAME
+     * or RATEB_INFRA_DB_DSN when you need a different schema (e.g. workers on a dedicated host).
      */
     private static function legacyInfraDatabaseName(): string
     {
-        $fromEnv = getenv('RATIB_INFRA_DB_NAME');
+        $fromEnv = getenv('RATEB_INFRA_DB_NAME');
         if (is_string($fromEnv) && trim($fromEnv) !== '') {
             return trim($fromEnv);
         }
@@ -70,11 +70,11 @@ final class DatabaseConnectionFactory
             return (string) DB_NAME;
         }
 
-        throw new \RuntimeException('Infrastructure DB name is not configured (CONTROL_PANEL_DB_NAME / RATIB_INFRA_DB_NAME / DB_NAME).');
+        throw new \RuntimeException('Infrastructure DB name is not configured (CONTROL_PANEL_DB_NAME / RATEB_INFRA_DB_NAME / DB_NAME).');
     }
 
     /**
-     * Optional app-DB credentials when control-panel DB_USER cannot access RATIB_PRO_DB_NAME.
+     * Optional app-DB credentials when control-panel DB_USER cannot access RATEB_PRO_DB_NAME.
      *
      * @return array{0:string,1:string}
      */
@@ -82,11 +82,11 @@ final class DatabaseConnectionFactory
     {
         $user = (string) DB_USER;
         $pass = (string) DB_PASS;
-        $iu = getenv('RATIB_INFRA_DB_USER');
+        $iu = getenv('RATEB_INFRA_DB_USER');
         if (is_string($iu) && trim($iu) !== '') {
             $user = trim($iu);
         }
-        $ip = getenv('RATIB_INFRA_DB_PASS');
+        $ip = getenv('RATEB_INFRA_DB_PASS');
         if ($ip !== false && $ip !== '') {
             $pass = (string) $ip;
         }

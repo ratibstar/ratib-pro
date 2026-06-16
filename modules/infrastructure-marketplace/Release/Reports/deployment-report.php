@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 
 $pdo = DatabaseConnectionFactory::createPdo();
 $rows = (new DeploymentAuditReporter($pdo))->latest(50);

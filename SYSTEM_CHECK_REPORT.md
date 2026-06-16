@@ -1,4 +1,4 @@
-# Ratib Program – Entire System Check Report
+# Rateb Program – Entire System Check Report
 
 **Date:** February 11, 2026  
 **Scope:** Full codebase – structure, security, consistency, APIs, frontend, config, docs.

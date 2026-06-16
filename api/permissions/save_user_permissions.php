@@ -133,7 +133,7 @@ try {
             $conn->exec("ALTER TABLE users ADD COLUMN permissions JSON NULL COMMENT 'User-specific permissions (overrides role permissions when set)'");
             $columnExists = true;
         }
-        $pdoPk = ratib_users_primary_key_column($conn);
+        $pdoPk = rateb_users_primary_key_column($conn);
         $selectFields = $columnExists ? "`{$pdoPk}`, username, permissions" : "`{$pdoPk}`, username";
         $stmt = $conn->prepare("SELECT {$selectFields} FROM users WHERE `{$pdoPk}` = ?");
         $stmt->execute([$userId]);

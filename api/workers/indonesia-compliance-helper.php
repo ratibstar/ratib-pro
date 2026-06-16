@@ -4,8 +4,8 @@
  * AR: طبقة امتثال إندونيسيا/BP2MI للعمال (المخطط، التحقق من المراحل، والتنبيهات).
  */
 
-if (!function_exists('ratib_indonesia_worker_stages')) {
-    function ratib_indonesia_worker_stages(): array
+if (!function_exists('rateb_indonesia_worker_stages')) {
+    function rateb_indonesia_worker_stages(): array
     {
         return [
             'registered',
@@ -21,8 +21,8 @@ if (!function_exists('ratib_indonesia_worker_stages')) {
     }
 }
 
-if (!function_exists('ratib_indonesia_required_documents')) {
-    function ratib_indonesia_required_documents(): array
+if (!function_exists('rateb_indonesia_required_documents')) {
+    function rateb_indonesia_required_documents(): array
     {
         return [
             'passport' => 'Passport',
@@ -36,8 +36,8 @@ if (!function_exists('ratib_indonesia_required_documents')) {
     }
 }
 
-if (!function_exists('ratib_indonesia_compliance_ensure_schema')) {
-    function ratib_indonesia_compliance_ensure_schema(PDO $pdo): void
+if (!function_exists('rateb_indonesia_compliance_ensure_schema')) {
+    function rateb_indonesia_compliance_ensure_schema(PDO $pdo): void
     {
         $columns = [];
         try {
@@ -103,8 +103,8 @@ if (!function_exists('ratib_indonesia_compliance_ensure_schema')) {
     }
 }
 
-if (!function_exists('ratib_indonesia_is_worker')) {
-    function ratib_indonesia_is_worker(array $worker): bool
+if (!function_exists('rateb_indonesia_is_worker')) {
+    function rateb_indonesia_is_worker(array $worker): bool
     {
         $haystack = strtolower(implode(' ', [
             (string)($worker['country'] ?? ''),
@@ -117,25 +117,25 @@ if (!function_exists('ratib_indonesia_is_worker')) {
     }
 }
 
-if (!function_exists('ratib_worker_is_indonesia_payload')) {
+if (!function_exists('rateb_worker_is_indonesia_payload')) {
     /**
      * True when a worker payload/snapshot belongs to Indonesia context.
      * We use country-aware exclusion so lifecycle extensions never apply to Indonesia workers.
      */
-    function ratib_worker_is_indonesia_payload(array $workerLike): bool
+    function rateb_worker_is_indonesia_payload(array $workerLike): bool
     {
-        return ratib_indonesia_is_worker($workerLike);
+        return rateb_indonesia_is_worker($workerLike);
     }
 }
 
-if (!function_exists('ratib_worker_lifecycle_ensure_schema')) {
+if (!function_exists('rateb_worker_lifecycle_ensure_schema')) {
     /**
      * Ensure non-Indonesia lifecycle columns exist on workers table.
      * This intentionally skips Indonesia context to preserve existing Indonesia flow.
      */
-    function ratib_worker_lifecycle_ensure_schema(PDO $pdo, array $workerLike = []): void
+    function rateb_worker_lifecycle_ensure_schema(PDO $pdo, array $workerLike = []): void
     {
-        if (ratib_worker_is_indonesia_payload($workerLike)) {
+        if (rateb_worker_is_indonesia_payload($workerLike)) {
             return;
         }
 
@@ -209,25 +209,25 @@ if (!function_exists('ratib_worker_lifecycle_ensure_schema')) {
     }
 }
 
-if (!function_exists('ratib_indonesia_status_approved')) {
-    function ratib_indonesia_status_approved($value): bool
+if (!function_exists('rateb_indonesia_status_approved')) {
+    function rateb_indonesia_status_approved($value): bool
     {
         return in_array(strtolower(trim((string)$value)), ['approved', 'ok', 'passed', 'completed', 'issued', 'signed'], true);
     }
 }
 
-if (!function_exists('ratib_indonesia_status_rejected')) {
-    function ratib_indonesia_status_rejected($value): bool
+if (!function_exists('rateb_indonesia_status_rejected')) {
+    function rateb_indonesia_status_rejected($value): bool
     {
         return in_array(strtolower(trim((string)$value)), ['rejected', 'not_ok', 'failed'], true);
     }
 }
 
-if (!function_exists('ratib_indonesia_document_statuses')) {
-    function ratib_indonesia_document_statuses(PDO $pdo, int $workerId, array $worker): array
+if (!function_exists('rateb_indonesia_document_statuses')) {
+    function rateb_indonesia_document_statuses(PDO $pdo, int $workerId, array $worker): array
     {
         $docs = [];
-        foreach (ratib_indonesia_required_documents() as $type => $label) {
+        foreach (rateb_indonesia_required_documents() as $type => $label) {
             $docs[$type] = [
                 'label' => $label,
                 'status' => 'pending',
@@ -283,7 +283,7 @@ if (!function_exists('validateWorkerForDeployment')) {
             require_once __DIR__ . '/../core/Database.php';
             $pdo = Database::getInstance()->getConnection();
         }
-        ratib_indonesia_compliance_ensure_schema($pdo);
+        rateb_indonesia_compliance_ensure_schema($pdo);
 
         $stmt = $pdo->prepare("SELECT * FROM workers WHERE id = ? AND COALESCE(status, '') != 'deleted' LIMIT 1");
         $stmt->execute([(int)$workerId]);
@@ -293,10 +293,10 @@ if (!function_exists('validateWorkerForDeployment')) {
         }
 
         $missing = [];
-        $alerts = ratib_indonesia_compliance_alerts($pdo, $worker);
-        $docs = ratib_indonesia_document_statuses($pdo, (int)$workerId, $worker);
+        $alerts = rateb_indonesia_compliance_alerts($pdo, $worker);
+        $docs = rateb_indonesia_document_statuses($pdo, (int)$workerId, $worker);
         foreach ($docs as $type => $doc) {
-            if (!ratib_indonesia_status_approved($doc['status']) || empty($doc['file_path'])) {
+            if (!rateb_indonesia_status_approved($doc['status']) || empty($doc['file_path'])) {
                 $missing[] = 'document_' . $type;
             }
         }
@@ -311,10 +311,10 @@ if (!function_exists('validateWorkerForDeployment')) {
         if (strtolower(trim((string)($worker['training_status'] ?? 'not_started'))) !== 'completed') {
             $missing[] = 'training_not_completed';
         }
-        if (!ratib_indonesia_status_approved($worker['contract_signed_status'] ?? null)) {
+        if (!rateb_indonesia_status_approved($worker['contract_signed_status'] ?? null)) {
             $missing[] = 'contract_not_signed';
         }
-        if (!ratib_indonesia_status_approved($worker['visa_status'] ?? null)) {
+        if (!rateb_indonesia_status_approved($worker['visa_status'] ?? null)) {
             $missing[] = 'visa_not_issued';
         }
         if (strtolower(trim((string)($worker['gov_approval_status'] ?? 'pending'))) !== 'approved') {
@@ -330,17 +330,17 @@ if (!function_exists('validateWorkerForDeployment')) {
     }
 }
 
-if (!function_exists('ratib_indonesia_can_move_to_stage')) {
-    function ratib_indonesia_can_move_to_stage(PDO $pdo, array $worker, string $targetStage): array
+if (!function_exists('rateb_indonesia_can_move_to_stage')) {
+    function rateb_indonesia_can_move_to_stage(PDO $pdo, array $worker, string $targetStage): array
     {
-        $stages = ratib_indonesia_worker_stages();
+        $stages = rateb_indonesia_worker_stages();
         if (!in_array($targetStage, $stages, true)) {
             return ['allowed' => false, 'missing_items' => ['invalid_stage']];
         }
-        if (!ratib_indonesia_is_worker($worker)) {
+        if (!rateb_indonesia_is_worker($worker)) {
             return ['allowed' => true, 'missing_items' => []];
         }
-        if (ratib_indonesia_status_rejected($worker['medical_status'] ?? null)) {
+        if (rateb_indonesia_status_rejected($worker['medical_status'] ?? null)) {
             return ['allowed' => false, 'missing_items' => ['medical_failed']];
         }
 
@@ -376,8 +376,8 @@ if (!function_exists('ratib_indonesia_can_move_to_stage')) {
     }
 }
 
-if (!function_exists('ratib_indonesia_compliance_alerts')) {
-    function ratib_indonesia_compliance_alerts(PDO $pdo, array $worker, int $stuckDays = 7): array
+if (!function_exists('rateb_indonesia_compliance_alerts')) {
+    function rateb_indonesia_compliance_alerts(PDO $pdo, array $worker, int $stuckDays = 7): array
     {
         $alerts = [];
         $workerId = (int)($worker['id'] ?? 0);
@@ -385,13 +385,13 @@ if (!function_exists('ratib_indonesia_compliance_alerts')) {
             return $alerts;
         }
 
-        $docs = ratib_indonesia_document_statuses($pdo, $workerId, $worker);
+        $docs = rateb_indonesia_document_statuses($pdo, $workerId, $worker);
         foreach ($docs as $type => $doc) {
-            if (!ratib_indonesia_status_approved($doc['status']) || empty($doc['file_path'])) {
+            if (!rateb_indonesia_status_approved($doc['status']) || empty($doc['file_path'])) {
                 $alerts[] = ['type' => 'document_missing', 'document_type' => $type];
             }
         }
-        if (ratib_indonesia_status_rejected($worker['medical_status'] ?? null)) {
+        if (rateb_indonesia_status_rejected($worker['medical_status'] ?? null)) {
             $alerts[] = ['type' => 'medical_failed'];
         }
         $stageUpdatedAt = trim((string)($worker['status_stage_updated_at'] ?? ''));

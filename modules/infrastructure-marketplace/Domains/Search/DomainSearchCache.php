@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Domains\Search;
+namespace RATEB\InfrastructureMarketplace\Domains\Search;
 
 final class DomainSearchCache
 {
@@ -19,7 +19,7 @@ final class DomainSearchCache
     {
         $stmt = $this->pdo->prepare(
             'SELECT result_json
-             FROM ratib_infra_domain_search_cache
+             FROM rateb_infra_domain_search_cache
              WHERE cache_key = :cache_key
                AND expires_at > NOW()
              LIMIT 1'
@@ -39,7 +39,7 @@ final class DomainSearchCache
     public function put(string $cacheKey, array $result, int $ttlSeconds = 120): void
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO ratib_infra_domain_search_cache (cache_key, result_json, expires_at, created_at, updated_at)
+            'INSERT INTO rateb_infra_domain_search_cache (cache_key, result_json, expires_at, created_at, updated_at)
              VALUES (:cache_key, :result_json, DATE_ADD(NOW(), INTERVAL :ttl SECOND), NOW(), NOW())
              ON DUPLICATE KEY UPDATE result_json = VALUES(result_json), expires_at = VALUES(expires_at), updated_at = NOW()'
         );

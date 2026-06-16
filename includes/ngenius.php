@@ -476,8 +476,8 @@ function ngenius_token_failure_client_payload(array $tokenRes): array
     ) {
         $out['credential_hint'] = ngenius_api_key_shape((string) $tokenRes['api_key']);
     }
-    $debugOn = getenv('RATIB_PAYMENT_DEBUG') === '1'
-        || (isset($_SERVER['RATIB_PAYMENT_DEBUG']) && (string) $_SERVER['RATIB_PAYMENT_DEBUG'] === '1');
+    $debugOn = getenv('RATEB_PAYMENT_DEBUG') === '1'
+        || (isset($_SERVER['RATEB_PAYMENT_DEBUG']) && (string) $_SERVER['RATEB_PAYMENT_DEBUG'] === '1');
     if ($debugOn && $body !== '') {
         $out['body_excerpt'] = substr($body, 0, 400);
     }

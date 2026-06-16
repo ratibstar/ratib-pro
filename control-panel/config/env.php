@@ -5,19 +5,24 @@
  */
 /**
  * Control Panel - Standalone Environment
- * Use this when running the control panel separately from Ratib Pro.
+ * Use this when running the control panel separately from RATEB Pro.
  * On server: ensure DB_USER has access to CONTROL_PANEL_DB_NAME in cPanel → MySQL® Databases.
  */
 if (defined('ENV_LOADED')) {
     return;
 }
 require_once dirname(__DIR__, 2) . '/config/env/directadmin_db.php';
-$e = function($k, $d) { $v = getenv($k); return ($v !== false && $v !== '') ? $v : $d; };
-define('DB_HOST', $e('CONTROL_DB_HOST', 'localhost'));
-define('DB_PORT', (int)$e('CONTROL_DB_PORT', '3306'));
-define('DB_USER', $e('CONTROL_DB_USER', ratib_default_mysql_user()));
-define('DB_PASS', $e('CONTROL_DB_PASS', ''));
-define('CONTROL_PANEL_DB_NAME', $e('CONTROL_PANEL_DB_NAME', ratib_control_panel_database()));
+require_once dirname(__DIR__, 2) . '/config/env/dotenv_bridge.php';
+rateb_bootstrap_project_dotenv(dirname(__DIR__, 2));
+$e = function ($k, $d) {
+    $v = getenv($k);
+    return ($v !== false && $v !== '') ? $v : $d;
+};
+define('DB_HOST', $e('CONTROL_DB_HOST', $e('DB_HOST', '127.0.0.1')));
+define('DB_PORT', (int) $e('CONTROL_DB_PORT', $e('DB_PORT', '3306')));
+define('DB_USER', $e('CONTROL_DB_USER', $e('DB_USER', rateb_default_mysql_user())));
+define('DB_PASS', $e('CONTROL_DB_PASS', $e('DB_PASS', '')));
+define('CONTROL_PANEL_DB_NAME', $e('CONTROL_PANEL_DB_NAME', rateb_control_panel_database()));
 define('DB_NAME', $e('CONTROL_DB_NAME', CONTROL_PANEL_DB_NAME));
 // Aliases used by newer services/scripts.
 define('DB_DATABASE', $e('DB_DATABASE', DB_NAME));
@@ -28,22 +33,22 @@ define('EXTERNAL_API_TOKEN', $e('EXTERNAL_API_TOKEN', ''));
 define('WEBHOOK_SIGNING_SECRET', $e('WEBHOOK_SIGNING_SECRET', ''));
 define('SEC_RATE_LIMIT_IP_MAX', (int) $e('SEC_RATE_LIMIT_IP_MAX', '120'));
 define('REQUEST_SIGNING_SECRET', $e('REQUEST_SIGNING_SECRET', ''));
-/** Ratib Pro / N-Genius orders DB (usually outratib_out). Used to fill registration list from ngenius_reg_orders. */
-define('RATIB_PRO_DB_NAME', $e('RATIB_PRO_DB_NAME', ratib_main_pro_database()));
-/** RATEB ERP — isolated database (all rateb_* tables). */
-define('RATEB_ERP_DB_NAME', $e('RATEB_ERP_DB_NAME', ratib_erp_database_name()));
-/** Optional: dedicated MySQL user for ERP only (leave empty to use CONTROL_DB_USER / outratib_out). */
+/** RATEB Pro / N-Genius orders DB (admin_rateb). */
+define('RATEB_PRO_DB_NAME', $e('RATEB_PRO_DB_NAME', rateb_main_pro_database()));
+/** RATEB ERP — isolated database (admin_rateb-erp). */
+define('RATEB_ERP_DB_NAME', $e('RATEB_ERP_DB_NAME', rateb_erp_database_name()));
+/** Optional: dedicated MySQL user for ERP only (leave empty to use CONTROL_DB_USER / admin_rateb). */
 define('RATEB_ERP_DB_USER', $e('RATEB_ERP_DB_USER', ''));
 define('RATEB_ERP_DB_PASS', $e('RATEB_ERP_DB_PASS', ''));
 /** Deploy/automation token for rateb-erp/public/run-migrations.php (defaults to CPANEL API token env). */
 define('RATEB_ERP_MIGRATE_TOKEN', $e('RATEB_ERP_MIGRATE_TOKEN', $e('CPANEL_API_TOKEN', '')));
 define('SITE_URL', $e('CONTROL_SITE_URL', 'https://rateb.sa'));
-define('RATIB_PRO_URL', $e('RATIB_PRO_URL', SITE_URL));
+define('RATEB_PRO_URL', $e('RATEB_PRO_URL', SITE_URL));
 // Designed app: pages/designed-launcher.php works without /Designed/ rewrites; override with full URL if needed.
-define('DESIGNED_APP_URL', rtrim($e('DESIGNED_APP_URL', rtrim(RATIB_PRO_URL, '/') . '/pages/designed-launcher.php'), '/'));
-define('APP_NAME', 'Ratib Control Panel');
+define('DESIGNED_APP_URL', rtrim($e('DESIGNED_APP_URL', rtrim(RATEB_PRO_URL, '/') . '/pages/designed-launcher.php'), '/'));
+define('APP_NAME', 'RATEB Control Panel');
 define('APP_VERSION', '1.0.0');
-// When running inside ratibprogram/control-panel/ subfolder, set base path so URLs work
+// When running inside control-panel/ subfolder, set base path so URLs work
 $baseUrl = $e('CONTROL_BASE_URL', '');
 if ($baseUrl === '' && isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/control-panel/') !== false) {
     $baseUrl = '/control-panel';

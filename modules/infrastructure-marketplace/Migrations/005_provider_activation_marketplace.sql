@@ -1,8 +1,8 @@
 -- 005_provider_activation_marketplace.sql
 -- Phase 4 provider activation + marketplace domain search tables.
--- Run on CONTROL_PANEL_DB_NAME (e.g. outratib_control_panel_db). Safe to re-run.
+-- Run on CONTROL_PANEL_DB_NAME (e.g. admin_control_panel_db). Safe to re-run.
 
-CREATE TABLE IF NOT EXISTS `ratib_infra_provider_activations` (
+CREATE TABLE IF NOT EXISTS `rateb_infra_provider_activations` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `provider_type` ENUM('hosting','registrar','dns','ssl') NOT NULL,
   `provider_code` VARCHAR(64) NOT NULL,
@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS `ratib_infra_provider_activations` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_ratib_infra_provider_activation_scope` (`provider_type`, `provider_code`, `tenant_id`, `agency_id`),
-  KEY `idx_ratib_infra_provider_activation_enabled` (`provider_type`, `is_enabled`, `priority_weight`)
+  UNIQUE KEY `uniq_rateb_infra_provider_activation_scope` (`provider_type`, `provider_code`, `tenant_id`, `agency_id`),
+  KEY `idx_rateb_infra_provider_activation_enabled` (`provider_type`, `is_enabled`, `priority_weight`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `ratib_infra_domain_search_cache` (
+CREATE TABLE IF NOT EXISTS `rateb_infra_domain_search_cache` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `cache_key` VARCHAR(128) NOT NULL,
   `result_json` JSON NOT NULL,
@@ -27,11 +27,11 @@ CREATE TABLE IF NOT EXISTS `ratib_infra_domain_search_cache` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_ratib_infra_domain_search_cache_key` (`cache_key`),
-  KEY `idx_ratib_infra_domain_search_cache_expiry` (`expires_at`)
+  UNIQUE KEY `uniq_rateb_infra_domain_search_cache_key` (`cache_key`),
+  KEY `idx_rateb_infra_domain_search_cache_expiry` (`expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `ratib_infra_domain_search_rate` (
+CREATE TABLE IF NOT EXISTS `rateb_infra_domain_search_rate` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `scope_key` VARCHAR(120) NOT NULL,
   `minute_bucket` CHAR(12) NOT NULL,
@@ -39,5 +39,5 @@ CREATE TABLE IF NOT EXISTS `ratib_infra_domain_search_rate` (
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_ratib_infra_domain_search_rate_scope_bucket` (`scope_key`, `minute_bucket`)
+  UNIQUE KEY `uniq_rateb_infra_domain_search_rate_scope_bucket` (`scope_key`, `minute_bucket`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

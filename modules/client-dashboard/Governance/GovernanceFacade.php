@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_GovernanceFacade
+final class RATEB_ClientDashboard_GovernanceFacade
 {
     /**
      * @param array<string, mixed> $base
@@ -12,8 +12,8 @@ final class Ratib_ClientDashboard_GovernanceFacade
      */
     public static function mergeSnapshot(
         array $base,
-        Ratib_ClientDashboard_AdapterContext $ctx,
-        Ratib_ClientDashboard_ObservabilityHub $obs,
+        RATEB_ClientDashboard_AdapterContext $ctx,
+        RATEB_ClientDashboard_ObservabilityHub $obs,
         array $orders,
         array $services,
         array $billingSync,
@@ -29,18 +29,18 @@ final class Ratib_ClientDashboard_GovernanceFacade
         require_once dirname(__DIR__) . '/Recovery/RecoveryLayer.php';
         require_once dirname(__DIR__) . '/Async/AsyncCoordinationLayer.php';
 
-        $tenant = Ratib_ClientDashboard_TenantScope::fromSession();
-        $stateEngine = new Ratib_ClientDashboard_UnifiedStateEngine();
+        $tenant = RATEB_ClientDashboard_TenantScope::fromSession();
+        $stateEngine = new RATEB_ClientDashboard_UnifiedStateEngine();
         $unified = $stateEngine->compile($orders, $services, $billingSync, $subscription, $infra, $notifications);
 
-        $validator = new Ratib_ClientDashboard_ConsistencyValidator();
+        $validator = new RATEB_ClientDashboard_ConsistencyValidator();
         $warnings = $validator->validate($unified, $services, $domainRows);
 
-        $policy = new Ratib_ClientDashboard_PolicyEngine();
+        $policy = new RATEB_ClientDashboard_PolicyEngine();
 
-        $asyncPreview = Ratib_ClientDashboard_AsyncCoordinationLayer::tail($ctx->conn, $tenant->userId, 5);
+        $asyncPreview = RATEB_ClientDashboard_AsyncCoordinationLayer::tail($ctx->conn, $tenant->userId, 5);
 
-        $recovery = new Ratib_ClientDashboard_RecoveryLayer();
+        $recovery = new RATEB_ClientDashboard_RecoveryLayer();
         $base['governance'] = [
             'tenant_scope' => $tenant->toMeta(),
             'unified_state' => $unified,
@@ -80,7 +80,7 @@ final class Ratib_ClientDashboard_GovernanceFacade
         string $correlationId,
         string $traceId,
         ?array $asyncEnvelope,
-        Ratib_ClientDashboard_ServiceLifecycleCoordinator $lifecycle,
+        RATEB_ClientDashboard_ServiceLifecycleCoordinator $lifecycle,
         string $verb
     ): array {
         $lc = $lifecycle->mapActionToLifecycle($verb, null);

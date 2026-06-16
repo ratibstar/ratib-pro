@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Resources;
+namespace RATEB\InfrastructureMarketplace\Resources;
 
 /**
  * Globally unique, provider-agnostic resource identities (not plan_id / sku / provider ids).

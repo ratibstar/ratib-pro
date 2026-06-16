@@ -5,13 +5,13 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/permission_middleware.php';
-require_once __DIR__ . '/../includes/ratib-qr-login.php';
+require_once __DIR__ . '/../includes/rateb-qr-login.php';
 
-$ratibWorkforceCtx = ratib_qr_login_badge_tenant_context();
+$ratebWorkforceCtx = rateb_qr_login_badge_tenant_context();
 
-// Stay on Ratib Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
+// Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
 
-// Ratib Pro only: allow agency admin (role_id=1 or manage_settings); must be a real `users` row.
+// RATEB Pro only: allow agency admin (role_id=1 or manage_settings); must be a real `users` row.
 $isAgencyAdmin = !empty($_SESSION['logged_in'])
     && (int)($_SESSION['user_id'] ?? 0) > 0
     && (
@@ -59,13 +59,13 @@ if ($directInclude) {
 <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
 <script src="<?php echo asset('js/system-settings-alerts.js'); ?>?v=<?php echo $systemSettingsAlertsVersion; ?>"></script>
 <script>
-window.RATIB_WORKFORCE_CTX = <?php echo json_encode([
-    'agencyId' => (int) ($ratibWorkforceCtx['agency_id'] ?? 0),
-    'countryId' => (int) ($ratibWorkforceCtx['country_id'] ?? 0),
-    'countrySlug' => (string) ($ratibWorkforceCtx['country_slug'] ?? ''),
+window.RATEB_WORKFORCE_CTX = <?php echo json_encode([
+    'agencyId' => (int) ($ratebWorkforceCtx['agency_id'] ?? 0),
+    'countryId' => (int) ($ratebWorkforceCtx['country_id'] ?? 0),
+    'countrySlug' => (string) ($ratebWorkforceCtx['country_slug'] ?? ''),
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 </script>
-<script src="<?php echo asset('js/ratib-qr-image.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/ratib-qr-image.js') ? filemtime(__DIR__ . '/../js/ratib-qr-image.js') : time(); ?>"></script>
+<script src="<?php echo asset('js/rateb-qr-image.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/rateb-qr-image.js') ? filemtime(__DIR__ . '/../js/rateb-qr-image.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/workforce-access.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/workforce-access.js') ? filemtime(__DIR__ . '/../js/workforce-access.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/modern-forms.js'); ?>?v=<?php echo $modernFormsVersion; ?>"></script>
 <script src="<?php echo asset('js/system-settings.js'); ?>?v=<?php echo $systemSettingsJsVersion; ?>"></script>
@@ -91,7 +91,7 @@ if ($embeddedMode) {
     <link rel="stylesheet" href="<?php echo asset('css/nav.css'); ?>?v=<?php echo $cssVer; ?>">
     <link rel="stylesheet" href="<?php echo asset('css/system-settings.css'); ?>?v=<?php echo $cssVer; ?>">
     <link rel="stylesheet" href="<?php echo asset('css/workforce-access.css'); ?>?v=<?php echo $cssVer; ?>">
-    <link rel="stylesheet" href="<?php echo asset('css/ratib-qr-image.css'); ?>?v=<?php echo $cssVer; ?>">
+    <link rel="stylesheet" href="<?php echo asset('css/rateb-qr-image.css'); ?>?v=<?php echo $cssVer; ?>">
     <script src="<?php echo asset('js/utils/header-config.js'); ?>"></script>
 </head>
 <body class="system-settings-embedded">
@@ -100,7 +100,7 @@ if ($embeddedMode) {
 <?php
 } else {
     $pageTitle = "System Settings";
-    $pageCss = ["../css/system-settings.css?v=" . time(), "../css/workforce-access.css?v=" . time(), "../css/ratib-qr-image.css?v=" . time()];
+    $pageCss = ["../css/system-settings.css?v=" . time(), "../css/workforce-access.css?v=" . time(), "../css/rateb-qr-image.css?v=" . time()];
     include '../includes/header.php';
 }
 ?>
@@ -664,13 +664,13 @@ if ($embeddedMode) {
 <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
 <script src="<?php echo asset('js/system-settings-alerts.js'); ?>?v=<?php echo $systemSettingsAlertsVersion; ?>"></script>
 <script>
-window.RATIB_WORKFORCE_CTX = <?php echo json_encode([
-    'agencyId' => (int) ($ratibWorkforceCtx['agency_id'] ?? 0),
-    'countryId' => (int) ($ratibWorkforceCtx['country_id'] ?? 0),
-    'countrySlug' => (string) ($ratibWorkforceCtx['country_slug'] ?? ''),
+window.RATEB_WORKFORCE_CTX = <?php echo json_encode([
+    'agencyId' => (int) ($ratebWorkforceCtx['agency_id'] ?? 0),
+    'countryId' => (int) ($ratebWorkforceCtx['country_id'] ?? 0),
+    'countrySlug' => (string) ($ratebWorkforceCtx['country_slug'] ?? ''),
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 </script>
-<script src="<?php echo asset('js/ratib-qr-image.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/ratib-qr-image.js') ? filemtime(__DIR__ . '/../js/ratib-qr-image.js') : time(); ?>"></script>
+<script src="<?php echo asset('js/rateb-qr-image.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/rateb-qr-image.js') ? filemtime(__DIR__ . '/../js/rateb-qr-image.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/workforce-access.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/workforce-access.js') ? filemtime(__DIR__ . '/../js/workforce-access.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/modern-forms.js'); ?>?v=<?php echo $modernFormsVersion; ?>"></script>
 <script src="<?php echo asset('js/system-settings.js'); ?>?v=<?php echo $systemSettingsJsVersion; ?>"></script>

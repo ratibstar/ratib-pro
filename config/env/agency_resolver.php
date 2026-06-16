@@ -71,7 +71,7 @@ function resolve_agency_by_host($host) {
     define('DB_NAME', $row['db_name']);
     if (!defined('CONTROL_PANEL_DB_NAME')) {
         $_cp = getenv('CONTROL_PANEL_DB_NAME');
-        define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : (function_exists('ratib_control_panel_database') ? ratib_control_panel_database() : 'admin_rateb'));
+        define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : (function_exists('rateb_control_panel_database') ? rateb_control_panel_database() : 'admin_rateb'));
     }
     define('SITE_URL', rtrim(rtrim($row['site_url'] ?? '', '/')) ?: ('https://' . $host));
     define('APP_NAME', 'RATEB');

@@ -1,6 +1,6 @@
 # Architecture Page — Content Map
 
-Maps user-facing sections to PHP config keys and DOM anchors. Source of truth: `includes/ratib-architecture-data.php`.
+Maps user-facing sections to PHP config keys and DOM anchors. Source of truth: `includes/rateb-architecture-data.php`.
 
 ---
 
@@ -64,7 +64,7 @@ Rendered top-to-bottom (L7 → L1) via `layers.items[]`.
 | Governance boundaries | `isolation.pillars[2]` |
 | Scoped operations | `isolation.pillars[3]` |
 
-**Visual:** `ratib-arch-topology__diagram` (core + Tenant A/B/C spokes)
+**Visual:** `rateb-arch-topology__diagram` (core + Tenant A/B/C spokes)
 
 ---
 
@@ -137,7 +137,7 @@ Grid: 2 columns on wide viewports.
 | Orchestration core | `core` | |
 | Tenant databases | `data` | |
 
-**Visual:** `ratib-arch-deploy-topology` rows + `ratib-arch-deploy-legend`
+**Visual:** `rateb-arch-deploy-topology` rows + `rateb-arch-deploy-legend`
 
 ---
 
@@ -174,13 +174,13 @@ Grid: 2 columns on wide viewports.
 |---------|----------------|
 | Mega nav Company | `architecture` → `/architecture/` |
 | Footer Legal | `home.footer.link.legal.architecture` |
-| Resolver | `ratib_mega_nav_resolve_href('architecture', …)` |
+| Resolver | `rateb_mega_nav_resolve_href('architecture', …)` |
 
 ---
 
 ## Content Editing
 
-1. Edit copy in `includes/ratib-architecture-data.php` only.  
-2. Adjust layout/markup in `includes/ratib-architecture-sections.php`.  
+1. Edit copy in `includes/rateb-architecture-data.php` only.  
+2. Adjust layout/markup in `includes/rateb-architecture-sections.php`.  
 3. Adjust visuals in `css/pages/architecture.css`.  
 4. No CMS DB keys for architecture body copy (static include pattern, same as security-compliance).

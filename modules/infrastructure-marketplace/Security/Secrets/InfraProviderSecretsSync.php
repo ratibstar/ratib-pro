@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Security\Secrets;
+namespace RATEB\InfrastructureMarketplace\Security\Secrets;
 
-use Ratib\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
+use RATEB\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
 
 /**
- * Keeps runtime-overrides and ratib_infra_provider_secrets aligned for Control Panel saves.
+ * Keeps runtime-overrides and rateb_infra_provider_secrets aligned for Control Panel saves.
  */
 final class InfraProviderSecretsSync
 {
-    private const NAMECHEAP_SCOPE = 'ratib_infra_namecheap';
-    private const CPANEL_SCOPE = 'ratib_infra_cpanel';
+    private const NAMECHEAP_SCOPE = 'rateb_infra_namecheap';
+    private const CPANEL_SCOPE = 'rateb_infra_cpanel';
 
     private ProviderSecretStore $store;
 
@@ -28,7 +28,7 @@ final class InfraProviderSecretsSync
     {
         InfraEnvBootstrap::load();
         if (!InfraEnvBootstrap::hasSecretKey()) {
-            return ['skipped' => true, 'reason' => 'RATIB_INFRA_SECRET_KEY missing'];
+            return ['skipped' => true, 'reason' => 'RATEB_INFRA_SECRET_KEY missing'];
         }
 
         $out = ['namecheap' => 'skipped', 'cpanel' => 'skipped'];

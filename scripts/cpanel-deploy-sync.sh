@@ -1,32 +1,32 @@
 #!/bin/bash
-# cPanel Version Control: after git pull, sync checkout → /home/outratib/public_html
+# cPanel Version Control: after git pull, sync checkout → /home/admin/public_html
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-MARKER="$(tr -d '\r\n' < public/ratib-build.txt 2>/dev/null || echo unknown)"
+MARKER="$(tr -d '\r\n' < public/rateb-build.txt 2>/dev/null || echo unknown)"
 STAMP="deploy-$(date -u +%Y%m%dT%H%M%SZ)-${MARKER}"
-LOG="${HOME}/.ratib-deploy-log"
-PUBLIC_HTML="${RATIB_PUBLIC_HTML:-/home/outratib/public_html}"
+LOG="${HOME}/.rateb-deploy-log"
+PUBLIC_HTML="${RATEB_PUBLIC_HTML:-/home/admin/public_html}"
 # Do NOT use rsync --delete on live public_html unless explicitly enabled (can break the site).
-RATIB_RSYNC_DELETE="${RATIB_RSYNC_DELETE:-0}"
+RATEB_RSYNC_DELETE="${RATEB_RSYNC_DELETE:-0}"
 
 mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
 log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"; }
 
-log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete=${RATIB_RSYNC_DELETE}"
+log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete=${RATEB_RSYNC_DELETE}"
 
 # Keep in sync with scripts/github-cpanel-fileman-deploy-core.py (FAST_FILES + CRITICAL).
 # GitHub fast deploy also uploads commit-changed paths under includes/, pages/, control-panel/, js/, css/, api/, public/.
 
 CRITICAL_FILES=(
   ".htaccess"
-  "ratib-profile-fix.php"
+  "rateb-profile-fix.php"
   "pages/company-profile.php"
-  "includes/ratib-php74-compat.php"
-  "includes/ratib_html_global_ai_patch.php"
+  "includes/rateb-php74-compat.php"
+  "includes/rateb_html_global_ai_patch.php"
   "control-panel/includes/config.php"
   "control-panel/includes/control/public-marketing-urls.php"
   "control-panel/includes/control/sidebar.php"
@@ -38,25 +38,25 @@ CRITICAL_FILES=(
   "app/UI/GlobalAIButton.php"
   "css/global-ai-action.css"
   "css/chat-widget.css"
-  "includes/ratib-overlay-dismiss-guard.php"
-  "includes/ratib-home-public-nav-sync.php"
-  "includes/ratib-profile-nav-guard.php"
-  "includes/ratib-public-base-url.php"
-  "includes/ratib-mega-nav-config.php"
-  "includes/ratib-mega-nav-resolve.php"
-  "includes/ratib-mega-nav-resolve.fallback.php"
-  "includes/ratib-mega-nav-render.php"
-  "includes/ratib-home-public-chrome-top.php"
-  "includes/ratib-home-public-nav-bootstrap.php"
-  "includes/ratib-public-marketing-density.php"
-  "includes/ratib-marketing-expand-bar.php"
+  "includes/rateb-overlay-dismiss-guard.php"
+  "includes/rateb-home-public-nav-sync.php"
+  "includes/rateb-profile-nav-guard.php"
+  "includes/rateb-public-base-url.php"
+  "includes/rateb-mega-nav-config.php"
+  "includes/rateb-mega-nav-resolve.php"
+  "includes/rateb-mega-nav-resolve.fallback.php"
+  "includes/rateb-mega-nav-render.php"
+  "includes/rateb-home-public-chrome-top.php"
+  "includes/rateb-home-public-nav-bootstrap.php"
+  "includes/rateb-public-marketing-density.php"
+  "includes/rateb-marketing-expand-bar.php"
   "css/pages/home-marketing-focused.css"
-  "js/pages/ratib-marketing-focused.js"
-  "includes/ratib-home-public-footer.php"
-  "includes/ratib-public-deploy-ensure.php"
-  "includes/ratib-enterprise-trust-home.dist.php"
-  "includes/ratib-operational-proof-render.dist.php"
-  "includes/ratib-operational-proof-data.dist.php"
+  "js/pages/rateb-marketing-focused.js"
+  "includes/rateb-home-public-footer.php"
+  "includes/rateb-public-deploy-ensure.php"
+  "includes/rateb-enterprise-trust-home.dist.php"
+  "includes/rateb-operational-proof-render.dist.php"
+  "includes/rateb-operational-proof-data.dist.php"
   "pages/home.php"
   "pages/about.php"
   "pages/site-content-media.php"
@@ -69,15 +69,15 @@ CRITICAL_FILES=(
   "pages/about.php"
   "pages/company-profile.php"
   "pages/deploy-root.php"
-  "public/ratib-build.txt"
-  "js/pages/ratib-profile-nav-guard.js"
-  "js/pages/ratib-mega-nav.js"
-  "includes/ratib-about-sections.php"
-  "includes/ratib-operational-proof-render.php"
-  "includes/ratib-operational-proof-data.php"
+  "public/rateb-build.txt"
+  "js/pages/rateb-profile-nav-guard.js"
+  "js/pages/rateb-mega-nav.js"
+  "includes/rateb-about-sections.php"
+  "includes/rateb-operational-proof-render.php"
+  "includes/rateb-operational-proof-data.php"
   "js/pages/home-page.js"
   "css/pages/home-public.css"
-  "css/pages/ratib-mega-nav.css"
+  "css/pages/rateb-mega-nav.css"
   "control-panel/includes/control/layout-wrapper.php"
   "control-panel/includes/control/client-platform-nav.php"
   "css/pages/about-enterprise.css"
@@ -86,25 +86,25 @@ CRITICAL_FILES=(
   "pages/architecture.php"
   "pages/security-compliance.php"
   "pages/procurement-legal.php"
-  "includes/ratib-enterprise-trust-home.php"
-  "includes/ratib-operational-proof-data.php"
-  "includes/ratib-operational-proof-render.php"
+  "includes/rateb-enterprise-trust-home.php"
+  "includes/rateb-operational-proof-data.php"
+  "includes/rateb-operational-proof-render.php"
   "css/pages/enterprise-trust-layer.css"
   "css/pages/operational-proof.css"
-  "includes/ratib-security-compliance-data.php"
-  "includes/ratib-security-compliance-sections.php"
-  "includes/ratib-architecture-data.php"
-  "includes/ratib-architecture-sections.php"
-  "includes/ratib-procurement-legal-data.php"
-  "includes/ratib-procurement-legal-sections.php"
+  "includes/rateb-security-compliance-data.php"
+  "includes/rateb-security-compliance-sections.php"
+  "includes/rateb-architecture-data.php"
+  "includes/rateb-architecture-sections.php"
+  "includes/rateb-procurement-legal-data.php"
+  "includes/rateb-procurement-legal-sections.php"
   "pages/security-compliance.php"
   "pages/architecture.php"
   "pages/procurement-legal.php"
   "css/pages/security-compliance.css"
   "css/pages/architecture.css"
   "css/pages/procurement-legal.css"
-  "includes/ratib-public-cms.php"
-  "includes/ratib-site-content-rebrand-sanitize.php"
+  "includes/rateb-public-cms.php"
+  "includes/rateb-site-content-rebrand-sanitize.php"
   "includes/site-content.php"
   "includes/site-content-home-data.php"
   "includes/site-content-profile-data.php"
@@ -157,8 +157,8 @@ CRITICAL_FILES=(
   "modules/infrastructure-marketplace/Health/PrelaunchHealthService.php"
   "modules/infrastructure-marketplace/Security/Secrets/SecretManager.php"
   "modules/infrastructure-marketplace/Security/Secrets/PreparedEncryptedDbSecretProvider.php"
-  "modules/infrastructure-marketplace/Migrations/ALL_for_outratib_control_panel_db.sql"
-  "modules/infrastructure-marketplace/Migrations/ALL_for_outratib_out.sql"
+  "modules/infrastructure-marketplace/Migrations/ALL_for_admin_control_panel_db.sql"
+  "modules/infrastructure-marketplace/Migrations/ALL_for_admin_out.sql"
   "api/infrastructure-marketplace/providers.php"
   "api/infrastructure-marketplace/provider-activation.php"
   "api/infrastructure-marketplace/domain-search.php"
@@ -180,8 +180,8 @@ add_target() {
 for UD in \
   "/var/cpanel/userdata/${USER}/rateb.sa" \
   "/var/cpanel/userdata/${USER}/rateb.sa_SSL" \
-  "/var/cpanel/userdata/outratib/rateb.sa" \
-  "/var/cpanel/userdata/outratib/rateb.sa_SSL"
+  "/var/cpanel/userdata/admin/rateb.sa" \
+  "/var/cpanel/userdata/admin/rateb.sa_SSL"
 do
   if [ -f "$UD" ]; then
     DR="$(grep -E '^documentroot:' "$UD" 2>/dev/null | head -1 | sed 's/^documentroot:[[:space:]]*//' | tr -d '\r')"
@@ -200,7 +200,7 @@ if [ -f "$LIST" ]; then
 fi
 
 add_target "$PUBLIC_HTML"
-add_target "/home/outratib/public_html"
+add_target "/home/admin/public_html"
 
 ROOT_REAL="$(realpath "$ROOT" 2>/dev/null || echo "$ROOT")"
 PUBLIC_REAL="$(realpath "$PUBLIC_HTML" 2>/dev/null || echo "$PUBLIC_HTML")"
@@ -231,9 +231,9 @@ sync_one_target() {
   if [ "$TARGET_REAL" = "$ROOT_REAL" ]; then
     log "git root is docroot ${TARGET} (no rsync copy needed; git pull updates files here)"
     fix_live_permissions "$TARGET"
-    printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp" 2>/dev/null || true
-    printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
-    chmod 644 "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+    printf '%s\n' "$STAMP" > "${TARGET}/.rateb-deploy-stamp" 2>/dev/null || true
+    printf '%s\n' "$STAMP" > "${TARGET}/pages/rateb-deploy-status.txt" 2>/dev/null || true
+    chmod 644 "${TARGET}/pages/rateb-deploy-status.txt" 2>/dev/null || true
     if [ -d "${TARGET}/.git" ]; then
       git -C "${TARGET}" rev-parse HEAD 2>/dev/null | head -1 | tee -a "$LOG" || true
     fi
@@ -243,7 +243,7 @@ sync_one_target() {
   log "sync -> ${TARGET}"
   local ok=0
   local RSYNC_EXTRA=()
-  if [ "$RATIB_RSYNC_DELETE" = "1" ]; then
+  if [ "$RATEB_RSYNC_DELETE" = "1" ]; then
     RSYNC_EXTRA+=(--delete)
   fi
 
@@ -273,13 +273,13 @@ sync_one_target() {
 
   fix_live_permissions "$TARGET"
 
-  printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp"
-  if [ -f "${TARGET}/pages/ratib-deploy-status.txt" ]; then
-    printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt"
-    chmod 644 "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+  printf '%s\n' "$STAMP" > "${TARGET}/.rateb-deploy-stamp"
+  if [ -f "${TARGET}/pages/rateb-deploy-status.txt" ]; then
+    printf '%s\n' "$STAMP" > "${TARGET}/pages/rateb-deploy-status.txt"
+    chmod 644 "${TARGET}/pages/rateb-deploy-status.txt" 2>/dev/null || true
   else
-    printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
-    chmod 644 "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+    printf '%s\n' "$STAMP" > "${TARGET}/pages/rateb-deploy-status.txt" 2>/dev/null || true
+    chmod 644 "${TARGET}/pages/rateb-deploy-status.txt" 2>/dev/null || true
   fi
 
   local profile=no

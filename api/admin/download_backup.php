@@ -28,7 +28,7 @@ $filename = $_GET['file'];
 $filepath = '../../backups/' . $filename;
 
 // Security check - only allow .sql files
-if (!preg_match('/^ratibprogram_backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.sql$/', $filename)) {
+if (!preg_match('/^ratebprogram_backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.sql$/', $filename)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Invalid filename']);
     exit;

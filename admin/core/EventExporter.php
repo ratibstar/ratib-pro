@@ -45,7 +45,7 @@ final class EventExporter
                 [
                     'resource' => [
                         'attributes' => [
-                            ['key' => 'service.name', 'value' => ['stringValue' => 'ratib-control-center']],
+                            ['key' => 'service.name', 'value' => ['stringValue' => 'rateb-control-center']],
                         ],
                     ],
                     'scopeLogs' => [

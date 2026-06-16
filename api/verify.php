@@ -98,7 +98,7 @@ function paymentPdo()
 
 function fetchOrder($pdo, int $orderId): ?array
 {
-    $t = RATIB_NGENIUS_ORDERS_TABLE;
+    $t = RATEB_NGENIUS_ORDERS_TABLE;
     $stmt = $pdo->prepare(
         "SELECT id, email, plan_key, years, total_amount, ngenius_order_id, control_request_id,
                 reg_agency_name, reg_agency_id, reg_country_id, reg_country_name,
@@ -116,7 +116,7 @@ function updateOrderControlRequestId($pdo, int $orderId, int $controlRequestId):
     if ($controlRequestId <= 0) {
         return;
     }
-    $t = RATIB_NGENIUS_ORDERS_TABLE;
+    $t = RATEB_NGENIUS_ORDERS_TABLE;
     $stmt = $pdo->prepare("UPDATE `{$t}` SET control_request_id = :cid WHERE id = :id");
     $stmt->bindValue(':cid', $controlRequestId, PDO::PARAM_INT);
     $stmt->bindValue(':id', $orderId, PDO::PARAM_INT);
@@ -365,7 +365,7 @@ function verifyRespond(bool $success, string $message, int $orderId, array $meta
 
 function updateOrderStatus($pdo, int $orderId, string $status): void
 {
-    $t = RATIB_NGENIUS_ORDERS_TABLE;
+    $t = RATEB_NGENIUS_ORDERS_TABLE;
     $stmt = $pdo->prepare("UPDATE `{$t}` SET status = :status WHERE id = :id");
     $stmt->bindValue(':status', $status, PDO::PARAM_STR);
     $stmt->bindValue(':id', $orderId, PDO::PARAM_INT);
@@ -383,7 +383,7 @@ function activateUser($pdo, string $email): void
 
 function storePaymentRecord($pdo, int $orderId, string $reference, string $status, string $rawResponse): void
 {
-    $t = RATIB_NGENIUS_PAYMENTS_TABLE;
+    $t = RATEB_NGENIUS_PAYMENTS_TABLE;
     $stmt = $pdo->prepare(
         "INSERT INTO `{$t}` (order_id, reference, status, raw_response, created_at) VALUES (:order_id, :reference, :status, :raw_response, NOW())"
     );
@@ -400,23 +400,23 @@ if ($orderIdRaw === '' || !ctype_digit($orderIdRaw)) {
 }
 $orderId = (int) $orderIdRaw;
 
-$apiKey = (string) ratib_ngenius_env('NGENIUS_API_KEY', '');
-$apiSecret = (string) ratib_ngenius_env('NGENIUS_API_SECRET', '');
-$outletId = (string) ratib_ngenius_env('NGENIUS_OUTLET_ID', '');
+$apiKey = (string) rateb_ngenius_env('NGENIUS_API_KEY', '');
+$apiSecret = (string) rateb_ngenius_env('NGENIUS_API_SECRET', '');
+$outletId = (string) rateb_ngenius_env('NGENIUS_OUTLET_ID', '');
 $fallbackBase = NGENIUS_DEFAULT_API_BASE_KSA;
-$identityBase = rtrim((string) ratib_ngenius_env('NGENIUS_IDENTITY_BASE', (string) ratib_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
-$orderBase = rtrim((string) ratib_ngenius_env('NGENIUS_ORDER_BASE', (string) ratib_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
-$tokenUrl = trim((string) ratib_ngenius_env('NGENIUS_TOKEN_URL', ''));
+$identityBase = rtrim((string) rateb_ngenius_env('NGENIUS_IDENTITY_BASE', (string) rateb_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
+$orderBase = rtrim((string) rateb_ngenius_env('NGENIUS_ORDER_BASE', (string) rateb_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
+$tokenUrl = trim((string) rateb_ngenius_env('NGENIUS_TOKEN_URL', ''));
 
 if ($apiKey === '' || $outletId === '') {
-    $ratibRoot = dirname(__DIR__);
-    $ratibDoc = isset($_SERVER['DOCUMENT_ROOT']) ? rtrim((string) $_SERVER['DOCUMENT_ROOT'], "/\\") : '';
+    $ratebRoot = dirname(__DIR__);
+    $ratebDoc = isset($_SERVER['DOCUMENT_ROOT']) ? rtrim((string) $_SERVER['DOCUMENT_ROOT'], "/\\") : '';
     paymentLog('Missing N-Genius credentials in verify', [
         'has_key' => $apiKey !== '',
         'has_secret' => $apiSecret !== '',
         'has_outlet' => $outletId !== '',
-        'dotenv_project_root' => is_readable($ratibRoot . '/.env'),
-        'dotenv_document_root' => $ratibDoc !== '' && is_readable($ratibDoc . '/.env'),
+        'dotenv_project_root' => is_readable($ratebRoot . '/.env'),
+        'dotenv_document_root' => $ratebDoc !== '' && is_readable($ratebDoc . '/.env'),
         'secrets_config_readable' => is_readable(__DIR__ . '/../config/ngenius.secrets.php'),
         'secrets_env_readable' => is_readable(__DIR__ . '/../config/env/ngenius.secrets.php'),
         'defined_outlet' => defined('NGENIUS_OUTLET_ID'),
@@ -430,7 +430,7 @@ if (!function_exists('curl_init')) {
     jsonOut(500, ['message' => 'Payment unavailable: PHP curl extension is not enabled on this server.']);
 }
 
-$ngeniusRealm = trim((string) ratib_ngenius_env('NGENIUS_REALM', 'networkinternational'));
+$ngeniusRealm = trim((string) rateb_ngenius_env('NGENIUS_REALM', 'networkinternational'));
 if ($ngeniusRealm === '') {
     $ngeniusRealm = 'networkinternational';
 }

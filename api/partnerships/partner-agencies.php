@@ -27,7 +27,7 @@ try {
 
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
     $controller = new PartnerAgencyController($conn);
 
     if ($method === 'GET') {

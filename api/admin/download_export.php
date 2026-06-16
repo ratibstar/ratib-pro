@@ -28,7 +28,7 @@ $filename = $_GET['file'];
 $filepath = '../../exports/' . $filename;
 
 // Security check - only allow .json files
-if (!preg_match('/^ratibprogram_export_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.json$/', $filename)) {
+if (!preg_match('/^ratebprogram_export_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.json$/', $filename)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Invalid filename']);
     exit;

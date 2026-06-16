@@ -16,8 +16,8 @@ $chatCssV = file_exists(__DIR__ . '/../css/chat-widget.css')
 ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars(asset('css/chat-widget.css')); ?>?v=<?php echo (int) $chatCssV; ?>">
 <?php
-$ratibOverlayGuardPath = __DIR__ . '/ratib-overlay-dismiss-guard.php';
-if (is_file($ratibOverlayGuardPath)) {
-    require_once $ratibOverlayGuardPath;
+$ratebOverlayGuardPath = __DIR__ . '/rateb-overlay-dismiss-guard.php';
+if (is_file($ratebOverlayGuardPath)) {
+    require_once $ratebOverlayGuardPath;
 }
 ?>

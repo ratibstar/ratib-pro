@@ -14,7 +14,7 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'payment_api_throwable_polyfill.php
  */
 function payment_api_mark_completed(): void
 {
-    $GLOBALS['ratib_payment_api_completed'] = true;
+    $GLOBALS['rateb_payment_api_completed'] = true;
 }
 
 /**
@@ -28,7 +28,7 @@ function payment_api_register_fatal_json_handler(): void
     }
 
     register_shutdown_function(static function () {
-        if (!empty($GLOBALS['ratib_payment_api_completed'])) {
+        if (!empty($GLOBALS['rateb_payment_api_completed'])) {
             return;
         }
         $err = error_get_last();
@@ -63,7 +63,7 @@ function payment_api_register_fatal_json_handler(): void
             'message' => 'Payment setup failed: ' . $err['message'],
             'error' => $err['message'],
         ];
-        if (getenv('RATIB_PAYMENT_DEBUG') === '1' || (isset($_SERVER['RATIB_PAYMENT_DEBUG']) && (string) $_SERVER['RATIB_PAYMENT_DEBUG'] === '1')) {
+        if (getenv('RATEB_PAYMENT_DEBUG') === '1' || (isset($_SERVER['RATEB_PAYMENT_DEBUG']) && (string) $_SERVER['RATEB_PAYMENT_DEBUG'] === '1')) {
             $payload['debug'] = $err['message'] . ' @ ' . $err['file'] . ':' . (string) $err['line'];
         }
         echo json_encode($payload, JSON_UNESCAPED_SLASHES);

@@ -15,7 +15,7 @@ enforceApiPermission('workers', 'stats');
 try {
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratib_indonesia_compliance_ensure_schema($conn);
+    rateb_indonesia_compliance_ensure_schema($conn);
     
     // Single optimized query for all stats
     // Normalize status: handle NULL, empty string, and trim whitespace

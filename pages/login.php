@@ -74,7 +74,7 @@ if ($countryListConn instanceof mysqli) {
                 }
             }
         }
-        // Pre-select country from URL (e.g. when redirecting from Ratib Pro logout) — only if not from path
+        // Pre-select country from URL (e.g. when redirecting from RATEB Pro logout) — only if not from path
         if (!$singleCountryFromPath) {
         $urlCountryId = isset($_GET['country_id']) ? (int)$_GET['country_id'] : 0;
         if ($urlCountryId > 0) {
@@ -107,7 +107,7 @@ if ($countryListConn instanceof mysqli) {
                 $res->free();
             }
         }
-        // Pre-select from SITE_URL or TENANT (skip if already set from URL e.g. Ratib Pro logout)
+        // Pre-select from SITE_URL or TENANT (skip if already set from URL e.g. RATEB Pro logout)
         if (!$loginCountryId && defined('TENANT_ID') && TENANT_ID > 0) {
             $loginCountryId = TENANT_ID;
             $loginCountryName = defined('TENANT_NAME') ? TENANT_NAME : null;
@@ -118,7 +118,7 @@ if ($countryListConn instanceof mysqli) {
                 if ($chk && $chk->num_rows > 0) {
                     $colChk = @$db->query("SHOW COLUMNS FROM control_agencies LIKE 'country_id'");
                     if ($colChk && $colChk->num_rows > 0) {
-                        $suspA = ratib_control_agency_active_fragment($db, 'a');
+                        $suspA = rateb_control_agency_active_fragment($db, 'a');
                         $stmtC = $db->prepare("SELECT c.id, c.name FROM control_agencies a LEFT JOIN control_countries c ON a.country_id = c.id WHERE (a.site_url = ? OR a.site_url = ? OR a.site_url LIKE ?) AND a.is_active = 1 AND {$suspA} LIMIT 1");
                         if ($stmtC) {
                             $url1 = $siteUrl;
@@ -151,7 +151,7 @@ if ($countryListConn instanceof mysqli) {
             if ($chkAg && $chkAg->num_rows > 0 && $chkCo && $chkCo->num_rows > 0) {
                 $colCActive = @$db->query("SHOW COLUMNS FROM control_countries LIKE 'is_active'");
                 $cActiveSql = ($colCActive && $colCActive->num_rows > 0) ? ' AND c.is_active = 1' : '';
-                $suspPick = ratib_control_agency_active_fragment($db, 'a');
+                $suspPick = rateb_control_agency_active_fragment($db, 'a');
                 $resAg = @$db->query(
                     'SELECT a.id AS agency_id, a.name AS agency_name, a.country_id, c.name AS country_name, c.slug AS country_slug '
                     . 'FROM control_agencies a INNER JOIN control_countries c ON c.id = a.country_id '
@@ -181,12 +181,12 @@ $formHiddenCountryId = 0;
 $agencySelectOptions = [];
 $loginPrefillFromCookie = isset($_GET['message']) && (string)$_GET['message'] === 'logged_out';
 $urlAgencyIdPre = isset($_GET['agency_id']) ? (int)$_GET['agency_id'] : 0;
-if ($urlAgencyIdPre <= 0 && $loginPrefillFromCookie && !empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
-    $urlAgencyIdPre = (int)$_COOKIE['ratib_last_agency_id'];
+if ($urlAgencyIdPre <= 0 && $loginPrefillFromCookie && !empty($_COOKIE['rateb_last_agency_id']) && ctype_digit((string)$_COOKIE['rateb_last_agency_id'])) {
+    $urlAgencyIdPre = (int)$_COOKIE['rateb_last_agency_id'];
 }
 $urlCountryIdPre = isset($_GET['country_id']) ? (int)$_GET['country_id'] : 0;
-if ($urlCountryIdPre <= 0 && $loginPrefillFromCookie && !empty($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
-    $urlCountryIdPre = (int)$_COOKIE['ratib_last_country_id'];
+if ($urlCountryIdPre <= 0 && $loginPrefillFromCookie && !empty($_COOKIE['rateb_last_country_id']) && ctype_digit((string)$_COOKIE['rateb_last_country_id'])) {
+    $urlCountryIdPre = (int)$_COOKIE['rateb_last_country_id'];
 }
 if ($singleCountryFromPath && $loginCountryId > 0) {
     $formHiddenCountryId = (int)$loginCountryId;
@@ -212,8 +212,8 @@ if ($urlAgencyIdPre > 0 && $formHiddenAgencyId <= 0 && $countryListConn instance
     $lu = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
     $lookupAg = ($lu instanceof mysqli) ? $lu : $countryListConn;
     $chkA = @$lookupAg->query("SHOW TABLES LIKE 'control_agencies'");
-    if ($chkA && $chkA->num_rows > 0 && function_exists('ratib_control_agency_active_fragment')) {
-        $suspA = ratib_control_agency_active_fragment($lookupAg, 'a');
+    if ($chkA && $chkA->num_rows > 0 && function_exists('rateb_control_agency_active_fragment')) {
+        $suspA = rateb_control_agency_active_fragment($lookupAg, 'a');
         $stA = @$lookupAg->prepare(
             "SELECT a.id, a.country_id, c.name AS country_name FROM control_agencies a "
             . "LEFT JOIN control_countries c ON c.id = a.country_id WHERE a.id = ? AND a.is_active = 1 AND {$suspA} LIMIT 1"
@@ -306,15 +306,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $conn !== null) {
         ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['barcode_pair']))
         : '';
     if (strlen($barcodePairToken) === 32) {
-        require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
-        $pairSession = ratib_barcode_pair_consume_session($barcodePairToken);
+        require_once __DIR__ . '/../includes/rateb-barcode-login-pair.php';
+        $pairSession = rateb_barcode_pair_consume_session($barcodePairToken);
         if (is_array($pairSession)) {
-            if (function_exists('ratib_partner_portal_clear')) {
-                ratib_partner_portal_clear();
+            if (function_exists('rateb_partner_portal_clear')) {
+                rateb_partner_portal_clear();
             }
-            if (!empty($pairSession['_trusted_device_token']) && function_exists('ratib_qr_set_device_cookie')) {
-                require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
-                ratib_qr_set_device_cookie((string) $pairSession['_trusted_device_token']);
+            if (!empty($pairSession['_trusted_device_token']) && function_exists('rateb_qr_set_device_cookie')) {
+                require_once __DIR__ . '/../includes/rateb-qr-workforce-identity.php';
+                rateb_qr_set_device_cookie((string) $pairSession['_trusted_device_token']);
             }
             if (function_exists('session_regenerate_id')) {
                 session_regenerate_id(true);
@@ -325,9 +325,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $conn !== null) {
                 }
                 $_SESSION[$k] = $v;
             }
-            if (function_exists('ratib_qr_login_resolve_tenant_names')) {
-                require_once __DIR__ . '/../includes/ratib-qr-login.php';
-                $resolved = ratib_qr_login_resolve_tenant_names([
+            if (function_exists('rateb_qr_login_resolve_tenant_names')) {
+                require_once __DIR__ . '/../includes/rateb-qr-login.php';
+                $resolved = rateb_qr_login_resolve_tenant_names([
                     'country_id' => (int) ($_SESSION['country_id'] ?? 0),
                     'agency_id' => (int) ($_SESSION['agency_id'] ?? 0),
                     'country_name' => (string) ($_SESSION['country_name'] ?? ''),
@@ -344,10 +344,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $conn !== null) {
                     $_SESSION['country_id'] = (int) $resolved['country_id'];
                 }
             }
-            if (function_exists('ratib_set_login_context_cookies')) {
-                ratib_set_login_context_cookies((int) ($_SESSION['country_id'] ?? 0), (int) ($_SESSION['agency_id'] ?? 0));
+            if (function_exists('rateb_set_login_context_cookies')) {
+                rateb_set_login_context_cookies((int) ($_SESSION['country_id'] ?? 0), (int) ($_SESSION['agency_id'] ?? 0));
             }
-            header('Location: ' . ratib_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
+            header('Location: ' . rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
             exit;
         }
         $error = 'Login link expired. Choose Barcode again and scan with your phone.';
@@ -439,7 +439,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         return $matched;
     };
 
-    require_once __DIR__ . '/../includes/ratib-user-login-barcode.php';
+    require_once __DIR__ . '/../includes/rateb-user-login-barcode.php';
     $barcodeLogin = (($_POST['login_method'] ?? '') === 'barcode');
     $barcodeValue = $barcodeLogin ? trim((string) ($_POST['barcode'] ?? '')) : '';
     $username = $barcodeLogin ? '' : trim($_POST['username'] ?? '');
@@ -504,8 +504,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         if (!empty($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id'])) {
             $candAgencies[] = (int)$_GET['agency_id'];
         }
-        if (!empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
-            $candAgencies[] = (int)$_COOKIE['ratib_last_agency_id'];
+        if (!empty($_COOKIE['rateb_last_agency_id']) && ctype_digit((string)$_COOKIE['rateb_last_agency_id'])) {
+            $candAgencies[] = (int)$_COOKIE['rateb_last_agency_id'];
         }
         foreach (array_unique(array_filter($candAgencies)) as $cand) {
             if ($cand <= 0) {
@@ -536,11 +536,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     }
     // No country/agency on the form: still need the correct tenant DB under SINGLE_URL_MODE.
     if ($singleUrlMode && $postedAgencyId <= 0 && $postedCountryId <= 0) {
-        if (!empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
-            $postedAgencyId = (int)$_COOKIE['ratib_last_agency_id'];
+        if (!empty($_COOKIE['rateb_last_agency_id']) && ctype_digit((string)$_COOKIE['rateb_last_agency_id'])) {
+            $postedAgencyId = (int)$_COOKIE['rateb_last_agency_id'];
         }
-        if ($postedAgencyId <= 0 && !empty($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
-            $postedCountryId = (int)$_COOKIE['ratib_last_country_id'];
+        if ($postedAgencyId <= 0 && !empty($_COOKIE['rateb_last_country_id']) && ctype_digit((string)$_COOKIE['rateb_last_country_id'])) {
+            $postedCountryId = (int)$_COOKIE['rateb_last_country_id'];
         }
     }
     if ($singleUrlMode && $postedAgencyId <= 0 && $postedCountryId <= 0) {
@@ -551,7 +551,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                 $chkAg2 = @$lcPost->query("SHOW TABLES LIKE 'control_agencies'");
                 $chkCo2 = @$lcPost->query("SHOW COLUMNS FROM control_agencies LIKE 'country_id'");
                 if ($chkAg2 && $chkAg2->num_rows > 0 && $chkCo2 && $chkCo2->num_rows > 0) {
-                    $suspR = ratib_control_agency_active_fragment($lcPost, 'a');
+                    $suspR = rateb_control_agency_active_fragment($lcPost, 'a');
                     $stR = $lcPost->prepare("SELECT a.id AS ag_id, a.country_id AS cid FROM control_agencies a WHERE (a.site_url = ? OR a.site_url = ? OR a.site_url LIKE ?) AND a.is_active = 1 AND {$suspR} ORDER BY a.id ASC LIMIT 1");
                     if ($stR) {
                         $u1 = $siteUrlRes;
@@ -576,7 +576,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     // After SITE_URL/cookies resolve agency/country so strict mode applies even when constants are missing.
     $strictTenantAuth = $singleUrlMode || $postedCountryId > 0 || $postedAgencyId > 0 || $singleCountryFromPath;
     /** Reject control-bridge / synthetic sessions; only real users table rows may log in here. */
-    $ratibLoginRequireRealUserRow = function (array $u) use ($strictTenantAuth): bool {
+    $ratebLoginRequireRealUserRow = function (array $u) use ($strictTenantAuth): bool {
         if (!$strictTenantAuth) {
             return true;
         }
@@ -596,7 +596,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         $lookupConn = (function_exists('get_control_lookup_conn') && get_control_lookup_conn()) ? get_control_lookup_conn() : $conn;
         $chk = @$lookupConn->query("SHOW TABLES LIKE 'control_agencies'");
         if ($chk && $chk->num_rows > 0) {
-            $suspL = ratib_control_agency_active_fragment($lookupConn, 'a');
+            $suspL = rateb_control_agency_active_fragment($lookupConn, 'a');
             $stmtA = $lookupConn->prepare(
                 "SELECT a.id, a.name, a.country_id, a.db_host, a.db_port, a.db_user, a.db_pass, a.db_name, c.slug AS country_slug "
                 . "FROM control_agencies a LEFT JOIN control_countries c ON c.id = a.country_id "
@@ -639,7 +639,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         $lookupConn = (function_exists('get_control_lookup_conn') && get_control_lookup_conn()) ? get_control_lookup_conn() : $conn;
         $chk = @$lookupConn->query("SHOW TABLES LIKE 'control_agencies'");
         if ($chk && $chk->num_rows > 0) {
-            $suspL2 = ratib_control_agency_active_fragment($lookupConn, 'a');
+            $suspL2 = rateb_control_agency_active_fragment($lookupConn, 'a');
             $stmtA = $lookupConn->prepare(
                 "SELECT a.id, a.name, a.country_id, a.db_host, a.db_port, a.db_user, a.db_pass, a.db_name, c.slug AS country_slug "
                 . "FROM control_agencies a LEFT JOIN control_countries c ON c.id = a.country_id "
@@ -694,7 +694,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             require_once '../includes/permissions.php';
             $_SESSION['user_permissions'] = getUserPermissions();
             try {
-                $loginPk = ratib_users_primary_key_column($conn);
+                $loginPk = rateb_users_primary_key_column($conn);
                 $permStmt = $conn->prepare("SELECT permissions FROM users WHERE `{$loginPk}` = ?");
                 if ($permStmt) {
                     $uid = (int)$user['user_id'];
@@ -726,10 +726,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             try {
                 $conn->query("UPDATE users SET last_login = NOW() WHERE user_id = " . (int)$user['user_id']);
             } catch (Exception $e) { /* ignore */ }
-            if (function_exists('ratib_set_login_context_cookies')) {
-                ratib_set_login_context_cookies(defined('TENANT_ID') ? (int)TENANT_ID : 0, 0);
+            if (function_exists('rateb_set_login_context_cookies')) {
+                rateb_set_login_context_cookies(defined('TENANT_ID') ? (int)TENANT_ID : 0, 0);
             }
-            header('Location: ' . ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
+            header('Location: ' . rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
             exit;
         }
         $error = $authResult['error'];
@@ -771,7 +771,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     try {
                         $chk = @$tryConn->query("SHOW TABLES LIKE 'control_agencies'");
                         if (!$chk || $chk->num_rows === 0) continue;
-                        $suspT = ratib_control_agency_active_fragment($tryConn, null);
+                        $suspT = rateb_control_agency_active_fragment($tryConn, null);
                         $stmtA = $tryConn->prepare("SELECT id, name FROM control_agencies WHERE country_id = ? AND is_active = 1 AND {$suspT} ORDER BY id ASC LIMIT 1");
                         if (!$stmtA) continue;
                         $stmtA->bind_param("i", $agencyCountryId);
@@ -794,7 +794,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             if ($chk && $chk->num_rows > 0) {
                 $colChk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'country_id'");
                 if ($colChk && $colChk->num_rows > 0) {
-                    $suspSite = ratib_control_agency_active_fragment($conn, 'a');
+                    $suspSite = rateb_control_agency_active_fragment($conn, 'a');
                     $stmtC = $conn->prepare("SELECT c.id, c.name, a.id AS agency_id, a.name AS agency_name FROM control_agencies a LEFT JOIN control_countries c ON a.country_id = c.id WHERE (a.site_url = ? OR a.site_url = ? OR a.site_url LIKE ?) AND a.is_active = 1 AND {$suspSite} LIMIT 1");
                     if ($stmtC) {
                         $url1 = $siteUrl;
@@ -824,7 +824,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                 if ($chk && $chk->num_rows > 0) {
                     $colChk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'country_id'");
                     if ($colChk && $colChk->num_rows > 0) {
-                        $suspSite2 = ratib_control_agency_active_fragment($conn, 'a');
+                        $suspSite2 = rateb_control_agency_active_fragment($conn, 'a');
                         $stmtC = $conn->prepare("SELECT c.id, c.name, a.id AS agency_id, a.name AS agency_name FROM control_agencies a LEFT JOIN control_countries c ON a.country_id = c.id WHERE (a.site_url = ? OR a.site_url = ? OR a.site_url LIKE ?) AND a.is_active = 1 AND {$suspSite2} LIMIT 1");
                         if ($stmtC) {
                             $url1 = $siteUrl;
@@ -859,7 +859,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
      * User row must match this login's country when users.country_id is set.
      * No implicit "global admin" (role_id=1 + NULL country) — only tenant_role super_admin may cross countries.
      */
-    $ratibLoginUserAllowedForAgencyCountry = function (array $u) use ($agencyCountryId): bool {
+    $ratebLoginUserAllowedForAgencyCountry = function (array $u) use ($agencyCountryId): bool {
         $hasCountryColumn = array_key_exists('country_id', $u);
         if ($agencyCountryId === null || (int)$agencyCountryId <= 0 || !$hasCountryColumn) {
             return true;
@@ -877,7 +877,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     };
 
     /** When users.agency_id is set, it must match the agency context (shared DB, multiple agencies). */
-    $ratibLoginUserAllowedForProgramAgency = function (array $u) use ($agencyId): bool {
+    $ratebLoginUserAllowedForProgramAgency = function (array $u) use ($agencyId): bool {
         if (!array_key_exists('agency_id', $u)) {
             return true;
         }
@@ -942,7 +942,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     $userCols = empty($error) ? $buildUserSelectCols($loginConn) : '';
     $barcodeCol = null;
     if (empty($error) && $barcodeLogin) {
-        $barcodeCol = ratib_users_login_barcode_column($loginConn);
+        $barcodeCol = rateb_users_login_barcode_column($loginConn);
         if ($barcodeCol === null || $barcodeCol === '') {
             $error = 'Barcode login is not configured for this workspace. Ask your administrator to assign login barcodes to users.';
         }
@@ -970,16 +970,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         if ($result->num_rows === 1) {
             $user = $result->fetch_assoc();
             error_log("User found: " . $user['username'] . ", Status: " . ($user['status'] ?? ''));
-            if (!$ratibLoginRequireRealUserRow($user)) {
+            if (!$ratebLoginRequireRealUserRow($user)) {
                 $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
                 error_log('Login denied: non-user-table session row blocked in strict tenant context (user_id=' . (int)($user['user_id'] ?? 0) . ')');
             } else {
                 // Country isolation (same rules as sibling-agency and "user not in first DB" paths).
-                if (!$ratibLoginUserAllowedForAgencyCountry($user)) {
+                if (!$ratebLoginUserAllowedForAgencyCountry($user)) {
                     $error = 'Access denied. This account is not valid for this country. Please use the correct login page.';
                     error_log('Login denied: user country_id does not match agency country_id=' . (int)$agencyCountryId);
                 }
-                if (empty($error) && !$ratibLoginUserAllowedForProgramAgency($user)) {
+                if (empty($error) && !$ratebLoginUserAllowedForProgramAgency($user)) {
                     $error = 'Access denied. This account is not valid for this agency. Open the agency workspace from Manage Agencies for the correct agency.';
                     error_log('Login denied: user agency_id does not match agency context agency_id=' . (int)($agencyId ?? 0));
                 }
@@ -1023,7 +1023,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     if ($lookupConn instanceof mysqli) {
                         $chkAgTbl = @$lookupConn->query("SHOW TABLES LIKE 'control_agencies'");
                         if ($chkAgTbl && $chkAgTbl->num_rows > 0) {
-                            $suspAg = ratib_control_agency_active_fragment($lookupConn, 'a');
+                            $suspAg = rateb_control_agency_active_fragment($lookupConn, 'a');
                             $sqlAgTry = "SELECT a.id, a.name, a.country_id, a.db_host, a.db_port, a.db_user, a.db_pass, a.db_name, c.slug AS country_slug "
                                 . "FROM control_agencies a "
                                 . "LEFT JOIN control_countries c ON c.id = a.country_id "
@@ -1045,7 +1045,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                     }
                                     $tryConn = $acctTry['conn'];
                                     $tryCols = $buildUserSelectCols($tryConn);
-                                    $tryBarcodeCol = ($barcodeLogin && $barcodeCol) ? ratib_users_login_barcode_column($tryConn) : null;
+                                    $tryBarcodeCol = ($barcodeLogin && $barcodeCol) ? rateb_users_login_barcode_column($tryConn) : null;
                                     if ($barcodeLogin && ($tryBarcodeCol === null || $tryBarcodeCol === '')) {
                                         continue;
                                     }
@@ -1066,12 +1066,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                     $rsTryUser = $stTryUser->get_result();
                                     if ($rsTryUser && $rsTryUser->num_rows === 1) {
                                         $tryUser = $rsTryUser->fetch_assoc();
-                                        if (!$ratibLoginUserAllowedForAgencyCountry($tryUser) || !$ratibLoginUserAllowedForProgramAgency($tryUser)) {
+                                        if (!$ratebLoginUserAllowedForAgencyCountry($tryUser) || !$ratebLoginUserAllowedForProgramAgency($tryUser)) {
                                             $stTryUser->close();
                                             continue;
                                         }
                                         $tryAuthOk = $barcodeLogin ? true : $verifyUserPassword($tryConn, $tryUser, $password);
-                                        if ($tryAuthOk && $ratibLoginRequireRealUserRow($tryUser)) {
+                                        if ($tryAuthOk && $ratebLoginRequireRealUserRow($tryUser)) {
                                             $passwordVerified = true;
                                             $user = $tryUser;
                                             $loginConn = $tryConn;
@@ -1090,7 +1090,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
 
                 if ($passwordVerified) {
                     error_log("Password verified successfully");
-                    if ($strictTenantAuth && !$ratibLoginRequireRealUserRow($user)) {
+                    if ($strictTenantAuth && !$ratebLoginRequireRealUserRow($user)) {
                         $passwordVerified = false;
                         $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
                         error_log('Login denied after verify: blocked non-user row in strict tenant context');
@@ -1107,8 +1107,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                         $_SESSION['username'] = $user['username'];
                         $_SESSION['role_id'] = $user['role_id'];
                         $_SESSION['logged_in'] = true;
-                        if (function_exists('ratib_partner_portal_clear')) {
-                            ratib_partner_portal_clear();
+                        if (function_exists('rateb_partner_portal_clear')) {
+                            rateb_partner_portal_clear();
                         }
 
                         // Set role name for display (Admin, User, etc.) — use same DB as user (country DB)
@@ -1152,7 +1152,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                         $_SESSION['user_permissions'] = getUserPermissions();
 
                         try {
-                            $loginPk2 = ratib_users_primary_key_column($loginConn);
+                            $loginPk2 = rateb_users_primary_key_column($loginConn);
                             $permStmt = $loginConn->prepare("SELECT permissions FROM users WHERE `{$loginPk2}` = ?");
                             $permStmt->bind_param("i", $user['user_id']);
                             $permStmt->execute();
@@ -1171,10 +1171,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                         }
 
                         error_log("Session created for user: " . $user['username'] . " with role_id: " . $user['role_id']);
-                        if (function_exists('ratib_set_login_context_cookies')) {
-                            ratib_set_login_context_cookies((int)($_SESSION['country_id'] ?? 0), (int)($_SESSION['agency_id'] ?? 0));
+                        if (function_exists('rateb_set_login_context_cookies')) {
+                            rateb_set_login_context_cookies((int)($_SESSION['country_id'] ?? 0), (int)($_SESSION['agency_id'] ?? 0));
                         }
-                        header('Location: ' . ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
+                        header('Location: ' . rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
                         exit();
                     }
                     $error = 'Account is inactive.';
@@ -1192,7 +1192,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                 if ($lookupConn instanceof mysqli) {
                     $chkAgTbl = @$lookupConn->query("SHOW TABLES LIKE 'control_agencies'");
                     if ($chkAgTbl && $chkAgTbl->num_rows > 0) {
-                        $suspAg = ratib_control_agency_active_fragment($lookupConn, 'a');
+                        $suspAg = rateb_control_agency_active_fragment($lookupConn, 'a');
                         $sqlAgTry = "SELECT a.id, a.name, a.country_id, a.db_host, a.db_port, a.db_user, a.db_pass, a.db_name, c.slug AS country_slug "
                             . "FROM control_agencies a "
                             . "LEFT JOIN control_countries c ON c.id = a.country_id "
@@ -1210,7 +1210,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                 }
                                 $tryConn = $acctTry['conn'];
                                 $tryCols = $buildUserSelectCols($tryConn);
-                                $tryBarcodeCol2 = ($barcodeLogin && $barcodeCol) ? ratib_users_login_barcode_column($tryConn) : null;
+                                $tryBarcodeCol2 = ($barcodeLogin && $barcodeCol) ? rateb_users_login_barcode_column($tryConn) : null;
                                 if ($barcodeLogin && ($tryBarcodeCol2 === null || $tryBarcodeCol2 === '')) {
                                     continue;
                                 }
@@ -1231,19 +1231,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                 $rsTryUser = $stTryUser->get_result();
                                 if ($rsTryUser && $rsTryUser->num_rows === 1) {
                                     $tryUser = $rsTryUser->fetch_assoc();
-                                    if (!$ratibLoginUserAllowedForAgencyCountry($tryUser) || !$ratibLoginUserAllowedForProgramAgency($tryUser)) {
+                                    if (!$ratebLoginUserAllowedForAgencyCountry($tryUser) || !$ratebLoginUserAllowedForProgramAgency($tryUser)) {
                                         $stTryUser->close();
                                         continue;
                                     }
                                     $tryAuthOk2 = $barcodeLogin ? true : $verifyUserPassword($tryConn, $tryUser, $password);
-                                    if ($tryAuthOk2 && $ratibLoginRequireRealUserRow($tryUser)) {
+                                    if ($tryAuthOk2 && $ratebLoginRequireRealUserRow($tryUser)) {
                                         $tryRoleId = (int)($tryUser['role_id'] ?? 1);
                                         $_SESSION['user_id'] = (int)($tryUser['user_id'] ?? 0);
                                         $_SESSION['username'] = (string)($tryUser['username'] ?? '');
                                         $_SESSION['role_id'] = $tryRoleId;
                                         $_SESSION['logged_in'] = true;
-                                        if (function_exists('ratib_partner_portal_clear')) {
-                                            ratib_partner_portal_clear();
+                                        if (function_exists('rateb_partner_portal_clear')) {
+                                            rateb_partner_portal_clear();
                                         }
                                         $_SESSION['role'] = 'User';
                                         try {
@@ -1263,10 +1263,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                         $_SESSION['country_name'] = $agencyCountryName;
                                         $_SESSION['agency_name'] = trim((string)($agTry['name'] ?? '')) ?: $agencyName;
                                         $_SESSION['agency_id'] = (int)($agTry['id'] ?? 0);
-                                        if (function_exists('ratib_set_login_context_cookies')) {
-                                            ratib_set_login_context_cookies((int)($_SESSION['country_id'] ?? 0), (int)($_SESSION['agency_id'] ?? 0));
+                                        if (function_exists('rateb_set_login_context_cookies')) {
+                                            rateb_set_login_context_cookies((int)($_SESSION['country_id'] ?? 0), (int)($_SESSION['agency_id'] ?? 0));
                                         }
-                                        header('Location: ' . ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
+                                        header('Location: ' . rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
                                         exit();
                                     }
                                 }
@@ -1285,7 +1285,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     $hintRes = $hintStmt->get_result();
                     if ($hintRes && $hintRes->num_rows > 0) {
                         $mainDb = defined('DB_NAME') ? DB_NAME : 'main';
-                        error_log("Ratib login: user exists in main DB ({$mainDb}) but not in selected country DB (country_id={$postedCountryId}). Fix: set control_agencies.db_name/db_user to that main DB for each country, or create this user in the per-country database. See config/migrations/ratib_pro_use_main_db.sql");
+                        error_log("RATEB login: user exists in main DB ({$mainDb}) but not in selected country DB (country_id={$postedCountryId}). Fix: set control_agencies.db_name/db_user to that main DB for each country, or create this user in the per-country database. See config/migrations/rateb_pro_use_main_db.sql");
                     }
                     $hintStmt->close();
                 }
@@ -1310,13 +1310,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                             if (!$statusOk && array_key_exists('is_active', $user)) {
                                 $statusOk = !empty((int)($user['is_active'] ?? 0));
                             }
-                            if ($statusOk && $ratibLoginRequireRealUserRow($user)) {
+                            if ($statusOk && $ratebLoginRequireRealUserRow($user)) {
                                 $_SESSION['user_id'] = $user['user_id'];
                                 $_SESSION['username'] = $user['username'];
                                 $_SESSION['role_id'] = $user['role_id'];
                                 $_SESSION['logged_in'] = true;
-                                if (function_exists('ratib_partner_portal_clear')) {
-                                    ratib_partner_portal_clear();
+                                if (function_exists('rateb_partner_portal_clear')) {
+                                    rateb_partner_portal_clear();
                                 }
                                 $_SESSION['role'] = 'User';
                                 try {
@@ -1343,10 +1343,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                 } catch (Throwable $e) { /* ignore */ }
                                 require_once '../includes/permissions.php';
                                 $_SESSION['user_permissions'] = getUserPermissions();
-                                if (function_exists('ratib_set_login_context_cookies')) {
-                                    ratib_set_login_context_cookies((int)($agencyCountryId ?? 0), (int)($agencyId ?? 0));
+                                if (function_exists('rateb_set_login_context_cookies')) {
+                                    rateb_set_login_context_cookies((int)($agencyCountryId ?? 0), (int)($agencyId ?? 0));
                                 }
-                                header('Location: ' . ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
+                                header('Location: ' . rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
                                 exit();
                             } else {
                                 $error = 'Account is inactive.';
@@ -1614,7 +1614,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     }
     ?>
     <script>
-    window.RATIB_LOGIN_PAIR = <?php echo json_encode([
+    window.RATEB_LOGIN_PAIR = <?php echo json_encode([
         'apiPair' => $loginPairApi,
         'scanPage' => $loginScanUrl,
         'countryId' => (int) $formHiddenCountryId,

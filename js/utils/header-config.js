@@ -87,7 +87,7 @@
     window.API_BASE = window.APP_CONFIG.apiBase || '';
 
     /** Build extensionless /pages/ URL (matches PHP pageUrl()). */
-    window.ratibPageUrl = function(page, extraQuery) {
+    window.ratebPageUrl = function(page, extraQuery) {
         var p = String(page || '').replace(/^\/+/, '').replace(/\.php$/i, '');
         var base = String((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || window.BASE_PATH || '').replace(/\/+$/, '');
         var url = (base || '') + '/pages/' + p;
@@ -98,7 +98,7 @@
     };
 
     /** Strip .php from user-facing page links (not /api/, assets, or Designed). */
-    window.ratibCleanPageHref = function(href) {
+    window.ratebCleanPageHref = function(href) {
         if (!href || typeof href !== 'string') return href;
         if (href.indexOf('/api/') !== -1 || href.indexOf('/Designed/') !== -1) return href;
         if (/\/pages\/[^?#]+\.php/i.test(href) || /\/control-panel\/pages\/[^?#]+\.php/i.test(href)) {
@@ -110,20 +110,20 @@
         return href;
     };
 
-    function ratibApplyCleanPageLinks(root) {
+    function ratebApplyCleanPageLinks(root) {
         var scope = root && root.querySelectorAll ? root : document;
         scope.querySelectorAll('a[href*=".php"]').forEach(function(a) {
             var h = a.getAttribute('href');
             if (!h) return;
-            var cleaned = window.ratibCleanPageHref(h);
+            var cleaned = window.ratebCleanPageHref(h);
             if (cleaned !== h) a.setAttribute('href', cleaned);
         });
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { ratibApplyCleanPageLinks(document); });
+        document.addEventListener('DOMContentLoaded', function() { ratebApplyCleanPageLinks(document); });
     } else {
-        ratibApplyCleanPageLinks(document);
+        ratebApplyCleanPageLinks(document);
     }
 
     if (typeof MutationObserver !== 'undefined') {
@@ -133,9 +133,9 @@
                     if (node.nodeType !== 1) return;
                     if (node.matches && node.matches('a[href*=".php"]')) {
                         var h = node.getAttribute('href');
-                        if (h) node.setAttribute('href', window.ratibCleanPageHref(h));
+                        if (h) node.setAttribute('href', window.ratebCleanPageHref(h));
                     }
-                    ratibApplyCleanPageLinks(node);
+                    ratebApplyCleanPageLinks(node);
                 });
             });
         });
@@ -175,7 +175,7 @@
             var isControl = window.location.pathname.indexOf('/control/') !== -1 || (window.location.search || '').indexOf('control=1') !== -1 ||
                 (appCfgEl && appCfgEl.getAttribute('data-control') === '1') || isControlProBridge;
             var controlSuffix = isControl ? '?control=1' : '';
-            var logoutUrl = window.ratibPageUrl('logout.php') + controlSuffix;
+            var logoutUrl = window.ratebPageUrl('logout.php') + controlSuffix;
             window.location.href = logoutUrl;
         }
 

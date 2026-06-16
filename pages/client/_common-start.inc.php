@@ -18,24 +18,24 @@ if (!isset($RCP_EXTRA_JS) || !is_array($RCP_EXTRA_JS)) {
     $RCP_EXTRA_JS = [];
 }
 
-$ratibCpSectionKey = $RCP_SECTION;
-$ratibCpPageHeading = $RCP_HEADING;
-$ratibCpPageSubheading = $RCP_SUBHEADING;
+$ratebCpSectionKey = $RCP_SECTION;
+$ratebCpPageHeading = $RCP_HEADING;
+$ratebCpPageSubheading = $RCP_SUBHEADING;
 
 $pageTitle = 'Client Hub · ' . $RCP_HEADING;
-$extraBodyClasses = ['ratib-client-dashboard'];
-$pageCss = [ratib_client_dashboard_asset_url('css/client-dashboard.css')];
+$extraBodyClasses = ['rateb-client-dashboard'];
+$pageCss = [rateb_client_dashboard_asset_url('css/client-dashboard.css')];
 
 $pageJs = array_merge([
-    ratib_client_dashboard_asset_url('js/client-dashboard-shell.js'),
-    ratib_client_dashboard_asset_url('js/client-dashboard-data.js'),
-    ratib_client_dashboard_asset_url('js/client-dashboard-actions.js'),
+    rateb_client_dashboard_asset_url('js/client-dashboard-shell.js'),
+    rateb_client_dashboard_asset_url('js/client-dashboard-data.js'),
+    rateb_client_dashboard_asset_url('js/client-dashboard-actions.js'),
 ], $RCP_EXTRA_JS);
 
-if (function_exists('ratib_client_dashboard_is_control_wrapper_active') && ratib_client_dashboard_is_control_wrapper_active()) {
+if (function_exists('rateb_client_dashboard_is_control_wrapper_active') && rateb_client_dashboard_is_control_wrapper_active()) {
     require_once dirname(__DIR__, 2) . '/control-panel/includes/control/layout-wrapper.php';
     startControlLayout($pageTitle, $pageCss);
-    echo '<div class="ratib-client-dashboard-surface">';
+    echo '<div class="rateb-client-dashboard-surface">';
     require dirname(__DIR__, 2) . '/modules/client-dashboard/Layout/shell-start.inc.php';
     return;
 }

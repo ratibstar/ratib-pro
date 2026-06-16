@@ -8,11 +8,11 @@
  * Always prefers the control panel database by name so escalations work even when
  * $GLOBALS['conn'] is switched to a per-country DB (SINGLE_URL_MODE after login).
  */
-if (!function_exists('ratib_support_chat_db')) {
+if (!function_exists('rateb_support_chat_db')) {
     /**
      * @return mysqli|null
      */
-    function ratib_support_chat_db() {
+    function rateb_support_chat_db() {
         static $resolved = false;
         static $db = null;
         if ($resolved) {
@@ -58,7 +58,7 @@ if (!function_exists('ratib_support_chat_db')) {
                     }
                 }
             } catch (Throwable $e) {
-                error_log('ratib_support_chat_db: ' . $e->getMessage());
+                error_log('rateb_support_chat_db: ' . $e->getMessage());
             }
         }
 
@@ -67,8 +67,8 @@ if (!function_exists('ratib_support_chat_db')) {
     }
 }
 
-if (!function_exists('ratib_support_chat_has_context_columns')) {
-    function ratib_support_chat_has_context_columns(mysqli $conn) {
+if (!function_exists('rateb_support_chat_has_context_columns')) {
+    function rateb_support_chat_has_context_columns(mysqli $conn) {
         static $cache = [];
         $key = spl_object_hash($conn);
         if (!array_key_exists($key, $cache)) {

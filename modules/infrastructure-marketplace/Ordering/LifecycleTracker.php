@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Ordering;
+namespace RATEB\InfrastructureMarketplace\Ordering;
 
 final class LifecycleTracker
 {
@@ -15,7 +15,7 @@ final class LifecycleTracker
     public function syncFromProvisioningJob(string $jobPublicId, string $state): void
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_orders
+            'UPDATE rateb_infra_orders
              SET status = :state, updated_at = NOW()
              WHERE provisioning_job_public_id = :job_public_id'
         );

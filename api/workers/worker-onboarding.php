@@ -9,13 +9,13 @@ for ($i = 0; $i < 12; $i++) {
     $standalone = $dir . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'worker_onboarding_standalone.php';
     if (is_file($standalone)) {
         require_once $standalone;
-        ratib_worker_onboarding_standalone_run();
+        rateb_worker_onboarding_standalone_run();
         return;
     }
     $standaloneAlt = $dir . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'worker_onboarding_standalone.php';
     if (is_file($standaloneAlt)) {
         require_once $standaloneAlt;
-        ratib_worker_onboarding_standalone_run();
+        rateb_worker_onboarding_standalone_run();
         return;
     }
     $parent = dirname($dir);

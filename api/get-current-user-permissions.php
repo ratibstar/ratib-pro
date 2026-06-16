@@ -7,8 +7,8 @@
  * Get current logged-in user's permissions
  * Returns JSON array of permission IDs
  */
-require_once __DIR__ . '/core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+require_once __DIR__ . '/core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

@@ -61,8 +61,8 @@ try {
 
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
-    ratibEnsureGovernmentLaborSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGovernmentLaborSchema($conn);
     $controller = new DeploymentController($conn);
 
     if ($method === 'GET') {

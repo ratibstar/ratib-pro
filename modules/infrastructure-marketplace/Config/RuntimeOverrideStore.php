@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Config;
+namespace RATEB\InfrastructureMarketplace\Config;
 
 final class RuntimeOverrideStore
 {
@@ -48,7 +48,7 @@ final class RuntimeOverrideStore
      */
     private static function writeCandidatePaths(): array
     {
-        $fromEnv = getenv('RATIB_INFRA_RUNTIME_OVERRIDES_PATH');
+        $fromEnv = getenv('RATEB_INFRA_RUNTIME_OVERRIDES_PATH');
         if (is_string($fromEnv) && trim($fromEnv) !== '') {
             return [trim($fromEnv)];
         }
@@ -58,19 +58,19 @@ final class RuntimeOverrideStore
             self::defaultPath(),
         ];
 
-        $uploadsHelper = $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'ratib_uploads_base.php';
+        $uploadsHelper = $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'rateb_uploads_base.php';
         if (is_file($uploadsHelper)) {
             require_once $uploadsHelper;
-            if (function_exists('ratib_uploads_base_dir')) {
-                $base = ratib_uploads_base_dir();
+            if (function_exists('rateb_uploads_base_dir')) {
+                $base = rateb_uploads_base_dir();
                 if (is_string($base) && $base !== '') {
                     $out[] = rtrim($base, DIRECTORY_SEPARATOR)
                         . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
                         . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
                 }
             }
-            if (function_exists('ratib_uploads_candidate_base_dirs')) {
-                foreach (ratib_uploads_candidate_base_dirs(false) as $base) {
+            if (function_exists('rateb_uploads_candidate_base_dirs')) {
+                foreach (rateb_uploads_candidate_base_dirs(false) as $base) {
                     if (!is_string($base) || $base === '') {
                         continue;
                     }
@@ -83,7 +83,7 @@ final class RuntimeOverrideStore
 
         $parent = dirname($root);
         if ($parent !== '' && $parent !== '.' && $parent !== $root) {
-            $out[] = $parent . DIRECTORY_SEPARATOR . 'ratib_infra' . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
+            $out[] = $parent . DIRECTORY_SEPARATOR . 'rateb_infra' . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
         }
 
         $unique = [];

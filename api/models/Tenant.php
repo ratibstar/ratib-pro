@@ -11,7 +11,7 @@ if (!defined('ENV_LOADED')) {
 }
 if (!defined('CONTROL_PANEL_DB_NAME')) {
     $_cp = getenv('CONTROL_PANEL_DB_NAME');
-    define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : 'outratib_control_panel_db');
+    define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : 'admin_control_panel_db');
 }
 if (!defined('DB_HOST')) {
     // Avoid pulling in config/database.php (it starts sessions) — keep Tenant model bootstrap-light.

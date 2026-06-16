@@ -4,12 +4,12 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_InfrastructureAdapter
+final class RATEB_ClientDashboard_InfrastructureAdapter
 {
     /**
      * @return array<string, mixed>
      */
-    public function fetchAwareness(Ratib_ClientDashboard_AdapterContext $ctx): array
+    public function fetchAwareness(RATEB_ClientDashboard_AdapterContext $ctx): array
     {
         $fallback = [
             'reachable' => false,

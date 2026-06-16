@@ -7,11 +7,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/cors.php';
 require_once __DIR__ . '/bootstrap.php';
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
 
 require_once __DIR__ . '/../../includes/config.php';
 
-ratib_api_pick_session_name();
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -34,7 +34,7 @@ try {
 
     if ($accountType === 'partner' && $subjectId > 0) {
         $pdo = Database::getInstance()->getConnection();
-        ratibEnsureGlobalPartnershipsSchema($pdo);
+        ratebEnsureGlobalPartnershipsSchema($pdo);
         $stmt = $pdo->prepare(
             'SELECT id, name, email FROM partner_agencies WHERE id = ? AND portal_enabled = 1 LIMIT 1'
         );

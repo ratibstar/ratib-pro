@@ -5,7 +5,7 @@
  */
 // Use control session when ?control=1 so control panel requests are authenticated
 if (isset($_GET['control']) && (string)$_GET['control'] === '1') {
-    session_name('ratib_control');
+    session_name('rateb_control');
 }
 require_once __DIR__ . '/hr-api-bootstrap.inc.php';
 // Disable caching for this API endpoint
@@ -339,8 +339,8 @@ try {
             
             $newEmployeeId = $conn->lastInsertId();
             
-            // Auto-create GL account (Ratib Pro HR only — not control-panel HR DB)
-            if (hr_api_writes_ratib_artifacts()) {
+            // Auto-create GL account (RATEB Pro HR only — not control-panel HR DB)
+            if (hr_api_writes_rateb_artifacts()) {
                 try {
                     require_once __DIR__ . '/../accounting/entity-account-helper.php';
                     $employeeName = $input['name'] ?? '';
@@ -360,7 +360,7 @@ try {
             $stmt->execute([$newEmployeeId]);
             $newEmployee = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('employees', $newEmployeeId, 'create', 'hr', null, $newEmployee);
             }
@@ -488,7 +488,7 @@ try {
             $stmt->execute();
             $updatedEmployee = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('employees', $id, 'update', 'hr', $oldEmployee, $updatedEmployee);
             }
@@ -519,7 +519,7 @@ try {
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
             
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('employees', $id, 'delete', 'hr', $deletedEmployee, null);
             }

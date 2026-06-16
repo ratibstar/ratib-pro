@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Security;
+namespace RATEB\InfrastructureMarketplace\Security;
 
 /**
  * Unified control-plane security pipeline: session auth, RBAC tiers, CSRF, rate limits.
@@ -192,38 +192,38 @@ final class ControlSecurityGuard
      */
     private static function rateLimitParams(int $tier): array
     {
-        $w = self::envInt('RATIB_INFRA_RL_WINDOW_SECONDS', 60);
+        $w = self::envInt('RATEB_INFRA_RL_WINDOW_SECONDS', 60);
         $w = $w > 0 ? $w : 60;
 
         switch ($tier) {
             case self::TIER_PUBLIC_READ:
                 return [
-                    self::envInt('RATIB_INFRA_RL_PUBLIC_READ_IP', 240),
-                    self::envInt('RATIB_INFRA_RL_PUBLIC_READ_USER', 600),
+                    self::envInt('RATEB_INFRA_RL_PUBLIC_READ_IP', 240),
+                    self::envInt('RATEB_INFRA_RL_PUBLIC_READ_USER', 600),
                     $w,
                 ];
             case self::TIER_PUBLIC_MUTATOR:
                 return [
-                    self::envInt('RATIB_INFRA_RL_PUBLIC_MUTATOR_IP', 40),
-                    self::envInt('RATIB_INFRA_RL_PUBLIC_MUTATOR_USER', 120),
+                    self::envInt('RATEB_INFRA_RL_PUBLIC_MUTATOR_IP', 40),
+                    self::envInt('RATEB_INFRA_RL_PUBLIC_MUTATOR_USER', 120),
                     $w,
                 ];
             case self::TIER_CONTROL_VIEW:
                 return [
-                    self::envInt('RATIB_INFRA_RL_CONTROL_VIEW_IP', 120),
-                    self::envInt('RATIB_INFRA_RL_CONTROL_VIEW_USER', 180),
+                    self::envInt('RATEB_INFRA_RL_CONTROL_VIEW_IP', 120),
+                    self::envInt('RATEB_INFRA_RL_CONTROL_VIEW_USER', 180),
                     $w,
                 ];
             case self::TIER_CONTROL_WRITE:
                 return [
-                    self::envInt('RATIB_INFRA_RL_CONTROL_WRITE_IP', 60),
-                    self::envInt('RATIB_INFRA_RL_CONTROL_WRITE_USER', 90),
+                    self::envInt('RATEB_INFRA_RL_CONTROL_WRITE_IP', 60),
+                    self::envInt('RATEB_INFRA_RL_CONTROL_WRITE_USER', 90),
                     $w,
                 ];
             case self::TIER_CONTROL_SYSTEM:
                 return [
-                    self::envInt('RATIB_INFRA_RL_CONTROL_SYSTEM_IP', 40),
-                    self::envInt('RATIB_INFRA_RL_CONTROL_SYSTEM_USER', 60),
+                    self::envInt('RATEB_INFRA_RL_CONTROL_SYSTEM_IP', 40),
+                    self::envInt('RATEB_INFRA_RL_CONTROL_SYSTEM_USER', 60),
                     $w,
                 ];
             default:

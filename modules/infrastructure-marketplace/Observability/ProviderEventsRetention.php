@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Observability;
+namespace RATEB\InfrastructureMarketplace\Observability;
 
 /**
- * Prunes ratib_infra_provider_events only — never touches ratib_infra_audit_entries.
+ * Prunes rateb_infra_provider_events only — never touches rateb_infra_audit_entries.
  */
 final class ProviderEventsRetention
 {
@@ -33,13 +33,13 @@ final class ProviderEventsRetention
      */
     public function run(bool $dryRun = false): array
     {
-        if (!$this->tableExists('ratib_infra_provider_events')) {
+        if (!$this->tableExists('rateb_infra_provider_events')) {
             return ['health_check' => 0, 'success_non_critical' => 0, 'success_critical_old' => 0, 'total' => 0, 'skipped' => 1];
         }
 
-        $healthDays = $this->envInt('RATIB_INFRA_EVENTS_RETAIN_HEALTH_DAYS', 7);
-        $successDays = $this->envInt('RATIB_INFRA_EVENTS_RETAIN_SUCCESS_DAYS', 14);
-        $criticalDays = $this->envInt('RATIB_INFRA_EVENTS_RETAIN_CRITICAL_DAYS', 90);
+        $healthDays = $this->envInt('RATEB_INFRA_EVENTS_RETAIN_HEALTH_DAYS', 7);
+        $successDays = $this->envInt('RATEB_INFRA_EVENTS_RETAIN_SUCCESS_DAYS', 14);
+        $criticalDays = $this->envInt('RATEB_INFRA_EVENTS_RETAIN_CRITICAL_DAYS', 90);
 
         // Never delete failure/retry/degraded rows — operational incidents must remain auditable.
         $deleted = [
@@ -70,14 +70,14 @@ final class ProviderEventsRetention
 
     private function purge(string $where, array $params, bool $dryRun): int
     {
-        $countSql = 'SELECT COUNT(*) FROM ratib_infra_provider_events WHERE ' . $where;
+        $countSql = 'SELECT COUNT(*) FROM rateb_infra_provider_events WHERE ' . $where;
         $countStmt = $this->pdo->prepare($countSql);
         $countStmt->execute($params);
         $count = (int) ($countStmt->fetchColumn() ?: 0);
         if ($dryRun || $count === 0) {
             return $count;
         }
-        $deleteSql = 'DELETE FROM ratib_infra_provider_events WHERE ' . $where . ' LIMIT 5000';
+        $deleteSql = 'DELETE FROM rateb_infra_provider_events WHERE ' . $where . ' LIMIT 5000';
         $deleted = 0;
         while (true) {
             $stmt = $this->pdo->prepare($deleteSql);

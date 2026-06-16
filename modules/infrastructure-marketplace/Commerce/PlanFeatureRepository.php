@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Commerce;
+namespace RATEB\InfrastructureMarketplace\Commerce;
 
 final class PlanFeatureRepository
 {
@@ -13,7 +13,7 @@ final class PlanFeatureRepository
      */
     public function listForPlan(int $planId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_plan_features WHERE plan_id = :p ORDER BY feature_key ASC');
+        $stmt = $this->pdo->prepare('SELECT * FROM rateb_infra_plan_features WHERE plan_id = :p ORDER BY feature_key ASC');
         $stmt->execute(['p' => $planId]);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -25,7 +25,7 @@ final class PlanFeatureRepository
      */
     public function upsertFeature(int $planId, string $featureKey, string $featureValue, string $featureType = 'string'): int
     {
-        $sql = 'INSERT INTO ratib_infra_plan_features (plan_id, feature_key, feature_value, feature_type, created_at)
+        $sql = 'INSERT INTO rateb_infra_plan_features (plan_id, feature_key, feature_value, feature_type, created_at)
                 VALUES (:plan_id, :feature_key, :feature_value, :feature_type, NOW())
                 ON DUPLICATE KEY UPDATE feature_value = VALUES(feature_value), feature_type = VALUES(feature_type)';
         $stmt = $this->pdo->prepare($sql);

@@ -55,11 +55,11 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
         }
         $apiBase = control_control_api_base_url();
     }
-    // Public Ratib root for shared assets (css/js at site root, not /control-panel).
-    $ratibPublic = function_exists('control_ratib_pro_public_base_url')
-        ? control_ratib_pro_public_base_url()
+    // Public RATEB root for shared assets (css/js at site root, not /control-panel).
+    $ratebPublic = function_exists('control_rateb_pro_public_base_url')
+        ? control_rateb_pro_public_base_url()
         : preg_replace('#/control-panel$#', '', $fullBase);
-    $ratibPublic = rtrim((string) $ratibPublic, '/');
+    $ratebPublic = rtrim((string) $ratebPublic, '/');
     $GLOBALS['control_layout_standalone'] = $standalone;
     ?>
 <!DOCTYPE html>
@@ -78,7 +78,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/control/system.css'); ?>?v=<?php echo time(); ?>">
     <?php if (!$standalone): ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratibPublic . '/css/global-ai-action.css?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratebPublic . '/css/global-ai-action.css?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
     <?php foreach ($additionalCSS as $css):
         $css = (string)$css;
@@ -93,21 +93,21 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     <div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>"></div>
     <?php
     $coreAiUrl = rtrim($fullBase, '/') . '/coreai/index.php';
-    // Main Ratib Pro JSON API lives at site /api, not /control-panel/api
-    $ratibPublic = function_exists('control_ratib_pro_public_base_url') ? control_ratib_pro_public_base_url() : $fullBase;
-    $ratibApiBase = rtrim($ratibPublic !== '' ? $ratibPublic : $fullBase, '/') . '/api';
+    // Main RATEB Pro JSON API lives at site /api, not /control-panel/api
+    $ratebPublic = function_exists('control_rateb_pro_public_base_url') ? control_rateb_pro_public_base_url() : $fullBase;
+    $ratebApiBase = rtrim($ratebPublic !== '' ? $ratebPublic : $fullBase, '/') . '/api';
     ?>
     <?php $controlHrApiBase = rtrim($fullBase, '/') . '/api/control/hr'; ?>
-    <div id="app-config" data-base-url="<?php echo htmlspecialchars($fullBase, ENT_QUOTES, 'UTF-8'); ?>" data-api-base="<?php echo htmlspecialchars($ratibApiBase, ENT_QUOTES, 'UTF-8'); ?>" data-control="1" data-control-api-path="<?php echo htmlspecialchars($fullBase . '/api/control', ENT_QUOTES, 'UTF-8'); ?>" data-control-hr-api-base="<?php echo htmlspecialchars($controlHrApiBase, ENT_QUOTES, 'UTF-8'); ?>" class="hidden"></div>
+    <div id="app-config" data-base-url="<?php echo htmlspecialchars($fullBase, ENT_QUOTES, 'UTF-8'); ?>" data-api-base="<?php echo htmlspecialchars($ratebApiBase, ENT_QUOTES, 'UTF-8'); ?>" data-control="1" data-control-api-path="<?php echo htmlspecialchars($fullBase . '/api/control', ENT_QUOTES, 'UTF-8'); ?>" data-control-hr-api-base="<?php echo htmlspecialchars($controlHrApiBase, ENT_QUOTES, 'UTF-8'); ?>" class="hidden"></div>
     <?php
-    $ratibGlobalAiRunUrl = htmlspecialchars(
-        rtrim($ratibApiBase, '/') . '/workers/global-ai-run.php',
+    $ratebGlobalAiRunUrl = htmlspecialchars(
+        rtrim($ratebApiBase, '/') . '/workers/global-ai-run.php',
         ENT_QUOTES,
         'UTF-8'
     );
     ?>
-    <script id="ratib-global-ai-fetch-v7">
-    (function(){if(window.__ratibGlobalAiFetchV7)return;window.__ratibGlobalAiFetchV7=1;var RUN_URL='<?php echo $ratibGlobalAiRunUrl; ?>';var orig=window.fetch;window.fetch=function(url,opts){var u=typeof url==='string'?url:(url&&url.url)||'';if(u.indexOf('worker-onboarding')!==-1){url=typeof url==='string'?RUN_URL:(typeof Request!=='undefined'?new Request(RUN_URL,url):RUN_URL);}return orig.call(this,url,opts);};})();
+    <script id="rateb-global-ai-fetch-v7">
+    (function(){if(window.__ratebGlobalAiFetchV7)return;window.__ratebGlobalAiFetchV7=1;var RUN_URL='<?php echo $ratebGlobalAiRunUrl; ?>';var orig=window.fetch;window.fetch=function(url,opts){var u=typeof url==='string'?url:(url&&url.url)||'';if(u.indexOf('worker-onboarding')!==-1){url=typeof url==='string'?RUN_URL:(typeof Request!=='undefined'?new Request(RUN_URL,url):RUN_URL);}return orig.call(this,url,opts);};})();
     </script>
     <script src="<?php echo asset('js/control/app-config-init.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/frame-guard.js'); ?>?v=<?php echo time(); ?>"></script>
@@ -162,7 +162,7 @@ function endControlLayout($additionalJS = []) {
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
     <?php if (!$standaloneEnd): ?>
     <script src="<?php echo asset('js/control/header-support-alerts.js'); ?>?v=<?php echo time(); ?>"></script>
-    <script src="<?php echo htmlspecialchars(rtrim((string) (function_exists('control_ratib_pro_public_base_url') ? control_ratib_pro_public_base_url() : preg_replace('#/control-panel$#', '', $fullBase)), '/') . '/js/utils/global-ai-action.js?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>"></script>
+    <script src="<?php echo htmlspecialchars(rtrim((string) (function_exists('control_rateb_pro_public_base_url') ? control_rateb_pro_public_base_url() : preg_replace('#/control-panel$#', '', $fullBase)), '/') . '/js/utils/global-ai-action.js?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>"></script>
     <?php
     $globalAiRunPatch = dirname(__DIR__, 3) . '/includes/global_ai_run_patch.php';
     if (is_file($globalAiRunPatch)) {

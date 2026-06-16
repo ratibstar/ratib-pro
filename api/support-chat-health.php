@@ -21,7 +21,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/support_chat_db.php';
 mysqli_report(MYSQLI_REPORT_OFF);
 
-$isAppAdmin = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user()
+$isAppAdmin = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user()
     && (int) ($_SESSION['role_id'] ?? 0) === 1;
 $isControlLogged = !empty($_SESSION['control_logged_in']);
 if (!$isAppAdmin && !$isControlLogged) {
@@ -36,7 +36,7 @@ function h_json_out($data) {
 }
 
 try {
-    $conn = ratib_support_chat_db();
+    $conn = rateb_support_chat_db();
     $sessionCountryId = !empty($_SESSION['country_id']) ? (int) $_SESSION['country_id'] : 0;
     $sessionAgencyId = !empty($_SESSION['agency_id']) ? (int) $_SESSION['agency_id'] : 0;
     $sessionCountryName = trim((string)($_SESSION['country_name'] ?? ''));
@@ -71,7 +71,7 @@ try {
 
     if (!$conn instanceof mysqli || $conn->connect_errno) {
         $result['success'] = false;
-        $result['message'] = 'ratib_support_chat_db() returned no connection';
+        $result['message'] = 'rateb_support_chat_db() returned no connection';
         h_json_out($result);
     }
 

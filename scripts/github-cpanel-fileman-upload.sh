@@ -6,7 +6,7 @@ CPANEL_HOST="${CPANEL_HOST:?CPANEL_HOST required}"
 CPANEL_USER="${CPANEL_USER:?CPANEL_USER required}"
 CPANEL_API_TOKEN="${CPANEL_API_TOKEN:?CPANEL_API_TOKEN required}"
 CPANEL_PORT="${CPANEL_PORT:-2083}"
-REMOTE_BASE="${CPANEL_REMOTE_BASE:-/home/outratib/public_html}"
+REMOTE_BASE="${CPANEL_REMOTE_BASE:-/home/admin/public_html}"
 
 CPANEL_BASE="https://${CPANEL_HOST}:${CPANEL_PORT}/execute/Fileman/save_file_content"
 AUTH="Authorization: cpanel ${CPANEL_USER}:${CPANEL_API_TOKEN}"
@@ -14,19 +14,19 @@ AUTH="Authorization: cpanel ${CPANEL_USER}:${CPANEL_API_TOKEN}"
 FILES=(
   ".htaccess"
   "profile/index.php"
-  "public/ratib-build.txt"
+  "public/rateb-build.txt"
   "public/index.php"
   "pages/company-profile.php"
   "pages/about.php"
   "pages/deploy-root.php"
-  "pages/ratib-deploy-status.txt"
-  "includes/ratib_html_global_ai_patch.php"
-  "includes/ratib-public-base-url.php"
-  "includes/ratib-home-public-chrome-top.php"
-  "includes/ratib-home-public-nav-sync.php"
-  "includes/ratib-home-public-nav-bootstrap.php"
-  "includes/ratib-home-public-footer.php"
-  "ratib-profile-fix.php"
+  "pages/rateb-deploy-status.txt"
+  "includes/rateb_html_global_ai_patch.php"
+  "includes/rateb-public-base-url.php"
+  "includes/rateb-home-public-chrome-top.php"
+  "includes/rateb-home-public-nav-sync.php"
+  "includes/rateb-home-public-nav-bootstrap.php"
+  "includes/rateb-home-public-footer.php"
+  "rateb-profile-fix.php"
 )
 
 ok=0
@@ -42,7 +42,7 @@ for rel in "${FILES[@]}"; do
     dir="${REMOTE_BASE}"
   fi
   file="$(basename "$rel")"
-  if [ "$rel" = ".htaccess" ] || [ "$rel" = "profile/index.php" ] || [ "$rel" = "public/ratib-build.txt" ]; then
+  if [ "$rel" = ".htaccess" ] || [ "$rel" = "profile/index.php" ] || [ "$rel" = "public/rateb-build.txt" ]; then
     echo "=== PRIORITY Upload ${rel} -> ${dir}/${file} ==="
   else
     echo "=== Upload ${rel} -> ${dir}/${file} ==="

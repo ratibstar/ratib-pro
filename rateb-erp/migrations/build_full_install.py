@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build 000_full_install_outratib_rateb-erp.sql from migration parts."""
+"""Build 000_full_install_admin_rateb-erp.sql from migration parts."""
 import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "000_full_install_outratib_rateb-erp.sql"
+OUT = ROOT / "000_full_install_admin_rateb-erp.sql"
 
 schema = (ROOT / "001_initial_schema.sql").read_text(encoding="utf-8")
 schema = schema.replace(
@@ -82,16 +82,16 @@ drops = [
 ]
 
 header = """-- =============================================================================
--- RATEB ERP — Full database install for outratib_rateb-erp
+-- RATEB ERP — Full database install for admin_rateb-erp
 -- =============================================================================
--- Database: outratib_rateb-erp
+-- Database: admin_rateb-erp
 -- Import via cPanel phpMyAdmin → select database → Import → choose this file
 --
 -- WARNING: Drops all existing rateb_* tables before recreating (fresh install).
 -- Default login after import: admin@rateb.sa / password
 -- =============================================================================
 
-USE `outratib_rateb-erp`;
+USE `admin_rateb-erp`;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;

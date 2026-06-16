@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_InternalEventBus
+final class RATEB_ClientDashboard_InternalEventBus
 {
     /** @var array<string, list<callable(array<string, mixed>): void>> */
     private static $listeners = [];
@@ -37,8 +37,8 @@ final class Ratib_ClientDashboard_InternalEventBus
         if (is_file($auditPath)) {
             require_once $auditPath;
         }
-        if (class_exists('Ratib_ClientDashboard_AuditLogger')) {
-            Ratib_ClientDashboard_AuditLogger::log($conn, 'internal_event', $envelope);
+        if (class_exists('RATEB_ClientDashboard_AuditLogger')) {
+            RATEB_ClientDashboard_AuditLogger::log($conn, 'internal_event', $envelope);
         }
 
         foreach (self::$listeners as $pattern => $fns) {

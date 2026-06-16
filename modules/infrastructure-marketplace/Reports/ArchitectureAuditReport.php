@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Reports;
+namespace RATEB\InfrastructureMarketplace\Reports;
 
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 
 /**
  * Phase 1 — system audit & auto-detection for infrastructure-marketplace (+ notes for client-dashboard).
@@ -184,12 +184,12 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
         };
 
         $catalogRepo = $f('Catalog/CatalogRepository.php');
-        $catalogTable = $table($pdo, 'ratib_infra_catalog_items');
-        $productsTable = $table($pdo, 'ratib_infra_products');
-        $plansTable = $table($pdo, 'ratib_infra_plans');
+        $catalogTable = $table($pdo, 'rateb_infra_catalog_items');
+        $productsTable = $table($pdo, 'rateb_infra_products');
+        $plansTable = $table($pdo, 'rateb_infra_plans');
         $catalogSt = self::STATUS_EXISTS_PARTIAL;
         $catalogGaps = [
-            'Commerce tables ratib_infra_products / ratib_infra_plans / ratib_infra_plan_features / ratib_infra_pricing not in baseline schema — add via additive migrations when ready.',
+            'Commerce tables rateb_infra_products / rateb_infra_plans / rateb_infra_plan_features / rateb_infra_pricing not in baseline schema — add via additive migrations when ready.',
         ];
         if ($productsTable === true && $plansTable === true) {
             $catalogSt = self::STATUS_EXISTS_COMPLETE;
@@ -200,7 +200,7 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
         }
         $catalogEvidence = array_values(array_filter([
             $catalogRepo ? 'Catalog/CatalogRepository.php' : null,
-            $catalogTable === true ? 'DB: ratib_infra_catalog_items' : null,
+            $catalogTable === true ? 'DB: rateb_infra_catalog_items' : null,
             $catalogTable === null && $pdo === null ? 'DB: skipped (no PDO)' : null,
         ]));
         $add([
@@ -216,7 +216,7 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
             'name' => 'Hosting plans (commerce SKUs)',
             'status' => $plansTable === true ? self::STATUS_EXISTS_COMPLETE : self::STATUS_MISSING,
             'evidence' => $f('Catalog/Pricing/PricingEngine.php') ? ['Catalog/Pricing/PricingEngine.php'] : [],
-            'gaps' => $plansTable === true ? [] : ['Add ratib_infra_plans (+ migrations) or extend catalog_items with plan metadata without breaking APIs.'],
+            'gaps' => $plansTable === true ? [] : ['Add rateb_infra_plans (+ migrations) or extend catalog_items with plan metadata without breaking APIs.'],
         ]);
 
         $add([
@@ -256,17 +256,17 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
             'gaps' => [],
         ]);
 
-        $servicesTable = $table($pdo, 'ratib_infra_services');
+        $servicesTable = $table($pdo, 'rateb_infra_services');
         $add([
             'id' => 'tenant_resources',
             'name' => 'Tenant resource ownership',
             'status' => $servicesTable === true ? self::STATUS_EXISTS_PARTIAL : ($servicesTable === false ? self::STATUS_MISSING : self::STATUS_EXISTS_PARTIAL),
             'evidence' => array_values(array_filter([
                 $f('Provisioning/Execution/OrphanResourceReconciler.php') ? 'OrphanResourceReconciler' : null,
-                $servicesTable === true ? 'DB: ratib_infra_services' : null,
+                $servicesTable === true ? 'DB: rateb_infra_services' : null,
             ])),
             'gaps' => [
-                'ratib_tenant_resources table + TenantResourceManager.php not present — extend additively alongside ratib_infra_services.',
+                'rateb_tenant_resources table + TenantResourceManager.php not present — extend additively alongside rateb_infra_services.',
             ],
         ]);
 
@@ -357,8 +357,8 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
             'id' => 'resource_ownership_tracking',
             'name' => 'Resource ownership tracking',
             'status' => $servicesTable === true ? self::STATUS_EXISTS_PARTIAL : self::STATUS_MISSING,
-            'evidence' => $servicesTable === true ? ['ratib_infra_services'] : [],
-            'gaps' => ['Align with proposed ratib_tenant_resources for cross-product ownership.'],
+            'evidence' => $servicesTable === true ? ['rateb_infra_services'] : [],
+            'gaps' => ['Align with proposed rateb_tenant_resources for cross-product ownership.'],
         ]);
 
         $add([
@@ -384,7 +384,7 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
             'evidence' => [
                 'dry_run: ModuleConfig + ProvisioningExecutionEngine',
                 'correlation_id: ProvisioningJob + job repository',
-                'audit: InfrastructureAuditLogger, ratib_infra_audit_entries',
+                'audit: InfrastructureAuditLogger, rateb_infra_audit_entries',
                 'observability: InfrastructureMetrics, InfrastructureEventEmitter',
                 'tenant: TenantContext, TenantIsolationCompliance',
             ],
@@ -396,7 +396,7 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
             'name' => 'Hosting automation (cPanel/WHM)',
             'status' => $f('Hosting/Adapters/CpanelWhmAdapter.php') ? self::STATUS_EXISTS_PARTIAL : self::STATUS_MISSING,
             'evidence' => ['CpanelWhmAdapter.php (create/suspend/unsuspend/terminate/listPackages/usageMetrics)'],
-            'gaps' => ['Env uses RATIB_INFRA_CPANEL_BASE_URL / USERNAME / API_TOKEN (not *_URL alone). Extend quota sync if product requires it.'],
+            'gaps' => ['Env uses RATEB_INFRA_CPANEL_BASE_URL / USERNAME / API_TOKEN (not *_URL alone). Extend quota sync if product requires it.'],
         ]);
 
         $add([
@@ -419,7 +419,7 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
             'id' => 'schema_docs_naming',
             'name' => 'Schema documentation vs tables',
             'status' => $f('Database/README.schema-notes.txt') ? self::STATUS_LEGACY_CONFLICT : self::STATUS_MISSING,
-            'evidence' => ['Database/README.schema-notes.txt mentions ratib_infra_catalog_item (singular); code uses ratib_infra_catalog_items.'],
+            'evidence' => ['Database/README.schema-notes.txt mentions rateb_infra_catalog_item (singular); code uses rateb_infra_catalog_items.'],
             'gaps' => ['Align documentation with MigrationVerifier list; do not rename live tables.'],
         ]);
 
@@ -451,15 +451,15 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
     private static function detectMissingEnv(): array
     {
         $checks = [
-            'RATIB_INFRA_MARKETPLACE_ENABLED' => 'Module master flag',
-            'RATIB_INFRA_CPANEL_BASE_URL' => 'cPanel/WHM API base (also check runtime override)',
-            'RATIB_INFRA_CPANEL_USERNAME' => 'cPanel user',
-            'RATIB_INFRA_CPANEL_API_TOKEN' => 'cPanel API token',
+            'RATEB_INFRA_MARKETPLACE_ENABLED' => 'Module master flag',
+            'RATEB_INFRA_CPANEL_BASE_URL' => 'cPanel/WHM API base (also check runtime override)',
+            'RATEB_INFRA_CPANEL_USERNAME' => 'cPanel user',
+            'RATEB_INFRA_CPANEL_API_TOKEN' => 'cPanel API token',
         ];
         $missing = [];
         foreach ($checks as $key => $label) {
             $v = getenv($key);
-            if ($key === 'RATIB_INFRA_MARKETPLACE_ENABLED') {
+            if ($key === 'RATEB_INFRA_MARKETPLACE_ENABLED') {
                 continue;
             }
             if (!is_string($v) || trim($v) === '') {
@@ -479,8 +479,8 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
         $notes[] = 'Run `php modules/infrastructure-marketplace/Workers/InfrastructureProvisioningWorker.php` (or systemd) when queue driver is database/redis.';
         if ($pdo !== null) {
             try {
-                if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_worker_heartbeats')) {
-                    $notes[] = 'Table ratib_infra_worker_heartbeats missing — worker health not persisted.';
+                if (!SchemaHelpers::tableExists($pdo, 'rateb_infra_worker_heartbeats')) {
+                    $notes[] = 'Table rateb_infra_worker_heartbeats missing — worker health not persisted.';
                 }
             } catch (\Throwable $e) {
                 $notes[] = 'Could not verify worker_heartbeats table: ' . $e->getMessage();
@@ -505,7 +505,7 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
     private static function activationChecklist(array $subsystems, array $missingEnv, array $missingWorkers): array
     {
         return [
-            ['step' => 'Enable module + dry-run pilot', 'done' => false, 'notes' => 'Use control panel Infrastructure → Control; confirm RATIB_INFRA_MARKETPLACE_ENABLED.'],
+            ['step' => 'Enable module + dry-run pilot', 'done' => false, 'notes' => 'Use control panel Infrastructure → Control; confirm RATEB_INFRA_MARKETPLACE_ENABLED.'],
             ['step' => 'Apply SQL migrations (control DB)', 'done' => false, 'notes' => 'See modules/infrastructure-marketplace Migrations bundle used by your DBA.'],
             ['step' => 'Configure providers + activations', 'done' => false, 'notes' => 'Providers tab; Namecheap/Cloudflare/LE credentials.'],
             ['step' => 'Start queue worker', 'done' => false, 'notes' => implode(' ', $missingWorkers)],
@@ -586,14 +586,14 @@ ul.evidence,ul.gaps{margin:0;padding-left:1.1rem}
     private static function migrationSafetyReport(?\PDO $pdo): array
     {
         if ($pdo === null) {
-            return ['status' => 'SKIPPED', 'reason' => 'No PDO — run CLI with control-panel config loaded or set RATIB_INFRA_DB_DSN.'];
+            return ['status' => 'SKIPPED', 'reason' => 'No PDO — run CLI with control-panel config loaded or set RATEB_INFRA_DB_DSN.'];
         }
         $required = [
-            'ratib_infra_provisioning_jobs',
-            'ratib_infra_job_logs',
-            'ratib_infra_orders',
-            'ratib_infra_catalog_items',
-            'ratib_infra_provider_activations',
+            'rateb_infra_provisioning_jobs',
+            'rateb_infra_job_logs',
+            'rateb_infra_orders',
+            'rateb_infra_catalog_items',
+            'rateb_infra_provider_activations',
         ];
         $present = [];
         $missing = [];
@@ -632,8 +632,8 @@ if (PHP_SAPI === 'cli') {
 
     $pdo = null;
     try {
-        if (class_exists(\Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::class)) {
-            $pdo = \Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
+        if (class_exists(\RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::class)) {
+            $pdo = \RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
         }
     } catch (\Throwable $e) {
         fwrite(STDERR, "Note: running without DB (" . $e->getMessage() . ")\n");

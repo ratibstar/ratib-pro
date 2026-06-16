@@ -59,16 +59,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
-use Ratib\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
-use Ratib\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
-use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
+use RATEB\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 ControlSecurityGuard::enforce('dashboard', ControlSecurityGuard::TIER_PUBLIC_READ);
 
@@ -147,7 +147,7 @@ try {
     try {
         $workerRows = $pdo->query(
             'SELECT worker_name, heartbeat_at, memory_bytes
-             FROM ratib_infra_worker_heartbeats
+             FROM rateb_infra_worker_heartbeats
              ORDER BY heartbeat_at DESC
              LIMIT 5'
         );
@@ -178,7 +178,7 @@ try {
 
     try {
         $orderRows = $pdo->query(
-            'SELECT status, COUNT(*) c FROM ratib_infra_orders GROUP BY status'
+            'SELECT status, COUNT(*) c FROM rateb_infra_orders GROUP BY status'
         );
         $orderCounts = [];
         if ($orderRows instanceof PDOStatement) {
@@ -200,7 +200,7 @@ try {
     try {
         $auditRows = $pdo->query(
             'SELECT action_type, created_at
-             FROM ratib_infra_audit_entries
+             FROM rateb_infra_audit_entries
              ORDER BY id DESC
              LIMIT 5'
         );

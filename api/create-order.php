@@ -6,8 +6,8 @@
 declare(strict_types=1);
 
 /** Bumps when create-order.php changes — check Network response headers or GET ?ping=1 */
-const RATIB_CREATE_ORDER_RELEASE = '2026-04-16a';
-const RATIB_CREATE_ORDER_DEDUPE_WINDOW_SECONDS = 86400;
+const RATEB_CREATE_ORDER_RELEASE = '2026-04-16a';
+const RATEB_CREATE_ORDER_DEDUPE_WINDOW_SECONDS = 86400;
 
 ini_set('display_errors', '0');
 error_reporting(0);
@@ -34,15 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['ping'])) {
     }
     if (!headers_sent()) {
         header('Content-Type: application/json; charset=UTF-8');
-        header('X-Ratib-Create-Order-Release: ' . RATIB_CREATE_ORDER_RELEASE);
+        header('X-RATEB-Create-Order-Release: ' . RATEB_CREATE_ORDER_RELEASE);
     }
     http_response_code(200);
     echo json_encode([
         'ok' => true,
-        'backend_release' => RATIB_CREATE_ORDER_RELEASE,
+        'backend_release' => RATEB_CREATE_ORDER_RELEASE,
         'script' => basename(__FILE__),
         'mtime' => @filemtime(__FILE__) ?: 0,
-        'hint' => 'If POST still returns 500, open /api/ratib-payment-trace.php for DB/schema checks; then Network → create-order.php Response or logs/payment.log.',
+        'hint' => 'If POST still returns 500, open /api/rateb-payment-trace.php for DB/schema checks; then Network → create-order.php Response or logs/payment.log.',
     ], JSON_UNESCAPED_SLASHES);
     exit;
 }
@@ -52,11 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     if (!headers_sent()) {
         header('Content-Type: application/json; charset=UTF-8');
-        header('X-Ratib-Create-Order-Release: ' . RATIB_CREATE_ORDER_RELEASE);
+        header('X-RATEB-Create-Order-Release: ' . RATEB_CREATE_ORDER_RELEASE);
     }
     echo json_encode([
         'message' => 'Method not allowed. Use POST for checkout, or GET ?ping=1 to verify deployment.',
-        'backend_release' => RATIB_CREATE_ORDER_RELEASE,
+        'backend_release' => RATEB_CREATE_ORDER_RELEASE,
     ], JSON_UNESCAPED_SLASHES);
     exit;
 }
@@ -68,11 +68,11 @@ function jsonOut(int $status, array $payload): void
         ob_end_clean();
     }
     if (!headers_sent()) {
-        header('X-Ratib-Create-Order-Release: ' . RATIB_CREATE_ORDER_RELEASE);
+        header('X-RATEB-Create-Order-Release: ' . RATEB_CREATE_ORDER_RELEASE);
     }
     http_response_code($status);
     if (!array_key_exists('backend_release', $payload)) {
-        $payload['backend_release'] = RATIB_CREATE_ORDER_RELEASE;
+        $payload['backend_release'] = RATEB_CREATE_ORDER_RELEASE;
     }
     echo json_encode($payload, JSON_UNESCAPED_SLASHES);
     exit;
@@ -164,9 +164,9 @@ const TAX_RATE = 0.15;
  *
  * @return array{minor:int,currency:string,usd_to_sar?:float}
  */
-function ratib_ngenius_minor_units_from_usd_total(float $totalUsd): array
+function rateb_ngenius_minor_units_from_usd_total(float $totalUsd): array
 {
-    $currency = strtoupper(trim((string) ratib_ngenius_env('NGENIUS_CHECKOUT_CURRENCY', 'SAR')));
+    $currency = strtoupper(trim((string) rateb_ngenius_env('NGENIUS_CHECKOUT_CURRENCY', 'SAR')));
     if ($currency === '') {
         $currency = 'SAR';
     }
@@ -187,7 +187,7 @@ function ratib_ngenius_minor_units_from_usd_total(float $totalUsd): array
         ];
     }
 
-    $rate = (float) ratib_ngenius_env('NGENIUS_USD_TO_SAR', '3.75');
+    $rate = (float) rateb_ngenius_env('NGENIUS_USD_TO_SAR', '3.75');
     if (!is_finite($rate) || $rate <= 0) {
         $rate = 3.75;
     }
@@ -269,8 +269,8 @@ function findRecentDuplicatePendingOrderId(
     PDO $pdo,
     string $email
 ): int {
-    $t = RATIB_NGENIUS_ORDERS_TABLE;
-    $windowMinutes = max(1, (int) ceil(RATIB_CREATE_ORDER_DEDUPE_WINDOW_SECONDS / 60));
+    $t = RATEB_NGENIUS_ORDERS_TABLE;
+    $windowMinutes = max(1, (int) ceil(RATEB_CREATE_ORDER_DEDUPE_WINDOW_SECONDS / 60));
     $sql = "SELECT id
             FROM `{$t}`
             WHERE email = :email
@@ -301,7 +301,7 @@ function insertPendingOrder(
     array $input
 ): int
 {
-    $t = RATIB_NGENIUS_ORDERS_TABLE;
+    $t = RATEB_NGENIUS_ORDERS_TABLE;
     $regAgency = substr(trim((string) ($input['agency_name'] ?? '')), 0, 255);
     $regAgencyId = substr(trim((string) ($input['agency_id'] ?? '')), 0, 64);
     $regCountryId = isset($input['country_id']) && ctype_digit((string) $input['country_id'])
@@ -578,7 +578,7 @@ function backfillMissingControlRequests($pdo, int $limit = 50): int
     $hasPaymentStatus = ($conn->query("SHOW COLUMNS FROM control_registration_requests LIKE 'payment_status'")->num_rows ?? 0) > 0;
     $hasPaymentMethod = ($conn->query("SHOW COLUMNS FROM control_registration_requests LIKE 'payment_method'")->num_rows ?? 0) > 0;
 
-    $ordersTable = RATIB_NGENIUS_ORDERS_TABLE;
+    $ordersTable = RATEB_NGENIUS_ORDERS_TABLE;
     // Integer LIMIT only: native PDO MySQL prepares (ATTR_EMULATE_PREPARES false) often reject LIMIT :placeholder.
     $lim = max(1, min(500, $limit));
     $stmt = $pdo->prepare(
@@ -734,7 +734,7 @@ function resolvePlanAmount(array $input): array
             'total' => 0.0,
             'plan' => $plan,
             'years' => $years,
-            'checkout_currency' => strtoupper(trim((string) ratib_ngenius_env('NGENIUS_CHECKOUT_CURRENCY', 'SAR'))) ?: 'SAR',
+            'checkout_currency' => strtoupper(trim((string) rateb_ngenius_env('NGENIUS_CHECKOUT_CURRENCY', 'SAR'))) ?: 'SAR',
             'usd_to_sar_rate' => null,
             'message' => 'Please choose Gold or Platinum before payment.',
         ];
@@ -748,7 +748,7 @@ function resolvePlanAmount(array $input): array
             'total' => 0.0,
             'plan' => $plan,
             'years' => $years,
-            'checkout_currency' => strtoupper(trim((string) ratib_ngenius_env('NGENIUS_CHECKOUT_CURRENCY', 'SAR'))) ?: 'SAR',
+            'checkout_currency' => strtoupper(trim((string) rateb_ngenius_env('NGENIUS_CHECKOUT_CURRENCY', 'SAR'))) ?: 'SAR',
             'usd_to_sar_rate' => null,
             'message' => 'Unsupported plan duration selected.',
         ];
@@ -757,7 +757,7 @@ function resolvePlanAmount(array $input): array
     $subtotal = (float) $priceTable[$plan][$years];
     $taxAmount = round($subtotal * TAX_RATE, 2);
     $total = round($subtotal + $taxAmount, 2);
-    $gw = ratib_ngenius_minor_units_from_usd_total($total);
+    $gw = rateb_ngenius_minor_units_from_usd_total($total);
 
     return [
         'ok' => true,
@@ -774,7 +774,7 @@ function resolvePlanAmount(array $input): array
 
 function saveNgeniusReference($pdo, int $orderId, string $reference): void
 {
-    $t = RATIB_NGENIUS_ORDERS_TABLE;
+    $t = RATEB_NGENIUS_ORDERS_TABLE;
     $stmt = $pdo->prepare("UPDATE `{$t}` SET ngenius_order_id = :ref WHERE id = :id");
     $stmt->bindValue(':ref', substr($reference, 0, 128), PDO::PARAM_STR);
     $stmt->bindValue(':id', $orderId, PDO::PARAM_INT);
@@ -785,23 +785,23 @@ if (!function_exists('curl_init')) {
     jsonOut(500, ['message' => 'Payment unavailable: PHP curl extension is not enabled on this server.']);
 }
 
-$apiKey = (string) ratib_ngenius_env('NGENIUS_API_KEY', '');
-$apiSecret = (string) ratib_ngenius_env('NGENIUS_API_SECRET', '');
-$outletId = (string) ratib_ngenius_env('NGENIUS_OUTLET_ID', '');
+$apiKey = (string) rateb_ngenius_env('NGENIUS_API_KEY', '');
+$apiSecret = (string) rateb_ngenius_env('NGENIUS_API_SECRET', '');
+$outletId = (string) rateb_ngenius_env('NGENIUS_OUTLET_ID', '');
 $fallbackBase = NGENIUS_DEFAULT_API_BASE_KSA;
-$identityBase = rtrim((string) ratib_ngenius_env('NGENIUS_IDENTITY_BASE', (string) ratib_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
-$orderBase = rtrim((string) ratib_ngenius_env('NGENIUS_ORDER_BASE', (string) ratib_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
-$tokenUrl = trim((string) ratib_ngenius_env('NGENIUS_TOKEN_URL', ''));
+$identityBase = rtrim((string) rateb_ngenius_env('NGENIUS_IDENTITY_BASE', (string) rateb_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
+$orderBase = rtrim((string) rateb_ngenius_env('NGENIUS_ORDER_BASE', (string) rateb_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
+$tokenUrl = trim((string) rateb_ngenius_env('NGENIUS_TOKEN_URL', ''));
 
 if ($apiKey === '' || $outletId === '') {
-    $ratibRoot = dirname(__DIR__);
-    $ratibDoc = isset($_SERVER['DOCUMENT_ROOT']) ? rtrim((string) $_SERVER['DOCUMENT_ROOT'], "/\\") : '';
+    $ratebRoot = dirname(__DIR__);
+    $ratebDoc = isset($_SERVER['DOCUMENT_ROOT']) ? rtrim((string) $_SERVER['DOCUMENT_ROOT'], "/\\") : '';
     $diag = [
         'has_key' => $apiKey !== '',
         'has_secret' => $apiSecret !== '',
         'has_outlet' => $outletId !== '',
-        'dotenv_project_root' => is_readable($ratibRoot . '/.env'),
-        'dotenv_document_root' => $ratibDoc !== '' && is_readable($ratibDoc . '/.env'),
+        'dotenv_project_root' => is_readable($ratebRoot . '/.env'),
+        'dotenv_document_root' => $ratebDoc !== '' && is_readable($ratebDoc . '/.env'),
         'secrets_config_readable' => is_readable(__DIR__ . '/../config/ngenius.secrets.php'),
         'secrets_env_readable' => is_readable(__DIR__ . '/../config/env/ngenius.secrets.php'),
         'defined_outlet' => defined('NGENIUS_OUTLET_ID'),
@@ -827,7 +827,7 @@ if ($apiKey === '' || $outletId === '') {
     ]);
 }
 
-$ngeniusRealm = trim((string) ratib_ngenius_env('NGENIUS_REALM', 'networkinternational'));
+$ngeniusRealm = trim((string) rateb_ngenius_env('NGENIUS_REALM', 'networkinternational'));
 if ($ngeniusRealm === '') {
     $ngeniusRealm = 'networkinternational';
 }
@@ -916,12 +916,12 @@ try {
     $detail = substr(preg_replace('/\s+/', ' ', $dbErr), 0, 220);
     $payload = [
         'message' => 'Could not record order. Check DB credentials and logs/payment.log.',
-        'backend_release' => RATIB_CREATE_ORDER_RELEASE,
+        'backend_release' => RATEB_CREATE_ORDER_RELEASE,
         'hint' => $hint,
         'detail' => $detail,
     ];
-    if (getenv('RATIB_PAYMENT_DEBUG') === '1'
-        || (isset($_SERVER['RATIB_PAYMENT_DEBUG']) && (string) $_SERVER['RATIB_PAYMENT_DEBUG'] === '1')) {
+    if (getenv('RATEB_PAYMENT_DEBUG') === '1'
+        || (isset($_SERVER['RATEB_PAYMENT_DEBUG']) && (string) $_SERVER['RATEB_PAYMENT_DEBUG'] === '1')) {
         $payload['error'] = $dbErr;
         $payload['origin'] = basename($e->getFile()) . ':' . (string) $e->getLine();
     }
@@ -930,8 +930,8 @@ try {
 
 try {
     $baseUrl = inferBaseUrl();
-    $redirectBase = (string) ratib_ngenius_env('NGENIUS_REDIRECT_URL', $baseUrl . '/api/verify.php');
-    $cancelBase = (string) ratib_ngenius_env('NGENIUS_CANCEL_URL', $baseUrl . '/api/verify.php');
+    $redirectBase = (string) rateb_ngenius_env('NGENIUS_REDIRECT_URL', $baseUrl . '/api/verify.php');
+    $cancelBase = (string) rateb_ngenius_env('NGENIUS_CANCEL_URL', $baseUrl . '/api/verify.php');
     $redirectUrl = appendOrderId($redirectBase, $localOrderId);
     $cancelUrl = appendOrderId($cancelBase, $localOrderId);
 

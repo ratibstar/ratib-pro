@@ -180,7 +180,7 @@ File:
 
 Current rule:
 
-- old Ratib-style staff nav should not advertise customer-owned Client Hub shortcuts
+- old Rateb-style staff nav should not advertise customer-owned Client Hub shortcuts
 - `Client Hub` and `Plans & Services` entries were removed from this old shell
 
 ### Client Hub sidebar
@@ -227,7 +227,7 @@ Customer-facing labels should prefer:
 
 Avoid presenting customer-facing experiences as a detached ecosystem under:
 
-- `Ratib Pro`
+- `Rateb Pro`
 - `Infrastructure Marketplace`
 
 Internal/admin/developer wording may still mention infrastructure, marketplace, or legacy system names where needed for implementation or operations.
@@ -238,7 +238,7 @@ Internal/admin/developer wording may still mention infrastructure, marketplace, 
 
 These are not current ownership bugs by themselves:
 
-- internal comments, diagnostics, migration names, and env constants that still mention `Ratib Pro`
+- internal comments, diagnostics, migration names, and env constants that still mention `Rateb Pro`
 - compatibility wrappers that still exist for deep links or embeds
 - old main-app pages that remain functional outside control mode
 

@@ -40,7 +40,7 @@ function rateb_mobile_json(array $payload, int $status = 200): void
  */
 function rateb_mobile_is_production(): bool
 {
-    if (defined('RATIB_ENV') && strtolower((string) RATIB_ENV) === 'production') {
+    if (defined('RATEB_ENV') && strtolower((string) RATEB_ENV) === 'production') {
         return true;
     }
     if (defined('APP_ENV') && strtolower((string) APP_ENV) === 'production') {
@@ -56,7 +56,7 @@ function rateb_mobile_is_production(): bool
         return false;
     }
 
-    return str_contains($host, 'rateb.sa') || str_contains($host, 'ratib.sa');
+    return str_contains($host, 'rateb.sa') || str_contains($host, 'rateb.sa');
 }
 
 /**

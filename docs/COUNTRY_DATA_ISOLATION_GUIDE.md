@@ -12,27 +12,27 @@ Each country has its own database. Different DB = different data. No code change
 
 | Country   | Database     | URL                    |
 |-----------|--------------|-------------------------|
-| Bangladesh| outratib_bd  | bangladesh.rateb.sa |
-| Main      | outratib_out | rateb.sa            |
+| Bangladesh| admin_bd  | bangladesh.rateb.sa |
+| Main      | admin_out | rateb.sa            |
 
 **Steps:**
 
-1. **Create a new database in cPanel** for Bangladesh (e.g. `outratib_bd`).
+1. **Create a new database in cPanel** for Bangladesh (e.g. `admin_bd`).
 
-2. **Copy structure and data** from `outratib_out`:
-   - In phpMyAdmin: Export `outratib_out` → Import into `outratib_bd`
+2. **Copy structure and data** from `admin_out`:
+   - In phpMyAdmin: Export `admin_out` → Import into `admin_bd`
    - Or: Export structure only, then copy only Bangladesh rows (where `country_id = 1`)
 
 3. **Update `control_agencies`** in phpMyAdmin:
    ```sql
    UPDATE control_agencies 
-   SET db_name = 'outratib_bd', db_user = 'your_bd_user', db_pass = 'your_bd_pass' 
+   SET db_name = 'admin_bd', db_user = 'your_bd_user', db_pass = 'your_bd_pass' 
    WHERE country_id = 1 AND slug = 'bangladesh';
    ```
 
-4. **Create DB user** in cPanel for `outratib_bd` and use those credentials in the UPDATE above.
+4. **Create DB user** in cPanel for `admin_bd` and use those credentials in the UPDATE above.
 
-5. **Result:** When users visit `bangladesh.rateb.sa`, they use `outratib_bd`. When they visit `rateb.sa`, they use `outratib_out`. Complete isolation.
+5. **Result:** When users visit `bangladesh.rateb.sa`, they use `admin_bd`. When they visit `rateb.sa`, they use `admin_out`. Complete isolation.
 
 ---
 
@@ -67,19 +67,19 @@ Use **Option A (separate database per country)**. It gives:
 ### 1. Create Bangladesh database
 
 In cPanel → MySQL Databases:
-- Create database: `outratib_bd`
-- Create user and assign to `outratib_bd` with ALL PRIVILEGES
+- Create database: `admin_bd`
+- Create user and assign to `admin_bd` with ALL PRIVILEGES
 
 ### 2. Copy data
 
 In phpMyAdmin:
-- Select `outratib_out` → Export (structure + data)
-- Select `outratib_bd` → Import
+- Select `admin_out` → Export (structure + data)
+- Select `admin_bd` → Import
 
 Or, to copy only Bangladesh data:
 ```sql
--- Run in outratib_out, export result
--- Then run in outratib_bd
+-- Run in admin_out, export result
+-- Then run in admin_bd
 -- (Tables need country_id - agents, workers, etc.)
 ```
 
@@ -87,8 +87,8 @@ Or, to copy only Bangladesh data:
 
 ```sql
 UPDATE control_agencies 
-SET db_name = 'outratib_bd', 
-    db_user = 'outratib_bd', 
+SET db_name = 'admin_bd', 
+    db_user = 'admin_bd', 
     db_pass = 'your_password_here' 
 WHERE country_id = 1;
 ```

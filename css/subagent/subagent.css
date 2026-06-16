@@ -3615,14 +3615,14 @@ body.modal-open {
 
 /* Final desktop layout guard: keep SubAgent content outside left navbar */
 @media (min-width: 1025px) {
-    body.ratib-app .content-wrapper:has(.subagent-container) {
+    body.rateb-app .content-wrapper:has(.subagent-container) {
         margin-left: 240px !important;
         width: calc(100% - 240px) !important;
         max-width: calc(100% - 240px) !important;
         box-sizing: border-box !important;
     }
 
-    body.ratib-app .content-wrapper:has(.subagent-container) .subagent-container {
+    body.rateb-app .content-wrapper:has(.subagent-container) .subagent-container {
         margin-left: 0 !important;
         width: 100% !important;
         max-width: 100% !important;

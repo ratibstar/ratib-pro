@@ -10,14 +10,14 @@
  * after core/bootstrap.php so Database + $GLOBALS['conn'] exist when available.
  *
  * - getTenantDB(): tenant PDO when domain middleware set REQUEST_TENANT_ID, else app default (mysqli|PDO).
- * - ratib_app_default_db_connection(): always the legacy app connection (never TenantDatabaseManager).
+ * - rateb_app_default_db_connection(): always the legacy app connection (never TenantDatabaseManager).
  */
 
-if (!function_exists('ratib_app_default_db_connection')) {
+if (!function_exists('rateb_app_default_db_connection')) {
     /**
      * @return PDO|mysqli
      */
-    function ratib_app_default_db_connection()
+    function rateb_app_default_db_connection()
     {
         if (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
             return $GLOBALS['conn'];
@@ -43,7 +43,7 @@ if (!function_exists('getTenantDB')) {
 
         // Preserve system/admin behavior: system context uses existing default DB.
         if (TenantExecutionContext::isInitialized() && TenantExecutionContext::isSystemContext()) {
-            return ratib_app_default_db_connection();
+            return rateb_app_default_db_connection();
         }
 
         if (!class_exists('TenantDatabaseManager', false)) {

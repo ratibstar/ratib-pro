@@ -47,7 +47,7 @@ Use this checklist so **new control-panel operators** know **where to go**, **wh
 
 ## Tab: Providers
 
-**Purpose:** **Provider integrations** — JSON health/capability snapshots and **database activations** (`ratib_infra_provider_activations`) for which adapter classes are enabled.
+**Purpose:** **Provider integrations** — JSON health/capability snapshots and **database activations** (`rateb_infra_provider_activations`) for which adapter classes are enabled.
 
 | Step | Check |
 |------|--------|

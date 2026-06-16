@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\Queue;
+namespace RATEB\InfrastructureMarketplace\Provisioning\Queue;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\QueueDispatcherInterface;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\QueueDispatcherInterface;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
 
 final class DatabaseQueueDispatcher implements QueueDispatcherInterface
 {

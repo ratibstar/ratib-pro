@@ -24,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Controllers\HealthController;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Controllers\HealthController;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('health', ControlSecurityGuard::TIER_PUBLIC_READ);
 

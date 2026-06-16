@@ -10,8 +10,8 @@
 
     function refreshStaffMode() {
         staffCfg =
-            typeof window !== 'undefined' && window.RATIB_PARTNER_DOCS_STAFF && window.RATIB_PARTNER_DOCS_STAFF.partner_agency_id
-                ? window.RATIB_PARTNER_DOCS_STAFF
+            typeof window !== 'undefined' && window.RATEB_PARTNER_DOCS_STAFF && window.RATEB_PARTNER_DOCS_STAFF.partner_agency_id
+                ? window.RATEB_PARTNER_DOCS_STAFF
                 : null;
         staffMode = !!staffCfg;
     }
@@ -31,7 +31,7 @@
     let selectedDocKeys = new Set();
 
     /** After history.back() from Worker.php, reopen modal without a full reload (see worker-form.js). */
-    const PP_REOPEN_MODAL_STORAGE_KEY = 'ratib_pp_reopen_worker_modal_v1';
+    const PP_REOPEN_MODAL_STORAGE_KEY = 'rateb_pp_reopen_worker_modal_v1';
     const PP_REOPEN_MODAL_MAX_AGE_MS = 10 * 60 * 1000;
 
     function $(id) {
@@ -2266,8 +2266,8 @@
         return true;
     }
 
-    if (typeof window !== 'undefined' && !window.__ratibPartnerDocsStaffPageshow) {
-        window.__ratibPartnerDocsStaffPageshow = true;
+    if (typeof window !== 'undefined' && !window.__ratebPartnerDocsStaffPageshow) {
+        window.__ratebPartnerDocsStaffPageshow = true;
         window.addEventListener('pageshow', (ev) => {
             if (!ev.persisted) return;
             try {

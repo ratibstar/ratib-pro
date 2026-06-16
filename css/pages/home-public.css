@@ -8,11 +8,11 @@
   scroll-margin-top: 170px;
 }
 
-.ratib-home-domains-embed {
+.rateb-home-domains-embed {
   margin-top: 4px;
 }
 
-.ratib-home-domains-embed__frame {
+.rateb-home-domains-embed__frame {
   display: block;
   width: 100%;
   min-height: min(720px, 85vh);
@@ -41,10 +41,10 @@
   --r-radius-sm: 10px;
   --r-space: clamp(1rem, 3vw, 2rem);
   --r-max: 1540px;
-  --ratib-pink: #c94868;
-  --ratib-yellow: #d9a428;
-  --ratib-dark: #1e293b;
-  --ratib-darker: #0f172a;
+  --rateb-pink: #c94868;
+  --rateb-yellow: #d9a428;
+  --rateb-dark: #1e293b;
+  --rateb-darker: #0f172a;
 }
 
 *,
@@ -58,7 +58,7 @@ html {
   overflow-x: clip;
 }
 
-body.ratib-saas-home {
+body.rateb-saas-home {
   margin: 0;
   min-height: 100vh;
   font-family: var(--r-font);
@@ -67,7 +67,7 @@ body.ratib-saas-home {
   -webkit-font-smoothing: antialiased;
 }
 
-.ratib-saas-bg {
+.rateb-saas-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -75,7 +75,7 @@ body.ratib-saas-home {
   overflow: hidden;
 }
 
-.ratib-saas-bg__gradient {
+.rateb-saas-bg__gradient {
   position: absolute;
   inset: 0;
   background:
@@ -85,7 +85,7 @@ body.ratib-saas-home {
     linear-gradient(180deg, #070b14 0%, #0d1324 40%, #070b14 100%);
 }
 
-.ratib-saas-bg__grid {
+.rateb-saas-bg__grid {
   position: absolute;
   inset: 0;
   opacity: 0.14;
@@ -94,10 +94,10 @@ body.ratib-saas-home {
     linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 10%, transparent 70%);
-  animation: ratibGridDrift 80s linear infinite;
+  animation: ratebGridDrift 80s linear infinite;
 }
 
-@keyframes ratibGridDrift {
+@keyframes ratebGridDrift {
   0% {
     transform: translate(0, 0);
   }
@@ -106,15 +106,15 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-saas-bg__orb {
+.rateb-saas-bg__orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(80px);
   opacity: 0.34;
-  animation: ratibOrbFloat 18s ease-in-out infinite;
+  animation: ratebOrbFloat 18s ease-in-out infinite;
 }
 
-.ratib-saas-bg__orb--a {
+.rateb-saas-bg__orb--a {
   width: 420px;
   height: 420px;
   left: -120px;
@@ -122,7 +122,7 @@ body.ratib-saas-home {
   background: rgba(124, 98, 200, 0.22);
 }
 
-.ratib-saas-bg__orb--b {
+.rateb-saas-bg__orb--b {
   width: 360px;
   height: 360px;
   right: -100px;
@@ -131,7 +131,7 @@ body.ratib-saas-home {
   animation-delay: -7s;
 }
 
-@keyframes ratibOrbFloat {
+@keyframes ratebOrbFloat {
   0%,
   100% {
     transform: translate(0, 0) scale(1);
@@ -141,7 +141,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-container {
+.rateb-container {
   width: 100%;
   max-width: var(--r-max);
   margin: 0 auto;
@@ -150,7 +150,7 @@ body.ratib-saas-home {
 }
 
 /* Sticky site header: topbar + main nav stay visible while scrolling (not fixed — avoids gap/scroll bugs) */
-.ratib-public-header-pin {
+.rateb-public-header-pin {
   position: sticky;
   top: 0;
   left: 0;
@@ -162,19 +162,19 @@ body.ratib-saas-home {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
-.ratib-public-header-pin .ratib-topbar {
+.rateb-public-header-pin .rateb-topbar {
   position: relative;
   z-index: 2;
 }
 
-.ratib-public-header-pin .ratib-nav-shell {
+.rateb-public-header-pin .rateb-nav-shell {
   position: relative;
   top: auto;
   z-index: 1;
 }
 
 /* Topbar — taller, glass, spectrum edge */
-.ratib-topbar {
+.rateb-topbar {
   position: relative;
   z-index: 60;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
@@ -187,7 +187,7 @@ body.ratib-saas-home {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
-.ratib-topbar::after {
+.rateb-topbar::after {
   content: "";
   position: absolute;
   left: 0;
@@ -206,7 +206,7 @@ body.ratib-saas-home {
   pointer-events: none;
 }
 
-.ratib-topbar__inner {
+.rateb-topbar__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -217,15 +217,15 @@ body.ratib-saas-home {
   font-size: 0.835rem;
 }
 
-.ratib-topbar__left,
-.ratib-topbar__right {
+.rateb-topbar__left,
+.rateb-topbar__right {
   display: flex;
   align-items: center;
   gap: 1.25rem;
   flex-wrap: wrap;
 }
 
-.ratib-topbar__link {
+.rateb-topbar__link {
   color: var(--r-muted);
   text-decoration: none;
   display: inline-flex;
@@ -240,33 +240,33 @@ body.ratib-saas-home {
     box-shadow 0.2s ease;
 }
 
-.ratib-topbar__link[href^="tel:"] {
+.rateb-topbar__link[href^="tel:"] {
   color: rgba(165, 243, 252, 0.92);
 }
 
-.ratib-topbar__link[href^="tel:"]:hover {
+.rateb-topbar__link[href^="tel:"]:hover {
   color: #ecfeff;
   background: rgba(34, 211, 238, 0.12);
   box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.35);
 }
 
-.ratib-topbar__link[href*="customer-portal"] {
+.rateb-topbar__link[href*="customer-portal"] {
   color: rgba(253, 224, 200, 0.95);
 }
 
-.ratib-topbar__link[href*="customer-portal"]:hover {
+.rateb-topbar__link[href*="customer-portal"]:hover {
   color: #fff7ed;
   background: linear-gradient(135deg, rgba(251, 146, 60, 0.18), rgba(249, 115, 22, 0.12));
   box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.45);
 }
 
 /* Isolate phone display from adjacent digit runs (Unicode bidi; Arabic OS / mixed numerals). */
-.ratib-topbar__phone-text {
+.rateb-topbar__phone-text {
   unicode-bidi: isolate;
   direction: ltr;
 }
 
-.ratib-topbar__wa {
+.rateb-topbar__wa {
   color: #4ade80;
   text-decoration: none;
   display: inline-flex;
@@ -285,23 +285,23 @@ body.ratib-saas-home {
     border-color 0.2s ease;
 }
 
-.ratib-topbar__wa:hover {
+.rateb-topbar__wa:hover {
   color: #ecfdf5;
   border-color: rgba(52, 211, 153, 0.55);
   box-shadow: 0 0 28px rgba(52, 211, 153, 0.22);
   transform: translateY(-1px);
 }
 
-.ratib-live-dot {
+.rateb-live-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #34d399;
   box-shadow: 0 0 12px rgba(52, 211, 153, 0.8);
-  animation: ratibPulseDot 2s ease infinite;
+  animation: ratebPulseDot 2s ease infinite;
 }
 
-@keyframes ratibPulseDot {
+@keyframes ratebPulseDot {
   0%,
   100% {
     opacity: 1;
@@ -311,7 +311,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-topbar__lang {
+.rateb-topbar__lang {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -322,27 +322,27 @@ body.ratib-saas-home {
   border: 1px solid rgba(129, 140, 248, 0.25);
 }
 
-.ratib-lang {
+.rateb-lang {
   color: var(--r-muted);
   text-decoration: none;
   font-weight: 500;
 }
 
-.ratib-lang--active {
+.rateb-lang--active {
   color: #e0e7ff;
   font-weight: 600;
 }
 
-.ratib-lang:hover {
+.rateb-lang:hover {
   color: #f8fafc;
 }
 
-.ratib-lang-sep {
+.rateb-lang-sep {
   opacity: 0.4;
 }
 
-/* Main nav — glass band + spectrum wash (pinned with topbar via .ratib-public-header-pin) */
-.ratib-nav-shell {
+/* Main nav — glass band + spectrum wash (pinned with topbar via .rateb-public-header-pin) */
+.rateb-nav-shell {
   position: relative;
   z-index: 50;
   transition:
@@ -359,7 +359,7 @@ body.ratib-saas-home {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
 }
 
-.ratib-nav-shell.is-scrolled {
+.rateb-nav-shell.is-scrolled {
   background:
     linear-gradient(180deg, rgba(5, 8, 18, 0.94) 0%, rgba(5, 8, 22, 0.9) 100%),
     radial-gradient(ellipse 80% 100% at 20% 0%, rgba(124, 98, 200, 0.12), transparent 45%);
@@ -370,7 +370,7 @@ body.ratib-saas-home {
     0 1px 0 rgba(255, 255, 255, 0.05) inset;
 }
 
-.ratib-nav-shell__inner {
+.rateb-nav-shell__inner {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -380,7 +380,7 @@ body.ratib-saas-home {
 }
 
 @media (min-width: 1100px) {
-  .ratib-nav-shell__inner {
+  .rateb-nav-shell__inner {
     align-items: center;
     min-height: 0;
     padding-block: 0.55rem;
@@ -388,7 +388,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-nav__brand-block {
+.rateb-nav__brand-block {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -398,13 +398,13 @@ body.ratib-saas-home {
   max-width: min(20rem, 44vw);
 }
 
-.ratib-nav__brand-block--row {
+.rateb-nav__brand-block--row {
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
 }
 
-.ratib-nav__brand-block--animated {
+.rateb-nav__brand-block--animated {
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
@@ -421,7 +421,7 @@ body.ratib-saas-home {
   backdrop-filter: blur(8px);
 }
 
-.ratib-nav__brand {
+.rateb-nav__brand {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
@@ -431,7 +431,7 @@ body.ratib-saas-home {
   letter-spacing: -0.02em;
 }
 
-.ratib-nav__brand--animated-title {
+.rateb-nav__brand--animated-title {
   display: block;
   width: auto;
   max-width: 100%;
@@ -440,7 +440,7 @@ body.ratib-saas-home {
   border-radius: 0;
 }
 
-.ratib-nav__brand-profile {
+.rateb-nav__brand-profile {
   display: inline-flex;
   align-items: center;
   align-self: center;
@@ -459,33 +459,33 @@ body.ratib-saas-home {
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.ratib-nav__brand-profile:hover,
-.ratib-nav__brand-profile:focus-visible {
+.rateb-nav__brand-profile:hover,
+.rateb-nav__brand-profile:focus-visible {
   color: rgba(226, 232, 240, 0.92);
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.14);
 }
 
-.ratib-nav__brand-profile.is-current {
+.rateb-nav__brand-profile.is-current {
   color: rgba(226, 232, 240, 0.95);
   background: rgba(139, 126, 200, 0.12);
   border-color: rgba(139, 126, 200, 0.28);
   box-shadow: none;
 }
 
-.ratib-nav__brand img {
+.rateb-nav__brand img {
   display: block;
   height: 40px;
   width: auto;
   filter: drop-shadow(0 0 14px rgba(139, 92, 246, 0.35));
 }
 
-.ratib-nav__brand-text {
+.rateb-nav__brand-text {
   font-size: 1.05rem;
 }
 
 @media (min-width: 900px) {
-  .ratib-nav__brand-text {
+  .rateb-nav__brand-text {
     display: inline;
     font-size: 0.95rem;
     line-height: 1.1;
@@ -496,7 +496,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-nav__toggle {
+.rateb-nav__toggle {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -511,7 +511,7 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(139, 92, 246, 0.18);
 }
 
-.ratib-nav__toggle span {
+.rateb-nav__toggle span {
   display: block;
   height: 2px;
   width: 20px;
@@ -521,12 +521,12 @@ body.ratib-saas-home {
 }
 
 @media (min-width: 1100px) {
-  .ratib-nav__toggle {
+  .rateb-nav__toggle {
     display: none;
   }
 }
 
-.ratib-nav__menu {
+.rateb-nav__menu {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -536,7 +536,7 @@ body.ratib-saas-home {
 
 /* Wide desktops: wrap to multiple rows — no horizontal scrollbar; links stay readable at full width. */
 @media (min-width: 1100px) {
-  .ratib-nav__menu {
+  .rateb-nav__menu {
     min-width: 0;
     justify-content: center;
     align-content: center;
@@ -548,7 +548,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-nav__link {
+.rateb-nav__link {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -568,7 +568,7 @@ body.ratib-saas-home {
     transform 0.18s ease;
 }
 
-.ratib-nav__icon {
+.rateb-nav__icon {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -588,7 +588,7 @@ body.ratib-saas-home {
     background 0.2s ease;
 }
 
-.ratib-nav__glyph {
+.rateb-nav__glyph {
   width: 1.42rem;
   height: 1.42rem;
   display: block;
@@ -596,26 +596,26 @@ body.ratib-saas-home {
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
-.ratib-nav__link--product-tour .ratib-nav__glyph {
+.rateb-nav__link--product-tour .rateb-nav__glyph {
   width: 1.52rem;
   height: 1.52rem;
 }
 
-.ratib-nav__link:hover .ratib-nav__icon {
+.rateb-nav__link:hover .rateb-nav__icon {
   transform: scale(1.07) translateY(-1px);
 }
 
-.ratib-nav__label {
+.rateb-nav__label {
   white-space: nowrap;
 }
 
 @media (min-width: 1100px) {
-  .ratib-nav-shell .ratib-nav__platform-links {
+  .rateb-nav-shell .rateb-nav__platform-links {
     row-gap: 0.28rem;
     column-gap: 0.28rem;
   }
 
-  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__link {
+  .rateb-nav-shell .rateb-nav__platform-links .rateb-nav__link {
     font-size: 0.8rem;
     font-weight: 600;
     padding: 0.32rem 0.52rem 0.32rem 0.38rem;
@@ -626,180 +626,180 @@ body.ratib-saas-home {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
   }
 
-  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__link:hover {
+  .rateb-nav-shell .rateb-nav__platform-links .rateb-nav__link:hover {
     border-color: rgba(124, 98, 200, 0.35);
     background: rgba(124, 98, 200, 0.1);
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
   }
 
-  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__icon {
+  .rateb-nav-shell .rateb-nav__platform-links .rateb-nav__icon {
     width: 2.08rem;
     height: 2.08rem;
     border-radius: 12px;
     font-size: 1.05rem;
   }
 
-  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__glyph {
+  .rateb-nav-shell .rateb-nav__platform-links .rateb-nav__glyph {
     width: 1.16rem;
     height: 1.16rem;
   }
 
-  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__link--product-tour .ratib-nav__glyph {
+  .rateb-nav-shell .rateb-nav__platform-links .rateb-nav__link--product-tour .rateb-nav__glyph {
     width: 1.22rem;
     height: 1.22rem;
   }
 }
 
 /* Nav semantic map (meaning → color): Platform · video media · agency · Features · Solutions · Programs (#programs) · Agencies · Tracking · Visibility · API · Contact · Partner */
-@keyframes ratibSemanticPulse {
+@keyframes ratebSemanticPulse {
   0%,
   100% {
     filter: brightness(1) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
   }
   50% {
-    filter: brightness(1.04) drop-shadow(0 0 10px var(--ratib-pulse, rgba(148, 163, 184, 0.28)));
+    filter: brightness(1.04) drop-shadow(0 0 10px var(--rateb-pulse, rgba(148, 163, 184, 0.28)));
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   /* Subtle idle shimmer — calmer than full pulse on every icon */
-  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__icon {
-    animation: ratibSemanticPulse 5.5s ease-in-out infinite;
+  .rateb-nav-shell .rateb-nav__platform-links .rateb-nav__icon {
+    animation: ratebSemanticPulse 5.5s ease-in-out infinite;
   }
 
-  .ratib-nav__platform-links .ratib-nav__link:nth-child(1) .ratib-nav__icon {
+  .rateb-nav__platform-links .rateb-nav__link:nth-child(1) .rateb-nav__icon {
     animation-delay: 0s;
   }
-  .ratib-nav__platform-links .ratib-nav__link:nth-child(2) .ratib-nav__icon {
+  .rateb-nav__platform-links .rateb-nav__link:nth-child(2) .rateb-nav__icon {
     animation-delay: 0.2s;
   }
-  .ratib-nav__platform-links .ratib-nav__link:nth-child(3) .ratib-nav__icon {
+  .rateb-nav__platform-links .rateb-nav__link:nth-child(3) .rateb-nav__icon {
     animation-delay: 0.4s;
   }
-  .ratib-nav__platform-links .ratib-nav__link:nth-child(4) .ratib-nav__icon {
+  .rateb-nav__platform-links .rateb-nav__link:nth-child(4) .rateb-nav__icon {
     animation-delay: 0.6s;
   }
-  .ratib-nav__platform-links .ratib-nav__link:nth-child(5) .ratib-nav__icon {
+  .rateb-nav__platform-links .rateb-nav__link:nth-child(5) .rateb-nav__icon {
     animation-delay: 0.8s;
   }
-  .ratib-nav__platform-links .ratib-nav__link:nth-child(6) .ratib-nav__icon {
+  .rateb-nav__platform-links .rateb-nav__link:nth-child(6) .rateb-nav__icon {
     animation-delay: 1s;
   }
 
-  .ratib-nav__partner-icon {
-    animation: ratibSemanticPulse 5.5s ease-in-out infinite;
+  .rateb-nav__partner-icon {
+    animation: ratebSemanticPulse 5.5s ease-in-out infinite;
     animation-delay: 1.1s;
-    --ratib-pulse: rgba(245, 158, 11, 0.45);
+    --rateb-pulse: rgba(245, 158, 11, 0.45);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__icon,
-  .ratib-nav__partner-icon {
+  .rateb-nav-shell .rateb-nav__platform-links .rateb-nav__icon,
+  .rateb-nav__partner-icon {
     animation: none;
   }
 }
 
 /* Tab label tints at rest */
-.ratib-nav__link:is([href="#platform"], [href$="#platform"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#platform"], [href$="#platform"]) .rateb-nav__label {
   color: #bae6fd;
 }
 
-.ratib-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]) .rateb-nav__label {
   color: #a7f3d0;
 }
 
-.ratib-nav__link:is([href="#features"], [href$="#features"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#features"], [href$="#features"]) .rateb-nav__label {
   color: #e0e7ff;
 }
 
-.ratib-nav__link:is([href="#solutions"], [href$="#solutions"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#solutions"], [href$="#solutions"]) .rateb-nav__label {
   color: #ffedd5;
 }
 
-.ratib-nav__link:is([href="#programs"], [href$="#programs"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#programs"], [href$="#programs"]) .rateb-nav__label {
   color: #fef3c7;
 }
 
-.ratib-nav__link:is([href="#agencies"], [href$="#agencies"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#agencies"], [href$="#agencies"]) .rateb-nav__label {
   color: #dbeafe;
 }
 
-.ratib-nav__link:is([href="#tracking"], [href$="#tracking"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#tracking"], [href$="#tracking"]) .rateb-nav__label {
   color: #ccfbf1;
 }
 
-.ratib-nav__link:is([href="#operational"], [href$="#operational"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#operational"], [href$="#operational"]) .rateb-nav__label {
   color: #fef08a;
 }
 
-.ratib-nav__link:is([href="#api"], [href$="#api"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#api"], [href$="#api"]) .rateb-nav__label {
   color: #ecfccb;
 }
 
-.ratib-nav__link:is([href="#contact"], [href$="#contact"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#contact"], [href$="#contact"]) .rateb-nav__label {
   color: #fecdd3;
 }
 
-.ratib-nav__link--product-tour .ratib-nav__label {
+.rateb-nav__link--product-tour .rateb-nav__label {
   color: #fae8ff;
 }
 
-/* Per-section icon tiles + pulse hue (CSS var --ratib-pulse on each tile) */
-.ratib-nav__link:is([href="#platform"], [href$="#platform"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(56, 189, 248, 0.55);
+/* Per-section icon tiles + pulse hue (CSS var --rateb-pulse on each tile) */
+.rateb-nav__link:is([href="#platform"], [href$="#platform"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(56, 189, 248, 0.55);
   color: #e0f2fe;
   background: linear-gradient(145deg, rgba(14, 165, 233, 0.45), rgba(12, 74, 110, 0.78));
   border-color: rgba(56, 189, 248, 0.55);
   box-shadow: 0 6px 22px rgba(56, 189, 248, 0.3);
 }
 
-.ratib-nav__link:is([href="#platform"], [href$="#platform"]):hover {
+.rateb-nav__link:is([href="#platform"], [href$="#platform"]):hover {
   color: #f0f9ff;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(8, 47, 73, 0.12));
   border-color: rgba(125, 211, 252, 0.45);
   box-shadow: 0 0 26px rgba(56, 189, 248, 0.2);
 }
 
-.ratib-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(52, 211, 153, 0.5);
+.rateb-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(52, 211, 153, 0.5);
   color: #ecfdf5;
   background: linear-gradient(145deg, rgba(16, 185, 129, 0.48), rgba(6, 78, 59, 0.72));
   border-color: rgba(52, 211, 153, 0.55);
   box-shadow: 0 6px 22px rgba(52, 211, 153, 0.26);
 }
 
-.ratib-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]):hover {
+.rateb-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]):hover {
   color: #ecfdf5;
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(6, 95, 70, 0.12));
   border-color: rgba(110, 231, 183, 0.45);
   box-shadow: 0 0 24px rgba(52, 211, 153, 0.18);
 }
 
-.ratib-nav__link:is([href="#features"], [href$="#features"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(99, 102, 241, 0.55);
+.rateb-nav__link:is([href="#features"], [href$="#features"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(99, 102, 241, 0.55);
   color: #eef2ff;
   background: linear-gradient(145deg, rgba(79, 70, 229, 0.52), rgba(49, 46, 129, 0.72));
   border-color: rgba(129, 140, 248, 0.55);
   box-shadow: 0 6px 22px rgba(99, 102, 241, 0.28);
 }
 
-.ratib-nav__link:is([href="#features"], [href$="#features"]):hover {
+.rateb-nav__link:is([href="#features"], [href$="#features"]):hover {
   color: #eef2ff;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(55, 48, 163, 0.12));
   border-color: rgba(165, 180, 252, 0.45);
   box-shadow: 0 0 26px rgba(99, 102, 241, 0.22);
 }
 
-.ratib-nav__link:is([href="#solutions"], [href$="#solutions"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(249, 115, 22, 0.5);
+.rateb-nav__link:is([href="#solutions"], [href$="#solutions"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(249, 115, 22, 0.5);
   color: #fff7ed;
   background: linear-gradient(145deg, rgba(249, 115, 22, 0.48), rgba(124, 45, 18, 0.62));
   border-color: rgba(251, 146, 60, 0.55);
   box-shadow: 0 6px 22px rgba(249, 115, 22, 0.26);
 }
 
-.ratib-nav__link:is([href="#solutions"], [href$="#solutions"]):hover {
+.rateb-nav__link:is([href="#solutions"], [href$="#solutions"]):hover {
   color: #fff7ed;
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(154, 52, 18, 0.12));
   border-color: rgba(253, 186, 116, 0.48);
@@ -807,45 +807,45 @@ body.ratib-saas-home {
 }
 
 /* Programs (#programs) — icon tile; label from CMS (default "Programs") */
-.ratib-nav__link:is([href="#programs"], [href$="#programs"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(245, 158, 11, 0.55);
+.rateb-nav__link:is([href="#programs"], [href$="#programs"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(245, 158, 11, 0.55);
   color: #fffbeb;
   background: linear-gradient(145deg, rgba(245, 158, 11, 0.48), rgba(120, 53, 15, 0.68));
   border-color: rgba(251, 191, 36, 0.58);
   box-shadow: 0 6px 22px rgba(245, 158, 11, 0.28);
 }
 
-.ratib-nav__link:is([href="#programs"], [href$="#programs"]):hover {
+.rateb-nav__link:is([href="#programs"], [href$="#programs"]):hover {
   color: #fffbeb;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(146, 64, 14, 0.14));
   border-color: rgba(253, 224, 71, 0.5);
   box-shadow: 0 0 26px rgba(245, 158, 11, 0.22);
 }
 
-.ratib-nav__link:is([href="#agencies"], [href$="#agencies"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(59, 130, 246, 0.52);
+.rateb-nav__link:is([href="#agencies"], [href$="#agencies"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(59, 130, 246, 0.52);
   color: #eff6ff;
   background: linear-gradient(145deg, rgba(37, 99, 235, 0.48), rgba(23, 37, 84, 0.78));
   border-color: rgba(96, 165, 250, 0.55);
   box-shadow: 0 6px 22px rgba(59, 130, 246, 0.28);
 }
 
-.ratib-nav__link:is([href="#agencies"], [href$="#agencies"]):hover {
+.rateb-nav__link:is([href="#agencies"], [href$="#agencies"]):hover {
   color: #eff6ff;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(30, 58, 138, 0.12));
   border-color: rgba(147, 197, 253, 0.45);
   box-shadow: 0 0 24px rgba(59, 130, 246, 0.2);
 }
 
-.ratib-nav__link:is([href="#tracking"], [href$="#tracking"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(20, 184, 166, 0.52);
+.rateb-nav__link:is([href="#tracking"], [href$="#tracking"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(20, 184, 166, 0.52);
   color: #f0fdfa;
   background: linear-gradient(145deg, rgba(13, 148, 136, 0.48), rgba(15, 118, 110, 0.72));
   border-color: rgba(45, 212, 191, 0.55);
   box-shadow: 0 6px 22px rgba(20, 184, 166, 0.26);
 }
 
-.ratib-nav__link:is([href="#tracking"], [href$="#tracking"]):hover {
+.rateb-nav__link:is([href="#tracking"], [href$="#tracking"]):hover {
   color: #f0fdfa;
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.16), rgba(15, 118, 110, 0.12));
   border-color: rgba(94, 234, 212, 0.45);
@@ -853,45 +853,45 @@ body.ratib-saas-home {
 }
 
 /* Visibility — CMS label often "Visibility"; section #operational */
-.ratib-nav__link:is([href="#operational"], [href$="#operational"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(234, 179, 8, 0.48);
+.rateb-nav__link:is([href="#operational"], [href$="#operational"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(234, 179, 8, 0.48);
   color: #fefce8;
   background: linear-gradient(145deg, rgba(234, 179, 8, 0.42), rgba(113, 63, 18, 0.62));
   border-color: rgba(250, 204, 21, 0.55);
   box-shadow: 0 6px 22px rgba(234, 179, 8, 0.22);
 }
 
-.ratib-nav__link:is([href="#operational"], [href$="#operational"]):hover {
+.rateb-nav__link:is([href="#operational"], [href$="#operational"]):hover {
   color: #fefce8;
   background: linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(113, 63, 18, 0.12));
   border-color: rgba(253, 224, 71, 0.48);
   box-shadow: 0 0 26px rgba(234, 179, 8, 0.2);
 }
 
-.ratib-nav__link:is([href="#api"], [href$="#api"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(163, 230, 53, 0.48);
+.rateb-nav__link:is([href="#api"], [href$="#api"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(163, 230, 53, 0.48);
   color: #f7fee7;
   background: linear-gradient(145deg, rgba(101, 163, 13, 0.52), rgba(28, 69, 17, 0.72));
   border-color: rgba(163, 230, 53, 0.5);
   box-shadow: 0 6px 22px rgba(132, 204, 22, 0.24);
 }
 
-.ratib-nav__link:is([href="#api"], [href$="#api"]):hover {
+.rateb-nav__link:is([href="#api"], [href$="#api"]):hover {
   color: #f7fee7;
   background: linear-gradient(135deg, rgba(163, 230, 53, 0.16), rgba(63, 98, 18, 0.12));
   border-color: rgba(217, 249, 157, 0.45);
   box-shadow: 0 0 24px rgba(163, 230, 53, 0.18);
 }
 
-.ratib-nav__link:is([href="#contact"], [href$="#contact"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(251, 113, 133, 0.52);
+.rateb-nav__link:is([href="#contact"], [href$="#contact"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(251, 113, 133, 0.52);
   color: #fff1f2;
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.48), rgba(136, 19, 55, 0.68));
   border-color: rgba(253, 164, 175, 0.55);
   box-shadow: 0 6px 22px rgba(251, 113, 133, 0.26);
 }
 
-.ratib-nav__link:is([href="#contact"], [href$="#contact"]):hover {
+.rateb-nav__link:is([href="#contact"], [href$="#contact"]):hover {
   color: #fff1f2;
   background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(159, 18, 57, 0.12));
   border-color: rgba(254, 205, 211, 0.48);
@@ -899,30 +899,30 @@ body.ratib-saas-home {
 }
 
 /* Infrastructure marketplace entry points (absolute URLs in chrome) */
-.ratib-nav__link:is([href*="marketplace/index.php"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(167, 139, 250, 0.55);
+.rateb-nav__link:is([href*="marketplace/index.php"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(167, 139, 250, 0.55);
   color: #f5f3ff;
   background: linear-gradient(145deg, rgba(139, 92, 246, 0.55), rgba(67, 56, 202, 0.65));
   border-color: rgba(196, 181, 253, 0.55);
   box-shadow: 0 6px 22px rgba(139, 92, 246, 0.28);
 }
 
-.ratib-nav__link:is([href*="marketplace/index.php"]):hover {
+.rateb-nav__link:is([href*="marketplace/index.php"]):hover {
   color: #f5f3ff;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(67, 56, 202, 0.12));
   border-color: rgba(196, 181, 253, 0.45);
   box-shadow: 0 0 24px rgba(139, 92, 246, 0.22);
 }
 
-.ratib-nav__link:is([href*="client/services.php"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(56, 189, 248, 0.52);
+.rateb-nav__link:is([href*="client/services.php"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(56, 189, 248, 0.52);
   color: #f0f9ff;
   background: linear-gradient(145deg, rgba(14, 165, 233, 0.52), rgba(12, 74, 110, 0.68));
   border-color: rgba(125, 211, 252, 0.55);
   box-shadow: 0 6px 22px rgba(14, 165, 233, 0.26);
 }
 
-.ratib-nav__link:is([href*="client/services.php"]):hover {
+.rateb-nav__link:is([href*="client/services.php"]):hover {
   color: #f0f9ff;
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(12, 74, 110, 0.12));
   border-color: rgba(125, 211, 252, 0.45);
@@ -930,43 +930,43 @@ body.ratib-saas-home {
 }
 
 /* Demo / hero video band (#video) — same semantic family as video/pic */
-.ratib-nav__link:is([href="#video"], [href$="#video"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#video"], [href$="#video"]) .rateb-nav__label {
   color: #fae8ff;
 }
 
-.ratib-nav__link:is([href="#video"], [href$="#video"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(217, 70, 239, 0.55);
+.rateb-nav__link:is([href="#video"], [href$="#video"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(217, 70, 239, 0.55);
   color: #fdf4ff;
   background: linear-gradient(145deg, rgba(192, 38, 211, 0.55), rgba(91, 33, 182, 0.62));
   border-color: rgba(232, 121, 249, 0.58);
   box-shadow: 0 6px 22px rgba(192, 38, 211, 0.32);
 }
 
-.ratib-nav__link:is([href="#video"], [href$="#video"]):hover {
+.rateb-nav__link:is([href="#video"], [href$="#video"]):hover {
   color: #fdf4ff;
   border-color: rgba(217, 70, 239, 0.45);
   background: linear-gradient(135deg, rgba(147, 51, 234, 0.28), rgba(76, 29, 149, 0.18));
   box-shadow: 0 0 28px rgba(168, 85, 247, 0.28);
 }
 
-.ratib-nav__link:is([href="#video"], [href$="#video"]):hover .ratib-nav__icon {
+.rateb-nav__link:is([href="#video"], [href$="#video"]):hover .rateb-nav__icon {
   box-shadow: 0 8px 26px rgba(217, 70, 239, 0.42);
 }
 
 /* Registration (#register) — outreach / contact family */
-.ratib-nav__link:is([href="#register"], [href$="#register"]) .ratib-nav__label {
+.rateb-nav__link:is([href="#register"], [href$="#register"]) .rateb-nav__label {
   color: #fecdd3;
 }
 
-.ratib-nav__link:is([href="#register"], [href$="#register"]) .ratib-nav__icon {
-  --ratib-pulse: rgba(251, 113, 133, 0.52);
+.rateb-nav__link:is([href="#register"], [href$="#register"]) .rateb-nav__icon {
+  --rateb-pulse: rgba(251, 113, 133, 0.52);
   color: #fff1f2;
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.48), rgba(136, 19, 55, 0.68));
   border-color: rgba(253, 164, 175, 0.55);
   box-shadow: 0 6px 22px rgba(251, 113, 133, 0.26);
 }
 
-.ratib-nav__link:is([href="#register"], [href$="#register"]):hover {
+.rateb-nav__link:is([href="#register"], [href$="#register"]):hover {
   color: #fff1f2;
   background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(159, 18, 57, 0.12));
   border-color: rgba(254, 205, 211, 0.48);
@@ -974,45 +974,45 @@ body.ratib-saas-home {
 }
 
 /* video/pic — same pill geometry as other platform links; emphasis stays on the icon tile */
-.ratib-nav__link--product-tour .ratib-nav__icon {
-  --ratib-pulse: rgba(217, 70, 239, 0.55);
+.rateb-nav__link--product-tour .rateb-nav__icon {
+  --rateb-pulse: rgba(217, 70, 239, 0.55);
   color: #fdf4ff;
   background: linear-gradient(145deg, rgba(192, 38, 211, 0.55), rgba(91, 33, 182, 0.62));
   border-color: rgba(232, 121, 249, 0.58);
   box-shadow: 0 6px 22px rgba(192, 38, 211, 0.32);
 }
 
-.ratib-nav__link--product-tour {
+.rateb-nav__link--product-tour {
   color: rgba(226, 232, 240, 0.92);
   border-color: transparent;
   background: transparent;
   box-shadow: none;
 }
 
-.ratib-nav__link--product-tour:hover {
+.rateb-nav__link--product-tour:hover {
   color: #fdf4ff;
   border-color: rgba(217, 70, 239, 0.45);
   background: linear-gradient(135deg, rgba(147, 51, 234, 0.22), rgba(76, 29, 149, 0.12));
   box-shadow: 0 0 22px rgba(168, 85, 247, 0.2);
 }
 
-.ratib-nav__link--product-tour:hover .ratib-nav__icon {
+.rateb-nav__link--product-tour:hover .rateb-nav__icon {
   box-shadow: 0 8px 26px rgba(217, 70, 239, 0.42);
 }
 
-.ratib-nav__cta {
+.rateb-nav__cta {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-/* Hide header register CTA (removed from PHP; defensive for cached HTML / stale deploys). Partner Login (.ratib-btn--ghost) stays. */
-.ratib-nav-shell .ratib-nav__cta > a.ratib-btn--primary {
+/* Hide header register CTA (removed from PHP; defensive for cached HTML / stale deploys). Partner Login (.rateb-btn--ghost) stays. */
+.rateb-nav-shell .rateb-nav__cta > a.rateb-btn--primary {
   display: none !important;
 }
 
 /* Partner Login — partnership / trust (amber–gold), distinct from nav tabs */
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -1028,7 +1028,7 @@ body.ratib-saas-home {
     0 10px 32px rgba(245, 158, 11, 0.28);
 }
 
-.ratib-nav__partner-icon {
+.rateb-nav__partner-icon {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -1042,16 +1042,16 @@ body.ratib-saas-home {
   box-shadow: 0 4px 18px rgba(245, 158, 11, 0.22);
 }
 
-.ratib-nav__partner-icon .ratib-nav__glyph {
+.rateb-nav__partner-icon .rateb-nav__glyph {
   width: 1.28rem;
   height: 1.28rem;
 }
 
-.ratib-nav__partner-label {
+.rateb-nav__partner-label {
   color: #fef3c7;
 }
 
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost:hover {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost:hover {
   color: #ffffff;
   border-color: rgba(253, 224, 71, 0.65);
   background: linear-gradient(145deg, rgba(245, 158, 11, 0.48), rgba(92, 46, 15, 0.78));
@@ -1061,24 +1061,24 @@ body.ratib-saas-home {
   transform: translateY(-1px);
 }
 
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost:hover .ratib-nav__partner-label {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost:hover .rateb-nav__partner-label {
   color: #ffffff;
 }
 
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost:hover .ratib-nav__partner-icon {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost:hover .rateb-nav__partner-icon {
   border-color: rgba(254, 240, 138, 0.55);
   box-shadow: 0 6px 24px rgba(245, 158, 11, 0.35);
 }
 
 /* Current page (e.g. partner-portal-login): non-interactive Partner Login pill */
-.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost.is-current {
+.rateb-nav-shell .rateb-nav__cta .rateb-nav__partner-login.rateb-btn--ghost.is-current {
   cursor: default;
   pointer-events: none;
   opacity: 0.96;
 }
 
 @media (max-width: 1099px) {
-  .ratib-nav-shell__inner {
+  .rateb-nav-shell__inner {
     flex-wrap: wrap;
     align-items: center;
     min-height: 0;
@@ -1086,28 +1086,28 @@ body.ratib-saas-home {
     gap: 0.5rem 0.65rem;
   }
 
-  .ratib-nav__brand-block {
+  .rateb-nav__brand-block {
     flex: 1 1 auto;
     min-width: 0;
     max-width: calc(100% - 3.25rem);
   }
 
-  .ratib-nav__brand-text {
+  .rateb-nav__brand-text {
     display: none;
   }
 
-  .ratib-nav__brand img {
+  .rateb-nav__brand img {
     height: 34px;
     width: auto;
   }
 
-  .ratib-nav__toggle {
+  .rateb-nav__toggle {
     order: 2;
     margin-left: auto;
     flex-shrink: 0;
   }
 
-  .ratib-nav__cta {
+  .rateb-nav__cta {
     display: flex;
     order: 3;
     flex: 1 0 100%;
@@ -1117,19 +1117,19 @@ body.ratib-saas-home {
     justify-content: stretch;
   }
 
-  .ratib-nav__cta > a,
-  .ratib-nav__cta .ratib-btn {
+  .rateb-nav__cta > a,
+  .rateb-nav__cta .rateb-btn {
     width: 100%;
     justify-content: center;
     box-sizing: border-box;
   }
 
-  /* ratib-mega-nav.css sets .ratib-nav-shell .ratib-nav__menu { display:flex } — override when closed */
-  .ratib-nav-shell .ratib-nav__menu:not(.is-open) {
+  /* rateb-mega-nav.css sets .rateb-nav-shell .rateb-nav__menu { display:flex } — override when closed */
+  .rateb-nav-shell .rateb-nav__menu:not(.is-open) {
     display: none !important;
   }
 
-  .ratib-nav-shell .ratib-nav__menu.is-open {
+  .rateb-nav-shell .rateb-nav__menu.is-open {
     display: flex !important;
     order: 4;
     flex: 1 0 100%;
@@ -1148,19 +1148,19 @@ body.ratib-saas-home {
     -webkit-overflow-scrolling: touch;
   }
 
-  .ratib-nav-shell .ratib-nav__menu.is-open .ratib-nav__platform-links {
+  .rateb-nav-shell .rateb-nav__menu.is-open .rateb-nav__platform-links {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
   }
 
-  .ratib-nav-shell .ratib-nav__menu.is-open .ratib-nav__platform-links .ratib-nav__link {
+  .rateb-nav-shell .rateb-nav__menu.is-open .rateb-nav__platform-links .rateb-nav__link {
     width: 100%;
     box-sizing: border-box;
   }
 }
 
-.ratib-btn {
+.rateb-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1179,47 +1179,47 @@ body.ratib-saas-home {
     border-color 0.2s ease;
 }
 
-.ratib-btn--primary {
+.rateb-btn--primary {
   background: linear-gradient(135deg, var(--r-accent) 0%, #6b52a8 50%, var(--r-accent-2) 140%);
   color: #fff;
   box-shadow: 0 4px 18px rgba(116, 96, 176, 0.22);
 }
 
-.ratib-btn--primary:hover {
+.rateb-btn--primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 24px rgba(116, 96, 176, 0.28);
   color: #fff;
 }
 
-.ratib-btn--ghost {
+.rateb-btn--ghost {
   background: transparent;
   border-color: var(--r-border);
   color: var(--r-text);
 }
 
-.ratib-btn--ghost:hover {
+.rateb-btn--ghost:hover {
   background: rgba(255, 255, 255, 0.06);
   color: var(--r-text);
 }
 
-.ratib-btn--outline {
+.rateb-btn--outline {
   border-color: rgba(124, 98, 200, 0.32);
   color: var(--r-text);
   background: rgba(124, 98, 200, 0.06);
 }
 
-.ratib-btn--outline:hover {
+.rateb-btn--outline:hover {
   border-color: rgba(124, 98, 200, 0.52);
   background: rgba(124, 98, 200, 0.11);
   color: #fff;
 }
 
-.ratib-btn--lg {
+.rateb-btn--lg {
   padding: 0.75rem 1.35rem;
   font-size: 0.9375rem;
 }
 
-.ratib-main {
+.rateb-main {
   position: relative;
   z-index: 10;
   overflow-x: clip;
@@ -1227,28 +1227,28 @@ body.ratib-saas-home {
 }
 
 /* Main column headings & metric emphasis — muted slate (not pure white on dark bg) */
-.ratib-main .ratib-section__title {
+.rateb-main .rateb-section__title {
   color: #d8e1ec;
 }
 
-.ratib-main .ratib-analytics-card h3 {
+.rateb-main .rateb-analytics-card h3 {
   color: #c6d0dc;
 }
 
-.ratib-main .ratib-metric__val {
+.rateb-main .rateb-metric__val {
   color: #dce5f0;
 }
 
-.ratib-main .ratib-trust-card h3,
-.ratib-main .ratib-ai-card h3 {
+.rateb-main .rateb-trust-card h3,
+.rateb-main .rateb-ai-card h3 {
   color: #cad6e4;
 }
 
-.ratib-main .ratib-api-strip__title {
+.rateb-main .rateb-api-strip__title {
   color: #d8e1ec;
 }
 
-.ratib-eyebrow {
+.rateb-eyebrow {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -1257,7 +1257,7 @@ body.ratib-saas-home {
   margin: 0 0 0.75rem;
 }
 
-.ratib-text-gradient {
+.rateb-text-gradient {
   background: linear-gradient(135deg, #a89ede 0%, #d98456 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -1265,7 +1265,7 @@ body.ratib-saas-home {
 }
 
 /* Full brand title — horizontal flex, animated mixed colors (hero + nav) */
-.ratib-brand-full {
+.rateb-brand-full {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -1277,24 +1277,24 @@ body.ratib-saas-home {
   letter-spacing: -0.02em;
 }
 
-.ratib-brand-full--hero {
+.rateb-brand-full--hero {
   font-size: clamp(0.95rem, 2.2vw, 1.5rem);
   gap: 0.28em 0.42em;
   max-width: min(44rem, 100%);
   line-height: 1.14;
 }
 
-.ratib-brand-full--hero .ratib-brand-letter {
+.rateb-brand-full--hero .rateb-brand-letter {
   font-size: clamp(1.15rem, 3vw, 1.75rem);
   line-height: 1.05;
 }
 
-.ratib-brand-full--hero .ratib-brand-full__word {
+.rateb-brand-full--hero .rateb-brand-full__word {
   font-size: clamp(0.88rem, 2.15vw, 1.38rem);
   font-weight: 650;
 }
 
-.ratib-brand-full--nav {
+.rateb-brand-full--nav {
   font-size: clamp(0.58rem, 1.1vw, 0.72rem);
   font-weight: 650;
   line-height: 1.2;
@@ -1303,7 +1303,7 @@ body.ratib-saas-home {
 }
 
 /* Nav header — matches screenshot: RATEB + Company, then two-line expansion */
-.ratib-brand-full--nav-stack {
+.rateb-brand-full--nav-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1312,7 +1312,7 @@ body.ratib-saas-home {
   max-width: 100%;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__head {
+.rateb-brand-full--nav-stack .rateb-brand-full__head {
   display: inline-flex;
   flex-wrap: nowrap;
   align-items: baseline;
@@ -1321,23 +1321,23 @@ body.ratib-saas-home {
   padding-bottom: 0.05rem;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__rateb {
+.rateb-brand-full--nav-stack .rateb-brand-full__rateb {
   gap: 0.05em;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-letter {
+.rateb-brand-full--nav-stack .rateb-brand-letter {
   font-size: clamp(1.02rem, 2.35vw, 1.28rem);
   font-weight: 800;
   line-height: 1;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+.rateb-brand-full--nav-stack .rateb-brand-full__word--company {
   font-size: clamp(0.76rem, 1.5vw, 0.92rem);
   font-weight: 700;
   letter-spacing: 0.015em;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__tagline {
+.rateb-brand-full--nav-stack .rateb-brand-full__tagline {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1346,7 +1346,7 @@ body.ratib-saas-home {
   line-height: 1.3;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__tagline-row {
+.rateb-brand-full--nav-stack .rateb-brand-full__tagline-row {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -1356,100 +1356,100 @@ body.ratib-saas-home {
   letter-spacing: 0.012em;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__tagline-row .ratib-brand-full__word {
+.rateb-brand-full--nav-stack .rateb-brand-full__tagline-row .rateb-brand-full__word {
   font-size: inherit;
   font-weight: inherit;
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__word--amp {
+.rateb-brand-full--nav-stack .rateb-brand-full__word--amp {
   font-weight: 700;
   opacity: 0.9;
 }
 
-.ratib-brand-full__rateb {
+.rateb-brand-full__rateb {
   display: inline-flex;
   gap: 0.02em;
   flex-shrink: 0;
 }
 
-.ratib-brand-letter {
+.rateb-brand-letter {
   font-weight: 800;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: ratibBrandLetterPulse 4.5s ease-in-out infinite;
+  animation: ratebBrandLetterPulse 4.5s ease-in-out infinite;
 }
 
-.ratib-brand-letter--r {
+.rateb-brand-letter--r {
   background-image: linear-gradient(135deg, #ff6b6b, #ff9f43);
   animation-delay: 0s;
 }
 
-.ratib-brand-letter--a {
+.rateb-brand-letter--a {
   background-image: linear-gradient(135deg, #feca57, #f1c40f);
   animation-delay: 0.35s;
 }
 
-.ratib-brand-letter--t {
+.rateb-brand-letter--t {
   background-image: linear-gradient(135deg, #2ecc71, #1dd1a1);
   animation-delay: 0.7s;
 }
 
-.ratib-brand-letter--e {
+.rateb-brand-letter--e {
   background-image: linear-gradient(135deg, #54a0ff, #5dade2);
   animation-delay: 1.05s;
 }
 
-.ratib-brand-letter--b {
+.rateb-brand-letter--b {
   background-image: linear-gradient(135deg, #a29bfe, #9b59b6);
   animation-delay: 1.4s;
 }
 
-.ratib-brand-full__word {
+.rateb-brand-full__word {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   background-size: 220% 220%;
-  animation: ratibBrandWordShift 7s ease-in-out infinite;
+  animation: ratebBrandWordShift 7s ease-in-out infinite;
 }
 
-.ratib-brand-full__word--company {
+.rateb-brand-full__word--company {
   background-image: linear-gradient(120deg, #f6d365, #fda085, #f6d365);
   font-weight: 700;
 }
 
-.ratib-brand-full__word--w1 {
+.rateb-brand-full__word--w1 {
   background-image: linear-gradient(120deg, #c4b5fd, #a78bfa, #818cf8, #c4b5fd);
   animation-delay: 0s;
 }
 
-.ratib-brand-full__word--w2 {
+.rateb-brand-full__word--w2 {
   background-image: linear-gradient(120deg, #93c5fd, #60a5fa, #38bdf8, #93c5fd);
   animation-delay: 0.6s;
 }
 
-.ratib-brand-full__word--amp {
+.rateb-brand-full__word--amp {
   background-image: linear-gradient(120deg, #fcd34d, #fbbf24, #fcd34d);
   animation-delay: 1.1s;
   font-weight: 800;
 }
 
-.ratib-brand-full__word--w3 {
+.rateb-brand-full__word--w3 {
   background-image: linear-gradient(120deg, #6ee7b7, #34d399, #2dd4bf, #6ee7b7);
   animation-delay: 1.6s;
 }
 
-.ratib-brand-full__word--w4 {
+.rateb-brand-full__word--w4 {
   background-image: linear-gradient(120deg, #fda4af, #fb7185, #f472b6, #fda4af);
   animation-delay: 2.1s;
 }
 
-.ratib-brand-full__word--w5 {
+.rateb-brand-full__word--w5 {
   background-image: linear-gradient(120deg, #e9d5ff, #d8b4fe, #c084fc, #e9d5ff);
   animation-delay: 2.6s;
 }
 
-@keyframes ratibBrandLetterPulse {
+@keyframes ratebBrandLetterPulse {
   0%,
   100% {
     filter: brightness(1) saturate(1);
@@ -1461,7 +1461,7 @@ body.ratib-saas-home {
   }
 }
 
-@keyframes ratibBrandWordShift {
+@keyframes ratebBrandWordShift {
   0%,
   100% {
     background-position: 0% 50%;
@@ -1471,22 +1471,22 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-nav__brand--stacked {
+.rateb-nav__brand--stacked {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.35rem;
   max-width: 100%;
 }
 
-.ratib-nav__brand--stacked .ratib-nav__brand-logo {
+.rateb-nav__brand--stacked .rateb-nav__brand-logo {
   flex-shrink: 0;
 }
 
-.ratib-nav__brand--animated-title img,
-.ratib-nav__brand--animated-title .ratib-nav__brand-logo,
-.ratib-nav__brand--animated-title .ratib-nav__brand-text,
-.ratib-nav__brand:has(.ratib-brand-full) img,
-.ratib-nav__brand:has(.ratib-brand-full) .ratib-nav__brand-text {
+.rateb-nav__brand--animated-title img,
+.rateb-nav__brand--animated-title .rateb-nav__brand-logo,
+.rateb-nav__brand--animated-title .rateb-nav__brand-text,
+.rateb-nav__brand:has(.rateb-brand-full) img,
+.rateb-nav__brand:has(.rateb-brand-full) .rateb-nav__brand-text {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -1496,103 +1496,103 @@ body.ratib-saas-home {
 }
 
 @media (max-width: 1099px) {
-  .ratib-nav__brand-block--animated {
+  .rateb-nav__brand-block--animated {
     max-width: min(19rem, 56vw);
     padding: 0.38rem 0.55rem 0.36rem;
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-letter {
+  .rateb-brand-full--nav-stack .rateb-brand-letter {
     font-size: clamp(1rem, 4vw, 1.2rem);
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+  .rateb-brand-full--nav-stack .rateb-brand-full__word--company {
     font-size: clamp(0.72rem, 2.6vw, 0.88rem);
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-full__tagline-row {
+  .rateb-brand-full--nav-stack .rateb-brand-full__tagline-row {
     font-size: clamp(0.56rem, 2.4vw, 0.68rem);
   }
 }
 
 @media (max-width: 599px) {
-  .ratib-nav-shell__inner {
+  .rateb-nav-shell__inner {
     min-height: 80px;
     padding-block: 0.45rem 0.5rem;
   }
 
-  .ratib-nav__brand-block--animated {
+  .rateb-nav__brand-block--animated {
     max-width: min(17rem, 68vw);
     gap: 0.28rem;
     padding: 0.32rem 0.48rem 0.3rem;
     border-radius: 12px;
   }
 
-  .ratib-brand-full--hero {
+  .rateb-brand-full--hero {
     font-size: clamp(0.82rem, 3.6vw, 1.05rem);
     gap: 0.22em 0.32em;
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-letter {
+  .rateb-brand-full--nav-stack .rateb-brand-letter {
     font-size: 0.94rem;
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+  .rateb-brand-full--nav-stack .rateb-brand-full__word--company {
     font-size: 0.7rem;
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-full__tagline-row {
+  .rateb-brand-full--nav-stack .rateb-brand-full__tagline-row {
     font-size: 0.54rem;
     gap: 0.2em 0.3em;
   }
 
-  .ratib-nav__brand-profile {
+  .rateb-nav__brand-profile {
     font-size: 0.64rem;
     padding: 0.2rem 0.52rem;
   }
 }
 
-.ratib-nav__brand-block--animated .ratib-brand-full__tagline,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w1,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w2,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w3,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w4,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w5,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--amp {
+.rateb-nav__brand-block--animated .rateb-brand-full__tagline,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w1,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w2,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w3,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w4,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w5,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--amp {
   display: none !important;
 }
 
 @media (min-width: 1100px) {
-  .ratib-nav__brand-block--animated {
+  .rateb-nav__brand-block--animated {
     max-width: 17.5rem;
     min-width: 0;
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-letter {
+  .rateb-brand-full--nav-stack .rateb-brand-letter {
     font-size: 1.28rem;
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+  .rateb-brand-full--nav-stack .rateb-brand-full__word--company {
     font-size: 0.92rem;
   }
 
-  .ratib-brand-full--nav-stack .ratib-brand-full__tagline-row {
+  .rateb-brand-full--nav-stack .rateb-brand-full__tagline-row {
     font-size: 0.72rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ratib-brand-letter,
-  .ratib-brand-full__word {
+  .rateb-brand-letter,
+  .rateb-brand-full__word {
     animation: none;
   }
 }
 
 /* Hero */
-.ratib-hero {
+.rateb-hero {
   padding: clamp(2.5rem, 6vw, 5rem) 0 clamp(3rem, 8vw, 6rem);
 }
 
-.ratib-hero__grid {
+.rateb-hero__grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: clamp(2rem, 5vw, 4rem);
@@ -1600,12 +1600,12 @@ body.ratib-saas-home {
 }
 
 @media (min-width: 1024px) {
-  .ratib-hero__grid {
+  .rateb-hero__grid {
     grid-template-columns: 1fr 1.05fr;
   }
 }
 
-.ratib-hero__title {
+.rateb-hero__title {
   font-size: inherit;
   font-weight: inherit;
   line-height: 1.12;
@@ -1614,13 +1614,13 @@ body.ratib-saas-home {
   max-width: min(44rem, 100%);
 }
 
-.ratib-hero__title .ratib-brand-full--hero {
+.rateb-hero__title .rateb-brand-full--hero {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
 }
 
-.ratib-hero__lead {
+.rateb-hero__lead {
   font-size: 1.0625rem;
   line-height: 1.65;
   color: var(--r-muted);
@@ -1628,7 +1628,7 @@ body.ratib-saas-home {
   max-width: 34rem;
 }
 
-.ratib-hero__bullets {
+.rateb-hero__bullets {
   list-style: none;
   padding: 0;
   margin: 0 0 1.75rem;
@@ -1638,31 +1638,31 @@ body.ratib-saas-home {
   color: #cbd5e1;
 }
 
-.ratib-hero__bullets li {
+.rateb-hero__bullets li {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
 }
 
-.ratib-hero__bullets i {
+.rateb-hero__bullets i {
   margin-top: 2px;
   color: var(--r-accent);
   width: 1rem;
 }
 
-.ratib-hero__actions {
+.rateb-hero__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
 }
 
-.ratib-hero__photo-strip {
+.rateb-hero__photo-strip {
   margin-top: clamp(1.75rem, 4vw, 2.75rem);
   padding-top: clamp(1.25rem, 3vw, 2rem);
   border-top: 1px solid rgba(148, 163, 184, 0.12);
 }
 
-.ratib-hero__photo-eyebrow {
+.rateb-hero__photo-eyebrow {
   font-size: 0.6875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1670,20 +1670,20 @@ body.ratib-saas-home {
   margin: 0 0 1rem;
 }
 
-.ratib-hero__photo-grid {
+.rateb-hero__photo-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
 }
 
 @media (min-width: 640px) {
-  .ratib-hero__photo-grid {
+  .rateb-hero__photo-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   }
 }
 
-.ratib-hero__photo {
+.rateb-hero__photo {
   margin: 0;
   border-radius: 12px;
   overflow: hidden;
@@ -1694,7 +1694,7 @@ body.ratib-saas-home {
     0 0 0 1px rgba(139, 92, 246, 0.06) inset;
 }
 
-.ratib-hero__photo img {
+.rateb-hero__photo img {
   width: 100%;
   height: auto;
   aspect-ratio: 8 / 5;
@@ -1702,7 +1702,7 @@ body.ratib-saas-home {
   display: block;
 }
 
-.ratib-hero__photo figcaption {
+.rateb-hero__photo figcaption {
   padding: 0.6rem 0.85rem;
   font-size: 0.8125rem;
   color: var(--r-muted);
@@ -1711,7 +1711,7 @@ body.ratib-saas-home {
 }
 
 /* Dashboard mockup */
-.ratib-dash {
+.rateb-dash {
   border-radius: 18px;
   border: 1px solid var(--r-border);
   background: linear-gradient(165deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.65) 100%);
@@ -1722,7 +1722,7 @@ body.ratib-saas-home {
   backdrop-filter: blur(12px);
 }
 
-.ratib-dash__chrome {
+.rateb-dash__chrome {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -1732,13 +1732,13 @@ body.ratib-saas-home {
   background: rgba(0, 0, 0, 0.25);
 }
 
-.ratib-dash__chrome-main {
+.rateb-dash__chrome-main {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.ratib-dash__chrome-sub {
+.rateb-dash__chrome-sub {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1750,29 +1750,29 @@ body.ratib-saas-home {
   line-height: 1.3;
 }
 
-.ratib-dash__sep {
+.rateb-dash__sep {
   opacity: 0.45;
   user-select: none;
 }
 
-.ratib-dash__panel-id {
+.rateb-dash__panel-id {
   color: #cbd5e1;
 }
 
-.ratib-dash__sync {
+.rateb-dash__sync {
   color: #a5b4fc;
 }
 
-.ratib-sync-label {
+.rateb-sync-label {
   opacity: 0.75;
   margin-right: 0.15rem;
 }
 
-.ratib-mono-ops {
+.rateb-mono-ops {
   letter-spacing: 0.02em;
 }
 
-.ratib-env-tag {
+.rateb-env-tag {
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   background: rgba(52, 211, 153, 0.12);
@@ -1783,24 +1783,24 @@ body.ratib-saas-home {
   letter-spacing: 0.08em;
 }
 
-.ratib-dash__dot {
+.rateb-dash__dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: #475569;
 }
 
-.ratib-dash__dot:first-child {
+.rateb-dash__dot:first-child {
   background: #f87171;
 }
-.ratib-dash__dot:nth-child(2) {
+.rateb-dash__dot:nth-child(2) {
   background: #fbbf24;
 }
-.ratib-dash__dot:nth-child(3) {
+.rateb-dash__dot:nth-child(3) {
   background: #34d399;
 }
 
-.ratib-dash__title {
+.rateb-dash__title {
   flex: 1;
   text-align: center;
   font-size: 0.75rem;
@@ -1808,7 +1808,7 @@ body.ratib-saas-home {
   color: var(--r-muted);
 }
 
-.ratib-dash__live {
+.rateb-dash__live {
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--r-green);
@@ -1817,17 +1817,17 @@ body.ratib-saas-home {
   gap: 0.35rem;
 }
 
-.ratib-dash__body {
+.rateb-dash__body {
   display: grid;
   grid-template-columns: 120px 1fr;
   min-height: 280px;
 }
 
 @media (max-width: 520px) {
-  .ratib-dash__body {
+  .rateb-dash__body {
     grid-template-columns: 1fr;
   }
-  .ratib-dash__sidebar {
+  .rateb-dash__sidebar {
     flex-direction: row !important;
     flex-wrap: wrap;
     border-right: none !important;
@@ -1835,7 +1835,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-dash__sidebar {
+.rateb-dash__sidebar {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1844,39 +1844,39 @@ body.ratib-saas-home {
   background: rgba(0, 0, 0, 0.2);
 }
 
-.ratib-dash__nav-item {
+.rateb-dash__nav-item {
   font-size: 0.6875rem;
   padding: 0.4rem 0.5rem;
   border-radius: 6px;
   color: var(--r-muted);
 }
 
-.ratib-dash__nav-item--active {
+.rateb-dash__nav-item--active {
   background: rgba(139, 92, 246, 0.2);
   color: #e9d5ff;
 }
 
-.ratib-dash__main {
+.rateb-dash__main {
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.ratib-dash__row {
+.rateb-dash__row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
 }
 
-.ratib-kpi {
+.rateb-kpi {
   background: var(--r-surface);
   border: 1px solid var(--r-border);
   border-radius: 10px;
   padding: 0.55rem 0.6rem;
 }
 
-.ratib-kpi__label {
+.rateb-kpi__label {
   display: block;
   font-size: 0.625rem;
   color: var(--r-muted);
@@ -1884,30 +1884,30 @@ body.ratib-saas-home {
   letter-spacing: 0.06em;
 }
 
-.ratib-kpi__value {
+.rateb-kpi__value {
   font-size: 1.125rem;
   font-weight: 700;
   font-family: var(--r-mono);
   color: #dce5f0;
 }
 
-.ratib-kpi__delta {
+.rateb-kpi__delta {
   font-size: 0.625rem;
   color: var(--r-muted);
 }
 
-.ratib-kpi__delta--up {
+.rateb-kpi__delta--up {
   color: var(--r-green);
 }
 
-.ratib-dash__signals {
+.rateb-dash__signals {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 0.5rem;
   align-items: center;
 }
 
-.ratib-signal {
+.rateb-signal {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1919,48 +1919,48 @@ body.ratib-saas-home {
   color: #cbd5e1;
 }
 
-.ratib-signal--ok {
+.rateb-signal--ok {
   border-color: rgba(52, 211, 153, 0.22);
   color: #a7f3d0;
 }
 
-.ratib-signal--pulse {
+.rateb-signal--pulse {
   border-color: rgba(167, 139, 250, 0.35);
   color: #ddd6fe;
   animation: none;
 }
 
-@keyframes ratibSignalPulse {
+@keyframes ratebSignalPulse {
   50% {
     box-shadow: 0 0 14px rgba(139, 92, 246, 0.22);
   }
 }
 
-.ratib-micro-delta {
+.rateb-micro-delta {
   font-size: 0.55rem;
   font-weight: 600;
   color: var(--r-muted);
   margin-left: 0.35rem;
 }
 
-.ratib-micro-delta--ok {
+.rateb-micro-delta--ok {
   color: #6ee7b7;
 }
 
-.ratib-pill--subtle {
+.rateb-pill--subtle {
   background: rgba(148, 163, 184, 0.12);
   color: #94a3b8;
   font-weight: 600;
 }
 
-.ratib-dash__panel {
+.rateb-dash__panel {
   border-radius: 10px;
   border: 1px solid var(--r-border);
   background: rgba(0, 0, 0, 0.25);
   padding: 0.65rem;
 }
 
-.ratib-dash__panel-head {
+.rateb-dash__panel-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1971,7 +1971,7 @@ body.ratib-saas-home {
   margin-bottom: 0.5rem;
 }
 
-.ratib-pill {
+.rateb-pill {
   display: inline-block;
   font-size: 0.625rem;
   font-weight: 700;
@@ -1981,23 +1981,23 @@ body.ratib-saas-home {
   color: #ddd6fe;
 }
 
-.ratib-pill--muted {
+.rateb-pill--muted {
   background: rgba(148, 163, 184, 0.15);
   color: var(--r-muted);
 }
 
-.ratib-pill--accent {
+.rateb-pill--accent {
   background: rgba(249, 115, 22, 0.22);
   color: #fdba74;
 }
 
-.ratib-stagebar {
+.rateb-stagebar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
 }
 
-.ratib-stage {
+.rateb-stage {
   font-size: 0.625rem;
   padding: 0.25rem 0.45rem;
   border-radius: 6px;
@@ -2006,18 +2006,18 @@ body.ratib-saas-home {
   border: 1px solid transparent;
 }
 
-.ratib-stage--done {
+.rateb-stage--done {
   border-color: rgba(52, 211, 153, 0.35);
   color: var(--r-green);
 }
 
-.ratib-stage--active {
+.rateb-stage--active {
   border-color: rgba(139, 92, 246, 0.5);
   color: #e9d5ff;
   box-shadow: 0 0 16px rgba(139, 92, 246, 0.25);
 }
 
-.ratib-mapstrip {
+.rateb-mapstrip {
   margin-top: 0.5rem;
   display: flex;
   align-items: center;
@@ -2026,7 +2026,7 @@ body.ratib-saas-home {
   color: var(--r-muted);
 }
 
-.ratib-dash__toolbar {
+.rateb-dash__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2035,58 +2035,58 @@ body.ratib-saas-home {
   color: #94a3b8;
 }
 
-.ratib-dash__strong {
+.rateb-dash__strong {
   color: #e2e8f0;
   font-weight: 600;
 }
 
-.ratib-dash__context {
+.rateb-dash__context {
   margin: 0;
   font-size: 0.625rem;
   color: #94a3b8;
 }
 
-.ratib-dash__corr {
+.rateb-dash__corr {
   color: #a5b4fc;
 }
 
-.ratib-dash__workspace {
+.rateb-dash__workspace {
   display: grid;
   gap: 0.5rem;
   grid-template-columns: 1fr;
 }
 
 @media (min-width: 520px) {
-  .ratib-dash__workspace {
+  .rateb-dash__workspace {
     grid-template-columns: 1.28fr 1fr;
   align-items: stretch;
 }
 }
 
-.ratib-dash__panel--table {
+.rateb-dash__panel--table {
   padding: 0;
   overflow: hidden;
 }
 
-.ratib-dash__panel--table .ratib-dash__panel-head {
+.rateb-dash__panel--table .rateb-dash__panel-head {
   padding: 0.5rem 0.65rem;
   margin-bottom: 0;
   border-bottom: 1px solid var(--r-border);
 }
 
-.ratib-dash-table-scroll {
+.rateb-dash-table-scroll {
   overflow-x: auto;
   max-height: 118px;
 }
 
-.ratib-dash-table {
+.rateb-dash-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.58rem;
   font-family: var(--r-mono);
 }
 
-.ratib-dash-table th {
+.rateb-dash-table th {
   text-align: left;
   font-weight: 600;
   color: #64748b;
@@ -2094,17 +2094,17 @@ body.ratib-saas-home {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.ratib-dash-table td {
+.rateb-dash-table td {
   padding: 0.32rem 0.45rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: #cbd5e1;
 }
 
-.ratib-dash-num {
+.rateb-dash-num {
   color: #94a3b8;
 }
 
-.ratib-dash-tag {
+.rateb-dash-tag {
   display: inline-block;
   font-size: 0.54rem;
   padding: 0.1rem 0.32rem;
@@ -2112,39 +2112,39 @@ body.ratib-saas-home {
   font-weight: 600;
 }
 
-.ratib-dash-tag--warn {
+.rateb-dash-tag--warn {
   background: rgba(251, 191, 36, 0.14);
   color: #fcd34d;
 }
 
-.ratib-dash-tag--idle {
+.rateb-dash-tag--idle {
   background: rgba(148, 163, 184, 0.12);
   color: #94a3b8;
 }
 
-.ratib-dash-tag--ok {
+.rateb-dash-tag--ok {
   background: rgba(52, 211, 153, 0.12);
   color: #6ee7b7;
 }
 
-.ratib-dash__sidecol {
+.rateb-dash__sidecol {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.ratib-dash__panel--stack {
+.rateb-dash__panel--stack {
   padding: 0.55rem 0.6rem;
 }
 
-.ratib-dash-qlist,
-.ratib-dash-alerts {
+.rateb-dash-qlist,
+.rateb-dash-alerts {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.ratib-dash-qlist li {
+.rateb-dash-qlist li {
   display: flex;
   justify-content: space-between;
   gap: 0.35rem;
@@ -2154,18 +2154,18 @@ body.ratib-saas-home {
   color: #cbd5e1;
 }
 
-.ratib-q-type {
+.rateb-q-type {
   font-weight: 600;
 }
 
-.ratib-q-meta {
+.rateb-q-meta {
   color: #64748b;
   font-family: var(--r-mono);
   font-size: 0.52rem;
   text-align: right;
 }
 
-.ratib-dash-alerts__item {
+.rateb-dash-alerts__item {
   padding: 0.28rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   color: #cbd5e1;
@@ -2174,7 +2174,7 @@ body.ratib-saas-home {
   line-height: 1.35;
 }
 
-.ratib-dash-alerts__sev {
+.rateb-dash-alerts__sev {
   display: inline-block;
   min-width: 2.35rem;
   margin-right: 0.35rem;
@@ -2182,40 +2182,40 @@ body.ratib-saas-home {
   font-size: 0.5rem;
 }
 
-.ratib-dash-alerts__item--info .ratib-dash-alerts__sev {
+.rateb-dash-alerts__item--info .rateb-dash-alerts__sev {
   color: #38bdf8;
 }
 
-.ratib-dash-alerts__item--warn .ratib-dash-alerts__sev {
+.rateb-dash-alerts__item--warn .rateb-dash-alerts__sev {
   color: #fbbf24;
 }
 
-.ratib-dash__footer {
+.rateb-dash__footer {
   display: grid;
   gap: 0.45rem;
 }
 
 @media (min-width: 520px) {
-  .ratib-dash__footer {
+  .rateb-dash__footer {
     grid-template-columns: 1fr 1fr;
     align-items: start;
   }
 }
 
-.ratib-dash-ledger {
+.rateb-dash-ledger {
   border-radius: 10px;
   border: 1px solid var(--r-border);
   background: rgba(0, 0, 0, 0.22);
   padding: 0.45rem 0.55rem;
 }
 
-.ratib-dash-ledger__head {
+.rateb-dash-ledger__head {
   font-size: 0.58rem;
   margin-bottom: 0.3rem;
   color: #64748b;
 }
 
-.ratib-dash-ledger__rows {
+.rateb-dash-ledger__rows {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -2223,38 +2223,38 @@ body.ratib-saas-home {
   color: #94a3b8;
 }
 
-.ratib-dash-ledger__rows li {
+.rateb-dash-ledger__rows li {
   padding: 0.18rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.ratib-dash__charts {
+.rateb-dash__charts {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
 
-.ratib-chart {
+.rateb-chart {
   border-radius: 10px;
   border: 1px solid var(--r-border);
   background: rgba(0, 0, 0, 0.2);
   padding: 0.5rem;
 }
 
-.ratib-chart__legend {
+.rateb-chart__legend {
   font-size: 0.625rem;
   color: var(--r-muted);
   margin-bottom: 0.35rem;
 }
 
-.ratib-chart__bars {
+.rateb-chart__bars {
   display: flex;
   align-items: flex-end;
   gap: 4px;
   height: 52px;
 }
 
-.ratib-chart__bars i {
+.rateb-chart__bars i {
   flex: 1;
   border-radius: 3px 3px 0 0;
   background: linear-gradient(180deg, rgba(139, 92, 246, 0.8), rgba(139, 92, 246, 0.15));
@@ -2262,20 +2262,20 @@ body.ratib-saas-home {
   animation: none;
 }
 
-.ratib-chart__bars i:nth-child(2) {
+.rateb-chart__bars i:nth-child(2) {
   animation-delay: 0.2s;
 }
-.ratib-chart__bars i:nth-child(3) {
+.rateb-chart__bars i:nth-child(3) {
   animation-delay: 0.4s;
 }
-.ratib-chart__bars i:nth-child(4) {
+.rateb-chart__bars i:nth-child(4) {
   animation-delay: 0.6s;
 }
-.ratib-chart__bars i:nth-child(5) {
+.rateb-chart__bars i:nth-child(5) {
   animation-delay: 0.8s;
 }
 
-@keyframes ratibBar {
+@keyframes ratebBar {
   0%,
   100% {
     opacity: 0.85;
@@ -2286,7 +2286,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-spark {
+.rateb-spark {
   height: 48px;
   border-radius: 6px;
   background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.3), transparent);
@@ -2294,7 +2294,7 @@ body.ratib-saas-home {
   overflow: hidden;
 }
 
-.ratib-spark::after {
+.rateb-spark::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -2307,7 +2307,7 @@ body.ratib-saas-home {
   animation: none;
 }
 
-@keyframes ratibSpark {
+@keyframes ratebSpark {
   0% {
     transform: translateX(-100%);
   }
@@ -2317,43 +2317,43 @@ body.ratib-saas-home {
 }
 
 /* Sections */
-.ratib-section {
+.rateb-section {
   padding: clamp(3rem, 6vw, 5rem) 0;
   position: relative;
 }
 
-.ratib-section__head {
+.rateb-section__head {
   text-align: center;
   max-width: 42rem;
   margin: 0 auto 2.75rem;
 }
 
-.ratib-section__head--left {
+.rateb-section__head--left {
   text-align: left;
   margin-left: 0;
 }
 
-.ratib-section__title {
+.rateb-section__title {
   font-size: clamp(1.75rem, 3vw, 2.25rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 0.75rem;
 }
 
-.ratib-section__sub {
+.rateb-section__sub {
   margin: 0;
   color: var(--r-muted);
   font-size: 1.05rem;
   line-height: 1.6;
 }
 
-.ratib-trust__grid {
+.rateb-trust__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
 }
 
-.ratib-trust-card {
+.rateb-trust-card {
   padding: 1.35rem;
   border-radius: var(--r-radius);
   border: 1px solid var(--r-border);
@@ -2364,13 +2364,13 @@ body.ratib-saas-home {
     box-shadow 0.2s ease;
 }
 
-.ratib-trust-card:hover {
+.rateb-trust-card:hover {
   transform: translateY(-3px);
   border-color: rgba(139, 92, 246, 0.35);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
-.ratib-trust-card__icon {
+.rateb-trust-card__icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -2382,25 +2382,25 @@ body.ratib-saas-home {
   margin-bottom: 0.85rem;
 }
 
-.ratib-trust-card h3 {
+.rateb-trust-card h3 {
   margin: 0 0 0.5rem;
   font-size: 1.05rem;
 }
 
-.ratib-trust-card p {
+.rateb-trust-card p {
   margin: 0;
   font-size: 0.9rem;
   color: var(--r-muted);
   line-height: 1.55;
 }
 
-.ratib-feature-grid {
+.rateb-feature-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
 }
 
-.ratib-feature-card {
+.rateb-feature-card {
   padding: 1.25rem;
   border-radius: var(--r-radius);
   border: 1px solid var(--r-border);
@@ -2410,23 +2410,23 @@ body.ratib-saas-home {
     border-color 0.2s ease;
 }
 
-.ratib-feature-card:hover {
+.rateb-feature-card:hover {
   transform: translateY(-2px);
   border-color: rgba(249, 115, 22, 0.35);
 }
 
-.ratib-feature-card__icon {
+.rateb-feature-card__icon {
   font-size: 1.25rem;
   color: var(--r-accent-2);
   margin-bottom: 0.75rem;
 }
 
-.ratib-feature-card h3 {
+.rateb-feature-card h3 {
   margin: 0 0 0.45rem;
   font-size: 1rem;
 }
 
-.ratib-feature-card p {
+.rateb-feature-card p {
   margin: 0;
   font-size: 0.875rem;
   color: var(--r-muted);
@@ -2434,11 +2434,11 @@ body.ratib-saas-home {
 }
 
 /* Pipeline */
-.ratib-pipeline-section {
+.rateb-pipeline-section {
   overflow: hidden;
 }
 
-.ratib-pipeline {
+.rateb-pipeline {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -2448,7 +2448,7 @@ body.ratib-saas-home {
   padding: 1rem 0;
 }
 
-.ratib-pipeline__track {
+.rateb-pipeline__track {
   position: absolute;
   left: 5%;
   right: 5%;
@@ -2459,7 +2459,7 @@ body.ratib-saas-home {
   z-index: 0;
 }
 
-.ratib-pipeline__item {
+.rateb-pipeline__item {
   position: relative;
   z-index: 1;
   flex: 0 1 100px;
@@ -2467,7 +2467,7 @@ body.ratib-saas-home {
   padding: 0.35rem;
 }
 
-.ratib-pipeline__dot {
+.rateb-pipeline__dot {
   display: block;
   width: 12px;
   height: 12px;
@@ -2477,74 +2477,74 @@ body.ratib-saas-home {
   border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
-.ratib-pipeline__item--complete .ratib-pipeline__dot {
+.rateb-pipeline__item--complete .rateb-pipeline__dot {
   background: var(--r-green);
   border-color: rgba(47, 168, 128, 0.42);
   box-shadow: 0 0 10px rgba(47, 168, 128, 0.28);
 }
 
-.ratib-pipeline__item--active .ratib-pipeline__dot {
+.rateb-pipeline__item--active .rateb-pipeline__dot {
   background: var(--r-accent);
   border-color: #b8a8d8;
   box-shadow: 0 0 12px rgba(116, 96, 176, 0.32);
-  animation: ratibPulseDot 1.8s ease infinite;
+  animation: ratebPulseDot 1.8s ease infinite;
 }
 
-.ratib-pipeline__label {
+.rateb-pipeline__label {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
 }
 
-.ratib-pipeline__meta {
+.rateb-pipeline__meta {
   font-size: 0.625rem;
   color: var(--r-muted);
 }
 
 /* AI section */
-.ratib-ai-grid {
+.rateb-ai-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
 }
 
-.ratib-ai-card {
+.rateb-ai-card {
   padding: 1.35rem;
   border-radius: var(--r-radius);
   border: 1px solid var(--r-border);
   background: linear-gradient(155deg, rgba(139, 92, 246, 0.08), rgba(15, 23, 42, 0.5));
 }
 
-.ratib-ai-card--wide {
+.rateb-ai-card--wide {
   grid-column: 1 / -1;
 }
 
 @media (min-width: 900px) {
-  .ratib-ai-card--wide {
+  .rateb-ai-card--wide {
     grid-column: span 2;
   }
 }
 
-.ratib-ai-card h3 {
+.rateb-ai-card h3 {
   margin: 0 0 0.5rem;
   font-size: 1.05rem;
 }
 
-.ratib-ai-card p {
+.rateb-ai-card p {
   margin: 0 0 0.75rem;
   color: var(--r-muted);
   font-size: 0.9rem;
   line-height: 1.55;
 }
 
-.ratib-ai-visual {
+.rateb-ai-visual {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
   margin-top: 0.5rem;
 }
 
-.ratib-ai-row {
+.rateb-ai-row {
   font-size: 0.8125rem;
   padding: 0.5rem 0.65rem;
   border-radius: var(--r-radius-sm);
@@ -2557,14 +2557,14 @@ body.ratib-saas-home {
 }
 
 /* Ecosystem */
-.ratib-eco__viz {
+.rateb-eco__viz {
   display: grid;
   gap: 1.5rem;
   max-width: 720px;
   margin: 0 auto;
 }
 
-.ratib-eco__core {
+.rateb-eco__core {
   text-align: center;
   padding: 2rem 1.5rem;
   border-radius: 18px;
@@ -2573,14 +2573,14 @@ body.ratib-saas-home {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
-.ratib-eco__core-label {
+.rateb-eco__core-label {
   display: block;
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: 0.08em;
 }
 
-.ratib-eco__core-sub {
+.rateb-eco__core-sub {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.8rem;
@@ -2588,13 +2588,13 @@ body.ratib-saas-home {
   font-family: var(--r-mono);
 }
 
-.ratib-eco__spokes {
+.rateb-eco__spokes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 0.75rem;
 }
 
-.ratib-eco__spoke {
+.rateb-eco__spoke {
   padding: 1rem;
   border-radius: var(--r-radius);
   border: 1px solid var(--r-border);
@@ -2607,12 +2607,12 @@ body.ratib-saas-home {
     border-color 0.2s;
 }
 
-.ratib-eco__spoke:hover {
+.rateb-eco__spoke:hover {
   transform: translateY(-2px);
   border-color: rgba(34, 211, 238, 0.3);
 }
 
-.ratib-eco__spoke small {
+.rateb-eco__spoke small {
   display: block;
   margin-top: 0.25rem;
   font-weight: 400;
@@ -2620,49 +2620,49 @@ body.ratib-saas-home {
   color: var(--r-muted);
 }
 
-.ratib-eco__spoke--accent {
+.rateb-eco__spoke--accent {
   border-color: rgba(249, 115, 22, 0.4);
 }
 
 /* Analytics */
-.ratib-analytics__grid {
+.rateb-analytics__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
 }
 
-.ratib-analytics-card {
+.rateb-analytics-card {
   padding: 1.25rem;
   border-radius: var(--r-radius);
   border: 1px solid var(--r-border);
   background: rgba(255, 255, 255, 0.02);
 }
 
-.ratib-analytics-card h3 {
+.rateb-analytics-card h3 {
   margin: 0 0 0.65rem;
   font-size: 0.95rem;
 }
 
-.ratib-analytics-card p {
+.rateb-analytics-card p {
   margin: 0.65rem 0 0;
   font-size: 0.8125rem;
   color: var(--r-muted);
 }
 
-.ratib-metric__val {
+.rateb-metric__val {
   font-size: 1.75rem;
   font-weight: 800;
   font-family: var(--r-mono);
 }
 
-.ratib-metric__note {
+.rateb-metric__note {
   display: block;
   font-size: 0.75rem;
   color: var(--r-muted);
   margin-top: 0.15rem;
 }
 
-.ratib-metric__chart {
+.rateb-metric__chart {
   display: block;
   margin-top: 0.65rem;
   height: 40px;
@@ -2672,11 +2672,11 @@ body.ratib-saas-home {
   overflow: hidden;
 }
 
-.ratib-metric__chart--line {
+.rateb-metric__chart--line {
   background: linear-gradient(90deg, rgba(52, 211, 153, 0.15), rgba(139, 92, 246, 0.35));
 }
 
-.ratib-metric__chart--line::after {
+.rateb-metric__chart--line::after {
   content: "";
   position: absolute;
   left: 0;
@@ -2687,15 +2687,15 @@ body.ratib-saas-home {
   border-radius: 2px;
 }
 
-.ratib-metric__chart--bars {
+.rateb-metric__chart--bars {
   display: flex;
   align-items: flex-end;
   gap: 4px;
   padding: 8px;
 }
 
-.ratib-metric__chart--bars::before,
-.ratib-metric__chart--bars::after {
+.rateb-metric__chart--bars::before,
+.rateb-metric__chart--bars::after {
   content: "";
   flex: 1;
   border-radius: 2px;
@@ -2703,17 +2703,17 @@ body.ratib-saas-home {
   height: 35%;
 }
 
-.ratib-metric__chart--bars::after {
+.rateb-metric__chart--bars::after {
   height: 65%;
   background: rgba(249, 115, 22, 0.55);
 }
 
 /* API strip */
-.ratib-api-strip {
+.rateb-api-strip {
   padding: 2.5rem 0;
 }
 
-.ratib-api-strip__inner {
+.rateb-api-strip__inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2725,12 +2725,12 @@ body.ratib-saas-home {
   background: rgba(139, 92, 246, 0.06);
 }
 
-.ratib-api-strip__title {
+.rateb-api-strip__title {
   margin: 0.35rem 0;
   font-size: 1.35rem;
 }
 
-.ratib-api-strip__sub {
+.rateb-api-strip__sub {
   margin: 0;
   color: var(--r-muted);
   max-width: 36rem;
@@ -2738,11 +2738,11 @@ body.ratib-saas-home {
 }
 
 /* Pricing (compat + SaaS) */
-.pricing-section.ratib-pricing-saas {
+.pricing-section.rateb-pricing-saas {
   padding: clamp(3rem, 6vw, 5rem) 0;
 }
 
-.pricing-section.ratib-pricing-saas .pricing-section h2 {
+.pricing-section.rateb-pricing-saas .pricing-section h2 {
   animation: none;
 }
 
@@ -2801,52 +2801,52 @@ body.ratib-saas-home {
 }
 
 /* Video */
-.ratib-video {
+.rateb-video {
   padding-bottom: 0;
 }
 
-.ratib-video .video-caption {
+.rateb-video .video-caption {
   color: var(--r-muted);
   margin-bottom: 1.25rem;
 }
 
-.video-section.ratib-video {
+.video-section.rateb-video {
   padding-top: clamp(1.5rem, 4vw, 2.5rem);
   padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
 }
 
-.ratib-hero__video-band.video-section.ratib-video {
+.rateb-hero__video-band.video-section.rateb-video {
   padding-top: clamp(1.15rem, 2.8vw, 1.85rem);
   padding-bottom: clamp(0.85rem, 2vw, 1.35rem);
   margin-top: clamp(1rem, 2.8vw, 1.75rem);
   border-top: 1px solid rgba(148, 163, 184, 0.12);
 }
 
-.ratib-hero__video-head.ratib-section__head {
+.rateb-hero__video-head.rateb-section__head {
   margin-bottom: 1.1rem;
   text-align: left;
 }
 
-.ratib-hero__video-title {
+.rateb-hero__video-title {
   font-size: clamp(1.35rem, 2.45vw, 1.85rem);
 }
 
-.ratib-video--hero .ratib-video__shell {
+.rateb-video--hero .rateb-video__shell {
   max-width: min(680px, 100%);
 }
 
-.ratib-hero__photo--program img {
+.rateb-hero__photo--program img {
   object-fit: contain;
   background: #020617;
 }
 
-.ratib-video__shell {
+.rateb-video__shell {
   max-width: min(560px, 100%);
   margin-left: auto;
   margin-right: auto;
 }
 
-.ratib-video .ratib-video__shell .video-wrap {
+.rateb-video .rateb-video__shell .video-wrap {
   border-radius: 14px;
 }
 
@@ -2868,7 +2868,7 @@ body.ratib-saas-home {
 }
 
 /* Homepage CMS: videos + program images as compact horizontal scroll rows */
-.ratib-cms-media-strip {
+.rateb-cms-media-strip {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -2878,7 +2878,7 @@ body.ratib-saas-home {
   scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
-.ratib-cms-media-strip__track {
+.rateb-cms-media-strip__track {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -2888,39 +2888,39 @@ body.ratib-saas-home {
   padding: 0.2rem 0;
 }
 
-.ratib-cms-media-strip__item--video {
+.rateb-cms-media-strip__item--video {
   flex: 0 0 auto;
   width: min(300px, 82vw);
   scroll-snap-align: start;
 }
 
-.ratib-cms-media-strip__video-wrap.video-wrap {
+.rateb-cms-media-strip__video-wrap.video-wrap {
   max-height: none;
 }
 
-.ratib-cms-media-strip__video-wrap video.home-video-player,
-.ratib-cms-media-strip__video-wrap .ratib-cms-media-strip__video {
+.rateb-cms-media-strip__video-wrap video.home-video-player,
+.rateb-cms-media-strip__video-wrap .rateb-cms-media-strip__video {
   max-height: min(48vw, 220px);
   width: 100%;
   object-fit: contain;
 }
 
-.ratib-cms-media-strip--program .ratib-cms-media-strip__track--program {
+.rateb-cms-media-strip--program .rateb-cms-media-strip__track--program {
   align-items: stretch;
 }
 
-.ratib-cms-media-strip__item--program {
+.rateb-cms-media-strip__item--program {
   flex: 0 0 auto;
   width: min(260px, 78vw);
   scroll-snap-align: start;
 }
 
-.ratib-cms-media-strip__item--program .ratib-hero__photo {
+.rateb-cms-media-strip__item--program .rateb-hero__photo {
   margin: 0;
   height: 100%;
 }
 
-.ratib-cms-media-strip__item--program .ratib-hero__photo img {
+.rateb-cms-media-strip__item--program .rateb-hero__photo img {
   width: 100%;
   aspect-ratio: 16 / 10;
   max-height: min(44vw, 220px);
@@ -2929,11 +2929,11 @@ body.ratib-saas-home {
 }
 
 /* Program strip: auto marquee (JS scroll) + wheel pan + drag + scrollbar + edge buttons + click-to-zoom */
-.ratib-cms-media-strip.ratib-program-marquee {
+.rateb-cms-media-strip.rateb-program-marquee {
   overflow: visible;
 }
 
-.ratib-program-marquee__shell {
+.rateb-program-marquee__shell {
   display: flex;
   align-items: stretch;
   gap: 0.35rem;
@@ -2941,13 +2941,13 @@ body.ratib-saas-home {
   position: relative;
 }
 
-.ratib-program-marquee__shell .ratib-program-marquee__viewport {
+.rateb-program-marquee__shell .rateb-program-marquee__viewport {
   margin-top: 0;
   flex: 1;
   min-width: 0;
 }
 
-.ratib-program-strip-hint {
+.rateb-program-strip-hint {
   margin: 0.35rem 0 0.15rem;
   max-width: 52rem;
   font-size: 0.9rem;
@@ -2955,7 +2955,7 @@ body.ratib-saas-home {
   color: rgba(203, 213, 225, 0.94);
 }
 
-.ratib-program-strip-empty {
+.rateb-program-strip-empty {
   margin: 0.45rem 0 0;
   max-width: 48rem;
   padding: 1rem 1.15rem;
@@ -2967,11 +2967,11 @@ body.ratib-saas-home {
   color: rgba(226, 232, 240, 0.96);
 }
 
-.ratib-hero__program-strip--empty .ratib-hero__photo-eyebrow {
+.rateb-hero__program-strip--empty .rateb-hero__photo-eyebrow {
   margin-bottom: 0.25rem;
 }
 
-.ratib-program-marquee__scroll-btn {
+.rateb-program-marquee__scroll-btn {
   flex-shrink: 0;
   align-self: center;
   width: 2.85rem;
@@ -2997,22 +2997,22 @@ body.ratib-saas-home {
     0 0 0 1px rgba(15, 23, 42, 0.4) inset;
 }
 
-.ratib-program-marquee__scroll-btn:hover {
+.rateb-program-marquee__scroll-btn:hover {
   filter: brightness(1.08);
   border-color: rgba(196, 181, 253, 0.85);
 }
 
-.ratib-program-marquee__scroll-btn:active {
+.rateb-program-marquee__scroll-btn:active {
   transform: scale(0.97);
 }
 
-.ratib-program-marquee__scroll-btn:focus-visible {
+.rateb-program-marquee__scroll-btn:focus-visible {
   outline: 2px solid rgba(139, 92, 246, 0.95);
   outline-offset: 2px;
 }
 
 @media (max-width: 520px) {
-  .ratib-program-marquee__scroll-btn {
+  .rateb-program-marquee__scroll-btn {
     width: 2rem;
     min-width: 2rem;
     height: 2.6rem;
@@ -3020,7 +3020,7 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-program-marquee__viewport {
+.rateb-program-marquee__viewport {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -3031,45 +3031,45 @@ body.ratib-saas-home {
 }
 
 /* JS-driven loop: thin scrollbar so users can drag it manually */
-.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport {
+.rateb-program-marquee--js-marquee .rateb-program-marquee__viewport {
   cursor: default;
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.35);
 }
 
-.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport::-webkit-scrollbar {
+.rateb-program-marquee--js-marquee .rateb-program-marquee__viewport::-webkit-scrollbar {
   height: 8px;
 }
 
-.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport::-webkit-scrollbar-thumb {
+.rateb-program-marquee--js-marquee .rateb-program-marquee__viewport::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.45);
   border-radius: 999px;
 }
 
-.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport::-webkit-scrollbar-track {
+.rateb-program-marquee--js-marquee .rateb-program-marquee__viewport::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.35);
   border-radius: 999px;
 }
 
-.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport:hover {
+.rateb-program-marquee--js-marquee .rateb-program-marquee__viewport:hover {
   cursor: grab;
 }
 
-.ratib-program-marquee__viewport.ratib-program-marquee__viewport--dragging {
+.rateb-program-marquee__viewport.rateb-program-marquee__viewport--dragging {
   cursor: grabbing;
   user-select: none;
 }
 
-.ratib-program-marquee--no-motion .ratib-program-marquee__viewport:hover {
+.rateb-program-marquee--no-motion .rateb-program-marquee__viewport:hover {
   cursor: grab;
 }
 
-.ratib-program-marquee--no-motion .ratib-program-marquee__viewport {
+.rateb-program-marquee--no-motion .rateb-program-marquee__viewport {
   scrollbar-width: thin;
   scroll-snap-type: x proximity;
 }
 
-.ratib-program-strip__thumb {
+.rateb-program-strip__thumb {
   display: block;
   width: 100%;
   padding: 0;
@@ -3081,12 +3081,12 @@ body.ratib-saas-home {
   overflow: hidden;
 }
 
-.ratib-program-strip__thumb:focus-visible {
+.rateb-program-strip__thumb:focus-visible {
   outline: 2px solid rgba(139, 92, 246, 0.95);
   outline-offset: 3px;
 }
 
-.ratib-program-strip__thumb img {
+.rateb-program-strip__thumb img {
   display: block;
   width: 100%;
   max-width: 100%;
@@ -3096,11 +3096,11 @@ body.ratib-saas-home {
   vertical-align: top;
 }
 
-body.ratib-program-lightbox-open {
+body.rateb-program-lightbox-open {
   overflow: hidden;
 }
 
-.ratib-program-lightbox {
+.rateb-program-lightbox {
   position: fixed;
   inset: 0;
   z-index: 10050;
@@ -3110,18 +3110,18 @@ body.ratib-program-lightbox-open {
   overflow: visible;
 }
 
-.ratib-program-lightbox[hidden] {
+.rateb-program-lightbox[hidden] {
   display: none !important;
 }
 
-.ratib-program-lightbox__backdrop {
+.rateb-program-lightbox__backdrop {
   position: absolute;
   inset: 0;
   background: rgba(2, 6, 23, 0.88);
   backdrop-filter: blur(6px);
 }
 
-.ratib-program-lightbox__panel {
+.rateb-program-lightbox__panel {
   position: relative;
   z-index: 1;
   max-width: min(96vw, 1200px);
@@ -3136,7 +3136,7 @@ body.ratib-program-lightbox-open {
 }
 
 /* Prev / Next sit on the image (bottom overlay) so they stay visible while viewing any screenshot. */
-.ratib-program-lightbox__stage {
+.rateb-program-lightbox__stage {
   position: relative;
   display: inline-block;
   max-width: 100%;
@@ -3145,7 +3145,7 @@ body.ratib-program-lightbox-open {
   border-radius: 12px;
 }
 
-.ratib-program-lightbox__overlay-nav {
+.rateb-program-lightbox__overlay-nav {
   position: absolute;
   left: 0;
   right: 0;
@@ -3161,19 +3161,19 @@ body.ratib-program-lightbox-open {
   pointer-events: none;
 }
 
-.ratib-program-lightbox__overlay-nav[hidden] {
+.rateb-program-lightbox__overlay-nav[hidden] {
   display: none !important;
 }
 
-.ratib-program-lightbox__overlay-nav .ratib-program-lightbox__btn {
+.rateb-program-lightbox__overlay-nav .rateb-program-lightbox__btn {
   pointer-events: auto;
 }
 
-.ratib-program-lightbox__overlay-nav .ratib-program-lightbox__counter {
+.rateb-program-lightbox__overlay-nav .rateb-program-lightbox__counter {
   pointer-events: none;
 }
 
-.ratib-program-lightbox__btn {
+.rateb-program-lightbox__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3195,28 +3195,28 @@ body.ratib-program-lightbox-open {
     border-color 0.12s ease;
 }
 
-.ratib-program-lightbox__btn:hover {
+.rateb-program-lightbox__btn:hover {
   filter: brightness(1.07);
   border-color: rgba(196, 181, 253, 0.85);
 }
 
-.ratib-program-lightbox__btn:active {
+.rateb-program-lightbox__btn:active {
   transform: scale(0.98);
 }
 
-.ratib-program-lightbox__btn:focus-visible {
+.rateb-program-lightbox__btn:focus-visible {
   outline: 2px solid rgba(196, 181, 253, 0.95);
   outline-offset: 3px;
 }
 
-.ratib-program-lightbox__btn-ic {
+.rateb-program-lightbox__btn-ic {
   font-size: 1.25rem;
   line-height: 1;
   opacity: 0.95;
 }
 
 @media (max-width: 520px) {
-  .ratib-program-lightbox__btn {
+  .rateb-program-lightbox__btn {
     flex: 1 1 calc(50% - 0.5rem);
     min-width: 8rem;
     padding: 0.5rem 0.75rem;
@@ -3224,7 +3224,7 @@ body.ratib-program-lightbox-open {
   }
 }
 
-.ratib-program-lightbox__img {
+.rateb-program-lightbox__img {
   display: block;
   max-width: 100%;
   max-height: min(82vh, 800px);
@@ -3238,7 +3238,7 @@ body.ratib-program-lightbox-open {
   vertical-align: middle;
 }
 
-.ratib-program-lightbox__caption {
+.rateb-program-lightbox__caption {
   margin: 0;
   max-width: min(56rem, 92vw);
   text-align: center;
@@ -3247,11 +3247,11 @@ body.ratib-program-lightbox-open {
   line-height: 1.45;
 }
 
-.ratib-program-lightbox__caption[hidden] {
+.rateb-program-lightbox__caption[hidden] {
   display: none !important;
 }
 
-.ratib-program-lightbox__counter {
+.rateb-program-lightbox__counter {
   margin: 0;
   min-width: 4.5rem;
   text-align: center;
@@ -3261,7 +3261,7 @@ body.ratib-program-lightbox-open {
   letter-spacing: 0.08em;
 }
 
-.ratib-program-lightbox__close {
+.rateb-program-lightbox__close {
   position: absolute;
   top: -2.75rem;
   right: 0;
@@ -3278,12 +3278,12 @@ body.ratib-program-lightbox-open {
   place-items: center;
 }
 
-.ratib-program-lightbox__close:hover {
+.rateb-program-lightbox__close:hover {
   background: rgba(30, 41, 59, 0.95);
 }
 
 @media (max-width: 640px) {
-  .ratib-program-lightbox__close {
+  .rateb-program-lightbox__close {
     top: -0.5rem;
     right: -0.25rem;
   }
@@ -3294,13 +3294,13 @@ body.ratib-program-lightbox-open {
 }
 
 /* Final CTA */
-.ratib-final-cta {
+.rateb-final-cta {
   position: relative;
   padding: clamp(3.5rem, 8vw, 6rem) 0;
   margin-top: 2rem;
 }
 
-.ratib-final-cta__bg {
+.rateb-final-cta__bg {
   position: absolute;
   inset: 0;
   background:
@@ -3309,14 +3309,14 @@ body.ratib-program-lightbox-open {
   pointer-events: none;
 }
 
-.ratib-final-cta__inner {
+.rateb-final-cta__inner {
   position: relative;
   text-align: center;
   max-width: 40rem;
   margin: 0 auto;
 }
 
-.ratib-final-cta__title {
+.rateb-final-cta__title {
   font-size: clamp(1.75rem, 3.5vw, 2.5rem);
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -3324,14 +3324,14 @@ body.ratib-program-lightbox-open {
   color: #dce5f0;
 }
 
-.ratib-final-cta__sub {
+.rateb-final-cta__sub {
   color: var(--r-muted);
   font-size: 1.0625rem;
   line-height: 1.65;
   margin: 0 0 1.75rem;
 }
 
-.ratib-final-cta__actions {
+.rateb-final-cta__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -3339,7 +3339,7 @@ body.ratib-program-lightbox-open {
 }
 
 /* Footer */
-.ratib-footer-enterprise {
+.rateb-footer-enterprise {
   position: relative;
   z-index: 10;
   border-top: 1px solid var(--r-border);
@@ -3347,7 +3347,7 @@ body.ratib-program-lightbox-open {
   padding-top: 3rem;
 }
 
-.ratib-footer-enterprise__grid {
+.rateb-footer-enterprise__grid {
   display: grid;
   grid-template-columns: 1.4fr repeat(4, 1fr) 1.2fr;
   gap: 2rem 1.5rem;
@@ -3355,18 +3355,18 @@ body.ratib-program-lightbox-open {
 }
 
 @media (max-width: 1100px) {
-  .ratib-footer-enterprise__grid {
+  .rateb-footer-enterprise__grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 560px) {
-  .ratib-footer-enterprise__grid {
+  .rateb-footer-enterprise__grid {
     grid-template-columns: 1fr;
   }
 }
 
-.ratib-footer-enterprise__brand p {
+.rateb-footer-enterprise__brand p {
   color: var(--r-muted);
   font-size: 0.9rem;
   line-height: 1.6;
@@ -3374,12 +3374,12 @@ body.ratib-program-lightbox-open {
   max-width: 22rem;
 }
 
-.ratib-footer-enterprise__logo {
+.rateb-footer-enterprise__logo {
   display: inline-flex;
   align-items: center;
 }
 
-.ratib-footer-col h4 {
+.rateb-footer-col h4 {
   margin: 0 0 0.85rem;
   font-size: 0.8125rem;
   font-weight: 700;
@@ -3388,27 +3388,27 @@ body.ratib-program-lightbox-open {
   color: #94a3b8;
 }
 
-.ratib-footer-col ul {
+.rateb-footer-col ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.ratib-footer-enterprise .ratib-footer-col ul.ratib-footer-enterprise__link-list {
+.rateb-footer-enterprise .rateb-footer-col ul.rateb-footer-enterprise__link-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.ratib-footer-enterprise .ratib-footer-col ul.ratib-footer-enterprise__link-list > li {
+.rateb-footer-enterprise .rateb-footer-col ul.rateb-footer-enterprise__link-list > li {
   margin-bottom: 0;
 }
 
-.ratib-footer-col li {
+.rateb-footer-col li {
   margin-bottom: 0.45rem;
 }
 
-.ratib-footer-enterprise .ratib-footer-col a.ratib-nav__link.ratib-footer-enterprise__nav-link {
+.rateb-footer-enterprise .rateb-footer-col a.rateb-nav__link.rateb-footer-enterprise__nav-link {
   width: 100%;
   max-width: 100%;
   justify-content: flex-start;
@@ -3416,147 +3416,147 @@ body.ratib-program-lightbox-open {
   font-size: 0.92rem;
 }
 
-.ratib-footer-enterprise .ratib-footer-col .ratib-nav__label {
+.rateb-footer-enterprise .rateb-footer-col .rateb-nav__label {
   white-space: normal;
   line-height: 1.25;
 }
 
-.ratib-footer-enterprise .ratib-nav__icon--fa {
+.rateb-footer-enterprise .rateb-nav__icon--fa {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.ratib-footer-enterprise .ratib-nav__icon--fa.fab {
+.rateb-footer-enterprise .rateb-nav__icon--fa.fab {
   font-size: 1.22rem;
 }
 
-.ratib-footer-enterprise .ratib-nav__icon--fa.fas {
+.rateb-footer-enterprise .rateb-nav__icon--fa.fas {
   font-size: 1.05rem;
 }
 
 /* External-only pills (no hash match): align with header semantics */
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--customer-portal .ratib-nav__icon {
-  --ratib-pulse: rgba(245, 158, 11, 0.55);
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--customer-portal .rateb-nav__icon {
+  --rateb-pulse: rgba(245, 158, 11, 0.55);
   color: #fffbeb;
   background: linear-gradient(145deg, rgba(217, 119, 6, 0.38), rgba(69, 26, 3, 0.72));
   border-color: rgba(251, 191, 36, 0.55);
   box-shadow: 0 6px 22px rgba(245, 158, 11, 0.26);
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--customer-portal .ratib-nav__label {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--customer-portal .rateb-nav__label {
   color: #fef3c7;
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--customer-portal {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--customer-portal {
   color: #fffbeb;
   border: 1px solid rgba(251, 191, 36, 0.45);
   background: linear-gradient(135deg, rgba(217, 119, 6, 0.22), rgba(69, 26, 3, 0.42));
   box-shadow: 0 0 22px rgba(245, 158, 11, 0.18);
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--customer-portal:hover {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--customer-portal:hover {
   color: #ffffff;
   border-color: rgba(253, 224, 71, 0.55);
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.32), rgba(92, 46, 15, 0.45));
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--support-tickets .ratib-nav__icon {
-  --ratib-pulse: rgba(99, 102, 241, 0.55);
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--support-tickets .rateb-nav__icon {
+  --rateb-pulse: rgba(99, 102, 241, 0.55);
   color: #eef2ff;
   background: linear-gradient(145deg, rgba(79, 70, 229, 0.52), rgba(49, 46, 129, 0.72));
   border-color: rgba(129, 140, 248, 0.55);
   box-shadow: 0 6px 22px rgba(99, 102, 241, 0.28);
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--support-tickets .ratib-nav__label {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--support-tickets .rateb-nav__label {
   color: #e0e7ff;
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--support-tickets:hover {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--support-tickets:hover {
   color: #eef2ff;
   border-color: rgba(165, 180, 252, 0.45);
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(55, 48, 163, 0.12));
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--whatsapp .ratib-nav__icon {
-  --ratib-pulse: rgba(52, 211, 153, 0.5);
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--whatsapp .rateb-nav__icon {
+  --rateb-pulse: rgba(52, 211, 153, 0.5);
   color: #ecfdf5;
   background: linear-gradient(145deg, rgba(16, 185, 129, 0.52), rgba(6, 78, 59, 0.72));
   border-color: rgba(52, 211, 153, 0.55);
   box-shadow: 0 6px 22px rgba(52, 211, 153, 0.26);
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--whatsapp .ratib-nav__label {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--whatsapp .rateb-nav__label {
   color: #a7f3d0;
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--whatsapp:hover {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--whatsapp:hover {
   color: #ecfdf5;
   border-color: rgba(110, 231, 183, 0.45);
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(6, 95, 70, 0.12));
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--phone .ratib-nav__icon {
-  --ratib-pulse: rgba(56, 189, 248, 0.52);
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--phone .rateb-nav__icon {
+  --rateb-pulse: rgba(56, 189, 248, 0.52);
   color: #e0f2fe;
   background: linear-gradient(145deg, rgba(14, 165, 233, 0.48), rgba(12, 74, 110, 0.72));
   border-color: rgba(56, 189, 248, 0.55);
   box-shadow: 0 6px 22px rgba(56, 189, 248, 0.26);
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--phone .ratib-nav__label {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--phone .rateb-nav__label {
   color: #bae6fd;
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--phone:hover {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--phone:hover {
   color: #f0f9ff;
   border-color: rgba(125, 211, 252, 0.45);
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(8, 47, 73, 0.12));
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--mailto .ratib-nav__icon {
-  --ratib-pulse: rgba(251, 113, 133, 0.52);
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--mailto .rateb-nav__icon {
+  --rateb-pulse: rgba(251, 113, 133, 0.52);
   color: #fff1f2;
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.48), rgba(136, 19, 55, 0.68));
   border-color: rgba(253, 164, 175, 0.55);
   box-shadow: 0 6px 22px rgba(251, 113, 133, 0.26);
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--mailto .ratib-nav__label {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--mailto .rateb-nav__label {
   color: #fecdd3;
 }
 
-.ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--mailto:hover {
+.rateb-footer-enterprise .rateb-nav__link.rateb-footer-link--mailto:hover {
   color: #fff1f2;
   border-color: rgba(254, 205, 211, 0.48);
   background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(159, 18, 57, 0.12));
 }
 
-.ratib-footer-col a:not(.ratib-nav__link) {
+.rateb-footer-col a:not(.rateb-nav__link) {
   color: #cbd5e1;
   text-decoration: none;
   font-size: 0.9rem;
 }
 
-.ratib-footer-col a:not(.ratib-nav__link):hover {
+.rateb-footer-col a:not(.rateb-nav__link):hover {
   color: #fff;
 }
 
-.ratib-footer-enterprise__infra-copy {
+.rateb-footer-enterprise__infra-copy {
   font-size: 0.85rem;
   color: var(--r-muted);
   line-height: 1.55;
   margin: 0 0 0.85rem;
 }
 
-.ratib-footer-social {
+.rateb-footer-social {
   display: flex;
   gap: 0.65rem;
   margin-bottom: 1rem;
 }
 
-.ratib-footer-social a {
+.rateb-footer-social a {
   width: 36px;
   height: 36px;
   border-radius: 9px;
@@ -3570,19 +3570,19 @@ body.ratib-program-lightbox-open {
     border-color 0.15s;
 }
 
-.ratib-footer-social a:hover {
+.rateb-footer-social a:hover {
   color: #fff;
   border-color: rgba(139, 92, 246, 0.45);
 }
 
-.ratib-footer-newsletter__label {
+.rateb-footer-newsletter__label {
   display: block;
   font-size: 0.75rem;
   color: var(--r-muted);
   margin-bottom: 0.35rem;
 }
 
-.ratib-footer-newsletter input {
+.rateb-footer-newsletter input {
   width: 100%;
   padding: 0.5rem 0.65rem;
   border-radius: 8px;
@@ -3592,7 +3592,7 @@ body.ratib-program-lightbox-open {
   margin-bottom: 0.4rem;
 }
 
-.ratib-footer-newsletter .btn-sub {
+.rateb-footer-newsletter .btn-sub {
   width: 100%;
   padding: 0.5rem;
   border: none;
@@ -3603,12 +3603,12 @@ body.ratib-program-lightbox-open {
   cursor: pointer;
 }
 
-.ratib-footer-enterprise__bottom {
+.rateb-footer-enterprise__bottom {
   border-top: 1px solid var(--r-border);
   padding: 1rem 0;
 }
 
-.ratib-footer-enterprise__bottom-inner {
+.rateb-footer-enterprise__bottom-inner {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -3617,14 +3617,14 @@ body.ratib-program-lightbox-open {
   color: var(--r-muted);
 }
 
-.ratib-footer-enterprise__loc {
+.rateb-footer-enterprise__loc {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }
 
 /* Register + form (legacy hooks) */
-.ratib-register-wrap.register-section {
+.rateb-register-wrap.register-section {
   max-width: var(--r-max);
 }
 
@@ -3640,19 +3640,19 @@ body.ratib-program-lightbox-open {
   justify-content: center;
 }
 
-.register-section .ratib-info {
+.register-section .rateb-info {
   flex: 1;
   min-width: 280px;
   max-width: 400px;
 }
 
-.register-section .ratib-info h2 {
+.register-section .rateb-info h2 {
   font-size: 1.35rem;
   margin-bottom: 0.75rem;
   color: var(--r-text);
 }
 
-.register-section .ratib-info p {
+.register-section .rateb-info p {
   color: var(--r-muted);
   font-size: 0.9375rem;
   line-height: 1.6;
@@ -3874,7 +3874,7 @@ body.ratib-program-lightbox-open {
   color: var(--r-yellow);
 }
 
-.ratib-ngenius-currency-note {
+.rateb-ngenius-currency-note {
   color: #94a3b8;
   line-height: 1.45;
   font-size: 0.8125rem;
@@ -3882,7 +3882,7 @@ body.ratib-program-lightbox-open {
   padding-top: 0.65rem;
 }
 
-.ratib-ngenius-sar-total {
+.rateb-ngenius-sar-total {
   color: #e2e8f0;
 }
 
@@ -3900,7 +3900,7 @@ body.ratib-program-lightbox-open {
   animation: none;
 }
 
-.pricing-section .ratib-section__head .ratib-section__title {
+.pricing-section .rateb-section__head .rateb-section__title {
   text-align: center;
 }
 
@@ -4030,7 +4030,7 @@ body.ratib-program-lightbox-open {
 }
 
 /* Film grain + vignette — readability-preserving */
-body.ratib-saas-home::after {
+body.rateb-saas-home::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -4043,7 +4043,7 @@ body.ratib-saas-home::after {
   background-size: 256px 256px;
 }
 
-body.ratib-saas-home::before {
+body.rateb-saas-home::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -4053,7 +4053,7 @@ body.ratib-saas-home::before {
 }
 
 /* Background depth — third orb + finer grid */
-.ratib-saas-bg::after {
+.rateb-saas-bg::after {
   content: "";
   position: absolute;
   width: 280px;
@@ -4063,22 +4063,22 @@ body.ratib-saas-home::before {
   border-radius: 50%;
   filter: blur(72px);
   background: rgba(34, 211, 238, 0.12);
-  animation: ratibOrbFloat 22s ease-in-out infinite;
+  animation: ratebOrbFloat 22s ease-in-out infinite;
   animation-delay: -5s;
 }
 
-.ratib-saas-bg__grid {
+.rateb-saas-bg__grid {
   opacity: 0.28;
   background-size: 48px 48px;
 }
 
 /* Typography rhythm */
-.ratib-section__title {
+.rateb-section__title {
   line-height: 1.15;
   font-weight: 750;
 }
 
-.ratib-section__sub {
+.rateb-section__sub {
   max-width: 38rem;
   margin-left: auto;
   margin-right: auto;
@@ -4086,16 +4086,16 @@ body.ratib-saas-home::before {
   line-height: 1.65;
 }
 
-.ratib-section__head--left .ratib-section__sub {
+.rateb-section__head--left .rateb-section__sub {
   margin-left: 0;
 }
 
 /* Section flow — soft separators */
-.ratib-main > .ratib-section + .ratib-section {
+.rateb-main > .rateb-section + .rateb-section {
   position: relative;
 }
 
-.ratib-main > .ratib-section + .ratib-section::before {
+.rateb-main > .rateb-section + .rateb-section::before {
   content: "";
   position: absolute;
   left: 50%;
@@ -4114,9 +4114,9 @@ body.ratib-saas-home::before {
   pointer-events: none;
 }
 
-.ratib-main > .pricing-section.ratib-pricing-saas::before,
-.ratib-main > .video-section.ratib-video::before,
-.ratib-main > .ratib-final-cta::before {
+.rateb-main > .pricing-section.rateb-pricing-saas::before,
+.rateb-main > .video-section.rateb-video::before,
+.rateb-main > .rateb-final-cta::before {
   content: "";
   position: absolute;
   left: 50%;
@@ -4128,31 +4128,31 @@ body.ratib-saas-home::before {
   pointer-events: none;
 }
 
-.pricing-section.ratib-pricing-saas,
-.video-section.ratib-video,
-.ratib-final-cta {
+.pricing-section.rateb-pricing-saas,
+.video-section.rateb-video,
+.rateb-final-cta {
   position: relative;
 }
 
 /* --- Hero premium --- */
-.ratib-hero {
+.rateb-hero {
   padding-top: clamp(3rem, 7vw, 5.5rem);
   padding-bottom: clamp(3.5rem, 9vw, 6.5rem);
 }
 
-.ratib-hero__grid {
+.rateb-hero__grid {
   gap: clamp(2.25rem, 5vw, 4.5rem);
   align-items: stretch;
 }
 
-.ratib-eyebrow {
+.rateb-eyebrow {
   margin-bottom: 1rem;
   font-size: 0.6875rem;
   letter-spacing: 0.14em;
   color: rgba(27, 176, 203, 0.78);
 }
 
-.ratib-hero__title {
+.rateb-hero__title {
   max-width: 100%;
   line-height: 1.16;
   font-weight: 750;
@@ -4160,17 +4160,17 @@ body.ratib-saas-home::before {
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
-.ratib-text-gradient {
+.rateb-text-gradient {
   background: linear-gradient(122deg, #d4c4ee 0%, #b8a8e0 26%, #9888c8 48%, #c87850 76%, #dcb090 100%);
   background-size: 140% 140%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: ratibHeroGradient 10s ease infinite;
+  animation: ratebHeroGradient 10s ease infinite;
   filter: drop-shadow(0 0 14px rgba(130, 118, 168, 0.14));
 }
 
-@keyframes ratibHeroGradient {
+@keyframes ratebHeroGradient {
   0%,
   100% {
     background-position: 0% 40%;
@@ -4180,7 +4180,7 @@ body.ratib-saas-home::before {
   }
 }
 
-.ratib-hero__lead {
+.rateb-hero__lead {
   font-size: 1rem;
   line-height: 1.62;
   max-width: 36rem;
@@ -4189,12 +4189,12 @@ body.ratib-saas-home::before {
 }
 
 /* Micro-feature list */
-.ratib-hero__bullets {
+.rateb-hero__bullets {
   gap: 0.5rem;
   margin-bottom: 2rem;
 }
 
-.ratib-hero__bullets li {
+.rateb-hero__bullets li {
   position: relative;
   padding: 0.65rem 0.85rem 0.65rem 0.75rem;
   border-radius: var(--r-radius-sm);
@@ -4207,7 +4207,7 @@ body.ratib-saas-home::before {
     transform 0.2s ease;
 }
 
-.ratib-hero__bullets li:hover {
+.rateb-hero__bullets li:hover {
   border-color: rgba(124, 98, 200, 0.28);
   box-shadow:
     0 0 0 1px rgba(124, 98, 200, 0.09),
@@ -4215,7 +4215,7 @@ body.ratib-saas-home::before {
   transform: translateY(-1px);
 }
 
-.ratib-hero__bullets i {
+.rateb-hero__bullets i {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4230,35 +4230,35 @@ body.ratib-saas-home::before {
   box-shadow: 0 0 14px rgba(124, 98, 200, 0.08);
 }
 
-.ratib-hero__bullets li:nth-child(1) i {
+.rateb-hero__bullets li:nth-child(1) i {
   background: rgba(56, 189, 248, 0.15);
   color: #bae6fd;
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.14);
 }
 
-.ratib-hero__bullets li:nth-child(2) i {
+.rateb-hero__bullets li:nth-child(2) i {
   background: rgba(217, 70, 239, 0.14);
   color: #f5d0fe;
   box-shadow: 0 0 14px rgba(217, 70, 239, 0.16);
 }
 
-.ratib-hero__bullets li:nth-child(3) i {
+.rateb-hero__bullets li:nth-child(3) i {
   background: rgba(52, 211, 153, 0.14);
   color: #a7f3d0;
   box-shadow: 0 0 14px rgba(52, 211, 153, 0.14);
 }
 
-.ratib-hero__bullets li:nth-child(4) i {
+.rateb-hero__bullets li:nth-child(4) i {
   background: rgba(251, 191, 36, 0.14);
   color: #fde68a;
   box-shadow: 0 0 14px rgba(251, 191, 36, 0.14);
 }
 
-.ratib-hero__actions {
+.rateb-hero__actions {
   gap: 0.85rem;
 }
 
-.ratib-btn--primary {
+.rateb-btn--primary {
   position: relative;
   overflow: hidden;
   box-shadow:
@@ -4267,7 +4267,7 @@ body.ratib-saas-home::before {
     0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
-.ratib-btn--primary::after {
+.rateb-btn--primary::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -4276,11 +4276,11 @@ body.ratib-saas-home::before {
   transition: transform 0.55s ease;
 }
 
-.ratib-btn--primary:hover::after {
+.rateb-btn--primary:hover::after {
   transform: translateX(120%);
 }
 
-.ratib-btn--primary:hover {
+.rateb-btn--primary:hover {
   transform: translateY(-2px);
   box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.3),
@@ -4288,28 +4288,28 @@ body.ratib-saas-home::before {
     0 0 22px rgba(208, 104, 56, 0.12);
 }
 
-.ratib-btn--outline {
+.rateb-btn--outline {
   box-shadow: 0 0 0 1px rgba(124, 98, 200, 0.18) inset;
   backdrop-filter: blur(8px);
 }
 
-.ratib-btn--outline:hover {
+.rateb-btn--outline:hover {
   transform: translateY(-2px);
   box-shadow:
     0 6px 20px rgba(116, 96, 176, 0.16),
     0 0 0 1px rgba(148, 130, 188, 0.32) inset;
 }
 
-.ratib-btn:active {
+.rateb-btn:active {
   transform: translateY(0);
 }
 
 /* --- Command dashboard — depth & live motion --- */
-.ratib-hero__visual {
+.rateb-hero__visual {
   perspective: 1200px;
 }
 
-.ratib-dash {
+.rateb-dash {
   position: relative;
   transform-style: preserve-3d;
   border-radius: 20px;
@@ -4324,7 +4324,7 @@ body.ratib-saas-home::before {
   animation: none;
 }
 
-@keyframes ratibDashFloat {
+@keyframes ratebDashFloat {
   0%,
   100% {
     transform: rotateX(0deg) translateY(0);
@@ -4334,7 +4334,7 @@ body.ratib-saas-home::before {
   }
 }
 
-.ratib-dash::before {
+.rateb-dash::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -4359,16 +4359,16 @@ body.ratib-saas-home::before {
   opacity: 0.65;
 }
 
-.ratib-dash__chrome {
+.rateb-dash__chrome {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(0, 0, 0, 0.35));
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
 
-.ratib-dash__live .ratib-live-dot {
-  animation: ratibLiveBlink 1.4s ease-in-out infinite;
+.rateb-dash__live .rateb-live-dot {
+  animation: ratebLiveBlink 1.4s ease-in-out infinite;
 }
 
-@keyframes ratibLiveBlink {
+@keyframes ratebLiveBlink {
   0%,
   100% {
     opacity: 1;
@@ -4382,18 +4382,18 @@ body.ratib-saas-home::before {
   }
 }
 
-.ratib-kpi {
+.rateb-kpi {
   position: relative;
   overflow: hidden;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
   animation: none;
 }
 
-.ratib-kpi::after {
+.rateb-kpi::after {
   display: none;
 }
 
-@keyframes ratibKpiPulse {
+@keyframes ratebKpiPulse {
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
@@ -4403,7 +4403,7 @@ body.ratib-saas-home::before {
   }
 }
 
-@keyframes ratibKpiSheen {
+@keyframes ratebKpiSheen {
   0% {
     transform: translateX(0);
   }
@@ -4412,14 +4412,14 @@ body.ratib-saas-home::before {
   }
 }
 
-.ratib-stage--active {
+.rateb-stage--active {
   animation: none;
   box-shadow:
     0 0 10px rgba(116, 96, 176, 0.18),
     0 0 0 1px rgba(148, 130, 188, 0.28);
 }
 
-.ratib-mapstrip {
+.rateb-mapstrip {
   padding: 0.45rem 0.5rem;
   margin-top: 0.65rem;
   border-radius: 8px;
@@ -4427,39 +4427,39 @@ body.ratib-saas-home::before {
   border: 1px solid rgba(27, 176, 203, 0.1);
 }
 
-.ratib-mapstrip i {
+.rateb-mapstrip i {
   animation: none;
 }
 
-@keyframes ratibIconPulse {
+@keyframes ratebIconPulse {
   50% {
     color: var(--r-cyan);
     filter: drop-shadow(0 0 4px rgba(27, 176, 203, 0.28));
   }
 }
 
-.ratib-chart__bars i {
+.rateb-chart__bars i {
   transform-origin: bottom center;
   animation: none;
 }
 
-.ratib-chart__bars i:nth-child(1) {
+.rateb-chart__bars i:nth-child(1) {
   animation-duration: 2.4s;
 }
-.ratib-chart__bars i:nth-child(2) {
+.rateb-chart__bars i:nth-child(2) {
   animation-duration: 2.8s;
 }
-.ratib-chart__bars i:nth-child(3) {
+.rateb-chart__bars i:nth-child(3) {
   animation-duration: 2.2s;
 }
-.ratib-chart__bars i:nth-child(4) {
+.rateb-chart__bars i:nth-child(4) {
   animation-duration: 3s;
 }
-.ratib-chart__bars i:nth-child(5) {
+.rateb-chart__bars i:nth-child(5) {
   animation-duration: 2.5s;
 }
 
-@keyframes ratibDashBarMotion {
+@keyframes ratebDashBarMotion {
   0%,
   100% {
     transform: scaleY(0.88);
@@ -4471,11 +4471,11 @@ body.ratib-saas-home::before {
   }
 }
 
-.ratib-spark {
+.rateb-spark {
   background: rgba(0, 0, 0, 0.35);
 }
 
-.ratib-spark::before {
+.rateb-spark::before {
   content: "";
   position: absolute;
   left: 8%;
@@ -4488,7 +4488,7 @@ body.ratib-saas-home::before {
   animation: none;
 }
 
-@keyframes ratibSparkPath {
+@keyframes ratebSparkPath {
   0%,
   100% {
     opacity: 0.65;
@@ -4501,14 +4501,14 @@ body.ratib-saas-home::before {
 }
 
 /* Trust + feature cards — glass & glow */
-.ratib-trust-card,
-.ratib-feature-card {
+.rateb-trust-card,
+.rateb-feature-card {
   backdrop-filter: blur(12px);
   background: linear-gradient(155deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
 }
 
-.ratib-trust-card:hover,
-.ratib-feature-card:hover {
+.rateb-trust-card:hover,
+.rateb-feature-card:hover {
   transform: translateY(-4px);
   border-color: rgba(124, 98, 200, 0.32);
   box-shadow:
@@ -4517,18 +4517,18 @@ body.ratib-saas-home::before {
     0 0 22px rgba(124, 98, 200, 0.05);
 }
 
-.ratib-trust-card__icon {
+.rateb-trust-card__icon {
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
 }
 
-.ratib-trust-card:hover .ratib-trust-card__icon {
+.rateb-trust-card:hover .rateb-trust-card__icon {
   transform: scale(1.06);
   box-shadow: 0 0 14px rgba(116, 96, 176, 0.18);
 }
 
-.ratib-feature-card__icon {
+.rateb-feature-card__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4543,18 +4543,18 @@ body.ratib-saas-home::before {
     box-shadow 0.25s ease;
 }
 
-.ratib-feature-card:hover .ratib-feature-card__icon {
+.rateb-feature-card:hover .rateb-feature-card__icon {
   transform: scale(1.08) rotate(-2deg);
   box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
 }
 
-.ratib-feature-card h3 {
+.rateb-feature-card h3 {
   font-weight: 650;
   letter-spacing: -0.02em;
 }
 
 /* #features — semantic tile accents (visible body styling; hue families align with header nav) */
-section#features.ratib-section::before {
+section#features.rateb-section::before {
   content: "";
   position: absolute;
   left: 0;
@@ -4566,324 +4566,324 @@ section#features.ratib-section::before {
   z-index: 0;
 }
 
-section#features.ratib-section > .ratib-container {
+section#features.rateb-section > .rateb-container {
   position: relative;
   z-index: 1;
 }
 
-.ratib-feature-card[class*="ratib-feature-card--tone"] {
+.rateb-feature-card[class*="rateb-feature-card--tone"] {
   border-left-width: 3px;
   border-left-style: solid;
 }
 
-.ratib-feature-card--tone1 .ratib-feature-card__icon {
+.rateb-feature-card--tone1 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(14, 165, 233, 0.44), rgba(12, 74, 110, 0.78));
   border: 1px solid rgba(56, 189, 248, 0.52);
   color: #e0f2fe;
   box-shadow: 0 4px 18px rgba(56, 189, 248, 0.22);
 }
 
-.ratib-feature-card--tone1 {
+.rateb-feature-card--tone1 {
   border-left-color: rgba(56, 189, 248, 0.5);
 }
 
-.ratib-feature-card--tone1:hover {
+.rateb-feature-card--tone1:hover {
   border-color: rgba(56, 189, 248, 0.22);
   border-left-color: rgba(125, 211, 252, 0.65);
 }
 
-.ratib-feature-card--tone1:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone1:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(56, 189, 248, 0.28);
 }
 
-.ratib-feature-card--tone2 .ratib-feature-card__icon {
+.rateb-feature-card--tone2 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(192, 38, 211, 0.48), rgba(91, 33, 182, 0.72));
   border: 1px solid rgba(232, 121, 249, 0.52);
   color: #fdf4ff;
   box-shadow: 0 4px 18px rgba(192, 38, 211, 0.26);
 }
 
-.ratib-feature-card--tone2 {
+.rateb-feature-card--tone2 {
   border-left-color: rgba(217, 70, 239, 0.48);
 }
 
-.ratib-feature-card--tone2:hover {
+.rateb-feature-card--tone2:hover {
   border-color: rgba(217, 70, 239, 0.22);
   border-left-color: rgba(232, 121, 249, 0.58);
 }
 
-.ratib-feature-card--tone2:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone2:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(217, 70, 239, 0.32);
 }
 
-.ratib-feature-card--tone3 .ratib-feature-card__icon {
+.rateb-feature-card--tone3 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(16, 185, 129, 0.46), rgba(6, 78, 59, 0.74));
   border: 1px solid rgba(52, 211, 153, 0.52);
   color: #ecfdf5;
   box-shadow: 0 4px 18px rgba(52, 211, 153, 0.2);
 }
 
-.ratib-feature-card--tone3 {
+.rateb-feature-card--tone3 {
   border-left-color: rgba(52, 211, 153, 0.48);
 }
 
-.ratib-feature-card--tone3:hover {
+.rateb-feature-card--tone3:hover {
   border-color: rgba(52, 211, 153, 0.22);
   border-left-color: rgba(110, 231, 183, 0.55);
 }
 
-.ratib-feature-card--tone3:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone3:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(52, 211, 153, 0.26);
 }
 
-.ratib-feature-card--tone4 .ratib-feature-card__icon {
+.rateb-feature-card--tone4 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(79, 70, 229, 0.5), rgba(49, 46, 129, 0.74));
   border: 1px solid rgba(129, 140, 248, 0.52);
   color: #eef2ff;
   box-shadow: 0 4px 18px rgba(99, 102, 241, 0.22);
 }
 
-.ratib-feature-card--tone4 {
+.rateb-feature-card--tone4 {
   border-left-color: rgba(129, 140, 248, 0.48);
 }
 
-.ratib-feature-card--tone4:hover {
+.rateb-feature-card--tone4:hover {
   border-color: rgba(99, 102, 241, 0.22);
   border-left-color: rgba(165, 180, 252, 0.58);
 }
 
-.ratib-feature-card--tone4:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone4:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(99, 102, 241, 0.28);
 }
 
-.ratib-feature-card--tone5 .ratib-feature-card__icon {
+.rateb-feature-card--tone5 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(249, 115, 22, 0.46), rgba(124, 45, 18, 0.68));
   border: 1px solid rgba(251, 146, 60, 0.52);
   color: #fff7ed;
   box-shadow: 0 4px 18px rgba(249, 115, 22, 0.18);
 }
 
-.ratib-feature-card--tone5 {
+.rateb-feature-card--tone5 {
   border-left-color: rgba(251, 146, 60, 0.48);
 }
 
-.ratib-feature-card--tone5:hover {
+.rateb-feature-card--tone5:hover {
   border-color: rgba(249, 115, 22, 0.22);
   border-left-color: rgba(253, 186, 116, 0.55);
 }
 
-.ratib-feature-card--tone5:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone5:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(249, 115, 22, 0.22);
 }
 
-.ratib-feature-card--tone6 .ratib-feature-card__icon {
+.rateb-feature-card--tone6 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(245, 158, 11, 0.46), rgba(120, 53, 15, 0.7));
   border: 1px solid rgba(251, 191, 36, 0.55);
   color: #fffbeb;
   box-shadow: 0 4px 18px rgba(245, 158, 11, 0.2);
 }
 
-.ratib-feature-card--tone6 {
+.rateb-feature-card--tone6 {
   border-left-color: rgba(251, 191, 36, 0.52);
 }
 
-.ratib-feature-card--tone6:hover {
+.rateb-feature-card--tone6:hover {
   border-color: rgba(245, 158, 11, 0.22);
   border-left-color: rgba(253, 224, 71, 0.55);
 }
 
-.ratib-feature-card--tone6:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone6:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(245, 158, 11, 0.24);
 }
 
-.ratib-feature-card--tone7 .ratib-feature-card__icon {
+.rateb-feature-card--tone7 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(37, 99, 235, 0.46), rgba(23, 37, 84, 0.78));
   border: 1px solid rgba(96, 165, 250, 0.52);
   color: #eff6ff;
   box-shadow: 0 4px 18px rgba(59, 130, 246, 0.2);
 }
 
-.ratib-feature-card--tone7 {
+.rateb-feature-card--tone7 {
   border-left-color: rgba(96, 165, 250, 0.48);
 }
 
-.ratib-feature-card--tone7:hover {
+.rateb-feature-card--tone7:hover {
   border-color: rgba(59, 130, 246, 0.22);
   border-left-color: rgba(147, 197, 253, 0.58);
 }
 
-.ratib-feature-card--tone7:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone7:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(59, 130, 246, 0.24);
 }
 
-.ratib-feature-card--tone8 .ratib-feature-card__icon {
+.rateb-feature-card--tone8 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(13, 148, 136, 0.46), rgba(15, 118, 110, 0.74));
   border: 1px solid rgba(45, 212, 191, 0.52);
   color: #f0fdfa;
   box-shadow: 0 4px 18px rgba(20, 184, 166, 0.2);
 }
 
-.ratib-feature-card--tone8 {
+.rateb-feature-card--tone8 {
   border-left-color: rgba(45, 212, 191, 0.48);
 }
 
-.ratib-feature-card--tone8:hover {
+.rateb-feature-card--tone8:hover {
   border-color: rgba(20, 184, 166, 0.22);
   border-left-color: rgba(94, 234, 212, 0.55);
 }
 
-.ratib-feature-card--tone8:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone8:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(20, 184, 166, 0.24);
 }
 
-.ratib-feature-card--tone9 .ratib-feature-card__icon {
+.rateb-feature-card--tone9 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(234, 179, 8, 0.42), rgba(113, 63, 18, 0.66));
   border: 1px solid rgba(250, 204, 21, 0.52);
   color: #fefce8;
   box-shadow: 0 4px 18px rgba(234, 179, 8, 0.16);
 }
 
-.ratib-feature-card--tone9 {
+.rateb-feature-card--tone9 {
   border-left-color: rgba(250, 204, 21, 0.45);
 }
 
-.ratib-feature-card--tone9:hover {
+.rateb-feature-card--tone9:hover {
   border-color: rgba(234, 179, 8, 0.22);
   border-left-color: rgba(253, 224, 71, 0.52);
 }
 
-.ratib-feature-card--tone9:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone9:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(234, 179, 8, 0.22);
 }
 
-.ratib-feature-card--tone10 .ratib-feature-card__icon {
+.rateb-feature-card--tone10 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(101, 163, 13, 0.48), rgba(28, 69, 17, 0.74));
   border: 1px solid rgba(163, 230, 53, 0.48);
   color: #f7fee7;
   box-shadow: 0 4px 18px rgba(132, 204, 22, 0.18);
 }
 
-.ratib-feature-card--tone10 {
+.rateb-feature-card--tone10 {
   border-left-color: rgba(163, 230, 53, 0.42);
 }
 
-.ratib-feature-card--tone10:hover {
+.rateb-feature-card--tone10:hover {
   border-color: rgba(163, 230, 53, 0.22);
   border-left-color: rgba(217, 249, 157, 0.52);
 }
 
-.ratib-feature-card--tone10:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone10:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(163, 230, 53, 0.22);
 }
 
-.ratib-feature-card--tone11 .ratib-feature-card__icon {
+.rateb-feature-card--tone11 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.46), rgba(136, 19, 55, 0.7));
   border: 1px solid rgba(253, 164, 175, 0.52);
   color: #fff1f2;
   box-shadow: 0 4px 18px rgba(251, 113, 133, 0.18);
 }
 
-.ratib-feature-card--tone11 {
+.rateb-feature-card--tone11 {
   border-left-color: rgba(253, 164, 175, 0.45);
 }
 
-.ratib-feature-card--tone11:hover {
+.rateb-feature-card--tone11:hover {
   border-color: rgba(251, 113, 133, 0.22);
   border-left-color: rgba(254, 205, 211, 0.55);
 }
 
-.ratib-feature-card--tone11:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone11:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(251, 113, 133, 0.24);
 }
 
-.ratib-feature-card--tone12 .ratib-feature-card__icon {
+.rateb-feature-card--tone12 .rateb-feature-card__icon {
   background: linear-gradient(145deg, rgba(147, 51, 234, 0.44), rgba(76, 29, 149, 0.72));
   border: 1px solid rgba(167, 139, 250, 0.52);
   color: #f5f3ff;
   box-shadow: 0 4px 18px rgba(139, 92, 246, 0.22);
 }
 
-.ratib-feature-card--tone12 {
+.rateb-feature-card--tone12 {
   border-left-color: rgba(167, 139, 250, 0.48);
 }
 
-.ratib-feature-card--tone12:hover {
+.rateb-feature-card--tone12:hover {
   border-color: rgba(139, 92, 246, 0.22);
   border-left-color: rgba(196, 181, 253, 0.58);
 }
 
-.ratib-feature-card--tone12:hover .ratib-feature-card__icon {
+.rateb-feature-card--tone12:hover .rateb-feature-card__icon {
   box-shadow: 0 8px 26px rgba(139, 92, 246, 0.28);
 }
 
 /* Feature section headline + card titles — hues aligned with each tile */
-section#features .ratib-section__head .ratib-eyebrow {
+section#features .rateb-section__head .rateb-eyebrow {
   color: rgba(34, 211, 238, 0.88);
 }
 
-section#features .ratib-section__head .ratib-section__title {
+section#features .rateb-section__head .rateb-section__title {
   color: #e2e9f2;
 }
 
-section#features .ratib-feature-card--tone1 h3 {
+section#features .rateb-feature-card--tone1 h3 {
   color: #bae6fd;
 }
 
-section#features .ratib-feature-card--tone2 h3 {
+section#features .rateb-feature-card--tone2 h3 {
   color: #f5d0fe;
 }
 
-section#features .ratib-feature-card--tone3 h3 {
+section#features .rateb-feature-card--tone3 h3 {
   color: #a7f3d0;
 }
 
-section#features .ratib-feature-card--tone4 h3 {
+section#features .rateb-feature-card--tone4 h3 {
   color: #e0e7ff;
 }
 
-section#features .ratib-feature-card--tone5 h3 {
+section#features .rateb-feature-card--tone5 h3 {
   color: #ffedd5;
 }
 
-section#features .ratib-feature-card--tone6 h3 {
+section#features .rateb-feature-card--tone6 h3 {
   color: #fef3c7;
 }
 
-section#features .ratib-feature-card--tone7 h3 {
+section#features .rateb-feature-card--tone7 h3 {
   color: #dbeafe;
 }
 
-section#features .ratib-feature-card--tone8 h3 {
+section#features .rateb-feature-card--tone8 h3 {
   color: #ccfbf1;
 }
 
-section#features .ratib-feature-card--tone9 h3 {
+section#features .rateb-feature-card--tone9 h3 {
   color: #fef08a;
 }
 
-section#features .ratib-feature-card--tone10 h3 {
+section#features .rateb-feature-card--tone10 h3 {
   color: #d9f99d;
 }
 
-section#features .ratib-feature-card--tone11 h3 {
+section#features .rateb-feature-card--tone11 h3 {
   color: #fecdd3;
 }
 
-section#features .ratib-feature-card--tone12 h3 {
+section#features .rateb-feature-card--tone12 h3 {
   color: #ddd6fe;
 }
 
 /* Pipeline — mission control */
-.ratib-pipeline-section .ratib-section__sub {
+.rateb-pipeline-section .rateb-section__sub {
   max-width: 36rem;
 }
 
-.ratib-pipeline {
+.rateb-pipeline {
   padding: 2rem 0 1.5rem;
   align-items: stretch;
 }
 
-.ratib-pipeline__track {
+.rateb-pipeline__track {
   top: 2.25rem;
   height: 3px;
   border-radius: 4px;
@@ -4896,11 +4896,11 @@ section#features .ratib-feature-card--tone12 h3 {
     rgba(249, 115, 22, 0.12)
   );
   background-size: 220% 100%;
-  animation: ratibPipelineFlow 4.5s linear infinite;
+  animation: ratebPipelineFlow 4.5s linear infinite;
   box-shadow: 0 0 14px rgba(139, 92, 246, 0.18);
 }
 
-@keyframes ratibPipelineFlow {
+@keyframes ratebPipelineFlow {
   0% {
     background-position: 0% 50%;
   }
@@ -4909,44 +4909,44 @@ section#features .ratib-feature-card--tone12 h3 {
   }
 }
 
-.ratib-pipeline__track::after {
+.rateb-pipeline__track::after {
   content: "";
   position: absolute;
   inset: -6px -4px;
   background: radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.25), transparent 65%);
   opacity: 0.6;
-  animation: ratibPipelineGlow 3s ease-in-out infinite;
+  animation: ratebPipelineGlow 3s ease-in-out infinite;
   pointer-events: none;
 }
 
-@keyframes ratibPipelineGlow {
+@keyframes ratebPipelineGlow {
   50% {
     opacity: 1;
   }
 }
 
-.ratib-pipeline__item {
+.rateb-pipeline__item {
   flex: 1 1 88px;
   min-width: 76px;
   padding-top: 0.25rem;
 }
 
-.ratib-pipeline__dot {
+.rateb-pipeline__dot {
   width: 14px;
   height: 14px;
   position: relative;
 }
 
-.ratib-pipeline__item--active .ratib-pipeline__dot::after {
+.rateb-pipeline__item--active .rateb-pipeline__dot::after {
   content: "";
   position: absolute;
   inset: -6px;
   border-radius: 50%;
   border: 1px solid rgba(167, 139, 250, 0.45);
-  animation: ratibPipelineRing 2s ease-out infinite;
+  animation: ratebPipelineRing 2s ease-out infinite;
 }
 
-@keyframes ratibPipelineRing {
+@keyframes ratebPipelineRing {
   0% {
     transform: scale(0.8);
     opacity: 0.9;
@@ -4957,26 +4957,26 @@ section#features .ratib-feature-card--tone12 h3 {
   }
 }
 
-.ratib-pipeline__label {
+.rateb-pipeline__label {
   margin-top: 0.25rem;
   font-size: 0.6875rem;
   letter-spacing: 0.02em;
   color: #e2e8f0;
 }
 
-.ratib-pipeline__meta {
+.rateb-pipeline__meta {
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 /* Multi-agency — infrastructure energy */
-.ratib-eco__viz {
+.rateb-eco__viz {
   position: relative;
   padding: 2rem 0;
 }
 
-.ratib-eco__viz::before {
+.rateb-eco__viz::before {
   content: "";
   position: absolute;
   left: 50%;
@@ -4994,24 +4994,24 @@ section#features .ratib-feature-card--tone12 h3 {
     rgba(249, 115, 22, 0.05) 315deg,
     transparent 360deg
   );
-  animation: ratibEcoRotate 32s linear infinite;
+  animation: ratebEcoRotate 32s linear infinite;
   pointer-events: none;
   z-index: 0;
 }
 
-@keyframes ratibEcoRotate {
+@keyframes ratebEcoRotate {
   to {
     transform: rotate(360deg);
   }
 }
 
-.ratib-eco__core,
-.ratib-eco__spokes {
+.rateb-eco__core,
+.rateb-eco__spokes {
   position: relative;
   z-index: 1;
 }
 
-.ratib-eco__core {
+.rateb-eco__core {
   overflow: visible;
   box-shadow:
     0 0 0 1px rgba(139, 92, 246, 0.25) inset,
@@ -5019,7 +5019,7 @@ section#features .ratib-feature-card--tone12 h3 {
     0 0 80px rgba(139, 92, 246, 0.12);
 }
 
-.ratib-eco__core::after {
+.rateb-eco__core::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -5028,10 +5028,10 @@ section#features .ratib-feature-card--tone12 h3 {
   height: 12px;
   margin-left: -1px;
   background: linear-gradient(180deg, rgba(139, 92, 246, 0.75), rgba(34, 211, 238, 0.35));
-  animation: ratibEcoBeam 2.2s ease-in-out infinite;
+  animation: ratebEcoBeam 2.2s ease-in-out infinite;
 }
 
-@keyframes ratibEcoBeam {
+@keyframes ratebEcoBeam {
   0%,
   100% {
     opacity: 0.5;
@@ -5043,11 +5043,11 @@ section#features .ratib-feature-card--tone12 h3 {
   }
 }
 
-.ratib-eco__spokes {
+.rateb-eco__spokes {
   padding-top: 0.5rem;
 }
 
-.ratib-eco__spokes::before {
+.rateb-eco__spokes::before {
   content: "";
   position: absolute;
   left: 8%;
@@ -5065,7 +5065,7 @@ section#features .ratib-feature-card--tone12 h3 {
   opacity: 0.85;
 }
 
-.ratib-eco__spoke {
+.rateb-eco__spoke {
   display: flex;
     flex-direction: column;
   align-items: center;
@@ -5073,7 +5073,7 @@ section#features .ratib-feature-card--tone12 h3 {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(15, 23, 42, 0.6));
 }
 
-.ratib-eco__spoke::before {
+.rateb-eco__spoke::before {
   content: "";
   display: block;
   flex-shrink: 0;
@@ -5083,20 +5083,20 @@ section#features .ratib-feature-card--tone12 h3 {
   border-radius: 50%;
   background: rgba(34, 211, 238, 0.5);
   box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
-  animation: ratibEcoNode 3s ease-in-out infinite;
+  animation: ratebEcoNode 3s ease-in-out infinite;
 }
 
-.ratib-eco__spoke:nth-child(2)::before {
+.rateb-eco__spoke:nth-child(2)::before {
   animation-delay: 0.4s;
 }
-.ratib-eco__spoke:nth-child(3)::before {
+.rateb-eco__spoke:nth-child(3)::before {
   animation-delay: 0.8s;
 }
-.ratib-eco__spoke:nth-child(4)::before {
+.rateb-eco__spoke:nth-child(4)::before {
   animation-delay: 1.2s;
 }
 
-@keyframes ratibEcoNode {
+@keyframes ratebEcoNode {
   0%,
   100% {
     opacity: 0.6;
@@ -5109,24 +5109,24 @@ section#features .ratib-feature-card--tone12 h3 {
 }
 
 /* Analytics cards */
-.ratib-analytics-card {
+.rateb-analytics-card {
   backdrop-filter: blur(10px);
   transition:
     border-color 0.25s ease,
     box-shadow 0.25s ease;
 }
 
-.ratib-analytics-card:hover {
+.rateb-analytics-card:hover {
   border-color: rgba(148, 163, 184, 0.18);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
-.ratib-metric__chart--line::after {
+.rateb-metric__chart--line::after {
   animation: none;
 }
 
 /* AI cards polish */
-.ratib-ai-card {
+.rateb-ai-card {
   backdrop-filter: blur(10px);
   transition:
     transform 0.25s ease,
@@ -5134,22 +5134,22 @@ section#features .ratib-feature-card--tone12 h3 {
     box-shadow 0.25s ease;
 }
 
-.ratib-ai-card:hover {
+.rateb-ai-card:hover {
   transform: translateY(-2px);
   border-color: rgba(139, 92, 246, 0.28);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
 }
 
-.ratib-ai-row {
+.rateb-ai-row {
   transition: border-color 0.2s ease;
 }
 
-.ratib-ai-row:hover {
+.rateb-ai-row:hover {
   border-color: rgba(139, 92, 246, 0.25);
 }
 
 /* API strip */
-.ratib-api-strip__inner {
+.rateb-api-strip__inner {
   backdrop-filter: blur(14px);
   box-shadow:
     0 0 0 1px rgba(139, 92, 246, 0.1) inset,
@@ -5157,14 +5157,14 @@ section#features .ratib-feature-card--tone12 h3 {
 }
 
 /* Video + final CTA */
-.ratib-final-cta__bg {
+.rateb-final-cta__bg {
   background:
     radial-gradient(ellipse 80% 80% at 50% 120%, rgba(139, 92, 246, 0.2), transparent),
     radial-gradient(ellipse 50% 40% at 20% 30%, rgba(249, 115, 22, 0.08), transparent);
-  animation: ratibCtaBg 16s ease-in-out infinite;
+  animation: ratebCtaBg 16s ease-in-out infinite;
 }
 
-@keyframes ratibCtaBg {
+@keyframes ratebCtaBg {
   50% {
     opacity: 0.95;
     filter: saturate(1.08);
@@ -5172,7 +5172,7 @@ section#features .ratib-feature-card--tone12 h3 {
 }
 
 /* Scroll reveal — progressive enhancement (see home-page.js) */
-.ratib-reveal {
+.rateb-reveal {
   opacity: 1;
   transform: none;
   transition:
@@ -5180,18 +5180,18 @@ section#features .ratib-feature-card--tone12 h3 {
     transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal:not(.ratib-reveal-visible) {
+html.rateb-reveal-init.rateb-reveal-ready .rateb-reveal:not(.rateb-reveal-visible) {
   opacity: 0;
   transform: translateY(22px);
 }
 
-html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
+html.rateb-reveal-init.rateb-reveal-ready .rateb-reveal.rateb-reveal-visible {
   opacity: 1;
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal:not(.ratib-reveal-visible) {
+  html.rateb-reveal-init.rateb-reveal-ready .rateb-reveal:not(.rateb-reveal-visible) {
     opacity: 1;
     transform: none;
   }
@@ -5199,53 +5199,53 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 
 /* Responsive polish */
 @media (max-width: 1023px) {
-  .ratib-hero__visual {
+  .rateb-hero__visual {
     max-width: min(100%, 540px);
     margin-left: auto;
     margin-right: auto;
   }
 
-  .ratib-dash {
+  .rateb-dash {
     animation: none;
   }
 
-  .ratib-pipeline__item {
+  .rateb-pipeline__item {
     flex: 1 1 42%;
   }
 
-  .ratib-pipeline__track {
+  .rateb-pipeline__track {
     display: none;
   }
 
-  .ratib-eco__viz::before {
+  .rateb-eco__viz::before {
     opacity: 0.5;
   }
 }
 
 @media (max-width: 599px) {
-  .ratib-hero__title {
+  .rateb-hero__title {
     max-width: none;
   }
 
-  .ratib-hero__actions {
+  .rateb-hero__actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .ratib-btn--lg {
+  .rateb-btn--lg {
     width: 100%;
     justify-content: center;
   }
 
-  .ratib-dash__row {
+  .rateb-dash__row {
     grid-template-columns: 1fr;
   }
 
-  .ratib-dash__charts {
+  .rateb-dash__charts {
     grid-template-columns: 1fr;
   }
 
-  .ratib-nav-shell__inner {
+  .rateb-nav-shell__inner {
     gap: 0.65rem;
   }
 }
@@ -5254,7 +5254,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
    PHASE 3 — Productization: operational language, live feel, visibility surface
    ============================================================================= */
 
-.ratib-mono-tag {
+.rateb-mono-tag {
   font-family: var(--r-mono);
   font-size: 0.65rem;
   font-weight: 500;
@@ -5262,7 +5262,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   color: #94a3b8;
 }
 
-.ratib-topbar__ops {
+.rateb-topbar__ops {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -5279,28 +5279,28 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   box-shadow: 0 0 20px rgba(34, 211, 238, 0.08);
 }
 
-.ratib-topbar__ops .ratib-mono-tag {
+.rateb-topbar__ops .rateb-mono-tag {
   color: #a5f3fc;
   text-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
 }
 
-.ratib-topbar__ops-sep {
+.rateb-topbar__ops-sep {
   opacity: 0.55;
   color: rgba(167, 139, 250, 0.85);
 }
 
 @media (max-width: 520px) {
-  .ratib-topbar__ops {
+  .rateb-topbar__ops {
     display: none;
   }
 }
 
 /* Operational visibility section */
-.ratib-ops-visibility {
+.rateb-ops-visibility {
   position: relative;
 }
 
-.ratib-ops__disclaimer {
+.rateb-ops__disclaimer {
   margin: 0.35rem 0 0;
   font-size: 0.68rem;
   color: #64748b;
@@ -5308,20 +5308,20 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   text-transform: uppercase;
 }
 
-.ratib-ops__layout {
+.rateb-ops__layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.25rem;
 }
 
 @media (min-width: 960px) {
-  .ratib-ops__layout {
+  .rateb-ops__layout {
     grid-template-columns: 1.35fr 1fr;
     align-items: start;
   }
 }
 
-.ratib-ops__panel {
+.rateb-ops__panel {
   border-radius: var(--r-radius);
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(165deg, rgba(15, 23, 42, 0.92), rgba(5, 8, 22, 0.88));
@@ -5331,7 +5331,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   overflow: hidden;
 }
 
-.ratib-ops__panel-bar {
+.rateb-ops__panel-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5342,7 +5342,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   background: rgba(0, 0, 0, 0.35);
 }
 
-.ratib-pill--live {
+.rateb-pill--live {
   background: rgba(100, 116, 139, 0.2);
   color: #94a3b8;
   font-size: 0.6rem;
@@ -5351,7 +5351,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   gap: 0.35rem;
 }
 
-.ratib-ops__preview-grid {
+.rateb-ops__preview-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.65rem;
@@ -5359,12 +5359,12 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 }
 
 @media (max-width: 599px) {
-  .ratib-ops__preview-grid {
+  .rateb-ops__preview-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.ratib-ops__mini {
+.rateb-ops__mini {
   padding: 0.65rem 0.75rem;
   border-radius: var(--r-radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -5372,7 +5372,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   position: relative;
 }
 
-.ratib-ops__mini::before {
+.rateb-ops__mini::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -5385,11 +5385,11 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   pointer-events: none;
 }
 
-.ratib-ops__mini--wide {
+.rateb-ops__mini--wide {
   grid-column: 1 / -1;
 }
 
-.ratib-ops__mini-label {
+.rateb-ops__mini-label {
   display: block;
   font-size: 0.6rem;
   text-transform: uppercase;
@@ -5398,7 +5398,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   margin-bottom: 0.35rem;
 }
 
-.ratib-ops__mini-val {
+.rateb-ops__mini-val {
   display: block;
   font-size: 1.125rem;
   font-weight: 750;
@@ -5406,11 +5406,11 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   color: #d8e2ee;
 }
 
-.ratib-ops__mini-val--ok {
+.rateb-ops__mini-val--ok {
   color: #6ee7b7;
 }
 
-.ratib-ops__mini-sub {
+.rateb-ops__mini-sub {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.72rem;
@@ -5418,7 +5418,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   color: #94a3b8;
 }
 
-.ratib-ops__sparkline {
+.rateb-ops__sparkline {
   grid-column: 1 / -1;
   display: flex;
   align-items: flex-end;
@@ -5428,36 +5428,36 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   opacity: 0.85;
 }
 
-.ratib-ops__sparkline span {
+.rateb-ops__sparkline span {
   flex: 1;
   border-radius: 2px 2px 0 0;
   background: linear-gradient(180deg, rgba(139, 92, 246, 0.65), rgba(139, 92, 246, 0.1));
-  animation: ratibOpsSpark 2.8s ease-in-out infinite;
+  animation: ratebOpsSpark 2.8s ease-in-out infinite;
 }
 
-.ratib-ops__sparkline span:nth-child(2) {
+.rateb-ops__sparkline span:nth-child(2) {
   animation-delay: 0.15s;
 }
-.ratib-ops__sparkline span:nth-child(3) {
+.rateb-ops__sparkline span:nth-child(3) {
   animation-delay: 0.3s;
 }
-.ratib-ops__sparkline span:nth-child(4) {
+.rateb-ops__sparkline span:nth-child(4) {
   animation-delay: 0.45s;
 }
-.ratib-ops__sparkline span:nth-child(5) {
+.rateb-ops__sparkline span:nth-child(5) {
   animation-delay: 0.6s;
 }
-.ratib-ops__sparkline span:nth-child(6) {
+.rateb-ops__sparkline span:nth-child(6) {
   animation-delay: 0.75s;
 }
-.ratib-ops__sparkline span:nth-child(7) {
+.rateb-ops__sparkline span:nth-child(7) {
   animation-delay: 0.9s;
 }
-.ratib-ops__sparkline span:nth-child(8) {
+.rateb-ops__sparkline span:nth-child(8) {
   animation-delay: 1.05s;
 }
 
-@keyframes ratibOpsSpark {
+@keyframes ratebOpsSpark {
   0%,
   100% {
     height: 28%;
@@ -5469,14 +5469,14 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   }
 }
 
-.ratib-ops__events {
+.rateb-ops__events {
   border-radius: var(--r-radius);
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
 
-.ratib-ops__events-head {
+.rateb-ops__events-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -5485,7 +5485,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   font-size: 0.65rem;
 }
 
-.ratib-ops__event-list {
+.rateb-ops__event-list {
   list-style: none;
   margin: 0;
   padding: 0.5rem 0.65rem 0.65rem;
@@ -5495,7 +5495,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   color: #94a3b8;
 }
 
-.ratib-ops__event-list li {
+.rateb-ops__event-list li {
   display: grid;
   grid-template-columns: 5.5rem 1fr;
   gap: 0.5rem;
@@ -5503,20 +5503,20 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.ratib-ops__event-list li:last-child {
+.rateb-ops__event-list li:last-child {
   border-bottom: none;
 }
 
-.ratib-ops__time {
+.rateb-ops__time {
   color: #64748b;
 }
 
-.ratib-ops__evt {
+.rateb-ops__evt {
   color: #cbd5e1;
   word-break: break-word;
 }
 
-.ratib-trust-band {
+.rateb-trust-band {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.75rem;
@@ -5527,12 +5527,12 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.ratib-trust-band__item {
+.rateb-trust-band__item {
   font-size: 0.78rem;
   line-height: 1.45;
 }
 
-.ratib-trust-band__k {
+.rateb-trust-band__k {
   display: block;
   font-size: 0.58rem;
   text-transform: uppercase;
@@ -5541,12 +5541,12 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   margin-bottom: 0.25rem;
 }
 
-.ratib-trust-band__v {
+.rateb-trust-band__v {
   color: #e2e8f0;
 }
 
 /* Phase 4 — onboarding flow + credibility markers */
-.ratib-how__steps {
+.rateb-how__steps {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -5555,26 +5555,26 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 }
 
 @media (min-width: 1100px) {
-  .ratib-how__steps {
+  .rateb-how__steps {
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 0.6rem;
   }
 }
 
 @media (min-width: 640px) and (max-width: 1099px) {
-  .ratib-how__steps {
+  .rateb-how__steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.ratib-how__step {
+.rateb-how__step {
   padding: 0.85rem 0.75rem;
   border-radius: var(--r-radius);
   border: 1px solid var(--r-border);
   background: var(--r-surface);
 }
 
-.ratib-how__n {
+.rateb-how__n {
   display: block;
   font-family: var(--r-mono);
   font-size: 0.65rem;
@@ -5582,39 +5582,39 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   margin-bottom: 0.35rem;
 }
 
-.ratib-how__title {
+.rateb-how__title {
   display: block;
   font-size: 0.8125rem;
   margin-bottom: 0.35rem;
   color: #d1dae6;
 }
 
-.ratib-how__desc {
+.rateb-how__desc {
   display: block;
   font-size: 0.72rem;
   line-height: 1.45;
   color: var(--r-muted);
 }
 
-.ratib-section__head--left .ratib-section__sub--inline {
+.rateb-section__head--left .rateb-section__sub--inline {
   margin-top: 0.65rem;
   max-width: 38rem;
 }
 
-.ratib-analytics-card__stamp {
+.rateb-analytics-card__stamp {
   margin: 0 0 0.4rem;
   font-size: 0.58rem;
   color: #64748b;
 }
 
 /* Footer system strip */
-.ratib-footer-system-strip {
+.rateb-footer-system-strip {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.35);
   padding: 0.65rem 0;
 }
 
-.ratib-footer-system-strip__inner {
+.rateb-footer-system-strip__inner {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem 1.5rem;
@@ -5623,28 +5623,28 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   color: #64748b;
 }
 
-.ratib-footer-system-strip__item {
+.rateb-footer-system-strip__item {
   display: inline-flex;
   align-items: baseline;
   gap: 0.4rem;
 }
 
-.ratib-footer-system-strip__item .ratib-mono-tag {
+.rateb-footer-system-strip__item .rateb-mono-tag {
   color: #475569;
 }
 
 /* Focus + interaction refinement */
-.ratib-btn:focus-visible,
-.ratib-nav__link:focus-visible,
-.ratib-topbar__link:focus-visible,
-.ratib-footer-col a:focus-visible {
+.rateb-btn:focus-visible,
+.rateb-nav__link:focus-visible,
+.rateb-topbar__link:focus-visible,
+.rateb-footer-col a:focus-visible {
   outline: 2px solid rgba(139, 92, 246, 0.65);
   outline-offset: 3px;
 }
 
-.ratib-trust-card,
-.ratib-feature-card,
-.ratib-analytics-card {
+.rateb-trust-card,
+.rateb-feature-card,
+.rateb-analytics-card {
   transition:
     transform 0.35s cubic-bezier(0.33, 1, 0.68, 1),
     border-color 0.35s cubic-bezier(0.33, 1, 0.68, 1),
@@ -5652,7 +5652,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 }
 
 /* ---------- Card hue cycle + ambient pulse (nav-aligned palette) ---------- */
-@keyframes ratibCardAuraPulse {
+@keyframes ratebCardAuraPulse {
   0%,
   100% {
     opacity: 0;
@@ -5664,44 +5664,44 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   }
 }
 
-@keyframes ratibHeroBulletGlow {
+@keyframes ratebHeroBulletGlow {
   0%,
   100% {
     box-shadow:
       0 2px 10px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(255, 255, 255, 0.05),
-      0 0 12px var(--ratib-hero-bullet-glow, transparent);
+      0 0 12px var(--rateb-hero-bullet-glow, transparent);
   }
   50% {
     box-shadow:
       0 6px 22px rgba(0, 0, 0, 0.28),
       0 0 0 1px rgba(255, 255, 255, 0.07),
-      0 0 28px var(--ratib-hero-bullet-glow, rgba(148, 163, 184, 0.12));
+      0 0 28px var(--rateb-hero-bullet-glow, rgba(148, 163, 184, 0.12));
   }
 }
 
-.ratib-trust__grid .ratib-trust-card,
-.ratib-analytics__grid .ratib-analytics-card,
-.ratib-ai-grid .ratib-ai-card,
-.ratib-how__steps > .ratib-how__step,
-.ratib-eco__spokes .ratib-eco__spoke,
-.ratib-ops__preview-grid .ratib-ops__mini,
-.ratib-dash__row .ratib-kpi,
+.rateb-trust__grid .rateb-trust-card,
+.rateb-analytics__grid .rateb-analytics-card,
+.rateb-ai-grid .rateb-ai-card,
+.rateb-how__steps > .rateb-how__step,
+.rateb-eco__spokes .rateb-eco__spoke,
+.rateb-ops__preview-grid .rateb-ops__mini,
+.rateb-dash__row .rateb-kpi,
 .pricing-section .pricing-row .price-card,
-.ratib-feature-grid .ratib-feature-card {
+.rateb-feature-grid .rateb-feature-card {
   position: relative;
   overflow: hidden;
 }
 
-.ratib-trust__grid .ratib-trust-card::after,
-.ratib-analytics__grid .ratib-analytics-card::after,
-.ratib-ai-grid .ratib-ai-card::after,
-.ratib-how__steps > .ratib-how__step::after,
-.ratib-eco__spokes .ratib-eco__spoke::after,
-.ratib-ops__preview-grid .ratib-ops__mini::after,
-.ratib-dash__row .ratib-kpi::after,
+.rateb-trust__grid .rateb-trust-card::after,
+.rateb-analytics__grid .rateb-analytics-card::after,
+.rateb-ai-grid .rateb-ai-card::after,
+.rateb-how__steps > .rateb-how__step::after,
+.rateb-eco__spokes .rateb-eco__spoke::after,
+.rateb-ops__preview-grid .rateb-ops__mini::after,
+.rateb-dash__row .rateb-kpi::after,
 .pricing-section .pricing-row .price-card::after,
-.ratib-feature-grid .ratib-feature-card::after {
+.rateb-feature-grid .rateb-feature-card::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -5711,272 +5711,272 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   opacity: 0;
 }
 
-.ratib-trust__grid .ratib-trust-card > *,
-.ratib-analytics__grid .ratib-analytics-card > *,
-.ratib-ai-grid .ratib-ai-card > *,
-.ratib-how__steps > .ratib-how__step > *,
-.ratib-eco__spokes .ratib-eco__spoke > *,
-.ratib-ops__preview-grid .ratib-ops__mini > *,
-.ratib-dash__row .ratib-kpi > *,
+.rateb-trust__grid .rateb-trust-card > *,
+.rateb-analytics__grid .rateb-analytics-card > *,
+.rateb-ai-grid .rateb-ai-card > *,
+.rateb-how__steps > .rateb-how__step > *,
+.rateb-eco__spokes .rateb-eco__spoke > *,
+.rateb-ops__preview-grid .rateb-ops__mini > *,
+.rateb-dash__row .rateb-kpi > *,
 .pricing-section .pricing-row .price-card > *,
-.ratib-feature-grid .ratib-feature-card > * {
+.rateb-feature-grid .rateb-feature-card > * {
   position: relative;
   z-index: 1;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .ratib-trust__grid .ratib-trust-card::after,
-  .ratib-analytics__grid .ratib-analytics-card::after,
-  .ratib-ai-grid .ratib-ai-card::after,
-  .ratib-how__steps > .ratib-how__step::after,
-  .ratib-eco__spokes .ratib-eco__spoke::after,
-  .ratib-ops__preview-grid .ratib-ops__mini::after,
-  .ratib-dash__row .ratib-kpi::after,
+  .rateb-trust__grid .rateb-trust-card::after,
+  .rateb-analytics__grid .rateb-analytics-card::after,
+  .rateb-ai-grid .rateb-ai-card::after,
+  .rateb-how__steps > .rateb-how__step::after,
+  .rateb-eco__spokes .rateb-eco__spoke::after,
+  .rateb-ops__preview-grid .rateb-ops__mini::after,
+  .rateb-dash__row .rateb-kpi::after,
   .pricing-section .pricing-row .price-card::after,
-  .ratib-feature-grid .ratib-feature-card::after {
-    animation: ratibCardAuraPulse 6.4s ease-in-out infinite;
+  .rateb-feature-grid .rateb-feature-card::after {
+    animation: ratebCardAuraPulse 6.4s ease-in-out infinite;
   }
 
-  .ratib-hero__bullets > li {
-    animation: ratibHeroBulletGlow 5.8s ease-in-out infinite;
+  .rateb-hero__bullets > li {
+    animation: ratebHeroBulletGlow 5.8s ease-in-out infinite;
   }
 
-  .ratib-hero__bullets > li:nth-child(12n + 1) {
-    --ratib-hero-bullet-glow: rgba(56, 189, 248, 0.35);
+  .rateb-hero__bullets > li:nth-child(12n + 1) {
+    --rateb-hero-bullet-glow: rgba(56, 189, 248, 0.35);
     animation-duration: 5.6s;
   }
 
-  .ratib-hero__bullets > li:nth-child(12n + 2) {
-    --ratib-hero-bullet-glow: rgba(217, 70, 239, 0.32);
+  .rateb-hero__bullets > li:nth-child(12n + 2) {
+    --rateb-hero-bullet-glow: rgba(217, 70, 239, 0.32);
     animation-duration: 6.1s;
   }
 
-  .ratib-hero__bullets > li:nth-child(12n + 3) {
-    --ratib-hero-bullet-glow: rgba(52, 211, 153, 0.32);
+  .rateb-hero__bullets > li:nth-child(12n + 3) {
+    --rateb-hero-bullet-glow: rgba(52, 211, 153, 0.32);
     animation-duration: 5.4s;
   }
 
-  .ratib-hero__bullets > li:nth-child(12n + 4) {
-    --ratib-hero-bullet-glow: rgba(251, 191, 36, 0.36);
+  .rateb-hero__bullets > li:nth-child(12n + 4) {
+    --rateb-hero-bullet-glow: rgba(251, 191, 36, 0.36);
     animation-duration: 6.4s;
   }
 
-  .ratib-hero__bullets > li:nth-child(1) {
+  .rateb-hero__bullets > li:nth-child(1) {
     animation-delay: 0s;
   }
 
-  .ratib-hero__bullets > li:nth-child(2) {
+  .rateb-hero__bullets > li:nth-child(2) {
     animation-delay: -1.1s;
   }
 
-  .ratib-hero__bullets > li:nth-child(3) {
+  .rateb-hero__bullets > li:nth-child(3) {
     animation-delay: -2.2s;
   }
 
-  .ratib-hero__bullets > li:nth-child(4) {
+  .rateb-hero__bullets > li:nth-child(4) {
     animation-delay: -3.3s;
   }
 
   /* Hue + stagger per grid slot (12-tone cycle) */
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 1)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 1)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 1)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 1)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 1)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 1)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 1)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 1)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 1)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 1)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 1)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 1)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 1)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 1)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 1)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 1)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 1)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(56, 189, 248, 0.48), transparent 62%);
     animation-delay: 0s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 2)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 2)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 2)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 2)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 2)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 2)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 2)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 2)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 2)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 2)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 2)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 2)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 2)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 2)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 2)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 2)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 2)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(217, 70, 239, 0.44), transparent 62%);
     animation-delay: -0.55s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 3)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 3)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 3)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 3)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 3)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 3)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 3)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 3)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 3)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 3)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 3)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 3)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 3)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 3)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 3)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 3)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 3)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(52, 211, 153, 0.44), transparent 62%);
     animation-delay: -1.1s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 4)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 4)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 4)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 4)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 4)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 4)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 4)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 4)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 4)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 4)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 4)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 4)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 4)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 4)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 4)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 4)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 4)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(99, 102, 241, 0.44), transparent 62%);
     animation-delay: -1.65s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 5)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 5)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 5)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 5)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 5)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 5)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 5)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 5)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 5)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 5)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 5)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 5)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 5)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 5)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 5)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 5)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 5)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(249, 115, 22, 0.42), transparent 62%);
     animation-delay: -2.2s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 6)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 6)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 6)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 6)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 6)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 6)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 6)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 6)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 6)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 6)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 6)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 6)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 6)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 6)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 6)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 6)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 6)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(245, 158, 11, 0.42), transparent 62%);
     animation-delay: -2.75s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 7)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 7)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 7)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 7)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 7)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 7)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 7)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 7)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 7)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 7)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 7)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 7)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 7)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 7)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 7)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 7)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 7)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(59, 130, 246, 0.44), transparent 62%);
     animation-delay: -3.3s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 8)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 8)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 8)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 8)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 8)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 8)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 8)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 8)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 8)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 8)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 8)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 8)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 8)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 8)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 8)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 8)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 8)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(20, 184, 166, 0.44), transparent 62%);
     animation-delay: -3.85s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 9)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 9)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 9)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 9)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 9)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 9)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 9)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 9)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 9)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 9)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 9)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 9)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 9)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 9)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 9)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 9)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 9)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(234, 179, 8, 0.4), transparent 62%);
     animation-delay: -4.4s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 10)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 10)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 10)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 10)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 10)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 10)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 10)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 10)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 10)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 10)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 10)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 10)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 10)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 10)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 10)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 10)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 10)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(163, 230, 53, 0.38), transparent 62%);
     animation-delay: -4.95s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 11)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 11)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 11)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 11)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 11)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 11)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 11)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 11)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 11)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 11)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 11)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 11)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 11)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 11)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 11)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 11)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 11)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(251, 113, 133, 0.42), transparent 62%);
     animation-delay: -5.5s;
   }
 
-  .ratib-trust__grid .ratib-trust-card:nth-child(12n + 12)::after,
-  .ratib-analytics__grid .ratib-analytics-card:nth-child(12n + 12)::after,
-  .ratib-ai-grid .ratib-ai-card:nth-child(12n + 12)::after,
-  .ratib-how__steps > .ratib-how__step:nth-child(12n + 12)::after,
-  .ratib-eco__spokes .ratib-eco__spoke:nth-child(12n + 12)::after,
-  .ratib-ops__preview-grid .ratib-ops__mini:nth-child(12n + 12)::after,
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 12)::after,
+  .rateb-trust__grid .rateb-trust-card:nth-child(12n + 12)::after,
+  .rateb-analytics__grid .rateb-analytics-card:nth-child(12n + 12)::after,
+  .rateb-ai-grid .rateb-ai-card:nth-child(12n + 12)::after,
+  .rateb-how__steps > .rateb-how__step:nth-child(12n + 12)::after,
+  .rateb-eco__spokes .rateb-eco__spoke:nth-child(12n + 12)::after,
+  .rateb-ops__preview-grid .rateb-ops__mini:nth-child(12n + 12)::after,
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 12)::after,
   .pricing-section .pricing-row .price-card:nth-child(12n + 12)::after,
-  .ratib-feature-grid .ratib-feature-card:nth-child(12n + 12)::after {
+  .rateb-feature-grid .rateb-feature-card:nth-child(12n + 12)::after {
     background: radial-gradient(ellipse 115% 92% at 50% -18%, rgba(167, 139, 250, 0.44), transparent 62%);
     animation-delay: -6.05s;
   }
 
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 1)::after {
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 1)::after {
     animation-duration: 5.2s;
   }
 
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 2)::after {
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 2)::after {
     animation-duration: 5.9s;
   }
 
-  .ratib-dash__row .ratib-kpi:nth-child(12n + 3)::after {
+  .rateb-dash__row .rateb-kpi:nth-child(12n + 3)::after {
     animation-duration: 6.5s;
   }
 
   /* Hover lifts card while pausing pulse so box-shadow isn’t fighting keyframes */
-  .ratib-main .ratib-hero .ratib-hero__bullets > li:hover {
+  .rateb-main .rateb-hero .rateb-hero__bullets > li:hover {
     animation-play-state: paused;
     border-color: rgba(148, 163, 184, 0.28);
     box-shadow:
       0 0 0 1px rgba(148, 163, 184, 0.12),
       0 14px 38px rgba(0, 0, 0, 0.42),
-      0 0 34px var(--ratib-hero-bullet-glow, rgba(148, 163, 184, 0.22));
+      0 0 34px var(--rateb-hero-bullet-glow, rgba(148, 163, 184, 0.22));
     transform: translateY(-2px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ratib-ops__sparkline span {
+  .rateb-ops__sparkline span {
     animation: none;
     height: 55%;
   }
 
-  .ratib-hero__bullets > li {
+  .rateb-hero__bullets > li {
     animation: none !important;
   }
 
-  .ratib-trust__grid .ratib-trust-card::after,
-  .ratib-analytics__grid .ratib-analytics-card::after,
-  .ratib-ai-grid .ratib-ai-card::after,
-  .ratib-how__steps > .ratib-how__step::after,
-  .ratib-eco__spokes .ratib-eco__spoke::after,
-  .ratib-ops__preview-grid .ratib-ops__mini::after,
-  .ratib-dash__row .ratib-kpi::after,
+  .rateb-trust__grid .rateb-trust-card::after,
+  .rateb-analytics__grid .rateb-analytics-card::after,
+  .rateb-ai-grid .rateb-ai-card::after,
+  .rateb-how__steps > .rateb-how__step::after,
+  .rateb-eco__spokes .rateb-eco__spoke::after,
+  .rateb-ops__preview-grid .rateb-ops__mini::after,
+  .rateb-dash__row .rateb-kpi::after,
   .pricing-section .pricing-row .price-card::after,
-  .ratib-feature-grid .ratib-feature-card::after {
+  .rateb-feature-grid .rateb-feature-card::after {
     animation: none !important;
     opacity: 0 !important;
   }
@@ -5985,14 +5985,14 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 /* bump: hero video band + program SVG previews (forces css ?v= refresh on deploy) */
 
 /* Inline infrastructure panel under top nav (same-page marketplace/status preview). */
-.ratib-nav__link[data-ratib-infra-marketplace-tab].is-active,
-.ratib-nav__link[data-ratib-infra-status-tab].is-active {
+.rateb-nav__link[data-rateb-infra-marketplace-tab].is-active,
+.rateb-nav__link[data-rateb-infra-status-tab].is-active {
   border-color: rgba(117, 104, 184, 0.65);
   background: rgba(117, 104, 184, 0.15);
   color: #efeaff;
 }
 
-.ratib-infra-inline-panel {
+.rateb-infra-inline-panel {
   position: relative;
   z-index: 12;
   width: min(var(--r-max), calc(100% - (var(--r-space) * 2)));
@@ -6004,7 +6004,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   overflow: hidden;
 }
 
-.ratib-infra-inline-panel__head {
+.rateb-infra-inline-panel__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6013,13 +6013,13 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.ratib-infra-inline-panel__title {
+.rateb-infra-inline-panel__title {
   color: #e8eef9;
   font-size: 0.96rem;
   letter-spacing: 0.01em;
 }
 
-.ratib-infra-inline-panel__close {
+.rateb-infra-inline-panel__close {
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
@@ -6029,15 +6029,15 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   cursor: pointer;
 }
 
-.ratib-infra-inline-panel__close:hover {
+.rateb-infra-inline-panel__close:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.ratib-infra-inline-panel__body {
+.rateb-infra-inline-panel__body {
   width: 100%;
 }
 
-.ratib-infra-inline-panel__frame {
+.rateb-infra-inline-panel__frame {
   display: block;
   width: 100%;
   min-height: 72vh;
@@ -6046,12 +6046,12 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 }
 
 @media (max-width: 860px) {
-  .ratib-infra-inline-panel {
+  .rateb-infra-inline-panel {
     width: calc(100% - 1rem);
     margin-top: 0.5rem;
   }
 
-  .ratib-infra-inline-panel__frame {
+  .rateb-infra-inline-panel__frame {
     min-height: 64vh;
   }
 }

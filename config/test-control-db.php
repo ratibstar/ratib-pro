@@ -15,9 +15,9 @@ header('Content-Type: text/plain; charset=utf-8');
 
 $db_host = 'localhost';
 $db_port = 3306;
-$db_user = 'outratib_out';
+$db_user = 'admin_out';
 $db_pass = '9s%BpMr1]dfb';
-$db_name = 'outratib_out';
+$db_name = 'admin_out';
 
 echo "=== Control Panel DB Connection Test ===\n\n";
 echo "Host: $db_host\n";

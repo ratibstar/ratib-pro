@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Health;
+namespace RATEB\InfrastructureMarketplace\Health;
 
-use Ratib\InfrastructureMarketplace\Config\RuntimeOverrideStore;
-use Ratib\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Verification\EnvironmentVerifier;
-use Ratib\InfrastructureMarketplace\Verification\MigrationVerifier;
-use Ratib\InfrastructureMarketplace\Verification\QueueWorkerVerifier;
+use RATEB\InfrastructureMarketplace\Config\RuntimeOverrideStore;
+use RATEB\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Verification\EnvironmentVerifier;
+use RATEB\InfrastructureMarketplace\Verification\MigrationVerifier;
+use RATEB\InfrastructureMarketplace\Verification\QueueWorkerVerifier;
 
 final class PrelaunchHealthService
 {
@@ -79,12 +79,12 @@ final class PrelaunchHealthService
             }
         }
         $migrationCompatible = is_file($migrationAsset)
-            || ($this->tableExists('ratib_infra_provider_activations')
-                && $this->tableExists('ratib_infra_orders')
-                && $this->tableExists('ratib_infra_services'));
+            || ($this->tableExists('rateb_infra_provider_activations')
+                && $this->tableExists('rateb_infra_orders')
+                && $this->tableExists('rateb_infra_services'));
         $securityObsMigrationCompatible = is_file($securityObsMigrationAsset)
-            || ($this->tableExists('ratib_infra_provider_secrets')
-                && $this->tableExists('ratib_infra_provider_events'));
+            || ($this->tableExists('rateb_infra_provider_secrets')
+                && $this->tableExists('rateb_infra_provider_events'));
         $runtimeOverridePath = RuntimeOverrideStore::path();
         $runtimeOverrideDir = dirname($runtimeOverridePath);
         if (!is_dir($runtimeOverrideDir)) {
@@ -113,12 +113,12 @@ final class PrelaunchHealthService
     private function securityVerification(): array
     {
         $checks = [
-            ['name' => 'secret_masking_helper_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Security\\Secrets\\SecretManager') ? 'PASS' : 'FAIL'],
-            ['name' => 'provider_secret_store_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Security\\Secrets\\ProviderSecretStore') ? 'PASS' : 'WARN'],
-            ['name' => 'provider_secret_table_present', 'status' => $this->tableExists('ratib_infra_provider_secrets') ? 'PASS' : 'WARN'],
-            ['name' => 'audit_table_present', 'status' => $this->tableExists('ratib_infra_audit_entries') ? 'PASS' : 'FAIL'],
-            ['name' => 'tenant_isolation_component_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Compliance\\TenantIsolationCompliance') ? 'PASS' : 'FAIL'],
-            ['name' => 'admin_action_traceability_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Compliance\\AdminActionHistory') ? 'PASS' : 'FAIL'],
+            ['name' => 'secret_masking_helper_present', 'status' => class_exists('RATEB\\InfrastructureMarketplace\\Security\\Secrets\\SecretManager') ? 'PASS' : 'FAIL'],
+            ['name' => 'provider_secret_store_present', 'status' => class_exists('RATEB\\InfrastructureMarketplace\\Security\\Secrets\\ProviderSecretStore') ? 'PASS' : 'WARN'],
+            ['name' => 'provider_secret_table_present', 'status' => $this->tableExists('rateb_infra_provider_secrets') ? 'PASS' : 'WARN'],
+            ['name' => 'audit_table_present', 'status' => $this->tableExists('rateb_infra_audit_entries') ? 'PASS' : 'FAIL'],
+            ['name' => 'tenant_isolation_component_present', 'status' => class_exists('RATEB\\InfrastructureMarketplace\\Compliance\\TenantIsolationCompliance') ? 'PASS' : 'FAIL'],
+            ['name' => 'admin_action_traceability_present', 'status' => class_exists('RATEB\\InfrastructureMarketplace\\Compliance\\AdminActionHistory') ? 'PASS' : 'FAIL'],
         ];
         return ['checks' => $checks];
     }
@@ -129,14 +129,14 @@ final class PrelaunchHealthService
     private function observabilityVerification(): array
     {
         $checks = [
-            ['name' => 'alerting_service_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService') ? 'PASS' : 'FAIL'],
-            ['name' => 'provider_outage_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'providerOutage') ? 'PASS' : 'FAIL'],
-            ['name' => 'worker_failure_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'workerFailure') ? 'PASS' : 'FAIL'],
-            ['name' => 'queue_saturation_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'queueSaturation') ? 'PASS' : 'FAIL'],
-            ['name' => 'ssl_expiration_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'sslExpiration') ? 'PASS' : 'FAIL'],
-            ['name' => 'reconciliation_anomaly_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'reconciliationAnomaly') ? 'PASS' : 'FAIL'],
-            ['name' => 'provider_health_monitor_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Providers\\Health\\ProviderHealthMonitor') ? 'PASS' : 'WARN'],
-            ['name' => 'provider_event_table_present', 'status' => $this->tableExists('ratib_infra_provider_events') ? 'PASS' : 'WARN'],
+            ['name' => 'alerting_service_present', 'status' => class_exists('RATEB\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService') ? 'PASS' : 'FAIL'],
+            ['name' => 'provider_outage_alert_path', 'status' => method_exists('RATEB\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'providerOutage') ? 'PASS' : 'FAIL'],
+            ['name' => 'worker_failure_alert_path', 'status' => method_exists('RATEB\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'workerFailure') ? 'PASS' : 'FAIL'],
+            ['name' => 'queue_saturation_alert_path', 'status' => method_exists('RATEB\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'queueSaturation') ? 'PASS' : 'FAIL'],
+            ['name' => 'ssl_expiration_alert_path', 'status' => method_exists('RATEB\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'sslExpiration') ? 'PASS' : 'FAIL'],
+            ['name' => 'reconciliation_anomaly_alert_path', 'status' => method_exists('RATEB\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'reconciliationAnomaly') ? 'PASS' : 'FAIL'],
+            ['name' => 'provider_health_monitor_present', 'status' => class_exists('RATEB\\InfrastructureMarketplace\\Providers\\Health\\ProviderHealthMonitor') ? 'PASS' : 'WARN'],
+            ['name' => 'provider_event_table_present', 'status' => $this->tableExists('rateb_infra_provider_events') ? 'PASS' : 'WARN'],
         ];
         return ['checks' => $checks];
     }

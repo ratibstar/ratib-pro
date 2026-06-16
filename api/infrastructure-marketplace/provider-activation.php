@@ -12,13 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Compliance\AdminActionHistory;
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Compliance\AdminActionHistory;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? ''));
 
@@ -30,11 +30,11 @@ try {
     exit;
 }
 
-if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_activations')) {
+if (!SchemaHelpers::tableExists($pdo, 'rateb_infra_provider_activations')) {
     http_response_code(200);
     echo json_encode([
         'ok' => false,
-        'message' => 'Table ratib_infra_provider_activations missing. Run migration 005.',
+        'message' => 'Table rateb_infra_provider_activations missing. Run migration 005.',
         'rows' => [],
     ], JSON_UNESCAPED_SLASHES);
     exit;

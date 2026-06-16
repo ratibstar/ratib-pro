@@ -883,11 +883,11 @@ class WorkerTable {
     }
 
     isIndonesiaProgramContext() {
-        if (typeof window.RATIB_COUNTRY_PROFILE === 'string' && window.RATIB_COUNTRY_PROFILE.trim()) {
-            return window.RATIB_COUNTRY_PROFILE.trim().toLowerCase() === 'indonesia';
+        if (typeof window.RATEB_COUNTRY_PROFILE === 'string' && window.RATEB_COUNTRY_PROFILE.trim()) {
+            return window.RATEB_COUNTRY_PROFILE.trim().toLowerCase() === 'indonesia';
         }
-        if (typeof window.RATIB_IS_INDONESIA_PROGRAM === 'boolean') {
-            return window.RATIB_IS_INDONESIA_PROGRAM;
+        if (typeof window.RATEB_IS_INDONESIA_PROGRAM === 'boolean') {
+            return window.RATEB_IS_INDONESIA_PROGRAM;
         }
         const config = document.getElementById('app-config');
         const text = [
@@ -2818,7 +2818,7 @@ async function showAllFilesForType(elementId) {
         const viewUrl = `${workersApi}/documents/view.php?id=${workerId}&type=${encodeURIComponent(documentType)}`;
         const viewUrlAttr = encodeURIComponent(viewUrl);
         const ext = fileName ? (fileName.split('.').pop() || '').toUpperCase() : '';
-        const pickId = `ratibWorkerFilesPick_${workerId}_${documentType}`;
+        const pickId = `ratebWorkerFilesPick_${workerId}_${documentType}`;
         const refreshElementId = currentFileElementIdFromDocType(documentType);
 
         const fileCardHtml = fileName
@@ -2860,7 +2860,7 @@ async function showAllFilesForType(elementId) {
                             <p>${esc(documentType.replace(/_/g, ' ').toUpperCase())}</p>
                         </div>
                         <div class="header-actions" style="display:flex;align-items:center;gap:0.5rem;">
-                            <input type="file" id="${pickId}" class="ratib-uploaded-files-pick" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" data-ratib-doc-type="${esc(documentType)}" style="position:absolute;width:1px;height:1px;opacity:0;left:-9999px;" tabindex="-1" aria-hidden="true">
+                            <input type="file" id="${pickId}" class="rateb-uploaded-files-pick" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" data-rateb-doc-type="${esc(documentType)}" style="position:absolute;width:1px;height:1px;opacity:0;left:-9999px;" tabindex="-1" aria-hidden="true">
                             <button type="button" class="action-btn view-btn" data-action="trigger-uploaded-files-modal-input" data-for-input="${esc(pickId)}" title="Upload or replace file">
                                 <i class="fas fa-upload"></i>
                             </button>
@@ -2909,10 +2909,10 @@ async function showAllFilesForType(elementId) {
             });
         });
 
-        modal.querySelectorAll('.ratib-uploaded-files-pick').forEach((inp) => {
+        modal.querySelectorAll('.rateb-uploaded-files-pick').forEach((inp) => {
             inp.addEventListener('change', async (e) => {
                 const f = e.target.files && e.target.files[0];
-                const dt = e.target.getAttribute('data-ratib-doc-type');
+                const dt = e.target.getAttribute('data-rateb-doc-type');
                 if (!f || !dt) return;
                 const ok = await uploadFile(f, dt);
                 e.target.value = '';
@@ -3408,8 +3408,8 @@ function buildEmptyCvHtml(worker) {
             const raw = el && el.getAttribute('data-company-name');
             const s = raw != null ? String(raw).trim() : '';
             if (s) return s;
-            if (typeof window.RATIB_AGENCY_DISPLAY_NAME === 'string' && window.RATIB_AGENCY_DISPLAY_NAME.trim()) {
-                return window.RATIB_AGENCY_DISPLAY_NAME.trim();
+            if (typeof window.RATEB_AGENCY_DISPLAY_NAME === 'string' && window.RATEB_AGENCY_DISPLAY_NAME.trim()) {
+                return window.RATEB_AGENCY_DISPLAY_NAME.trim();
             }
         } catch (_e) { /* ignore */ }
         return 'RATEB';
@@ -4747,7 +4747,7 @@ window.saveWorker = async function(event) {
     const missingFields = [];
     const isIndonesiaContext = window.workerTable && typeof window.workerTable.isIndonesiaProgramContext === 'function'
         ? window.workerTable.isIndonesiaProgramContext()
-        : (typeof window.RATIB_IS_INDONESIA_PROGRAM === 'boolean' ? window.RATIB_IS_INDONESIA_PROGRAM : false);
+        : (typeof window.RATEB_IS_INDONESIA_PROGRAM === 'boolean' ? window.RATEB_IS_INDONESIA_PROGRAM : false);
     
     requiredFields.forEach(fieldName => {
         const field = form.querySelector(`[name="${fieldName}"]`);
@@ -4767,7 +4767,7 @@ window.saveWorker = async function(event) {
         return;
     }
 
-    // Lifecycle required checks removed to restore previous Ratib Pro flow.
+    // Lifecycle required checks removed to restore previous RATEB Pro flow.
 
     /** Keep hidden *_status fields aligned with status-dot UI so Save persists what the user sees. */
     (function syncWorkerFormDocumentStatusesFromWrappers(workerFormEl) {
@@ -4995,12 +4995,12 @@ window.saveWorker = async function(event) {
                     form.reset();
                 }
 
-                if (typeof window.ratibNavigatePartnerDocumentsStaffReturn === 'function') {
-                    if (window.ratibNavigatePartnerDocumentsStaffReturn()) {
+                if (typeof window.ratebNavigatePartnerDocumentsStaffReturn === 'function') {
+                    if (window.ratebNavigatePartnerDocumentsStaffReturn()) {
                         return;
                     }
-                } else if (typeof window.ratibGetPartnerDocumentsStaffReturnUrl === 'function') {
-                    const partnerDocsStaffHref = window.ratibGetPartnerDocumentsStaffReturnUrl();
+                } else if (typeof window.ratebGetPartnerDocumentsStaffReturnUrl === 'function') {
+                    const partnerDocsStaffHref = window.ratebGetPartnerDocumentsStaffReturnUrl();
                     if (partnerDocsStaffHref) {
                         window.location.assign(partnerDocsStaffHref);
                         return;

@@ -1,6 +1,6 @@
 Place your home page video here (home page "How it works" section):
   - video.mp4   (recommended — picked first if present)
-  - Ratib program.mp4  (also recognized by name)
+  - Rateb program.mp4  (also recognized by name)
   - Any other single .mp4 in this folder is used if neither of the above exists
   - video.webm  (optional — not auto-detected yet; use mp4 for the main clip)
 

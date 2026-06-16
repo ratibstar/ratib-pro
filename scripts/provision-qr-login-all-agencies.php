@@ -27,9 +27,9 @@ if (php_sapi_name() !== 'cli') {
 }
 
 require_once dirname(__DIR__) . '/includes/control_lookup_conn.php';
-require_once dirname(__DIR__) . '/includes/ratib-qr-login.php';
-require_once dirname(__DIR__) . '/includes/ratib-qr-workforce-identity.php';
-require_once dirname(__DIR__) . '/includes/ratib-barcode-login-pair.php';
+require_once dirname(__DIR__) . '/includes/rateb-qr-login.php';
+require_once dirname(__DIR__) . '/includes/rateb-qr-workforce-identity.php';
+require_once dirname(__DIR__) . '/includes/rateb-barcode-login-pair.php';
 
 $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
 if (!($lookup instanceof mysqli)) {
@@ -48,8 +48,8 @@ if (is_readable($helper)) {
 
 echo "=== RATEB QR login provision (all agencies) ===\n\n";
 
-if (function_exists('ratib_barcode_pair_ensure_table')) {
-    if (ratib_barcode_pair_ensure_table($lookup)) {
+if (function_exists('rateb_barcode_pair_ensure_table')) {
+    if (rateb_barcode_pair_ensure_table($lookup)) {
         echo "[OK] control DB: login_barcode_pairs table ready\n";
     } else {
         echo "[WARN] control DB: could not ensure login_barcode_pairs\n";
@@ -111,8 +111,8 @@ while ($row = $res->fetch_assoc()) {
                 throw new RuntimeException($tenantConn->connect_error);
             }
             $tenantConn->set_charset('utf8mb4');
-            if (function_exists('ratib_ensure_minimal_ratib_pro_schema')) {
-                ratib_ensure_minimal_ratib_pro_schema($tenantConn);
+            if (function_exists('rateb_ensure_minimal_rateb_pro_schema')) {
+                rateb_ensure_minimal_rateb_pro_schema($tenantConn);
             }
         } catch (Throwable $e) {
             echo "[FAIL] $label ($dbName): " . $e->getMessage() . "\n";
@@ -122,8 +122,8 @@ while ($row = $res->fetch_assoc()) {
     }
 
     try {
-        ratib_qr_login_ensure_schema($tenantConn);
-        ratib_qr_workforce_ensure_schema($tenantConn);
+        rateb_qr_login_ensure_schema($tenantConn);
+        rateb_qr_workforce_ensure_schema($tenantConn);
         $loginUrl = $countrySlug !== ''
             ? 'https://' . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa') . '/' . rawurlencode($countrySlug) . '/login'
             : 'https://' . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa') . '/pages/login.php?agency_id=' . $agencyId;

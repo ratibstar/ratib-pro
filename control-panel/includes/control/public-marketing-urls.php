@@ -31,7 +31,7 @@ if (!function_exists('control_panel_load_public_url_helpers')) {
             return;
         }
         $root = dirname(__DIR__, 3);
-        $file = $root . '/includes/ratib-public-base-url.php';
+        $file = $root . '/includes/rateb-public-base-url.php';
         if (is_file($file)) {
             require_once $file;
         }
@@ -49,7 +49,7 @@ if (!function_exists('control_panel_public_cms_rev')) {
             return '';
         }
         try {
-            $revRes = $ctrl->query('SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM ratib_site_content');
+            $revRes = $ctrl->query('SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM rateb_site_content');
             if ($revRes && ($revRow = $revRes->fetch_assoc())) {
                 $rev = (string) ($revRow['rev'] ?? '0');
                 if ($rev !== '' && $rev !== '0') {
@@ -100,8 +100,8 @@ if (!function_exists('control_panel_registration_page_url')) {
         if ($rev !== '') {
             $query['cms_rev'] = $rev;
         }
-        if (function_exists('ratib_public_marketing_home_register_url')) {
-            return ratib_public_marketing_home_register_url($root, $plan, $years, $query);
+        if (function_exists('rateb_public_marketing_home_register_url')) {
+            return rateb_public_marketing_home_register_url($root, $plan, $years, $query);
         }
         $url = rtrim($root, '/') . '/pages/home.php?open=register&plan=' . rawurlencode($plan) . '&years=' . (int) $years;
         if ($query !== []) {
@@ -171,8 +171,8 @@ if (!function_exists('control_panel_public_marketing_home_url')) {
         if ($rev !== '') {
             $query['cms_rev'] = $rev;
         }
-        if (function_exists('ratib_public_marketing_home_url')) {
-            return ratib_public_marketing_home_url($root, $query, $hash);
+        if (function_exists('rateb_public_marketing_home_url')) {
+            return rateb_public_marketing_home_url($root, $query, $hash);
         }
         $url = rtrim($root, '/') . '/pages/home.php';
         if ($query !== []) {

@@ -101,7 +101,7 @@ try {
         @session_start();
     }
     $isControl = !empty($_SESSION['control_logged_in']);
-    $isAppUser = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user();
+    $isAppUser = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user();
     if (!$isControl && !$isAppUser) {
         sendResponse(false, null, 'Unauthorized');
     }

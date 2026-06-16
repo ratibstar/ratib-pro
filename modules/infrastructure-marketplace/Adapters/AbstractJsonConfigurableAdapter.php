@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Adapters;
+namespace RATEB\InfrastructureMarketplace\Adapters;
 
 /**
  * Shared helper for adapters that hydrate options from Vault/env via caller (never embed secrets in repo).

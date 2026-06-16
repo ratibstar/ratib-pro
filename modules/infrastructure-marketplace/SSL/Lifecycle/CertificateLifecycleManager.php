@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\SSL\Lifecycle;
+namespace RATEB\InfrastructureMarketplace\SSL\Lifecycle;
 
-use Ratib\InfrastructureMarketplace\SSL\Validation\DnsValidationPreparation;
-use Ratib\InfrastructureMarketplace\SSL\Validation\HttpValidationPreparation;
+use RATEB\InfrastructureMarketplace\SSL\Validation\DnsValidationPreparation;
+use RATEB\InfrastructureMarketplace\SSL\Validation\HttpValidationPreparation;
 
 final class CertificateLifecycleManager
 {

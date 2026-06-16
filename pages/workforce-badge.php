@@ -5,9 +5,9 @@ declare(strict_types=1);
  * Printable workforce identity badge — enterprise layout.
  */
 require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/ratib-user-login-barcode.php';
-require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
-require_once __DIR__ . '/../includes/ratib-qr-login.php';
+require_once __DIR__ . '/../includes/rateb-user-login-barcode.php';
+require_once __DIR__ . '/../includes/rateb-qr-workforce-identity.php';
+require_once __DIR__ . '/../includes/rateb-qr-login.php';
 
 if (!isset($_SESSION['user_id'], $_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ' . pageUrl('login.php'));
@@ -28,14 +28,14 @@ if (!($conn instanceof mysqli)) {
     exit;
 }
 
-ratib_user_ensure_login_barcode($conn, $targetUserId);
-$issued = ratib_qr_login_ensure_persistent_token($conn, $targetUserId, false);
-$wf = ratib_qr_workforce_status($conn, $targetUserId);
+rateb_user_ensure_login_barcode($conn, $targetUserId);
+$issued = rateb_qr_login_ensure_persistent_token($conn, $targetUserId, false);
+$wf = rateb_qr_workforce_status($conn, $targetUserId);
 $username = (string) ($wf['username'] ?? '');
 $legacyRef = (string) ($wf['legacy_ref'] ?? '');
 $qrPayload = (string) ($issued['qr_payload'] ?? '');
 $showQrOnce = $qrPayload !== '';
-$badgeUrl = $showQrOnce ? ratib_qr_login_badge_url($qrPayload, ratib_qr_login_badge_tenant_context()) : '';
+$badgeUrl = $showQrOnce ? rateb_qr_login_badge_url($qrPayload, rateb_qr_login_badge_tenant_context()) : '';
 
 if (!$showQrOnce && ($wf['qr_status'] ?? '') === 'active') {
     $badgeUrl = '';
@@ -99,18 +99,18 @@ $pageTitle = 'Workforce badge — ' . ($username !== '' ? $username : 'User');
         <button type="button" class="btn btn-primary" onclick="window.print()">Print / PDF</button>
         <button type="button" class="btn" id="btn-png">Download PNG</button>
     </div>
-    <link rel="stylesheet" href="<?php echo function_exists('asset') ? asset('css/ratib-qr-image.css') : '/css/ratib-qr-image.css'; ?>">
+    <link rel="stylesheet" href="<?php echo function_exists('asset') ? asset('css/rateb-qr-image.css') : '/css/rateb-qr-image.css'; ?>">
     <?php if ($showQrOnce && $badgeUrl !== ''): ?>
-    <script src="<?php echo function_exists('asset') ? asset('js/ratib-qr-image.js') : '/js/ratib-qr-image.js'; ?>"></script>
+    <script src="<?php echo function_exists('asset') ? asset('js/rateb-qr-image.js') : '/js/rateb-qr-image.js'; ?>"></script>
     <script>
     (function () {
         var url = <?php echo json_encode($badgeUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         var host = document.getElementById('badge-qr');
-        if (host && typeof ratibRenderQrImage === 'function') {
-            ratibRenderQrImage(host, url, 300);
+        if (host && typeof ratebRenderQrImage === 'function') {
+            ratebRenderQrImage(host, url, 300);
         }
         document.getElementById('btn-png').addEventListener('click', function () {
-            var img = host && host.querySelector('.ratib-qr-image');
+            var img = host && host.querySelector('.rateb-qr-image');
             if (!img || !img.src) return;
             var a = document.createElement('a');
             a.download = 'rateb-workforce-badge.png';

@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_TenantScope
+final class RATEB_ClientDashboard_TenantScope
 {
     /** @var int */
     public $userId;

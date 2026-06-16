@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\DNS;
+namespace RATEB\InfrastructureMarketplace\DNS;
 
-use Ratib\InfrastructureMarketplace\Domain\Contracts\DnsProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\DnsProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 final class PlaceholderDnsAdapter implements DnsProviderInterface
 {

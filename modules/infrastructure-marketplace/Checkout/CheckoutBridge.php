@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Checkout;
+namespace RATEB\InfrastructureMarketplace\Checkout;
 
-use Ratib\InfrastructureMarketplace\Billing\BillingHookRegistry;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Billing\BillingHookRegistry;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 /**
  * Non-invasive integration bridge for existing payment events.

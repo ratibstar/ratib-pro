@@ -112,7 +112,7 @@ try {
     gov_json_out(['success' => false, 'message' => 'Database unavailable: ' . $e->getMessage()], 503);
 }
 
-ratibEnsureGovernmentLaborSchema($pdo);
+ratebEnsureGovernmentLaborSchema($pdo);
 $hasWorkersTable = false;
 $workersSchema = '';
 $autoAgencyDbUsed = false;
@@ -159,7 +159,7 @@ if (!$hasWorkersTable) {
                             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                             PDO::ATTR_EMULATE_PREPARES => false,
                         ]);
-                        ratibEnsureGovernmentLaborSchema($pdo);
+                        ratebEnsureGovernmentLaborSchema($pdo);
                         $chkAgencyWorkers = $pdo->query("SHOW TABLES LIKE 'workers'");
                         $hasWorkersTable = (bool) ($chkAgencyWorkers && $chkAgencyWorkers->fetchColumn());
                         if ($hasWorkersTable) {
@@ -174,7 +174,7 @@ if (!$hasWorkersTable) {
         }
     }
 
-    $fallbackSchema = defined('RATIB_PRO_DB_NAME') ? (string) RATIB_PRO_DB_NAME : '';
+    $fallbackSchema = defined('RATEB_PRO_DB_NAME') ? (string) RATEB_PRO_DB_NAME : '';
     if ($fallbackSchema !== '' && preg_match('/^[A-Za-z0-9_]+$/', $fallbackSchema)) {
         try {
             $chkFallback = $pdo->query("SHOW TABLES FROM `{$fallbackSchema}` LIKE 'workers'");
@@ -195,7 +195,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $action = isset($_GET['action']) ? trim((string) $_GET['action']) : '';
 
 if ($method === 'GET' && ($action === '' || $action === 'summary')) {
-    $sum = ratib_government_dashboard_summary_pdo($pdo);
+    $sum = rateb_government_dashboard_summary_pdo($pdo);
     $sum['meta'] = [
         'has_workers_table' => $hasWorkersTable,
         'workers_schema' => $workersSchema,

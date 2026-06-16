@@ -7,7 +7,7 @@
  * Ensures agency_partnerships table and workers.agency_partnership_id exist.
  * Safe to call multiple times (idempotent).
  */
-function ratibEnsureAgencyPartnershipsSchema(PDO $conn) {
+function ratebEnsureAgencyPartnershipsSchema(PDO $conn) {
     static $done = false;
     if ($done) {
         return;
@@ -47,7 +47,7 @@ function ratibEnsureAgencyPartnershipsSchema(PDO $conn) {
                 );
             }
         } catch (Throwable $e2) {
-            error_log('ratibEnsureAgencyPartnershipsSchema: workers column: ' . $e2->getMessage());
+            error_log('ratebEnsureAgencyPartnershipsSchema: workers column: ' . $e2->getMessage());
         }
     }
 }

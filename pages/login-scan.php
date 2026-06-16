@@ -12,8 +12,8 @@ $hasPair = strlen($pairToken) === 32;
 $mode = isset($_GET['mode']) ? trim((string) $_GET['mode']) : '';
 
 if ($hasPair) {
-    require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
-    $pair = ratib_barcode_pair_read($pairToken);
+    require_once __DIR__ . '/../includes/rateb-barcode-login-pair.php';
+    $pair = rateb_barcode_pair_read($pairToken);
     if ($pair === null || ($pair['status'] ?? '') !== 'pending') {
         http_response_code(410);
         echo 'Session expired. On your computer, choose Barcode again.';
@@ -22,7 +22,7 @@ if ($hasPair) {
     $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
         || (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
             && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
-    setcookie('ratib_pair', $pairToken, [
+    setcookie('rateb_pair', $pairToken, [
         'expires' => time() + 600,
         'path' => '/',
         'secure' => $secure,
@@ -39,10 +39,10 @@ if ($autoBadge === '' && isset($_GET['badge'])) {
 $pageTitle = $hasPair ? 'Scan badge — RATEB' : 'QR check-in — RATEB';
 $cssV = (int) @filemtime(__DIR__ . '/../css/qr-scan.css');
 $jsScanV = (int) @filemtime(__DIR__ . '/../js/login-scan.js');
-$jsLibV = (int) @filemtime(__DIR__ . '/../js/ratib-qr-scanner.js');
+$jsLibV = (int) @filemtime(__DIR__ . '/../js/rateb-qr-scanner.js');
 
 $cssUrl = function_exists('asset') ? asset('css/qr-scan.css') : '/css/qr-scan.css';
-$jsScannerUrl = function_exists('asset') ? asset('js/ratib-qr-scanner.js') : '/js/ratib-qr-scanner.js';
+$jsScannerUrl = function_exists('asset') ? asset('js/rateb-qr-scanner.js') : '/js/rateb-qr-scanner.js';
 $jsScanUrl = function_exists('asset') ? asset('js/login-scan.js') : '/js/login-scan.js';
 
 $apiQr = '/api/qr-login.php';
@@ -142,7 +142,7 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         <?php endif; ?>
     </div>
     <script>
-    window.RATIB_QR_SCAN = <?php echo json_encode([
+    window.RATEB_QR_SCAN = <?php echo json_encode([
         'pairToken' => $hasPair ? $pairToken : '',
         'apiQr' => $apiQr,
         'apiPair' => $apiPair,
@@ -155,8 +155,8 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
     </script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
     <?php
-    $jsMobileBadgeV = (int) @filemtime(__DIR__ . '/../js/ratib-mobile-badge-store.js');
-    $jsMobileBadgeUrl = function_exists('asset') ? asset('js/ratib-mobile-badge-store.js') : '/js/ratib-mobile-badge-store.js';
+    $jsMobileBadgeV = (int) @filemtime(__DIR__ . '/../js/rateb-mobile-badge-store.js');
+    $jsMobileBadgeUrl = function_exists('asset') ? asset('js/rateb-mobile-badge-store.js') : '/js/rateb-mobile-badge-store.js';
     ?>
     <script src="<?php echo htmlspecialchars($jsMobileBadgeUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsMobileBadgeV; ?>"></script>
     <script src="<?php echo htmlspecialchars($jsScannerUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsLibV; ?>"></script>

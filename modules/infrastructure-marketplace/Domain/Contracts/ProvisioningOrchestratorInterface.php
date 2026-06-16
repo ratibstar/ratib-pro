@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Domain\Contracts;
+namespace RATEB\InfrastructureMarketplace\Domain\Contracts;
 
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
 
 /**
  * Coordinates multi-step infra flows (domains + DNS + SSL + hosting) without embedding vendor SDKs here.

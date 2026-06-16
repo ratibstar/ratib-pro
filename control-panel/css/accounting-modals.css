@@ -139,7 +139,7 @@ input.cp-acc-fp-en{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabul
 .cp-acc-report-card[data-report-id]{cursor:pointer;}
 .cp-acc-report-panel{display:none;padding:0;}
 .cp-acc-report-panel.active{display:block;}
-/* Ratib Pro style: report period, actions, status cards, filters, table totals, pagination */
+/* RATEB Pro style: report period, actions, status cards, filters, table totals, pagination */
 .cp-acc-report-panel .report-period{font-size:0.9rem;color:var(--text-muted,#94a3b8);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .cp-acc-report-panel .report-period i{opacity:0.8;}
 .cp-acc-report-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}

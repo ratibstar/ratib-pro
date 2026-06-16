@@ -13,11 +13,11 @@ $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 // On an idle/expired session the session is already empty, so recover the last
 // known country/agency from the long-lived login cookies. Without this the redirect
 // falls back to a context-less /pages/login that fails with "Country not found".
-if ($countryId <= 0 && !empty($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
-    $countryId = (int)$_COOKIE['ratib_last_country_id'];
+if ($countryId <= 0 && !empty($_COOKIE['rateb_last_country_id']) && ctype_digit((string)$_COOKIE['rateb_last_country_id'])) {
+    $countryId = (int)$_COOKIE['rateb_last_country_id'];
 }
-if ($agencyId <= 0 && !empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
-    $agencyId = (int)$_COOKIE['ratib_last_agency_id'];
+if ($agencyId <= 0 && !empty($_COOKIE['rateb_last_agency_id']) && ctype_digit((string)$_COOKIE['rateb_last_agency_id'])) {
+    $agencyId = (int)$_COOKIE['rateb_last_agency_id'];
 }
 
 emitEvent('AUTH_LOGOUT', 'info', 'User logout', [
@@ -49,12 +49,12 @@ if ($countryId <= 0 && $agencyId > 0) {
     }
 }
 
-if (($countryId > 0 || $agencyId > 0) && function_exists('ratib_set_login_context_cookies')) {
-    ratib_set_login_context_cookies($countryId, $agencyId);
+if (($countryId > 0 || $agencyId > 0) && function_exists('rateb_set_login_context_cookies')) {
+    rateb_set_login_context_cookies($countryId, $agencyId);
 }
 
-// Control panel and Ratib Pro can share the same session cookie. Never destroy the whole
-// session when control_* keys exist; only clear Ratib keys so control panel stays logged in.
+// Control panel and RATEB Pro can share the same session cookie. Never destroy the whole
+// session when control_* keys exist; only clear RATEB keys so control panel stays logged in.
 $hasControlSessionKeys = !empty($_SESSION['control_logged_in'])
     || isset($_SESSION['control_username'])
     || isset($_SESSION['control_admin_id'])

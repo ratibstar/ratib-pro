@@ -17,13 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Audit\RuntimeConfigAuditLogger;
-use Ratib\InfrastructureMarketplace\Config\RuntimeOverrideStore;
-use Ratib\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
-use Ratib\InfrastructureMarketplace\Security\Secrets\InfraProviderSecretsSync;
+use RATEB\InfrastructureMarketplace\Audit\RuntimeConfigAuditLogger;
+use RATEB\InfrastructureMarketplace\Config\RuntimeOverrideStore;
+use RATEB\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Security\Secrets\InfraProviderSecretsSync;
 
 /**
  * @param int $code
@@ -107,7 +107,7 @@ $toInt = static function ($v, int $default): int {
 };
 
 $defaultModuleEnabled = static function (): bool {
-    $v = getenv('RATIB_INFRA_MARKETPLACE_ENABLED');
+    $v = getenv('RATEB_INFRA_MARKETPLACE_ENABLED');
     if ($v === false || $v === '') {
         return false;
     }
@@ -346,7 +346,7 @@ try {
     $respond(500, [
         'ok' => false,
         'message' => 'Unable to write runtime overrides file',
-        'hint' => 'Ensure storage/infrastructure-marketplace/ (or ratib_uploads) is writable by PHP, or set RATIB_INFRA_RUNTIME_OVERRIDES_PATH.',
+        'hint' => 'Ensure storage/infrastructure-marketplace/ (or rateb_uploads) is writable by PHP, or set RATEB_INFRA_RUNTIME_OVERRIDES_PATH.',
         'target' => RuntimeOverrideStore::path(),
         'detail' => substr($e->getMessage(), 0, 240),
     ]);

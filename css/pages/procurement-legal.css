@@ -2,7 +2,7 @@
  * RATEB — Procurement & legal enterprise page
  */
 
-body.ratib-proc-page {
+body.rateb-proc-page {
   --r-bg-deep: #0c0f14;
   --r-bg: #12161d;
   --proc-accent: #c4b5a8;
@@ -11,7 +11,7 @@ body.ratib-proc-page {
   --proc-ink: #e8eaed;
 }
 
-.ratib-proc-distinct-banner {
+.rateb-proc-distinct-banner {
   position: relative;
   z-index: 50;
   padding: 0.8rem 0;
@@ -19,14 +19,14 @@ body.ratib-proc-page {
   border-bottom: 1px solid var(--proc-border);
 }
 
-.ratib-proc-distinct-banner__inner {
+.rateb-proc-distinct-banner__inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem 0.9rem;
 }
 
-.ratib-proc-distinct-banner__badge {
+.rateb-proc-distinct-banner__badge {
   padding: 0.22rem 0.6rem;
   border-radius: 3px;
   font-size: 0.65rem;
@@ -38,20 +38,20 @@ body.ratib-proc-page {
   font-family: var(--about-mono);
 }
 
-.ratib-proc-distinct-banner__text {
+.rateb-proc-distinct-banner__text {
   flex: 1 1 14rem;
   margin: 0;
   font-size: 0.85rem;
   color: #94a3b8;
 }
 
-.ratib-proc-distinct-banner__links {
+.rateb-proc-distinct-banner__links {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
 
-.ratib-proc-distinct-banner__link {
+.rateb-proc-distinct-banner__link {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--proc-accent);
@@ -62,23 +62,23 @@ body.ratib-proc-page {
   font-family: var(--about-mono);
 }
 
-.ratib-proc-distinct-banner__link:hover {
+.rateb-proc-distinct-banner__link:hover {
   color: #fff;
   border-color: rgba(196, 181, 168, 0.5);
 }
 
-.ratib-proc-main {
+.rateb-proc-main {
   position: relative;
   z-index: 1;
 }
 
 /* Hero */
-.ratib-proc-hero {
+.rateb-proc-hero {
   padding: 2rem 0 2.1rem;
   border-bottom: 1px solid var(--proc-border);
 }
 
-.ratib-proc-hero__title {
+.rateb-proc-hero__title {
   margin: 0 0 0.65rem;
   font-size: clamp(1.7rem, 3.2vw, 2.35rem);
   font-weight: 800;
@@ -86,7 +86,7 @@ body.ratib-proc-page {
   color: var(--proc-ink);
 }
 
-.ratib-proc-hero__lead {
+.rateb-proc-hero__lead {
   margin: 0 0 0.85rem;
   max-width: 44rem;
   font-size: 0.98rem;
@@ -94,7 +94,7 @@ body.ratib-proc-page {
   color: var(--about-muted);
 }
 
-.ratib-proc-notice {
+.rateb-proc-notice {
   margin: 0;
   padding: 0.65rem 0.8rem;
   max-width: 44rem;
@@ -107,19 +107,19 @@ body.ratib-proc-page {
 }
 
 /* Identity registry */
-.ratib-proc-identity-grid {
+.rateb-proc-identity-grid {
   display: grid;
   gap: 0.5rem;
   margin-top: 1rem;
 }
 
 @media (min-width: 720px) {
-  .ratib-proc-identity-grid {
+  .rateb-proc-identity-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.ratib-proc-identity-row {
+.rateb-proc-identity-row {
   display: grid;
   grid-template-columns: 2.25rem 1fr;
   gap: 0.65rem;
@@ -127,12 +127,12 @@ body.ratib-proc-page {
   padding: 0.85rem 0.95rem;
 }
 
-.ratib-proc-identity-row__icon {
+.rateb-proc-identity-row__icon {
   color: var(--proc-accent);
   padding-top: 0.15rem;
 }
 
-.ratib-proc-identity-row__body dt {
+.rateb-proc-identity-row__body dt {
   margin: 0 0 0.2rem;
   font-size: 0.68rem;
   text-transform: uppercase;
@@ -140,29 +140,29 @@ body.ratib-proc-page {
   color: #64748b;
 }
 
-.ratib-proc-identity-row__body dd {
+.rateb-proc-identity-row__body dd {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.45;
   color: var(--proc-ink);
 }
 
-.ratib-proc-identity-row__body a {
+.rateb-proc-identity-row__body a {
   color: #cbd5e1;
   text-decoration: none;
   border-bottom: 1px solid rgba(148, 163, 184, 0.35);
 }
 
-.ratib-proc-identity-row__body a:hover {
+.rateb-proc-identity-row__body a:hover {
   color: #fff;
 }
 
 /* Engagement process */
-.ratib-proc-section--engagement {
+.rateb-proc-section--engagement {
   background: linear-gradient(180deg, rgba(51, 65, 85, 0.2) 0%, transparent 100%);
 }
 
-.ratib-proc-process {
+.rateb-proc-process {
   margin: 1rem 0 0;
   padding: 0;
   list-style: none;
@@ -170,7 +170,7 @@ body.ratib-proc-page {
   gap: 0.55rem;
 }
 
-.ratib-proc-process__step {
+.rateb-proc-process__step {
   display: grid;
   grid-template-columns: 2.5rem 2rem 1fr;
   gap: 0.65rem 0.75rem;
@@ -178,25 +178,25 @@ body.ratib-proc-page {
   padding: 0.95rem 1rem;
 }
 
-.ratib-proc-process__num {
+.rateb-proc-process__num {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--proc-accent);
   padding-top: 0.1rem;
 }
 
-.ratib-proc-process__icon {
+.rateb-proc-process__icon {
   color: #64748b;
   padding-top: 0.1rem;
 }
 
-.ratib-proc-process__copy h3 {
+.rateb-proc-process__copy h3 {
   margin: 0 0 0.3rem;
   font-size: 0.95rem;
   color: var(--proc-ink);
 }
 
-.ratib-proc-process__copy p {
+.rateb-proc-process__copy p {
   margin: 0;
   font-size: 0.86rem;
   line-height: 1.48;
@@ -204,11 +204,11 @@ body.ratib-proc-page {
 }
 
 /* Security refs */
-.ratib-proc-section--security {
+.rateb-proc-section--security {
   background: linear-gradient(180deg, rgba(30, 58, 138, 0.08) 0%, transparent 100%);
 }
 
-.ratib-proc-summary {
+.rateb-proc-summary {
   margin: 1rem 0;
   padding: 1rem 1.1rem;
   font-size: 0.9rem;
@@ -216,18 +216,18 @@ body.ratib-proc-page {
   color: var(--about-muted);
 }
 
-.ratib-proc-ref-links {
+.rateb-proc-ref-links {
   display: grid;
   gap: 0.55rem;
 }
 
 @media (min-width: 768px) {
-  .ratib-proc-ref-links {
+  .rateb-proc-ref-links {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.ratib-proc-ref-link {
+.rateb-proc-ref-link {
   display: grid;
   grid-template-columns: 2.25rem 1fr auto;
   gap: 0.65rem;
@@ -238,35 +238,35 @@ body.ratib-proc-page {
   transition: border-color 0.2s, background 0.2s;
 }
 
-.ratib-proc-ref-link:hover {
+.rateb-proc-ref-link:hover {
   border-color: rgba(196, 181, 168, 0.4);
 }
 
-.ratib-proc-ref-link__icon {
+.rateb-proc-ref-link__icon {
   color: #93c5fd;
 }
 
-.ratib-proc-ref-link__copy strong {
+.rateb-proc-ref-link__copy strong {
   display: block;
   font-size: 0.92rem;
   color: var(--proc-ink);
   margin-bottom: 0.2rem;
 }
 
-.ratib-proc-ref-link__copy span {
+.rateb-proc-ref-link__copy span {
   display: block;
   font-size: 0.82rem;
   line-height: 1.4;
   color: var(--about-muted);
 }
 
-.ratib-proc-ref-link__arrow {
+.rateb-proc-ref-link__arrow {
   color: #64748b;
   font-family: var(--about-mono);
 }
 
 /* Boundary diagram */
-.ratib-proc-boundary-diagram {
+.rateb-proc-boundary-diagram {
   max-width: 28rem;
   margin: 1rem auto 1.25rem;
   padding: 1rem;
@@ -276,7 +276,7 @@ body.ratib-proc-page {
   background: rgba(15, 23, 42, 0.5);
 }
 
-.ratib-proc-boundary-diagram__plane {
+.rateb-proc-boundary-diagram__plane {
   padding: 0.55rem;
   font-size: 0.8rem;
   font-weight: 700;
@@ -286,20 +286,20 @@ body.ratib-proc-page {
   border-radius: 4px;
 }
 
-.ratib-proc-boundary-diagram__line {
+.rateb-proc-boundary-diagram__line {
   width: 2px;
   height: 0.85rem;
   margin: 0.4rem auto;
   background: var(--proc-accent);
 }
 
-.ratib-proc-boundary-diagram__tenants {
+.rateb-proc-boundary-diagram__tenants {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.35rem;
 }
 
-.ratib-proc-boundary-diagram__tenants span {
+.rateb-proc-boundary-diagram__tenants span {
   padding: 0.4rem 0.2rem;
   font-size: 0.62rem;
   font-family: var(--about-mono);
@@ -309,11 +309,11 @@ body.ratib-proc-page {
 }
 
 /* Legal notes */
-.ratib-proc-section--legal {
+.rateb-proc-section--legal {
   background: linear-gradient(180deg, rgba(51, 65, 85, 0.15) 0%, transparent 100%);
 }
 
-.ratib-proc-legal-list {
+.rateb-proc-legal-list {
   margin: 1rem 0 0;
   padding: 0;
   list-style: none;
@@ -321,18 +321,18 @@ body.ratib-proc-page {
   gap: 0.55rem;
 }
 
-.ratib-proc-legal-list__item {
+.rateb-proc-legal-list__item {
   padding: 1rem 1.05rem;
   border-left: 3px solid var(--proc-accent);
 }
 
-.ratib-proc-legal-list__item h3 {
+.rateb-proc-legal-list__item h3 {
   margin: 0 0 0.35rem;
   font-size: 0.95rem;
   color: var(--proc-ink);
 }
 
-.ratib-proc-legal-list__item p {
+.rateb-proc-legal-list__item p {
   margin: 0;
   font-size: 0.86rem;
   line-height: 1.52;
@@ -340,29 +340,29 @@ body.ratib-proc-page {
 }
 
 /* CTAs */
-.ratib-proc-section--requests {
+.rateb-proc-section--requests {
   padding-bottom: 0.5rem;
 }
 
-.ratib-proc-cta-grid {
+.rateb-proc-cta-grid {
   display: grid;
   gap: 0.75rem;
   margin-top: 1.1rem;
 }
 
 @media (min-width: 640px) {
-  .ratib-proc-cta-grid {
+  .rateb-proc-cta-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (min-width: 1100px) {
-  .ratib-proc-cta-grid {
+  .rateb-proc-cta-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-.ratib-proc-cta-card {
+.rateb-proc-cta-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -370,17 +370,17 @@ body.ratib-proc-page {
   min-height: 100%;
 }
 
-.ratib-proc-cta-card__icon {
+.rateb-proc-cta-card__icon {
   color: var(--proc-accent);
 }
 
-.ratib-proc-cta-card h3 {
+.rateb-proc-cta-card h3 {
   margin: 0;
   font-size: 0.92rem;
   color: var(--proc-ink);
 }
 
-.ratib-proc-cta-card p {
+.rateb-proc-cta-card p {
   margin: 0;
   flex: 1;
   font-size: 0.82rem;
@@ -388,25 +388,25 @@ body.ratib-proc-page {
   color: var(--about-muted);
 }
 
-.ratib-proc-cta-card .ratib-about-btn {
+.rateb-proc-cta-card .rateb-about-btn {
   align-self: flex-start;
   margin-top: auto;
   font-size: 0.8rem;
 }
 
 /* Contact */
-.ratib-proc-section--contact {
+.rateb-proc-section--contact {
   padding-bottom: 3rem;
 }
 
-.ratib-proc-contact-card {
+.rateb-proc-contact-card {
   max-width: 36rem;
   margin: 1rem auto 0;
   padding: 1.35rem 1.4rem;
   text-align: center;
 }
 
-.ratib-proc-contact-email {
+.rateb-proc-contact-email {
   display: inline-block;
   font-size: 1.15rem;
   font-weight: 700;
@@ -416,17 +416,17 @@ body.ratib-proc-page {
   letter-spacing: 0.02em;
 }
 
-.ratib-proc-contact-email:hover {
+.rateb-proc-contact-email:hover {
   color: var(--proc-accent-strong);
 }
 
-.ratib-proc-contact-card__hq {
+.rateb-proc-contact-card__hq {
   margin: 0.5rem 0 1rem;
   font-size: 0.78rem;
   color: #64748b;
 }
 
-.ratib-proc-contact-card__channels {
+.rateb-proc-contact-card__channels {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -436,33 +436,33 @@ body.ratib-proc-page {
   gap: 0.5rem 1rem;
 }
 
-.ratib-proc-contact-card__channels a {
+.rateb-proc-contact-card__channels a {
   font-size: 0.82rem;
   color: #94a3b8;
   text-decoration: none;
 }
 
-.ratib-proc-contact-card__channels a:hover {
+.rateb-proc-contact-card__channels a:hover {
   color: #e2e8f0;
 }
 
-.ratib-proc-contact-card__channels i {
+.rateb-proc-contact-card__channels i {
   margin-right: 0.35rem;
 }
 
-[data-ratib-reveal] {
+[data-rateb-reveal] {
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-[data-ratib-reveal].is-visible {
+[data-rateb-reveal].is-visible {
   opacity: 1;
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-ratib-reveal] {
+  [data-rateb-reveal] {
     opacity: 1;
     transform: none;
     transition: none;

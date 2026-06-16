@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ConsistencyValidator
+final class RATEB_ClientDashboard_ConsistencyValidator
 {
     /**
      * @param array<string, mixed> $unifiedState

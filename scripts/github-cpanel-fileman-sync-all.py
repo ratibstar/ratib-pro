@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REMOTE_BASE = os.environ.get("CPANEL_REMOTE_BASE", "/home/outratib/public_html").rstrip("/")
+REMOTE_BASE = os.environ.get("CPANEL_REMOTE_BASE", "/home/admin/public_html").rstrip("/")
 HOST = os.environ["CPANEL_HOST"]
 PORT = os.environ.get("CPANEL_PORT", "2083")
 USER = os.environ["CPANEL_USER"]
@@ -28,27 +28,27 @@ BINARY_SUFFIX = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".pdf", ".mp4
 
 CRITICAL_ORDER = [
     ".htaccess",
-    "public/ratib-build.txt",
+    "public/rateb-build.txt",
     "profile/index.php",
     "pages/about.php",
     "pages/deploy-root.php",
     "pages/company-profile.php",
-    "includes/ratib-public-base-url.php",
-    "includes/ratib-home-public-nav-bootstrap.php",
-    "includes/ratib-home-public-chrome-top.php",
-    "includes/ratib-home-public-nav-sync.php",
-    "includes/ratib-home-public-footer.php",
-    "includes/ratib-profile-nav-guard.php",
-    "includes/ratib_html_global_ai_patch.php",
-    "includes/ratib-about-profile-data.php",
-    "includes/ratib-about-sections.php",
-    "js/pages/ratib-profile-nav-guard.js",
-    "js/pages/ratib-mega-nav.js",
-    "js/pages/ratib-home-nav-chrome.js",
+    "includes/rateb-public-base-url.php",
+    "includes/rateb-home-public-nav-bootstrap.php",
+    "includes/rateb-home-public-chrome-top.php",
+    "includes/rateb-home-public-nav-sync.php",
+    "includes/rateb-home-public-footer.php",
+    "includes/rateb-profile-nav-guard.php",
+    "includes/rateb_html_global_ai_patch.php",
+    "includes/rateb-about-profile-data.php",
+    "includes/rateb-about-sections.php",
+    "js/pages/rateb-profile-nav-guard.js",
+    "js/pages/rateb-mega-nav.js",
+    "js/pages/rateb-home-nav-chrome.js",
     "js/pages/about-enterprise.js",
     "css/pages/about-enterprise.css",
     "css/pages/home-public.css",
-    "css/pages/ratib-mega-nav.css",
+    "css/pages/rateb-mega-nav.css",
     "public/index.php",
     "pages/home.php",
 ]

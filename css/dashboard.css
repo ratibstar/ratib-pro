@@ -88,7 +88,7 @@
     text-align: center;
 }
 
-.ratib-dashboard-banner {
+.rateb-dashboard-banner {
     font-size: clamp(1.15rem, 1.65vw, 1.5rem);
     font-weight: 800;
     letter-spacing: 0.25px;
@@ -101,15 +101,15 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 0 14px rgba(123, 159, 255, 0.22);
-    animation: ratibBannerFlow 4.2s linear infinite, ratibBannerPulse 3.2s ease-in-out infinite;
+    animation: ratebBannerFlow 4.2s linear infinite, ratebBannerPulse 3.2s ease-in-out infinite;
 }
 
-@keyframes ratibBannerFlow {
+@keyframes ratebBannerFlow {
     0% { background-position: 0% 50%; }
     100% { background-position: 100% 50%; }
 }
 
-@keyframes ratibBannerPulse {
+@keyframes ratebBannerPulse {
     0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 0 rgba(189, 147, 249, 0)); }
     50% { transform: translateY(-1px); filter: drop-shadow(0 0 8px rgba(189, 147, 249, 0.45)); }
 }

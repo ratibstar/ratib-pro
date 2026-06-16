@@ -17,8 +17,8 @@ A procurement-facing page provides verifiable company identity, engagement proce
 | File | Role |
 |------|------|
 | `pages/procurement-legal.php` | Page template, SEO, JSON-LD `WebPage` + Organization contact |
-| `includes/ratib-procurement-legal-data.php` | All section copy, CTAs, links |
-| `includes/ratib-procurement-legal-sections.php` | Section renderers |
+| `includes/rateb-procurement-legal-data.php` | All section copy, CTAs, links |
+| `includes/rateb-procurement-legal-sections.php` | Section renderers |
 | `css/pages/procurement-legal.css` | Formal slate/stone enterprise styling |
 | `js/pages/procurement-legal.js` | Scroll reveal |
 
@@ -29,9 +29,9 @@ A procurement-facing page provides verifiable company identity, engagement proce
 | File | Change |
 |------|--------|
 | `.htaccess` | Rewrites + cache bypass |
-| `includes/ratib-mega-nav-resolve.php` | `procurement_legal` → `/procurement-legal/` |
-| `includes/ratib-mega-nav-config.php` | Company panel link |
-| `includes/ratib-home-public-footer.php` | Legal column link |
+| `includes/rateb-mega-nav-resolve.php` | `procurement_legal` → `/procurement-legal/` |
+| `includes/rateb-mega-nav-config.php` | Company panel link |
+| `includes/rateb-home-public-footer.php` | Legal column link |
 | `includes/site-content-home-data.php` | `home.footer.link.legal.procurement` |
 
 ---
@@ -73,7 +73,7 @@ A procurement-facing page provides verifiable company identity, engagement proce
 
 - Banner → `/security-compliance/`, `/architecture/`, marketing home  
 - Section 3 → full trust center and architecture pages  
-- Company identity aligned with `ratib-about-profile-data.php` (CR under NDA, VAT on invoice)
+- Company identity aligned with `rateb-about-profile-data.php` (CR under NDA, VAT on invoice)
 
 ---
 

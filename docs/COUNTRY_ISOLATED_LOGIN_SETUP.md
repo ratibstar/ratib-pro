@@ -26,7 +26,7 @@
 
 ### 1. Run the migration
 
-In phpMyAdmin on your **agency database** (e.g. `outratib_out`):
+In phpMyAdmin on your **agency database** (e.g. `admin_out`):
 
 ```sql
 -- From config/migrations/country_isolated_login_001_users_control_country.sql

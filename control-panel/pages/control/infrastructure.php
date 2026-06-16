@@ -81,7 +81,7 @@ $fullBase = rtrim(
     <header class="control-header">
         <div class="header-left">
             <h1><i class="fas fa-cog"></i> Control Panel</h1>
-            <span class="header-subtitle header-subtitle-ratib">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</span>
+            <span class="header-subtitle header-subtitle-rateb">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</span>
         </div>
         <div class="header-right">
             <span class="user-info"><?php echo htmlspecialchars((string) ($_SESSION['control_username'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Reseller;
+namespace RATEB\InfrastructureMarketplace\Reseller;
 
-use Ratib\InfrastructureMarketplace\Domain\Contracts\ResellerCapabilityInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\ResellerCapabilityInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 final class AgencyResellerPolicy implements ResellerCapabilityInterface
 {

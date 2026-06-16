@@ -42,8 +42,8 @@ function hcIsAdmin(): bool
             return true;
         }
     }
-    $hasProgramSession = function_exists('ratib_program_session_is_valid_user')
-        ? ratib_program_session_is_valid_user()
+    $hasProgramSession = function_exists('rateb_program_session_is_valid_user')
+        ? rateb_program_session_is_valid_user()
         : (!empty($_SESSION['logged_in']) && (int) ($_SESSION['user_id'] ?? 0) > 0);
     if ($hasProgramSession) {
         $roleId = (int) ($_SESSION['role_id'] ?? 0);

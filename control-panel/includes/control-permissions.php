@@ -187,17 +187,17 @@ function getExpandedControlPermissions(array $perms) {
             }
         }
     }
-    // Ratib Pro HR page uses data-permission slugs from the main app; map control HR access for permissions.js
+    // RATEB Pro HR page uses data-permission slugs from the main app; map control HR access for permissions.js
     $canManageHr = in_array('manage_control_hr', $out, true) || in_array(CONTROL_PERM_HR, $perms, true);
     $canViewHr = in_array('view_control_hr', $out, true) || $canManageHr;
     if ($canViewHr) {
-        $ratibHrView = ['view_hr_dashboard', 'view_employees'];
-        $ratibHrFull = array_merge($ratibHrView, [
+        $ratebHrView = ['view_hr_dashboard', 'view_employees'];
+        $ratebHrFull = array_merge($ratebHrView, [
             'add_employee', 'edit_employee', 'delete_employee',
             'manage_attendance', 'manage_leaves', 'manage_salaries',
             'manage_departments', 'manage_positions',
         ]);
-        $toAdd = $canManageHr ? $ratibHrFull : $ratibHrView;
+        $toAdd = $canManageHr ? $ratebHrFull : $ratebHrView;
         foreach ($toAdd as $p) {
             if (!in_array($p, $out, true)) {
                 $out[] = $p;

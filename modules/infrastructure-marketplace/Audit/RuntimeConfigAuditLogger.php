@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Audit;
+namespace RATEB\InfrastructureMarketplace\Audit;
 
 final class RuntimeConfigAuditLogger
 {
@@ -13,7 +13,7 @@ final class RuntimeConfigAuditLogger
             $this->file = $file;
             return;
         }
-        $fromEnv = getenv('RATIB_INFRA_RUNTIME_AUDIT_PATH');
+        $fromEnv = getenv('RATEB_INFRA_RUNTIME_AUDIT_PATH');
         if (is_string($fromEnv) && trim($fromEnv) !== '') {
             $this->file = trim($fromEnv);
             return;

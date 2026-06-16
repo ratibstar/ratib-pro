@@ -13,13 +13,13 @@ The first rebrand pass established CMS defaults, live sanitization, and public m
 
 | Dimension | Score | Notes |
 |-----------|------:|-------|
-| **Brand consistency** | **69/100** | Public surfaces largely RATEB; legacy `RATIB` remains in env constants, docs, and 1 public CSS comment |
+| **Brand consistency** | **69/100** | Public surfaces largely RATEB; legacy `RATEB` remains in env constants, docs, and 1 public CSS comment |
 | **Terminology normalization** | **60/100** | Core nav updated; help-center builtin + accounting "Reports" modules still use legacy labels in depth |
 | **Procurement readiness** | **73/100** | Trust cluster (security, architecture, procurement) aligned; evidence packs / SLA artifacts still manual |
 | **Visual maturity** | **78/100** | Enterprise dark glass system present; some sections still read template/SaaS (manual review) |
 
 **Runnable audit:** `php scripts/rateb-enterprise-brand-audit.php`  
-**Production:** `https://rateb.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026`
+**Production:** `https://rateb.sa/pages/rateb-enterprise-brand-audit.php?key=rateb-deploy-sync-2026`
 
 ---
 
@@ -29,19 +29,19 @@ The first rebrand pass established CMS defaults, live sanitization, and public m
 
 | Pattern | Public status |
 |---------|----------------|
-| `Ratib Company` | Sanitizer + forced CMS defaults |
+| `Rateb Company` | Sanitizer + forced CMS defaults |
 | `Software Foundation for Information Technology` | Removed from footers, schema, profile, procurement |
 | `Tracking Intelligence` | Mapped to Telemetry Enterprise Base |
-| `RATIB` product name in CMS-driven HTML | Forced to **RATEB** on marketing keys |
+| `RATEB` product name in CMS-driven HTML | Forced to **RATEB** on marketing keys |
 
-### 2.2 Remaining `RATIB` (acceptable vs must-fix)
+### 2.2 Remaining `RATEB` (acceptable vs must-fix)
 
 | Category | Count | Action |
 |----------|------:|--------|
-| **Internal constants** (`RATIB_BASE_URL`, `RATIB_INFRA_*`, env) | ~41 | Keep — backward compatibility |
+| **Internal constants** (`RATEB_BASE_URL`, `RATEB_INFRA_*`, env) | ~41 | Keep — backward compatibility |
 | **Historical `.md` reports** | ~25 | Update when publishing docs; not user-facing |
 | **Deploy/diagnostic scripts** | ~5 | Low priority |
-| **Public CSS comment** (`ratib-mega-nav.css`) | 1 | Optional comment cleanup |
+| **Public CSS comment** (`rateb-mega-nav.css`) | 1 | Optional comment cleanup |
 
 ### 2.3 Weak terminology still present (top files)
 
@@ -57,9 +57,9 @@ The first rebrand pass established CMS defaults, live sanitization, and public m
 
 | Finding | Location | Status |
 |---------|----------|--------|
-| Hosting as **supporting** commercial layer | `ratib-about-profile-data.php` | Intentional — de-emphasized in copy |
+| Hosting as **supporting** commercial layer | `rateb-about-profile-data.php` | Intentional — de-emphasized in copy |
 | "not a lightweight CRM" | profile what.sub | Good — positions against CRM |
-| Mega-nav Sites = hosting+mail | `ratib-mega-nav-config.php` | Acceptable infrastructure scope; not primary hero |
+| Mega-nav Sites = hosting+mail | `rateb-mega-nav-config.php` | Acceptable infrastructure scope; not primary hero |
 
 ---
 
@@ -155,7 +155,7 @@ The first rebrand pass established CMS defaults, live sanitization, and public m
 ## 9. Phase 8 — Recommended next upgrades
 
 1. Seed `api/help-center/seed-tutorial-content.php` from updated builtin JS.
-2. Run `pages/ratib-cms-rebrand-apply.php` on production after each brand push.
+2. Run `pages/rateb-cms-rebrand-apply.php` on production after each brand push.
 3. Add `sitemap.xml` + Organization JSON-LD on home root.
 4. Split accounting UI labels: "Financial Reports" vs program "Executive Telemetry".
 5. Visual pass: hero screenshot frames + procurement PDF one-pager.
@@ -165,9 +165,9 @@ The first rebrand pass established CMS defaults, live sanitization, and public m
 
 ## 10. Change log (this audit pass)
 
-- Added `includes/ratib-enterprise-terminology.php` — meta helpers + term map
+- Added `includes/rateb-enterprise-terminology.php` — meta helpers + term map
 - Added `scripts/rateb-enterprise-brand-audit.php` — repeatable scanner
-- Added `pages/ratib-enterprise-brand-audit.php` — production runner
+- Added `pages/rateb-enterprise-brand-audit.php` — production runner
 - Normalized in-app nav, dashboard cards, reports title, login/biometric copy
 - Updated mobile PWA manifest to RATEB Workforce Telemetry
 - Partial help-center enterprise terminology sweep
@@ -180,8 +180,8 @@ Open in browser (hard refresh):
 
 - [ ] `https://rateb.sa/pages/home.php` — hero shows **RATEB** + **Telemetry Enterprise Base**
 - [ ] `https://rateb.sa/profile/` — no Software Foundation; trade name **RATEB**
-- [ ] `https://rateb.sa/pages/ratib-rebrand-status.php` — `stale_hits=0`
-- [ ] `https://rateb.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026`
+- [ ] `https://rateb.sa/pages/rateb-rebrand-status.php` — `stale_hits=0`
+- [ ] `https://rateb.sa/pages/rateb-enterprise-brand-audit.php?key=rateb-deploy-sync-2026`
 - [ ] Logged-in nav — Operations Control Plane, Executive Telemetry, Operational Signaling
 
 ---

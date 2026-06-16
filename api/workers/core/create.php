@@ -90,22 +90,22 @@ try {
     }
 
     // Enforce country profile requirements on backend (not UI only).
-    ratib_enforce_country_requirements($data, null);
+    rateb_enforce_country_requirements($data, null);
 
-    $isIndonesiaWorker = ratib_worker_is_indonesia_payload([
+    $isIndonesiaWorker = rateb_worker_is_indonesia_payload([
         'country' => (string)($data['country'] ?? ''),
         'nationality' => (string)($data['nationality'] ?? ''),
         'language' => (string)($data['language'] ?? ''),
     ]);
 
-    // Lifecycle-specific validation removed to restore previous Ratib Pro flow.
+    // Lifecycle-specific validation removed to restore previous RATEB Pro flow.
 
     // Database connection
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratib_indonesia_compliance_ensure_schema($conn);
-    ratib_worker_lifecycle_ensure_schema($conn, $data);
-    ratib_workflow_ensure_schema($conn);
+    rateb_indonesia_compliance_ensure_schema($conn);
+    rateb_worker_lifecycle_ensure_schema($conn, $data);
+    rateb_workflow_ensure_schema($conn);
     
     // EN: Schema compatibility guard: extend status enum dynamically if deployment is outdated.
     // AR: حماية توافق المخطط: توسيع ENUM للحالة ديناميكياً إذا كانت البنية قديمة.
@@ -137,7 +137,7 @@ try {
         $stmt = $conn->query("DESCRIBE workers");
         $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        ratib_indonesia_compliance_ensure_schema($conn);
+        rateb_indonesia_compliance_ensure_schema($conn);
         $stmt = $conn->query("DESCRIBE workers");
         $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
         
@@ -215,7 +215,7 @@ try {
 
         // Dynamic workflow engine (country-configured).
         $actorId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-        ratib_workflow_apply_on_save($conn, $mappedData, null, $actorId);
+        rateb_workflow_apply_on_save($conn, $mappedData, null, $actorId);
         
         // Handle status - use form value or default to 'pending'
         if (isset($data['status']) && !empty($data['status'])) {
@@ -261,7 +261,7 @@ try {
         $workerId = $conn->lastInsertId();
 
         if (!empty($mappedData['_workflow_transition_needed'])) {
-            ratib_workflow_log_stage_transition(
+            rateb_workflow_log_stage_transition(
                 $conn,
                 (int)$workerId,
                 (string)($mappedData['_workflow_stage_from'] ?? null),

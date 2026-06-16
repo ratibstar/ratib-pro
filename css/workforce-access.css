@@ -314,11 +314,11 @@
     max-height: 100% !important;
 }
 
-.wf-qr-fullscreen-host .ratib-qr-image-wrap {
+.wf-qr-fullscreen-host .rateb-qr-image-wrap {
     padding: 10px;
 }
 
-.wf-qr-fullscreen-host .ratib-qr-image {
+.wf-qr-fullscreen-host .rateb-qr-image {
     display: block !important;
     width: var(--wf-qr-size, 260px) !important;
     height: var(--wf-qr-size, 260px) !important;

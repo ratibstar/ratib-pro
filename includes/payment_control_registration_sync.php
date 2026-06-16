@@ -547,10 +547,10 @@ function payment_build_ngenius_order_snapshot_for_control_sync(array $input, arr
  */
 function payment_fetch_ngenius_order_row_for_control_sync(PDO $mainPdo, int $orderId): ?array
 {
-    if ($orderId < 1 || !defined('RATIB_NGENIUS_ORDERS_TABLE')) {
+    if ($orderId < 1 || !defined('RATEB_NGENIUS_ORDERS_TABLE')) {
         return null;
     }
-    $t = RATIB_NGENIUS_ORDERS_TABLE;
+    $t = RATEB_NGENIUS_ORDERS_TABLE;
     $stmt = $mainPdo->prepare(
         "SELECT email, plan_key, years, total_amount,
                 reg_agency_name, reg_agency_id, reg_country_id, reg_country_name,

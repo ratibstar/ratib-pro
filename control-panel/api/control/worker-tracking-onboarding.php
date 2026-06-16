@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-if (!defined('RATIB_TRACKING_PROGRAM_AUTH') || !RATIB_TRACKING_PROGRAM_AUTH) {
+if (!defined('RATEB_TRACKING_PROGRAM_AUTH') || !RATEB_TRACKING_PROGRAM_AUTH) {
     require_once __DIR__ . '/../../includes/config.php';
 }
 require_once __DIR__ . '/../../includes/control-permissions.php';
@@ -345,7 +345,7 @@ function onboard_resolve_tenant_and_worker_by_text(PDO $controlPdo, string $text
     return null;
 }
 
-$programAuth = defined('RATIB_TRACKING_PROGRAM_AUTH') && RATIB_TRACKING_PROGRAM_AUTH;
+$programAuth = defined('RATEB_TRACKING_PROGRAM_AUTH') && RATEB_TRACKING_PROGRAM_AUTH;
 if (!$programAuth) {
     if (empty($_SESSION['control_logged_in'])) {
         onboard_json(['success' => false, 'message' => 'Unauthorized'], 401);
@@ -448,7 +448,7 @@ try {
         $token = bin2hex(random_bytes(24));
     }
 
-    ratibEnsureWorkerTrackingSchema($controlPdo);
+    ratebEnsureWorkerTrackingSchema($controlPdo);
     $st2 = $controlPdo->prepare(
         "INSERT INTO worker_tracking_devices
          (worker_id, tenant_id, device_id, worker_identity, worker_password_hash, api_token, is_active, last_seen, created_at, updated_at)
@@ -496,9 +496,9 @@ try {
         $legacyFile = dirname(__DIR__, 3) . '/includes/worker_onboarding_workflow_legacy.php';
         if (is_file($legacyFile)) {
             require_once $legacyFile;
-            $agencyPdo = ratib_global_ai_agency_pdo_for_tenant($controlPdo, $tenantId);
+            $agencyPdo = rateb_global_ai_agency_pdo_for_tenant($controlPdo, $tenantId);
             if ($agencyPdo instanceof PDO) {
-                $workflowId = ratib_global_ai_record_workflow($agencyPdo, $workerId, $payload);
+                $workflowId = rateb_global_ai_record_workflow($agencyPdo, $workerId, $payload);
             }
         }
     }

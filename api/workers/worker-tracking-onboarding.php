@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Tracking onboarding for Ratib Pro country sites (/philippines, /pages/Worker.php, etc.).
+ * Tracking onboarding for RATEB Pro country sites (/philippines, /pages/Worker.php, etc.).
  * Uses program session (view_workers) — not control_logged_in only.
  */
 require_once __DIR__ . '/../core/api-permission-helper.php';
@@ -26,5 +26,5 @@ try {
     }
 }
 
-define('RATIB_TRACKING_PROGRAM_AUTH', true);
+define('RATEB_TRACKING_PROGRAM_AUTH', true);
 require_once dirname(__DIR__, 2) . '/control-panel/api/control/worker-tracking-onboarding.php';

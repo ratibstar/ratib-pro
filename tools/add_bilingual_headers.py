@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(r"c:\Users\انا\Desktop\ratibprogram")
+ROOT = Path(r"c:\Users\انا\Desktop\ratebprogram")
 EXCLUDE_DIRS = {"Designed", "vendor", "archive", "logs", ".git", "node_modules"}
 EXTS = {".php", ".js", ".css"}
 

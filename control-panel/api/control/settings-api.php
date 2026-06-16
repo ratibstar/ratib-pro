@@ -10,9 +10,9 @@
 define('IS_CONTROL_PANEL', true);
 define('SETTINGS_API_CONTROL_MODE', true);
 
-// CORS: allow credentials from ratib.sa subdomains (for cross-subdomain API calls)
+// CORS: allow credentials from rateb.sa subdomains (for cross-subdomain API calls)
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (preg_match('/^https?:\/\/([a-z0-9.-]+\.)?ratib\.sa$/i', $origin)) {
+if (preg_match('/^https?:\/\/([a-z0-9.-]+\.)?rateb\.sa$/i', $origin)) {
     header('Access-Control-Allow-Origin: ' . $origin);
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
@@ -36,7 +36,7 @@ if (!hasControlPermission(CONTROL_PERM_SYSTEM_SETTINGS) && !hasControlPermission
 }
 
 // Standalone control panel: main settings-api.php not present.
-// Copy api/settings/settings-api.php from Ratib Pro if you need full system settings (users, visa types, etc.).
+// Copy api/settings/settings-api.php from RATEB Pro if you need full system settings (users, visa types, etc.).
 header('Content-Type: application/json; charset=UTF-8');
 echo json_encode([
     'success' => false,

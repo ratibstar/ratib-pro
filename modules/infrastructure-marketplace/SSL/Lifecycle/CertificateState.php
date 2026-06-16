@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\SSL\Lifecycle;
+namespace RATEB\InfrastructureMarketplace\SSL\Lifecycle;
 
 final class CertificateState
 {

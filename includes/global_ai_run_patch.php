@@ -21,7 +21,7 @@ $patchApiBase = htmlspecialchars(rtrim((string) (function_exists('getBaseUrl') ?
             + '</div>';
     }
     function patchSubmit() {
-        if (!window.GlobalAIAction || typeof window.GlobalAIAction.submit !== 'function' || window.GlobalAIAction.__ratibRunV5) return;
+        if (!window.GlobalAIAction || typeof window.GlobalAIAction.submit !== 'function' || window.GlobalAIAction.__ratebRunV5) return;
         var legacy = window.GlobalAIAction.submit.bind(window.GlobalAIAction);
         window.GlobalAIAction.submit = async function (payloadOverride) {
             var runBtn = document.getElementById('globalAiRunBtn');
@@ -54,7 +54,7 @@ $patchApiBase = htmlspecialchars(rtrim((string) (function_exists('getBaseUrl') ?
                 if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run AI Workflow'; }
             }
         };
-        window.GlobalAIAction.__ratibRunV5 = true;
+        window.GlobalAIAction.__ratebRunV5 = true;
     }
     document.addEventListener('DOMContentLoaded', patchSubmit);
     setTimeout(patchSubmit, 300);

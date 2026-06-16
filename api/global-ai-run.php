@@ -40,7 +40,7 @@ try {
     }
 
     require_once dirname(__DIR__) . '/includes/global_ai_run.php';
-    $result = ratib_global_ai_run($payload);
+    $result = rateb_global_ai_run($payload);
     echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 } catch (Throwable $e) {
     $code = (int) $e->getCode();

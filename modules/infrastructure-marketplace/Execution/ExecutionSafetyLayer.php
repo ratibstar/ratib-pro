@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Execution;
+namespace RATEB\InfrastructureMarketplace\Execution;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\State\StateNamespaceRegistry;
 
 /**
  * Duplicate activation / replay / drift guards (warnings-first).
@@ -19,7 +19,7 @@ final class ExecutionSafetyLayer
     }
 
     /**
-     * @param array<string, mixed> $order ratib_infra_orders row
+     * @param array<string, mixed> $order rateb_infra_orders row
      *
      * @return array{warnings: list<string>, blockers: list<string>, replay_detected: bool}
      */
@@ -102,7 +102,7 @@ final class ExecutionSafetyLayer
     {
         try {
             $stmt = $this->pdo->prepare(
-                'SELECT id FROM ratib_infra_audit_entries
+                'SELECT id FROM rateb_infra_audit_entries
                  WHERE action_type = :a
                    AND JSON_UNQUOTE(JSON_EXTRACT(payload_json, \'$.order_public_id\')) = :p
                  LIMIT 1'
@@ -117,7 +117,7 @@ final class ExecutionSafetyLayer
         } catch (\Throwable $e) {
             $like = '%"order_public_id":"' . str_replace(['%', '_'], ['\\%', '\\_'], $orderPublicId) . '"%';
             $stmt = $this->pdo->prepare(
-                'SELECT id FROM ratib_infra_audit_entries WHERE action_type = :a AND payload_json LIKE :l LIMIT 1'
+                'SELECT id FROM rateb_infra_audit_entries WHERE action_type = :a AND payload_json LIKE :l LIMIT 1'
             );
             $stmt->execute(['a' => 'commerce_activation_completed', 'l' => $like]);
 
@@ -131,7 +131,7 @@ final class ExecutionSafetyLayer
     {
         try {
             $stmt = $this->pdo->prepare(
-                'SELECT id FROM ratib_infra_audit_entries
+                'SELECT id FROM rateb_infra_audit_entries
                  WHERE action_type = :a
                    AND JSON_UNQUOTE(JSON_EXTRACT(payload_json, \'$.intent_id\')) = :i
                    AND JSON_UNQUOTE(JSON_EXTRACT(payload_json, \'$.order_public_id\')) = :p

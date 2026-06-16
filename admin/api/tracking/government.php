@@ -41,7 +41,7 @@ if (!$isSuper && !$isGov) {
 
 try {
     $controlPdo = getControlDB();
-    ratibEnsureWorkerTrackingSchema($controlPdo);
+    ratebEnsureWorkerTrackingSchema($controlPdo);
 
     $action = trim((string) ($_GET['action'] ?? 'latest'));
     $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 400;

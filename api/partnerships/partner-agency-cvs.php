@@ -25,13 +25,13 @@ try {
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($conn);
+    ratebEnsureGlobalPartnershipsSchema($conn);
     $cvs = new PartnerAgencyCvsController($conn);
 
     if ($method === 'GET') {
         $agencyId = (int) ($_GET['partner_agency_id'] ?? 0);
-        if (function_exists('ratib_partner_portal_session_is_valid') && ratib_partner_portal_session_is_valid()) {
-            $agencyId = ratib_partner_portal_agency_id();
+        if (function_exists('rateb_partner_portal_session_is_valid') && rateb_partner_portal_session_is_valid()) {
+            $agencyId = rateb_partner_portal_agency_id();
         } else {
             enforceApiPermission('partnerships', 'view');
             if ($agencyId <= 0) {

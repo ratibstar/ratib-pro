@@ -114,7 +114,7 @@ function pickValue(array $row, array $candidates, $default = null) {
 // EN: Normalize and validate emails consistently to reduce duplicate/bad recipients.
 // AR: توحيد وتنقيح البريد الإلكتروني بشكل ثابت لتقليل التكرار والمستلمين غير الصالحين.
 // CRITICAL: Normalize email addresses consistently across all stages
-// This ensures ratibstar@gmail.com = ratib.star@gmail.com (Gmail treats them the same)
+// This ensures ratebstar@gmail.com = rateb.star@gmail.com (Gmail treats them the same)
 function normalizeEmailForBroadcast($email) {
     if (empty($email) || !is_string($email)) {
         return '';

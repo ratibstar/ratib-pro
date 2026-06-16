@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_BillingAdapter
+final class RATEB_ClientDashboard_BillingAdapter
 {
     /**
      * @return array<string, mixed>
      */
-    public function fetchNormalized(Ratib_ClientDashboard_AdapterContext $ctx): array
+    public function fetchNormalized(RATEB_ClientDashboard_AdapterContext $ctx): array
     {
         $base = [
             'currency' => 'SAR',

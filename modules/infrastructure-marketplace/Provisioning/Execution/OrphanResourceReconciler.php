@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\Execution;
+namespace RATEB\InfrastructureMarketplace\Provisioning\Execution;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
 
 final class OrphanResourceReconciler
 {
@@ -19,8 +19,8 @@ final class OrphanResourceReconciler
     public function snapshot(): array
     {
         $sql = 'SELECT s.public_id
-                FROM ratib_infra_services s
-                LEFT JOIN ratib_infra_orders o ON o.public_id = s.order_public_id
+                FROM rateb_infra_services s
+                LEFT JOIN rateb_infra_orders o ON o.public_id = s.order_public_id
                 WHERE o.public_id IS NULL
                 LIMIT 100';
         $rows = $this->pdo->query($sql);

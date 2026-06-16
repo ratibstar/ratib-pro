@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 header('Content-Type: text/plain; charset=UTF-8');
 
-define('RATIB_ENV_NO_SESSION', true);
+define('RATEB_ENV_NO_SESSION', true);
 
 $ratebRoot = realpath(dirname(__FILE__, 2));
 if ($ratebRoot === false) {

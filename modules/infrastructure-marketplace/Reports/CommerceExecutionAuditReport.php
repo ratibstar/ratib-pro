@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Reports;
+namespace RATEB\InfrastructureMarketplace\Reports;
 
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 
 /**
  * Phase 3 — execution-layer audit: orders, provisioning linkage, payment path, identity/ownership gaps.
@@ -24,7 +24,7 @@ final class CommerceExecutionAuditReport
 
         $orderLifecycle = [
             'evidence' => [
-                'ratib_infra_orders.status written as PENDING then QUEUED (OrderRepository::markQueued).',
+                'rateb_infra_orders.status written as PENDING then QUEUED (OrderRepository::markQueued).',
                 'LifecycleTracker::syncFromProvisioningJob copies job state into order.status (queue-shaped literals on order row).',
             ],
             'observed_status_literals' => ['PENDING', 'QUEUED', 'RUNNING', 'FAILED', '… (mirrors job queue when synced)'],
@@ -38,9 +38,9 @@ final class CommerceExecutionAuditReport
         ];
 
         $missingBindings = [
-            'ratib_infra_orders has sku but no native plan_id / product_id FK (mapper resolves via plan_code or catalog).',
+            'rateb_infra_orders has sku but no native plan_id / product_id FK (mapper resolves via plan_code or catalog).',
             'ProvisioningIntent is not persisted as its own DB row (audit + optional tenant_resources metadata only).',
-            'No ratib_infra_order_line_items table in this module (recommended additive Phase 4).',
+            'No rateb_infra_order_line_items table in this module (recommended additive Phase 4).',
         ];
 
         $resourceIdentityGaps = [
@@ -50,11 +50,11 @@ final class CommerceExecutionAuditReport
 
         $provisioningDrift = [
             'LifecycleTracker maps queue_state into order.status — risk of treating order row as commerce lifecycle.',
-            'ratib_infra_services.lifecycle_state may use queue-like vocabulary (see foundation readiness).',
+            'rateb_infra_services.lifecycle_state may use queue-like vocabulary (see foundation readiness).',
         ];
 
         $ownershipInconsistencies = [
-            'ratib_tenant_resources optional overlay vs ratib_infra_services.order_public_id — dual tracking until reconciled.',
+            'rateb_tenant_resources optional overlay vs rateb_infra_services.order_public_id — dual tracking until reconciled.',
         ];
 
         $duplicateExecutionHazards = [
@@ -63,8 +63,8 @@ final class CommerceExecutionAuditReport
         ];
 
         $providerCouplingRisks = [
-            'ProviderExecutionBinder reads ProviderRegistry + ratib_infra_provider_activations only (no adapter calls).',
-            'Misconfigured RATIB_INFRA_PROVIDER_BINDINGS yields empty execution target with warnings.',
+            'ProviderExecutionBinder reads ProviderRegistry + rateb_infra_provider_activations only (no adapter calls).',
+            'Misconfigured RATEB_INFRA_PROVIDER_BINDINGS yields empty execution target with warnings.',
         ];
 
         $reconciliationLogic = [
@@ -115,7 +115,7 @@ final class CommerceExecutionAuditReport
             return ['status' => 'SKIPPED_NO_PDO'];
         }
         $out = ['status' => 'ok'];
-        foreach (['ratib_infra_orders', 'ratib_infra_services', 'ratib_infra_provisioning_jobs', 'ratib_infra_plans', 'ratib_tenant_resources', 'ratib_infra_audit_entries'] as $t) {
+        foreach (['rateb_infra_orders', 'rateb_infra_services', 'rateb_infra_provisioning_jobs', 'rateb_infra_plans', 'rateb_tenant_resources', 'rateb_infra_audit_entries'] as $t) {
             try {
                 $out['tables'][$t] = SchemaHelpers::tableExists($pdo, $t) ? 'PRESENT' : 'MISSING';
             } catch (\Throwable $e) {
@@ -123,7 +123,7 @@ final class CommerceExecutionAuditReport
             }
         }
         try {
-            $stmt = $pdo->query('SELECT status, COUNT(*) c FROM ratib_infra_orders GROUP BY status');
+            $stmt = $pdo->query('SELECT status, COUNT(*) c FROM rateb_infra_orders GROUP BY status');
             if ($stmt instanceof \PDOStatement) {
                 $out['order_status_histogram'] = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
             }
@@ -164,7 +164,7 @@ if (PHP_SAPI === 'cli') {
         require_once dirname(__DIR__) . '/bootstrap.php';
         $pdo = null;
         try {
-            $pdo = \Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
+            $pdo = \RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
         } catch (\Throwable $e) {
             fwrite(STDERR, 'Note: ' . $e->getMessage() . "\n");
         }

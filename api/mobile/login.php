@@ -10,11 +10,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/cors.php';
 require_once __DIR__ . '/bootstrap.php';
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
 
 require_once __DIR__ . '/../../includes/config.php';
 
-ratib_api_pick_session_name();
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -45,7 +45,7 @@ try {
     }
 
     $pdo = Database::getInstance()->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($pdo);
+    ratebEnsureGlobalPartnershipsSchema($pdo);
 
     $isNumericId = ctype_digit($login);
     if ($isNumericId) {
@@ -72,8 +72,8 @@ try {
         $hash = (string) ($candidate['portal_password_hash'] ?? '');
         if ($hash !== '' && password_verify($password, $hash)) {
             session_regenerate_id(true);
-            if (function_exists('ratib_partner_portal_clear')) {
-                ratib_partner_portal_clear();
+            if (function_exists('rateb_partner_portal_clear')) {
+                rateb_partner_portal_clear();
             }
             $_SESSION['partner_portal_logged_in'] = true;
             $_SESSION['partner_portal_agency_id'] = (int) ($candidate['id'] ?? 0);

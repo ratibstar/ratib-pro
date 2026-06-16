@@ -26,7 +26,7 @@
     const CHAT_MESSAGES_KEY = 'chatWidgetMessages';
     const ESCALATED_KEY = 'chatWidgetEscalated';
     /** Persists across tab close so escalate can merge into one agency board in control panel */
-    const SUPPORT_BOARD_TOKEN_KEY = 'ratibSupportBoardToken';
+    const SUPPORT_BOARD_TOKEN_KEY = 'ratebSupportBoardToken';
     /** Bump when a forced storage wipe is needed for all users */
     const CHAT_PURGE_KEY = 'chatWidgetHistoryPurgeV5';
     /** General + live transcript on this browser (ms). */
@@ -253,7 +253,7 @@
     }
 
     function isPublicSiteChat() {
-        if (window.RATIB_CHAT_CONTEXT === 'public') return true;
+        if (window.RATEB_CHAT_CONTEXT === 'public') return true;
         var p = String(window.location.pathname || '').toLowerCase();
         return /\/(home|profile|architecture|security-compliance|procurement-legal|enterprise-trust|government-workforce-operations|enterprise-pack|customer-portal)(\/|$)/.test(p)
             || /\/pages\/(home|about|customer-portal|partner-portal-login)\.php$/i.test(p)
@@ -380,12 +380,12 @@
             category: 'contacts_module'
         },
         {
-            keywords: ['contact us', 'company phone', 'your email', 'call you', 'whatsapp number', 'support phone', 'reach ratib'],
+            keywords: ['contact us', 'company phone', 'your email', 'call you', 'whatsapp number', 'support phone', 'reach rateb'],
             answer: "Contact us:\n• Phone: +966 59 986 3868\n• WhatsApp: Chat via the green button or 'Live via WhatsApp' in the header\n• Email: info@rateb.sa\n\nYou can also use the registration form to request a callback.",
             category: 'contact'
         },
         {
-            keywords: ['recruitment', 'recruit', 'agency program', 'ratib program', 'your program', 'about ratib'],
+            keywords: ['recruitment', 'recruit', 'agency program', 'rateb program', 'your program', 'about rateb'],
             answer: "RATEB is enterprise workforce program infrastructure for agencies and host-market programs. Recruitment orchestration, workforce tracking, compliance, and finance-grade operations run on one multi-tenant platform. It helps you manage:\n• Candidates & worker records\n• Your branded agency portal\n• E-invoice system\n• Contracts & compliance governance\n\nRegister above to get started or watch the 'How it works' video for an overview.",
             category: 'program'
         },
@@ -401,8 +401,8 @@
 
     function getKnowledgeBase() {
         var base = knowledgeBaseEN.slice();
-        if (isPublicSiteChat() && Array.isArray(window.RATIB_PUBLIC_CHAT_KB) && window.RATIB_PUBLIC_CHAT_KB.length) {
-            return window.RATIB_PUBLIC_CHAT_KB.concat(base);
+        if (isPublicSiteChat() && Array.isArray(window.RATEB_PUBLIC_CHAT_KB) && window.RATEB_PUBLIC_CHAT_KB.length) {
+            return window.RATEB_PUBLIC_CHAT_KB.concat(base);
         }
         return base;
     }
@@ -1063,10 +1063,10 @@
         chatContainer.classList.remove('active');
     }
 
-    // Get API base URL (must match server base path, e.g. '' or '/ratib')
+    // Get API base URL (must match server base path, e.g. '' or '/rateb')
     function getApiBase() {
-        if (typeof window.RATIB_BASE_URL !== 'undefined' && window.RATIB_BASE_URL) {
-            return (window.RATIB_BASE_URL + '').replace(/\/+$/, '');
+        if (typeof window.RATEB_BASE_URL !== 'undefined' && window.RATEB_BASE_URL) {
+            return (window.RATEB_BASE_URL + '').replace(/\/+$/, '');
         }
         const path = window.location.pathname || '';
         const basePath = path.replace(/\/pages\/[^/]*$/, ''); // path before /pages/xxx

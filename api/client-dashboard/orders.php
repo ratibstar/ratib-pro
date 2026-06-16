@@ -23,7 +23,7 @@ require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Observability/Obse
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Adapters/AdapterContext.php';
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Adapters/OrdersAdapter.php';
 
-ratib_client_dashboard_api_require_access();
+rateb_client_dashboard_api_require_access();
 
 $q = isset($_GET['q']) ? strtolower(trim((string) $_GET['q'])) : '';
 $status = isset($_GET['status']) ? strtolower(trim((string) $_GET['status'])) : '';
@@ -32,9 +32,9 @@ $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $per = isset($_GET['per_page']) ? min(50, max(5, (int) $_GET['per_page'])) : 8;
 
 $conn = isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli ? $GLOBALS['conn'] : null;
-$obs = new Ratib_ClientDashboard_ObservabilityHub();
-$ctx = Ratib_ClientDashboard_AdapterContext::fromSession($conn, $obs);
-$rows = (new Ratib_ClientDashboard_OrdersAdapter())->fetchNormalized($ctx);
+$obs = new RATEB_ClientDashboard_ObservabilityHub();
+$ctx = RATEB_ClientDashboard_AdapterContext::fromSession($conn, $obs);
+$rows = (new RATEB_ClientDashboard_OrdersAdapter())->fetchNormalized($ctx);
 
 $filtered = array_values(array_filter($rows, static function ($r) use ($q, $status, $pay): bool {
     if ($status !== '' && ($r['status'] ?? '') !== $status) {

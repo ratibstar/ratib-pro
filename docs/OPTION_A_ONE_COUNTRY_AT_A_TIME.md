@@ -10,8 +10,8 @@ Start with **Bangladesh** only. When it works, repeat for the next country.
 
 1. Log in to **cPanel**
 2. Open **MySQL® Databases**
-3. Create database: `outratib_bangladish`
-4. Create user (or use existing `outratib_out`)
+3. Create database: `admin_bangladish`
+4. Create user (or use existing `admin_out`)
 5. Add user to database with **ALL PRIVILEGES**
 
 ---
@@ -19,7 +19,7 @@ Start with **Bangladesh** only. When it works, repeat for the next country.
 ### Step 2: Export from main database
 
 1. Open **phpMyAdmin**
-2. Click **outratib_out** in the left sidebar
+2. Click **admin_out** in the left sidebar
 3. Click **Export** tab
 4. Method: **Quick**
 5. Format: **SQL**
@@ -29,7 +29,7 @@ Start with **Bangladesh** only. When it works, repeat for the next country.
 
 ### Step 3: Import into Bangladesh database
 
-1. In phpMyAdmin, click **outratib_bangladish** in the left sidebar
+1. In phpMyAdmin, click **admin_bangladish** in the left sidebar
 2. Click **Import** tab
 3. Choose the `.sql` file from Step 2
 4. Click **Go**
@@ -39,7 +39,7 @@ Start with **Bangladesh** only. When it works, repeat for the next country.
 
 ### Step 4: Keep only Bangladesh in control_agencies
 
-1. Still in phpMyAdmin, make sure **outratib_bangladish** is selected (left sidebar)
+1. Still in phpMyAdmin, make sure **admin_bangladish** is selected (left sidebar)
 2. Click **SQL** tab
 3. Paste this and click **Go**:
 
@@ -51,12 +51,12 @@ DELETE FROM control_agencies WHERE country_id != 1;
 
 ### Step 5: Update main database to use Bangladesh DB
 
-1. Click **outratib_out** in the left sidebar
+1. Click **admin_out** in the left sidebar
 2. Click **SQL** tab
 3. Paste this and click **Go** (use your real password if different):
 
 ```sql
-UPDATE control_agencies SET db_name = 'outratib_bangladish', db_user = 'outratib_out', db_pass = '9s%BpMr1]dfb' WHERE country_id = 1;
+UPDATE control_agencies SET db_name = 'admin_bangladish', db_user = 'admin_out', db_pass = '9s%BpMr1]dfb' WHERE country_id = 1;
 ```
 
 ---
@@ -73,9 +73,9 @@ UPDATE control_agencies SET db_name = 'outratib_bangladish', db_user = 'outratib
 
 When Bangladesh works, repeat the same steps for the next country (e.g. Ethiopia):
 
-- Use database: **outratib_ethiopia**
+- Use database: **admin_ethiopia**
 - Use: `DELETE FROM control_agencies WHERE country_id != 2;`
-- Use: `UPDATE control_agencies SET db_name = 'outratib_ethiopia', ... WHERE country_id = 2;`
+- Use: `UPDATE control_agencies SET db_name = 'admin_ethiopia', ... WHERE country_id = 2;`
 
 ---
 
@@ -83,14 +83,14 @@ When Bangladesh works, repeat the same steps for the next country (e.g. Ethiopia
 
 | Country   | country_id | Database          |
 |-----------|------------|-------------------|
-| Bangladesh| 1          | outratib_bangladish |
-| Ethiopia  | 2          | outratib_ethiopia |
-| Indonesia | 3          | outratib_indonesia |
-| Kenya     | 4          | outratib_kenya    |
-| Nepal     | 5          | outratib_nepal    |
-| Nigeria   | 6          | outratib_nigeria  |
-| Philippines | 7        | outratib_philippines |
-| Rwanda    | 8          | outratib_rwanda   |
-| Sri Lanka | 9          | outratib_sri_lanka |
-| Thailand  | 10         | outratib_thailand |
-| Uganda    | 11         | outratib_uganda   |
+| Bangladesh| 1          | admin_bangladish |
+| Ethiopia  | 2          | admin_ethiopia |
+| Indonesia | 3          | admin_indonesia |
+| Kenya     | 4          | admin_kenya    |
+| Nepal     | 5          | admin_nepal    |
+| Nigeria   | 6          | admin_nigeria  |
+| Philippines | 7        | admin_philippines |
+| Rwanda    | 8          | admin_rwanda   |
+| Sri Lanka | 9          | admin_sri_lanka |
+| Thailand  | 10         | admin_thailand |
+| Uganda    | 11         | admin_uganda   |

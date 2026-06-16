@@ -10,10 +10,10 @@
 (function () {
   'use strict';
 
-  const RatibApp = {};
+  const RATEBApp = {};
 
   /* ========== Currency Formatter ========== */
-  RatibApp.formatCurrency = function (value, currencyCode, decimals) {
+  RATEBApp.formatCurrency = function (value, currencyCode, decimals) {
     const num = parseFloat(value);
     if (Number.isNaN(num)) return '';
     const code = currencyCode || 'SAR';
@@ -25,7 +25,7 @@
   };
 
   /* ========== AJAX Helper ========== */
-  RatibApp.ajax = function (url, options) {
+  RATEBApp.ajax = function (url, options) {
     const config = Object.assign(
       {
         method: 'GET',
@@ -232,7 +232,7 @@
       const val = el.getAttribute('data-format-currency');
       const currency = el.getAttribute('data-currency') || 'SAR';
       const decimals = parseInt(el.getAttribute('data-decimals'), 10);
-      if (val) el.textContent = RatibApp.formatCurrency(val, currency, isNaN(decimals) ? undefined : decimals);
+      if (val) el.textContent = RATEBApp.formatCurrency(val, currency, isNaN(decimals) ? undefined : decimals);
     });
   }
 
@@ -242,7 +242,7 @@
     init();
   }
 
-  RatibApp.modal = Modal;
+  RATEBApp.modal = Modal;
 
-  window.RatibApp = RatibApp;
+  window.RATEBApp = RATEBApp;
 })();

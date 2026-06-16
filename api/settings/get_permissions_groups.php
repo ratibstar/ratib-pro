@@ -144,8 +144,8 @@ try {
         if ($lookupConn instanceof mysqli) {
             $chk = @$lookupConn->query("SHOW TABLES LIKE 'control_agencies'");
             if ($chk && $chk->num_rows > 0) {
-                $susp = function_exists('ratib_control_agency_active_fragment')
-                    ? ratib_control_agency_active_fragment($lookupConn, 'a')
+                $susp = function_exists('rateb_control_agency_active_fragment')
+                    ? rateb_control_agency_active_fragment($lookupConn, 'a')
                     : '1=1';
                 $row = null;
                 if ($sessionAgencyId > 0) {
@@ -238,7 +238,7 @@ try {
                 $chk = @$permReadConn->query("SHOW COLUMNS FROM users LIKE 'permissions'");
                 $columnExists = $chk && $chk->num_rows > 0;
                 if ($columnExists) {
-                    $pkCur = ratib_users_primary_key_column($permReadConn);
+                    $pkCur = rateb_users_primary_key_column($permReadConn);
                     $stmt = $permReadConn->prepare("SELECT permissions FROM users WHERE `{$pkCur}` = ?");
                     $stmt->bind_param('i', $_SESSION['user_id']);
                     $stmt->execute();
@@ -266,7 +266,7 @@ try {
                 $checkStmt = $conn->query("SHOW COLUMNS FROM users LIKE 'permissions'");
                 $columnExists = $checkStmt->rowCount() > 0;
                 if ($columnExists) {
-                    $pkCur = ratib_users_primary_key_column($conn);
+                    $pkCur = rateb_users_primary_key_column($conn);
                     $stmt = $conn->prepare("SELECT permissions FROM users WHERE `{$pkCur}` = ?");
                     $stmt->execute([$_SESSION['user_id']]);
                     $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -458,7 +458,7 @@ try {
         ]
     ];
     } else {
-        // Ratib Pro (agency/country app) - full permission set (includes Partner Agencies group; counts drift — do not rely on comment for exact totals)
+        // RATEB Pro (agency/country app) - full permission set (includes Partner Agencies group; counts drift — do not rely on comment for exact totals)
         $permissionGroups = [
             ['id' => 'system_management', 'name' => 'System Management', 'count' => 11, 'permissions' => [
                 ['id' => 'view_dashboard', 'name' => 'View Dashboard'],
@@ -797,7 +797,7 @@ try {
                 $checkStmt = $conn->query("SHOW COLUMNS FROM users LIKE 'permissions'");
                 $columnExists = $checkStmt->rowCount() > 0;
                 if ($columnExists) {
-                    $pkEdit = ratib_users_primary_key_column($conn);
+                    $pkEdit = rateb_users_primary_key_column($conn);
                     $stmt = $conn->prepare("SELECT role_id, permissions FROM users WHERE `{$pkEdit}` = ?");
                     $stmt->execute([$userId]);
                     $user = $stmt->fetch(PDO::FETCH_ASSOC);

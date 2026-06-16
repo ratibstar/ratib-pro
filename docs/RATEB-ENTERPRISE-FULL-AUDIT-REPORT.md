@@ -1,6 +1,6 @@
 # RATEB — Enterprise Audit (Executive Brief)
 
-**Scope:** Full `ratibprogram` repository (~1,876 files) · **Read-only** · May 2026  
+**Scope:** Full `ratebprogram` repository (~1,876 files) · **Read-only** · May 2026  
 **Brand:** RATEB — Recruitment Automation & Telemetry Enterprise Base  
 **Live:** https://rateb.sa
 
@@ -77,7 +77,7 @@
 
 **Strengths:** RBAC (page + API + control panel), tenant isolation, QR audit trail, session regeneration, idempotency, infra emergency runbooks.
 
-**Weaknesses:** Hardcoded DB password fallbacks in committed env files; maintenance pages (`ratib-sync-from-github`, `fix-perms`, etc.) in deploy tree; thin test coverage; debug APIs present.
+**Weaknesses:** Hardcoded DB password fallbacks in committed env files; maintenance pages (`rateb-sync-from-github`, `fix-perms`, etc.) in deploy tree; thin test coverage; debug APIs present.
 
 **Deploy:** GitHub Actions → cPanel fast deploy, build marker, post-deploy HTTP checks — **mature**. SQL migrations **not** auto-deployed.
 

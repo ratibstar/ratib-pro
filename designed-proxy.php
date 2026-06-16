@@ -11,7 +11,7 @@ declare(strict_types=1);
  * Keeps old bookmarks working: redirects to /Designed/ or runs the app.
  */
 require_once __DIR__ . '/includes/designed_bootstrap.php';
-ratib_serve_designed_if_requested();
+rateb_serve_designed_if_requested();
 
 header('Location: /Designed/', true, 302);
 exit;

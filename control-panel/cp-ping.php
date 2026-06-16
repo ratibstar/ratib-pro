@@ -7,7 +7,7 @@ header('Cache-Control: no-store');
 
 echo "cp-ping ok PHP " . PHP_VERSION . "\n";
 
-$compat = dirname(__DIR__) . '/includes/ratib-php74-compat.php';
+$compat = dirname(__DIR__) . '/includes/rateb-php74-compat.php';
 echo 'compat_file=' . (is_file($compat) ? 'yes' : 'no') . "\n";
 if (is_file($compat)) {
     require_once $compat;

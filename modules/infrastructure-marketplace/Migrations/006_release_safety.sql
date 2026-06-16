@@ -1,6 +1,6 @@
 -- Phase 5.2 release safety and deployment audit structures.
 
-CREATE TABLE IF NOT EXISTS `ratib_infra_deployment_audits` (
+CREATE TABLE IF NOT EXISTS `rateb_infra_deployment_audits` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `release_id` VARCHAR(128) NOT NULL,
   `environment` VARCHAR(32) NOT NULL DEFAULT 'production',
@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS `ratib_infra_deployment_audits` (
   `snapshot_json` JSON NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_ratib_infra_deployment_audits_release` (`release_id`, `created_at`)
+  KEY `idx_rateb_infra_deployment_audits_release` (`release_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

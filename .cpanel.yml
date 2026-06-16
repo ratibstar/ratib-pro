@@ -1,5 +1,5 @@
 ---
-# Git push → cPanel pulls repo → this syncs checkout to /home/outratib/public_html
+# Git push → cPanel pulls repo → this syncs checkout to /home/admin/public_html
 deployment:
   tasks:
-    - /bin/bash -lc 'export RATIB_PUBLIC_HTML=/home/outratib/public_html; bash scripts/cpanel-deploy-sync.sh'
+    - /bin/bash -lc 'export RATEB_PUBLIC_HTML=/home/admin/public_html; bash scripts/cpanel-deploy-sync.sh'

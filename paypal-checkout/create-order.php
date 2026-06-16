@@ -94,7 +94,7 @@ $orderData = [
     'intent' => 'CAPTURE', // CAPTURE = immediate payment, AUTHORIZE = authorize for later capture
     'purchase_units' => [
         [
-            'reference_id' => 'ratib_' . uniqid(), // Unique reference for your system
+            'reference_id' => 'rateb_' . uniqid(), // Unique reference for your system
             'description' => $years === 0
                 ? sprintf('RATEB %s Plan - Monthly', ucfirst($plan))
                 : sprintf('RATEB %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),

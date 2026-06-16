@@ -9,25 +9,25 @@ $legacyServicesQuery = [
     'compatibility' => '1',
 ];
 $legacyServicesAgencyId = (int) ($_SESSION['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
-if (function_exists('ratib_control_pro_bridge') && ratib_control_pro_bridge() && $legacyServicesAgencyId > 0) {
+if (function_exists('rateb_control_pro_bridge') && rateb_control_pro_bridge() && $legacyServicesAgencyId > 0) {
     $legacyServicesQuery['control'] = '1';
     $legacyServicesQuery['agency_id'] = (string) $legacyServicesAgencyId;
 }
 $legacyServicesSrc = htmlspecialchars(
-    ratib_client_dashboard_public_site_base_url() . '/modules/infrastructure-marketplace/Views/client/services.php?' . http_build_query($legacyServicesQuery),
+    rateb_client_dashboard_public_site_base_url() . '/modules/infrastructure-marketplace/Views/client/services.php?' . http_build_query($legacyServicesQuery),
     ENT_QUOTES,
     'UTF-8'
 );
-$catalogHref = htmlspecialchars(ratib_client_dashboard_context_url('domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8');
+$catalogHref = htmlspecialchars(rateb_client_dashboard_context_url('domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8');
 ?>
-            <div class="ratib-cp-board">
-                <section id="client-service-lifecycle" class="ratib-cp-card mb-4">
+            <div class="rateb-cp-board">
+                <section id="client-service-lifecycle" class="rateb-cp-card mb-4">
                     <div class="d-flex flex-wrap justify-content-between gap-3 align-items-start">
                         <div>
                             <h2>Service lifecycle</h2>
                             <p class="rcp-note mb-0">Canonical service visibility now lives in Client Hub while the infrastructure module remains the internal capability layer.</p>
                         </div>
-                        <a class="ratib-cp-pillbtn" href="<?php echo $catalogHref; ?>">Browse plans &amp; domains</a>
+                        <a class="rateb-cp-pillbtn" href="<?php echo $catalogHref; ?>">Browse plans &amp; domains</a>
                     </div>
                     <div class="mt-3" style="border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:rgba(5,10,24,.45);">
                         <iframe
@@ -39,7 +39,7 @@ $catalogHref = htmlspecialchars(ratib_client_dashboard_context_url('domains.php'
                         ></iframe>
                     </div>
                 </section>
-                <div class="ratib-cp-metrics" role="list">
+                <div class="rateb-cp-metrics" role="list">
                     <?php
                     $cards = [
                         ['Shared hosting', 'healthy', '92% seat utilisation', 'renew in 24d'],
@@ -50,20 +50,20 @@ $catalogHref = htmlspecialchars(ratib_client_dashboard_context_url('domains.php'
                     ];
                     foreach ($cards as $c) {
                         ?>
-                        <section class="ratib-cp-card" role="listitem" aria-label="<?php echo htmlspecialchars($c[0], ENT_QUOTES, 'UTF-8'); ?>">
+                        <section class="rateb-cp-card" role="listitem" aria-label="<?php echo htmlspecialchars($c[0], ENT_QUOTES, 'UTF-8'); ?>">
                             <h2><?php echo htmlspecialchars($c[0], ENT_QUOTES, 'UTF-8'); ?></h2>
                             <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="ratib-status <?php echo $c[1] === 'healthy' ? 'ratib-status--active' : 'ratib-status--pending'; ?>">
+                                <span class="rateb-status <?php echo $c[1] === 'healthy' ? 'rateb-status--active' : 'rateb-status--pending'; ?>">
                                     <?php echo htmlspecialchars($c[1], ENT_QUOTES, 'UTF-8'); ?>
                                 </span>
                                 <span class="rcp-muted-span">Uptime 99.98%</span>
                             </div>
                             <p class="rcp-note mb-1"><?php echo htmlspecialchars($c[2], ENT_QUOTES, 'UTF-8'); ?></p>
                             <p class="rcp-note"><?php echo htmlspecialchars($c[3], ENT_QUOTES, 'UTF-8'); ?></p>
-                            <div class="ratib-cp-quick mt-3" role="group">
-                                <button type="button" onclick="RatibClientActions.restart('svc-demo')">Restart</button>
-                                <button type="button" class="secondary" onclick="RatibClientActions.suspend('svc-demo')">Suspend</button>
-                                <button type="button" class="secondary" onclick="RatibClientActions.upgrade('svc-demo')">Upgrade</button>
+                            <div class="rateb-cp-quick mt-3" role="group">
+                                <button type="button" onclick="RATEBClientActions.restart('svc-demo')">Restart</button>
+                                <button type="button" class="secondary" onclick="RATEBClientActions.suspend('svc-demo')">Suspend</button>
+                                <button type="button" class="secondary" onclick="RATEBClientActions.upgrade('svc-demo')">Upgrade</button>
                             </div>
                         </section>
                         <?php

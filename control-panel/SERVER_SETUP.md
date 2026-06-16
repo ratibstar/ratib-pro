@@ -7,7 +7,7 @@
 **Fix:** Upload the file **`control.php`** to the **site root** on the server (the same folder where `index.php` is, usually `public_html` or `httpdocs`).
 
 - In cPanel → File Manager → go to the site root.
-- Upload the `control.php` file from your project (root of `ratibprogram`).
+- Upload the `control.php` file from your project (root of `ratebprogram`).
 - So you have: `index.php`, `control.php`, `control-panel/`, etc. in the same folder.
 
 ---
@@ -22,10 +22,10 @@
 
 1. **Create the database**
    - cPanel → **MySQL® Databases**.
-   - Create a new database, e.g. `outratib_control_panel_db` (or use the name your host allows, e.g. `cpaneluser_controlpanel`).
+   - Create a new database, e.g. `admin_control_panel_db` (or use the name your host allows, e.g. `cpaneluser_controlpanel`).
 
 2. **Assign the MySQL user**
-   - In the same MySQL Databases page, add the **same MySQL user** that Ratib Pro uses (e.g. `outratib_out`) to this new database with **ALL PRIVILEGES**.
+   - In the same MySQL Databases page, add the **same MySQL user** that Rateb Pro uses (e.g. `admin_out`) to this new database with **ALL PRIVILEGES**.
 
 3. **Create tables**
    - cPanel → **phpMyAdmin** (or MySQL Remote).
@@ -33,7 +33,7 @@
    - Run the SQL from:
      - `config/migrations/separate_control_panel_db/01_create_database.sql` (only the `CREATE DATABASE` part if the DB was created in cPanel; otherwise run as-is).
      - `config/migrations/separate_control_panel_db/02_create_tables.sql`  
-   - If your database name is different (e.g. with a prefix), change the first line of `02_create_tables.sql` from `USE outratib_control_panel_db;` to `USE your_actual_db_name;`.
+   - If your database name is different (e.g. with a prefix), change the first line of `02_create_tables.sql` from `USE admin_control_panel_db;` to `USE your_actual_db_name;`.
 
 4. **Create an admin user**
    - In the control panel database, ensure table `control_admins` has at least one user. Example (set your own password):
@@ -47,15 +47,15 @@
    - Edit **`control-panel/config/env.php`** on the server (or set environment variables).
    - Set:
      - `DB_HOST` – usually `localhost`
-     - `DB_USER` – your MySQL username (e.g. `outratib_out`)
+     - `DB_USER` – your MySQL username (e.g. `admin_out`)
      - `DB_PASS` – your MySQL password
-     - `CONTROL_PANEL_DB_NAME` or `DB_NAME` – the **exact** name of the control panel database you created (e.g. `outratib_control_panel_db` or `cpaneluser_controlpanel`).
+     - `CONTROL_PANEL_DB_NAME` or `DB_NAME` – the **exact** name of the control panel database you created (e.g. `admin_control_panel_db` or `cpaneluser_controlpanel`).
 
-### Option B – Use the same database as Ratib Pro
+### Option B – Use the same database as Rateb Pro
 
-If the **main Ratib Pro database** already has the control panel tables (`control_admins`, `control_countries`, `control_agencies`, etc.):
+If the **main Rateb Pro database** already has the control panel tables (`control_admins`, `control_countries`, `control_agencies`, etc.):
 
-- In **`control-panel/config/env.php`** on the server, set **`CONTROL_PANEL_DB_NAME`** (or **`CONTROL_DB_NAME`**) to the **same database name** as Ratib Pro (e.g. `outratib_out`).
+- In **`control-panel/config/env.php`** on the server, set **`CONTROL_PANEL_DB_NAME`** (or **`CONTROL_DB_NAME`**) to the **same database name** as Rateb Pro (e.g. `admin_out`).
 - Keep **DB_HOST**, **DB_USER**, **DB_PASS** the same as the main app.
 - Then the control panel will use that one database and the existing control_* tables.
 

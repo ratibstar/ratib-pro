@@ -13,12 +13,12 @@ if (empty($_SESSION['control_logged_in'])) {
 requireControlPermission(CONTROL_PERM_DASHBOARD);
 
 require_once __DIR__ . '/../../includes/control/request-url.php';
-$socCssUrl = function_exists('control_ratib_pro_asset_url')
-    ? control_ratib_pro_asset_url('admin/assets/dashboard.css')
-    : (rtrim(control_ratib_pro_public_base_url(), '/') . '/admin/assets/dashboard.css?v=' . time());
-$socJsUrl = function_exists('control_ratib_pro_asset_url')
-    ? control_ratib_pro_asset_url('admin/assets/dashboard.js')
-    : (rtrim(control_ratib_pro_public_base_url(), '/') . '/admin/assets/dashboard.js?v=' . time());
+$socCssUrl = function_exists('control_rateb_pro_asset_url')
+    ? control_rateb_pro_asset_url('admin/assets/dashboard.css')
+    : (rtrim(control_rateb_pro_public_base_url(), '/') . '/admin/assets/dashboard.css?v=' . time());
+$socJsUrl = function_exists('control_rateb_pro_asset_url')
+    ? control_rateb_pro_asset_url('admin/assets/dashboard.js')
+    : (rtrim(control_rateb_pro_public_base_url(), '/') . '/admin/assets/dashboard.js?v=' . time());
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('SOC Dashboard', [

@@ -79,7 +79,7 @@
     font-weight: 400;
 }
 
-.header-subtitle-ratib {
+.header-subtitle-rateb {
     font-size: 1.03rem;
     font-weight: 700;
     letter-spacing: 0.2px;
@@ -88,10 +88,10 @@
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: controlRatibGradient 4.4s linear infinite;
+    animation: controlRATEBGradient 4.4s linear infinite;
 }
 
-@keyframes controlRatibGradient {
+@keyframes controlRATEBGradient {
     0% { background-position: 0% 50%; }
     100% { background-position: 100% 50%; }
 }
@@ -269,7 +269,7 @@ body.control-layout-no-header .control-sidebar {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     text-align: center;
-    animation: controlRatibGradient 4.6s linear infinite;
+    animation: controlRATEBGradient 4.6s linear infinite;
 }
 
 .sidebar-header h2 {
@@ -1168,7 +1168,7 @@ body.control-layout-no-header .control-content {
     background: transparent;
 }
 
-/* Ratib Pro HR (hr.css) offsets .main-content for the main app nav; cancel inside control shell */
+/* RATEB Pro HR (hr.css) offsets .main-content for the main app nav; cancel inside control shell */
 /* hr.css uses overflow:hidden / max-height:100vh and mobile !important rules — override so tables/forms stay interactive */
 .module-content .main-content {
     margin-left: 0 !important;

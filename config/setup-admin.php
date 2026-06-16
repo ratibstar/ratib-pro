@@ -86,7 +86,7 @@ if ($existing) {
     echo "Password reset for user '{$username}'.\n";
 } else {
     // Insert new admin user
-    $email = 'admin@ratibprogram.com';
+    $email = 'admin@ratebprogram.com';
     $roleId = 1;
     $status = 'active';
 

@@ -5,7 +5,7 @@
  */
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../utils/response.php';
-require_once __DIR__ . '/../../../includes/ratib_uploads_base.php';
+require_once __DIR__ . '/../../../includes/rateb_uploads_base.php';
 
 try {
     if (empty($_FILES['document']) || empty($_POST['id']) || empty($_POST['document_type'])) {
@@ -29,11 +29,11 @@ try {
     }
 
     try {
-        $base = ratib_uploads_pick_base_for_worker_document($workerId, $docType);
+        $base = rateb_uploads_pick_base_for_worker_document($workerId, $docType);
     } catch (RuntimeException $e) {
         throw new Exception(
             $e->getMessage()
-                . ' Set RATIB_UPLOADS_BASE (or define RATIB_UPLOADS_BASE) to an absolute path the web server can write.'
+                . ' Set RATEB_UPLOADS_BASE (or define RATEB_UPLOADS_BASE) to an absolute path the web server can write.'
         );
     }
     $uploadDir = $base . DIRECTORY_SEPARATOR . 'workers' . DIRECTORY_SEPARATOR . $workerId

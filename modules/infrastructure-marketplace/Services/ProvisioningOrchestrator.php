@@ -1,19 +1,19 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Services;
+namespace RATEB\InfrastructureMarketplace\Services;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\ProvisioningOrchestratorInterface;
-use Ratib\InfrastructureMarketplace\Domain\Contracts\QueueDispatcherInterface;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\Queue\DatabaseQueueDispatcher;
-use Ratib\InfrastructureMarketplace\Provisioning\SyncQueueDispatcher;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\ProvisioningOrchestratorInterface;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\QueueDispatcherInterface;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\Queue\DatabaseQueueDispatcher;
+use RATEB\InfrastructureMarketplace\Provisioning\SyncQueueDispatcher;
 
 final class ProvisioningOrchestrator implements ProvisioningOrchestratorInterface
 {
@@ -84,7 +84,7 @@ final class ProvisioningOrchestrator implements ProvisioningOrchestratorInterfac
     public function submit(ProvisioningJob $job): string
     {
         if (!ModuleConfig::isModuleEnabled()) {
-            throw new \RuntimeException('Infrastructure marketplace module is disabled (RATIB_INFRA_MARKETPLACE_ENABLED).');
+            throw new \RuntimeException('Infrastructure marketplace module is disabled (RATEB_INFRA_MARKETPLACE_ENABLED).');
         }
         $started = microtime(true);
         $id = $this->queue->enqueue($job);
@@ -108,8 +108,8 @@ final class ProvisioningOrchestrator implements ProvisioningOrchestratorInterfac
     private static function databaseQueueSchemaReady(\PDO $pdo): bool
     {
         try {
-            return SchemaHelpers::tableExists($pdo, 'ratib_infra_provisioning_jobs')
-                && SchemaHelpers::tableExists($pdo, 'ratib_infra_job_logs');
+            return SchemaHelpers::tableExists($pdo, 'rateb_infra_provisioning_jobs')
+                && SchemaHelpers::tableExists($pdo, 'rateb_infra_job_logs');
         } catch (\Throwable $e) {
             return false;
         }

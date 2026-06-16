@@ -3,8 +3,8 @@
  * Dynamic worker workflow engine (country-configured, no hardcoded branching).
  */
 
-if (!function_exists('ratib_workflow_stage_keys')) {
-    function ratib_workflow_stage_keys(): array
+if (!function_exists('rateb_workflow_stage_keys')) {
+    function rateb_workflow_stage_keys(): array
     {
         return [
             'identity',
@@ -23,8 +23,8 @@ if (!function_exists('ratib_workflow_stage_keys')) {
     }
 }
 
-if (!function_exists('ratib_workflow_ensure_schema')) {
-    function ratib_workflow_ensure_schema(PDO $pdo): void
+if (!function_exists('rateb_workflow_ensure_schema')) {
+    function rateb_workflow_ensure_schema(PDO $pdo): void
     {
         $pdo->exec(
             "CREATE TABLE IF NOT EXISTS workflow_definitions (
@@ -142,13 +142,13 @@ if (!function_exists('ratib_workflow_ensure_schema')) {
             }
         }
 
-        ratib_workflow_seed_default($pdo);
-        ratib_workflow_ensure_version_snapshot($pdo, (int)$pdo->query("SELECT id FROM workflow_definitions WHERE workflow_key = 'default_global' LIMIT 1")->fetchColumn(), null);
+        rateb_workflow_seed_default($pdo);
+        rateb_workflow_ensure_version_snapshot($pdo, (int)$pdo->query("SELECT id FROM workflow_definitions WHERE workflow_key = 'default_global' LIMIT 1")->fetchColumn(), null);
     }
 }
 
-if (!function_exists('ratib_workflow_seed_default')) {
-    function ratib_workflow_seed_default(PDO $pdo): void
+if (!function_exists('rateb_workflow_seed_default')) {
+    function rateb_workflow_seed_default(PDO $pdo): void
     {
         // Ensure default workflow shell exists; rules are DB-driven and not hardcoded here.
         $pdo->prepare(
@@ -162,9 +162,9 @@ if (!function_exists('ratib_workflow_seed_default')) {
             return;
         }
 
-        $stages = ratib_workflow_stage_keys();
+        $stages = rateb_workflow_stage_keys();
         foreach ($stages as $index => $stageKey) {
-            $required = ratib_workflow_default_required_fields($stageKey);
+            $required = rateb_workflow_default_required_fields($stageKey);
             $fieldsConfig = [];
             foreach ($required as $fieldKey) {
                 $fieldsConfig[$fieldKey] = ['required' => true];
@@ -205,8 +205,8 @@ if (!function_exists('ratib_workflow_seed_default')) {
     }
 }
 
-if (!function_exists('ratib_workflow_default_required_fields')) {
-    function ratib_workflow_default_required_fields(string $stageKey): array
+if (!function_exists('rateb_workflow_default_required_fields')) {
+    function rateb_workflow_default_required_fields(string $stageKey): array
     {
         $map = [
             'identity' => ['identity_number', 'identity_date'],
@@ -226,8 +226,8 @@ if (!function_exists('ratib_workflow_default_required_fields')) {
     }
 }
 
-if (!function_exists('ratib_workflow_resolve_definition')) {
-    function ratib_workflow_resolve_definition(PDO $pdo, ?string $countryName): array
+if (!function_exists('rateb_workflow_resolve_definition')) {
+    function rateb_workflow_resolve_definition(PDO $pdo, ?string $countryName): array
     {
         $country = trim((string)$countryName);
         if ($country !== '') {
@@ -250,8 +250,8 @@ if (!function_exists('ratib_workflow_resolve_definition')) {
     }
 }
 
-if (!function_exists('ratib_workflow_get_stage_map')) {
-    function ratib_workflow_get_stage_map(PDO $pdo, int $workflowId): array
+if (!function_exists('rateb_workflow_get_stage_map')) {
+    function rateb_workflow_get_stage_map(PDO $pdo, int $workflowId): array
     {
         $stmt = $pdo->prepare("SELECT stage_key, stage_order, stage_label, stage_description, required_fields_json, fields_config_json, stage_weight FROM workflow_stages WHERE workflow_id = ? ORDER BY stage_order ASC");
         $stmt->execute([$workflowId]);
@@ -275,8 +275,8 @@ if (!function_exists('ratib_workflow_get_stage_map')) {
     }
 }
 
-if (!function_exists('ratib_workflow_get_rules')) {
-    function ratib_workflow_get_rules(PDO $pdo, int $workflowId, string $stageKey): array
+if (!function_exists('rateb_workflow_get_rules')) {
+    function rateb_workflow_get_rules(PDO $pdo, int $workflowId, string $stageKey): array
     {
         $stmt = $pdo->prepare("SELECT rule_type, rule_config_json FROM workflow_rules WHERE workflow_id = ? AND stage_key = ?");
         $stmt->execute([$workflowId, $stageKey]);
@@ -290,8 +290,8 @@ if (!function_exists('ratib_workflow_get_rules')) {
     }
 }
 
-if (!function_exists('ratib_workflow_collect_snapshot')) {
-    function ratib_workflow_collect_snapshot(PDO $pdo, int $workflowId): array
+if (!function_exists('rateb_workflow_collect_snapshot')) {
+    function rateb_workflow_collect_snapshot(PDO $pdo, int $workflowId): array
     {
         $defStmt = $pdo->prepare("SELECT * FROM workflow_definitions WHERE id = ? LIMIT 1");
         $defStmt->execute([$workflowId]);
@@ -313,11 +313,11 @@ if (!function_exists('ratib_workflow_collect_snapshot')) {
     }
 }
 
-if (!function_exists('ratib_workflow_validate_definition')) {
-    function ratib_workflow_validate_definition(PDO $pdo, int $workflowId): array
+if (!function_exists('rateb_workflow_validate_definition')) {
+    function rateb_workflow_validate_definition(PDO $pdo, int $workflowId): array
     {
         $errors = [];
-        $stages = ratib_workflow_get_stage_map($pdo, $workflowId);
+        $stages = rateb_workflow_get_stage_map($pdo, $workflowId);
         if (empty($stages)) {
             return ['valid' => false, 'errors' => ['missing_stages']];
         }
@@ -415,15 +415,15 @@ if (!function_exists('ratib_workflow_validate_definition')) {
 if (!function_exists('validate_workflow_definition')) {
     function validate_workflow_definition(PDO $pdo, int $workflowId): array
     {
-        return ratib_workflow_validate_definition($pdo, $workflowId);
+        return rateb_workflow_validate_definition($pdo, $workflowId);
     }
 }
 
-if (!function_exists('ratib_workflow_ensure_version_snapshot')) {
-    function ratib_workflow_ensure_version_snapshot(PDO $pdo, int $workflowId, ?int $createdBy): ?int
+if (!function_exists('rateb_workflow_ensure_version_snapshot')) {
+    function rateb_workflow_ensure_version_snapshot(PDO $pdo, int $workflowId, ?int $createdBy): ?int
     {
         if ($workflowId <= 0) return null;
-        $snapshot = ratib_workflow_collect_snapshot($pdo, $workflowId);
+        $snapshot = rateb_workflow_collect_snapshot($pdo, $workflowId);
         $snapshotJson = json_encode($snapshot, JSON_UNESCAPED_UNICODE);
         $hash = hash('sha256', (string)$snapshotJson);
 
@@ -450,8 +450,8 @@ if (!function_exists('ratib_workflow_ensure_version_snapshot')) {
     }
 }
 
-if (!function_exists('ratib_workflow_activate_version')) {
-    function ratib_workflow_activate_version(PDO $pdo, int $workflowId, int $versionId): bool
+if (!function_exists('rateb_workflow_activate_version')) {
+    function rateb_workflow_activate_version(PDO $pdo, int $workflowId, int $versionId): bool
     {
         if ($workflowId <= 0 || $versionId <= 0) return false;
         $exists = $pdo->prepare("SELECT id FROM workflow_versions WHERE workflow_id = ? AND id = ? LIMIT 1");
@@ -462,8 +462,8 @@ if (!function_exists('ratib_workflow_activate_version')) {
     }
 }
 
-if (!function_exists('ratib_workflow_clone_template')) {
-    function ratib_workflow_clone_template(PDO $pdo, int $templateId, string $workflowKey, string $countryCode, ?int $createdBy = null): int
+if (!function_exists('rateb_workflow_clone_template')) {
+    function rateb_workflow_clone_template(PDO $pdo, int $templateId, string $workflowKey, string $countryCode, ?int $createdBy = null): int
     {
         $stmt = $pdo->prepare("SELECT template_json, base_country_group FROM workflow_templates WHERE id = ? LIMIT 1");
         $stmt->execute([$templateId]);
@@ -511,13 +511,13 @@ if (!function_exists('ratib_workflow_clone_template')) {
             ]);
         }
 
-        ratib_workflow_ensure_version_snapshot($pdo, $workflowId, $createdBy);
+        rateb_workflow_ensure_version_snapshot($pdo, $workflowId, $createdBy);
         return $workflowId;
     }
 }
 
-if (!function_exists('ratib_workflow_context_from_payload')) {
-    function ratib_workflow_context_from_payload(array $payload, ?array $existingWorker = null): array
+if (!function_exists('rateb_workflow_context_from_payload')) {
+    function rateb_workflow_context_from_payload(array $payload, ?array $existingWorker = null): array
     {
         $merged = array_merge($existingWorker ?? [], $payload);
         $jobType = '';
@@ -551,8 +551,8 @@ if (!function_exists('ratib_workflow_context_from_payload')) {
     }
 }
 
-if (!function_exists('ratib_workflow_resolve_definition_selector')) {
-    function ratib_workflow_resolve_definition_selector(PDO $pdo, $selector): ?array
+if (!function_exists('rateb_workflow_resolve_definition_selector')) {
+    function rateb_workflow_resolve_definition_selector(PDO $pdo, $selector): ?array
     {
         if (is_numeric($selector)) {
             $stmt = $pdo->prepare("SELECT * FROM workflow_definitions WHERE is_active = 1 AND id = ? LIMIT 1");
@@ -576,15 +576,15 @@ if (!function_exists('ratib_workflow_resolve_definition_selector')) {
 
         if (is_array($selector)) {
             if (!empty($selector['id'])) {
-                $row = ratib_workflow_resolve_definition_selector($pdo, (int)$selector['id']);
+                $row = rateb_workflow_resolve_definition_selector($pdo, (int)$selector['id']);
                 if ($row) return $row;
             }
             if (!empty($selector['workflow_key'])) {
-                $row = ratib_workflow_resolve_definition_selector($pdo, (string)$selector['workflow_key']);
+                $row = rateb_workflow_resolve_definition_selector($pdo, (string)$selector['workflow_key']);
                 if ($row) return $row;
             }
             if (!empty($selector['country_code'])) {
-                $row = ratib_workflow_resolve_definition_selector($pdo, (string)$selector['country_code']);
+                $row = rateb_workflow_resolve_definition_selector($pdo, (string)$selector['country_code']);
                 if ($row) return $row;
             }
         }
@@ -593,12 +593,12 @@ if (!function_exists('ratib_workflow_resolve_definition_selector')) {
     }
 }
 
-if (!function_exists('ratib_workflow_recommend_template')) {
+if (!function_exists('rateb_workflow_recommend_template')) {
     /**
      * Intelligent template recommendation layer (additive, non-breaking).
      * Returns: recommended_template_id, confidence_score, adjusted_rules, explanation, workflow_definition_id.
      */
-    function ratib_workflow_recommend_template(PDO $pdo, array $context): array
+    function rateb_workflow_recommend_template(PDO $pdo, array $context): array
     {
         $country = strtolower(trim((string)($context['country'] ?? '')));
         $nationality = strtolower(trim((string)($context['nationality'] ?? '')));
@@ -668,7 +668,7 @@ if (!function_exists('ratib_workflow_recommend_template')) {
             }
 
             $baseWorkflowSelector = $templateJson['base_workflow'] ?? null;
-            $resolvedWorkflow = ratib_workflow_resolve_definition_selector($pdo, $baseWorkflowSelector);
+            $resolvedWorkflow = rateb_workflow_resolve_definition_selector($pdo, $baseWorkflowSelector);
 
             if ($resolvedWorkflow) {
                 $score += 0.05;
@@ -693,8 +693,8 @@ if (!function_exists('ratib_workflow_recommend_template')) {
     }
 }
 
-if (!function_exists('ratib_workflow_to_bool_map')) {
-    function ratib_workflow_to_bool_map($raw): array
+if (!function_exists('rateb_workflow_to_bool_map')) {
+    function rateb_workflow_to_bool_map($raw): array
     {
         if (is_array($raw)) {
             $arr = $raw;
@@ -712,8 +712,8 @@ if (!function_exists('ratib_workflow_to_bool_map')) {
     }
 }
 
-if (!function_exists('ratib_workflow_is_value_allowed')) {
-    function ratib_workflow_is_value_allowed($value, array $allowed): bool
+if (!function_exists('rateb_workflow_is_value_allowed')) {
+    function rateb_workflow_is_value_allowed($value, array $allowed): bool
     {
         $normalized = strtolower(trim((string)$value));
         foreach ($allowed as $a) {
@@ -725,11 +725,11 @@ if (!function_exists('ratib_workflow_is_value_allowed')) {
     }
 }
 
-if (!function_exists('ratib_workflow_validate_stage_rules')) {
-    function ratib_workflow_validate_stage_rules(PDO $pdo, int $workflowId, string $stageKey, array $workerLike, array $stageCompleted): array
+if (!function_exists('rateb_workflow_validate_stage_rules')) {
+    function rateb_workflow_validate_stage_rules(PDO $pdo, int $workflowId, string $stageKey, array $workerLike, array $stageCompleted): array
     {
         $missing = [];
-        $rules = ratib_workflow_get_rules($pdo, $workflowId, $stageKey);
+        $rules = rateb_workflow_get_rules($pdo, $workflowId, $stageKey);
         foreach ($rules as $rule) {
             $cfg = $rule['config'];
             $type = strtolower(trim((string)($cfg['type'] ?? $rule['rule_type'])));
@@ -744,7 +744,7 @@ if (!function_exists('ratib_workflow_validate_stage_rules')) {
             if ($type === 'require_field_value') {
                 $field = (string)($cfg['field'] ?? '');
                 $allowed = is_array($cfg['allowed'] ?? null) ? $cfg['allowed'] : [];
-                if ($field === '' || !ratib_workflow_is_value_allowed($workerLike[$field] ?? '', $allowed)) {
+                if ($field === '' || !rateb_workflow_is_value_allowed($workerLike[$field] ?? '', $allowed)) {
                     $missing[] = "field_{$field}_invalid";
                 }
                 continue;
@@ -754,7 +754,7 @@ if (!function_exists('ratib_workflow_validate_stage_rules')) {
                 foreach ($conditions as $cond) {
                     $field = (string)($cond['field'] ?? '');
                     $allowed = is_array($cond['allowed'] ?? null) ? $cond['allowed'] : [];
-                    if ($field === '' || !ratib_workflow_is_value_allowed($workerLike[$field] ?? '', $allowed)) {
+                    if ($field === '' || !rateb_workflow_is_value_allowed($workerLike[$field] ?? '', $allowed)) {
                         $missing[] = "field_{$field}_invalid";
                     }
                 }
@@ -763,7 +763,7 @@ if (!function_exists('ratib_workflow_validate_stage_rules')) {
             if ($type === 'block_if') {
                 $field = (string)($cfg['field'] ?? '');
                 $blocked = is_array($cfg['blocked'] ?? null) ? $cfg['blocked'] : [];
-                if ($field !== '' && ratib_workflow_is_value_allowed($workerLike[$field] ?? '', $blocked)) {
+                if ($field !== '' && rateb_workflow_is_value_allowed($workerLike[$field] ?? '', $blocked)) {
                     $missing[] = "field_{$field}_blocked";
                 }
                 continue;
@@ -773,8 +773,8 @@ if (!function_exists('ratib_workflow_validate_stage_rules')) {
     }
 }
 
-if (!function_exists('ratib_workflow_validate_field_type')) {
-    function ratib_workflow_validate_field_type($value, string $type): bool
+if (!function_exists('rateb_workflow_validate_field_type')) {
+    function rateb_workflow_validate_field_type($value, string $type): bool
     {
         $type = strtolower(trim($type));
         $str = trim((string)$value);
@@ -790,8 +790,8 @@ if (!function_exists('ratib_workflow_validate_field_type')) {
     }
 }
 
-if (!function_exists('ratib_workflow_validate_stage_fields_config')) {
-    function ratib_workflow_validate_stage_fields_config(array $stageDef, array $workerLike): array
+if (!function_exists('rateb_workflow_validate_stage_fields_config')) {
+    function rateb_workflow_validate_stage_fields_config(array $stageDef, array $workerLike): array
     {
         $errors = [];
         $fieldsConfig = is_array($stageDef['fields_config'] ?? null) ? $stageDef['fields_config'] : [];
@@ -803,7 +803,7 @@ if (!function_exists('ratib_workflow_validate_stage_fields_config')) {
                 $errors[] = "field_{$fieldKey}_required";
                 continue;
             }
-            if ($value !== null && $value !== '' && !empty($cfg['type']) && !ratib_workflow_validate_field_type($value, (string)$cfg['type'])) {
+            if ($value !== null && $value !== '' && !empty($cfg['type']) && !rateb_workflow_validate_field_type($value, (string)$cfg['type'])) {
                 $errors[] = "field_{$fieldKey}_invalid_type";
             }
         }
@@ -811,8 +811,8 @@ if (!function_exists('ratib_workflow_validate_stage_fields_config')) {
     }
 }
 
-if (!function_exists('ratib_workflow_field_label')) {
-    function ratib_workflow_field_label(string $fieldKey): string
+if (!function_exists('rateb_workflow_field_label')) {
+    function rateb_workflow_field_label(string $fieldKey): string
     {
         $labels = [
             'identity_number' => 'Identity Number',
@@ -841,8 +841,8 @@ if (!function_exists('ratib_workflow_field_label')) {
     }
 }
 
-if (!function_exists('ratib_workflow_compute_document_statuses')) {
-    function ratib_workflow_compute_document_statuses(PDO $pdo, int $workflowId, array &$payload, array $workerLike): void
+if (!function_exists('rateb_workflow_compute_document_statuses')) {
+    function rateb_workflow_compute_document_statuses(PDO $pdo, int $workflowId, array &$payload, array $workerLike): void
     {
         $docStatusMap = [
             'passport_status' => ['number_field' => 'passport_number'],
@@ -856,7 +856,7 @@ if (!function_exists('ratib_workflow_compute_document_statuses')) {
         $stageRulesStmt->execute([$workflowId]);
         $stageKeys = $stageRulesStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
         foreach ($stageKeys as $stageKey) {
-            $rules = ratib_workflow_get_rules($pdo, $workflowId, (string)$stageKey);
+            $rules = rateb_workflow_get_rules($pdo, $workflowId, (string)$stageKey);
             foreach ($rules as $rule) {
                 $ruleType = strtolower(trim((string)$rule['rule_type']));
                 $cfg = $rule['config'];
@@ -865,7 +865,7 @@ if (!function_exists('ratib_workflow_compute_document_statuses')) {
                 if ($target === '') continue;
                 $field = (string)($cfg['field'] ?? '');
                 $allowed = is_array($cfg['allowed'] ?? null) ? $cfg['allowed'] : [];
-                if ($field !== '' && !empty($allowed) && ratib_workflow_is_value_allowed($workerLike[$field] ?? '', $allowed)) {
+                if ($field !== '' && !empty($allowed) && rateb_workflow_is_value_allowed($workerLike[$field] ?? '', $allowed)) {
                     $payload[$target] = (string)($cfg['on_match'] ?? 'ok');
                 } else {
                     $payload[$target] = (string)($cfg['on_fail'] ?? ($payload[$target] ?? 'pending'));
@@ -885,14 +885,14 @@ if (!function_exists('ratib_workflow_compute_document_statuses')) {
             if ($value === '') {
                 $payload[$statusField] = 'pending';
             } else {
-                $payload[$statusField] = ratib_workflow_validate_field_type($value, 'string') ? 'ok' : 'not_ok';
+                $payload[$statusField] = rateb_workflow_validate_field_type($value, 'string') ? 'ok' : 'not_ok';
             }
         }
     }
 }
 
-if (!function_exists('ratib_workflow_log_stage_transition')) {
-    function ratib_workflow_log_stage_transition(PDO $pdo, int $workerId, ?string $from, ?string $to, ?int $changedBy, ?int $workflowId): void
+if (!function_exists('rateb_workflow_log_stage_transition')) {
+    function rateb_workflow_log_stage_transition(PDO $pdo, int $workerId, ?string $from, ?string $to, ?int $changedBy, ?int $workflowId): void
     {
         if ($workerId <= 0) return;
         if ((string)$from === (string)$to) return;
@@ -904,18 +904,18 @@ if (!function_exists('ratib_workflow_log_stage_transition')) {
     }
 }
 
-if (!function_exists('ratib_workflow_apply_on_save')) {
+if (!function_exists('rateb_workflow_apply_on_save')) {
     /**
      * Validates and mutates payload with workflow_id/current_stage/stage_completed.
      */
-    function ratib_workflow_apply_on_save(PDO $pdo, array &$payload, ?array $existingWorker = null, ?int $changedBy = null): void
+    function rateb_workflow_apply_on_save(PDO $pdo, array &$payload, ?array $existingWorker = null, ?int $changedBy = null): void
     {
-        ratib_workflow_ensure_schema($pdo);
+        rateb_workflow_ensure_schema($pdo);
 
         $country = (string)($payload['country'] ?? ($existingWorker['country'] ?? ''));
         $preferredWorkflowId = isset($payload['workflow_id']) ? (int)$payload['workflow_id'] : 0;
-        $context = ratib_workflow_context_from_payload($payload, $existingWorker);
-        $recommendation = ratib_workflow_recommend_template($pdo, $context);
+        $context = rateb_workflow_context_from_payload($payload, $existingWorker);
+        $recommendation = rateb_workflow_recommend_template($pdo, $context);
         if ($preferredWorkflowId <= 0 && !empty($recommendation['workflow_definition_id'])) {
             $preferredWorkflowId = (int)$recommendation['workflow_definition_id'];
         }
@@ -924,13 +924,13 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
         $workflowValidation = ['valid' => false, 'errors' => ['workflow_not_loaded']];
         try {
             if ($preferredWorkflowId > 0) {
-                $workflow = ratib_workflow_resolve_definition_selector($pdo, $preferredWorkflowId);
+                $workflow = rateb_workflow_resolve_definition_selector($pdo, $preferredWorkflowId);
             }
             if (!$workflow) {
-                $workflow = ratib_workflow_resolve_definition($pdo, $country);
+                $workflow = rateb_workflow_resolve_definition($pdo, $country);
             }
             $workflowId = (int)$workflow['id'];
-            $workflowValidation = ratib_workflow_validate_definition($pdo, $workflowId);
+            $workflowValidation = rateb_workflow_validate_definition($pdo, $workflowId);
         } catch (Throwable $e) {
             error_log('Workflow resolve failed, falling back to default safe workflow: ' . $e->getMessage());
         }
@@ -939,25 +939,25 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
             if (!empty($workflowValidation['errors'])) {
                 error_log('Workflow validation failed for country [' . $country . ']: ' . implode(', ', $workflowValidation['errors']));
             }
-            $workflow = ratib_workflow_resolve_definition($pdo, 'DEFAULT');
+            $workflow = rateb_workflow_resolve_definition($pdo, 'DEFAULT');
             $workflowId = (int)$workflow['id'];
-            $workflowValidation = ratib_workflow_validate_definition($pdo, $workflowId);
+            $workflowValidation = rateb_workflow_validate_definition($pdo, $workflowId);
             if (!$workflowValidation['valid']) {
                 error_log('Default safe workflow is invalid: ' . implode(', ', $workflowValidation['errors']));
             }
         }
 
-        $activeVersionId = ratib_workflow_ensure_version_snapshot($pdo, $workflowId, $changedBy);
+        $activeVersionId = rateb_workflow_ensure_version_snapshot($pdo, $workflowId, $changedBy);
         $enforce = (int)($workflow['enforce_stage_order'] ?? 1) === 1;
-        $stages = ratib_workflow_get_stage_map($pdo, $workflowId);
+        $stages = rateb_workflow_get_stage_map($pdo, $workflowId);
         if (empty($stages)) {
             throw new Exception('Workflow has no stages configured');
         }
 
         $stageKeys = array_column($stages, 'stage_key');
         $firstStage = $stageKeys[0];
-        $existingStageCompleted = ratib_workflow_to_bool_map($existingWorker['stage_completed'] ?? []);
-        $incomingStageCompleted = ratib_workflow_to_bool_map($payload['stage_completed'] ?? []);
+        $existingStageCompleted = rateb_workflow_to_bool_map($existingWorker['stage_completed'] ?? []);
+        $incomingStageCompleted = rateb_workflow_to_bool_map($payload['stage_completed'] ?? []);
         $stageCompleted = array_merge($existingStageCompleted, $incomingStageCompleted);
 
         $currentStage = (string)($payload['current_stage'] ?? ($existingWorker['current_stage'] ?? $firstStage));
@@ -966,7 +966,7 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
         }
 
         $workerLike = array_merge($existingWorker ?? [], $payload);
-        ratib_workflow_compute_document_statuses($pdo, $workflowId, $payload, $workerLike);
+        rateb_workflow_compute_document_statuses($pdo, $workflowId, $payload, $workerLike);
         $workerLike = array_merge($workerLike, $payload);
 
         $currentStageDef = null;
@@ -995,12 +995,12 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
                 }
             }
             if (!empty($missingRequired)) {
-                $missingLabels = array_map('ratib_workflow_field_label', array_values(array_unique($missingRequired)));
+                $missingLabels = array_map('rateb_workflow_field_label', array_values(array_unique($missingRequired)));
                 throw new Exception('Missing required fields (' . count($missingLabels) . '): ' . implode(', ', $missingLabels));
             }
 
             if ($enforce) {
-                $blocked = ratib_workflow_validate_stage_rules($pdo, $workflowId, $currentStage, $workerLike, $stageCompleted);
+                $blocked = rateb_workflow_validate_stage_rules($pdo, $workflowId, $currentStage, $workerLike, $stageCompleted);
                 if (!empty($blocked)) {
                     throw new Exception('Workflow stage requirements not met');
                 }
@@ -1026,7 +1026,7 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
         $payload['_workflow_resolved_id'] = $workflowId;
 
         if (!empty($existingWorker['id'])) {
-            ratib_workflow_log_stage_transition($pdo, (int)$existingWorker['id'], $previousStage, $nextStage, $changedBy, $workflowId);
+            rateb_workflow_log_stage_transition($pdo, (int)$existingWorker['id'], $previousStage, $nextStage, $changedBy, $workflowId);
         }
     }
 }

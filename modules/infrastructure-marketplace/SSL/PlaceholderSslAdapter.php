@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\SSL;
+namespace RATEB\InfrastructureMarketplace\SSL;
 
-use Ratib\InfrastructureMarketplace\Domain\Contracts\SslProviderInterface;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Domain\Contracts\SslProviderInterface;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 final class PlaceholderSslAdapter implements SslProviderInterface
 {

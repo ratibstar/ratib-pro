@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ObservabilityHub
+final class RATEB_ClientDashboard_ObservabilityHub
 {
     /** @var list<array<string, mixed>> */
     private $adapterEvents = [];

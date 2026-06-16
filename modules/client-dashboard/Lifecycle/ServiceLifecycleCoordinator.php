@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ServiceLifecycleCoordinator
+final class RATEB_ClientDashboard_ServiceLifecycleCoordinator
 {
     /** @var array<string, list<string>> */
     private const SERVICE_STATUS_GRAPH = [

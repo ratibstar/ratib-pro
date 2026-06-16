@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\Lifecycle;
+namespace RATEB\InfrastructureMarketplace\Provisioning\Lifecycle;
 
 final class ProvisioningState
 {

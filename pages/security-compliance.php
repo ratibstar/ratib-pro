@@ -16,30 +16,30 @@ if (!headers_sent()) {
     header('CDN-Cache-Control: no-store');
 }
 
-require_once __DIR__ . '/../includes/ratib-public-base-url.php';
-$baseUrl = ratib_public_site_base_url();
+require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+$baseUrl = rateb_public_site_base_url();
 
-require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-require_once __DIR__ . '/../includes/ratib-security-compliance-data.php';
-require_once __DIR__ . '/../includes/ratib-security-compliance-sections.php';
+require_once __DIR__ . '/../includes/rateb-home-public-nav-bootstrap.php';
+require_once __DIR__ . '/../includes/rateb-security-compliance-data.php';
+require_once __DIR__ . '/../includes/rateb-security-compliance-sections.php';
 
-$trust = ratib_security_compliance_config($baseUrl);
-$ratibTrustPageActive = true;
-$ratibHomeNavHrefPrefix = function_exists('ratib_public_nav_marketing_home_prefix')
-    ? ratib_public_nav_marketing_home_prefix($baseUrl)
+$trust = rateb_security_compliance_config($baseUrl);
+$ratebTrustPageActive = true;
+$ratebHomeNavHrefPrefix = function_exists('rateb_public_nav_marketing_home_prefix')
+    ? rateb_public_nav_marketing_home_prefix($baseUrl)
     : rtrim($baseUrl, '/') . '/pages/home.php';
 
-$ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
-clearstatcache(true, $ratibAboutCssPath);
-$ratibAboutCssQuery = (int) (@filemtime($ratibAboutCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ . '-c' . $ratibChromeBundleHash;
+$ratebAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
+clearstatcache(true, $ratebAboutCssPath);
+$ratebAboutCssQuery = (int) (@filemtime($ratebAboutCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-' . $ratebHomePhpMtime . $ratebHomeAssetExtraQ . '-c' . $ratebChromeBundleHash;
 
-$ratibTrustCssPath = __DIR__ . '/../css/pages/security-compliance.css';
-clearstatcache(true, $ratibTrustCssPath);
-$ratibTrustCssQuery = (int) (@filemtime($ratibTrustCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratebTrustCssPath = __DIR__ . '/../css/pages/security-compliance.css';
+clearstatcache(true, $ratebTrustCssPath);
+$ratebTrustCssQuery = (int) (@filemtime($ratebTrustCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
 
-$ratibTrustJsPath = __DIR__ . '/../js/pages/security-compliance.js';
-clearstatcache(true, $ratibTrustJsPath);
-$ratibTrustJsQuery = (int) (@filemtime($ratibTrustJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratebTrustJsPath = __DIR__ . '/../js/pages/security-compliance.js';
+clearstatcache(true, $ratebTrustJsPath);
+$ratebTrustJsQuery = (int) (@filemtime($ratebTrustJsPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
 
 $metaTitle = (string) ($trust['meta']['title'] ?? 'Security & Compliance — RATEB');
 $metaDesc = (string) ($trust['meta']['description'] ?? '');
@@ -50,9 +50,9 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/security-compliance/';
 <head>
     <meta charset="UTF-8">
     <?php
-    require_once __DIR__ . '/../includes/ratib-profile-force-same-tab.php';
-    ratib_emit_profile_force_same_tab($baseUrl);
-    ratib_home_nav_emit_sync_guard_style();
+    require_once __DIR__ . '/../includes/rateb-profile-force-same-tab.php';
+    rateb_emit_profile_force_same_tab($baseUrl);
+    rateb_home_nav_emit_sync_guard_style();
     ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
@@ -68,15 +68,15 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/security-compliance/';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <?php ratib_home_public_nav_emit_stylesheets($baseUrl); ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/security-compliance.css?v=<?php echo htmlspecialchars($ratibTrustCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php rateb_home_public_nav_emit_stylesheets($baseUrl); ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratebAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/security-compliance.css?v=<?php echo htmlspecialchars($ratebTrustCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
-    $ratibEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
-    clearstatcache(true, $ratibEntCssPath);
-    $ratibEntCssQuery = (int) (@filemtime($ratibEntCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+    $ratebEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
+    clearstatcache(true, $ratebEntCssPath);
+    $ratebEntCssQuery = (int) (@filemtime($ratebEntCssPath) ?: time()) . '-' . $ratebHomeUiRev . '-c' . $ratebChromeBundleHash;
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratibEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratebEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'WebPage',
@@ -94,26 +94,26 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/security-compliance/';
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>
-<body class="ratib-saas-home ratib-trust-page" data-ratib-trust="1" style="background:#0a0e1a !important">
+<body class="rateb-saas-home rateb-trust-page" data-rateb-trust="1" style="background:#0a0e1a !important">
 
 <?php
-include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
-$ratibMarketingHomeUrl = function_exists('ratib_public_marketing_home_url')
-    ? ratib_public_marketing_home_url($baseUrl)
+include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
+$ratebMarketingHomeUrl = function_exists('rateb_public_marketing_home_url')
+    ? rateb_public_marketing_home_url($baseUrl)
     : rtrim($baseUrl, '/') . '/pages/home.php';
 ?>
 
-<div class="ratib-trust-distinct-banner" role="status" data-ratib-trust-distinct="1">
-    <div class="ratib-about-container ratib-trust-distinct-banner__inner">
-        <span class="ratib-trust-distinct-banner__badge" aria-hidden="true">Trust center</span>
-        <p class="ratib-trust-distinct-banner__text">Security, compliance governance, and tenant isolation for <strong>RATEB</strong> enterprise workforce program infrastructure.</p>
-        <a class="ratib-trust-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
+<div class="rateb-trust-distinct-banner" role="status" data-rateb-trust-distinct="1">
+    <div class="rateb-about-container rateb-trust-distinct-banner__inner">
+        <span class="rateb-trust-distinct-banner__badge" aria-hidden="true">Trust center</span>
+        <p class="rateb-trust-distinct-banner__text">Security, compliance governance, and tenant isolation for <strong>RATEB</strong> enterprise workforce program infrastructure.</p>
+        <a class="rateb-trust-distinct-banner__link" href="<?php echo htmlspecialchars($ratebMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
     </div>
 </div>
 
-<main class="ratib-trust-main" id="main">
-    <nav class="ratib-about-jump" aria-label="On this page">
-        <div class="ratib-about-container ratib-about-jump__inner">
+<main class="rateb-trust-main" id="main">
+    <nav class="rateb-about-jump" aria-label="On this page">
+        <div class="rateb-about-container rateb-about-jump__inner">
             <a href="#top">Overview</a>
             <a href="#security-overview">Security</a>
             <a href="#compliance-governance">Governance</a>
@@ -124,13 +124,13 @@ $ratibMarketingHomeUrl = function_exists('ratib_public_marketing_home_url')
             <a href="#procurement">Procurement</a>
         </div>
     </nav>
-    <?php ratib_security_compliance_render_sections($trust, $baseUrl); ?>
+    <?php rateb_security_compliance_render_sections($trust, $baseUrl); ?>
 </main>
 
-<?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
+<?php include __DIR__ . '/../includes/rateb-home-public-footer.php'; ?>
 
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/security-compliance.js?v=<?php echo htmlspecialchars($ratibTrustJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/rateb-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratebMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/security-compliance.js?v=<?php echo htmlspecialchars($ratebTrustJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php require_once __DIR__ . '/../includes/chat-widget-public-footer.php'; ?>
 </body>
 </html>

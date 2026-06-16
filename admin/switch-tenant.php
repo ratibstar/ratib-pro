@@ -17,6 +17,6 @@ $tenantId = (int)($_GET['tenant_id'] ?? 0);
 if ($tenantId > 0) {
     $_SESSION['tenant_override_id'] = $tenantId;
 }
-$defaultReturn = ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0));
+$defaultReturn = rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0));
 header('Location: ' . ($_GET['return'] ?? $defaultReturn));
 exit;

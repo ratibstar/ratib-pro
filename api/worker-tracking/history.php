@@ -46,7 +46,7 @@ try {
     $limit = max(10, min(10000, $limit));
 
     $controlPdo = getControlDB();
-    ratibEnsureWorkerTrackingSchema($controlPdo);
+    ratebEnsureWorkerTrackingSchema($controlPdo);
 
     $sql = "SELECT id, worker_id, tenant_id, lat, lng, accuracy, speed, status, battery, source, recorded_at
             FROM worker_locations

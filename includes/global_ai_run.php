@@ -7,7 +7,7 @@ declare(strict_types=1);
  * @param array<string, mixed> $payload
  * @return array<string, mixed>
  */
-function ratib_global_ai_run(array $payload): array
+function rateb_global_ai_run(array $payload): array
 {
     $root = dirname(__DIR__);
     require_once $root . '/includes/worker_onboarding_workflow_legacy.php';
@@ -41,7 +41,7 @@ function ratib_global_ai_run(array $payload): array
         throw new RuntimeException('Worker not found in agency database.', 404);
     }
 
-    $workflowId = ratib_global_ai_record_workflow($agencyPdo, $workerId, $payload);
+    $workflowId = rateb_global_ai_record_workflow($agencyPdo, $workerId, $payload);
     if ($workflowId === null || $workflowId <= 0) {
         throw new RuntimeException('Could not record workflow.', 503);
     }
@@ -60,7 +60,7 @@ function ratib_global_ai_run(array $payload): array
         }
     }
     if ($tenantId <= 0) {
-        $resolved = ratib_global_ai_resolve_tenant_for_worker($controlPdo, $workerId);
+        $resolved = rateb_global_ai_resolve_tenant_for_worker($controlPdo, $workerId);
         $tenantId = (int) ($resolved['tenant_id'] ?? 0);
     }
 
@@ -73,7 +73,7 @@ function ratib_global_ai_run(array $payload): array
         if ($token === '') {
             $token = bin2hex(random_bytes(24));
         }
-        ratibEnsureWorkerTrackingSchema($controlPdo);
+        ratebEnsureWorkerTrackingSchema($controlPdo);
         $st2 = $controlPdo->prepare(
             "INSERT INTO worker_tracking_devices
              (worker_id, tenant_id, device_id, worker_identity, worker_password_hash, api_token, is_active, last_seen, created_at, updated_at)
@@ -115,7 +115,7 @@ function ratib_global_ai_run(array $payload): array
 /**
  * @return array{tenant_id?: int, agency_id?: int}|null
  */
-function ratib_global_ai_resolve_tenant_for_worker(PDO $controlPdo, int $workerId): ?array
+function rateb_global_ai_resolve_tenant_for_worker(PDO $controlPdo, int $workerId): ?array
 {
     $st = $controlPdo->prepare(
         "SELECT id, tenant_id, db_host, db_port, db_user, db_pass, db_name
@@ -129,7 +129,7 @@ function ratib_global_ai_resolve_tenant_for_worker(PDO $controlPdo, int $workerI
         if ($tenantId <= 0) {
             continue;
         }
-        $agencyPdo = ratib_global_ai_agency_pdo_for_tenant($controlPdo, $tenantId);
+        $agencyPdo = rateb_global_ai_agency_pdo_for_tenant($controlPdo, $tenantId);
         if (!$agencyPdo instanceof PDO) {
             continue;
         }

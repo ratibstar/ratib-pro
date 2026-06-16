@@ -27,7 +27,7 @@ final class Database
 
         $candidates = function_exists('rateb_erp_database_candidates')
             ? rateb_erp_database_candidates()
-            : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'outratib_rateb-erp'];
+            : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'admin_rateb-erp'];
 
         $last = null;
         $tried = [];
@@ -61,7 +61,7 @@ final class Database
 
         if ($last instanceof PDOException) {
             $hint = 'Tried: ' . implode(', ', $tried) . '. Grant ' . RATEB_DB_USER
-                . ' ALL PRIVILEGES on outratib_rateb-erp in cPanel → MySQL® Databases.';
+                . ' ALL PRIVILEGES on admin_rateb-erp in cPanel → MySQL® Databases.';
             error_log('RATEB ERP DB connection failed: ' . $last->getMessage() . ' — ' . $hint);
             throw new PDOException($last->getMessage() . "\n\n" . $hint, (int) $last->getCode(), $last);
         }

@@ -2,8 +2,8 @@
 /**
  * Public marketing pages — floating chat (CMS knowledge + live support → control panel).
  *
- * Expects $baseUrl (or sets from request). Optional: $ratibHome (CMS), $chatWidgetPlaceholder.
- * Optional: $ratibPublicChatSkipCss = true when chat-widget.css is already in <head>.
+ * Expects $baseUrl (or sets from request). Optional: $ratebHome (CMS), $chatWidgetPlaceholder.
+ * Optional: $ratebPublicChatSkipCss = true when chat-widget.css is already in <head>.
  */
 declare(strict_types=1);
 
@@ -11,13 +11,13 @@ if (!function_exists('asset')) {
     return;
 }
 
-require_once __DIR__ . '/ratib-public-chat-kb.php';
+require_once __DIR__ . '/rateb-public-chat-kb.php';
 
-$ratibPublicChatBase = '';
+$ratebPublicChatBase = '';
 if (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '') {
-    $ratibPublicChatBase = rtrim($baseUrl, '/');
-} elseif (isset($ratibChatBase) && is_string($ratibChatBase) && $ratibChatBase !== '') {
-    $ratibPublicChatBase = rtrim($ratibChatBase, '/');
+    $ratebPublicChatBase = rtrim($baseUrl, '/');
+} elseif (isset($ratebChatBase) && is_string($ratebChatBase) && $ratebChatBase !== '') {
+    $ratebPublicChatBase = rtrim($ratebChatBase, '/');
 } else {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? '';
@@ -27,14 +27,14 @@ if (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '') {
     if ($appRoot === $dir) {
         $appRoot = '';
     }
-    $ratibPublicChatBase = rtrim($scheme . '://' . $host . ($appRoot === '/' ? '' : $appRoot), '/');
+    $ratebPublicChatBase = rtrim($scheme . '://' . $host . ($appRoot === '/' ? '' : $appRoot), '/');
 }
 
-$ratibHomeForChat = (isset($ratibHome) && is_array($ratibHome)) ? $ratibHome : [];
-$ratibPublicChatKb = ratib_public_chat_kb_entries($ratibPublicChatBase, $ratibHomeForChat);
+$ratebHomeForChat = (isset($ratebHome) && is_array($ratebHome)) ? $ratebHome : [];
+$ratebPublicChatKb = rateb_public_chat_kb_entries($ratebPublicChatBase, $ratebHomeForChat);
 
-$chatTitle = trim((string) ($ratibHomeForChat['home.chat.title'] ?? 'RATEB Assistant'));
-$chatSubtitle = trim((string) ($ratibHomeForChat['home.chat.subtitle'] ?? 'Public site help & live support'));
+$chatTitle = trim((string) ($ratebHomeForChat['home.chat.title'] ?? 'RATEB Assistant'));
+$chatSubtitle = trim((string) ($ratebHomeForChat['home.chat.subtitle'] ?? 'Public site help & live support'));
 $chatPlaceholder = (isset($chatWidgetPlaceholder) && is_string($chatWidgetPlaceholder) && $chatWidgetPlaceholder !== '')
     ? $chatWidgetPlaceholder
     : 'Ask about register, domains, pricing… or: I need to talk to support';
@@ -42,7 +42,7 @@ $chatPlaceholderAttr = htmlspecialchars($chatPlaceholder, ENT_QUOTES, 'UTF-8');
 $chatTitleAttr = htmlspecialchars($chatTitle, ENT_QUOTES, 'UTF-8');
 $chatSubtitleAttr = htmlspecialchars($chatSubtitle, ENT_QUOTES, 'UTF-8');
 
-$skipCss = !empty($ratibPublicChatSkipCss);
+$skipCss = !empty($ratebPublicChatSkipCss);
 if (!$skipCss) {
     $chatCssV = is_file(__DIR__ . '/../css/chat-widget.css') ? filemtime(__DIR__ . '/../css/chat-widget.css') : time();
     echo '<link rel="stylesheet" href="' . htmlspecialchars(asset('css/chat-widget.css'), ENT_QUOTES, 'UTF-8') . '?v=' . (int) $chatCssV . '">' . "\n";
@@ -84,8 +84,8 @@ $chatJsV = is_file($chatJsPath) ? filemtime($chatJsPath) : time();
         </div>
     </div>
 </div>
-<script>window.RATIB_BASE_URL = <?php echo json_encode($ratibPublicChatBase, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;</script>
-<script>window.RATIB_CHAT_CONTEXT = 'public';</script>
-<script>window.RATIB_PUBLIC_CHAT_KB = <?php echo json_encode($ratibPublicChatKb, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;</script>
+<script>window.RATEB_BASE_URL = <?php echo json_encode($ratebPublicChatBase, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;</script>
+<script>window.RATEB_CHAT_CONTEXT = 'public';</script>
+<script>window.RATEB_PUBLIC_CHAT_KB = <?php echo json_encode($ratebPublicChatKb, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;</script>
 <script src="<?php echo htmlspecialchars(asset('js/help-center/help-center-builtin-content.js')); ?>?v=<?php echo (int) $builtinV; ?>"></script>
 <script src="<?php echo htmlspecialchars(asset('js/chat-widget.js')); ?>?v=<?php echo (int) $chatJsV; ?>"></script>

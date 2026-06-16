@@ -24,7 +24,7 @@ Maps user requirements to implementation status.
 |-------------|----------------|
 | Clearer section hierarchy | `enterprise-trust-layer.css` title/eyebrow rules |
 | Enterprise spacing | `--ent-section-gap`, panel padding |
-| Operational console feel | `ratib-mono-ops`, audit block, ops strip unchanged |
+| Operational console feel | `rateb-mono-ops`, audit block, ops strip unchanged |
 | Readability | Muted copy max-width; reduced gradient noise on hero title |
 
 ---
@@ -34,7 +34,7 @@ Maps user requirements to implementation status.
 | Indicator | Where |
 |-----------|--------|
 | Infrastructure notes | Footer infra copy; enterprise badges |
-| Governance badges | Home `ratib-ent-indicators` |
+| Governance badges | Home `rateb-ent-indicators` |
 | Tenant isolation | Hero strip + enterprise badges |
 | SLA / support | Footer strip (`target 99.95% SLA`); ops band |
 | Audit-oriented UI | Audit block; existing ops event log |

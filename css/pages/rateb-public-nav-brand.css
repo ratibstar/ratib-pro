@@ -1,0 +1,144 @@
+/**
+ * Public header brand row — single source of truth (home + profile + marketing pages).
+ * Edit nav brand layout here only; chrome markup: includes/rateb-home-public-chrome-top.php
+ */
+
+.rateb-nav__brand--animated-title img,
+.rateb-nav__brand--animated-title .rateb-nav__brand-logo,
+.rateb-nav__brand--animated-title .rateb-nav__brand-text,
+.rateb-nav__brand:has(.rateb-brand-full) img,
+.rateb-nav__brand:has(.rateb-brand-full) .rateb-nav__brand-text {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.rateb-public-header-pin {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.rateb-public-header-pin .rateb-nav-shell {
+  position: relative;
+  top: auto;
+}
+
+.rateb-nav__brand-block--animated,
+.rateb-nav__brand-block--row,
+.rateb-nav__brand-block[data-rateb-brand-nav='row-v1'] {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  max-width: min(17.5rem, 42vw);
+  min-width: 0;
+  padding: 0.36rem 0.5rem 0.36rem 0.46rem;
+  border-radius: 14px;
+  border: 1px solid rgba(167, 139, 250, 0.38);
+  border-left: 4px solid rgba(236, 72, 153, 0.75);
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(76, 29, 149, 0.3));
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.rateb-brand-full--nav-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  width: auto;
+}
+
+.rateb-brand-full--nav-stack .rateb-brand-full__head {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.45em;
+}
+
+.rateb-brand-full--nav-stack .rateb-brand-letter {
+  font-size: clamp(1.02rem, 2.35vw, 1.28rem);
+  font-weight: 800;
+}
+
+.rateb-brand-full--nav-stack .rateb-brand-full__word--company {
+  font-size: clamp(0.76rem, 1.5vw, 0.92rem);
+  font-weight: 700;
+}
+
+.rateb-nav__brand-block--animated > a.rateb-nav__brand,
+.rateb-nav__brand-block--row > a.rateb-nav__brand {
+  order: 1;
+  width: auto;
+  max-width: none;
+  flex: 0 1 auto;
+}
+
+.rateb-nav__brand-block--animated > .rateb-nav__brand-profile,
+.rateb-nav__brand-block--row > .rateb-nav__brand-profile {
+  order: 2;
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0;
+}
+
+.rateb-nav__brand-block--animated .rateb-brand-full__tagline,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w1,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w2,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w3,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w4,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--w5,
+.rateb-nav__brand-block--animated .rateb-brand-full__word--amp {
+  display: none !important;
+}
+
+.rateb-nav__brand-block--animated .rateb-brand-letter {
+  animation: none;
+  filter: saturate(0.92);
+}
+
+.rateb-nav__brand-block--animated .rateb-brand-full__word--company {
+  animation: none;
+  color: rgba(226, 232, 240, 0.88);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.rateb-nav__brand-block--animated .rateb-nav__brand-profile {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 0.16rem 0.44rem;
+  color: rgba(148, 163, 184, 0.9);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.rateb-nav__brand-block--animated .rateb-nav__brand-profile:hover,
+.rateb-nav__brand-block--animated .rateb-nav__brand-profile:focus-visible {
+  color: rgba(226, 232, 240, 0.92);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.rateb-nav__brand-block--animated .rateb-nav__brand-profile.is-current {
+  color: rgba(226, 232, 240, 0.95);
+  background: rgba(139, 126, 200, 0.12);
+  border-color: rgba(139, 126, 200, 0.28);
+  box-shadow: none;
+}
+
+@media (max-width: 1099px) {
+  .rateb-nav__brand-block--animated,
+  .rateb-nav__brand-block--row {
+    max-width: min(13.5rem, 52vw);
+  }
+}

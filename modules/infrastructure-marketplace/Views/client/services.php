@@ -11,11 +11,11 @@ require_once dirname(__DIR__, 2) . '/bootstrap.php';
 $embedMode = isset($_GET['embed']) && (string) $_GET['embed'] === '1';
 $compatMode = isset($_GET['compatibility']) && (string) $_GET['compatibility'] === '1';
 $controlMode = isset($_GET['control']) && (string) $_GET['control'] === '1';
-if (!$embedMode && !$compatMode && !$controlMode && ratib_client_dashboard_can_access()) {
+if (!$embedMode && !$compatMode && !$controlMode && rateb_client_dashboard_can_access()) {
     $canonicalQuery = $_GET;
     unset($canonicalQuery['embed'], $canonicalQuery['compatibility']);
     $canonicalQuery['source'] = 'legacy_infra_services';
-    header('Location: ' . ratib_nav_url('client/services.php', http_build_query($canonicalQuery)), true, 302);
+    header('Location: ' . rateb_nav_url('client/services.php', http_build_query($canonicalQuery)), true, 302);
     exit;
 }
 $clientServicesJsPath = dirname(__DIR__, 2) . '/Assets/js/client-services.js';
@@ -31,7 +31,7 @@ $clientServicesJsV = (int) (@filemtime($clientServicesJsPath) ?: time());
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace-exposure.css">
 </head>
-<body class="ratib-infra-marketplace-scope ratib-infra-marketplace-view<?php echo $embedMode ? ' ratib-infra-marketplace-embed' : ''; ?>">
+<body class="rateb-infra-marketplace-scope rateb-infra-marketplace-view<?php echo $embedMode ? ' rateb-infra-marketplace-embed' : ''; ?>">
 <main class="infra-market-wrap">
     <?php if (!$embedMode): ?>
     <header>

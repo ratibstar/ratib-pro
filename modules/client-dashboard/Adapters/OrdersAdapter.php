@@ -1,19 +1,19 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_OrdersAdapter
+final class RATEB_ClientDashboard_OrdersAdapter
 {
     /**
      * @return list<array<string, mixed>>
      */
-    public function fetchNormalized(Ratib_ClientDashboard_AdapterContext $ctx): array
+    public function fetchNormalized(RATEB_ClientDashboard_AdapterContext $ctx): array
     {
         require_once dirname(__DIR__) . '/Data/FallbackPayloads.php';
 
         try {
             $conn = $ctx->conn;
             if ($conn instanceof mysqli) {
-                $rows = $this->tryRatibOrdersTable($conn);
+                $rows = $this->tryRATEBOrdersTable($conn);
                 if ($rows !== null) {
                     $ctx->obs->recordAdapter('orders', true, null, ['rows' => count($rows)]);
 
@@ -26,19 +26,19 @@ final class Ratib_ClientDashboard_OrdersAdapter
 
         $ctx->obs->recordAdapter('orders', true, 'demo_dataset', ['fallback' => true]);
 
-        return Ratib_ClientDashboard_FallbackPayloads::demoOrdersRows();
+        return RATEB_ClientDashboard_FallbackPayloads::demoOrdersRows();
     }
 
     /**
      * @return list<array<string, mixed>>|null
      */
-    private function tryRatibOrdersTable(mysqli $conn): ?array
+    private function tryRATEBOrdersTable(mysqli $conn): ?array
     {
-        $chk = @$conn->query("SHOW TABLES LIKE 'ratib_client_orders'");
+        $chk = @$conn->query("SHOW TABLES LIKE 'rateb_client_orders'");
         if (!$chk || $chk->num_rows === 0) {
             return null;
         }
-        $sql = 'SELECT order_id AS id, product_label AS product, status, payment_status, created_at, renewal_at FROM ratib_client_orders ORDER BY created_at DESC LIMIT 200';
+        $sql = 'SELECT order_id AS id, product_label AS product, status, payment_status, created_at, renewal_at FROM rateb_client_orders ORDER BY created_at DESC LIMIT 200';
         $r = @$conn->query($sql);
         if (!$r) {
             return null;

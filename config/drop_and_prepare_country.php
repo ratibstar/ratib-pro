@@ -22,18 +22,18 @@ if (!defined('DB_HOST') || !defined('DB_NAME')) {
 }
 
 $countryMap = [
-    'bangladesh' => ratib_db_prefix() . '_bangladesh',
-    'bangladish' => ratib_db_prefix() . '_bangladish',
-    'ethiopia' => ratib_db_prefix() . '_ethiopia',
-    'indonesia' => ratib_db_prefix() . '_indonesia',
-    'kenya' => ratib_db_prefix() . '_kenya',
-    'nepal' => ratib_db_prefix() . '_nepal',
-    'nigeria' => ratib_db_prefix() . '_nigeria',
-    'philippines' => ratib_db_prefix() . '_philippines',
-    'rwanda' => ratib_db_prefix() . '_rwanda',
-    'sri_lanka' => ratib_db_prefix() . '_sri_lanka',
-    'thailand' => ratib_db_prefix() . '_thailand',
-    'uganda' => ratib_db_prefix() . '_uganda',
+    'bangladesh' => rateb_db_prefix() . '_bangladesh',
+    'bangladish' => rateb_db_prefix() . '_bangladish',
+    'ethiopia' => rateb_db_prefix() . '_ethiopia',
+    'indonesia' => rateb_db_prefix() . '_indonesia',
+    'kenya' => rateb_db_prefix() . '_kenya',
+    'nepal' => rateb_db_prefix() . '_nepal',
+    'nigeria' => rateb_db_prefix() . '_nigeria',
+    'philippines' => rateb_db_prefix() . '_philippines',
+    'rwanda' => rateb_db_prefix() . '_rwanda',
+    'sri_lanka' => rateb_db_prefix() . '_sri_lanka',
+    'thailand' => rateb_db_prefix() . '_thailand',
+    'uganda' => rateb_db_prefix() . '_uganda',
 ];
 
 $country = strtolower(trim($_GET['country'] ?? ''));

@@ -100,7 +100,7 @@ function support_escalate_diff_new_messages(array $dbRows, array $convRows) {
     return array_slice($convTail, 0, count($convTail) - $matched);
 }
 
-$conn = ratib_support_chat_db();
+$conn = rateb_support_chat_db();
 if (!$conn) {
     jsonOut(['success' => false, 'message' => 'Support chat is not configured']);
 }
@@ -138,7 +138,7 @@ try {
     $lastMsgText = substr($convRows[count($convRows) - 1]['text'] ?? '', 0, 120);
     error_log('support-chat-escalate host=' . ($_SERVER['HTTP_HOST'] ?? '') . ' source_page=' . $sourcePage . ' last_msg=' . $lastMsgText . ' country_id=' . $countryId . ' agency_id=' . $agencyId);
 
-    $hasCtx = ratib_support_chat_has_context_columns($conn);
+    $hasCtx = rateb_support_chat_has_context_columns($conn);
     $reuseId = 0;
     $reuseToken = '';
 

@@ -2,7 +2,7 @@
 /**
  * Staff-selected worker documents visible on a partner agency portal (per worker + document type).
  */
-require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
+require_once __DIR__ . '/../../includes/rateb_uploads_base.php';
 
 class PartnerAgencyWorkerDocSharesController
 {
@@ -292,7 +292,7 @@ class PartnerAgencyWorkerDocSharesController
         if ($fn === '') {
             return null;
         }
-        $baseRoot = ratib_uploads_base_dir();
+        $baseRoot = rateb_uploads_base_dir();
         $baseDir = realpath(
             $baseRoot
                 . DIRECTORY_SEPARATOR

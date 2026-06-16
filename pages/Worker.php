@@ -11,7 +11,7 @@ header("Expires: 0");
 require_once '../includes/config.php';
 require_once '../includes/permissions.php';
 
-// Stay on Ratib Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
+// Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -80,7 +80,7 @@ $pageCss[] = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
 if ($workerCvEmbedPreview) {
     $pageCss[] = asset('css/worker/worker-cv-embed.css') . "?v=$cacheBuster&force=$forceCache";
 }
-$extraBodyClasses = $workerCvEmbedPreview ? ['ratib-worker-cv-embed'] : [];
+$extraBodyClasses = $workerCvEmbedPreview ? ['rateb-worker-cv-embed'] : [];
 $pageTitle = "Worker Management";
 
 include '../includes/header.php';
@@ -93,7 +93,7 @@ include '../includes/header.php';
 
 <!-- Force cache clear on page load -->
 <script src="<?php echo asset('js/utils/cache-clear.js'); ?>?v=<?php echo $cacheBuster; ?>"></script>
-<script>window.RATIB_IS_INDONESIA_PROGRAM = <?php echo $isIndonesiaProgram ? 'true' : 'false'; ?>;</script>
+<script>window.RATEB_IS_INDONESIA_PROGRAM = <?php echo $isIndonesiaProgram ? 'true' : 'false'; ?>;</script>
 
 <!-- Main container for the content of the page -->
 <div class="main-container worker-management-container">
@@ -1197,7 +1197,7 @@ include '../includes/header.php';
                         </div>
                     </div>
 
-                <!-- Non-Indonesia lifecycle sections removed to restore previous Ratib Pro form state -->
+                <!-- Non-Indonesia lifecycle sections removed to restore previous RATEB Pro form state -->
 
                 </div>
             </div>

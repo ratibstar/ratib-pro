@@ -5,8 +5,8 @@ if (!class_exists('CountryProfileValidationException')) {
     class CountryProfileValidationException extends Exception {}
 }
 
-if (!function_exists('ratib_country_profile_allowed_requirement_fields')) {
-    function ratib_country_profile_allowed_requirement_fields(): array
+if (!function_exists('rateb_country_profile_allowed_requirement_fields')) {
+    function rateb_country_profile_allowed_requirement_fields(): array
     {
         return [
             'full_name', 'gender', 'agent_id',
@@ -19,8 +19,8 @@ if (!function_exists('ratib_country_profile_allowed_requirement_fields')) {
     }
 }
 
-if (!function_exists('ratib_country_profile_defaults')) {
-    function ratib_country_profile_defaults(): array
+if (!function_exists('rateb_country_profile_defaults')) {
+    function rateb_country_profile_defaults(): array
     {
         return [
             'indonesia' => [
@@ -47,13 +47,13 @@ if (!function_exists('ratib_country_profile_defaults')) {
     }
 }
 
-if (!function_exists('ratib_country_profile_registry_rows')) {
+if (!function_exists('rateb_country_profile_registry_rows')) {
     /**
      * Active rows from control_countries (same registry as Country Profiles UI).
      *
      * @return list<array{slug: string, name_lower: string}>
      */
-    function ratib_country_profile_registry_rows(): array
+    function rateb_country_profile_registry_rows(): array
     {
         static $cache = null;
         if ($cache !== null) {
@@ -91,14 +91,14 @@ if (!function_exists('ratib_country_profile_registry_rows')) {
     }
 }
 
-if (!function_exists('ratib_country_profile_detect_slug')) {
-    function ratib_country_profile_detect_slug(array $source): string
+if (!function_exists('rateb_country_profile_detect_slug')) {
+    function rateb_country_profile_detect_slug(array $source): string
     {
         $countryName = strtolower(trim((string) ($source['country'] ?? $source['nationality'] ?? $_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : ''))));
         $countryCode = strtolower(trim((string) ($source['country_code'] ?? $_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : ''))));
         $combined = trim($countryName . ' ' . $countryCode);
 
-        foreach (ratib_country_profile_registry_rows() as $row) {
+        foreach (rateb_country_profile_registry_rows() as $row) {
             $slug = $row['slug'];
             $nm = $row['name_lower'];
             if ($countryName !== '') {
@@ -119,8 +119,8 @@ if (!function_exists('ratib_country_profile_detect_slug')) {
     }
 }
 
-if (!function_exists('ratib_country_profile_load_custom')) {
-    function ratib_country_profile_load_custom(string $slug): ?array
+if (!function_exists('rateb_country_profile_load_custom')) {
+    function rateb_country_profile_load_custom(string $slug): ?array
     {
         $ctrl = $GLOBALS['control_conn'] ?? null;
         if (!($ctrl instanceof mysqli) || $slug === '') return null;
@@ -140,12 +140,12 @@ if (!function_exists('ratib_country_profile_load_custom')) {
     }
 }
 
-if (!function_exists('ratib_country_profile_effective')) {
-    function ratib_country_profile_effective(string $slug): array
+if (!function_exists('rateb_country_profile_effective')) {
+    function rateb_country_profile_effective(string $slug): array
     {
-        $defaults = ratib_country_profile_defaults();
+        $defaults = rateb_country_profile_defaults();
         $base = $defaults[$slug] ?? $defaults['default'];
-        $custom = ratib_country_profile_load_custom($slug);
+        $custom = rateb_country_profile_load_custom($slug);
         if (is_array($custom) && !empty($custom['labels']) && is_array($custom['labels'])) {
             $base['labels'] = $custom['labels'];
         }
@@ -156,8 +156,8 @@ if (!function_exists('ratib_country_profile_effective')) {
     }
 }
 
-if (!function_exists('ratib_country_profile_value_for_field')) {
-    function ratib_country_profile_value_for_field(string $field, array $payload, ?array $existing)
+if (!function_exists('rateb_country_profile_value_for_field')) {
+    function rateb_country_profile_value_for_field(string $field, array $payload, ?array $existing)
     {
         if (array_key_exists($field, $payload)) return $payload[$field];
         if ($field === 'full_name') {
@@ -169,14 +169,14 @@ if (!function_exists('ratib_country_profile_value_for_field')) {
             if (is_array($existing)) return $existing['agent_id'] ?? null;
         }
         if ($field === 'identity') {
-            return ratib_country_profile_value_for_field('identity_number', $payload, $existing);
+            return rateb_country_profile_value_for_field('identity_number', $payload, $existing);
         }
         return is_array($existing) ? ($existing[$field] ?? null) : null;
     }
 }
 
-if (!function_exists('ratib_country_profile_is_missing')) {
-    function ratib_country_profile_is_missing($value): bool
+if (!function_exists('rateb_country_profile_is_missing')) {
+    function rateb_country_profile_is_missing($value): bool
     {
         if ($value === null) return true;
         if (is_string($value)) return trim($value) === '';
@@ -185,13 +185,13 @@ if (!function_exists('ratib_country_profile_is_missing')) {
     }
 }
 
-if (!function_exists('ratib_enforce_country_requirements')) {
-    function ratib_enforce_country_requirements(array $payload, ?array $existing = null): void
+if (!function_exists('rateb_enforce_country_requirements')) {
+    function rateb_enforce_country_requirements(array $payload, ?array $existing = null): void
     {
-        $slug = ratib_country_profile_detect_slug(array_merge($existing ?: [], $payload));
-        $effective = ratib_country_profile_effective($slug);
+        $slug = rateb_country_profile_detect_slug(array_merge($existing ?: [], $payload));
+        $effective = rateb_country_profile_effective($slug);
         $required = array_values(array_intersect(
-            ratib_country_profile_allowed_requirement_fields(),
+            rateb_country_profile_allowed_requirement_fields(),
             array_map('strval', (array) ($effective['requirements'] ?? []))
         ));
         $missing = [];
@@ -199,8 +199,8 @@ if (!function_exists('ratib_enforce_country_requirements')) {
             if ($field === 'password') {
                 continue;
             }
-            $val = ratib_country_profile_value_for_field($field, $payload, $existing);
-            if (ratib_country_profile_is_missing($val)) $missing[] = $field;
+            $val = rateb_country_profile_value_for_field($field, $payload, $existing);
+            if (rateb_country_profile_is_missing($val)) $missing[] = $field;
         }
         if (!empty($missing)) {
             throw new CountryProfileValidationException('Missing required fields for country profile [' . $slug . ']: ' . implode(', ', $missing));

@@ -4,24 +4,24 @@
  * AR: يدير سلوك إعدادات النظام وتهيئة التشغيل في `config/migrations/separate_control_panel_db/03_migrate_data.php`.
  */
 /**
- * Migrate control_* tables from outratib_out (Ratib Pro DB) to control_panel_db.
+ * Migrate control_* tables from admin_out (RATEB Pro DB) to control_panel_db.
  * Run once after 01_create_database.sql and 02_create_tables.sql.
  *
  * Usage: php 03_migrate_data.php
  *    or: https://rateb.sa/config/migrations/separate_control_panel_db/03_migrate_data.php (requires control login)
  *
  * Set env vars or edit below:
- *   RATIB_DB_NAME (source) = outratib_out
+ *   RATEB_DB_NAME (source) = admin_out
  *   CONTROL_PANEL_DB_NAME (dest) = control_panel_db
  */
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$sourceDb = getenv('RATIB_DB_NAME') ?: 'outratib_out';
+$sourceDb = getenv('RATEB_DB_NAME') ?: 'admin_out';
 $destDb   = getenv('CONTROL_PANEL_DB_NAME') ?: 'control_panel_db';
 $host     = getenv('DB_HOST') ?: 'localhost';
 $port     = (int)(getenv('DB_PORT') ?: 3306);
-$user     = getenv('DB_USER') ?: 'outratib_out';
+$user     = getenv('DB_USER') ?: 'admin_out';
 $pass     = getenv('DB_PASS') ?: '9s%BpMr1]dfb';
 
 $controlTables = [

@@ -2,8 +2,8 @@
 /**
  * Download CV file (staff with view permission, or partner portal for own agency).
  */
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -23,7 +23,7 @@ if ($id <= 0) {
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
-ratibEnsureGlobalPartnershipsSchema($conn);
+ratebEnsureGlobalPartnershipsSchema($conn);
 
 $cvs = new PartnerAgencyCvsController($conn);
 try {
@@ -35,8 +35,8 @@ try {
 }
 
 $authorized = false;
-if (function_exists('ratib_partner_portal_session_is_valid') && ratib_partner_portal_session_is_valid()) {
-    $authorized = ratib_partner_portal_agency_id() === (int) ($row['partner_agency_id'] ?? 0);
+if (function_exists('rateb_partner_portal_session_is_valid') && rateb_partner_portal_session_is_valid()) {
+    $authorized = rateb_partner_portal_agency_id() === (int) ($row['partner_agency_id'] ?? 0);
 } else {
     try {
         enforceApiPermission('partnerships', 'view');

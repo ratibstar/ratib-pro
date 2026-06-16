@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Hosting\DTOs;
+namespace RATEB\InfrastructureMarketplace\Hosting\DTOs;
 
 final class HostingUsageSnapshot
 {

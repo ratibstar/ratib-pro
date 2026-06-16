@@ -5,8 +5,8 @@
 ob_start();
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -27,18 +27,18 @@ function partnerPortalStmtJson(array $payload, int $status = 200): void
     exit;
 }
 
-if (!function_exists('ratib_partner_portal_session_is_valid') || !ratib_partner_portal_session_is_valid()) {
+if (!function_exists('rateb_partner_portal_session_is_valid') || !rateb_partner_portal_session_is_valid()) {
     partnerPortalStmtJson(['success' => false, 'message' => 'Partner portal session required'], 401);
 }
 
-$pid = (int) ratib_partner_portal_agency_id();
+$pid = (int) rateb_partner_portal_agency_id();
 if ($pid <= 0) {
     partnerPortalStmtJson(['success' => false, 'message' => 'Invalid session'], 401);
 }
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
-ratibEnsureGlobalPartnershipsSchema($conn);
+ratebEnsureGlobalPartnershipsSchema($conn);
 $controller = new PartnerAgencyController($conn);
 
 $linkedId = $controller->resolveLinkedFinancialAccountId($pid);

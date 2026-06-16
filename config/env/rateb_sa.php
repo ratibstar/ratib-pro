@@ -11,7 +11,7 @@ if (defined('DB_NAME')) {
     return;
 }
 require_once __DIR__ . '/directadmin_db.php';
-// Prefer project-root .env (merged in load.php via ratib_env_load_bridge_dotenv) so credentials are not only hardcoded.
+// Prefer project-root .env (merged in load.php via rateb_env_load_bridge_dotenv) so credentials are not only hardcoded.
 $dbHost = getenv('DB_HOST');
 $dbPort = getenv('DB_PORT');
 $dbUser = getenv('DB_USER');
@@ -19,13 +19,13 @@ $dbPass = getenv('DB_PASS');
 $dbName = getenv('DB_NAME');
 define('DB_HOST', ($dbHost !== false && $dbHost !== '') ? (string) $dbHost : 'localhost');
 define('DB_PORT', ($dbPort !== false && $dbPort !== '') ? (int) $dbPort : 3306);
-define('DB_USER', ($dbUser !== false && $dbUser !== '') ? (string) $dbUser : ratib_default_mysql_user());
+define('DB_USER', ($dbUser !== false && $dbUser !== '') ? (string) $dbUser : rateb_default_mysql_user());
 define('DB_PASS', ($dbPass !== false && $dbPass !== '') ? (string) $dbPass : '');
-define('DB_NAME', ($dbName !== false && $dbName !== '') ? (string) $dbName : ratib_main_pro_database());
-define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: ratib_control_panel_database());
+define('DB_NAME', ($dbName !== false && $dbName !== '') ? (string) $dbName : rateb_main_pro_database());
+define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: rateb_control_panel_database());
 if (!defined('RATEB_ERP_DB_NAME')) {
     $_erpDb = getenv('RATEB_ERP_DB_NAME');
-    define('RATEB_ERP_DB_NAME', ($_erpDb !== false && $_erpDb !== '') ? (string) $_erpDb : ratib_erp_database_name());
+    define('RATEB_ERP_DB_NAME', ($_erpDb !== false && $_erpDb !== '') ? (string) $_erpDb : rateb_erp_database_name());
 }
 
 define('SITE_URL', 'https://rateb.sa');
@@ -52,26 +52,26 @@ define('OBSERVABILITY_DASHBOARD_ENABLED', true);
 define('ADMIN_CONTROL_CENTER_ENABLED', true);
 
 /*
- * Homepage CMS (ratib_site_content): default to DB-only resolution on this host so stale disk/json
- * snapshots cannot hide fresh saves. Override in .env: RATIB_SITE_CONTENT_PUBLIC_SOURCE=auto
- * RATIB_CMS_HOME_PUBLIC_SOURCE is also defined because some PHP-FPM pools strip putenv(); homepage reads the constant.
+ * Homepage CMS (rateb_site_content): default to DB-only resolution on this host so stale disk/json
+ * snapshots cannot hide fresh saves. Override in .env: RATEB_SITE_CONTENT_PUBLIC_SOURCE=auto
+ * RATEB_CMS_HOME_PUBLIC_SOURCE is also defined because some PHP-FPM pools strip putenv(); homepage reads the constant.
  */
-if (!defined('RATIB_CMS_HOME_PUBLIC_SOURCE')) {
-    $_ratibPubSrc = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
-    if ($_ratibPubSrc === false || trim((string) $_ratibPubSrc) === '') {
-        define('RATIB_CMS_HOME_PUBLIC_SOURCE', 'db_only');
-        putenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only');
-        $_ENV['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
-        $_SERVER['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
+if (!defined('RATEB_CMS_HOME_PUBLIC_SOURCE')) {
+    $_ratebPubSrc = getenv('RATEB_SITE_CONTENT_PUBLIC_SOURCE');
+    if ($_ratebPubSrc === false || trim((string) $_ratebPubSrc) === '') {
+        define('RATEB_CMS_HOME_PUBLIC_SOURCE', 'db_only');
+        putenv('RATEB_SITE_CONTENT_PUBLIC_SOURCE=db_only');
+        $_ENV['RATEB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
+        $_SERVER['RATEB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
     } else {
-        define('RATIB_CMS_HOME_PUBLIC_SOURCE', trim((string) $_ratibPubSrc));
+        define('RATEB_CMS_HOME_PUBLIC_SOURCE', trim((string) $_ratebPubSrc));
     }
 }
 
 /*
  * Optional: if public_html/uploads is not writable by PHP, partner agency file uploads use
- * ../ratib_uploads automatically, or set an absolute path:
- *   define('RATIB_UPLOADS_BASE', '/home/outratib/ratib_uploads');
+ * ../rateb_uploads automatically, or set an absolute path:
+ *   define('RATEB_UPLOADS_BASE', '/home/admin/rateb_uploads');
  */
 
 /*

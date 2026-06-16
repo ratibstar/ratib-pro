@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Security\Secrets;
+namespace RATEB\InfrastructureMarketplace\Security\Secrets;
 
 /**
  * Preparation abstraction only. Real decryption backend can be added without changing callers.
@@ -20,7 +20,7 @@ final class PreparedEncryptedDbSecretProvider implements SecretProviderInterface
     public function get(string $scope, string $key): ?string
     {
         try {
-            $sql = 'SELECT encrypted_value FROM ratib_infra_secret_refs
+            $sql = 'SELECT encrypted_value FROM rateb_infra_secret_refs
                     WHERE scope_key = :scope_key AND secret_key = :secret_key AND is_active = 1
                     LIMIT 1';
             $stmt = $this->pdo->prepare($sql);

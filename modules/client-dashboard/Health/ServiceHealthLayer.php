@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ServiceHealthLayer
+final class RATEB_ClientDashboard_ServiceHealthLayer
 {
     /**
      * @param list<array<string, mixed>> $services

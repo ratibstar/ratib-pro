@@ -120,7 +120,7 @@
     }
 
     /**
-     * English Chart.js bar chart — monthly debit vs credit from Ratib Pro GL.
+     * English Chart.js bar chart — monthly debit vs credit from RATEB Pro GL.
      * @param {Array<{ label?: string, key?: string, debit?: number, credit?: number }>|undefined} monthRows
      */
     function renderAccountingChart(monthRows) {

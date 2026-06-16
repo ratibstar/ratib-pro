@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning;
+namespace RATEB\InfrastructureMarketplace\Provisioning;
 
 /**
  * Normalized provisioning input; adapters map this to vendor payloads.

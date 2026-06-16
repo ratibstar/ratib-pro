@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_UnifiedStateEngine
+final class RATEB_ClientDashboard_UnifiedStateEngine
 {
     /**
      * @param list<array<string, mixed>> $orders

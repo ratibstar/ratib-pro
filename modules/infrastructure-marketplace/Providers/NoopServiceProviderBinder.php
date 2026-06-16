@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Providers;
+namespace RATEB\InfrastructureMarketplace\Providers;
 
-use Ratib\InfrastructureMarketplace\Billing\BillingHookRegistry;
+use RATEB\InfrastructureMarketplace\Billing\BillingHookRegistry;
 
 /**
  * Future extension point analogous to Laravel service providers — registers hooks without Laravel.

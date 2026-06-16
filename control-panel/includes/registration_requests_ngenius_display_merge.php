@@ -68,7 +68,7 @@ if (!function_exists('registration_requests_fetch_ngenius_orders_map')) {
         $pass = defined('DB_PASS') ? (string) DB_PASS : '';
         $user = (string) DB_USER;
 
-        $mainDb = defined('RATIB_PRO_DB_NAME') ? trim((string) RATIB_PRO_DB_NAME) : 'outratib_out';
+        $mainDb = defined('RATEB_PRO_DB_NAME') ? trim((string) RATEB_PRO_DB_NAME) : 'admin_out';
         if ($mainDb === '') {
             return [];
         }
@@ -142,7 +142,7 @@ if (!function_exists('registration_requests_fetch_ngenius_orders_by_control_requ
         $port = defined('DB_PORT') ? (int) DB_PORT : 3306;
         $pass = defined('DB_PASS') ? (string) DB_PASS : '';
         $user = (string) DB_USER;
-        $mainDb = defined('RATIB_PRO_DB_NAME') ? trim((string) RATIB_PRO_DB_NAME) : 'outratib_out';
+        $mainDb = defined('RATEB_PRO_DB_NAME') ? trim((string) RATEB_PRO_DB_NAME) : 'admin_out';
         if ($mainDb === '') {
             return [];
         }

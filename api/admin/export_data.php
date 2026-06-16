@@ -27,7 +27,7 @@ try {
 
     // Generate export filename with timestamp
     $timestamp = date('Y-m-d_H-i-s');
-    $filename = "ratibprogram_export_{$timestamp}.json";
+    $filename = "ratebprogram_export_{$timestamp}.json";
     $filepath = $exportDir . $filename;
 
     // Get all tables

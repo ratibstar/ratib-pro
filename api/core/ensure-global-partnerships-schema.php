@@ -8,7 +8,7 @@
  * Safe to call multiple times.
  * (Live map / worker_locations / tracking_rate_limits removed — see database/migrate_remove_live_tracking.sql for legacy DB cleanup.)
  */
-function ratibEnsureGlobalPartnershipsSchema(PDO $conn)
+function ratebEnsureGlobalPartnershipsSchema(PDO $conn)
 {
     static $done = false;
     if ($done) {
@@ -56,15 +56,15 @@ function ratibEnsureGlobalPartnershipsSchema(PDO $conn)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
-    ratibEnsurePartnerPortalPartnershipsSchema($conn);
-    ratibEnsurePartnerAgencyExtendedProfileColumns($conn);
-    ratibEnsurePartnerAgencyWorkerDocumentSharesSchema($conn);
+    ratebEnsurePartnerPortalPartnershipsSchema($conn);
+    ratebEnsurePartnerAgencyExtendedProfileColumns($conn);
+    ratebEnsurePartnerAgencyWorkerDocumentSharesSchema($conn);
 }
 
 /**
  * Staff toggles which worker document types each partner agency may see on the partner portal.
  */
-function ratibEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
+function ratebEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
 {
     static $shareDone = false;
     if ($shareDone) {
@@ -86,7 +86,7 @@ function ratibEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
     } catch (Throwable $e) {
-        error_log('ratibEnsurePartnerAgencyWorkerDocumentSharesSchema CREATE: ' . $e->getMessage());
+        error_log('ratebEnsurePartnerAgencyWorkerDocumentSharesSchema CREATE: ' . $e->getMessage());
     }
 
     $tryFk = static function (PDO $conn, string $sql): void {
@@ -96,7 +96,7 @@ function ratibEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
             $msg = $e->getMessage();
             if (stripos($msg, 'Duplicate foreign key') === false && stripos($msg, 'already exists') === false
                 && stripos($msg, 'Duplicate key name') === false) {
-                error_log('ratibEnsurePartnerAgencyWorkerDocumentSharesSchema FK: ' . $msg);
+                error_log('ratebEnsurePartnerAgencyWorkerDocumentSharesSchema FK: ' . $msg);
             }
         }
     };
@@ -119,7 +119,7 @@ function ratibEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
     } catch (Throwable $e) {
         $msg = $e->getMessage();
         if (stripos($msg, 'Duplicate column') === false) {
-            error_log('ratibEnsurePartnerAgencyWorkerDocumentSharesSchema display_status: ' . $msg);
+            error_log('ratebEnsurePartnerAgencyWorkerDocumentSharesSchema display_status: ' . $msg);
         }
     }
 
@@ -129,7 +129,7 @@ function ratibEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
 /**
  * Extended partner agency profile fields (license, bank, passport, legacy Arabic columns unused in English UI).
  */
-function ratibEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
+function ratebEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
 {
     static $extDone = false;
     if ($extDone) {
@@ -160,7 +160,7 @@ function ratibEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
             $conn->exec($sql);
         } catch (Throwable $e) {
             if (stripos($e->getMessage(), 'Duplicate column') === false) {
-                error_log('ratibEnsurePartnerAgencyExtendedProfileColumns: ' . $e->getMessage());
+                error_log('ratebEnsurePartnerAgencyExtendedProfileColumns: ' . $e->getMessage());
             }
         }
     }
@@ -170,7 +170,7 @@ function ratibEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
     } catch (Throwable $e) {
         $msg = $e->getMessage();
         if (stripos($msg, 'Duplicate key name') === false && stripos($msg, 'check that column/key exists') === false) {
-            error_log('ratibEnsurePartnerAgencyExtendedProfileColumns index financial_account_id: ' . $msg);
+            error_log('ratebEnsurePartnerAgencyExtendedProfileColumns index financial_account_id: ' . $msg);
         }
     }
 
@@ -180,7 +180,7 @@ function ratibEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
 /**
  * Partner portal access (magic link / optional password) + CV documents per agency.
  */
-function ratibEnsurePartnerPortalPartnershipsSchema(PDO $conn): void
+function ratebEnsurePartnerPortalPartnershipsSchema(PDO $conn): void
 {
     static $portalDone = false;
     if ($portalDone) {
@@ -193,7 +193,7 @@ function ratibEnsurePartnerPortalPartnershipsSchema(PDO $conn): void
         } catch (Throwable $e) {
             $msg = $e->getMessage();
             if (stripos($msg, 'Duplicate column') === false && stripos($msg, 'check that column/key exists') === false) {
-                error_log('ratibEnsurePartnerPortalPartnershipsSchema ALTER: ' . $msg);
+                error_log('ratebEnsurePartnerPortalPartnershipsSchema ALTER: ' . $msg);
             }
         }
     };
@@ -217,7 +217,7 @@ function ratibEnsurePartnerPortalPartnershipsSchema(PDO $conn): void
         );
     } catch (Throwable $e) {
         if (stripos($e->getMessage(), 'Duplicate key name') === false) {
-            error_log('ratibEnsurePartnerPortalPartnershipsSchema index: ' . $e->getMessage());
+            error_log('ratebEnsurePartnerPortalPartnershipsSchema index: ' . $e->getMessage());
         }
     }
 
@@ -239,7 +239,7 @@ function ratibEnsurePartnerPortalPartnershipsSchema(PDO $conn): void
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
     } catch (Throwable $e) {
-        error_log('ratibEnsurePartnerPortalPartnershipsSchema partner_agency_cvs table: ' . $e->getMessage());
+        error_log('ratebEnsurePartnerPortalPartnershipsSchema partner_agency_cvs table: ' . $e->getMessage());
     }
 
     $addColumn(

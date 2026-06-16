@@ -319,10 +319,10 @@ class AgentQueries {
      */
     public static function repositoryForSystem() {
         require_once __DIR__ . '/../QueryRepository.php';
-        if (!function_exists('ratib_app_default_db_connection')) {
+        if (!function_exists('rateb_app_default_db_connection')) {
             require_once __DIR__ . '/../../../includes/helpers/get_tenant_db.php';
         }
-        return new QueryRepository(ratib_app_default_db_connection());
+        return new QueryRepository(rateb_app_default_db_connection());
     }
 }
 

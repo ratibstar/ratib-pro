@@ -77,7 +77,7 @@ if ($existing) {
     $stmt->close();
     echo "Password reset for user '{$username}'.\n";
 } else {
-    $email = 'admin@ratibprogram.com';
+    $email = 'admin@ratebprogram.com';
     $roleId = 1;
     $status = 'active';
     $countryId = 1;

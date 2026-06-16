@@ -5,17 +5,17 @@ declare(strict_types=1);
  * Badge QR landing — iPhone Camera; pair login or direct mobile sign-in + optional PIN.
  */
 require_once __DIR__ . '/../includes/config.php';
-require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
-require_once __DIR__ . '/../includes/ratib-qr-login.php';
+require_once __DIR__ . '/../includes/rateb-qr-workforce-identity.php';
+require_once __DIR__ . '/../includes/rateb-qr-login.php';
 
 $payload = isset($_GET['d']) ? trim((string) $_GET['d']) : '';
-$pairToken = isset($_COOKIE['ratib_pair']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_COOKIE['ratib_pair'])) : '';
+$pairToken = isset($_COOKIE['rateb_pair']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_COOKIE['rateb_pair'])) : '';
 if (strlen($pairToken) !== 32) {
     $pairToken = '';
 }
 
-$badgeCtx = ratib_qr_login_badge_tenant_context();
-$badgeCtx = ratib_qr_login_enrich_context($badgeCtx, $pairToken !== '' ? $pairToken : null);
+$badgeCtx = rateb_qr_login_badge_tenant_context();
+$badgeCtx = rateb_qr_login_enrich_context($badgeCtx, $pairToken !== '' ? $pairToken : null);
 $ctxCountryId = (int) ($badgeCtx['country_id'] ?? 0);
 $ctxAgencyId = (int) ($badgeCtx['agency_id'] ?? 0);
 $ctxCountrySlug = trim((string) ($badgeCtx['country_slug'] ?? ''));
@@ -47,7 +47,7 @@ $pageTitle = 'Workforce badge — RATEB';
             <button type="button" class="qr-scan-btn qr-scan-btn-primary" id="badge-pin-submit">Continue</button>
         </div>
     </div>
-    <script src="<?php echo function_exists('asset') ? asset('js/ratib-mobile-badge-store.js') : '/js/ratib-mobile-badge-store.js'; ?>"></script>
+    <script src="<?php echo function_exists('asset') ? asset('js/rateb-mobile-badge-store.js') : '/js/rateb-mobile-badge-store.js'; ?>"></script>
     <script>
     (function () {
         var payload = <?php echo json_encode($payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
@@ -115,8 +115,8 @@ $pageTitle = 'Workforce badge — RATEB';
                         return;
                     }
                     if (json && json.success) {
-                        if (window.RatibMobileBadgeStore && payload) {
-                            RatibMobileBadgeStore.save(
+                        if (window.RATEBMobileBadgeStore && payload) {
+                            RATEBMobileBadgeStore.save(
                                 { agencyId: agencyId, countryId: countryId, countrySlug: countrySlug },
                                 payload,
                                 window.location.href || payload,
@@ -150,8 +150,8 @@ $pageTitle = 'Workforce badge — RATEB';
                 .then(function (r) { return r.json(); })
                 .then(function (json) {
                     if (json && json.success) {
-                        if (window.RatibMobileBadgeStore && payload) {
-                            RatibMobileBadgeStore.save(
+                        if (window.RATEBMobileBadgeStore && payload) {
+                            RATEBMobileBadgeStore.save(
                                 { agencyId: agencyId, countryId: countryId, countrySlug: countrySlug },
                                 payload,
                                 window.location.href || payload,

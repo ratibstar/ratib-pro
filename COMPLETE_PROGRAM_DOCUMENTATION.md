@@ -1,4 +1,4 @@
-# Ratib Program - Complete Documentation
+# Rateb Program - Complete Documentation
 ## From Zero to Production: Complete System Documentation
 
 **Version:** 1.0.0  
@@ -27,9 +27,9 @@
 
 ## Introduction
 
-### What is Ratib Program?
+### What is Rateb Program?
 
-**Ratib Program** is a comprehensive business management system designed for managing workers, agents, subagents, accounting, HR, cases, contacts, and more. It's a full-stack web application built with PHP, MySQL, and vanilla JavaScript.
+**Rateb Program** is a comprehensive business management system designed for managing workers, agents, subagents, accounting, HR, cases, contacts, and more. It's a full-stack web application built with PHP, MySQL, and vanilla JavaScript.
 
 ### Project Timeline
 
@@ -41,7 +41,7 @@ This documentation covers the complete development journey from initial setup to
 
 ### Purpose
 
-Ratib Program serves as a centralized platform for:
+Rateb Program serves as a centralized platform for:
 - **Worker Management** - Complete lifecycle management for workers
 - **Agent & Subagent Management** - Multi-level agent relationship tracking
 - **Accounting System** - Professional double-entry bookkeeping
@@ -96,21 +96,21 @@ Ratib Program serves as a centralized platform for:
 
 ```bash
 # Extract to web server directory
-C:\xampp\htdocs\ratibprogram\
+C:\xampp\htdocs\ratebprogram\
 ```
 
 #### 2. Database Setup
 
 1. **Create Database:**
    ```sql
-   CREATE DATABASE ratibprogram CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE DATABASE ratebprogram CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
 
 2. **Import Database:**
    - Option A: Use phpMyAdmin to import `database/init.sql`
    - Option B: Command line:
      ```bash
-     mysql -u root -p ratibprogram < database/init.sql
+     mysql -u root -p ratebprogram < database/init.sql
      ```
 
 #### 3. Configuration
@@ -123,13 +123,13 @@ define('DB_HOST', 'localhost');
 define('DB_PORT', 3306);
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'ratibprogram');
+define('DB_NAME', 'ratebprogram');
 
 // Application Settings
-define('SITE_URL', 'http://localhost/ratibprogram');
-define('APP_NAME', 'Ratib Program');
+define('SITE_URL', 'http://localhost/ratebprogram');
+define('APP_NAME', 'Rateb Program');
 define('APP_VERSION', '1.0.0');
-define('BASE_URL', '/ratibprogram'); // Empty for root domain
+define('BASE_URL', '/ratebprogram'); // Empty for root domain
 ```
 
 #### 4. Email Configuration (Optional)
@@ -154,7 +154,7 @@ chmod 755 uploads/documents/
 
 #### 6. Access the System
 
-Navigate to: `http://localhost/ratibprogram/`
+Navigate to: `http://localhost/ratebprogram/`
 
 Default login credentials (if applicable):
 - Username: `admin`
@@ -167,7 +167,7 @@ Default login credentials (if applicable):
 ### Directory Structure
 
 ```
-ratibprogram/
+ratebprogram/
 ├── api/                          # API endpoints
 │   ├── accounting/               # Accounting API endpoints
 │   │   ├── accounts.php          # Chart of Accounts
@@ -982,7 +982,7 @@ For issues or questions:
 
 ## Conclusion
 
-This documentation covers the complete Ratib Program system from initial setup to production deployment. The system is a comprehensive business management platform with multiple modules, robust security, and extensive functionality.
+This documentation covers the complete Rateb Program system from initial setup to production deployment. The system is a comprehensive business management platform with multiple modules, robust security, and extensive functionality.
 
 **Key Achievements:**
 - ✅ Complete worker management system

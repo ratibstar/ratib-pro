@@ -27,7 +27,7 @@ try {
 
     // Generate backup filename with timestamp
     $timestamp = date('Y-m-d_H-i-s');
-    $filename = "ratibprogram_backup_{$timestamp}.sql";
+    $filename = "ratebprogram_backup_{$timestamp}.sql";
     $filepath = $backupDir . $filename;
 
     // Get database configuration

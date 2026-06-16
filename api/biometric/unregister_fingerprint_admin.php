@@ -13,7 +13,7 @@ try {
     $username = $_POST['username'] ?? $_GET['username'] ?? null;
     
     // Check if admin is logged in (app admin or control panel admin)
-    $isAppAdmin = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user();
+    $isAppAdmin = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user();
     $isControlAdmin = !empty($_SESSION['control_logged_in']);
     if (!$isAppAdmin && !$isControlAdmin) {
         echo json_encode(['success' => false, 'message' => 'Admin not logged in']);

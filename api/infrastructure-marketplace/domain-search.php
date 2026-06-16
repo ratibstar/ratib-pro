@@ -17,16 +17,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Domains\Search\DomainSearchCache;
-use Ratib\InfrastructureMarketplace\Domains\Search\DomainSearchRateLimiter;
-use Ratib\InfrastructureMarketplace\Domains\Search\DomainSearchService;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
-use Ratib\InfrastructureMarketplace\Registrars\Search\RegistrarSearchAggregator;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Domains\Search\DomainSearchCache;
+use RATEB\InfrastructureMarketplace\Domains\Search\DomainSearchRateLimiter;
+use RATEB\InfrastructureMarketplace\Domains\Search\DomainSearchService;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Registrars\Search\RegistrarSearchAggregator;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('domain-search', ControlSecurityGuard::TIER_PUBLIC_READ);
 

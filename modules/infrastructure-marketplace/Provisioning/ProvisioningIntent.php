@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning;
+namespace RATEB\InfrastructureMarketplace\Provisioning;
 
 /**
  * Business intent DTO — not a queue row and not a provider call.

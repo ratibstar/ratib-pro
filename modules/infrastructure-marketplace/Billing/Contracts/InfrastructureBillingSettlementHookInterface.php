@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Billing\Contracts;
+namespace RATEB\InfrastructureMarketplace\Billing\Contracts;
 
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 /**
  * Implemented by adapters that mirror line items into N-Genius orders, ledger journals, invoices, etc.

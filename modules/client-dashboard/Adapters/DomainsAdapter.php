@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_DomainsAdapter
+final class RATEB_ClientDashboard_DomainsAdapter
 {
     /**
      * @return array{domains: list<array<string, mixed>>, expiry_alerts: list<array<string, mixed>>}
      */
-    public function fetchNormalized(Ratib_ClientDashboard_AdapterContext $ctx): array
+    public function fetchNormalized(RATEB_ClientDashboard_AdapterContext $ctx): array
     {
         $domains = [];
         $alerts = [];
@@ -46,11 +46,11 @@ final class Ratib_ClientDashboard_DomainsAdapter
      */
     private function tryClientDomains(mysqli $conn): ?array
     {
-        $chk = @$conn->query("SHOW TABLES LIKE 'ratib_client_domains'");
+        $chk = @$conn->query("SHOW TABLES LIKE 'rateb_client_domains'");
         if (!$chk || $chk->num_rows === 0) {
             return null;
         }
-        $r = @$conn->query('SELECT service_id, fqdn, registrar, expires_at, auto_renew, transfer_lock, health_state FROM ratib_client_domains ORDER BY expires_at ASC LIMIT 100');
+        $r = @$conn->query('SELECT service_id, fqdn, registrar, expires_at, auto_renew, transfer_lock, health_state FROM rateb_client_domains ORDER BY expires_at ASC LIMIT 100');
         if (!$r) {
             return null;
         }

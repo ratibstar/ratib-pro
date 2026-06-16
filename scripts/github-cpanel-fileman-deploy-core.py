@@ -34,16 +34,16 @@ DEPLOY_ALLOW_PREFIXES = (
     "public/profile-media/",
     "assets/images/government/",
     "assets/images/diagrams/",
-    "assets/images/about-ratib-command.png",
+    "assets/images/about-rateb-command.png",
     "assets/images/program-preview-pipeline.svg",
     "assets/images/program-preview-workers.svg",
     "assets/images/program-preview-finance.svg",
-    "uploads/ratib_cms_media/",
+    "uploads/rateb_cms_media/",
 )
 DEPLOY_ALLOW_FILES = frozenset({
     ".htaccess",
     "index.php",
-    "ratib-profile-fix.php",
+    "rateb-profile-fix.php",
     "config/env.php",
 })
 DEPLOY_DENY_PREFIXES = (
@@ -165,47 +165,47 @@ FAST_FILES = [
     ".htaccess",
     "index.php",
     "pages/home.php",
-    "includes/ratib-mega-nav-render.php",
-    "includes/ratib-home-public-nav-bootstrap.php",
+    "includes/rateb-mega-nav-render.php",
+    "includes/rateb-home-public-nav-bootstrap.php",
     "control-panel/includes/control/sidebar.php",
-    "assets/ratib-logo.svg",
+    "assets/rateb-logo.svg",
     # Build marker — MUST stay last.
-    "public/ratib-build.txt",
+    "public/rateb-build.txt",
 ]
 
 CRITICAL = [
     ".htaccess",
-    "public/ratib-build.txt",
+    "public/rateb-build.txt",
     "pages/about.php",
     "pages/deploy-root.php",
     "pages/company-profile.php",
-    "includes/ratib-public-base-url.php",
-    "includes/ratib-mega-nav-config.php",
-    "includes/ratib-mega-nav-resolve.php",
-    "includes/ratib-mega-nav-resolve.fallback.php",
-    "includes/ratib-mega-nav-render.php",
-    "includes/ratib-nav-asset-preflight.php",
-    "includes/ratib-home-public-nav-bootstrap.php",
-    "includes/ratib-home-public-nav-styles.php",
-    "includes/ratib-enterprise-trust-home.php",
-    "includes/ratib-public-deploy-ensure.php",
-    "includes/ratib-home-public-chrome-top.php",
-    "includes/ratib-overlay-dismiss-guard.php",
-    "includes/ratib-home-public-nav-sync.php",
-    "includes/ratib-home-public-footer.php",
-    "includes/ratib-profile-nav-guard.php",
-    "js/pages/ratib-mega-nav.js",
-    "includes/ratib_html_global_ai_patch.php",
-    "includes/ratib-about-profile-data.php",
-    "includes/ratib-about-sections.php",
-    "js/pages/ratib-profile-nav-guard.js",
-    "js/pages/ratib-mega-nav.js",
-    "js/pages/ratib-home-nav-chrome.js",
+    "includes/rateb-public-base-url.php",
+    "includes/rateb-mega-nav-config.php",
+    "includes/rateb-mega-nav-resolve.php",
+    "includes/rateb-mega-nav-resolve.fallback.php",
+    "includes/rateb-mega-nav-render.php",
+    "includes/rateb-nav-asset-preflight.php",
+    "includes/rateb-home-public-nav-bootstrap.php",
+    "includes/rateb-home-public-nav-styles.php",
+    "includes/rateb-enterprise-trust-home.php",
+    "includes/rateb-public-deploy-ensure.php",
+    "includes/rateb-home-public-chrome-top.php",
+    "includes/rateb-overlay-dismiss-guard.php",
+    "includes/rateb-home-public-nav-sync.php",
+    "includes/rateb-home-public-footer.php",
+    "includes/rateb-profile-nav-guard.php",
+    "js/pages/rateb-mega-nav.js",
+    "includes/rateb_html_global_ai_patch.php",
+    "includes/rateb-about-profile-data.php",
+    "includes/rateb-about-sections.php",
+    "js/pages/rateb-profile-nav-guard.js",
+    "js/pages/rateb-mega-nav.js",
+    "js/pages/rateb-home-nav-chrome.js",
     "js/pages/about-enterprise.js",
     "js/pages/home-page.js",
     "css/pages/about-enterprise.css",
     "css/pages/home-public.css",
-    "css/pages/ratib-mega-nav.css",
+    "css/pages/rateb-mega-nav.css",
     "public/index.php",
     "pages/home.php",
     "control-panel/includes/control/public-marketing-urls.php",
@@ -224,7 +224,7 @@ CRITICAL_SET = set(CRITICAL) | set(FAST_FILES)
 
 MUST_OK = [
     ".htaccess",
-    "public/ratib-build.txt",
+    "public/rateb-build.txt",
     "public/cms-media.php",
     "public/cms_media.php",
     "public/cms-bundle-gov-control.png",
@@ -232,9 +232,9 @@ MUST_OK = [
     "pages/about.php",
     "pages/home.php",
     "includes/site-content.php",
-    "includes/ratib-mega-nav-resolve.php",
-    "includes/ratib-mega-nav-resolve.fallback.php",
-    "js/pages/ratib-profile-nav-guard.js",
+    "includes/rateb-mega-nav-resolve.php",
+    "includes/rateb-mega-nav-resolve.fallback.php",
+    "js/pages/rateb-profile-nav-guard.js",
 ]
 
 _print_lock = Lock()
@@ -740,7 +740,7 @@ def run_uploads(files: list[str], remote_base: str, workers: int) -> tuple[int, 
 def main() -> int:
     root = os.path.dirname(os.path.abspath(__file__))
     os.chdir(os.path.join(root, ".."))
-    remote_base = os.environ.get("CPANEL_REMOTE_BASE", "/home/outratib/public_html")
+    remote_base = os.environ.get("CPANEL_REMOTE_BASE", "/home/admin/public_html")
     mode = os.environ.get("CPANEL_DEPLOY_MODE", "fast")
     files, workers = build_file_list(mode)
     total = len(files)

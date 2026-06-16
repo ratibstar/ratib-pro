@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_AdapterContext
+final class RATEB_ClientDashboard_AdapterContext
 {
     /** @var mysqli|null */
     public $conn;
@@ -12,13 +12,13 @@ final class Ratib_ClientDashboard_AdapterContext
     /** @var array<string, mixed> */
     public $tenant;
 
-    /** @var Ratib_ClientDashboard_ObservabilityHub */
+    /** @var RATEB_ClientDashboard_ObservabilityHub */
     public $obs;
 
     /**
      * @param array<string, mixed> $tenant
      */
-    public function __construct(?mysqli $conn, int $userId, array $tenant, Ratib_ClientDashboard_ObservabilityHub $obs)
+    public function __construct(?mysqli $conn, int $userId, array $tenant, RATEB_ClientDashboard_ObservabilityHub $obs)
     {
         $this->conn = $conn;
         $this->userId = $userId;
@@ -26,7 +26,7 @@ final class Ratib_ClientDashboard_AdapterContext
         $this->obs = $obs;
     }
 
-    public static function fromSession(?mysqli $conn, Ratib_ClientDashboard_ObservabilityHub $obs): self
+    public static function fromSession(?mysqli $conn, RATEB_ClientDashboard_ObservabilityHub $obs): self
     {
         $uid = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
         $tenant = [

@@ -6,17 +6,17 @@
 declare(strict_types=1);
 
 $root = dirname(__DIR__);
-require_once $root . '/includes/ratib-php74-compat.php';
+require_once $root . '/includes/rateb-php74-compat.php';
 
 $scanDirs = ['includes', 'pages', 'api', 'js', 'css', 'public', 'control-panel', 'mobile-app', 'modules', 'paypal-checkout', 'config'];
 $skipDirs = ['Designed', 'node_modules', 'archive', '.git', '.github', '.cursor', 'vendor'];
 $extensions = ['php', 'js', 'html', 'json', 'xml', 'md', 'css'];
 
 $patterns = [
-    'ratib_brand' => '/\bRATIB\b(?!_)/',
+    'rateb_brand' => '/\bRATEB\b(?!_)/',
     'tracking_intelligence' => '/Tracking Intelligence/i',
     'software_foundation' => '/Software Foundation/i',
-    'ratib_company' => '/Ratib Company/i',
+    'rateb_company' => '/RATEB Company/i',
     'weak_dashboard' => '/\bDashboard\b/',
     'weak_reports' => '/\bReports\b/',
     'weak_notifications' => '/\bNotifications\b/',
@@ -50,7 +50,7 @@ foreach ($iterator as $file) {
     if (!in_array($ext, $extensions, true)) {
         continue;
     }
-    if (str_contains($rel, 'ratib-site-content-rebrand-sanitize.php')) {
+    if (str_contains($rel, 'rateb-site-content-rebrand-sanitize.php')) {
         continue;
     }
     $content = @file_get_contents($path);
@@ -69,10 +69,10 @@ foreach ($iterator as $file) {
     }
 }
 
-$publicPrefixes = ['pages/', 'includes/ratib-', 'includes/site-content', 'includes/ratib-home-public', 'includes/ratib-about', 'includes/ratib-architecture', 'includes/ratib-security', 'includes/ratib-procurement', 'js/help-center/help-center-builtin', 'api/help-center/seed'];
+$publicPrefixes = ['pages/', 'includes/rateb-', 'includes/site-content', 'includes/rateb-home-public', 'includes/rateb-about', 'includes/rateb-architecture', 'includes/rateb-security', 'includes/rateb-procurement', 'js/help-center/help-center-builtin', 'api/help-center/seed'];
 $publicHits = 0;
 $internalHits = 0;
-foreach ($hits['ratib_brand'] as $rel => $n) {
+foreach ($hits['rateb_brand'] as $rel => $n) {
     $isPublic = false;
     foreach ($publicPrefixes as $p) {
         if (str_starts_with($rel, $p)) {
@@ -97,7 +97,7 @@ foreach (['weak_dashboard', 'weak_reports', 'weak_notifications', 'weak_settings
 $brandClean = ($publicHits === 0)
     && array_sum($hits['tracking_intelligence']) === 0
     && array_sum($hits['software_foundation']) === 0
-    && array_sum($hits['ratib_company']) === 0;
+    && array_sum($hits['rateb_company']) === 0;
 
 $terminologyScore = max(0, min(100, 100 - (int) min(40, $weakTotal / 8)));
 $brandScore = $brandClean ? 92 : max(40, 92 - ($publicHits * 5) - (array_sum($hits['tracking_intelligence']) * 3));
@@ -133,5 +133,5 @@ echo "brand_consistency={$brandScore}/100\n";
 echo "terminology_normalization={$terminologyScore}/100\n";
 echo "procurement_readiness={$procurementScore}/100\n";
 echo "visual_maturity={$visualScore}/100 (manual CSS review — not auto-scored)\n";
-echo "public_RATIB_hits={$publicHits}\n";
-echo "internal_RATIB_constant_hits={$internalHits} (env/JS constants — OK if not user-facing)\n";
+echo "public_RATEB_hits={$publicHits}\n";
+echo "internal_RATEB_constant_hits={$internalHits} (env/JS constants — OK if not user-facing)\n";

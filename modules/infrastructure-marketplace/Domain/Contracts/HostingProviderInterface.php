@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Domain\Contracts;
+namespace RATEB\InfrastructureMarketplace\Domain\Contracts;
 
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
 
 /**
  * Abstraction over panel/WHM-capable backends (implementations stay in Adapters/Hosting).

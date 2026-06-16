@@ -2,17 +2,17 @@
     function statusClass(st) {
         var s = String(st || '').toLowerCase();
         var map = {
-            pending: 'ratib-status--pending',
-            processing: 'ratib-status--processing',
-            active: 'ratib-status--active',
-            suspended: 'ratib-status--suspended',
-            failed: 'ratib-status--failed',
-            paid: 'ratib-status--active',
-            unpaid: 'ratib-status--pending',
-            cancelled: 'ratib-status--cancelled',
-            canceled: 'ratib-status--cancelled',
+            pending: 'rateb-status--pending',
+            processing: 'rateb-status--processing',
+            active: 'rateb-status--active',
+            suspended: 'rateb-status--suspended',
+            failed: 'rateb-status--failed',
+            paid: 'rateb-status--active',
+            unpaid: 'rateb-status--pending',
+            cancelled: 'rateb-status--cancelled',
+            canceled: 'rateb-status--cancelled',
         };
-        return map[s] || 'ratib-status--neutral';
+        return map[s] || 'rateb-status--neutral';
     }
 
     function encodeHtml(txt) {
@@ -34,8 +34,8 @@
         var apiBase =
             (apiBaseEl && apiBaseEl.getAttribute('data-api-base')) || '';
 
-        if (typeof RatibClientActions.configure === 'function') {
-            RatibClientActions.configure(apiBase);
+        if (typeof RATEBClientActions.configure === 'function') {
+            RATEBClientActions.configure(apiBase);
         }
 
         var tbody = qs('rcp-orders-tbody');
@@ -53,7 +53,7 @@
             var s = state();
             root.setAttribute('data-loading', '1');
             tbody.innerHTML =
-                '<tr><td colspan="8"><div class="ratib-cp-skeleton">&nbsp;</div></td></tr>';
+                '<tr><td colspan="8"><div class="rateb-cp-skeleton">&nbsp;</div></td></tr>';
 
             var qstr = new URLSearchParams();
             qstr.set('q', s.q);
@@ -62,7 +62,7 @@
             qstr.set('page', String(s.page));
             qstr.set('per_page', '8');
 
-            RatibClientDashboardData.fetchJson(
+            RATEBClientDashboardData.fetchJson(
                 apiBase + '/client-dashboard/orders.php?' + qstr.toString()
             )
                 .then(function (payload) {
@@ -72,7 +72,7 @@
                 })
                 .catch(function () {
                     tbody.innerHTML =
-                        '<tr><td colspan="8" class="ratib-cp-empty">Temporary service issue — retry shortly.</td></tr>';
+                        '<tr><td colspan="8" class="rateb-cp-empty">Temporary service issue — retry shortly.</td></tr>';
                     root.removeAttribute('data-loading');
                 });
         }
@@ -81,7 +81,7 @@
             tbody.innerHTML = '';
             if (!rows.length) {
                 tbody.innerHTML =
-                    '<tr><td colspan="8" class="ratib-cp-empty">No orders matched.</td></tr>';
+                    '<tr><td colspan="8" class="rateb-cp-empty">No orders matched.</td></tr>';
                 return;
             }
 
@@ -119,7 +119,7 @@
 
                 var tdSt = document.createElement('td');
                 tdSt.innerHTML =
-                    '<span class="ratib-status ' +
+                    '<span class="rateb-status ' +
                     statusClass(stRaw) +
                     '">' +
                     encodeHtml(stRaw) +
@@ -128,7 +128,7 @@
 
                 var tdPay = document.createElement('td');
                 tdPay.innerHTML =
-                    '<span class="ratib-status ' +
+                    '<span class="rateb-status ' +
                     statusClass(pstRaw) +
                     '">' +
                     encodeHtml(pstRaw) +
@@ -145,9 +145,9 @@
 
                 var actionsTd = document.createElement('td');
                 actionsTd.innerHTML =
-                    '<details class="ratib-cp-actions">' +
+                    '<details class="rateb-cp-actions">' +
                     '<summary>⋯</summary>' +
-                    '<div class="ratib-cp-actions__menu" role="menu">' +
+                    '<div class="rateb-cp-actions__menu" role="menu">' +
                     '<button type="button" data-rcp-act="renew" data-rcp-id="' +
                     targetIdEsc +
                     '">Renew</button>' +
@@ -172,7 +172,7 @@
                 actionsTd.querySelectorAll('button[data-rcp-act]').forEach(
                     function (btn) {
                         btn.addEventListener('click', function () {
-                            RatibClientActions.dispatch(
+                            RATEBClientActions.dispatch(
                                 String(btn.getAttribute('data-rcp-act') || ''),
                                 {
                                     targetId:
@@ -230,7 +230,7 @@
                 '.rcp-bulk:checked'
             ).length;
 
-            RatibClientActions.dispatch('suspend', {
+            RATEBClientActions.dispatch('suspend', {
 
                 targetId: 'bulk:' + String(chk),
             });

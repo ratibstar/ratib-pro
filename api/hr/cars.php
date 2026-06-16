@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/hr/cars.php`.
  */
 if (isset($_GET['control']) && (string)$_GET['control'] === '1') {
-    session_name('ratib_control');
+    session_name('rateb_control');
 }
 require_once __DIR__ . '/hr-api-bootstrap.inc.php';
 error_reporting(E_ALL);
@@ -224,7 +224,7 @@ try {
             $newCar = $stmt->fetch(PDO::FETCH_ASSOC);
             
             // Log history
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('cars', $newCarId, 'create', 'hr', null, $newCar);
             }
@@ -287,7 +287,7 @@ try {
             $updatedCar = $stmt->fetch(PDO::FETCH_ASSOC);
             
             // Log history
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('cars', $id, 'update', 'hr', $oldCar, $updatedCar);
             }
@@ -348,7 +348,7 @@ try {
             $stmt->execute();
             
             // Log history
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('cars', $id, 'delete', 'hr', $deletedCar, null);
             }

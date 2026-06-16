@@ -21,15 +21,15 @@ require_once dirname(__DIR__, 2) . '/modules/client-dashboard/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Data/FallbackPayloads.php';
 require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Orchestration/SnapshotOrchestrator.php';
 
-ratib_client_dashboard_api_require_access();
+rateb_client_dashboard_api_require_access();
 
 $conn = isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli ? $GLOBALS['conn'] : null;
 
 try {
-    $payload = Ratib_ClientDashboard_SnapshotOrchestrator::build($conn);
+    $payload = RATEB_ClientDashboard_SnapshotOrchestrator::build($conn);
 } catch (Throwable $e) {
     require_once dirname(__DIR__, 2) . '/modules/client-dashboard/Data/SnapshotBuilder.php';
-    $payload = Ratib_ClientDashboard_SnapshotBuilder::build($conn);
+    $payload = RATEB_ClientDashboard_SnapshotBuilder::build($conn);
     $payload['observability'] = [
         'degraded_flags' => ['orchestrator_exception'],
         'adapter_events_tail' => [],
@@ -49,7 +49,7 @@ if (function_exists('apiUrl')) {
 
 $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES);
 if (!is_string($encoded)) {
-    $payload = Ratib_ClientDashboard_FallbackPayloads::homeSnapshotEnvelope();
+    $payload = RATEB_ClientDashboard_FallbackPayloads::homeSnapshotEnvelope();
     $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES);
 }
 if (!is_string($encoded)) {

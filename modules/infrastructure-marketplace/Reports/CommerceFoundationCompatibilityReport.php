@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Reports;
+namespace RATEB\InfrastructureMarketplace\Reports;
 
 /**
  * Phase 2 — commerce foundation compatibility strategy (read-only narrative + structured facts).
@@ -19,22 +19,22 @@ final class CommerceFoundationCompatibilityReport
             'schema_version' => 'phase2-1.0',
             'generated_at' => gmdate('c'),
             'reused_systems' => [
-                'CatalogRepository + ratib_infra_catalog_items (unchanged read path)',
-                'ProvisioningState + ratib_infra_provisioning_jobs.status (queue semantics unchanged)',
-                'ratib_infra_services for provisioned service rows',
-                'InfrastructureAuditLogger + ratib_infra_audit_entries',
+                'CatalogRepository + rateb_infra_catalog_items (unchanged read path)',
+                'ProvisioningState + rateb_infra_provisioning_jobs.status (queue semantics unchanged)',
+                'rateb_infra_services for provisioned service rows',
+                'InfrastructureAuditLogger + rateb_infra_audit_entries',
                 'InfrastructureEventEmitter / correlation_id on jobs',
                 'ProviderRegistry + ProviderActivationRegistry',
                 'CapabilityDiscoveryService',
             ],
             'extended_systems' => [
                 'New commerce tables sit beside catalog_items; CatalogCommerceBridge maps views only.',
-                'ProductLifecycleManager updates ratib_infra_plans.commerce_state only (new column already in DDL).',
-                'TenantResourceManager adds ratib_tenant_resources without altering ratib_infra_services DDL.',
+                'ProductLifecycleManager updates rateb_infra_plans.commerce_state only (new column already in DDL).',
+                'TenantResourceManager adds rateb_tenant_resources without altering rateb_infra_services DDL.',
                 'StateNamespaceRegistry documents separation: queue vs commerce vs provisioning_phase vs ownership literals.',
             ],
             'avoided_conflicts' => [
-                'No rename of ratib_infra_catalog_items, ratib_infra_provisioning_jobs, or job status strings.',
+                'No rename of rateb_infra_catalog_items, rateb_infra_provisioning_jobs, or job status strings.',
                 'No merge of queue_state into commerce_state.',
                 'Ownership literals (OWNED, UNCLAIMED, …) disjoint from ProvisioningState and commerce plan states.',
                 'WAITING_EXTERNAL documented as queue-side ambiguous for provisioning phases; use WAITING_PROVIDER for phases.',
@@ -45,19 +45,19 @@ final class CommerceFoundationCompatibilityReport
                 'Run order: 001_commerce_foundation_tables.sql then 002_tenant_resources_overlay.sql.',
             ],
             'enum_separation_strategy' => [
-                'queue_state: ProvisioningState constants only on ratib_infra_provisioning_jobs.status.',
-                'commerce_state: ratib_infra_plans.commerce_state + ProductLifecycleManager transitions.',
+                'queue_state: ProvisioningState constants only on rateb_infra_provisioning_jobs.status.',
+                'commerce_state: rateb_infra_plans.commerce_state + ProductLifecycleManager transitions.',
                 'provisioning_phase: advisory strings for orchestration UI / metadata — not written into job status by this phase.',
-                'ownership_state: ratib_tenant_resources.ownership_state uses OWNED|UNCLAIMED|DISABLED|PENDING_LINK only.',
+                'ownership_state: rateb_tenant_resources.ownership_state uses OWNED|UNCLAIMED|DISABLED|PENDING_LINK only.',
             ],
             'compatibility_risks' => [
-                'Dual catalog naming (ratib_infra_catalog_item vs items) remains documentation-only fix via SchemaAliasMap.',
+                'Dual catalog naming (rateb_infra_catalog_item vs items) remains documentation-only fix via SchemaAliasMap.',
                 'Environments without Phase2 migrations: repositories will throw SQL errors — gate features by table presence in callers.',
-                'ratib_infra_services.lifecycle_state VARCHAR may still echo queue-ish words; do not conflate with commerce_state.',
+                'rateb_infra_services.lifecycle_state VARCHAR may still echo queue-ish words; do not conflate with commerce_state.',
             ],
             'recommended_follow_ups' => [
                 'Optional read-only API to expose compatibilityView() for admin tooling.',
-                'Phase 3: bind ratib_infra_orders.sku to ratib_infra_plans.plan_code additively (nullable FK or mapping table).',
+                'Phase 3: bind rateb_infra_orders.sku to rateb_infra_plans.plan_code additively (nullable FK or mapping table).',
             ],
         ];
     }

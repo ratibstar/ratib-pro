@@ -34,9 +34,9 @@ function qr_ctx_from_input(array $input): array
         'device_label' => trim((string) ($input['device_label'] ?? 'Mobile')),
         'skip_pin' => !empty($input['skip_pin']),
     ];
-    if (function_exists('ratib_qr_login_enrich_context')) {
+    if (function_exists('rateb_qr_login_enrich_context')) {
         $pair = isset($input['pair_token']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $input['pair_token'])) : '';
-        $ctx = ratib_qr_login_enrich_context($ctx, strlen($pair) === 32 ? $pair : null);
+        $ctx = rateb_qr_login_enrich_context($ctx, strlen($pair) === 32 ? $pair : null);
     }
     return $ctx;
 }
@@ -51,16 +51,16 @@ function qr_trusted_resolve(string $deviceToken, array $input): array
         return ['ok' => false, 'message' => 'No device token.'];
     }
     $ctx = qr_ctx_from_input($input);
-    $conn = ratib_barcode_login_resolve_connection($ctx);
+    $conn = rateb_barcode_login_resolve_connection($ctx);
     if (!($conn instanceof mysqli)) {
         return ['ok' => false, 'message' => 'Database unavailable.'];
     }
-    $v = ratib_qr_trusted_device_validate_cookie($conn, $dev);
+    $v = rateb_qr_trusted_device_validate_cookie($conn, $dev);
     if (empty($v['ok'])) {
         return ['ok' => false, 'message' => 'Device not trusted.'];
     }
     $uid = (int) ($v['user_id'] ?? 0);
-    $row = ratib_qr_workforce_user_row($conn, $uid);
+    $row = rateb_qr_workforce_user_row($conn, $uid);
     if (!$row) {
         return ['ok' => false, 'message' => 'User not found.'];
     }
@@ -77,8 +77,8 @@ function qr_trusted_resolve(string $deviceToken, array $input): array
 function qr_finish_login(array $auth, ?string $pairToken, bool $applySession): void
 {
     if ($pairToken !== '' && strlen($pairToken) === 32) {
-        require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
-        if (!ratib_barcode_pair_approve($pairToken, $auth['session'])) {
+        require_once __DIR__ . '/../includes/rateb-barcode-login-pair.php';
+        if (!rateb_barcode_pair_approve($pairToken, $auth['session'])) {
             qr_json(['success' => false, 'message' => 'Could not complete desktop login.', 'code' => 'pair_failed'], 500);
         }
     }
@@ -87,11 +87,11 @@ function qr_finish_login(array $auth, ?string $pairToken, bool $applySession): v
         $trustedDev = (string) $auth['session']['_trusted_device_token'];
         unset($auth['session']['_trusted_device_token']);
     }
-    if ($applySession && function_exists('ratib_qr_login_apply_session')) {
-        ratib_qr_login_apply_session($auth['session']);
+    if ($applySession && function_exists('rateb_qr_login_apply_session')) {
+        rateb_qr_login_apply_session($auth['session']);
     }
-    if ($trustedDev !== null && function_exists('ratib_qr_set_device_cookie')) {
-        ratib_qr_set_device_cookie($trustedDev);
+    if ($trustedDev !== null && function_exists('rateb_qr_set_device_cookie')) {
+        rateb_qr_set_device_cookie($trustedDev);
     }
     $username = (string) ($auth['session']['username'] ?? '');
     $redirect = '/pages/dashboard.php';
@@ -99,8 +99,8 @@ function qr_finish_login(array $auth, ?string $pairToken, bool $applySession): v
     if ($applySession && $agencyForUrl <= 0 && !empty($_SESSION['agency_id'])) {
         $agencyForUrl = (int) $_SESSION['agency_id'];
     }
-    if (function_exists('ratib_country_dashboard_url')) {
-        $redirect = ratib_country_dashboard_url($agencyForUrl);
+    if (function_exists('rateb_country_dashboard_url')) {
+        $redirect = rateb_country_dashboard_url($agencyForUrl);
     }
     qr_json([
         'success' => true,
@@ -121,8 +121,8 @@ $action = isset($input['action']) ? strtolower(trim((string) $input['action'])) 
 try {
     if (in_array($action, ['validate', 'submit', 'validate_pin', 'trusted_check', 'trusted_login', 'metrics'], true)) {
         require_once __DIR__ . '/../includes/config.php';
-        require_once __DIR__ . '/../includes/ratib-qr-login.php';
-        require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
+        require_once __DIR__ . '/../includes/rateb-qr-login.php';
+        require_once __DIR__ . '/../includes/rateb-qr-workforce-identity.php';
     }
 
     if ($action === 'validate' || $action === 'submit') {
@@ -135,7 +135,7 @@ try {
         if ($payload === '') {
             qr_json(['success' => false, 'message' => 'No QR data.', 'code' => 'invalid'], 400);
         }
-        $auth = ratib_qr_login_authenticate_payload($payload, $ctx, $pairToken !== '' ? $pairToken : null);
+        $auth = rateb_qr_login_authenticate_payload($payload, $ctx, $pairToken !== '' ? $pairToken : null);
         if (!empty($auth['needs_pin'])) {
             qr_json([
                 'success' => false,
@@ -176,7 +176,7 @@ try {
         if ($challenge === '') {
             qr_json(['success' => false, 'message' => 'Missing challenge.', 'code' => 'invalid'], 400);
         }
-        $auth = ratib_qr_login_complete_with_pin($challenge, $pin, $ctx);
+        $auth = rateb_qr_login_complete_with_pin($challenge, $pin, $ctx);
         if (empty($auth['ok'])) {
             qr_json([
                 'success' => false,
@@ -190,7 +190,7 @@ try {
     }
 
     if ($action === 'trusted_check') {
-        $dev = (string) ($_COOKIE['ratib_device'] ?? '');
+        $dev = (string) ($_COOKIE['rateb_device'] ?? '');
         if ($dev === '') {
             qr_json(['success' => true, 'trusted' => false]);
         }
@@ -207,7 +207,7 @@ try {
     }
 
     if ($action === 'trusted_login') {
-        $dev = (string) ($_COOKIE['ratib_device'] ?? $input['device_token'] ?? '');
+        $dev = (string) ($_COOKIE['rateb_device'] ?? $input['device_token'] ?? '');
         $resolved = qr_trusted_resolve($dev, $input);
         if (empty($resolved['ok'])) {
             qr_json(['success' => false, 'message' => $resolved['message'] ?? 'Device not trusted.', 'code' => 'untrusted'], 403);
@@ -215,19 +215,19 @@ try {
         $conn = $resolved['conn'];
         $row = $resolved['user_row'];
         if (!isset($row['user_id'])) {
-            $pk = ratib_users_primary_key_for_barcode($conn);
+            $pk = rateb_users_primary_key_for_barcode($conn);
             $row['user_id'] = (int) ($row[$pk] ?? $resolved['user_id']);
         }
         $ctx = qr_ctx_from_input($input);
-        $session = ratib_barcode_login_build_session($conn, $row, $ctx);
+        $session = rateb_barcode_login_build_session($conn, $row, $ctx);
         if ($session === null) {
             qr_json(['success' => false, 'message' => 'Account inactive.'], 403);
         }
-        ratib_qr_login_apply_session($session);
-        ratib_qr_login_audit($conn, 'trusted_login', 'ok', (int) $resolved['user_id']);
+        rateb_qr_login_apply_session($session);
+        rateb_qr_login_audit($conn, 'trusted_login', 'ok', (int) $resolved['user_id']);
         $redirect = '/pages/dashboard.php';
-        if (function_exists('ratib_country_dashboard_url')) {
-            $redirect = ratib_country_dashboard_url((int) ($_SESSION['agency_id'] ?? $ctx['agency_id'] ?? 0));
+        if (function_exists('rateb_country_dashboard_url')) {
+            $redirect = rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? $ctx['agency_id'] ?? 0));
         }
         qr_json(['success' => true, 'redirect' => $redirect]);
     }
@@ -240,13 +240,13 @@ try {
         if (!($conn instanceof mysqli)) {
             qr_json(['success' => false, 'message' => 'Database unavailable.'], 500);
         }
-        qr_json(['success' => true, 'metrics' => ratib_qr_workforce_metrics_snapshot($conn)]);
+        qr_json(['success' => true, 'metrics' => rateb_qr_workforce_metrics_snapshot($conn)]);
     }
 
     if (in_array($action, ['issue', 'revoke', 'ensure', 'regenerate', 'status'], true)) {
         require_once __DIR__ . '/../includes/config.php';
-        require_once __DIR__ . '/../includes/ratib-qr-login.php';
-        require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
+        require_once __DIR__ . '/../includes/rateb-qr-login.php';
+        require_once __DIR__ . '/../includes/rateb-qr-workforce-identity.php';
         if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
             qr_json(['success' => false, 'message' => 'Authentication required.'], 401);
         }
@@ -259,20 +259,20 @@ try {
             qr_json(['success' => false, 'message' => 'Database unavailable.'], 500);
         }
         if ($action === 'revoke') {
-            $ok = ratib_qr_login_revoke_token($conn, $userId);
+            $ok = rateb_qr_login_revoke_token($conn, $userId);
             qr_json(['success' => $ok, 'message' => $ok ? 'Revoked.' : 'Failed.'], $ok ? 200 : 500);
         }
         if ($action === 'status') {
-            qr_json(['success' => true, 'data' => ratib_qr_workforce_status($conn, $userId)]);
+            qr_json(['success' => true, 'data' => rateb_qr_workforce_status($conn, $userId)]);
         }
         if ($action === 'ensure') {
-            $issued = ratib_qr_login_ensure_persistent_token($conn, $userId, false);
+            $issued = rateb_qr_login_ensure_persistent_token($conn, $userId, false);
             if (empty($issued['ok'])) {
                 qr_json(['success' => false, 'message' => $issued['message'] ?? 'Failed.'], 500);
             }
             $badgeUrl = '';
-            if (!empty($issued['qr_payload']) && function_exists('ratib_qr_login_badge_url')) {
-                $badgeUrl = ratib_qr_login_badge_url((string) $issued['qr_payload'], ratib_qr_login_badge_tenant_context());
+            if (!empty($issued['qr_payload']) && function_exists('rateb_qr_login_badge_url')) {
+                $badgeUrl = rateb_qr_login_badge_url((string) $issued['qr_payload'], rateb_qr_login_badge_tenant_context());
             }
             qr_json([
                 'success' => true,
@@ -285,7 +285,7 @@ try {
         }
         if ($action === 'regenerate' || $action === 'issue') {
             $ttl = (int) ($input['ttl_seconds'] ?? 0);
-            $issued = ratib_qr_login_issue_token($conn, $userId, $ttl, true);
+            $issued = rateb_qr_login_issue_token($conn, $userId, $ttl, true);
             if (empty($issued['ok'])) {
                 qr_json(['success' => false, 'message' => $issued['message'] ?? 'Issue failed.'], 500);
             }
@@ -293,7 +293,7 @@ try {
                 'success' => true,
                 'qr_payload' => $issued['qr_payload'],
                 'expires_at' => $issued['expires_at'],
-                'badge_url' => ratib_qr_login_badge_url((string) $issued['qr_payload'], ratib_qr_login_badge_tenant_context()),
+                'badge_url' => rateb_qr_login_badge_url((string) $issued['qr_payload'], rateb_qr_login_badge_tenant_context()),
             ]);
         }
     }

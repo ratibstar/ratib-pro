@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/hr/attendance.php`.
  */
 if (isset($_GET['control']) && (string)$_GET['control'] === '1') {
-    session_name('ratib_control');
+    session_name('rateb_control');
 }
 require_once __DIR__ . '/hr-api-bootstrap.inc.php';
 // Disable caching for this API endpoint
@@ -265,7 +265,7 @@ try {
                 $newAttendance = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 // Log history
-                if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+                if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                     require_once __DIR__ . '/../core/global-history-helper.php';
                     @logGlobalHistory('attendance', $newAttendanceId, 'create', 'hr', null, $newAttendance);
                 }
@@ -377,7 +377,7 @@ try {
             $updatedAttendance = $stmt->fetch(PDO::FETCH_ASSOC);
             
             // Log history
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('attendance', $id, 'update', 'hr', $oldAttendance, $updatedAttendance);
             }
@@ -411,7 +411,7 @@ try {
             $stmt->execute();
             
             // Log history
-            if (hr_api_writes_ratib_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
+            if (hr_api_writes_rateb_artifacts() && file_exists(__DIR__ . '/../core/global-history-helper.php')) {
                 require_once __DIR__ . '/../core/global-history-helper.php';
                 @logGlobalHistory('attendance', $id, 'delete', 'hr', $deletedAttendance, null);
             }

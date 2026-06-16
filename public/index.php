@@ -11,9 +11,9 @@ declare(strict_types=1);
  * Without this file, Apache returns 404 for any rewritten URL (including /Designed/).
  */
 
-/* Surface fatal errors as plain text when Designed launcher fails (add &ratib_diag=1 for full notices). */
-if (!empty($_GET['ratib_designed'])) {
-    if (!empty($_GET['ratib_diag'])) {
+/* Surface fatal errors as plain text when Designed launcher fails (add &rateb_diag=1 for full notices). */
+if (!empty($_GET['rateb_designed'])) {
+    if (!empty($_GET['rateb_diag'])) {
         ini_set('display_errors', '1');
         ini_set('display_startup_errors', '1');
         error_reporting(E_ALL);
@@ -42,15 +42,15 @@ if (!empty($_GET['ratib_designed'])) {
 }
 
 require_once dirname(__DIR__) . '/includes/designed_bootstrap.php';
-ratib_serve_designed_if_requested();
+rateb_serve_designed_if_requested();
 
-if (!empty($_GET['ratib_designed'])) {
+if (!empty($_GET['rateb_designed'])) {
     if (isset($_GET['ping']) && (string) $_GET['ping'] === '1') {
         header('Content-Type: text/plain; charset=UTF-8');
         echo 'designed-launcher route OK (via public/index.php), PHP ' . PHP_VERSION . "\n";
         exit;
     }
-    ratib_run_designed_launcher();
+    rateb_run_designed_launcher();
     exit;
 }
 

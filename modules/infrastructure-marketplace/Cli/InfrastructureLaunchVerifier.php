@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Cli;
+namespace RATEB\InfrastructureMarketplace\Cli;
 
-use Ratib\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
-use Ratib\InfrastructureMarketplace\Health\PrelaunchHealthService;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Release\Deployment\ReleaseGateEvaluator;
-use Ratib\InfrastructureMarketplace\Release\Deployment\RollbackChecklistGenerator;
+use RATEB\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
+use RATEB\InfrastructureMarketplace\Health\PrelaunchHealthService;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Release\Deployment\ReleaseGateEvaluator;
+use RATEB\InfrastructureMarketplace\Release\Deployment\RollbackChecklistGenerator;
 
 final class InfrastructureLaunchVerifier
 {
@@ -23,8 +23,8 @@ final class InfrastructureLaunchVerifier
         $report = (new PrelaunchHealthService($pdo))->run();
         $gate = (new ReleaseGateEvaluator())->evaluate($report, (bool) $opts['strict']);
 
-        $releaseId = (string) ($opts['release'] ?? getenv('RATIB_INFRA_RELEASE_ID') ?: ('manual-' . date('Ymd-His')));
-        $env = (string) ($opts['environment'] ?? getenv('RATIB_INFRA_RELEASE_ENV') ?: 'production');
+        $releaseId = (string) ($opts['release'] ?? getenv('RATEB_INFRA_RELEASE_ID') ?: ('manual-' . date('Ymd-His')));
+        $env = (string) ($opts['environment'] ?? getenv('RATEB_INFRA_RELEASE_ENV') ?: 'production');
         (new DeploymentAuditReporter($pdo))->record($releaseId, $env, $report);
 
         if ((bool) $opts['json']) {

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning;
+namespace RATEB\InfrastructureMarketplace\Provisioning;
 
-use Ratib\InfrastructureMarketplace\Resources\ResourceIdentityManager;
-use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
+use RATEB\InfrastructureMarketplace\Resources\ResourceIdentityManager;
+use RATEB\InfrastructureMarketplace\State\StateNamespaceRegistry;
 
 /**
  * Builds ProvisioningIntent from resolved commerce + order context (no provider I/O).
@@ -12,9 +12,9 @@ use Ratib\InfrastructureMarketplace\State\StateNamespaceRegistry;
 final class ProvisioningIntentFactory
 {
     /**
-     * @param array<string, mixed> $order ratib_infra_orders row
-     * @param array<string, mixed>|null $plan ratib_infra_plans row or null
-     * @param array<string, mixed>|null $product ratib_infra_products row or null
+     * @param array<string, mixed> $order rateb_infra_orders row
+     * @param array<string, mixed>|null $plan rateb_infra_plans row or null
+     * @param array<string, mixed>|null $product rateb_infra_products row or null
      * @param list<string> $requestedCapabilities
      * @param array<string, mixed> $extraMetadata merged into metadata_json
      */

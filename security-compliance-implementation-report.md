@@ -8,7 +8,7 @@
 
 ## Summary
 
-A new public trust center page positions **RATIB** as infrastructure suitable for regulated workforce operations and enterprise procurement review. The page follows the same chrome pattern as the company profile (`about.php`): shared mega-nav, public footer, `about-enterprise.css` tokens, and dedicated trust-center styling.
+A new public trust center page positions **RATEB** as infrastructure suitable for regulated workforce operations and enterprise procurement review. The page follows the same chrome pattern as the company profile (`about.php`): shared mega-nav, public footer, `about-enterprise.css` tokens, and dedicated trust-center styling.
 
 **Wording policy:** Copy uses *designed for*, *supports*, and *architecture includes*. No SOC 2, ISO, or other third-party certification claims unless separately documented in a signed enterprise agreement. An explicit disclaimer appears in the hero.
 
@@ -19,10 +19,10 @@ A new public trust center page positions **RATIB** as infrastructure suitable fo
 | File | Role |
 |------|------|
 | `pages/security-compliance.php` | Page template: SEO meta, JSON-LD `WebPage`, chrome includes, sticky jump nav, asset cache-busting |
-| `includes/ratib-security-compliance-data.php` | Content config: meta, hero, 7 sections, procurement CTAs, disclaimer, contact |
-| `includes/ratib-security-compliance-sections.php` | PHP renderers: hero, feature grids, isolation diagram, procurement block |
+| `includes/rateb-security-compliance-data.php` | Content config: meta, hero, 7 sections, procurement CTAs, disclaimer, contact |
+| `includes/rateb-security-compliance-sections.php` | PHP renderers: hero, feature grids, isolation diagram, procurement block |
 | `css/pages/security-compliance.css` | Trust-center layout (banner, hero, isolation diagram, procurement cards, scroll reveal hooks) |
-| `js/pages/security-compliance.js` | Lightweight `data-ratib-reveal` scroll animations |
+| `js/pages/security-compliance.js` | Lightweight `data-rateb-reveal` scroll animations |
 
 ---
 
@@ -30,10 +30,10 @@ A new public trust center page positions **RATIB** as infrastructure suitable fo
 
 | File | Change |
 |------|--------|
-| `.htaccess` | Pretty URL rewrites; LiteSpeed `CacheDisable` and `RATIB_NOCACHE` for page and assets |
-| `includes/ratib-mega-nav-resolve.php` | `security_compliance` → `/security-compliance/` |
-| `includes/ratib-mega-nav-config.php` | Company mega panel + Security mega panel trust-center links |
-| `includes/ratib-home-public-footer.php` | Legal column link to trust center |
+| `.htaccess` | Pretty URL rewrites; LiteSpeed `CacheDisable` and `RATEB_NOCACHE` for page and assets |
+| `includes/rateb-mega-nav-resolve.php` | `security_compliance` → `/security-compliance/` |
+| `includes/rateb-mega-nav-config.php` | Company mega panel + Security mega panel trust-center links |
+| `includes/rateb-home-public-footer.php` | Legal column link to trust center |
 | `includes/site-content-home-data.php` | CMS key `home.footer.link.legal.security_compliance` |
 
 ---
@@ -70,9 +70,9 @@ Sticky jump nav in `<main>` links to all anchors.
 
 All CTAs use `mailto:info@rateb.sa` with distinct subjects:
 
-- **Request Security Brief** — `RATIB — Request Security Brief`
-- **Request Architecture Review** — `RATIB — Request Architecture Review`
-- **Contact Enterprise Team** — `RATIB — Enterprise Team Inquiry`
+- **Request Security Brief** — `RATEB — Request Security Brief`
+- **Request Architecture Review** — `RATEB — Request Architecture Review`
+- **Contact Enterprise Team** — `RATEB — Enterprise Team Inquiry`
 
 WhatsApp enterprise line linked in the procurement footer note.
 
@@ -84,13 +84,13 @@ WhatsApp enterprise line linked in the procurement footer note.
 - **Mega nav → Security:** “Security & compliance center” (first item under Trust & protect)
 - **Footer → Legal:** “Security & compliance” → `/security-compliance/`
 
-On the trust page, `$ratibHomeNavHrefPrefix` points to `home.php` so hash links in chrome resolve to the marketing home.
+On the trust page, `$ratebHomeNavHrefPrefix` points to `home.php` so hash links in chrome resolve to the marketing home.
 
 ---
 
 ## SEO Metadata
 
-- `<title>`: Security & Compliance — RATIB Trust Center
+- `<title>`: Security & Compliance — RATEB Trust Center
 - `<meta name="description">`: architecture/governance/isolation positioning (no certification claims)
 - `rel="canonical"`: `{baseUrl}/security-compliance/`
 - Open Graph: `title`, `description`, `type=website`, `url`
@@ -100,17 +100,17 @@ On the trust page, `$ratibHomeNavHrefPrefix` points to `home.php` so hash links 
 
 ## Design System
 
-- **Base:** `home-public.css`, `ratib-mega-nav.css`
+- **Base:** `home-public.css`, `rateb-mega-nav.css`
 - **Enterprise tokens:** `about-enterprise.css` (glass cards, typography, buttons, section headers)
 - **Page-specific:** `security-compliance.css` (trust banner, isolation diagram, procurement grid)
-- **Body class:** `ratib-trust-page` on `ratib-saas-home`
+- **Body class:** `rateb-trust-page` on `rateb-saas-home`
 - **Tone:** Dense feature grids, mono accents, government-tech palette aligned with company profile
 
 ---
 
 ## Verification
 
-- [x] PHP syntax: `pages/security-compliance.php`, `ratib-security-compliance-data.php`, `ratib-security-compliance-sections.php` — no errors
+- [x] PHP syntax: `pages/security-compliance.php`, `rateb-security-compliance-data.php`, `rateb-security-compliance-sections.php` — no errors
 - [ ] Browser smoke test on production/staging after deploy
 - [ ] Confirm `.htaccess` active on host (LiteSpeed/cPanel)
 - [ ] Validate mega-nav links from home and trust page
@@ -121,7 +121,7 @@ On the trust page, `$ratibHomeNavHrefPrefix` points to `home.php` so hash links 
 
 1. Upload all files listed above plus modified includes and `.htaccess`.
 2. Purge CDN / LiteSpeed cache for `/security-compliance/` if a stale shell appears.
-3. Optional: bump `public/ratib-build.txt` if your deploy script uses it for asset rev.
+3. Optional: bump `public/rateb-build.txt` if your deploy script uses it for asset rev.
 
 ---
 

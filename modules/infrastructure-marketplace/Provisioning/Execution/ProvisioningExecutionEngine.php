@@ -1,22 +1,22 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\Execution;
+namespace RATEB\InfrastructureMarketplace\Provisioning\Execution;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Compliance\TenantIsolationCompliance;
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
-use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
-use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\StateTransitionValidator;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
-use Ratib\InfrastructureMarketplace\Provisioning\StateMachine\ProvisioningStateMachine;
-use Ratib\InfrastructureMarketplace\DNS\Orchestration\DnsOrchestrationService;
-use Ratib\InfrastructureMarketplace\Services\ProviderRegistry;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Compliance\TenantIsolationCompliance;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use RATEB\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
+use RATEB\InfrastructureMarketplace\Provisioning\Lifecycle\StateTransitionValidator;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use RATEB\InfrastructureMarketplace\Provisioning\StateMachine\ProvisioningStateMachine;
+use RATEB\InfrastructureMarketplace\DNS\Orchestration\DnsOrchestrationService;
+use RATEB\InfrastructureMarketplace\Services\ProviderRegistry;
 
 final class ProvisioningExecutionEngine
 {

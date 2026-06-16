@@ -52,7 +52,7 @@ final class StorageHelper
 
         $erpParent = dirname((string) RATEB_ROOT);
         $candidates[] = $erpParent . '/uploads/rateb_erp/' . $stripped;
-        $candidates[] = dirname($erpParent) . '/ratib_uploads/rateb-erp/' . $stripped;
+        $candidates[] = dirname($erpParent) . '/rateb_uploads/rateb-erp/' . $stripped;
 
         foreach ($candidates as $path) {
             if (is_file($path)) {
@@ -122,15 +122,15 @@ final class StorageHelper
         $candidates = [
             rtrim(str_replace('\\', '/', (string) RATEB_STORAGE_PATH), '/') . '/uploads',
             $parent . '/uploads/rateb_erp',
-            $parent . '/ratib_uploads/rateb-erp',
-            $grand . '/ratib_uploads/rateb-erp',
+            $parent . '/rateb_uploads/rateb-erp',
+            $grand . '/rateb_uploads/rateb-erp',
         ];
 
-        $mainInc = $parent . '/includes/ratib_uploads_base.php';
+        $mainInc = $parent . '/includes/rateb_uploads_base.php';
         if (is_file($mainInc)) {
             require_once $mainInc;
-            if (function_exists('ratib_uploads_base_dir')) {
-                $candidates[] = rtrim(str_replace('\\', '/', ratib_uploads_base_dir()), '/') . '/rateb_erp';
+            if (function_exists('rateb_uploads_base_dir')) {
+                $candidates[] = rtrim(str_replace('\\', '/', rateb_uploads_base_dir()), '/') . '/rateb_erp';
             }
         }
 
@@ -174,7 +174,7 @@ final class StorageHelper
 
     private static function markerFile(): string
     {
-        return rtrim(str_replace('\\', '/', (string) RATEB_STORAGE_PATH), '/') . '/.ratib_erp_upload_root';
+        return rtrim(str_replace('\\', '/', (string) RATEB_STORAGE_PATH), '/') . '/.rateb_erp_upload_root';
     }
 
     private static function writeMarker(string $dir): void

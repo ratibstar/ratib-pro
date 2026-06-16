@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_BillingSyncService
+final class RATEB_ClientDashboard_BillingSyncService
 {
     /**
      * @param array<string, mixed> $billingAdapter

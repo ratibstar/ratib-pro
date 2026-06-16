@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Audit;
+namespace RATEB\InfrastructureMarketplace\Audit;
 
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 
 final class InfrastructureAuditLogger
 {
@@ -21,7 +21,7 @@ final class InfrastructureAuditLogger
      */
     public function appendImmutable(string $actionType, array $payload): void
     {
-        $sql = 'INSERT INTO ratib_infra_audit_entries (action_type, actor_id, tenant_id, payload_json, created_at)
+        $sql = 'INSERT INTO rateb_infra_audit_entries (action_type, actor_id, tenant_id, payload_json, created_at)
                 VALUES (:action_type, :actor_id, :tenant_id, :payload_json, NOW())';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([

@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_ClientSecuritySnapshotBuilder
+final class RATEB_ClientDashboard_ClientSecuritySnapshotBuilder
 {
     /**
      * @return array<string, mixed>
      */
-    public function build(Ratib_ClientDashboard_AdapterContext $ctx): array
+    public function build(RATEB_ClientDashboard_AdapterContext $ctx): array
     {
         $sessions = [
             ['id' => 'sess:current', 'label' => 'This browser', 'current' => true, 'last_seen' => gmdate('c')],
@@ -75,11 +75,11 @@ final class Ratib_ClientDashboard_ClientSecuritySnapshotBuilder
      */
     private function sessionRowsFromDb(mysqli $conn, int $userId): array
     {
-        $chk = @$conn->query("SHOW TABLES LIKE 'ratib_client_sessions'");
+        $chk = @$conn->query("SHOW TABLES LIKE 'rateb_client_sessions'");
         if (!$chk || $chk->num_rows === 0) {
             return [];
         }
-        $stmt = @$conn->prepare('SELECT session_id, label, last_seen_at FROM ratib_client_sessions WHERE user_id = ? ORDER BY last_seen_at DESC LIMIT 5');
+        $stmt = @$conn->prepare('SELECT session_id, label, last_seen_at FROM rateb_client_sessions WHERE user_id = ? ORDER BY last_seen_at DESC LIMIT 5');
         if (!$stmt) {
             return [];
         }

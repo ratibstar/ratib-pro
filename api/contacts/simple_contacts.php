@@ -2158,7 +2158,7 @@ function getSentMessages($pdo) {
  * Send email using PHPMailer if available, otherwise fall back to PHP mail()
  */
 function sendContactEmail($to, $subject, $message) {
-    $fromEmail = defined('SMTP_FROM_EMAIL') ? constant('SMTP_FROM_EMAIL') : 'noreply@ratibprogram.com';
+    $fromEmail = defined('SMTP_FROM_EMAIL') ? constant('SMTP_FROM_EMAIL') : 'noreply@ratebprogram.com';
     $fromName = defined('SMTP_FROM_NAME') ? constant('SMTP_FROM_NAME') : 'RATEB';
     $smtpHost = defined('SMTP_HOST') ? constant('SMTP_HOST') : 'smtp.gmail.com';
     $smtpPort = defined('SMTP_PORT') ? constant('SMTP_PORT') : 587;

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * CLI: run ERP migrations + role dedupe on outratib_rateb-erp
+ * CLI: run ERP migrations + role dedupe on admin_rateb-erp
  * Usage (cPanel Terminal): php rateb-erp/bin/erp-db-fix.php
  */
 $root = dirname(__DIR__);

@@ -41,8 +41,8 @@ try {
 
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    ratib_indonesia_compliance_ensure_schema($conn);
-    ratib_workflow_ensure_schema($conn);
+    rateb_indonesia_compliance_ensure_schema($conn);
+    rateb_workflow_ensure_schema($conn);
     $describeStmt = $conn->query("DESCRIBE workers");
     $workerColumns = $describeStmt->fetchAll(PDO::FETCH_COLUMN);
     $workerColumnLookup = array_fill_keys($workerColumns, true);
@@ -82,7 +82,7 @@ try {
         ? filter_var($data['enforce_country_requirements'], FILTER_VALIDATE_BOOLEAN)
         : false;
     if ($enforceCountryRequirements) {
-        ratib_enforce_country_requirements($data, $oldWorker);
+        rateb_enforce_country_requirements($data, $oldWorker);
     }
 
     $mergedWorkerContext = array_merge($oldWorker, [
@@ -90,12 +90,12 @@ try {
         'nationality' => (string)($data['nationality'] ?? ($oldWorker['nationality'] ?? '')),
         'language' => (string)($data['language'] ?? ($oldWorker['language'] ?? '')),
     ]);
-    $isIndonesiaWorker = ratib_worker_is_indonesia_payload($mergedWorkerContext);
-    ratib_worker_lifecycle_ensure_schema($conn, $mergedWorkerContext);
+    $isIndonesiaWorker = rateb_worker_is_indonesia_payload($mergedWorkerContext);
+    rateb_worker_lifecycle_ensure_schema($conn, $mergedWorkerContext);
     $actorId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-    ratib_workflow_apply_on_save($conn, $data, $oldWorker, $actorId);
+    rateb_workflow_apply_on_save($conn, $data, $oldWorker, $actorId);
 
-    // Lifecycle-specific validation removed to restore previous Ratib Pro flow.
+    // Lifecycle-specific validation removed to restore previous RATEB Pro flow.
 
     // Stage progression is enforced by workflow-engine.php for all countries.
 

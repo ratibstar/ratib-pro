@@ -33,7 +33,7 @@ $tableChecksEnabled = $isAppUser || (isset($_SESSION['agency_id']) && (int) $_SE
 /**
  * @return bool
  */
-function ratib_selftest_table_exists(mysqli $conn, string $table): bool
+function rateb_selftest_table_exists(mysqli $conn, string $table): bool
 {
     $safe = $conn->real_escape_string($table);
     $res = @$conn->query("SHOW TABLES LIKE '{$safe}'");
@@ -43,7 +43,7 @@ function ratib_selftest_table_exists(mysqli $conn, string $table): bool
 /**
  * @return bool
  */
-function ratib_selftest_file_has_config_include(string $absPath): bool
+function rateb_selftest_file_has_config_include(string $absPath): bool
 {
     if (!is_readable($absPath)) {
         return false;
@@ -58,7 +58,7 @@ function ratib_selftest_file_has_config_include(string $absPath): bool
 /**
  * @return bool
  */
-function ratib_selftest_file_avoids_direct_db_fallback(string $absPath): bool
+function rateb_selftest_file_avoids_direct_db_fallback(string $absPath): bool
 {
     if (!is_readable($absPath)) {
         return false;
@@ -90,73 +90,73 @@ $api = $root . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR;
 
 $checks = [
     'Dashboard' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'dashboard.php'),
-        'page_avoids_direct_db_fallback' => ratib_selftest_file_avoids_direct_db_fallback($pages . 'dashboard.php'),
-        'table_agents_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'agents') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'dashboard.php'),
+        'page_avoids_direct_db_fallback' => rateb_selftest_file_avoids_direct_db_fallback($pages . 'dashboard.php'),
+        'table_agents_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'agents') : null,
     ],
     'Agent' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'agent.php'),
-        'table_agents_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'agents') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'agent.php'),
+        'table_agents_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'agents') : null,
     ],
     'SubAgent' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'subagent.php'),
-        'table_subagents_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'subagents') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'subagent.php'),
+        'table_subagents_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'subagents') : null,
     ],
     'Workers' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'Worker.php'),
-        'table_workers_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'workers') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'Worker.php'),
+        'table_workers_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'workers') : null,
     ],
     'Partner Agencies' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'partner-agencies.php'),
-        'table_partner_agencies_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'partner_agencies') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'partner-agencies.php'),
+        'table_partner_agencies_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'partner_agencies') : null,
     ],
     'Cases' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'cases' . DIRECTORY_SEPARATOR . 'cases-table.php'),
-        'table_cases_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'cases') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'cases' . DIRECTORY_SEPARATOR . 'cases-table.php'),
+        'table_cases_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'cases') : null,
     ],
     'Accounting' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'accounting.php'),
-        'table_financial_transactions_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'financial_transactions') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'accounting.php'),
+        'table_financial_transactions_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'financial_transactions') : null,
     ],
     'HR' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'hr.php'),
-        'table_employees_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'employees') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'hr.php'),
+        'table_employees_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'employees') : null,
     ],
     'Reports' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'reports.php'),
-        'table_activity_logs_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'activity_logs') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'reports.php'),
+        'table_activity_logs_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'activity_logs') : null,
     ],
     'Contact' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'contact.php'),
-        'table_contacts_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'contacts') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'contact.php'),
+        'table_contacts_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'contacts') : null,
     ],
     'Notifications' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'notifications.php'),
-        'table_contact_notifications_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'contact_notifications') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'notifications.php'),
+        'table_contact_notifications_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'contact_notifications') : null,
     ],
     'Register Pro' => [
         'page_exists' => is_readable($pages . 'register-pro.php'),
-        'is_redirect_page' => !ratib_selftest_file_has_config_include($pages . 'register-pro.php'),
+        'is_redirect_page' => !rateb_selftest_file_has_config_include($pages . 'register-pro.php'),
     ],
     'System Settings' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'system-settings.php'),
-        'table_users_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'users') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'system-settings.php'),
+        'table_users_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'users') : null,
     ],
     'Help & Learning Center' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'help-center.php'),
-        'table_help_articles_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'help_articles') : null,
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'help-center.php'),
+        'table_help_articles_exists' => $tableChecksEnabled ? rateb_selftest_table_exists($conn, 'help_articles') : null,
     ],
     'Logout' => [
-        'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'logout.php'),
+        'page_uses_bootstrap' => rateb_selftest_file_has_config_include($pages . 'logout.php'),
         'page_exists' => is_readable($pages . 'logout.php'),
     ],
 ];
 
 // Extra runtime safety checks for patched APIs that previously opened direct DB fallbacks.
 $apiGuards = [
-    'chat_voice_messages_no_direct_fallback' => ratib_selftest_file_avoids_direct_db_fallback($api . 'chat-voice' . DIRECTORY_SEPARATOR . 'messages.php'),
-    'chat_voice_conversations_no_direct_fallback' => ratib_selftest_file_avoids_direct_db_fallback($api . 'chat-voice' . DIRECTORY_SEPARATOR . 'conversations.php'),
-    'chat_voice_users_no_direct_fallback' => ratib_selftest_file_avoids_direct_db_fallback($api . 'chat-voice' . DIRECTORY_SEPARATOR . 'users.php'),
+    'chat_voice_messages_no_direct_fallback' => rateb_selftest_file_avoids_direct_db_fallback($api . 'chat-voice' . DIRECTORY_SEPARATOR . 'messages.php'),
+    'chat_voice_conversations_no_direct_fallback' => rateb_selftest_file_avoids_direct_db_fallback($api . 'chat-voice' . DIRECTORY_SEPARATOR . 'conversations.php'),
+    'chat_voice_users_no_direct_fallback' => rateb_selftest_file_avoids_direct_db_fallback($api . 'chat-voice' . DIRECTORY_SEPARATOR . 'users.php'),
 ];
 
 $strictCheckPaths = [

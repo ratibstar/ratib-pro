@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Verification;
+namespace RATEB\InfrastructureMarketplace\Verification;
 
-use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Config\ModuleConfig;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 
 final class QueueWorkerVerifier
 {
@@ -20,10 +20,10 @@ final class QueueWorkerVerifier
      */
     public function verify(): array
     {
-        if (!SchemaHelpers::tableExists($this->pdo, 'ratib_infra_provisioning_jobs')) {
+        if (!SchemaHelpers::tableExists($this->pdo, 'rateb_infra_provisioning_jobs')) {
             return [
                 'checks' => [
-                    ['name' => 'queue_schema', 'status' => 'FAIL', 'value' => 0, 'message' => 'ratib_infra_provisioning_jobs missing (run migration 002)'],
+                    ['name' => 'queue_schema', 'status' => 'FAIL', 'value' => 0, 'message' => 'rateb_infra_provisioning_jobs missing (run migration 002)'],
                 ],
                 'summary' => [
                     'depth' => 0,
@@ -40,7 +40,7 @@ final class QueueWorkerVerifier
             $dead = $this->countByStatuses(['DEAD_LETTER']);
             $recon = $this->countByStatuses(['RECONCILING']);
             $stuck = $this->countStuckRunning(20);
-            $hasHeartbeats = SchemaHelpers::tableExists($this->pdo, 'ratib_infra_worker_heartbeats');
+            $hasHeartbeats = SchemaHelpers::tableExists($this->pdo, 'rateb_infra_worker_heartbeats');
             $staleWorkers = $hasHeartbeats ? $this->countStaleWorkers(120) : 0;
         } catch (\Throwable $e) {
             return [
@@ -87,7 +87,7 @@ final class QueueWorkerVerifier
     private function countByStatuses(array $statuses): int
     {
         $in = implode(',', array_map(static fn(string $s): string => "'" . addslashes($s) . "'", $statuses));
-        $sql = 'SELECT COUNT(*) c FROM ratib_infra_provisioning_jobs WHERE status IN (' . $in . ')';
+        $sql = 'SELECT COUNT(*) c FROM rateb_infra_provisioning_jobs WHERE status IN (' . $in . ')';
         $stmt = $this->pdo->query($sql);
         $row = $stmt instanceof \PDOStatement ? $stmt->fetch(\PDO::FETCH_ASSOC) : null;
         return is_array($row) ? (int) ($row['c'] ?? 0) : 0;
@@ -97,7 +97,7 @@ final class QueueWorkerVerifier
     {
         $stmt = $this->pdo->prepare(
             "SELECT COUNT(*) c
-             FROM ratib_infra_provisioning_jobs
+             FROM rateb_infra_provisioning_jobs
              WHERE status = 'RUNNING'
                AND updated_at < DATE_SUB(NOW(), INTERVAL :mins MINUTE)"
         );
@@ -110,7 +110,7 @@ final class QueueWorkerVerifier
     {
         $stmt = $this->pdo->prepare(
             'SELECT COUNT(*) c
-             FROM ratib_infra_worker_heartbeats
+             FROM rateb_infra_worker_heartbeats
              WHERE heartbeat_at < DATE_SUB(NOW(), INTERVAL :sec SECOND)'
         );
         $stmt->execute(['sec' => $seconds]);

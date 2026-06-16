@@ -14,10 +14,10 @@ if (!function_exists('rateb_erp_database_name')) {
             }
         }
         if ($name === '') {
-            $name = ratib_erp_database_name();
+            $name = rateb_erp_database_name();
         }
-        if ($name === 'outratib-rateb-erp') {
-            $name = 'outratib_rateb-erp';
+        if ($name === 'admin-rateb-erp') {
+            $name = 'admin_rateb-erp';
         }
         if ($name === 'admin-rateb-erp') {
             $name = 'admin_rateb-erp';
@@ -49,8 +49,8 @@ if (!function_exists('rateb_erp_database_candidates')) {
 }
 
 if (!defined('DB_HOST') && !defined('DB_NAME')) {
-    if (!defined('RATIB_ENV_NO_SESSION')) {
-        define('RATIB_ENV_NO_SESSION', true);
+    if (!defined('RATEB_ENV_NO_SESSION')) {
+        define('RATEB_ENV_NO_SESSION', true);
     }
     $parentRoot = dirname(RATEB_ROOT, 1);
     $parentEnv = $parentRoot . '/config/env/load.php';

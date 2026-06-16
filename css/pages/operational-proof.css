@@ -2,18 +2,18 @@
  * Operational proof — diagrams, screenshots, workflows (calm enterprise surfaces)
  */
 
-.ratib-op-proof {
+.rateb-op-proof {
   padding: clamp(2.5rem, 5vw, 3.5rem) 0;
   border-top: 1px solid rgba(148, 163, 184, 0.12);
   background: #0c1220;
 }
 
-.ratib-op-proof__head {
+.rateb-op-proof__head {
   max-width: 52rem;
   margin-bottom: 2rem;
 }
 
-.ratib-op-proof__eyebrow {
+.rateb-op-proof__eyebrow {
   margin: 0 0 0.5rem;
   font-size: 0.7rem;
   font-weight: 600;
@@ -22,7 +22,7 @@
   color: #94a3b8;
 }
 
-.ratib-op-proof__title {
+.rateb-op-proof__title {
   margin: 0 0 0.65rem;
   font-size: clamp(1.5rem, 3.5vw, 2.1rem);
   font-weight: 700;
@@ -30,14 +30,14 @@
   color: #f1f5f9;
 }
 
-.ratib-op-proof__sub {
+.rateb-op-proof__sub {
   margin: 0 0 0.85rem;
   font-size: 1rem;
   line-height: 1.55;
   color: #94a3b8;
 }
 
-.ratib-op-proof__disclaimer {
+.rateb-op-proof__disclaimer {
   margin: 0;
   padding: 0.65rem 0.85rem;
   font-size: 0.68rem;
@@ -48,24 +48,24 @@
   border-radius: 4px;
 }
 
-.ratib-op-proof__block {
+.rateb-op-proof__block {
   margin-bottom: 2.25rem;
 }
 
-.ratib-op-proof__block-title {
+.rateb-op-proof__block-title {
   margin: 0 0 0.35rem;
   font-size: 1.05rem;
   font-weight: 700;
   color: #e2e8f0;
 }
 
-.ratib-op-proof__block-note {
+.rateb-op-proof__block-note {
   margin: 0 0 1rem;
   font-size: 0.82rem;
   color: #64748b;
 }
 
-.ratib-op-sample {
+.rateb-op-sample {
   display: inline-block;
   padding: 0.15rem 0.45rem;
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -79,24 +79,24 @@
   border-radius: 3px;
 }
 
-.ratib-op-diagram-grid {
+.rateb-op-diagram-grid {
   display: grid;
   gap: 1rem;
 }
 
 @media (min-width: 720px) {
-  .ratib-op-diagram-grid {
+  .rateb-op-diagram-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (min-width: 1100px) {
-  .ratib-op-diagram-grid {
+  .rateb-op-diagram-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.ratib-op-diagram-card {
+.rateb-op-diagram-card {
   margin: 0;
   border: 1px solid rgba(71, 85, 105, 0.45);
   border-radius: 6px;
@@ -104,7 +104,7 @@
   overflow: hidden;
 }
 
-.ratib-op-diagram-card__frame {
+.rateb-op-diagram-card__frame {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +114,7 @@
   line-height: 0;
 }
 
-.ratib-op-diagram-card__frame img {
+.rateb-op-diagram-card__frame img {
   width: 100%;
   max-width: 100%;
   height: auto;
@@ -124,30 +124,30 @@
   object-position: center;
 }
 
-.ratib-op-diagram-card figcaption {
+.rateb-op-diagram-card figcaption {
   padding: 0.65rem 0.75rem;
   font-size: 0.8rem;
   line-height: 1.45;
   color: #94a3b8;
 }
 
-.ratib-op-diagram-card figcaption strong {
+.rateb-op-diagram-card figcaption strong {
   display: block;
   color: #e2e8f0;
   font-weight: 600;
 }
 
-.ratib-op-screen-grid {
+.rateb-op-screen-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
-.ratib-op-screen-card {
+.rateb-op-screen-card {
   margin: 0;
 }
 
-.ratib-op-screen-card__frame {
+.rateb-op-screen-card__frame {
   position: relative;
   border: 1px solid rgba(71, 85, 105, 0.5);
   border-radius: 6px;
@@ -155,7 +155,7 @@
   background: #0f172a;
 }
 
-.ratib-op-gallery-thumb {
+.rateb-op-gallery-thumb {
   display: block;
   width: 100%;
   padding: 0;
@@ -169,23 +169,23 @@
   color: inherit;
 }
 
-.ratib-op-gallery-thumb:focus-visible {
+.rateb-op-gallery-thumb:focus-visible {
   outline: 2px solid rgba(139, 92, 246, 0.95);
   outline-offset: 3px;
 }
 
-.ratib-op-gallery-thumb .ratib-op-sample {
+.rateb-op-gallery-thumb .rateb-op-sample {
   pointer-events: none;
 }
 
-.ratib-op-screen-card__frame .ratib-op-sample {
+.rateb-op-screen-card__frame .rateb-op-sample {
   position: absolute;
   top: 0.5rem;
   left: 0.5rem;
   z-index: 2;
 }
 
-.ratib-op-screen-card__frame img {
+.rateb-op-screen-card__frame img {
   width: 100%;
   max-width: 100%;
   height: auto;
@@ -197,14 +197,14 @@
   image-rendering: auto;
 }
 
-.ratib-op-screen-card figcaption {
+.rateb-op-screen-card figcaption {
   margin-top: 0.4rem;
   font-size: 0.82rem;
   font-weight: 600;
   color: #cbd5e1;
 }
 
-.ratib-op-screen-card figcaption span {
+.rateb-op-screen-card figcaption span {
   display: block;
   margin-top: 0.2rem;
   font-size: 0.78rem;
@@ -214,7 +214,7 @@
 }
 
 /* Government & mobilization — always first inside operational proof */
-.ratib-op-gov {
+.rateb-op-gov {
   margin-bottom: 2.5rem;
   padding: clamp(1rem, 3vw, 1.35rem);
   border: 1px solid rgba(139, 92, 246, 0.32);
@@ -223,7 +223,7 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
 }
 
-.ratib-op-gov__eyebrow {
+.rateb-op-gov__eyebrow {
   margin: 0 0 0.35rem;
   font-size: 0.68rem;
   font-weight: 700;
@@ -232,11 +232,11 @@
   color: #fbbf24;
 }
 
-.ratib-op-gov__title {
+.rateb-op-gov__title {
   font-size: clamp(1.15rem, 2.8vw, 1.45rem);
 }
 
-.ratib-op-gov__lead {
+.rateb-op-gov__lead {
   margin: 0 0 0.85rem;
   max-width: 52rem;
   font-size: 0.92rem;
@@ -244,7 +244,7 @@
   color: #cbd5e1;
 }
 
-.ratib-op-gov__points {
+.rateb-op-gov__points {
   margin: 0 0 1rem;
   padding-left: 1.15rem;
   max-width: 52rem;
@@ -253,35 +253,35 @@
   color: #94a3b8;
 }
 
-.ratib-op-gov__points li {
+.rateb-op-gov__points li {
   margin-bottom: 0.35rem;
 }
 
-.ratib-op-gov__grid {
+.rateb-op-gov__grid {
   display: grid;
   gap: 1.25rem;
   grid-template-columns: minmax(0, 1fr);
 }
 
-.ratib-op-gov__grid .ratib-op-screen-card {
+.rateb-op-gov__grid .rateb-op-screen-card {
   min-width: 0;
 }
 
 @media (min-width: 720px) {
-  .ratib-op-gov__grid {
+  .rateb-op-gov__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .ratib-op-gov__grid .ratib-op-screen-card--featured {
+  .rateb-op-gov__grid .rateb-op-screen-card--featured {
     grid-column: 1 / -1;
   }
 }
 
-.ratib-op-gov__grid .ratib-op-screen-card--featured .ratib-op-screen-card__frame {
+.rateb-op-gov__grid .rateb-op-screen-card--featured .rateb-op-screen-card__frame {
   background: #020617;
 }
 
-.ratib-op-gov__grid .ratib-op-screen-card--featured .ratib-op-screen-card__frame img {
+.rateb-op-gov__grid .rateb-op-screen-card--featured .rateb-op-screen-card__frame img {
   width: 100%;
   max-width: 100%;
   max-height: min(52vh, 480px);
@@ -289,50 +289,50 @@
   object-position: top center;
 }
 
-.ratib-op-workflow-grid {
+.rateb-op-workflow-grid {
   display: grid;
   gap: 0.85rem;
 }
 
 @media (min-width: 900px) {
-  .ratib-op-workflow-grid {
+  .rateb-op-workflow-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (min-width: 1200px) {
-  .ratib-op-workflow-grid {
+  .rateb-op-workflow-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.ratib-op-workflow {
+.rateb-op-workflow {
   padding: 0.85rem 1rem;
   border: 1px solid rgba(71, 85, 105, 0.45);
   border-radius: 6px;
   background: rgba(15, 23, 42, 0.55);
 }
 
-.ratib-op-workflow__head {
+.rateb-op-workflow__head {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.55rem;
 }
 
-.ratib-op-workflow__head h4 {
+.rateb-op-workflow__head h4 {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 700;
   color: #e2e8f0;
 }
 
-.ratib-op-workflow__icon {
+.rateb-op-workflow__icon {
   color: #64748b;
   font-size: 0.9rem;
 }
 
-.ratib-op-workflow__steps {
+.rateb-op-workflow__steps {
   margin: 0 0 0.55rem;
   padding-left: 1.15rem;
   font-size: 0.82rem;
@@ -340,18 +340,18 @@
   color: #94a3b8;
 }
 
-.ratib-op-workflow__steps li {
+.rateb-op-workflow__steps li {
   margin-bottom: 0.25rem;
 }
 
-.ratib-op-workflow__outcome {
+.rateb-op-workflow__outcome {
   margin: 0;
   font-size: 0.78rem;
   line-height: 1.45;
   color: #64748b;
 }
 
-.ratib-op-workflow__outcome .ratib-mono {
+.rateb-op-workflow__outcome .rateb-mono {
   color: #94a3b8;
   font-size: 0.65rem;
   text-transform: uppercase;
@@ -359,73 +359,73 @@
 }
 
 /* Home: container width when not using about-container */
-body.ratib-saas-home .ratib-op-proof__inner.ratib-about-container {
+body.rateb-saas-home .rateb-op-proof__inner.rateb-about-container {
   max-width: 72rem;
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 1.5rem);
 }
 
 /* Compact preview (profile) — minimum visible, More expands */
-.ratib-op-text--clamp-1 {
+.rateb-op-text--clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.ratib-op-text--clamp-2 {
+.rateb-op-text--clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.ratib-op-collapsible:not(.is-expanded) .ratib-op-item--more {
+.rateb-op-collapsible:not(.is-expanded) .rateb-op-item--more {
   display: none;
 }
 
-.ratib-op-proof--compact {
+.rateb-op-proof--compact {
   padding: clamp(1.5rem, 3vw, 2rem) 0;
 }
 
-.ratib-op-proof--compact .ratib-op-proof__head {
+.rateb-op-proof--compact .rateb-op-proof__head {
   margin-bottom: 1.25rem;
 }
 
-.ratib-op-proof--compact .ratib-op-proof__block {
+.rateb-op-proof--compact .rateb-op-proof__block {
   margin-bottom: 1.35rem;
 }
 
-.ratib-op-proof--compact .ratib-op-gov {
+.rateb-op-proof--compact .rateb-op-gov {
   padding: 0.85rem 1rem;
 }
 
-.ratib-op-proof--compact .ratib-op-collapsible:not(.is-expanded) .ratib-op-gov__grid .ratib-op-screen-card--featured {
+.rateb-op-proof--compact .rateb-op-collapsible:not(.is-expanded) .rateb-op-gov__grid .rateb-op-screen-card--featured {
   grid-column: auto;
 }
 
-.ratib-op-proof--compact .ratib-op-gov__grid .ratib-op-screen-card__frame img,
-.ratib-op-proof--compact .ratib-op-screen-grid .ratib-op-screen-card__frame img {
+.rateb-op-proof--compact .rateb-op-gov__grid .rateb-op-screen-card__frame img,
+.rateb-op-proof--compact .rateb-op-screen-grid .rateb-op-screen-card__frame img {
   max-height: min(22vh, 160px);
 }
 
-.ratib-op-proof--compact .ratib-op-diagram-card__frame {
+.rateb-op-proof--compact .rateb-op-diagram-card__frame {
   min-height: 6.5rem;
 }
 
-.ratib-op-proof--compact .ratib-op-diagram-card__frame img {
+.rateb-op-proof--compact .rateb-op-diagram-card__frame img {
   max-height: min(24vh, 160px);
 }
 
-.ratib-op-proof--compact .ratib-op-gov__grid .ratib-op-screen-card--featured .ratib-op-screen-card__frame img {
+.rateb-op-proof--compact .rateb-op-gov__grid .rateb-op-screen-card--featured .rateb-op-screen-card__frame img {
   max-height: min(24vh, 180px);
 }
 
-.ratib-op-proof--compact .ratib-op-collapsible:not(.is-expanded) .ratib-op-gov__points {
+.rateb-op-proof--compact .rateb-op-collapsible:not(.is-expanded) .rateb-op-gov__points {
   display: none;
 }
 
-.ratib-op-more-btn {
+.rateb-op-more-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -441,18 +441,18 @@ body.ratib-saas-home .ratib-op-proof__inner.ratib-about-container {
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.ratib-op-more-btn:hover {
+.rateb-op-more-btn:hover {
   background: rgba(109, 40, 217, 0.5);
   border-color: rgba(196, 181, 253, 0.65);
 }
 
-.ratib-op-more-btn:focus-visible {
+.rateb-op-more-btn:focus-visible {
   outline: 2px solid rgba(167, 139, 250, 0.95);
   outline-offset: 2px;
 }
 
-.ratib-op-collapsible.is-expanded .ratib-op-gov__grid .ratib-op-screen-card__frame img,
-.ratib-op-collapsible.is-expanded .ratib-op-screen-grid .ratib-op-screen-card__frame img,
-.ratib-op-collapsible.is-expanded .ratib-op-diagram-card__frame img {
+.rateb-op-collapsible.is-expanded .rateb-op-gov__grid .rateb-op-screen-card__frame img,
+.rateb-op-collapsible.is-expanded .rateb-op-screen-grid .rateb-op-screen-card__frame img,
+.rateb-op-collapsible.is-expanded .rateb-op-diagram-card__frame img {
   max-height: none;
 }

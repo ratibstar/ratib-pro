@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Security\Secrets;
+namespace RATEB\InfrastructureMarketplace\Security\Secrets;
 
 /**
  * Symmetric crypto helper for provider secret persistence.
@@ -65,15 +65,15 @@ final class ProviderSecretCipher
 
     private function key(): string
     {
-        if (class_exists('Ratib\\InfrastructureMarketplace\\Infrastructure\\InfraEnvBootstrap')) {
-            \Ratib\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap::load();
+        if (class_exists('RATEB\\InfrastructureMarketplace\\Infrastructure\\InfraEnvBootstrap')) {
+            \RATEB\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap::load();
         }
-        $raw = getenv('RATIB_INFRA_SECRET_KEY');
+        $raw = getenv('RATEB_INFRA_SECRET_KEY');
         if (!is_string($raw) || trim($raw) === '') {
-            $raw = getenv('RATIB_INFRA_PROVIDER_SECRET_KEY');
+            $raw = getenv('RATEB_INFRA_PROVIDER_SECRET_KEY');
         }
         if (!is_string($raw) || trim($raw) === '') {
-            throw new \RuntimeException('Provider secret encryption key is missing (RATIB_INFRA_SECRET_KEY).');
+            throw new \RuntimeException('Provider secret encryption key is missing (RATEB_INFRA_SECRET_KEY).');
         }
 
         return hash('sha256', trim($raw), true);

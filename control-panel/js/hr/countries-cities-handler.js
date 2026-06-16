@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 120);
     }
 
-    function ratibApiRoot() {
-        var t = (typeof getRatibApiBaseTrimmed === 'function') ? getRatibApiBaseTrimmed() : '';
+    function ratebApiRoot() {
+        var t = (typeof getRATEBApiBaseTrimmed === 'function') ? getRATEBApiBaseTrimmed() : '';
         if (t) return t;
-        // getRatibApiBaseTrimmed() is '' in control HR shell — still use main /api from app-config for countries/cities
+        // getRATEBApiBaseTrimmed() is '' in control HR shell — still use main /api from app-config for countries/cities
         var b = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || '';
         b = String(b || '').replace(/\/+$/, '');
         if (b) return b;
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 // Bundled map missing this country — fall through to API
             }
-            const apiRoot = ratibApiRoot();
+            const apiRoot = ratebApiRoot();
             if (!apiRoot) {
                 console.warn('[HR] No API base for cities; country=', country);
                 return;
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sel = document.getElementById('country');
                 if (!sel || sel.options.length > 1) return;
 
-                const apiRoot = ratibApiRoot();
+                const apiRoot = ratebApiRoot();
                 if (!apiRoot) return;
 
                 const url = apiRoot + '/admin/get_countries_cities.php?action=countries&_t=' + Date.now();
@@ -261,8 +261,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Delegated listener: survives employeeForm cloneNode (hr.js) which drops direct listeners
     var delegateHost = document.getElementById('hrModal') || document.body;
-    if (delegateHost && !delegateHost.__ratibHrCountryDelegated) {
-        delegateHost.__ratibHrCountryDelegated = true;
+    if (delegateHost && !delegateHost.__ratebHrCountryDelegated) {
+        delegateHost.__ratebHrCountryDelegated = true;
         delegateHost.addEventListener('change', function(ev) {
             var t = ev.target;
             if (!t || t.id !== 'country') return;

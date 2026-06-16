@@ -39,7 +39,7 @@ function jsonOut($data) {
     exit;
 }
 
-$conn = ratib_support_chat_db();
+$conn = rateb_support_chat_db();
 if (!$conn) {
     jsonOut(['success' => false, 'message' => 'Support chat is not configured']);
 }

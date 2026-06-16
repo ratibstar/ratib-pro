@@ -17,22 +17,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('deployment-audit', ControlSecurityGuard::TIER_CONTROL_VIEW);
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();
-    if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_deployment_audits')) {
+    if (!SchemaHelpers::tableExists($pdo, 'rateb_infra_deployment_audits')) {
         http_response_code(200);
         echo json_encode([
             'ok' => true,
             'rows' => [],
             'degraded' => true,
-            'message' => 'Table ratib_infra_deployment_audits is missing. Run modules/infrastructure-marketplace/Migrations/006_release_safety.sql on the infrastructure database.',
+            'message' => 'Table rateb_infra_deployment_audits is missing. Run modules/infrastructure-marketplace/Migrations/006_release_safety.sql on the infrastructure database.',
         ], JSON_UNESCAPED_SLASHES);
         exit;
     }

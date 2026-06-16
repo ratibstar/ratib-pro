@@ -19,7 +19,7 @@ function getApiBase() {
 }
 
 /** Site `/api` root (no trailing slash). Empty when Control HR is isolated (use bundled countries). */
-function getRatibApiBaseTrimmed() {
+function getRATEBApiBaseTrimmed() {
     const elCfg = document.getElementById('app-config');
     if ((window.APP_CONFIG && window.APP_CONFIG.controlHrApiBase) || (elCfg && elCfg.getAttribute('data-control-hr-api-base'))) {
         return '';
@@ -46,7 +46,7 @@ function appendHRControlParam(url) {
 }
 
 /**
- * api/hr/* URLs. Control Panel HR uses /control-panel/api/control/hr/*.php (no main Ratib /api/hr).
+ * api/hr/* URLs. Control Panel HR uses /control-panel/api/control/hr/*.php (no main RATEB /api/hr).
  */
 function hrApiUrl(pathFromApiHr) {
     const raw = (pathFromApiHr.startsWith('/') ? pathFromApiHr : '/' + pathFromApiHr).trim();
@@ -1081,7 +1081,7 @@ function setupHRFormHandlers() {
                 
                 if (countrySelect) {
                     try {
-                        const apiRoot = typeof getRatibApiBaseTrimmed === 'function' ? getRatibApiBaseTrimmed() : '';
+                        const apiRoot = typeof getRATEBApiBaseTrimmed === 'function' ? getRATEBApiBaseTrimmed() : '';
                         const url = `${apiRoot}/admin/get_countries_cities.php?action=countries`;
                         
                         const response = await fetch(url, {
@@ -2093,7 +2093,7 @@ async function editEmployee(id) {
                         // Populate countries from API if not already populated
                         if (countrySelect.options.length <= 1) {
                             try {
-                                const apiRoot = typeof getRatibApiBaseTrimmed === 'function' ? getRatibApiBaseTrimmed() : '';
+                                const apiRoot = typeof getRATEBApiBaseTrimmed === 'function' ? getRATEBApiBaseTrimmed() : '';
                                 const url = `${apiRoot}/admin/get_countries_cities.php?action=countries`;
                                 
                                 fetch(url, {

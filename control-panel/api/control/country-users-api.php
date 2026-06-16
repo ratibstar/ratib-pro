@@ -49,7 +49,7 @@ if ($agencyId <= 0) {
     exit;
 }
 
-// Get agency DB credentials (join country slug so agency-db-helper can fall back to outratib_{slug} when db_name is wrong)
+// Get agency DB credentials (join country slug so agency-db-helper can fall back to admin_{slug} when db_name is wrong)
 $stmt = $ctrl->prepare(
     "SELECT a.db_host, a.db_port, a.db_user, a.db_pass, a.db_name, a.country_id, c.slug AS country_slug "
     . "FROM control_agencies a LEFT JOIN control_countries c ON c.id = a.country_id "
@@ -85,7 +85,7 @@ if (!$result) {
     if ($detail !== '') {
         $msg .= ' ' . $detail;
     }
-    $msg .= ' Update control_agencies.db_name (and credentials) for this agency, or ensure a database such as outratib_{country_slug} exists.';
+    $msg .= ' Update control_agencies.db_name (and credentials) for this agency, or ensure a database such as admin_{country_slug} exists.';
     echo json_encode(['success' => false, 'message' => $msg]);
     exit;
 }

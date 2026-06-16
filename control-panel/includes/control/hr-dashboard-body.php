@@ -4,7 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/includes/control/hr-dashboard-body.php`.
  */
 /**
- * Shared HR dashboard markup (Ratib Pro HR) — used by pages/hr.php and control-panel HR.
+ * Shared HR dashboard markup (RATEB Pro HR) — used by pages/hr.php and control-panel HR.
  * Expects Bootstrap/Font Awesome already loaded; modal + .main-content match js/hr.js.
  */
 ?>

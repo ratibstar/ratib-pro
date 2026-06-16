@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\Persistence;
+namespace RATEB\InfrastructureMarketplace\Provisioning\Persistence;
 
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
-use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningJob;
+use RATEB\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
 
 final class ProvisioningJobRepository
 {
@@ -17,7 +17,7 @@ final class ProvisioningJobRepository
 
     public function insertQueued(ProvisioningJob $job, string $publicId, int $maxAttempts): void
     {
-        $sql = 'INSERT INTO ratib_infra_provisioning_jobs (
+        $sql = 'INSERT INTO rateb_infra_provisioning_jobs (
             public_id, tenant_id, agency_id, correlation_id, status, attempts, max_attempts,
             reconcile_required, available_at, steps_json, payload_snapshot_json, created_at, updated_at
         ) VALUES (
@@ -45,7 +45,7 @@ final class ProvisioningJobRepository
     {
         $this->pdo->beginTransaction();
         try {
-            $sql = "SELECT * FROM ratib_infra_provisioning_jobs
+            $sql = "SELECT * FROM rateb_infra_provisioning_jobs
                     WHERE status IN (' . $this->pdo->quote(ProvisioningState::QUEUED) . ',' . $this->pdo->quote(ProvisioningState::RETRYING) . ') AND available_at <= NOW()
                     ORDER BY id ASC
                     LIMIT 1
@@ -60,7 +60,7 @@ final class ProvisioningJobRepository
                 $this->pdo->commit();
                 return null;
             }
-            $update = $this->pdo->prepare('UPDATE ratib_infra_provisioning_jobs SET status = :status, locked_at = NOW(), updated_at = NOW() WHERE id = :id');
+            $update = $this->pdo->prepare('UPDATE rateb_infra_provisioning_jobs SET status = :status, locked_at = NOW(), updated_at = NOW() WHERE id = :id');
             $update->execute(['status' => ProvisioningState::RUNNING, 'id' => $job['id']]);
             $this->pdo->commit();
             return $job;
@@ -73,7 +73,7 @@ final class ProvisioningJobRepository
     public function markSuccess(int $id): void
     {
         $stmt = $this->pdo->prepare(
-            "UPDATE ratib_infra_provisioning_jobs
+            "UPDATE rateb_infra_provisioning_jobs
              SET status = :status, locked_at = NULL, processed_at = NOW(), updated_at = NOW()
              WHERE id = :id"
         );
@@ -84,7 +84,7 @@ final class ProvisioningJobRepository
     {
         if ($attempts >= $maxAttempts) {
             $stmt = $this->pdo->prepare(
-                'UPDATE ratib_infra_provisioning_jobs
+                'UPDATE rateb_infra_provisioning_jobs
                  SET status = :dead_state, locked_at = NULL, last_error = :last_error, reconcile_required = 1, updated_at = NOW()
                  WHERE id = :id'
             );
@@ -100,7 +100,7 @@ final class ProvisioningJobRepository
         $jitter = random_int(0, max(1, (int) floor($base * 0.2)));
         $delay = $base + $jitter;
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_provisioning_jobs
+            'UPDATE rateb_infra_provisioning_jobs
              SET status = :status, attempts = :attempts, locked_at = NULL, last_error = :last_error,
                  available_at = DATE_ADD(NOW(), INTERVAL :delay SECOND), updated_at = NOW()
              WHERE id = :id'
@@ -131,7 +131,7 @@ final class ProvisioningJobRepository
             ProvisioningState::RECONCILING => 0,
             ProvisioningState::CANCELLED => 0,
         ];
-        $rows = $this->pdo->query('SELECT status, COUNT(*) c FROM ratib_infra_provisioning_jobs GROUP BY status');
+        $rows = $this->pdo->query('SELECT status, COUNT(*) c FROM rateb_infra_provisioning_jobs GROUP BY status');
         if (!$rows instanceof \PDOStatement) {
             return $out;
         }
@@ -148,7 +148,7 @@ final class ProvisioningJobRepository
     public function queueDepth(): int
     {
         $stmt = $this->pdo->query(
-            'SELECT COUNT(*) AS c FROM ratib_infra_provisioning_jobs
+            'SELECT COUNT(*) AS c FROM rateb_infra_provisioning_jobs
              WHERE status IN (' . $this->pdo->quote(ProvisioningState::QUEUED) . ',' . $this->pdo->quote(ProvisioningState::RETRYING) . ',' . $this->pdo->quote(ProvisioningState::RUNNING) . ')'
         );
         if (!$stmt instanceof \PDOStatement) {
@@ -161,7 +161,7 @@ final class ProvisioningJobRepository
     public function transitionState(int $jobId, string $fromState, string $toState): bool
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_provisioning_jobs
+            'UPDATE rateb_infra_provisioning_jobs
              SET status = :to_state, updated_at = NOW()
              WHERE id = :id AND status = :from_state'
         );
@@ -176,7 +176,7 @@ final class ProvisioningJobRepository
     public function recoverExpiredLocks(int $lockTtlSeconds): int
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_provisioning_jobs
+            'UPDATE rateb_infra_provisioning_jobs
              SET status = :retry_state, locked_at = NULL, available_at = NOW(), updated_at = NOW()
              WHERE status = :running_state AND locked_at IS NOT NULL
                AND locked_at < DATE_SUB(NOW(), INTERVAL :ttl SECOND)'
@@ -192,7 +192,7 @@ final class ProvisioningJobRepository
     public function requeueDeadLetter(string $publicId): bool
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_provisioning_jobs
+            'UPDATE rateb_infra_provisioning_jobs
              SET status = :queued, attempts = 0, locked_at = NULL, available_at = NOW(), reconcile_required = 0, updated_at = NOW()
              WHERE public_id = :public_id AND status = :dead'
         );
@@ -207,7 +207,7 @@ final class ProvisioningJobRepository
     public function replayFromAnyState(string $publicId): bool
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE ratib_infra_provisioning_jobs
+            'UPDATE rateb_infra_provisioning_jobs
              SET status = :queued, attempts = 0, locked_at = NULL, available_at = NOW(), reconcile_required = 0, updated_at = NOW()
              WHERE public_id = :public_id'
         );
@@ -225,7 +225,7 @@ final class ProvisioningJobRepository
     {
         $stmt = $this->pdo->prepare(
             'SELECT id, public_id, tenant_id, agency_id, status, attempts, max_attempts, reconcile_required, updated_at
-             FROM ratib_infra_provisioning_jobs
+             FROM rateb_infra_provisioning_jobs
              ORDER BY id DESC
              LIMIT :lim'
         );

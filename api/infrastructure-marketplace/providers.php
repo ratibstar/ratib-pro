@@ -17,21 +17,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
-use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
-use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
-use Ratib\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
-use Ratib\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
-use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use RATEB\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use RATEB\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use RATEB\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use RATEB\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
+use RATEB\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
+use RATEB\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 try {
     ControlSecurityGuard::enforce('providers', ControlSecurityGuard::TIER_CONTROL_VIEW);
 
     $pdo = DatabaseConnectionFactory::createPdo();
-    if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_activations')) {
+    if (!SchemaHelpers::tableExists($pdo, 'rateb_infra_provider_activations')) {
         http_response_code(200);
         $degradedHealth = [
             ['provider_type' => 'hosting', 'status' => 'unavailable', 'active_count' => 0],
@@ -49,7 +49,7 @@ try {
                 'ssl' => [],
             ],
             'degraded' => true,
-            'message' => 'Table ratib_infra_provider_activations is missing. Run modules/infrastructure-marketplace/Migrations/005_provider_activation_marketplace.sql on the infrastructure database.',
+            'message' => 'Table rateb_infra_provider_activations is missing. Run modules/infrastructure-marketplace/Migrations/005_provider_activation_marketplace.sql on the infrastructure database.',
         ], JSON_UNESCAPED_SLASHES);
         exit;
     }
@@ -114,7 +114,7 @@ try {
         'ok' => false,
         'health' => [],
         'capabilities' => (object) [],
-        'message' => 'Provider snapshot unavailable. Check infra DB connection and that ratib_infra_provider_activations exists on the same database PHP uses.',
+        'message' => 'Provider snapshot unavailable. Check infra DB connection and that rateb_infra_provider_activations exists on the same database PHP uses.',
         'error_class' => \get_class($e),
         'error_detail' => $hint,
     ], JSON_UNESCAPED_SLASHES);

@@ -29,7 +29,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // Endpoint classification for global tenant guard.
 define('SYSTEM_ENDPOINT', true);
 require_once __DIR__ . '/../includes/config.php';
-$isAppAdmin = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user()
+$isAppAdmin = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user()
     && (int) ($_SESSION['role_id'] ?? 0) === 1;
 $isControlLogged = !empty($_SESSION['control_logged_in']);
 if (!$isAppAdmin && !$isControlLogged) {
@@ -41,14 +41,14 @@ if (!$isAppAdmin && !$isControlLogged) {
 require_once __DIR__ . '/../includes/payment_api_bootstrap.php';
 require_once __DIR__ . '/../includes/ngenius.php';
 
-$apiKey = (string) ratib_ngenius_env('NGENIUS_API_KEY', '');
-$apiSecret = (string) ratib_ngenius_env('NGENIUS_API_SECRET', '');
-$outletId = (string) ratib_ngenius_env('NGENIUS_OUTLET_ID', '');
+$apiKey = (string) rateb_ngenius_env('NGENIUS_API_KEY', '');
+$apiSecret = (string) rateb_ngenius_env('NGENIUS_API_SECRET', '');
+$outletId = (string) rateb_ngenius_env('NGENIUS_OUTLET_ID', '');
 $fallbackBase = NGENIUS_DEFAULT_API_BASE_KSA;
-$identityBase = rtrim((string) ratib_ngenius_env('NGENIUS_IDENTITY_BASE', (string) ratib_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
-$orderBase = rtrim((string) ratib_ngenius_env('NGENIUS_ORDER_BASE', (string) ratib_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
-$tokenUrl = trim((string) ratib_ngenius_env('NGENIUS_TOKEN_URL', ''));
-$realm = trim((string) ratib_ngenius_env('NGENIUS_REALM', 'networkinternational'));
+$identityBase = rtrim((string) rateb_ngenius_env('NGENIUS_IDENTITY_BASE', (string) rateb_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
+$orderBase = rtrim((string) rateb_ngenius_env('NGENIUS_ORDER_BASE', (string) rateb_ngenius_env('NGENIUS_API_BASE', $fallbackBase)), '/');
+$tokenUrl = trim((string) rateb_ngenius_env('NGENIUS_TOKEN_URL', ''));
+$realm = trim((string) rateb_ngenius_env('NGENIUS_REALM', 'networkinternational'));
 if ($realm === '') {
     $realm = 'networkinternational';
 }

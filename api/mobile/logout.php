@@ -7,11 +7,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/cors.php';
 require_once __DIR__ . '/bootstrap.php';
 
-require_once __DIR__ . '/../core/ratib_api_session.inc.php';
+require_once __DIR__ . '/../core/rateb_api_session.inc.php';
 
 require_once __DIR__ . '/../../includes/config.php';
 
-ratib_api_pick_session_name();
+rateb_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -25,8 +25,8 @@ try {
     $claims = rateb_mobile_validate_token(rateb_mobile_bearer_token());
 
     if (($claims['typ'] ?? '') === 'partner') {
-        if (function_exists('ratib_partner_portal_clear')) {
-            ratib_partner_portal_clear();
+        if (function_exists('rateb_partner_portal_clear')) {
+            rateb_partner_portal_clear();
         }
     } else {
         Auth::logout();

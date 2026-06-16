@@ -11,14 +11,14 @@ Pure PHP 7.4–8.2 SaaS platform with multi-tenant isolation, Super Admin panel,
 
 ## Installation (cPanel / VPS)
 
-1. Upload the `rateb-erp/` folder to your web root (alongside existing RATIB files).
-2. Create MySQL database **`outratib_rateb-erp`** (or set `RATEB_ERP_DB_NAME` in `.env`).  
+1. Upload the `rateb-erp/` folder to your web root (alongside existing RATEB files).
+2. Create MySQL database **`admin_rateb-erp`** (or set `RATEB_ERP_DB_NAME` in `.env`).  
    Grant your MySQL user ALL PRIVILEGES on that database (cPanel → MySQL® Databases).  
-   ERP uses **its own DB** — not `outratib_control_panel_db`.
+   ERP uses **its own DB** — not `admin_control_panel_db`.
    ```
    DB_HOST=127.0.0.1
    DB_PORT=3306
-   RATEB_ERP_DB_NAME=outratib_rateb-erp
+   RATEB_ERP_DB_NAME=admin_rateb-erp
    DB_USER=your_user
    DB_PASS=your_password
    ```

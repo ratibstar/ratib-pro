@@ -35,7 +35,7 @@ function rateb_mobile_require_auth(?string $requiredRole = null): array
 function rateb_mobile_pdo(): PDO
 {
     $pdo = Database::getInstance()->getConnection();
-    ratibEnsureGlobalPartnershipsSchema($pdo);
+    ratebEnsureGlobalPartnershipsSchema($pdo);
 
     return $pdo;
 }

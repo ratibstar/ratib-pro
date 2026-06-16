@@ -25,8 +25,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 }
 
-require_once __DIR__ . '/../../core/ratib_api_session.inc.php';
-ratib_api_pick_session_name();
+require_once __DIR__ . '/../../core/rateb_api_session.inc.php';
+rateb_api_pick_session_name();
 
 $configPath = __DIR__ . '/../../../includes/config.php';
 if (!file_exists($configPath)) {

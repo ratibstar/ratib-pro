@@ -14,14 +14,14 @@ register_shutdown_function(static function (): void {
 echo "<pre>";
 
 $token = $_GET['token'] ?? '';
-$expected = 'ratib-readiness-2026';
+$expected = 'rateb-readiness-2026';
 if (!hash_equals($expected, (string) $token)) {
     http_response_code(403);
     echo "Forbidden\n";
     exit;
 }
 
-$project = '/home/outratib/public_html';
+$project = '/home/admin/public_html';
 if (!is_dir($project)) {
     echo "Project path not found: {$project}\n";
     echo "Current dir: " . __DIR__ . "\n";
@@ -72,8 +72,8 @@ if ($dbHost === '' || $dbPort === '' || $dbName === '' || $dbUser === '') {
         $dbHost = $dbHost !== '' ? $dbHost : (defined('DB_HOST') ? (string) DB_HOST : '');
         $dbPort = $dbPort !== '' ? $dbPort : (defined('DB_PORT') ? (string) DB_PORT : '3306');
         if ($dbName === '') {
-            if (defined('RATIB_PRO_DB_NAME') && (string) RATIB_PRO_DB_NAME !== '') {
-                $dbName = (string) RATIB_PRO_DB_NAME;
+            if (defined('RATEB_PRO_DB_NAME') && (string) RATEB_PRO_DB_NAME !== '') {
+                $dbName = (string) RATEB_PRO_DB_NAME;
             } elseif (defined('DB_NAME')) {
                 $dbName = (string) DB_NAME;
             }
@@ -103,7 +103,7 @@ try {
         'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
         $dbHost !== '' ? $dbHost : '127.0.0.1',
         $dbPort !== '' ? $dbPort : '3306',
-        $dbName !== '' ? $dbName : 'outratib_out'
+        $dbName !== '' ? $dbName : 'admin_out'
     );
     $pdo = new PDO($dsn, $dbUser !== '' ? $dbUser : 'root', $dbPass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

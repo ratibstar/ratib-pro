@@ -3,37 +3,37 @@ require_once __DIR__ . '/_auth.inc.php';
 $RCP_SECTION = 'home';
 $RCP_HEADING = 'Client Hub';
 $RCP_SUBHEADING = 'Services, domains, orders, billing, and provisioning visibility in one unified platform shell.';
-$RCP_EXTRA_JS = [ratib_client_dashboard_asset_url('js/client-dashboard-home.js')];
+$RCP_EXTRA_JS = [rateb_client_dashboard_asset_url('js/client-dashboard-home.js')];
 require __DIR__ . '/_common-start.inc.php';
 ?>
             <span id="rcp-home-config" class="visually-hidden">home shell</span>
-            <div class="ratib-cp-board">
+            <div class="rateb-cp-board">
                 <p id="rcp-loading-state" class="rcp-muted-span" role="status" aria-live="polite">
                     Loading live metrics…
                 </p>
 
-                <div class="ratib-cp-metrics" aria-label="Key metrics">
-                    <div class="ratib-cp-card">
+                <div class="rateb-cp-metrics" aria-label="Key metrics">
+                    <div class="rateb-cp-card">
                         <h2>Billing snapshots</h2>
-                        <div class="rcp-value"><span id="rcp-inv-count" class="ratib-cp-skeleton">&nbsp;</span></div>
+                        <div class="rcp-value"><span id="rcp-inv-count" class="rateb-cp-skeleton">&nbsp;</span></div>
                         <p class="rcp-note">
                             Tenant invoice count when <code class="rcp-code">accounting_invoices</code> exists —
                             graceful zero otherwise.
                         </p>
                     </div>
-                    <div class="ratib-cp-card">
+                    <div class="rateb-cp-card">
                         <h2>Subscription health</h2>
                         <div class="rcp-value">
-                            <span id="rcp-sub-health" class="ratib-cp-skeleton">&nbsp;</span>
+                            <span id="rcp-sub-health" class="rateb-cp-skeleton">&nbsp;</span>
                         </div>
                         <p class="rcp-note">
                             Wired to provisioning data when schemas land — never blocks dashboard render.
                         </p>
                     </div>
-                    <div class="ratib-cp-card">
+                    <div class="rateb-cp-card">
                         <h2>Infrastructure</h2>
                         <div class="rcp-value">
-                            <span id="rcp-infra" class="ratib-cp-skeleton">&nbsp;</span>
+                            <span id="rcp-infra" class="rateb-cp-skeleton">&nbsp;</span>
                         </div>
                         <p class="rcp-note">
                             Optional live probe endpoint link is exposed inside JSON <code class="rcp-code">links.infra_dashboard</code>.
@@ -41,41 +41,41 @@ require __DIR__ . '/_common-start.inc.php';
                     </div>
                 </div>
 
-                <div class="ratib-cp-split">
-                    <section class="ratib-cp-card" aria-labelledby="rcp-recent-orders-h">
+                <div class="rateb-cp-split">
+                    <section class="rateb-cp-card" aria-labelledby="rcp-recent-orders-h">
                         <h2 id="rcp-recent-orders-h">Recent orders</h2>
                         <div id="rcp-recent-orders" class="pt-2"></div>
                         <p class="rcp-note mt-3">
-                            <a href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Open orders center →</a>
+                            <a href="<?php echo htmlspecialchars(rateb_client_dashboard_context_url('orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Open orders center →</a>
                         </p>
                     </section>
                     <div class="d-flex flex-column gap-3">
-                        <section class="ratib-cp-card" aria-labelledby="rcp-activity-h">
+                        <section class="rateb-cp-card" aria-labelledby="rcp-activity-h">
                             <h2 id="rcp-activity-h">Activity</h2>
-                            <ul id="rcp-activity-feed" class="ratib-cp-feed" role="list"></ul>
+                            <ul id="rcp-activity-feed" class="rateb-cp-feed" role="list"></ul>
                         </section>
-                        <section class="ratib-cp-card" aria-labelledby="rcp-sec-h">
+                        <section class="rateb-cp-card" aria-labelledby="rcp-sec-h">
                             <h2 id="rcp-sec-h">Security signals</h2>
                             <div id="rcp-security-mini" class="rcp-note"></div>
                         </section>
                     </div>
                 </div>
 
-                <section class="ratib-cp-card" aria-labelledby="rcp-hub-h">
+                <section class="rateb-cp-card" aria-labelledby="rcp-hub-h">
                     <h2 id="rcp-hub-h">Hub navigation</h2>
                     <p class="rcp-note">Client Hub is now the primary customer container for services, domains, orders, and billing.</p>
-                    <div class="ratib-cp-quick" role="group" aria-label="Client Hub sections">
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('services.php'), ENT_QUOTES, 'UTF-8'); ?>">Services</a>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8'); ?>">Domains</a>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Orders</a>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('billing.php'), ENT_QUOTES, 'UTF-8'); ?>">Billing</a>
+                    <div class="rateb-cp-quick" role="group" aria-label="Client Hub sections">
+                        <a class="rateb-cp-pillbtn" href="<?php echo htmlspecialchars(rateb_client_dashboard_context_url('services.php'), ENT_QUOTES, 'UTF-8'); ?>">Services</a>
+                        <a class="rateb-cp-pillbtn" href="<?php echo htmlspecialchars(rateb_client_dashboard_context_url('domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8'); ?>">Domains</a>
+                        <a class="rateb-cp-pillbtn" href="<?php echo htmlspecialchars(rateb_client_dashboard_context_url('orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Orders</a>
+                        <a class="rateb-cp-pillbtn" href="<?php echo htmlspecialchars(rateb_client_dashboard_context_url('billing.php'), ENT_QUOTES, 'UTF-8'); ?>">Billing</a>
                     </div>
                 </section>
 
-                <section class="ratib-cp-card" aria-labelledby="rcp-quick-h">
+                <section class="rateb-cp-card" aria-labelledby="rcp-quick-h">
                     <h2 id="rcp-quick-h">Quick actions</h2>
                     <p class="rcp-note">Central action layer — posts to <code class="rcp-code">api/client-dashboard/actions.php</code> (stub, production-safe).</p>
-                    <div id="rcp-quick-actions" class="ratib-cp-quick" role="group" aria-label="Quick actions">
+                    <div id="rcp-quick-actions" class="rateb-cp-quick" role="group" aria-label="Quick actions">
                         <button type="button" data-rcp-action="open_ticket">Open ticket</button>
                         <button type="button" data-rcp-action="renew" data-rcp-target-id="demo-service">Renew</button>
                         <button type="button" data-rcp-action="retry_payment" data-rcp-target-id="demo-invoice">Retry payment</button>

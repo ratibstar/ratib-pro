@@ -35,13 +35,13 @@ checkContains(
 
 checkContains(
     $root . '/api/workers/core/create.php',
-    ['ratib_enforce_country_requirements($data, null);'],
+    ['rateb_enforce_country_requirements($data, null);'],
     $failures,
     $passes
 );
 checkContains(
     $root . '/api/workers/core/update.php',
-    ['ratib_enforce_country_requirements($data, $oldWorker);'],
+    ['rateb_enforce_country_requirements($data, $oldWorker);'],
     $failures,
     $passes
 );

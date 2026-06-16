@@ -1,4 +1,4 @@
-# Enterprise realism audit — RATIB public surfaces
+# Enterprise realism audit — RATEB public surfaces
 
 **Date:** 2026-05-18  
 **Scope:** `/profile/`, `/`, `/security-compliance/`, `/architecture/`, `/procurement-legal/`, home CMS strings, mega nav, enterprise trust layer.  
@@ -10,7 +10,7 @@
 
 | Area | Finding | Action taken |
 |------|---------|--------------|
-| Company profile | High density of control-plane, intelligence, sovereign, and finance-grade language | Moderated in `ratib-about-profile-data.php` + `ratib-about-sections.php` |
+| Company profile | High density of control-plane, intelligence, sovereign, and finance-grade language | Moderated in `rateb-about-profile-data.php` + `rateb-about-sections.php` |
 | Home | Hero and trust block read as live production / sovereign orchestration | Moderated in `site-content-home-data.php`; sample UI labels on dash |
 | Trust pages | Repeated “control plane”, mission-critical, telemetry intelligence | Moderated in data PHP files + section templates |
 | Visual | Purple glow, strong gradients, green “ok” chips | Reduced in `about-enterprise.css`, `enterprise-trust-layer.css` |
@@ -45,18 +45,18 @@
 
 ## Files changed (implementation)
 
-- `includes/ratib-about-profile-data.php`
-- `includes/ratib-about-sections.php`
+- `includes/rateb-about-profile-data.php`
+- `includes/rateb-about-sections.php`
 - `includes/site-content-home-data.php`
-- `includes/ratib-enterprise-trust-home.php`
-- `includes/ratib-security-compliance-data.php`
-- `includes/ratib-security-compliance-sections.php`
-- `includes/ratib-architecture-data.php`
-- `includes/ratib-architecture-sections.php`
-- `includes/ratib-procurement-legal-data.php`
-- `includes/ratib-procurement-legal-sections.php`
-- `includes/ratib-mega-nav-config.php`
-- `pages/home.php`, `pages/architecture.php`, `pages/ratib-which-page.php`
+- `includes/rateb-enterprise-trust-home.php`
+- `includes/rateb-security-compliance-data.php`
+- `includes/rateb-security-compliance-sections.php`
+- `includes/rateb-architecture-data.php`
+- `includes/rateb-architecture-sections.php`
+- `includes/rateb-procurement-legal-data.php`
+- `includes/rateb-procurement-legal-sections.php`
+- `includes/rateb-mega-nav-config.php`
+- `pages/home.php`, `pages/architecture.php`, `pages/rateb-which-page.php`
 - `css/pages/about-enterprise.css`, `css/pages/enterprise-trust-layer.css`
 
 ---

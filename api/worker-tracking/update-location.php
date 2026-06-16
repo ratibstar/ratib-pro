@@ -125,7 +125,7 @@ try {
     }
 
     $controlPdo = getControlDB();
-    ratibEnsureWorkerTrackingSchema($controlPdo);
+    ratebEnsureWorkerTrackingSchema($controlPdo);
 
     $deviceId = trim((string) ($payload['device_id'] ?? ''));
     $token = tracking_extract_token();

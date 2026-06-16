@@ -1,7 +1,7 @@
-# Ratib Program - Detailed Step-by-Step Training Manual
+# Rateb Program - Detailed Step-by-Step Training Manual
 ## Complete Training Guide for New Users
 
-**This manual provides extremely detailed, step-by-step instructions for every action in the Ratib Program.**
+**This manual provides extremely detailed, step-by-step instructions for every action in the Rateb Program.**
 
 ---
 
@@ -28,7 +28,7 @@
 **Step 1:** Open your web browser (Chrome, Firefox, or Edge recommended)
 
 **Step 2:** In the address bar at the top of your browser, type the URL provided by your administrator
-- Example: `https://rateb.sa` or `http://localhost/ratibprogram`
+- Example: `https://rateb.sa` or `http://localhost/ratebprogram`
 - Press **Enter** on your keyboard
 
 **Step 3:** Wait for the login page to load completely
@@ -1530,7 +1530,7 @@ Use this checklist to ensure you've learned all essential tasks:
 
 **Congratulations!** 🎉
 
-You have completed the detailed training manual. Practice these tasks regularly to become proficient with the Ratib Program system.
+You have completed the detailed training manual. Practice these tasks regularly to become proficient with the Rateb Program system.
 
 **Remember:**
 - Take your time

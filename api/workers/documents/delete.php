@@ -3,7 +3,7 @@
  * Remove a worker document file (staff): clear DB column, delete file from uploads tree when present.
  */
 require_once __DIR__ . '/../../../includes/config.php';
-require_once __DIR__ . '/../../../includes/ratib_uploads_base.php';
+require_once __DIR__ . '/../../../includes/rateb_uploads_base.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../utils/response.php';
 
@@ -44,7 +44,7 @@ try {
 
     if ($fn !== '' && $fn !== '.' && $fn !== '..') {
         try {
-            $baseRoot = ratib_uploads_pick_base_for_worker_document($workerId, $docType);
+            $baseRoot = rateb_uploads_pick_base_for_worker_document($workerId, $docType);
             $baseDir = realpath(
                 $baseRoot . DIRECTORY_SEPARATOR . 'workers' . DIRECTORY_SEPARATOR . $workerId
                     . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $docType

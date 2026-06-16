@@ -9,7 +9,7 @@
     var apiBase = (config && config.getAttribute('data-api-base')) || '';
     var agenciesUrlBase = (config && config.getAttribute('data-agencies-url-base')) || '';
     var countryUsersUrlBase = (config && config.getAttribute('data-country-users-url-base')) || '';
-    var ratibBase = (config && config.getAttribute('data-ratib-base')) || '';
+    var ratebBase = (config && config.getAttribute('data-rateb-base')) || '';
     var tenantSelfTestUrl = (config && config.getAttribute('data-tenant-self-test-url')) || '';
     var tenantAllIntervalMs = Number((config && config.getAttribute('data-tenant-all-self-test-interval-ms')) || 0) || 300000;
     var grid = document.getElementById('usersPerCountryGrid');
@@ -21,7 +21,7 @@
     var tenantIsolationGlobalAlertText = document.getElementById('tenantIsolationGlobalAlertText');
     if (!grid || !apiBase) return;
     apiBase = apiBase.replace(/\/$/, '');
-    ratibBase = ratibBase.replace(/\/$/, '') || (window.location.origin || '');
+    ratebBase = ratebBase.replace(/\/$/, '') || (window.location.origin || '');
     /** If PHP pageUrl() base disagrees with this deployment, derive panel root from api path (same as dashboard.php $baseUrl). */
     if (!agenciesUrlBase && apiBase) {
         agenciesUrlBase = apiBase.replace(/\/?api\/control$/i, '') + '/pages/control/agencies.php?control=1';
@@ -41,7 +41,7 @@
                     var agenciesUrl = agenciesUrlBase ? (agenciesUrlBase + (agenciesUrlBase.indexOf('?') >= 0 ? '&' : '?') + 'country_id=' + cid) : '#';
                     var usersUrl = c.agency_id && countryUsersUrlBase ? (countryUsersUrlBase + '&agency_id=' + encodeURIComponent(String(c.agency_id))) : null;
                     var slug = (c.slug || '').trim();
-                    var loginUrl = (ratibBase && slug) ? (ratibBase + '/' + slug + '/login') : null;
+                    var loginUrl = (ratebBase && slug) ? (ratebBase + '/' + slug + '/login') : null;
                     var linksHtml = '<div class="users-per-country-links">' +
                         (usersUrl ? '<a href="' + usersUrl + '" target="_blank" rel="noopener noreferrer">View Users &rarr;</a>' : '') +
                         '<a href="' + agenciesUrl + '">View Agencies &rarr;</a>' +

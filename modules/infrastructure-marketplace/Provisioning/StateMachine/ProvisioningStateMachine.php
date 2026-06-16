@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Provisioning\StateMachine;
+namespace RATEB\InfrastructureMarketplace\Provisioning\StateMachine;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
-use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\StateTransitionValidator;
-use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Provisioning\Lifecycle\StateTransitionValidator;
+use RATEB\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
 
 final class ProvisioningStateMachine
 {

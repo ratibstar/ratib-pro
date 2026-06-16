@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Hosting;
+namespace RATEB\InfrastructureMarketplace\Hosting;
 
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
-use Ratib\InfrastructureMarketplace\Hosting\Contracts\HostingProvisioningInterface;
-use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Hosting\Contracts\HostingProvisioningInterface;
+use RATEB\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
 
 final class PlaceholderHostingAdapter implements HostingProvisioningInterface
 {

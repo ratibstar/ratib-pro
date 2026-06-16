@@ -1,14 +1,14 @@
 # Separate Control Panel Database
 
-Moves all `control_*` tables from Ratib Pro DB (`outratib_out`) to a dedicated `control_panel_db`.
+Moves all `control_*` tables from Rateb Pro DB (`admin_out`) to a dedicated `control_panel_db`.
 
 ## Steps
 
 ### 1. Create database and tables (phpMyAdmin or MySQL CLI)
 
 ```bash
-mysql -u outratib_out -p < 01_create_database.sql
-mysql -u outratib_out -p < 02_create_tables.sql
+mysql -u admin_out -p < 01_create_database.sql
+mysql -u admin_out -p < 02_create_tables.sql
 ```
 
 Or run both in phpMyAdmin (create DB first, then run 02_create_tables.sql in `control_panel_db`).
@@ -24,7 +24,7 @@ Or via browser (must be logged in to Control Panel):
 
 ### 3. Update configuration
 
-Add to `config/env/control_ratib_sa.php` (or set env vars):
+Add to `config/env/control_rateb_sa.php` (or set env vars):
 
 ```php
 define('CONTROL_PANEL_DB_NAME', 'control_panel_db');
@@ -32,12 +32,12 @@ define('CONTROL_PANEL_DB_NAME', 'control_panel_db');
 
 The app will use `control_panel_db` for `control_conn` when this constant is defined.
 
-### 4. (Optional) Drop control tables from outratib_out
+### 4. (Optional) Drop control tables from admin_out
 
 After verifying Control Panel works with the new DB:
 
 ```sql
--- Run in outratib_out - only after confirming migration succeeded
+-- Run in admin_out - only after confirming migration succeeded
 DROP TABLE IF EXISTS control_bank_reconciliations, control_entry_approvals, control_electronic_invoices,
   control_disbursement_vouchers, control_receipts, control_expenses, control_journal_entry_lines,
   control_journal_entries, control_support_payments, control_bank_guarantees, control_cost_centers,
@@ -51,5 +51,5 @@ DROP TABLE IF EXISTS control_bank_reconciliations, control_entry_approvals, cont
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CONTROL_PANEL_DB_NAME` | `control_panel_db` | Control Panel database name |
-| `RATIB_DB_NAME` | `outratib_out` | Source Ratib Pro database |
+| `RATEB_DB_NAME` | `admin_out` | Source Rateb Pro database |
 | `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_PORT` | (from env) | MySQL credentials |

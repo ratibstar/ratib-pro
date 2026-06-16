@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Observability;
+namespace RATEB\InfrastructureMarketplace\Observability;
 
 final class ProviderEventLogger
 {
@@ -22,7 +22,7 @@ final class ProviderEventLogger
      */
     public function log(string $providerType, string $providerCode, string $eventName, array $context = []): void
     {
-        $sql = 'INSERT INTO ratib_infra_provider_events
+        $sql = 'INSERT INTO rateb_infra_provider_events
                 (provider_type, provider_code, event_name, request_id, operation_name, status, duration_ms, retry_count, tenant_id, agency_id, error_message, payload_json, created_at)
                 VALUES
                 (:provider_type, :provider_code, :event_name, :request_id, :operation_name, :status, :duration_ms, :retry_count, :tenant_id, :agency_id, :error_message, :payload_json, NOW())';
@@ -45,7 +45,7 @@ final class ProviderEventLogger
 
     public function failuresLastMinutes(string $providerCode, int $minutes = 60, ?int $tenantId = null, ?int $agencyId = null): int
     {
-        $sql = 'SELECT COUNT(*) FROM ratib_infra_provider_events
+        $sql = 'SELECT COUNT(*) FROM rateb_infra_provider_events
                 WHERE provider_code = :provider_code
                   AND created_at >= DATE_SUB(NOW(), INTERVAL :minutes MINUTE)
                   AND status IN ("failed","error","retry","degraded")

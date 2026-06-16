@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-final class Ratib_ClientDashboard_Action_Context
+final class RATEB_ClientDashboard_Action_Context
 {
     /** @var mysqli|null */
     public $conn;
@@ -18,7 +18,7 @@ final class Ratib_ClientDashboard_Action_Context
     /** @var array<string, mixed> */
     public $input;
 
-    /** @var Ratib_ClientDashboard_ObservabilityHub */
+    /** @var RATEB_ClientDashboard_ObservabilityHub */
     public $obs;
 
     /**
@@ -30,7 +30,7 @@ final class Ratib_ClientDashboard_Action_Context
         string $verb,
         string $targetId,
         array $input,
-        Ratib_ClientDashboard_ObservabilityHub $obs
+        RATEB_ClientDashboard_ObservabilityHub $obs
     ) {
         $this->conn = $conn;
         $this->userId = $userId;

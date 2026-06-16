@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Commerce;
+namespace RATEB\InfrastructureMarketplace\Commerce;
 
 /**
- * Regional / tenant / agency pricing overlays for ratib_infra_pricing.
+ * Regional / tenant / agency pricing overlays for rateb_infra_pricing.
  */
 final class PricingRepository
 {
@@ -17,7 +17,7 @@ final class PricingRepository
     public function listForPlan(int $planId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM ratib_infra_pricing WHERE plan_id = :p AND active = 1 ORDER BY id ASC'
+            'SELECT * FROM rateb_infra_pricing WHERE plan_id = :p AND active = 1 ORDER BY id ASC'
         );
         $stmt->execute(['p' => $planId]);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -92,7 +92,7 @@ final class PricingRepository
             throw new \InvalidArgumentException('No columns for insert.');
         }
         $placeholders = array_map(static fn (string $c): string => ':' . $c, $fields);
-        $sql = 'INSERT INTO ratib_infra_pricing (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO rateb_infra_pricing (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 

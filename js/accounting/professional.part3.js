@@ -1827,8 +1827,8 @@ ProfessionalAccounting.prototype.showToast = function(message, type = 'info', du
 
 ProfessionalAccounting.prototype.showConfirmDialog = function(title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'warning') {
         return new Promise((resolve) => {
-            if (typeof window.ratibAccountingConfirmSweepGlobal === 'function') {
-                window.ratibAccountingConfirmSweepGlobal();
+            if (typeof window.ratebAccountingConfirmSweepGlobal === 'function') {
+                window.ratebAccountingConfirmSweepGlobal();
             } else {
                 document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => el.remove());
             }
@@ -1899,16 +1899,16 @@ ProfessionalAccounting.prototype.showConfirmDialog = function(title, message, co
                     overlay.style.cssText = 'display:none!important;pointer-events:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
                     dialog.style.display = 'none';
                 } catch (e2) {}
-                if (typeof window.ratibAccountingConfirmSweepGlobal === 'function') {
-                    window.ratibAccountingConfirmSweepGlobal();
+                if (typeof window.ratebAccountingConfirmSweepGlobal === 'function') {
+                    window.ratebAccountingConfirmSweepGlobal();
                 } else {
                     try { if (overlay.parentElement) overlay.remove(); } catch (e3) {}
                 }
                 document.body.classList.remove('body-no-scroll');
                 const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
                 if (parentModal) document.body.classList.add('body-no-scroll');
-                if (typeof window.ratibRestoreAccountingModalFocusGlobal === 'function') {
-                    window.ratibRestoreAccountingModalFocusGlobal();
+                if (typeof window.ratebRestoreAccountingModalFocusGlobal === 'function') {
+                    window.ratebRestoreAccountingModalFocusGlobal();
                 }
                 resolve(result);
             };
@@ -1930,8 +1930,8 @@ ProfessionalAccounting.prototype.showConfirmDialog = function(title, message, co
     // Modern prompt dialog (replaces browser prompt)
 ProfessionalAccounting.prototype.showPrompt = function(title, message, defaultValue = '', placeholder = '', inputType = 'text') {
         return new Promise((resolve) => {
-            if (typeof window.ratibAccountingConfirmSweepGlobal === 'function') {
-                window.ratibAccountingConfirmSweepGlobal();
+            if (typeof window.ratebAccountingConfirmSweepGlobal === 'function') {
+                window.ratebAccountingConfirmSweepGlobal();
             } else {
                 document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => el.remove());
             }
@@ -2020,16 +2020,16 @@ ProfessionalAccounting.prototype.showPrompt = function(title, message, defaultVa
                     overlay.style.cssText = 'display:none!important;pointer-events:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
                     dialog.style.display = 'none';
                 } catch (e2) {}
-                if (typeof window.ratibAccountingConfirmSweepGlobal === 'function') {
-                    window.ratibAccountingConfirmSweepGlobal();
+                if (typeof window.ratebAccountingConfirmSweepGlobal === 'function') {
+                    window.ratebAccountingConfirmSweepGlobal();
                 } else {
                     try { if (overlay.parentElement) overlay.remove(); } catch (e3) {}
                 }
                 document.body.classList.remove('body-no-scroll');
                 const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
                 if (parentModal) document.body.classList.add('body-no-scroll');
-                if (typeof window.ratibRestoreAccountingModalFocusGlobal === 'function') {
-                    window.ratibRestoreAccountingModalFocusGlobal();
+                if (typeof window.ratebRestoreAccountingModalFocusGlobal === 'function') {
+                    window.ratebRestoreAccountingModalFocusGlobal();
                 }
                 resolve(value);
             };
@@ -2043,16 +2043,16 @@ ProfessionalAccounting.prototype.showPrompt = function(title, message, defaultVa
                     overlay.style.cssText = 'display:none!important;pointer-events:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
                     dialog.style.display = 'none';
                 } catch (e2) {}
-                if (typeof window.ratibAccountingConfirmSweepGlobal === 'function') {
-                    window.ratibAccountingConfirmSweepGlobal();
+                if (typeof window.ratebAccountingConfirmSweepGlobal === 'function') {
+                    window.ratebAccountingConfirmSweepGlobal();
                 } else {
                     try { if (overlay.parentElement) overlay.remove(); } catch (e3) {}
                 }
                 document.body.classList.remove('body-no-scroll');
                 const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
                 if (parentModal) document.body.classList.add('body-no-scroll');
-                if (typeof window.ratibRestoreAccountingModalFocusGlobal === 'function') {
-                    window.ratibRestoreAccountingModalFocusGlobal();
+                if (typeof window.ratebRestoreAccountingModalFocusGlobal === 'function') {
+                    window.ratebRestoreAccountingModalFocusGlobal();
                 }
                 resolve(null);
             };

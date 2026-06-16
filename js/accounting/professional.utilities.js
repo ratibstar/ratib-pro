@@ -11,7 +11,7 @@
     const P = ProfessionalAccounting.prototype;
 
     /** Remove all custom confirm layers + stray Bootstrap backdrops (footer loads Bootstrap globally). */
-    function ratibAccountingConfirmSweep() {
+    function ratebAccountingConfirmSweep() {
         document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => {
             try {
                 el.style.cssText = 'display:none!important;pointer-events:none!important;opacity:0!important;visibility:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
@@ -26,7 +26,7 @@
         }
     }
 
-    function ratibRestoreAccountingModalFocus() {
+    function ratebRestoreAccountingModalFocus() {
         const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
         if (!parentModal) return;
         requestAnimationFrame(() => {
@@ -463,7 +463,7 @@
 
     P.showConfirmDialog = function(title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'warning') {
         return new Promise((resolve) => {
-            ratibAccountingConfirmSweep();
+            ratebAccountingConfirmSweep();
             document.body.classList.remove('body-no-scroll');
 
             const overlay = document.createElement('div');
@@ -501,11 +501,11 @@
                     overlay.style.cssText = 'display:none!important;pointer-events:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
                     dialog.style.display = 'none';
                 } catch (e2) {}
-                ratibAccountingConfirmSweep();
+                ratebAccountingConfirmSweep();
                 document.body.classList.remove('body-no-scroll');
                 const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
                 if (parentModal) document.body.classList.add('body-no-scroll');
-                ratibRestoreAccountingModalFocus();
+                ratebRestoreAccountingModalFocus();
                 resolve(value);
             };
             const handleConfirm = () => finish(true);
@@ -522,7 +522,7 @@
 
     P.showPrompt = function(title, message, defaultValue = '', placeholder = '', inputType = 'text') {
         return new Promise((resolve) => {
-            ratibAccountingConfirmSweep();
+            ratebAccountingConfirmSweep();
             document.body.classList.remove('body-no-scroll');
 
             const overlay = document.createElement('div');
@@ -561,11 +561,11 @@
                     overlay.style.cssText = 'display:none!important;pointer-events:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
                     dialog.style.display = 'none';
                 } catch (e2) {}
-                ratibAccountingConfirmSweep();
+                ratebAccountingConfirmSweep();
                 document.body.classList.remove('body-no-scroll');
                 const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
                 if (parentModal) document.body.classList.add('body-no-scroll');
-                ratibRestoreAccountingModalFocus();
+                ratebRestoreAccountingModalFocus();
                 resolve(value);
             };
             const handleConfirm = () => {
@@ -814,6 +814,6 @@
         };
     };
 
-    window.ratibAccountingConfirmSweepGlobal = ratibAccountingConfirmSweep;
-    window.ratibRestoreAccountingModalFocusGlobal = ratibRestoreAccountingModalFocus;
+    window.ratebAccountingConfirmSweepGlobal = ratebAccountingConfirmSweep;
+    window.ratebRestoreAccountingModalFocusGlobal = ratebRestoreAccountingModalFocus;
 })();

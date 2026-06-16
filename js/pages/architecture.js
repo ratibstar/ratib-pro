@@ -7,7 +7,7 @@
     var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function initReveal() {
-        var nodes = document.querySelectorAll('[data-ratib-reveal]');
+        var nodes = document.querySelectorAll('[data-rateb-reveal]');
         if (!nodes.length) {
             return;
         }
@@ -26,7 +26,7 @@
                         return;
                     }
                     var el = entry.target;
-                    var delay = parseInt(el.getAttribute('data-ratib-delay') || '0', 10);
+                    var delay = parseInt(el.getAttribute('data-rateb-delay') || '0', 10);
                     window.setTimeout(function () {
                         el.classList.add('is-visible');
                     }, delay);

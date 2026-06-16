@@ -33,7 +33,7 @@ if (!function_exists('str_ends_with')) {
 // Compatibility mode: allow temporary operation on older PHP versions.
 // Keep this non-blocking until infrastructure is upgraded.
 if (PHP_VERSION_ID < 80200) {
-    error_log('Ratib Pro compatibility mode active on PHP ' . PHP_VERSION . '. Upgrade target remains PHP 8.2+.');
+    error_log('RATEB Pro compatibility mode active on PHP ' . PHP_VERSION . '. Upgrade target remains PHP 8.2+.');
 }
 
 /**
@@ -53,7 +53,7 @@ if (PHP_VERSION_ID < 80200) {
 // EN: Load environment profile first (host/country-specific overrides).
 // AR: تحميل ملف البيئة أولاً (تخصيصات حسب النطاق/الدولة).
 require_once __DIR__ . '/../config/env/load.php';
-require_once __DIR__ . '/ratib-clean-url.php';
+require_once __DIR__ . '/rateb-clean-url.php';
 
 // EN: Central event bus bootstrap (safe no-op if unavailable).
 // AR: تهيئة ناقل الأحداث المركزي (لا يؤثر إذا لم يكن متاحاً).
@@ -72,7 +72,7 @@ if (is_file($eventBusFile)) {
 // Agency resolver / partial env files may omit this; HR control isolation and lookups need it.
 if (!defined('CONTROL_PANEL_DB_NAME')) {
     $_cp = getenv('CONTROL_PANEL_DB_NAME');
-    define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : 'outratib_control_panel_db');
+    define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : 'admin_control_panel_db');
 }
 
 if (!defined('DB_HOST')) {
@@ -174,8 +174,8 @@ if (file_exists(__DIR__ . '/middleware/TenantResolverMiddleware.php')) {
 require_once __DIR__ . '/../core/TenantExecutionContext.php';
 $ctxTenantIdInit = null;
 $ctxResolvedFromLegacy = false;
-if (function_exists('ratib_request_context')) {
-    $ctx = ratib_request_context();
+if (function_exists('rateb_request_context')) {
+    $ctx = rateb_request_context();
     if (is_array($ctx) && isset($ctx['tenant_id'])) {
         $tmp = (int) $ctx['tenant_id'];
         if ($tmp > 0) {
@@ -275,8 +275,8 @@ if (!function_exists('apiUrl')) {
 if (!function_exists('pageUrl')) {
     function pageUrl($page) {
         $base = rtrim((string) getBaseUrl(), '/');
-        $page = function_exists('ratib_clean_page_segment')
-            ? ratib_clean_page_segment((string) $page)
+        $page = function_exists('rateb_clean_page_segment')
+            ? rateb_clean_page_segment((string) $page)
             : ltrim((string) $page, '/');
 
         return ($base !== '' ? $base : '') . '/pages/' . $page;
@@ -344,11 +344,11 @@ if (!empty($_SESSION['logged_in'])
 }
 
 /**
- * Ratib Pro program login: must match a real row in `users` (positive user_id, not control-bridge).
+ * RATEB Pro program login: must match a real row in `users` (positive user_id, not control-bridge).
  * Use this instead of checking only $_SESSION['logged_in'].
  */
-if (!function_exists('ratib_program_session_is_valid_user')) {
-    function ratib_program_session_is_valid_user(): bool
+if (!function_exists('rateb_program_session_is_valid_user')) {
+    function rateb_program_session_is_valid_user(): bool
     {
         if (empty($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             return false;
@@ -364,8 +364,8 @@ if (!function_exists('ratib_program_session_is_valid_user')) {
     }
 }
 
-if (!function_exists('ratib_control_pro_bridge')) {
-    function ratib_control_pro_bridge(): bool
+if (!function_exists('rateb_control_pro_bridge')) {
+    function rateb_control_pro_bridge(): bool
     {
         return !empty($_SESSION['logged_in'])
             && (
@@ -376,34 +376,34 @@ if (!function_exists('ratib_control_pro_bridge')) {
 }
 
 /** Partner agency portal (magic-link / optional password): scoped session, no staff permissions. */
-if (!function_exists('ratib_partner_portal_clear')) {
-    function ratib_partner_portal_clear(): void
+if (!function_exists('rateb_partner_portal_clear')) {
+    function rateb_partner_portal_clear(): void
     {
         unset($_SESSION['partner_portal_logged_in'], $_SESSION['partner_portal_agency_id']);
     }
 }
 
-if (!function_exists('ratib_partner_portal_session_is_valid')) {
-    function ratib_partner_portal_session_is_valid(): bool
+if (!function_exists('rateb_partner_portal_session_is_valid')) {
+    function rateb_partner_portal_session_is_valid(): bool
     {
         return !empty($_SESSION['partner_portal_logged_in'])
             && (int) ($_SESSION['partner_portal_agency_id'] ?? 0) > 0;
     }
 }
 
-if (!function_exists('ratib_partner_portal_agency_id')) {
-    function ratib_partner_portal_agency_id(): int
+if (!function_exists('rateb_partner_portal_agency_id')) {
+    function rateb_partner_portal_agency_id(): int
     {
-        return ratib_partner_portal_session_is_valid() ? (int) $_SESSION['partner_portal_agency_id'] : 0;
+        return rateb_partner_portal_session_is_valid() ? (int) $_SESSION['partner_portal_agency_id'] : 0;
     }
 }
 
-if (!function_exists('ratib_absolute_public_base')) {
+if (!function_exists('rateb_absolute_public_base')) {
     /**
      * Site root for fully qualified links (email, partner magic URL). When BASE_URL is empty,
      * uses SITE_URL or the current request host so partners get https://host/... not a path-only URL.
      */
-    function ratib_absolute_public_base(): string
+    function rateb_absolute_public_base(): string
     {
         $base = defined('BASE_URL') ? (string) BASE_URL : '';
         $base = rtrim($base, '/');
@@ -429,15 +429,15 @@ if (!function_exists('ratib_absolute_public_base')) {
     }
 }
 
-if (!function_exists('ratib_partner_portal_magic_link_url')) {
+if (!function_exists('rateb_partner_portal_magic_link_url')) {
     /**
      * Full URL for bookmark / sharing (treat like a password — HTTPS only in production).
      */
-    function ratib_partner_portal_magic_link_url(string $token): string
+    function rateb_partner_portal_magic_link_url(string $token): string
     {
-        $root = ratib_absolute_public_base();
-        $path = function_exists('ratib_public_page_path')
-            ? ratib_public_page_path('partner-portal.php')
+        $root = rateb_absolute_public_base();
+        $path = function_exists('rateb_public_page_path')
+            ? rateb_public_page_path('partner-portal.php')
             : '/pages/partner-portal';
         $url = ($root !== '' ? $root : '') . $path . '?token=' . rawurlencode($token);
         if ($root === '') {
@@ -451,14 +451,14 @@ if (!function_exists('ratib_partner_portal_magic_link_url')) {
     }
 }
 
-if (!function_exists('ratib_nav_url')) {
+if (!function_exists('rateb_nav_url')) {
     /**
      * Internal page URL; appends ?control=1&agency_id= for control-panel SSO users so APIs and SSO stay aligned.
      *
      * @param string $page e.g. 'dashboard.php' or 'cases/cases-table.php'
      * @param string $extraQuery optional fragment without leading '?' e.g. 'open=register'
      */
-    function ratib_nav_url($page, $extraQuery = '')
+    function rateb_nav_url($page, $extraQuery = '')
     {
         $u = pageUrl($page);
         if ($extraQuery !== '') {
@@ -468,7 +468,7 @@ if (!function_exists('ratib_nav_url')) {
         if ($aid <= 0) {
             $aid = (int) ($_SESSION['control_agency_id'] ?? 0);
         }
-        $controlContext = ratib_control_pro_bridge() || (!empty($_SESSION['control_logged_in']) && $aid > 0);
+        $controlContext = rateb_control_pro_bridge() || (!empty($_SESSION['control_logged_in']) && $aid > 0);
         if (!$controlContext) {
             return $u;
         }
@@ -480,23 +480,23 @@ if (!function_exists('ratib_nav_url')) {
     }
 }
 
-if (!function_exists('ratib_logout_url')) {
-    function ratib_logout_url()
+if (!function_exists('rateb_logout_url')) {
+    function rateb_logout_url()
     {
         $u = pageUrl('logout.php');
-        if (ratib_control_pro_bridge()) {
+        if (rateb_control_pro_bridge()) {
             $u .= (strpos($u, '?') !== false ? '&' : '?') . 'control=1';
         }
         return $u;
     }
 }
 
-if (!function_exists('ratib_country_dashboard_url')) {
+if (!function_exists('rateb_country_dashboard_url')) {
     /**
      * Canonical dashboard URL with country slug when available.
      * Falls back to /pages/dashboard.php when slug is unavailable.
      */
-    function ratib_country_dashboard_url($agencyId = 0)
+    function rateb_country_dashboard_url($agencyId = 0)
     {
         $agencyId = (int)$agencyId;
         $defaultUrl = pageUrl('dashboard.php');
@@ -541,45 +541,45 @@ if (!function_exists('ratib_country_dashboard_url')) {
     }
 }
 
-if (!function_exists('ratib_set_login_context_cookies')) {
+if (!function_exists('rateb_set_login_context_cookies')) {
     /**
      * Remember last country/agency for post-logout login (also used when PHP session name mismatches).
      */
-    function ratib_set_login_context_cookies($countryId, $agencyId) {
+    function rateb_set_login_context_cookies($countryId, $agencyId) {
         $countryId = (int)$countryId;
         $agencyId = (int)$agencyId;
         $expires = time() + 86400 * 365;
         $path = '/';
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
         if ($countryId > 0) {
-            setcookie('ratib_last_country_id', (string)$countryId, $expires, $path, '', $secure, true);
-            $_COOKIE['ratib_last_country_id'] = (string)$countryId;
+            setcookie('rateb_last_country_id', (string)$countryId, $expires, $path, '', $secure, true);
+            $_COOKIE['rateb_last_country_id'] = (string)$countryId;
         }
         if ($agencyId > 0) {
-            setcookie('ratib_last_agency_id', (string)$agencyId, $expires, $path, '', $secure, true);
-            $_COOKIE['ratib_last_agency_id'] = (string)$agencyId;
+            setcookie('rateb_last_agency_id', (string)$agencyId, $expires, $path, '', $secure, true);
+            $_COOKIE['rateb_last_agency_id'] = (string)$agencyId;
         }
     }
 }
 
-if (!function_exists('ratib_post_logout_login_url')) {
+if (!function_exists('rateb_post_logout_login_url')) {
     /**
      * Build the correct login URL after a session ends — manual logout OR idle timeout.
      * Recovers country/agency from the session first, then from the long-lived
-     * ratib_last_* cookies (set at login), so an EXPIRED session still lands on the
+     * rateb_last_* cookies (set at login), so an EXPIRED session still lands on the
      * proper /{country}/login page with prefill instead of a context-less /pages/login
      * that fails with "Country not found". Returns a plain login URL (no message) when
      * there is no context at all, to avoid a misleading "logged out" banner.
      */
-    function ratib_post_logout_login_url(): string
+    function rateb_post_logout_login_url(): string
     {
         $countryId = isset($_SESSION['country_id']) ? (int)$_SESSION['country_id'] : 0;
         $agencyId = isset($_SESSION['agency_id']) ? (int)$_SESSION['agency_id'] : 0;
-        if ($countryId <= 0 && !empty($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
-            $countryId = (int)$_COOKIE['ratib_last_country_id'];
+        if ($countryId <= 0 && !empty($_COOKIE['rateb_last_country_id']) && ctype_digit((string)$_COOKIE['rateb_last_country_id'])) {
+            $countryId = (int)$_COOKIE['rateb_last_country_id'];
         }
-        if ($agencyId <= 0 && !empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
-            $agencyId = (int)$_COOKIE['ratib_last_agency_id'];
+        if ($agencyId <= 0 && !empty($_COOKIE['rateb_last_agency_id']) && ctype_digit((string)$_COOKIE['rateb_last_agency_id'])) {
+            $agencyId = (int)$_COOKIE['rateb_last_agency_id'];
         }
 
         $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
@@ -646,13 +646,13 @@ if (!function_exists('ratib_post_logout_login_url')) {
     }
 }
 
-if (!function_exists('ratib_control_panel_try_program_sso')) {
+if (!function_exists('rateb_control_panel_try_program_sso')) {
     /**
-     * Manage Agencies "Open": same browser session uses session name ratib_control (see config/env/load.php).
+     * Manage Agencies "Open": same browser session uses session name rateb_control (see config/env/load.php).
      * When ?control=1&agency_id= is present and control_logged_in is set, pick an eligible tenant user row
-     * and establish a normal Ratib Pro session so the login form can be skipped.
+     * and establish a normal RATEB Pro session so the login form can be skipped.
      */
-    function ratib_control_panel_try_program_sso(mysqli $tenantConn, int $effectiveAgencyId, int $agencyCountryId): void
+    function rateb_control_panel_try_program_sso(mysqli $tenantConn, int $effectiveAgencyId, int $agencyCountryId): void
     {
         if (!defined('SINGLE_URL_MODE') || !SINGLE_URL_MODE) {
             return;
@@ -667,7 +667,7 @@ if (!function_exists('ratib_control_panel_try_program_sso')) {
         if (empty($_SESSION['control_logged_in'])) {
             return;
         }
-        if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user()) {
+        if (function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user()) {
             if ((int)($_SESSION['agency_id'] ?? 0) === $effectiveAgencyId) {
                 return;
             }
@@ -804,7 +804,7 @@ if (!function_exists('ratib_control_panel_try_program_sso')) {
         $_SESSION['user_permissions'] = getUserPermissions();
 
         try {
-            $ssoPk = ratib_users_primary_key_column($tenantConn);
+            $ssoPk = rateb_users_primary_key_column($tenantConn);
             $permStmt = $tenantConn->prepare("SELECT permissions FROM users WHERE `{$ssoPk}` = ?");
             if ($permStmt) {
                 $puid = (int)$user['user_id'];
@@ -824,8 +824,8 @@ if (!function_exists('ratib_control_panel_try_program_sso')) {
             $_SESSION['user_specific_permissions'] = null;
         }
 
-        if (function_exists('ratib_set_login_context_cookies')) {
-            ratib_set_login_context_cookies((int)($_SESSION['country_id'] ?? 0), (int)($_SESSION['agency_id'] ?? 0));
+        if (function_exists('rateb_set_login_context_cookies')) {
+            rateb_set_login_context_cookies((int)($_SESSION['country_id'] ?? 0), (int)($_SESSION['agency_id'] ?? 0));
         }
 
         error_log('control SSO: session started as user_id=' . (int)$user['user_id'] . ' agency_id=' . $effectiveAgencyId);
@@ -834,18 +834,18 @@ if (!function_exists('ratib_control_panel_try_program_sso')) {
         $isApiReq = strpos($reqUri, '/api/') !== false;
         $script = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
         if (!$isApiReq && $script === 'login.php') {
-            header('Location: ' . ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
+            header('Location: ' . rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
             exit;
         }
     }
 }
 
-if (!function_exists('ratib_url_matches_agency_site')) {
+if (!function_exists('rateb_url_matches_agency_site')) {
     /**
      * Ensure current request is under configured agency Site URL.
      * Example: site https://rateb.sa/indonesia must match /indonesia/login...
      */
-    function ratib_url_matches_agency_site($siteUrl)
+    function rateb_url_matches_agency_site($siteUrl)
     {
         $siteUrl = trim((string)$siteUrl);
         if ($siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
@@ -874,15 +874,15 @@ if (!function_exists('ratib_url_matches_agency_site')) {
     }
 }
 
-if (!function_exists('ratib_halt_for_agency_db_error')) {
+if (!function_exists('rateb_halt_for_agency_db_error')) {
     /**
      * Stop execution when agency DB is required but cannot be used.
      * Avoid silent fallback to default DB in single URL mode.
      */
-    function ratib_halt_for_agency_db_error($message)
+    function rateb_halt_for_agency_db_error($message)
     {
-        if (!function_exists('ratib_control_agencies_has_column')) {
-            function ratib_control_agencies_has_column(?mysqli $conn, string $column): bool
+        if (!function_exists('rateb_control_agencies_has_column')) {
+            function rateb_control_agencies_has_column(?mysqli $conn, string $column): bool
             {
                 static $cache = [];
                 if (!($conn instanceof mysqli) || $column === '') {
@@ -909,16 +909,16 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
                 }
             }
         }
-        if (!function_exists('ratib_prepare_one_week_extension_columns')) {
-            function ratib_prepare_one_week_extension_columns(?mysqli $conn): void
+        if (!function_exists('rateb_prepare_one_week_extension_columns')) {
+            function rateb_prepare_one_week_extension_columns(?mysqli $conn): void
             {
                 if (!($conn instanceof mysqli)) {
                     return;
                 }
-                if (!ratib_control_agencies_has_column($conn, 'one_week_extension_used')) {
+                if (!rateb_control_agencies_has_column($conn, 'one_week_extension_used')) {
                     @$conn->query("ALTER TABLE control_agencies ADD COLUMN one_week_extension_used TINYINT(1) NOT NULL DEFAULT 0");
                 }
-                if (!ratib_control_agencies_has_column($conn, 'extension_active_until')) {
+                if (!rateb_control_agencies_has_column($conn, 'extension_active_until')) {
                     @$conn->query("ALTER TABLE control_agencies ADD COLUMN extension_active_until DATETIME NULL");
                 }
             }
@@ -964,9 +964,9 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
             try {
                 $lookupConn = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
                 if ($lookupConn instanceof mysqli) {
-                    ratib_prepare_one_week_extension_columns($lookupConn);
-                    $hasUsedCol = ratib_control_agencies_has_column($lookupConn, 'one_week_extension_used');
-                    $hasUntilCol = ratib_control_agencies_has_column($lookupConn, 'extension_active_until');
+                    rateb_prepare_one_week_extension_columns($lookupConn);
+                    $hasUsedCol = rateb_control_agencies_has_column($lookupConn, 'one_week_extension_used');
+                    $hasUntilCol = rateb_control_agencies_has_column($lookupConn, 'extension_active_until');
                     $sql = "SELECT is_suspended, is_active"
                         . ($hasUsedCol ? ", one_week_extension_used" : ", 0 AS one_week_extension_used")
                         . ($hasUntilCol ? ", extension_active_until" : ", NULL AS extension_active_until")
@@ -1030,7 +1030,7 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
         $agencyIdLabel = trim((string)($_GET['agency_id'] ?? ''));
         $agencyDescriptor = $agencyLabel !== '' ? $agencyLabel : ('Agency #' . ($agencyIdLabel !== '' ? $agencyIdLabel : 'Unknown'));
         $safeAgencyDescriptor = htmlspecialchars($agencyDescriptor, ENT_QUOTES, 'UTF-8');
-        $supportEmail = 'support@ratib.sa';
+        $supportEmail = 'support@rateb.sa';
         $subjectBase = 'Agency support - ' . $agencyDescriptor;
         $renewHref = '/admin/control-center.php';
         if ($agencyIdLabel !== '' && ctype_digit($agencyIdLabel)) {
@@ -1132,12 +1132,12 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
     }
 }
 
-if (!function_exists('ratib_require_single_url_db_config')) {
+if (!function_exists('rateb_require_single_url_db_config')) {
     /**
      * Single-URL hard guard: never continue with empty/incomplete DB config.
      * This prevents accidental fallback to a shared/default database.
      */
-    function ratib_require_single_url_db_config(): void
+    function rateb_require_single_url_db_config(): void
     {
         if (!(defined('SINGLE_URL_MODE') && SINGLE_URL_MODE)) {
             return;
@@ -1147,7 +1147,7 @@ if (!function_exists('ratib_require_single_url_db_config')) {
         $dbName = trim((string)(defined('DB_NAME') ? DB_NAME : ''));
         $dbPort = (int)(defined('DB_PORT') ? DB_PORT : 0);
         if ($dbHost === '' || $dbUser === '' || $dbName === '' || $dbPort <= 0) {
-            ratib_halt_for_agency_db_error('Single URL mode requires complete DB config (host/user/name/port).');
+            rateb_halt_for_agency_db_error('Single URL mode requires complete DB config (host/user/name/port).');
         }
     }
 }
@@ -1171,14 +1171,14 @@ if (
         try {
             $lookupConn = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
             if ($lookupConn instanceof mysqli) {
-                $hasSuspCol = function_exists('ratib_control_agencies_has_is_suspended')
-                    ? ratib_control_agencies_has_is_suspended($lookupConn)
+                $hasSuspCol = function_exists('rateb_control_agencies_has_is_suspended')
+                    ? rateb_control_agencies_has_is_suspended($lookupConn)
                     : false;
-                $hasOneWeekUsedCol = function_exists('ratib_control_agencies_has_column')
-                    ? ratib_control_agencies_has_column($lookupConn, 'one_week_extension_used')
+                $hasOneWeekUsedCol = function_exists('rateb_control_agencies_has_column')
+                    ? rateb_control_agencies_has_column($lookupConn, 'one_week_extension_used')
                     : false;
-                $hasExtensionUntilCol = function_exists('ratib_control_agencies_has_column')
-                    ? ratib_control_agencies_has_column($lookupConn, 'extension_active_until')
+                $hasExtensionUntilCol = function_exists('rateb_control_agencies_has_column')
+                    ? rateb_control_agencies_has_column($lookupConn, 'extension_active_until')
                     : false;
                 $statusSql = $hasSuspCol
                     ? "SELECT is_active, is_suspended"
@@ -1210,22 +1210,22 @@ if (
                                 $autoSuspendSt->execute();
                                 $autoSuspendSt->close();
                             }
-                            ratib_halt_for_agency_db_error('Agency is suspended. One-week activation expired.');
+                            rateb_halt_for_agency_db_error('Agency is suspended. One-week activation expired.');
                         }
                         if (!$isActive) {
-                            ratib_halt_for_agency_db_error('Agency is inactive.');
+                            rateb_halt_for_agency_db_error('Agency is inactive.');
                         }
                         if ($isSuspended) {
-                            ratib_halt_for_agency_db_error('Agency is suspended.');
+                            rateb_halt_for_agency_db_error('Agency is suspended.');
                         }
                     } else {
                         $st->close();
-                        ratib_halt_for_agency_db_error('No active agency DB mapping found for current session.');
+                        rateb_halt_for_agency_db_error('No active agency DB mapping found for current session.');
                     }
                 }
             }
         } catch (Throwable $e) {
-            ratib_halt_for_agency_db_error('Agency status check failed: ' . $e->getMessage());
+            rateb_halt_for_agency_db_error('Agency status check failed: ' . $e->getMessage());
         }
     }
 }
@@ -1235,8 +1235,8 @@ if (
 if (
     (defined('SINGLE_URL_MODE') && SINGLE_URL_MODE)
     && !$isAdminControlCenterRequest
-    && function_exists('ratib_control_pro_bridge')
-    && ratib_control_pro_bridge()
+    && function_exists('rateb_control_pro_bridge')
+    && rateb_control_pro_bridge()
     && !empty($_SESSION['agency_id'])
 ) {
     $sessAgencyId = (int)$_SESSION['agency_id'];
@@ -1244,8 +1244,8 @@ if (
         try {
             $lookupConn = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
             if ($lookupConn instanceof mysqli) {
-                $hasSuspCol = function_exists('ratib_control_agencies_has_is_suspended')
-                    ? ratib_control_agencies_has_is_suspended($lookupConn)
+                $hasSuspCol = function_exists('rateb_control_agencies_has_is_suspended')
+                    ? rateb_control_agencies_has_is_suspended($lookupConn)
                     : false;
                 $statusSql = $hasSuspCol
                     ? "SELECT is_active, is_suspended FROM control_agencies WHERE id = ? LIMIT 1"
@@ -1261,29 +1261,29 @@ if (
                         $isSuspended = (int)($row['is_suspended'] ?? 0) === 1;
                         $st->close();
                         if (!$isActive) {
-                            ratib_halt_for_agency_db_error('Agency is inactive.');
+                            rateb_halt_for_agency_db_error('Agency is inactive.');
                         }
                         if ($isSuspended) {
-                            ratib_halt_for_agency_db_error('Agency is suspended.');
+                            rateb_halt_for_agency_db_error('Agency is suspended.');
                         }
                     } else {
                         $st->close();
-                        ratib_halt_for_agency_db_error('No active agency DB mapping found for current session.');
+                        rateb_halt_for_agency_db_error('No active agency DB mapping found for current session.');
                     }
                 }
             }
         } catch (Throwable $e) {
-            ratib_halt_for_agency_db_error('Agency status check failed: ' . $e->getMessage());
+            rateb_halt_for_agency_db_error('Agency status check failed: ' . $e->getMessage());
         }
     }
 }
 
-// Control → Ratib Pro: optional SSO (ratib_control_panel_try_program_sso) still requires a real `users` row; no synthetic Control:* sessions.
+// Control → RATEB Pro: optional SSO (rateb_control_panel_try_program_sso) still requires a real `users` row; no synthetic Control:* sessions.
 
-// Ratib Pro only — single connection (no control panel)
+// RATEB Pro only — single connection (no control panel)
 if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
     try {
-        ratib_require_single_url_db_config();
+        rateb_require_single_url_db_config();
         if (function_exists('mysqli_report') && defined('MYSQLI_REPORT_ERROR') && defined('MYSQLI_REPORT_STRICT')) {
             mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         }
@@ -1297,15 +1297,15 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
         if ($sessionCountryId <= 0 && isset($_SESSION['control_country_id'])) {
             $sessionCountryId = (int)$_SESSION['control_country_id'];
         }
-        if ($sessionCountryId <= 0 && isset($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
-            $sessionCountryId = (int)$_COOKIE['ratib_last_country_id'];
+        if ($sessionCountryId <= 0 && isset($_COOKIE['rateb_last_country_id']) && ctype_digit((string)$_COOKIE['rateb_last_country_id'])) {
+            $sessionCountryId = (int)$_COOKIE['rateb_last_country_id'];
         }
         $sessionAgencyId = isset($_SESSION['agency_id']) ? (int)$_SESSION['agency_id'] : 0;
         if ($sessionAgencyId <= 0 && isset($_SESSION['control_agency_id'])) {
             $sessionAgencyId = (int)$_SESSION['control_agency_id'];
         }
-        if ($sessionAgencyId <= 0 && isset($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
-            $sessionAgencyId = (int)$_COOKIE['ratib_last_agency_id'];
+        if ($sessionAgencyId <= 0 && isset($_COOKIE['rateb_last_agency_id']) && ctype_digit((string)$_COOKIE['rateb_last_agency_id'])) {
+            $sessionAgencyId = (int)$_COOKIE['rateb_last_agency_id'];
         }
         $sessionLoggedIn = !empty($_SESSION['logged_in']);
         $controlLoggedIn = !empty($_SESSION['control_logged_in']);
@@ -1353,7 +1353,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
         if ($openAgencyContext && $getAgencyId > 0) {
             $targetAg = $getAgencyId;
             $prevAg = (int)($_SESSION['agency_id'] ?? 0);
-            $programOk = function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user();
+            $programOk = function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user();
             if ($prevAg > 0 && $prevAg !== $targetAg) {
                 if ($programOk) {
                     foreach ([
@@ -1392,8 +1392,8 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
             $chk = @$lookupConn->query("SHOW TABLES LIKE 'control_agencies'");
             if ($chk && $chk->num_rows > 0) {
                 $row = null;
-                $susp = function_exists('ratib_control_agency_active_fragment')
-                    ? ratib_control_agency_active_fragment($lookupConn, 'a')
+                $susp = function_exists('rateb_control_agency_active_fragment')
+                    ? rateb_control_agency_active_fragment($lookupConn, 'a')
                     : '1=1';
                 if ($effectiveAgencyId > 0) {
                     $sqlAg = "SELECT a.id AS agency_row_id, a.name AS agency_name, a.country_id, c.slug AS country_slug, a.db_host, a.db_port, a.db_user, a.db_pass, a.db_name, a.site_url
@@ -1433,10 +1433,10 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     $reqUri = (string)($_SERVER['REQUEST_URI'] ?? '');
                     $isApiReq = strpos($reqUri, '/api/') !== false;
                     if (!$isApiReq && $effectiveAgencyId > 0 && trim((string)($row['site_url'] ?? '')) === '') {
-                        ratib_halt_for_agency_db_error('Agency site URL is missing.');
+                        rateb_halt_for_agency_db_error('Agency site URL is missing.');
                     }
-                    if (!$isApiReq && $effectiveAgencyId > 0 && !ratib_url_matches_agency_site($row['site_url'] ?? '')) {
-                        ratib_halt_for_agency_db_error('Agency site URL mismatch.');
+                    if (!$isApiReq && $effectiveAgencyId > 0 && !rateb_url_matches_agency_site($row['site_url'] ?? '')) {
+                        rateb_halt_for_agency_db_error('Agency site URL mismatch.');
                     }
                     $agencyHelper = __DIR__ . '/../control-panel/api/control/agency-db-helper.php';
                     if (is_readable($agencyHelper)) {
@@ -1461,8 +1461,8 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                                     $port
                                 );
                                 $countryConn->set_charset("utf8mb4");
-                                if (function_exists('ratib_ensure_minimal_ratib_pro_schema')) {
-                                    ratib_ensure_minimal_ratib_pro_schema($countryConn);
+                                if (function_exists('rateb_ensure_minimal_rateb_pro_schema')) {
+                                    rateb_ensure_minimal_rateb_pro_schema($countryConn);
                                 }
                                 $conn->close();
                                 $GLOBALS['conn'] = $countryConn;
@@ -1475,7 +1475,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                                     'pass' => $row['db_pass'],
                                 ];
                             } catch (Exception $e) {
-                                ratib_halt_for_agency_db_error('Failed to connect to agency DB: ' . $e->getMessage());
+                                rateb_halt_for_agency_db_error('Failed to connect to agency DB: ' . $e->getMessage());
                             }
                         } else {
                             $detail = function_exists('getAgencyDbConnectionLastError')
@@ -1484,7 +1484,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                             $msg = $detail !== ''
                                 ? ('Failed to connect to agency DB: ' . $detail)
                                 : 'Failed to connect to agency DB.';
-                            ratib_halt_for_agency_db_error($msg);
+                            rateb_halt_for_agency_db_error($msg);
                         }
                     } else {
                         $countryConn = $acct['conn'];
@@ -1513,7 +1513,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     }
                     if ($openAgencyContext && !$sessionLoggedIn && $effectiveAgencyId > 0 && !empty($_SESSION['control_logged_in'])
                         && $conn instanceof mysqli) {
-                        ratib_control_panel_try_program_sso($conn, $effectiveAgencyId, (int)($row['country_id'] ?? 0));
+                        rateb_control_panel_try_program_sso($conn, $effectiveAgencyId, (int)($row['country_id'] ?? 0));
                     }
                     // Keep program-session tenant context synced when control session is active.
                     if ($effectiveAgencyId > 0 && (int)($_SESSION['agency_id'] ?? 0) <= 0) {
@@ -1527,8 +1527,8 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     }
                 } else {
                     if ($effectiveAgencyId > 0) {
-                        $hasSuspCol = function_exists('ratib_control_agencies_has_is_suspended')
-                            ? ratib_control_agencies_has_is_suspended($lookupConn)
+                        $hasSuspCol = function_exists('rateb_control_agencies_has_is_suspended')
+                            ? rateb_control_agencies_has_is_suspended($lookupConn)
                             : false;
                         $statusSql = $hasSuspCol
                             ? "SELECT is_active, is_suspended FROM control_agencies WHERE id = ? LIMIT 1"
@@ -1544,20 +1544,20 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                                 $isSuspRaw = (int)($raw['is_suspended'] ?? 0);
                                 $rawStmt->close();
                                 if ($isActiveRaw !== 1) {
-                                    ratib_halt_for_agency_db_error('Agency is inactive.');
+                                    rateb_halt_for_agency_db_error('Agency is inactive.');
                                 }
                                 if ($isSuspRaw === 1) {
-                                    ratib_halt_for_agency_db_error('Agency is suspended.');
+                                    rateb_halt_for_agency_db_error('Agency is suspended.');
                                 }
                             } else {
                                 $rawStmt->close();
                             }
                         }
                     }
-                    ratib_halt_for_agency_db_error('No active agency DB mapping found for current session.');
+                    rateb_halt_for_agency_db_error('No active agency DB mapping found for current session.');
                 }
             } else {
-                ratib_halt_for_agency_db_error('control_agencies table not found for agency DB resolution.');
+                rateb_halt_for_agency_db_error('control_agencies table not found for agency DB resolution.');
             }
         }
     } catch (Throwable $e) {
@@ -1578,4 +1578,4 @@ if (!defined('MULTI_TENANT_ENABLED')) {
     define('MULTI_TENANT_ENABLED', false);
 }
 
-require_once __DIR__ . '/ratib_html_global_ai_patch.php';
+require_once __DIR__ . '/rateb_html_global_ai_patch.php';

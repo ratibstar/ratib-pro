@@ -7,10 +7,10 @@
 
   function apiBaseUrl() {
     if (
-      typeof window.RATIB_BASE_URL === 'string' &&
-      window.RATIB_BASE_URL.trim() !== ''
+      typeof window.RATEB_BASE_URL === 'string' &&
+      window.RATEB_BASE_URL.trim() !== ''
     ) {
-      return String(window.RATIB_BASE_URL).replace(/\/+$/, '');
+      return String(window.RATEB_BASE_URL).replace(/\/+$/, '');
     }
     var pathRoot =
       (window.location.pathname || '').replace(/\/pages\/.*$/, '') || '';
@@ -62,7 +62,7 @@
   var REQUEST_TIMEOUT_MS = 25000;
   // Browser lock disabled: rely on backend safeguards instead.
   var CHECKOUT_LOCK_TTL_MS = 1;
-  var CHECKOUT_LOCK_KEY = 'ratib_checkout_pending_v1';
+  var CHECKOUT_LOCK_KEY = 'rateb_checkout_pending_v1';
 
   function normalizeLockYears(raw) {
     if (raw === undefined || raw === null || raw === '') {

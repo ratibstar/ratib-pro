@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Security\Secrets;
+namespace RATEB\InfrastructureMarketplace\Security\Secrets;
 
 final class SecretManager
 {
@@ -34,7 +34,7 @@ final class SecretManager
     public static function withDefaultProvidersLazy(?int $tenantId = null, ?int $agencyId = null): self
     {
         try {
-            $pdo = \Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
+            $pdo = \RATEB\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
 
             return self::withDefaultProviders($pdo, $tenantId, $agencyId);
         } catch (\Throwable $e) {

@@ -3,7 +3,7 @@
  * Stream a worker document file for authenticated staff (same storage as documents/upload.php).
  */
 require_once __DIR__ . '/../../../includes/config.php';
-require_once __DIR__ . '/../../../includes/ratib_uploads_base.php';
+require_once __DIR__ . '/../../../includes/rateb_uploads_base.php';
 require_once __DIR__ . '/../../core/Database.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -52,7 +52,7 @@ try {
         exit;
     }
 
-    $baseRoot = ratib_uploads_base_dir();
+    $baseRoot = rateb_uploads_base_dir();
     $baseDir = realpath(
         $baseRoot . DIRECTORY_SEPARATOR . 'workers' . DIRECTORY_SEPARATOR . $workerId
             . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $docType

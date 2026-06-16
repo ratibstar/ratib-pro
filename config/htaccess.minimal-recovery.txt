@@ -1,5 +1,5 @@
 # Paste into public_html/.htaccess if site is down (403).
-# Rename old file to .htaccess.bak first. Permissions: 644, owner outratib.
+# Rename old file to .htaccess.bak first. Permissions: 644, owner admin.
 
 RewriteEngine On
 DirectoryIndex index.php

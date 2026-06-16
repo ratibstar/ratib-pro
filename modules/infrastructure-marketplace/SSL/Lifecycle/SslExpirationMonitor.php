@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\SSL\Lifecycle;
+namespace RATEB\InfrastructureMarketplace\SSL\Lifecycle;
 
-use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
+use RATEB\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
 
 final class SslExpirationMonitor
 {
@@ -20,7 +20,7 @@ final class SslExpirationMonitor
     {
         $stmt = $this->pdo->prepare(
             'SELECT public_id, resource_reference, expires_at
-             FROM ratib_infra_services
+             FROM rateb_infra_services
              WHERE service_type = :service_type
                AND expires_at IS NOT NULL
                AND expires_at <= DATE_ADD(NOW(), INTERVAL :days DAY)'

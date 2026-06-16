@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Catalog\Presentation;
+namespace RATEB\InfrastructureMarketplace\Catalog\Presentation;
 
-use Ratib\InfrastructureMarketplace\Catalog\Pricing\PricingEngine;
-use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+use RATEB\InfrastructureMarketplace\Catalog\Pricing\PricingEngine;
+use RATEB\InfrastructureMarketplace\Domain\TenantContext;
 
 final class CatalogPresenter
 {

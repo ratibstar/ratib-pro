@@ -1,6 +1,6 @@
 # Rollout Runbook (Single Control Plane)
 
-This runbook defines how to release Ratib Pro updates safely across many agencies and countries using the rollout flag engine.
+This runbook defines how to release Rateb Pro updates safely across many agencies and countries using the rollout flag engine.
 
 ## Scope
 

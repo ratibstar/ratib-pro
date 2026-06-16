@@ -48,11 +48,11 @@ try {
         
         // Insert sample users
         $sampleUsers = [
-            ['admin', 'admin@ratibprogram.com', password_hash('admin123', PASSWORD_DEFAULT), 1],
-            ['manager', 'manager@ratibprogram.com', password_hash('manager123', PASSWORD_DEFAULT), 2],
-            ['editor', 'editor@ratibprogram.com', password_hash('editor123', PASSWORD_DEFAULT), 3],
-            ['viewer', 'viewer@ratibprogram.com', password_hash('viewer123', PASSWORD_DEFAULT), 4],
-            ['operator', 'operator@ratibprogram.com', password_hash('operator123', PASSWORD_DEFAULT), 5]
+            ['admin', 'admin@ratebprogram.com', password_hash('admin123', PASSWORD_DEFAULT), 1],
+            ['manager', 'manager@ratebprogram.com', password_hash('manager123', PASSWORD_DEFAULT), 2],
+            ['editor', 'editor@ratebprogram.com', password_hash('editor123', PASSWORD_DEFAULT), 3],
+            ['viewer', 'viewer@ratebprogram.com', password_hash('viewer123', PASSWORD_DEFAULT), 4],
+            ['operator', 'operator@ratebprogram.com', password_hash('operator123', PASSWORD_DEFAULT), 5]
         ];
         
         $stmt = $pdo->prepare("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)");

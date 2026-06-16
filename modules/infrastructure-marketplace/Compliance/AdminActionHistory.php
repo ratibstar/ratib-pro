@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Compliance;
+namespace RATEB\InfrastructureMarketplace\Compliance;
 
-use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use RATEB\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
 
 final class AdminActionHistory
 {

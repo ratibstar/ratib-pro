@@ -10,13 +10,13 @@
 
 ```bash
 # 1. Backup
-mysqldump -u user -p outratib_out > backup_$(date +%Y%m%d).sql
+mysqldump -u user -p admin_out > backup_$(date +%Y%m%d).sql
 
 # 2. Run schema (run each block separately if errors)
-mysql -u user -p outratib_out < config/migrations/enterprise_multi_tenant_001_schema.sql
+mysql -u user -p admin_out < config/migrations/enterprise_multi_tenant_001_schema.sql
 
 # 3. If countries exists, add subscription columns
-mysql -u user -p outratib_out < config/migrations/enterprise_multi_tenant_002_extend_countries.sql
+mysql -u user -p admin_out < config/migrations/enterprise_multi_tenant_002_extend_countries.sql
 ```
 
 - [ ] Verify `countries` table has 12 rows

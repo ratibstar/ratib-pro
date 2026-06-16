@@ -4,7 +4,7 @@
  * AR: يدير سلوك الملفات المشتركة للإعدادات والمساعدات وأجزاء التخطيط في `includes/control_lookup_conn.php`.
  */
 /**
- * Control panel DB lookup for Ratib Pro (main app).
+ * Control panel DB lookup for RATEB Pro (main app).
  * When SINGLE_URL_MODE is on, countries and agency DB credentials are read from
  * the control panel DB so one source of truth is used and each country uses its own DB.
  */
@@ -48,11 +48,11 @@ if (!function_exists('get_control_lookup_conn')) {
     }
 }
 
-if (!function_exists('ratib_control_agencies_has_is_suspended')) {
+if (!function_exists('rateb_control_agencies_has_is_suspended')) {
     /**
      * Older installs may not have control_agencies.is_suspended — avoid "Unknown column" in WHERE.
      */
-    function ratib_control_agencies_has_is_suspended(?mysqli $conn): bool
+    function rateb_control_agencies_has_is_suspended(?mysqli $conn): bool
     {
         static $cache = [];
         if (!$conn instanceof mysqli) {
@@ -75,16 +75,16 @@ if (!function_exists('ratib_control_agencies_has_is_suspended')) {
     }
 }
 
-if (!function_exists('ratib_control_agency_active_fragment')) {
+if (!function_exists('rateb_control_agency_active_fragment')) {
     /**
      * SQL fragment for "agency not suspended" (1=1 if column missing).
      *
      * @param mysqli|null $conn Same connection used for the query (correct DB for SHOW COLUMNS).
      * @param string|null $alias Table alias without dot, e.g. 'a' for COALESCE(a.is_suspended,0)=0
      */
-    function ratib_control_agency_active_fragment(?mysqli $conn, ?string $alias = null): string
+    function rateb_control_agency_active_fragment(?mysqli $conn, ?string $alias = null): string
     {
-        if (!ratib_control_agencies_has_is_suspended($conn)) {
+        if (!rateb_control_agencies_has_is_suspended($conn)) {
             return '1=1';
         }
         $p = ($alias !== null && $alias !== '') ? $alias . '.' : '';

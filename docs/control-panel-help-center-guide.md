@@ -1,6 +1,6 @@
-# Ratib Control Panel — Help Center Guide
+# Rateb Control Panel — Help Center Guide
 
-This document is the **canonical operator guide** for the Ratib control panel. It is rendered inside the panel at **Help center** (`control-panel/pages/control/help-center.php`, requires dashboard permission) and kept in the repository under `docs/control-panel-help-center-guide.md`.
+This document is the **canonical operator guide** for the Rateb control panel. It is rendered inside the panel at **Help center** (`control-panel/pages/control/help-center.php`, requires dashboard permission) and kept in the repository under `docs/control-panel-help-center-guide.md`.
 
 ---
 
@@ -63,7 +63,7 @@ If a menu row is **hidden**, your account does not have the required permission;
 
 - **Control** — write **runtime configuration** (flags, queues, allowlist, provider overrides, Namecheap runtime fields). Persists to the module runtime overrides file. Use **Save**; reload when the UI asks so read-only summaries refresh.
 - **Dashboard** — read-only **operational** picture: health, queues, workers, jobs, warnings, readiness. Use this first when **provisioning or marketplace flows fail**.
-- **Providers** — provider **health/capability** views and **database activations** for registrar/DNS/SSL adapter classes (`ratib_infra_provider_activations`).
+- **Providers** — provider **health/capability** views and **database activations** for registrar/DNS/SSL adapter classes (`rateb_infra_provider_activations`).
 
 **URLs:** same script with `view=control`, `view=dashboard`, or `view=providers` (tabs update this for you).
 
@@ -150,7 +150,7 @@ If a menu row is **hidden**, your account does not have the required permission;
 - `docs/CONTROL_PANEL_COMPLETE_USER_GUIDE_AR_EN.md` — **EN/AR** control panel user guide (includes **§4.10** Infrastructure summary).
 - `docs/infrastructure-tabs-operator-checklist.md` — **checklist** format for Infrastructure tabs.
 - `docs/infrastructure-marketplace-production-readiness-review.md` — production readiness notes for the marketplace module.
-- `modules/infrastructure-marketplace/Migrations/Phase2/` — **commerce foundation** (`ratib_infra_products`, `ratib_infra_plans`, `ratib_infra_plan_features`, `ratib_infra_pricing`, `ratib_tenant_resources`); see `README.txt` for run order.
+- `modules/infrastructure-marketplace/Migrations/Phase2/` — **commerce foundation** (`rateb_infra_products`, `rateb_infra_plans`, `rateb_infra_plan_features`, `rateb_infra_pricing`, `rateb_tenant_resources`); see `README.txt` for run order.
 - `modules/infrastructure-marketplace/Reports/ArchitectureAuditReport.php` — run `php .../ArchitectureAuditReport.php` to regenerate subsystem audit (JSON + HTML under `Reports/`).
 
 ---

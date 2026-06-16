@@ -5,7 +5,7 @@
  */
 /**
  * System Settings - Redirects to Control Panel Settings.
- * Ratib Program settings (users, visa types) and Control Panel settings are now on one page.
+ * RATEB Program settings (users, visa types) and Control Panel settings are now on one page.
  */
 if (!defined('IS_CONTROL_PANEL')) define('IS_CONTROL_PANEL', true);
 require_once __DIR__ . '/../../includes/config.php';

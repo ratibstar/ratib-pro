@@ -4,7 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/api/control/hr-currencies.php`.
  */
 /**
- * Control Panel HR — currencies without main Ratib settings DB.
+ * Control Panel HR — currencies without main RATEB settings DB.
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);

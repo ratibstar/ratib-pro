@@ -4,12 +4,12 @@ declare(strict_types=1);
 if (!function_exists('control_client_platform_public_root')) {
     function control_client_platform_public_root(): string
     {
-        if (!function_exists('control_ratib_pro_public_base_url')) {
+        if (!function_exists('control_rateb_pro_public_base_url')) {
             require_once __DIR__ . '/request-url.php';
         }
 
-        $root = function_exists('control_ratib_pro_public_base_url')
-            ? rtrim((string) control_ratib_pro_public_base_url(), '/')
+        $root = function_exists('control_rateb_pro_public_base_url')
+            ? rtrim((string) control_rateb_pro_public_base_url(), '/')
             : '';
 
         if ($root === '' && defined('SITE_URL') && (string) SITE_URL !== '') {
@@ -45,8 +45,8 @@ if (!function_exists('control_panel_resolved_base_path')) {
 if (!function_exists('control_panel_client_wrapper_href')) {
     function control_panel_client_wrapper_href(string $pagePath, array $query = []): string
     {
-        $page = function_exists('ratib_clean_page_segment')
-            ? ratib_clean_page_segment($pagePath)
+        $page = function_exists('rateb_clean_page_segment')
+            ? rateb_clean_page_segment($pagePath)
             : ltrim(str_replace('\\', '/', $pagePath), '/');
         $query['control'] = '1';
 

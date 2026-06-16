@@ -28,7 +28,7 @@ final class ErpDatabaseService
             $pdo = $this->openDatabase($name);
             $stats = $this->stats($pdo);
             $stats['warning'] = ($stats['rateb_tables'] ?? 0) > 0
-                ? 'ERP tables found in control panel DB — migrations should run on outratib_rateb-erp only.'
+                ? 'ERP tables found in control panel DB — migrations should run on admin_rateb-erp only.'
                 : '';
             return array_merge(['ok' => true, 'db' => $name], $stats);
         } catch (\Throwable $e) {
@@ -182,7 +182,7 @@ final class ErpDatabaseService
         if (function_exists('rateb_erp_database_name')) {
             return rateb_erp_database_name();
         }
-        return defined('RATEB_ERP_DB_NAME') ? (string) RATEB_ERP_DB_NAME : 'outratib_rateb-erp';
+        return defined('RATEB_ERP_DB_NAME') ? (string) RATEB_ERP_DB_NAME : 'admin_rateb-erp';
     }
 
     private function controlPanelDbName(): string
@@ -193,6 +193,6 @@ final class ErpDatabaseService
         if (defined('DB_NAME')) {
             return (string) DB_NAME;
         }
-        return 'outratib_control_panel_db';
+        return 'admin_control_panel_db';
     }
 }

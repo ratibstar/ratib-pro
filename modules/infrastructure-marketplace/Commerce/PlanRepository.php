@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ratib\InfrastructureMarketplace\Commerce;
+namespace RATEB\InfrastructureMarketplace\Commerce;
 
 final class PlanRepository
 {
@@ -13,7 +13,7 @@ final class PlanRepository
      */
     public function listForProduct(int $productId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_plans WHERE product_id = :p ORDER BY id ASC');
+        $stmt = $this->pdo->prepare('SELECT * FROM rateb_infra_plans WHERE product_id = :p ORDER BY id ASC');
         $stmt->execute(['p' => $productId]);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -26,7 +26,7 @@ final class PlanRepository
     public function findByProductAndPlanCode(int $productId, string $planCode): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM ratib_infra_plans WHERE product_id = :p AND plan_code = :c LIMIT 1'
+            'SELECT * FROM rateb_infra_plans WHERE product_id = :p AND plan_code = :c LIMIT 1'
         );
         $stmt->execute(['p' => $productId, 'c' => $planCode]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -41,7 +41,7 @@ final class PlanRepository
      */
     public function findFirstByPlanCode(string $planCode): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_plans WHERE plan_code = :c ORDER BY id ASC LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM rateb_infra_plans WHERE plan_code = :c ORDER BY id ASC LIMIT 1');
         $stmt->execute(['c' => $planCode]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -70,7 +70,7 @@ final class PlanRepository
             throw new \InvalidArgumentException('No columns for insert.');
         }
         $placeholders = array_map(static fn (string $c): string => ':' . $c, $fields);
-        $sql = 'INSERT INTO ratib_infra_plans (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
+        $sql = 'INSERT INTO rateb_infra_plans (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
