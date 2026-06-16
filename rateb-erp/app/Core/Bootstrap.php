@@ -51,6 +51,8 @@ final class Bootstrap
             '/app/controllers/Admin/CmsControllers.php',
             '/app/controllers/Marketing/MarketingController.php',
             '/app/models/CmsModels.php',
+            '/app/models/HrModels.php',
+            '/app/services/HrService.php',
             '/app/controllers/Company/CompanyControllers.php',
             '/app/controllers/Company/HrControllers.php',
             '/app/controllers/Company/ExtendedControllers.php',

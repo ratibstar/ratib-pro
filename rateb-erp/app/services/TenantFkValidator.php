@@ -15,6 +15,10 @@ final class TenantFkValidator
         'destination_warehouse_id' => 'rateb_warehouses',
         'inventory_id' => 'rateb_inventory',
         'rfq_id' => 'rateb_rfq',
+        'employee_id' => 'rateb_employees',
+        'department_id' => 'rateb_hr_departments',
+        'leave_type_id' => 'rateb_leave_types',
+        'period_id' => 'rateb_payroll_periods',
     ];
 
     /** @param array<int, string> $fields */

@@ -17,8 +17,12 @@ use Rateb\App\Models\CmsSection;
 use Rateb\App\Models\CmsServiceCategory;
 use Rateb\App\Models\Contract;
 use Rateb\App\Models\CostCenter;
+use Rateb\App\Models\Employee;
 use Rateb\App\Models\FiscalPeriod;
+use Rateb\App\Models\HrDepartment;
 use Rateb\App\Models\Inventory;
+use Rateb\App\Models\LeaveType;
+use Rateb\App\Models\PayrollPeriod;
 use Rateb\App\Models\ProductCategory;
 use Rateb\App\Models\PurchaseOrder;
 use Rateb\App\Models\PurchaseRequest;
@@ -91,6 +95,33 @@ final class FormLookupService
                 break;
             case 'supplier_classifications':
                 $options = $this->mapRows((new SupplierClassification())->all(200, 0), 'id', 'name');
+                break;
+            case 'hr_departments':
+                $options = $this->mapRows((new HrDepartment())->all(200, 0), 'id', 'name');
+                break;
+            case 'employees':
+                $options = $this->mapRows((new Employee())->all(500, 0), 'id', 'name');
+                break;
+            case 'leave_types':
+                $options = $this->mapRows((new LeaveType())->all(100, 0), 'id', 'name');
+                break;
+            case 'payroll_periods':
+                $options = $this->mapRows((new PayrollPeriod())->all(120, 0), 'id', 'period_year');
+                break;
+            case 'employee_statuses':
+                $options = $this->staticOptions(['active', 'inactive', 'terminated'], true);
+                break;
+            case 'attendance_statuses':
+                $options = $this->staticOptions(['present', 'absent', 'late', 'leave', 'holiday'], true);
+                break;
+            case 'leave_request_statuses':
+                $options = $this->staticOptions(['pending', 'approved', 'rejected', 'cancelled'], true);
+                break;
+            case 'payroll_statuses':
+                $options = $this->staticOptions(['draft', 'approved', 'posted'], true);
+                break;
+            case 'active_inactive_statuses':
+                $options = $this->staticOptions(['active', 'inactive'], true);
                 break;
             case 'rfq':
                 $options = $this->rfqOptions();

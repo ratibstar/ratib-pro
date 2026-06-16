@@ -18,6 +18,12 @@ use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
 use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
 use Rateb\App\Controllers\Company\HrDashboardController;
+use Rateb\App\Controllers\Company\HrEmployeesController;
+use Rateb\App\Controllers\Company\HrDepartmentsController;
+use Rateb\App\Controllers\Company\HrAttendanceController;
+use Rateb\App\Controllers\Company\HrLeavesController;
+use Rateb\App\Controllers\Company\HrLeaveTypesController;
+use Rateb\App\Controllers\Company\HrPayrollController;
 use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAccountsController;
 use Rateb\App\Controllers\Company\ProductCategoriesController;
 use Rateb\App\Controllers\Company\StockMovementsController;
@@ -129,10 +135,46 @@ $router->post($app('purchase-orders/{id}/submit'), [PurchaseOrdersController::cl
 $router->post($app('quotations/{id}/create-po'), [PurchaseOrdersController::class, 'createFromQuotation'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('hr'), [HrDashboardController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
-$router->get($app('hr/employees'), [HrDashboardController::class, 'employees'], rateb_erp_mw('hr', '', 'hr-employees'));
-$router->get($app('hr/attendance'), [HrDashboardController::class, 'attendance'], rateb_erp_mw('hr', '', 'hr-attendance'));
-$router->get($app('hr/leaves'), [HrDashboardController::class, 'leaves'], rateb_erp_mw('hr', '', 'hr-leaves'));
-$router->get($app('hr/payroll'), [HrDashboardController::class, 'payroll'], rateb_erp_mw('hr', '', 'hr-payroll'));
+
+$hrCrudRoutes = [
+    'hr/employees' => ['class' => HrEmployeesController::class, 'entity' => 'hr-employees'],
+    'hr/departments' => ['class' => HrDepartmentsController::class, 'entity' => 'hr-employees'],
+    'hr/attendance' => ['class' => HrAttendanceController::class, 'entity' => 'hr-attendance'],
+    'hr/leaves' => ['class' => HrLeavesController::class, 'entity' => 'hr-leaves'],
+    'hr/leave-types' => ['class' => HrLeaveTypesController::class, 'entity' => 'hr-leaves'],
+];
+
+foreach ($hrCrudRoutes as $path => $cfg) {
+    $class = $cfg['class'];
+    $mw = rateb_erp_mw('hr', '', $cfg['entity']);
+    $router->get($app($path), [$class, 'index'], $mw);
+    $router->get($app($path . '/create'), [$class, 'create'], $mw);
+    $router->post($app($path), [$class, 'store'], $mw);
+    $router->get($app($path . '/{id}/edit'), [$class, 'edit'], $mw);
+    $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
+    $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
+    $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
+    $router->get($app($path . '/{id}/documents'), [$class, 'documents'], $mw);
+    $router->post($app($path . '/{id}/documents'), [$class, 'storeDocument'], $mw);
+    $router->post($app($path . '/{id}/documents/{docId}'), [$class, 'updateDocument'], $mw);
+    $router->post($app($path . '/{id}/documents/{docId}/delete'), [$class, 'destroyDocument'], $mw);
+}
+
+$hrLeaveMw = rateb_erp_mw('hr', '', 'hr-leaves');
+$router->post($app('hr/leaves/{id}/approve'), [HrLeavesController::class, 'approve'], $hrLeaveMw);
+$router->post($app('hr/leaves/{id}/reject'), [HrLeavesController::class, 'reject'], $hrLeaveMw);
+
+$hrPayMw = rateb_erp_mw('hr', '', 'hr-payroll');
+$router->get($app('hr/payroll'), [HrPayrollController::class, 'index'], $hrPayMw);
+$router->get($app('hr/payroll/create'), [HrPayrollController::class, 'create'], $hrPayMw);
+$router->post($app('hr/payroll'), [HrPayrollController::class, 'store'], $hrPayMw);
+$router->get($app('hr/payroll/{id}'), [HrPayrollController::class, 'show'], $hrPayMw);
+$router->get($app('hr/payroll/{id}/edit'), [HrPayrollController::class, 'edit'], $hrPayMw);
+$router->post($app('hr/payroll/{id}'), [HrPayrollController::class, 'update'], $hrPayMw);
+$router->post($app('hr/payroll/{id}/delete'), [HrPayrollController::class, 'destroy'], $hrPayMw);
+$router->post($app('hr/payroll/{id}/generate'), [HrPayrollController::class, 'generate'], $hrPayMw);
+$router->post($app('hr/payroll/{id}/approve'), [HrPayrollController::class, 'approve'], $hrPayMw);
+$router->post($app('hr/payroll/{id}/post'), [HrPayrollController::class, 'post'], $hrPayMw);
 $router->get($app('accounting'), [CompanyAccountingDashboardController::class, 'index'], rateb_erp_mw('accounting', '', 'accounting'));
 $router->get($app('accounting/reports'), [CompanyAccountingDashboardController::class, 'reportsHub'], rateb_erp_mw('accounting', '', 'accounting-reports'));
 $router->get($app('accounting/trial-balance'), [CompanyAccountingDashboardController::class, 'trialBalanceReport'], rateb_erp_mw('accounting', '', 'trial-balance'));
