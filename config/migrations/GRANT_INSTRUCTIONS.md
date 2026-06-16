@@ -6,32 +6,30 @@ Fix **"Access denied for user 'admin_rateb'@'localhost' to database 'admin_xxx'"
 
 ## Quick fix (choose one)
 
-### Option A — DirectAdmin UI (recommended)
+### Option A — DirectAdmin UI (recommended — use when phpMyAdmin GRANT gives #1044)
 
-1. Log in to **DirectAdmin** → **User Level** → **MySQL Management**
-2. Open user **`admin_rateb`**
-3. Assign **ALL PRIVILEGES** on every country database:
+**phpMyAdmin cannot GRANT** if you are logged in as `admin__XXXX...` (limited user). Use DirectAdmin instead.
 
-| Database |
-|----------|
-| admin_bangladesh |
-| admin_ethiopia |
-| admin_genia |
-| admin_indonesia |
-| admin_kenya |
-| admin_nepal |
-| admin_nigeria |
-| admin_philippines |
-| admin_rwanda |
-| admin_sri_lanka |
-| admin_thailand |
-| admin_uganda |
+Full steps: **`control-panel/DIRECTADMIN_GRANT_STEPS.md`**
 
-4. Save
+Short version:
 
-### Option B — SQL (phpMyAdmin as MySQL admin, not admin_rateb)
+1. **DirectAdmin** `https://167.233.71.107:2222` → login **`admin`**
+2. **Account Manager** → **MySQL Management**
+3. **Add User to Database** — repeat 12 times:
+   - User: **`admin_rateb`**
+   - Database: each country DB (see table below)
+   - Privileges: **ALL**
+4. Verify: **https://rateb.sa/config/check_country_db_access.php?control=1**
 
-Run **`control-panel/GRANT_COUNTRY_DBS_ADMIN_RATEB.sql`** in phpMyAdmin while logged in as the DirectAdmin MySQL **admin** user (or root).
+### Option B — SQL via SSH only (not phpMyAdmin limited user)
+
+```bash
+ssh admin@167.233.71.107
+mysql -u admin -p
+```
+
+Then paste **`control-panel/GRANT_COUNTRY_DBS_ADMIN_RATEB.sql`** and `FLUSH PRIVILEGES;`.
 
 ---
 
