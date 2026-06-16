@@ -134,6 +134,10 @@ jobs:
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
             "${HOME_URL}" 2>/dev/null | head -c 250000 || true)"
           BRAND_FAIL=0
+          if ! grep -qi '<!DOCTYPE' <<< "$HOME_RAW"; then
+            echo "::error::home did not return HTML (body=${HOME_RAW:0:200})"
+            exit 1
+          fi
           # Use grep <<< "$var" (not echo "$var" | grep) — large HTML + grep -q closes the pipe early → SIGPIPE noise.
           if grep -qi 'RATEB Company' <<< "$HOME_RAW"; then
             echo "::error::home still contains RATEB Company"

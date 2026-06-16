@@ -69,7 +69,7 @@ if ($countryListConn instanceof mysqli) {
                     }
                     $stmtSlug->close();
                 }
-                if ($urlCountrySlug !== '' && !$singleCountryFromPath) {
+                if ($urlCountrySlug !== '' && !$singleCountryFromPath && !in_array($urlCountrySlug, ['pages', 'page', 'login'], true)) {
                     $error = 'Country not found. Please use a valid login link.';
                 }
             }

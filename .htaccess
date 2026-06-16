@@ -57,6 +57,10 @@ RewriteRule ^ - [L]
 # Marketing home (MUST be before country-slug catch-all — /home is not a country code)
 RewriteRule ^home/?$ pages/home.php [L,QSA]
 
+# App login — MUST be before /{country}/login (otherwise /pages/login → country_slug=pages).
+RewriteRule ^pages/login/?$ pages/login.php [L,QSA]
+RewriteRule ^login/?$ pages/login.php [L,QSA]
+
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
 RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]
 RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
@@ -66,7 +70,8 @@ RewriteCond %{QUERY_STRING} (^|&)(open=profile|open=about)(&|$) [NC]
 RewriteRule ^pages/home\.php$ /profile [R=302,L]
 
 # Country-specific login: /bangladesh/login, /kenya/login, etc. → /pages/login.php?country_slug=X
-RewriteRule ^([a-z0-9_-]+)/login/?$ /pages/login.php?country_slug=$1 [L,QSA]
+RewriteCond %{REQUEST_URI} !^/pages/ [NC]
+RewriteRule ^([a-z0-9_-]+)/login/?$ pages/login.php?country_slug=$1 [L,QSA]
 
 # Phone barcode scanner (pairs with PC login): /philippines/login-scan?token=…
 RewriteRule ^([a-z0-9_-]+)/login-scan/?$ /pages/login-scan.php?country_slug=$1 [L,QSA]

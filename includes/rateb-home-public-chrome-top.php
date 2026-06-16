@@ -19,6 +19,15 @@
  * @var int $ratebTopbarNodesNum
  * @var string $ratebTopbarNodesDigits
  */
+if (!isset($baseUrl) || !is_string($baseUrl) || $baseUrl === '') {
+    if (!function_exists('rateb_public_site_base_url')) {
+        require_once __DIR__ . '/rateb-public-base-url.php';
+    }
+    $baseUrl = rateb_public_site_base_url();
+}
+if (!isset($ratebHome) || !is_array($ratebHome)) {
+    $ratebHome = [];
+}
 $ratebNavPrefix = isset($ratebHomeNavHrefPrefix) ? (string) $ratebHomeNavHrefPrefix : '';
 $ratebPartnerNavIsCurrent = !empty($ratebHomeHeaderPartnerIsCurrent);
 

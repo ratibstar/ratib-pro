@@ -8,6 +8,29 @@ if (!defined('RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY')) {
     define('RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY', '__rateb_home_json_snapshot.v1__');
 }
 
+if (!function_exists('rateb_site_content_sql_table')) {
+    /** Resolved once per request — supports legacy DB table until RENAME is applied on server. */
+    function rateb_site_content_sql_table(?mysqli $conn = null): string
+    {
+        static $resolved = null;
+        if ($resolved !== null) {
+            return $resolved;
+        }
+        $resolved = 'rateb_site_content';
+        if ($conn instanceof mysqli) {
+            foreach (['rateb_site_content', 'ratib_site_content'] as $candidate) {
+                $esc = $conn->real_escape_string($candidate);
+                $probe = @$conn->query("SHOW TABLES LIKE '{$esc}'");
+                if ($probe && $probe->num_rows > 0) {
+                    $resolved = $candidate;
+                    break;
+                }
+            }
+        }
+        return $resolved;
+    }
+}
+
 if (!function_exists('rateb_site_content_db_credentials')) {
     /**
      * Resolve connection params for reading rateb_site_content (control DB).
@@ -164,7 +187,8 @@ if (!function_exists('rateb_site_content_db_can_read_table')) {
      */
     function rateb_site_content_db_can_read_table(mysqli $c): bool
     {
-        $res = @$c->query('SELECT 1 FROM rateb_site_content LIMIT 1');
+        $table = rateb_site_content_sql_table($c);
+        $res = @$c->query('SELECT 1 FROM `' . $table . '` LIMIT 1');
 
         return $res !== false;
     }
@@ -314,7 +338,8 @@ if (!function_exists('rateb_site_content_fetch_value_by_key')) {
             return null;
         }
         $esc = $conn->real_escape_string($key);
-        $sql = "SELECT content_value FROM rateb_site_content WHERE content_key = '" . $esc . "' LIMIT 1";
+        $table = rateb_site_content_sql_table($conn);
+        $sql = "SELECT content_value FROM `{$table}` WHERE content_key = '" . $esc . "' LIMIT 1";
         $res = $conn->query($sql);
         if ($res === false) {
             $errno = (int) $conn->errno;
@@ -374,7 +399,7 @@ if (!function_exists('rateb_site_content_fetch_key_values')) {
             foreach ($chunk as $k) {
                 $parts[] = "'" . $conn->real_escape_string($k) . "'";
             }
-            $sql = 'SELECT content_key, content_value FROM rateb_site_content WHERE content_key IN (' . implode(',', $parts) . ')';
+            $sql = 'SELECT content_key, content_value FROM `' . rateb_site_content_sql_table($conn) . '` WHERE content_key IN (' . implode(',', $parts) . ')';
             $res = $conn->query($sql);
             if ($res === false) {
                 $errno = (int) $conn->errno;
@@ -455,8 +480,9 @@ if (!function_exists('rateb_site_content_home_snapshot_db_save')) {
             return false;
         }
         $key = RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY;
+        $table = rateb_site_content_sql_table($conn);
         $stmt = $conn->prepare(
-            'INSERT INTO rateb_site_content (content_key, content_value) VALUES (?, ?)
+            'INSERT INTO `' . $table . '` (content_key, content_value) VALUES (?, ?)
              ON DUPLICATE KEY UPDATE content_value = VALUES(content_value), updated_at = CURRENT_TIMESTAMP'
         );
         if (!$stmt) {
@@ -483,7 +509,8 @@ if (!function_exists('rateb_site_content_home_snapshot_db_delete')) {
             return;
         }
         $key = RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY;
-        $stmt = $conn->prepare('DELETE FROM rateb_site_content WHERE content_key = ? LIMIT 1');
+        $table = rateb_site_content_sql_table($conn);
+        $stmt = $conn->prepare('DELETE FROM `' . $table . '` WHERE content_key = ? LIMIT 1');
         if (!$stmt) {
             return;
         }
@@ -734,7 +761,8 @@ if (!function_exists('rateb_site_content_revision_token')) {
         if (!$c instanceof mysqli) {
             return '';
         }
-        $res = @$c->query("SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM rateb_site_content");
+        $table = rateb_site_content_sql_table($c);
+        $res = @$c->query("SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM `{$table}`");
         if ($res === false) {
             return '';
         }
