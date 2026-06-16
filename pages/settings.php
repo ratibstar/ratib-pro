@@ -109,10 +109,10 @@ include '../includes/header.php';
                         <span>System Settings</span>
                     </div>
                     <?php endif; ?>
-                    <div class="category-item" data-type="logout" data-href="logout.php">
+                    <a class="category-item category-item--logout" href="<?php echo htmlspecialchars(rateb_logout_url(), ENT_QUOTES, 'UTF-8'); ?>">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
-                    </div>
+                    </a>
                 </div>
             </div>
     </div>

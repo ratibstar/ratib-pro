@@ -86,6 +86,26 @@
     window.BASE_PATH = window.APP_CONFIG.baseUrl || '';
     window.API_BASE = window.APP_CONFIG.apiBase || '';
 
+    /** Country-aware logout URL (matches PHP rateb_logout_url()). */
+    window.ratebLogoutUrl = function() {
+        var appCfgEl = document.getElementById('app-config');
+        var fromCfg = appCfgEl && appCfgEl.getAttribute('data-logout-url');
+        if (fromCfg) {
+            return fromCfg;
+        }
+        var path = window.location.pathname || '';
+        var m = path.match(/^\/([a-z0-9_-]+)(?:\/|$)/i);
+        var reserved = /^(control-panel|rateb-erp|pages|api|public|designed|js|css|assets|tap-payments|home|profile|admin|login|logout)$/i;
+        if (m && m[1] && !reserved.test(m[1])) {
+            var slug = m[1].toLowerCase();
+            var isControl = (appCfgEl && appCfgEl.getAttribute('data-control-pro-bridge') === '1')
+                || (window.location.search || '').indexOf('control=1') !== -1;
+            return window.location.origin + '/' + encodeURIComponent(slug) + '/logout'
+                + (isControl ? '?control=1' : '');
+        }
+        return window.ratebPageUrl('logout.php');
+    };
+
     /** Build extensionless /pages/ URL (matches PHP pageUrl()). */
     window.ratebPageUrl = function(page, extraQuery) {
         var p = String(page || '').replace(/^\/+/, '').replace(/\.php$/i, '');
@@ -174,9 +194,7 @@
             var isControlProBridge = appCfgEl && appCfgEl.getAttribute('data-control-pro-bridge') === '1';
             var isControl = window.location.pathname.indexOf('/control/') !== -1 || (window.location.search || '').indexOf('control=1') !== -1 ||
                 (appCfgEl && appCfgEl.getAttribute('data-control') === '1') || isControlProBridge;
-            var controlSuffix = isControl ? '?control=1' : '';
-            var logoutUrl = window.ratebPageUrl('logout.php') + controlSuffix;
-            window.location.href = logoutUrl;
+            window.location.href = window.ratebLogoutUrl();
         }
 
         function isOurApiUrl(urlStr) {

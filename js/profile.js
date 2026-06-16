@@ -657,7 +657,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     showProfileSuccess('Password changed successfully! Redirecting to login...');
                     setTimeout(() => {
                         closeChangePasswordModal();
-                        window.location.href = getBaseUrl() + '/pages/logout.php';
+                        window.location.href = (typeof window.ratebLogoutUrl === 'function')
+                            ? window.ratebLogoutUrl()
+                            : (getBaseUrl() + '/pages/logout');
                     }, 1500);
                 } else {
                     showProfileError('Error: ' + (data.message || 'Failed to change password'));

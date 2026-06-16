@@ -481,13 +481,39 @@ if (!function_exists('rateb_nav_url')) {
     }
 }
 
+if (!function_exists('rateb_request_country_slug')) {
+    /**
+     * Country slug from ?country_slug= or first URL path segment (e.g. /philippines/pages/worker).
+     */
+    function rateb_request_country_slug(): string
+    {
+        if (!empty($_GET['country_slug'])) {
+            return trim(preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $_GET['country_slug'])));
+        }
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+        $path = trim($path, '/');
+        if ($path === '') {
+            return '';
+        }
+        $first = strtolower((string) (explode('/', $path, 2)[0] ?? ''));
+        $reserved = [
+            'control-panel', 'rateb-erp', 'pages', 'api', 'public', 'designed', 'js', 'css', 'assets',
+            'tap-payments', 'home', 'profile', 'architecture', 'security-compliance', 'procurement-legal',
+            'enterprise-trust', 'government-workforce-operations', 'enterprise-pack', 'admin', 'login',
+            'logout', 'favicon.ico',
+        ];
+        if ($first === '' || in_array($first, $reserved, true)) {
+            return '';
+        }
+
+        return trim(preg_replace('/[^a-z0-9_-]/', '', $first));
+    }
+}
+
 if (!function_exists('rateb_logout_url')) {
     function rateb_logout_url()
     {
-        $slug = '';
-        if (!empty($_GET['country_slug'])) {
-            $slug = trim(preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $_GET['country_slug'])));
-        }
+        $slug = rateb_request_country_slug();
         if ($slug === '' && (int) ($_SESSION['country_id'] ?? 0) > 0) {
             $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
             if ($lookup instanceof mysqli) {

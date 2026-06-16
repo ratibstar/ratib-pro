@@ -121,6 +121,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
          data-country-id="<?php echo (int) ($_SESSION['country_id'] ?? 0); ?>"
          data-country-name="<?php echo htmlspecialchars((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')), ENT_QUOTES, 'UTF-8'); ?>"
          data-country-code="<?php echo htmlspecialchars((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : '')), ENT_QUOTES, 'UTF-8'); ?>"
+         data-logout-url="<?php echo htmlspecialchars(function_exists('rateb_logout_url') ? rateb_logout_url() : pageUrl('logout.php'), ENT_QUOTES, 'UTF-8'); ?>"
          class="hidden"></div>
     <?php
     $headerConfigJsPath = __DIR__ . '/../js/utils/header-config.js';
@@ -313,10 +314,13 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
         </div>
     </nav>
 
+    <?php if ((function_exists('rateb_program_session_is_valid_user') && rateb_program_session_is_valid_user())
+        || (function_exists('rateb_control_pro_bridge') && rateb_control_pro_bridge())): ?>
     <a href="<?php echo htmlspecialchars(rateb_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="rateb-topbar-logout" title="Logout" aria-label="Logout">
         <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
         <span>Logout</span>
     </a>
+    <?php endif; ?>
 
     <?php if (class_exists('\App\UI\GlobalAIButton') && method_exists('\App\UI\GlobalAIButton', 'render')): ?>
     <?php echo \App\UI\GlobalAIButton::render(getBaseUrl()); ?>
