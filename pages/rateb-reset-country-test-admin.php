@@ -12,6 +12,11 @@ header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store');
 
 $cli = (PHP_SAPI === 'cli');
+if ($cli) {
+    // In CLI there is no HTTP host, so force rateb.sa env resolution.
+    $_SERVER['HTTP_HOST'] = 'rateb.sa';
+    $_GET['control'] = '1';
+}
 if (!$cli && (!isset($_GET['run']) || (string) $_GET['run'] !== '1')) {
     http_response_code(403);
     exit("Forbidden. Use ?run=1 with X-Rateb-Migrate-Token, or run via CLI on the server.\n");
