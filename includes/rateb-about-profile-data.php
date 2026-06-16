@@ -68,7 +68,7 @@ if (!function_exists('rateb_about_profile_config')) {
             ],
             'company' => [
                 'trade_name' => rateb_public_cms('profile.company.trade_name', 'RATEB'),
-                'legal_name' => rateb_public_cms('profile.company.legal_name', 'RATEB Company'),
+                'legal_name' => rateb_public_cms('profile.company.legal_name', 'RATEB'),
                 'tagline' => rateb_public_cms('profile.company.tagline', 'Enterprise workforce program infrastructure'),
                 'founded' => rateb_public_cms('profile.company.founded', '2018'),
                 'hq' => rateb_public_cms('profile.company.hq', 'Riyadh, Kingdom of Saudi Arabia'),
@@ -86,7 +86,7 @@ if (!function_exists('rateb_about_profile_config')) {
                 'markets' => rateb_public_cms('profile.company.markets', 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand'),
                 'mission' => rateb_public_cms('profile.company.mission', 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.'),
                 'vision' => rateb_public_cms('profile.company.vision', 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.'),
-                'summary' => rateb_public_cms('profile.company.summary', 'RATEB Company operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce tracking, policy controls, and integrated billing for agencies and oversight-aligned programs.'),
+                'summary' => rateb_public_cms('profile.company.summary', 'RATEB operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce tracking, policy controls, and integrated billing for agencies and oversight-aligned programs.'),
                 'services' => rateb_public_cms_lines('profile.company.services', [
                     'Workforce lifecycle workflows',
                     'Agency operations workspace (multi-level agents)',

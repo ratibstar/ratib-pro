@@ -33,9 +33,9 @@ if (!function_exists('rateb_render_brand_full_title')) {
         }
 
         if ($withCompany && !$showTagline) {
-            $ariaLabel = 'RATEB Company';
+            $ariaLabel = 'RATEB';
         } elseif ($withCompany) {
-            $ariaLabel = 'RATEB Company Recruitment Automation and Telemetry Enterprise Base';
+            $ariaLabel = 'RATEB Recruitment Automation and Telemetry Enterprise Base';
         } else {
             $ariaLabel = 'RATEB Recruitment Automation and Telemetry Enterprise Base';
         }

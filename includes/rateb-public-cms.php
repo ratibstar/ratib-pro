@@ -42,7 +42,7 @@ if (!function_exists('rateb_brand_platform_name')) {
 if (!function_exists('rateb_brand_company_name')) {
     function rateb_brand_company_name(): string
     {
-        return 'RATEB Company';
+        return 'RATEB';
     }
 }
 

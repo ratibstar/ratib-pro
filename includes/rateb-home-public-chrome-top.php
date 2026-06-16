@@ -140,7 +140,7 @@ if (!function_exists('rateb_home_nav_emit_sync_guard_style')) {
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/rateb-logo.svg?v=6'); ?>" alt="<?php echo htmlspecialchars($ratebBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36" class="rateb-nav__brand-logo">
                     <?php } ?>
                     <?php if ($ratebHideBrandText) { ?>
-                    <?php rateb_render_brand_full_title(['with_company' => true, 'variant' => 'nav', 'show_tagline' => false]); ?>
+                    <?php rateb_render_brand_full_title(['variant' => 'nav', 'show_tagline' => false]); ?>
                     <?php } else { ?>
                     <span class="rateb-nav__brand-text"><?php echo htmlspecialchars($ratebBrandName, ENT_QUOTES, 'UTF-8'); ?></span>
                     <?php } ?>

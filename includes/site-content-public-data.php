@@ -146,7 +146,7 @@ if (!function_exists('rateb_site_content_defaults_public_pages')) {
             'proc.hero.title' => 'Enterprise procurement and compliance review',
             'proc.hero.lead' => 'Formal reference for government buyers, enterprise procurement teams, international partners, and compliance reviewers evaluating RATEB as workforce program orchestration infrastructure.',
             'proc.hero.notice' => 'This page states verifiable company and platform facts. RATEB does not claim government partnerships, regulatory licenses, or third-party certifications unless separately documented in a signed agreement.',
-            'proc.identity.legal_name' => 'RATEB Company',
+            'proc.identity.legal_name' => 'RATEB',
             'proc.identity.trade_name' => 'RATEB',
             'proc.identity.hq' => 'Riyadh, Kingdom of Saudi Arabia',
             'proc.identity.cr' => 'On file — available to enterprise procurement under NDA upon request',

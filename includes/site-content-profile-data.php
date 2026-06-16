@@ -31,9 +31,9 @@ if (!function_exists('rateb_site_content_defaults_profile')) {
 
         return [
             'profile.company.trade_name' => 'RATEB',
-            'profile.company.legal_name' => 'RATEB Company',
+            'profile.company.legal_name' => 'RATEB',
             'profile.company.tagline' => 'Enterprise Workforce Program Infrastructure',
-            'profile.company.summary' => 'RATEB Company operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce tracking, policy controls, and integrated billing for agencies and oversight-aligned programs.',
+            'profile.company.summary' => 'RATEB operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce tracking, policy controls, and integrated billing for agencies and oversight-aligned programs.',
             'profile.company.mission' => 'Give sending-country agencies and host-market programs one platform to run regulated workforce corridors—with recruitment orchestration, operational visibility, compliance checkpoints, and finance linked to program events.',
             'profile.company.vision' => 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
             'profile.company.markets' => 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',
