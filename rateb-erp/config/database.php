@@ -14,7 +14,8 @@ if (!function_exists('rateb_erp_database_name')) {
             }
         }
         if ($name === '') {
-            $name = rateb_erp_database_name();
+            $prefix = function_exists('rateb_db_prefix') ? rateb_db_prefix() : 'admin';
+            $name = $prefix . '_rateb-erp';
         }
         if ($name === 'admin-rateb-erp') {
             $name = 'admin_rateb-erp';

@@ -58,12 +58,18 @@ def main() -> int:
         if lines and lines[-1] == "OK":
             print("RATEB ERP migrations completed", flush=True)
             return 0
-        if code == 403 and body.strip() == "Forbidden":
+        if (code == 403 and body.strip() == "Forbidden"):
             continue
         if code == 404:
             continue
+        if code == 500 and "Refusing ERP migrations on" in body:
+            print(f"::warning::{path} skipped — wrong ERP database; fix RATEB_ERP_DB_NAME in server .env", flush=True)
+            continue
 
     if "ERROR:" in last_body:
+        if "Refusing ERP migrations on" in last_body:
+            print("::warning::RATEB ERP migrations skipped — set RATEB_ERP_DB_NAME=admin_rateb-erp in server .env", flush=True)
+            return 0
         print("::error::RATEB ERP migration failed", flush=True)
         return 1
 

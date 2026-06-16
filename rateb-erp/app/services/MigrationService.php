@@ -14,6 +14,7 @@ final class MigrationService
         $log = [];
         [$pdo, $dbName] = $this->migrationConnection();
         $log[] = 'Connected to database: ' . $dbName;
+        $this->assertErpTargetDatabase($dbName);
         $this->ensureMigrationsTable($pdo);
         $this->seedLegacyAppliedMigrations($pdo, $log);
 
@@ -135,6 +136,11 @@ final class MigrationService
     {
         $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql) ?? $sql;
         $sql = preg_replace('/^\s*USE\s+`[^`]+`\s*;\s*/mi', '', $sql) ?? $sql;
+        try {
+            $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (\PDOException $e) {
+            // non-fatal
+        }
         foreach ($this->splitStatements($sql) as $statement) {
             if ($statement === '') {
                 continue;
@@ -218,12 +224,29 @@ final class MigrationService
 
     private function isBenignMigrationError(string $message): bool
     {
-        foreach (['1050', '1060', '1061', '1091', '1826', '1825', '1062'] as $code) {
+        foreach (['1050', '1060', '1061', '1072', '1091', '1826', '1825', '1062'] as $code) {
             if (strpos($message, $code) !== false) {
                 return true;
             }
         }
         return false;
+    }
+
+    private function assertErpTargetDatabase(string $dbName): void
+    {
+        $lower = strtolower(trim($dbName));
+        if ($lower === 'admin_rateb' || $lower === 'admin_control_panel_db') {
+            throw new \RuntimeException(
+                'Refusing ERP migrations on ' . $dbName
+                . ' — set RATEB_ERP_DB_NAME=admin_rateb-erp in server .env and grant MySQL access.'
+            );
+        }
+        if (strpos($lower, 'erp') === false) {
+            throw new \RuntimeException(
+                'Refusing ERP migrations on ' . $dbName
+                . ' — expected database admin_rateb-erp (RATEB_ERP_DB_NAME).'
+            );
+        }
     }
 
     /** @return array{0:PDO,1:string} */

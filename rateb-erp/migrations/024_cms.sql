@@ -477,14 +477,14 @@ CREATE TABLE IF NOT EXISTS rateb_cms_system_status (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Permissions
+-- Permissions (Arabic filled by ErpArabicRepairService / 054_permissions_coa_arabic_unhex.sql)
 INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
-('View CMS', 'عرض نظام المحتوى', 'cms.view', 'cms', 'View marketing CMS', 'عرض نظام إدارة المحتوى'),
-('Manage CMS', 'إدارة نظام المحتوى', 'cms.manage', 'cms', 'Manage marketing CMS content', 'إدارة محتوى الموقع التسويقي'),
-('Manage CMS Leads', 'إدارة العملاء المحتملين', 'cms.leads', 'cms', 'Manage contact and demo leads', 'إدارة طلبات التواصل والعروض'),
-('Manage CMS SEO', 'إدارة تحسين محركات البحث', 'cms.seo', 'cms', 'Manage SEO settings', 'إدارة إعدادات SEO'),
-('Manage CMS Media', 'إدارة مكتبة الوسائط', 'cms.media', 'cms', 'Upload and manage media', 'رفع وإدارة الوسائط')
-ON DUPLICATE KEY UPDATE name = VALUES(name), name_ar = VALUES(name_ar), module = VALUES(module);
+('View CMS', '', 'cms.view', 'cms', 'View marketing CMS', ''),
+('Manage CMS', '', 'cms.manage', 'cms', 'Manage marketing CMS content', ''),
+('Manage CMS Leads', '', 'cms.leads', 'cms', 'Manage contact and demo leads', ''),
+('Manage CMS SEO', '', 'cms.seo', 'cms', 'Manage SEO settings', ''),
+('Manage CMS Media', '', 'cms.media', 'cms', 'Upload and manage media', '')
+ON DUPLICATE KEY UPDATE name = VALUES(name), module = VALUES(module);
 
 INSERT INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r
