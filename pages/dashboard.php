@@ -4,6 +4,9 @@
  * AR: يدير عرض صفحات المستخدم وتدفق الخادم الخاص بالصفحة في `pages/dashboard.php`.
  */
 require_once '../includes/config.php';
+if (!function_exists('rateb_control_agency_active_fragment')) {
+    require_once __DIR__ . '/../includes/control_lookup_conn.php';
+}
 require_once '../includes/permissions.php';
 require_once '../api/core/ensure-global-partnerships-schema.php';
 require_once '../api/partnerships/PartnerAgencyController.php';

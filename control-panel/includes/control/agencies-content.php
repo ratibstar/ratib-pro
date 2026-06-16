@@ -23,6 +23,13 @@ if (!function_exists('agency_site_url_invalid_for_rateb_pro_open')) {
         if ($u === '') {
             return true;
         }
+        $legacyHost = dirname(__DIR__, 3) . '/includes/rateb-legacy-host.php';
+        if (is_file($legacyHost)) {
+            require_once $legacyHost;
+            if (function_exists('rateb_url_host_is_legacy_ratib') && rateb_url_host_is_legacy_ratib($u)) {
+                return true;
+            }
+        }
         if (stripos($u, 'control-panel') !== false) {
             return true;
         }

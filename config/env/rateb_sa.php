@@ -5,7 +5,7 @@
  */
 /**
  * Main rateb.sa — no Bangla, English only.
- * DirectAdmin DBs: admin_rateb (main), admin_rateb-erp (ERP).
+ * DirectAdmin DBs: admin_control_panel_db (master CP), admin_rateb (Pro/orders), admin_* countries, admin_rateb-erp (ERP).
  */
 if (defined('DB_NAME')) {
     return;

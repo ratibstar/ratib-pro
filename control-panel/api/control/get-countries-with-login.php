@@ -11,6 +11,10 @@ header('Content-Type: application/json; charset=UTF-8');
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/control-permissions.php';
+$legacyHost = dirname(__DIR__, 3) . '/includes/rateb-legacy-host.php';
+if (is_file($legacyHost)) {
+    require_once $legacyHost;
+}
 
 if (empty($_SESSION['control_logged_in'])) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -67,7 +71,13 @@ while ($countryRow = $countriesRes->fetch_assoc()) {
     if ($agenciesRes) {
         while ($agency = $agenciesRes->fetch_assoc()) {
             if (empty($loginUrl) && !empty($agency['site_url'])) {
-                $loginUrl = rtrim($agency['site_url'], '/') . '/pages/login.php';
+                $candidate = rtrim((string) $agency['site_url'], '/');
+                if (function_exists('rateb_url_host_is_legacy_ratib') && rateb_url_host_is_legacy_ratib($candidate)) {
+                    $candidate = '';
+                }
+                if ($candidate !== '') {
+                    $loginUrl = $candidate . '/pages/login.php';
+                }
             }
             $dbKey = $agency['db_host'] . '|' . ($agency['db_name'] ?? '');
             if (isset($seenDbThisCountry[$dbKey])) continue;
@@ -87,6 +97,12 @@ while ($countryRow = $countriesRes->fetch_assoc()) {
             } catch (Throwable $e) { /* skip */ }
         }
         $agenciesRes->free();
+    }
+
+    if ($loginUrl === '' || (function_exists('rateb_url_host_is_legacy_ratib') && rateb_url_host_is_legacy_ratib($loginUrl))) {
+        $loginUrl = function_exists('rateb_country_login_url')
+            ? rateb_country_login_url((string) $countrySlug)
+            : '';
     }
 
     $result[] = [

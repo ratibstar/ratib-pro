@@ -7,27 +7,65 @@ if (!defined('RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY')) {
     /** Reserved row in rateb_site_content: full homepage JSON when disk cache cannot be written. */
     define('RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY', '__rateb_home_json_snapshot.v1__');
 }
+if (!defined('RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY_LEGACY')) {
+    /** Pre-rebrand snapshot row — still present in many migrated databases. */
+    define('RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY_LEGACY', '__ratib_home_json_snapshot.v1__');
+}
+
+if (!function_exists('rateb_site_content_resolve_table_name')) {
+    /**
+     * Physical CMS table on this connection, or null when neither rateb_site_content nor ratib_site_content exists.
+     */
+    function rateb_site_content_resolve_table_name(?mysqli $conn): ?string
+    {
+        if (!$conn instanceof mysqli) {
+            return null;
+        }
+        static $byConn = [];
+        $id = spl_object_id($conn);
+        if (array_key_exists($id, $byConn)) {
+            return $byConn[$id];
+        }
+        $byConn[$id] = null;
+        foreach (['rateb_site_content', 'ratib_site_content'] as $candidate) {
+            $esc = $conn->real_escape_string($candidate);
+            $probe = @$conn->query("SHOW TABLES LIKE '{$esc}'");
+            if ($probe && $probe->num_rows > 0) {
+                $byConn[$id] = $candidate;
+                break;
+            }
+        }
+
+        return $byConn[$id];
+    }
+}
+
+if (!function_exists('rateb_site_content_mysqli_query_safe')) {
+    /** mysqli_report(STRICT) must not bubble through CMS reads — fall back to defaults instead of 500. */
+    function rateb_site_content_mysqli_query_safe(mysqli $conn, string $sql)
+    {
+        try {
+            return $conn->query($sql);
+        } catch (Throwable $e) {
+            error_log('rateb_site_content_mysqli_query_safe: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+}
 
 if (!function_exists('rateb_site_content_sql_table')) {
     /** Resolved once per request — supports legacy DB table until RENAME is applied on server. */
     function rateb_site_content_sql_table(?mysqli $conn = null): string
     {
-        static $resolved = null;
-        if ($resolved !== null) {
-            return $resolved;
-        }
-        $resolved = 'rateb_site_content';
         if ($conn instanceof mysqli) {
-            foreach (['rateb_site_content', 'ratib_site_content'] as $candidate) {
-                $esc = $conn->real_escape_string($candidate);
-                $probe = @$conn->query("SHOW TABLES LIKE '{$esc}'");
-                if ($probe && $probe->num_rows > 0) {
-                    $resolved = $candidate;
-                    break;
-                }
+            $resolved = rateb_site_content_resolve_table_name($conn);
+            if ($resolved !== null) {
+                return $resolved;
             }
         }
-        return $resolved;
+
+        return 'rateb_site_content';
     }
 }
 
@@ -187,8 +225,11 @@ if (!function_exists('rateb_site_content_db_can_read_table')) {
      */
     function rateb_site_content_db_can_read_table(mysqli $c): bool
     {
-        $table = rateb_site_content_sql_table($c);
-        $res = @$c->query('SELECT 1 FROM `' . $table . '` LIMIT 1');
+        $table = rateb_site_content_resolve_table_name($c);
+        if ($table === null) {
+            return false;
+        }
+        $res = rateb_site_content_mysqli_query_safe($c, 'SELECT 1 FROM `' . $table . '` LIMIT 1');
 
         return $res !== false;
     }
@@ -337,10 +378,13 @@ if (!function_exists('rateb_site_content_fetch_value_by_key')) {
         if (!rateb_site_content_key_allowed($key)) {
             return null;
         }
+        $table = rateb_site_content_resolve_table_name($conn);
+        if ($table === null) {
+            return null;
+        }
         $esc = $conn->real_escape_string($key);
-        $table = rateb_site_content_sql_table($conn);
         $sql = "SELECT content_value FROM `{$table}` WHERE content_key = '" . $esc . "' LIMIT 1";
-        $res = $conn->query($sql);
+        $res = rateb_site_content_mysqli_query_safe($conn, $sql);
         if ($res === false) {
             $errno = (int) $conn->errno;
             error_log('rateb_site_content_fetch_value_by_key: query failed: ' . $conn->error);
@@ -399,8 +443,12 @@ if (!function_exists('rateb_site_content_fetch_key_values')) {
             foreach ($chunk as $k) {
                 $parts[] = "'" . $conn->real_escape_string($k) . "'";
             }
-            $sql = 'SELECT content_key, content_value FROM `' . rateb_site_content_sql_table($conn) . '` WHERE content_key IN (' . implode(',', $parts) . ')';
-            $res = $conn->query($sql);
+            $table = rateb_site_content_resolve_table_name($conn);
+            if ($table === null) {
+                return [];
+            }
+            $sql = 'SELECT content_key, content_value FROM `' . $table . '` WHERE content_key IN (' . implode(',', $parts) . ')';
+            $res = rateb_site_content_mysqli_query_safe($conn, $sql);
             if ($res === false) {
                 $errno = (int) $conn->errno;
                 error_log('rateb_site_content_fetch_key_values: chunk query failed: ' . $conn->error);
@@ -464,6 +512,9 @@ if (!function_exists('rateb_site_content_home_snapshot_db_read')) {
         }
         $key = RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY;
         $val = rateb_site_content_fetch_value_by_key($conn, $key);
+        if (($val === null || $val === '') && defined('RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY_LEGACY')) {
+            $val = rateb_site_content_fetch_value_by_key($conn, RATEB_SITE_CONTENT_HOME_SNAPSHOT_KEY_LEGACY);
+        }
         if ($val === null || $val === '') {
             return null;
         }

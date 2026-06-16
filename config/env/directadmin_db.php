@@ -45,13 +45,17 @@ if (!function_exists('rateb_main_pro_database')) {
 }
 
 if (!function_exists('rateb_control_panel_database')) {
+    /**
+     * Master control DB: admins, countries, agencies, CMS (rateb_site_content).
+     * Separate from RATEB Pro orders DB (admin_rateb) and per-country tenant DBs (admin_bangladesh, …).
+     */
     function rateb_control_panel_database(): string
     {
         $fromEnv = getenv('CONTROL_PANEL_DB_NAME');
         if ($fromEnv !== false && $fromEnv !== '') {
             return (string) $fromEnv;
         }
-        return rateb_main_pro_database();
+        return rateb_db_prefix() . '_control_panel_db';
     }
 }
 
