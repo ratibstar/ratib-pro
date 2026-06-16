@@ -19,25 +19,14 @@ if (php_sapi_name() === 'cli') {
     $_GET['control'] = '1';
 }
 require_once __DIR__ . '/env/load.php';
+require_once __DIR__ . '/env/directadmin_db.php';
 
 if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_PASS')) {
     die('Config not loaded. Check config/env.');
 }
 
-// Match actual cPanel names (bangladish, sri Lanka, thalland are typos in cPanel)
-$countryDbs = [
-    'outratib_bangladish',   // cPanel typo (not bangladesh)
-    'outratib_ethiopia',
-    'outratib_indonesia',
-    'outratib_kenya',
-    'outratib_nepal',
-    'outratib_nigeria',
-    'outratib_philippines',
-    'outratib_rwanda',
-    'outratib_sri_lanka',    // or 'outratib_sri Lanka' if cPanel has space
-    'outratib_thalland',     // cPanel typo (not thailand)
-    'outratib_uganda',
-];
+// DirectAdmin: admin_bangladesh, admin_ethiopia, … (legacy outratib_* kept as fallback)
+$countryDbs = ratib_all_country_database_names();
 
 $host = DB_HOST;
 $user = DB_USER;

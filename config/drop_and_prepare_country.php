@@ -15,24 +15,25 @@ ini_set('display_errors', 1);
 
 $_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
 require_once __DIR__ . '/env/load.php';
+require_once __DIR__ . '/env/directadmin_db.php';
 
 if (!defined('DB_HOST') || !defined('DB_NAME')) {
     die('Config not loaded.');
 }
 
 $countryMap = [
-    'bangladesh' => 'outratib_bangladesh',
-    'bangladish' => 'outratib_bangladish',
-    'ethiopia' => 'outratib_ethiopia',
-    'indonesia' => 'outratib_indonesia',
-    'kenya' => 'outratib_kenya',
-    'nepal' => 'outratib_nepal',
-    'nigeria' => 'outratib_nigeria',
-    'philippines' => 'outratib_philippines',
-    'rwanda' => 'outratib_rwanda',
-    'sri_lanka' => 'outratib_sri_lanka',
-    'thailand' => 'outratib_thailand',
-    'uganda' => 'outratib_uganda',
+    'bangladesh' => ratib_db_prefix() . '_bangladesh',
+    'bangladish' => ratib_db_prefix() . '_bangladish',
+    'ethiopia' => ratib_db_prefix() . '_ethiopia',
+    'indonesia' => ratib_db_prefix() . '_indonesia',
+    'kenya' => ratib_db_prefix() . '_kenya',
+    'nepal' => ratib_db_prefix() . '_nepal',
+    'nigeria' => ratib_db_prefix() . '_nigeria',
+    'philippines' => ratib_db_prefix() . '_philippines',
+    'rwanda' => ratib_db_prefix() . '_rwanda',
+    'sri_lanka' => ratib_db_prefix() . '_sri_lanka',
+    'thailand' => ratib_db_prefix() . '_thailand',
+    'uganda' => ratib_db_prefix() . '_uganda',
 ];
 
 $country = strtolower(trim($_GET['country'] ?? ''));

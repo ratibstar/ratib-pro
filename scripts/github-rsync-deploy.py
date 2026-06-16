@@ -55,6 +55,54 @@ def _ssh_opts(key_path: str) -> str:
     return f"{base} {extra}".strip()
 
 
+def _ssh_run(key_path: str, remote_cmd: str) -> subprocess.CompletedProcess[str]:
+    host = os.environ.get("DEPLOY_SSH_HOST") or os.environ.get("SSH_HOST")
+    user = os.environ.get("DEPLOY_SSH_USER") or os.environ.get("SSH_USER")
+    port = os.environ.get("DEPLOY_SSH_PORT") or os.environ.get("SSH_PORT") or "22"
+    cmd = [
+        "ssh",
+        "-i",
+        key_path,
+        "-p",
+        port,
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "IdentitiesOnly=yes",
+        "-o",
+        "StrictHostKeyChecking=accept-new",
+        f"{user}@{host}",
+        remote_cmd,
+    ]
+    return subprocess.run(cmd, text=True, capture_output=True)
+
+
+def _ensure_remote_dir(remote_base: str, key_path: str) -> None:
+    quoted = remote_base.replace("'", "'\"'\"'")
+    proc = _ssh_run(key_path, f"mkdir -p '{quoted}'")
+    if proc.stdout:
+        print(proc.stdout.rstrip(), flush=True)
+    if proc.returncode != 0:
+        probe = _ssh_run(
+            key_path,
+            "pwd; echo '---'; ls -la; echo '---'; "
+            "ls -la domains 2>/dev/null || true; echo '---'; "
+            "ls -la public_html 2>/dev/null || true",
+        )
+        print(f"::error::cannot create remote dir: {remote_base}", flush=True)
+        if probe.stdout:
+            print("remote home listing:", flush=True)
+            print(probe.stdout.rstrip(), flush=True)
+        if probe.stderr:
+            print(probe.stderr.rstrip(), flush=True)
+        if proc.stderr:
+            print(proc.stderr.rstrip(), flush=True)
+        raise SystemExit(
+            "Fix DEPLOY_REMOTE_BASE in GitHub Environment rateb.sa "
+            "(DirectAdmin File Manager shows the real public_html path)"
+        )
+
+
 def _remote_dest(remote_base: str) -> str:
     host = os.environ.get("DEPLOY_SSH_HOST") or os.environ.get("SSH_HOST")
     user = os.environ.get("DEPLOY_SSH_USER") or os.environ.get("SSH_USER")
@@ -106,7 +154,7 @@ def _rsync_files(core, files: list[str], remote_base: str, key_path: str) -> tup
                 handle.write(rel.replace("\\", "/") + "\n")
 
         dest = _remote_dest(remote_base)
-        switches = os.environ.get("DEPLOY_RSYNC_SWITCHES", "-avz --relative").split()
+        switches = os.environ.get("DEPLOY_RSYNC_SWITCHES", "-avz").split()
         cmd = [
             "rsync",
             *switches,
@@ -154,6 +202,7 @@ def main() -> int:
 
     key_path = _write_ssh_key()
     try:
+        _ensure_remote_dir(remote_base.rstrip("/"), key_path)
         ok, fail = _rsync_files(core, files, remote_base, key_path)
         print(
             f"\n========== Summary: ok={ok} fail={fail} total={total} "

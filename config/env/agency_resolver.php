@@ -15,6 +15,10 @@ function resolve_agency_by_host($host) {
     if (empty($host) || defined('DB_NAME')) {
         return false;
     }
+    $directadminDb = __DIR__ . DIRECTORY_SEPARATOR . 'directadmin_db.php';
+    if (is_file($directadminDb)) {
+        require_once $directadminDb;
+    }
     $env_dir = __DIR__;
     $lookupFile = $env_dir . DIRECTORY_SEPARATOR . 'control_db_for_lookup.php';
     if (!is_readable($lookupFile)) {
@@ -67,7 +71,7 @@ function resolve_agency_by_host($host) {
     define('DB_NAME', $row['db_name']);
     if (!defined('CONTROL_PANEL_DB_NAME')) {
         $_cp = getenv('CONTROL_PANEL_DB_NAME');
-        define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : 'outratib_control_panel_db');
+        define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : (function_exists('ratib_control_panel_database') ? ratib_control_panel_database() : 'admin_rateb'));
     }
     define('SITE_URL', rtrim(rtrim($row['site_url'] ?? '', '/')) ?: ('https://' . $host));
     define('APP_NAME', 'RATEB');

@@ -48,7 +48,7 @@ jobs:
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
           DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
-          DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/domains/rateb.sa/public_html' }}
+          DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/public_html' }}
           DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.infra_only == 'true' && 'list' || (github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && 'critical' || 'fast') }}
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
           CPANEL_USER: ${{ secrets.CPANEL_USER }}

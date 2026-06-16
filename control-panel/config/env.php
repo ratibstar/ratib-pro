@@ -11,12 +11,13 @@
 if (defined('ENV_LOADED')) {
     return;
 }
+require_once dirname(__DIR__, 2) . '/config/env/directadmin_db.php';
 $e = function($k, $d) { $v = getenv($k); return ($v !== false && $v !== '') ? $v : $d; };
 define('DB_HOST', $e('CONTROL_DB_HOST', 'localhost'));
 define('DB_PORT', (int)$e('CONTROL_DB_PORT', '3306'));
-define('DB_USER', $e('CONTROL_DB_USER', 'outratib_out'));
-define('DB_PASS', $e('CONTROL_DB_PASS', '9s%BpMr1]dfb'));
-define('CONTROL_PANEL_DB_NAME', $e('CONTROL_PANEL_DB_NAME', 'outratib_control_panel_db'));
+define('DB_USER', $e('CONTROL_DB_USER', ratib_default_mysql_user()));
+define('DB_PASS', $e('CONTROL_DB_PASS', ''));
+define('CONTROL_PANEL_DB_NAME', $e('CONTROL_PANEL_DB_NAME', ratib_control_panel_database()));
 define('DB_NAME', $e('CONTROL_DB_NAME', CONTROL_PANEL_DB_NAME));
 // Aliases used by newer services/scripts.
 define('DB_DATABASE', $e('DB_DATABASE', DB_NAME));
@@ -28,9 +29,9 @@ define('WEBHOOK_SIGNING_SECRET', $e('WEBHOOK_SIGNING_SECRET', ''));
 define('SEC_RATE_LIMIT_IP_MAX', (int) $e('SEC_RATE_LIMIT_IP_MAX', '120'));
 define('REQUEST_SIGNING_SECRET', $e('REQUEST_SIGNING_SECRET', ''));
 /** Ratib Pro / N-Genius orders DB (usually outratib_out). Used to fill registration list from ngenius_reg_orders. */
-define('RATIB_PRO_DB_NAME', $e('RATIB_PRO_DB_NAME', 'outratib_out'));
-/** RATEB ERP — isolated database (all rateb_* tables). Grant DB_USER access in cPanel → MySQL®. */
-define('RATEB_ERP_DB_NAME', $e('RATEB_ERP_DB_NAME', 'outratib_rateb-erp'));
+define('RATIB_PRO_DB_NAME', $e('RATIB_PRO_DB_NAME', ratib_main_pro_database()));
+/** RATEB ERP — isolated database (all rateb_* tables). */
+define('RATEB_ERP_DB_NAME', $e('RATEB_ERP_DB_NAME', ratib_erp_database_name()));
 /** Optional: dedicated MySQL user for ERP only (leave empty to use CONTROL_DB_USER / outratib_out). */
 define('RATEB_ERP_DB_USER', $e('RATEB_ERP_DB_USER', ''));
 define('RATEB_ERP_DB_PASS', $e('RATEB_ERP_DB_PASS', ''));

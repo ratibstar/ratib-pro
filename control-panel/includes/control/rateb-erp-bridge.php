@@ -170,11 +170,11 @@ function control_rateb_erp_db_name(): string
     }
     if (defined('RATEB_ERP_DB_NAME') && (string) RATEB_ERP_DB_NAME !== '') {
         $name = (string) RATEB_ERP_DB_NAME;
-        return $name === 'outratib-rateb-erp' ? 'outratib_rateb-erp' : $name;
+        return $name === 'admin-rateb-erp' ? 'admin_rateb-erp' : ($name === 'outratib-rateb-erp' ? 'outratib_rateb-erp' : $name);
     }
     $env = getenv('RATEB_ERP_DB_NAME');
-    $name = ($env !== false && $env !== '') ? (string) $env : 'outratib_rateb-erp';
-    return $name === 'outratib-rateb-erp' ? 'outratib_rateb-erp' : $name;
+    $name = ($env !== false && $env !== '') ? (string) $env : (function_exists('ratib_erp_database_name') ? ratib_erp_database_name() : 'admin_rateb-erp');
+    return $name === 'admin-rateb-erp' ? 'admin_rateb-erp' : ($name === 'outratib-rateb-erp' ? 'outratib_rateb-erp' : $name);
 }
 
 /** @return array<int, string> */

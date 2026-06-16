@@ -5,11 +5,12 @@
  */
 /**
  * Main rateb.sa — no Bangla, English only.
- * Uses outratib_out DB for Ratib Pro. Control Panel uses control_panel_db (separate).
+ * DirectAdmin DBs: admin_rateb (main), admin_rateb-erp (ERP).
  */
 if (defined('DB_NAME')) {
     return;
 }
+require_once __DIR__ . '/directadmin_db.php';
 // Prefer project-root .env (merged in load.php via ratib_env_load_bridge_dotenv) so credentials are not only hardcoded.
 $dbHost = getenv('DB_HOST');
 $dbPort = getenv('DB_PORT');
@@ -18,13 +19,13 @@ $dbPass = getenv('DB_PASS');
 $dbName = getenv('DB_NAME');
 define('DB_HOST', ($dbHost !== false && $dbHost !== '') ? (string) $dbHost : 'localhost');
 define('DB_PORT', ($dbPort !== false && $dbPort !== '') ? (int) $dbPort : 3306);
-define('DB_USER', ($dbUser !== false && $dbUser !== '') ? (string) $dbUser : 'outratib_out');
-define('DB_PASS', ($dbPass !== false && $dbPass !== '') ? (string) $dbPass : '9s%BpMr1]dfb');
-define('DB_NAME', ($dbName !== false && $dbName !== '') ? (string) $dbName : 'outratib_out');
-define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_control_panel_db');
+define('DB_USER', ($dbUser !== false && $dbUser !== '') ? (string) $dbUser : ratib_default_mysql_user());
+define('DB_PASS', ($dbPass !== false && $dbPass !== '') ? (string) $dbPass : '');
+define('DB_NAME', ($dbName !== false && $dbName !== '') ? (string) $dbName : ratib_main_pro_database());
+define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: ratib_control_panel_database());
 if (!defined('RATEB_ERP_DB_NAME')) {
     $_erpDb = getenv('RATEB_ERP_DB_NAME');
-    define('RATEB_ERP_DB_NAME', ($_erpDb !== false && $_erpDb !== '') ? (string) $_erpDb : 'outratib_rateb-erp');
+    define('RATEB_ERP_DB_NAME', ($_erpDb !== false && $_erpDb !== '') ? (string) $_erpDb : ratib_erp_database_name());
 }
 
 define('SITE_URL', 'https://rateb.sa');

@@ -14,11 +14,13 @@ if (!function_exists('rateb_erp_database_name')) {
             }
         }
         if ($name === '') {
-            $name = 'outratib_rateb-erp';
+            $name = ratib_erp_database_name();
         }
-        // Common typo — cPanel prefix must stay underscore: outratib_rateb-erp
         if ($name === 'outratib-rateb-erp') {
             $name = 'outratib_rateb-erp';
+        }
+        if ($name === 'admin-rateb-erp') {
+            $name = 'admin_rateb-erp';
         }
         return $name;
     }

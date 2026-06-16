@@ -135,15 +135,11 @@ function getAgencyDbConnection($agency, $countryId = 0) {
         $norm = strtolower(preg_replace('/[^a-z0-9_-]+/i', '', str_replace([' ', '.'], '_', $slugRaw)));
         $norm = str_replace('-', '_', $norm);
         $slugCandidates = [];
-        if ($norm !== '') {
+        if ($norm !== '' && function_exists('ratib_country_database_candidates')) {
+            $slugCandidates = ratib_country_database_candidates($norm);
+        } elseif ($norm !== '') {
+            $slugCandidates[] = 'admin_' . $norm;
             $slugCandidates[] = 'outratib_' . $norm;
-        }
-        if (stripos($norm, 'bangladesh') !== false || $norm === 'bangla') {
-            $slugCandidates[] = 'outratib_bangladish';
-            $slugCandidates[] = 'outratib_bangladesh';
-        }
-        if (stripos($norm, 'sri') !== false && stripos($norm, 'lanka') !== false) {
-            $slugCandidates[] = 'outratib_sri_lanka';
         }
         $slugCandidates = array_unique(array_filter($slugCandidates));
         foreach ($slugCandidates as $altDb) {
@@ -200,9 +196,17 @@ function getAgencyDbConnection($agency, $countryId = 0) {
     if (!$conn && ($isBangladesh || $isSriLanka)) {
         $alts = [];
         if ($isBangladesh) {
-            $alts = [['outratib_bangladish', $dbHost, $dbUser, $dbPass], ['outratib_bangladesh', $dbHost, $dbUser, $dbPass]];
+            $alts = [];
+            foreach (['bangladish', 'bangladesh'] as $slug) {
+                foreach ((function_exists('ratib_country_database_candidates') ? ratib_country_database_candidates($slug) : ['admin_' . $slug, 'outratib_' . $slug]) as $db) {
+                    $alts[] = [$db, $dbHost, $dbUser, $dbPass];
+                }
+            }
         } elseif ($isSriLanka) {
-            $alts = [['outratib_sri_lanka', $dbHost, $dbUser, $dbPass], ['outratib_sri Lanka', $dbHost, $dbUser, $dbPass]];
+            $alts = [];
+            foreach ((function_exists('ratib_country_database_candidates') ? ratib_country_database_candidates('sri_lanka') : ['admin_sri_lanka', 'outratib_sri_lanka', 'outratib_sri Lanka']) as $db) {
+                $alts[] = [$db, $dbHost, $dbUser, $dbPass];
+            }
         }
         if (defined('DB_NAME') && DB_NAME !== $dbName) {
             $alts[] = [DB_NAME, defined('DB_HOST') ? DB_HOST : $dbHost, defined('DB_USER') ? DB_USER : $dbUser, defined('DB_PASS') ? DB_PASS : $dbPass];

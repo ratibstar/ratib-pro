@@ -10,12 +10,13 @@
 if (defined('DB_NAME')) {
     return;
 }
+require_once __DIR__ . '/directadmin_db.php';
 define('DB_HOST', 'localhost');
 define('DB_PORT', 3306);
-define('DB_USER', 'outratib_out');
-define('DB_PASS', '9s%BpMr1]dfb');
-define('DB_NAME', 'outratib_out');
-define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_control_panel_db');
+define('DB_USER', ratib_default_mysql_user());
+define('DB_PASS', '');
+define('DB_NAME', ratib_db_prefix() . '_bangladesh');
+define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: ratib_control_panel_database());
 
 define('SITE_URL', 'https://bangladesh.rateb.sa');
 define('APP_NAME', 'RATEB');
