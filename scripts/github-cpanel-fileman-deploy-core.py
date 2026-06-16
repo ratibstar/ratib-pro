@@ -55,6 +55,8 @@ DEPLOY_DENY_PREFIXES = (
     "node_modules/",
 )
 FAST_DEPLOY_CHANGED_CAP = 200
+# When a commit touches more than this many deployable paths, upload all of them (no cap).
+FAST_DEPLOY_LARGE_COMMIT_THRESHOLD = 200
 
 # save_file_content percent-encoded bodies break cPanel JSON serializer on PNG/large files.
 BINARY_EXTENSIONS = frozenset({
@@ -164,7 +166,18 @@ def mime_for_filename(name: str) -> str:
 FAST_FILES = [
     ".htaccess",
     "index.php",
+    "includes/config.php",
+    "includes/rateb-clean-url.php",
+    "includes/rateb-public-base-url.php",
+    "config/env/load.php",
+    "config/env/dotenv_bridge.php",
+    "config/env/directadmin_db.php",
+    "config/env/rateb_sa.php",
+    "config/env.php",
+    "includes/site-content.php",
+    "includes/site-content-home-data.php",
     "pages/home.php",
+    "js/pages/rateb-profile-nav-guard.js",
     "includes/rateb-mega-nav-render.php",
     "includes/rateb-home-public-nav-bootstrap.php",
     "control-panel/includes/control/sidebar.php",
@@ -537,6 +550,36 @@ def git_changed_paths() -> set[str]:
         return set()
 
 
+def deployable_changed_paths() -> list[str]:
+    """Changed paths we can upload, priority order (bootstrap before bulk api/)."""
+    priority = (
+        "config/env/",
+        "config/env.php",
+        "includes/",
+        "pages/",
+        "js/",
+        "css/",
+        "control-panel/",
+        "public/",
+        "rateb-erp/",
+        "modules/",
+        "api/",
+    )
+
+    def sort_key(path: str) -> tuple[int, int, str]:
+        for idx, prefix in enumerate(priority):
+            if path == prefix or path.startswith(prefix):
+                return (0, idx, path)
+        return (1, len(priority), path)
+
+    paths = [
+        p
+        for p in git_changed_paths()
+        if is_auto_deploy_path(p) and os.path.isfile(p)
+    ]
+    return sorted(paths, key=sort_key)
+
+
 def _files_from_list_spec(spec: str) -> list[str]:
     paths: list[str] = []
     if os.path.isfile(spec):
@@ -606,25 +649,33 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
     if mode == "critical":
         return list(CRITICAL), 3
 
-    # fast (default on push): baseline FAST_FILES + any changed deployable paths in this commit
+    # fast (default on push): baseline FAST_FILES + CRITICAL + commit-changed paths
     marker = FAST_FILES[-1]
     core = [f for f in FAST_FILES if f != marker]
     seen = set(core)
     seen.add(marker)
+    for rel in CRITICAL:
+        if rel in seen or rel == marker:
+            continue
+        if os.path.isfile(rel):
+            core.append(rel)
+            seen.add(rel)
     extras: list[str] = []
-    changed = sorted(git_changed_paths())
-    for path in changed:
+    deployable = deployable_changed_paths()
+    large_commit = len(deployable) > FAST_DEPLOY_LARGE_COMMIT_THRESHOLD
+    if large_commit:
+        print(
+            f"fast deploy: large commit ({len(deployable)} deployable paths) — uploading all",
+            flush=True,
+        )
+    for path in deployable:
         if path in seen:
-            continue
-        if not is_auto_deploy_path(path):
-            continue
-        if not os.path.isfile(path):
             continue
         extras.append(path)
         seen.add(path)
-        if len(extras) >= FAST_DEPLOY_CHANGED_CAP:
+        if not large_commit and len(extras) >= FAST_DEPLOY_CHANGED_CAP:
             break
-    if needs_full_erp_bundle(changed):
+    if needs_full_erp_bundle(set(deployable)):
         bundle = rateb_erp_bundle_files() + rateb_erp_control_panel_files()
         added = 0
         for path in bundle:
