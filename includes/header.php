@@ -314,7 +314,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
     </nav>
 
     <a href="<?php echo htmlspecialchars(rateb_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="rateb-topbar-logout" title="Logout" aria-label="Logout">
-        <i class="fas fa-sign-out-alt"></i>
+        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
         <span>Logout</span>
     </a>
 

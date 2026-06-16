@@ -10,6 +10,23 @@ $countryId = isset($_SESSION['country_id']) ? (int)$_SESSION['country_id'] : 0;
 $agencyId = isset($_SESSION['agency_id']) ? (int)$_SESSION['agency_id'] : 0;
 $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 
+$urlCountrySlug = isset($_GET['country_slug']) ? trim(preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $_GET['country_slug']))) : '';
+if ($urlCountrySlug !== '' && $countryId <= 0 && function_exists('get_control_lookup_conn')) {
+    $lookup = get_control_lookup_conn();
+    if ($lookup instanceof mysqli) {
+        $st = @$lookup->prepare('SELECT id FROM control_countries WHERE LOWER(TRIM(slug)) = ? LIMIT 1');
+        if ($st) {
+            $st->bind_param('s', $urlCountrySlug);
+            $st->execute();
+            $rs = $st->get_result();
+            if ($rs && ($row = $rs->fetch_assoc())) {
+                $countryId = (int) ($row['id'] ?? 0);
+            }
+            $st->close();
+        }
+    }
+}
+
 // On an idle/expired session the session is already empty, so recover the last
 // known country/agency from the long-lived login cookies. Without this the redirect
 // falls back to a context-less /pages/login that fails with "Country not found".

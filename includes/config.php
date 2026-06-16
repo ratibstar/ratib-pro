@@ -484,10 +484,49 @@ if (!function_exists('rateb_nav_url')) {
 if (!function_exists('rateb_logout_url')) {
     function rateb_logout_url()
     {
-        $u = pageUrl('logout.php');
-        if (rateb_control_pro_bridge()) {
-            $u .= (strpos($u, '?') !== false ? '&' : '?') . 'control=1';
+        $slug = '';
+        if (!empty($_GET['country_slug'])) {
+            $slug = trim(preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $_GET['country_slug'])));
         }
+        if ($slug === '' && (int) ($_SESSION['country_id'] ?? 0) > 0) {
+            $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
+            if ($lookup instanceof mysqli) {
+                $cid = (int) $_SESSION['country_id'];
+                $st = @$lookup->prepare('SELECT slug FROM control_countries WHERE id = ? LIMIT 1');
+                if ($st) {
+                    $st->bind_param('i', $cid);
+                    $st->execute();
+                    $rs = $st->get_result();
+                    if ($rs && ($row = $rs->fetch_assoc())) {
+                        $slug = trim(preg_replace('/[^a-z0-9_-]/', '', strtolower((string) ($row['slug'] ?? ''))));
+                    }
+                    $st->close();
+                }
+            }
+        }
+        $qs = [];
+        if (rateb_control_pro_bridge()
+            || (!empty($_SESSION['control_logged_in']) && (int) ($_SESSION['agency_id'] ?? 0) > 0)) {
+            $qs[] = 'control=1';
+        }
+        if ($slug !== '') {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+            if ($host === '') {
+                $host = 'rateb.sa';
+            }
+            $u = $scheme . '://' . $host . '/' . rawurlencode($slug) . '/logout';
+            if ($qs !== []) {
+                $u .= '?' . implode('&', $qs);
+            }
+
+            return $u;
+        }
+        $u = pageUrl('logout.php');
+        if ($qs !== []) {
+            $u .= (strpos($u, '?') !== false ? '&' : '?') . implode('&', $qs);
+        }
+
         return $u;
     }
 }

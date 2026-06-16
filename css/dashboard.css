@@ -2680,6 +2680,47 @@ body.modal-open {
     flex-wrap: wrap;
 }
 
+.dashboard-context-logout {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fecaca;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+.dashboard-context-logout:hover {
+    color: #fff;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-color: transparent;
+}
+
+.dashboard-header-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+    background: rgba(239, 68, 68, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.dashboard-header-logout:hover {
+    color: #fff;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-color: transparent;
+}
+
 .dashboard-context-label {
     font-size: 0.95rem;
     font-weight: 600;

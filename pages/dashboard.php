@@ -823,6 +823,10 @@ include '../includes/header.php';
                 <span class="dashboard-context-sep" aria-hidden="true"></span>
                 <span class="dashboard-context-label">Agency:</span>
                 <span class="dashboard-context-value"><?php echo htmlspecialchars(($currentAgencyName !== null && $currentAgencyName !== '') ? $currentAgencyName : '—'); ?></span>
+                <a href="<?php echo htmlspecialchars(rateb_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="dashboard-context-logout" title="Logout" aria-label="Logout">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                    <span>Logout</span>
+                </a>
             </div>
             <?php endif; ?>
             <div class="header-bar">
@@ -836,6 +840,10 @@ include '../includes/header.php';
                         <span class="user-full-name"><?php echo htmlspecialchars($userFullName); ?></span>
                     </div>
                     <?php endif; ?>
+                    <a href="<?php echo htmlspecialchars(rateb_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="dashboard-header-logout" title="Logout" aria-label="Logout">
+                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                        <span>Logout</span>
+                    </a>
                 </div>
             </div>
             <div class="main-content">

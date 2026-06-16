@@ -73,6 +73,10 @@ RewriteRule ^pages/home\.php$ /profile [R=302,L]
 RewriteCond %{REQUEST_URI} !^/pages/ [NC]
 RewriteRule ^([a-z0-9_-]+)/login/?$ pages/login.php?country_slug=$1 [L,QSA]
 
+# Country-specific logout: /philippines/logout → pages/logout.php?country_slug=philippines
+RewriteCond %{REQUEST_URI} !^/pages/ [NC]
+RewriteRule ^([a-z0-9_-]+)/logout/?$ pages/logout.php?country_slug=$1 [L,QSA]
+
 # Phone barcode scanner (pairs with PC login): /philippines/login-scan?token=…
 RewriteRule ^([a-z0-9_-]+)/login-scan/?$ /pages/login-scan.php?country_slug=$1 [L,QSA]
 
