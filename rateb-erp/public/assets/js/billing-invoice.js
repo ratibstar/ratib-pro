@@ -35,6 +35,15 @@
         var termsEl = form.querySelector('[name="payment_terms_days"]');
         var dueHint = form.querySelector('[data-due-hint]');
         var lookupUrl = form.getAttribute('data-subscription-lookup') || '';
+        var taxProfileUrl = form.getAttribute('data-tax-profile-lookup') || '';
+        var invoiceTypeEl = form.querySelector('[name="invoice_type"]');
+        var taxPanel = form.querySelector('[data-tax-invoice-panel]');
+        var taxBuyerName = form.querySelector('[data-tax-buyer-name]');
+        var taxBuyerVat = form.querySelector('[data-tax-buyer-vat]');
+        var taxBuyerCr = form.querySelector('[data-tax-buyer-cr]');
+        var taxBuyerAddress = form.querySelector('[data-tax-buyer-address]');
+        var taxBuyerWarning = form.querySelector('[data-tax-buyer-warning]');
+        var linesSectionTitle = form.querySelector('.rateb-invoice-lines-wrap .rateb-invoice-section-title');
         var allSubs = [];
         try {
             allSubs = JSON.parse(form.getAttribute('data-subscriptions') || '[]');
@@ -105,6 +114,49 @@
             recalc();
         }
 
+        function syncInvoiceTypeUi() {
+            var type = invoiceTypeEl ? invoiceTypeEl.value : 'tax';
+            var isTax = type === 'tax';
+            if (taxPanel) {
+                taxPanel.classList.toggle('d-none', !isTax);
+            }
+            if (linesSectionTitle) {
+                linesSectionTitle.innerHTML = '<i class="fas fa-list"></i> ' + (isTax
+                    ? (form.getAttribute('data-tax-lines-title') || 'Tax invoice line items')
+                    : (form.getAttribute('data-lines-title') || 'Invoice line items'));
+            }
+            if (isTax && companyEl && companyEl.value) {
+                loadBuyerTaxProfile(companyEl.value);
+            }
+        }
+
+        function loadBuyerTaxProfile(companyId) {
+            if (!taxProfileUrl || !companyId) {
+                if (taxBuyerName) taxBuyerName.value = '';
+                if (taxBuyerVat) taxBuyerVat.value = '';
+                if (taxBuyerCr) taxBuyerCr.value = '';
+                if (taxBuyerAddress) taxBuyerAddress.value = '';
+                if (taxBuyerWarning) taxBuyerWarning.classList.add('d-none');
+                return;
+            }
+            fetch(taxProfileUrl + '?company_id=' + encodeURIComponent(companyId), {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    var profile = data && data.profile ? data.profile : {};
+                    if (taxBuyerName) taxBuyerName.value = profile.legal_name || '';
+                    if (taxBuyerVat) taxBuyerVat.value = profile.vat_number || '';
+                    if (taxBuyerCr) taxBuyerCr.value = profile.cr_number || '';
+                    if (taxBuyerAddress) taxBuyerAddress.value = profile.address || '';
+                    if (taxBuyerWarning) {
+                        taxBuyerWarning.classList.toggle('d-none', !!profile.complete);
+                    }
+                })
+                .catch(function () {});
+        }
+
         function loadCompanySubscription(companyId) {
             if (!companyId) {
                 filterSubscriptions('');
@@ -158,7 +210,13 @@
         if (companyEl) {
             companyEl.addEventListener('change', function () {
                 loadCompanySubscription(companyEl.value);
+                if (invoiceTypeEl && invoiceTypeEl.value === 'tax') {
+                    loadBuyerTaxProfile(companyEl.value);
+                }
             });
+        }
+        if (invoiceTypeEl) {
+            invoiceTypeEl.addEventListener('change', syncInvoiceTypeUi);
         }
         if (subEl) {
             subEl.addEventListener('change', function () {
@@ -280,6 +338,7 @@
 
         initAttachments();
         setDiscountMode((discountTypeEl && discountTypeEl.value) || 'value');
+        syncInvoiceTypeUi();
         if (companyEl && companyEl.value) filterSubscriptions(companyEl.value);
         updateDueDate();
         recalc();

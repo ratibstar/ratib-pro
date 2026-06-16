@@ -58,6 +58,7 @@ $subJson = json_encode(array_map(static function (array $sub): array {
               data-invoice-id="<?php echo $invoiceId; ?>"
               data-subscriptions="<?php echo Rateb\App\Core\View::escape($subJson ?: '[]'); ?>"
               data-subscription-lookup="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/subscription-lookup')); ?>"
+              data-tax-profile-lookup="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/tax-profile-lookup')); ?>"
               data-preview-url="<?php echo $isEdit ? Rateb\App\Core\View::escape(rateb_url($routePrefix . '/' . $invoiceId . '/preview')) : ''; ?>"
               data-preview-draft-url="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/preview-draft')); ?>"
               data-max-attachments="<?php echo $maxAttachments; ?>"
@@ -65,7 +66,9 @@ $subJson = json_encode(array_map(static function (array $sub): array {
               data-optional-label="<?php echo Rateb\App\Core\View::escape(__('optional')); ?>"
               data-after-days-label="<?php echo Rateb\App\Core\View::escape(__('due_after_days', ['days' => ':days'])); ?>"
               data-attachment-count-label="<?php echo Rateb\App\Core\View::escape(__('attachments_count', ['count' => ':count', 'max' => ':max'])); ?>"
-              data-currency-label="<?php echo Rateb\App\Core\View::escape($currencyLabel); ?>">
+              data-currency-label="<?php echo Rateb\App\Core\View::escape($currencyLabel); ?>"
+              data-tax-lines-title="<?php echo Rateb\App\Core\View::escape(__('tax_invoice_lines_section')); ?>"
+              data-lines-title="<?php echo Rateb\App\Core\View::escape(__('invoice_lines_section')); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <input type="hidden" name="submit_action" value="draft" data-submit-action>
 
@@ -177,10 +180,40 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                 </div>
             </section>
 
+            <section class="rateb-invoice-section mb-4<?php echo $invoiceType === 'tax' ? '' : ' d-none'; ?>" data-tax-invoice-panel>
+                <h6 class="rateb-invoice-section-title"><i class="fas fa-file-invoice-dollar"></i> <?php echo __('tax_invoice_section'); ?></h6>
+                <p class="text-muted small mb-3"><?php echo __('tax_invoice_buyer_hint'); ?></p>
+                <h6 class="rateb-invoice-subsection-title"><?php echo __('tax_invoice_buyer_section'); ?></h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label rateb-form-label"><?php echo __('buyer_legal_name'); ?></label>
+                        <input class="form-control rateb-form-control" type="text" readonly data-tax-buyer-name>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label rateb-form-label"><?php echo __('vat_number'); ?></label>
+                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" readonly data-tax-buyer-vat>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label rateb-form-label"><?php echo __('cr_number'); ?></label>
+                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" readonly data-tax-buyer-cr>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label rateb-form-label"><?php echo __('buyer_address'); ?></label>
+                        <input class="form-control rateb-form-control" type="text" readonly data-tax-buyer-address>
+                    </div>
+                </div>
+                <div class="alert alert-warning mt-3 mb-0 small d-none" data-tax-buyer-warning>
+                    <?php echo __('tax_invoice_buyer_incomplete'); ?>
+                </div>
+            </section>
+
+            <section class="rateb-invoice-section mb-4">
             <?php Rateb\App\Core\View::partial('invoice-lines', [
                 'lineItems' => $lineItems,
                 'defaultVat15' => true,
+                'sectionTitle' => __('tax_invoice_lines_section'),
             ]); ?>
+            </section>
 
             <section class="rateb-invoice-section mb-4">
                 <h6 class="rateb-invoice-section-title"><i class="fas fa-calculator"></i> <?php echo __('amount_details_section'); ?></h6>

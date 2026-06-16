@@ -61,6 +61,22 @@ final class LineItems
         ];
     }
 
+    public static function taxPresetLabel(string $preset): string
+    {
+        $map = [
+            'Local Sales 0%' => 'tax_preset_local_0',
+            'VAT 15%' => 'tax_preset_vat_15',
+            'VAT 5%' => 'tax_preset_vat_5',
+            'Exempt' => 'tax_preset_exempt',
+        ];
+        $key = $map[$preset] ?? '';
+        if ($key === '') {
+            return $preset;
+        }
+        $label = __($key);
+        return $label !== $key ? $label : $preset;
+    }
+
     /** @return array{subtotal: float, tax: float, total: float} */
     public static function lineTotals(float $qty, float $unitPrice, float $taxRate, bool $excludingTax): array
     {

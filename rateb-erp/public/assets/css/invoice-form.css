@@ -92,6 +92,17 @@
     background: rgba(13, 110, 253, 0.08);
 }
 
+.rateb-invoice-subsection-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--rateb-text-muted);
+}
+
+.rateb-invoice-lines-wrap .rateb-card {
+    border: 1px solid var(--rateb-border);
+}
+
 .rateb-invoice-print .rateb-invoice-print-header h2 {
     font-size: 1.35rem;
 }

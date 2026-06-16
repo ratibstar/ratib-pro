@@ -1,8 +1,10 @@
 <?php
 /** @var array<int, array<string, mixed>> $lineItems */
 /** @var bool $defaultVat15 */
+/** @var string|null $sectionTitle */
 $lineItems = $lineItems ?? [];
 $defaultVat15 = !empty($defaultVat15);
+$sectionTitle = $sectionTitle ?? __('invoice_lines_section');
 $taxPresets = \Rateb\App\Helpers\LineItems::taxPresets();
 if ($lineItems === []) {
     $lineItems = [[
@@ -16,10 +18,11 @@ if ($lineItems === []) {
     ]];
 }
 ?>
-<div class="col-12">
-    <div class="rateb-card mt-2">
+<div class="rateb-invoice-lines-wrap">
+    <h6 class="rateb-invoice-section-title mb-3"><i class="fas fa-list"></i> <?php echo Rateb\App\Core\View::escape($sectionTitle); ?></h6>
+    <div class="rateb-card">
         <div class="rateb-card-header d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-list"></i> <?php echo __('invoice_lines_section'); ?></span>
+            <span class="small text-muted"><?php echo __('line_items'); ?></span>
             <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add><i class="fas fa-plus"></i> <?php echo __('add_line'); ?></button>
         </div>
         <div class="rateb-card-body p-0">
@@ -59,7 +62,7 @@ if ($lineItems === []) {
                                 <?php foreach ($taxPresets as $preset) {
                                     $presetRate = strpos($preset, '15%') !== false ? 15 : (strpos($preset, '5%') !== false ? 5 : 0);
                                     ?>
-                                <option value="<?php echo Rateb\App\Core\View::escape($preset); ?>" data-tax-rate="<?php echo $presetRate; ?>"<?php echo $taxName === $preset ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($preset); ?></option>
+                                <option value="<?php echo Rateb\App\Core\View::escape($preset); ?>" data-tax-rate="<?php echo $presetRate; ?>"<?php echo $taxName === $preset ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape(\Rateb\App\Helpers\LineItems::taxPresetLabel($preset)); ?></option>
                                 <?php } ?>
                             </select>
                             <input type="hidden" name="line_excluding_tax[]" value="1">

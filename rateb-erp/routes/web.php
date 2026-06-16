@@ -146,6 +146,7 @@ foreach ($billingCrud as $path => $class) {
     $router->post('/admin/' . $path, [$class, 'store'], rateb_admin_mw('billing.manage'));
     if ($path === 'invoices') {
         $router->get('/admin/invoices/subscription-lookup', [$class, 'subscriptionLookup'], rateb_admin_mw('billing.manage'));
+        $router->get('/admin/invoices/tax-profile-lookup', [$class, 'taxProfileLookup'], rateb_admin_mw('billing.manage'));
         $router->get('/admin/invoices/{id}/preview', [$class, 'preview'], rateb_admin_mw('accounting.view'));
         $router->post('/admin/invoices/preview-draft', [$class, 'previewDraft'], rateb_admin_mw('billing.manage'));
     }

@@ -6,6 +6,12 @@
 $company = $company ?? [];
 $lines = $lines ?? [];
 $currency = (string) ($item['currency'] ?? 'SAR');
+$invoiceType = (string) ($item['invoice_type'] ?? 'tax');
+$invoiceTypeLabel = $invoiceType === 'simplified' ? __('invoice_type_simplified') : __('invoice_type_tax');
+$buyerProfile = [];
+if (!empty($item['company_id'])) {
+    $buyerProfile = (new \Rateb\App\Services\ZatcaService())->getTaxProfile((int) $item['company_id']);
+}
 $discountType = (string) ($item['discount_type'] ?? 'value');
 $discountVal = (float) ($item['discount_amount'] ?? 0);
 $amount = (float) ($item['amount'] ?? 0);
@@ -14,8 +20,14 @@ $discount = $discountType === 'percent' ? min($amount, $amount * ($discountVal /
 <div class="rateb-invoice-print">
     <div class="rateb-invoice-print-header d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
         <div>
-            <h2 class="mb-1"><?php echo Rateb\App\Core\View::escape(__('invoice_type_tax')); ?></h2>
+            <h2 class="mb-1"><?php echo Rateb\App\Core\View::escape($invoiceTypeLabel); ?></h2>
             <div class="text-muted"><?php echo Rateb\App\Core\View::escape((string) ($company['name'] ?? '')); ?></div>
+            <?php if ($invoiceType === 'tax' && !empty($buyerProfile['vat_number'])) { ?>
+            <div class="small text-muted"><?php echo __('vat_number'); ?>: <?php echo Rateb\App\Core\View::escape((string) $buyerProfile['vat_number']); ?></div>
+            <?php } ?>
+            <?php if ($invoiceType === 'tax' && !empty($buyerProfile['cr_number'])) { ?>
+            <div class="small text-muted"><?php echo __('cr_number'); ?>: <?php echo Rateb\App\Core\View::escape((string) $buyerProfile['cr_number']); ?></div>
+            <?php } ?>
             <?php if (!empty($company['email'])) { ?>
             <div class="small text-muted"><?php echo Rateb\App\Core\View::escape((string) $company['email']); ?></div>
             <?php } ?>

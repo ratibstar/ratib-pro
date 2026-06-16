@@ -1098,7 +1098,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         }
         $this->billing->ensureBillingReady();
         $this->view($this->viewPrefix . '/form', [
-            'title' => __('create') . ' ' . __('invoices'),
+            'title' => __('create_tax_invoice'),
             'item' => [
                 'invoice_no' => $this->billing->nextInvoiceNo(),
                 'status' => 'draft',
@@ -1215,6 +1215,41 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         $sub = $this->billing->activeSubscriptionForCompany($companyId);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['subscription' => $sub], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function taxProfileLookup(): void
+    {
+        if (!rateb_can('billing.manage')) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error' => 'forbidden'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        $companyId = (int) $this->input('company_id', 0);
+        $profile = $companyId > 0
+            ? (new \Rateb\App\Services\ZatcaService())->getTaxProfile($companyId)
+            : [];
+        $company = $companyId > 0 ? (new \Rateb\App\Models\Company())->find($companyId) : null;
+        $legalName = trim((string) ($profile['legal_name_ar'] ?? $profile['legal_name_en'] ?? ''));
+        if ($legalName === '' && is_array($company)) {
+            $legalName = (string) ($company['name'] ?? '');
+        }
+        $addressParts = array_filter([
+            trim((string) ($profile['street'] ?? '')),
+            trim((string) ($profile['building_no'] ?? '')),
+            trim((string) ($profile['city'] ?? '')),
+            trim((string) ($profile['postal_code'] ?? '')),
+        ]);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'profile' => [
+                'vat_number' => (string) ($profile['vat_number'] ?? ''),
+                'cr_number' => (string) ($profile['cr_number'] ?? ''),
+                'legal_name' => $legalName,
+                'address' => implode('، ', $addressParts),
+                'complete' => strlen((string) ($profile['vat_number'] ?? '')) >= 15,
+            ],
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     public function preview(array $params): void
