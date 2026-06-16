@@ -172,4 +172,12 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
         </form>
     </div>
 </div>
+<script>
+window.ratebSpLabels = <?php echo json_encode([
+    'bank_reference' => __('bank_reference'),
+    'check_number' => __('check_number'),
+    'select_document' => __('supplier_payment_select_document'),
+    'select_supplier' => __('supplier_payment_select_supplier'),
+], JSON_UNESCAPED_UNICODE); ?>;
+</script>
 <script src="<?php echo rateb_asset('js/supplier-payment.js'); ?>" defer></script>
