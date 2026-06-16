@@ -34,6 +34,7 @@ return [
         'documents',
         'workflows',
         'notifications',
+        'hr',
     ],
 
     /** Default role slug for demo / full company ERP access. */

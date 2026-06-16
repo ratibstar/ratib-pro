@@ -15,4 +15,5 @@ return [
     'accounting' => 'accounting.view',
     'documents' => 'documents.view',
     'workflows' => 'workflows.view',
+    'hr' => 'hr.view',
 ];

@@ -31,6 +31,13 @@ $opsSection(__('suppliers'), [
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
 ], 'fa-truck-field');
+$opsSection(__('human_resources'), [
+    ['hr', 'hr_overview', 'fa-gauge-high', 'hr'],
+    ['hr/employees', 'hr_employees', 'fa-id-badge', 'hr'],
+    ['hr/attendance', 'hr_attendance', 'fa-clock', 'hr'],
+    ['hr/leaves', 'hr_leaves', 'fa-calendar-minus', 'hr'],
+    ['hr/payroll', 'hr_payroll', 'fa-money-check-dollar', 'hr'],
+], 'fa-users-gear');
 $opsSection(__('accounting_module'), [
     ['accounting', 'accounting_overview', 'fa-gauge-high', 'accounting'],
     ['accounting/reports', 'accounting_reports', 'fa-chart-pie', 'accounting', 'accounting.view'],

@@ -41,6 +41,10 @@ final class CustomerPortalService
             ],
             'documents' => ['icon' => 'fa-folder-open'],
             'workflows' => ['icon' => 'fa-diagram-project'],
+            'hr' => [
+                'icon' => 'fa-users-gear',
+                'subs' => ['hr_employees', 'hr_attendance', 'hr_leaves', 'hr_payroll'],
+            ],
         ];
     }
 

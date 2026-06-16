@@ -356,4 +356,29 @@ return [
         'view' => '',
         'manage' => '',
     ],
+    'hr' => [
+        'module' => 'hr',
+        'view' => 'hr.view',
+        'manage' => 'hr.manage',
+    ],
+    'hr-employees' => [
+        'module' => 'hr',
+        'view' => 'hr.view',
+        'manage' => 'hr.manage',
+    ],
+    'hr-attendance' => [
+        'module' => 'hr',
+        'view' => 'hr.view',
+        'manage' => 'hr.manage',
+    ],
+    'hr-leaves' => [
+        'module' => 'hr',
+        'view' => 'hr.view',
+        'manage' => 'hr.manage',
+    ],
+    'hr-payroll' => [
+        'module' => 'hr',
+        'view' => 'hr.view',
+        'manage' => 'hr.manage',
+    ],
 ];

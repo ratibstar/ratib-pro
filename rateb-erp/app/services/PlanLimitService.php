@@ -24,6 +24,7 @@ final class PlanLimitService
             'accounting' => 'accounting',
             'documents' => 'documents',
             'workflows' => 'workflows',
+            'hr' => 'human_resources',
         ];
     }
 
