@@ -1,0 +1,16 @@
+.rateb-sp-form-card .rateb-sp-link-panel {
+    background: var(--rateb-surface-muted, #f4f8fc);
+    border: 1px solid var(--rateb-border, #d4e3f4);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+}
+
+.rateb-sp-form-card [data-sp-fields],
+.rateb-sp-form-card .rateb-sp-fields {
+    border-top: 1px solid var(--rateb-border, #d4e3f4);
+    padding-top: 1rem;
+}
+
+.rateb-sp-form-card [readonly] {
+    background: #eef4fb;
+}

@@ -10,8 +10,10 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\ChartOfAccount;
 use Rateb\App\Models\JournalEntry;
+use Rateb\App\Models\Supplier;
 use Rateb\App\Services\AccountingService;
 use Rateb\App\Services\AuditService;
+use Rateb\App\Services\DocumentService;
 use Rateb\App\Controllers\Shared\ExportController;
 
 final class AccountingDashboardController extends Controller
@@ -382,35 +384,48 @@ final class AccountingDashboardController extends Controller
         $companyId = rateb_resolve_ops_company_id();
         if ($companyId < 1) {
             SessionManager::flash('error', __('select_company_ops'));
-            Response::redirect(rateb_app_url('accounting/accounts-payable'));
+            Response::redirect(rateb_app_url('accounting/supplier-payments'));
         }
         rateb_bootstrap_ops_tenant();
         TenantContext::setCompanyId($companyId);
+        $service = new AccountingService();
         $poId = (int) ($_GET['purchase_order_id'] ?? 0);
+        $invoiceId = (int) ($_GET['invoice_id'] ?? 0);
+        $supplierId = (int) ($_GET['supplier_id'] ?? 0);
+        $payable = null;
         $po = null;
         if ($poId > 0) {
-            $po = (new JournalEntry())->queryOne(
-                'SELECT po.*, s.name AS supplier_name FROM rateb_purchase_orders po
-                 LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
-                 WHERE po.id = :id AND po.company_id = :cid',
-                ['id' => $poId, 'cid' => $companyId]
-            );
+            $payable = $service->purchaseOrderPayable($companyId, $poId);
+            $po = $payable['po'] ?? null;
+            if ($supplierId < 1 && $payable) {
+                $supplierId = (int) ($payable['supplier_id'] ?? 0);
+            }
         }
-        $service = new AccountingService();
-        $paid = 0.0;
-        if ($po) {
-            $paidRow = (new JournalEntry())->queryOne(
-                'SELECT COALESCE(SUM(amount), 0) AS paid FROM rateb_supplier_payments
-                 WHERE purchase_order_id = :poid AND status = :st',
-                ['poid' => $poId, 'st' => 'posted']
-            );
-            $paid = (float) ($paidRow['paid'] ?? 0);
+        $payableOrders = $service->listPayablePurchaseOrders($companyId, $supplierId > 0 ? $supplierId : null);
+        $payableInvoices = $service->listPayableSupplierInvoices($companyId, $supplierId > 0 ? $supplierId : null);
+        $suppliers = (new Supplier())->all(500, 0);
+        $supplierBalances = [];
+        foreach ($suppliers as $sup) {
+            $sid = (int) ($sup['id'] ?? 0);
+            if ($sid > 0) {
+                $supplierBalances[(string) $sid] = $service->supplierOutstandingBalance($companyId, $sid);
+            }
         }
+        $supplierBalance = $supplierId > 0 ? $service->supplierOutstandingBalance($companyId, $supplierId) : 0.0;
         $this->view('company/accounting/supplier-payment-form', [
-            'title' => __('supplier_payment'),
+            'title' => __('create_supplier_payment'),
             'po' => $po,
-            'paidAmount' => $paid,
-            'banks' => $service->listBankAccounts($companyId),
+            'payable' => $payable,
+            'paidAmount' => (float) ($payable['paid'] ?? 0),
+            'payableOrders' => $payableOrders,
+            'payableInvoices' => $payableInvoices,
+            'suppliers' => $suppliers,
+            'supplierBalances' => $supplierBalances,
+            'supplierBalance' => $supplierBalance,
+            'selectedSupplierId' => $supplierId,
+            'selectedPoId' => $poId,
+            'selectedInvoiceId' => $invoiceId,
+            'linkType' => $invoiceId > 0 ? 'invoice' : 'po',
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('accounting'),
         ], 'main');
@@ -420,26 +435,45 @@ final class AccountingDashboardController extends Controller
     {
         rateb_require_post('accounting');
         if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
-            Response::redirect(rateb_app_url('accounting/accounts-payable'));
+            Response::redirect(rateb_app_url('accounting/supplier-payments'));
         }
         $companyId = rateb_require_ops_company();
         $service = new AccountingService();
         $id = $service->postSupplierPayment($companyId, [
             'purchase_order_id' => (int) ($_POST['purchase_order_id'] ?? 0),
+            'invoice_id' => (int) ($_POST['invoice_id'] ?? 0),
             'supplier_id' => (int) ($_POST['supplier_id'] ?? 0),
             'amount' => (float) ($_POST['amount'] ?? 0),
             'payment_date' => trim((string) ($_POST['payment_date'] ?? date('Y-m-d'))),
+            'due_date' => trim((string) ($_POST['due_date'] ?? '')),
+            'payment_method' => trim((string) ($_POST['payment_method'] ?? 'bank')),
             'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0),
             'reference_no' => trim((string) ($_POST['reference_no'] ?? '')),
             'notes' => trim((string) ($_POST['notes'] ?? '')),
         ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
         if ($id) {
+            if (!empty($_FILES['entity_attachment']) && is_array($_FILES['entity_attachment'])) {
+                $upload = (new DocumentService())->storeUpload(
+                    $_FILES['entity_attachment'],
+                    'supplier_payment',
+                    $id,
+                    __('attach_transfer_voucher')
+                );
+                if (!($upload['success'] ?? false) && !empty($upload['error'])) {
+                    SessionManager::flash('warning', (string) $upload['error']);
+                }
+            }
             (new AuditService())->log('create', 'supplier_payment', $id, []);
             SessionManager::flash('success', __('supplier_payment_posted'));
-        } else {
-            SessionManager::flash('error', __('supplier_payment_failed'));
+            Response::redirect(rateb_app_url('accounting/supplier-payments'));
         }
-        Response::redirect(rateb_app_url('accounting/accounts-payable'));
+        SessionManager::flash('error', __('supplier_payment_failed'));
+        $redirect = rateb_app_url('accounting/supplier-payments/create');
+        $poId = (int) ($_POST['purchase_order_id'] ?? 0);
+        if ($poId > 0) {
+            $redirect = rateb_url_query($redirect, ['purchase_order_id' => $poId]);
+        }
+        Response::redirect($redirect);
     }
 
     public function bankReconciliationDetail(array $params): void
@@ -513,17 +547,28 @@ final class AccountingDashboardController extends Controller
         }
         $rows = (new AccountingService())->listSupplierPayments($companyId);
         foreach ($rows as &$row) {
+            $method = (string) ($row['payment_method'] ?? '');
+            $row['payment_method'] = match ($method) {
+                'bank', 'bank_transfer' => __('payment_method_bank'),
+                'cheque' => __('payment_method_cheque'),
+                'cash' => __('payment_method_cash'),
+                default => $method,
+            };
             $row['status'] = __((string) ($row['status'] ?? ''));
         }
         unset($row);
         ExportController::send('supplier_payments', [
             ['name' => 'payment_no', 'label' => __('payment_no')],
-            ['name' => 'payment_date', 'label' => __('evaluation_date')],
+            ['name' => 'payment_date', 'label' => __('actual_payment_date')],
+            ['name' => 'due_date', 'label' => __('due_date')],
             ['name' => 'supplier_name', 'label' => __('supplier')],
             ['name' => 'order_no', 'label' => __('purchase_order')],
-            ['name' => 'entry_no', 'label' => __('entry_no')],
+            ['name' => 'invoice_no', 'label' => __('supplier_invoice')],
+            ['name' => 'payment_method', 'label' => __('payment_method')],
+            ['name' => 'reference_no', 'label' => __('reference_bank_or_check')],
             ['name' => 'amount', 'label' => __('amount'), 'type' => 'money'],
             ['name' => 'status', 'label' => __('status')],
+            ['name' => 'notes', 'label' => __('notes')],
         ], $rows, __('supplier_payments'), 'supplier-payments');
     }
 

@@ -204,6 +204,13 @@ final class FormLookupService
             case 'regulatory_statuses':
                 $options = $this->staticOptions(['compliant', 'pending', 'non_compliant'], true);
                 break;
+            case 'supplier_payment_methods':
+                $options = [
+                    ['value' => 'bank', 'label' => __('payment_method_bank')],
+                    ['value' => 'cheque', 'label' => __('payment_method_cheque')],
+                    ['value' => 'cash', 'label' => __('payment_method_cash')],
+                ];
+                break;
             case 'payment_methods':
                 $options = $this->staticOptions(['bank_transfer', 'card', 'cash', 'cheque', 'online'], true);
                 break;
@@ -539,11 +546,13 @@ final class FormLookupService
     public static function supplierPaymentFormFields(float $maxAmount = 0): array
     {
         return [
+            ['name' => 'payment_method', 'label' => 'payment_method', 'type' => 'select', 'lookup' => 'supplier_payment_methods', 'translate_options' => false, 'required' => true, 'col' => 'col-md-4', 'default' => 'bank'],
+            ['name' => 'due_date', 'label' => 'due_date', 'type' => 'date', 'col' => 'col-md-4'],
+            ['name' => 'payment_date', 'label' => 'actual_payment_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
             ['name' => 'amount', 'label' => 'amount', 'type' => 'number', 'step' => '0.01', 'min' => '0.01', 'max' => (string) max(0.01, $maxAmount), 'required' => true, 'col' => 'col-md-4'],
-            ['name' => 'payment_date', 'label' => 'payment_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
-            ['name' => 'bank_account_id', 'label' => 'bank_account', 'type' => 'fk', 'lookup' => 'payment_bank_accounts', 'col' => 'col-md-4'],
-            ['name' => 'reference_no', 'label' => 'reference_no', 'type' => 'text', 'col' => 'col-md-6'],
-            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
+            ['name' => 'bank_account_id', 'label' => 'bank_account', 'type' => 'fk', 'lookup' => 'payment_bank_accounts', 'col' => 'col-md-4', 'show_when' => 'bank,cheque'],
+            ['name' => 'reference_no', 'label' => 'reference_bank_or_check', 'type' => 'text', 'col' => 'col-md-4'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 3],
         ];
     }
 

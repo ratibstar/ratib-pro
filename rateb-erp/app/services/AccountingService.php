@@ -604,6 +604,132 @@ final class AccountingService
         return ['rows' => $rows, 'total_open' => $totalOpen, 'total_posted' => $totalPosted];
     }
 
+    /** Outstanding AP balance for a supplier (posted PO totals minus payments). */
+    public function supplierOutstandingBalance(?int $companyId, int $supplierId): float
+    {
+        if ($companyId === null || $companyId < 1 || $supplierId < 1) {
+            return 0.0;
+        }
+        $row = (new JournalEntry())->queryOne(
+            "SELECT COALESCE(SUM(GREATEST(po.total_amount - COALESCE(sp.paid, 0), 0)), 0) AS due
+             FROM rateb_purchase_orders po
+             INNER JOIN rateb_journal_entries je ON je.source_type = 'purchase_order'
+                 AND je.source_id = po.id AND je.status = 'posted'
+             LEFT JOIN (
+                 SELECT purchase_order_id, SUM(amount) AS paid
+                 FROM rateb_supplier_payments WHERE status = 'posted'
+                 GROUP BY purchase_order_id
+             ) sp ON sp.purchase_order_id = po.id
+             WHERE po.company_id = :cid AND po.supplier_id = :sid
+               AND po.status IN ('sent','confirmed','partial','received')",
+            ['cid' => $companyId, 'sid' => $supplierId]
+        );
+
+        return (float) ($row['due'] ?? 0);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function purchaseOrderPayable(?int $companyId, int $poId): ?array
+    {
+        if ($companyId === null || $companyId < 1 || $poId < 1) {
+            return null;
+        }
+        $po = (new JournalEntry())->queryOne(
+            'SELECT po.*, s.name AS supplier_name, je.id AS journal_id
+             FROM rateb_purchase_orders po
+             LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+             LEFT JOIN rateb_journal_entries je ON je.source_type = \'purchase_order\'
+                 AND je.source_id = po.id AND je.status = \'posted\'
+             WHERE po.id = :id AND po.company_id = :cid LIMIT 1',
+            ['id' => $poId, 'cid' => $companyId]
+        );
+        if (!$po || empty($po['journal_id'])) {
+            return null;
+        }
+        $paidRow = (new JournalEntry())->queryOne(
+            'SELECT COALESCE(SUM(amount), 0) AS paid FROM rateb_supplier_payments
+             WHERE purchase_order_id = :poid AND status = :st',
+            ['poid' => $poId, 'st' => 'posted']
+        );
+        $total = (float) ($po['total_amount'] ?? 0);
+        $paid = (float) ($paidRow['paid'] ?? 0);
+        $due = max(0, $total - $paid);
+        $dueDate = (string) ($po['expected_date'] ?? $po['order_date'] ?? '');
+
+        return [
+            'po' => $po,
+            'total' => $total,
+            'paid' => $paid,
+            'due' => $due,
+            'due_date' => $dueDate,
+            'supplier_id' => (int) ($po['supplier_id'] ?? 0),
+            'supplier_name' => (string) ($po['supplier_name'] ?? ''),
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listPayablePurchaseOrders(?int $companyId, ?int $supplierId = null): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return [];
+        }
+        $sql = "SELECT po.id, po.order_no, po.order_date, po.expected_date, po.total_amount, po.supplier_id,
+                       s.name AS supplier_name,
+                       COALESCE(sp.paid, 0) AS paid_amount,
+                       GREATEST(po.total_amount - COALESCE(sp.paid, 0), 0) AS due_amount
+                FROM rateb_purchase_orders po
+                LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+                INNER JOIN rateb_journal_entries je ON je.source_type = 'purchase_order'
+                    AND je.source_id = po.id AND je.status = 'posted'
+                LEFT JOIN (
+                    SELECT purchase_order_id, SUM(amount) AS paid
+                    FROM rateb_supplier_payments WHERE status = 'posted'
+                    GROUP BY purchase_order_id
+                ) sp ON sp.purchase_order_id = po.id
+                WHERE po.company_id = :cid
+                  AND po.status IN ('sent','confirmed','partial','received')
+                  AND po.total_amount > COALESCE(sp.paid, 0) + 0.009";
+        $params = ['cid' => $companyId];
+        if ($supplierId !== null && $supplierId > 0) {
+            $sql .= ' AND po.supplier_id = :sid';
+            $params['sid'] = $supplierId;
+        }
+        $sql .= ' ORDER BY po.order_date DESC, po.id DESC LIMIT 300';
+
+        return (new JournalEntry())->query($sql, $params);
+    }
+
+    /** Supplier invoices linked via po_number (open balances). */
+    /** @return array<int, array<string, mixed>> */
+    public function listPayableSupplierInvoices(?int $companyId, ?int $supplierId = null, ?string $orderNo = null): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return [];
+        }
+        $sql = "SELECT i.id, i.invoice_no, i.po_number, i.total_amount, i.due_date, i.issued_at,
+                       i.payment_status, po.id AS purchase_order_id, po.supplier_id, s.name AS supplier_name
+                FROM rateb_invoices i
+                INNER JOIN rateb_purchase_orders po ON po.company_id = i.company_id
+                    AND po.order_no = i.po_number
+                LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+                WHERE i.company_id = :cid
+                  AND i.status IN ('sent','overdue')
+                  AND i.payment_status IN ('unpaid','partial')
+                  AND i.po_number IS NOT NULL AND i.po_number != ''";
+        $params = ['cid' => $companyId];
+        if ($supplierId !== null && $supplierId > 0) {
+            $sql .= ' AND po.supplier_id = :sid';
+            $params['sid'] = $supplierId;
+        }
+        if ($orderNo !== null && $orderNo !== '') {
+            $sql .= ' AND i.po_number = :ono';
+            $params['ono'] = $orderNo;
+        }
+        $sql .= ' ORDER BY i.due_date ASC, i.id DESC LIMIT 200';
+
+        return (new JournalEntry())->query($sql, $params);
+    }
+
     /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_paid: float} */
     public function accountsReceivable(?int $companyId): array
     {
@@ -1307,9 +1433,30 @@ final class AccountingService
         $this->ensureDefaultAccounts($companyId);
         $amount = (float) ($data['amount'] ?? 0);
         $poId = (int) ($data['purchase_order_id'] ?? 0);
+        $invoiceId = (int) ($data['invoice_id'] ?? 0);
         $paymentDate = (string) ($data['payment_date'] ?? date('Y-m-d'));
+        $dueDate = trim((string) ($data['due_date'] ?? ''));
+        $paymentMethod = (string) ($data['payment_method'] ?? 'bank');
+        if (!in_array($paymentMethod, ['bank', 'cheque', 'cash', 'bank_transfer'], true)) {
+            $paymentMethod = 'bank';
+        }
+        if ($paymentMethod === 'bank_transfer') {
+            $paymentMethod = 'bank';
+        }
         if ($amount <= 0 || !$this->isPeriodOpen($companyId, $paymentDate)) {
             return null;
+        }
+        if ($poId > 0) {
+            $payable = $this->purchaseOrderPayable($companyId, $poId);
+            if ($payable === null || $amount > (float) $payable['due'] + 0.01) {
+                return null;
+            }
+            if ($dueDate === '' && !empty($payable['due_date'])) {
+                $dueDate = (string) $payable['due_date'];
+            }
+            if ((int) ($data['supplier_id'] ?? 0) < 1) {
+                $data['supplier_id'] = (int) ($payable['supplier_id'] ?? 0);
+            }
         }
         $ap = $this->accountIdByCode($companyId, '2100');
         if (!$ap) {
@@ -1317,7 +1464,13 @@ final class AccountingService
         }
         $creditAccountId = $ap;
         $bankAccountId = (int) ($data['bank_account_id'] ?? 0);
-        if ($bankAccountId > 0) {
+        if ($paymentMethod === 'cash') {
+            $cashId = $this->accountIdByCode($companyId, '1100');
+            if ($cashId) {
+                $creditAccountId = $cashId;
+            }
+            $bankAccountId = 0;
+        } elseif ($bankAccountId > 0) {
             $bank = (new JournalEntry())->queryOne(
                 'SELECT chart_account_id FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid LIMIT 1',
                 ['id' => $bankAccountId, 'cid' => $companyId]
@@ -1351,19 +1504,21 @@ final class AccountingService
         }
         $stmt = $pdo->prepare(
             'INSERT INTO rateb_supplier_payments
-             (company_id, supplier_id, purchase_order_id, payment_no, payment_date, amount, bank_account_id,
+             (company_id, supplier_id, purchase_order_id, invoice_id, payment_no, payment_date, due_date, amount, bank_account_id,
               payment_method, reference_no, journal_entry_id, status, notes, created_by, posted_at)
-             VALUES (:cid, :sid, :poid, :no, :dt, :amt, :bid, :meth, :ref, :jid, :st, :notes, :uid, NOW())'
+             VALUES (:cid, :sid, :poid, :iid, :no, :dt, :due, :amt, :bid, :meth, :ref, :jid, :st, :notes, :uid, NOW())'
         );
         $stmt->execute([
             'cid' => $companyId,
             'sid' => $supplierId,
             'poid' => $poId > 0 ? $poId : null,
+            'iid' => $invoiceId > 0 ? $invoiceId : null,
             'no' => $paymentNo,
             'dt' => $paymentDate,
+            'due' => $dueDate !== '' ? $dueDate : null,
             'amt' => $amount,
             'bid' => $bankAccountId > 0 ? $bankAccountId : null,
-            'meth' => (string) ($data['payment_method'] ?? 'bank'),
+            'meth' => $paymentMethod,
             'ref' => trim((string) ($data['reference_no'] ?? '')) ?: null,
             'jid' => $entryId,
             'st' => 'posted',
@@ -2230,11 +2385,14 @@ final class AccountingService
             return [];
         }
         return (new JournalEntry())->query(
-            'SELECT sp.*, s.name AS supplier_name, po.order_no, je.entry_no
+            'SELECT sp.*, s.name AS supplier_name, po.order_no, je.entry_no, inv.invoice_no,
+                    ba.name AS bank_name
              FROM rateb_supplier_payments sp
              LEFT JOIN rateb_suppliers s ON s.id = sp.supplier_id
              LEFT JOIN rateb_purchase_orders po ON po.id = sp.purchase_order_id
+             LEFT JOIN rateb_invoices inv ON inv.id = sp.invoice_id
              LEFT JOIN rateb_journal_entries je ON je.id = sp.journal_entry_id
+             LEFT JOIN rateb_bank_accounts ba ON ba.id = sp.bank_account_id
              WHERE sp.company_id = :cid
              ORDER BY sp.id DESC LIMIT ' . (int) $limit,
             ['cid' => $companyId]
