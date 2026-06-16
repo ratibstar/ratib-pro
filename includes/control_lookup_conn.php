@@ -32,6 +32,13 @@ if (!function_exists('get_control_lookup_conn')) {
         }
         try {
             $controlConn = @new mysqli($host, $user, $pass, CONTROL_PANEL_DB_NAME, $port);
+            if ($controlConn && $controlConn->connect_error && $host === 'localhost') {
+                $controlConn->close();
+                $controlConn = @new mysqli('127.0.0.1', $user, $pass, CONTROL_PANEL_DB_NAME, $port);
+            } elseif ($controlConn && $controlConn->connect_error && $host === '127.0.0.1') {
+                $controlConn->close();
+                $controlConn = @new mysqli('localhost', $user, $pass, CONTROL_PANEL_DB_NAME, $port);
+            }
             if ($controlConn && !$controlConn->connect_error) {
                 $controlConn->set_charset('utf8mb4');
                 return $controlConn;

@@ -36,6 +36,7 @@ if (!$cli) {
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/control_lookup_conn.php';
+require_once __DIR__ . '/../control-panel/api/control/agency-db-helper.php';
 
 $username = 'admin';
 $password = '123456';
@@ -56,8 +57,10 @@ if (!$ctrl instanceof mysqli) {
 
 $agencies = [];
 $res = $ctrl->query(
-    'SELECT DISTINCT db_host, db_port, db_user, db_pass, db_name, name, country_id '
-    . 'FROM control_agencies WHERE is_active = 1 AND db_name IS NOT NULL AND TRIM(db_name) <> "" ORDER BY db_name'
+    'SELECT DISTINCT a.db_host, a.db_port, a.db_user, a.db_pass, a.db_name, a.name, a.country_id, c.slug AS country_slug '
+    . 'FROM control_agencies a '
+    . 'LEFT JOIN control_countries c ON c.id = a.country_id '
+    . 'WHERE a.is_active = 1 AND a.db_name IS NOT NULL AND TRIM(a.db_name) <> "" ORDER BY a.db_name'
 );
 if ($res) {
     while ($row = $res->fetch_assoc()) {
@@ -70,11 +73,6 @@ if ($agencies === []) {
     echo implode("\n", $lines) . "\n";
     exit(1);
 }
-
-$hostDefault = defined('DB_HOST') ? (string) DB_HOST : '127.0.0.1';
-$portDefault = defined('DB_PORT') ? (int) DB_PORT : 3306;
-$userDefault = defined('DB_USER') ? (string) DB_USER : '';
-$passDefault = defined('DB_PASS') ? (string) DB_PASS : '';
 
 $resetOne = static function (mysqli $conn, string $uname, string $pwdHash) use (&$lines): bool {
     $res = $conn->query('SHOW TABLES LIKE \'users\'');
@@ -173,26 +171,16 @@ foreach ($agencies as $ag) {
     $label = trim((string) ($ag['name'] ?? '')) . ' → ' . $dbName;
     $lines[] = $label;
 
-    $host = trim((string) ($ag['db_host'] ?? '')) ?: $hostDefault;
-    $port = (int) ($ag['db_port'] ?? 0) ?: $portDefault;
-    $user = trim((string) ($ag['db_user'] ?? '')) ?: $userDefault;
-    $pass = (string) ($ag['db_pass'] ?? '');
-    if ($pass === '' && $user === $userDefault) {
-        $pass = $passDefault;
-    }
-
     try {
-        $tenant = @new mysqli($host, $user, $pass, $dbName, $port);
-        if ($tenant->connect_error && $user === $userDefault && $pass !== $passDefault && $passDefault !== '') {
-            // control_agencies often stores stale db_pass; retry with env/main password
-            $tenant = @new mysqli($host, $user, $passDefault, $dbName, $port);
-            $pass = $passDefault;
-        }
-        if ($tenant->connect_error) {
-            $lines[] = '  FAIL connect: ' . $tenant->connect_error;
+        $countryId = (int) ($ag['country_id'] ?? 0);
+        $acct = getAgencyDbConnection($ag, $countryId);
+        if (!$acct || !isset($acct['conn']) || !($acct['conn'] instanceof mysqli)) {
+            $detail = function_exists('getAgencyDbConnectionLastError') ? getAgencyDbConnectionLastError() : 'unknown';
+            $lines[] = '  FAIL connect: ' . $detail;
             continue;
         }
-        $tenant->set_charset('utf8mb4');
+        $tenant = $acct['conn'];
+        $lines[] = '  connected via ' . ($acct['connect_host'] ?? '?') . ' as ' . ($acct['connect_user'] ?? '?');
         $resetOne($tenant, $username, $hash);
         $tenant->close();
     } catch (Throwable $e) {

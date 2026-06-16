@@ -84,7 +84,11 @@ function getAgencyDbConnection($agency, $countryId = 0) {
     $port = (int)($agency['db_port'] ?? 3306);
     $dbHost = trim($agency['db_host'] ?? '') ?: (defined('DB_HOST') ? DB_HOST : 'localhost');
     $dbUser = trim($agency['db_user'] ?? '') ?: (defined('DB_USER') ? DB_USER : '');
-    $dbPass = $agency['db_pass'] ?? (defined('DB_PASS') ? DB_PASS : '');
+    $envUser = defined('DB_USER') ? (string) DB_USER : '';
+    $envPass = defined('DB_PASS') ? (string) DB_PASS : '';
+    // Shared MySQL user (admin_rateb): .env password is source of truth — agency rows often store stale cPanel passwords.
+    $agencyPass = (string) ($agency['db_pass'] ?? '');
+    $dbPass = ($dbUser !== '' && $dbUser === $envUser) ? $envPass : ($agencyPass !== '' ? $agencyPass : $envPass);
     $dbName = trim($agency['db_name'] ?? '');
     if (empty($dbName)) {
         $GLOBALS['__agency_db_connect_error'] = 'control_agencies.db_name is empty for this agency.';

@@ -41,6 +41,7 @@ if (!$cli) {
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/control_lookup_conn.php';
 require_once __DIR__ . '/../config/env/directadmin_db.php';
+require_once __DIR__ . '/../control-panel/api/control/agency-db-helper.php';
 
 $lines = [];
 $lines[] = 'RATEB — all country database audit';
@@ -134,25 +135,28 @@ foreach ($targets as $dbName => $meta) {
     $host = $meta['db_host'] !== '' ? $meta['db_host'] : $hostDefault;
     $port = $meta['db_port'] > 0 ? $meta['db_port'] : $portDefault;
     $user = $meta['db_user'] !== '' ? $meta['db_user'] : $userDefault;
-    $pass = $meta['db_pass'] !== '' ? $meta['db_pass'] : ($user === $userDefault ? $passDefault : '');
 
     try {
-        $tenant = @new mysqli($host, $user, $pass, $dbName, $port);
-        if ($tenant->connect_error && $user === $userDefault && $pass !== $passDefault && $passDefault !== '') {
-            // control_agencies rows may have stale db_pass; retry with env/main password
-            $tenant = @new mysqli($host, $user, $passDefault, $dbName, $port);
-            $pass = $passDefault;
-        }
-        if ($tenant->connect_error) {
-            $lines[] = '  connect: FAIL — ' . $tenant->connect_error;
-            if (stripos($tenant->connect_error, 'Access denied') !== false) {
-                $lines[] = '  FIX: run control-panel/GRANT_COUNTRY_DBS_ADMIN_RATEB.sql (DirectAdmin MySQL admin)';
+        $agencyRow = [
+            'db_host' => $host,
+            'db_port' => $port,
+            'db_user' => $user,
+            'db_pass' => $meta['db_pass'],
+            'db_name' => $dbName,
+            'country_slug' => $meta['country_slug'] ?? '',
+        ];
+        $acct = getAgencyDbConnection($agencyRow, 0);
+        if (!$acct || !isset($acct['conn']) || !($acct['conn'] instanceof mysqli)) {
+            $err = function_exists('getAgencyDbConnectionLastError') ? getAgencyDbConnectionLastError() : 'Connection failed';
+            $lines[] = '  connect: FAIL — ' . $err;
+            if (stripos($err, 'Access denied') !== false) {
+                $lines[] = '  FIX: DirectAdmin → admin_rateb → Full access on this DB; run CLEAR_CONTROL_AGENCIES_DB_PASS.sql';
             }
             $fail++;
             continue;
         }
-        $tenant->set_charset('utf8mb4');
-        $lines[] = '  connect: OK (' . $host . ':' . $port . ' as ' . $user . ')';
+        $tenant = $acct['conn'];
+        $lines[] = '  connect: OK (' . ($acct['connect_host'] ?? $host) . ':' . ($acct['connect_port'] ?? $port) . ' as ' . ($acct['connect_user'] ?? $user) . ')';
         $ok++;
 
         $t = $tenant->query("SHOW TABLES LIKE 'users'");
