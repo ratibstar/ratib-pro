@@ -49,6 +49,26 @@ RewriteRule ^pages/enterprise-pack/?$ /enterprise-pack/ [R=302,L]
 RewriteRule ^sitemap\.xml$ public/sitemap.xml [L]
 RewriteRule ^robots\.txt$ public/robots.txt [L]
 
+# Legacy ERP public URLs → clean paths (keep /rateb-erp/public/assets/ for CSS/JS)
+RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/site/?[\s?] [NC]
+RewriteRule ^rateb-erp/public/site/?$ / [R=301,L,QSA]
+RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/(\S*) [NC]
+RewriteCond %1 !^assets/ [NC]
+RewriteRule ^rateb-erp/public/(.*)$ /$1 [R=301,L]
+
+# rateb.sa — ERP marketing site at domain root (not /rateb-erp/public/site)
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{REQUEST_URI} ^/?$ [NC]
+RewriteRule ^$ rateb-erp/public/index.php?route=site [L,QSA]
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{REQUEST_URI} ^/(site(/.*)?|locale/) [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ rateb-erp/public/index.php?route=$1 [L,QSA]
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{THE_REQUEST} \s+/site/?[\s?] [NC]
+RewriteRule ^site/?$ / [R=301,L]
+
 # Static assets (/css/pages/, /js/pages/, …) — must run before country_slug rewrites (else /css/pages/foo.css → country_slug=css)
 RewriteCond %{REQUEST_URI} ^/(css|js|assets|modules|public|uploads)/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f

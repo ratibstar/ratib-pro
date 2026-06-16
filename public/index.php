@@ -56,6 +56,12 @@ if (!empty($_GET['rateb_designed'])) {
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 if ($path === '/' || $path === '') {
+    $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+    if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+        $_GET['route'] = 'site';
+        require dirname(__DIR__) . '/rateb-erp/public/index.php';
+        exit;
+    }
     require dirname(__DIR__) . '/index.php';
     exit;
 }

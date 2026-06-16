@@ -71,7 +71,7 @@ try {
         $isDbAccess = strpos($msg, '1044') !== false || strpos($msg, '1049') !== false || strpos($msg, 'Access denied') !== false;
         $dbName = function_exists('control_rateb_erp_db_name') ? control_rateb_erp_db_name() : 'admin_rateb-erp';
         $dbUser = defined('RATEB_DB_USER') ? (string) RATEB_DB_USER : (defined('DB_USER') ? (string) DB_USER : 'admin_out');
-        $assetBase = defined('RATEB_CP_ASSETS_URL') ? (string) RATEB_CP_ASSETS_URL : '/rateb-erp/public/assets';
+        $assetBase = defined('RATEB_CP_ASSETS_URL') ? (string) RATEB_CP_ASSETS_URL : (function_exists('rateb_erp_assets_prefix') ? rateb_erp_assets_prefix() . '/assets' : '/rateb-erp/public/assets');
         echo '<!DOCTYPE html><html lang="ar" dir="rtl" data-theme="light" data-bs-theme="light"><head><meta charset="UTF-8">';
         echo '<link href="' . htmlspecialchars($assetBase . '/css/variables.css', ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
         echo '<link href="' . htmlspecialchars($assetBase . '/css/light.css', ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';

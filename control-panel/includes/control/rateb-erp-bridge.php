@@ -73,6 +73,9 @@ function control_rateb_erp_app_url(string $route = 'admin'): string
 /** Direct ERP URL — no Control Panel login required. */
 function control_rateb_erp_public_url(string $route = 'admin'): string
 {
+    if (function_exists('rateb_public_url')) {
+        return rateb_public_url($route !== '' ? $route : 'admin');
+    }
     $route = trim($route, '/');
     if ($route === '') {
         $route = 'admin';
@@ -82,7 +85,19 @@ function control_rateb_erp_public_url(string $route = 'admin'): string
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $site = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa');
     }
-    return $site . '/rateb-erp/public/' . $route;
+    $host = strtolower(parse_url($site, PHP_URL_HOST) ?: '');
+    $atRoot = in_array($host, ['rateb.sa', 'www.rateb.sa'], true);
+    $marketing = $route === 'site' || str_starts_with($route, 'site/') || str_starts_with($route, 'locale/');
+    if ($atRoot && $marketing) {
+        if ($route === 'site') {
+            return $site . '/';
+        }
+
+        return $site . '/' . $route;
+    }
+    $prefix = $atRoot ? '/rateb-erp/public' : '/rateb-erp/public';
+
+    return $site . $prefix . '/' . $route;
 }
 
 function control_rateb_erp_ensure_root(): string
@@ -213,5 +228,7 @@ function control_rateb_erp_assets_base_url(): string
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $site = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
     }
-    return $site . '/rateb-erp/public/assets';
+    $assetsPrefix = function_exists('rateb_erp_assets_prefix') ? rateb_erp_assets_prefix() : '/rateb-erp/public';
+
+    return $site . $assetsPrefix . '/assets';
 }

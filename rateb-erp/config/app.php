@@ -13,14 +13,67 @@ define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
 define('RATEB_ASSET_BUILD', '20260614-workflow-complete');
 
+if (!function_exists('rateb_erp_public_prefix')) {
+    /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */
+    function rateb_erp_public_prefix(): string
+    {
+        static $prefix = null;
+        if ($prefix !== null) {
+            return $prefix;
+        }
+        $env = getenv('RATEB_ERP_PUBLIC_PREFIX');
+        if ($env !== false && $env !== 'auto') {
+            $prefix = rtrim((string) $env, '/');
+
+            return $prefix;
+        }
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+            $prefix = '';
+
+            return $prefix;
+        }
+        $prefix = '/rateb-erp/public';
+
+        return $prefix;
+    }
+}
+
+if (!function_exists('rateb_erp_app_prefix')) {
+    /** App routes (admin, login, api) — stays under /rateb-erp/public when marketing uses domain root. */
+    function rateb_erp_app_prefix(): string
+    {
+        $prefix = rateb_erp_public_prefix();
+
+        return $prefix === '' ? '/rateb-erp/public' : $prefix;
+    }
+}
+
+if (!function_exists('rateb_erp_assets_prefix')) {
+    function rateb_erp_assets_prefix(): string
+    {
+        return rateb_erp_app_prefix();
+    }
+}
+
+if (!function_exists('rateb_erp_path_uses_root_prefix')) {
+    function rateb_erp_path_uses_root_prefix(string $path): bool
+    {
+        $path = ltrim($path, '/');
+        if ($path === '' || $path === 'site' || str_starts_with($path, 'site/') || str_starts_with($path, 'locale/')) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
     define('RATEB_BASE_URL', (string) RATEB_CP_APP_URL);
 } else {
     define('RATEB_CP_MODE', false);
-    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
-    $basePath = rtrim(str_replace('/public/index.php', '', $scriptName), '/');
-    define('RATEB_BASE_URL', $basePath !== '' ? $basePath : '/rateb-erp/public');
+    define('RATEB_BASE_URL', rateb_erp_public_prefix());
 }
 
 define('RATEB_DEFAULT_LOCALE', 'ar');
@@ -43,8 +96,20 @@ if (!function_exists('rateb_public_url')) {
     function rateb_public_url(string $path = ''): string
     {
         $path = ltrim($path, '/');
-        $base = rateb_site_origin() . '/rateb-erp/public';
-        return $path === '' ? $base : $base . '/' . $path;
+        $origin = rateb_site_origin();
+        if (rateb_erp_public_prefix() === '' && rateb_erp_path_uses_root_prefix($path)) {
+            if ($path === '' || $path === 'site') {
+                return $origin . '/';
+            }
+
+            return $origin . '/' . $path;
+        }
+        $prefix = rateb_erp_public_prefix() === '' ? rateb_erp_app_prefix() : rateb_erp_public_prefix();
+        if ($path === '') {
+            return $origin . $prefix;
+        }
+
+        return $origin . $prefix . '/' . $path;
     }
 }
 
@@ -54,7 +119,8 @@ if (!function_exists('rateb_asset')) {
         $path = ltrim($path, '/');
         $ver = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
         $suffix = '?v=' . rawurlencode($ver);
-        return rateb_public_url('assets/' . $path) . $suffix;
+
+        return rateb_site_origin() . rateb_erp_assets_prefix() . '/assets/' . $path . $suffix;
     }
 }
 
