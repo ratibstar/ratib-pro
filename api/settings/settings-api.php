@@ -2609,6 +2609,12 @@ class SettingsAPI {
         // For users table, ensure password_plain column exists
         // Security: do NOT add password_plain - passwords must be hashed only, never stored in plain
 
+        if ($table === 'users' && !in_array('phone', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `phone` VARCHAR(50) NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('email', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `email` VARCHAR(255) NULL DEFAULT NULL';
+        }
         if ($table === 'users' && !in_array('login_barcode', $existingColsLower, true)) {
             $columnsToAdd[] = 'ADD COLUMN `login_barcode` VARCHAR(64) NULL DEFAULT NULL';
         }

@@ -6222,6 +6222,9 @@ class ModernForms {
                         return [
                             { key: 'name', label: 'Username', type: 'text', maxLen: 16, maxWidth: 100 },
                             { key: 'login_barcode', label: 'Barcode', type: 'login_barcode', maxWidth: 130 },
+                            { key: 'email', label: 'Email', type: 'text', maxLen: 20, maxWidth: 140 },
+                            { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
+                            { key: 'position', label: 'Position', type: 'text', maxLen: 14, maxWidth: 100 },
                             { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                             { key: 'permissions', label: 'Permissions', type: 'permissions', maxWidth: 130 },
                             { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
@@ -6498,6 +6501,10 @@ class ModernForms {
                         return [
                             { name: 'name', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
                             { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Auto-generated on save if empty', help: 'Leave blank to create R… reference code on save. Use Access for the scannable workforce QR.' },
+                            { name: 'email', label: 'Email', type: 'email', required: false, placeholder: 'Enter email address' },
+                            { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },
+                            { name: 'position', label: 'Position', type: 'text', placeholder: 'Enter position (optional)' },
+                            { name: 'role_id', label: 'Portal role', type: 'select', required: false, relation: { table: 'roles', displayField: 'role_name', valueField: 'role_id' }, help: 'Optional. Choose Worker for mobile worker portal. Admin/company staff use Company portal.' },
                             { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter password (required for new user)' },
                             { name: 'status', label: 'Status', type: 'select', options: [
                                 { value: 'active', label: 'Active' },
