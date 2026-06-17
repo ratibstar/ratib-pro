@@ -46,24 +46,4 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
         </div>
     </div>
 </div>
-<p class="text-muted mb-4"><?php echo __('hr_intro'); ?></p>
-<div class="d-flex flex-wrap gap-2">
-    <a href="<?php echo rateb_app_url('hr/employees'); ?>" class="btn btn-primary btn-sm">
-        <i class="fas fa-id-badge"></i> <?php echo __('hr_employees'); ?>
-    </a>
-    <a href="<?php echo rateb_app_url('hr/departments'); ?>" class="btn btn-outline-primary btn-sm">
-        <i class="fas fa-sitemap"></i> <?php echo __('hr_departments'); ?>
-    </a>
-    <a href="<?php echo rateb_app_url('hr/attendance'); ?>" class="btn btn-outline-primary btn-sm">
-        <i class="fas fa-clock"></i> <?php echo __('hr_attendance'); ?>
-    </a>
-    <a href="<?php echo rateb_app_url('hr/leaves'); ?>" class="btn btn-outline-primary btn-sm">
-        <i class="fas fa-calendar-minus"></i> <?php echo __('hr_leaves'); ?>
-    </a>
-    <a href="<?php echo rateb_app_url('hr/payroll'); ?>" class="btn btn-outline-primary btn-sm">
-        <i class="fas fa-money-check-dollar"></i> <?php echo __('hr_payroll'); ?>
-    </a>
-    <a href="<?php echo rateb_app_url('hr/reports'); ?>" class="btn btn-outline-primary btn-sm">
-        <i class="fas fa-chart-column"></i> <?php echo __('hr_reports'); ?>
-    </a>
-</div>
+<p class="text-muted small mb-0"><?php echo __('hr_intro'); ?></p>
