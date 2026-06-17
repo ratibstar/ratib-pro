@@ -199,6 +199,24 @@
     border-color: var(--rateb-border);
 }
 
+.rateb-image-preview-modal .modal-header {
+    position: relative;
+    z-index: 2;
+}
+
+.rateb-image-preview-modal .btn-close {
+    opacity: 0.85;
+}
+
+#ratebImagePreviewModal {
+    z-index: 1060;
+}
+
+#ratebImagePreviewModal + .modal-backdrop,
+.modal-backdrop.show {
+    z-index: 1055;
+}
+
 .rateb-actions .btn {
     margin-inline-end: 0.25rem;
 }
