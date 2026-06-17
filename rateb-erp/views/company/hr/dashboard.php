@@ -47,3 +47,4 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
     </div>
 </div>
 <p class="text-muted small mb-0"><?php echo __('hr_intro'); ?></p>
+<?php Rateb\App\Core\View::partial('hr-nav-end'); ?>

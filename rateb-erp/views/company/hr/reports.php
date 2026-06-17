@@ -3,7 +3,7 @@
 /** @var array<int, array<string, mixed>> $payroll */
 $year = (int) ($year ?? date('Y'));
 $month = (int) ($month ?? date('n'));
-Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'reports']);
+Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'attendance-monthly']);
 ?>
 <form method="get" class="row g-2 align-items-end mb-4">
     <div class="col-auto">
@@ -91,3 +91,4 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'reports']);
         </div>
     </div>
 </div>
+<?php Rateb\App\Core\View::partial('hr-nav-end'); ?>

@@ -95,3 +95,4 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'employees']);
     </div>
 </div>
 <?php } ?>
+<?php Rateb\App\Core\View::partial('hr-nav-end'); ?>

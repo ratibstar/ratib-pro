@@ -550,6 +550,58 @@ final class HrLeaveTypesController extends \Rateb\App\Controllers\CrudController
     }
 }
 
+final class HrPlaceholderController extends Controller
+{
+    /** @return array<string, array{title: string, active: string}> */
+    private static function routeMap(): array
+    {
+        return [
+            'hr/holidays' => ['title' => 'hr_holidays', 'active' => 'holidays'],
+            'hr/workplaces' => ['title' => 'hr_workplaces', 'active' => 'workplaces'],
+            'hr/permission-requests' => ['title' => 'hr_permission_requests', 'active' => 'permission-requests'],
+            'hr/attendance/bulk' => ['title' => 'hr_attendance_bulk', 'active' => 'attendance-bulk'],
+            'hr/loans' => ['title' => 'hr_loans_list', 'active' => 'loans-list'],
+            'hr/loans/create' => ['title' => 'hr_loan_add', 'active' => 'loans-create'],
+            'hr/loan-types' => ['title' => 'hr_loan_types', 'active' => 'loan-types'],
+            'hr/payroll/components' => ['title' => 'hr_payroll_components', 'active' => 'payroll-components'],
+            'hr/payroll/structure' => ['title' => 'hr_payroll_structure', 'active' => 'payroll-structure'],
+            'hr/documents' => ['title' => 'hr_documents_manage', 'active' => 'documents-manage'],
+            'hr/documents/create' => ['title' => 'hr_document_add', 'active' => 'documents-add'],
+            'hr/requests' => ['title' => 'hr_employee_requests', 'active' => 'employee-requests'],
+            'hr/fleet' => ['title' => 'hr_fleet_manage', 'active' => 'fleet-manage'],
+            'hr/fleet/create' => ['title' => 'hr_fleet_add', 'active' => 'fleet-add'],
+        ];
+    }
+
+    public function show(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $current = function_exists('rateb_normalize_erp_route')
+            ? rateb_normalize_erp_route(rateb_current_erp_route())
+            : '';
+        $meta = null;
+        foreach (self::routeMap() as $route => $info) {
+            if ($current === rateb_app_route($route)) {
+                $meta = $info;
+                break;
+            }
+        }
+        if ($meta === null) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view('company/hr/placeholder', [
+            'title' => __($meta['title']),
+            'pageTitle' => __($meta['title']),
+            'pageDescription' => __('hr_coming_soon'),
+            'hrActive' => $meta['active'],
+        ], 'main');
+    }
+}
+
 final class HrReportsController extends Controller
 {
     public function index(): void

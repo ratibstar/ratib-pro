@@ -1,7 +1,7 @@
 <?php
 /** @var array<int, array<string, mixed>> $items */
 $canManage = $canManage ?? true;
-Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll']);
+Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll-list']);
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -46,3 +46,4 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll']);
     </div>
 </div>
 <?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? 20, 'routePrefix' => $routePrefix ?? '']); ?>
+<?php Rateb\App\Core\View::partial('hr-nav-end'); ?>

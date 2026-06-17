@@ -25,6 +25,7 @@ use Rateb\App\Controllers\Company\HrLeavesController;
 use Rateb\App\Controllers\Company\HrLeaveTypesController;
 use Rateb\App\Controllers\Company\HrPayrollController;
 use Rateb\App\Controllers\Company\HrReportsController;
+use Rateb\App\Controllers\Company\HrPlaceholderController;
 use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAccountsController;
 use Rateb\App\Controllers\Company\ProductCategoriesController;
 use Rateb\App\Controllers\Company\StockMovementsController;
@@ -142,6 +143,26 @@ $router->post($app('purchase-orders/{id}/submit'), [PurchaseOrdersController::cl
 $router->post($app('quotations/{id}/create-po'), [PurchaseOrdersController::class, 'createFromQuotation'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('hr'), [HrDashboardController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
+
+$hrStubMw = rateb_erp_mw('hr', '', 'hr');
+foreach ([
+    'hr/holidays',
+    'hr/workplaces',
+    'hr/permission-requests',
+    'hr/attendance/bulk',
+    'hr/loans',
+    'hr/loans/create',
+    'hr/loan-types',
+    'hr/payroll/components',
+    'hr/payroll/structure',
+    'hr/documents',
+    'hr/documents/create',
+    'hr/requests',
+    'hr/fleet',
+    'hr/fleet/create',
+] as $hrStubPath) {
+    $router->get($app($hrStubPath), [HrPlaceholderController::class, 'show'], $hrStubMw);
+}
 
 $hrCrudRoutes = [
     'hr/employees' => ['class' => HrEmployeesController::class, 'entity' => 'hr-employees'],

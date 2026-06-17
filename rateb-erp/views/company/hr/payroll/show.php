@@ -6,7 +6,7 @@ $lines = $lines ?? [];
 $canManage = $canManage ?? true;
 $status = (string) ($period['status'] ?? 'draft');
 $periodId = (int) ($period['id'] ?? 0);
-Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll']);
+Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll-list']);
 ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -86,3 +86,4 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll']);
         </div>
     </div>
 </div>
+<?php Rateb\App\Core\View::partial('hr-nav-end'); ?>

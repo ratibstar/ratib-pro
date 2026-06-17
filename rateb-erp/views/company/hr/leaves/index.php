@@ -11,18 +11,15 @@ foreach ($lookups['employees'] ?? [] as $opt) {
 foreach ($lookups['leave_types'] ?? [] as $opt) {
     $typeMap[(string) $opt['value']] = (string) $opt['label'];
 }
-Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'leaves']);
+Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'leave-requests']);
 ?>
-<div class="mb-3 d-flex flex-wrap gap-2">
-    <a href="<?php echo rateb_app_url('hr/leave-types'); ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="fas fa-list"></i> <?php echo __('leave_types'); ?>
-    </a>
-    <?php if ($canManage) { ?>
+<?php if ($canManage) { ?>
+<div class="mb-3">
     <a href="<?php echo rateb_url($routePrefix . '/create'); ?>" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus"></i> <?php echo __('create'); ?>
+        <i class="fas fa-plus"></i> <?php echo __('hr_leave_submit'); ?>
     </a>
-    <?php } ?>
 </div>
+<?php } ?>
 <?php
 $leaveBalances = $leaveBalances ?? [];
 $balanceYear = (int) ($balanceYear ?? date('Y'));
@@ -116,3 +113,4 @@ if ($leaveBalances !== []) { ?>
     </div>
 </div>
 <?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? 20, 'routePrefix' => $routePrefix ?? '']); ?>
+<?php Rateb\App\Core\View::partial('hr-nav-end'); ?>
