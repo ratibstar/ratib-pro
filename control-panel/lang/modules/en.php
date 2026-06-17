@@ -260,10 +260,23 @@ return [
     'hub.select_country' => 'Select country',
     'help.title' => 'Help center',
     'help.search' => 'Search help...',
+    'help.toc_on_page' => 'On this page',
+    'help.intro' => 'Operator guide for the control panel and the Infrastructure tabs (Control, Dashboard, Providers).',
+    'help.source_note' => 'Source: docs/control-panel-help-center-guide.md plus appendices. Update those files in Git to change what appears here.',
+    'help.missing_content' => 'Content file missing. Ask an administrator to restore docs/control-panel-help-center-guide.md in the deployment.',
+    'help.appendix_infra' => 'Appendix A — Infrastructure tabs operator checklist',
+    'help.appendix_ownership' => 'Appendix B — Client Hub / Control Panel route ownership',
 
     // Infrastructure
     'infra.title' => 'Infrastructure',
     'infra.marketplace' => 'Marketplace',
+    'infra.control' => 'Control',
+    'infra.dashboard' => 'Dashboard',
+    'infra.providers' => 'Providers',
+    'infra.control_title' => 'Infrastructure Control',
+    'infra.dashboard_title' => 'Infrastructure Dashboard',
+    'infra.providers_title' => 'Infrastructure Providers',
+    'infra.back_dashboard' => 'Back to Dashboard',
 
     // Site content
     'site.edit_home' => 'Edit homepage copy',

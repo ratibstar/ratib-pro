@@ -78,6 +78,34 @@ html[dir="rtl"] .ms-2 { margin-left: 0 !important; margin-right: 0.5rem !importa
 html[dir="rtl"] .text-start { text-align: right !important; }
 html[dir="rtl"] .text-end { text-align: left !important; }
 
+html[dir="rtl"] .module-content {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .control-settings-intro,
+html[dir="rtl"] .control-settings-card,
+html[dir="rtl"] .help-center-intro,
+html[dir="rtl"] .help-doc {
+    text-align: right;
+}
+
+html[dir="rtl"] input.cp-ltr-field,
+html[dir="rtl"] input[type="date"],
+html[dir="rtl"] input[type="datetime-local"],
+html[dir="rtl"] input[type="number"] {
+    direction: ltr;
+    text-align: left;
+}
+
+html[dir="rtl"] .content-header .btn-logout {
+    margin-inline-start: 0.5rem;
+}
+
+html[dir="rtl"] .content-header .user-info {
+    margin-inline-start: 0.5rem;
+}
+
 html[dir="rtl"] .control-settings-grid,
 html[dir="rtl"] .country-grid,
 html[dir="rtl"] .stats-grid,

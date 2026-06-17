@@ -32,15 +32,15 @@ if ($siteRootUrl === '') {
 $view = strtolower(trim((string) ($_GET['view'] ?? 'control')));
 $allowed = [
     'control' => [
-        'title' => 'Infrastructure Control',
+        'title' => cp_t('infra.control_title'),
         'url' => $siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/control.php',
     ],
     'dashboard' => [
-        'title' => 'Infrastructure Dashboard',
+        'title' => cp_t('infra.dashboard_title'),
         'url' => $siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/dashboard.php',
     ],
     'providers' => [
-        'title' => 'Infrastructure Providers',
+        'title' => cp_t('infra.providers_title'),
         'url' => $siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/providers.php',
     ],
 ];
@@ -52,9 +52,9 @@ $pageTitle = $allowed[$view]['title'];
 $embedUrl = $allowed[$view]['url'] . '?embed=1&_rt=' . time();
 $infraShellBase = control_panel_page_with_control('control/infrastructure.php');
 $infraTabs = [
-    'control' => ['label' => 'Control', 'icon' => 'fa-sliders-h'],
-    'dashboard' => ['label' => 'Dashboard', 'icon' => 'fa-chart-line'],
-    'providers' => ['label' => 'Providers', 'icon' => 'fa-plug'],
+    'control' => ['label' => cp_t('infra.control'), 'icon' => 'fa-sliders-h'],
+    'dashboard' => ['label' => cp_t('infra.dashboard'), 'icon' => 'fa-chart-line'],
+    'providers' => ['label' => cp_t('infra.providers'), 'icon' => 'fa-plug'],
 ];
 $controlDashboardUrl = pageUrl('control/dashboard.php');
 $fullBase = rtrim(
@@ -66,26 +66,28 @@ $fullBase = rtrim(
 );
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars(cp_html_lang(), ENT_QUOTES, 'UTF-8'); ?>" dir="<?php echo htmlspecialchars(cp_html_dir(), ENT_QUOTES, 'UTF-8'); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars('Infrastructure — ' . ($infraTabs[$view]['label'] ?? $pageTitle), ENT_QUOTES, 'UTF-8'); ?></title>
+    <title><?php echo htmlspecialchars(cp_t('infra.title') . ' — ' . ($infraTabs[$view]['label'] ?? $pageTitle), ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/control/system.css'); ?>?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo asset('css/control/rtl.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/infrastructure-embed.css'); ?>?v=<?php echo time(); ?>">
 </head>
-<body class="control-system-body">
+<body class="control-system-body<?php echo cp_is_rtl() ? ' cp-rtl' : ''; ?>">
     <div id="app-config" data-base-url="<?php echo htmlspecialchars($fullBase, ENT_QUOTES, 'UTF-8'); ?>" data-api-base="<?php echo htmlspecialchars($fullBase . '/api', ENT_QUOTES, 'UTF-8'); ?>" data-control-api-path="<?php echo htmlspecialchars($fullBase . '/api/control', ENT_QUOTES, 'UTF-8'); ?>" data-control="1" class="hidden"></div>
     <header class="control-header">
         <div class="header-left">
-            <h1><i class="fas fa-cog"></i> Control Panel</h1>
-            <span class="header-subtitle header-subtitle-rateb">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</span>
+            <h1><i class="fas fa-cog"></i> <?php echo htmlspecialchars(cp_t('meta.control_panel'), ENT_QUOTES, 'UTF-8'); ?></h1>
+            <span class="header-subtitle header-subtitle-rateb"><?php echo htmlspecialchars(cp_t('meta.brand_suffix'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
         <div class="header-right">
+            <?php require __DIR__ . '/../../includes/control/lang-switcher.php'; ?>
             <span class="user-info"><?php echo htmlspecialchars((string) ($_SESSION['control_username'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
-            <a href="<?php echo pageUrl('logout.php'); ?>?control=1" class="btn-logout">Logout</a>
+            <a href="<?php echo pageUrl('logout.php'); ?>?control=1" class="btn-logout"><?php echo htmlspecialchars(cp_t('nav.logout'), ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
     </header>
 
@@ -94,17 +96,17 @@ $fullBase = rtrim(
 
         <main class="control-content">
             <div class="content-header content-header-infra">
-                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="<?php echo htmlspecialchars(cp_t('layout.toggle_sidebar'), ENT_QUOTES, 'UTF-8'); ?>">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="content-header-infra__titles">
-                    <h2 class="mb-0"><i class="fas fa-network-wired me-2"></i>Infrastructure</h2>
+                    <h2 class="mb-0"><i class="fas fa-network-wired me-2"></i><?php echo htmlspecialchars(cp_t('infra.title'), ENT_QUOTES, 'UTF-8'); ?></h2>
                     <p class="content-header-infra__subtitle text-muted mb-0 small"><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
-                <a href="<?php echo htmlspecialchars($controlDashboardUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-light ms-auto">Back to Dashboard</a>
+                <a href="<?php echo htmlspecialchars($controlDashboardUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-light ms-auto"><?php echo htmlspecialchars(cp_t('infra.back_dashboard'), ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
 
-            <nav class="infra-shell-nav" aria-label="Infrastructure views">
+            <nav class="infra-shell-nav" aria-label="<?php echo htmlspecialchars(cp_t('infra.title'), ENT_QUOTES, 'UTF-8'); ?>">
                 <?php foreach ($infraTabs as $tabKey => $tabMeta) :
                     $tabHref = $infraShellBase . '&view=' . rawurlencode($tabKey);
                     $isTabActive = $view === $tabKey;
@@ -129,6 +131,8 @@ $fullBase = rtrim(
         </main>
     </div>
 
+    <?php if (function_exists('cp_i18n_inline_script')) { echo cp_i18n_inline_script(); } ?>
+    <script src="<?php echo asset('js/control/i18n.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/app-config-init.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>

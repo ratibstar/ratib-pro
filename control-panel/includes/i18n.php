@@ -101,6 +101,34 @@ if (!function_exists('cp_load_translations')) {
                 $merged = array_merge($merged, $mod);
             }
         }
+        $extra = $baseDir . '/modules/government.php';
+        if ($locale === 'en' && is_file($extra)) {
+            $g = require $extra;
+            if (is_array($g)) {
+                $merged = array_merge($merged, $g);
+            }
+        }
+        $extraAr = $baseDir . '/modules/government-ar.php';
+        if ($locale === 'ar' && is_file($extraAr)) {
+            $g = require $extraAr;
+            if (is_array($g)) {
+                $merged = array_merge($merged, $g);
+            }
+        }
+        $hub = $baseDir . '/modules/hub.php';
+        if ($locale === 'en' && is_file($hub)) {
+            $h = require $hub;
+            if (is_array($h)) {
+                $merged = array_merge($merged, $h);
+            }
+        }
+        $hubAr = $baseDir . '/modules/hub-ar.php';
+        if ($locale === 'ar' && is_file($hubAr)) {
+            $h = require $hubAr;
+            if (is_array($h)) {
+                $merged = array_merge($merged, $h);
+            }
+        }
         $cache[$locale] = $merged;
         return $cache[$locale];
     }

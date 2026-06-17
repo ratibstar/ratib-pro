@@ -33,8 +33,14 @@
         return map[en] || en;
     }
 
+    function shouldSkipEl(el) {
+        if (!el || !el.matches) return false;
+        return el.matches('input[type=date],input[type=datetime-local],input[type=number],input[type=month],input[type=time],input[type=week],.cp-ltr-field,[lang="en"],[data-cp-no-i18n]');
+    }
+
     function translateAttributes(el) {
-        if (!el || el.closest && el.closest('[translate="no"]')) return;
+        if (!el || shouldSkipEl(el)) return;
+        if (el.closest && el.closest('[translate="no"]')) return;
         if (el.getAttribute && el.getAttribute('lang') === 'en') return;
         ['placeholder', 'title', 'aria-label'].forEach(function (attr) {
             var val = el.getAttribute && el.getAttribute(attr);
@@ -52,7 +58,7 @@
             acceptNode: function (node) {
                 if (!node.parentElement) return NodeFilter.FILTER_REJECT;
                 var p = node.parentElement;
-                if (p.closest('script,style,pre,code,textarea,svg,[translate="no"],[lang="en"]')) {
+                if (p.closest('script,style,pre,code,textarea,svg,input,select,[translate="no"],[lang="en"],.cp-ltr-field')) {
                     return NodeFilter.FILTER_REJECT;
                 }
                 var t = (node.nodeValue || '').trim();

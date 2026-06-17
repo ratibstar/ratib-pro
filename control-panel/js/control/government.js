@@ -57,6 +57,22 @@
         });
     }
 
+    function cpMsg(key, fallback) {
+        return (typeof cpT === 'function') ? cpT(key) : (typeof cpPhrase === 'function' ? cpPhrase(fallback) : fallback);
+    }
+
+    function afterTableUpdate() {
+        if (typeof cpApplyDomI18n === 'function') {
+            cpApplyDomI18n(root);
+        }
+    }
+
+    function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+    }
+
     function loadSummary() {
         api('summary', null, null)
             .then(function (res) {
@@ -69,7 +85,7 @@
                 if (b) b.textContent = String(t.blacklist_active != null ? t.blacklist_active : '0');
                 if (a) a.textContent = String(t.workers_alert != null ? t.workers_alert : '0');
                 if (meta.auto_agency_db_used) {
-                    flash('Connected automatically to real agency DB: ' + (meta.workers_schema || 'unknown'), true);
+                    flash(cpMsg('gov.connected_db', 'Connected automatically to real agency DB: {schema}').replace('{schema}', meta.workers_schema || 'unknown'), true);
                 }
             })
             .catch(function () {
@@ -94,9 +110,9 @@
         var v = row.inspector_password_set;
         var on = v === true || v === 1 || v === '1';
         if (on) {
-            return '<span class="badge bg-success gov-badge" title="Password stored (hashed)">Yes</span>';
+            return '<span class="badge bg-success gov-badge" title="' + escapeHtml(cpMsg('gov.password_stored', 'Password stored (hashed)')) + '">' + escapeHtml(cpMsg('gov.password_yes', 'Yes')) + '</span>';
         }
-        return '<span class="badge bg-secondary gov-badge" title="No password on file">No</span>';
+        return '<span class="badge bg-secondary gov-badge" title="' + escapeHtml(cpMsg('gov.no_password', 'No password on file')) + '">' + escapeHtml(cpMsg('gov.password_no', 'No')) + '</span>';
     }
 
     function loadInspections() {
@@ -114,10 +130,11 @@
                 tb.innerHTML = (res.data || []).map(function (row) {
                     var stClass = inspectionStatusBadgeClass(row.status);
                     return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.inspection_date || '') + '</td><td>' + escapeHtml(row.inspector_name || '') + '</td><td>' + escapeHtml(row.inspector_identity || '') + '</td><td>' + inspectionPasswordSetCell(row) + '</td><td><span class="badge gov-badge ' + stClass + '">' + escapeHtml(row.status || '') + '</span></td><td>' + escapeHtml(String(row.agency_id != null ? row.agency_id : '')) + '</td><td>' + escapeHtml((row.notes || '').substring(0, 80)) + '</td></tr>';
-                }).join('') || '<tr><td colspan="9" class="text-muted">No records</td></tr>';
+                }).join('') || '<tr><td colspan="9" class="text-muted">' + escapeHtml(cpMsg('gov.no_records', 'No records')) + '</td></tr>';
+                afterTableUpdate();
             })
             .catch(function (e) {
-                flash(e.message || 'Load failed', false);
+                flash(e.message || cpMsg('gov.load_failed', 'Load failed'), false);
             });
     }
 
@@ -129,10 +146,11 @@
                 if (!tb) return;
                 tb.innerHTML = (res.data || []).map(function (row) {
                     return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.type || '') + '</td><td>' + escapeHtml(row.severity || '') + '</td><td>' + escapeHtml(String(row.inspection_id != null ? row.inspection_id : '')) + '</td><td>' + escapeHtml(row.created_at || '') + '</td></tr>';
-                }).join('') || '<tr><td colspan="6" class="text-muted">No records</td></tr>';
+                }).join('') || '<tr><td colspan="6" class="text-muted">' + escapeHtml(cpMsg('gov.no_records', 'No records')) + '</td></tr>';
+                afterTableUpdate();
             })
             .catch(function (e) {
-                flash(e.message || 'Load failed', false);
+                flash(e.message || cpMsg('gov.load_failed', 'Load failed'), false);
             });
     }
 
@@ -144,13 +162,14 @@
                 tb.innerHTML = (res.data || []).map(function (row) {
                     var rm = '';
                     if (canManage && row.status === 'active') {
-                        rm = '<td><button type="button" class="btn btn-sm btn-outline-light gov-bl-remove" data-id="' + row.id + '">Remove</button></td>';
+                        rm = '<td><button type="button" class="btn btn-sm btn-outline-light gov-bl-remove" data-id="' + row.id + '">' + escapeHtml(cpMsg('gov.remove', 'Remove')) + '</button></td>';
                     } else if (canManage) {
                         rm = '<td></td>';
                     }
                     var base = '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.entity_type || '') + '</td><td>' + row.entity_id + '</td><td>' + escapeHtml(row.status || '') + '</td><td>' + escapeHtml((row.reason || '').substring(0, 120)) + '</td><td>' + escapeHtml(row.worker_name || '') + '</td>';
                     return base + (canManage ? rm : '') + '</tr>';
-                }).join('') || '<tr><td colspan="' + (canManage ? 7 : 6) + '" class="text-muted">No records</td></tr>';
+                }).join('') || '<tr><td colspan="' + (canManage ? 7 : 6) + '" class="text-muted">' + escapeHtml(cpMsg('gov.no_records', 'No records')) + '</td></tr>';
+                afterTableUpdate();
                 tb.querySelectorAll('.gov-bl-remove').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         var id = parseInt(btn.getAttribute('data-id'), 10);
@@ -165,18 +184,18 @@
                             null
                         )
                             .then(function () {
-                                flash('Blacklist entry removed', true);
+                                flash(cpMsg('gov.blacklist_removed', 'Blacklist entry removed'), true);
                                 loadBlacklist();
                                 loadSummary();
                             })
                             .catch(function (e) {
-                                flash(e.message || 'Error', false);
+                                flash(e.message || cpMsg('gov.error', 'Error'), false);
                             });
                     });
                 });
             })
             .catch(function (e) {
-                flash(e.message || 'Load failed', false);
+                flash(e.message || cpMsg('gov.load_failed', 'Load failed'), false);
             });
     }
 
@@ -196,17 +215,12 @@
                     if (row.status === 'warning') badge = 'bg-warning text-dark';
                     if (row.status === 'safe') badge = 'bg-success';
                     return '<tr><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.worker_country || '') + '</td><td>' + escapeHtml(row.last_checkin || '') + '</td><td>' + escapeHtml(row.location_text || '') + '</td><td><span class="badge ' + badge + ' gov-badge">' + escapeHtml(row.status || '') + '</span></td></tr>';
-                }).join('') || '<tr><td colspan="5" class="text-muted">No records</td></tr>';
+                }).join('') || '<tr><td colspan="5" class="text-muted">' + escapeHtml(cpMsg('gov.no_records', 'No records')) + '</td></tr>';
+                afterTableUpdate();
             })
             .catch(function (e) {
-                flash(e.message || 'Load failed', false);
+                flash(e.message || cpMsg('gov.load_failed', 'Load failed'), false);
             });
-    }
-
-    function escapeHtml(s) {
-        var d = document.createElement('div');
-        d.textContent = s == null ? '' : String(s);
-        return d.innerHTML;
     }
 
     function formToObj(form) {
@@ -227,7 +241,7 @@
     var seedBtn = document.getElementById('govSeedDemoBtn');
     if (seedBtn) {
         seedBtn.addEventListener('click', function () {
-            if (!confirm('Seed demo records for current agency database?')) return;
+            if (!confirm(cpMsg('gov.seed_confirm', 'Seed demo records for current agency database?'))) return;
             seedBtn.disabled = true;
             api(
                 'seed_demo',
@@ -240,7 +254,7 @@
                 null
             )
                 .then(function (res) {
-                    flash((res && res.message) ? res.message : 'Demo seeded', true);
+                    flash((res && res.message) ? res.message : cpMsg('gov.demo_seeded', 'Demo seeded'), true);
                     loadSummary();
                     loadInspections();
                     loadViolations(0);
@@ -248,7 +262,7 @@
                     loadTracking();
                 })
                 .catch(function (e) {
-                    flash(e.message || 'Seed failed', false);
+                    flash(e.message || cpMsg('gov.seed_failed', 'Seed failed'), false);
                 })
                 .finally(function () {
                     seedBtn.disabled = false;
@@ -271,13 +285,13 @@
                 null
             )
                 .then(function () {
-                    flash('Inspection saved', true);
+                    flash(cpMsg('gov.inspection_saved', 'Inspection saved'), true);
                     formInsp.reset();
                     loadInspections();
                     loadSummary();
                 })
                 .catch(function (e) {
-                    flash(e.message || 'Error', false);
+                    flash(e.message || cpMsg('gov.error', 'Error'), false);
                 });
         });
     }
@@ -297,13 +311,13 @@
                 null
             )
                 .then(function () {
-                    flash('Violation saved', true);
+                    flash(cpMsg('gov.violation_saved', 'Violation saved'), true);
                     formViol.reset();
                     loadViolations(0);
                     loadSummary();
                 })
                 .catch(function (e) {
-                    flash(e.message || 'Error', false);
+                    flash(e.message || cpMsg('gov.error', 'Error'), false);
                 });
         });
     }
@@ -323,13 +337,13 @@
                 null
             )
                 .then(function () {
-                    flash('Blacklist updated', true);
+                    flash(cpMsg('gov.blacklist_updated', 'Blacklist updated'), true);
                     formBl.reset();
                     loadBlacklist();
                     loadSummary();
                 })
                 .catch(function (e) {
-                    flash(e.message || 'Error', false);
+                    flash(e.message || cpMsg('gov.error', 'Error'), false);
                 });
         });
     }
@@ -349,12 +363,12 @@
                 null
             )
                 .then(function () {
-                    flash('Tracking saved', true);
+                    flash(cpMsg('gov.tracking_saved', 'Tracking saved'), true);
                     loadTracking();
                     loadSummary();
                 })
                 .catch(function (e) {
-                    flash(e.message || 'Error', false);
+                    flash(e.message || cpMsg('gov.error', 'Error'), false);
                 });
         });
     }

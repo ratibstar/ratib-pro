@@ -1,7 +1,6 @@
 <?php
 /**
  * Unified Control Hub — one page linking to major control panel and admin surfaces.
- * URL: …/pages/control/control-hub.php?control=1 (via control-panel routing).
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);
@@ -19,7 +18,7 @@ requireControlPermission(CONTROL_PERM_DASHBOARD);
 
 $ctrl = $GLOBALS['control_conn'] ?? null;
 if (!$ctrl) {
-    die('Control panel database unavailable.');
+    die(cp_t('common.db_unavailable'));
 }
 
 $siteRootUrl = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
@@ -65,8 +64,7 @@ if ($ctrl) {
                 $rcp->close();
             }
         }
-    } catch (Throwable $e) { /* ignore */
-    }
+    } catch (Throwable $e) { /* ignore */ }
 }
 
 $fullBaseUrl = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/') . (function_exists('getBaseUrl') ? getBaseUrl() : '');
@@ -77,190 +75,183 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
 ?>
 
 <p class="control-settings-intro mb-3">
-    <strong><i class="fas fa-layer-group me-2"></i>Control hub</strong>
-    — Quick links to operations, public site copy, infrastructure, and deep admin tools. Sidebar entries use the same permission gates; items you are not allowed to use stay hidden.
+    <strong><i class="fas fa-layer-group me-2"></i><?php echo htmlspecialchars(cp_t('page.control_hub'), ENT_QUOTES, 'UTF-8'); ?></strong>
+    — <?php echo htmlspecialchars(cp_t('hub.intro'), ENT_QUOTES, 'UTF-8'); ?>
 </p>
 
 <?php if ($legacyModuleLabel !== ''): ?>
 <div class="alert alert-info mb-3" role="status">
     <i class="fas fa-compass me-2"></i>
-    The legacy <strong><?php echo htmlspecialchars($legacyModuleLabel, ENT_QUOTES, 'UTF-8'); ?></strong> route now resolves into the main control panel ownership flow. Use the in-panel destinations below instead of the old shell.
+    <?php echo htmlspecialchars(cp_t('hub.legacy_notice', ['module' => $legacyModuleLabel]), ENT_QUOTES, 'UTF-8'); ?>
 </div>
 <?php endif; ?>
 
-<div class="control-settings-intro mb-2"><strong>Overview</strong></div>
+<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.overview'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_dashboard">
-        <h3><i class="fas fa-tachometer-alt"></i> Dashboard</h3>
-        <p>KPIs, quick actions, and recent activity.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-arrow-right"></i> Open dashboard</a>
+        <h3><i class="fas fa-tachometer-alt"></i> <?php echo htmlspecialchars(cp_t('nav.dashboard'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.dashboard_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-arrow-right"></i> <?php echo htmlspecialchars(cp_t('hub.open_dashboard'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_dashboard">
-        <h3><i class="fas fa-book"></i> Help center</h3>
-        <p>In-panel guide: navigation, permissions, Infrastructure tabs, troubleshooting. Synced from <code>docs/</code> Markdown.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-info"><i class="fas fa-circle-question"></i> Open help center</a>
+        <h3><i class="fas fa-book"></i> <?php echo htmlspecialchars(cp_t('nav.help_center'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.help_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-info"><i class="fas fa-circle-question"></i> <?php echo htmlspecialchars(cp_t('hub.open_help'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong>Client platform ownership</strong></div>
+<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.client_platform'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_dashboard">
-        <h3><i class="fas fa-chart-pie"></i> Client Hub</h3>
-        <p>Canonical customer dashboard inside the control-panel ownership flow.</p>
-        <a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-arrow-right"></i> Open Client Hub</a>
+        <h3><i class="fas fa-chart-pie"></i> <?php echo htmlspecialchars(cp_t('nav.client_hub'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.client_hub_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-arrow-right"></i> <?php echo htmlspecialchars(cp_t('hub.open_client_hub'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_dashboard">
-        <h3><i class="fas fa-server"></i> Services</h3>
-        <p>Customer services and provisioning visibility inside the control panel.</p>
-        <a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Open Services</a>
+        <h3><i class="fas fa-server"></i> <?php echo htmlspecialchars(cp_t('nav.services'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.services_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> <?php echo htmlspecialchars(cp_t('hub.open_services'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_dashboard">
-        <h3><i class="fas fa-globe"></i> Domains</h3>
-        <p>Canonical domains/catalog surface inside the control panel journey.</p>
-        <a href="<?php echo htmlspecialchars($clientPlatformLinks['domains']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Open Domains</a>
+        <h3><i class="fas fa-globe"></i> <?php echo htmlspecialchars(cp_t('nav.domains'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.domains_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($clientPlatformLinks['domains']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> <?php echo htmlspecialchars(cp_t('hub.open_domains'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_dashboard">
-        <h3><i class="fas fa-bag-shopping"></i> Orders &amp; billing</h3>
-        <p>Open customer order and billing centers without leaving the control panel shell.</p>
+        <h3><i class="fas fa-bag-shopping"></i> <?php echo htmlspecialchars(cp_t('hub.orders_billing'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.orders_billing_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
         <div class="d-flex flex-wrap gap-2">
-            <a href="<?php echo htmlspecialchars($clientPlatformLinks['orders']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-receipt"></i> Orders</a>
-            <a href="<?php echo htmlspecialchars($clientPlatformLinks['billing']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
+            <a href="<?php echo htmlspecialchars($clientPlatformLinks['orders']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-receipt"></i> <?php echo htmlspecialchars(cp_t('nav.orders'), ENT_QUOTES, 'UTF-8'); ?></a>
+            <a href="<?php echo htmlspecialchars($clientPlatformLinks['billing']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-file-invoice-dollar"></i> <?php echo htmlspecialchars(cp_t('nav.billing'), ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong>Core management</strong></div>
+<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('section.core_management'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_select_country">
-        <h3><i class="fas fa-globe"></i> Select country</h3>
-        <p>Switch the active country workspace.</p>
-        <a href="<?php echo htmlspecialchars(pageUrl('select-country.php') . '?control=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-location-dot"></i> Select country</a>
+        <h3><i class="fas fa-globe"></i> <?php echo htmlspecialchars(cp_t('nav.select_country'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.select_country_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(pageUrl('select-country.php') . '?control=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-location-dot"></i> <?php echo htmlspecialchars(cp_t('nav.select_country'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_countries,view_control_countries">
-        <h3><i class="fas fa-list"></i> Countries</h3>
-        <p>Manage country records and availability.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/countries.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-flag"></i> Manage countries</a>
+        <h3><i class="fas fa-list"></i> <?php echo htmlspecialchars(cp_t('countries.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.countries_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/countries.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-flag"></i> <?php echo htmlspecialchars(cp_t('hub.manage_countries'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_agencies,view_control_agencies">
-        <h3><i class="fas fa-building"></i> Agencies</h3>
-        <p>Agencies, databases, and program instances.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-building"></i> Manage agencies</a>
+        <h3><i class="fas fa-building"></i> <?php echo htmlspecialchars(cp_t('agencies.title'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.agencies_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-building"></i> <?php echo htmlspecialchars(cp_t('hub.manage_agencies'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <?php if ($canViewCountryUsers): ?>
     <div class="control-settings-card" data-permission="control_country_users,view_control_country_users,control_agencies,view_control_agencies,open_control_agency">
-        <h3><i class="fas fa-globe-americas"></i> Country users</h3>
-        <p>Users scoped to country / agency access.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-users.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-users"></i> Country users</a>
+        <h3><i class="fas fa-globe-americas"></i> <?php echo htmlspecialchars(cp_t('nav.country_users'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.country_users_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-users.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-users"></i> <?php echo htmlspecialchars(cp_t('nav.country_users'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <?php endif; ?>
 </div>
 
-<div class="control-settings-intro mb-2"><strong>Registration &amp; public site</strong></div>
+<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.registration_public'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_registration_requests,view_control_registration,view_all_control_registration">
-        <h3><i class="fas fa-user-plus"></i> Registration requests</h3>
-        <p>Review and approve agency registrations.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/registration-requests.php') . '&all_dates=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-clipboard-check"></i> Open queue</a>
+        <h3><i class="fas fa-user-plus"></i> <?php echo htmlspecialchars(cp_t('nav.registration_requests'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.registration_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/registration-requests.php') . '&all_dates=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-clipboard-check"></i> <?php echo htmlspecialchars(cp_t('hub.open_queue'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_support_chats,view_control_support">
-        <h3><i class="fas fa-comments"></i> Support chats</h3>
-        <p>Operator support conversations.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/support-chats.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-headset"></i> Support chats</a>
+        <h3><i class="fas fa-comments"></i> <?php echo htmlspecialchars(cp_t('nav.support_chats'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.support_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/support-chats.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-headset"></i> <?php echo htmlspecialchars(cp_t('hub.support_chats'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card">
-        <h3><i class="fas fa-tags"></i> Client registration &amp; pricing</h3>
-        <p>Opens the live pricing section (Gold / Platinum). Clients register from the Gold or Platinum card.</p>
-        <a href="<?php echo htmlspecialchars($clientPricingPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> View pricing</a>
-        <a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary ms-2" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-signature"></i> Open checkout form</a>
+        <h3><i class="fas fa-tags"></i> <?php echo htmlspecialchars(cp_t('hub.client_pricing'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.client_pricing_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($clientPricingPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> <?php echo htmlspecialchars(cp_t('hub.view_pricing'), ENT_QUOTES, 'UTF-8'); ?></a>
+        <a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary ms-2" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-signature"></i> <?php echo htmlspecialchars(cp_t('hub.open_checkout'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings">
-        <h3><i class="fas fa-globe"></i> Public site content</h3>
-        <p>Marketing homepage, <strong>company profile</strong> (/profile), and government mobilization screenshots.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-pen-to-square"></i> Open public site editor</a>
+        <h3><i class="fas fa-globe"></i> <?php echo htmlspecialchars(cp_t('nav.public_site_content'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.public_site_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-pen-to-square"></i> <?php echo htmlspecialchars(cp_t('hub.open_site_editor'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
-    <?php if (false && isset($designedAppUrl) && $designedAppUrl !== ''): ?>
-    <div class="control-settings-card" data-permission="control_designed_site,view_control_designed_site">
-        <h3><i class="fas fa-palette"></i> Designed site</h3>
-        <p>Separate Designed experience (if configured).</p>
-        <a href="<?php echo htmlspecialchars($designedAppUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> Open Designed</a>
-    </div>
-    <?php endif; ?>
 </div>
 
-<div class="control-settings-intro mb-2"><strong>Business modules</strong></div>
+<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('section.business_modules'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="<?php echo htmlspecialchars($countryProgramPerms, ENT_QUOTES, 'UTF-8'); ?>">
-        <h3><i class="fas fa-flag"></i> Country program</h3>
-        <p>Government and program entry points.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-program.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-diagram-project"></i> Country program</a>
+        <h3><i class="fas fa-flag"></i> <?php echo htmlspecialchars(cp_t('nav.country_program'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.country_program_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-program.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-diagram-project"></i> <?php echo htmlspecialchars(cp_t('nav.country_program'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_accounting,view_control_accounting">
-        <h3><i class="fas fa-calculator"></i> Accounting</h3>
-        <p>Control-panel accounting workspace.</p>
-        <a href="<?php echo htmlspecialchars(pageUrl('control/accounting.php') . '?control=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-coins"></i> Accounting</a>
+        <h3><i class="fas fa-calculator"></i> <?php echo htmlspecialchars(cp_t('nav.accounting'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.accounting_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(pageUrl('control/accounting.php') . '?control=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-coins"></i> <?php echo htmlspecialchars(cp_t('nav.accounting'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_hr,view_control_hr">
-        <h3><i class="fas fa-user-tie"></i> HR center</h3>
-        <p>HR tools in the control panel.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/hr.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-people-group"></i> HR center</a>
+        <h3><i class="fas fa-user-tie"></i> <?php echo htmlspecialchars(cp_t('hub.hr_center'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.hr_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/hr.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-people-group"></i> <?php echo htmlspecialchars(cp_t('hub.hr_center'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_government,view_control_government,gov_admin">
-        <h3><i class="fas fa-shield-halved"></i> Government control</h3>
-        <p>Government / compliance surfaces.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-shield"></i> Government</a>
+        <h3><i class="fas fa-shield-halved"></i> <?php echo htmlspecialchars(cp_t('nav.government_control'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.government_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-shield"></i> <?php echo htmlspecialchars(cp_t('gov.title'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_government,view_control_government,gov_admin">
-        <h3><i class="fas fa-map-location-dot"></i> Tracking map</h3>
-        <p>Map and tracking overview.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-map"></i> Tracking map</a>
+        <h3><i class="fas fa-map-location-dot"></i> <?php echo htmlspecialchars(cp_t('hub.tracking_map'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.tracking_map_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-map"></i> <?php echo htmlspecialchars(cp_t('hub.tracking_map'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_government,manage_control_government,gov_admin">
-        <h3><i class="fas fa-qrcode"></i> Tracking onboarding</h3>
-        <p>Onboarding QR and device flows.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-onboarding.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-mobile-screen"></i> Onboarding</a>
+        <h3><i class="fas fa-qrcode"></i> <?php echo htmlspecialchars(cp_t('hub.onboarding'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.onboarding_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-onboarding.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-mobile-screen"></i> <?php echo htmlspecialchars(cp_t('hub.onboarding'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_government,view_control_government,gov_admin">
-        <h3><i class="fas fa-heart-pulse"></i> Tracking health</h3>
-        <p>Health checks for tracking services.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-health.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-wave-square"></i> Tracking health</a>
+        <h3><i class="fas fa-heart-pulse"></i> <?php echo htmlspecialchars(cp_t('hub.tracking_health'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.tracking_health_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-health.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-wave-square"></i> <?php echo htmlspecialchars(cp_t('hub.tracking_health'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings,manage_control_roles">
-        <h3><i class="fas fa-sliders"></i> Country profiles</h3>
-        <p>Per-country labels and field requirements.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-profiles.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-sliders-h"></i> Country profiles</a>
+        <h3><i class="fas fa-sliders"></i> <?php echo htmlspecialchars(cp_t('nav.country_profiles'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.country_profiles_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-profiles.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-sliders-h"></i> <?php echo htmlspecialchars(cp_t('nav.country_profiles'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong>Administration &amp; infrastructure</strong></div>
+<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.admin_infra'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,control_dashboard">
-        <h3><i class="fas fa-diagram-project"></i> Rollout control</h3>
-        <p>System flags and rollout (Admin Control Center, new tab).</p>
-        <a href="<?php echo htmlspecialchars($controlCenterUrl . '#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning" target="_blank" rel="noopener noreferrer"><i class="fas fa-flag"></i> Rollout / flags</a>
+        <h3><i class="fas fa-diagram-project"></i> <?php echo htmlspecialchars(cp_t('nav.rollout_control'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.rollout_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($controlCenterUrl . '#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning" target="_blank" rel="noopener noreferrer"><i class="fas fa-flag"></i> <?php echo htmlspecialchars(cp_t('hub.rollout_flags'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
-        <h3><i class="fas fa-tools"></i> Admin Control Center</h3>
-        <p>Deep tools: tenant, database, policies, safety, logs (new tab).</p>
-        <a href="<?php echo htmlspecialchars($controlCenterUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning" target="_blank" rel="noopener noreferrer"><i class="fas fa-screwdriver-wrench"></i> Open Control Center</a>
+        <h3><i class="fas fa-tools"></i> <?php echo htmlspecialchars(cp_t('nav.admin_control_center'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.control_center_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($controlCenterUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-warning" target="_blank" rel="noopener noreferrer"><i class="fas fa-screwdriver-wrench"></i> <?php echo htmlspecialchars(cp_t('hub.open_control_center'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
-        <h3><i class="fas fa-sliders-h"></i> Control panel settings</h3>
-        <p>Panel users, admins, countries/agencies shortcuts.</p>
-        <a href="<?php echo htmlspecialchars($panelSettingsHref, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-cog"></i> Panel settings</a>
+        <h3><i class="fas fa-sliders-h"></i> <?php echo htmlspecialchars(cp_t('nav.panel_settings'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.panel_settings_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($panelSettingsHref, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-cog"></i> <?php echo htmlspecialchars(cp_t('hub.panel_settings'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
-        <h3><i class="fas fa-network-wired"></i> Infrastructure</h3>
-        <p>Runtime controls, operations dashboard, and provider integrations — same page, switch with the tabs.</p>
+        <h3><i class="fas fa-network-wired"></i> <?php echo htmlspecialchars(cp_t('nav.infrastructure'), ENT_QUOTES, 'UTF-8'); ?></h3>
+        <p><?php echo htmlspecialchars(cp_t('hub.infrastructure_desc'), ENT_QUOTES, 'UTF-8'); ?></p>
         <div class="d-flex flex-wrap gap-2">
-            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=control', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-sliders-h"></i> Control</a>
-            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=dashboard', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-chart-line"></i> Dashboard</a>
-            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=providers', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-plug"></i> Providers</a>
+            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=control', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-sliders-h"></i> <?php echo htmlspecialchars(cp_t('hub.infra_control'), ENT_QUOTES, 'UTF-8'); ?></a>
+            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=dashboard', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-chart-line"></i> <?php echo htmlspecialchars(cp_t('hub.infra_dashboard'), ENT_QUOTES, 'UTF-8'); ?></a>
+            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=providers', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-plug"></i> <?php echo htmlspecialchars(cp_t('hub.infra_providers'), ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
     </div>
 </div>
 
 <p class="control-settings-footer-note mb-0">
-    <i class="fas fa-info-circle"></i> Permissions match the left sidebar. Use the sidebar for day-to-day navigation; this hub is a single bookmark for everything you are allowed to open.
+    <i class="fas fa-info-circle"></i> <?php echo htmlspecialchars(cp_t('hub.footer'), ENT_QUOTES, 'UTF-8'); ?>
 </p>
 
 <?php endControlLayout(); ?>
