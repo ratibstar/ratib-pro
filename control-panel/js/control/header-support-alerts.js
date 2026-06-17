@@ -68,7 +68,7 @@
             updateSidebarBadge(unread);
 
             if (!items || items.length === 0) {
-                list.innerHTML = '<div class="header-alert-empty">No unread chats.</div>';
+                list.innerHTML = '<div class="header-alert-empty">' + ((typeof cpT === 'function') ? cpT('js.no_unread_chats') : 'No unread chats.') + '</div>';
                 return;
             }
 

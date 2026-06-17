@@ -201,20 +201,21 @@ if (!empty($_SESSION['control_popup_error'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars(cp_html_lang(), ENT_QUOTES, 'UTF-8'); ?>" dir="<?php echo htmlspecialchars(cp_html_dir(), ENT_QUOTES, 'UTF-8'); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <title><?php echo htmlspecialchars(cp_t('dashboard.title'), ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/control/system.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/dashboard.css'); ?>?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo asset('css/control/rtl.css'); ?>?v=<?php echo time(); ?>">
     <?php if ($govWidgetData !== null): ?>
     <link rel="stylesheet" href="<?php echo asset('css/control/government.css'); ?>?v=<?php echo time(); ?>">
     <?php endif; ?>
 </head>
-<body class="control-system-body">
+<body class="control-system-body<?php echo cp_html_dir() === 'rtl' ? ' cp-rtl' : ''; ?>">
     <?php if ($controlPopupError !== ''): ?>
     <style>
         @keyframes controlPopupShake {
@@ -244,29 +245,30 @@ if (!empty($_SESSION['control_popup_error'])) {
     <!-- Header -->
     <header class="control-header">
         <div class="header-left">
-            <h1><i class="fas fa-cog"></i> Control Panel</h1>
-            <span class="header-subtitle header-subtitle-rateb">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</span>
+            <h1><i class="fas fa-cog"></i> <?php echo htmlspecialchars(cp_t('dashboard.title'), ENT_QUOTES, 'UTF-8'); ?></h1>
+            <span class="header-subtitle header-subtitle-rateb"><?php echo htmlspecialchars(cp_t('meta.brand_suffix'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
         <div class="header-right">
+            <?php require __DIR__ . '/../../includes/control/lang-switcher.php'; ?>
             <div class="header-alerts" id="headerAlerts" data-permission="control_support_chats,view_control_support">
-                <button type="button" class="header-alert-btn" id="supportAlertsBtn" aria-label="Support alerts" title="Support alerts">
+                <button type="button" class="header-alert-btn" id="supportAlertsBtn" aria-label="<?php echo htmlspecialchars(cp_t('layout.support_alerts'), ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars(cp_t('layout.support_alerts'), ENT_QUOTES, 'UTF-8'); ?>">
                     <i class="fas fa-bell"></i>
                     <span class="badge-count header-alert-badge is-hidden" id="supportAlertsBadge">0</span>
                 </button>
                 <div class="header-alert-dropdown is-hidden" id="supportAlertsDropdown">
-                    <div class="header-alert-title">Support Alerts</div>
+                    <div class="header-alert-title"><?php echo htmlspecialchars(cp_t('layout.support_alerts_title'), ENT_QUOTES, 'UTF-8'); ?></div>
                     <div class="header-alert-list" id="supportAlertsList">
-                        <div class="header-alert-empty">No unread chats.</div>
+                        <div class="header-alert-empty"><?php echo htmlspecialchars(cp_t('layout.no_unread_chats'), ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
-                    <a href="<?php echo pageUrl('control/support-chats.php'); ?>?control=1" class="header-alert-footer">Open Support Chats</a>
+                    <a href="<?php echo pageUrl('control/support-chats.php'); ?>?control=1" class="header-alert-footer"><?php echo htmlspecialchars(cp_t('layout.open_support_chats'), ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
-            <a href="<?php echo htmlspecialchars(rtrim($ratebBase !== '' ? $ratebBase : $fullBase, '/') . '/coreai/index.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" title="Open CoreAI">
+            <a href="<?php echo htmlspecialchars(rtrim($ratebBase !== '' ? $ratebBase : $fullBase, '/') . '/coreai/index.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" title="<?php echo htmlspecialchars(cp_t('layout.open_coreai'), ENT_QUOTES, 'UTF-8'); ?>">
                 <i class="fas fa-robot"></i>
-                <span>CoreAI</span>
+                <span><?php echo htmlspecialchars(cp_t('layout.coreai'), ENT_QUOTES, 'UTF-8'); ?></span>
             </a>
             <span class="user-info"><?php echo htmlspecialchars($_SESSION['control_username'] ?? ''); ?></span>
-            <a href="<?php echo pageUrl('logout.php'); ?>?control=1" class="btn-logout">Logout</a>
+            <a href="<?php echo pageUrl('logout.php'); ?>?control=1" class="btn-logout"><?php echo htmlspecialchars(cp_t('nav.logout'), ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
     </header>
 
@@ -277,10 +279,10 @@ if (!empty($_SESSION['control_popup_error'])) {
         <!-- Main Content Area -->
         <main class="control-content">
             <div class="content-header">
-                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="<?php echo htmlspecialchars(cp_t('layout.toggle_sidebar'), ENT_QUOTES, 'UTF-8'); ?>">
                     <i class="fas fa-bars"></i>
                 </button>
-                <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard Overview</h2>
+                <h2><i class="fas fa-tachometer-alt me-2"></i><?php echo htmlspecialchars(cp_t('dashboard.overview'), ENT_QUOTES, 'UTF-8'); ?></h2>
             </div>
             <?php if ($phase2NoticeEnabled && is_array($phase2ResolvedFlag)): ?>
             <div class="alert alert-info py-2 px-3 mb-3" role="status">
@@ -291,7 +293,7 @@ if (!empty($_SESSION['control_popup_error'])) {
             <?php endif; ?>
             <div id="tenantIsolationGlobalAlert" class="tenant-isolation-global-alert is-hidden" role="alert">
                 <i class="fas fa-triangle-exclamation me-2"></i>
-                <span id="tenantIsolationGlobalAlertText">Tenant isolation issue detected.</span>
+                <span id="tenantIsolationGlobalAlertText"><?php echo htmlspecialchars(cp_t('dashboard.tenant_isolation_issue'), ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
             <!-- EN: KPI cards controlled by role-based visibility switches. -->
             <!-- AR: بطاقات المؤشرات الرئيسية وتخضع لإعدادات إظهار حسب الصلاحيات. -->
@@ -304,8 +306,8 @@ if (!empty($_SESSION['control_popup_error'])) {
                     </div>
                     <div class="stat-content">
                         <h3><?php echo $stats['countries']; ?></h3>
-                        <p>Active Countries</p>
-                        <a href="<?php echo pageUrl('control/countries.php'); ?>?control=1" class="stat-link">View All <i class="fas fa-arrow-right"></i></a>
+                        <p><?php echo htmlspecialchars(cp_t('dashboard.active_countries'), ENT_QUOTES, 'UTF-8'); ?></p>
+                        <a href="<?php echo pageUrl('control/countries.php'); ?>?control=1" class="stat-link"><?php echo htmlspecialchars(cp_t('common.view_all'), ENT_QUOTES, 'UTF-8'); ?> <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -317,9 +319,9 @@ if (!empty($_SESSION['control_popup_error'])) {
                     </div>
                     <div class="stat-content">
                         <h3><?php echo $stats['agencies']; ?></h3>
-                        <p>Total Agencies</p>
-                        <span class="stat-subtitle"><?php echo $stats['active_agencies']; ?> Active</span>
-                        <a href="<?php echo pageUrl('control/agencies.php'); ?>?control=1" class="stat-link">Manage <i class="fas fa-arrow-right"></i></a>
+                        <p><?php echo htmlspecialchars(cp_t('dashboard.total_agencies'), ENT_QUOTES, 'UTF-8'); ?></p>
+                        <span class="stat-subtitle"><?php echo $stats['active_agencies']; ?> <?php echo htmlspecialchars(cp_t('common.active'), ENT_QUOTES, 'UTF-8'); ?></span>
+                        <a href="<?php echo pageUrl('control/agencies.php'); ?>?control=1" class="stat-link"><?php echo htmlspecialchars(cp_t('common.manage'), ENT_QUOTES, 'UTF-8'); ?> <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -331,8 +333,8 @@ if (!empty($_SESSION['control_popup_error'])) {
                     </div>
                     <div class="stat-content">
                         <h3><?php echo $stats['pending_requests']; ?></h3>
-                        <p>Pending Requests</p>
-                        <a href="<?php echo pageUrl('control/registration-requests.php'); ?>?control=1" class="stat-link">Review <i class="fas fa-arrow-right"></i></a>
+                        <p><?php echo htmlspecialchars(cp_t('dashboard.pending_requests'), ENT_QUOTES, 'UTF-8'); ?></p>
+                        <a href="<?php echo pageUrl('control/registration-requests.php'); ?>?control=1" class="stat-link"><?php echo htmlspecialchars(cp_t('common.review'), ENT_QUOTES, 'UTF-8'); ?> <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -343,9 +345,9 @@ if (!empty($_SESSION['control_popup_error'])) {
                         <i class="fas fa-calculator"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>Accounting</h3>
-                        <p>Financial Management</p>
-                        <a href="<?php echo pageUrl('control/accounting.php'); ?>?control=1" class="stat-link">Open <i class="fas fa-arrow-right"></i></a>
+                        <h3><?php echo htmlspecialchars(cp_t('nav.accounting'), ENT_QUOTES, 'UTF-8'); ?></h3>
+                        <p><?php echo htmlspecialchars(cp_t('dashboard.financial_management'), ENT_QUOTES, 'UTF-8'); ?></p>
+                        <a href="<?php echo pageUrl('control/accounting.php'); ?>?control=1" class="stat-link"><?php echo htmlspecialchars(cp_t('common.open'), ENT_QUOTES, 'UTF-8'); ?> <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -357,24 +359,24 @@ if (!empty($_SESSION['control_popup_error'])) {
             $gal = $govWidgetData['alerts'] ?? [];
             ?>
             <section class="gov-dashboard-widget" id="govLaborDashboard" aria-label="Government labor alerts">
-                <h3><i class="fas fa-shield-halved me-2"></i>Government labor monitoring</h3>
+                <h3><i class="fas fa-shield-halved me-2"></i><?php echo htmlspecialchars(cp_t('dashboard.gov_monitoring'), ENT_QUOTES, 'UTF-8'); ?></h3>
                 <div class="gov-dash-row">
-                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['violations'] ?? 0); ?></strong> violations</span>
-                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['blacklist_active'] ?? 0); ?></strong> active blacklist</span>
-                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['workers_alert'] ?? 0); ?></strong> workers in alert</span>
-                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['inspections_failed_pending'] ?? 0); ?></strong> inspections (failed / pending)</span>
+                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['violations'] ?? 0); ?></strong> <?php echo htmlspecialchars(cp_t('dashboard.violations'), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['blacklist_active'] ?? 0); ?></strong> <?php echo htmlspecialchars(cp_t('dashboard.active_blacklist'), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['workers_alert'] ?? 0); ?></strong> <?php echo htmlspecialchars(cp_t('dashboard.workers_alert'), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="gov-dash-metric"><strong><?php echo (int) ($gt['inspections_failed_pending'] ?? 0); ?></strong> <?php echo htmlspecialchars(cp_t('dashboard.inspections_failed'), ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
                 <?php if (!empty($gal)): ?>
-                <p class="text-muted small mb-1">Active signals</p>
+                <p class="text-muted small mb-1"><?php echo htmlspecialchars(cp_t('dashboard.active_signals'), ENT_QUOTES, 'UTF-8'); ?></p>
                 <ul class="gov-dash-alerts">
                     <?php foreach (array_slice($gal, 0, 10) as $item): ?>
                     <li><?php echo htmlspecialchars(($item['title'] ?? '') . ': ' . ($item['detail'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php endforeach; ?>
                 </ul>
                 <?php else: ?>
-                <p class="text-muted small mb-0">No active government alerts in this database.</p>
+                <p class="text-muted small mb-0"><?php echo htmlspecialchars(cp_t('dashboard.no_gov_alerts'), ENT_QUOTES, 'UTF-8'); ?></p>
                 <?php endif; ?>
-                <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php'), ENT_QUOTES, 'UTF-8'); ?>" class="stat-link d-inline-block mt-2">Open Government Control <i class="fas fa-arrow-right"></i></a>
+                <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php'), ENT_QUOTES, 'UTF-8'); ?>" class="stat-link d-inline-block mt-2"><?php echo htmlspecialchars(cp_t('dashboard.open_government'), ENT_QUOTES, 'UTF-8'); ?> <i class="fas fa-arrow-right"></i></a>
             </section>
             <?php endif; ?>
 
@@ -383,11 +385,11 @@ if (!empty($_SESSION['control_popup_error'])) {
             <!-- Users per Country -->
             <div class="users-per-country-section">
                 <div class="section-header">
-                    <h3><i class="fas fa-users me-2"></i>Users per Country</h3>
+                    <h3><i class="fas fa-users me-2"></i><?php echo htmlspecialchars(cp_t('dashboard.users_per_country'), ENT_QUOTES, 'UTF-8'); ?></h3>
                 </div>
                 <div class="users-per-country-grid" id="usersPerCountryGrid">
                     <div class="loading-state">
-                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                        <i class="fas fa-spinner fa-spin"></i> <?php echo htmlspecialchars(cp_t('common.loading'), ENT_QUOTES, 'UTF-8'); ?>
                     </div>
                 </div>
             </div>
@@ -397,43 +399,43 @@ if (!empty($_SESSION['control_popup_error'])) {
             <!-- Quick Actions -->
             <?php if (hasControlDashboardCardVisible('hide_dashboard_quick_actions')): ?>
             <div class="quick-actions-section">
-                <h3><i class="fas fa-bolt me-2"></i>Quick Actions</h3>
+                <h3><i class="fas fa-bolt me-2"></i><?php echo htmlspecialchars(cp_t('dashboard.quick_actions'), ENT_QUOTES, 'UTF-8'); ?></h3>
                 <div class="quick-actions-grid">
                     <a href="<?php echo pageUrl('control/countries.php'); ?>?control=1" class="quick-action-card" data-permission="control_countries,add_control_country,view_control_countries">
                         <i class="fas fa-plus-circle"></i>
-                        <span>Add Country</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.add_country'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo pageUrl('control/agencies.php'); ?>?control=1" class="quick-action-card" data-permission="control_agencies,add_control_agency,view_control_agencies">
                         <i class="fas fa-plus-circle"></i>
-                        <span>Add Agency</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.add_agency'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo pageUrl('control/registration-requests.php'); ?>?control=1" class="quick-action-card" data-permission="control_registration_requests,view_control_registration">
                         <i class="fas fa-check-circle"></i>
-                        <span>Review Requests</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.review_requests'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo pageUrl('control/accounting.php'); ?>?control=1" class="quick-action-card" data-permission="control_accounting,view_control_accounting">
                         <i class="fas fa-chart-line"></i>
-                        <span>View Reports</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.view_reports'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo htmlspecialchars(rtrim($ratebBase !== '' ? $ratebBase : $fullBase, '/') . '/admin/control-center.php#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings,control_dashboard">
                         <i class="fas fa-diagram-project"></i>
-                        <span>Rollout Control</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.rollout_control'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo pageUrl('control/soc-dashboard.php'); ?>?control=1" class="quick-action-card">
                         <i class="fas fa-shield-halved"></i>
-                        <span>Open SOC Dashboard</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.open_soc'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo htmlspecialchars(rtrim($ratebBase !== '' ? $ratebBase : $fullBase, '/') . '/mobile-app/index.php', ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer">
                         <i class="fas fa-location-crosshairs"></i>
-                        <span>Open Tracker View</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.open_tracker'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card">
                         <i class="fas fa-chart-pie"></i>
-                        <span>Open Client Hub</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.open_client_hub'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                     <a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card">
                         <i class="fas fa-server"></i>
-                        <span>Open Services</span>
+                        <span><?php echo htmlspecialchars(cp_t('dashboard.open_services'), ENT_QUOTES, 'UTF-8'); ?></span>
                     </a>
                 </div>
             </div>
@@ -441,25 +443,25 @@ if (!empty($_SESSION['control_popup_error'])) {
 
             <div class="tenant-self-test-section">
                 <div class="tenant-self-test-header">
-                    <h3><i class="fas fa-shield-check me-2"></i>Tenant Isolation Self-Test</h3>
+                    <h3><i class="fas fa-shield-check me-2"></i><?php echo htmlspecialchars(cp_t('dashboard.tenant_self_test'), ENT_QUOTES, 'UTF-8'); ?></h3>
                     <div class="tenant-self-test-actions">
-                        <button type="button" id="runTenantSelfTestBtn" class="btn btn-sm btn-outline-info">Run Current</button>
+                        <button type="button" id="runTenantSelfTestBtn" class="btn btn-sm btn-outline-info"><?php echo htmlspecialchars(cp_t('dashboard.run_current'), ENT_QUOTES, 'UTF-8'); ?></button>
                         <?php if ($phase2AllAgenciesAuditEnabled): ?>
-                        <button type="button" id="runTenantAllSelfTestBtn" class="btn btn-sm btn-outline-warning">Run All Agencies</button>
+                        <button type="button" id="runTenantAllSelfTestBtn" class="btn btn-sm btn-outline-warning"><?php echo htmlspecialchars(cp_t('dashboard.run_all_agencies'), ENT_QUOTES, 'UTF-8'); ?></button>
                         <?php else: ?>
                         <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Disabled by feature flag control.dashboard.enable_all_agencies_audit">
-                            Run All Agencies (Flag Disabled)
+                            <?php echo htmlspecialchars(cp_t('dashboard.run_all_disabled'), ENT_QUOTES, 'UTF-8'); ?>
                         </button>
                         <?php endif; ?>
                     </div>
                 </div>
                 <div id="tenantSelfTestResult" class="tenant-self-test-result tenant-self-test-idle">
-                    <span class="tenant-self-test-badge">IDLE</span>
-                    <span class="tenant-self-test-text">Press "Run Test" to verify DB isolation now.</span>
+                    <span class="tenant-self-test-badge"><?php echo htmlspecialchars(cp_t('js.idle'), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="tenant-self-test-text"><?php echo htmlspecialchars(cp_t('dashboard.press_run_test'), ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
                 <div id="tenantAllSelfTestResult" class="tenant-all-self-test-result tenant-self-test-idle">
-                    <span class="tenant-self-test-badge">IDLE</span>
-                    <span class="tenant-self-test-text">Run All Agencies to validate every agency DB connection/readiness.</span>
+                    <span class="tenant-self-test-badge"><?php echo htmlspecialchars(cp_t('js.idle'), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="tenant-self-test-text"><?php echo htmlspecialchars(cp_t('dashboard.run_all_hint'), ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
             </div>
 
@@ -469,12 +471,12 @@ if (!empty($_SESSION['control_popup_error'])) {
             <?php if (hasControlDashboardCardVisible('hide_dashboard_recent_requests')): ?>
             <div class="recent-section">
                 <div class="section-header">
-                    <h3><i class="fas fa-clock me-2"></i>Recent Registration Requests</h3>
-                    <a href="<?php echo pageUrl('control/registration-requests.php'); ?>?control=1" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+                    <h3><i class="fas fa-clock me-2"></i><?php echo htmlspecialchars(cp_t('dashboard.recent_requests'), ENT_QUOTES, 'UTF-8'); ?></h3>
+                    <a href="<?php echo pageUrl('control/registration-requests.php'); ?>?control=1" class="view-all-link"><?php echo htmlspecialchars(cp_t('common.view_all'), ENT_QUOTES, 'UTF-8'); ?> <i class="fas fa-arrow-right"></i></a>
                 </div>
                 <div class="recent-list" id="recent-requests">
                     <div class="loading-state">
-                        <i class="fas fa-spinner fa-spin"></i> Loading recent requests...
+                        <i class="fas fa-spinner fa-spin"></i> <?php echo htmlspecialchars(cp_t('js.loading_recent'), ENT_QUOTES, 'UTF-8'); ?>
                     </div>
                 </div>
             </div>
@@ -483,6 +485,8 @@ if (!empty($_SESSION['control_popup_error'])) {
     </div>
 
     <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
+    <?php echo cp_i18n_inline_script(); ?>
+    <script src="<?php echo asset('js/control/i18n.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/app-config-init.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/header-support-alerts.js'); ?>?v=<?php echo time(); ?>"></script>

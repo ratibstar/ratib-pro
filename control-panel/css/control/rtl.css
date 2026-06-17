@@ -1,0 +1,166 @@
+/**
+ * Control Panel RTL layout adjustments (Arabic only).
+ */
+html[dir="rtl"] .control-sidebar {
+    left: auto;
+    right: 0;
+    border-right: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html[dir="rtl"] .control-content {
+    margin-left: 0;
+    margin-right: var(--cp-sidebar-width, 280px);
+}
+
+html[dir="rtl"] .control-sidebar.collapsed + .control-content,
+html[dir="rtl"] .control-layout:not(:has(.control-sidebar:not(.collapsed))) .control-content {
+    margin-right: var(--cp-sidebar-collapsed-width, 72px);
+}
+
+html[dir="rtl"] .sidebar-item.active::before,
+html[dir="rtl"] .sidebar-subitem.active::before {
+    left: auto;
+    right: 0;
+}
+
+html[dir="rtl"] .sidebar-item i,
+html[dir="rtl"] .sidebar-subitem i {
+    margin-right: 0;
+    margin-left: 0.65rem;
+}
+
+html[dir="rtl"] .content-header h2,
+html[dir="rtl"] .section-header h3 {
+    text-align: right;
+}
+
+html[dir="rtl"] .back-button i.fa-arrow-left::before {
+    content: "\f061";
+}
+
+html[dir="rtl"] .stat-link .fa-arrow-right::before,
+html[dir="rtl"] .view-all-link .fa-arrow-right::before,
+html[dir="rtl"] .country-card .fa-arrow-right::before {
+    content: "\f060";
+}
+
+html[dir="rtl"] .country-card .hint i {
+    margin-left: 0;
+    margin-right: 0.35rem;
+}
+
+html[dir="rtl"] .control-header .header-left {
+    text-align: right;
+}
+
+html[dir="rtl"] .control-header .header-right {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .cp-lang-switcher {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .me-1,
+html[dir="rtl"] .me-2,
+html[dir="rtl"] .me-3 {
+    margin-right: 0 !important;
+}
+
+html[dir="rtl"] .me-1 { margin-left: 0.25rem !important; }
+html[dir="rtl"] .me-2 { margin-left: 0.5rem !important; }
+html[dir="rtl"] .me-3 { margin-left: 1rem !important; }
+
+html[dir="rtl"] .ms-1 { margin-left: 0 !important; margin-right: 0.25rem !important; }
+html[dir="rtl"] .ms-2 { margin-left: 0 !important; margin-right: 0.5rem !important; }
+
+html[dir="rtl"] .text-start { text-align: right !important; }
+html[dir="rtl"] .text-end { text-align: left !important; }
+
+html[dir="rtl"] .control-settings-grid,
+html[dir="rtl"] .country-grid,
+html[dir="rtl"] .stats-grid,
+html[dir="rtl"] .quick-actions-grid {
+    direction: rtl;
+}
+
+html[dir="rtl"] input.cp-acc-fp-en,
+html[dir="rtl"] input.req-date-en,
+html[dir="rtl"] .cp-acc-amount-en,
+html[dir="rtl"] [lang="en"] {
+    direction: ltr;
+    text-align: left;
+}
+
+.sidebar-lang-switch {
+    margin-top: 0.5rem;
+}
+
+.cp-login-lang {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+}
+
+.cp-lang-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-inline-start: 0.5rem;
+}
+
+.cp-lang-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 1.75rem;
+    padding: 0 0.45rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    opacity: 0.75;
+}
+
+.cp-lang-btn:hover {
+    opacity: 1;
+    text-decoration: none;
+    color: inherit;
+}
+
+.cp-lang-btn.active {
+    opacity: 1;
+    background: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.55);
+}
+
+.content-header-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-inline-start: auto;
+}
+
+html[dir="rtl"] .content-header {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .content-header-toolbar {
+    margin-inline-start: 0;
+    margin-inline-end: auto;
+}
+
+html[dir="rtl"] #controlPopupErrorToast i {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+@media (max-width: 768px) {
+    html[dir="rtl"] .control-content {
+        margin-right: 0;
+    }
+}

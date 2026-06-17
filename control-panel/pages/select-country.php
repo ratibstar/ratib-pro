@@ -50,10 +50,10 @@ require_once __DIR__ . '/../includes/control/layout-wrapper.php';
 startControlLayout('Select Country', [], []);
 ?>
 <div class="module-section">
-    <p class="text-muted mb-4">Choose a country to open its main platform login.</p>
+    <p class="text-muted mb-4"><?php echo htmlspecialchars(cp_t('select_country.intro'), ENT_QUOTES, 'UTF-8'); ?></p>
     <?php if (empty($countries)): ?>
-        <div class="alert alert-warning">No countries configured.</div>
-        <a href="<?php echo pageUrl('select-agency.php'); ?>" class="back-button"><i class="fas fa-arrow-left"></i><span>View all agencies</span></a>
+        <div class="alert alert-warning"><?php echo htmlspecialchars(cp_t('select_country.no_countries'), ENT_QUOTES, 'UTF-8'); ?></div>
+        <a href="<?php echo pageUrl('select-agency.php'); ?>" class="back-button"><i class="fas fa-arrow-left"></i><span><?php echo htmlspecialchars(cp_t('select_country.view_all_agencies'), ENT_QUOTES, 'UTF-8'); ?></span></a>
     <?php else: ?>
         <div class="country-grid">
             <?php
@@ -68,7 +68,7 @@ startControlLayout('Select Country', [], []);
                 <a href="<?php echo htmlspecialchars($cardUrl); ?>" class="country-card" target="_blank" rel="noopener noreferrer">
                     <h3><?php echo htmlspecialchars($c['name']); ?></h3>
                     <div class="slug"><?php echo htmlspecialchars($c['slug']); ?></div>
-                    <div class="hint"><i class="fas fa-arrow-right"></i> Open platform login</div>
+                    <div class="hint"><i class="fas fa-arrow-right"></i> <?php echo htmlspecialchars(cp_t('select_country.open_platform_login'), ENT_QUOTES, 'UTF-8'); ?></div>
                 </a>
             <?php endforeach; ?>
         </div>

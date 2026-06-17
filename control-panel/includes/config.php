@@ -43,6 +43,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once __DIR__ . '/i18n.php';
+cp_init_locale();
+
 // Helper functions
 if (!function_exists('getBaseUrl')) {
     function getBaseUrl() {

@@ -32,6 +32,10 @@
 
     // EN: Load country/user summary from control API using same-origin session cookies.
     // AR: جلب ملخص الدول/المستخدمين من API لوحة التحكم باستخدام كوكيز الجلسة.
+    function cpMsg(key, fallback) {
+        return (typeof cpT === 'function') ? cpT(key) : fallback;
+    }
+
     fetch(apiBase + '/get-users-per-country.php', { credentials: 'same-origin' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -43,15 +47,15 @@
                     var slug = (c.slug || '').trim();
                     var loginUrl = (ratebBase && slug) ? (ratebBase + '/' + slug + '/login') : null;
                     var linksHtml = '<div class="users-per-country-links">' +
-                        (usersUrl ? '<a href="' + usersUrl + '" target="_blank" rel="noopener noreferrer">View Users &rarr;</a>' : '') +
-                        '<a href="' + agenciesUrl + '">View Agencies &rarr;</a>' +
+                        (usersUrl ? '<a href="' + usersUrl + '" target="_blank" rel="noopener noreferrer">' + cpMsg('js.view_users', 'View Users &rarr;') + '</a>' : '') +
+                        '<a href="' + agenciesUrl + '">' + cpMsg('js.view_agencies', 'View Agencies &rarr;') + '</a>' +
                         '</div>';
                     var cardClass = 'users-per-country-card' + (loginUrl ? ' users-per-country-card-clickable' : '');
                     var loginAttr = loginUrl ? (' data-login-url="' + loginUrl.replace(/"/g, '&quot;') + '"') : '';
                     return '<div class="' + cardClass + '"' + loginAttr + '>' +
-                        '<div class="country-name">' + (c.name || 'Unknown') + '</div>' +
+                        '<div class="country-name">' + (c.name || cpMsg('js.unknown', 'Unknown')) + '</div>' +
                         '<div class="users-count">' + (c.users_count || 0) + '</div>' +
-                        '<div class="users-label">Users</div>' +
+                        '<div class="users-label">' + cpMsg('common.users', 'Users') + '</div>' +
                         linksHtml +
                         '</div>';
                 }).join('');
@@ -66,18 +70,18 @@
                     });
                 });
             } else {
-                grid.innerHTML = '<div class="text-muted control-empty-state">No countries configured.</div>';
+                grid.innerHTML = '<div class="text-muted control-empty-state">' + cpMsg('js.no_countries', 'No countries configured.') + '</div>';
             }
         })
         .catch(function() {
-            grid.innerHTML = '<div class="text-muted control-empty-state">Failed to load users per country.</div>';
+            grid.innerHTML = '<div class="text-muted control-empty-state">' + cpMsg('js.failed_users_country', 'Failed to load users per country.') + '</div>';
         });
 
     function setSelfTestResult(status, text) {
         if (!tenantSelfTestResult) return;
         tenantSelfTestResult.classList.remove('tenant-self-test-idle', 'tenant-self-test-running', 'tenant-self-test-pass', 'tenant-self-test-fail');
         tenantSelfTestResult.classList.add('tenant-self-test-' + status);
-        tenantSelfTestResult.innerHTML = '<span class="tenant-self-test-badge">' + status.toUpperCase() + '</span>' +
+        tenantSelfTestResult.innerHTML = '<span class="tenant-self-test-badge">' + (typeof cpT === 'function' ? cpT('js.' + status) : status.toUpperCase()) + '</span>' +
             '<span class="tenant-self-test-text">' + text + '</span>';
     }
 

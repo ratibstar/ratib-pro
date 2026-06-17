@@ -8,7 +8,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 $error = '';
-$success_message = isset($_GET['message']) && $_GET['message'] === 'logged_out' ? 'You have been successfully logged out.' : '';
+$success_message = isset($_GET['message']) && $_GET['message'] === 'logged_out' ? cp_t('login.logged_out') : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db = $GLOBALS['control_conn'] ?? $GLOBALS['conn'] ?? null;
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     };
     if ($db === null) {
-        $error = 'Control panel database unavailable.';
+        $error = cp_t('login.error.db_unavailable');
     } else {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -76,10 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user) {
             $statusOk = isset($user['is_active']) ? !empty($user['is_active']) : true;
             if (!$statusOk) {
-                $error = 'Account is inactive. Please contact administrator.';
+                $error = cp_t('login.error.inactive');
                 $auditLogin($controlUserId > 0 ? $controlUserId : null, $username, false);
             } elseif (!password_verify($password, $user['password'])) {
-                $error = 'Invalid password.';
+                $error = cp_t('login.error.invalid_password');
                 $auditLogin($controlUserId > 0 ? $controlUserId : null, $username, false);
             } else {
                 $_SESSION['control_logged_in'] = true;
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         if (empty($error)) {
-            $error = 'Invalid username or password.';
+            $error = cp_t('login.error.invalid_credentials');
             $auditLogin(null, $username, false);
         }
     }
@@ -154,15 +154,16 @@ if (!empty($_SESSION['control_logged_in'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars(cp_html_lang(), ENT_QUOTES, 'UTF-8'); ?>" dir="<?php echo htmlspecialchars(cp_html_dir(), ENT_QUOTES, 'UTF-8'); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Control Panel</title>
+    <title><?php echo htmlspecialchars(cp_t('login.title'), ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/login.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/login-control.css'); ?>?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo asset('css/control/rtl.css'); ?>?v=<?php echo time(); ?>">
     <?php
     $ratebOverlayGuardPath = __DIR__ . '/../../includes/rateb-overlay-dismiss-guard.php';
     if (is_file($ratebOverlayGuardPath)) {
@@ -181,17 +182,18 @@ if (!empty($_SESSION['control_logged_in'])) {
             <span class="cp-bg-word">CONTROL PANEL</span>
         </div>
         <div class="portal-content active">
-            <h2>Control Panel Login</h2>
+            <div class="cp-login-lang"><?php require __DIR__ . '/../includes/control/lang-switcher.php'; ?></div>
+            <h2><?php echo htmlspecialchars(cp_t('login.title'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <?php if ($error): ?><div class="error-message"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
             <?php if ($success_message): ?><div class="success-message"><?php echo htmlspecialchars($success_message); ?></div><?php endif; ?>
             <form method="post" action="" class="text-center mt-4">
                 <div class="mb-3">
-                    <input type="text" name="username" placeholder="Username" required autocomplete="username" class="form-control">
+                    <input type="text" name="username" placeholder="<?php echo htmlspecialchars(cp_t('login.username'), ENT_QUOTES, 'UTF-8'); ?>" required autocomplete="username" class="form-control">
                 </div>
                 <div class="mb-4">
-                    <input type="password" name="password" placeholder="Password" required autocomplete="current-password" class="form-control">
+                    <input type="password" name="password" placeholder="<?php echo htmlspecialchars(cp_t('login.password'), ENT_QUOTES, 'UTF-8'); ?>" required autocomplete="current-password" class="form-control">
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Login</button>
+                <button type="submit" class="btn btn-primary w-100"><?php echo htmlspecialchars(cp_t('login.submit'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
         </div>
     </div>

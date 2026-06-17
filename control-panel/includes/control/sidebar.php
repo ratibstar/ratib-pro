@@ -12,6 +12,9 @@ $fullBaseUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base;
 $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/control-center.php';
 $clientPlatformLinks = control_client_platform_links();
 $clientPlatformActiveKey = control_client_platform_active_key();
+$cpT = static function (string $key): string {
+    return function_exists('cp_t') ? cp_t($key) : $key;
+};
 ?>
 <aside class="control-sidebar" id="control-sidebar">
     <div class="sidebar-header">
@@ -24,26 +27,32 @@ $clientPlatformActiveKey = control_client_platform_active_key();
         <?php elseif (!empty($_SESSION['control_country_name'])): ?>
         <div class="sidebar-context"><?php echo htmlspecialchars($_SESSION['control_country_name'], ENT_QUOTES, 'UTF-8'); ?></div>
         <?php endif; ?>
+        <div class="sidebar-lang-switch"><?php include __DIR__ . '/lang-switcher.php'; ?></div>
     </div>
     <nav class="sidebar-nav">
         <ul class="sidebar-menu">
-            <li><a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'dashboard.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/control-hub.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'control-hub.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-layer-group"></i><span>Control hub</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'help-center.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-book"></i><span>Help center</span></a></li>
-            <li class="sidebar-section"><span class="section-label"><i class="fas fa-hospital"></i> نظام رتب ERP</span></li>
-            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-hospital"></i><span>نظام رتب ERP</span></a></li>
+            <li><a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'dashboard.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-home"></i><span><?php echo htmlspecialchars($cpT('nav.dashboard'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/control-hub.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'control-hub.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-layer-group"></i><span><?php echo htmlspecialchars($cpT('nav.control_hub'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'help-center.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-book"></i><span><?php echo htmlspecialchars($cpT('nav.help_center'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li class="sidebar-section"><span class="section-label"><i class="fas fa-hospital"></i> <?php echo htmlspecialchars($cpT('section.rateb_erp'), ENT_QUOTES, 'UTF-8'); ?></span></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-hospital"></i><span><?php echo htmlspecialchars($cpT('nav.rateb_erp'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <?php
             $erpRouteCp = trim((string) ($_GET['route'] ?? ''), '/');
             $companyPortalActive = (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp-app.php' && strpos($erpRouteCp, 'company') === 0);
             ?>
-            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo $companyPortalActive ? ' active' : ''; ?>" data-permission="control_dashboard" target="_blank" rel="noopener"><i class="fas fa-building"></i><span>بوابة الشركة</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('portals.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" data-permission="control_dashboard" target="_blank" rel="noopener"><i class="fas fa-link"></i><span>روابط ERP</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp-migrate.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-database"></i><span>ERP Database Setup</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo $companyPortalActive ? ' active' : ''; ?>" data-permission="control_dashboard" target="_blank" rel="noopener"><i class="fas fa-building"></i><span><?php echo htmlspecialchars($cpT('nav.company_portal'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('portals.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" data-permission="control_dashboard" target="_blank" rel="noopener"><i class="fas fa-link"></i><span><?php echo htmlspecialchars($cpT('nav.erp_links'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp-migrate.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-database"></i><span><?php echo htmlspecialchars($cpT('nav.erp_db_setup'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <?php
             $ratebErpNavLinks = function_exists('control_rateb_erp_nav_links') ? control_rateb_erp_nav_links() : [];
             foreach ($ratebErpNavLinks as $erpLink) {
                 $active = (function_exists('control_rateb_erp_active_key') && control_rateb_erp_active_key() === ($erpLink['key'] ?? '')) ? ' active' : '';
-                echo '<li><a href="' . htmlspecialchars($erpLink['href'], ENT_QUOTES, 'UTF-8') . '" class="sidebar-item' . $active . '" data-permission="control_dashboard"><i class="fas ' . htmlspecialchars($erpLink['icon'], ENT_QUOTES, 'UTF-8') . '"></i><span>' . htmlspecialchars($erpLink['label'], ENT_QUOTES, 'UTF-8') . '</span></a></li>';
+                $erpKey = (string) ($erpLink['key'] ?? '');
+                $erpLabel = $cpT('erp.' . $erpKey);
+                if ($erpLabel === 'erp.' . $erpKey) {
+                    $erpLabel = (string) ($erpLink['label'] ?? $erpKey);
+                }
+                echo '<li><a href="' . htmlspecialchars($erpLink['href'], ENT_QUOTES, 'UTF-8') . '" class="sidebar-item' . $active . '" data-permission="control_dashboard"><i class="fas ' . htmlspecialchars($erpLink['icon'], ENT_QUOTES, 'UTF-8') . '"></i><span>' . htmlspecialchars($erpLabel, ENT_QUOTES, 'UTF-8') . '</span></a></li>';
             }
             ?>
             <?php
@@ -52,18 +61,18 @@ $clientPlatformActiveKey = control_client_platform_active_key();
                 $ratebPublicProfileUrl = rtrim((string) control_rateb_pro_public_base_url(), '/') . '/profile/';
             }
             ?>
-            <li class="sidebar-section"><span class="section-label">Public site</span></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'site-content.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings" title="Marketing home, company profile, architecture, security, procurement"><i class="fas fa-globe"></i><span>Public site content</span></a></li>
+            <li class="sidebar-section"><span class="section-label"><?php echo htmlspecialchars($cpT('section.public_site'), ENT_QUOTES, 'UTF-8'); ?></span></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'site-content.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings" title="Marketing home, company profile, architecture, security, procurement"><i class="fas fa-globe"></i><span><?php echo htmlspecialchars($cpT('nav.public_site_content'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <?php if ($ratebPublicProfileUrl !== '') { ?>
-            <li><a href="<?php echo htmlspecialchars($ratebPublicProfileUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-building"></i><span>Company profile (live)</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($ratebPublicProfileUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-building"></i><span><?php echo htmlspecialchars($cpT('nav.company_profile_live'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <?php } ?>
-            <li class="sidebar-section"><span class="section-label">Client Platform</span></li>
-            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'hub') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-chart-pie"></i><span>Client Hub</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'services') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-server"></i><span>Services</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['domains']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'domains') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-globe"></i><span>Domains</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['orders']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'orders') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-bag-shopping"></i><span>Orders</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['billing']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'billing') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-file-invoice-dollar"></i><span>Billing</span></a></li>
-            <li class="sidebar-section"><span class="section-label">Core Management</span></li>
+            <li class="sidebar-section"><span class="section-label"><?php echo htmlspecialchars($cpT('section.client_platform'), ENT_QUOTES, 'UTF-8'); ?></span></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'hub') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-chart-pie"></i><span><?php echo htmlspecialchars($cpT('nav.client_hub'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'services') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-server"></i><span><?php echo htmlspecialchars($cpT('nav.services'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['domains']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'domains') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-globe"></i><span><?php echo htmlspecialchars($cpT('nav.domains'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['orders']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'orders') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-bag-shopping"></i><span><?php echo htmlspecialchars($cpT('nav.orders'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['billing']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'billing') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-file-invoice-dollar"></i><span><?php echo htmlspecialchars($cpT('nav.billing'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li class="sidebar-section"><span class="section-label"><?php echo htmlspecialchars($cpT('section.core_management'), ENT_QUOTES, 'UTF-8'); ?></span></li>
             <?php
             $selectCountryPerms = 'control_select_country';
             if (isset($ctrl) && $ctrl) {
@@ -76,9 +85,9 @@ $clientPlatformActiveKey = control_client_platform_active_key();
                 } catch (Throwable $e) { /* ignore */ }
             }
             ?>
-            <li><a href="<?php echo pageUrl('select-country.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'select-country.php') ? 'active' : ''; ?>" data-permission="<?php echo htmlspecialchars($selectCountryPerms); ?>"><i class="fas fa-globe"></i><span>Select Country</span></a></li>
-            <li><a href="<?php echo pageUrl('control/countries.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'countries.php') ? 'active' : ''; ?>" data-permission="control_countries,view_control_countries"><i class="fas fa-list"></i><span>Manage Countries</span></a></li>
-            <li><a href="<?php echo pageUrl('control/agencies.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'agencies.php') ? 'active' : ''; ?>" data-permission="control_agencies,view_control_agencies"><i class="fas fa-building"></i><span>Manage Agencies</span></a></li>
+            <li><a href="<?php echo pageUrl('select-country.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'select-country.php') ? 'active' : ''; ?>" data-permission="<?php echo htmlspecialchars($selectCountryPerms); ?>"><i class="fas fa-globe"></i><span><?php echo htmlspecialchars($cpT('nav.select_country'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo pageUrl('control/countries.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'countries.php') ? 'active' : ''; ?>" data-permission="control_countries,view_control_countries"><i class="fas fa-list"></i><span><?php echo htmlspecialchars($cpT('nav.manage_countries'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo pageUrl('control/agencies.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'agencies.php') ? 'active' : ''; ?>" data-permission="control_agencies,view_control_agencies"><i class="fas fa-building"></i><span><?php echo htmlspecialchars($cpT('nav.manage_agencies'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <?php
             $canViewCountryUsers = (strtolower(trim($_SESSION['control_username'] ?? '')) === 'admin')
                 || hasControlPermission(CONTROL_PERM_COUNTRY_USERS)
@@ -87,12 +96,12 @@ $clientPlatformActiveKey = control_client_platform_active_key();
                 || hasControlPermission('view_control_agencies')
                 || hasControlPermission('open_control_agency');
             if ($canViewCountryUsers): ?>
-            <li><a href="<?php echo pageUrl('control/country-users.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-users.php') ? 'active' : ''; ?>" data-permission="control_country_users,view_control_country_users,control_agencies,view_control_agencies,open_control_agency"><i class="fas fa-globe-americas"></i><span>Country Users</span></a></li>
+            <li><a href="<?php echo pageUrl('control/country-users.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-users.php') ? 'active' : ''; ?>" data-permission="control_country_users,view_control_country_users,control_agencies,view_control_agencies,open_control_agency"><i class="fas fa-globe-americas"></i><span><?php echo htmlspecialchars($cpT('nav.country_users'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <?php endif; ?>
-            <li class="sidebar-section"><span class="section-label">Registration & Support</span></li>
+            <li class="sidebar-section"><span class="section-label"><?php echo htmlspecialchars($cpT('section.registration_support'), ENT_QUOTES, 'UTF-8'); ?></span></li>
             <li>
                 <a href="<?php echo htmlspecialchars(function_exists('control_panel_page_with_control') ? (control_panel_page_with_control('control/registration-requests.php') . '&all_dates=1') : (pageUrl('control/registration-requests.php') . '?control=1&all_dates=1')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'registration-requests.php') ? 'active' : ''; ?>" data-permission="control_registration_requests,view_control_registration,view_all_control_registration">
-                    <i class="fas fa-user-plus"></i><span>Registration Requests</span>
+                    <i class="fas fa-user-plus"></i><span><?php echo htmlspecialchars($cpT('nav.registration_requests'), ENT_QUOTES, 'UTF-8'); ?></span>
                     <?php
                     $pendingCount = 0;
                     if (isset($ctrl) && $ctrl && function_exists('getRegistrationRequestScopeCountryIds')) {
@@ -120,8 +129,6 @@ $clientPlatformActiveKey = control_client_platform_active_key();
                                         : '';
                                     $reqWhere = " AND (country_id IN ($idsStr)$nameMatch)";
                                 }
-                                // Keep sidebar pending badge aligned with queue safety:
-                                // count only paid registrations (plus optional Pro inquiries), not unpaid paid-plans.
                                 $pendingSafety = '';
                                 $psCol = @$ctrl->query("SHOW COLUMNS FROM control_registration_requests LIKE 'payment_status'");
                                 $hasPaymentStatusCol = ($psCol && $psCol->num_rows > 0);
@@ -185,7 +192,7 @@ $clientPlatformActiveKey = control_client_platform_active_key();
             <li>
                 <a href="<?php echo pageUrl('control/support-chats.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'support-chats.php') ? 'active' : ''; ?>" data-permission="control_support_chats,view_control_support">
                     <i class="fas fa-comments"></i>
-                    <span>Support Chats</span>
+                    <span><?php echo htmlspecialchars($cpT('nav.support_chats'), ENT_QUOTES, 'UTF-8'); ?></span>
                     <span class="badge-count <?php echo $supportUnreadCount > 0 ? '' : 'd-none'; ?>" id="sidebarSupportChatsBadge"><?php echo $supportUnreadCount > 99 ? '99+' : (int) $supportUnreadCount; ?></span>
                 </a>
             </li>
@@ -193,8 +200,8 @@ $clientPlatformActiveKey = control_client_platform_active_key();
             $ctrlDb = (isset($ctrl) && $ctrl instanceof mysqli) ? $ctrl : null;
             $clientPricingPageUrl = control_panel_pricing_page_url($ctrlDb);
             ?>
-            <li><a href="<?php echo htmlspecialchars($clientPricingPageUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" title="Gold &amp; Platinum pricing on the live marketing site"><i class="fas fa-tags"></i><span>Client Registration Page</span></a></li>
-            <li class="sidebar-section"><span class="section-label">Business Modules</span></li>
+            <li><a href="<?php echo htmlspecialchars($clientPricingPageUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" title="Gold &amp; Platinum pricing on the live marketing site"><i class="fas fa-tags"></i><span><?php echo htmlspecialchars($cpT('nav.client_registration_page'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li class="sidebar-section"><span class="section-label"><?php echo htmlspecialchars($cpT('section.business_modules'), ENT_QUOTES, 'UTF-8'); ?></span></li>
             <?php
             $countryProgramPerms = 'control_government,view_control_government,gov_admin,control_admins';
             if (isset($ctrl) && $ctrl) {
@@ -212,21 +219,21 @@ $clientPlatformActiveKey = control_client_platform_active_key();
                 } catch (Throwable $e) { /* ignore */ }
             }
             ?>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-program.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-program.php') ? 'active' : ''; ?>" data-permission="<?php echo htmlspecialchars($countryProgramPerms); ?>"><i class="fas fa-flag"></i><span>Country program</span></a></li>
-            <li><a href="<?php echo pageUrl('control/accounting.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'accounting.php') ? 'active' : ''; ?>" data-permission="control_accounting,view_control_accounting"><i class="fas fa-calculator"></i><span>Accounting</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/hr.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'hr.php') ? 'active' : ''; ?>" data-permission="control_hr,view_control_hr"><i class="fas fa-user-tie"></i><span>HR Center</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'government.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-shield-halved"></i><span>Government Control</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-map.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-map-location-dot"></i><span>Tracking Map</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-onboarding.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-onboarding.php') ? 'active' : ''; ?>" data-permission="control_government,manage_control_government,gov_admin"><i class="fas fa-qrcode"></i><span>Tracking Onboarding</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-health.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-health.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-heart-pulse"></i><span>Telemetry Health</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-profiles.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-profiles.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings,manage_control_roles"><i class="fas fa-sliders"></i><span>Country Profiles</span></a></li>
-            <li class="sidebar-section"><span class="section-label">Administration</span></li>
-            <li><a href="<?php echo htmlspecialchars($controlCenterUrl . '#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings,control_dashboard"><i class="fas fa-diagram-project"></i><span>Rollout Control (Admin)</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($fullBaseUrl . '/pages/control/panel-settings.php?control=1'); ?>" id="nav-control-panel-settings" class="sidebar-item <?php echo in_array(basename($_SERVER['PHP_SELF']), ['panel-settings.php', 'admins.php', 'control-panel-settings.php', 'panel-users.php', 'control-panel-users.php']) ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-sliders-h"></i><span>Control Panel Settings</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($controlCenterUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-tools"></i><span>Admin Control Center</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=control', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) === 'infrastructure.php' ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-network-wired"></i><span>Infrastructure</span></a></li>
-            <li class="sidebar-section"><span class="section-label">Account</span></li>
-            <li><a href="<?php echo pageUrl('logout.php'); ?>" class="sidebar-item sidebar-item-logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-program.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-program.php') ? 'active' : ''; ?>" data-permission="<?php echo htmlspecialchars($countryProgramPerms); ?>"><i class="fas fa-flag"></i><span><?php echo htmlspecialchars($cpT('nav.country_program'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo pageUrl('control/accounting.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'accounting.php') ? 'active' : ''; ?>" data-permission="control_accounting,view_control_accounting"><i class="fas fa-calculator"></i><span><?php echo htmlspecialchars($cpT('nav.accounting'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/hr.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'hr.php') ? 'active' : ''; ?>" data-permission="control_hr,view_control_hr"><i class="fas fa-user-tie"></i><span><?php echo htmlspecialchars($cpT('nav.hr_center'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'government.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-shield-halved"></i><span><?php echo htmlspecialchars($cpT('nav.government_control'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-map.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-map-location-dot"></i><span><?php echo htmlspecialchars($cpT('nav.tracking_map'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-onboarding.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-onboarding.php') ? 'active' : ''; ?>" data-permission="control_government,manage_control_government,gov_admin"><i class="fas fa-qrcode"></i><span><?php echo htmlspecialchars($cpT('nav.tracking_onboarding'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-health.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-health.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-heart-pulse"></i><span><?php echo htmlspecialchars($cpT('nav.telemetry_health'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-profiles.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-profiles.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings,manage_control_roles"><i class="fas fa-sliders"></i><span><?php echo htmlspecialchars($cpT('nav.country_profiles'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li class="sidebar-section"><span class="section-label"><?php echo htmlspecialchars($cpT('section.administration'), ENT_QUOTES, 'UTF-8'); ?></span></li>
+            <li><a href="<?php echo htmlspecialchars($controlCenterUrl . '#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings,control_dashboard"><i class="fas fa-diagram-project"></i><span><?php echo htmlspecialchars($cpT('nav.rollout_control'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars($fullBaseUrl . '/pages/control/panel-settings.php?control=1'); ?>" id="nav-control-panel-settings" class="sidebar-item <?php echo in_array(basename($_SERVER['PHP_SELF']), ['panel-settings.php', 'admins.php', 'control-panel-settings.php', 'panel-users.php', 'control-panel-users.php']) ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-sliders-h"></i><span><?php echo htmlspecialchars($cpT('nav.panel_settings'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars($controlCenterUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-tools"></i><span><?php echo htmlspecialchars($cpT('nav.admin_control_center'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=control', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) === 'infrastructure.php' ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-network-wired"></i><span><?php echo htmlspecialchars($cpT('nav.infrastructure'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li class="sidebar-section"><span class="section-label"><?php echo htmlspecialchars($cpT('section.account'), ENT_QUOTES, 'UTF-8'); ?></span></li>
+            <li><a href="<?php echo pageUrl('logout.php'); ?>" class="sidebar-item sidebar-item-logout"><i class="fas fa-sign-out-alt"></i><span><?php echo htmlspecialchars($cpT('nav.logout'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
         </ul>
     </nav>
 </aside>
