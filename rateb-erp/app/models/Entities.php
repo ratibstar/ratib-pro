@@ -158,9 +158,11 @@ final class SupplierEvaluation extends Model
     protected string $table = 'rateb_supplier_evaluations';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'company_id', 'evaluation_no', 'supplier_id', 'evaluated_by', 'evaluation_date',
+        'company_id', 'evaluation_no', 'supplier_id', 'evaluated_by', 'evaluator_name',
+        'evaluation_date', 'period_start', 'period_end',
         'quality_score', 'delivery_score', 'price_score', 'service_score',
-        'overall_score', 'comments', 'status',
+        'overall_score', 'score_percent', 'rating_tier', 'comments', 'status',
+        'manager_approval', 'approved_by', 'approved_at',
     ];
 
     public function recalculateOverall(array $scores): float
@@ -173,8 +175,9 @@ final class SupplierEvaluation extends Model
     public function updateSupplierRating(int $supplierId): void
     {
         $row = $this->queryOne(
-            'SELECT AVG(overall_score) AS avg_rating FROM rateb_supplier_evaluations WHERE supplier_id = :sid AND status = :st',
-            ['sid' => $supplierId, 'st' => 'published']
+            'SELECT AVG(overall_score) AS avg_rating FROM rateb_supplier_evaluations
+             WHERE supplier_id = :sid AND status = :st AND manager_approval = :ap',
+            ['sid' => $supplierId, 'st' => 'published', 'ap' => 'approved']
         );
         $avg = $row ? round((float) $row['avg_rating'], 2) : 0.0;
         $this->db->prepare('UPDATE rateb_suppliers SET rating = :r WHERE id = :id')

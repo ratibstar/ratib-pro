@@ -121,6 +121,11 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
     $router->post($app($path . '/{id}/documents/{docId}/delete'), [$class, 'destroyDocument'], $mw);
 }
 
+$seMw = rateb_erp_mw('suppliers', '', 'supplier-evaluations');
+$router->get($app('supplier-evaluations/history'), [SupplierEvaluationsController::class, 'supplierHistory'], $seMw);
+$router->post($app('supplier-evaluations/{id}/approve'), [SupplierEvaluationsController::class, 'approve'], $seMw);
+$router->post($app('supplier-evaluations/{id}/reject'), [SupplierEvaluationsController::class, 'reject'], $seMw);
+
 $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'warehouseItemsJson'], rateb_erp_mw('inventory', '', 'inventory'));
 
 $router->get($app('purchase-requests/export'), [PurchaseRequestsController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-requests'));

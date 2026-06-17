@@ -1432,28 +1432,53 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         $this->viewPrefix = 'company/supplier-evaluations';
         $this->routePrefix = rateb_app_route('supplier-evaluations');
         $this->entityName = 'supplier_evaluations';
+        $this->permissionResource = 'supplier-evaluations';
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
-            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers', 'required' => true],
-            ['name' => 'evaluation_date', 'label' => 'evaluation_date', 'type' => 'date', 'default' => date('Y-m-d')],
-            ['name' => 'quality_score', 'label' => 'quality_score', 'type' => 'score_select'],
-            ['name' => 'delivery_score', 'label' => 'delivery_score', 'type' => 'score_select'],
-            ['name' => 'price_score', 'label' => 'price_score', 'type' => 'score_select'],
-            ['name' => 'service_score', 'label' => 'service_score', 'type' => 'score_select'],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'evaluation_statuses', 'default' => 'published'],
-            ['name' => 'comments', 'label' => 'comments', 'type' => 'textarea'],
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers', 'required' => true, 'col' => 'col-md-6'],
+            ['name' => 'evaluation_date', 'label' => 'evaluation_date', 'type' => 'date', 'default' => date('Y-m-d'), 'col' => 'col-md-6'],
+            ['name' => 'period_start', 'label' => 'evaluation_period_start', 'type' => 'date', 'col' => 'col-md-6'],
+            ['name' => 'period_end', 'label' => 'evaluation_period_end', 'type' => 'date', 'col' => 'col-md-6'],
+            ['name' => 'quality_score', 'label' => 'quality_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'delivery_score', 'label' => 'delivery_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'price_score', 'label' => 'price_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'service_score', 'label' => 'service_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'evaluation_statuses', 'default' => 'published', 'col' => 'col-md-6'],
+            ['name' => 'comments', 'label' => 'comments', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 4],
+        ];
+        $this->indexFields = [
+            ['name' => 'evaluation_no', 'label' => 'evaluation_no'],
+            ['name' => 'supplier_name', 'label' => 'suppliers'],
+            ['name' => 'evaluation_date', 'label' => 'evaluation_date'],
+            ['name' => 'overall_score', 'label' => 'overall_score'],
+            ['name' => 'score_percent', 'label' => 'evaluation_percent'],
+            ['name' => 'rating_tier', 'label' => 'supplier_rating_tier', 'type' => 'status'],
+            ['name' => 'evaluator_name', 'label' => 'evaluator_name'],
+            ['name' => 'manager_approval', 'label' => 'manager_approval', 'type' => 'status'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
     }
 
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id());
         $items = $this->model->query(
             'SELECT e.*, s.name AS supplier_name FROM rateb_supplier_evaluations e
              LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
              WHERE e.company_id = :cid ORDER BY e.id DESC LIMIT 100',
             ['cid' => $companyId]
         );
+        $svc = new \Rateb\App\Services\SupplierEvaluationService();
+        foreach ($items as &$row) {
+            $tier = (string) ($row['rating_tier'] ?? '');
+            if ($tier !== '') {
+                $row['rating_tier'] = 'eval_tier_' . $tier;
+            }
+            $approval = (string) ($row['manager_approval'] ?? 'pending');
+            $row['manager_approval'] = 'manager_approval_' . $approval;
+        }
+        unset($row);
 
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
@@ -1462,22 +1487,58 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             'page' => 1,
             'limit' => 100,
             'routePrefix' => $this->routePrefix,
-            'fields' => [
-                ['name' => 'evaluation_no', 'label' => 'evaluation_no'],
-                ['name' => 'supplier_name', 'label' => 'suppliers'],
-                ['name' => 'evaluation_date', 'label' => 'evaluation_date'],
-                ['name' => 'overall_score', 'label' => 'overall_score'],
-                ['name' => 'quality_score', 'label' => 'quality_score'],
-                ['name' => 'status', 'label' => 'status'],
-            ],
+            'fields' => $this->indexFields,
             'documentEntityType' => $this->resolveDocumentEntityType(),
-            'csrf' => Csrf::token(),
+            'csrf' => \Rateb\App\Core\Csrf::token(),
         ]), $this->layout());
+    }
+
+    protected function formViewData(array $extra = []): array
+    {
+        $data = parent::formViewData($extra);
+        $item = $data['item'] ?? null;
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id());
+        $svc = new \Rateb\App\Services\SupplierEvaluationService();
+        $user = \Rateb\App\Core\Auth::user();
+        $data['multipart'] = true;
+        $data['evaluatorName'] = is_array($item) && !empty($item['evaluator_name'])
+            ? (string) $item['evaluator_name']
+            : (string) ($user['name'] ?? '');
+        $data['evaluationMetrics'] = $svc->computeMetrics(
+            (int) (is_array($item) ? ($item['quality_score'] ?? 0) : 0),
+            (int) (is_array($item) ? ($item['delivery_score'] ?? 0) : 0),
+            (int) (is_array($item) ? ($item['price_score'] ?? 0) : 0),
+            (int) (is_array($item) ? ($item['service_score'] ?? 0) : 0)
+        );
+        $data['tierLabels'] = [
+            'excellent' => $svc->tierLabel('excellent'),
+            'very_good' => $svc->tierLabel('very_good'),
+            'good' => $svc->tierLabel('good'),
+            'weak' => $svc->tierLabel('weak'),
+        ];
+        $supplierId = is_array($item) ? (int) ($item['supplier_id'] ?? 0) : 0;
+        $evalId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
+        $data['supplierHistory'] = $supplierId > 0
+            ? $svc->historyForSupplier($companyId, $supplierId, $evalId)
+            : [];
+        $data['historyUrl'] = rateb_app_url('supplier-evaluations/history');
+        $data['evaluationFormJs'] = rateb_asset('js/supplier-evaluation-form.js');
+        $data['canApprove'] = function_exists('rateb_can_manage_entity')
+            ? rateb_can_manage_entity('supplier-evaluations')
+            : true;
+        if (is_array($item) && !empty($item['id'])) {
+            $data['existingDocuments'] = (new \Rateb\App\Services\DocumentService())
+                ->listForEntity('supplier_evaluation', (int) $item['id'], $companyId);
+        } else {
+            $data['existingDocuments'] = [];
+        }
+        return $data;
     }
 
     public function create(): void
     {
         $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __('supplier_evaluations'),
             'item' => null,
@@ -1487,6 +1548,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
     public function edit(array $params): void
     {
         $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -1503,11 +1565,19 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
     public function store(): void
     {
         $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $data = $this->collectData();
+        try {
+            $data = $this->collectData();
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $this->ensureTenantCompanyForWrite($data);
+        $data['manager_approval'] = 'pending';
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
@@ -1515,21 +1585,33 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $id = $this->model->create($data);
-        $this->model->updateSupplierRating((int) ($data['supplier_id'] ?? 0));
+        try {
+            $this->persistAttachments($id, (int) ($data['company_id'] ?? 0));
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($data['supplier_id'] ?? 0));
         (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        SessionManager::flash('success', __('evaluation_saved'));
         $this->redirect(rateb_url($this->routePrefix));
     }
 
     public function update(array $params): void
     {
         $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
-        $data = $this->collectData();
+        try {
+            $data = $this->collectData();
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
@@ -1537,25 +1619,133 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->model->update($id, $data);
-        $this->model->updateSupplierRating((int) ($data['supplier_id'] ?? 0));
+        try {
+            $this->persistAttachments($id, (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id()));
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($data['supplier_id'] ?? 0));
         (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        SessionManager::flash('success', __('evaluation_saved'));
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function supplierHistory(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id());
+        $supplierId = (int) $this->input('supplier_id', 0);
+        $excludeId = (int) $this->input('exclude_id', 0);
+        $svc = new \Rateb\App\Services\SupplierEvaluationService();
+        $rows = $svc->historyForSupplier($companyId, $supplierId, $excludeId);
+        $out = [];
+        foreach ($rows as $row) {
+            $approval = (string) ($row['manager_approval'] ?? 'pending');
+            $row['manager_approval_label'] = __('manager_approval_' . $approval);
+            $out[] = $row;
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['rows' => $out], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    public function approve(array $params): void
+    {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $this->model->update($id, [
+            'manager_approval' => 'approved',
+            'approved_by' => (int) SessionManager::get('rateb_user_id'),
+            'approved_at' => date('Y-m-d H:i:s'),
+        ]);
+        (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
+        (new AuditService())->log('approve', $this->entityName, $id);
+        SessionManager::flash('success', __('evaluation_approved'));
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+    }
+
+    public function reject(array $params): void
+    {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $this->model->update($id, [
+            'manager_approval' => 'rejected',
+            'approved_by' => (int) SessionManager::get('rateb_user_id'),
+            'approved_at' => date('Y-m-d H:i:s'),
+        ]);
+        (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
+        (new AuditService())->log('reject', $this->entityName, $id);
+        SessionManager::flash('success', __('evaluation_rejected'));
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
     }
 
     protected function collectData(): array
     {
         $data = parent::collectData();
-        $evalModel = new \Rateb\App\Models\SupplierEvaluation();
-        $data['overall_score'] = $evalModel->recalculateOverall([
+        $svc = new \Rateb\App\Services\SupplierEvaluationService();
+        $metrics = $svc->computeMetrics(
             (int) ($data['quality_score'] ?? 0),
             (int) ($data['delivery_score'] ?? 0),
             (int) ($data['price_score'] ?? 0),
-            (int) ($data['service_score'] ?? 0),
-        ]);
+            (int) ($data['service_score'] ?? 0)
+        );
+        $data['overall_score'] = $metrics['overall'];
+        $data['score_percent'] = $metrics['percent'];
+        $data['rating_tier'] = $metrics['tier'];
         $data['evaluated_by'] = SessionManager::get('rateb_user_id');
+        $user = \Rateb\App\Core\Auth::user();
+        $data['evaluator_name'] = trim((string) ($user['name'] ?? ''));
+        if ($data['evaluator_name'] === '') {
+            $data['evaluator_name'] = trim((string) ($user['email'] ?? ''));
+        }
+        $periodStart = trim((string) ($data['period_start'] ?? ''));
+        $periodEnd = trim((string) ($data['period_end'] ?? ''));
+        $data['period_start'] = $periodStart !== '' ? $periodStart : null;
+        $data['period_end'] = $periodEnd !== '' ? $periodEnd : null;
+        if ($data['period_start'] && $data['period_end'] && $data['period_end'] < $data['period_start']) {
+            throw new \RuntimeException(__('evaluation_period_invalid'));
+        }
         $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_EVALUATION, 'evaluation_no');
         return $data;
+    }
+
+    private function persistAttachments(int $evaluationId, int $companyId): void
+    {
+        if ($evaluationId < 1 || $companyId < 1) {
+            return;
+        }
+        $result = \Rateb\App\Helpers\EntityAttachment::handleMultipleFiles(
+            'evaluation_attachments',
+            $companyId,
+            'supplier_evaluation',
+            $evaluationId,
+            5,
+            __('evaluation_attachments')
+        );
+        if (!($result['success'] ?? false)) {
+            throw new \RuntimeException((string) ($result['error'] ?? __('upload_failed')));
+        }
     }
 
     protected function layout(): string
