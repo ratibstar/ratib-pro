@@ -406,6 +406,7 @@ return [
     'comm_archive' => 'أرشفة',
     'comm_unarchive' => 'إلغاء الأرشفة',
     'comm_open_email_client' => 'سيتم فتح برنامج البريد لإرسال الرسالة',
+    'comm_history_hint' => 'اختر مورداً في النموذج أو الفلتر لعرض سجل المراسلات',
     'sent_at' => 'تاريخ الإرسال',
     'open_matrix' => 'فتح المصفوفة',
     'permissions_count' => 'عدد الصلاحيات',

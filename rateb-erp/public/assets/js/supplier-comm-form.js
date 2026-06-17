@@ -64,8 +64,6 @@
 
     if (supplierSelect) {
         supplierSelect.addEventListener('change', loadHistory);
-        if (excludeId > 0) {
-            loadHistory();
-        }
+        loadHistory();
     }
 })();

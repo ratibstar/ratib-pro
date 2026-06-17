@@ -8,7 +8,7 @@ $routePrefix = $routePrefix ?? rateb_app_route('supplier-comms');
 $canManage = $canManage ?? rateb_can_manage_entity('supplier-comms');
 $columns = $columns ?? [];
 $colspan = count($columns) + ($actionsEnabled ?? true ? 1 : 0);
-$stats = $stats ?? ['total' => 0, 'this_month' => 0, 'pending_followups' => 0, 'by_supplier' => 0];
+$stats = $stats ?? ['total' => 0, 'this_month' => 0, 'pending_followups' => 0, 'by_supplier' => 0, 'distinct_suppliers' => 0];
 $upcomingFollowUps = $upcomingFollowUps ?? [];
 $topSuppliers = $topSuppliers ?? [];
 $supplierHistory = $supplierHistory ?? [];
@@ -72,7 +72,7 @@ $channelIcon = static function (string $ch): string {
         </div>
         <div class="col-6 col-md-3">
             <div class="rateb-sc-stat-card">
-                <div class="rateb-sc-stat-value"><?php echo count($topSuppliers); ?></div>
+                <div class="rateb-sc-stat-value"><?php echo (int) ($stats['distinct_suppliers'] ?? 0); ?></div>
                 <div class="rateb-sc-stat-label"><?php echo __('comm_stat_active_suppliers'); ?></div>
             </div>
         </div>
@@ -97,7 +97,7 @@ $channelIcon = static function (string $ch): string {
     <?php } ?>
 
     <div class="row g-3">
-        <div class="col-lg-<?php echo !empty($supplierHistory) ? '8' : '12'; ?>">
+        <div class="col-lg-8">
             <?php if ($canManage) { ?>
             <div class="rateb-sc-card rateb-sc-form-card" id="rateb-sc-form">
                 <div class="rateb-sc-card-header">
@@ -253,12 +253,18 @@ $channelIcon = static function (string $ch): string {
             </div>
         </div>
 
-        <?php if (!empty($supplierHistory) || !empty($topSuppliers)) { ?>
         <div class="col-lg-4">
-            <?php if (!empty($supplierHistory)) { ?>
-            <div class="rateb-sc-card h-100 mb-3">
+            <div class="rateb-sc-card mb-3">
                 <div class="rateb-sc-card-header"><?php echo __('comm_supplier_history'); ?></div>
-                <div class="rateb-sc-card-body p-0">
+                <div class="rateb-sc-card-body p-0" id="sc_supplier_history"
+                    data-empty="<?php echo Rateb\App\Core\View::escape(__('no_records')); ?>"
+                    data-col-date="<?php echo Rateb\App\Core\View::escape(__('comm_date')); ?>"
+                    data-col-subject="<?php echo Rateb\App\Core\View::escape(__('subject')); ?>"
+                    data-col-status="<?php echo Rateb\App\Core\View::escape(__('comm_status')); ?>"
+                    data-initial-supplier="<?php echo (int) ($filters['supplier_id'] ?? 0); ?>">
+                    <?php if (empty($supplierHistory)) { ?>
+                    <p class="text-muted small p-3 mb-0"><?php echo __('comm_history_hint'); ?></p>
+                    <?php } else { ?>
                     <div class="table-responsive">
                         <table class="table table-sm rateb-table mb-0">
                             <thead><tr>
@@ -278,9 +284,9 @@ $channelIcon = static function (string $ch): string {
                             </tbody>
                         </table>
                     </div>
+                    <?php } ?>
                 </div>
             </div>
-            <?php } ?>
             <?php if ($topSuppliers !== []) { ?>
             <div class="rateb-sc-card">
                 <div class="rateb-sc-card-header"><?php echo __('comm_top_suppliers'); ?></div>
@@ -288,7 +294,9 @@ $channelIcon = static function (string $ch): string {
                     <ul class="list-unstyled mb-0 small">
                         <?php foreach ($topSuppliers as $ts) { ?>
                         <li class="d-flex justify-content-between py-1 border-bottom border-secondary-subtle">
-                            <span><?php echo Rateb\App\Core\View::escape((string) ($ts['supplier_name'] ?? '')); ?></span>
+                            <a href="<?php echo Rateb\App\Core\View::escape($listUrl . '?supplier_id=' . (int) ($ts['supplier_id'] ?? 0)); ?>" class="text-decoration-none">
+                                <?php echo Rateb\App\Core\View::escape((string) ($ts['supplier_name'] ?? '')); ?>
+                            </a>
                             <span class="badge bg-primary"><?php echo (int) ($ts['cnt'] ?? 0); ?></span>
                         </li>
                         <?php } ?>
@@ -297,7 +305,6 @@ $channelIcon = static function (string $ch): string {
             </div>
             <?php } ?>
         </div>
-        <?php } ?>
     </div>
 </div>
 

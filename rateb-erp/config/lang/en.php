@@ -407,6 +407,7 @@ return [
     'comm_archive' => 'Archive',
     'comm_unarchive' => 'Unarchive',
     'comm_open_email_client' => 'Your email client will open to send the message',
+    'comm_history_hint' => 'Select a supplier in the form or filter to view correspondence history',
     'sent_at' => 'Sent at',
     'open_matrix' => 'Open Matrix',
     'permissions_count' => 'Permissions',

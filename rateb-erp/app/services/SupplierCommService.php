@@ -7,11 +7,11 @@ use Rateb\App\Models\SupplierCommunication;
 
 final class SupplierCommService
 {
-    /** @return array{total:int,this_month:int,pending_followups:int,by_supplier:int} */
+    /** @return array{total:int,this_month:int,pending_followups:int,by_supplier:int,distinct_suppliers:int} */
     public function companyStats(int $companyId, int $supplierId = 0): array
     {
         if ($companyId < 1) {
-            return ['total' => 0, 'this_month' => 0, 'pending_followups' => 0, 'by_supplier' => 0];
+            return ['total' => 0, 'this_month' => 0, 'pending_followups' => 0, 'by_supplier' => 0, 'distinct_suppliers' => 0];
         }
         $model = new SupplierCommunication();
         $base = 'FROM rateb_supplier_communications WHERE company_id = :cid AND is_archived = 0';
@@ -32,11 +32,16 @@ final class SupplierCommService
             AND comm_status IN (\'new\', \'follow_up\')';
         $pendingFollowups = (int) ($model->queryOne($followSql, $params)['c'] ?? 0);
         $bySupplier = $supplierId > 0 ? $total : 0;
+        $distinctSuppliers = (int) ($model->queryOne(
+            'SELECT COUNT(DISTINCT supplier_id) AS c ' . $base,
+            $params
+        )['c'] ?? 0);
         return [
             'total' => $total,
             'this_month' => $thisMonth,
             'pending_followups' => $pendingFollowups,
             'by_supplier' => $bySupplier,
+            'distinct_suppliers' => $distinctSuppliers,
         ];
     }
 
