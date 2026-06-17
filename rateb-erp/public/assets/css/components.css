@@ -423,6 +423,22 @@
     margin: 0;
 }
 
+.rateb-eval-approvals-table th.rateb-actions-cell,
+.rateb-eval-approvals-table td.rateb-actions-cell {
+    min-width: 9.5rem;
+    width: 9.5rem;
+}
+
+.rateb-eval-approvals-table td.rateb-actions-cell > .rateb-actions {
+    justify-content: flex-start;
+    gap: 0.4rem;
+}
+
+.rateb-eval-approvals-table .rateb-approval-actions .btn {
+    min-width: 2.1rem;
+    padding-inline: 0.45rem;
+}
+
 html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {
     background: rgba(255, 255, 255, 0.04);
 }

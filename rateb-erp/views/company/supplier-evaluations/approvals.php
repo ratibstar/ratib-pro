@@ -20,7 +20,7 @@ $svc = new \Rateb\App\Services\SupplierEvaluationService();
     </div>
     <div class="rateb-card-body p-0">
         <div class="table-responsive">
-            <table class="table rateb-table mb-0">
+            <table class="table rateb-table rateb-eval-approvals-table mb-0">
                 <thead>
                 <tr>
                     <th><?php echo __('evaluation_no'); ?></th>
@@ -30,7 +30,7 @@ $svc = new \Rateb\App\Services\SupplierEvaluationService();
                     <th><?php echo __('overall_score'); ?></th>
                     <th><?php echo __('evaluation_percent'); ?></th>
                     <th><?php echo __('supplier_rating_tier'); ?></th>
-                    <th><?php echo __('actions'); ?></th>
+                    <th class="rateb-actions-cell"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -49,22 +49,30 @@ $svc = new \Rateb\App\Services\SupplierEvaluationService();
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['overall_score'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['score_percent'] ?? '')); ?>%</td>
                     <td><span class="badge bg-<?php echo Rateb\App\Core\View::escape($svc->tierBadgeClass($tier)); ?>"><?php echo Rateb\App\Core\View::escape($svc->tierLabel($tier)); ?></span></td>
-                    <td class="text-nowrap">
-                        <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('view'); ?>">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/approve'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-sm btn-success" title="<?php echo __('approve_evaluation'); ?>">
-                                <i class="fas fa-check"></i> <?php echo __('approve_evaluation'); ?>
-                            </button>
-                        </form>
-                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/reject'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('reject_evaluation'); ?>">
-                                <i class="fas fa-times"></i> <?php echo __('reject_evaluation'); ?>
-                            </button>
-                        </form>
+                    <td class="rateb-actions-cell">
+                        <div class="rateb-actions rateb-approval-actions">
+                            <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-secondary"
+                                title="<?php echo Rateb\App\Core\View::escape(__('view')); ?>"
+                                aria-label="<?php echo Rateb\App\Core\View::escape(__('view')); ?>">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/approve'); ?>" class="d-inline">
+                                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                                <button type="submit" class="btn btn-sm btn-success"
+                                    title="<?php echo Rateb\App\Core\View::escape(__('approve_evaluation')); ?>"
+                                    aria-label="<?php echo Rateb\App\Core\View::escape(__('approve_evaluation')); ?>">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </form>
+                            <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/reject'); ?>" class="d-inline">
+                                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                    title="<?php echo Rateb\App\Core\View::escape(__('reject_evaluation')); ?>"
+                                    aria-label="<?php echo Rateb\App\Core\View::escape(__('reject_evaluation')); ?>">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 <?php }
