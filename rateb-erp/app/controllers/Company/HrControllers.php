@@ -227,7 +227,6 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
         if ($companyId > 0) {
             TenantContext::setCompanyId($companyId);
         }
-        $year = (int) $this->input('year', (int) date('Y'));
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $this->model->all($limit, $offset, [], $search),
@@ -238,8 +237,6 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $this->resolveIndexFields(),
             'csrf' => Csrf::token(),
-            'leaveBalances' => (new HrService())->leaveBalancesSummary($companyId, $year),
-            'balanceYear' => $year,
         ]), $this->layout());
     }
 
@@ -299,6 +296,21 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function balances(): void
+    {
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
+        $year = (int) $this->input('year', (int) date('Y'));
+        $this->view('company/hr/leaves/balances', [
+            'title' => __('hr_leave_balances'),
+            'leaveBalances' => (new HrService())->leaveBalancesSummary($companyId, $year),
+            'balanceYear' => $year,
+        ], $this->layout());
     }
 
     protected function layout(): string
@@ -550,58 +562,6 @@ final class HrLeaveTypesController extends \Rateb\App\Controllers\CrudController
     }
 }
 
-final class HrPlaceholderController extends Controller
-{
-    /** @return array<string, array{title: string, active: string}> */
-    private static function routeMap(): array
-    {
-        return [
-            'hr/holidays' => ['title' => 'hr_holidays', 'active' => 'holidays'],
-            'hr/workplaces' => ['title' => 'hr_workplaces', 'active' => 'workplaces'],
-            'hr/permission-requests' => ['title' => 'hr_permission_requests', 'active' => 'permission-requests'],
-            'hr/attendance/bulk' => ['title' => 'hr_attendance_bulk', 'active' => 'attendance-bulk'],
-            'hr/loans' => ['title' => 'hr_loans_list', 'active' => 'loans-list'],
-            'hr/loans/create' => ['title' => 'hr_loan_add', 'active' => 'loans-create'],
-            'hr/loan-types' => ['title' => 'hr_loan_types', 'active' => 'loan-types'],
-            'hr/payroll/components' => ['title' => 'hr_payroll_components', 'active' => 'payroll-components'],
-            'hr/payroll/structure' => ['title' => 'hr_payroll_structure', 'active' => 'payroll-structure'],
-            'hr/documents' => ['title' => 'hr_documents_manage', 'active' => 'documents-manage'],
-            'hr/documents/create' => ['title' => 'hr_document_add', 'active' => 'documents-add'],
-            'hr/requests' => ['title' => 'hr_employee_requests', 'active' => 'employee-requests'],
-            'hr/fleet' => ['title' => 'hr_fleet_manage', 'active' => 'fleet-manage'],
-            'hr/fleet/create' => ['title' => 'hr_fleet_add', 'active' => 'fleet-add'],
-        ];
-    }
-
-    public function show(): void
-    {
-        if (function_exists('rateb_bootstrap_ops_tenant')) {
-            rateb_bootstrap_ops_tenant();
-        }
-        $current = function_exists('rateb_normalize_erp_route')
-            ? rateb_normalize_erp_route(rateb_current_erp_route())
-            : '';
-        $meta = null;
-        foreach (self::routeMap() as $route => $info) {
-            if ($current === rateb_app_route($route)) {
-                $meta = $info;
-                break;
-            }
-        }
-        if ($meta === null) {
-            http_response_code(404);
-            $this->view('errors/404', ['title' => '404']);
-            return;
-        }
-        $this->view('company/hr/placeholder', [
-            'title' => __($meta['title']),
-            'pageTitle' => __($meta['title']),
-            'pageDescription' => __('hr_coming_soon'),
-            'hrActive' => $meta['active'],
-        ], 'main');
-    }
-}
-
 final class HrReportsController extends Controller
 {
     public function index(): void
@@ -646,5 +606,35 @@ final class HrReportsController extends Controller
             ['name' => 'absent_days', 'label' => __('absent_days')],
             ['name' => 'leave_days', 'label' => __('leave_days')],
         ], $rows, __('hr_reports'), 'hr');
+    }
+
+    public function leaves(): void
+    {
+        $companyId = rateb_require_ops_company();
+        TenantContext::setCompanyId($companyId);
+        $year = max(2020, (int) $this->input('year', (int) date('Y')));
+        $rows = (new HrService())->leaveReport($companyId, $year);
+        $this->view('company/hr/reports-leaves', [
+            'title' => __('hr_leave_report'),
+            'year' => $year,
+            'rows' => $rows,
+            'exportRoute' => rateb_app_url('hr/reports/leaves/export') . '?year=' . $year,
+            'exportEnabled' => function_exists('rateb_can_export_entity') ? rateb_can_export_entity('hr') : true,
+        ], 'main');
+    }
+
+    public function leavesExport(): void
+    {
+        $companyId = rateb_require_ops_company();
+        TenantContext::setCompanyId($companyId);
+        $year = max(2020, (int) $this->input('year', (int) date('Y')));
+        $rows = (new HrService())->leaveReport($companyId, $year);
+        \Rateb\App\Controllers\Shared\ExportController::send('hr_leave_report', [
+            ['name' => 'employee_code', 'label' => __('employee_code')],
+            ['name' => 'employee_name', 'label' => __('name')],
+            ['name' => 'leave_type', 'label' => __('leave_type')],
+            ['name' => 'total_days', 'label' => __('days')],
+            ['name' => 'approved_count', 'label' => __('approved')],
+        ], $rows, __('hr_leave_report'), 'hr');
     }
 }

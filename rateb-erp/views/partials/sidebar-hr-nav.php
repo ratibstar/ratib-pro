@@ -17,8 +17,21 @@ $hrRouteActive = static function (string $resourcePath) use ($erpRoute, $navActi
     if ($resourcePath === 'hr') {
         return $erpRoute === $route;
     }
+    if ($resourcePath === 'hr/reports') {
+        return $erpRoute === $route;
+    }
+    if ($resourcePath === 'hr/reports/leaves') {
+        return $erpRoute === rateb_app_route('hr/reports/leaves');
+    }
+    if ($resourcePath === 'hr/leaves/balances') {
+        return $erpRoute === rateb_app_route('hr/leaves/balances');
+    }
     if ($resourcePath === 'hr/leaves') {
         $leaveTypes = rateb_app_route('hr/leave-types');
+        $balances = rateb_app_route('hr/leaves/balances');
+        if ($erpRoute === $balances || str_starts_with($erpRoute, $balances . '/')) {
+            return false;
+        }
         if ($erpRoute === $route || str_starts_with($erpRoute, $route . '/')) {
             return !str_starts_with($erpRoute, $leaveTypes);
         }
@@ -39,9 +52,6 @@ $renderHrLink = static function (array $item) use ($hrRouteActive): void {
     echo '<a href="' . Rateb\App\Core\View::escape($url) . '" class="rateb-nav-link' . $active . '">';
     echo '<i class="fas ' . Rateb\App\Core\View::escape((string) ($item['icon'] ?? 'fa-circle')) . '"></i>';
     echo '<span>' . Rateb\App\Core\View::escape(__((string) ($item['label'] ?? ''))) . '</span>';
-    if (!empty($item['stub'])) {
-        echo '<span class="rateb-nav-soon">' . __('soon') . '</span>';
-    }
     echo '</a>';
 };
 

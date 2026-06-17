@@ -4,19 +4,15 @@
 $canManage = $actionsEnabled ?? ($canManage ?? true);
 $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($fields ?? []);
 $employeeMap = [];
-$typeMap = [];
 foreach ($lookups['employees'] ?? [] as $opt) {
     $employeeMap[(string) $opt['value']] = (string) $opt['label'];
 }
-foreach ($lookups['leave_types'] ?? [] as $opt) {
-    $typeMap[(string) $opt['value']] = (string) $opt['label'];
-}
-Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'leave-requests']);
+Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'employee-requests']);
 ?>
 <?php if ($canManage) { ?>
 <div class="mb-3">
     <a href="<?php echo rateb_url($routePrefix . '/create'); ?>" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus"></i> <?php echo __('hr_leave_submit'); ?>
+        <i class="fas fa-plus"></i> <?php echo __('create'); ?>
     </a>
 </div>
 <?php } ?>
@@ -26,12 +22,12 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'leave-requests']);
             <table class="table rateb-table mb-0">
                 <thead>
                 <tr>
+                    <th><?php echo __('request_no'); ?></th>
                     <th><?php echo __('hr_employees'); ?></th>
-                    <th><?php echo __('leave_type'); ?></th>
-                    <th><?php echo __('start_date'); ?></th>
-                    <th><?php echo __('end_date'); ?></th>
-                    <th><?php echo __('days'); ?></th>
+                    <th><?php echo __('request_type'); ?></th>
+                    <th><?php echo __('request_date'); ?></th>
                     <th><?php echo __('status'); ?></th>
+                    <th><?php echo __('processed_at'); ?></th>
                     <th><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
@@ -43,12 +39,12 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'leave-requests']);
                         $status = (string) ($row['status'] ?? 'pending');
                         ?>
                 <tr>
-                    <td><?php echo Rateb\App\Core\View::escape($employeeMap[(string) ($row['employee_id'] ?? '')] ?? ('#' . (int) ($row['employee_id'] ?? 0))); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($typeMap[(string) ($row['leave_type_id'] ?? '')] ?? '—'); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['start_date'] ?? '')); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['end_date'] ?? '')); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['days'] ?? '')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['request_no'] ?? '')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape($employeeMap[(string) ($row['employee_id'] ?? '')] ?? '—'); ?></td>
+                    <td><?php echo __((string) ($row['request_type'] ?? '')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['request_date'] ?? '')); ?></td>
                     <td><?php echo __($status); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['processed_at'] ?? '—')); ?></td>
                     <td class="rateb-actions-cell text-nowrap">
                         <div class="rateb-actions">
                         <?php if ($canManage && $status === 'pending') { ?>

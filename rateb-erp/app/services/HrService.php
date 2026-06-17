@@ -277,6 +277,27 @@ final class HrService
         );
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function leaveReport(int $companyId, int $year): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        return (new LeaveRequest())->query(
+            "SELECT e.employee_code, e.name AS employee_name, lt.name AS leave_type,
+                    SUM(lr.days) AS total_days,
+                    SUM(CASE WHEN lr.status = 'approved' THEN 1 ELSE 0 END) AS approved_count
+             FROM rateb_leave_requests lr
+             JOIN rateb_employees e ON e.id = lr.employee_id
+             JOIN rateb_leave_types lt ON lt.id = lr.leave_type_id
+             WHERE lr.company_id = :cid
+               AND YEAR(lr.start_date) = :y
+             GROUP BY e.id, e.employee_code, e.name, lt.id, lt.name
+             ORDER BY e.name ASC, lt.name ASC",
+            ['cid' => $companyId, 'y' => $year]
+        );
+    }
+
     /** @return array{attendance: array<int, array<string, mixed>>, payroll: array<int, array<string, mixed>>} */
     public function monthlyReport(int $companyId, int $year, int $month): array
     {

@@ -108,6 +108,34 @@ final class FormLookupService
             case 'leave_types':
                 $options = $this->mapRows((new LeaveType())->all(100, 0), 'id', 'name');
                 break;
+            case 'loan_types':
+                $options = $this->mapRows((new \Rateb\App\Models\HrLoanType())->all(100, 0), 'id', 'name');
+                break;
+            case 'hr_payroll_components':
+                $options = $this->mapRows((new \Rateb\App\Models\HrPayrollComponent())->all(200, 0), 'id', 'name');
+                break;
+            case 'employee_request_types':
+                $options = $this->staticOptions([
+                    'salary_certificate', 'end_of_service', 'experience_letter', 'other',
+                ], true);
+                break;
+            case 'hr_document_types':
+                $options = $this->staticOptions([
+                    'contract', 'id_copy', 'certificate', 'medical', 'general',
+                ], true);
+                break;
+            case 'loan_statuses':
+                $options = $this->staticOptions(['active', 'paid', 'cancelled'], true);
+                break;
+            case 'fleet_statuses':
+                $options = $this->staticOptions(['active', 'maintenance', 'inactive'], true);
+                break;
+            case 'payroll_component_types':
+                $options = $this->staticOptions(['allowance', 'deduction'], true);
+                break;
+            case 'payroll_calc_types':
+                $options = $this->staticOptions(['fixed', 'percent'], true);
+                break;
             case 'payroll_periods':
                 $options = $this->mapRows((new PayrollPeriod())->all(120, 0), 'id', 'period_year');
                 break;
@@ -1203,6 +1231,8 @@ final class FormLookupService
             'hr_departments' => (string) ((new HrDepartment())->find($id)['name'] ?? ''),
             'employees' => (string) ((new Employee())->find($id)['name'] ?? ''),
             'leave_types' => (string) ((new LeaveType())->find($id)['name'] ?? ''),
+            'loan_types' => (string) ((new \Rateb\App\Models\HrLoanType())->find($id)['name'] ?? ''),
+            'hr_payroll_components' => (string) ((new \Rateb\App\Models\HrPayrollComponent())->find($id)['name'] ?? ''),
             'suppliers' => (string) ((new Supplier())->find($id)['name'] ?? ''),
             'warehouses' => (string) ((new Warehouse())->find($id)['name'] ?? ''),
             default => '',
