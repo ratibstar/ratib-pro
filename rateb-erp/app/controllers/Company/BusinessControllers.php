@@ -1291,8 +1291,6 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
             'moduleCss' => rateb_asset('css/supplier-comms.css'),
-            'moduleJs' => rateb_asset('js/supplier-comm-form.js'),
-            'historyUrl' => rateb_app_url('supplier-comms/history'),
             'stats' => $svc->companyStats($companyId, $supplierFilterId),
             'upcomingFollowUps' => $svc->upcomingFollowUps($companyId),
             'topSuppliers' => $svc->topSuppliersByComms($companyId),
@@ -1300,8 +1298,6 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
                 ? $svc->historyForSupplier($companyId, $supplierFilterId)
                 : [],
             'commSvc' => $svc,
-            'responsibleDefault' => (string) (\Rateb\App\Core\Auth::user()['name'] ?? ''),
-            'formFields' => $this->fields,
         ]), $this->layout());
     }
 
@@ -1412,14 +1408,14 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $data = $this->collectData();
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix) . '#rateb-sc-form');
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $formAction = trim((string) $this->input('form_action', 'save'));
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix) . '#rateb-sc-form');
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $id = $this->model->create($data);
         try {
@@ -1487,7 +1483,18 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     public function create(): void
     {
         $this->guardManage();
-        $this->redirect(rateb_url($this->routePrefix) . '#rateb-sc-form');
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($this->fields);
+        if (($lookups['suppliers'] ?? []) === []) {
+            SessionManager::flash('error', __('no_records') . ' — ' . __('suppliers'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('create') . ' ' . __('supplier_comms'),
+            'item' => null,
+        ]), $this->layout());
     }
 
     protected function formViewData(array $extra = []): array

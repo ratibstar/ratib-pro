@@ -49,6 +49,11 @@ $channelIcon = static function (string $ch): string {
             </nav>
             <h2 class="h4 mb-0"><?php echo __('supplier_comms'); ?></h2>
         </div>
+        <?php if ($canManage) { ?>
+        <a href="<?php echo rateb_app_url('supplier-comms/create'); ?>" class="btn btn-primary">
+            <i class="fas fa-plus"></i> <?php echo __('supplier_comms_create'); ?>
+        </a>
+        <?php } ?>
     </div>
 
     <div class="row g-3 rateb-sc-stats-row">
@@ -98,38 +103,6 @@ $channelIcon = static function (string $ch): string {
 
     <div class="row g-3">
         <div class="col-lg-8">
-            <?php if ($canManage) { ?>
-            <div class="rateb-sc-card rateb-sc-form-card" id="rateb-sc-form">
-                <div class="rateb-sc-card-header">
-                    <span><i class="fas fa-comments text-primary"></i> <?php echo __('supplier_comms_create'); ?></span>
-                </div>
-                <div class="rateb-sc-card-body">
-                    <?php if (empty($supplierOptions)) { ?>
-                    <div class="alert alert-warning mb-0"><?php echo __('no_records'); ?> — <?php echo __('suppliers'); ?></div>
-                    <?php } else { ?>
-                    <form method="post" action="<?php echo rateb_app_url('supplier-comms'); ?>" class="rateb-sc-form-grid"
-                        enctype="multipart/form-data" data-supplier-comm-form="1"
-                        data-history-url="<?php echo Rateb\App\Core\View::escape($historyUrl ?? ''); ?>">
-                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                        <?php
-                        Rateb\App\Core\View::partial('supplier-comm-form-fields', [
-                            'item' => [],
-                            'fields' => $formFields ?? [],
-                            'lookups' => $lookups,
-                            'responsibleDefault' => $responsibleDefault ?? '',
-                            'showAttachments' => true,
-                        ]);
-                        ?>
-                        <div class="rateb-sc-form-actions">
-                            <button type="submit" name="form_action" value="save" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
-                            <button type="submit" name="form_action" value="save_send" class="btn btn-outline-primary"><i class="fas fa-paper-plane"></i> <?php echo __('save_and_send'); ?></button>
-                            <button type="reset" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></button>
-                        </div>
-                    </form>
-                    <?php } ?>
-                </div>
-            </div>
-            <?php } ?>
 
             <div class="rateb-sc-card rateb-sc-filter-card">
                 <div class="rateb-sc-card-header rateb-sc-filter-toggle" data-bs-toggle="collapse" data-bs-target="#rateb-sc-filter-body" aria-expanded="true">
@@ -192,8 +165,13 @@ $channelIcon = static function (string $ch): string {
             </div>
 
             <div class="rateb-sc-card">
-                <div class="rateb-sc-card-header">
+                <div class="rateb-sc-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <span><i class="fas fa-list text-primary"></i> <?php echo __('supplier_comms_log'); ?></span>
+                    <?php if ($canManage) { ?>
+                    <a href="<?php echo rateb_app_url('supplier-comms/create'); ?>" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> <?php echo __('supplier_comms_create'); ?>
+                    </a>
+                    <?php } ?>
                 </div>
                 <div class="rateb-sc-card-body">
                     <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'server', 'search' => $search ?? '', 'routePrefix' => $routePrefix]); ?>
@@ -314,9 +292,6 @@ if (is_string($mailto) && $mailto !== '') {
     \Rateb\App\Core\SessionManager::set('rateb_comm_mailto', null);
 }
 ?>
-<?php if (!empty($moduleJs)) { ?>
-<script src="<?php echo Rateb\App\Core\View::escape($moduleJs); ?>"></script>
-<?php } ?>
 <?php if (!empty($mailto)) { ?>
 <script>window.addEventListener('load', function () { window.location.href = <?php echo json_encode($mailto, JSON_UNESCAPED_UNICODE); ?>; });</script>
 <?php } ?>
