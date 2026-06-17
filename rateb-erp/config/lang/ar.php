@@ -153,6 +153,8 @@ return [
     'payroll_generated' => 'تم توليد :count سطر راتب',
     'payroll_no_lines' => 'لا توجد بنود — اضغط توليد الرواتب',
     'payroll_absence_deduction' => 'خصم غياب :days يوم',
+    'payroll_loan_deduction' => 'خصم قرض :amount',
+    'holiday_attendance_synced' => 'تم مزامنة :count سجل حضور للعطلة',
     'basic_salary' => 'الراتب الأساسي',
     'allowances' => 'البدلات',
     'deductions' => 'الخصومات',

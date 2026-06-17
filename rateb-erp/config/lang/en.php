@@ -153,6 +153,8 @@ return [
     'payroll_generated' => 'Generated :count payroll lines',
     'payroll_no_lines' => 'No lines yet — click Generate payroll',
     'payroll_absence_deduction' => 'Absence deduction :days days',
+    'payroll_loan_deduction' => 'Loan deduction :amount',
+    'holiday_attendance_synced' => 'Synced :count attendance records for holiday',
     'basic_salary' => 'Basic salary',
     'allowances' => 'Allowances',
     'deductions' => 'Deductions',

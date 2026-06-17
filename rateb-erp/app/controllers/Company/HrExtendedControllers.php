@@ -36,6 +36,55 @@ final class HrHolidaysController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
+    public function store(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $this->ensureTenantCompanyForWrite($data);
+        $id = $this->model->create($data);
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        $this->syncHolidayIfActive($data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $this->model->update($id, $data);
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        $this->syncHolidayIfActive($data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @param array<string, mixed> $data */
+    private function syncHolidayIfActive(array $data): void
+    {
+        if ((string) ($data['status'] ?? 'active') !== 'active') {
+            return;
+        }
+        $companyId = (int) ($data['company_id'] ?? 0);
+        $date = (string) ($data['holiday_date'] ?? '');
+        if ($companyId < 1 || $date === '') {
+            return;
+        }
+        $count = (new HrService())->syncHolidayAttendance($companyId, $date, (string) ($data['name'] ?? ''));
+        if ($count > 0) {
+            SessionManager::flash('success', __('holiday_attendance_synced', ['count' => $count]));
+        }
+    }
+
     protected function layout(): string
     {
         return 'main';

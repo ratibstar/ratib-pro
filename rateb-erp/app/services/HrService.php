@@ -6,6 +6,9 @@ namespace Rateb\App\Services;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\AttendanceRecord;
 use Rateb\App\Models\Employee;
+use Rateb\App\Models\HrHoliday;
+use Rateb\App\Models\HrLoan;
+use Rateb\App\Models\HrPayrollStructure;
 use Rateb\App\Models\LeaveBalance;
 use Rateb\App\Models\LeaveRequest;
 use Rateb\App\Models\LeaveType;
@@ -129,18 +132,30 @@ final class HrService
             )['c'] ?? 0);
 
             $daily = $basic > 0 ? $basic / 30 : 0;
-            $deductions = round($daily * $absentDays, 2);
-            $net = max(0, round($basic - $deductions, 2));
+            $absentDeduction = round($daily * $absentDays, 2);
+            $structure = $this->payrollStructureTotals($companyId, $employeeId, $basic);
+            $loanDeduction = $this->loanInstallmentDeduction($companyId, $employeeId, $start, $end);
+            $allowances = $structure['allowances'];
+            $deductions = round($structure['deductions'] + $loanDeduction + $absentDeduction, 2);
+            $net = max(0, round($basic + $allowances - $deductions, 2));
+
+            $notes = [];
+            if ($absentDays > 0) {
+                $notes[] = __('payroll_absence_deduction', ['days' => $absentDays]);
+            }
+            if ($loanDeduction > 0) {
+                $notes[] = __('payroll_loan_deduction', ['amount' => number_format($loanDeduction, 2)]);
+            }
 
             $lineModel->create([
                 'company_id' => $companyId,
                 'period_id' => $periodId,
                 'employee_id' => $employeeId,
                 'basic_salary' => $basic,
-                'allowances' => 0,
+                'allowances' => $allowances,
                 'deductions' => $deductions,
                 'net_salary' => $net,
-                'notes' => $absentDays > 0 ? __('payroll_absence_deduction', ['days' => $absentDays]) : null,
+                'notes' => $notes !== [] ? implode(' | ', $notes) : null,
             ]);
             $created++;
         }
@@ -411,5 +426,98 @@ final class HrService
             }
             $cursor = strtotime('+1 day', $cursor);
         }
+    }
+
+    /** @return array{allowances: float, deductions: float} */
+    public function payrollStructureTotals(int $companyId, int $employeeId, float $basicSalary): array
+    {
+        $rows = (new HrPayrollStructure())->query(
+            "SELECT ps.value, pc.component_type, pc.calc_type
+             FROM rateb_hr_payroll_structures ps
+             JOIN rateb_hr_payroll_components pc ON pc.id = ps.component_id
+             WHERE ps.company_id = :cid AND ps.employee_id = :eid AND pc.status = 'active'",
+            ['cid' => $companyId, 'eid' => $employeeId]
+        );
+        $allowances = 0.0;
+        $deductions = 0.0;
+        foreach ($rows as $row) {
+            $amount = $this->payrollComponentAmount($row, $basicSalary);
+            if (($row['component_type'] ?? '') === 'allowance') {
+                $allowances += $amount;
+            } else {
+                $deductions += $amount;
+            }
+        }
+        return [
+            'allowances' => round($allowances, 2),
+            'deductions' => round($deductions, 2),
+        ];
+    }
+
+    /** @param array<string, mixed> $row */
+    private function payrollComponentAmount(array $row, float $basicSalary): float
+    {
+        $value = (float) ($row['value'] ?? 0);
+        if (($row['calc_type'] ?? 'fixed') === 'percent') {
+            return round($basicSalary * $value / 100, 2);
+        }
+        return round($value, 2);
+    }
+
+    public function loanInstallmentDeduction(int $companyId, int $employeeId, string $periodStart, string $periodEnd): float
+    {
+        $row = (new HrLoan())->queryOne(
+            "SELECT COALESCE(SUM(installment_amount), 0) AS total
+             FROM rateb_hr_loans
+             WHERE company_id = :cid AND employee_id = :eid AND status = 'active'
+               AND paid_installments < installments_count
+               AND start_date <= :end",
+            ['cid' => $companyId, 'eid' => $employeeId, 'end' => $periodEnd]
+        );
+        return round((float) ($row['total'] ?? 0), 2);
+    }
+
+    public function syncHolidayAttendance(int $companyId, string $holidayDate, string $holidayName = ''): int
+    {
+        if ($companyId < 1 || $holidayDate === '') {
+            return 0;
+        }
+        $employees = (new Employee())->query(
+            "SELECT id FROM rateb_employees WHERE company_id = :cid AND status = 'active'",
+            ['cid' => $companyId]
+        );
+        $attModel = new AttendanceRecord();
+        $note = $holidayName !== '' ? $holidayName : __('holiday');
+        $synced = 0;
+        foreach ($employees as $emp) {
+            $employeeId = (int) ($emp['id'] ?? 0);
+            if ($employeeId < 1) {
+                continue;
+            }
+            $existing = $attModel->queryOne(
+                'SELECT id, status FROM rateb_attendance_records
+                 WHERE company_id = :cid AND employee_id = :eid AND attendance_date = :d LIMIT 1',
+                ['cid' => $companyId, 'eid' => $employeeId, 'd' => $holidayDate]
+            );
+            if ($existing && in_array((string) ($existing['status'] ?? ''), ['present', 'late'], true)) {
+                continue;
+            }
+            if ($existing) {
+                $attModel->update((int) $existing['id'], [
+                    'status' => 'holiday',
+                    'notes' => $note,
+                ]);
+            } else {
+                $attModel->create([
+                    'company_id' => $companyId,
+                    'employee_id' => $employeeId,
+                    'attendance_date' => $holidayDate,
+                    'status' => 'holiday',
+                    'notes' => $note,
+                ]);
+            }
+            $synced++;
+        }
+        return $synced;
     }
 }
