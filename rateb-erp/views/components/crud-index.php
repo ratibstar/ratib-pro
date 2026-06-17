@@ -101,8 +101,12 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                             ?>
                     <td class="rateb-cell-image">
                         <?php if ($imgUrl !== '') { ?>
-                        <img src="<?php echo Rateb\App\Core\View::escape($imgUrl); ?>" alt="" class="rounded border"
-                            style="width: 48px; height: 48px; object-fit: cover;">
+                        <button type="button" class="btn p-0 border-0 bg-transparent rateb-image-thumb-btn"
+                            data-rateb-image-preview="<?php echo Rateb\App\Core\View::escape($imgUrl); ?>"
+                            title="<?php echo Rateb\App\Core\View::escape(__('view_image')); ?>">
+                            <img src="<?php echo Rateb\App\Core\View::escape($imgUrl); ?>" alt="" class="rounded border"
+                                style="width: 48px; height: 48px; object-fit: cover; cursor: zoom-in;">
+                        </button>
                         <?php } else { ?>
                         <span class="text-muted">—</span>
                         <?php } ?>
@@ -174,3 +178,15 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
     </div>
 </div>
 <?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? 20, 'routePrefix' => $routePrefix ?? '']); ?>
+<?php
+$ratebHasImageCol = false;
+foreach ($columns as $col) {
+    if ((string) ($col['type'] ?? '') === 'image') {
+        $ratebHasImageCol = true;
+        break;
+    }
+}
+if ($ratebHasImageCol) {
+    Rateb\App\Core\View::partial('image-preview-kit');
+}
+?>

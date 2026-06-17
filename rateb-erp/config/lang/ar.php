@@ -746,6 +746,8 @@ return [
     'category_image' => 'صورة التصنيف',
     'category_image_hint' => 'ارفع صورة JPG أو PNG أو WebP (حد أقصى 2 ميجابايت). تظهر في القائمة والشجرة.',
     'remove_category_image' => 'حذف الصورة الحالية',
+    'view_image' => 'عرض الصورة',
+    'sort_order' => 'ترتيب العرض',
     'category_visible' => 'ظاهر',
     'category_hidden' => 'مخفي',
     'category_tree' => 'شجرة التصنيفات',

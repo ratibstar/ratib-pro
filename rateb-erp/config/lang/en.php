@@ -747,6 +747,8 @@ return [
     'category_image' => 'Category image',
     'category_image_hint' => 'Upload JPG, PNG, or WebP (max 2 MB). Shown in the list and tree.',
     'remove_category_image' => 'Remove current image',
+    'view_image' => 'View image',
+    'sort_order' => 'Sort order',
     'category_visible' => 'Visible',
     'category_hidden' => 'Hidden',
     'category_tree' => 'Category tree',

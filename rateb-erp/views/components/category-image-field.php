@@ -18,8 +18,11 @@ $hasImage = !empty($hasImage);
     <small class="text-muted d-block mt-1"><?php echo __('category_image_hint'); ?></small>
     <?php if ($hasImage && $imageUrl !== '') { ?>
     <div class="mt-3 d-flex flex-wrap align-items-start gap-3">
-        <img src="<?php echo Rateb\App\Core\View::escape($imageUrl); ?>" alt="" class="rounded border"
-            style="max-width: 160px; max-height: 120px; object-fit: cover;">
+        <button type="button" class="btn p-0 border-0 bg-transparent" data-rateb-image-preview="<?php echo Rateb\App\Core\View::escape($imageUrl); ?>"
+            title="<?php echo Rateb\App\Core\View::escape(__('view_image')); ?>">
+            <img src="<?php echo Rateb\App\Core\View::escape($imageUrl); ?>" alt="" class="rounded border"
+                style="max-width: 160px; max-height: 120px; object-fit: cover; cursor: zoom-in;">
+        </button>
         <div class="form-check mt-1">
             <input class="form-check-input" type="checkbox" name="remove_category_image" value="1" id="remove_category_image">
             <label class="form-check-label" for="remove_category_image"><?php echo __('remove_category_image'); ?></label>

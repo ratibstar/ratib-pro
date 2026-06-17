@@ -213,8 +213,8 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             ['name' => 'code', 'label' => 'code'],
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'parent_label', 'label' => 'parent_category'],
-            ['name' => 'product_count', 'label' => 'product_count', 'type' => 'number'],
-            ['name' => 'sort_order', 'label' => 'sort_order', 'type' => 'number'],
+            ['name' => 'product_count', 'label' => 'product_count'],
+            ['name' => 'sort_order', 'label' => 'sort_order'],
             ['name' => 'is_active', 'label' => 'status', 'type' => 'status'],
             ['name' => 'is_visible', 'label' => 'visibility', 'type' => 'status'],
         ];
@@ -243,6 +243,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
         $svc = new \Rateb\App\Services\ProductCategoryService();
         $items = $svc->enrichRows($this->model->all($limit, $offset, [], $search), $companyId);
         foreach ($items as &$row) {
+            $row['is_active'] = !empty($row['is_active']) ? 'yes' : 'no';
             $row['is_visible'] = !empty($row['is_visible']) ? 'yes' : 'no';
         }
         unset($row);

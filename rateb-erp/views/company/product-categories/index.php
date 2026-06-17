@@ -27,7 +27,9 @@ $mostUsed = $mostUsed ?? [];
                             $imgUrl = $svc->imageUrl($catId, $node['image_path'] ?? null);
                             echo '<li class="py-1 d-flex align-items-center gap-2">';
                             if ($imgUrl !== '') {
-                                echo '<img src="' . Rateb\App\Core\View::escape($imgUrl) . '" alt="" class="rounded border flex-shrink-0" style="width:28px;height:28px;object-fit:cover;">';
+                                echo '<button type="button" class="btn p-0 border-0 bg-transparent flex-shrink-0" data-rateb-image-preview="' . Rateb\App\Core\View::escape($imgUrl) . '" title="' . Rateb\App\Core\View::escape(__('view_image')) . '">';
+                                echo '<img src="' . Rateb\App\Core\View::escape($imgUrl) . '" alt="" class="rounded border" style="width:28px;height:28px;object-fit:cover;cursor:zoom-in;">';
+                                echo '</button>';
                             } elseif ($icon !== '') {
                                 echo '<i class="fas ' . Rateb\App\Core\View::escape($icon) . '"></i>';
                             }
@@ -105,3 +107,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php } ?>
+<?php Rateb\App\Core\View::partial('image-preview-kit'); ?>
