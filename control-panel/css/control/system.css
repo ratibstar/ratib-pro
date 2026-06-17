@@ -178,7 +178,7 @@ body.control-layout-no-header .control-layout {
     min-width: 280px;
     background: var(--control-card);
     backdrop-filter: blur(10px);
-    border-right: 1px solid var(--control-glass-border);
+    border-inline-end: 1px solid var(--control-glass-border);
     height: 100vh;
     position: sticky;
     top: 0;
