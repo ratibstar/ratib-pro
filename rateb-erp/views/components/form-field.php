@@ -98,12 +98,19 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
         <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"></option>
         <?php } ?>
     </datalist>
-    <?php } elseif ($type === 'fk' || ($lookup !== '' && in_array($type, ['number', 'text'], true))) { ?>
+    <?php } elseif ($type === 'fk' || ($lookup !== '' && in_array($type, ['number', 'text'], true))) {
+        $selectedKey = ($value !== '' && $value !== null) ? (string) (int) $value : '';
+        ?>
     <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
             name="<?php echo Rateb\App\Core\View::escape($name); ?>"<?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?>>
         <option value=""><?php echo __('select'); ?></option>
-        <?php foreach (($lookups[$lookup] ?? []) as $opt) { ?>
-        <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo (string) $value === (string) $opt['value'] ? ' selected' : ''; ?>>
+        <?php foreach (($lookups[$lookup] ?? []) as $opt) {
+            $optKey = (string) (int) ($opt['value'] ?? 0);
+            if ($optKey === '0') {
+                continue;
+            }
+            ?>
+        <option value="<?php echo Rateb\App\Core\View::escape($optKey); ?>"<?php echo $selectedKey === $optKey ? ' selected' : ''; ?>>
             <?php echo Rateb\App\Core\View::escape($opt['label']); ?>
         </option>
         <?php } ?>

@@ -1132,10 +1132,83 @@ final class FormLookupService
         return $out;
     }
 
+    /** @return array<string, string> */
+    public function valueLabelMap(string $lookup): array
+    {
+        $map = [];
+        foreach ($this->get($lookup) as $opt) {
+            $id = (int) ($opt['value'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $map[(string) $id] = (string) ($opt['label'] ?? '');
+        }
+        return $map;
+    }
+
+    public function resolveFkLabel(string $lookup, mixed $value): string
+    {
+        $id = (int) $value;
+        if ($id < 1) {
+            return '';
+        }
+        $label = $this->valueLabelMap($lookup)[(string) $id] ?? '';
+        if ($label !== '') {
+            return $label;
+        }
+        return $this->fetchFkLabelDirect($lookup, $id);
+    }
+
     /**
-     * @param array<int, array<string, mixed>> $rows
-     * @return list<FormOption>
+     * @param array<string, list<FormOption>> $lookups
+     * @param array<int, array<string, mixed>> $fields
+     * @param array<string, mixed>|null $item
+     * @return array<string, list<FormOption>>
      */
+    public function withMissingItemOptions(array $lookups, array $fields, ?array $item): array
+    {
+        if ($item === null) {
+            return $lookups;
+        }
+        foreach ($fields as $field) {
+            if ((string) ($field['type'] ?? '') !== 'fk') {
+                continue;
+            }
+            $lookup = (string) ($field['lookup'] ?? '');
+            $name = (string) ($field['name'] ?? '');
+            if ($lookup === '' || empty($item[$name])) {
+                continue;
+            }
+            $id = (int) $item[$name];
+            if ($id < 1) {
+                continue;
+            }
+            $key = (string) $id;
+            foreach ($lookups[$lookup] ?? [] as $opt) {
+                if ((string) (int) ($opt['value'] ?? 0) === $key) {
+                    continue 2;
+                }
+            }
+            $label = $this->resolveFkLabel($lookup, $id);
+            if ($label !== '') {
+                $lookups[$lookup][] = ['value' => $key, 'label' => $label];
+            }
+        }
+        return $lookups;
+    }
+
+    private function fetchFkLabelDirect(string $lookup, int $id): string
+    {
+        return match ($lookup) {
+            'hr_departments' => (string) ((new HrDepartment())->find($id)['name'] ?? ''),
+            'employees' => (string) ((new Employee())->find($id)['name'] ?? ''),
+            'leave_types' => (string) ((new LeaveType())->find($id)['name'] ?? ''),
+            'suppliers' => (string) ((new Supplier())->find($id)['name'] ?? ''),
+            'warehouses' => (string) ((new Warehouse())->find($id)['name'] ?? ''),
+            default => '',
+        };
+    }
+
     private function mapRows(array $rows, string $valueKey, string $labelKey): array
     {
         $out = [];
@@ -1144,7 +1217,7 @@ final class FormLookupService
             if ($label === '' && isset($row['id'])) {
                 $label = '#' . $row['id'];
             }
-            $out[] = ['value' => $row[$valueKey] ?? '', 'label' => $label];
+            $out[] = ['value' => (string) ($row[$valueKey] ?? ''), 'label' => $label];
         }
         return $out;
     }

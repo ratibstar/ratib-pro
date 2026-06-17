@@ -27,6 +27,15 @@ if (empty($columns) && !empty($items)) {
 }
 $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
 $documentEntityType = (string) ($documentEntityType ?? '');
+$fkLabelMaps = [];
+if ($columns !== []) {
+    $lookupSvc = new \Rateb\App\Services\FormLookupService();
+    foreach ($columns as $col) {
+        if ((string) ($col['type'] ?? '') === 'fk' && !empty($col['lookup'])) {
+            $fkLabelMaps[(string) $col['name']] = $lookupSvc->valueLabelMap((string) $col['lookup']);
+        }
+    }
+}
 $isCompanies = ($routePrefix ?? '') === 'admin/companies';
 ?>
 <div class="rateb-card<?php echo empty($title) ? ' border-0 shadow-none' : ''; ?>">
@@ -127,6 +136,18 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         <span class="text-muted">—</span>
                         <?php } ?>
                     </td>
+                        <?php } elseif ($colType === 'fk') {
+                            $map = $fkLabelMaps[$colName] ?? [];
+                            $idKey = (string) (int) $val;
+                            $display = $map[$idKey] ?? '';
+                            if ($display === '' && (int) $val > 0 && !empty($col['lookup'])) {
+                                $display = (new \Rateb\App\Services\FormLookupService())->resolveFkLabel((string) $col['lookup'], $val);
+                            }
+                            if ($display === '') {
+                                $display = $idKey !== '0' ? $idKey : '—';
+                            }
+                            ?>
+                    <td class="rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape($display); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
                         <?php } elseif ($colType === 'slug' || $colName === 'slug') {
                             Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => array_merge($col, ['type' => 'id', 'name' => 'slug'])]);
                         } elseif ($colType === 'html_preview') {

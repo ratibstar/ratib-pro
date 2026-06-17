@@ -45,7 +45,7 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'department_id', 'label' => 'department', 'type' => 'fk', 'lookup' => 'hr_departments'],
             ['name' => 'job_title', 'label' => 'job_title'],
             ['name' => 'salary_base', 'label' => 'salary_base'],
-            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
         $this->fields = [
             ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true],

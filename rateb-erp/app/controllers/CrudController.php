@@ -152,11 +152,17 @@ abstract class CrudController extends Controller
             rateb_bootstrap_ops_tenant();
         }
         $fields = $extra['fields'] ?? $this->fields;
+        $lookupSvc = new \Rateb\App\Services\FormLookupService();
+        $item = $extra['item'] ?? null;
+        $lookups = $lookupSvc->forFields($fields);
+        if (is_array($item)) {
+            $lookups = $lookupSvc->withMissingItemOptions($lookups, $fields, $item);
+        }
         return array_merge([
             'routePrefix' => $this->routePrefix,
             'fields' => $fields,
             'csrf' => Csrf::token(),
-            'lookups' => (new \Rateb\App\Services\FormLookupService())->forFields($fields),
+            'lookups' => $lookups,
         ], $extra);
     }
 
