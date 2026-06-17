@@ -55,6 +55,7 @@ final class Bootstrap
             '/app/services/HrService.php',
             '/app/controllers/Company/CompanyControllers.php',
             '/app/controllers/Company/HrControllers.php',
+            '/app/controllers/Company/HrExtendedControllers.php',
             '/app/controllers/Company/ExtendedControllers.php',
             '/app/controllers/Company/AccountingControllers.php',
             '/app/controllers/Company/BusinessControllers.php',
