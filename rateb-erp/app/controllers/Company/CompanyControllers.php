@@ -1476,11 +1476,14 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
                 $row['rating_tier'] = 'eval_tier_' . $tier;
             }
             $approval = (string) ($row['manager_approval'] ?? 'pending');
+            $row['_pending_approval'] = $approval === 'pending';
             $row['manager_approval'] = 'manager_approval_' . $approval;
             $row['score_percent'] = number_format((float) ($row['score_percent'] ?? 0), 1) . '%';
         }
         unset($row);
 
+        $canManage = function_exists('rateb_can_manage_entity')
+            && rateb_can_manage_entity($this->permissionResource);
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $items,
@@ -1493,6 +1496,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             'csrf' => \Rateb\App\Core\Csrf::token(),
             'approvalsRoute' => rateb_app_url('supplier-evaluations/approvals'),
             'pendingApprovalCount' => $svc->pendingApprovalCount($companyId),
+            'canManageEvaluations' => $canManage,
         ]), $this->layout());
     }
 
@@ -1542,6 +1546,8 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         $data['historyUrl'] = rateb_app_url('supplier-evaluations/history');
         $data['evaluationFormJs'] = rateb_asset('js/supplier-evaluation-form.js');
         $data['approvalsRoute'] = rateb_app_url('supplier-evaluations/approvals');
+        $data['canManageEvaluations'] = function_exists('rateb_can_manage_entity')
+            && rateb_can_manage_entity($this->permissionResource);
         if (is_array($item) && !empty($item['id'])) {
             $data['existingDocuments'] = (new \Rateb\App\Services\DocumentService())
                 ->listForEntity('supplier_evaluation', (int) $item['id'], $companyId);
@@ -1704,7 +1710,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
         (new AuditService())->log('approve', $this->entityName, $id);
         SessionManager::flash('success', __('evaluation_approved'));
-        $this->redirect(rateb_url($this->routePrefix . '/approvals'));
+        $this->redirect($this->approvalRedirectUrl());
     }
 
     public function reject(array $params): void
@@ -1733,7 +1739,20 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
         (new AuditService())->log('reject', $this->entityName, $id);
         SessionManager::flash('success', __('evaluation_rejected'));
-        $this->redirect(rateb_url($this->routePrefix . '/approvals'));
+        $this->redirect($this->approvalRedirectUrl());
+    }
+
+    private function approvalRedirectUrl(): string
+    {
+        $approvalsUrl = rateb_url($this->routePrefix . '/approvals');
+        $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        if ($referer === '' || !str_starts_with($referer, rateb_site_origin())) {
+            return $approvalsUrl;
+        }
+        if (str_contains($referer, '/approve') || str_contains($referer, '/reject')) {
+            return $approvalsUrl;
+        }
+        return $referer;
     }
 
     public function destroy(array $params): void
