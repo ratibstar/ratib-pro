@@ -14,7 +14,7 @@ final class DocumentDownloadController extends Controller
         (new DocumentService())->sendDownload($id);
     }
 
-    public function view(array $params): void
+    public function viewFile(array $params): void
     {
         $id = (int) ($params['id'] ?? 0);
         (new DocumentService())->sendView($id);

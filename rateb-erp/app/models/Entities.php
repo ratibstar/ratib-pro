@@ -180,6 +180,7 @@ final class SupplierEvaluation extends Model
             ['sid' => $supplierId, 'st' => 'published', 'ap' => 'approved']
         );
         $avg = $row ? round((float) $row['avg_rating'], 2) : 0.0;
+        $avg = max(0.0, min(10.0, $avg));
         $this->db->prepare('UPDATE rateb_suppliers SET rating = :r WHERE id = :id')
             ->execute(['r' => $avg, 'id' => $supplierId]);
     }

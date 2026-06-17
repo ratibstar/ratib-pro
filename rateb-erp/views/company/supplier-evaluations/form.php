@@ -83,7 +83,7 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                                 <?php foreach ($existingDocuments as $doc) {
                                     $docId = (int) ($doc['id'] ?? 0); ?>
                                 <li class="py-1">
-                                    <a href="<?php echo rateb_url('documents/download/' . $docId); ?>"><?php echo Rateb\App\Core\View::escape((string) ($doc['file_name'] ?? '')); ?></a>
+                                    <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" target="_blank" rel="noopener"><?php echo Rateb\App\Core\View::escape((string) ($doc['file_name'] ?? '')); ?></a>
                                 </li>
                                 <?php } ?>
                             </ul>
@@ -100,16 +100,12 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                         <?php } ?>
                     </div>
                 </form>
-                <?php if ($isEdit && ($canApprove ?? false) && $approval === 'pending') { ?>
-                <div class="mt-3 d-flex flex-wrap gap-2 border-top pt-3">
-                    <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $evalId . '/approve'); ?>" class="d-inline">
-                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> <?php echo __('approve_evaluation'); ?></button>
-                    </form>
-                    <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $evalId . '/reject'); ?>" class="d-inline">
-                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                        <button type="submit" class="btn btn-outline-danger"><i class="fas fa-times"></i> <?php echo __('reject_evaluation'); ?></button>
-                    </form>
+                <?php if ($isEdit && $approval === 'pending') { ?>
+                <div class="mt-3 border-top pt-3">
+                    <p class="text-muted small mb-2"><?php echo __('evaluation_pending_go_approvals'); ?></p>
+                    <a href="<?php echo rateb_url($approvalsRoute ?? rateb_app_url('supplier-evaluations/approvals')); ?>" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-clipboard-check"></i> <?php echo __('evaluation_approvals'); ?>
+                    </a>
                 </div>
                 <?php } ?>
             </div>

@@ -72,7 +72,7 @@ $router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMi
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 
 $router->get('/documents/download/{id}', [\Rateb\App\Controllers\Shared\DocumentDownloadController::class, 'download'], [ErpAuthMiddleware::class]);
-$router->get('/documents/view/{id}', [\Rateb\App\Controllers\Shared\DocumentDownloadController::class, 'view'], [ErpAuthMiddleware::class]);
+$router->get('/documents/view/{id}', [\Rateb\App\Controllers\Shared\DocumentDownloadController::class, 'viewFile'], [ErpAuthMiddleware::class]);
 $router->get('/barcode/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::class, 'image'], [ErpAuthMiddleware::class]);
 
 $router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class, [RequirePermissionMiddleware::class, 'dashboard.view']]);

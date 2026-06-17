@@ -122,6 +122,7 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
 }
 
 $seMw = rateb_erp_mw('suppliers', '', 'supplier-evaluations');
+$router->get($app('supplier-evaluations/approvals'), [SupplierEvaluationsController::class, 'approvals'], $seMw);
 $router->get($app('supplier-evaluations/history'), [SupplierEvaluationsController::class, 'supplierHistory'], $seMw);
 $router->post($app('supplier-evaluations/{id}/approve'), [SupplierEvaluationsController::class, 'approve'], $seMw);
 $router->post($app('supplier-evaluations/{id}/reject'), [SupplierEvaluationsController::class, 'reject'], $seMw);

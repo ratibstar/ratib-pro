@@ -74,4 +74,34 @@ final class SupplierEvaluationService
     {
         (new SupplierEvaluation())->updateSupplierRating($supplierId);
     }
+
+    public function pendingApprovalCount(int $companyId): int
+    {
+        if ($companyId < 1) {
+            return 0;
+        }
+        $row = (new SupplierEvaluation())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_supplier_evaluations
+             WHERE company_id = :cid AND manager_approval = :st',
+            ['cid' => $companyId, 'st' => 'pending']
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function pendingApprovals(int $companyId, int $limit = 50): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        return (new SupplierEvaluation())->query(
+            'SELECT e.*, s.name AS supplier_name
+             FROM rateb_supplier_evaluations e
+             LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
+             WHERE e.company_id = :cid AND e.manager_approval = :st
+             ORDER BY e.evaluation_date DESC, e.id DESC
+             LIMIT ' . max(1, min(100, $limit)),
+            ['cid' => $companyId, 'st' => 'pending']
+        );
+    }
 }

@@ -1490,7 +1490,24 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             'fields' => $this->indexFields,
             'documentEntityType' => $this->resolveDocumentEntityType(),
             'csrf' => \Rateb\App\Core\Csrf::token(),
+            'approvalsRoute' => rateb_app_url('supplier-evaluations/approvals'),
+            'pendingApprovalCount' => $svc->pendingApprovalCount($companyId),
         ]), $this->layout());
+    }
+
+    public function approvals(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $this->guardManage();
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id());
+        $svc = new \Rateb\App\Services\SupplierEvaluationService();
+        $items = $svc->pendingApprovals($companyId);
+        $this->view($this->viewPrefix . '/approvals', [
+            'title' => __('evaluation_approvals'),
+            'items' => $items,
+            'routePrefix' => $this->routePrefix,
+            'csrf' => \Rateb\App\Core\Csrf::token(),
+        ], $this->layout());
     }
 
     protected function formViewData(array $extra = []): array
@@ -1523,9 +1540,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             : [];
         $data['historyUrl'] = rateb_app_url('supplier-evaluations/history');
         $data['evaluationFormJs'] = rateb_asset('js/supplier-evaluation-form.js');
-        $data['canApprove'] = function_exists('rateb_can_manage_entity')
-            ? rateb_can_manage_entity('supplier-evaluations')
-            : true;
+        $data['approvalsRoute'] = rateb_app_url('supplier-evaluations/approvals');
         if (is_array($item) && !empty($item['id'])) {
             $data['existingDocuments'] = (new \Rateb\App\Services\DocumentService())
                 ->listForEntity('supplier_evaluation', (int) $item['id'], $companyId);
@@ -1656,13 +1671,17 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         rateb_bootstrap_ops_tenant();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->redirect(rateb_url($this->routePrefix . '/approvals'));
         }
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->redirect(rateb_url($this->routePrefix . '/approvals'));
+        }
+        if ((string) ($item['manager_approval'] ?? '') !== 'pending') {
+            SessionManager::flash('error', __('evaluation_already_processed'));
+            $this->redirect(rateb_url($this->routePrefix . '/approvals'));
         }
         $this->model->update($id, [
             'manager_approval' => 'approved',
@@ -1672,7 +1691,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
         (new AuditService())->log('approve', $this->entityName, $id);
         SessionManager::flash('success', __('evaluation_approved'));
-        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        $this->redirect(rateb_url($this->routePrefix . '/approvals'));
     }
 
     public function reject(array $params): void
@@ -1681,13 +1700,17 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         rateb_bootstrap_ops_tenant();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->redirect(rateb_url($this->routePrefix . '/approvals'));
         }
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->redirect(rateb_url($this->routePrefix . '/approvals'));
+        }
+        if ((string) ($item['manager_approval'] ?? '') !== 'pending') {
+            SessionManager::flash('error', __('evaluation_already_processed'));
+            $this->redirect(rateb_url($this->routePrefix . '/approvals'));
         }
         $this->model->update($id, [
             'manager_approval' => 'rejected',
@@ -1697,7 +1720,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
         (new AuditService())->log('reject', $this->entityName, $id);
         SessionManager::flash('success', __('evaluation_rejected'));
-        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        $this->redirect(rateb_url($this->routePrefix . '/approvals'));
     }
 
     protected function collectData(): array
