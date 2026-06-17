@@ -76,6 +76,7 @@ return [
     'radius_meters' => 'نطاق الموقع (متر)',
     'time_from' => 'من الساعة',
     'time_to' => 'إلى الساعة',
+    'permission_date' => 'تاريخ الاستئذان',
     'loan_code' => 'رقم القرض',
     'loan_type' => 'نوع القرض',
     'principal' => 'مبلغ القرض',

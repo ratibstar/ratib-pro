@@ -99,6 +99,12 @@ final class HrPermissionRequestsController extends \Rateb\App\Controllers\CrudCo
         ];
     }
 
+    public function index(): void
+    {
+        HrService::bootstrapTenant();
+        parent::index();
+    }
+
     protected function collectData(): array
     {
         $data = parent::collectData();

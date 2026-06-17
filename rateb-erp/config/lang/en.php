@@ -76,6 +76,7 @@ return [
     'radius_meters' => 'Location radius (m)',
     'time_from' => 'From time',
     'time_to' => 'To time',
+    'permission_date' => 'Permission date',
     'loan_code' => 'Loan code',
     'loan_type' => 'Loan type',
     'principal' => 'Principal',
