@@ -106,7 +106,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     <?php endforeach; ?>
 </head>
 <body class="control-system-body control-layout-no-header<?php echo $standalone ? ' control-layout-standalone' : ''; ?><?php echo $htmlDir === 'rtl' ? ' cp-rtl' : ''; ?>">
-    <div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>"></div>
+    <div id="control-config" data-cp-no-i18n data-api-base="<?php echo htmlspecialchars($apiBase); ?>"></div>
     <?php
     $coreAiUrl = rtrim($fullBase, '/') . '/coreai/index.php';
     // Main RATEB Pro JSON API lives at site /api, not /control-panel/api

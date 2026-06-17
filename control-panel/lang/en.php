@@ -208,6 +208,7 @@ return [
     'js.loading_recent' => 'Loading recent requests...',
     'js.no_countries' => 'No countries configured.',
     'js.failed_users_country' => 'Failed to load users per country.',
+    'js.users_country_timeout' => 'Loading timed out. Refresh the page or try again.',
     'js.view_users' => 'View Users →',
     'js.view_agencies' => 'View Agencies →',
     'js.unknown' => 'Unknown',

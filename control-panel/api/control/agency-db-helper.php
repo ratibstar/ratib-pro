@@ -66,6 +66,31 @@ if (!function_exists('rateb_ensure_minimal_rateb_pro_schema')) {
     }
 }
 
+if (!function_exists('rateb_mysqli_connect')) {
+    /**
+     * mysqli with connect (and optional read) timeout so dashboard APIs do not hang on bad agency DSNs.
+     */
+    function rateb_mysqli_connect(string $host, string $user, string $pass, string $db, int $port = 3306, int $timeoutSec = 3): ?mysqli
+    {
+        $mysqli = @mysqli_init();
+        if (!$mysqli) {
+            return null;
+        }
+        $timeoutSec = max(1, min(15, $timeoutSec));
+        @mysqli_options($mysqli, MYSQLI_OPT_CONNECT_TIMEOUT, $timeoutSec);
+        if (defined('MYSQLI_OPT_READ_TIMEOUT')) {
+            @mysqli_options($mysqli, MYSQLI_OPT_READ_TIMEOUT, min(30, $timeoutSec * 3));
+        }
+        $ok = @mysqli_real_connect($mysqli, $host, $user, $pass, $db, $port);
+        if (!$ok || $mysqli->connect_error) {
+            $GLOBALS['__agency_db_connect_error'] = trim((string) ($mysqli->connect_error ?: 'Connect failed'));
+            @$mysqli->close();
+            return null;
+        }
+        return $mysqli;
+    }
+}
+
 if (function_exists('getAgencyDbConnection')) {
     return;
 }
@@ -104,10 +129,9 @@ function getAgencyDbConnection($agency, $countryId = 0) {
     $conn = null;
     $connectErr = '';
     try {
-        $conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName, $port);
-        if ($conn && $conn->connect_error) {
-            $connectErr = $conn->connect_error;
-            $conn = null;
+        $conn = rateb_mysqli_connect($dbHost, $dbUser, $dbPass, $dbName, $port);
+        if (!$conn) {
+            $connectErr = getAgencyDbConnectionLastError();
         }
     } catch (Throwable $e) {
         $connectErr = $e->getMessage();
@@ -150,8 +174,8 @@ function getAgencyDbConnection($agency, $countryId = 0) {
             if ($altDb === $dbName) {
                 continue;
             }
-            $try = @new mysqli(DB_HOST, DB_USER, DB_PASS, $altDb, defined('DB_PORT') ? DB_PORT : 3306);
-            if ($try && !$try->connect_error) {
+            $try = rateb_mysqli_connect(DB_HOST, DB_USER, DB_PASS, $altDb, defined('DB_PORT') ? (int) DB_PORT : 3306);
+            if ($try) {
                 $conn = $try;
                 $dbName = $altDb;
                 $cHost = defined('DB_HOST') ? DB_HOST : $dbHost;
@@ -160,20 +184,22 @@ function getAgencyDbConnection($agency, $countryId = 0) {
                 $cPass = defined('DB_PASS') ? DB_PASS : $dbPass;
                 break;
             }
-            if ($try) {
-                $connectErr = $try->connect_error ?: $connectErr;
-                $try->close();
+            $err = getAgencyDbConnectionLastError();
+            if ($err !== '') {
+                $connectErr = $err;
             }
         }
     }
 
     // Same database name, main app credentials (when agency row points at correct db but wrong user).
     if (!$conn && defined('DB_HOST') && defined('DB_USER') && defined('DB_PASS')) {
-        $conn = @new mysqli(DB_HOST, DB_USER, DB_PASS, $dbName, defined('DB_PORT') ? DB_PORT : 3306);
-        if ($conn && $conn->connect_error) {
-            $connectErr = $conn->connect_error;
-            $conn = null;
-        } elseif ($conn) {
+        $conn = rateb_mysqli_connect(DB_HOST, DB_USER, DB_PASS, $dbName, defined('DB_PORT') ? (int) DB_PORT : 3306);
+        if (!$conn) {
+            $err = getAgencyDbConnectionLastError();
+            if ($err !== '') {
+                $connectErr = $err;
+            }
+        } else {
             $cHost = DB_HOST;
             $cPort = defined('DB_PORT') ? (int) DB_PORT : 3306;
             $cUser = DB_USER;
@@ -185,11 +211,13 @@ function getAgencyDbConnection($agency, $countryId = 0) {
         $tryHost = (($dbHost ?: (defined('DB_HOST') ? DB_HOST : '')) === 'localhost') ? '127.0.0.1' : 'localhost';
         $tryUser = $dbUser ?: (defined('DB_USER') ? DB_USER : '');
         $tryPass = $dbPass ?: (defined('DB_PASS') ? DB_PASS : '');
-        $conn = @new mysqli($tryHost, $tryUser, $tryPass, $dbName, $port);
-        if ($conn && $conn->connect_error) {
-            $connectErr = $conn->connect_error;
-            $conn = null;
-        } elseif ($conn) {
+        $conn = rateb_mysqli_connect($tryHost, $tryUser, $tryPass, $dbName, $port);
+        if (!$conn) {
+            $err = getAgencyDbConnectionLastError();
+            if ($err !== '') {
+                $connectErr = $err;
+            }
+        } else {
             $cHost = $tryHost;
             $cUser = $tryUser;
             $cPass = $tryPass;
@@ -218,8 +246,8 @@ function getAgencyDbConnection($agency, $countryId = 0) {
         foreach ($alts as $a) {
             list($alt, $h, $u, $p) = $a;
             if ($alt === $dbName) continue;
-            $conn = @new mysqli($h, $u, $p, $alt, $port);
-            if ($conn && !$conn->connect_error) {
+            $conn = rateb_mysqli_connect($h, $u, $p, $alt, $port);
+            if ($conn) {
                 $dbName = $alt;
                 $cHost = $h;
                 $cUser = $u;
@@ -234,14 +262,14 @@ function getAgencyDbConnection($agency, $countryId = 0) {
         $p1 = defined('DB_PORT') ? (int) DB_PORT : 3306;
         $u1 = defined('DB_USER') ? DB_USER : '';
         $pw1 = defined('DB_PASS') ? DB_PASS : '';
-        $conn = @new mysqli($h1, $u1, $pw1, DB_NAME, $p1);
+        $conn = rateb_mysqli_connect($h1, $u1, $pw1, DB_NAME, $p1);
         $usedHost = $h1;
-        if ($conn && $conn->connect_error) {
+        if (!$conn) {
             $tryH = ($h1 === 'localhost') ? '127.0.0.1' : 'localhost';
-            $conn = @new mysqli($tryH, $u1, $pw1, DB_NAME, $p1);
+            $conn = rateb_mysqli_connect($tryH, $u1, $pw1, DB_NAME, $p1);
             $usedHost = $tryH;
         }
-        if ($conn && !$conn->connect_error) {
+        if ($conn) {
             $dbName = DB_NAME;
             $cHost = $usedHost;
             $cPort = $p1;

@@ -8,6 +8,8 @@
  * Connects to each agency's database and counts users, grouped by country.
  */
 header('Content-Type: application/json; charset=UTF-8');
+@ini_set('default_socket_timeout', '5');
+@set_time_limit(90);
 
 try {
     require_once __DIR__ . '/../../includes/config.php';
@@ -22,7 +24,8 @@ if (empty($_SESSION['control_logged_in'])) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
-if (!hasControlPermission(CONTROL_PERM_COUNTRY_USERS)
+if (!hasControlPermission(CONTROL_PERM_DASHBOARD)
+    && !hasControlPermission(CONTROL_PERM_COUNTRY_USERS)
     && !hasControlPermission('view_control_country_users')
     && !hasControlPermission(CONTROL_PERM_AGENCIES)
     && !hasControlPermission('view_control_agencies')

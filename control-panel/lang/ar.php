@@ -208,6 +208,7 @@ return [
     'js.loading_recent' => 'جاري تحميل أحدث الطلبات...',
     'js.no_countries' => 'لم يتم إعداد أي دول.',
     'js.failed_users_country' => 'فشل تحميل المستخدمين حسب الدولة.',
+    'js.users_country_timeout' => 'انتهت مهلة التحميل. حدّث الصفحة أو أعد المحاولة.',
     'js.view_users' => 'عرض المستخدمين ←',
     'js.view_agencies' => 'عرض الوكالات ←',
     'js.unknown' => 'غير معروف',
