@@ -26,6 +26,13 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                     <input type="hidden" name="rating_tier" id="eval_tier_input" value="<?php echo Rateb\App\Core\View::escape((string) ($metrics['tier'] ?? 'weak')); ?>">
                     <div class="row g-3">
+                        <?php if ($isEdit && !empty($item['evaluation_no'])) { ?>
+                        <div class="col-md-4">
+                            <label class="form-label rateb-form-label"><?php echo __('evaluation_no'); ?></label>
+                            <input class="form-control rateb-form-control" type="text" readonly
+                                value="<?php echo Rateb\App\Core\View::escape((string) $item['evaluation_no']); ?>">
+                        </div>
+                        <?php } ?>
                         <?php foreach ($fields as $field) {
                             $name = $field['name'];
                             $value = $item[$name] ?? ($field['default'] ?? '');

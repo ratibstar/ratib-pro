@@ -316,6 +316,7 @@ return [
     'evaluation_approved' => 'Evaluation approved',
     'evaluation_rejected' => 'Evaluation rejected',
     'evaluation_saved' => 'Evaluation saved successfully',
+    'evaluation_resubmitted_for_approval' => 'Changes saved — evaluation sent back for approval',
     'supplier_evaluation_history' => 'Previous evaluations for this supplier',
     'evaluation_approvals' => 'Evaluation approvals',
     'no_pending_approvals' => 'No evaluations pending approval',

@@ -316,6 +316,7 @@ return [
     'evaluation_approved' => 'تم اعتماد التقييم',
     'evaluation_rejected' => 'تم رفض التقييم',
     'evaluation_saved' => 'تم حفظ التقييم بنجاح',
+    'evaluation_resubmitted_for_approval' => 'تم حفظ التعديلات وإعادة التقييم لصفحة الاعتمادات',
     'supplier_evaluation_history' => 'سجل التقييمات السابقة للمورد',
     'evaluation_approvals' => 'اعتمادات التقييم',
     'no_pending_approvals' => 'لا توجد تقييمات بانتظار الاعتماد',

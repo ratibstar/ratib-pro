@@ -1631,11 +1631,20 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         unset($data['evaluated_by'], $data['evaluator_name']);
+        if (!empty($existing['evaluation_no'])) {
+            $data['evaluation_no'] = (string) $existing['evaluation_no'];
+        }
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        $needsReapproval = $this->evaluationNeedsReapproval($existing, $data);
+        if ($needsReapproval) {
+            $data['manager_approval'] = 'pending';
+            $data['approved_by'] = null;
+            $data['approved_at'] = null;
         }
         $this->model->update($id, $data);
         try {
@@ -1652,7 +1661,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $svc->refreshSupplierRating($oldSupplierId);
         }
         (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('evaluation_saved'));
+        SessionManager::flash('success', $needsReapproval ? __('evaluation_resubmitted_for_approval') : __('evaluation_saved'));
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -1824,6 +1833,30 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         }
         $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_EVALUATION, 'evaluation_no');
         return $data;
+    }
+
+    /** @param array<string, mixed> $existing @param array<string, mixed> $data */
+    private function evaluationNeedsReapproval(array $existing, array $data): bool
+    {
+        $prev = (string) ($existing['manager_approval'] ?? 'pending');
+        if ($prev === 'pending') {
+            return false;
+        }
+        $watch = [
+            'supplier_id', 'evaluation_date', 'period_start', 'period_end', 'status',
+            'quality_score', 'delivery_score', 'price_score', 'service_score',
+        ];
+        foreach ($watch as $key) {
+            $old = $existing[$key] ?? null;
+            $new = $data[$key] ?? null;
+            if ($old === null && ($new === null || $new === '')) {
+                continue;
+            }
+            if ((string) $old !== (string) $new) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private function persistAttachments(int $evaluationId, int $companyId): void

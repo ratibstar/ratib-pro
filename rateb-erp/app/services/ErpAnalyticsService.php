@@ -118,7 +118,9 @@ final class ErpAnalyticsService
         return (new Supplier())->query(
             'SELECT s.id, s.code, s.name, s.rating, s.performance_kpi, sc.name AS classification_name,
                     (SELECT COUNT(*) FROM rateb_purchase_orders po WHERE po.supplier_id = s.id AND po.company_id = s.company_id) AS po_count,
-                    (SELECT COALESCE(AVG(overall_score),0) FROM rateb_supplier_evaluations e WHERE e.supplier_id = s.id) AS avg_eval
+                    (SELECT COALESCE(AVG(overall_score),0) FROM rateb_supplier_evaluations e
+                     WHERE e.supplier_id = s.id AND e.company_id = s.company_id
+                       AND e.status = \'published\' AND e.manager_approval = \'approved\') AS avg_eval
              FROM rateb_suppliers s
              LEFT JOIN rateb_supplier_classifications sc ON sc.id = s.classification_id
              WHERE s.company_id = :cid ORDER BY avg_eval DESC, s.rating DESC LIMIT 100',
