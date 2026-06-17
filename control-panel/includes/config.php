@@ -258,7 +258,9 @@ if ($useOwnProgram && isset($GLOBALS['control_conn'])) {
             || (stripos($script, 'client-domains') !== false)
             || (stripos($script, 'client-orders') !== false)
             || (stripos($script, 'client-billing') !== false);
-        $isLogout = (strpos($req, 'logout.php') !== false);
+        // Match extensionless /pages/logout as well as logout.php (SCRIPT_NAME after rewrite).
+        $isLogout = (strpos($req . ' ' . $script, 'logout.php') !== false)
+            || preg_match('#/pages/logout(/|\?|$)#i', $req);
         $isSystemSettings = (strpos($req, 'system-settings') !== false) || (strpos($req, 'control-panel-settings.php') !== false) || (strpos($req, 'panel-settings.php') !== false) || (strpos($req, 'panel-users.php') !== false) || (strpos($req, 'control-panel-users.php') !== false);
         if (!$isLogin && !$isSelect && !$isLogout && !$isSystemSettings) {
             header('Location: ' . pageUrl('select-country.php'));
