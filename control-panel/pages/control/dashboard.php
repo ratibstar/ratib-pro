@@ -211,6 +211,13 @@ if (!empty($_SESSION['control_popup_error'])) {
     <link rel="stylesheet" href="<?php echo asset('css/control/system.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/dashboard.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/rtl.css'); ?>?v=<?php echo time(); ?>">
+    <?php if (cp_html_dir() === 'rtl'): ?>
+    <style id="cp-rtl-layout-fix">
+    .control-layout{display:flex!important;flex-direction:row!important;direction:ltr!important}
+    .control-layout.cp-layout-rtl>.control-content{order:1!important;flex:1 1 auto!important;min-width:0!important;direction:rtl}
+    .control-layout.cp-layout-rtl>.control-sidebar{order:2!important;flex:0 0 auto!important;direction:rtl;text-align:right}
+    </style>
+    <?php endif; ?>
     <?php if ($govWidgetData !== null): ?>
     <link rel="stylesheet" href="<?php echo asset('css/control/government.css'); ?>?v=<?php echo time(); ?>">
     <?php endif; ?>

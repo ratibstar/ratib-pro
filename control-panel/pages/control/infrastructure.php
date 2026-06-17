@@ -75,6 +75,13 @@ $fullBase = rtrim(
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/control/system.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/rtl.css'); ?>?v=<?php echo time(); ?>">
+    <?php if (cp_is_rtl()): ?>
+    <style id="cp-rtl-layout-fix">
+    .control-layout{display:flex!important;flex-direction:row!important;direction:ltr!important}
+    .control-layout.cp-layout-rtl>.control-content{order:1!important;flex:1 1 auto!important;min-width:0!important;direction:rtl}
+    .control-layout.cp-layout-rtl>.control-sidebar{order:2!important;flex:0 0 auto!important;direction:rtl;text-align:right}
+    </style>
+    <?php endif; ?>
     <link rel="stylesheet" href="<?php echo asset('css/control/infrastructure-embed.css'); ?>?v=<?php echo time(); ?>">
 </head>
 <body class="control-system-body<?php echo cp_is_rtl() ? ' cp-rtl' : ''; ?>">

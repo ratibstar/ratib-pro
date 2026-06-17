@@ -1,14 +1,33 @@
 /**
  * Control Panel RTL layout adjustments (Arabic only).
- * Sidebar on the right: DOM order is swapped in PHP (see sidebar-layout.php).
+ *
+ * IMPORTANT: html[dir=rtl] reverses flex row order (first item goes right).
+ * Keep .control-layout LTR for physical placement; use direction:rtl on text regions only.
  */
-html[dir="rtl"] .control-layout.cp-layout-rtl,
-body.cp-rtl .control-layout.cp-layout-rtl {
+html[dir="rtl"] .control-layout,
+body.cp-rtl .control-layout {
+    display: flex;
     flex-direction: row;
+    direction: ltr;
+}
+
+html[dir="rtl"] .control-layout.cp-layout-rtl > .control-content,
+body.cp-rtl .control-layout.cp-layout-rtl > .control-content {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+html[dir="rtl"] .control-layout.cp-layout-rtl > .control-sidebar,
+body.cp-rtl .control-layout.cp-layout-rtl > .control-sidebar {
+    order: 2;
+    flex: 0 0 auto;
 }
 
 html[dir="rtl"] .control-sidebar,
 body.cp-rtl .control-sidebar {
+    direction: rtl;
+    text-align: right;
     border-right: none;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -18,6 +37,7 @@ body.cp-rtl .control-content {
     margin-left: 0;
     margin-right: 0;
     padding: 2rem 4px 2rem 2rem;
+    direction: rtl;
 }
 
 html[dir="rtl"] body.control-layout-no-header .control-content,
