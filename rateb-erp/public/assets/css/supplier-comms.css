@@ -144,3 +144,16 @@
 .rateb-sc-alert-card .rateb-sc-card-header {
     background: rgba(var(--bs-warning-rgb), 0.08);
 }
+
+.rateb-sc-form-compact .rateb-sc-form-section {
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.75rem;
+}
+
+.rateb-sc-form-compact .rateb-form-label {
+    margin-bottom: 0.2rem;
+}
+
+.rateb-sc-form-compact textarea.form-control {
+    min-height: 4.5rem;
+}

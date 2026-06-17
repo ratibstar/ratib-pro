@@ -17,76 +17,62 @@ $defaults = [
     'channel' => 'phone',
     'responsible_name' => $responsibleDefault,
 ];
+
+$renderFields = static function (array $names) use ($fields, $item, $defaults, $lookups): void {
+    foreach ($fields as $field) {
+        $name = (string) $field['name'];
+        if (!in_array($name, $names, true)) {
+            continue;
+        }
+        $value = $item[$name] ?? ($defaults[$name] ?? ($field['default'] ?? ''));
+        Rateb\App\Core\View::partial('form-field', ['field' => $field, 'value' => $value, 'lookups' => $lookups]);
+    }
+};
 ?>
-<div class="rateb-sc-form-section">
-    <div class="rateb-sc-section-title"><?php echo __('comm_section_basic'); ?></div>
-    <div class="row g-3">
-        <?php foreach ($fields as $field) {
-            $name = (string) $field['name'];
-            if (!in_array($name, ['supplier_id', 'channel', 'comm_date', 'comm_time', 'comm_status', 'subject', 'details', 'body'], true)) {
-                continue;
-            }
-            $value = $item[$name] ?? ($defaults[$name] ?? ($field['default'] ?? ''));
-            Rateb\App\Core\View::partial('form-field', ['field' => $field, 'value' => $value, 'lookups' => $lookups]);
-        } ?>
+<div class="rateb-sc-form-compact">
+    <div class="rateb-sc-form-section">
+        <div class="rateb-sc-section-title"><?php echo __('comm_section_basic'); ?></div>
+        <div class="row g-2 g-md-3">
+            <?php $renderFields(['supplier_id', 'channel', 'comm_date', 'comm_time', 'comm_status', 'subject', 'details', 'body']); ?>
+        </div>
     </div>
-</div>
-<div class="rateb-sc-form-section">
-    <div class="rateb-sc-section-title"><?php echo __('comm_section_contacts'); ?></div>
-    <div class="row g-3">
-        <?php foreach ($fields as $field) {
-            $name = (string) $field['name'];
-            if (!in_array($name, ['responsible_name', 'supplier_contact', 'supplier_phone', 'supplier_email'], true)) {
-                continue;
-            }
-            $value = $item[$name] ?? ($defaults[$name] ?? ($field['default'] ?? ''));
-            Rateb\App\Core\View::partial('form-field', ['field' => $field, 'value' => $value, 'lookups' => $lookups]);
-        } ?>
+    <div class="rateb-sc-form-section">
+        <div class="rateb-sc-section-title"><?php echo __('comm_section_contacts'); ?></div>
+        <div class="row g-2 g-md-3">
+            <?php $renderFields(['responsible_name', 'supplier_contact', 'supplier_phone', 'supplier_email']); ?>
+        </div>
     </div>
-</div>
-<div class="rateb-sc-form-section">
-    <div class="rateb-sc-section-title"><?php echo __('comm_section_followup'); ?></div>
-    <div class="row g-3">
-        <?php foreach ($fields as $field) {
-            $name = (string) $field['name'];
-            if (!in_array($name, ['follow_up_date', 'follow_up_priority'], true)) {
-                continue;
-            }
-            $value = $item[$name] ?? ($defaults[$name] ?? ($field['default'] ?? ''));
-            Rateb\App\Core\View::partial('form-field', ['field' => $field, 'value' => $value, 'lookups' => $lookups]);
-        } ?>
+    <div class="rateb-sc-form-section">
+        <div class="rateb-sc-section-title"><?php echo __('comm_section_followup'); ?> / <?php echo __('comm_section_links'); ?></div>
+        <div class="row g-2 g-md-3">
+            <?php $renderFields(['follow_up_date', 'follow_up_priority', 'purchase_order_id', 'rfq_id']); ?>
+        </div>
     </div>
-</div>
-<div class="rateb-sc-form-section">
-    <div class="rateb-sc-section-title"><?php echo __('comm_section_links'); ?></div>
-    <div class="row g-3">
-        <?php foreach ($fields as $field) {
-            $name = (string) $field['name'];
-            if (!in_array($name, ['purchase_order_id', 'rfq_id'], true)) {
-                continue;
-            }
-            $value = $item[$name] ?? '';
-            Rateb\App\Core\View::partial('form-field', ['field' => $field, 'value' => $value, 'lookups' => $lookups]);
-        } ?>
+    <?php if ($showAttachments) { ?>
+    <div class="rateb-sc-form-section">
+        <div class="rateb-sc-section-title"><?php echo __('comm_attachments'); ?></div>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <p class="text-muted small mb-2"><?php echo __('comm_attachments_hint'); ?></p>
+                <input class="form-control rateb-form-control" type="file" name="comm_attachments[]" multiple
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
+            </div>
+            <?php if ($existingDocuments !== []) { ?>
+            <div class="col-md-6">
+                <p class="text-muted small mb-2"><?php echo __('attachment'); ?></p>
+                <ul class="list-unstyled small mb-0">
+                    <?php foreach ($existingDocuments as $doc) {
+                        $docId = (int) ($doc['id'] ?? 0); ?>
+                    <li class="mb-1">
+                        <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" target="_blank" rel="noopener">
+                            <i class="fas fa-paperclip"></i> <?php echo Rateb\App\Core\View::escape((string) ($doc['file_name'] ?? $doc['title'] ?? '')); ?>
+                        </a>
+                    </li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <?php } ?>
+        </div>
     </div>
-</div>
-<?php if ($showAttachments) { ?>
-<div class="rateb-sc-form-section">
-    <div class="rateb-sc-section-title"><?php echo __('comm_attachments'); ?></div>
-    <p class="text-muted small mb-2"><?php echo __('comm_attachments_hint'); ?></p>
-    <input class="form-control rateb-form-control" type="file" name="comm_attachments[]" multiple
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
-    <?php if ($existingDocuments !== []) { ?>
-    <ul class="list-unstyled small mt-2 mb-0">
-        <?php foreach ($existingDocuments as $doc) {
-            $docId = (int) ($doc['id'] ?? 0); ?>
-        <li class="mb-1">
-            <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" target="_blank" rel="noopener">
-                <i class="fas fa-paperclip"></i> <?php echo Rateb\App\Core\View::escape((string) ($doc['file_name'] ?? $doc['title'] ?? '')); ?>
-            </a>
-        </li>
-        <?php } ?>
-    </ul>
     <?php } ?>
 </div>
-<?php } ?>
