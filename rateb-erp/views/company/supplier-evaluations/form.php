@@ -42,12 +42,12 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                         </div>
                         <div class="col-md-4">
                             <label class="form-label rateb-form-label"><?php echo __('overall_score'); ?></label>
-                            <div class="form-control rateb-form-control bg-light" id="eval_overall_display"><?php echo number_format((float) ($metrics['overall'] ?? 0), 2); ?></div>
+                            <div class="form-control rateb-form-control rateb-readonly-display" id="eval_overall_display"><?php echo number_format((float) ($metrics['overall'] ?? 0), 2); ?></div>
                             <small class="text-muted"><?php echo __('overall_score_auto'); ?></small>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label rateb-form-label"><?php echo __('evaluation_percent'); ?></label>
-                            <div class="form-control rateb-form-control bg-light" id="eval_percent_display"><?php echo number_format((float) ($metrics['percent'] ?? 0), 1); ?>%</div>
+                            <div class="form-control rateb-form-control rateb-readonly-display" id="eval_percent_display"><?php echo number_format((float) ($metrics['percent'] ?? 0), 1); ?>%</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label rateb-form-label"><?php echo __('supplier_rating_tier'); ?></label>

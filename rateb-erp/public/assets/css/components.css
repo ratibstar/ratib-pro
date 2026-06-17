@@ -186,6 +186,13 @@
     border-color: var(--rateb-border);
 }
 
+.rateb-readonly-display {
+    background: var(--rateb-surface-elevated) !important;
+    color: var(--rateb-text) !important;
+    border-color: var(--rateb-border) !important;
+    cursor: default;
+}
+
 .rateb-badge-status {
     font-size: 0.75rem;
     padding: 0.35em 0.65em;

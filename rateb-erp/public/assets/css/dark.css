@@ -71,6 +71,11 @@ html[data-bs-theme="light"] {
     color: var(--rateb-text-muted) !important;
 }
 
+.rateb-app .bg-light {
+    background-color: var(--rateb-surface-elevated) !important;
+    color: var(--rateb-text) !important;
+}
+
 .rateb-app .pagination .page-link {
     background-color: var(--rateb-surface);
     border-color: var(--rateb-border);
