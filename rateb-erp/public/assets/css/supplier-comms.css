@@ -90,6 +90,57 @@
     font-size: 0.8125rem;
     padding: 0.15rem 0.5rem;
     border-radius: 999px;
-    background: var(--rateb-surface-2);
+    background: var(--rateb-surface-elevated);
     border: 1px solid var(--rateb-border);
+}
+
+.rateb-sc-stats-row .rateb-sc-stat-card {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    padding: 0.85rem 1rem;
+    text-align: center;
+    height: 100%;
+}
+
+.rateb-sc-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--rateb-text);
+    line-height: 1.2;
+}
+
+.rateb-sc-stat-label {
+    font-size: 0.75rem;
+    color: var(--rateb-text-muted);
+    margin-top: 0.25rem;
+}
+
+.rateb-sc-stat-warn .rateb-sc-stat-value {
+    color: var(--bs-warning);
+}
+
+.rateb-sc-form-section {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--rateb-border);
+}
+
+.rateb-sc-form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.rateb-sc-section-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--rateb-primary);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.rateb-sc-alert-card .rateb-sc-card-header {
+    background: rgba(var(--bs-warning-rgb), 0.08);
 }

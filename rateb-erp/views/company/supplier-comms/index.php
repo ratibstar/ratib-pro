@@ -1,16 +1,20 @@
 <?php
 /** @var array<int, array<string, mixed>> $items */
 /** @var array<string, mixed> $filters */
-/** @var array<int, array{value:string|int,label:string}> $supplierOptions */
-/** @var array<int, array{value:string,label:string}> $channelOptions */
-/** @var array<int, array{name:string,label:string,type?:string}> $columns */
+/** @var array<string, mixed> $stats */
+/** @var \Rateb\App\Services\SupplierCommService $commSvc */
 $listUrl = rateb_app_url('supplier-comms');
 $routePrefix = $routePrefix ?? rateb_app_route('supplier-comms');
 $canManage = $canManage ?? rateb_can_manage_entity('supplier-comms');
-$bulkEnabled = $bulkEnabled ?? false;
-$actionsEnabled = $actionsEnabled ?? true;
 $columns = $columns ?? [];
-$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
+$colspan = count($columns) + ($actionsEnabled ?? true ? 1 : 0);
+$stats = $stats ?? ['total' => 0, 'this_month' => 0, 'pending_followups' => 0, 'by_supplier' => 0];
+$upcomingFollowUps = $upcomingFollowUps ?? [];
+$topSuppliers = $topSuppliers ?? [];
+$supplierHistory = $supplierHistory ?? [];
+$commSvc = $commSvc ?? new \Rateb\App\Services\SupplierCommService();
+$lookups = $lookups ?? [];
+$formFields = $formFields ?? [];
 
 $channelLabel = static function (string $ch): string {
     $key = 'comm_channel_' . $ch;
@@ -18,37 +22,15 @@ $channelLabel = static function (string $ch): string {
     return $t !== $key ? $t : $ch;
 };
 $channelIcon = static function (string $ch): string {
-    if ($ch === 'email') {
-        return 'fa-envelope';
-    }
-    if ($ch === 'sms') {
-        return 'fa-sms';
-    }
-    if ($ch === 'whatsapp') {
-        return 'fa-brands fa-whatsapp';
-    }
-    if ($ch === 'phone') {
-        return 'fa-phone';
-    }
-    if ($ch === 'meeting') {
-        return 'fa-handshake';
-    }
-    return 'fa-comment';
-};
-$formatCell = static function ($val, array $col) use ($channelLabel, $channelIcon): string {
-    $type = (string) ($col['type'] ?? '');
-    $name = (string) ($col['name'] ?? '');
-    if ($type === 'channel' || $name === 'channel') {
-        $ch = (string) $val;
-        $icon = $channelIcon($ch);
-        $label = $channelLabel($ch);
-        return '<span class="rateb-sc-channel-badge"><i class="fas ' . Rateb\App\Core\View::escape($icon) . '"></i> '
-            . Rateb\App\Core\View::escape($label) . '</span>';
-    }
-    if ($val === null || $val === '') {
-        return '—';
-    }
-    return Rateb\App\Core\View::escape((string) $val);
+    return match ($ch) {
+        'email' => 'fa-envelope',
+        'sms' => 'fa-sms',
+        'whatsapp' => 'fa-brands fa-whatsapp',
+        'phone' => 'fa-phone',
+        'meeting' => 'fa-handshake',
+        'field_visit' => 'fa-map-location-dot',
+        default => 'fa-comment',
+    };
 };
 ?>
 <?php if (!empty($moduleCss)) { ?>
@@ -69,178 +51,265 @@ $formatCell = static function ($val, array $col) use ($channelLabel, $channelIco
         </div>
     </div>
 
-    <?php if ($canManage) { ?>
-    <div class="rateb-sc-card rateb-sc-form-card" id="rateb-sc-form">
-        <div class="rateb-sc-card-header">
-            <span><i class="fas fa-comments text-primary"></i> <?php echo __('supplier_comms_create'); ?></span>
+    <div class="row g-3 rateb-sc-stats-row">
+        <div class="col-6 col-md-3">
+            <div class="rateb-sc-stat-card">
+                <div class="rateb-sc-stat-value"><?php echo (int) $stats['total']; ?></div>
+                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_total'); ?></div>
+            </div>
         </div>
-        <div class="rateb-sc-card-body">
-            <?php if (empty($supplierOptions)) { ?>
-            <div class="alert alert-warning mb-0"><?php echo __('no_records'); ?> — <?php echo __('suppliers'); ?></div>
-            <?php } else { ?>
-            <form method="post" action="<?php echo rateb_app_url('supplier-comms'); ?>" class="rateb-sc-form-grid">
-                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label rateb-form-label"><?php echo __('suppliers'); ?></label>
-                        <select class="form-select rateb-form-control" name="supplier_id" required>
-                            <option value=""><?php echo __('select'); ?>…</option>
-                            <?php foreach ($supplierOptions as $opt) { ?>
-                            <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label rateb-form-label"><?php echo __('comm_channel'); ?></label>
-                        <select class="form-select rateb-form-control" name="channel" required>
-                            <?php foreach ($channelOptions as $opt) { ?>
-                            <option value="<?php echo Rateb\App\Core\View::escape($opt['value']); ?>"<?php echo $opt['value'] === 'email' ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label rateb-form-label"><?php echo __('subject'); ?></label>
-                        <input class="form-control rateb-form-control" type="text" name="subject" required maxlength="255" placeholder="<?php echo __('subject'); ?>…">
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label rateb-form-label"><?php echo __('notes'); ?></label>
-                        <textarea class="form-control rateb-form-control" name="body" rows="4" placeholder="<?php echo __('notes'); ?>…"></textarea>
-                    </div>
-                </div>
-                <div class="rateb-sc-form-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
-                    <button type="reset" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></button>
-                </div>
-            </form>
-            <?php } ?>
+        <div class="col-6 col-md-3">
+            <div class="rateb-sc-stat-card">
+                <div class="rateb-sc-stat-value"><?php echo (int) $stats['this_month']; ?></div>
+                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_this_month'); ?></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="rateb-sc-stat-card rateb-sc-stat-warn">
+                <div class="rateb-sc-stat-value"><?php echo (int) $stats['pending_followups']; ?></div>
+                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_followups'); ?></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="rateb-sc-stat-card">
+                <div class="rateb-sc-stat-value"><?php echo count($topSuppliers); ?></div>
+                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_active_suppliers'); ?></div>
+            </div>
+        </div>
+    </div>
+
+    <?php if ($upcomingFollowUps !== []) { ?>
+    <div class="rateb-sc-card rateb-sc-alert-card">
+        <div class="rateb-sc-card-header"><i class="fas fa-bell text-warning"></i> <?php echo __('comm_followup_alerts'); ?></div>
+        <div class="rateb-sc-card-body py-2">
+            <ul class="list-unstyled mb-0 small">
+                <?php foreach ($upcomingFollowUps as $fu) { ?>
+                <li class="py-1 border-bottom border-secondary-subtle">
+                    <strong><?php echo Rateb\App\Core\View::escape((string) ($fu['supplier_name'] ?? '')); ?></strong>
+                    — <?php echo Rateb\App\Core\View::escape((string) ($fu['subject'] ?? '')); ?>
+                    <span class="text-muted">(<?php echo Rateb\App\Core\View::escape((string) ($fu['follow_up_date'] ?? '')); ?>)</span>
+                    <a href="<?php echo rateb_url($routePrefix . '/' . (int) ($fu['id'] ?? 0) . '/edit'); ?>" class="ms-1"><?php echo __('view'); ?></a>
+                </li>
+                <?php } ?>
+            </ul>
         </div>
     </div>
     <?php } ?>
 
-    <div class="rateb-sc-card rateb-sc-filter-card">
-        <div class="rateb-sc-card-header rateb-sc-filter-toggle" data-bs-toggle="collapse" data-bs-target="#rateb-sc-filter-body" aria-expanded="true">
-            <span><i class="fas fa-filter text-primary"></i> <?php echo __('supplier_comms_search_filter'); ?></span>
-            <i class="fas fa-chevron-down small text-muted"></i>
-        </div>
-        <div class="collapse show" id="rateb-sc-filter-body">
-            <div class="rateb-sc-card-body pt-3">
-                <form method="get" action="<?php echo Rateb\App\Core\View::escape($listUrl); ?>">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-3">
-                            <label class="form-label rateb-form-label"><?php echo __('suppliers'); ?></label>
-                            <select class="form-select rateb-form-control" name="supplier_id">
-                                <option value=""><?php echo __('all'); ?></option>
-                                <?php foreach ($supplierOptions as $opt) { ?>
-                                <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo (string) ($filters['supplier_id'] ?? '') === (string) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
-                                <?php } ?>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label rateb-form-label"><?php echo __('comm_channel'); ?></label>
-                            <select class="form-select rateb-form-control" name="channel">
-                                <option value=""><?php echo __('all'); ?></option>
-                                <?php foreach ($channelOptions as $opt) { ?>
-                                <option value="<?php echo Rateb\App\Core\View::escape($opt['value']); ?>"<?php echo (string) ($filters['channel'] ?? '') === (string) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
-                                <?php } ?>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label rateb-form-label"><?php echo __('date_from'); ?></label>
-                            <input class="form-control rateb-form-control" type="date" name="date_from" value="<?php echo Rateb\App\Core\View::escape((string) ($filters['date_from'] ?? '')); ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label rateb-form-label"><?php echo __('date_to'); ?></label>
-                            <input class="form-control rateb-form-control" type="date" name="date_to" value="<?php echo Rateb\App\Core\View::escape((string) ($filters['date_to'] ?? '')); ?>">
-                        </div>
-                        <div class="col-md-3 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-search"></i> <?php echo __('search'); ?></button>
-                            <a href="<?php echo Rateb\App\Core\View::escape($listUrl); ?>" class="btn btn-outline-secondary"><?php echo __('reset'); ?></a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="rateb-sc-card">
-        <div class="rateb-sc-card-header">
-            <span><i class="fas fa-list text-primary"></i> <?php echo __('supplier_comms_log'); ?></span>
-        </div>
-        <div class="rateb-sc-card-body">
+    <div class="row g-3">
+        <div class="col-lg-<?php echo !empty($supplierHistory) ? '8' : '12'; ?>">
             <?php if ($canManage) { ?>
-            <div class="rateb-sc-table-toolbar">
-                <a href="#rateb-sc-form" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> <?php echo __('supplier_comms_create'); ?></a>
+            <div class="rateb-sc-card rateb-sc-form-card" id="rateb-sc-form">
+                <div class="rateb-sc-card-header">
+                    <span><i class="fas fa-comments text-primary"></i> <?php echo __('supplier_comms_create'); ?></span>
+                </div>
+                <div class="rateb-sc-card-body">
+                    <?php if (empty($supplierOptions)) { ?>
+                    <div class="alert alert-warning mb-0"><?php echo __('no_records'); ?> — <?php echo __('suppliers'); ?></div>
+                    <?php } else { ?>
+                    <form method="post" action="<?php echo rateb_app_url('supplier-comms'); ?>" class="rateb-sc-form-grid"
+                        enctype="multipart/form-data" data-supplier-comm-form="1"
+                        data-history-url="<?php echo Rateb\App\Core\View::escape($historyUrl ?? ''); ?>">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <?php
+                        Rateb\App\Core\View::partial('company/supplier-comms/_form-fields', [
+                            'item' => [],
+                            'fields' => $formFields ?? [],
+                            'lookups' => $lookups,
+                            'responsibleDefault' => $responsibleDefault ?? '',
+                            'showAttachments' => true,
+                        ]);
+                        ?>
+                        <div class="rateb-sc-form-actions">
+                            <button type="submit" name="form_action" value="save" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
+                            <button type="submit" name="form_action" value="save_send" class="btn btn-outline-primary"><i class="fas fa-paper-plane"></i> <?php echo __('save_and_send'); ?></button>
+                            <button type="reset" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></button>
+                        </div>
+                    </form>
+                    <?php } ?>
+                </div>
             </div>
             <?php } ?>
 
-            <?php Rateb\App\Core\View::partial('table-search', [
-                'mode' => 'server',
-                'search' => $search ?? '',
-                'routePrefix' => $routePrefix,
-            ]); ?>
-
-            <div class="rateb-table-wrap" data-rateb-table-search-host="1">
-                <table class="table table-hover rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
-                    <thead>
-                    <tr>
-                        <?php foreach ($columns as $col) { ?>
-                        <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
-                        <?php } ?>
-                        <?php if ($actionsEnabled) { ?>
-                        <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
-                        <?php } ?>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php if (empty($items)) { ?>
-                    <tr><td colspan="<?php echo $colspan; ?>" class="text-muted text-center py-4"><?php echo __('no_records'); ?></td></tr>
-                    <?php } else {
-                        foreach ($items as $row) {
-                            $id = (int) ($row['id'] ?? 0);
-                            ?>
-                    <tr>
-                        <?php foreach ($columns as $col) {
-                            $type = (string) ($col['type'] ?? '');
-                            $val = $row[$col['name']] ?? '';
-                            if ($type === 'channel') {
-                                $ch = (string) $val;
-                                $label = $channelLabel($ch);
-                                $icon = $channelIcon($ch);
-                                $title = Rateb\App\Core\View::escape($label);
-                                echo '<td class="rateb-cell-clip" title="' . $title . '"><span class="rateb-sc-channel-badge"><i class="fas ' . Rateb\App\Core\View::escape($icon) . '"></i> ' . $title . '</span></td>';
-                                continue;
-                            }
-                            if ($type === 'datetime') {
-                                $col['type'] = 'clip';
-                            }
-                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
-                        } ?>
-                        <?php if ($actionsEnabled) { ?>
-                        <td class="rateb-actions-cell text-nowrap">
-                            <div class="rateb-actions">
-                                <?php if ($canManage) { ?>
-                                <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
-                                <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
-                                    <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-trash"></i></button>
-                                </form>
-                                <?php } ?>
+            <div class="rateb-sc-card rateb-sc-filter-card">
+                <div class="rateb-sc-card-header rateb-sc-filter-toggle" data-bs-toggle="collapse" data-bs-target="#rateb-sc-filter-body" aria-expanded="true">
+                    <span><i class="fas fa-filter text-primary"></i> <?php echo __('supplier_comms_search_filter'); ?></span>
+                    <i class="fas fa-chevron-down small text-muted"></i>
+                </div>
+                <div class="collapse show" id="rateb-sc-filter-body">
+                    <div class="rateb-sc-card-body pt-3">
+                        <form method="get" action="<?php echo Rateb\App\Core\View::escape($listUrl); ?>">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label rateb-form-label"><?php echo __('suppliers'); ?></label>
+                                    <select class="form-select rateb-form-control" name="supplier_id">
+                                        <option value=""><?php echo __('all'); ?></option>
+                                        <?php foreach ($supplierOptions as $opt) { ?>
+                                        <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo (string) ($filters['supplier_id'] ?? '') === (string) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label rateb-form-label"><?php echo __('comm_channel'); ?></label>
+                                    <select class="form-select rateb-form-control" name="channel">
+                                        <option value=""><?php echo __('all'); ?></option>
+                                        <?php foreach ($channelOptions as $opt) { ?>
+                                        <option value="<?php echo Rateb\App\Core\View::escape($opt['value']); ?>"<?php echo (string) ($filters['channel'] ?? '') === (string) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label rateb-form-label"><?php echo __('comm_status'); ?></label>
+                                    <select class="form-select rateb-form-control" name="comm_status">
+                                        <option value=""><?php echo __('all'); ?></option>
+                                        <?php foreach (($statusOptions ?? []) as $opt) { ?>
+                                        <option value="<?php echo Rateb\App\Core\View::escape($opt['value']); ?>"<?php echo (string) ($filters['comm_status'] ?? '') === (string) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label rateb-form-label"><?php echo __('date_from'); ?></label>
+                                    <input class="form-control rateb-form-control" type="date" name="date_from" value="<?php echo Rateb\App\Core\View::escape((string) ($filters['date_from'] ?? '')); ?>">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label rateb-form-label"><?php echo __('date_to'); ?></label>
+                                    <input class="form-control rateb-form-control" type="date" name="date_to" value="<?php echo Rateb\App\Core\View::escape((string) ($filters['date_to'] ?? '')); ?>">
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_archived" value="1" id="sc_show_archived"<?php echo !empty($filters['show_archived']) ? ' checked' : ''; ?>>
+                                        <label class="form-check-label small" for="sc_show_archived"><?php echo __('archived'); ?></label>
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> <?php echo __('search'); ?></button>
+                                    <a href="<?php echo Rateb\App\Core\View::escape($listUrl); ?>" class="btn btn-outline-secondary"><?php echo __('reset'); ?></a>
+                                </div>
                             </div>
-                        </td>
-                        <?php } ?>
-                    </tr>
-                    <?php }
-                    } ?>
-                    </tbody>
-                </table>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            <?php Rateb\App\Core\View::partial('pagination', [
-                'page' => $page ?? 1,
-                'total' => $total ?? 0,
-                'limit' => $limit ?? 20,
-                'routePrefix' => $routePrefix,
-            ]); ?>
+            <div class="rateb-sc-card">
+                <div class="rateb-sc-card-header">
+                    <span><i class="fas fa-list text-primary"></i> <?php echo __('supplier_comms_log'); ?></span>
+                </div>
+                <div class="rateb-sc-card-body">
+                    <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'server', 'search' => $search ?? '', 'routePrefix' => $routePrefix]); ?>
+                    <div class="rateb-table-wrap" data-rateb-table-search-host="1">
+                        <table class="table table-hover rateb-table mb-0">
+                            <thead>
+                            <tr>
+                                <?php foreach ($columns as $col) { ?>
+                                <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
+                                <?php } ?>
+                                <?php if ($actionsEnabled ?? true) { ?>
+                                <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
+                                <?php } ?>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php if (empty($items)) { ?>
+                            <tr><td colspan="<?php echo $colspan; ?>" class="text-muted text-center py-4"><?php echo __('no_records'); ?></td></tr>
+                            <?php } else {
+                                foreach ($items as $row) {
+                                    $id = (int) ($row['id'] ?? 0); ?>
+                            <tr<?php echo (int) ($row['is_archived'] ?? 0) === 1 ? ' class="opacity-75"' : ''; ?>>
+                                <?php foreach ($columns as $col) {
+                                    $type = (string) ($col['type'] ?? '');
+                                    $val = $row[$col['name']] ?? '';
+                                    if ($type === 'channel') {
+                                        $ch = (string) $val;
+                                        $label = $channelLabel($ch);
+                                        $icon = $channelIcon($ch);
+                                        echo '<td class="rateb-cell-clip"><span class="rateb-sc-channel-badge"><i class="fas ' . Rateb\App\Core\View::escape($icon) . '"></i> ' . Rateb\App\Core\View::escape($label) . '</span></td>';
+                                        continue;
+                                    }
+                                    Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
+                                } ?>
+                                <?php if ($actionsEnabled ?? true) { ?>
+                                <td class="rateb-actions-cell text-nowrap">
+                                    <div class="rateb-actions">
+                                        <?php if ($canManage) { ?>
+                                        <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+                                        <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/print'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('print'); ?>" target="_blank"><i class="fas fa-print"></i></a>
+                                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
+                                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                        <?php } ?>
+                                    </div>
+                                </td>
+                                <?php } ?>
+                            </tr>
+                            <?php }
+                            } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? 20, 'routePrefix' => $routePrefix]); ?>
+                </div>
+            </div>
         </div>
+
+        <?php if (!empty($supplierHistory) || !empty($topSuppliers)) { ?>
+        <div class="col-lg-4">
+            <?php if (!empty($supplierHistory)) { ?>
+            <div class="rateb-sc-card h-100 mb-3">
+                <div class="rateb-sc-card-header"><?php echo __('comm_supplier_history'); ?></div>
+                <div class="rateb-sc-card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm rateb-table mb-0">
+                            <thead><tr>
+                                <th><?php echo __('comm_date'); ?></th>
+                                <th><?php echo __('subject'); ?></th>
+                                <th><?php echo __('comm_status'); ?></th>
+                            </tr></thead>
+                            <tbody>
+                            <?php foreach ($supplierHistory as $hist) {
+                                $st = (string) ($hist['comm_status'] ?? 'new'); ?>
+                            <tr>
+                                <td><?php echo Rateb\App\Core\View::escape((string) ($hist['comm_date'] ?? substr((string) ($hist['created_at'] ?? ''), 0, 10))); ?></td>
+                                <td class="rateb-cell-clip"><?php echo Rateb\App\Core\View::escape((string) ($hist['subject'] ?? '')); ?></td>
+                                <td><span class="badge bg-<?php echo $commSvc->statusBadgeClass($st); ?>"><?php echo Rateb\App\Core\View::escape(__('comm_status_' . $st)); ?></span></td>
+                            </tr>
+                            <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <?php } ?>
+            <?php if ($topSuppliers !== []) { ?>
+            <div class="rateb-sc-card">
+                <div class="rateb-sc-card-header"><?php echo __('comm_top_suppliers'); ?></div>
+                <div class="rateb-sc-card-body py-2">
+                    <ul class="list-unstyled mb-0 small">
+                        <?php foreach ($topSuppliers as $ts) { ?>
+                        <li class="d-flex justify-content-between py-1 border-bottom border-secondary-subtle">
+                            <span><?php echo Rateb\App\Core\View::escape((string) ($ts['supplier_name'] ?? '')); ?></span>
+                            <span class="badge bg-primary"><?php echo (int) ($ts['cnt'] ?? 0); ?></span>
+                        </li>
+                        <?php } ?>
+                    </ul>
+                </div>
+            </div>
+            <?php } ?>
+        </div>
+        <?php } ?>
     </div>
 </div>
+
+<?php
+$mailto = \Rateb\App\Core\SessionManager::get('rateb_comm_mailto');
+if (is_string($mailto) && $mailto !== '') {
+    \Rateb\App\Core\SessionManager::set('rateb_comm_mailto', null);
+}
+?>
+<?php if (!empty($moduleJs)) { ?>
+<script src="<?php echo Rateb\App\Core\View::escape($moduleJs); ?>"></script>
+<?php } ?>
+<?php if (!empty($mailto)) { ?>
+<script>window.addEventListener('load', function () { window.location.href = <?php echo json_encode($mailto, JSON_UNESCAPED_UNICODE); ?>; });</script>
+<?php } ?>

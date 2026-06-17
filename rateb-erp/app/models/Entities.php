@@ -314,8 +314,13 @@ final class SupplierCommunication extends Model
 {
     protected string $table = 'rateb_supplier_communications';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['company_id', 'supplier_id', 'channel', 'subject', 'body', 'created_by'];
-    protected array $searchable = ['channel', 'subject', 'body'];
+    protected array $fillable = [
+        'company_id', 'supplier_id', 'channel', 'subject', 'comm_date', 'comm_time', 'details',
+        'body', 'responsible_name', 'supplier_contact', 'supplier_phone', 'supplier_email',
+        'comm_status', 'follow_up_date', 'follow_up_priority',
+        'purchase_order_id', 'rfq_id', 'is_archived', 'archived_at', 'created_by',
+    ];
+    protected array $searchable = ['channel', 'subject', 'body', 'details', 'responsible_name', 'supplier_contact'];
 }
 
 final class AuditLog extends Model

@@ -224,12 +224,28 @@ final class FormLookupService
                 break;
             case 'communication_types':
                 $options = [
-                    ['value' => 'email', 'label' => __('comm_channel_email')],
-                    ['value' => 'sms', 'label' => __('comm_channel_sms')],
-                    ['value' => 'whatsapp', 'label' => __('comm_channel_whatsapp')],
                     ['value' => 'phone', 'label' => __('comm_channel_phone')],
+                    ['value' => 'email', 'label' => __('comm_channel_email')],
+                    ['value' => 'whatsapp', 'label' => __('comm_channel_whatsapp')],
                     ['value' => 'meeting', 'label' => __('comm_channel_meeting')],
+                    ['value' => 'field_visit', 'label' => __('comm_channel_field_visit')],
+                    ['value' => 'sms', 'label' => __('comm_channel_sms')],
                     ['value' => 'note', 'label' => __('comm_channel_note')],
+                ];
+                break;
+            case 'comm_statuses':
+                $options = [
+                    ['value' => 'new', 'label' => __('comm_status_new')],
+                    ['value' => 'follow_up', 'label' => __('comm_status_follow_up')],
+                    ['value' => 'completed', 'label' => __('comm_status_completed')],
+                    ['value' => 'closed', 'label' => __('comm_status_closed')],
+                ];
+                break;
+            case 'follow_up_priorities':
+                $options = [
+                    ['value' => 'low', 'label' => __('comm_priority_low')],
+                    ['value' => 'medium', 'label' => __('comm_priority_medium')],
+                    ['value' => 'high', 'label' => __('comm_priority_high')],
                 ];
                 break;
             case 'priority_levels':

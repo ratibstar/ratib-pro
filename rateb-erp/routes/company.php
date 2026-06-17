@@ -385,6 +385,9 @@ $router->get($app('supplier-comms/{id}/edit'), [\Rateb\App\Controllers\Company\S
 $router->post($app('supplier-comms/{id}'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'update'], $scMw);
 $router->post($app('supplier-comms/{id}/delete'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'destroy'], $scMw);
 $router->post($app('supplier-comms/bulk-delete'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'bulkDestroy'], $scMw);
+$router->get($app('supplier-comms/history'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'supplierHistory'], $scMw);
+$router->get($app('supplier-comms/{id}/print'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'print'], $scMw);
+$router->post($app('supplier-comms/{id}/archive'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'archive'], $scMw);
 
 $ctrMw = rateb_erp_mw('contracts', '', 'contract-renewals');
 $ctrWriteMw = rateb_erp_mw('contracts', 'contracts.manage', 'contract-renewals');

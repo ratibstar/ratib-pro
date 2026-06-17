@@ -1145,20 +1145,34 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $this->routePrefix = rateb_app_route('supplier-comms');
         $this->entityName = 'supplier_comms';
         $this->permissionResource = 'supplier-comms';
-        $this->filesEnabled = false;
+        $this->documentEntityType = 'supplier_communication';
         $this->indexFields = [
             ['name' => 'supplier_name', 'label' => 'suppliers'],
             ['name' => 'channel', 'label' => 'comm_channel', 'type' => 'channel'],
             ['name' => 'subject', 'label' => 'subject'],
-            ['name' => 'created_at', 'label' => 'sent_at', 'type' => 'datetime'],
+            ['name' => 'comm_date_display', 'label' => 'comm_date', 'type' => 'clip'],
+            ['name' => 'comm_status', 'label' => 'comm_status', 'type' => 'status'],
+            ['name' => 'follow_up_date', 'label' => 'follow_up_date', 'type' => 'clip'],
         ];
         $this->fields = [
-            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
-            ['name' => 'channel', 'label' => 'comm_channel', 'type' => 'select', 'lookup' => 'communication_types'],
-            ['name' => 'subject', 'label' => 'subject', 'type' => 'text'],
-            ['name' => 'body', 'label' => 'notes', 'type' => 'textarea'],
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers', 'required' => true, 'col' => 'col-md-6'],
+            ['name' => 'channel', 'label' => 'comm_channel', 'type' => 'select', 'lookup' => 'communication_types', 'required' => true, 'col' => 'col-md-6'],
+            ['name' => 'comm_date', 'label' => 'comm_date', 'type' => 'date', 'default' => date('Y-m-d'), 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'comm_time', 'label' => 'comm_time', 'type' => 'time', 'col' => 'col-md-4'],
+            ['name' => 'comm_status', 'label' => 'comm_status', 'type' => 'select', 'lookup' => 'comm_statuses', 'default' => 'new', 'col' => 'col-md-4'],
+            ['name' => 'subject', 'label' => 'subject', 'type' => 'text', 'required' => true, 'col' => 'col-12'],
+            ['name' => 'details', 'label' => 'comm_details', 'type' => 'text', 'col' => 'col-12'],
+            ['name' => 'body', 'label' => 'comm_message', 'type' => 'textarea', 'required' => true, 'col' => 'col-12', 'rows' => 4],
+            ['name' => 'responsible_name', 'label' => 'comm_responsible', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'supplier_contact', 'label' => 'comm_supplier_contact', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'supplier_phone', 'label' => 'comm_supplier_phone', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'supplier_email', 'label' => 'comm_supplier_email', 'type' => 'email', 'col' => 'col-md-6'],
+            ['name' => 'follow_up_date', 'label' => 'follow_up_date', 'type' => 'date', 'col' => 'col-md-4'],
+            ['name' => 'follow_up_priority', 'label' => 'follow_up_priority', 'type' => 'select', 'lookup' => 'follow_up_priorities', 'default' => 'medium', 'col' => 'col-md-4'],
+            ['name' => 'purchase_order_id', 'label' => 'link_purchase_order', 'type' => 'fk', 'lookup' => 'purchase_orders', 'col' => 'col-md-6'],
+            ['name' => 'rfq_id', 'label' => 'link_rfq', 'type' => 'fk', 'lookup' => 'rfq', 'col' => 'col-md-6'],
         ];
-        $this->tenantForeignKeys = ['supplier_id'];
+        $this->tenantForeignKeys = ['supplier_id', 'purchase_order_id', 'rfq_id'];
     }
 
     protected function layout(): string
@@ -1178,20 +1192,26 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $filters = [
             'supplier_id' => max(0, (int) $this->input('supplier_id', 0)),
             'channel' => trim((string) $this->input('channel', '')),
+            'comm_status' => trim((string) $this->input('comm_status', '')),
             'date_from' => trim((string) $this->input('date_from', '')),
             'date_to' => trim((string) $this->input('date_to', '')),
+            'show_archived' => (int) $this->input('show_archived', 0) === 1,
             'q' => $search,
         ];
         $companyId = rateb_resolve_ops_company_id();
         TenantContext::setCompanyId($companyId);
-
+        $svc = new \Rateb\App\Services\SupplierCommService();
         $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($this->fields);
         $supplierOptions = $lookups['supplier_id'] ?? [];
         $channelOptions = $lookups['channel'] ?? [];
+        $statusOptions = $lookups['comm_status'] ?? [];
 
-        $sql = 'SELECT c.*, s.name AS supplier_name
+        $sql = 'SELECT c.*, s.name AS supplier_name,
+                       po.order_no AS po_no, r.rfq_no
                 FROM rateb_supplier_communications c
                 LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id
+                LEFT JOIN rateb_purchase_orders po ON po.id = c.purchase_order_id
+                LEFT JOIN rateb_rfq r ON r.id = c.rfq_id
                 WHERE c.company_id = :cid';
         $params = ['cid' => $companyId];
         $countSql = 'SELECT COUNT(*) AS c FROM rateb_supplier_communications c
@@ -1199,9 +1219,13 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
                      WHERE c.company_id = :cid';
         $countParams = ['cid' => $companyId];
 
+        if (!$filters['show_archived']) {
+            $sql .= ' AND c.is_archived = 0';
+            $countSql .= ' AND c.is_archived = 0';
+        }
         if ($search !== '') {
-            $sql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.channel LIKE :q)';
-            $countSql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.channel LIKE :q)';
+            $sql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.details LIKE :q OR c.channel LIKE :q)';
+            $countSql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.details LIKE :q OR c.channel LIKE :q)';
             $params['q'] = '%' . $search . '%';
             $countParams['q'] = '%' . $search . '%';
         }
@@ -1217,15 +1241,21 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $params['ch'] = $filters['channel'];
             $countParams['ch'] = $filters['channel'];
         }
+        if ($filters['comm_status'] !== '') {
+            $sql .= ' AND c.comm_status = :cst';
+            $countSql .= ' AND c.comm_status = :cst';
+            $params['cst'] = $filters['comm_status'];
+            $countParams['cst'] = $filters['comm_status'];
+        }
         if ($filters['date_from'] !== '') {
-            $sql .= ' AND DATE(c.created_at) >= :df';
-            $countSql .= ' AND DATE(c.created_at) >= :df';
+            $sql .= ' AND COALESCE(c.comm_date, DATE(c.created_at)) >= :df';
+            $countSql .= ' AND COALESCE(c.comm_date, DATE(c.created_at)) >= :df';
             $params['df'] = $filters['date_from'];
             $countParams['df'] = $filters['date_from'];
         }
         if ($filters['date_to'] !== '') {
-            $sql .= ' AND DATE(c.created_at) <= :dt';
-            $countSql .= ' AND DATE(c.created_at) <= :dt';
+            $sql .= ' AND COALESCE(c.comm_date, DATE(c.created_at)) <= :dt';
+            $countSql .= ' AND COALESCE(c.comm_date, DATE(c.created_at)) <= :dt';
             $params['dt'] = $filters['date_to'];
             $countParams['dt'] = $filters['date_to'];
         }
@@ -1234,7 +1264,14 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $orderSql = function_exists('rateb_list_order_sql') ? rateb_list_order_sql('c') : 'c.id DESC';
         $sql .= ' ORDER BY ' . $orderSql . ' LIMIT ' . $limit . ' OFFSET ' . $offset;
         $items = $this->model->query($sql, $params);
+        foreach ($items as &$row) {
+            $row['comm_date_display'] = (string) ($row['comm_date'] ?? substr((string) ($row['created_at'] ?? ''), 0, 10));
+            $status = (string) ($row['comm_status'] ?? 'new');
+            $row['comm_status'] = 'comm_status_' . $status;
+        }
+        unset($row);
 
+        $supplierFilterId = (int) $filters['supplier_id'];
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __('supplier_comms'),
             'items' => $items,
@@ -1245,6 +1282,8 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             'filters' => $filters,
             'supplierOptions' => $supplierOptions,
             'channelOptions' => $channelOptions,
+            'statusOptions' => $statusOptions,
+            'lookups' => $lookups,
             'columns' => $this->indexFields,
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
@@ -1252,7 +1291,81 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
             'moduleCss' => rateb_asset('css/supplier-comms.css'),
+            'moduleJs' => rateb_asset('js/supplier-comm-form.js'),
+            'historyUrl' => rateb_app_url('supplier-comms/history'),
+            'stats' => $svc->companyStats($companyId, $supplierFilterId),
+            'upcomingFollowUps' => $svc->upcomingFollowUps($companyId),
+            'topSuppliers' => $svc->topSuppliersByComms($companyId),
+            'supplierHistory' => $supplierFilterId > 0
+                ? $svc->historyForSupplier($companyId, $supplierFilterId)
+                : [],
+            'commSvc' => $svc,
+            'responsibleDefault' => (string) (\Rateb\App\Core\Auth::user()['name'] ?? ''),
+            'formFields' => $this->fields,
         ]), $this->layout());
+    }
+
+    public function supplierHistory(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $supplierId = (int) $this->input('supplier_id', 0);
+        $excludeId = (int) $this->input('exclude_id', 0);
+        $rows = (new \Rateb\App\Services\SupplierCommService())->historyForSupplier($companyId, $supplierId, $excludeId);
+        $out = [];
+        foreach ($rows as $row) {
+            $status = (string) ($row['comm_status'] ?? 'new');
+            $row['comm_status_label'] = __('comm_status_' . $status);
+            $out[] = $row;
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['rows' => $out], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    public function print(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/print', [
+            'title' => __('print') . ' — ' . __('supplier_comms'),
+            'item' => $item,
+        ], 'print');
+    }
+
+    public function archive(array $params): void
+    {
+        $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $archived = (int) ($item['is_archived'] ?? 0) === 1;
+        $this->model->update($id, [
+            'is_archived' => $archived ? 0 : 1,
+            'archived_at' => $archived ? null : date('Y-m-d H:i:s'),
+        ]);
+        SessionManager::flash('success', $archived ? __('comm_unarchived') : __('comm_archived'));
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
     }
 
     protected function collectData(): array
@@ -1263,10 +1376,112 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $data['company_id'] = $companyId;
         }
         $uid = (int) SessionManager::get('rateb_user_id', 0);
-        if ($uid > 0) {
+        if ($uid > 0 && empty($data['created_by'])) {
             $data['created_by'] = $uid;
         }
+        if (empty($data['responsible_name'])) {
+            $user = \Rateb\App\Core\Auth::user();
+            $data['responsible_name'] = trim((string) ($user['name'] ?? ''));
+        }
+        $data['comm_date'] = trim((string) ($data['comm_date'] ?? '')) ?: date('Y-m-d');
+        $commTime = trim((string) ($data['comm_time'] ?? ''));
+        $data['comm_time'] = $commTime !== '' ? $commTime : null;
+        $followUp = trim((string) ($data['follow_up_date'] ?? ''));
+        $data['follow_up_date'] = $followUp !== '' ? $followUp : null;
+        $data['purchase_order_id'] = (int) ($data['purchase_order_id'] ?? 0) ?: null;
+        $data['rfq_id'] = (int) ($data['rfq_id'] ?? 0) ?: null;
+        $data['comm_status'] = trim((string) ($data['comm_status'] ?? 'new')) ?: 'new';
+        $data['follow_up_priority'] = trim((string) ($data['follow_up_priority'] ?? 'medium')) ?: 'medium';
+        if (trim((string) ($data['body'] ?? '')) === '') {
+            throw new \RuntimeException(__('comm_message_required'));
+        }
         return $data;
+    }
+
+    public function store(): void
+    {
+        $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        try {
+            $data = $this->collectData();
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix) . '#rateb-sc-form');
+        }
+        $formAction = trim((string) $this->input('form_action', 'save'));
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix) . '#rateb-sc-form');
+        }
+        $id = $this->model->create($data);
+        try {
+            $this->persistAttachments($id, (int) ($data['company_id'] ?? 0));
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('comm_saved'));
+        if ($formAction === 'save_send' && ($data['channel'] ?? '') === 'email') {
+            $mailto = $this->buildMailtoUrl($data);
+            if ($mailto !== '') {
+                SessionManager::flash('info', __('comm_open_email_client'));
+                SessionManager::set('rateb_comm_mailto', $mailto);
+            }
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $data = $this->collectData();
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        unset($data['created_by']);
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        $formAction = trim((string) $this->input('form_action', 'save'));
+        $this->model->update($id, $data);
+        try {
+            $this->persistAttachments($id, (int) rateb_resolve_ops_company_id());
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('comm_saved'));
+        if ($formAction === 'save_send' && ($data['channel'] ?? '') === 'email') {
+            $mailto = $this->buildMailtoUrl($data);
+            if ($mailto !== '') {
+                SessionManager::flash('info', __('comm_open_email_client'));
+                SessionManager::set('rateb_comm_mailto', $mailto);
+            }
+        }
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
     }
 
     public function create(): void
@@ -1277,14 +1492,38 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
 
     protected function formViewData(array $extra = []): array
     {
-        return array_merge(parent::formViewData($extra), [
-            'moduleCss' => rateb_asset('css/supplier-comms.css'),
-        ]);
+        $data = parent::formViewData($extra);
+        $item = $data['item'] ?? null;
+        $companyId = rateb_resolve_ops_company_id();
+        $supplierId = is_array($item) ? (int) ($item['supplier_id'] ?? 0) : 0;
+        $commId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
+        $svc = new \Rateb\App\Services\SupplierCommService();
+        $data['multipart'] = true;
+        $data['moduleCss'] = rateb_asset('css/supplier-comms.css');
+        $data['moduleJs'] = rateb_asset('js/supplier-comm-form.js');
+        $data['historyUrl'] = rateb_app_url('supplier-comms/history');
+        $data['responsibleDefault'] = is_array($item) && !empty($item['responsible_name'])
+            ? (string) $item['responsible_name']
+            : (string) (\Rateb\App\Core\Auth::user()['name'] ?? '');
+        $data['supplierHistory'] = $supplierId > 0
+            ? $svc->historyForSupplier($companyId, $supplierId, $commId)
+            : [];
+        $data['commSvc'] = $svc;
+        if (is_array($item) && !empty($item['id'])) {
+            $data['existingDocuments'] = (new \Rateb\App\Services\DocumentService())
+                ->listForEntity('supplier_communication', (int) $item['id'], $companyId);
+        } else {
+            $data['existingDocuments'] = [];
+        }
+        return $data;
     }
 
     public function edit(array $params): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -1296,6 +1535,36 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             'title' => __('edit') . ' ' . __('supplier_comms'),
             'item' => $item,
         ]), $this->layout());
+    }
+
+    /** @param array<string, mixed> $data */
+    private function buildMailtoUrl(array $data): string
+    {
+        $email = trim((string) ($data['supplier_email'] ?? ''));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return '';
+        }
+        $subject = rawurlencode((string) ($data['subject'] ?? ''));
+        $body = rawurlencode((string) ($data['body'] ?? ''));
+        return 'mailto:' . $email . '?subject=' . $subject . '&body=' . $body;
+    }
+
+    private function persistAttachments(int $commId, int $companyId): void
+    {
+        if ($commId < 1 || $companyId < 1) {
+            return;
+        }
+        $result = \Rateb\App\Helpers\EntityAttachment::handleMultipleFiles(
+            'comm_attachments',
+            $companyId,
+            'supplier_communication',
+            $commId,
+            5,
+            __('comm_attachments')
+        );
+        if (!($result['success'] ?? false)) {
+            throw new \RuntimeException((string) ($result['error'] ?? __('upload_failed')));
+        }
     }
 }
 

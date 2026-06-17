@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260617-eval-audit-fixes');
+define('RATEB_ASSET_BUILD', '20260617-supplier-comms-full');
 
 if (!function_exists('rateb_erp_public_prefix')) {
     /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */
@@ -424,6 +424,14 @@ if (!function_exists('rateb_table_cell_meta')) {
                     'pending' => 'warning',
                     'rejected' => 'danger',
                     default => 'success',
+                };
+            } elseif (str_starts_with($statusKey, 'comm_status_')) {
+                $commSt = substr($statusKey, strlen('comm_status_'));
+                $badge = match ($commSt) {
+                    'completed' => 'success',
+                    'closed' => 'secondary',
+                    'follow_up' => 'warning',
+                    default => 'info',
                 };
             } else {
                 $badge = in_array($statusKey, ['draft', 'pending', 'cancelled', 'inactive'], true) ? 'info' : 'success';

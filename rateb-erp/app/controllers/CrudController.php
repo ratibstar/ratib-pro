@@ -402,6 +402,7 @@ abstract class CrudController extends Controller
             'purchase_requests' => 'purchase_request',
             'purchase_orders' => 'purchase_order',
             'supplier_evaluations' => 'supplier_evaluation',
+            'supplier_comms' => 'supplier_communication',
             'supplier_classifications' => 'supplier_classification',
             'product_categories' => 'product_category',
             'inventory_batches' => 'inventory_batch',

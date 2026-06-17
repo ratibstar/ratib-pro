@@ -348,6 +348,7 @@ final class DocumentService
             'purchase_request' => 'purchase-requests',
             'purchase_order' => 'purchase-orders',
             'supplier_evaluation' => 'supplier-evaluations',
+            'supplier_communication' => 'supplier-comms',
             'supplier_classification' => 'supplier-classifications',
             'product_category' => 'product-categories',
             'inventory_batch' => 'inventory-batches',
