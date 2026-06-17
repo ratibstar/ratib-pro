@@ -263,7 +263,10 @@ final class ProductCategory extends Model
 {
     protected string $table = 'rateb_product_categories';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['name', 'name_ar', 'parent_id', 'is_active'];
+    protected array $fillable = [
+        'company_id', 'code', 'name', 'name_ar', 'description_en', 'description_ar',
+        'parent_id', 'sort_order', 'is_active', 'is_visible', 'icon',
+    ];
 }
 
 final class Document extends Model

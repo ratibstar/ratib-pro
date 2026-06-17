@@ -91,7 +91,10 @@ final class FormLookupService
                 ];
                 break;
             case 'product_categories':
-                $options = $this->mapRows((new ProductCategory())->all(300, 0), 'id', 'name');
+                $options = $this->productCategoryOptions();
+                break;
+            case 'product_category_parents':
+                $options = $this->productCategoryOptions();
                 break;
             case 'supplier_classifications':
                 $options = $this->mapRows((new SupplierClassification())->all(200, 0), 'id', 'name');
@@ -1084,6 +1087,32 @@ final class FormLookupService
                 $out[] = ['value' => $val, 'label' => $val];
             }
         }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function productCategoryOptions(): array
+    {
+        $rows = (new ProductCategory())->query(
+            'SELECT id, parent_id, name, name_ar, code FROM rateb_product_categories ORDER BY sort_order ASC, name ASC LIMIT 500'
+        );
+        $out = [];
+        $walk = static function (?int $parentId, int $depth) use (&$walk, $rows, &$out): void {
+            foreach ($rows as $row) {
+                $pid = $row['parent_id'] ?? null;
+                $pid = ($pid === null || $pid === '' || (int) $pid < 1) ? null : (int) $pid;
+                if ($pid !== $parentId) {
+                    continue;
+                }
+                $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? (string) $row['name_ar'] : (string) ($row['name'] ?? '');
+                $code = trim((string) ($row['code'] ?? ''));
+                $prefix = $depth > 0 ? str_repeat('— ', $depth) : '';
+                $label = $prefix . ($code !== '' ? $code . ' — ' : '') . $name;
+                $out[] = ['value' => (int) ($row['id'] ?? 0), 'label' => $label];
+                $walk((int) ($row['id'] ?? 0), $depth + 1);
+            }
+        };
+        $walk(null, 0);
         return $out;
     }
 

@@ -28,6 +28,7 @@ final class DocumentCodeService
     public const PREFIX_ASSET = 'AS-';
     public const PREFIX_EVALUATION = 'SE-';
     public const PREFIX_EMPLOYEE = 'EM-';
+    public const PREFIX_PRODUCT_CATEGORY = 'PC-';
 
     public function generate(Model $model, string $prefix, string $column): string
     {
