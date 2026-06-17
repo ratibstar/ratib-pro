@@ -37,7 +37,7 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
     </div>
 
     <div class="row g-3">
-        <div class="col-lg-8">
+        <div class="<?php echo $isEdit ? 'col-lg-8' : 'col-12'; ?>">
             <div class="rateb-sc-card">
                 <div class="rateb-sc-card-header">
                     <span>
@@ -47,10 +47,11 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                     <?php if ($archived) { ?><span class="badge bg-secondary"><?php echo __('archived'); ?></span><?php } ?>
                 </div>
                 <div class="rateb-sc-card-body">
-                    <form method="post" action="<?php echo $formAction; ?>" enctype="multipart/form-data"
-                        data-supplier-comm-form="1"
+                    <form method="post" action="<?php echo $formAction; ?>" enctype="multipart/form-data"<?php echo $isEdit ? ' data-supplier-comm-form="1"' : ''; ?>
+                        <?php if ($isEdit) { ?>
                         data-history-url="<?php echo Rateb\App\Core\View::escape($historyUrl ?? ''); ?>"
-                        data-comm-id="<?php echo $commId; ?>">
+                        data-comm-id="<?php echo $commId; ?>"
+                        <?php } ?>>
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <?php Rateb\App\Core\View::partial('supplier-comm-form-fields', [
                             'item' => $item,
@@ -69,6 +70,7 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                 </div>
             </div>
         </div>
+        <?php if ($isEdit) { ?>
         <div class="col-lg-4">
             <div class="rateb-sc-card h-100" id="sc_supplier_history"
                 data-empty="<?php echo Rateb\App\Core\View::escape(__('no_records')); ?>"
@@ -103,6 +105,7 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                 </div>
             </div>
         </div>
+        <?php } ?>
     </div>
 </div>
 <?php
@@ -111,7 +114,7 @@ if (is_string($mailto) && $mailto !== '') {
     \Rateb\App\Core\SessionManager::set('rateb_comm_mailto', null);
 }
 ?>
-<?php if (!empty($moduleJs)) { ?>
+<?php if ($isEdit && !empty($moduleJs)) { ?>
 <script src="<?php echo Rateb\App\Core\View::escape($moduleJs); ?>"></script>
 <?php } ?>
 <?php if (!empty($mailto)) { ?>
