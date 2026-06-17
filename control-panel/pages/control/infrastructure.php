@@ -91,8 +91,8 @@ $fullBase = rtrim(
         </div>
     </header>
 
-    <div class="control-layout">
-        <?php include __DIR__ . '/../../includes/control/sidebar.php'; ?>
+    <div class="control-layout<?php echo cp_is_rtl() ? ' cp-layout-rtl' : ''; ?>">
+        <?php if (control_sidebar_before_main()) { control_render_sidebar(); } ?>
 
         <main class="control-content">
             <div class="content-header content-header-infra">
@@ -129,6 +129,7 @@ $fullBase = rtrim(
                 ></iframe>
             </section>
         </main>
+        <?php if (!control_sidebar_before_main()) { control_render_sidebar(); } ?>
     </div>
 
     <?php if (function_exists('cp_i18n_inline_script')) { echo cp_i18n_inline_script(); } ?>

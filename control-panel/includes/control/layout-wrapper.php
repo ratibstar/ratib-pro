@@ -116,9 +116,9 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     <?php if (function_exists('cp_i18n_inline_script')) { echo cp_i18n_inline_script(); } ?>
     <script src="<?php echo asset('js/control/i18n.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/frame-guard.js'); ?>?v=<?php echo time(); ?>"></script>
-    <div class="control-layout<?php echo $standalone ? ' control-layout-standalone-shell' : ''; ?>">
+    <div class="control-layout<?php echo $standalone ? ' control-layout-standalone-shell' : ''; ?><?php echo $htmlDir === 'rtl' ? ' cp-layout-rtl' : ''; ?>">
         <?php if (!$standalone): ?>
-        <?php include __DIR__ . '/sidebar.php'; ?>
+        <?php if (control_sidebar_before_main()) { control_render_sidebar(); } ?>
         <main class="control-content">
             <div class="content-header">
                 <button class="sidebar-toggle" id="sidebar-toggle" aria-label="<?php echo htmlspecialchars(function_exists('cp_t') ? cp_t('layout.toggle_sidebar') : 'Toggle sidebar', ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-bars"></i></button>
@@ -168,6 +168,7 @@ function endControlLayout($additionalJS = []) {
 <!--CP_MODULE_END-->
             </div>
         </main>
+        <?php if (!$standaloneEnd && !control_sidebar_before_main()) { control_render_sidebar(); } ?>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>

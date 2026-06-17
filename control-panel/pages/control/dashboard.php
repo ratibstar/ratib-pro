@@ -272,9 +272,8 @@ if (!empty($_SESSION['control_popup_error'])) {
         </div>
     </header>
 
-    <div class="control-layout">
-        <!-- Left Sidebar Navigation -->
-        <?php include __DIR__ . '/../../includes/control/sidebar.php'; ?>
+    <div class="control-layout<?php echo cp_is_rtl() ? ' cp-layout-rtl' : ''; ?>">
+        <?php if (control_sidebar_before_main()) { control_render_sidebar(); } ?>
 
         <!-- Main Content Area -->
         <main class="control-content">
@@ -482,6 +481,7 @@ if (!empty($_SESSION['control_popup_error'])) {
             </div>
             <?php endif; ?>
         </main>
+        <?php if (!control_sidebar_before_main()) { control_render_sidebar(); } ?>
     </div>
 
     <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>

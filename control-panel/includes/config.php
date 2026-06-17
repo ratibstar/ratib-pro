@@ -45,6 +45,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/i18n.php';
 cp_init_locale();
+require_once __DIR__ . '/control/sidebar-layout.php';
 cp_ob_translate_start();
 
 // Helper functions

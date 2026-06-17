@@ -1,21 +1,10 @@
 /**
  * Control Panel RTL layout adjustments (Arabic only).
+ * Sidebar on the right: DOM order is swapped in PHP (see sidebar-layout.php).
  */
-@media (min-width: 1025px) {
-    html[dir="rtl"] .control-layout,
-    body.cp-rtl .control-layout {
-        flex-direction: row;
-    }
-
-    html[dir="rtl"] .control-sidebar,
-    body.cp-rtl .control-sidebar {
-        order: 2;
-    }
-
-    html[dir="rtl"] .control-content,
-    body.cp-rtl .control-content {
-        order: 1;
-    }
+html[dir="rtl"] .control-layout.cp-layout-rtl,
+body.cp-rtl .control-layout.cp-layout-rtl {
+    flex-direction: row;
 }
 
 html[dir="rtl"] .control-sidebar,

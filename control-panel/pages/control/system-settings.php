@@ -65,8 +65,8 @@ $cssVer = time();
         </div>
     </header>
 
-    <div class="control-layout">
-        <?php include __DIR__ . '/../../includes/control/sidebar.php'; ?>
+    <div class="control-layout<?php echo function_exists('cp_is_rtl') && cp_is_rtl() ? ' cp-layout-rtl' : ''; ?>">
+        <?php if (function_exists('control_sidebar_before_main') && control_sidebar_before_main()) { control_render_sidebar(); } ?>
 
         <main class="control-content control-content-inline">
             <div class="content-header">
@@ -80,6 +80,7 @@ require_once __DIR__ . '/../system-settings.php';
 ?>
             </div>
         </main>
+        <?php if (function_exists('control_sidebar_before_main') && !control_sidebar_before_main()) { control_render_sidebar(); } ?>
     </div>
 
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
