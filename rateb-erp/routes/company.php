@@ -309,6 +309,7 @@ $router->get($app('product-categories/{id}/documents'), [ProductCategoriesContro
 $router->post($app('product-categories/{id}/documents'), [ProductCategoriesController::class, 'storeDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->post($app('product-categories/{id}/documents/{docId}'), [ProductCategoriesController::class, 'updateDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->post($app('product-categories/{id}/documents/{docId}/delete'), [ProductCategoriesController::class, 'destroyDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
+$router->get($app('product-categories/{id}/image'), [ProductCategoriesController::class, 'image'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->get($app('product-categories/{id}/copy'), [ProductCategoriesController::class, 'copy'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->get($app('product-categories/report'), [ProductCategoriesController::class, 'report'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->get($app('product-categories/export'), [ProductCategoriesController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'product-categories'));

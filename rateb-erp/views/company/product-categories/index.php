@@ -18,22 +18,27 @@ $mostUsed = $mostUsed ?? [];
                 <?php if ($categoryTree === []) { ?>
                 <p class="text-muted mb-0 small"><?php echo __('no_records'); ?></p>
                 <?php } else {
-                    $renderTree = static function (array $nodes, int $depth = 0) use (&$renderTree): void {
+                    $svc = new \Rateb\App\Services\ProductCategoryService();
+                    $renderTree = static function (array $nodes, int $depth = 0) use (&$renderTree, $svc): void {
                         echo '<ul class="list-unstyled mb-0' . ($depth > 0 ? ' ms-3' : '') . '">';
                         foreach ($nodes as $node) {
                             $icon = trim((string) ($node['icon'] ?? ''));
-                            echo '<li class="py-1">';
-                            if ($icon !== '') {
-                                echo '<i class="fas ' . Rateb\App\Core\View::escape($icon) . ' me-1"></i>';
+                            $catId = (int) ($node['id'] ?? 0);
+                            $imgUrl = $svc->imageUrl($catId, $node['image_path'] ?? null);
+                            echo '<li class="py-1 d-flex align-items-center gap-2">';
+                            if ($imgUrl !== '') {
+                                echo '<img src="' . Rateb\App\Core\View::escape($imgUrl) . '" alt="" class="rounded border flex-shrink-0" style="width:28px;height:28px;object-fit:cover;">';
+                            } elseif ($icon !== '') {
+                                echo '<i class="fas ' . Rateb\App\Core\View::escape($icon) . '"></i>';
                             }
-                            echo Rateb\App\Core\View::escape((string) ($node['label'] ?? ''));
+                            echo '<span>' . Rateb\App\Core\View::escape((string) ($node['label'] ?? ''));
                             if (empty($node['is_active'])) {
                                 echo ' <span class="badge bg-secondary">' . __('inactive') . '</span>';
                             }
                             if (empty($node['is_visible'])) {
                                 echo ' <span class="badge bg-warning text-dark">' . __('category_hidden') . '</span>';
                             }
-                            echo '</li>';
+                            echo '</span></li>';
                             if (!empty($node['children'])) {
                                 $renderTree($node['children'], $depth + 1);
                             }

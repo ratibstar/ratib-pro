@@ -96,7 +96,18 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         $val = $row[$col['name']] ?? '';
                         $colType = (string) ($col['type'] ?? '');
                         $colName = (string) ($col['name'] ?? '');
-                        if ($colType === 'barcode') {
+                        if ($colType === 'image') {
+                            $imgUrl = trim((string) $val);
+                            ?>
+                    <td class="rateb-cell-image">
+                        <?php if ($imgUrl !== '') { ?>
+                        <img src="<?php echo Rateb\App\Core\View::escape($imgUrl); ?>" alt="" class="rounded border"
+                            style="width: 48px; height: 48px; object-fit: cover;">
+                        <?php } else { ?>
+                        <span class="text-muted">—</span>
+                        <?php } ?>
+                    </td>
+                        <?php } elseif ($colType === 'barcode') {
                             $barcode = trim((string) $val);
                             ?>
                     <td class="rateb-barcode-cell">

@@ -29,6 +29,9 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
                     <input class="form-control rateb-form-control" type="password" id="f_password" name="password">
                 </div>
                 <?php } ?>
+                <?php if (!empty($categoryImage) && is_array($categoryImage)) {
+                    Rateb\App\Core\View::partial('category-image-field', $categoryImage);
+                } ?>
                 <?php if (!empty($attachment) && is_array($attachment)) {
                     Rateb\App\Core\View::partial('entity-attachment-field', $attachment);
                 } ?>

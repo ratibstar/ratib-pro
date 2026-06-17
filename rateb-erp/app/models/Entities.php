@@ -265,7 +265,7 @@ final class ProductCategory extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'company_id', 'code', 'name', 'name_ar', 'description_en', 'description_ar',
-        'parent_id', 'sort_order', 'is_active', 'is_visible', 'icon',
+        'parent_id', 'sort_order', 'is_active', 'is_visible', 'icon', 'image_path',
     ];
 }
 

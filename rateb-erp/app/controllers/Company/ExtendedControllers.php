@@ -209,6 +209,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
         $this->entityName = 'product_categories';
         $this->permissionResource = 'product-categories';
         $this->indexFields = [
+            ['name' => 'image_thumb', 'label' => 'category_image', 'type' => 'image'],
             ['name' => 'code', 'label' => 'code'],
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'parent_label', 'label' => 'parent_category'],
@@ -278,6 +279,16 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
         $data['categoryTree'] = (new \Rateb\App\Services\ProductCategoryService())->tree(
             (int) (TenantContext::companyId() ?? rateb_resolve_ops_company_id())
         );
+        $data['multipart'] = true;
+        $categoryId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
+        $svc = new \Rateb\App\Services\ProductCategoryService();
+        $hasImage = is_array($item) && !empty($item['image_path']);
+        $data['categoryImage'] = [
+            'inputName' => 'category_image',
+            'label' => __('category_image'),
+            'imageUrl' => $hasImage ? $svc->imageUrl($categoryId, (string) ($item['image_path'] ?? '')) : '',
+            'hasImage' => $hasImage,
+        ];
         return $data;
     }
 
@@ -315,6 +326,12 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $id = $this->model->create($data);
+        try {
+            $this->persistCategoryImage($id);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         (new \Rateb\App\Services\AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('category_saved'));
         $this->redirect(rateb_url($this->routePrefix));
@@ -336,6 +353,12 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->model->update($id, $data);
+        try {
+            $this->persistCategoryImage($id);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         (new \Rateb\App\Services\AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('category_saved'));
         $this->redirect(rateb_url($this->routePrefix));
@@ -376,7 +399,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             $this->view('errors/404', ['title' => '404']);
             return;
         }
-        unset($item['id'], $item['created_at']);
+        unset($item['id'], $item['created_at'], $item['image_path']);
         $item['name'] = trim((string) ($item['name'] ?? '')) . ' (copy)';
         if (!empty($item['name_ar'])) {
             $item['name_ar'] = trim((string) $item['name_ar']) . ' (نسخة)';
@@ -386,6 +409,23 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             'title' => __('copy_category'),
             'item' => $item,
         ]), $this->layout());
+    }
+
+    public function image(array $params): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            http_response_code(404);
+            echo 'Not found';
+            return;
+        }
+        if (function_exists('rateb_can_view_entity') && !rateb_can_view_entity('product-categories')) {
+            http_response_code(403);
+            echo __('access_denied');
+            return;
+        }
+        (new \Rateb\App\Services\ProductCategoryService())->sendImage($id);
     }
 
     public function report(): void
@@ -437,6 +477,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             SessionManager::flash('error', $reason);
             $this->redirect(rateb_url($this->routePrefix));
         }
+        $this->deleteStoredImage($id);
         parent::destroy($params);
     }
 
@@ -458,8 +499,46 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
                 SessionManager::flash('error', __('category_delete_blocked'));
                 $this->redirect(rateb_url($this->routePrefix));
             }
+            $this->deleteStoredImage($id);
         }
         parent::bulkDestroy();
+    }
+
+    private function persistCategoryImage(int $id): void
+    {
+        $svc = new \Rateb\App\Services\ProductCategoryService();
+        if (!empty($_POST['remove_category_image'])) {
+            $item = $this->model->find($id);
+            if (is_array($item) && !empty($item['image_path'])) {
+                $svc->deleteImageFile((string) $item['image_path']);
+                $this->model->update($id, ['image_path' => null]);
+            }
+            return;
+        }
+        if (!isset($_FILES['category_image'])) {
+            return;
+        }
+        $companyId = (int) (TenantContext::companyId() ?? rateb_resolve_ops_company_id());
+        $result = $svc->storeImageUpload($_FILES['category_image'], $companyId);
+        if (!$result['success']) {
+            throw new \RuntimeException((string) ($result['error'] ?? __('upload_failed')));
+        }
+        if (empty($result['path'])) {
+            return;
+        }
+        $item = $this->model->find($id);
+        if (is_array($item) && !empty($item['image_path'])) {
+            $svc->deleteImageFile((string) $item['image_path']);
+        }
+        $this->model->update($id, ['image_path' => $result['path']]);
+    }
+
+    private function deleteStoredImage(int $id): void
+    {
+        $item = $this->model->find($id);
+        if (is_array($item) && !empty($item['image_path'])) {
+            (new \Rateb\App\Services\ProductCategoryService())->deleteImageFile((string) $item['image_path']);
+        }
     }
 
     protected function layout(): string

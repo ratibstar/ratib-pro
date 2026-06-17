@@ -3,11 +3,17 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\TenantContext;
+use Rateb\App\Helpers\StorageHelper;
 use Rateb\App\Models\Inventory;
 use Rateb\App\Models\ProductCategory;
 
 final class ProductCategoryService
 {
+    /** @var list<string> */
+    private const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+    private const IMAGE_MAX_BYTES = 2097152;
     /** @return array{total:int,active:int,inactive:int,visible:int,hidden:int} */
     public function stats(int $companyId): array
     {
@@ -77,7 +83,7 @@ final class ProductCategoryService
             return [];
         }
         $rows = (new ProductCategory())->query(
-            "SELECT id, parent_id, name, name_ar, code, is_active, is_visible, sort_order
+            "SELECT id, parent_id, name, name_ar, code, is_active, is_visible, sort_order, icon, image_path
              FROM rateb_product_categories
              WHERE company_id = :cid
              ORDER BY sort_order ASC, name ASC",
@@ -151,9 +157,139 @@ final class ProductCategoryService
             } else {
                 $row['parent_label'] = '—';
             }
+            $row['image_thumb'] = $this->imageUrl($id, $row['image_path'] ?? null);
         }
         unset($row);
         return $rows;
+    }
+
+    public function imageUrl(int $categoryId, ?string $imagePath = null): string
+    {
+        $path = trim((string) ($imagePath ?? ''));
+        if ($categoryId < 1 || $path === '') {
+            return '';
+        }
+        return rateb_app_url('product-categories/' . $categoryId . '/image');
+    }
+
+    /** @return array{success:bool,path?:string,error?:string} */
+    public function storeImageUpload(array $file, int $companyId): array
+    {
+        $uploadError = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadError === UPLOAD_ERR_NO_FILE) {
+            return ['success' => true];
+        }
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => __('upload_failed')];
+        }
+
+        $size = (int) ($file['size'] ?? 0);
+        if ($size < 1) {
+            return ['success' => true];
+        }
+        if ($size > self::IMAGE_MAX_BYTES) {
+            return ['success' => false, 'error' => __('file_too_large')];
+        }
+
+        if ($companyId < 1) {
+            return ['success' => false, 'error' => __('billing_company_required')];
+        }
+        if (!(new PlanLimitService())->canUploadBytes($companyId, $size)) {
+            return ['success' => false, 'error' => __('storage_limit_exceeded')];
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            return ['success' => false, 'error' => __('upload_failed')];
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpName) ?: '';
+        if (!in_array($mime, self::IMAGE_MIMES, true)) {
+            return ['success' => false, 'error' => __('file_type_not_allowed')];
+        }
+
+        $ext = pathinfo((string) ($file['name'] ?? 'image'), PATHINFO_EXTENSION);
+        $safeName = 'cat_' . bin2hex(random_bytes(8)) . ($ext !== '' ? '.' . preg_replace('/[^a-zA-Z0-9]/', '', $ext) : '');
+        $subdir = 'company_' . $companyId . '/product_categories';
+        $uploadsRoot = StorageHelper::uploadsRoot();
+        $destDir = $uploadsRoot . '/' . $subdir;
+        $dirError = StorageHelper::ensureWritableDir($destDir);
+        if ($dirError !== null) {
+            return ['success' => false, 'error' => $dirError];
+        }
+
+        $relative = 'uploads/' . $subdir . '/' . $safeName;
+        $full = $destDir . '/' . $safeName;
+        if (!move_uploaded_file($tmpName, $full)) {
+            return ['success' => false, 'error' => __('upload_save_failed')];
+        }
+
+        return ['success' => true, 'path' => $relative];
+    }
+
+    public function deleteImageFile(?string $relativePath): void
+    {
+        $relative = trim((string) $relativePath);
+        if ($relative === '' || strpos($relative, '..') !== false) {
+            return;
+        }
+        $full = StorageHelper::resolveFilePath($relative);
+        if ($full !== '' && is_file($full)) {
+            @unlink($full);
+        }
+    }
+
+    public function sendImage(int $categoryId, ?array $category = null): void
+    {
+        $row = $category ?? (new ProductCategory())->find($categoryId);
+        if (!$row || empty($row['image_path'])) {
+            http_response_code(404);
+            echo 'Not found';
+            return;
+        }
+
+        if (!TenantContext::isSuperAdmin()) {
+            $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0));
+            if ($sessionCompany < 1 || $sessionCompany !== (int) ($row['company_id'] ?? 0)) {
+                http_response_code(403);
+                echo __('access_denied');
+                return;
+            }
+        }
+
+        $relative = (string) $row['image_path'];
+        if (strpos($relative, '..') !== false) {
+            http_response_code(404);
+            echo 'Not found';
+            return;
+        }
+
+        $full = StorageHelper::resolveFilePath($relative);
+        if ($full === '' || !is_file($full)) {
+            http_response_code(404);
+            echo 'File missing';
+            return;
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($full) ?: 'image/jpeg';
+        if (!in_array($mime, self::IMAGE_MIMES, true)) {
+            http_response_code(403);
+            echo __('file_type_not_allowed');
+            return;
+        }
+
+        header('Content-Type: ' . $mime);
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: inline; filename="category-' . $categoryId . '"');
+        header('Content-Length: ' . (string) filesize($full));
+        header('Cache-Control: private, max-age=86400');
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        readfile($full);
+        exit;
     }
 
     /** @return array<int, array<string, mixed>> */

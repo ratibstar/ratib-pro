@@ -43,5 +43,6 @@ $categoryTree = $categoryTree ?? [];
             </div>
         </div>
         <p class="text-muted small mt-2 mb-0"><?php echo __('category_icon_hint'); ?></p>
+        <p class="text-muted small mb-0"><?php echo __('category_image_hint'); ?></p>
     </div>
 </div>
