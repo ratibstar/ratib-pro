@@ -1,2 +1,2 @@
 <?php
-Rateb\App\Core\View::partial('hr-shell-end');
+/** HR nav lives in main sidebar — partial kept for view compatibility. */

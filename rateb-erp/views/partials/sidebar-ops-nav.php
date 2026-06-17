@@ -32,7 +32,7 @@ $opsSection(__('suppliers'), [
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
 ], 'fa-truck-field');
-$opsLink('hr', 'human_resources', 'fa-users-gear', 'hr');
+require RATEB_ROOT . '/views/partials/sidebar-hr-nav.php';
 $opsSection(__('accounting_module'), [
     ['accounting', 'accounting_overview', 'fa-gauge-high', 'accounting'],
     ['accounting/reports', 'accounting_reports', 'fa-chart-pie', 'accounting', 'accounting.view'],

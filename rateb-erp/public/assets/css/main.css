@@ -130,6 +130,85 @@ body.rateb-app {
     font-size: 0.86rem;
 }
 
+.rateb-nav-subgroup {
+    margin: 0.1rem 0.2rem 0.1rem 0.55rem;
+    border-inline-start: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rateb-nav-subgroup-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.42rem 0.55rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--rateb-sidebar-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.rateb-nav-subgroup-toggle:hover,
+.rateb-nav-subgroup.is-open > .rateb-nav-subgroup-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.rateb-nav-subgroup-toggle i:first-child {
+    width: 0.95rem;
+    flex-shrink: 0;
+    text-align: center;
+    opacity: 0.85;
+    font-size: 0.82rem;
+}
+
+.rateb-nav-subgroup-toggle span {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rateb-nav-subgroup-chevron {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    transition: transform 0.2s ease;
+}
+
+.rateb-nav-subgroup.is-open .rateb-nav-subgroup-chevron {
+    transform: rotate(180deg);
+}
+
+.rateb-nav-subgroup-body {
+    display: none;
+    padding: 0.05rem 0 0.2rem;
+}
+
+.rateb-nav-subgroup.is-open .rateb-nav-subgroup-body {
+    display: block;
+}
+
+.rateb-nav-subgroup-body .rateb-nav-link {
+    margin: 0.06rem 0.2rem 0.06rem 0.35rem;
+    padding: 0.38rem 0.65rem 0.38rem 1.15rem;
+    font-size: 0.8rem;
+}
+
+.rateb-nav-soon {
+    font-size: 0.62rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    background: rgba(148, 163, 184, 0.22);
+    color: #94a3b8;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
 .rateb-nav-link {
     display: flex;
     align-items: center;

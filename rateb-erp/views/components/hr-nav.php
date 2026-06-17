@@ -1,3 +1,2 @@
 <?php
-/** @var string $hrActive */
-Rateb\App\Core\View::partial('hr-shell-start', ['hrActive' => $hrActive ?? '']);
+/** HR nav lives in main sidebar — partial kept for view compatibility. */

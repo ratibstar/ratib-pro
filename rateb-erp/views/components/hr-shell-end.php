@@ -1,3 +1,2 @@
-    </div>
-</div>
-<script src="<?php echo rateb_asset('js/hr-module.js'); ?>"></script>
+<?php
+/** HR layout shell removed — navigation is in main sidebar. */

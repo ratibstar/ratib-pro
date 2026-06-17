@@ -1,9 +1,8 @@
 <?php
 /** @var string $pageTitle */
 /** @var string $pageDescription */
-/** @var string $hrActive */
-Rateb\App\Core\View::partial('hr-shell-start', ['hrActive' => $hrActive ?? '']);
 ?>
+<link href="<?php echo rateb_asset('css/hr-module.css'); ?>" rel="stylesheet">
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($pageTitle ?? ''); ?></div>
     <div class="rateb-card-body rateb-hr-placeholder">
@@ -12,4 +11,3 @@ Rateb\App\Core\View::partial('hr-shell-start', ['hrActive' => $hrActive ?? '']);
         <p class="text-muted mb-0"><?php echo Rateb\App\Core\View::escape($pageDescription ?? __('hr_coming_soon')); ?></p>
     </div>
 </div>
-<?php Rateb\App\Core\View::partial('hr-shell-end'); ?>
