@@ -27,7 +27,6 @@ if (empty($columns) && !empty($items)) {
 }
 $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
 $documentEntityType = (string) ($documentEntityType ?? '');
-$extraActionsPartial = (string) ($extraActionsPartial ?? '');
 $isCompanies = ($routePrefix ?? '') === 'admin/companies';
 ?>
 <div class="rateb-card<?php echo empty($title) ? ' border-0 shadow-none' : ''; ?>">
@@ -154,13 +153,6 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         </a>
                         <?php } ?>
                         <a href="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-                        <?php if ($extraActionsPartial !== '') {
-                            Rateb\App\Core\View::partial($extraActionsPartial, [
-                                'row' => $row,
-                                'routePrefix' => $routePrefix,
-                                'csrf' => $csrf,
-                            ]);
-                        } ?>
                         <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>

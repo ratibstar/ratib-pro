@@ -100,31 +100,6 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                         <?php } ?>
                     </div>
                 </form>
-                <?php
-                $canManageEvaluations = $canManageEvaluations ?? false;
-                $approvalsHref = $approvalsRoute ?? rateb_app_url('supplier-evaluations/approvals');
-                if ($isEdit && $canManageEvaluations && $approval === 'pending') { ?>
-                <div class="mt-3 border-top pt-3">
-                    <p class="text-muted small mb-2"><?php echo __('evaluation_pending_go_approvals'); ?></p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $evalId . '/approve'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-success btn-sm">
-                                <i class="fas fa-check"></i> <?php echo __('approve_evaluation'); ?>
-                            </button>
-                        </form>
-                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $evalId . '/reject'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                <i class="fas fa-times"></i> <?php echo __('reject_evaluation'); ?>
-                            </button>
-                        </form>
-                        <a href="<?php echo Rateb\App\Core\View::escape($approvalsHref); ?>" class="btn btn-outline-warning btn-sm">
-                            <i class="fas fa-clipboard-check"></i> <?php echo __('evaluation_approvals'); ?>
-                        </a>
-                    </div>
-                </div>
-                <?php } ?>
             </div>
         </div>
     </div>
