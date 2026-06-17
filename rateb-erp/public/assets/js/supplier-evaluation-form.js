@@ -56,6 +56,14 @@
         if (tierInput) tierInput.value = tier;
     }
 
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     function renderHistory(rows) {
         if (!historyBox) return;
         if (!rows || !rows.length) {
@@ -70,10 +78,10 @@
         html += '</tr></thead><tbody>';
         rows.forEach(function (row) {
             html += '<tr>';
-            html += '<td>' + (row.evaluation_date || '—') + '</td>';
-            html += '<td>' + (row.overall_score != null ? row.overall_score : '—') + '</td>';
+            html += '<td>' + escapeHtml(row.evaluation_date || '—') + '</td>';
+            html += '<td>' + escapeHtml(row.overall_score != null ? row.overall_score : '—') + '</td>';
             html += '<td>' + tierBadge(row.rating_tier || 'weak') + '</td>';
-            html += '<td><span class="badge bg-secondary">' + (row.manager_approval_label || row.manager_approval || '') + '</span></td>';
+            html += '<td><span class="badge bg-secondary">' + escapeHtml(row.manager_approval_label || row.manager_approval || '') + '</span></td>';
             html += '</tr>';
         });
         html += '</tbody></table></div>';

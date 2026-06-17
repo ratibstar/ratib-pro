@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260617-eval-dark-fields');
+define('RATEB_ASSET_BUILD', '20260617-eval-audit-fixes');
 
 if (!function_exists('rateb_erp_public_prefix')) {
     /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */
@@ -410,12 +410,29 @@ if (!function_exists('rateb_table_cell_meta')) {
                     }
                 }
             }
-            $badge = in_array($statusKey, ['draft', 'pending', 'cancelled', 'inactive'], true) ? 'info' : 'success';
-            if (in_array($statusKey, ['failed', 'rejected', 'overdue'], true)) {
-                $badge = 'danger';
-            }
-            if (in_array($statusKey, ['warning', 'partial'], true)) {
-                $badge = 'warning';
+            if (str_starts_with($statusKey, 'eval_tier_')) {
+                $tier = substr($statusKey, strlen('eval_tier_'));
+                $badge = match ($tier) {
+                    'excellent' => 'success',
+                    'very_good' => 'primary',
+                    'good' => 'info',
+                    default => 'warning',
+                };
+            } elseif (str_starts_with($statusKey, 'manager_approval_')) {
+                $approval = substr($statusKey, strlen('manager_approval_'));
+                $badge = match ($approval) {
+                    'pending' => 'warning',
+                    'rejected' => 'danger',
+                    default => 'success',
+                };
+            } else {
+                $badge = in_array($statusKey, ['draft', 'pending', 'cancelled', 'inactive'], true) ? 'info' : 'success';
+                if (in_array($statusKey, ['failed', 'rejected', 'overdue'], true)) {
+                    $badge = 'danger';
+                }
+                if (in_array($statusKey, ['warning', 'partial'], true)) {
+                    $badge = 'warning';
+                }
             }
             return [
                 'display' => $label,

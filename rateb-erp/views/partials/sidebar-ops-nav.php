@@ -28,7 +28,7 @@ $opsSection(__('suppliers'), [
     ['suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
     ['supplier-comms', 'supplier_comms', 'fa-comments', 'suppliers'],
     ['supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke', 'suppliers'],
-    ['supplier-evaluations/approvals', 'evaluation_approvals', 'fa-clipboard-check', 'suppliers'],
+    ['supplier-evaluations/approvals', 'evaluation_approvals', 'fa-clipboard-check', 'suppliers', 'evaluations.manage'],
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
 ], 'fa-truck-field');

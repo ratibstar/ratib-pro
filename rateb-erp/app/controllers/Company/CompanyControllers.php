@@ -1477,6 +1477,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             }
             $approval = (string) ($row['manager_approval'] ?? 'pending');
             $row['manager_approval'] = 'manager_approval_' . $approval;
+            $row['score_percent'] = number_format((float) ($row['score_percent'] ?? 0), 1) . '%';
         }
         unset($row);
 
@@ -1621,12 +1622,18 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $existing = $this->model->find($id);
+        if (!$existing) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         try {
             $data = $this->collectData();
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
+        unset($data['evaluated_by'], $data['evaluator_name']);
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
@@ -1640,7 +1647,13 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
-        (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($data['supplier_id'] ?? 0));
+        $svc = new \Rateb\App\Services\SupplierEvaluationService();
+        $oldSupplierId = (int) ($existing['supplier_id'] ?? 0);
+        $newSupplierId = (int) ($data['supplier_id'] ?? 0);
+        $svc->refreshSupplierRating($newSupplierId);
+        if ($oldSupplierId > 0 && $oldSupplierId !== $newSupplierId) {
+            $svc->refreshSupplierRating($oldSupplierId);
+        }
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('evaluation_saved'));
         $this->redirect(rateb_url($this->routePrefix));
@@ -1721,6 +1734,69 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         (new AuditService())->log('reject', $this->entityName, $id);
         SessionManager::flash('success', __('evaluation_rejected'));
         $this->redirect(rateb_url($this->routePrefix . '/approvals'));
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $supplierId = (int) ($item['supplier_id'] ?? 0);
+        $this->model->delete($id);
+        if ($supplierId > 0) {
+            (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating($supplierId);
+        }
+        (new AuditService())->log('delete', $this->entityName, $id);
+        SessionManager::flash('success', __('delete') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function bulkDestroy(): void
+    {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
+        if (!$this->bulkEnabled) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $supplierIds = [];
+        foreach ($ids as $id) {
+            $item = $this->model->find($id);
+            if ($item) {
+                $sid = (int) ($item['supplier_id'] ?? 0);
+                if ($sid > 0) {
+                    $supplierIds[$sid] = true;
+                }
+            }
+        }
+        $deleted = $this->model->deleteMany($ids);
+        $svc = new \Rateb\App\Services\SupplierEvaluationService();
+        foreach (array_keys($supplierIds) as $supplierId) {
+            $svc->refreshSupplierRating($supplierId);
+        }
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_delete', $this->entityName, $id);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     protected function collectData(): array

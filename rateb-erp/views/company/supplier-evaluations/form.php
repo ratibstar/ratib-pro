@@ -130,15 +130,18 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                             <th><?php echo __('evaluation_date'); ?></th>
                             <th><?php echo __('overall_score'); ?></th>
                             <th><?php echo __('supplier_rating_tier'); ?></th>
+                            <th><?php echo __('manager_approval'); ?></th>
                         </tr>
                         </thead>
                         <tbody>
                         <?php foreach ($supplierHistory as $hist) {
-                            $tier = (string) ($hist['rating_tier'] ?? 'weak'); ?>
+                            $tier = (string) ($hist['rating_tier'] ?? 'weak');
+                            $approval = (string) ($hist['manager_approval'] ?? 'pending'); ?>
                         <tr>
                             <td><?php echo Rateb\App\Core\View::escape((string) ($hist['evaluation_date'] ?? '')); ?></td>
                             <td><?php echo Rateb\App\Core\View::escape((string) ($hist['overall_score'] ?? '')); ?></td>
                             <td><span class="badge bg-<?php echo Rateb\App\Core\View::escape($svc->tierBadgeClass($tier)); ?>"><?php echo Rateb\App\Core\View::escape($svc->tierLabel($tier)); ?></span></td>
+                            <td><span class="badge bg-secondary"><?php echo Rateb\App\Core\View::escape(__('manager_approval_' . $approval)); ?></span></td>
                         </tr>
                         <?php } ?>
                         </tbody>
