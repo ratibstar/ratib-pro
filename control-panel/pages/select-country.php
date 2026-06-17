@@ -16,11 +16,11 @@ $allowed = getAllowedCountrySlugs();
 $hasAccess = ($allowed === null) || !empty($allowed);
 if (!$hasAccess) {
     http_response_code(403);
-    die('Access denied.');
+    die(cp_t('common.access_denied'));
 }
 
 $ctrl = $GLOBALS['control_conn'] ?? null;
-if ($ctrl === null) die('Control panel database unavailable.');
+if ($ctrl === null) die(cp_t('common.db_unavailable'));
 $GLOBALS['ctrl'] = $ctrl;
 
 $hasCountries = false;

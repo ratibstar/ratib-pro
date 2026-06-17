@@ -198,5 +198,7 @@ if (!empty($_SESSION['control_logged_in'])) {
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <?php echo cp_i18n_inline_script(); ?>
+    <script src="<?php echo asset('js/control/i18n.js'); ?>?v=<?php echo time(); ?>"></script>
 </body>
 </html>

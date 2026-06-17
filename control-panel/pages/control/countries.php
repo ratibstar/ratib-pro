@@ -21,7 +21,7 @@ requireControlPermission(CONTROL_PERM_COUNTRIES, 'view_control_countries');
 
 $ctrl = $GLOBALS['control_conn'] ?? null;
 if (!$ctrl) {
-    die('Control panel database unavailable.');
+    die(cp_t('common.db_unavailable'));
 }
 
 // EN: Build same-origin control API base to keep panel routing stable under subpaths.
