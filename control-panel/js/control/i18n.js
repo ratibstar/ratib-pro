@@ -58,7 +58,7 @@
             acceptNode: function (node) {
                 if (!node.parentElement) return NodeFilter.FILTER_REJECT;
                 var p = node.parentElement;
-                if (p.closest('script,style,pre,code,textarea,svg,input,select,[translate="no"],[lang="en"],.cp-ltr-field')) {
+                if (p.closest('script,style,pre,code,textarea,svg,input,select,[translate="no"],[lang="en"],.cp-ltr-field,[data-cp-no-i18n]')) {
                     return NodeFilter.FILTER_REJECT;
                 }
                 var t = (node.nodeValue || '').trim();
@@ -86,9 +86,15 @@
         if (locale() !== 'ar') return;
         root = root || document.body;
         if (!root || !root.querySelectorAll) return;
-        root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(translateAttributes);
-        translateTextNodes(root);
+        if (root.getAttribute && root.getAttribute('data-cp-no-i18n')) return;
+        root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(function (el) {
+            if (!el.closest('[data-cp-no-i18n]')) translateAttributes(el);
+        });
+        if (!root.closest || !root.closest('[data-cp-no-i18n]')) {
+            translateTextNodes(root);
+        }
         root.querySelectorAll('option').forEach(function (opt) {
+            if (opt.closest('[data-cp-no-i18n]')) return;
             var t = (opt.textContent || '').trim();
             if (phraseMap()[t]) opt.textContent = phraseMap()[t];
         });

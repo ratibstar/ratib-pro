@@ -86,7 +86,7 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
 </div>
 <?php endif; ?>
 
-<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.overview'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+<div class="control-settings-intro mb-2 control-settings-section-title"><strong><?php echo htmlspecialchars(cp_t('hub.overview'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_dashboard">
         <h3><i class="fas fa-tachometer-alt"></i> <?php echo htmlspecialchars(cp_t('nav.dashboard'), ENT_QUOTES, 'UTF-8'); ?></h3>
@@ -100,7 +100,7 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.client_platform'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+<div class="control-settings-intro mb-2 control-settings-section-title"><strong><?php echo htmlspecialchars(cp_t('hub.client_platform'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_dashboard">
         <h3><i class="fas fa-chart-pie"></i> <?php echo htmlspecialchars(cp_t('nav.client_hub'), ENT_QUOTES, 'UTF-8'); ?></h3>
@@ -127,7 +127,7 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('section.core_management'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+<div class="control-settings-intro mb-2 control-settings-section-title"><strong><?php echo htmlspecialchars(cp_t('section.core_management'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_select_country">
         <h3><i class="fas fa-globe"></i> <?php echo htmlspecialchars(cp_t('nav.select_country'), ENT_QUOTES, 'UTF-8'); ?></h3>
@@ -153,7 +153,7 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
     <?php endif; ?>
 </div>
 
-<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.registration_public'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+<div class="control-settings-intro mb-2 control-settings-section-title"><strong><?php echo htmlspecialchars(cp_t('hub.registration_public'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_registration_requests,view_control_registration,view_all_control_registration">
         <h3><i class="fas fa-user-plus"></i> <?php echo htmlspecialchars(cp_t('nav.registration_requests'), ENT_QUOTES, 'UTF-8'); ?></h3>
@@ -178,7 +178,7 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('section.business_modules'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+<div class="control-settings-intro mb-2 control-settings-section-title"><strong><?php echo htmlspecialchars(cp_t('section.business_modules'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="<?php echo htmlspecialchars($countryProgramPerms, ENT_QUOTES, 'UTF-8'); ?>">
         <h3><i class="fas fa-flag"></i> <?php echo htmlspecialchars(cp_t('nav.country_program'), ENT_QUOTES, 'UTF-8'); ?></h3>
@@ -222,7 +222,7 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong><?php echo htmlspecialchars(cp_t('hub.admin_infra'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+<div class="control-settings-intro mb-2 control-settings-section-title"><strong><?php echo htmlspecialchars(cp_t('hub.admin_infra'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,control_dashboard">
         <h3><i class="fas fa-diagram-project"></i> <?php echo htmlspecialchars(cp_t('nav.rollout_control'), ENT_QUOTES, 'UTF-8'); ?></h3>

@@ -216,6 +216,24 @@ if (!function_exists('cp_translate_html')) {
             },
             $protected
         );
+        $protected = preg_replace_callback(
+            '/<!--CP_MODULE_START-->[\s\S]*?<!--CP_MODULE_END-->/',
+            static function (array $m) use (&$placeholders, &$i): string {
+                $key = '%%CP_PROTECT_' . ($i++) . '%%';
+                $placeholders[$key] = $m[0];
+                return $key;
+            },
+            $protected
+        );
+        $protected = preg_replace_callback(
+            '/<[^>]+data-cp-no-i18n[^>]*>[\s\S]*?<\/div>/i',
+            static function (array $m) use (&$placeholders, &$i): string {
+                $key = '%%CP_PROTECT_' . ($i++) . '%%';
+                $placeholders[$key] = $m[0];
+                return $key;
+            },
+            $protected
+        );
         foreach ($map as $en => $ar) {
             if ($en === '' || $en === $ar) {
                 continue;

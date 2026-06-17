@@ -123,6 +123,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
             <div class="content-header">
                 <button class="sidebar-toggle" id="sidebar-toggle" aria-label="<?php echo htmlspecialchars(function_exists('cp_t') ? cp_t('layout.toggle_sidebar') : 'Toggle sidebar', ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-bars"></i></button>
                 <?php if (isset($pageTitle) && $pageTitle): ?><h2><?php echo htmlspecialchars($pageTitle); ?></h2><?php endif; ?>
+                <div class="content-header-actions">
                 <div class="content-header-toolbar">
                 <?php include __DIR__ . '/lang-switcher.php'; ?>
                 <a href="<?php echo htmlspecialchars($coreAiUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" aria-label="<?php echo htmlspecialchars(function_exists('cp_t') ? cp_t('layout.open_coreai') : 'Open CoreAI', ENT_QUOTES, 'UTF-8'); ?>">
@@ -146,12 +147,14 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
                         <a href="<?php echo pageUrl('control/support-chats.php'); ?>" class="header-alert-footer"><?php echo htmlspecialchars(function_exists('cp_t') ? cp_t('layout.open_support_chats') : 'Open Support Chats', ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
                 </div>
+                </div>
             </div>
             <?php echo control_render_global_ai_modal($fullBase); ?>
         <?php else: ?>
         <main class="control-content control-content-standalone-full">
         <?php endif; ?>
-        <div class="module-content">
+        <div class="module-content<?php echo function_exists('cp_is_rtl') && cp_is_rtl() ? ' cp-module-rtl' : ''; ?>"<?php echo function_exists('cp_is_rtl') && cp_is_rtl() ? ' translate="no" data-cp-no-i18n="1"' : ''; ?>>
+<!--CP_MODULE_START-->
 <?php
 }
 
@@ -162,6 +165,7 @@ function endControlLayout($additionalJS = []) {
     $fullBase = control_request_origin_base();
     $standaloneEnd = !empty($GLOBALS['control_layout_standalone']);
     ?>
+<!--CP_MODULE_END-->
             </div>
         </main>
     </div>
