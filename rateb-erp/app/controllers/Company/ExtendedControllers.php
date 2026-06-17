@@ -314,6 +314,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
     public function store(): void
     {
         $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -341,6 +342,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
     public function update(array $params): void
     {
         $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -514,7 +516,6 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
                 $svc->deleteImageFile((string) $item['image_path']);
                 $this->model->update($id, ['image_path' => null]);
             }
-            return;
         }
         if (!isset($_FILES['category_image'])) {
             return;

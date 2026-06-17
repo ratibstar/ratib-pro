@@ -107,4 +107,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php } ?>
-<?php Rateb\App\Core\View::partial('image-preview-kit'); ?>
