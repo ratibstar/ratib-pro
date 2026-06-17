@@ -31,6 +31,9 @@ abstract class CrudController extends Controller
 
     public function index(): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $page = max(1, (int) $this->input('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;

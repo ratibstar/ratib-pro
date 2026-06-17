@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260617-eval-approvals-actions');
+define('RATEB_ASSET_BUILD', '20260617-hr-ops-company');
 
 if (!function_exists('rateb_erp_public_prefix')) {
     /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */
@@ -219,6 +219,7 @@ if (!function_exists('rateb_is_ops_route')) {
             'medical-devices', 'device-maintenance', 'device-spare-parts', 'device-warranty',
             'accounting', 'chart-of-accounts', 'journal-entries', 'cash-vouchers', 'fiscal-periods',
             'cost-centers', 'bank-accounts', 'documents', 'workflows', 'notifications', 'profile', 'reports',
+            'hr',
         ];
         return $roots;
     }

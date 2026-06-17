@@ -75,6 +75,9 @@ abstract class Model
             return ['', []];
         }
         $filterId = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+        if ($filterId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $filterId = rateb_resolve_ops_company_id();
+        }
         if ($filterId < 1) {
             return ['', []];
         }

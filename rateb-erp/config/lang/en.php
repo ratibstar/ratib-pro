@@ -37,6 +37,7 @@ return [
     'hr_leaves' => 'Leave requests',
     'hr_payroll' => 'Payroll',
     'hr_intro' => 'Manage employees, attendance, leave, and payroll in one place.',
+    'hr_select_company_hint' => 'Select a company from the list above to view HR statistics.',
     'hr_coming_soon' => 'Coming soon',
     'hr_departments' => 'Departments',
     'hr_present_today' => 'Present today',

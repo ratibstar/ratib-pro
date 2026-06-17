@@ -15,14 +15,16 @@ final class HrDashboardController extends Controller
 {
     public function index(): void
     {
-        $companyId = rateb_resolve_ops_company_id();
-        if ($companyId > 0) {
-            TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
         }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
         $stats = (new HrService())->dashboardStats($companyId);
         $this->view('company/hr/dashboard', [
             'title' => __('human_resources'),
             'stats' => $stats,
+            'companyId' => $companyId,
         ], 'main');
     }
 }

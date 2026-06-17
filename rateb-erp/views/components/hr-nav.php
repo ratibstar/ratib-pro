@@ -4,6 +4,7 @@ $hrActive = $hrActive ?? '';
 $tabs = [
     ['path' => rateb_app_route('hr'), 'label' => __('hr_overview'), 'match' => [rateb_app_route('hr')]],
     ['path' => rateb_app_route('hr/employees'), 'label' => __('hr_employees'), 'match' => [rateb_app_route('hr/employees')]],
+    ['path' => rateb_app_route('hr/departments'), 'label' => __('hr_departments'), 'match' => [rateb_app_route('hr/departments')]],
     ['path' => rateb_app_route('hr/attendance'), 'label' => __('hr_attendance'), 'match' => [rateb_app_route('hr/attendance')]],
     ['path' => rateb_app_route('hr/leaves'), 'label' => __('hr_leaves'), 'match' => [rateb_app_route('hr/leaves')]],
     ['path' => rateb_app_route('hr/payroll'), 'label' => __('hr_payroll'), 'match' => [rateb_app_route('hr/payroll')]],

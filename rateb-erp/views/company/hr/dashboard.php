@@ -1,7 +1,13 @@
 <?php
 $stats = $stats ?? ['employees' => 0, 'active' => 0, 'present_today' => 0, 'absent_today' => 0, 'pending_leaves' => 0, 'draft_payrolls' => 0];
+$companyId = (int) ($companyId ?? 0);
 Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
 ?>
+<?php if ($companyId < 1 && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) { ?>
+<div class="alert alert-warning mb-3">
+    <i class="fas fa-building me-1"></i> <?php echo __('hr_select_company_hint'); ?>
+</div>
+<?php } ?>
 <div class="row g-3 mb-4">
     <div class="col-md-4 col-lg-2">
         <div class="rateb-stat-card">
