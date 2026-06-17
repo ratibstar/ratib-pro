@@ -1202,9 +1202,9 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         TenantContext::setCompanyId($companyId);
         $svc = new \Rateb\App\Services\SupplierCommService();
         $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($this->fields);
-        $supplierOptions = $lookups['supplier_id'] ?? [];
-        $channelOptions = $lookups['channel'] ?? [];
-        $statusOptions = $lookups['comm_status'] ?? [];
+        $supplierOptions = $lookups['suppliers'] ?? [];
+        $channelOptions = $lookups['communication_types'] ?? [];
+        $statusOptions = $lookups['comm_statuses'] ?? [];
 
         $sql = 'SELECT c.*, s.name AS supplier_name,
                        po.order_no AS po_no, r.rfq_no
