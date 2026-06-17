@@ -45,7 +45,7 @@ $archived = (int) ($item['is_archived'] ?? 0) === 1;
                         data-history-url="<?php echo Rateb\App\Core\View::escape($historyUrl ?? ''); ?>"
                         data-comm-id="<?php echo $commId; ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                        <?php Rateb\App\Core\View::partial('company/supplier-comms/_form-fields', [
+                        <?php Rateb\App\Core\View::partial('supplier-comm-form-fields', [
                             'item' => $item,
                             'fields' => $fields,
                             'lookups' => $lookups,

@@ -112,7 +112,7 @@ $channelIcon = static function (string $ch): string {
                         data-history-url="<?php echo Rateb\App\Core\View::escape($historyUrl ?? ''); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <?php
-                        Rateb\App\Core\View::partial('company/supplier-comms/_form-fields', [
+                        Rateb\App\Core\View::partial('supplier-comm-form-fields', [
                             'item' => [],
                             'fields' => $formFields ?? [],
                             'lookups' => $lookups,
