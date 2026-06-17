@@ -42,7 +42,7 @@ body.cp-rtl .control-content {
 
 html[dir="rtl"] body.control-layout-no-header .control-content,
 body.cp-rtl.control-layout-no-header .control-content {
-    padding-inline: 4px 2rem;
+    padding: 2rem 4px 2rem 2rem;
 }
 
 html[dir="rtl"] .control-sidebar.collapsed + .control-content,
@@ -56,6 +56,54 @@ html[dir="rtl"] .sidebar-subitem.active::before {
     right: 0;
 }
 
+/* Sidebar — mirror EN measurements; accent bar on outer (right) edge */
+html[dir="rtl"] .sidebar-item,
+body.cp-rtl .sidebar-item {
+    border-left: none;
+    border-right: 3px solid transparent;
+}
+
+html[dir="rtl"] .sidebar-item::before,
+body.cp-rtl .sidebar-item::before {
+    left: auto;
+    right: 0;
+    background: linear-gradient(270deg, var(--control-accent), var(--control-accent-hover));
+}
+
+html[dir="rtl"] .sidebar-item:hover,
+body.cp-rtl .sidebar-item:hover {
+    border-left-color: transparent;
+    border-right-color: var(--control-accent);
+    padding-left: 1.25rem;
+    padding-right: 1.5rem;
+}
+
+html[dir="rtl"] .sidebar-item.active,
+body.cp-rtl .sidebar-item.active {
+    border-left-color: transparent;
+    border-right-color: var(--control-accent);
+    box-shadow: inset -4px 0 0 var(--control-accent);
+    background: linear-gradient(270deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+}
+
+html[dir="rtl"] .sidebar-item.active::after,
+body.cp-rtl .sidebar-item.active::after {
+    right: auto;
+    left: 10px;
+}
+
+html[dir="rtl"] .sidebar-subitem,
+body.cp-rtl .sidebar-subitem {
+    margin: 0.2rem 2.65rem 0.2rem 0;
+    border-radius: 0 10px 10px 0;
+    text-align: right;
+}
+
+html[dir="rtl"] .sidebar-subitem.active,
+body.cp-rtl .sidebar-subitem.active {
+    box-shadow: inset -3px 0 0 var(--control-accent);
+}
+
 html[dir="rtl"] .sidebar-item i,
 html[dir="rtl"] .sidebar-subitem i {
     margin-right: 0;
@@ -67,8 +115,13 @@ html[dir="rtl"] .content-header {
     justify-content: flex-start;
 }
 
-html[dir="rtl"] .content-header h2 {
+html[dir="rtl"] .content-header h2,
+body.cp-rtl .content-header h2 {
     text-align: right;
+    font-size: 1.5rem;
+    flex-direction: row-reverse;
+    display: flex;
+    align-items: center;
 }
 
 html[dir="rtl"] .content-header-actions {
@@ -98,6 +151,7 @@ html[dir="rtl"] .country-card .hint i {
 html[dir="rtl"] .control-header,
 body.cp-rtl .control-header {
     flex-direction: row-reverse;
+    padding: 1.5rem 2rem;
 }
 
 html[dir="rtl"] .control-header .header-left,
@@ -105,9 +159,26 @@ body.cp-rtl .control-header .header-left {
     text-align: right;
 }
 
+html[dir="rtl"] .control-header .header-left h1,
+body.cp-rtl .control-header .header-left h1 {
+    font-size: 1.75rem;
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .control-header .header-subtitle,
+body.cp-rtl .control-header .header-subtitle {
+    font-size: 0.875rem;
+}
+
+html[dir="rtl"] .control-header .header-subtitle-rateb,
+body.cp-rtl .control-header .header-subtitle-rateb {
+    font-size: 1.03rem;
+}
+
 html[dir="rtl"] .control-header .header-right,
 body.cp-rtl .control-header .header-right {
     flex-direction: row-reverse;
+    gap: 1rem;
 }
 
 html[dir="rtl"] .cp-lang-switcher {
@@ -163,7 +234,7 @@ html[dir="rtl"] .control-settings-card h3 {
 
 html[dir="rtl"] .control-settings-card p {
     text-align: right;
-    line-height: 1.65;
+    line-height: 1.5;
 }
 
 html[dir="rtl"] .control-settings-card .btn,
@@ -201,6 +272,66 @@ html[dir="rtl"] .country-grid,
 html[dir="rtl"] .stats-grid,
 html[dir="rtl"] .quick-actions-grid {
     direction: rtl;
+}
+
+/* Dashboard cards — same sizes as EN, mirrored (icon beside sidebar) */
+html[dir="rtl"] .stat-card,
+body.cp-rtl .stat-card {
+    flex-direction: row-reverse;
+    direction: rtl;
+    text-align: right;
+    padding: 1.5rem;
+    gap: 1.5rem;
+}
+
+html[dir="rtl"] .control-content .stat-content h3,
+body.cp-rtl .control-content .stat-content h3 {
+    font-size: 1.75rem;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+}
+
+html[dir="rtl"] .control-content .stat-content h3.stat-title-label,
+body.cp-rtl .control-content .stat-content h3.stat-title-label {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+html[dir="rtl"] .control-content .stat-content p,
+body.cp-rtl .control-content .stat-content p {
+    font-size: 0.9rem;
+}
+
+html[dir="rtl"] .stat-card.warning,
+body.cp-rtl .stat-card.warning {
+    border-left: none;
+    border-right: 3px solid var(--control-warning);
+}
+
+html[dir="rtl"] .quick-actions-section h3,
+html[dir="rtl"] .section-header h3,
+html[dir="rtl"] .users-per-country-section .section-header h3,
+body.cp-rtl .quick-actions-section h3,
+body.cp-rtl .section-header h3,
+body.cp-rtl .users-per-country-section .section-header h3 {
+    font-size: 1.05rem;
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .quick-action-card,
+body.cp-rtl .quick-action-card {
+    padding: 1.5rem;
+}
+
+html[dir="rtl"] .quick-action-card i,
+body.cp-rtl .quick-action-card i {
+    font-size: 1.5rem;
+}
+
+html[dir="rtl"] .quick-action-card span,
+body.cp-rtl .quick-action-card span {
+    font-size: 0.8rem;
 }
 
 html[dir="rtl"] input.cp-acc-fp-en,

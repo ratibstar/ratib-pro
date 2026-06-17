@@ -85,8 +85,10 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     <?php if ($htmlDir === 'rtl'): ?>
     <style id="cp-rtl-layout-fix">
     .control-layout{display:flex!important;flex-direction:row!important;direction:ltr!important}
-    .control-layout.cp-layout-rtl>.control-content{order:1!important;flex:1 1 auto!important;min-width:0!important;direction:rtl}
-    .control-layout.cp-layout-rtl>.control-sidebar{order:2!important;flex:0 0 auto!important;direction:rtl;text-align:right}
+    .control-layout.cp-layout-rtl>.control-content{order:1!important;flex:1 1 auto!important;min-width:0!important;direction:rtl;padding:2rem 4px 2rem 2rem!important}
+    .control-layout.cp-layout-rtl>.control-sidebar{order:2!important;flex:0 0 280px!important;width:280px!important;min-width:280px!important;direction:rtl;text-align:right}
+    .stat-card{flex-direction:row-reverse!important;padding:1.5rem!important;gap:1.5rem!important}
+    .sidebar-item.active{box-shadow:inset -4px 0 0 var(--control-accent)!important;border-right-color:var(--control-accent)!important;border-left-color:transparent!important}
     </style>
     <?php endif; ?>
     <?php endif; ?>

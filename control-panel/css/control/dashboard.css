@@ -88,6 +88,14 @@
     opacity: 1;
 }
 
+.control-content .stat-content h3.stat-title-label {
+    font-size: 1.25rem;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: normal;
+    line-height: 1.3;
+}
+
 .control-content .stat-icon {
     width: 56px;
     height: 56px;
