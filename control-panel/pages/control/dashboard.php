@@ -216,12 +216,19 @@ if (!empty($_SESSION['control_popup_error'])) {
     .control-layout{display:flex!important;flex-direction:row!important;direction:ltr!important}
     .control-layout.cp-layout-rtl>.control-content{order:1!important;flex:1 1 auto!important;min-width:0!important;direction:rtl;padding:2rem 4px 2rem 2rem!important}
     .control-layout.cp-layout-rtl>.control-sidebar{order:2!important;flex:0 0 280px!important;width:280px!important;min-width:280px!important;direction:rtl;text-align:right}
-    .stat-card{flex-direction:row-reverse!important;padding:1.5rem!important;gap:1.5rem!important}
-    .control-content .stat-content h3{font-size:1.75rem!important;font-family:inherit!important;line-height:1.2!important}
+    .control-content .stat-card{direction:ltr!important;flex-direction:row!important;align-items:flex-start!important;gap:1.25rem!important;padding:1.5rem!important}
+    .control-content .stat-card .stat-icon{order:2!important}
+    .control-content .stat-card .stat-content{order:1!important;direction:rtl!important;text-align:right!important;flex:1!important;min-width:0!important}
+    .control-content .stat-content h3{font-size:1.75rem!important;font-weight:800!important;font-family:inherit!important;line-height:1.2!important}
     .control-content .stat-content h3.stat-title-label{font-size:1.25rem!important}
-    .sidebar-item.active{box-shadow:inset -4px 0 0 var(--control-accent)!important;border-right-color:var(--control-accent)!important;border-left-color:transparent!important}
-    .control-header{padding:1.5rem 2rem!important}
-    .control-header .header-left h1{font-size:1.75rem!important}
+    .control-content .stat-link{flex-direction:row-reverse!important}
+    .control-sidebar .sidebar-item{border-left:none!important;border-right:3px solid transparent!important}
+    .control-sidebar .sidebar-item.active{border-left:none!important;border-right:3px solid var(--control-accent)!important;box-shadow:inset -4px 0 0 var(--control-accent)!important;background:linear-gradient(270deg,rgba(102,126,234,.2),rgba(118,75,162,.2))!important}
+    .control-sidebar .sidebar-item:hover{border-left-color:transparent!important;border-right-color:var(--control-accent)!important}
+    .control-sidebar .sidebar-item.active::after{right:auto!important;left:10px!important}
+    .content-header{flex-direction:row-reverse!important}
+    .control-header{padding:1.5rem 2rem!important;flex-direction:row-reverse!important}
+    .control-header .header-left h1{font-size:1.75rem!important;flex-direction:row-reverse!important}
     </style>
     <?php endif; ?>
     <?php if ($govWidgetData !== null): ?>
