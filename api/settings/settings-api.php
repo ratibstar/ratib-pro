@@ -287,11 +287,11 @@ class SettingsAPI {
                 $hasPasswordPlain = $this->columnExists('password_plain');
                 $passwordPlainSelect = $hasPasswordPlain ? ", u.password_plain" : "";
                 $hasPortalRole = $this->columnExists('portal_role_id');
-                $portalJoin = $hasPortalRole
-                    ? " LEFT JOIN portal_roles pr ON u.portal_role_id = pr.id"
-                    : "";
                 $portalSelect = $hasPortalRole
-                    ? ", pr.name AS portal_role_name, pr.portal_type AS portal_role_type"
+                    ? ", pr.name AS portal_role_name, pr.portal_type AS portal_role_type, perm_r.role_name AS permission_role_name"
+                    : "";
+                $portalJoin = $hasPortalRole
+                    ? " LEFT JOIN portal_roles pr ON u.portal_role_id = pr.id LEFT JOIN roles perm_r ON pr.role_id = perm_r.role_id"
                     : "";
                 $sql = "
                     SELECT 
@@ -332,6 +332,11 @@ class SettingsAPI {
                     } catch (Exception $e) { /* ignore */ }
                 }
                 $sql .= " ORDER BY a.id DESC";
+            } elseif ($this->table === 'portal_roles') {
+                $sql = "SELECT pr.*, r.role_name AS permission_role_name
+                        FROM `portal_roles` pr
+                        LEFT JOIN `roles` r ON pr.role_id = r.role_id
+                        ORDER BY pr.name ASC";
             } else {
             $sql = "SELECT * FROM `{$this->table}`";
             if ($this->columnExists('created_at')) {
@@ -533,10 +538,14 @@ class SettingsAPI {
                 $mappedData['updated_at'] = date('Y-m-d H:i:s');
             }
             
-            // For new users: Set empty permissions array by default (user sees nothing)
-            // Only admin can grant permissions later
+            // For new users: empty permissions unless a portal role supplies them
             if ($this->table === 'users' && $this->columnExists('permissions') && !isset($mappedData['permissions'])) {
-                $mappedData['permissions'] = json_encode([]); // Empty array = see nothing
+                $mappedData['permissions'] = json_encode([]);
+            }
+
+            if ($this->table === 'users' && !empty($mappedData['portal_role_id'])
+                && function_exists('rateb_apply_portal_role_to_user_fields')) {
+                $mappedData = rateb_apply_portal_role_to_user_fields($this->conn, $mappedData);
             }
             
             $this->ensurePasswordColumnsCapacity();
@@ -800,6 +809,11 @@ class SettingsAPI {
             if (in_array('updated_at', $existingCols) && !isset($mappedData['updated_at'])) {
                 $mappedData['updated_at'] = date('Y-m-d H:i:s');
             }
+
+            if ($this->table === 'users' && !empty($mappedData['portal_role_id'])
+                && function_exists('rateb_apply_portal_role_to_user_fields')) {
+                $mappedData = rateb_apply_portal_role_to_user_fields($this->conn, $mappedData);
+            }
             
             $this->ensurePasswordColumnsCapacity();
             $payload = array();
@@ -877,6 +891,10 @@ class SettingsAPI {
                         $updated['login_barcode'] = $barcodeVal;
                     }
                 }
+            }
+
+            if ($this->table === 'portal_roles' && function_exists('rateb_portal_roles_sync_users_for_portal_role')) {
+                rateb_portal_roles_sync_users_for_portal_role($this->conn, (int) $id);
             }
             
             // Log history BEFORE sending response (to ensure it completes)
@@ -1077,6 +1095,9 @@ class SettingsAPI {
             }
             $hasStatus = $this->columnExists('status');
             $hasIsActive = $this->columnExists('is_active');
+            if ($this->table === 'portal_roles') {
+                $hasIsActive = false;
+            }
             $isUsers = ($this->table === 'users');
             if ($isUsers) {
                 $this->ensureColumnsExist();

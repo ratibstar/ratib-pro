@@ -29,7 +29,7 @@ try {
     rateb_portal_roles_ensure_schema($conn);
 
     $activeOnly = !isset($_GET['all']) || (string) $_GET['all'] !== '1';
-    $sql = 'SELECT id, name, portal_type, description, status, created_at FROM portal_roles';
+    $sql = 'SELECT id, name, portal_type, role_id, description, status, created_at FROM portal_roles';
     if ($activeOnly) {
         $sql .= " WHERE status = 'active'";
     }
@@ -39,6 +39,18 @@ try {
     $result = $conn->query($sql);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
+            if (!empty($row['role_id'])) {
+                $rid = (int) $row['role_id'];
+                $rStmt = $conn->prepare('SELECT role_name FROM roles WHERE role_id = ? LIMIT 1');
+                if ($rStmt) {
+                    $rStmt->bind_param('i', $rid);
+                    $rStmt->execute();
+                    $rRes = $rStmt->get_result();
+                    $rRow = $rRes ? $rRes->fetch_assoc() : null;
+                    $row['permission_role_name'] = $rRow['role_name'] ?? '';
+                    $rStmt->close();
+                }
+            }
             $roles[] = $row;
         }
     }

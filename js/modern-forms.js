@@ -1245,6 +1245,7 @@ class ModernForms {
             'portal_roles': {
                 'name': ['name'],
                 'portal_type': ['portal_type'],
+                'role_id': ['role_id'],
                 'description': ['description'],
                 'status': ['status', 'is_active']
             }
@@ -1803,6 +1804,11 @@ class ModernForms {
 
             if (this.currentTable === 'users') {
                 await this.populatePortalRoleDropdown();
+                this.bindPortalRolePermissionPreview();
+            }
+
+            if (this.currentTable === 'portal_roles') {
+                await this.populatePermissionRoleDropdown();
             }
         }, 500);
     }
@@ -3114,9 +3120,13 @@ class ModernForms {
                 const opt = document.createElement('option');
                 opt.value = String(role.id);
                 const typeLabel = role.portal_type ? ' (' + role.portal_type + ')' : '';
-                opt.textContent = (role.name || ('Role ' + role.id)) + typeLabel;
+                const permLabel = role.permission_role_name ? ' — ' + role.permission_role_name : '';
+                opt.textContent = (role.name || ('Role ' + role.id)) + typeLabel + permLabel;
                 if (role.description) {
                     opt.title = role.description;
+                }
+                if (role.permission_role_name) {
+                    opt.dataset.permissionRole = role.permission_role_name;
                 }
                 roleSelect.appendChild(opt);
             });
@@ -3128,6 +3138,112 @@ class ModernForms {
             console.error('Failed to populate portal roles:', e);
             roleSelect.innerHTML = '<option value="">Could not load portal roles</option>';
         }
+    }
+
+    async populatePermissionRoleDropdown(selectedValue = '', maxRetries = 3) {
+        const formConfig = this.getFormConfig(this.currentTable);
+        const hasRoleField = formConfig.fields.some(function (field) {
+            return field.name === 'role_id' && field.relation && field.relation.table === 'roles';
+        });
+        if (!hasRoleField) {
+            return;
+        }
+
+        const roleSelect = document.getElementById('permission_role_id_select');
+        if (!roleSelect) {
+            if (maxRetries > 0) {
+                setTimeout(() => this.populatePermissionRoleDropdown(selectedValue, maxRetries - 1), 300);
+            }
+            return;
+        }
+
+        try {
+            const apiBase = getApiBaseModernForms();
+            const pageParams = new URLSearchParams(window.location.search || '');
+            const qs = new URLSearchParams();
+            if (getControlSuffixModernForms()) {
+                qs.set('control', '1');
+            }
+            const agencyId = pageParams.get('agency_id');
+            const countryId = pageParams.get('country_id');
+            if (agencyId) {
+                qs.set('agency_id', agencyId);
+            }
+            if (countryId) {
+                qs.set('country_id', countryId);
+            }
+            let url = apiBase + '/admin/get_roles.php';
+            const query = qs.toString();
+            if (query) {
+                url += '?' + query;
+            }
+
+            const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const data = await response.json();
+            const roles = (data && data.success && Array.isArray(data.roles)) ? data.roles : [];
+            if (!roles.length) {
+                roleSelect.innerHTML = '<option value="">No permission roles — create one in Manage Permissions</option>';
+                return;
+            }
+
+            roleSelect.innerHTML = '<option value="">Select permission role...</option>';
+            roles.forEach(function (role) {
+                const opt = document.createElement('option');
+                opt.value = String(role.role_id);
+                const permCount = Array.isArray(role.permissions) ? role.permissions.length : 0;
+                opt.textContent = (role.role_name || ('Role ' + role.role_id))
+                    + (permCount ? ' (' + permCount + ' permissions)' : '');
+                if (role.description) {
+                    opt.title = role.description;
+                }
+                roleSelect.appendChild(opt);
+            });
+
+            if (selectedValue !== null && selectedValue !== undefined && selectedValue !== '') {
+                roleSelect.value = String(selectedValue);
+            }
+        } catch (e) {
+            console.error('Failed to populate permission roles:', e);
+            roleSelect.innerHTML = '<option value="">Could not load permission roles</option>';
+        }
+    }
+
+    bindPortalRolePermissionPreview() {
+        const roleSelect = document.getElementById('portal_role_id_select');
+        const form = document.getElementById('modernForm');
+        if (!roleSelect || !form) {
+            return;
+        }
+
+        let hint = document.getElementById('portal_role_perm_hint');
+        if (!hint) {
+            hint = document.createElement('p');
+            hint.id = 'portal_role_perm_hint';
+            hint.className = 'field-help portal-role-perm-hint';
+            roleSelect.parentNode.appendChild(hint);
+        }
+
+        const updateHint = () => {
+            const opt = roleSelect.options[roleSelect.selectedIndex];
+            if (!opt || !roleSelect.value) {
+                hint.textContent = 'Permissions are applied automatically from the linked permission role.';
+                return;
+            }
+            const permRole = opt.dataset.permissionRole || (opt.textContent.includes('—')
+                ? opt.textContent.split('—').pop().trim()
+                : '');
+            hint.textContent = permRole
+                ? 'RATEB Pro permissions from: ' + permRole + ' (applied on save).'
+                : 'Permissions are applied automatically from the linked permission role.';
+        };
+
+        roleSelect.removeEventListener('change', roleSelect._portalPermHintHandler || (() => {}));
+        roleSelect._portalPermHintHandler = updateHint;
+        roleSelect.addEventListener('change', updateHint);
+        updateHint();
     }
     
     // Populate copy_from_currency dropdown (shows all currencies including inactive)
@@ -3961,6 +4077,12 @@ class ModernForms {
                 if (this.currentTable === 'users') {
                     const roleVal = this.getFieldValue(item, 'portal_role_id');
                     await this.populatePortalRoleDropdown(roleVal);
+                    this.bindPortalRolePermissionPreview();
+                }
+
+                if (this.currentTable === 'portal_roles') {
+                    const permRoleVal = this.getFieldValue(item, 'role_id');
+                    await this.populatePermissionRoleDropdown(permRoleVal);
                 }
                 
                 // Clear the stored item after form is rendered
@@ -4091,6 +4213,9 @@ class ModernForms {
         // Special handling for portal role — filled from portal_roles table after render
         else if (field.name === 'portal_role_id' && field.relation && field.relation.table === 'portal_roles') {
             input = `<select name="${field.name}" id="portal_role_id_select" ${required}><option value="">Select portal role...</option></select>`;
+        }
+        else if (field.name === 'role_id' && field.relation && field.relation.table === 'roles' && this.currentTable === 'portal_roles') {
+            input = `<select name="${field.name}" id="permission_role_id_select" ${required}><option value="">Select permission role...</option></select>`;
         }
         // Special handling for currency - dropdown populated from currencies table
         else if (field.name === 'currency' && field.currencyDropdown) {
@@ -4319,7 +4444,7 @@ class ModernForms {
             'arrival_stations': ['name'],
             'appearance_specifications': ['name'],
             'request_statuses': ['name'],
-            'portal_roles': ['name', 'portal_type']
+            'portal_roles': ['name', 'portal_type', 'role_id']
         };
         const alias = this.getReverseAliasMap(table);
         const missing = [];
@@ -6320,22 +6445,21 @@ class ModernForms {
                             { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
                             { key: 'position', label: 'Position', type: 'text', maxLen: 14, maxWidth: 100 },
                             { key: 'portal_role_name', label: 'Portal role', type: 'text', maxLen: 16, maxWidth: 110 },
+                            { key: 'permission_role_name', label: 'Permissions', type: 'text', maxLen: 16, maxWidth: 110 },
                             { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
-                            { key: 'permissions', label: 'Permissions', type: 'permissions', maxWidth: 130 },
                             { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                         ];
                     }
-                    const cols = [
+                    return [
                         { key: 'name', label: 'Username', type: 'text', maxLen: 16, maxWidth: 100 },
                         { key: 'login_barcode', label: 'Barcode', type: 'login_barcode', maxWidth: 130 },
                         { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                         { key: 'email', label: 'Email', type: 'text', maxLen: 20, maxWidth: 140 },
                         { key: 'portal_role_name', label: 'Portal role', type: 'text', maxLen: 16, maxWidth: 110 },
+                        { key: 'permission_role_name', label: 'Permissions', type: 'text', maxLen: 16, maxWidth: 110 },
                         { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
-                        { key: 'permissions', label: 'Permissions', type: 'permissions', maxWidth: 130 },
                         { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                     ];
-                    return cols;
                 })()
             },
             'appearance_specifications': {
@@ -6369,6 +6493,7 @@ class ModernForms {
                 columns: [
                     { key: 'name', label: 'Name', type: 'text', maxLen: 20, maxWidth: 140 },
                     { key: 'portal_type', label: 'Portal type', type: 'text', maxLen: 12, maxWidth: 90 },
+                    { key: 'permission_role_name', label: 'Permission role', type: 'text', maxLen: 18, maxWidth: 120 },
                     { key: 'description', label: 'Description', type: 'text', maxLen: 28, maxWidth: 160 },
                     { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                 ]
@@ -6608,7 +6733,7 @@ class ModernForms {
                             { name: 'email', label: 'Email', type: 'email', required: false, placeholder: 'Enter email address' },
                             { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },
                             { name: 'position', label: 'Position', type: 'text', placeholder: 'Enter position (optional)' },
-                            { name: 'portal_role_id', label: 'Portal role', type: 'select', required: false, relation: { table: 'portal_roles', displayField: 'name', valueField: 'id' }, help: 'Which mobile app this user opens. Manage roles under Portal Roles in System Settings.' },
+                            { name: 'portal_role_id', label: 'Portal role', type: 'select', required: false, relation: { table: 'portal_roles', displayField: 'name', valueField: 'id' }, help: 'Mobile app + RATEB Pro permissions (from linked permission role on save).' },
                             { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter password (required for new user)' },
                             { name: 'status', label: 'Status', type: 'select', options: [
                                 { value: 'active', label: 'Active' },
@@ -6621,7 +6746,7 @@ class ModernForms {
                         { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Auto-generated on save if empty', help: 'Leave blank to create R… reference code on save. Use Access for the scannable workforce QR.' },
                         { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
                         { name: 'password', label: 'Password', type: 'password', required: false, placeholder: 'Enter password (leave blank to keep current)' },
-                        { name: 'portal_role_id', label: 'Portal role', type: 'select', required: true, relation: { table: 'portal_roles', displayField: 'name', valueField: 'id' }, help: 'Which mobile app this user opens (Company, Worker, or Agency).' },
+                        { name: 'portal_role_id', label: 'Portal role', type: 'select', required: true, relation: { table: 'portal_roles', displayField: 'name', valueField: 'id' }, help: 'Select portal role — permissions are applied automatically from its permission role.' },
                         { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },
                         { name: 'position', label: 'Position', type: 'text', placeholder: 'Enter position (optional)' },
                         { name: 'status', label: 'Status', type: 'select', options: [
@@ -6679,6 +6804,7 @@ class ModernForms {
                         { value: 'worker', label: 'Worker (mobile worker portal)' },
                         { value: 'agency', label: 'Agency (recruitment agency portal)' }
                     ], help: 'Which mobile app opens when this user logs in.' },
+                    { name: 'role_id', label: 'Permission role', type: 'select', required: true, relation: { table: 'roles', displayField: 'role_name', valueField: 'role_id' }, help: 'RATEB Pro permissions copied to users who pick this portal role.' },
                     { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Optional notes', fullWidth: true },
                     { name: 'status', label: 'Status', type: 'select', options: [
                         { value: 'active', label: 'Active' },
