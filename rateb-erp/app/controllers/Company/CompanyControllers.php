@@ -823,6 +823,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     public function create(): void
     {
         $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         $this->view($this->viewPrefix . '/form', $this->inventoryFormData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
