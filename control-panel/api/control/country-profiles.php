@@ -32,26 +32,27 @@ function cp_allowed_requirement_fields(): array
 
 function cp_default_profiles(): array
 {
+    $core = ['full_name', 'gender', 'agent_id'];
     return [
         'indonesia' => [
             'labels' => ['government' => 'Government Approval', 'workPermit' => 'Exit Permit', 'contract' => 'Signed Contract', 'travel' => 'Travel Readiness'],
-            'requirements' => ['full_name', 'gender', 'agent_id', 'identity_number', 'passport_number', 'police_number', 'medical_number', 'visa_number', 'ticket_number', 'training_certificate_number', 'contract_signed_number', 'insurance_number', 'exit_permit_number', 'approval_reference_id']
+            'requirements' => $core
         ],
         'bangladesh' => [
             'labels' => ['government' => 'BMET Registration', 'workPermit' => 'Work Permit', 'contract' => 'Overseas Contract', 'travel' => 'Travel Clearance'],
-            'requirements' => ['full_name', 'gender', 'agent_id', 'identity_number', 'passport_number', 'police_number', 'medical_number', 'visa_number', 'ticket_number', 'government_registration_number', 'work_permit_number', 'insurance_policy_number', 'salary', 'contract_duration', 'flight_ticket_number', 'predeparture_training_completed', 'contract_verified']
+            'requirements' => $core
         ],
         'sri_lanka' => [
             'labels' => ['government' => 'SLBFE Registration', 'workPermit' => 'Work Permit', 'contract' => 'Employment Contract', 'travel' => 'Departure Clearance'],
-            'requirements' => ['full_name', 'gender', 'agent_id', 'identity_number', 'passport_number', 'police_number', 'medical_number', 'visa_number', 'ticket_number', 'government_registration_number', 'work_permit_number', 'insurance_policy_number', 'salary', 'contract_duration', 'flight_ticket_number', 'predeparture_training_completed', 'contract_verified']
+            'requirements' => $core
         ],
         'kenya' => [
             'labels' => ['government' => 'NITA Registration', 'workPermit' => 'Work Permit', 'contract' => 'Employment Contract', 'travel' => 'Travel Clearance'],
-            'requirements' => ['full_name', 'gender', 'agent_id', 'identity_number', 'passport_number', 'police_number', 'medical_number', 'visa_number', 'ticket_number', 'government_registration_number', 'work_permit_number', 'insurance_policy_number', 'salary', 'contract_duration', 'flight_ticket_number', 'predeparture_training_completed', 'contract_verified']
+            'requirements' => $core
         ],
         'default' => [
             'labels' => ['government' => 'Government Registration', 'workPermit' => 'Work Permit', 'contract' => 'Contract', 'travel' => 'Travel & Departure'],
-            'requirements' => ['full_name', 'gender', 'agent_id', 'identity_number', 'passport_number', 'police_number', 'medical_number', 'visa_number', 'ticket_number', 'government_registration_number', 'work_permit_number']
+            'requirements' => $core
         ],
     ];
 }

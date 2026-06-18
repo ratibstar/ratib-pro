@@ -392,56 +392,8 @@ document.addEventListener('DOMContentLoaded', function() {
             && window.RATEB_COUNTRY_PROFILE_CONFIG.requirements.length > 0) {
             return window.RATEB_COUNTRY_PROFILE_CONFIG.requirements.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
         }
-        // Core identity only — document row fields (ID, passport, police, etc.) stay optional; see applyCountrySpecificRequirements.
-        const common = [
-            'full_name',
-            'gender',
-            'agent_id'
-        ];
-        const byCountry = {
-            indonesia: [
-                'training_certificate_number',
-                'contract_signed_number',
-                'insurance_number',
-                'exit_permit_number',
-                'approval_reference_id'
-            ],
-            bangladesh: [
-                'government_registration_number',
-                'work_permit_number',
-                'insurance_policy_number',
-                'salary',
-                'contract_duration',
-                'flight_ticket_number',
-                'predeparture_training_completed',
-                'contract_verified'
-            ],
-            sri_lanka: [
-                'government_registration_number',
-                'work_permit_number',
-                'insurance_policy_number',
-                'salary',
-                'contract_duration',
-                'flight_ticket_number',
-                'predeparture_training_completed',
-                'contract_verified'
-            ],
-            kenya: [
-                'government_registration_number',
-                'work_permit_number',
-                'insurance_policy_number',
-                'salary',
-                'contract_duration',
-                'flight_ticket_number',
-                'predeparture_training_completed',
-                'contract_verified'
-            ],
-            default: [
-                'government_registration_number',
-                'work_permit_number'
-            ]
-        };
-        return common.concat(byCountry[profile] || byCountry.default);
+        // Core fields only — document/compliance fields are optional at save time.
+        return ['full_name', 'gender', 'agent_id'];
     }
 
     function expandCountryRequirementNames(requiredNames) {
