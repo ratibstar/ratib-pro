@@ -66,8 +66,18 @@ $jsScanV = (int) @filemtime(__DIR__ . '/../js/login-scan.js');
 $jsLibV = (int) @filemtime(__DIR__ . '/../js/rateb-qr-scanner.js');
 
 $cssUrl = function_exists('asset') ? asset('css/qr-scan.css') : '/css/qr-scan.css';
-$jsScannerUrl = function_exists('asset') ? asset('js/rateb-qr-scanner.js') : '/js/rateb-qr-scanner.js';
-$jsScanUrl = function_exists('asset') ? asset('js/login-scan.js') : '/js/login-scan.js';
+$publicBase = function_exists('rateb_absolute_public_base') ? rateb_absolute_public_base() : '';
+$absAsset = static function (string $path) use ($publicBase): string {
+    $path = ltrim($path, '/');
+    if ($publicBase !== '') {
+        return rtrim($publicBase, '/') . '/' . $path;
+    }
+    return function_exists('asset') ? asset($path) : '/' . $path;
+};
+$jsScannerUrl = $absAsset('js/rateb-qr-scanner.js');
+$jsScanUrl = $absAsset('js/login-scan.js');
+$html5LibUrl = $absAsset('js/vendor/html5-qrcode.min.js');
+$html5LibV = (int) @filemtime(__DIR__ . '/../js/vendor/html5-qrcode.min.js');
 
 $apiQr = '/api/qr-login.php';
 $apiPair = '/api/login-barcode-pair.php';
@@ -175,15 +185,16 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         'countrySlug' => $ctxCountrySlug,
         'mode' => $mode,
         'autoBadge' => $autoBadge,
+        'html5Lib' => $html5LibUrl . '?v=' . $html5LibV,
+        'html5LibFallback' => 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js',
+        'scannerLib' => $jsScannerUrl . '?v=' . $jsLibV,
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
     <?php
     $jsMobileBadgeV = (int) @filemtime(__DIR__ . '/../js/rateb-mobile-badge-store.js');
-    $jsMobileBadgeUrl = function_exists('asset') ? asset('js/rateb-mobile-badge-store.js') : '/js/rateb-mobile-badge-store.js';
+    $jsMobileBadgeUrl = $absAsset('js/rateb-mobile-badge-store.js');
     ?>
     <script src="<?php echo htmlspecialchars($jsMobileBadgeUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsMobileBadgeV; ?>"></script>
-    <script src="<?php echo htmlspecialchars($jsScannerUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsLibV; ?>"></script>
     <script src="<?php echo htmlspecialchars($jsScanUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsScanV; ?>"></script>
 </body>
 </html>

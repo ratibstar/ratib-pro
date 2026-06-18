@@ -382,17 +382,67 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    if (typeof RATEBQrScanner === 'undefined') {
-        setStatus('Scanner failed to load. Refresh the page.', 'error');
-        return;
+    function loadScriptOnce(url) {
+        return new Promise(function (resolve, reject) {
+            if (!url) {
+                reject(new Error('missing script url'));
+                return;
+            }
+            var existing = document.querySelector('script[data-rateb-src="' + url + '"]');
+            if (existing && existing.getAttribute('data-rateb-loaded') === '1') {
+                resolve();
+                return;
+            }
+            var s = existing || document.createElement('script');
+            s.src = url;
+            s.async = true;
+            s.setAttribute('data-rateb-src', url);
+            s.onload = function () {
+                s.setAttribute('data-rateb-loaded', '1');
+                resolve();
+            };
+            s.onerror = function () {
+                reject(new Error('load failed: ' + url));
+            };
+            if (!existing) {
+                document.head.appendChild(s);
+            }
+        });
     }
 
-    scanner = new RATEBQrScanner({
-        elementId: 'qr-scan-viewport',
-        throttleMs: 1200,
-        onScan: submitPayload,
-        onStatus: setStatus
-    });
+    function ensureScannerLibs() {
+        if (typeof Html5Qrcode !== 'undefined' && typeof RATEBQrScanner !== 'undefined') {
+            return Promise.resolve();
+        }
+        var primary = cfg.html5Lib || '/js/vendor/html5-qrcode.min.js';
+        var fallback = cfg.html5LibFallback || 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+        var scannerUrl = cfg.scannerLib || '/js/rateb-qr-scanner.js';
+        return loadScriptOnce(primary).catch(function () {
+            return loadScriptOnce(fallback);
+        }).then(function () {
+            if (typeof RATEBQrScanner !== 'undefined') {
+                return;
+            }
+            return loadScriptOnce(scannerUrl);
+        }).then(function () {
+            if (typeof Html5Qrcode === 'undefined' || typeof RATEBQrScanner === 'undefined') {
+                throw new Error('scanner libs unavailable');
+            }
+        });
+    }
+
+    function initScanner() {
+        if (scanner) {
+            return scanner;
+        }
+        scanner = new RATEBQrScanner({
+            elementId: 'qr-scan-viewport',
+            throttleMs: 1200,
+            onScan: submitPayload,
+            onStatus: setStatus
+        });
+        return scanner;
+    }
 
     if (startBtn) {
         startBtn.addEventListener('click', function () {
@@ -409,26 +459,43 @@ document.addEventListener('DOMContentLoaded', function () {
             if (banner) {
                 banner.classList.add('d-none');
             }
-            setStatus('Requesting camera…', 'loading');
-            scanner.throttleMs = 1200;
-            scanner.resetSubmit();
-            scanner.start().catch(function () {
-                restoreCameraUi();
-                setStatus('Could not start camera. Allow permission and tap Start again.', 'error');
-            });
-            hintTimer = setTimeout(function () {
-                if (!scanComplete) {
-                    setStatus(
-                        'No QR detected yet? Use the badge from System Settings → Users → Workforce access. Laptop screens are hard to scan — try Print badge or hold phone closer.',
-                        'info'
-                    );
+            setStatus('Loading scanner…', 'loading');
+            ensureScannerLibs().then(function () {
+                initScanner();
+                setStatus('Requesting camera…', 'loading');
+                scanner.throttleMs = 1200;
+                scanner.resetSubmit();
+                return scanner.start();
+            }).then(function () {
+                if (scanComplete || !scanner) {
+                    return;
                 }
-            }, 14000);
+                hintTimer = setTimeout(function () {
+                    if (!scanComplete) {
+                        setStatus(
+                            'No QR detected yet? Use the badge from System Settings → Users → Workforce access. Laptop screens are hard to scan — try Print badge or hold phone closer.',
+                            'info'
+                        );
+                    }
+                }, 14000);
+            }).catch(function (err) {
+                restoreCameraUi();
+                var libFail = err && String(err.message || '').indexOf('scanner libs') >= 0;
+                setStatus(
+                    libFail
+                        ? 'Scanner failed to load. Check connection and refresh, or use Copy badge link below.'
+                        : 'Could not start camera. Allow permission and tap Start again.',
+                    'error'
+                );
+            });
         });
     }
 
     if (stopBtn) {
         stopBtn.addEventListener('click', async function () {
+            if (!scanner) {
+                return;
+            }
             await scanner.stop();
             stopBtn.classList.add('d-none');
             if (startBtn) {
