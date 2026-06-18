@@ -679,6 +679,53 @@ if ($embeddedMode) {
     </div>
 </div>
 
+<!-- Portal Role Manual Permissions Modal -->
+<div id="portalRolePermissionsModal" class="modern-modal modal-hidden">
+    <div class="modern-modal-content permissions-modal-content">
+        <div class="modern-modal-header">
+            <h2 class="modern-modal-title">
+                <i class="fas fa-sliders-h"></i>
+                <span id="portalRolePermissionsModalTitle">Configure Portal Role Permissions</span>
+            </h2>
+            <button class="modal-close" data-action="close-portal-role-permissions-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="permissions-management-body">
+            <div class="permissions-user-info">
+                <div class="user-info-card">
+                    <i class="fas fa-mobile-alt"></i>
+                    <div>
+                        <strong id="portalRolePermissionsName">Loading...</strong>
+                        <small id="portalRolePermissionsMeta">Portal role</small>
+                    </div>
+                </div>
+                <div class="permissions-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="portalRolePermissionsNote">Pick permissions manually for this portal role. Saved overrides apply to all users with this role. Use “Use permission role defaults” to follow the linked role again.</span>
+                </div>
+            </div>
+
+            <div id="portalRolePermissionsGroupsContainer" class="permissions-groups-container">
+            </div>
+
+            <div id="portalRolePermissionsStatus" class="permissions-status-hidden"></div>
+        </div>
+
+        <div class="permissions-actions">
+            <button class="modern-btn modern-btn-secondary permissions-action-btn" data-action="close-portal-role-permissions-modal">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="modern-btn modern-btn-warning permissions-action-btn" data-action="reset-portal-role-permissions">
+                <i class="fas fa-undo"></i> Use Permission Role Defaults
+            </button>
+            <button id="savePortalRolePermissionsBtn" class="modern-btn modern-btn-primary permissions-action-btn" data-action="save-portal-role-permissions">
+                <i class="fas fa-save"></i> Save Manual Permissions
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="<?php echo asset('js/countries-cities.js'); ?>?v=<?php echo $countriesCitiesVersion; ?>"></script>
 <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
 <script src="<?php echo asset('js/system-settings-alerts.js'); ?>?v=<?php echo $systemSettingsAlertsVersion; ?>"></script>

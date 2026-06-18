@@ -435,6 +435,14 @@ class ModernForms {
                         } else {
                             console.error('openUserPermissionsModal function not found');
                         }
+                    } else if (action === 'manage-portal-role-permissions') {
+                        const portalRoleId = parseInt(btn.getAttribute('data-portal-role-id'), 10);
+                        const roleName = btn.getAttribute('data-role-name') || '';
+                        if (window.openPortalRolePermissionsModal) {
+                            window.openPortalRolePermissionsModal(portalRoleId, roleName);
+                        } else {
+                            console.error('openPortalRolePermissionsModal function not found');
+                        }
                     } else if (action === 'toggle-status') {
                         const id = parseInt(btn.getAttribute('data-id'));
                         const current = btn.getAttribute('data-current') || 'inactive';
@@ -1366,6 +1374,11 @@ class ModernForms {
                         <i class="fas fa-id-badge"></i>
                         <span class="btn-text">Access</span>
                     </button>` : ''}
+                    ${tableConfig.table === 'portal_roles' && itemId ? `
+                    <button type="button" class="modern-btn modern-btn-sm modern-btn-info" data-action="manage-portal-role-permissions" data-portal-role-id="${itemId}" data-role-name="${(this.getFieldValue(item, 'name') || '').replace(/"/g, '&quot;')}" title="Configure permissions manually" aria-label="Configure permissions manually">
+                        <i class="fas fa-sliders-h"></i>
+                        <span class="btn-text">Manual</span>
+                    </button>` : ''}
                 </td>
             </tr>
         `;
@@ -1413,6 +1426,22 @@ class ModernForms {
                     title="Manage User Permissions">
                     <i class="fas fa-key"></i>
                     <span class="btn-text">${hasCustomPermissions ? 'Edit' : 'Set'} Permissions</span>
+                </button>
+            `;
+        }
+
+        if (type === 'portal_manual_permissions' || colKey === 'manual_permissions') {
+            const portalRoleId = (item && (item.id || item.portal_role_id)) ? (item.id || item.portal_role_id) : '';
+            const roleName = item ? (item.name || this.getFieldValue(item, 'name') || '') : '';
+            const hasManual = item && item.permissions !== null && item.permissions !== '' && item.permissions !== '[]';
+            return `
+                <button type="button" class="modern-btn modern-btn-sm modern-btn-info"
+                    data-action="manage-portal-role-permissions"
+                    data-portal-role-id="${portalRoleId}"
+                    data-role-name="${roleName.replace(/"/g, '&quot;')}"
+                    title="Configure permissions manually">
+                    <i class="fas fa-sliders-h"></i>
+                    <span class="btn-text">${hasManual ? 'Edit Manual' : 'Configure'}</span>
                 </button>
             `;
         }
@@ -4444,7 +4473,7 @@ class ModernForms {
             'arrival_stations': ['name'],
             'appearance_specifications': ['name'],
             'request_statuses': ['name'],
-            'portal_roles': ['name', 'portal_type', 'role_id']
+            'portal_roles': ['name', 'portal_type']
         };
         const alias = this.getReverseAliasMap(table);
         const missing = [];
@@ -6494,6 +6523,7 @@ class ModernForms {
                     { key: 'name', label: 'Name', type: 'text', maxLen: 20, maxWidth: 140 },
                     { key: 'portal_type', label: 'Portal type', type: 'text', maxLen: 12, maxWidth: 90 },
                     { key: 'permission_role_name', label: 'Permission role', type: 'text', maxLen: 18, maxWidth: 120 },
+                    { key: 'manual_permissions', label: 'Manual perms', type: 'portal_manual_permissions', maxWidth: 130 },
                     { key: 'description', label: 'Description', type: 'text', maxLen: 28, maxWidth: 160 },
                     { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                 ]
@@ -6804,7 +6834,7 @@ class ModernForms {
                         { value: 'worker', label: 'Worker (mobile worker portal)' },
                         { value: 'agency', label: 'Agency (recruitment agency portal)' }
                     ], help: 'Which mobile app opens when this user logs in.' },
-                    { name: 'role_id', label: 'Permission role', type: 'select', required: true, relation: { table: 'roles', displayField: 'role_name', valueField: 'role_id' }, help: 'RATEB Pro permissions copied to users who pick this portal role.' },
+                    { name: 'role_id', label: 'Permission role', type: 'select', required: false, relation: { table: 'roles', displayField: 'role_name', valueField: 'role_id' }, help: 'Optional template. Use “Configure” in the table to set permissions manually for this portal role.' },
                     { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Optional notes', fullWidth: true },
                     { name: 'status', label: 'Status', type: 'select', options: [
                         { value: 'active', label: 'Active' },

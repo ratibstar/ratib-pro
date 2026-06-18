@@ -295,9 +295,10 @@ try {
         }
     }
     
-    // Get role_id or user_id from query parameter
+    // Get role_id, user_id, or portal_role_id from query parameter
     $roleId = isset($_GET['role_id']) ? (int)$_GET['role_id'] : null;
     $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
+    $portalRoleId = isset($_GET['portal_role_id']) ? (int)$_GET['portal_role_id'] : null;
     
     // Validate user_id if provided
     if ($userId !== null && $userId <= 0) {
@@ -315,6 +316,18 @@ try {
             'message' => 'Invalid role ID'
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    if ($portalRoleId !== null && $portalRoleId <= 0) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid portal role ID'
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    if ($portalRoleId && file_exists(__DIR__ . '/../../includes/portal-roles.php')) {
+        require_once __DIR__ . '/../../includes/portal-roles.php';
     }
     
     // Master control-panel vocabulary (countries, global agencies, etc.) — only when NOT inside a program/agency workspace.
@@ -727,6 +740,20 @@ try {
         } catch (Throwable $e) { /* ignore */ }
     }
 
+    // Get portal role permissions if portal_role_id is provided
+    $portalRolePermissions = [];
+    $portalRoleHasManual = false;
+    $portalRoleLinkedRoleId = 0;
+    if ($portalRoleId && function_exists('rateb_portal_role_effective_permissions')) {
+        $portalMeta = rateb_portal_role_effective_permissions($permReadConn instanceof mysqli ? $permReadConn : $conn, $portalRoleId);
+        $portalRolePermissions = $portalMeta['permissions'] ?? [];
+        $portalRoleHasManual = !empty($portalMeta['has_manual']);
+        $portalRoleLinkedRoleId = (int) ($portalMeta['role_id'] ?? 0);
+        if (!$roleId && $portalRoleLinkedRoleId > 0) {
+            $roleId = $portalRoleLinkedRoleId;
+        }
+    }
+
     // Get role permissions if role_id is provided (use permReadConn = country DB when available)
     $rolePermissions = [];
     if ($roleId) {
@@ -893,7 +920,9 @@ try {
     // For user edit: if users.permissions is empty, effective access follows the user's role — show that in granted flags.
     // Response user_permissions stays the stored JSON only (save/unsaved logic unchanged).
     $storedUserPerms = is_array($userPermissions) ? array_map('strval', $userPermissions) : [];
-    if ($userId) {
+    if ($portalRoleId) {
+        $permissionsToCheckForGranted = is_array($portalRolePermissions) ? $portalRolePermissions : [];
+    } elseif ($userId) {
         $permissionsToCheckForGranted = $storedUserPerms;
         if (!in_array('*', $permissionsToCheckForGranted, true) && count($permissionsToCheckForGranted) === 0) {
             $permissionsToCheckForGranted = $editedUserRolePermissionIds;
@@ -931,6 +960,11 @@ try {
                 'db_name' => $debugDbName,
             ];
         }
+    }
+    if ($portalRoleId) {
+        $response['portal_role_permissions'] = $portalRolePermissions;
+        $response['has_manual_override'] = $portalRoleHasManual;
+        $response['linked_role_id'] = $portalRoleLinkedRoleId;
     }
     if ($isControl) {
         $response['source'] = 'control';

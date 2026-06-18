@@ -105,6 +105,7 @@ if (!function_exists('rateb_portal_roles_ensure_schema')) {
                 `name` VARCHAR(100) NOT NULL,
                 `portal_type` ENUM('company','worker','agency') NOT NULL DEFAULT 'company',
                 `role_id` INT NULL DEFAULT NULL COMMENT 'FK roles.role_id — RATEB Pro permission profile',
+                `permissions` JSON NULL DEFAULT NULL COMMENT 'Manual permission override for this portal role',
                 `description` TEXT NULL,
                 `status` VARCHAR(20) NOT NULL DEFAULT 'active',
                 `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,6 +123,14 @@ if (!function_exists('rateb_portal_roles_ensure_schema')) {
                 ALTER TABLE `portal_roles`
                 ADD COLUMN `role_id` INT NULL DEFAULT NULL COMMENT 'FK roles.role_id' AFTER `portal_type`,
                 ADD KEY `idx_role_id` (`role_id`)
+            ");
+        }
+
+        if (rateb_portal_roles_table_exists($conn)
+            && !rateb_portal_roles_column_exists($conn, 'portal_roles', 'permissions')) {
+            rateb_portal_roles_run_sql($conn, "
+                ALTER TABLE `portal_roles`
+                ADD COLUMN `permissions` JSON NULL DEFAULT NULL COMMENT 'Manual permission override' AFTER `role_id`
             ");
         }
 
@@ -343,7 +352,7 @@ if (!function_exists('rateb_portal_role_permission_payload')) {
         try {
             if ($conn instanceof mysqli) {
                 $stmt = $conn->prepare(
-                    'SELECT pr.role_id, r.permissions
+                    'SELECT pr.role_id, pr.permissions AS portal_permissions, r.permissions AS role_permissions
                      FROM portal_roles pr
                      LEFT JOIN roles r ON pr.role_id = r.role_id
                      WHERE pr.id = ? AND pr.status = \'active\'
@@ -359,7 +368,7 @@ if (!function_exists('rateb_portal_role_permission_payload')) {
                 $stmt->close();
             } elseif ($conn instanceof PDO) {
                 $stmt = $conn->prepare(
-                    'SELECT pr.role_id, r.permissions
+                    'SELECT pr.role_id, pr.permissions AS portal_permissions, r.permissions AS role_permissions
                      FROM portal_roles pr
                      LEFT JOIN roles r ON pr.role_id = r.role_id
                      WHERE pr.id = ? AND pr.status = \'active\'
@@ -374,25 +383,113 @@ if (!function_exists('rateb_portal_role_permission_payload')) {
                 return null;
             }
 
-            if (!$row || empty($row['role_id'])) {
+            if (!$row) {
                 return null;
             }
 
-            $perms = $row['permissions'] ?? null;
-            if ($perms !== null && is_string($perms)) {
-                $decoded = json_decode($perms, true);
-                $perms = json_encode(is_array($decoded) ? $decoded : []);
-            } else {
-                $perms = json_encode([]);
+            $roleId = (int) ($row['role_id'] ?? 0);
+            $permsJson = null;
+
+            if ($row['portal_permissions'] !== null && trim((string) $row['portal_permissions']) !== '') {
+                $manual = json_decode((string) $row['portal_permissions'], true);
+                if (is_array($manual)) {
+                    $permsJson = json_encode($manual, JSON_UNESCAPED_UNICODE);
+                }
+            }
+
+            if ($permsJson === null) {
+                if ($roleId <= 0) {
+                    return null;
+                }
+                $rolePerms = $row['role_permissions'] ?? null;
+                if ($rolePerms !== null && is_string($rolePerms)) {
+                    $decoded = json_decode($rolePerms, true);
+                    $permsJson = json_encode(is_array($decoded) ? $decoded : []);
+                } else {
+                    $permsJson = json_encode([]);
+                }
+            }
+
+            if ($roleId <= 0) {
+                return [
+                    'role_id' => 0,
+                    'permissions' => $permsJson,
+                ];
             }
 
             return [
-                'role_id' => (int) $row['role_id'],
-                'permissions' => $perms,
+                'role_id' => $roleId,
+                'permissions' => $permsJson,
             ];
         } catch (Throwable $e) {
             error_log('rateb_portal_role_permission_payload: ' . $e->getMessage());
             return null;
+        }
+    }
+}
+
+if (!function_exists('rateb_portal_role_effective_permissions')) {
+    /**
+     * @param mysqli|PDO $conn
+     * @return array{permissions:array<int,string>,has_manual:bool,role_id:int}
+     */
+    function rateb_portal_role_effective_permissions($conn, int $portalRoleId): array
+    {
+        $empty = ['permissions' => [], 'has_manual' => false, 'role_id' => 0];
+        if ($portalRoleId <= 0) {
+            return $empty;
+        }
+
+        rateb_portal_roles_ensure_schema($conn);
+
+        try {
+            if ($conn instanceof mysqli) {
+                $stmt = $conn->prepare(
+                    'SELECT pr.role_id, pr.permissions AS portal_permissions, r.permissions AS role_permissions
+                     FROM portal_roles pr
+                     LEFT JOIN roles r ON pr.role_id = r.role_id
+                     WHERE pr.id = ? LIMIT 1'
+                );
+                if (!$stmt) {
+                    return $empty;
+                }
+                $stmt->bind_param('i', $portalRoleId);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $row = $res ? $res->fetch_assoc() : null;
+                $stmt->close();
+            } elseif ($conn instanceof PDO) {
+                $stmt = $conn->prepare(
+                    'SELECT pr.role_id, pr.permissions AS portal_permissions, r.permissions AS role_permissions
+                     FROM portal_roles pr
+                     LEFT JOIN roles r ON pr.role_id = r.role_id
+                     WHERE pr.id = ? LIMIT 1'
+                );
+                if (!$stmt) {
+                    return $empty;
+                }
+                $stmt->execute([$portalRoleId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            } else {
+                return $empty;
+            }
+
+            if (!$row) {
+                return $empty;
+            }
+
+            $roleId = (int) ($row['role_id'] ?? 0);
+            $hasManual = $row['portal_permissions'] !== null && trim((string) $row['portal_permissions']) !== '';
+            $source = $hasManual ? $row['portal_permissions'] : ($row['role_permissions'] ?? '[]');
+            $decoded = json_decode((string) $source, true);
+
+            return [
+                'permissions' => is_array($decoded) ? array_map('strval', $decoded) : [],
+                'has_manual' => $hasManual,
+                'role_id' => $roleId,
+            ];
+        } catch (Throwable $e) {
+            return $empty;
         }
     }
 }
@@ -419,6 +516,9 @@ if (!function_exists('rateb_apply_portal_role_to_user_fields')) {
         if ($payload['permissions'] !== null) {
             $fields['permissions'] = $payload['permissions'];
         }
+        if ((int) ($payload['role_id'] ?? 0) <= 0) {
+            unset($fields['role_id']);
+        }
 
         return $fields;
     }
@@ -437,20 +537,40 @@ if (!function_exists('rateb_portal_roles_sync_users_for_portal_role')) {
 
         try {
             if ($conn instanceof mysqli) {
-                $stmt = $conn->prepare(
-                    'UPDATE users SET role_id = ?, permissions = ? WHERE portal_role_id = ?'
-                );
-                if ($stmt) {
-                    $stmt->bind_param('isi', $payload['role_id'], $payload['permissions'], $portalRoleId);
-                    $stmt->execute();
-                    $stmt->close();
+                if ((int) ($payload['role_id'] ?? 0) > 0) {
+                    $stmt = $conn->prepare(
+                        'UPDATE users SET role_id = ?, permissions = ? WHERE portal_role_id = ?'
+                    );
+                    if ($stmt) {
+                        $stmt->bind_param('isi', $payload['role_id'], $payload['permissions'], $portalRoleId);
+                        $stmt->execute();
+                        $stmt->close();
+                    }
+                } else {
+                    $stmt = $conn->prepare(
+                        'UPDATE users SET permissions = ? WHERE portal_role_id = ?'
+                    );
+                    if ($stmt) {
+                        $stmt->bind_param('si', $payload['permissions'], $portalRoleId);
+                        $stmt->execute();
+                        $stmt->close();
+                    }
                 }
             } elseif ($conn instanceof PDO) {
-                $stmt = $conn->prepare(
-                    'UPDATE users SET role_id = ?, permissions = ? WHERE portal_role_id = ?'
-                );
-                if ($stmt) {
-                    $stmt->execute([$payload['role_id'], $payload['permissions'], $portalRoleId]);
+                if ((int) ($payload['role_id'] ?? 0) > 0) {
+                    $stmt = $conn->prepare(
+                        'UPDATE users SET role_id = ?, permissions = ? WHERE portal_role_id = ?'
+                    );
+                    if ($stmt) {
+                        $stmt->execute([$payload['role_id'], $payload['permissions'], $portalRoleId]);
+                    }
+                } else {
+                    $stmt = $conn->prepare(
+                        'UPDATE users SET permissions = ? WHERE portal_role_id = ?'
+                    );
+                    if ($stmt) {
+                        $stmt->execute([$payload['permissions'], $portalRoleId]);
+                    }
                 }
             }
         } catch (Throwable $e) {
@@ -537,10 +657,10 @@ if (!function_exists('rateb_portal_roles_sync_user_permissions')) {
         $sql = "
             UPDATE users u
             INNER JOIN portal_roles pr ON u.portal_role_id = pr.id AND pr.status = 'active'
-            INNER JOIN roles r ON pr.role_id = r.role_id
-            SET u.role_id = pr.role_id,
-                u.permissions = COALESCE(r.permissions, '[]')
-            WHERE pr.role_id IS NOT NULL AND pr.role_id > 0
+            LEFT JOIN roles r ON pr.role_id = r.role_id
+            SET u.role_id = CASE WHEN pr.role_id IS NOT NULL AND pr.role_id > 0 THEN pr.role_id ELSE u.role_id END,
+                u.permissions = COALESCE(pr.permissions, r.permissions, '[]')
+            WHERE pr.role_id IS NOT NULL OR pr.permissions IS NOT NULL
         ";
 
         try {

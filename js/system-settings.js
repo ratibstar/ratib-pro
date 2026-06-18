@@ -145,6 +145,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    document.querySelectorAll('[data-action="close-portal-role-permissions-modal"]').forEach(element => {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof closePortalRolePermissionsModal === 'function') {
+                closePortalRolePermissionsModal();
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-action="save-portal-role-permissions"]').forEach(element => {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof savePortalRolePermissions === 'function') {
+                savePortalRolePermissions();
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-action="reset-portal-role-permissions"]').forEach(element => {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof resetPortalRolePermissions === 'function') {
+                resetPortalRolePermissions();
+            }
+        });
+    });
 });
 
 // Handle Escape key for user permissions modal
@@ -155,6 +182,13 @@ document.addEventListener('keydown', function(e) {
             e.preventDefault();
             if (typeof closeUserPermissionsModal === 'function') {
                 closeUserPermissionsModal();
+            }
+        }
+        const portalPermModal = document.getElementById('portalRolePermissionsModal');
+        if (portalPermModal && !portalPermModal.classList.contains('modal-hidden')) {
+            e.preventDefault();
+            if (typeof closePortalRolePermissionsModal === 'function') {
+                closePortalRolePermissionsModal();
             }
         }
     }
@@ -1908,3 +1942,329 @@ function showPermissionsStatus(message, type) {
     statusDiv.className = `permissions-status-visible ${type}-message`;
     statusDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
 }
+
+// ============================================
+// PORTAL ROLE MANUAL PERMISSIONS
+// ============================================
+
+let currentPortalRolePermissionsId = null;
+let currentPortalRolePermissionsName = null;
+let portalRolePermissionsData = null;
+
+window.openPortalRolePermissionsModal = function(portalRoleId, roleName) {
+    if (!portalRoleId || Number.isNaN(parseInt(portalRoleId, 10)) || parseInt(portalRoleId, 10) <= 0) {
+        return;
+    }
+
+    const modal = document.getElementById('portalRolePermissionsModal');
+    const container = document.getElementById('portalRolePermissionsGroupsContainer');
+    const nameEl = document.getElementById('portalRolePermissionsName');
+    const metaEl = document.getElementById('portalRolePermissionsMeta');
+    const statusDiv = document.getElementById('portalRolePermissionsStatus');
+
+    if (!modal || !container) {
+        console.error('Portal role permissions modal not found');
+        return;
+    }
+
+    currentPortalRolePermissionsId = parseInt(portalRoleId, 10);
+    currentPortalRolePermissionsName = roleName || 'Portal role';
+
+    if (nameEl) {
+        nameEl.textContent = escapeHtml(currentPortalRolePermissionsName);
+    }
+    if (metaEl) {
+        metaEl.textContent = 'Portal role ID: ' + currentPortalRolePermissionsId;
+    }
+
+    modal.classList.remove('modal-hidden');
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+
+    container.innerHTML = '<div class="permissions-loading">Loading permissions...</div>';
+    if (statusDiv) {
+        statusDiv.className = 'permissions-status-hidden';
+        statusDiv.innerHTML = '';
+    }
+
+    loadPortalRolePermissions(currentPortalRolePermissionsId);
+};
+
+function closePortalRolePermissionsModal() {
+    const modal = document.getElementById('portalRolePermissionsModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.classList.add('modal-hidden');
+        document.body.classList.remove('modal-open');
+    }
+    currentPortalRolePermissionsId = null;
+    currentPortalRolePermissionsName = null;
+    portalRolePermissionsData = null;
+}
+window.closePortalRolePermissionsModal = closePortalRolePermissionsModal;
+
+async function loadPortalRolePermissions(portalRoleId) {
+    const container = document.getElementById('portalRolePermissionsGroupsContainer');
+    const noteEl = document.getElementById('portalRolePermissionsNote');
+    if (!container) {
+        return;
+    }
+
+    try {
+        const apiBase = getSystemSettingsApiBase();
+        let url = appendControlParam(`${apiBase}/settings/get_permissions_groups.php?portal_role_id=${portalRoleId}&_=${Date.now()}`);
+        url = appendPageAgencyIdParam(url);
+        const response = await fetch(url, { credentials: 'include', cache: 'no-store' });
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.groups) {
+            container.innerHTML = '<div class="permissions-error">Error loading permissions: ' + escapeHtml(data.message || 'Unknown error') + '</div>';
+            return;
+        }
+
+        portalRolePermissionsData = data;
+        if (noteEl) {
+            noteEl.textContent = data.has_manual_override
+                ? 'Manual permissions are active for this portal role. Save updates all assigned users.'
+                : 'Showing permission role defaults. Save to store a manual override for this portal role.';
+        }
+        renderPortalRolePermissionsGroups(data.groups);
+    } catch (error) {
+        container.innerHTML = '<div class="permissions-error">Error loading permissions: ' + escapeHtml(error.message) + '</div>';
+    }
+}
+
+function renderPortalRolePermissionsGroups(groups) {
+    const container = document.getElementById('portalRolePermissionsGroupsContainer');
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = '';
+
+    if (!groups || !groups.length) {
+        container.innerHTML = '<div class="permissions-error">No permission groups found</div>';
+        return;
+    }
+
+    let totalPermissions = 0;
+    for (const group of groups) {
+        if (group.permissions) {
+            totalPermissions += group.permissions.length;
+        }
+    }
+
+    if (totalPermissions > 0) {
+        const summary = document.createElement('div');
+        summary.className = 'permissions-summary';
+        summary.innerHTML = `<i class="fas fa-info-circle"></i> <strong>Total:</strong> ${totalPermissions} permissions across ${groups.length} groups`;
+        container.appendChild(summary);
+    }
+
+    for (const group of groups) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'permissions-group';
+
+        const header = document.createElement('div');
+        header.className = 'permissions-group-header';
+
+        const title = document.createElement('h3');
+        title.className = 'permissions-group-title';
+        title.innerHTML = `${group.name} <span class="permissions-group-count">${group.count}</span>`;
+
+        const actions = document.createElement('div');
+        actions.className = 'permissions-group-actions';
+
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.type = 'button';
+        selectAllBtn.className = 'permissions-btn-select-all';
+        selectAllBtn.innerHTML = '<i class="fas fa-check-square"></i> Select All';
+        selectAllBtn.onclick = () => selectAllPortalRolePermissions(group.id);
+
+        const cancelAllBtn = document.createElement('button');
+        cancelAllBtn.type = 'button';
+        cancelAllBtn.className = 'permissions-btn-cancel-all';
+        cancelAllBtn.innerHTML = '<i class="fas fa-times"></i> Cancel All';
+        cancelAllBtn.onclick = () => cancelAllPortalRolePermissions(group.id);
+
+        actions.appendChild(selectAllBtn);
+        actions.appendChild(cancelAllBtn);
+        header.appendChild(title);
+        header.appendChild(actions);
+
+        const permissionsGrid = document.createElement('div');
+        permissionsGrid.className = 'permissions-grid';
+        permissionsGrid.id = `portal-role-permissions-group-${group.id}`;
+
+        if (group.permissions && group.permissions.length) {
+            for (const permission of group.permissions) {
+                const permBtn = document.createElement('button');
+                permBtn.type = 'button';
+                permBtn.className = 'permission-btn';
+                permBtn.dataset.groupId = group.id;
+                permBtn.dataset.permissionId = permission.id;
+                permBtn.textContent = permission.name;
+                const isGranted = permission.granted === true;
+                if (!isGranted) {
+                    permBtn.classList.add('permission-inactive');
+                    permBtn.setAttribute('aria-pressed', 'false');
+                } else {
+                    permBtn.setAttribute('aria-pressed', 'true');
+                }
+                permBtn.title = permBtn.classList.contains('permission-inactive')
+                    ? 'Inactive (not granted) — click to grant'
+                    : 'Active (granted) — click to revoke';
+                permBtn.onclick = () => togglePortalRolePermission(permission.id, group.id);
+                permissionsGrid.appendChild(permBtn);
+            }
+        }
+
+        groupDiv.appendChild(header);
+        groupDiv.appendChild(permissionsGrid);
+        container.appendChild(groupDiv);
+    }
+}
+
+function togglePortalRolePermission(permissionId, groupId) {
+    const grid = document.getElementById(`portal-role-permissions-group-${groupId}`);
+    if (!grid) {
+        return;
+    }
+    const permBtn = grid.querySelector(`.permission-btn[data-permission-id="${permissionId}"]`);
+    if (!permBtn) {
+        return;
+    }
+    const isInactive = permBtn.classList.contains('permission-inactive');
+    if (isInactive) {
+        permBtn.classList.remove('permission-inactive');
+        permBtn.setAttribute('aria-pressed', 'true');
+        permBtn.title = 'Active (granted) — click to revoke';
+    } else {
+        permBtn.classList.add('permission-inactive');
+        permBtn.setAttribute('aria-pressed', 'false');
+        permBtn.title = 'Inactive (not granted) — click to grant';
+    }
+}
+
+function selectAllPortalRolePermissions(groupId) {
+    const grid = document.getElementById(`portal-role-permissions-group-${groupId}`);
+    if (!grid) {
+        return;
+    }
+    grid.querySelectorAll('.permission-btn').forEach(function (btn) {
+        btn.classList.remove('permission-inactive');
+        btn.setAttribute('aria-pressed', 'true');
+        btn.title = 'Active (granted) — click to revoke';
+    });
+}
+
+function cancelAllPortalRolePermissions(groupId) {
+    const grid = document.getElementById(`portal-role-permissions-group-${groupId}`);
+    if (!grid) {
+        return;
+    }
+    grid.querySelectorAll('.permission-btn').forEach(function (btn) {
+        btn.classList.add('permission-inactive');
+        btn.setAttribute('aria-pressed', 'false');
+        btn.title = 'Inactive (not granted) — click to grant';
+    });
+}
+
+function showPortalRolePermissionsStatus(message, type) {
+    const statusDiv = document.getElementById('portalRolePermissionsStatus');
+    if (!statusDiv) {
+        return;
+    }
+    statusDiv.className = `permissions-status-visible ${type}-message`;
+    statusDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${escapeHtml(message)}`;
+}
+
+window.savePortalRolePermissions = async function() {
+    if (!currentPortalRolePermissionsId) {
+        showPortalRolePermissionsStatus('No portal role selected', 'error');
+        return;
+    }
+
+    const saveBtn = document.getElementById('savePortalRolePermissionsBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    }
+
+    const grantedPermissions = [];
+    document.querySelectorAll('#portalRolePermissionsGroupsContainer .permission-btn:not(.permission-inactive)').forEach(function (btn) {
+        if (btn.dataset.permissionId) {
+            grantedPermissions.push(btn.dataset.permissionId);
+        }
+    });
+
+    try {
+        const apiBase = getSystemSettingsApiBase();
+        const url = appendControlParam(apiBase + '/settings/save_portal_role_permissions.php');
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                portal_role_id: currentPortalRolePermissionsId,
+                permissions: grantedPermissions
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showPortalRolePermissionsStatus(`Saved ${grantedPermissions.length} manual permission(s).`, 'success');
+            if (window.modernForms && typeof window.modernForms.loadData === 'function' && window.modernForms.currentTable === 'portal_roles') {
+                window.modernForms.loadData();
+            }
+            setTimeout(function () {
+                loadPortalRolePermissions(currentPortalRolePermissionsId);
+            }, 400);
+        } else {
+            showPortalRolePermissionsStatus(data.message || 'Save failed', 'error');
+        }
+    } catch (error) {
+        showPortalRolePermissionsStatus(error.message, 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Manual Permissions';
+        }
+    }
+};
+
+window.resetPortalRolePermissions = async function() {
+    if (!currentPortalRolePermissionsId) {
+        return;
+    }
+    if (!confirm('Clear manual permissions and use the linked permission role defaults for this portal role?')) {
+        return;
+    }
+
+    try {
+        const apiBase = getSystemSettingsApiBase();
+        const url = appendControlParam(apiBase + '/settings/save_portal_role_permissions.php');
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                portal_role_id: currentPortalRolePermissionsId,
+                clear_manual: true
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showPortalRolePermissionsStatus('Using permission role defaults again.', 'success');
+            if (window.modernForms && typeof window.modernForms.loadData === 'function' && window.modernForms.currentTable === 'portal_roles') {
+                window.modernForms.loadData();
+            }
+            setTimeout(function () {
+                loadPortalRolePermissions(currentPortalRolePermissionsId);
+            }, 400);
+        } else {
+            showPortalRolePermissionsStatus(data.message || 'Reset failed', 'error');
+        }
+    } catch (error) {
+        showPortalRolePermissionsStatus(error.message, 'error');
+    }
+};
