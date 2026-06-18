@@ -13,6 +13,7 @@ final class TenantFkValidator
         'warehouse_id' => 'rateb_warehouses',
         'source_warehouse_id' => 'rateb_warehouses',
         'destination_warehouse_id' => 'rateb_warehouses',
+        'category_id' => 'rateb_product_categories',
         'inventory_id' => 'rateb_inventory',
         'rfq_id' => 'rateb_rfq',
         'purchase_order_id' => 'rateb_purchase_orders',
@@ -25,11 +26,15 @@ final class TenantFkValidator
     /** @param array<int, string> $fields */
     public static function validate(array $data, array $fields): void
     {
-        if (TenantContext::isSuperAdmin()) {
-            return;
-        }
         $companyId = TenantContext::companyId();
+        if (($companyId === null || $companyId < 1) && TenantContext::isSuperAdmin()
+            && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
         if ($companyId === null || $companyId < 1) {
+            if (TenantContext::isSuperAdmin()) {
+                return;
+            }
             return;
         }
 
@@ -46,7 +51,8 @@ final class TenantFkValidator
                 continue;
             }
             if (!TenantGuard::belongsToCompany($table, $id, $companyId)) {
-                throw new \RuntimeException('Invalid reference for ' . $field . '.');
+                $msg = function_exists('__') ? __('db_fk_violation') : 'Invalid reference for ' . $field . '.';
+                throw new \RuntimeException($msg);
             }
         }
     }

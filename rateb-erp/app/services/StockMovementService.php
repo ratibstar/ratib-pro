@@ -19,6 +19,9 @@ final class StockMovementService
         $movementType = (string) ($data['movement_type'] ?? 'adjustment');
         $quantity = (float) ($data['quantity'] ?? 0);
         $warehouseId = isset($data['warehouse_id']) ? (int) $data['warehouse_id'] : null;
+        if ($warehouseId !== null && $warehouseId < 1) {
+            $warehouseId = null;
+        }
 
         if ($inventoryId < 1 || $quantity <= 0) {
             throw new \InvalidArgumentException('Invalid stock movement');

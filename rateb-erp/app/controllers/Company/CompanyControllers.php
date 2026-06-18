@@ -750,7 +750,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/inventory';
         $this->routePrefix = rateb_app_route('inventory');
         $this->entityName = 'inventory';
-        $this->tenantForeignKeys = ['warehouse_id'];
+        $this->tenantForeignKeys = ['warehouse_id', 'category_id'];
         $this->indexFields = [
             ['name' => 'item_code', 'label' => 'item_code'],
             ['name' => 'item_name', 'label' => 'item_name'],
@@ -787,6 +787,26 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         exit;
     }
 
+    public function index(): void
+    {
+        try {
+            parent::index();
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
+                'title' => __($this->entityName),
+                'items' => [],
+                'total' => 0,
+                'page' => 1,
+                'limit' => 20,
+                'search' => '',
+                'routePrefix' => $this->routePrefix,
+                'fields' => $this->resolveIndexFields(),
+                'csrf' => Csrf::token(),
+            ]), $this->layout());
+        }
+    }
+
     protected function layout(): string
     {
         return 'main';
@@ -796,7 +816,16 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     {
         $data = parent::collectData();
         $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_INVENTORY, 'item_code');
+        if (empty($data['category_id'])) {
+            $data['category_id'] = null;
+        }
         return $data;
+    }
+
+    private function movementWarehouseId(array $data, ?array $existing = null): ?int
+    {
+        $whId = (int) ($data['warehouse_id'] ?? $existing['warehouse_id'] ?? 0);
+        return $whId > 0 ? $whId : null;
     }
 
     /** @param array<string, mixed> $extra */
@@ -877,46 +906,36 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
 
-        $data = $this->collectData();
-        $data['notes'] = $notes;
-        $data['quantity'] = 0;
-
         try {
             $this->ensureTenantCompanyForWrite($data);
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
             $targetQty = $movementQty;
             $this->validateMaxStock($targetQty, (float) ($data['max_stock'] ?? 0));
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/create'));
-        }
+            $id = $this->model->create($data);
+            (new \Rateb\App\Services\DocumentBarcodeService())->ensure('inventory', $id);
+            $attachmentOk = $this->saveInventoryAttachment($id);
 
-        $id = $this->model->create($data);
-        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('inventory', $id);
-        $attachmentOk = $this->saveInventoryAttachment($id);
-
-        if ($movementQty > 0) {
-            try {
+            if ($movementQty > 0) {
                 (new \Rateb\App\Services\StockMovementService())->record([
                     'inventory_id' => $id,
-                    'warehouse_id' => (int) ($data['warehouse_id'] ?? 0),
+                    'warehouse_id' => $this->movementWarehouseId($data),
                     'movement_type' => $movementType === 'adjustment' ? 'adjustment' : 'in',
                     'quantity' => $movementQty,
                     'notes' => $notes,
                     'reference_type' => 'inventory_create',
                     'reference_id' => $id,
                 ]);
-            } catch (\Throwable $e) {
-                SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-                $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
             }
-        }
 
-        (new AuditService())->log('create', $this->entityName, $id, $data);
-        if ($attachmentOk) {
-            SessionManager::flash('success', __('save') . ' OK');
-        } else {
-            SessionManager::flash('error', __('save_ok_attachment_failed'));
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            if ($attachmentOk) {
+                SessionManager::flash('success', __('save') . ' OK');
+            } else {
+                SessionManager::flash('error', __('save_ok_attachment_failed'));
+            }
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $this->redirect(rateb_url($this->routePrefix));
     }
@@ -951,44 +970,38 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $data['notes'] = $notes;
 
         try {
+            $this->ensureTenantCompanyForWrite($data);
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
-        }
 
-        if ($movementType !== '') {
-            unset($data['quantity']);
-            try {
+            if ($movementType !== '') {
+                unset($data['quantity']);
+                if ($movementQty <= 0) {
+                    throw new \RuntimeException(__('quantity_required'));
+                }
                 (new \Rateb\App\Services\StockMovementService())->record([
                     'inventory_id' => $id,
-                    'warehouse_id' => (int) ($data['warehouse_id'] ?? 0),
+                    'warehouse_id' => $this->movementWarehouseId($data, $existing),
                     'movement_type' => $movementType,
                     'quantity' => $movementQty,
                     'notes' => $notes,
                     'reference_type' => 'inventory_edit',
                     'reference_id' => $id,
                 ]);
-            } catch (\Throwable $e) {
-                SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-                $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
-            }
-        } else {
-            try {
+            } else {
                 $this->validateMaxStock((float) ($data['quantity'] ?? 0), (float) ($data['max_stock'] ?? 0));
-            } catch (\RuntimeException $e) {
-                SessionManager::flash('error', $e->getMessage());
-                $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
             }
-        }
 
-        $this->model->update($id, $data);
-        $attachmentOk = $this->saveInventoryAttachment($id);
-        (new AuditService())->log('update', $this->entityName, $id, $data);
-        if ($attachmentOk) {
-            SessionManager::flash('success', __('save') . ' OK');
-        } else {
-            SessionManager::flash('error', __('save_ok_attachment_failed'));
+            $this->model->update($id, $data);
+            $attachmentOk = $this->saveInventoryAttachment($id);
+            (new AuditService())->log('update', $this->entityName, $id, $data);
+            if ($attachmentOk) {
+                SessionManager::flash('success', __('save') . ' OK');
+            } else {
+                SessionManager::flash('error', __('save_ok_attachment_failed'));
+            }
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->redirect(rateb_url($this->routePrefix));
     }
@@ -1022,7 +1035,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             }
             (new \Rateb\App\Services\StockMovementService())->record([
                 'inventory_id' => $existingId,
-                'warehouse_id' => (int) ($item['warehouse_id'] ?? 0),
+                'warehouse_id' => $this->movementWarehouseId([], $item),
                 'movement_type' => $movementType,
                 'quantity' => $movementQty,
                 'notes' => $notes,
