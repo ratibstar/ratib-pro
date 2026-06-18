@@ -399,6 +399,66 @@ if (!function_exists('rateb_partner_portal_agency_id')) {
     }
 }
 
+if (!function_exists('rateb_staff_open_agency_context_id')) {
+    function rateb_staff_open_agency_context_id(): int
+    {
+        if (!empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
+            return (int) $_GET['agency_id'];
+        }
+        $aid = (int) ($_SESSION['agency_id'] ?? 0);
+        if ($aid > 0) {
+            return $aid;
+        }
+        return (int) ($_SESSION['control_agency_id'] ?? 0);
+    }
+}
+
+if (!function_exists('rateb_staff_page_session_ok')) {
+    /**
+     * Session gate aligned with Worker.php / agent.php, plus control-panel Open (?control=1&agency_id=).
+     */
+    function rateb_staff_page_session_ok(): bool
+    {
+        if (isset($_SESSION['user_id']) && !empty($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
+            return true;
+        }
+        return !empty($_SESSION['control_logged_in']) && rateb_staff_open_agency_context_id() > 0;
+    }
+}
+
+if (!function_exists('rateb_staff_page_require_session')) {
+    function rateb_staff_page_require_session(): void
+    {
+        if (rateb_staff_page_session_ok()) {
+            return;
+        }
+        header('Location: ' . pageUrl('login.php'));
+        exit;
+    }
+}
+
+if (!function_exists('rateb_staff_partner_pages_ok')) {
+    /** Matches api-permission-helper: control-panel operators may open partnership pages. */
+    function rateb_staff_partner_pages_ok(): bool
+    {
+        if (!empty($_SESSION['control_logged_in'])) {
+            return true;
+        }
+        return hasPermission('view_partner_agencies') || hasPermission('view_workers');
+    }
+}
+
+if (!function_exists('rateb_staff_require_partner_access')) {
+    function rateb_staff_require_partner_access(): void
+    {
+        if (rateb_staff_partner_pages_ok()) {
+            return;
+        }
+        header('Location: ' . rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
+        exit;
+    }
+}
+
 if (!function_exists('rateb_absolute_public_base')) {
     /**
      * Site root for fully qualified links (email, partner magic URL). When BASE_URL is empty,

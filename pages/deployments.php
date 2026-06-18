@@ -10,14 +10,8 @@
 require_once '../includes/config.php';
 require_once '../includes/permissions.php';
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-if (!hasPermission('view_partner_agencies') && !hasPermission('view_workers')) {
-    header('Location: ' . rateb_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_require_partner_access();
 
 header('Location: ' . rateb_nav_url('partner-agencies.php'), true, 302);
 exit;

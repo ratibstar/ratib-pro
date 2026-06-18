@@ -5,14 +5,8 @@
 require_once '../includes/config.php';
 require_once '../includes/permissions.php';
 
-if (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user()) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-if (!hasPermission('view_partner_agencies') && !hasPermission('view_workers')) {
-    header('Location: ' . rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_require_partner_access();
 
 $pageTitle = 'Partner Agency Details';
 $v = time();
