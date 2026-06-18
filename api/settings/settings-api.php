@@ -288,11 +288,17 @@ class SettingsAPI {
                 $passwordPlainSelect = $hasPasswordPlain ? ", u.password_plain" : "";
                 $hasPortalRole = $this->columnExists('portal_role_id');
                 $portalSelect = $hasPortalRole
-                    ? ", pr.name AS portal_role_name, pr.portal_type AS portal_role_type, perm_r.role_name AS permission_role_name"
-                    : "";
-                $portalJoin = $hasPortalRole
-                    ? " LEFT JOIN portal_roles pr ON u.portal_role_id = pr.id LEFT JOIN roles perm_r ON pr.role_id = perm_r.role_id"
-                    : "";
+                    ? ", pr.name AS portal_role_name,
+                        pr.portal_type AS portal_role_type,
+                        COALESCE(NULLIF(TRIM(perm_r.role_name), ''), NULLIF(TRIM(user_r.role_name), '')) AS permission_role_name,
+                        user_r.role_name AS user_role_name,
+                        CASE WHEN pr.permissions IS NOT NULL AND TRIM(CAST(pr.permissions AS CHAR)) NOT IN ('', '[]', 'null') THEN 1 ELSE 0 END AS portal_has_manual_perms"
+                    : ", user_r.role_name AS user_role_name, user_r.role_name AS permission_role_name";
+                $portalJoin = " LEFT JOIN roles user_r ON u.role_id = user_r.role_id";
+                if ($hasPortalRole) {
+                    $portalJoin .= " LEFT JOIN portal_roles pr ON u.portal_role_id = pr.id"
+                        . " LEFT JOIN roles perm_r ON pr.role_id = perm_r.role_id";
+                }
                 $sql = "
                     SELECT 
                         u.*{$passwordPlainSelect}{$portalSelect},
@@ -368,7 +374,33 @@ class SettingsAPI {
                         $row['status'] = !empty($row['is_active']) ? 'active' : 'inactive'; // For display
                         $row['name'] = trim($row['full_name'] ?? '') ?: ($row['username'] ?? ''); // Display name
                     }
+                    if ($this->table === 'users') {
+                        if (empty($row['name']) && !empty($row['username'])) {
+                            $row['name'] = $row['username'];
+                        }
+                        $permRole = trim((string) ($row['permission_role_name'] ?? ''));
+                        if ($permRole === '') {
+                            $permRole = trim((string) ($row['user_role_name'] ?? ''));
+                        }
+                        if (!empty($row['portal_has_manual_perms'])) {
+                            $permRole = ($permRole !== '' ? $permRole : 'Custom') . ' (manual)';
+                        }
+                        $permCount = 0;
+                        if (!empty($row['permissions'])) {
+                            $decoded = json_decode((string) $row['permissions'], true);
+                            if (is_array($decoded)) {
+                                $permCount = count($decoded);
+                            }
+                        }
+                        $row['permissions_count'] = $permCount;
+                        if ($permRole === '' && $permCount > 0) {
+                            $permRole = $permCount . ' permission' . ($permCount === 1 ? '' : 's');
+                        }
+                        $row['permission_role_name'] = $permRole;
+                        $row['portal_role_name'] = trim((string) ($row['portal_role_name'] ?? ''));
+                    }
                 }
+                unset($row);
             }
             sendResponse([
                 "success"=>true,

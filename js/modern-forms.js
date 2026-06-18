@@ -1232,6 +1232,9 @@ class ModernForms {
                 'position': ['position', 'job_title'],
                 'role_id': ['role_id'],
                 'portal_role_id': ['portal_role_id'],
+                'portal_role_name': ['portal_role_name'],
+                'permission_role_name': ['permission_role_name', 'user_role_name', 'role_name'],
+                'permissions_count': ['permissions_count'],
                 'status': ['status', 'is_active'],
                 'login_barcode': ['login_barcode', 'barcode', 'user_barcode', 'card_number'],
                 'fingerprint_status': ['fingerprint_status', 'has_fingerprint']
@@ -1500,6 +1503,22 @@ class ModernForms {
             `;
         }
         
+        if (colKey === 'portal_role_name' || colKey === 'permission_role_name') {
+            const display = value !== null && value !== undefined && String(value).trim() !== ''
+                ? String(value).trim()
+                : '';
+            if (!display) {
+                return '<span class="role-badge role-badge-empty">Not set</span>';
+            }
+            const permCount = item && item.permissions_count ? parseInt(item.permissions_count, 10) : 0;
+            const countHint = (colKey === 'permission_role_name' && permCount > 0 && display.indexOf('permission') === -1)
+                ? ` <small class="perm-count">(${permCount})</small>`
+                : '';
+            const badgeClass = colKey === 'portal_role_name' ? 'role-badge-portal' : 'role-badge-perm';
+            const str = display.length > (maxLen || 20) ? display.slice(0, maxLen || 20) + '…' : display;
+            return `<span class="role-badge ${badgeClass}">${str}${countHint}</span>`;
+        }
+
         if (value === null || value === undefined || value === '') {
             if (type === 'status') {
                 // For status, if null/undefined, check is_active if available
@@ -6474,7 +6493,7 @@ class ModernForms {
                             { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
                             { key: 'position', label: 'Position', type: 'text', maxLen: 14, maxWidth: 100 },
                             { key: 'portal_role_name', label: 'Portal role', type: 'text', maxLen: 16, maxWidth: 110 },
-                            { key: 'permission_role_name', label: 'Permissions', type: 'text', maxLen: 16, maxWidth: 110 },
+                            { key: 'permission_role_name', label: 'Permission role', type: 'text', maxLen: 20, maxWidth: 120 },
                             { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                             { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                         ];
@@ -6485,7 +6504,7 @@ class ModernForms {
                         { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                         { key: 'email', label: 'Email', type: 'text', maxLen: 20, maxWidth: 140 },
                         { key: 'portal_role_name', label: 'Portal role', type: 'text', maxLen: 16, maxWidth: 110 },
-                        { key: 'permission_role_name', label: 'Permissions', type: 'text', maxLen: 16, maxWidth: 110 },
+                        { key: 'permission_role_name', label: 'Permission role', type: 'text', maxLen: 20, maxWidth: 120 },
                         { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
                         { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                     ];

@@ -490,6 +490,11 @@ body:not(.agent-page) .pagination-controls{display:flex;align-items:center;gap:8
 .status-badge.inactive{background:#3f1d1d;color:#fecaca;border:1px solid #7f1d1d}
 .status-toggle-cell{cursor:pointer;display:inline-block}
 .status-toggle-cell:hover .status-badge{opacity:.9;box-shadow:0 0 0 1px currentColor}
+.role-badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;font-size:.76rem;font-weight:600;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.role-badge-portal{background:rgba(99,102,241,.18);color:#c7d2fe;border:1px solid rgba(99,102,241,.45)}
+.role-badge-perm{background:rgba(14,165,233,.15);color:#7dd3fc;border:1px solid rgba(14,165,233,.4)}
+.role-badge-empty{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.35);font-weight:500}
+.role-badge .perm-count{opacity:.85;font-weight:500}
 .fingerprint-badge{display:inline-flex;align-items:center;gap:6px;padding:.2rem .65rem;border-radius:999px;font-size:.78rem;font-weight:600;border:1px solid transparent;cursor:pointer;background:none}
 .fingerprint-badge i{font-size:.85rem}
 .fingerprint-badge.registered{background:rgba(16,185,129,.15);color:#34d399;border-color:rgba(16,185,129,.4)}
