@@ -175,49 +175,7 @@ window.showSaveAlert = function() {
 };
 
 window.showCloseAlert = function() {
-    const form = document.getElementById('workerForm');
-    
-    // Check 1: Form must exist
-    if (!form) {
-        debug.log('[showCloseAlert] No form found, closing without alert');
-        return Promise.resolve(true);
-    }
-    
-    // Check 2: Must have originalValues (user interacted and we stored baseline)
-    if (!form.dataset.originalValues) {
-        debug.log('[showCloseAlert] No originalValues stored, closing without alert');
-        return Promise.resolve(true);
-    }
-    
-    // Check 3: Verify there are actual changes (not just form population)
-    try {
-        const originalValues = JSON.parse(form.dataset.originalValues);
-        let hasRealChanges = false;
-        const inputs = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="date"], select, textarea');
-        for (const input of inputs) {
-            const key = input.name || input.id;
-            if (!key || key === 'csrf_token') continue; // Skip csrf_token
-            const currentValue = input.value || '';
-            const originalValue = originalValues[key] || '';
-            // Only count as change if current value is different from original
-            if (currentValue !== originalValue) {
-                hasRealChanges = true;
-                break;
-            }
-        }
-        
-        if (!hasRealChanges) {
-            debug.log('[showCloseAlert] No real changes detected, closing without alert');
-            return Promise.resolve(true);
-        }
-    } catch (e) {
-        debug.log('[showCloseAlert] Error checking changes, closing without alert');
-        return Promise.resolve(true);
-    }
-    
-    // ALL checks passed - user has interacted AND made changes - show alert
-    debug.log('[showCloseAlert] All checks passed, showing alert');
-    return SimpleAlert.show('Close Form', 'Are you sure you want to close the form?', 'warning');
+    return Promise.resolve(true);
 };
 
 // Initialize base paths from PHP config
@@ -1801,47 +1759,26 @@ debug.log(`Pagination button clicked: page ${page}`);
 
     async hideAddWorkerForm() {
         debug.log('Closing add worker form');
-        
-        // Check if form is closing after successful save
-        if (window.workerFormClosingAfterSave) {
-            debug.log('Form closing after save, skipping confirmation');
-            window.workerFormClosingAfterSave = false; // Reset flag
-        } else {
-            // ULTRA AGGRESSIVE: Check time since form opened
-            const form = document.getElementById('workerForm');
-            const formOpenedTime = form ? (form.dataset.openedTime || 0) : 0;
-            const timeSinceOpen = Date.now() - parseInt(formOpenedTime);
-            const MIN_TIME_BEFORE_ALERT = 5000; // 5 seconds minimum
-            
-            if (timeSinceOpen < MIN_TIME_BEFORE_ALERT) {
-                debug.log(`Form opened ${timeSinceOpen}ms ago (less than ${MIN_TIME_BEFORE_ALERT}ms), closing without alert`);
-                // Form just opened, don't show alert
-            } else if (!this.userHasInteracted) {
-                debug.log('User has not interacted with form, closing without alert');
-                // Don't show alert, just close
-            } else {
-                const form = document.getElementById('workerForm');
-                if (form && this.hasUnsavedChanges(form)) {
-                    // Only show alert if there are actual unsaved changes
-                    const confirmed = await showCloseAlert();
-                    if (!confirmed) {
-                        debug.log('User cancelled close - keeping form open');
-                        return; // Keep form open - DON'T CLOSE
-                    }
-                } else {
-                    debug.log('No unsaved changes, closing without alert');
-                }
-            }
-        }
-        
-        // Only close if user confirmed
-        debug.log('Closing form');
+        window.workerFormClosingAfterSave = false;
+
         const formContainer = document.getElementById('workerFormContainer');
         if (formContainer) {
             formContainer.classList.remove('show');
+            formContainer.classList.add('force-hidden');
         }
-        
-        // Clean up status indicator listeners
+
+        const form = document.getElementById('workerForm');
+        if (form) {
+            form.reset();
+            delete form.dataset.workerId;
+            delete form.dataset.currentWorkerId;
+            delete form.dataset.formMode;
+            const idField = form.querySelector('input[name="id"]');
+            if (idField) {
+                idField.value = '';
+            }
+        }
+
         this.cleanupStatusListeners();
     }
     
@@ -1928,41 +1865,23 @@ debug.log(`Pagination button clicked: page ${page}`);
 
     async hideEditWorkerForm() {
         debug.log('Closing edit worker form');
-        
-        // Check if form is closing after successful save
-        if (window.workerFormClosingAfterSave) {
-            debug.log('Form closing after save, skipping confirmation');
-            window.workerFormClosingAfterSave = false; // Reset flag
-        } else {
-            // ONLY show alert if user has actually interacted with the form
-            if (!this.userHasInteracted) {
-                debug.log('User has not interacted with form, closing without alert');
-            } else {
-                const form = document.getElementById('workerForm');
-                if (form && this.hasUnsavedChanges(form)) {
-                    // Only show alert if there are actual unsaved changes
-                    const confirmed = await showCloseAlert();
-                    if (!confirmed) {
-                        debug.log('User cancelled close - keeping form open');
-                        return; // Keep form open - DON'T CLOSE
-                    }
-                }
-            }
-        }
-        
-        // Only close if user confirmed
-        debug.log('Closing form');
+        window.workerFormClosingAfterSave = false;
+
         const formContainer = document.getElementById('workerFormContainer');
         if (formContainer) {
             formContainer.classList.remove('show');
-            const form = document.getElementById('workerForm');
-            if (form) {
-                form.reset();
-                // Clear hidden ID field
-                const idField = form.querySelector('input[name="id"]');
-                if (idField) {
-                    idField.value = '';
-                }
+            formContainer.classList.add('force-hidden');
+        }
+
+        const form = document.getElementById('workerForm');
+        if (form) {
+            form.reset();
+            delete form.dataset.workerId;
+            delete form.dataset.currentWorkerId;
+            delete form.dataset.formMode;
+            const idField = form.querySelector('input[name="id"]');
+            if (idField) {
+                idField.value = '';
             }
         }
     }
@@ -2069,18 +1988,23 @@ debug.log(`Pagination button clicked: page ${page}`);
                 const form = document.getElementById('workerForm');
                 
                 if (form) {
+                    form.dataset.formMode = 'edit';
+                    form.dataset.workerId = String(worker.id);
+                    form.dataset.currentWorkerId = String(worker.id);
+
                     // Populate form fields
                     Object.keys(worker).forEach(key => {
-                        const field = form.querySelector(`[name="${key}"]`);
+                        const fieldName = key === 'worker_name' ? 'full_name' : (key === 'contact_number' ? 'phone' : key);
+                        const field = form.querySelector(`[name="${fieldName}"]`);
                         if (field) {
                             field.value = worker[key] || '';
                         }
                     });
 
-                    // Change form title to "Edit Workers"
+                    // Change form title to "Edit Worker"
                     const formTitle = form.querySelector('h2');
                     if (formTitle) {
-                        formTitle.textContent = 'Edit Workers';
+                        formTitle.textContent = 'Edit Worker';
                     }
                     
                     // Set hidden ID field
@@ -3833,17 +3757,9 @@ function initializeWorkerFormSubmission() {
     if (workerForm) {
         workerForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            debug.log('Worker form submitted');
-            
-            // Call the save worker function
-            if (window.saveWorker) {
-                window.saveWorker();
-            } else {
-                debug.error('saveWorker function not found!');
-            }
         });
         
-        debug.log('✅ Worker form submit event listener added');
+        debug.log('✅ Worker form submit guard added');
     } else {
         debug.error('❌ Worker form not found!');
     }
@@ -4704,70 +4620,38 @@ window.confirmDelete = function() {
 
 
 window.saveWorker = async function(event) {
-    try {
-        if (event) {
-            event.preventDefault();
-        }
-        
-        // Prevent double execution
-        if (window.isSavingWorker) {
-            return;
-        }
-        
-        // Show modern save confirmation alert
-        try {
-            let confirmed = false;
-            if (typeof window.ModernFormAlert !== 'undefined') {
-                confirmed = await window.ModernFormAlert.show(
-                    'Save Worker',
-                    'Are you sure you want to save this worker?',
-                    'info',
-                    { confirmText: 'Save', cancelText: 'Cancel' }
-                );
-            } else if (typeof showSaveAlert === 'function') {
-                confirmed = await showSaveAlert();
-            }
-            if (!confirmed) {
-                return;
-            }
-        } catch (error) {
-            // Continue with save if alert fails
-        }
-        
-        window.isSavingWorker = true;
-    
-    const form = document.getElementById('workerForm');
-    if (!form) {
-        window.isSavingWorker = false;
-        return;
-    }
-    
-    // Form validation
-    const requiredFields = ['full_name', 'agent_id'];
-    const missingFields = [];
-    const isIndonesiaContext = window.workerTable && typeof window.workerTable.isIndonesiaProgramContext === 'function'
-        ? window.workerTable.isIndonesiaProgramContext()
-        : (typeof window.RATEB_IS_INDONESIA_PROGRAM === 'boolean' ? window.RATEB_IS_INDONESIA_PROGRAM : false);
-    
-    requiredFields.forEach(fieldName => {
-        const field = form.querySelector(`[name="${fieldName}"]`);
-        if (!field || !field.value.trim()) {
-            missingFields.push(fieldName);
-        }
-    });
-    
-    if (missingFields.length > 0) {
-        const fieldLabels = {
-            'full_name': 'Full Name',
-            'agent_id': 'Agent'
-        };
-        const missingLabels = missingFields.map(field => fieldLabels[field] || field);
-        SimpleAlert.show('Validation Error', `Please fill in required fields: ${missingLabels.join(', ')}`, 'warning', { notification: true });
-        window.isSavingWorker = false;
-        return;
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
 
-    // Lifecycle required checks removed to restore previous RATEB Pro flow.
+    if (window.isSavingWorker) {
+        return;
+    }
+    window.isSavingWorker = true;
+
+    try {
+        const form = document.getElementById('workerForm');
+        if (!form) {
+            return;
+        }
+
+        // Form validation (required fields only — no popup)
+        const requiredFields = ['full_name', 'agent_id'];
+        const missingFields = [];
+        for (const fieldName of requiredFields) {
+            const field = form.querySelector(`[name="${fieldName}"]`);
+            if (!field || !String(field.value || '').trim()) {
+                missingFields.push(fieldName);
+            }
+        }
+        if (missingFields.length > 0) {
+            const firstMissing = form.querySelector(`[name="${missingFields[0]}"]`);
+            if (firstMissing) {
+                firstMissing.focus();
+            }
+            return;
+        }
 
     /** Keep hidden *_status fields aligned with status-dot UI so Save persists what the user sees. */
     (function syncWorkerFormDocumentStatusesFromWrappers(workerFormEl) {
@@ -4937,19 +4821,32 @@ window.saveWorker = async function(event) {
         workerData.status = 'pending';
     }
     
-    // Validate agent selection
+    // Validate agent selection (silent — focus field only)
     if (workerData.agent_id === '') {
-        SimpleAlert.show('Validation Error', 'Please select a valid Agent', 'warning', { notification: true });
-        window.isSavingWorker = false;
+        form.querySelector('[name="agent_id"]')?.focus();
         return;
     }
 
-    // Resolve worker id for edit vs create (hidden field can be empty while form is loading)
+    const urlEditId = new URLSearchParams(window.location.search).get('edit') || '';
+    const formMode = String(form.dataset.formMode || '').toLowerCase();
+    const formTitle = (form.querySelector('h2')?.textContent || '').toLowerCase();
+    const isEditByTitle = formTitle.includes('edit') && !formTitle.includes('add');
+    const isEditMode = formMode === 'edit' || isEditByTitle;
     const hiddenId = form.querySelector('input[name="id"]')?.value?.trim() || '';
-    const datasetId = form.dataset.currentWorkerId?.trim() || '';
-    const resolvedWorkerId = String(workerData.id || hiddenId || datasetId || '').trim();
+    const datasetId = String(form.dataset.workerId || form.dataset.currentWorkerId || '').trim();
+    const resolvedWorkerId = String(workerData.id || hiddenId || datasetId || (isEditByTitle ? urlEditId : '') || '').trim();
+    if (isEditMode && !resolvedWorkerId) {
+        debug.error('Edit save blocked: worker id missing');
+        return;
+    }
     if (resolvedWorkerId) {
         workerData.id = resolvedWorkerId;
+        form.dataset.workerId = resolvedWorkerId;
+        form.dataset.currentWorkerId = resolvedWorkerId;
+        const idInput = form.querySelector('input[name="id"]');
+        if (idInput) {
+            idInput.value = resolvedWorkerId;
+        }
     } else {
         delete workerData.id;
     }
@@ -4957,108 +4854,92 @@ window.saveWorker = async function(event) {
 
     // Workflow-stage document fields are optional on save; completion can be tracked per stage in the UI.
 
-    try {
-        const isEdit = resolvedWorkerId !== '';
+    const isEdit = resolvedWorkerId !== '';
+    
+    const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
+    debug.log('Sending to API:', {
+        url: isEdit ? `${workersApi}/core/update.php?id=${resolvedWorkerId}` : `${workersApi}/core/create.php`,
+        status: workerData.status,
+        workerId: resolvedWorkerId,
+        isEdit: isEdit
+    });
+    const apiUrl = isEdit ?
+        `${workersApi}/core/update.php?id=${encodeURIComponent(resolvedWorkerId)}` :
+        `${workersApi}/core/create.php`;
+    
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(workerData)
+    });
+    
+    if (response.ok) {
+        const result = await response.json();
         
-        const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
-        debug.log('Sending to API:', {
-            url: isEdit ? `${workersApi}/core/update.php?id=${resolvedWorkerId}` : `${workersApi}/core/create.php`,
-            status: workerData.status,
-            workerId: resolvedWorkerId,
-            isEdit: isEdit
-        });
-        const apiUrl = isEdit ?
-            `${workersApi}/core/update.php?id=${encodeURIComponent(resolvedWorkerId)}` :
-            `${workersApi}/core/create.php`;
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(workerData)
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
+        if (result.success) {
+            // Refresh history if UnifiedHistory modal is open
+            if (window.unifiedHistory) {
+                await window.unifiedHistory.refreshIfOpen();
+            }
             
-            if (result.success) {
-                // Refresh history if UnifiedHistory modal is open
-                if (window.unifiedHistory) {
-                    await window.unifiedHistory.refreshIfOpen();
-                }
-                
-                const message = isEdit ? 'Worker updated successfully!' : 'Worker added successfully!';
-                
-                // Show modern success notification (non-interactive, auto-closes)
-                SimpleAlert.show('Success', message, 'success', { notification: true, autoClose: true, autoCloseDelay: 1500 });
-                
-                // FORCE CLOSE the form completely without triggering alerts
-                const formContainer = document.getElementById('workerFormContainer');
-                
-                if (formContainer) {
-                    formContainer.classList.remove('show');
-                    formContainer.classList.add('force-hidden');
-                }
-                
-                // Reset form
-                if (form) {
-                    form.reset();
-                }
+            debug.log(isEdit ? 'Worker updated successfully' : 'Worker added successfully');
+            
+            // FORCE CLOSE the form completely without triggering alerts
+            const formContainer = document.getElementById('workerFormContainer');
+            
+            if (formContainer) {
+                formContainer.classList.remove('show');
+                formContainer.classList.add('force-hidden');
+            }
+            
+            // Reset form
+            if (form) {
+                form.reset();
+                delete form.dataset.workerId;
+                delete form.dataset.currentWorkerId;
+                delete form.dataset.formMode;
+            }
 
-                if (typeof window.ratebNavigatePartnerDocumentsStaffReturn === 'function') {
-                    if (window.ratebNavigatePartnerDocumentsStaffReturn()) {
-                        return;
-                    }
-                } else if (typeof window.ratebGetPartnerDocumentsStaffReturnUrl === 'function') {
-                    const partnerDocsStaffHref = window.ratebGetPartnerDocumentsStaffReturnUrl();
-                    if (partnerDocsStaffHref) {
-                        window.location.assign(partnerDocsStaffHref);
-                        return;
-                    }
+            if (typeof window.ratebNavigatePartnerDocumentsStaffReturn === 'function') {
+                if (window.ratebNavigatePartnerDocumentsStaffReturn()) {
+                    return;
                 }
-                
-                // Refresh worker table in background (don't block - alert shows immediately)
-                if (window.workerTable) {
-                    const timestamp = new Date().getTime();
-                    const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
-                    fetch(`${workersApi}/core/get.php?page=1&limit=10&t=${timestamp}`).then(() => {
-                        window.workerTable.loadWorkers();
-                        window.workerTable.loadStats();
-                    }).catch(() => {});
+            } else if (typeof window.ratebGetPartnerDocumentsStaffReturnUrl === 'function') {
+                const partnerDocsStaffHref = window.ratebGetPartnerDocumentsStaffReturnUrl();
+                if (partnerDocsStaffHref) {
+                    window.location.assign(partnerDocsStaffHref);
+                    return;
                 }
-            } else {
-                const errorMsg = `Failed to ${isEdit ? 'update' : 'add'} worker: ${result.message || 'Unknown error'}`;
-                SimpleAlert.show('Error', errorMsg, 'danger', { notification: true });
+            }
+            
+            // Refresh worker table in background
+            if (window.workerTable) {
+                const timestamp = new Date().getTime();
+                const workersApiRefresh = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
+                fetch(`${workersApiRefresh}/core/get.php?page=1&limit=10&t=${timestamp}`).then(() => {
+                    window.workerTable.loadWorkers();
+                    window.workerTable.loadStats();
+                }).catch(() => {});
             }
         } else {
-            const errorText = await response.text();
-            let backendMessage = '';
-            try {
-                const parsed = JSON.parse(errorText);
-                backendMessage = parsed && parsed.message ? String(parsed.message) : '';
-            } catch (parseError) {
-                backendMessage = String(errorText || '').trim();
-            }
-            const details = backendMessage ? ` - ${backendMessage}` : '';
-            throw new Error(`HTTP ${response.status}: ${response.statusText}${details}`);
+            debug.error(`Failed to ${isEdit ? 'update' : 'add'} worker:`, result.message || 'Unknown error');
         }
-    } catch (error) {
-        const rawMessage = String((error && error.message) || '');
-        const missingPrefix = 'Missing required fields';
-        if (rawMessage.includes(missingPrefix)) {
-            const cleaned = rawMessage.includes(' - ')
-                ? rawMessage.split(' - ').pop()
-                : rawMessage;
-            SimpleAlert.show('Missing Required Fields', cleaned, 'warning', { notification: true });
-        } else {
-            SimpleAlert.show('Error', 'Error saving worker: ' + rawMessage, 'danger', { notification: true });
+    } else {
+        const errorText = await response.text();
+        let backendMessage = '';
+        try {
+            const parsed = JSON.parse(errorText);
+            backendMessage = parsed && parsed.message ? String(parsed.message) : '';
+        } catch (parseError) {
+            backendMessage = String(errorText || '').trim();
         }
-    } finally {
-        // Reset the flag
-        window.isSavingWorker = false;
+        debug.error('Worker save HTTP error:', response.status, backendMessage || response.statusText);
     }
-    } catch (outerError) {
+    } catch (error) {
+        debug.error('Worker save failed:', error && error.message ? error.message : error);
+    } finally {
         window.isSavingWorker = false;
     }
 };

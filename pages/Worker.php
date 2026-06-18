@@ -1204,7 +1204,7 @@ include '../includes/header.php';
 
             <div class="form-actions">
                 <button type="button" class="btn-cancel">Cancel</button>
-                <button type="submit" class="btn-save">Save Worker</button>
+                <button type="button" class="btn-save" id="workerFormSaveBtn">Save Worker</button>
             </div>
         </form>
     </div>

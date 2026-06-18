@@ -51,25 +51,7 @@ function setupFormHandlers() {
         });
     });
 
-    // Save worker form
-    const saveWorkerBtn = document.querySelector('.btn-save');
-    if (saveWorkerBtn) {
-        saveWorkerBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            if (typeof window.saveWorker === 'function') {
-                window.saveWorker(event);
-            } else {
-                // Use SimpleAlert if available, otherwise use console error (no alert)
-                if (typeof window.SimpleAlert !== 'undefined' && window.SimpleAlert.show) {
-                    window.SimpleAlert.show('Error', 'Save function not available. Please refresh the page.', 'danger', { notification: true });
-                } else {
-                    debugModal.error('Error: Save function not available. Please refresh the page.');
-                }
-            }
-        });
-    }
+    // Save is handled by worker-form.js (#workerFormSaveBtn) to avoid duplicate API calls.
 }
 
 // Modal handlers

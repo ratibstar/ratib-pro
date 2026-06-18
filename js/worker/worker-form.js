@@ -792,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const workerFormContainer = document.getElementById('workerFormContainer');
     const closeBtn = document.querySelector('.close-btn');
     const cancelBtn = document.querySelector('.btn-cancel');
-    const saveBtn = document.querySelector('.btn-save');
+    const saveBtn = document.querySelector('#workerFormSaveBtn, #workerForm .btn-save');
     const workerForm = document.getElementById('workerForm');
     const formTitle = document.querySelector('#workerFormContainer h2');
     
@@ -1028,6 +1028,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (idField) {
                 idField.value = '';
             }
+            delete workerForm.dataset.workerId;
+            delete workerForm.dataset.currentWorkerId;
+            delete workerForm.dataset.formMode;
             // Reset user interaction flag
             userHasInteracted = false;
         }
@@ -1111,34 +1114,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Function to close form - uses modern alert system
+    // Function to close form — no confirmation popups
     async function closeForm() {
         debugForm.log('[Worker Form] closeForm called');
-        // Check if form is closing after successful save - skip alert
         if (window.workerFormClosingAfterSave) {
-            debugForm.log('Form closing after save, skipping confirmation');
-            window.workerFormClosingAfterSave = false; // Reset flag
-            performClose();
-            return;
+            window.workerFormClosingAfterSave = false;
         }
-        
-        // Check if form has unsaved changes
-        if (hasUnsavedChanges() && userHasInteracted) {
-            const confirmed = await ModernFormAlert.show(
-                'Unsaved Changes',
-                'You have unsaved changes. Are you sure you want to close the form?',
-                'warning',
-                { confirmText: 'Close', cancelText: 'Cancel' }
-            );
-            if (confirmed) {
-                performClose();
-            } else {
-                debugForm.log('[Worker Form] User cancelled close - keeping form open');
-            }
-        } else {
-            // No changes or no interaction - close without alert
-            performClose();
-        }
+        performClose();
     }
     
     // Make closeForm available globally so modal-handlers.js can use it
@@ -1223,8 +1205,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Save button functionality
-    if (saveBtn) {
+    // Save button — single handler (modal-handlers.js does not bind save)
+    if (saveBtn && !saveBtn.dataset.saveHandlerBound) {
+        saveBtn.dataset.saveHandlerBound = '1';
         saveBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -1299,6 +1282,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Reset form completely
         if (workerForm) {
+            workerForm.dataset.formMode = 'add';
+            delete workerForm.dataset.workerId;
+            delete workerForm.dataset.currentWorkerId;
             workerForm.reset();
             // Clear hidden ID field
             const idField = workerForm.querySelector('input[name="id"]');
@@ -1415,8 +1401,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Clear form first to prevent showing previous worker's data
         if (workerForm) {
-            // Store current worker ID to verify later
-            workerForm.dataset.currentWorkerId = workerId;
+            workerForm.dataset.formMode = 'edit';
+            workerForm.dataset.workerId = String(workerId);
+            workerForm.dataset.currentWorkerId = String(workerId);
             
             // Reset the form completely
             workerForm.reset();
@@ -1479,11 +1466,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             debugForm.error('Error loading worker data:', error);
-            if (typeof window.SimpleAlert !== 'undefined' && window.SimpleAlert.show) {
-                window.SimpleAlert.show('Error', 'Error loading worker data: ' + (error.message || 'Please try again.'), 'danger', { notification: true });
-            } else {
-                debugForm.error('Error loading worker data: ' + (error.message || 'Please try again.'));
-            }
             return;
         }
 
@@ -1546,19 +1528,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } else {
                 debugForm.error('Failed to load worker data');
-                if (typeof window.SimpleAlert !== 'undefined' && window.SimpleAlert.show) {
-                    window.SimpleAlert.show('Error', 'Failed to load worker data. Please try again.', 'danger', { notification: true });
-                } else {
-                    debugForm.error('Failed to load worker data. Please try again.');
-                }
             }
         } catch (error) {
             debugForm.error('Error loading worker data:', error);
-            if (typeof window.SimpleAlert !== 'undefined' && window.SimpleAlert.show) {
-                window.SimpleAlert.show('Error', 'Error loading worker data: ' + (error.message || 'Please try again.'), 'danger', { notification: true });
-            } else {
-                debugForm.error('Error loading worker data: ' + (error.message || 'Please try again.'));
-            }
         }
     }
     
@@ -2145,6 +2117,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const idField = workerForm?.querySelector('input[name="id"]');
         if (idField) {
             idField.value = String(worker.id);
+            if (workerForm) {
+                workerForm.dataset.workerId = String(worker.id);
+                workerForm.dataset.currentWorkerId = String(worker.id);
+                workerForm.dataset.formMode = 'edit';
+            }
             debugForm.log('Set hidden id field to:', idField.value);
         }
         
