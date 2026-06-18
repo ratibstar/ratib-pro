@@ -1421,16 +1421,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset the form completely
             workerForm.reset();
             
-            // Clear hidden ID field
+            // Keep worker id for update API (reset clears hidden id)
             const idField = workerForm.querySelector('input[name="id"]');
             if (idField) {
-                idField.value = '';
+                idField.value = String(workerId);
             }
             
             // Manually clear ALL input fields (text, email, tel, date, number, textarea)
-            const allInputs = workerForm.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input.date-input, input[type="number"], input[type="hidden"], textarea');
+            const allInputs = workerForm.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input.date-input, input[type="number"], textarea');
             allInputs.forEach(input => {
-                if (input.name !== 'csrf_token') { // Keep CSRF token
+                if (input.name !== 'csrf_token' && input.name !== 'id') {
                     if (input._flatpickr) {
                         input._flatpickr.clear();
                     } else {

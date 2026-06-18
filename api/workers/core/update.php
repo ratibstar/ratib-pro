@@ -45,6 +45,7 @@ try {
     if (!is_array($data)) {
         throw new Exception('Invalid input data');
     }
+    unset($data['csrf_token']);
     $data = rateb_worker_sanitize_empty_db_values($data, $conn, 'workers');
     rateb_indonesia_compliance_ensure_schema($conn);
     rateb_workflow_ensure_schema($conn);

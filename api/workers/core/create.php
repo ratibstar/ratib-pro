@@ -142,6 +142,7 @@ try {
         // AR: توحيد أسماء الحقول القادمة من الواجهة إلى أسماء الأعمدة المعتمدة في قاعدة البيانات.
         // Map frontend field names to database column names
         $mappedData = $data;
+        unset($mappedData['csrf_token']);
         if (isset($data['full_name'])) {
             $mappedData['worker_name'] = $data['full_name'];
             unset($mappedData['full_name']);

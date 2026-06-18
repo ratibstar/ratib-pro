@@ -4944,20 +4944,31 @@ window.saveWorker = async function(event) {
         return;
     }
 
+    // Resolve worker id for edit vs create (hidden field can be empty while form is loading)
+    const hiddenId = form.querySelector('input[name="id"]')?.value?.trim() || '';
+    const datasetId = form.dataset.currentWorkerId?.trim() || '';
+    const resolvedWorkerId = String(workerData.id || hiddenId || datasetId || '').trim();
+    if (resolvedWorkerId) {
+        workerData.id = resolvedWorkerId;
+    } else {
+        delete workerData.id;
+    }
+    delete workerData.csrf_token;
+
     // Workflow-stage document fields are optional on save; completion can be tracked per stage in the UI.
 
     try {
-        const isEdit = workerData.id && workerData.id.trim() !== '';
+        const isEdit = resolvedWorkerId !== '';
         
         const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
         debug.log('Sending to API:', {
-            url: isEdit ? `${workersApi}/core/update.php?id=${workerData.id}` : `${workersApi}/core/create.php`,
+            url: isEdit ? `${workersApi}/core/update.php?id=${resolvedWorkerId}` : `${workersApi}/core/create.php`,
             status: workerData.status,
-            workerId: workerData.id,
+            workerId: resolvedWorkerId,
             isEdit: isEdit
         });
-        const apiUrl = isEdit ? 
-            `${workersApi}/core/update.php?id=${workerData.id}` : 
+        const apiUrl = isEdit ?
+            `${workersApi}/core/update.php?id=${encodeURIComponent(resolvedWorkerId)}` :
             `${workersApi}/core/create.php`;
         
         const response = await fetch(apiUrl, {
