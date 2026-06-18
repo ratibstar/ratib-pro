@@ -948,6 +948,310 @@ body {
 }
 
 /* =====================================
+   PREMIUM SUBAGENT FORM MODAL
+   ===================================== */
+#editForm.subagent-modal-visible,
+#editForm.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(8, 12, 22, 0.88);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    animation: subagentModalFadeIn 0.35s ease;
+}
+
+@keyframes subagentModalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes subagentModalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#editForm .modal-content {
+    position: relative;
+    max-width: 520px;
+    width: 100%;
+    border: 1px solid rgba(99, 130, 255, 0.28);
+    border-radius: 16px;
+    background: linear-gradient(165deg, #1a2235 0%, #141c2e 45%, #121824 100%);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 24px 48px rgba(0, 0, 0, 0.45),
+        0 0 80px rgba(54, 153, 255, 0.08);
+    overflow: hidden;
+    animation: subagentModalSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#editForm .modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3699FF, #7c5cff, #0BB783);
+    opacity: 0.9;
+    z-index: 1;
+}
+
+#editForm .modal-header {
+    padding: 22px 24px 18px;
+    background: linear-gradient(180deg, rgba(54, 153, 255, 0.1) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(99, 130, 255, 0.15);
+    border-radius: 0;
+    position: relative;
+}
+
+#editForm .modal-header h2,
+#editForm .modal-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #a8c7ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+#editForm .close-modal {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 20px;
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#editForm .close-modal:hover {
+    color: #fff;
+    background: rgba(246, 78, 96, 0.2);
+    border-color: rgba(246, 78, 96, 0.45);
+    transform: rotate(90deg) scale(1.05);
+    box-shadow: 0 4px 16px rgba(246, 78, 96, 0.25);
+}
+
+#editForm .modal-body {
+    padding: 20px 24px 8px;
+    background: transparent;
+}
+
+#editForm .form-group {
+    margin-bottom: 18px;
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+#editForm .form-group:focus-within {
+    transform: translateX(2px);
+}
+
+#editForm .form-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: color 0.25s ease;
+}
+
+#editForm .form-group:focus-within label {
+    color: #7eb8ff;
+}
+
+#editForm .form-control {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(10, 14, 24, 0.75);
+    border: 1px solid rgba(99, 130, 255, 0.2);
+    border-radius: 10px;
+    color: #f1f5f9;
+    font-size: 0.92rem;
+    height: auto;
+    min-height: 44px;
+    box-sizing: border-box;
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease,
+        transform 0.2s ease;
+}
+
+#editForm select.form-control {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%237eb8ff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 12px;
+    padding-right: 40px;
+}
+
+#editForm .form-control::placeholder {
+    color: #64748b;
+    opacity: 0.85;
+}
+
+#editForm .form-control:hover:not(:focus):not(:disabled) {
+    border-color: rgba(99, 130, 255, 0.45);
+    background: rgba(20, 28, 46, 0.9);
+    box-shadow: 0 2px 12px rgba(54, 153, 255, 0.08);
+}
+
+#editForm .form-control:focus {
+    outline: none;
+    border-color: #3699FF;
+    background: rgba(15, 22, 38, 0.95);
+    box-shadow:
+        0 0 0 3px rgba(54, 153, 255, 0.18),
+        0 4px 20px rgba(54, 153, 255, 0.12);
+    transform: translateY(-1px);
+}
+
+#editForm textarea.form-control {
+    min-height: 88px;
+    height: auto;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+#editForm .form-control.invalid,
+#editForm .form-control.is-invalid {
+    border-color: #F64E60 !important;
+    box-shadow: 0 0 0 3px rgba(246, 78, 96, 0.15) !important;
+}
+
+#editForm .modal-footer {
+    padding: 18px 24px 22px;
+    background: linear-gradient(0deg, rgba(10, 14, 24, 0.6) 0%, transparent 100%);
+    border-top: 1px solid rgba(99, 130, 255, 0.12);
+    gap: 12px;
+}
+
+#editForm .modal-footer .btn {
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    min-width: 110px;
+    justify-content: center;
+    transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#editForm .modal-footer .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+#editForm .modal-footer .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(148, 163, 184, 0.45);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+#editForm .modal-footer .btn-primary {
+    background: linear-gradient(135deg, #3699FF 0%, #5b7cfa 50%, #7c5cff 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 16px rgba(54, 153, 255, 0.35);
+    position: relative;
+    overflow: hidden;
+}
+
+#editForm .modal-footer .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+#editForm .modal-footer .btn-primary:hover {
+    background: linear-gradient(135deg, #4aa8ff 0%, #6d8cff 50%, #9070ff 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(54, 153, 255, 0.45);
+}
+
+#editForm .modal-footer .btn-primary:hover::after {
+    opacity: 1;
+}
+
+#editForm .modal-footer .btn-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(54, 153, 255, 0.3);
+}
+
+#editForm .modal-footer .btn:active {
+    transform: translateY(0);
+}
+
+/* View modal — same polish */
+#viewSubagentModal.subagent-modal-visible {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 12, 22, 0.88);
+    backdrop-filter: blur(12px);
+}
+
+#viewSubagentModal .modal-content {
+    border: 1px solid rgba(99, 130, 255, 0.28);
+    border-radius: 16px;
+    background: linear-gradient(165deg, #1a2235 0%, #141c2e 100%);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+#viewSubagentModal .modal-header {
+    background: linear-gradient(180deg, rgba(54, 153, 255, 0.1) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(99, 130, 255, 0.15);
+}
+
+#viewSubagentModal .details-row {
+    border-bottom-color: rgba(99, 130, 255, 0.12);
+    transition: background 0.2s ease;
+    border-radius: 6px;
+    padding: 10px 8px;
+    margin-bottom: 4px;
+}
+
+#viewSubagentModal .details-row:hover {
+    background: rgba(54, 153, 255, 0.06);
+}
+
+#viewSubagentModal .details-row label {
+    color: #7eb8ff;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+#viewSubagentModal .details-row span {
+    color: #f1f5f9;
+    font-weight: 500;
+}
+
+/* =====================================
    FORM CONTROLS
    ===================================== */
 .form-group {
