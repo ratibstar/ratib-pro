@@ -252,7 +252,11 @@ abstract class Model
         );
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($data);
+        try {
+            $stmt->execute($data);
+        } catch (\PDOException $e) {
+            throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
+        }
         return (int) $this->db->lastInsertId();
     }
 
@@ -276,7 +280,11 @@ abstract class Model
         $data = array_merge($data, $extraParams);
 
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($data);
+        try {
+            return $stmt->execute($data);
+        } catch (\PDOException $e) {
+            throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
+        }
     }
 
     public function delete(int $id): bool
@@ -289,7 +297,11 @@ abstract class Model
         $params = array_merge($params, $extraParams);
 
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+        try {
+            return $stmt->execute($params);
+        } catch (\PDOException $e) {
+            throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
+        }
     }
 
     /** @param array<int, int> $ids */
@@ -407,7 +419,11 @@ abstract class Model
     private function executePrepared(\PDOStatement $stmt, string $sql, array $params): void
     {
         if (!preg_match_all('/:(\w+)/', $sql, $matches) || $matches[1] === []) {
-            $stmt->execute();
+            try {
+                $stmt->execute();
+            } catch (\PDOException $e) {
+                throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
+            }
             return;
         }
         $pos = 1;
@@ -417,7 +433,11 @@ abstract class Model
             }
             $stmt->bindValue($pos++, $params[$name], $this->pdoParamType($params[$name]));
         }
-        $stmt->execute();
+        try {
+            $stmt->execute();
+        } catch (\PDOException $e) {
+            throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
+        }
     }
 
     /** @param mixed $value */

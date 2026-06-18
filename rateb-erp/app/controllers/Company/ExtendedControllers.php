@@ -338,7 +338,12 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
-        $id = $this->model->create($data);
+        try {
+            $id = $this->model->create($data);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         if ($id < 1) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
@@ -370,7 +375,12 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
-        $this->model->update($id, $data);
+        try {
+            $this->model->update($id, $data);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         try {
             $this->persistCategoryImage($id);
         } catch (\RuntimeException $e) {

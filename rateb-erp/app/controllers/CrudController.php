@@ -191,9 +191,14 @@ abstract class CrudController extends Controller
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
-        $id = $this->model->create($data);
-        (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        try {
+            $id = $this->model->create($data);
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -230,9 +235,14 @@ abstract class CrudController extends Controller
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
-        $this->model->update($id, $data);
-        (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        try {
+            $this->model->update($id, $data);
+            (new AuditService())->log('update', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -245,9 +255,13 @@ abstract class CrudController extends Controller
         }
 
         $id = (int) ($params['id'] ?? 0);
-        $this->model->delete($id);
-        (new AuditService())->log('delete', $this->entityName, $id);
-        SessionManager::flash('success', __('delete') . ' OK');
+        try {
+            $this->model->delete($id);
+            (new AuditService())->log('delete', $this->entityName, $id);
+            SessionManager::flash('success', __('delete') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
