@@ -1515,8 +1515,9 @@ class ModernForms {
                 ? ` <small class="perm-count">(${permCount})</small>`
                 : '';
             const badgeClass = colKey === 'portal_role_name' ? 'role-badge-portal' : 'role-badge-perm';
+            const inferred = item && item.portal_role_inferred ? ' <small class="perm-count">(auto)</small>' : '';
             const str = display.length > (maxLen || 20) ? display.slice(0, maxLen || 20) + '…' : display;
-            return `<span class="role-badge ${badgeClass}">${str}${countHint}</span>`;
+            return `<span class="role-badge ${badgeClass}">${str}${countHint}${colKey === 'portal_role_name' ? inferred : ''}</span>`;
         }
 
         if (value === null || value === undefined || value === '') {

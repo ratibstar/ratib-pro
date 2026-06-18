@@ -278,6 +278,9 @@ class SettingsAPI {
                 if (function_exists('rateb_portal_roles_ensure_schema') && $this->conn) {
                     rateb_portal_roles_ensure_schema($this->conn);
                 }
+                if ($tableLower === 'users' && function_exists('rateb_portal_roles_backfill_users')) {
+                    rateb_portal_roles_backfill_users($this->conn);
+                }
             }
             
             // Ensure required columns exist before fetching (country_id, city, etc.)
@@ -398,6 +401,16 @@ class SettingsAPI {
                         }
                         $row['permission_role_name'] = $permRole;
                         $row['portal_role_name'] = trim((string) ($row['portal_role_name'] ?? ''));
+                        if ($row['portal_role_name'] === '' && function_exists('rateb_portal_role_display_name_for_user')) {
+                            $inferred = rateb_portal_role_display_name_for_user(
+                                (string) ($row['user_role_name'] ?? ''),
+                                (string) ($row['portal_role_type'] ?? '')
+                            );
+                            if ($inferred !== '') {
+                                $row['portal_role_name'] = $inferred;
+                                $row['portal_role_inferred'] = 1;
+                            }
+                        }
                     }
                 }
                 unset($row);

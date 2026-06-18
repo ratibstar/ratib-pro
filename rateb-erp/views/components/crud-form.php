@@ -4,7 +4,7 @@
 /** @var string $routePrefix */
 /** @var string $csrf */
 /** @var array<string, list<array{value: string|int, label: string}>> $lookups */
-$isEdit = !empty($item);
+$isEdit = is_array($item) && (int) ($item['id'] ?? 0) > 0;
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url($routePrefix);
 $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields($fields);
 ?>

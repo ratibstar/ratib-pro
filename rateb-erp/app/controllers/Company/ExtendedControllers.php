@@ -232,6 +232,17 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
         ];
     }
 
+    public function create(): void
+    {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
+        if (rateb_is_super_admin() && rateb_resolve_ops_company_id() < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        parent::create();
+    }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
@@ -328,6 +339,10 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $id = $this->model->create($data);
+        if ($id < 1) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         try {
             $this->persistCategoryImage($id);
         } catch (\RuntimeException $e) {

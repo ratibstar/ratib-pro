@@ -108,6 +108,8 @@ CREATE TABLE IF NOT EXISTS rateb_users (
     two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0,
     locale VARCHAR(5) NOT NULL DEFAULT 'en',
     last_login_at DATETIME NULL,
+    failed_attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_users_company (company_id),

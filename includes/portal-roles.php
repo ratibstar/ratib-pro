@@ -591,52 +591,87 @@ if (!function_exists('rateb_portal_roles_backfill_users')) {
             return;
         }
 
+        $queries = [
+            // 1) Same permission role linked on portal_roles.role_id
+            "UPDATE users u
+             INNER JOIN portal_roles pr ON pr.role_id = u.role_id AND pr.status = 'active'
+             SET u.portal_role_id = pr.id
+             WHERE u.portal_role_id IS NULL AND u.role_id IS NOT NULL AND u.role_id > 0",
+            // 2) Portal role name matches permission role name (e.g. Agency → Agency)
+            "UPDATE users u
+             INNER JOIN roles r ON u.role_id = r.role_id
+             INNER JOIN portal_roles pr ON LOWER(TRIM(pr.name)) = LOWER(TRIM(r.role_name)) AND pr.status = 'active'
+             SET u.portal_role_id = pr.id
+             WHERE u.portal_role_id IS NULL",
+            // 3) Map permission role name → portal_type (one portal role per type)
+            "UPDATE users u
+             INNER JOIN roles r ON u.role_id = r.role_id
+             INNER JOIN (
+                 SELECT portal_type, MIN(id) AS id
+                 FROM portal_roles
+                 WHERE status = 'active'
+                 GROUP BY portal_type
+             ) pr ON pr.portal_type = (
+                 CASE
+                     WHEN LOWER(COALESCE(r.role_name, '')) LIKE '%agency%'
+                       OR LOWER(COALESCE(r.role_name, '')) LIKE '%partner%'
+                       OR LOWER(COALESCE(r.role_name, '')) LIKE '%recruit%' THEN 'agency'
+                     WHEN LOWER(COALESCE(r.role_name, '')) LIKE '%worker%'
+                       OR LOWER(COALESCE(r.role_name, '')) LIKE '%employee%'
+                       OR LOWER(COALESCE(r.role_name, '')) LIKE '%labour%'
+                       OR LOWER(COALESCE(r.role_name, '')) LIKE '%labor%' THEN 'worker'
+                     ELSE 'company'
+                 END
+             )
+             SET u.portal_role_id = pr.id
+             WHERE u.portal_role_id IS NULL AND pr.id IS NOT NULL",
+        ];
+
         try {
-            if ($conn instanceof mysqli) {
-                $sql = "
-                    UPDATE users u
-                    LEFT JOIN roles r ON u.role_id = r.role_id
-                    LEFT JOIN portal_roles pr ON pr.portal_type = (
-                        CASE
-                            WHEN LOWER(COALESCE(r.role_name, '')) LIKE '%agency%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%partner%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%recruit%' THEN 'agency'
-                            WHEN LOWER(COALESCE(r.role_name, '')) LIKE '%worker%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%employee%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%labour%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%labor%' THEN 'worker'
-                            ELSE 'company'
-                        END
-                    ) AND pr.status = 'active'
-                    SET u.portal_role_id = pr.id
-                    WHERE u.portal_role_id IS NULL AND pr.id IS NOT NULL
-                ";
-                @$conn->query($sql);
-                return;
-            }
-            if ($conn instanceof PDO) {
-                $conn->exec("
-                    UPDATE users u
-                    LEFT JOIN roles r ON u.role_id = r.role_id
-                    LEFT JOIN portal_roles pr ON pr.portal_type = (
-                        CASE
-                            WHEN LOWER(COALESCE(r.role_name, '')) LIKE '%agency%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%partner%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%recruit%' THEN 'agency'
-                            WHEN LOWER(COALESCE(r.role_name, '')) LIKE '%worker%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%employee%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%labour%'
-                              OR LOWER(COALESCE(r.role_name, '')) LIKE '%labor%' THEN 'worker'
-                            ELSE 'company'
-                        END
-                    ) AND pr.status = 'active'
-                    SET u.portal_role_id = pr.id
-                    WHERE u.portal_role_id IS NULL AND pr.id IS NOT NULL
-                ");
+            foreach ($queries as $sql) {
+                if ($conn instanceof mysqli) {
+                    @$conn->query($sql);
+                } elseif ($conn instanceof PDO) {
+                    @$conn->exec($sql);
+                }
             }
         } catch (Throwable $e) {
             error_log('rateb_portal_roles_backfill_users: ' . $e->getMessage());
         }
+    }
+}
+
+if (!function_exists('rateb_portal_role_display_name_for_user')) {
+    /**
+     * Display label when portal_role_id is not set yet.
+     */
+    function rateb_portal_role_display_name_for_user(?string $userRoleName, ?string $portalType = null): string
+    {
+        if ($portalType !== null && trim($portalType) !== '') {
+            $map = [
+                'company' => 'Company Staff',
+                'worker' => 'Worker',
+                'agency' => 'Agency',
+            ];
+            $t = strtolower(trim($portalType));
+            if (isset($map[$t])) {
+                return $map[$t];
+            }
+        }
+        $rn = strtolower(trim((string) $userRoleName));
+        if ($rn === '') {
+            return '';
+        }
+        if (str_contains($rn, 'agency') || str_contains($rn, 'partner') || str_contains($rn, 'recruit')) {
+            return 'Agency';
+        }
+        if (str_contains($rn, 'worker') || str_contains($rn, 'employee') || str_contains($rn, 'labour') || str_contains($rn, 'labor')) {
+            return 'Worker';
+        }
+        if (str_contains($rn, 'admin') || str_contains($rn, 'company') || str_contains($rn, 'staff')) {
+            return 'Company Staff';
+        }
+        return ucfirst($rn);
     }
 }
 
