@@ -358,6 +358,7 @@ CREATE TABLE IF NOT EXISTS rateb_inventory (
     item_name VARCHAR(255) NOT NULL,
     sku VARCHAR(80) NULL,
     category VARCHAR(120) NULL,
+    category_id INT UNSIGNED NULL,
     quantity DECIMAL(12,3) NOT NULL DEFAULT 0.000,
     unit VARCHAR(30) NOT NULL DEFAULT 'unit',
     unit_cost DECIMAL(14,2) NOT NULL DEFAULT 0.00,
