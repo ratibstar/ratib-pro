@@ -86,6 +86,41 @@
         }, true);
     }
 
+    function readSidebarGroupState() {
+        try {
+            return JSON.parse(localStorage.getItem('cp_sidebar_groups_v1') || '{}');
+        } catch (_) {
+            return {};
+        }
+    }
+
+    function saveSidebarGroupState(key, isOpen) {
+        const state = readSidebarGroupState();
+        state[key] = !!isOpen;
+        try {
+            localStorage.setItem('cp_sidebar_groups_v1', JSON.stringify(state));
+        } catch (_) { /* ignore */ }
+    }
+
+    function setSidebarGroupOpen(wrapper, isOpen) {
+        if (!wrapper) return;
+        const toggle = wrapper.querySelector('[data-sidebar-toggle]');
+        const key = toggle ? toggle.getAttribute('data-sidebar-toggle') : '';
+        const panel = key ? wrapper.querySelector('[data-sidebar-panel="' + key + '"]') : null;
+        if (!toggle || !panel) return;
+        wrapper.classList.toggle('is-open', isOpen);
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        panel.hidden = !isOpen;
+        if (key) saveSidebarGroupState(key, isOpen);
+    }
+
+    function closeAllSidebarGroupsExcept(exceptWrapper) {
+        document.querySelectorAll('.sidebar-collapsible').forEach(function (w) {
+            if (exceptWrapper && w === exceptWrapper) return;
+            setSidebarGroupOpen(w, false);
+        });
+    }
+
     function syncSidebarActiveState() {
         const sidebar = document.getElementById('control-sidebar');
         if (!sidebar) return;
@@ -138,24 +173,8 @@
             bestMatch.link.classList.add('active');
             const wrapper = bestMatch.link.closest('.sidebar-collapsible');
             if (wrapper) {
-                wrapper.classList.add('is-open');
-                const toggle = wrapper.querySelector('[data-sidebar-toggle]');
-                const panel = wrapper.querySelector('[data-sidebar-panel]');
-                if (toggle) {
-                    toggle.setAttribute('aria-expanded', 'true');
-                    const key = toggle.getAttribute('data-sidebar-toggle');
-                    if (key) {
-                        try {
-                            const storageKey = 'cp_sidebar_groups_v1';
-                            const state = JSON.parse(localStorage.getItem(storageKey) || '{}');
-                            state[key] = true;
-                            localStorage.setItem(storageKey, JSON.stringify(state));
-                        } catch (_) { /* ignore */ }
-                    }
-                }
-                if (panel) {
-                    panel.hidden = false;
-                }
+                closeAllSidebarGroupsExcept(wrapper);
+                setSidebarGroupOpen(wrapper, true);
             }
         }
     }
@@ -164,49 +183,28 @@
         const toggles = Array.from(document.querySelectorAll('[data-sidebar-toggle]'));
         if (toggles.length === 0) return;
 
-        const storageKey = 'cp_sidebar_groups_v1';
-
-        function readStoredState() {
-            try {
-                return JSON.parse(localStorage.getItem(storageKey) || '{}');
-            } catch (_) {
-                return {};
-            }
+        const stored = readSidebarGroupState();
+        const openKeys = Object.keys(stored).filter(function (k) { return stored[k]; });
+        if (openKeys.length === 1) {
+            const toggle = document.querySelector('[data-sidebar-toggle="' + openKeys[0] + '"]');
+            const wrapper = toggle && toggle.closest('.sidebar-collapsible');
+            if (wrapper) setSidebarGroupOpen(wrapper, true);
         }
 
-        function saveGroupState(key, isOpen) {
-            const state = readStoredState();
-            state[key] = !!isOpen;
-            try {
-                localStorage.setItem(storageKey, JSON.stringify(state));
-            } catch (_) { /* ignore */ }
-        }
-
-        function setGroupOpen(wrapper, isOpen) {
-            const toggle = wrapper.querySelector('[data-sidebar-toggle]');
-            const key = toggle ? toggle.getAttribute('data-sidebar-toggle') : '';
-            const panel = key ? wrapper.querySelector('[data-sidebar-panel="' + key + '"]') : null;
-            if (!toggle || !panel) return;
-            wrapper.classList.toggle('is-open', isOpen);
-            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            panel.hidden = !isOpen;
-            if (key) saveGroupState(key, isOpen);
-        }
-
-        const stored = readStoredState();
-        toggles.forEach(toggle => {
+        toggles.forEach(function (toggle) {
             const key = toggle.getAttribute('data-sidebar-toggle');
             const panel = key ? document.querySelector('[data-sidebar-panel="' + key + '"]') : null;
             const wrapper = toggle.closest('.sidebar-collapsible');
             if (!panel || !wrapper || !key) return;
 
-            if (Object.prototype.hasOwnProperty.call(stored, key)) {
-                setGroupOpen(wrapper, !!stored[key]);
-            }
-
             toggle.addEventListener('click', function () {
-                const isOpen = !wrapper.classList.contains('is-open');
-                setGroupOpen(wrapper, isOpen);
+                const willOpen = !wrapper.classList.contains('is-open');
+                if (willOpen) {
+                    closeAllSidebarGroupsExcept(wrapper);
+                    setSidebarGroupOpen(wrapper, true);
+                } else {
+                    setSidebarGroupOpen(wrapper, false);
+                }
             });
         });
     }
