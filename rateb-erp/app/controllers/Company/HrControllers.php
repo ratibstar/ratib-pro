@@ -181,6 +181,79 @@ final class HrAttendanceController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
+    public function create(): void
+    {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        TenantContext::setCompanyId($companyId);
+        try {
+            if ((new \Rateb\App\Models\Employee())->count() < 1) {
+                SessionManager::flash('error', __('hr_attendance_need_employee'));
+                $this->redirect(rateb_url(rateb_app_route('hr/employees')));
+            }
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('create') . ' ' . __($this->entityName),
+            'item' => null,
+        ]), $this->layout());
+    }
+
+    public function store(): void
+    {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
+        $data = $this->collectData();
+        $missing = $this->missingRequiredFields($data);
+        if ($missing !== []) {
+            SessionManager::flash('error', __('form_required_fields') . ': ' . implode(', ', $missing));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+
+        $this->ensureTenantCompanyForWrite($data);
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+            $id = $this->model->create($data);
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @param array<string, mixed> $data
+     *  @return array<int, string>
+     */
+    private function missingRequiredFields(array $data): array
+    {
+        $missing = [];
+        foreach ($this->fields as $field) {
+            if (empty($field['required'])) {
+                continue;
+            }
+            $name = (string) $field['name'];
+            $val = $data[$name] ?? null;
+            if ($val === null || $val === '' || $val === 0) {
+                $missing[] = __((string) ($field['label'] ?? $name));
+            }
+        }
+        return $missing;
+    }
+
     protected function layout(): string
     {
         return 'main';

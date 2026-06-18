@@ -33,6 +33,15 @@ final class DatabaseErrorService
         if (self::isFkViolation($raw)) {
             return self::t('db_fk_violation');
         }
+        if (self::isDuplicateEntry($raw)) {
+            if (stripos($raw, 'uk_attendance_day') !== false) {
+                return self::t('hr_attendance_duplicate_day');
+            }
+            return self::t('db_duplicate_record');
+        }
+        if (self::isNotNullViolation($raw)) {
+            return self::t('form_required_fields');
+        }
         if (self::isDbAccessDenied($raw)) {
             return self::t('db_access_denied');
         }
@@ -137,6 +146,18 @@ final class DatabaseErrorService
         return strpos($raw, '23000') !== false
             || strpos($raw, '1452') !== false
             || stripos($raw, 'foreign key constraint') !== false;
+    }
+
+    private static function isDuplicateEntry(string $raw): bool
+    {
+        return strpos($raw, '1062') !== false
+            || stripos($raw, 'Duplicate entry') !== false;
+    }
+
+    private static function isNotNullViolation(string $raw): bool
+    {
+        return strpos($raw, '1048') !== false
+            || stripos($raw, 'cannot be null') !== false;
     }
 
     private static function isCompanyFkViolation(string $raw): bool
