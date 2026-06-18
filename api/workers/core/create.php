@@ -30,6 +30,7 @@ require_once __DIR__ . '/../../core/api-permission-helper.php';
 require_once __DIR__ . '/../indonesia-compliance-helper.php';
 require_once __DIR__ . '/../workflow-engine.php';
 require_once __DIR__ . '/country-profile-enforcement.php';
+require_once __DIR__ . '/../worker-payload-sanitize.php';
 
 // EN: Permission gate: only users with worker-create access can proceed.
 // AR: بوابة صلاحيات: يسمح فقط لمن يملك صلاحية إنشاء العمال بالمتابعة.
@@ -236,6 +237,8 @@ try {
         } else {
             $mappedData['status'] = 'pending';
         }
+
+        $mappedData = rateb_worker_sanitize_empty_db_values($mappedData, $conn, 'workers');
         
         // Filter out fields that don't exist in the database
         $filteredData = [];

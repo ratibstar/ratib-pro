@@ -27,6 +27,7 @@ require_once $responsePath;
 require_once __DIR__ . '/../indonesia-compliance-helper.php';
 require_once __DIR__ . '/../workflow-engine.php';
 require_once __DIR__ . '/country-profile-enforcement.php';
+require_once __DIR__ . '/../worker-payload-sanitize.php';
 
 // EN: Main update workflow with validation, normalization, persistence, and history logging.
 // AR: مسار التحديث الرئيسي: تحقق، توحيد بيانات، حفظ، وتسجيل تاريخ التغيير.
@@ -41,6 +42,10 @@ try {
 
     $db = Database::getInstance();
     $conn = $db->getConnection();
+    if (!is_array($data)) {
+        throw new Exception('Invalid input data');
+    }
+    $data = rateb_worker_sanitize_empty_db_values($data, $conn, 'workers');
     rateb_indonesia_compliance_ensure_schema($conn);
     rateb_workflow_ensure_schema($conn);
     $describeStmt = $conn->query("DESCRIBE workers");
