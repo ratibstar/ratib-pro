@@ -1792,6 +1792,10 @@ class ModernForms {
             if (this.currentTable === 'visa_types') {
                 this.initVisaSubtypeField('');
             }
+
+            if (this.currentTable === 'users') {
+                await this.populateRoleDropdown();
+            }
         }, 500);
     }
     
@@ -3047,6 +3051,75 @@ class ModernForms {
             currencySelect.innerHTML = '<option value="">Error loading currencies</option>';
         }
     }
+
+    async populateRoleDropdown(selectedValue = '', maxRetries = 3) {
+        const formConfig = this.getFormConfig(this.currentTable);
+        const hasRoleField = formConfig.fields.some(function (field) {
+            return field.name === 'role_id';
+        });
+        if (!hasRoleField) {
+            return;
+        }
+
+        const roleSelect = document.getElementById('role_id_select');
+        if (!roleSelect) {
+            if (maxRetries > 0) {
+                setTimeout(() => this.populateRoleDropdown(selectedValue, maxRetries - 1), 300);
+            }
+            return;
+        }
+
+        try {
+            const apiBase = getApiBaseModernForms();
+            const pageParams = new URLSearchParams(window.location.search || '');
+            const qs = new URLSearchParams();
+            if (getControlSuffixModernForms()) {
+                qs.set('control', '1');
+            }
+            const agencyId = pageParams.get('agency_id');
+            const countryId = pageParams.get('country_id');
+            if (agencyId) {
+                qs.set('agency_id', agencyId);
+            }
+            if (countryId) {
+                qs.set('country_id', countryId);
+            }
+            let url = apiBase + '/admin/get_roles.php';
+            const query = qs.toString();
+            if (query) {
+                url += '?' + query;
+            }
+
+            const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const data = await response.json();
+            const roles = (data && data.success && Array.isArray(data.roles)) ? data.roles : [];
+            if (!roles.length) {
+                roleSelect.innerHTML = '<option value="">No portal roles found</option>';
+                return;
+            }
+
+            roleSelect.innerHTML = '<option value="">Select portal role...</option>';
+            roles.forEach(function (role) {
+                const opt = document.createElement('option');
+                opt.value = String(role.role_id);
+                opt.textContent = role.role_name || ('Role ' + role.role_id);
+                if (role.description) {
+                    opt.title = role.description;
+                }
+                roleSelect.appendChild(opt);
+            });
+
+            if (selectedValue !== null && selectedValue !== undefined && selectedValue !== '') {
+                roleSelect.value = String(selectedValue);
+            }
+        } catch (e) {
+            console.error('Failed to populate portal roles:', e);
+            roleSelect.innerHTML = '<option value="">Could not load portal roles</option>';
+        }
+    }
     
     // Populate copy_from_currency dropdown (shows all currencies including inactive)
     async populateCopyFromCurrencyDropdown(maxRetries = 3) {
@@ -3875,6 +3948,11 @@ class ModernForms {
                     const descSaved = this.getFieldValue(item, 'description') || '';
                     this.initVisaSubtypeField(descSaved);
                 }
+
+                if (this.currentTable === 'users') {
+                    const roleVal = this.getFieldValue(item, 'role_id');
+                    await this.populateRoleDropdown(roleVal);
+                }
                 
                 // Clear the stored item after form is rendered
                 this.currentItem = null;
@@ -4000,6 +4078,10 @@ class ModernForms {
                 // For other tables, use dropdown
                 input = `<select name="city" id="city_select" ${required}><option value="">Select Country First</option></select>`;
             }
+        }
+        // Special handling for portal role — filled from roles table after render
+        else if (field.name === 'role_id' && field.relation && field.relation.table === 'roles') {
+            input = `<select name="${field.name}" id="role_id_select" ${required}><option value="">Select portal role...</option></select>`;
         }
         // Special handling for currency - dropdown populated from currencies table
         else if (field.name === 'currency' && field.currencyDropdown) {
