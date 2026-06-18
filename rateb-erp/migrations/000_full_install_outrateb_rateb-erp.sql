@@ -555,6 +555,7 @@ CREATE TABLE IF NOT EXISTS rateb_system_settings (
 CREATE TABLE IF NOT EXISTS rateb_supplier_evaluations (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     company_id INT UNSIGNED NOT NULL,
+    evaluation_no VARCHAR(20) NULL,
     supplier_id INT UNSIGNED NOT NULL,
     evaluated_by INT UNSIGNED NULL,
     evaluation_date DATE NOT NULL,

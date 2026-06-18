@@ -1587,28 +1587,23 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         }
         try {
             $data = $this->collectData();
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $this->ensureTenantCompanyForWrite($data);
         $data['manager_approval'] = 'pending';
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
+            $id = $this->model->create($data);
+            $this->persistAttachments($id, (int) ($data['company_id'] ?? 0));
+            (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($data['supplier_id'] ?? 0));
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('evaluation_saved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
-        $id = $this->model->create($data);
-        try {
-            $this->persistAttachments($id, (int) ($data['company_id'] ?? 0));
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
-        }
-        (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($data['supplier_id'] ?? 0));
-        (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('evaluation_saved'));
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -1673,16 +1668,24 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id());
         $supplierId = (int) $this->input('supplier_id', 0);
         $excludeId = (int) $this->input('exclude_id', 0);
-        $svc = new \Rateb\App\Services\SupplierEvaluationService();
-        $rows = $svc->historyForSupplier($companyId, $supplierId, $excludeId);
-        $out = [];
-        foreach ($rows as $row) {
-            $approval = (string) ($row['manager_approval'] ?? 'pending');
-            $row['manager_approval_label'] = __('manager_approval_' . $approval);
-            $out[] = $row;
-        }
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['rows' => $out], JSON_UNESCAPED_UNICODE);
+        try {
+            $svc = new \Rateb\App\Services\SupplierEvaluationService();
+            $rows = $svc->historyForSupplier($companyId, $supplierId, $excludeId);
+            $out = [];
+            foreach ($rows as $row) {
+                $approval = (string) ($row['manager_approval'] ?? 'pending');
+                $row['manager_approval_label'] = __('manager_approval_' . $approval);
+                $out[] = $row;
+            }
+            echo json_encode(['rows' => $out], JSON_UNESCAPED_UNICODE);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'rows' => [],
+                'error' => \Rateb\App\Services\DatabaseErrorService::userMessage($e),
+            ], JSON_UNESCAPED_UNICODE);
+        }
         exit;
     }
 
