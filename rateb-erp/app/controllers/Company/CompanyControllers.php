@@ -76,6 +76,8 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
 
     public function create(): void
     {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
@@ -162,24 +164,32 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
 
     public function store(): void
     {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $data = $this->collectData();
-        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
-        $this->applyLineTotals($data, $lines);
-        $id = $this->model->create($data);
-        if ($lines !== []) {
-            \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
+        try {
+            $data = $this->collectData();
+            $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+            $this->applyLineTotals($data, $lines);
+            $this->ensureTenantCompanyForWrite($data);
+            $id = $this->model->create($data);
+            if ($lines !== []) {
+                \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
+            }
+            $this->saveQuoteAttachment($id);
+            (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
+                $id,
+                (string) ($data['status'] ?? 'draft')
+            );
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
-        $this->saveQuoteAttachment($id);
-        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
-            $id,
-            (string) ($data['status'] ?? 'draft')
-        );
-        (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
     }
 
