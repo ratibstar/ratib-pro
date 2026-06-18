@@ -592,9 +592,14 @@ const ui = {
             modal.classList.remove('show', 'visible');
             modal.classList.add('hidden');
             
-            // Reset form change tracking
+            // Reset form change tracking and fields
             const form = modal.querySelector('form');
             if (form) {
+                form.reset();
+                const idField = form.querySelector('[name="id"]');
+                if (idField) {
+                    idField.value = '';
+                }
                 form.dataset.originalValues = '';
                 form.dataset.hasChanges = 'false';
             }
@@ -1033,43 +1038,52 @@ window.__agentInitialLoadTimestamp = window.__agentInitialLoadTimestamp || 0;
 // Main Agent Manager
 const agentManager = {
     isLoading: false, // Prevent double loading
+    isSaving: false,
     
     async load(filters = {}) {
+        const forceReload = filters.force === true;
+        const loadFilters = { ...filters };
+        delete loadFilters.force;
+
         // Check if this is initial load (no filters)
-        const isInitialLoad = Object.keys(filters).length === 0;
+        const isInitialLoad = Object.keys(loadFilters).length === 0;
         
-        if (isInitialLoad) {
-            if (window.__agentInitialLoadDone) {
-                return Promise.resolve();
+        if (!forceReload) {
+            if (isInitialLoad) {
+                if (window.__agentInitialLoadDone) {
+                    return Promise.resolve();
+                }
+                if (window.__agentInitialLoadStarted) {
+                    return Promise.resolve();
+                }
+                window.__agentInitialLoadStarted = true;
+                this.isLoading = true;
+            } else {
+                if (this.isLoading) {
+                    return Promise.resolve();
+                }
+                
+                if (window.__agentInitialLoadDone) {
+                    const timestamp = window.__agentInitialLoadTimestamp || 0;
+                    const timeSinceInitialLoad = Date.now() - timestamp;
+                    
+                    if (timestamp > 0 && timeSinceInitialLoad < 1000) {
+                        return Promise.resolve();
+                    }
+                    
+                    const hasDefaultFilters = (!loadFilters.limit || loadFilters.limit === 5) && 
+                                             (!loadFilters.page || loadFilters.page === 1) && 
+                                             !loadFilters.search && 
+                                             !loadFilters.status;
+                    
+                    if (timestamp > 0 && timeSinceInitialLoad < 2000 && hasDefaultFilters) {
+                        return Promise.resolve();
+                    }
+                }
+                
+                this.isLoading = true;
             }
-            if (window.__agentInitialLoadStarted) {
-                return Promise.resolve();
-            }
-            window.__agentInitialLoadStarted = true;
-            this.isLoading = true;
         } else {
-            if (this.isLoading) {
-                return Promise.resolve();
-            }
-            
-            if (window.__agentInitialLoadDone) {
-                const timestamp = window.__agentInitialLoadTimestamp || 0;
-                const timeSinceInitialLoad = Date.now() - timestamp;
-                
-                if (timestamp > 0 && timeSinceInitialLoad < 1000) {
-                    return Promise.resolve();
-                }
-                
-                const hasDefaultFilters = (!filters.limit || filters.limit === 5) && 
-                                         (!filters.page || filters.page === 1) && 
-                                         !filters.search && 
-                                         !filters.status;
-                
-                if (timestamp > 0 && timeSinceInitialLoad < 2000 && hasDefaultFilters) {
-                    return Promise.resolve();
-                }
-            }
-            
             this.isLoading = true;
         }
         
@@ -1079,7 +1093,7 @@ const agentManager = {
             ui.showLoading();
             
             // Update filters
-            state.filters = { ...state.filters, ...filters };
+            state.filters = { ...state.filters, ...loadFilters };
             
             const tableContainer = document.querySelector('.table-container');
             const tableScroll = document.querySelector('.table-scroll');
@@ -1196,7 +1210,9 @@ const agentManager = {
             // Reset flags on error
             if (isInitialLoad) {
                 window.__agentInitialLoadStarted = false;
+                window.__agentInitialLoadDone = false;
             }
+            this.isLoading = false;
         } finally {
             // because it needs to stay true until requestAnimationFrame completes
             // to prevent race conditions. Only reset for non-initial loads.
@@ -1373,19 +1389,18 @@ const agentManager = {
                 await api.create(data);
 
             if (response.success) {
-                // Refresh history if UnifiedHistory modal is open
-                if (window.unifiedHistory) {
-                    await window.unifiedHistory.refreshIfOpen();
-                }
-                
-                // Close the modal after successful save (no confirmation needed)
                 ui.closeModal();
-                // Reload with current filters - pass current state to avoid being treated as initial load
-                await this.load({ ...state.filters });
                 ui.showSuccess(`Agent ${id ? 'updated' : 'created'} successfully`);
+
+                if (window.unifiedHistory) {
+                    window.unifiedHistory.refreshIfOpen().catch(() => {});
+                }
+
+                // Reload list in background; modal is already closed
+                this.load({ ...state.filters, force: true }).catch(() => {});
             }
         } catch (error) {
-            ui.showError(`Failed to ${id ? 'update' : 'create'} agent`);
+            ui.showError(error.message || `Failed to ${id ? 'update' : 'create'} agent`);
         } finally {
             ui.hideLoading();
         }
@@ -1737,8 +1752,13 @@ function setupEventListeners() {
         
         e.preventDefault();
         e.stopPropagation();
+
+        if (agentManager.isSaving) {
+            return;
+        }
         
         try {
+            agentManager.isSaving = true;
             // Validate form
             if (!form.checkValidity()) {
                 form.reportValidity();
@@ -1792,17 +1812,21 @@ function setupEventListeners() {
                 await api.create(data);
 
             if (response.success) {
-                // First reload the data
-                await agentManager.load(state.filters);
-                // Close the modal after successful save
                 ui.closeModal();
                 ui.showSuccess(`Agent ${id ? 'updated' : 'created'} successfully`);
+
+                if (window.unifiedHistory) {
+                    window.unifiedHistory.refreshIfOpen().catch(() => {});
+                }
+
+                agentManager.load({ ...state.filters, force: true }).catch(() => {});
             } else {
                 throw new Error(response.message || `Failed to ${id ? 'update' : 'create'} agent`);
             }
         } catch (error) {
             ui.showError(error.message);
         } finally {
+            agentManager.isSaving = false;
             ui.hideLoading();
         }
     });
