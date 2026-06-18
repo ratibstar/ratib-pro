@@ -143,6 +143,15 @@
                 const panel = wrapper.querySelector('[data-sidebar-panel]');
                 if (toggle) {
                     toggle.setAttribute('aria-expanded', 'true');
+                    const key = toggle.getAttribute('data-sidebar-toggle');
+                    if (key) {
+                        try {
+                            const storageKey = 'cp_sidebar_groups_v1';
+                            const state = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                            state[key] = true;
+                            localStorage.setItem(storageKey, JSON.stringify(state));
+                        } catch (_) { /* ignore */ }
+                    }
                 }
                 if (panel) {
                     panel.hidden = false;
@@ -155,16 +164,49 @@
         const toggles = Array.from(document.querySelectorAll('[data-sidebar-toggle]'));
         if (toggles.length === 0) return;
 
+        const storageKey = 'cp_sidebar_groups_v1';
+
+        function readStoredState() {
+            try {
+                return JSON.parse(localStorage.getItem(storageKey) || '{}');
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function saveGroupState(key, isOpen) {
+            const state = readStoredState();
+            state[key] = !!isOpen;
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(state));
+            } catch (_) { /* ignore */ }
+        }
+
+        function setGroupOpen(wrapper, isOpen) {
+            const toggle = wrapper.querySelector('[data-sidebar-toggle]');
+            const key = toggle ? toggle.getAttribute('data-sidebar-toggle') : '';
+            const panel = key ? wrapper.querySelector('[data-sidebar-panel="' + key + '"]') : null;
+            if (!toggle || !panel) return;
+            wrapper.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            panel.hidden = !isOpen;
+            if (key) saveGroupState(key, isOpen);
+        }
+
+        const stored = readStoredState();
         toggles.forEach(toggle => {
             const key = toggle.getAttribute('data-sidebar-toggle');
             const panel = key ? document.querySelector('[data-sidebar-panel="' + key + '"]') : null;
             const wrapper = toggle.closest('.sidebar-collapsible');
-            if (!panel || !wrapper) return;
+            if (!panel || !wrapper || !key) return;
+
+            if (Object.prototype.hasOwnProperty.call(stored, key)) {
+                setGroupOpen(wrapper, !!stored[key]);
+            }
 
             toggle.addEventListener('click', function () {
-                const isOpen = wrapper.classList.toggle('is-open');
-                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-                panel.hidden = !isOpen;
+                const isOpen = !wrapper.classList.contains('is-open');
+                setGroupOpen(wrapper, isOpen);
             });
         });
     }

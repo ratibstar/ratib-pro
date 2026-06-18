@@ -183,8 +183,30 @@ window.UserPermissions = {
             }
         });
         
+        hideEmptySidebarGroups();
     }
 };
+
+function hideEmptySidebarGroups() {
+    document.querySelectorAll('.sidebar-collapsible').forEach(function (wrapper) {
+        const panel = wrapper.querySelector('[data-sidebar-panel]');
+        if (!panel) return;
+        const links = panel.querySelectorAll('a.sidebar-subitem, a.sidebar-item');
+        let visible = 0;
+        links.forEach(function (link) {
+            if (!link.classList.contains('permission-denied') && link.offsetParent !== null) {
+                visible++;
+            }
+        });
+        if (visible === 0) {
+            wrapper.style.display = 'none';
+        } else {
+            wrapper.style.display = '';
+        }
+    });
+}
+
+window.hideEmptySidebarGroups = hideEmptySidebarGroups;
 
 // Auto-load permissions when script loads
 if (document.readyState === 'loading') {

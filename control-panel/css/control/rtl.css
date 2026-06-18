@@ -105,6 +105,26 @@ body.cp-rtl .sidebar-subitem.active {
     box-shadow: inset -3px 0 0 var(--control-accent);
 }
 
+html[dir="rtl"] .sidebar-item-toggle,
+body.cp-rtl .sidebar-item-toggle {
+    text-align: right;
+    flex-direction: row-reverse;
+    border-left: none;
+    border-right: 3px solid transparent;
+}
+
+html[dir="rtl"] .sidebar-collapsible.is-open > .sidebar-item-toggle,
+body.cp-rtl .sidebar-collapsible.is-open > .sidebar-item-toggle {
+    border-right-color: var(--control-accent);
+}
+
+html[dir="rtl"] .sidebar-item-toggle:hover,
+body.cp-rtl .sidebar-item-toggle:hover {
+    border-right-color: var(--control-accent);
+    padding-right: 1.5rem;
+    padding-left: 1.25rem;
+}
+
 html[dir="rtl"] .sidebar-item i,
 html[dir="rtl"] .sidebar-subitem i {
     margin-right: 0;
