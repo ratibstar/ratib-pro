@@ -129,16 +129,7 @@ try {
     }
     
     try {
-        // EN: Transaction boundary to keep worker creation atomic and rollback-safe.
-        // AR: بداية المعاملة لضمان إنشاء العامل بشكل ذري مع إمكانية التراجع الآمن.
-        // Start transaction
-        $conn->beginTransaction();
-        
         // Check if workers table exists and get its structure
-        $stmt = $conn->query("DESCRIBE workers");
-        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        rateb_indonesia_compliance_ensure_schema($conn);
         $stmt = $conn->query("DESCRIBE workers");
         $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
         
@@ -258,6 +249,9 @@ try {
         $sql = "INSERT INTO workers (" . implode(', ', $fields) . ") 
                 VALUES (" . implode(', ', $placeholders) . ")";
         
+        // DDL (ALTER/CREATE) must run before beginTransaction — MySQL implicitly commits DDL.
+        $conn->beginTransaction();
+
         // Insert worker
         $stmt = $conn->prepare($sql);
         foreach ($filteredData as $key => $value) {
@@ -300,8 +294,9 @@ try {
         $stmt->execute([$workerId]);
         $worker = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // Commit transaction
-        $conn->commit();
+        if ($conn->inTransaction()) {
+            $conn->commit();
+        }
         
         // EN: Post-create accounting hook to ensure worker has a ledger/account mapping.
         // AR: ربط محاسبي بعد الإنشاء لضمان وجود حساب أستاذ/دليل مرتبط بالعامل.
