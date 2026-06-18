@@ -11,12 +11,15 @@ $ratebWorkforceCtx = rateb_qr_login_badge_tenant_context();
 
 // Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
 
-// RATEB Pro only: allow agency admin (role_id=1 or manage_settings); must be a real `users` row.
-$isAgencyAdmin = !empty($_SESSION['logged_in'])
-    && (int)($_SESSION['user_id'] ?? 0) > 0
-    && (
-        (isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1)
-        || (function_exists('hasPermission') && hasPermission('manage_settings'))
+// RATEB Pro only: allow agency admin (role_id=1 or manage_settings); control-panel operators may open settings.
+rateb_staff_page_require_session();
+$isAgencyAdmin = !empty($_SESSION['control_logged_in'])
+    || (
+        (int) ($_SESSION['user_id'] ?? 0) > 0
+        && (
+            (isset($_SESSION['role_id']) && (int) $_SESSION['role_id'] === 1)
+            || (function_exists('hasPermission') && hasPermission('manage_settings'))
+        )
     );
 if (!$isAgencyAdmin) {
     header('Location: ' . pageUrl('login.php'));

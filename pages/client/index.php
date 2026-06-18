@@ -5,10 +5,7 @@ if (rateb_client_dashboard_can_access()) {
     header('Location: ' . pageUrl('client/dashboard.php'));
     exit;
 }
-if (!function_exists('rateb_program_session_is_valid_user') || !rateb_program_session_is_valid_user()) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
 $controlMode = (!empty($_GET['control']) && (string) $_GET['control'] === '1') || !empty($_SESSION['control_logged_in']);
 if ($controlMode) {
     $controlQuery = ['control' => '1'];

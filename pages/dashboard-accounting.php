@@ -9,11 +9,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
-if (!isset($_SESSION['user_id']) || (int)$_SESSION['user_id'] < 1
-    || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
 
 $params = $_GET;
 unset($params['embedded']);

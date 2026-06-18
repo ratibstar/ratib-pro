@@ -4,9 +4,11 @@
  * AR: يدير عرض صفحات المستخدم وتدفق الخادم الخاص بالصفحة في `pages/communications.php`.
  */
 require_once "../includes/config.php";
+require_once "../includes/permissions.php";
 require_once "../includes/simple_warning.php";
 
-if (!checkPermission("communication_view")) {
+rateb_staff_page_require_session();
+if (!rateb_staff_page_permission_ok('communication_view')) {
     showWarning("communication_view");
     exit();
 }

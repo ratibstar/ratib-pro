@@ -8,15 +8,8 @@ require_once __DIR__ . '/../includes/permissions.php';
 
 // Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-
-if (!hasPermission('view_hr_dashboard')) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_page_require_permission('view_hr_dashboard');
 
 $pageTitle = "HR Management System";
 $pageCss = [

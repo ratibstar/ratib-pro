@@ -24,24 +24,17 @@ require_once __DIR__ . '/permissions.php';
  * @return bool|void Returns true if authorized, otherwise exits with error
  */
 function checkPermission($required_permission, $return_json = false) {
-    // Check if user is logged in (positive user_id = row in `users`)
-    if (!isset($_SESSION['user_id']) || (int)$_SESSION['user_id'] < 1
-        || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    if (!rateb_staff_page_session_ok()) {
         if ($return_json) {
             http_response_code(401);
             echo json_encode(['error' => 'Authentication required', 'code' => 'AUTH_REQUIRED']);
             exit;
-        } else {
-            $loginUrl = function_exists('rateb_post_logout_login_url')
-                ? rateb_post_logout_login_url()
-                : pageUrl('login.php');
-            header('Location: ' . $loginUrl);
-            exit;
         }
+        header('Location: ' . rateb_staff_login_redirect_url());
+        exit;
     }
-    
-    // Check if user has the required permission
-    if (!hasPermission($required_permission)) {
+
+    if (!rateb_staff_page_permission_ok($required_permission)) {
         if ($return_json) {
             http_response_code(403);
             echo json_encode(['error' => 'Access denied. Insufficient permissions.', 'code' => 'PERMISSION_DENIED']);

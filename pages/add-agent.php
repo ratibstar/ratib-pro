@@ -5,11 +5,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
-// Check if user is logged in
-if (!is_authenticated()) {
-    header('Location: ' . pageUrl('login.php'));
-    exit();
-}
+rateb_staff_page_require_session();
 
 $pageTitle = "Add New Agent";
 $pageCss = [

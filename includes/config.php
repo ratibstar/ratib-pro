@@ -432,8 +432,86 @@ if (!function_exists('rateb_staff_page_require_session')) {
         if (rateb_staff_page_session_ok()) {
             return;
         }
-        header('Location: ' . pageUrl('login.php'));
+        header('Location: ' . rateb_staff_login_redirect_url());
         exit;
+    }
+}
+
+if (!function_exists('rateb_staff_login_redirect_url')) {
+    function rateb_staff_login_redirect_url(): string
+    {
+        $ssoParts = [];
+        $countrySlug = isset($_GET['country_slug']) ? trim((string) $_GET['country_slug']) : '';
+        if ($countrySlug !== '') {
+            $ssoParts[] = 'country_slug=' . rawurlencode($countrySlug);
+        }
+        if (!empty($_GET['control']) && (string) $_GET['control'] === '1'
+            && !empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
+            $ssoParts[] = 'control=1';
+            $ssoParts[] = 'agency_id=' . (int) $_GET['agency_id'];
+        }
+        if (!empty($ssoParts)) {
+            return pageUrl('login.php') . '?' . implode('&', $ssoParts);
+        }
+        return function_exists('rateb_post_logout_login_url')
+            ? rateb_post_logout_login_url()
+            : pageUrl('login.php');
+    }
+}
+
+if (!function_exists('rateb_staff_page_permission_ok')) {
+    /** Matches api-permission-helper: control-panel operators bypass permission checks. */
+    function rateb_staff_page_permission_ok(string $permission): bool
+    {
+        if (!empty($_SESSION['control_logged_in'])) {
+            return true;
+        }
+        return hasPermission($permission);
+    }
+}
+
+if (!function_exists('rateb_staff_page_permissions_ok')) {
+    function rateb_staff_page_permissions_ok(array $permissions): bool
+    {
+        if (!empty($_SESSION['control_logged_in'])) {
+            return true;
+        }
+        foreach ($permissions as $permission) {
+            if (hasPermission($permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+if (!function_exists('rateb_staff_page_require_permission')) {
+    function rateb_staff_page_require_permission(string $permission, ?string $failRedirect = null): void
+    {
+        if (rateb_staff_page_permission_ok($permission)) {
+            return;
+        }
+        header('Location: ' . ($failRedirect ?? pageUrl('login.php')));
+        exit;
+    }
+}
+
+if (!function_exists('rateb_staff_page_require_any_permission')) {
+    function rateb_staff_page_require_any_permission(array $permissions, ?string $failRedirect = null): void
+    {
+        if (rateb_staff_page_permissions_ok($permissions)) {
+            return;
+        }
+        $dest = $failRedirect ?? rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0));
+        header('Location: ' . $dest);
+        exit;
+    }
+}
+
+if (!function_exists('is_authenticated')) {
+    function is_authenticated(): bool
+    {
+        return rateb_staff_page_session_ok();
     }
 }
 
@@ -441,21 +519,17 @@ if (!function_exists('rateb_staff_partner_pages_ok')) {
     /** Matches api-permission-helper: control-panel operators may open partnership pages. */
     function rateb_staff_partner_pages_ok(): bool
     {
-        if (!empty($_SESSION['control_logged_in'])) {
-            return true;
-        }
-        return hasPermission('view_partner_agencies') || hasPermission('view_workers');
+        return rateb_staff_page_permissions_ok(['view_partner_agencies', 'view_workers']);
     }
 }
 
 if (!function_exists('rateb_staff_require_partner_access')) {
     function rateb_staff_require_partner_access(): void
     {
-        if (rateb_staff_partner_pages_ok()) {
-            return;
-        }
-        header('Location: ' . rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
-        exit;
+        rateb_staff_page_require_any_permission(
+            ['view_partner_agencies', 'view_workers'],
+            rateb_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0))
+        );
     }
 }
 

@@ -8,17 +8,8 @@ require_once(__DIR__ . '/../includes/permissions.php');
 
 // Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-
-// Check if user has permission to view reports
-if (!hasPermission('view_reports')) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_page_require_permission('view_reports');
 
 // Get total reports count from API with database fallback
 $totalReports = 0;

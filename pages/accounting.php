@@ -8,17 +8,8 @@ require_once '../includes/permissions.php';
 
 // Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-
-// Check if user has permission to view accounting
-if (!hasPermission('view_chart_accounts')) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_page_require_permission('view_chart_accounts');
 
 // Bust browser/CDN caches after deploy: changes whenever this file is saved on the server.
 $accountingAssetDeploy = (int) @filemtime(__DIR__ . '/accounting.php');

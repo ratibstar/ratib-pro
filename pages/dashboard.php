@@ -15,33 +15,8 @@ require_once '../api/partnerships/DeploymentController.php';
 // run control-to-program SSO (rateb_control_panel_try_program_sso). A redirect to the control panel
 // would skip RATEB Pro entirely (Manage Agencies "Open" must land on this dashboard).
 
-// Check if user is logged in (must be a real `users` row: positive user_id)
-if (!isset($_SESSION['user_id']) || (int) $_SESSION['user_id'] < 1
-    || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    $ssoParts = [];
-    $countrySlug = isset($_GET['country_slug']) ? trim((string)$_GET['country_slug']) : '';
-    if ($countrySlug !== '') {
-        $ssoParts[] = 'country_slug=' . rawurlencode($countrySlug);
-    }
-    if (isset($_GET['control']) && (string) $_GET['control'] === '1'
-        && isset($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
-        $ssoParts[] = 'control=1';
-        $ssoParts[] = 'agency_id=' . (int) $_GET['agency_id'];
-    }
-    if (!empty($ssoParts)) {
-        header('Location: ' . pageUrl('login.php') . '?' . implode('&', $ssoParts));
-    } else {
-        // Expired session refresh: rebuild the correct /{country}/login URL from the
-        // persistent login cookies so the user can sign back in (no "Country not found").
-        header('Location: ' . (function_exists('rateb_post_logout_login_url')
-            ? rateb_post_logout_login_url()
-            : pageUrl('login.php')));
-    }
-    exit;
-}
-
-// Check if user has permission to view dashboard
-if (!hasPermission('view_dashboard')) {
+rateb_staff_page_require_session();
+if (!rateb_staff_page_permission_ok('view_dashboard')) {
     // Logged-in users without dashboard permission should not be treated as logged out.
     header('Location: ' . pageUrl('profile.php'));
     exit;

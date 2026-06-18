@@ -8,17 +8,8 @@ require_once '../includes/permissions.php';
 
 // Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-
-// Check if user has permission to view agents
-if (!hasPermission('view_agents')) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_page_require_permission('view_agents');
 $pageTitle = "Agent Management";
 $pageCss = [
     asset('css/agent/agent.css') . "?v=" . time() . "&force=1",

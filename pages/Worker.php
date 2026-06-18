@@ -13,17 +13,8 @@ require_once '../includes/permissions.php';
 
 // Stay on RATEB Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-
-// Check if user has permission to view workers
-if (!hasPermission('view_workers')) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_page_require_permission('view_workers');
 
 /** Same-origin iframe preview from Documents & CVs (staff): ?view=ID&embed_cv=1 — not edit mode. */
 $workerCvEmbedPreview = isset($_GET['embed_cv']) && (string) $_GET['embed_cv'] === '1'

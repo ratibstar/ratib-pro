@@ -6,17 +6,8 @@
 require_once '../../includes/config.php';
 require_once '../../includes/permissions.php';
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
-
-// Check if user has permission to view accounting
-if (!hasPermission('view_chart_accounts')) {
-    header('Location: ' . pageUrl('login.php'));
-    exit;
-}
+rateb_staff_page_require_session();
+rateb_staff_page_require_permission('view_chart_accounts');
 
 $pageTitle = "Support Payments";
 $pageCss = [
