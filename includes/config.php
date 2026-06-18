@@ -56,6 +56,14 @@ require_once __DIR__ . '/../config/env/load.php';
 require_once __DIR__ . '/rateb-users-schema.php';
 require_once __DIR__ . '/rateb-clean-url.php';
 
+if (!defined('RATEB_PUBLIC_QR_PAGE')) {
+    $ratebScriptBase = strtolower(basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+    define(
+        'RATEB_PUBLIC_QR_PAGE',
+        in_array($ratebScriptBase, ['login-scan.php', 'login-badge.php', 'workforce-badge.php'], true)
+    );
+}
+
 // EN: Central event bus bootstrap (safe no-op if unavailable).
 // AR: تهيئة ناقل الأحداث المركزي (لا يؤثر إذا لم يكن متاحاً).
 // Central event bus bootstrap (safe no-op if unavailable).
@@ -1580,9 +1588,13 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
         $effectiveAgencyId = (($openAgencyContext || $apiAgencyContext) && $getAgencyId > 0)
             ? $getAgencyId
             : ($sessionAgencyId > 0 ? $sessionAgencyId : 0);
-        $mustUseAgencyDb = $singleUrlMode && (
-            (($sessionLoggedIn || $controlLoggedIn) && ($sessionAgencyId > 0 || $sessionCountryId > 0))
-            || ($openAgencyContext && $effectiveAgencyId > 0)
+        $mustUseAgencyDb = !$singleUrlMode ? false : (
+            (defined('RATEB_PUBLIC_QR_PAGE') && RATEB_PUBLIC_QR_PAGE)
+                ? false
+                : (
+                    (($sessionLoggedIn || $controlLoggedIn) && ($sessionAgencyId > 0 || $sessionCountryId > 0))
+                    || ($openAgencyContext && $effectiveAgencyId > 0)
+                )
         );
         if ($mustUseAgencyDb && $conn instanceof mysqli) {
             $lookupConn = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
@@ -1632,10 +1644,11 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     // Internal API calls (/api/...) should keep working under the active session agency.
                     $reqUri = (string)($_SERVER['REQUEST_URI'] ?? '');
                     $isApiReq = strpos($reqUri, '/api/') !== false;
-                    if (!$isApiReq && $effectiveAgencyId > 0 && trim((string)($row['site_url'] ?? '')) === '') {
+                    $skipSiteUrlGate = defined('RATEB_PUBLIC_QR_PAGE') && RATEB_PUBLIC_QR_PAGE;
+                    if (!$isApiReq && !$skipSiteUrlGate && $effectiveAgencyId > 0 && trim((string)($row['site_url'] ?? '')) === '') {
                         rateb_halt_for_agency_db_error('Agency site URL is missing.');
                     }
-                    if (!$isApiReq && $effectiveAgencyId > 0 && !rateb_url_matches_agency_site($row['site_url'] ?? '')) {
+                    if (!$isApiReq && !$skipSiteUrlGate && $effectiveAgencyId > 0 && !rateb_url_matches_agency_site($row['site_url'] ?? '')) {
                         rateb_halt_for_agency_db_error('Agency site URL mismatch.');
                     }
                     $agencyHelper = __DIR__ . '/../control-panel/api/control/agency-db-helper.php';

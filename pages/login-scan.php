@@ -5,18 +5,42 @@ declare(strict_types=1);
  * Enterprise QR camera scanner — pairs with desktop login or direct mobile sign-in.
  * Routes: /{country}/login/scan, /login/scan, /{country}/workforce/scan
  */
+if (!defined('RATEB_PUBLIC_QR_PAGE')) {
+    define('RATEB_PUBLIC_QR_PAGE', true);
+}
 require_once __DIR__ . '/../includes/config.php';
 
 $pairToken = isset($_GET['token']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['token'])) : '';
 $hasPair = strlen($pairToken) === 32;
 $mode = isset($_GET['mode']) ? trim((string) $_GET['mode']) : '';
+$pair = null;
 
 if ($hasPair) {
     require_once __DIR__ . '/../includes/rateb-barcode-login-pair.php';
     $pair = rateb_barcode_pair_read($pairToken);
     if ($pair === null || ($pair['status'] ?? '') !== 'pending') {
         http_response_code(410);
-        echo 'Session expired. On your computer, choose Barcode again.';
+        $loginBack = function_exists('rateb_post_logout_login_url')
+            ? rateb_post_logout_login_url()
+            : (function_exists('pageUrl') ? pageUrl('login.php') : '/login');
+        ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan session expired — RATEB</title>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(function_exists('asset') ? asset('css/qr-scan.css') : '/css/qr-scan.css', ENT_QUOTES, 'UTF-8'); ?>">
+</head>
+<body class="qr-scan-page">
+    <div class="qr-scan-shell">
+        <h1 class="qr-scan-title">Session expired</h1>
+        <p class="qr-scan-sub">On your computer, open <strong>Login → Barcode</strong> again to get a new QR code.</p>
+        <a class="qr-scan-btn qr-scan-btn-primary" href="<?php echo htmlspecialchars($loginBack, ENT_QUOTES, 'UTF-8'); ?>">Back to login</a>
+    </div>
+</body>
+</html>
+        <?php
         exit;
     }
     $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'

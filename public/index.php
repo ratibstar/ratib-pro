@@ -68,6 +68,27 @@ if ($path === '/' || $path === '') {
 
 $projectRoot = dirname(__DIR__);
 
+// QR login routes (fallback when server rewrite rules miss /{country}/login/scan).
+if (preg_match('#^/(?:([a-z0-9_-]+)/)?login/(scan|badge)/?$#i', $path, $qrRoute)) {
+    if (!empty($qrRoute[1])) {
+        $_GET['country_slug'] = strtolower((string) $qrRoute[1]);
+    }
+    $qrFile = strtolower((string) ($qrRoute[2] ?? 'scan')) === 'badge' ? 'login-badge.php' : 'login-scan.php';
+    $qrPage = $projectRoot . '/pages/' . $qrFile;
+    if (is_file($qrPage)) {
+        require $qrPage;
+        exit;
+    }
+}
+if (preg_match('#^/([a-z0-9_-]+)/login-scan/?$#i', $path, $legacyScan)) {
+    $_GET['country_slug'] = strtolower((string) $legacyScan[1]);
+    $legacyPage = $projectRoot . '/pages/login-scan.php';
+    if (is_file($legacyPage)) {
+        require $legacyPage;
+        exit;
+    }
+}
+
 // /profile or /about — company profile (about.php; avoid company-profile.php redirect chains).
 if (preg_match('#^/(?:profile|about)/?$#i', $path)) {
     $aboutPage = $projectRoot . '/pages/about.php';

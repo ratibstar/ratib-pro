@@ -4,6 +4,9 @@ declare(strict_types=1);
 /**
  * Badge QR landing — iPhone Camera; pair login or direct mobile sign-in + optional PIN.
  */
+if (!defined('RATEB_PUBLIC_QR_PAGE')) {
+    define('RATEB_PUBLIC_QR_PAGE', true);
+}
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/rateb-qr-workforce-identity.php';
 require_once __DIR__ . '/../includes/rateb-qr-login.php';

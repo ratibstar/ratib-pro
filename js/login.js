@@ -306,14 +306,9 @@ document.addEventListener('DOMContentLoaded', function () {
     async function startDesktopBarcodePair() {
         const cfg = window.RATEB_LOGIN_PAIR || {};
         const apiPair = cfg.apiPair || '/api/login-barcode-pair.php';
-        let scanBase = cfg.scanPage || 'login-scan.php';
+        let scanBase = cfg.scanPage || '/login/scan';
         if (scanBase.indexOf('http') !== 0) {
-            if (scanBase.indexOf('/') === 0) {
-                scanBase = window.location.origin + scanBase;
-            } else {
-                const pathDir = window.location.pathname.replace(/\/[^/]*$/, '/');
-                scanBase = window.location.origin + pathDir + scanBase.replace(/^\.\.\//, '').replace(/^\.\//, '');
-            }
+            scanBase = window.location.origin + (scanBase.indexOf('/') === 0 ? scanBase : '/' + scanBase);
         }
 
         showBarcodeStatus('Preparing phone scanner…', 'info');

@@ -1595,19 +1595,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         : time();
     ?>
     <?php
-    $loginScanUrl = function_exists('pageUrl') ? pageUrl('login-scan.php') : '../pages/login-scan.php';
-    if (!empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {
-        $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $loginCountries[0]['slug']));
-        if ($slug !== '') {
-            $base = rtrim((string) (defined('BASE_URL') ? BASE_URL : ''), '/');
-            $loginScanUrl = ($base !== '' ? $base : '') . '/' . $slug . '/login/scan';
-        }
-    }
+    require_once __DIR__ . '/../includes/rateb-qr-login.php';
     $loginPairApi = '/api/login-barcode-pair.php';
     $loginPairCountrySlug = '';
-    if (!empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {
+    if ($loginPairCountrySlug === '' && !empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {
         $loginPairCountrySlug = (string) $loginCountries[0]['slug'];
-    } elseif ($formHiddenCountryId > 0 && !empty($loginCountries)) {
+    } elseif ($loginPairCountrySlug === '' && $formHiddenCountryId > 0 && !empty($loginCountries)) {
         foreach ($loginCountries as $c) {
             if ((int) ($c['id'] ?? 0) === $formHiddenCountryId && !empty($c['slug'])) {
                 $loginPairCountrySlug = (string) $c['slug'];
@@ -1634,13 +1627,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             }
         }
     }
-    if ($loginPairCountrySlug !== '' && (strpos($loginScanUrl, '/login/scan') === false || strpos($loginScanUrl, '/' . $loginPairCountrySlug . '/') === false)) {
-        $slugForScan = preg_replace('/[^a-z0-9_-]/', '', strtolower($loginPairCountrySlug));
-        if ($slugForScan !== '') {
-            $base = rtrim((string) (defined('BASE_URL') ? BASE_URL : ''), '/');
-            $loginScanUrl = ($base !== '' ? $base : '') . '/' . $slugForScan . '/login/scan';
-        }
-    }
+    $loginPairCountrySlug = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $loginPairCountrySlug));
+    $loginScanUrl = rateb_qr_login_scan_page_url([
+        'agency_id' => (int) $formHiddenAgencyId,
+        'country_id' => (int) $formHiddenCountryId,
+        'country_slug' => $loginPairCountrySlug,
+    ]);
     ?>
     <script>
     window.RATEB_LOGIN_PAIR = <?php echo json_encode([

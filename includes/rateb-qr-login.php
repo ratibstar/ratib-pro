@@ -264,6 +264,91 @@ if (!function_exists('rateb_qr_login_resolve_tenant_names')) {
     }
 }
 
+if (!function_exists('rateb_qr_login_country_slug_from_id')) {
+    function rateb_qr_login_country_slug_from_id(int $countryId): string
+    {
+        if ($countryId <= 0) {
+            return '';
+        }
+        $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
+        if (!($lookup instanceof mysqli)) {
+            $lookup = $GLOBALS['conn'] ?? null;
+        }
+        if (!($lookup instanceof mysqli)) {
+            return '';
+        }
+        $chk = @$lookup->query("SHOW TABLES LIKE 'control_countries'");
+        if (!$chk || $chk->num_rows === 0) {
+            return '';
+        }
+        $stmt = $lookup->prepare('SELECT slug FROM control_countries WHERE id = ? LIMIT 1');
+        if (!$stmt) {
+            return '';
+        }
+        $stmt->bind_param('i', $countryId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+        $stmt->close();
+        if (!$row) {
+            return '';
+        }
+
+        return preg_replace('/[^a-z0-9_-]/', '', strtolower(trim((string) ($row['slug'] ?? ''))));
+    }
+}
+
+if (!function_exists('rateb_qr_login_scan_page_url')) {
+    /**
+     * Absolute HTTPS URL for the phone scanner (pairing QR on desktop login).
+     *
+     * @param array<string, mixed>|null $ctx agency_id, country_id, country_slug
+     */
+    function rateb_qr_login_scan_page_url(?array $ctx = null): string
+    {
+        $base = function_exists('rateb_absolute_public_base') ? rateb_absolute_public_base() : '';
+        if ($base === '') {
+            $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
+                    && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+            $scheme = $https ? 'https' : 'http';
+            $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+            $base = $host !== '' ? $scheme . '://' . $host : '';
+        }
+        if ($base === '') {
+            return '/login/scan';
+        }
+
+        $tenant = $ctx ?? rateb_qr_login_badge_tenant_context();
+        if (function_exists('rateb_qr_login_enrich_context')) {
+            $tenant = rateb_qr_login_enrich_context($tenant);
+        }
+        $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower(trim((string) ($tenant['country_slug'] ?? ''))));
+        if ($slug === '' && (int) ($tenant['country_id'] ?? 0) > 0) {
+            $slug = rateb_qr_login_country_slug_from_id((int) $tenant['country_id']);
+        }
+        $path = $slug !== '' ? '/' . $slug . '/login/scan' : '/login/scan';
+        $query = [];
+        $agencyId = (int) ($tenant['agency_id'] ?? 0);
+        $countryId = (int) ($tenant['country_id'] ?? 0);
+        if ($agencyId > 0) {
+            $query['agency_id'] = $agencyId;
+        }
+        if ($countryId > 0) {
+            $query['country_id'] = $countryId;
+        }
+        if ($slug !== '') {
+            $query['country_slug'] = $slug;
+        }
+        $url = rtrim($base, '/') . $path;
+        if (!empty($query)) {
+            $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        }
+
+        return $url;
+    }
+}
+
 if (!function_exists('rateb_qr_login_badge_url')) {
     /**
      * Public HTTPS URL for badge QR (iPhone Camera opens Safari; in-app scanner also accepts this).
