@@ -433,6 +433,7 @@ return [
     'supplier_comms' => 'تواصل الموردين',
     'supplier_comms_log' => 'سجل التواصل',
     'supplier_comms_create' => 'إنشاء تواصل الموردين',
+    'supplier_comms_need_supplier' => 'يجب إضافة مورّد أولاً من قسم الموردون قبل تسجيل التواصل.',
     'supplier_comms_search_filter' => 'بحث وفلترة سجل التواصل',
     'comm_channel' => 'قناة التواصل',
     'comm_channel_email' => 'البريد الإلكتروني',

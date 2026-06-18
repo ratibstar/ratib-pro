@@ -245,6 +245,8 @@ CREATE TABLE IF NOT EXISTS rateb_suppliers (
     phone VARCHAR(40) NULL,
     address TEXT NULL,
     rating DECIMAL(3,2) NULL DEFAULT 0.00,
+    classification_id INT UNSIGNED NULL,
+    performance_kpi DECIMAL(5,2) NULL,
     status ENUM('active','inactive','blacklisted') NOT NULL DEFAULT 'active',
     notes TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -434,6 +434,7 @@ return [
     'supplier_comms' => 'Supplier communications',
     'supplier_comms_log' => 'Communication log',
     'supplier_comms_create' => 'Create supplier communication',
+    'supplier_comms_need_supplier' => 'Add at least one supplier under Suppliers before logging communication.',
     'supplier_comms_search_filter' => 'Search / filter communication log',
     'comm_channel' => 'Channel',
     'comm_channel_email' => 'Email',

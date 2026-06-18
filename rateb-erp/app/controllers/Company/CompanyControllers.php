@@ -721,6 +721,8 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
     {
         $data = parent::collectData();
         $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPLIER, 'code');
+        $classId = (int) ($data['classification_id'] ?? 0);
+        $data['classification_id'] = $classId > 0 ? $classId : null;
         return $data;
     }
 

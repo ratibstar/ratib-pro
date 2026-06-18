@@ -1417,15 +1417,16 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
-        $id = $this->model->create($data);
+        $this->ensureTenantCompanyForWrite($data);
         try {
+            $id = $this->model->create($data);
             $this->persistAttachments($id, (int) ($data['company_id'] ?? 0));
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('comm_saved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
-        (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('comm_saved'));
         if ($formAction === 'save_send' && ($data['channel'] ?? '') === 'email') {
             $mailto = $this->buildMailtoUrl($data);
             if ($mailto !== '') {
@@ -1461,15 +1462,15 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $formAction = trim((string) $this->input('form_action', 'save'));
-        $this->model->update($id, $data);
         try {
+            $this->model->update($id, $data);
             $this->persistAttachments($id, (int) rateb_resolve_ops_company_id());
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
+            (new AuditService())->log('update', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('comm_saved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
-        (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('comm_saved'));
         if ($formAction === 'save_send' && ($data['channel'] ?? '') === 'email') {
             $mailto = $this->buildMailtoUrl($data);
             if ($mailto !== '') {
@@ -1486,9 +1487,14 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
-        $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($this->fields);
-        if (($lookups['suppliers'] ?? []) === []) {
-            SessionManager::flash('error', __('no_records') . ' — ' . __('suppliers'));
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        TenantContext::setCompanyId($companyId);
+        if ((new \Rateb\App\Models\Supplier())->count() < 1) {
+            SessionManager::flash('error', __('supplier_comms_need_supplier'));
             $this->redirect(rateb_url($this->routePrefix));
         }
         $this->view($this->viewPrefix . '/form', $this->formViewData([
