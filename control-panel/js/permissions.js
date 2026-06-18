@@ -39,9 +39,13 @@ window.UserPermissions = {
                     this.applyPermissions();
                 }, 500);
                 
-                // Also re-apply when DOM changes
+                // Re-apply when DOM changes (debounced — avoids sidebar collapse/i18n flicker)
+                let permObserverTimer = null;
                 const observer = new MutationObserver(() => {
-                    this.applyPermissions();
+                    if (permObserverTimer) clearTimeout(permObserverTimer);
+                    permObserverTimer = setTimeout(() => {
+                        this.applyPermissions();
+                    }, 200);
                 });
                 observer.observe(document.body, { childList: true, subtree: true });
             } else {
@@ -192,17 +196,14 @@ function hideEmptySidebarGroups() {
         const panel = wrapper.querySelector('[data-sidebar-panel]');
         if (!panel) return;
         const links = panel.querySelectorAll('a.sidebar-subitem, a.sidebar-item');
-        let visible = 0;
+        let allowed = 0;
         links.forEach(function (link) {
-            if (!link.classList.contains('permission-denied') && link.offsetParent !== null) {
-                visible++;
+            // Count permission only — collapsed panels use [hidden] so offsetParent is null.
+            if (!link.classList.contains('permission-denied')) {
+                allowed++;
             }
         });
-        if (visible === 0) {
-            wrapper.style.display = 'none';
-        } else {
-            wrapper.style.display = '';
-        }
+        wrapper.style.display = allowed === 0 ? 'none' : '';
     });
 }
 
