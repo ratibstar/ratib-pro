@@ -99,8 +99,19 @@
         var url = historyUrl + (historyUrl.indexOf('?') >= 0 ? '&' : '?') + 'supplier_id=' + sid;
         if (excludeId > 0) url += '&exclude_id=' + excludeId;
         fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-            .then(function (r) { return r.json(); })
-            .then(function (data) { renderHistory(data.rows || []); })
+            .then(function (r) {
+                if (!r.ok) {
+                    return r.json().catch(function () { return { rows: [], error: '' }; });
+                }
+                return r.json();
+            })
+            .then(function (data) {
+                if (data && data.error) {
+                    renderHistory([]);
+                    return;
+                }
+                renderHistory(data.rows || []);
+            })
             .catch(function () { renderHistory([]); });
     }
 

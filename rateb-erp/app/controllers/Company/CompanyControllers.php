@@ -1554,6 +1554,16 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
     {
         $this->guardManage();
         rateb_bootstrap_ops_tenant();
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        TenantContext::setCompanyId($companyId);
+        if ((new \Rateb\App\Models\Supplier())->count() < 1) {
+            SessionManager::flash('error', __('supplier_comms_need_supplier'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __('supplier_evaluations'),
             'item' => null,
