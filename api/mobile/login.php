@@ -122,7 +122,7 @@ try {
         $roleName = $roleRow['role_name'] ?? null;
     }
 
-    $portalRole = rateb_mobile_map_portal_role('staff', $roleName);
+    $portalRole = rateb_mobile_resolve_staff_portal_role($pdo, $userId, $roleName);
     $claims = rateb_mobile_build_token_claims(
         'staff',
         $userId,

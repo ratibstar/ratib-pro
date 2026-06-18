@@ -63,6 +63,7 @@ function sendResponse($data, $code = 200) {
 // Load config first so session and country DB ($GLOBALS['agency_db']) are set before any DB use.
 // This ensures new users are created in the correct country DB when admin is in single-URL mode.
 require_once dirname(dirname(__DIR__)) . '/includes/config.php';
+require_once dirname(dirname(__DIR__)) . '/includes/portal-roles.php';
 
 // Try to require Database class - load core Database first (has getInstance), then fallback
 try {
@@ -171,6 +172,7 @@ class SettingsAPI {
                         'payment_receipts' => 'accounting',
                         'payment_payments' => 'accounting',
                         'users' => 'settings',
+                        'portal_roles' => 'settings',
                         'roles' => 'settings',
                         'recruitment_countries' => 'settings',
                         'recruitment_settings' => 'settings',
@@ -271,18 +273,32 @@ class SettingsAPI {
                 return;
             }
             
+            // Ensure portal_roles schema + users.portal_role_id on relevant tables
+            if ($tableLower === 'portal_roles' || $tableLower === 'users') {
+                if (function_exists('rateb_portal_roles_ensure_schema') && $this->conn) {
+                    rateb_portal_roles_ensure_schema($this->conn);
+                }
+            }
+            
             // Ensure required columns exist before fetching (country_id, city, etc.)
             $this->ensureColumnsExist();
             
             if ($this->table === 'users') {
                 $hasPasswordPlain = $this->columnExists('password_plain');
                 $passwordPlainSelect = $hasPasswordPlain ? ", u.password_plain" : "";
+                $hasPortalRole = $this->columnExists('portal_role_id');
+                $portalJoin = $hasPortalRole
+                    ? " LEFT JOIN portal_roles pr ON u.portal_role_id = pr.id"
+                    : "";
+                $portalSelect = $hasPortalRole
+                    ? ", pr.name AS portal_role_name, pr.portal_type AS portal_role_type"
+                    : "";
                 $sql = "
                     SELECT 
-                        u.*{$passwordPlainSelect},
+                        u.*{$passwordPlainSelect}{$portalSelect},
                         CASE WHEN (fp.latest_template_id IS NOT NULL OR wc.credential_id IS NOT NULL) THEN 1 ELSE 0 END AS has_fingerprint,
                         CASE WHEN (fp.latest_template_id IS NOT NULL OR wc.credential_id IS NOT NULL) THEN 'Registered' ELSE 'Not Registered' END AS fingerprint_status
-                    FROM `users` u
+                    FROM `users` u{$portalJoin}
                     LEFT JOIN (
                         SELECT user_id, MAX(id) AS latest_template_id
                         FROM fingerprint_templates
@@ -900,6 +916,27 @@ class SettingsAPI {
                 sendResponse(["success"=>false,"message"=>"Record not found"],404);
                 return;
             }
+
+            if ($this->table === 'portal_roles') {
+                try {
+                    $colChk = $this->conn->query("SHOW COLUMNS FROM `users` LIKE 'portal_role_id'");
+                    if ($colChk && $colChk->rowCount() > 0) {
+                        $stmt = $this->conn->prepare('SELECT COUNT(*) AS c FROM users WHERE portal_role_id = ?');
+                        $stmt->execute([$id]);
+                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                        if ((int) ($row['c'] ?? 0) > 0) {
+                            sendResponse([
+                                'success' => false,
+                                'message' => 'Cannot delete: users are assigned to this portal role.',
+                            ], 409);
+                            return;
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log('portal_roles delete check: ' . $e->getMessage());
+                }
+            }
+
             if ($this->table === 'users' && !$this->usersRowAllowedForSessionCountry($deletedData)) {
                 sendResponse(["success"=>false,"message"=>"Record not found"],404);
                 return;
@@ -1255,6 +1292,10 @@ class SettingsAPI {
                     break;
                 case 'system_config':
                     $this->createSystemConfigTable();
+                    $tableCreated = true;
+                    break;
+                case 'portal_roles':
+                    $this->createPortalRolesTable();
                     $tableCreated = true;
                     break;
                 default:
@@ -1983,6 +2024,34 @@ class SettingsAPI {
     }
     
     // Generic table creation method for unknown settings tables
+    private function createPortalRolesTable() {
+        if (!$this->conn) {
+            throw new Exception("Database connection is null");
+        }
+        if (function_exists('rateb_portal_roles_ensure_schema')) {
+            rateb_portal_roles_ensure_schema($this->conn);
+            return;
+        }
+        $createTable = "CREATE TABLE IF NOT EXISTS `portal_roles` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `name` VARCHAR(100) NOT NULL,
+            `portal_type` ENUM('company','worker','agency') NOT NULL DEFAULT 'company',
+            `description` TEXT NULL,
+            `status` VARCHAR(20) NOT NULL DEFAULT 'active',
+            `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_portal_type` (`portal_type`),
+            KEY `idx_status` (`status`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+        $result = $this->conn->exec($createTable);
+        if ($result === false) {
+            $errorInfo = $this->conn->errorInfo();
+            throw new Exception("Failed to create portal_roles: " . ($errorInfo[2] ?? 'Unknown error'));
+        }
+    }
+
+    // Generic table creation method for unknown settings tables
     private function createGenericSettingsTable() {
         if (!$this->conn) {
             throw new Exception("Database connection is null");
@@ -2617,6 +2686,9 @@ class SettingsAPI {
         }
         if ($table === 'users' && !in_array('login_barcode', $existingColsLower, true)) {
             $columnsToAdd[] = 'ADD COLUMN `login_barcode` VARCHAR(64) NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('portal_role_id', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `portal_role_id` INT NULL DEFAULT NULL';
         }
         if ($table === 'users' && !in_array('qr_login_token', $existingColsLower, true)) {
             $columnsToAdd[] = 'ADD COLUMN `qr_login_token` VARCHAR(64) NULL DEFAULT NULL';

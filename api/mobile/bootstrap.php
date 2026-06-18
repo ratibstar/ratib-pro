@@ -160,6 +160,9 @@ function rateb_mobile_map_portal_role(string $accountType, ?string $roleName = n
     if ($accountType === 'partner') {
         return 'agency';
     }
+    if (function_exists('rateb_portal_type_from_role_name')) {
+        return rateb_portal_type_from_role_name($roleName);
+    }
     $rn = strtolower(trim((string) $roleName));
     if ($rn !== '') {
         if (str_contains($rn, 'agency') || str_contains($rn, 'partner') || str_contains($rn, 'recruit')) {
@@ -173,6 +176,23 @@ function rateb_mobile_map_portal_role(string $accountType, ?string $roleName = n
         }
     }
     return 'company';
+}
+
+/**
+ * Resolve staff portal role from portal_roles table with legacy role_name fallback.
+ *
+ * @return 'worker'|'company'|'agency'
+ */
+function rateb_mobile_resolve_staff_portal_role(PDO $pdo, int $userId, ?string $fallbackRoleName = null): string
+{
+    $portalRolesPath = dirname(__DIR__, 2) . '/includes/portal-roles.php';
+    if (is_file($portalRolesPath)) {
+        require_once $portalRolesPath;
+        if (function_exists('rateb_resolve_user_portal_type')) {
+            return rateb_resolve_user_portal_type($pdo, $userId, $fallbackRoleName);
+        }
+    }
+    return rateb_mobile_map_portal_role('staff', $fallbackRoleName);
 }
 
 function rateb_mobile_build_token_claims(

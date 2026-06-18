@@ -38,28 +38,34 @@ if (!function_exists('rateb_ensure_minimal_rateb_pro_schema')) {
             }
 
             $chk = @$conn->query("SHOW TABLES LIKE 'users'");
-            if ($chk && $chk->num_rows > 0) {
-                return;
+            if (!$chk || $chk->num_rows === 0) {
+                @$conn->query(
+                    "CREATE TABLE IF NOT EXISTS `users` (
+                        `user_id` int NOT NULL AUTO_INCREMENT,
+                        `username` varchar(100) NOT NULL,
+                        `password` varchar(255) NOT NULL,
+                        `email` varchar(255) DEFAULT NULL,
+                        `role_id` int NOT NULL DEFAULT 1,
+                        `status` varchar(50) NOT NULL DEFAULT 'active',
+                        `country_id` int DEFAULT NULL,
+                        `agency_id` int DEFAULT NULL,
+                        `permissions` json DEFAULT NULL,
+                        `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+                        `last_login` datetime DEFAULT NULL,
+                        PRIMARY KEY (`user_id`),
+                        UNIQUE KEY `username` (`username`),
+                        KEY `idx_role` (`role_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+                );
             }
 
-            @$conn->query(
-                "CREATE TABLE IF NOT EXISTS `users` (
-                    `user_id` int NOT NULL AUTO_INCREMENT,
-                    `username` varchar(100) NOT NULL,
-                    `password` varchar(255) NOT NULL,
-                    `email` varchar(255) DEFAULT NULL,
-                    `role_id` int NOT NULL DEFAULT 1,
-                    `status` varchar(50) NOT NULL DEFAULT 'active',
-                    `country_id` int DEFAULT NULL,
-                    `agency_id` int DEFAULT NULL,
-                    `permissions` json DEFAULT NULL,
-                    `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-                    `last_login` datetime DEFAULT NULL,
-                    PRIMARY KEY (`user_id`),
-                    UNIQUE KEY `username` (`username`),
-                    KEY `idx_role` (`role_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-            );
+            $portalRolesPath = dirname(__DIR__, 3) . '/includes/portal-roles.php';
+            if (is_file($portalRolesPath)) {
+                require_once $portalRolesPath;
+                if (function_exists('rateb_portal_roles_ensure_schema')) {
+                    rateb_portal_roles_ensure_schema($conn);
+                }
+            }
         } catch (Throwable $e) {
             error_log('rateb_ensure_minimal_rateb_pro_schema: ' . $e->getMessage());
         }

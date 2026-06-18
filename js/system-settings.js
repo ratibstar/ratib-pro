@@ -180,6 +180,7 @@ document.addEventListener('click', function(e) {
                 'worker_statuses': 'worker_statuses',
                 'system_config': 'system_config',
                 'currencies': 'currencies',
+                'portal_roles': 'portal_roles',
                 'users': 'users'
             };
             
@@ -286,6 +287,8 @@ function autoOpenSettingModal() {
         'arrival_stations': 'arrival_stations',
         'worker_statuses': 'worker_statuses',
         'system_config': 'system_config',
+        'currencies': 'currencies',
+        'portal_roles': 'portal_roles',
         'users': 'users'
     };
     

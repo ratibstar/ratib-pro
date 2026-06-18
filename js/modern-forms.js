@@ -1223,6 +1223,7 @@ class ModernForms {
                 'phone': ['phone', 'contact_number', 'phone_number'],
                 'position': ['position', 'job_title'],
                 'role_id': ['role_id'],
+                'portal_role_id': ['portal_role_id'],
                 'status': ['status', 'is_active'],
                 'login_barcode': ['login_barcode', 'barcode', 'user_barcode', 'card_number'],
                 'fingerprint_status': ['fingerprint_status', 'has_fingerprint']
@@ -1239,6 +1240,12 @@ class ModernForms {
                 'description': ['description', 'status_description'],
                 'country_id': ['country_id', 'country'],
                 'city': ['city'],
+                'status': ['status', 'is_active']
+            },
+            'portal_roles': {
+                'name': ['name'],
+                'portal_type': ['portal_type'],
+                'description': ['description'],
                 'status': ['status', 'is_active']
             }
         };
@@ -1274,6 +1281,7 @@ class ModernForms {
             arrival_agencies: { manage: 'manage_recruitment_settings' },
             arrival_stations: { manage: 'manage_recruitment_settings' },
             worker_statuses: { manage: 'manage_positions' },
+            portal_roles: { manage: 'manage_settings' },
             system_config: { manage: 'manage_settings' }
         };
         const key = tableName || this.currentTable;
@@ -1794,7 +1802,7 @@ class ModernForms {
             }
 
             if (this.currentTable === 'users') {
-                await this.populateRoleDropdown();
+                await this.populatePortalRoleDropdown();
             }
         }, 500);
     }
@@ -3052,19 +3060,19 @@ class ModernForms {
         }
     }
 
-    async populateRoleDropdown(selectedValue = '', maxRetries = 3) {
+    async populatePortalRoleDropdown(selectedValue = '', maxRetries = 3) {
         const formConfig = this.getFormConfig(this.currentTable);
-        const hasRoleField = formConfig.fields.some(function (field) {
-            return field.name === 'role_id';
+        const hasPortalRoleField = formConfig.fields.some(function (field) {
+            return field.name === 'portal_role_id';
         });
-        if (!hasRoleField) {
+        if (!hasPortalRoleField) {
             return;
         }
 
-        const roleSelect = document.getElementById('role_id_select');
+        const roleSelect = document.getElementById('portal_role_id_select');
         if (!roleSelect) {
             if (maxRetries > 0) {
-                setTimeout(() => this.populateRoleDropdown(selectedValue, maxRetries - 1), 300);
+                setTimeout(() => this.populatePortalRoleDropdown(selectedValue, maxRetries - 1), 300);
             }
             return;
         }
@@ -3084,7 +3092,7 @@ class ModernForms {
             if (countryId) {
                 qs.set('country_id', countryId);
             }
-            let url = apiBase + '/admin/get_roles.php';
+            let url = apiBase + '/admin/get_portal_roles.php';
             const query = qs.toString();
             if (query) {
                 url += '?' + query;
@@ -3097,15 +3105,16 @@ class ModernForms {
             const data = await response.json();
             const roles = (data && data.success && Array.isArray(data.roles)) ? data.roles : [];
             if (!roles.length) {
-                roleSelect.innerHTML = '<option value="">No portal roles found</option>';
+                roleSelect.innerHTML = '<option value="">No portal roles — add one in Portal Roles</option>';
                 return;
             }
 
             roleSelect.innerHTML = '<option value="">Select portal role...</option>';
             roles.forEach(function (role) {
                 const opt = document.createElement('option');
-                opt.value = String(role.role_id);
-                opt.textContent = role.role_name || ('Role ' + role.role_id);
+                opt.value = String(role.id);
+                const typeLabel = role.portal_type ? ' (' + role.portal_type + ')' : '';
+                opt.textContent = (role.name || ('Role ' + role.id)) + typeLabel;
                 if (role.description) {
                     opt.title = role.description;
                 }
@@ -3950,8 +3959,8 @@ class ModernForms {
                 }
 
                 if (this.currentTable === 'users') {
-                    const roleVal = this.getFieldValue(item, 'role_id');
-                    await this.populateRoleDropdown(roleVal);
+                    const roleVal = this.getFieldValue(item, 'portal_role_id');
+                    await this.populatePortalRoleDropdown(roleVal);
                 }
                 
                 // Clear the stored item after form is rendered
@@ -4079,9 +4088,9 @@ class ModernForms {
                 input = `<select name="city" id="city_select" ${required}><option value="">Select Country First</option></select>`;
             }
         }
-        // Special handling for portal role — filled from roles table after render
-        else if (field.name === 'role_id' && field.relation && field.relation.table === 'roles') {
-            input = `<select name="${field.name}" id="role_id_select" ${required}><option value="">Select portal role...</option></select>`;
+        // Special handling for portal role — filled from portal_roles table after render
+        else if (field.name === 'portal_role_id' && field.relation && field.relation.table === 'portal_roles') {
+            input = `<select name="${field.name}" id="portal_role_id_select" ${required}><option value="">Select portal role...</option></select>`;
         }
         // Special handling for currency - dropdown populated from currencies table
         else if (field.name === 'currency' && field.currencyDropdown) {
@@ -4298,7 +4307,7 @@ class ModernForms {
         const table = this.currentTable;
         const isControl = (typeof isControlPanelContext === 'function' && isControlPanelContext()) || (window.location && window.location.search && window.location.search.includes('control=1'));
         const requiredByTable = {
-            'users': isControl ? (this.currentAction === 'create' ? ['name', 'password'] : ['name']) : (this.currentAction === 'create' ? ['name', 'email', 'password', 'role_id'] : ['name', 'email']),
+            'users': isControl ? (this.currentAction === 'create' ? ['name', 'password'] : ['name']) : (this.currentAction === 'create' ? ['name', 'email', 'password', 'portal_role_id'] : ['name', 'email']),
             'visa_types': ['name'],
             'recruitment_countries': ['name', 'code'],
             'office_managers': ['name', 'email'],
@@ -4309,7 +4318,8 @@ class ModernForms {
             'arrival_agencies': ['name'],
             'arrival_stations': ['name'],
             'appearance_specifications': ['name'],
-            'request_statuses': ['name']
+            'request_statuses': ['name'],
+            'portal_roles': ['name', 'portal_type']
         };
         const alias = this.getReverseAliasMap(table);
         const missing = [];
@@ -6092,6 +6102,7 @@ class ModernForms {
         const stats = [
             { id: 'totalUsers', table: 'users' },
             { id: 'usersCount', table: 'users' },
+            { id: 'portalRolesCount', table: 'portal_roles' },
             { id: 'totalAgents', table: 'agents' },
             { id: 'totalWorkers', table: 'workers' },
             { id: 'totalCases', table: 'cases' }
@@ -6192,6 +6203,7 @@ class ModernForms {
             'worker_statuses': 'Worker Statuses',
             'system_config': 'System Configuration',
             'users': 'Users',
+            'portal_roles': 'Portal Roles',
             'currencies': 'Currency'
         };
         return titles[setting] || 'Settings';
@@ -6307,6 +6319,7 @@ class ModernForms {
                             { key: 'email', label: 'Email', type: 'text', maxLen: 20, maxWidth: 140 },
                             { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
                             { key: 'position', label: 'Position', type: 'text', maxLen: 14, maxWidth: 100 },
+                            { key: 'portal_role_name', label: 'Portal role', type: 'text', maxLen: 16, maxWidth: 110 },
                             { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                             { key: 'permissions', label: 'Permissions', type: 'permissions', maxWidth: 130 },
                             { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
@@ -6317,6 +6330,7 @@ class ModernForms {
                         { key: 'login_barcode', label: 'Barcode', type: 'login_barcode', maxWidth: 130 },
                         { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                         { key: 'email', label: 'Email', type: 'text', maxLen: 20, maxWidth: 140 },
+                        { key: 'portal_role_name', label: 'Portal role', type: 'text', maxLen: 16, maxWidth: 110 },
                         { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
                         { key: 'permissions', label: 'Permissions', type: 'permissions', maxWidth: 130 },
                         { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
@@ -6348,6 +6362,14 @@ class ModernForms {
                     { key: 'name', label: 'Name', type: 'text', maxLen: 20, maxWidth: 140 },
                     { key: 'symbol', label: 'Symbol', type: 'text', maxLen: 8, maxWidth: 80 },
                     { key: 'display_order', label: 'Order', type: 'number', maxLen: 6, maxWidth: 70 },
+                    { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
+                ]
+            },
+            'portal_roles': {
+                columns: [
+                    { key: 'name', label: 'Name', type: 'text', maxLen: 20, maxWidth: 140 },
+                    { key: 'portal_type', label: 'Portal type', type: 'text', maxLen: 12, maxWidth: 90 },
+                    { key: 'description', label: 'Description', type: 'text', maxLen: 28, maxWidth: 160 },
                     { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                 ]
             }
@@ -6586,7 +6608,7 @@ class ModernForms {
                             { name: 'email', label: 'Email', type: 'email', required: false, placeholder: 'Enter email address' },
                             { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },
                             { name: 'position', label: 'Position', type: 'text', placeholder: 'Enter position (optional)' },
-                            { name: 'role_id', label: 'Portal role', type: 'select', required: false, relation: { table: 'roles', displayField: 'role_name', valueField: 'role_id' }, help: 'Optional. Choose Worker for mobile worker portal. Admin/company staff use Company portal.' },
+                            { name: 'portal_role_id', label: 'Portal role', type: 'select', required: false, relation: { table: 'portal_roles', displayField: 'name', valueField: 'id' }, help: 'Which mobile app this user opens. Manage roles under Portal Roles in System Settings.' },
                             { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter password (required for new user)' },
                             { name: 'status', label: 'Status', type: 'select', options: [
                                 { value: 'active', label: 'Active' },
@@ -6599,7 +6621,7 @@ class ModernForms {
                         { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Auto-generated on save if empty', help: 'Leave blank to create R… reference code on save. Use Access for the scannable workforce QR.' },
                         { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
                         { name: 'password', label: 'Password', type: 'password', required: false, placeholder: 'Enter password (leave blank to keep current)' },
-                        { name: 'role_id', label: 'Portal role', type: 'select', required: true, relation: { table: 'roles', displayField: 'role_name', valueField: 'role_id' }, help: 'Choose Worker for mobile worker portal. Admin/company staff use Company portal.' },
+                        { name: 'portal_role_id', label: 'Portal role', type: 'select', required: true, relation: { table: 'portal_roles', displayField: 'name', valueField: 'id' }, help: 'Which mobile app this user opens (Company, Worker, or Agency).' },
                         { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },
                         { name: 'position', label: 'Position', type: 'text', placeholder: 'Enter position (optional)' },
                         { name: 'status', label: 'Status', type: 'select', options: [
@@ -6643,6 +6665,21 @@ class ModernForms {
                     { name: 'name', label: 'Currency Name', type: 'text', required: true, placeholder: 'Enter currency name (e.g., US Dollar)' },
                     { name: 'symbol', label: 'Symbol', type: 'text', required: false, placeholder: 'Enter currency symbol (e.g., $)' },
                     { name: 'display_order', label: 'Display Order', type: 'number', required: false, placeholder: 'Enter display order (lower numbers first)' },
+                    { name: 'status', label: 'Status', type: 'select', options: [
+                        { value: 'active', label: 'Active' },
+                        { value: 'inactive', label: 'Inactive' }
+                    ] }
+                ]
+            },
+            'portal_roles': {
+                fields: [
+                    { name: 'name', label: 'Role name', type: 'text', required: true, placeholder: 'e.g. Field Supervisor' },
+                    { name: 'portal_type', label: 'Portal type', type: 'select', required: true, options: [
+                        { value: 'company', label: 'Company (RATEB Pro / company app)' },
+                        { value: 'worker', label: 'Worker (mobile worker portal)' },
+                        { value: 'agency', label: 'Agency (recruitment agency portal)' }
+                    ], help: 'Which mobile app opens when this user logs in.' },
+                    { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Optional notes', fullWidth: true },
                     { name: 'status', label: 'Status', type: 'select', options: [
                         { value: 'active', label: 'Active' },
                         { value: 'inactive', label: 'Inactive' }

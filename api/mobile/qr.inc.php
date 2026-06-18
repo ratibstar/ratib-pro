@@ -220,7 +220,7 @@ function rateb_mobile_qr_issue_staff_jwt(PDO $pdo, int $userId): array
     }
 
     $roleName = (string) ($user['role_name'] ?? '');
-    $portalRole = rateb_mobile_map_portal_role('staff', $roleName);
+    $portalRole = rateb_mobile_resolve_staff_portal_role($pdo, $userId, $roleName);
     $countryId = isset($user['country_id']) ? (int) $user['country_id'] : null;
 
     $claims = rateb_mobile_build_token_claims(

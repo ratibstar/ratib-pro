@@ -172,6 +172,22 @@ if ($embeddedMode) {
                         </button>
                     </div>
 
+                    <!-- Portal Roles -->
+                    <div class="setting-card" data-permission="manage_settings">
+                        <div class="setting-header">
+                            <h3 class="setting-title">
+                                <i class="fas fa-mobile-alt"></i>
+                                Portal Roles
+                            </h3>
+                            <span class="setting-count" id="portalRolesCount">-</span>
+                        </div>
+                        <p>Define mobile portal access types (Company, Worker, Agency) and assign them to users</p>
+                        <button class="modern-btn modern-btn-primary" data-action="open-setting-modal" data-setting="portal_roles" data-permission="manage_settings">
+                            <i class="fas fa-edit"></i>
+                            Manage Portal Roles
+                        </button>
+                    </div>
+
                     <!-- Office Manager -->
                     <div class="setting-card" data-permission="manage_settings">
                         <div class="setting-header">

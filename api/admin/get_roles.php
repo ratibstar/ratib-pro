@@ -27,38 +27,6 @@ try {
         }
     }
 
-    if (!function_exists('rateb_ensure_portal_roles')) {
-        function rateb_ensure_portal_roles(mysqli $conn): void
-        {
-            $defaults = [
-                ['Admin', 'Company portal — full staff access', '[]'],
-                ['Worker', 'Mobile worker portal access', '[]'],
-                ['Agency', 'Recruitment agency portal access', '[]'],
-            ];
-            foreach ($defaults as $row) {
-                [$name, $desc, $perms] = $row;
-                $stmt = $conn->prepare('SELECT role_id FROM roles WHERE LOWER(role_name) = LOWER(?) LIMIT 1');
-                if (!$stmt) {
-                    continue;
-                }
-                $stmt->bind_param('s', $name);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                $exists = $res && $res->num_rows > 0;
-                $stmt->close();
-                if ($exists) {
-                    continue;
-                }
-                $ins = $conn->prepare('INSERT INTO roles (role_name, description, permissions) VALUES (?, ?, ?)');
-                if ($ins) {
-                    $ins->bind_param('sss', $name, $desc, $perms);
-                    $ins->execute();
-                    $ins->close();
-                }
-            }
-        }
-    }
-    
     // Get specific role if role_name is provided
     $roleName = $_GET['role_name'] ?? null;
     
@@ -84,9 +52,7 @@ try {
             ]);
         }
     } else {
-        rateb_ensure_portal_roles($conn);
-
-        // Get all roles
+        // Get all permission roles (RATEB Pro web access — separate from portal_roles)
         $stmt = $conn->prepare("SELECT role_id, role_name, description, permissions, created_at FROM roles ORDER BY role_name");
         $stmt->execute();
         $result = $stmt->get_result();
