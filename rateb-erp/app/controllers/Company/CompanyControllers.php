@@ -907,7 +907,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                     'reference_id' => $id,
                 ]);
             } catch (\Throwable $e) {
-                SessionManager::flash('error', $e->getMessage());
+                SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
                 $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
             }
         }
@@ -970,7 +970,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                     'reference_id' => $id,
                 ]);
             } catch (\Throwable $e) {
-                SessionManager::flash('error', $e->getMessage());
+                SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
                 $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
             }
         } else {
@@ -1030,7 +1030,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                 'reference_id' => $existingId,
             ]);
         } catch (\Throwable $e) {
-            SessionManager::flash('error', $e->getMessage());
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
 
