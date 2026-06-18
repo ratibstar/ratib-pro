@@ -569,30 +569,77 @@ if (!function_exists('rateb_is_super_admin')) {
 }
 
 /** Resolve active company for ops routes (session, then ?company_id=, then ops session). */
+if (!function_exists('rateb_ops_company_exists')) {
+    function rateb_ops_company_exists(int $companyId): bool
+    {
+        if ($companyId < 1) {
+            return false;
+        }
+        try {
+            $row = (new \Rateb\App\Models\Company())->find($companyId);
+            return is_array($row) && (int) ($row['id'] ?? 0) === $companyId;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('rateb_clear_ops_company_session')) {
+    function rateb_clear_ops_company_session(): void
+    {
+        \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', 0);
+        if ((int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0) > 0) {
+            \Rateb\App\Core\SessionManager::set('rateb_company_id', 0);
+        }
+        \Rateb\App\Core\TenantContext::setCompanyId(null);
+    }
+}
+
+if (!function_exists('rateb_adopt_ops_company_id')) {
+    function rateb_adopt_ops_company_id(int $companyId): int
+    {
+        if ($companyId < 1 || !rateb_ops_company_exists($companyId)) {
+            rateb_clear_ops_company_session();
+            return 0;
+        }
+        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        return $companyId;
+    }
+}
+
 if (!function_exists('rateb_resolve_ops_company_id')) {
     function rateb_resolve_ops_company_id(): int
     {
         $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
         if ($sessionCompany > 0) {
-            \Rateb\App\Core\TenantContext::setCompanyId($sessionCompany);
-            return $sessionCompany;
+            $valid = rateb_adopt_ops_company_id($sessionCompany);
+            if ($valid > 0) {
+                return $valid;
+            }
         }
 
         $fromRequest = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
         if ($fromRequest > 0) {
-            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $fromRequest);
-            \Rateb\App\Core\TenantContext::setCompanyId($fromRequest);
-            return $fromRequest;
+            $valid = rateb_adopt_ops_company_id($fromRequest);
+            if ($valid > 0) {
+                \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $valid);
+                return $valid;
+            }
         }
 
         $opsCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_ops_company_id', 0) ?? 0);
         if ($opsCompany > 0) {
-            \Rateb\App\Core\TenantContext::setCompanyId($opsCompany);
-            return $opsCompany;
+            $valid = rateb_adopt_ops_company_id($opsCompany);
+            if ($valid > 0) {
+                return $valid;
+            }
         }
 
         $ctx = \Rateb\App\Core\TenantContext::companyId();
-        return $ctx !== null && $ctx > 0 ? (int) $ctx : 0;
+        if ($ctx !== null && $ctx > 0) {
+            return rateb_adopt_ops_company_id((int) $ctx);
+        }
+        return 0;
     }
 }
 

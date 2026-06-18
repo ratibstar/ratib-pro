@@ -490,6 +490,13 @@ abstract class CrudController extends Controller
             SessionManager::flash('error', __('select_company_ops'));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
+        if (function_exists('rateb_ops_company_exists') && !rateb_ops_company_exists($companyId)) {
+            if (function_exists('rateb_clear_ops_company_session')) {
+                rateb_clear_ops_company_session();
+            }
+            SessionManager::flash('error', __('company_not_found_ops'));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
 
         $data['company_id'] = $companyId;
         TenantContext::setCompanyId($companyId);

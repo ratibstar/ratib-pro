@@ -684,6 +684,7 @@ return [
     'ops_company_select_help' => 'As platform admin, pick a company from the list above, then continue. Your choice is remembered for this session.',
     'active_company' => 'Active company',
     'no_companies_for_ops' => 'No companies registered yet. Create one first from',
+    'company_not_found_ops' => 'The selected company does not exist. Create one under Companies, then pick it from the selector above.',
     'cost_centers' => 'Cost centers',
     'cost_center' => 'Cost center',
     'cost_center_report' => 'Cost center report',
