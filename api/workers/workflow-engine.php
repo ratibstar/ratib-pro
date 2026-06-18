@@ -844,8 +844,18 @@ if (!function_exists('rateb_workflow_field_label')) {
 if (!function_exists('rateb_workflow_compute_document_statuses')) {
     function rateb_workflow_compute_document_statuses(PDO $pdo, int $workflowId, array &$payload, array $workerLike): void
     {
+        // Preserve statuses explicitly sent from the worker form (dot toggles / hidden inputs).
+        $explicitDocumentStatuses = [];
+        foreach ($payload as $key => $value) {
+            if (!is_string($key) || !str_ends_with($key, '_status')) {
+                continue;
+            }
+            $explicitDocumentStatuses[$key] = $value;
+        }
+
         $docStatusMap = [
             'passport_status' => ['number_field' => 'passport_number'],
+            'police_status' => ['number_field' => 'police_number'],
             'medical_status' => ['number_field' => 'medical_number'],
             'visa_status' => ['number_field' => 'visa_number'],
             'ticket_status' => ['number_field' => 'ticket_number'],
@@ -863,6 +873,10 @@ if (!function_exists('rateb_workflow_compute_document_statuses')) {
                 if (!in_array($ruleType, ['compute_status', 'auto_set_status'], true)) continue;
                 $target = (string)($cfg['target_status_field'] ?? '');
                 if ($target === '') continue;
+                // Do not auto-compute a status the editor explicitly set in this save request.
+                if (array_key_exists($target, $explicitDocumentStatuses)) {
+                    continue;
+                }
                 $field = (string)($cfg['field'] ?? '');
                 $allowed = is_array($cfg['allowed'] ?? null) ? $cfg['allowed'] : [];
                 if ($field !== '' && !empty($allowed) && rateb_workflow_is_value_allowed($workerLike[$field] ?? '', $allowed)) {
@@ -874,9 +888,11 @@ if (!function_exists('rateb_workflow_compute_document_statuses')) {
         }
 
         foreach ($docStatusMap as $statusField => $meta) {
+            if (array_key_exists($statusField, $explicitDocumentStatuses)) {
+                continue;
+            }
             $incoming = array_key_exists($statusField, $payload) ? trim((string) $payload[$statusField]) : '';
             $incomingLower = strtolower($incoming);
-            // Never overwrite an explicit editor choice (ok / not_ok / approved / etc.) — empty ticket_number must still allow "OK".
             if ($incoming !== '' && $incomingLower !== 'pending') {
                 continue;
             }
@@ -887,6 +903,10 @@ if (!function_exists('rateb_workflow_compute_document_statuses')) {
             } else {
                 $payload[$statusField] = rateb_workflow_validate_field_type($value, 'string') ? 'ok' : 'not_ok';
             }
+        }
+
+        foreach ($explicitDocumentStatuses as $key => $value) {
+            $payload[$key] = $value;
         }
     }
 }

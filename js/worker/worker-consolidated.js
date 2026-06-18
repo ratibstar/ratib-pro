@@ -318,15 +318,10 @@ class WorkerTable {
         
         // Store status in form field (for form submission) — scope to #workerForm only
         const wf = document.getElementById('workerForm');
-        const statusInput = wf ? wf.querySelector(`input[name="${docType}_status"]`) : null;
-        if (statusInput) {
-            statusInput.value = nextStatus;
-        } else if (wf) {
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = `${docType}_status`;
-            hiddenInput.value = nextStatus;
-            wf.appendChild(hiddenInput);
+        if (wf) {
+            wf.querySelectorAll(`input[name="${docType}_status"]`).forEach((statusInput) => {
+                statusInput.value = nextStatus;
+            });
         }
         
         // Update table immediately if worker is visible (scope to main worker form)
@@ -2109,6 +2104,32 @@ debug.log(`Pagination button clicked: page ${page}`);
             debug.log(`Updated ${documentType} status in table to: ${normalizedStatus}`);
         } else {
             debug.warn(`Status cell not found for ${documentType} in worker ${workerId}`);
+        }
+    }
+
+    /** Refresh document icon columns for one worker row after save (from API response). */
+    patchWorkerDocumentStatuses(workerId, worker) {
+        if (!workerId || !worker) return;
+        const docTypes = ['training_certificate', 'police', 'medical', 'visa', 'ticket'];
+        docTypes.forEach((docType) => {
+            const status = worker[`${docType}_status`];
+            if (status !== undefined && status !== null) {
+                this.updateDocumentStatusInTable(workerId, docType, status);
+            }
+        });
+        // Mobile cards
+        const card = document.querySelector(`.mobile-worker-card[data-worker-id="${workerId}"]`);
+        if (card) {
+            docTypes.forEach((docType) => {
+                const status = worker[`${docType}_status`];
+                if (status === undefined || status === null) return;
+                const icon = card.querySelector(`.worker-card-doc[data-doc-type="${docType}"] .document-status-icon`);
+                if (icon) {
+                    const normalized = this.normalizeStatus(status);
+                    icon.setAttribute('data-status', normalized);
+                    icon.className = `document-status-icon ${normalized}`;
+                }
+            });
         }
     }
 
@@ -4654,8 +4675,9 @@ window.saveWorker = async function(event) {
         }
 
     /** Keep hidden *_status fields aligned with status-dot UI so Save persists what the user sees. */
-    (function syncWorkerFormDocumentStatusesFromWrappers(workerFormEl) {
-        if (!workerFormEl) return;
+    function syncWorkerFormDocumentStatusesFromWrappers(workerFormEl) {
+        if (!workerFormEl) return {};
+        const statuses = {};
         workerFormEl.querySelectorAll('.status-wrapper[data-doc-type]').forEach((wrapper) => {
             const docType = wrapper.getAttribute('data-doc-type');
             if (!docType) return;
@@ -4668,12 +4690,15 @@ window.saveWorker = async function(event) {
                   : indicator.classList.contains('status-not_ok')
                     ? 'not_ok'
                     : 'pending';
-            const statusInput = workerFormEl.querySelector(`input[name="${docType}_status"]`);
-            if (statusInput && statusInput.tagName === 'INPUT') {
+            statuses[`${docType}_status`] = currentStatus;
+            workerFormEl.querySelectorAll(`input[name="${docType}_status"]`).forEach((statusInput) => {
                 statusInput.value = currentStatus;
-            }
+            });
         });
-    })(form);
+        return statuses;
+    }
+
+    const documentStatusesFromUi = syncWorkerFormDocumentStatusesFromWrappers(form);
     
     const formData = new FormData(form);
     
@@ -4725,6 +4750,9 @@ window.saveWorker = async function(event) {
             workerData[key] = value;
         }
     }
+
+    // Document statuses from UI dots always win over FormData (hidden fields can be stale)
+    Object.assign(workerData, documentStatusesFromUi);
     
     // Handle multi-select job_title field - convert array to comma-separated string
     if (jobTitleValues.length > 0) {
@@ -4886,6 +4914,9 @@ window.saveWorker = async function(event) {
             
             debug.log(isEdit ? 'Worker updated successfully' : 'Worker added successfully');
             
+            const savedWorker = result.data && typeof result.data === 'object' ? result.data : null;
+            const savedWorkerId = savedWorker?.id || resolvedWorkerId;
+            
             // FORCE CLOSE the form completely without triggering alerts
             const formContainer = document.getElementById('workerFormContainer');
             
@@ -4914,14 +4945,17 @@ window.saveWorker = async function(event) {
                 }
             }
             
-            // Refresh worker table in background
+            // Refresh worker table — patch row immediately, then full reload
             if (window.workerTable) {
-                const timestamp = new Date().getTime();
-                const workersApiRefresh = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
-                fetch(`${workersApiRefresh}/core/get.php?page=1&limit=10&t=${timestamp}`).then(() => {
-                    window.workerTable.loadWorkers();
-                    window.workerTable.loadStats();
-                }).catch(() => {});
+                if (savedWorker && savedWorkerId) {
+                    window.workerTable.patchWorkerDocumentStatuses(savedWorkerId, savedWorker);
+                }
+                try {
+                    await window.workerTable.loadWorkers();
+                    await window.workerTable.loadStats();
+                } catch (refreshErr) {
+                    debug.error('Worker table refresh after save:', refreshErr);
+                }
             }
         } else {
             debug.error(`Failed to ${isEdit ? 'update' : 'add'} worker:`, result.message || 'Unknown error');

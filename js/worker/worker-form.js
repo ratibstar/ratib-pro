@@ -2650,11 +2650,10 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             text.textContent = statusTextMap[normalizedStatus] || 'pending';
             
-            // Update hidden input field
-            const statusInput = formRoot.querySelector(`input[name="${docType}_status"]`);
-            if (statusInput) {
+            // Update hidden input field(s)
+            formRoot.querySelectorAll(`input[name="${docType}_status"]`).forEach((statusInput) => {
                 statusInput.value = normalizedStatus;
-            }
+            });
         });
     }
     
