@@ -980,9 +980,12 @@ if (!function_exists('rateb_workflow_apply_on_save')) {
             throw new Exception('Current stage definition missing in workflow');
         }
 
-        $hasExplicitStageUpdate = array_key_exists('current_stage', $payload) || array_key_exists('stage_completed', $payload);
+        $isCreate = $existingWorker === null;
+        $hasExplicitStageUpdate = !$isCreate && (
+            array_key_exists('current_stage', $payload) || array_key_exists('stage_completed', $payload)
+        );
         $forceTransition = !empty($payload['_workflow_force_transition']);
-        $shouldProgressWorkflow = $hasExplicitStageUpdate || $forceTransition;
+        $shouldProgressWorkflow = !$isCreate && ($hasExplicitStageUpdate || $forceTransition);
 
         if ($shouldProgressWorkflow) {
             // Only enforce important stage-required fields during progression.

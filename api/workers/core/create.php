@@ -180,6 +180,11 @@ try {
             }
         }
 
+        // Never insert empty auto-increment primary key from the add-worker form.
+        if (!isset($mappedData['id']) || $mappedData['id'] === '' || $mappedData['id'] === null || (int) $mappedData['id'] <= 0) {
+            unset($mappedData['id']);
+        }
+
         // Set default document statuses if not provided and column exists
         $documentStatusFields = [
             'identity_status', 'passport_status', 'police_status', 'medical_status', 'visa_status',
@@ -235,6 +240,9 @@ try {
         // Filter out fields that don't exist in the database
         $filteredData = [];
         foreach ($mappedData as $key => $value) {
+            if (is_string($key) && str_starts_with($key, '_workflow_')) {
+                continue;
+            }
             if (in_array($key, $columns)) {
                 $filteredData[$key] = $value;
             }
