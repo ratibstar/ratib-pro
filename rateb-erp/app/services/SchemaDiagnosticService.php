@@ -25,6 +25,15 @@ final class SchemaDiagnosticService
         'rateb_stock_movements' => [
             'movement_no',
         ],
+        'rateb_notifications' => [
+            'trigger_type',
+            'entity_type',
+            'entity_id',
+        ],
+        'rateb_product_categories' => [
+            'code',
+            'sort_order',
+        ],
     ];
 
     /** @return list<array{table: string, column: string}> */

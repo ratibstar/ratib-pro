@@ -14,6 +14,11 @@ FROM (
     UNION ALL SELECT 'rateb_inventory', 'document_path'
     UNION ALL SELECT 'rateb_inventory', 'notes'
     UNION ALL SELECT 'rateb_stock_movements', 'movement_no'
+    UNION ALL SELECT 'rateb_notifications', 'trigger_type'
+    UNION ALL SELECT 'rateb_notifications', 'entity_type'
+    UNION ALL SELECT 'rateb_notifications', 'entity_id'
+    UNION ALL SELECT 'rateb_product_categories', 'code'
+    UNION ALL SELECT 'rateb_product_categories', 'sort_order'
 ) expected
 LEFT JOIN information_schema.tables t
     ON t.table_schema = DATABASE() AND t.table_name = expected.table_name

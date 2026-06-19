@@ -79,7 +79,12 @@ final class StockMovementService
             $reorder = (float) ($item['reorder_level'] ?? 0);
             $companyId = (int) ($item['company_id'] ?? TenantContext::companyId() ?? 0);
             if ($newQty <= $reorder && $reorder > 0 && $companyId > 0) {
-                (new NotificationService())->triggerLowStock($companyId, (string) ($item['item_name'] ?? ''), $newQty);
+                try {
+                    (new NotificationService())->triggerLowStock($companyId, (string) ($item['item_name'] ?? ''), $newQty);
+                } catch (\Throwable $e) {
+                    // Low-stock alerts must not roll back a valid stock movement.
+                    error_log('Low stock notification failed: ' . $e->getMessage());
+                }
             }
 
             $db->commit();
