@@ -936,6 +936,13 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
 
+        $data = $this->collectData();
+        $data['notes'] = $notes;
+        if ($movementQty > 0) {
+            // StockMovementService applies the delta; start at zero to avoid double-counting.
+            $data['quantity'] = 0;
+        }
+
         try {
             $this->ensureTenantCompanyForWrite($data);
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
