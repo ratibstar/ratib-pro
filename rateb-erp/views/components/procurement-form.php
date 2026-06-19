@@ -91,6 +91,7 @@ if ($entityType === 'purchase_request' && $isEdit) {
                     'defaultVat15' => $defaultVat15,
                     'lookups' => $lookups,
                     'showTableTotals' => $entityType !== 'purchase_order',
+                    'lineItemContext' => $entityType,
                 ]); ?>
                 <?php if ($entityType === 'purchase_request') {
                     Rateb\App\Core\View::partial('procurement-estimated-total', [

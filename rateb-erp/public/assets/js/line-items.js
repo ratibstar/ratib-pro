@@ -124,6 +124,43 @@
         suffix.textContent = '(' + (currencyEl.value || 'SAR') + ')';
     }
 
+    function renumberLineRows(table) {
+        table.querySelectorAll('[data-line-items-row]').forEach(function (row, index) {
+            var num = row.querySelector('[data-line-number]');
+            if (num) {
+                num.textContent = String(index + 1);
+            }
+        });
+    }
+
+    function updateStockHint(select) {
+        var row = select.closest('[data-line-items-row]');
+        if (!row) {
+            return;
+        }
+        var hint = row.querySelector('[data-stock-hint]');
+        if (!hint) {
+            return;
+        }
+        var opt = select.options[select.selectedIndex];
+        if (!opt || !opt.value) {
+            hint.style.display = 'none';
+            hint.textContent = '';
+            return;
+        }
+        var stock = opt.getAttribute('data-stock');
+        if (stock === null || stock === '') {
+            hint.style.display = 'none';
+            return;
+        }
+        var template = hint.getAttribute('data-hint-template') || '';
+        if (!template) {
+            template = hint.getAttribute('data-default-template') || '';
+        }
+        hint.textContent = template.replace(':qty', stock);
+        hint.style.display = '';
+    }
+
     function syncSummaryCard(form, subtotal, tax, grand) {
         var card = form ? form.querySelector('[data-summary-subtotal]') : null;
         if (!card) {
@@ -245,7 +282,19 @@
         if (subEl) { subEl.textContent = '0.00'; }
         if (totalEl) { totalEl.textContent = '0.00'; }
         tbody.appendChild(clone);
+        renumberLineRows(table);
         updateTableTotals(table);
+    }
+
+    function bindStockHints(table) {
+        table.querySelectorAll('[data-line-inventory]').forEach(function (sel) {
+            var row = sel.closest('[data-line-items-row]');
+            var hint = row ? row.querySelector('[data-stock-hint]') : null;
+            if (hint && !hint.getAttribute('data-default-template')) {
+                hint.setAttribute('data-default-template', hint.getAttribute('data-hint-template') || hint.textContent || '');
+            }
+            updateStockHint(sel);
+        });
     }
 
     function bindTable(table) {
@@ -265,6 +314,7 @@
             var rows = table.querySelectorAll('[data-line-items-row]');
             if (row && rows.length > 1) {
                 row.remove();
+                renumberLineRows(table);
                 updateTableTotals(table);
             }
         });
@@ -283,6 +333,8 @@
             }
         });
         table.querySelectorAll('[data-line-tax-preset]').forEach(syncTaxRate);
+        renumberLineRows(table);
+        bindStockHints(table);
         updateTableTotals(table);
     }
 
@@ -332,6 +384,7 @@
             unitSelect.value = opt.getAttribute('data-unit');
         }
         if (priceInput) { priceInput.value = opt.getAttribute('data-price') || '0'; }
+        updateStockHint(select);
         var table = row.closest('[data-line-items-table]');
         if (table) { updateTableTotals(table); }
     }
@@ -346,6 +399,7 @@
         document.addEventListener('change', function (e) {
             if (e.target.matches('[data-line-inventory]')) {
                 fillFromInventory(e.target);
+                updateStockHint(e.target);
             }
             if (e.target.matches('[data-procurement-adjust], [name="currency"]')) {
                 var table = document.querySelector('[data-line-items-table]');

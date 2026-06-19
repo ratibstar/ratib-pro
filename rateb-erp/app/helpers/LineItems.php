@@ -50,6 +50,16 @@ final class LineItems
         return round($qty * $factor, 3);
     }
 
+    private static function normalizeDate(mixed $value): ?string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return null;
+        }
+        $ts = strtotime($raw);
+        return $ts !== false ? date('Y-m-d', $ts) : null;
+    }
+
     /** @return list<string> */
     public static function taxPresets(): array
     {
@@ -116,6 +126,7 @@ final class LineItems
                 'inventory_id' => $inventoryId > 0 ? $inventoryId : null,
                 'item_name' => $name,
                 'description' => trim((string) ($_POST['line_description'][$i] ?? '')),
+                'needed_by' => self::normalizeDate($_POST['line_needed_by'][$i] ?? null),
                 'sku' => trim((string) ($_POST['line_sku'][$i] ?? '')),
                 'quantity' => max(0.001, $qty),
                 'delivered_qty' => (float) ($_POST['line_delivered_qty'][$i] ?? 0),

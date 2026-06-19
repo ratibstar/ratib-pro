@@ -35,6 +35,8 @@ $items = $items ?? [];
             <dd class="col-sm-9"><?php echo Rateb\App\Core\View::escape(__($req['status'] ?? '')); ?></dd>
             <dt class="col-sm-3"><?php echo __('currency'); ?></dt>
             <dd class="col-sm-9"><?php echo Rateb\App\Core\View::escape($req['currency'] ?? 'SAR'); ?></dd>
+            <dt class="col-sm-3"><?php echo __('estimated_total'); ?></dt>
+            <dd class="col-sm-9"><?php echo number_format((float) ($req['total_estimated'] ?? 0), 2); ?> <?php echo Rateb\App\Core\View::escape($req['currency'] ?? 'SAR'); ?></dd>
             <dt class="col-sm-3"><?php echo __('notes'); ?></dt>
             <dd class="col-sm-9"><?php echo nl2br(Rateb\App\Core\View::escape($req['notes'] ?? '')); ?></dd>
         </dl>
