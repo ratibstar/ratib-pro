@@ -119,6 +119,17 @@ startControlLayout('نظام رتب ERP — إعداد قاعدة البيانا
     <?php } elseif ((int) ($cpD['rateb_tables'] ?? 0) === 0) { ?>
     <p class="small text-muted mb-0 mt-2">قاعدة لوحة التحكم نظيفة (لا توجد جداول ERP) — هذا صحيح.</p>
     <?php } ?>
+    <?php
+    $invMissing = trim((string) ($erpD['missing_inventory_summary'] ?? ''));
+    if ($invMissing !== '') { ?>
+    <div class="alert alert-warning mt-3 mb-0 py-2">
+        <strong><i class="fas fa-boxes me-1"></i> أعمدة مخزون ناقصة في ERP:</strong>
+        <code><?php echo htmlspecialchars($invMissing, ENT_QUOTES, 'UTF-8'); ?></code>
+        <p class="small mb-0 mt-2">شغّل ترحيل <code>088_inventory_production_catchup.sql</code> على قاعدة ERP، أو زر «تشغيل الإصلاح والترحيلات» أدناه.</p>
+    </div>
+    <?php } else { ?>
+    <p class="small text-success mb-0 mt-2"><i class="fas fa-check-circle"></i> أعمدة المخزون الأساسية موجودة في قاعدة ERP.</p>
+    <?php } ?>
     <p class="small text-muted mb-0 mt-2">زر التشغيل أدناه يطبّق الترحيلات على <strong>قاعدة ERP فقط</strong> (<code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>).</p>
 </div>
 <?php } ?>

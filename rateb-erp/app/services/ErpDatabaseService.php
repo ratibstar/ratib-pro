@@ -14,7 +14,12 @@ final class ErpDatabaseService
         try {
             $pdo = Database::connection();
             $db = Database::resolvedDatabaseName();
-            return array_merge(['ok' => true, 'db' => $db], $this->stats($pdo));
+            $schemaDiag = new SchemaDiagnosticService();
+            $missingInventory = $schemaDiag->missingInventoryColumns($pdo);
+            return array_merge(['ok' => true, 'db' => $db], $this->stats($pdo), [
+                'missing_inventory_columns' => $missingInventory,
+                'missing_inventory_summary' => $schemaDiag->formatMissingInventorySummary($missingInventory),
+            ]);
         } catch (\Throwable $e) {
             return ['ok' => false, 'db' => $this->expectedErpDbName(), 'error' => $e->getMessage()];
         }

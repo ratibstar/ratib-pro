@@ -22,10 +22,16 @@ final class DatabaseErrorService
         }
 
         if (self::isMissingColumn($raw)) {
-            return self::t('db_schema_outdated');
+            $detail = self::missingColumnDetail($raw);
+            return $detail !== ''
+                ? self::t('db_schema_outdated') . ' [' . $detail . ']'
+                : self::t('db_schema_outdated');
         }
         if (self::isMissingTable($raw)) {
-            return self::t('db_schema_outdated');
+            $detail = self::missingTableDetail($raw);
+            return $detail !== ''
+                ? self::t('db_schema_outdated') . ' [' . $detail . ']'
+                : self::t('db_schema_outdated');
         }
         if (self::isCompanyFkViolation($raw)) {
             return self::t('company_not_found_ops');
@@ -132,6 +138,25 @@ final class DatabaseErrorService
         return strpos($raw, '42S22') !== false
             || strpos($raw, '1054') !== false
             || stripos($raw, 'Unknown column') !== false;
+    }
+
+    private static function missingColumnDetail(string $raw): string
+    {
+        if (preg_match("/Unknown column '([^']+)'/i", $raw, $m)) {
+            return (string) $m[1];
+        }
+        if (preg_match('/1054[^\'"]*\'([^\']+)\'/i', $raw, $m)) {
+            return (string) $m[1];
+        }
+        return '';
+    }
+
+    private static function missingTableDetail(string $raw): string
+    {
+        if (preg_match("/Table '([^']+)' doesn't exist/i", $raw, $m)) {
+            return (string) $m[1];
+        }
+        return '';
     }
 
     private static function isMissingTable(string $raw): bool

@@ -936,14 +936,14 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
 
-        $data = $this->collectData();
-        $data['notes'] = $notes;
-        if ($movementQty > 0) {
-            // StockMovementService applies the delta; start at zero to avoid double-counting.
-            $data['quantity'] = 0;
-        }
-
         try {
+            $data = $this->collectData();
+            $data['notes'] = $notes;
+            if ($movementQty > 0) {
+                // StockMovementService applies the delta; start at zero to avoid double-counting.
+                $data['quantity'] = 0;
+            }
+
             $this->ensureTenantCompanyForWrite($data);
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
             $targetQty = $movementQty;
@@ -971,6 +971,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                 SessionManager::flash('error', __('save_ok_attachment_failed'));
             }
         } catch (\Throwable $e) {
+            error_log('Inventory store failed: ' . $e->getMessage());
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }

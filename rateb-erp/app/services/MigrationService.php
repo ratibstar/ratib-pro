@@ -129,6 +129,9 @@ final class MigrationService
         if (strncmp($basename, '000_', 4) === 0) {
             return false;
         }
+        if (str_contains($basename, '_diagnose')) {
+            return false;
+        }
         return true;
     }
 
