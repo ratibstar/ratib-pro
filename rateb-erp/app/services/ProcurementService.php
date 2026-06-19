@@ -7,6 +7,7 @@ use Rateb\App\Core\Auth;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Helpers\LineItems;
+use Rateb\App\Models\HrDepartment;
 use Rateb\App\Models\Inventory;
 use Rateb\App\Models\PurchaseOrder;
 use Rateb\App\Models\PurchaseRequest;
@@ -18,22 +19,55 @@ final class ProcurementService
     public function departmentOptions(): array
     {
         $companyId = (int) (TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
         if ($companyId < 1) {
             return [];
         }
+
+        $seen = [];
+        $out = [];
+
+        $hrRows = (new HrDepartment())->query(
+            "SELECT name FROM rateb_hr_departments
+             WHERE company_id = :cid AND status = 'active' AND TRIM(name) <> ''
+             ORDER BY name",
+            ['cid' => $companyId]
+        );
+        foreach ($hrRows as $row) {
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $key = mb_strtolower($name);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = $name;
+        }
+
         $rows = (new PurchaseRequest())->query(
             "SELECT DISTINCT department FROM rateb_purchase_requests
              WHERE company_id = :cid AND department IS NOT NULL AND TRIM(department) <> ''
              ORDER BY department LIMIT 50",
             ['cid' => $companyId]
         );
-        $out = [];
         foreach ($rows as $row) {
             $d = trim((string) ($row['department'] ?? ''));
-            if ($d !== '') {
-                $out[] = $d;
+            if ($d === '') {
+                continue;
             }
+            $key = mb_strtolower($d);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = $d;
         }
+
+        sort($out, SORT_FLAG_CASE | SORT_NATURAL);
         return $out;
     }
 
