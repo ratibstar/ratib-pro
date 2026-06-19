@@ -38,7 +38,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'pr_statuses'],
             ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'lookup' => 'currencies'],
-            ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'number', 'readonly' => true],
+            ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'number'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
     }
@@ -235,7 +235,13 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
     /** @param array<string, mixed> $data */
     protected function applyLineTotals(array &$data, array $lines): void
     {
+        $manual = ($_POST['total_estimated_manual'] ?? '') === '1';
+        if ($manual) {
+            $data['total_estimated'] = max(0, round((float) ($data['total_estimated'] ?? 0), 2));
+            return;
+        }
         if ($lines === []) {
+            $data['total_estimated'] = max(0, round((float) ($data['total_estimated'] ?? 0), 2));
             return;
         }
         $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($lines);

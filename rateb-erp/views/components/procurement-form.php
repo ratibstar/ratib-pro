@@ -14,6 +14,17 @@ $defaultVat15 = !empty($defaultVat15);
 $workflow = $workflow ?? null;
 $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
 $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($fields);
+$estimatedTotalManual = false;
+if ($entityType === 'purchase_request' && $isEdit) {
+    $storedTotal = (float) ($item[$totalField] ?? 0);
+    $lineRows = $lineItems ?? [];
+    if ($lineRows === []) {
+        $estimatedTotalManual = $storedTotal > 0;
+    } else {
+        $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($lineRows);
+        $estimatedTotalManual = $storedTotal > 0 && abs($storedTotal - $agg['total']) > 0.009;
+    }
+}
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -33,6 +44,9 @@ $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($fields);
                             'entityType' => $entityType,
                             'companyId' => $companyId,
                         ]);
+                        continue;
+                    }
+                    if (in_array($name, [$totalField], true) && $entityType === 'purchase_request') {
                         continue;
                     }
                     if (in_array($name, [$totalField], true)) {
@@ -78,6 +92,14 @@ $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($fields);
                     'lookups' => $lookups,
                     'showTableTotals' => $entityType !== 'purchase_order',
                 ]); ?>
+                <?php if ($entityType === 'purchase_request') {
+                    Rateb\App\Core\View::partial('procurement-estimated-total', [
+                        'value' => (float) (($item ?? [])[$totalField] ?? 0),
+                        'currency' => (string) (($item ?? [])['currency'] ?? 'SAR'),
+                        'manual' => $estimatedTotalManual,
+                        'fieldName' => $totalField,
+                    ]);
+                } ?>
                 <?php if ($entityType === 'purchase_order') {
                     Rateb\App\Core\View::partial('procurement-summary', [
                         'currency' => (string) ($item['currency'] ?? 'SAR'),

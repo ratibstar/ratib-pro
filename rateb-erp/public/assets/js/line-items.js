@@ -60,6 +60,70 @@
         return totals;
     }
 
+    function isManualTotal(form) {
+        if (!form) {
+            return false;
+        }
+        var cb = form.querySelector('[data-total-estimated-manual]');
+        return !!(cb && cb.checked);
+    }
+
+    function applyEstimatedTotalMode(form) {
+        if (!form) {
+            return;
+        }
+        var wrap = form.querySelector('[data-procurement-estimated-total]');
+        if (!wrap) {
+            return;
+        }
+        var manual = isManualTotal(form);
+        var input = wrap.querySelector('[data-procurement-total-field]');
+        var hintAuto = wrap.querySelector('[data-estimated-total-hint-auto]');
+        var hintManual = wrap.querySelector('[data-estimated-total-hint-manual]');
+        if (input) {
+            input.readOnly = !manual;
+        }
+        if (hintAuto) {
+            hintAuto.style.display = manual ? 'none' : '';
+        }
+        if (hintManual) {
+            hintManual.style.display = manual ? '' : 'none';
+        }
+        if (!manual) {
+            var table = form.querySelector('[data-line-items-table]');
+            if (table) {
+                updateTableTotals(table);
+            }
+        }
+    }
+
+    function bindEstimatedTotal() {
+        document.querySelectorAll('[data-procurement-estimated-total]').forEach(function (wrap) {
+            var form = wrap.closest('[data-procurement-form]');
+            var cb = wrap.querySelector('[data-total-estimated-manual]');
+            if (!cb || cb.dataset.estimatedBound === '1') {
+                return;
+            }
+            cb.dataset.estimatedBound = '1';
+            cb.addEventListener('change', function () {
+                applyEstimatedTotalMode(form);
+            });
+            applyEstimatedTotalMode(form);
+        });
+    }
+
+    function syncEstimatedCurrency(form) {
+        if (!form) {
+            return;
+        }
+        var currencyEl = form.querySelector('[name="currency"]');
+        var suffix = form.querySelector('[data-estimated-total-currency]');
+        if (!currencyEl || !suffix) {
+            return;
+        }
+        suffix.textContent = '(' + (currencyEl.value || 'SAR') + ')';
+    }
+
     function syncSummaryCard(form, subtotal, tax, grand) {
         var card = form ? form.querySelector('[data-summary-subtotal]') : null;
         if (!card) {
@@ -112,7 +176,7 @@
         if (grandEl) { grandEl.textContent = grand.toFixed(2); }
         if (form) {
             var totalField = form.querySelector('[data-procurement-total-field]');
-            if (totalField) {
+            if (totalField && !isManualTotal(form)) {
                 totalField.value = grand.toFixed(2);
             }
             syncSummaryCard(form, subtotal, tax, grand);
@@ -275,6 +339,10 @@
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-line-items-table]').forEach(bindTable);
         bindNotes();
+        bindEstimatedTotal();
+        document.querySelectorAll('[data-procurement-form]').forEach(function (form) {
+            syncEstimatedCurrency(form);
+        });
         document.addEventListener('change', function (e) {
             if (e.target.matches('[data-line-inventory]')) {
                 fillFromInventory(e.target);
@@ -282,6 +350,10 @@
             if (e.target.matches('[data-procurement-adjust], [name="currency"]')) {
                 var table = document.querySelector('[data-line-items-table]');
                 if (table) { updateTableTotals(table); }
+                var form = e.target.closest('[data-procurement-form]');
+                if (e.target.matches('[name="currency"]')) {
+                    syncEstimatedCurrency(form);
+                }
             }
         });
         document.addEventListener('input', function (e) {
