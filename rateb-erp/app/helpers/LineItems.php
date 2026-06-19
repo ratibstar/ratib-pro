@@ -167,6 +167,34 @@ final class LineItems
             return [];
         }
         $lines = [];
+        $descriptions = $_POST['line_description'] ?? [];
+        $neededBy = $_POST['line_needed_by'] ?? [];
+        $supplierIds = $_POST['line_supplier_id'] ?? [];
+        $warehouseIds = $_POST['line_warehouse_id'] ?? [];
+        $attachmentKeep = $_POST['line_attachment_keep'] ?? [];
+        $attachmentNames = $_POST['line_attachment_name_keep'] ?? [];
+        $accountIds = $_POST['line_account_id'] ?? [];
+        if (!is_array($descriptions)) {
+            $descriptions = [];
+        }
+        if (!is_array($neededBy)) {
+            $neededBy = [];
+        }
+        if (!is_array($supplierIds)) {
+            $supplierIds = [];
+        }
+        if (!is_array($warehouseIds)) {
+            $warehouseIds = [];
+        }
+        if (!is_array($attachmentKeep)) {
+            $attachmentKeep = [];
+        }
+        if (!is_array($attachmentNames)) {
+            $attachmentNames = [];
+        }
+        if (!is_array($accountIds)) {
+            $accountIds = [];
+        }
         foreach (array_keys($names) as $i) {
             $name = trim((string) ($names[$i] ?? ''));
             if ($name === '') {
@@ -181,19 +209,19 @@ final class LineItems
             $lines[] = [
                 'inventory_id' => $inventoryId > 0 ? $inventoryId : null,
                 'item_name' => $name,
-                'description' => trim((string) ($_POST['line_description'][$i] ?? '')),
-                'needed_by' => self::normalizeDate($_POST['line_needed_by'][$i] ?? null),
-                'supplier_id' => (int) ($_POST['line_supplier_id'][$i] ?? 0) ?: null,
-                'warehouse_id' => (int) ($_POST['line_warehouse_id'][$i] ?? 0) ?: null,
-                'attachment_path' => self::normalizeAttachmentKeep($_POST['line_attachment_keep'][$i] ?? null),
-                'attachment_name' => trim((string) ($_POST['line_attachment_name_keep'][$i] ?? '')) ?: null,
+                'description' => trim((string) ($descriptions[$i] ?? '')),
+                'needed_by' => self::normalizeDate($neededBy[$i] ?? null),
+                'supplier_id' => (int) ($supplierIds[$i] ?? 0) ?: null,
+                'warehouse_id' => (int) ($warehouseIds[$i] ?? 0) ?: null,
+                'attachment_path' => self::normalizeAttachmentKeep($attachmentKeep[$i] ?? null),
+                'attachment_name' => trim((string) ($attachmentNames[$i] ?? '')) ?: null,
                 'sku' => trim((string) ($_POST['line_sku'][$i] ?? '')),
                 'quantity' => max(0.001, $qty),
                 'delivered_qty' => (float) ($_POST['line_delivered_qty'][$i] ?? 0),
                 'invoiced_qty' => (float) ($_POST['line_invoiced_qty'][$i] ?? 0),
                 'unit' => trim((string) ($_POST['line_unit'][$i] ?? 'unit')) ?: 'unit',
                 'unit_price' => $price,
-                'account_id' => (int) ($_POST['line_account_id'][$i] ?? 0) ?: null,
+                'account_id' => (int) ($accountIds[$i] ?? 0) ?: null,
                 'tax_name' => trim((string) ($_POST['line_tax_name'][$i] ?? 'Local Sales 0%')) ?: 'Local Sales 0%',
                 'tax_rate' => $taxRate,
                 'excluding_tax' => $excludingTax ? 1 : 0,
@@ -278,7 +306,11 @@ final class LineItems
         $db->prepare('DELETE FROM rateb_purchase_items WHERE purchase_order_id = :oid')->execute(['oid' => $orderId]);
         $agg = self::aggregateTotals($lines);
         foreach ($lines as $line) {
-            $model->create(array_merge($line, ['purchase_order_id' => $orderId]));
+            $payload = $line;
+            foreach (['needed_by', 'supplier_id', 'warehouse_id', 'account_id', 'attachment_path', 'attachment_name'] as $prOnly) {
+                unset($payload[$prOnly]);
+            }
+            $model->create(array_merge($payload, ['purchase_order_id' => $orderId]));
         }
         return $agg['total'];
     }

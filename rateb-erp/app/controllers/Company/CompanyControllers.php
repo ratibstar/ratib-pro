@@ -446,26 +446,27 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $data = $this->collectData();
         try {
+            rateb_bootstrap_ops_tenant();
+            $data = $this->collectData();
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
+            $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+            $this->applyLineTotals($data, $lines);
+            $id = $this->model->create($data);
+            \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+            $this->saveQuoteAttachment($id);
+            (new \Rateb\App\Services\DocumentBarcodeService())->ensure('purchase_order', $id);
+            (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
+                $id,
+                (string) ($data['status'] ?? 'draft')
+            );
+            $this->tryAutoPostPurchaseOrder($id, (string) ($data['status'] ?? ''));
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
-        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
-        $this->applyLineTotals($data, $lines);
-        $id = $this->model->create($data);
-        \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
-        $this->saveQuoteAttachment($id);
-        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('purchase_order', $id);
-        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
-            $id,
-            (string) ($data['status'] ?? 'draft')
-        );
-        $this->tryAutoPostPurchaseOrder($id, (string) ($data['status'] ?? ''));
-        (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
     }
 

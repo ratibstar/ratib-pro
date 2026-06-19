@@ -2,7 +2,11 @@
     'use strict';
 
     function parseNum(val) {
-        var n = parseFloat(val);
+        if (val === null || val === undefined) {
+            return 0;
+        }
+        var cleaned = String(val).replace(/,/g, '').trim();
+        var n = parseFloat(cleaned);
         return isNaN(n) ? 0 : n;
     }
 
