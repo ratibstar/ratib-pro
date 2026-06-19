@@ -1,18 +1,24 @@
 <?php
 /** @var array<int, array<string, mixed>> $items */
 /** @var array<string, mixed> $order */
+/** @var string $lineAttachmentRoute */
 $items = $items ?? [];
 $order = $order ?? [];
 $showDeliveryCols = !empty($showDeliveryCols);
 $currency = (string) ($order['currency'] ?? 'SAR');
+$lineAttachmentRoute = (string) ($lineAttachmentRoute ?? rateb_url(rateb_app_route('purchase-requests/line-attachment')));
+$lookup = new \Rateb\App\Services\FormLookupService();
 $showNeededBy = false;
+$showPrExtras = false;
 foreach ($items as $line) {
     if (!empty($line['needed_by'])) {
         $showNeededBy = true;
-        break;
+    }
+    if (!empty($line['supplier_id']) || !empty($line['warehouse_id']) || !empty($line['account_id']) || !empty($line['attachment_path'])) {
+        $showPrExtras = true;
     }
 }
-$footerColspan = 6 + ($showNeededBy ? 1 : 0) + ($showDeliveryCols ? 2 : 0);
+$footerColspan = 6 + ($showNeededBy ? 1 : 0) + ($showPrExtras ? 1 : 0) + ($showDeliveryCols ? 2 : 0);
 ?>
 <div class="table-responsive">
     <table class="table rateb-table">
@@ -23,6 +29,9 @@ $footerColspan = 6 + ($showNeededBy ? 1 : 0) + ($showDeliveryCols ? 2 : 0);
             <th><?php echo __('quantity'); ?></th>
             <?php if ($showNeededBy) { ?>
             <th><?php echo __('needed_by'); ?></th>
+            <?php } ?>
+            <?php if ($showPrExtras) { ?>
+            <th><?php echo __('pr_line_extras'); ?></th>
             <?php } ?>
             <?php if ($showDeliveryCols) { ?>
             <th><?php echo __('delivered'); ?></th>
@@ -35,13 +44,32 @@ $footerColspan = 6 + ($showNeededBy ? 1 : 0) + ($showDeliveryCols ? 2 : 0);
         </tr>
         </thead>
         <tbody>
-        <?php foreach ($items as $line) { ?>
+        <?php foreach ($items as $line) {
+            $extras = [];
+            if (!empty($line['supplier_id'])) {
+                $extras[] = __('preferred_supplier') . ': ' . $lookup->resolveFkLabel('suppliers', (int) $line['supplier_id']);
+            }
+            if (!empty($line['warehouse_id'])) {
+                $extras[] = __('receiving_warehouse') . ': ' . $lookup->resolveFkLabel('warehouses', (int) $line['warehouse_id']);
+            }
+            if (!empty($line['account_id'])) {
+                $extras[] = __('expense_account') . ': ' . $lookup->resolveFkLabel('chart_of_accounts', (int) $line['account_id']);
+            }
+            if (!empty($line['attachment_path'])) {
+                $attachUrl = $lineAttachmentRoute . '/' . (int) ($line['id'] ?? 0);
+                $attachName = (string) ($line['attachment_name'] ?? __('line_attachment'));
+                $extras[] = '<a href="' . Rateb\App\Core\View::escape($attachUrl) . '" target="_blank" rel="noopener"><i class="fas fa-paperclip"></i> ' . Rateb\App\Core\View::escape($attachName) . '</a>';
+            }
+            ?>
         <tr>
             <td><?php echo Rateb\App\Core\View::escape($line['item_name'] ?? ''); ?></td>
             <td><?php echo Rateb\App\Core\View::escape($line['description'] ?? ''); ?></td>
             <td><?php echo Rateb\App\Core\View::escape($line['quantity'] ?? ''); ?></td>
             <?php if ($showNeededBy) { ?>
             <td><?php echo Rateb\App\Core\View::escape($line['needed_by'] ?? '—'); ?></td>
+            <?php } ?>
+            <?php if ($showPrExtras) { ?>
+            <td class="small"><?php echo $extras === [] ? '—' : implode('<br>', $extras); ?></td>
             <?php } ?>
             <?php if ($showDeliveryCols) { ?>
             <td><?php echo Rateb\App\Core\View::escape($line['delivered_qty'] ?? 0); ?></td>

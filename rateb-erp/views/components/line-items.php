@@ -14,12 +14,19 @@ $isPurchaseRequest = $lineItemContext === 'purchase_request';
 $optionalLinePrice = $isPurchaseRequest || !empty($optionalLinePrice);
 $showLineDescription = $isPurchaseRequest || !empty($showLineDescription);
 $lineItemsTitle = (string) ($lineItemsTitle ?? ($isPurchaseRequest ? __('pr_line_items') : __('line_items')));
+$supplierOptions = $supplierOptions ?? [];
+$warehouseOptions = $warehouseOptions ?? [];
+$chartAccounts = $chartAccounts ?? [];
+$lineAttachmentRoute = (string) ($lineAttachmentRoute ?? '');
 $unitOptions = \Rateb\App\Helpers\LineItems::unitOptions();
 $unitFactors = \Rateb\App\Helpers\LineItems::unitFactors();
 $taxPresets = \Rateb\App\Helpers\LineItems::taxPresets();
 if ($lineItems === []) {
     $lineItems = [[
-        'inventory_id' => '', 'item_name' => '', 'description' => '', 'needed_by' => '', 'sku' => '', 'quantity' => 1,
+        'inventory_id' => '', 'item_name' => '', 'description' => '', 'needed_by' => '',
+        'supplier_id' => '', 'warehouse_id' => '', 'account_id' => '',
+        'attachment_path' => '', 'attachment_name' => '',
+        'sku' => '', 'quantity' => 1,
         'unit' => 'each', 'unit_price' => 0,
         'tax_name' => $defaultVat15 ? 'VAT 15%' : 'Local Sales 0%',
         'tax_rate' => $defaultVat15 ? 15 : 0,
@@ -54,6 +61,7 @@ $req = static function (string $label): string {
                         <col class="rateb-col-unit">
                         <col class="rateb-col-price">
                         <?php if ($isPurchaseRequest) { ?><col class="rateb-col-needed-by"><?php } ?>
+                        <?php if ($isPurchaseRequest) { ?><col class="rateb-col-pr-meta"><?php } ?>
                         <col class="rateb-col-subtotal">
                         <col class="rateb-col-tax">
                         <col class="rateb-col-total">
@@ -73,6 +81,7 @@ $req = static function (string $label): string {
                         <th><?php echo $optionalLinePrice ? __('unit_price_estimate') : $req(__('unit_price')); ?></th>
                         <?php if ($isPurchaseRequest) { ?>
                         <th><?php echo __('needed_by'); ?></th>
+                        <th><?php echo __('pr_line_extras'); ?></th>
                         <?php } ?>
                         <th class="text-end"><?php echo __('line_subtotal'); ?></th>
                         <th><?php echo __('taxes'); ?></th>
@@ -90,6 +99,12 @@ $req = static function (string $label): string {
                         $unit = (string) ($line['unit'] ?? 'each');
                         $taxName = (string) ($line['tax_name'] ?? ($defaultVat15 ? 'VAT 15%' : 'Local Sales 0%'));
                         $invId = (int) ($line['inventory_id'] ?? 0);
+                        $supplierId = (int) ($line['supplier_id'] ?? 0);
+                        $warehouseId = (int) ($line['warehouse_id'] ?? 0);
+                        $accountId = (int) ($line['account_id'] ?? 0);
+                        $attachmentPath = (string) ($line['attachment_path'] ?? '');
+                        $attachmentName = (string) ($line['attachment_name'] ?? '');
+                        $lineItemId = (int) ($line['id'] ?? 0);
                         $qtyEach = \Rateb\App\Helpers\LineItems::qtyInEach($qty, $unit);
                         ?>
                     <tr data-line-items-row>
@@ -143,6 +158,38 @@ $req = static function (string $label): string {
                         <?php if ($isPurchaseRequest) { ?>
                         <td class="rateb-line-needed-by">
                             <input class="form-control form-control-sm" type="date" name="line_needed_by[]" value="<?php echo Rateb\App\Core\View::escape((string) ($line['needed_by'] ?? '')); ?>">
+                        </td>
+                        <td class="rateb-line-pr-meta">
+                            <div class="rateb-line-pr-stack">
+                                <select class="form-select form-select-sm" name="line_supplier_id[]" title="<?php echo __('preferred_supplier'); ?>">
+                                    <option value=""><?php echo __('preferred_supplier'); ?>…</option>
+                                    <?php foreach ($supplierOptions as $opt) { ?>
+                                    <option value="<?php echo (int) $opt['value']; ?>"<?php echo $supplierId === (int) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape((string) $opt['label']); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <select class="form-select form-select-sm" name="line_warehouse_id[]" title="<?php echo __('receiving_warehouse'); ?>">
+                                    <option value=""><?php echo __('receiving_warehouse'); ?>…</option>
+                                    <?php foreach ($warehouseOptions as $opt) { ?>
+                                    <option value="<?php echo (int) $opt['value']; ?>"<?php echo $warehouseId === (int) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape((string) $opt['label']); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <select class="form-select form-select-sm" name="line_account_id[]" title="<?php echo __('expense_account'); ?>">
+                                    <option value=""><?php echo __('expense_account'); ?>…</option>
+                                    <?php foreach ($chartAccounts as $opt) { ?>
+                                    <option value="<?php echo (int) $opt['value']; ?>"<?php echo $accountId === (int) $opt['value'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape((string) $opt['label']); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <input type="file" class="form-control form-control-sm" name="line_attachment[]" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
+                                <input type="hidden" name="line_attachment_keep[]" value="<?php echo Rateb\App\Core\View::escape($attachmentPath); ?>">
+                                <input type="hidden" name="line_attachment_name_keep[]" value="<?php echo Rateb\App\Core\View::escape($attachmentName); ?>">
+                                <?php if ($attachmentPath !== '') { ?>
+                                <small class="rateb-line-attach-hint">
+                                    <a href="<?php echo Rateb\App\Core\View::escape($lineAttachmentRoute . '/' . $lineItemId); ?>" target="_blank" rel="noopener">
+                                        <i class="fas fa-paperclip"></i> <?php echo Rateb\App\Core\View::escape($attachmentName !== '' ? $attachmentName : __('line_attachment')); ?>
+                                    </a>
+                                </small>
+                                <?php } ?>
+                            </div>
                         </td>
                         <?php } ?>
                         <td class="text-end rateb-line-amount"><span data-line-subtotal><?php echo number_format($totals['subtotal'], 2); ?></span></td>

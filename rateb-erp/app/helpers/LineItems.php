@@ -60,6 +60,62 @@ final class LineItems
         return $ts !== false ? date('Y-m-d', $ts) : null;
     }
 
+    private static function normalizeAttachmentKeep(mixed $value): ?string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '' || strpos($raw, '..') !== false || !str_starts_with($raw, 'uploads/')) {
+            return null;
+        }
+        return $raw;
+    }
+
+    /** @param array<int, array<string, mixed>> $lines */
+    public static function validatePurchaseRequestLines(array $lines): void
+    {
+        foreach ($lines as $line) {
+            \Rateb\App\Services\TenantFkValidator::validate($line, [
+                'inventory_id', 'supplier_id', 'warehouse_id', 'account_id',
+            ]);
+        }
+    }
+
+    /** @param array<int, int> $itemIdsByIndex */
+    public static function processPurchaseRequestLineAttachments(array $itemIdsByIndex): void
+    {
+        $files = $_FILES['line_attachment'] ?? null;
+        if (!$files || !is_array($files['name'] ?? null)) {
+            return;
+        }
+        $model = new \Rateb\App\Models\PurchaseRequestItem();
+        $doc = new \Rateb\App\Services\DocumentService();
+        foreach ($itemIdsByIndex as $i => $itemId) {
+            if ($itemId < 1) {
+                continue;
+            }
+            $err = (int) ($files['error'][$i] ?? UPLOAD_ERR_NO_FILE);
+            if ($err === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $file = [
+                'name' => $files['name'][$i] ?? '',
+                'type' => $files['type'][$i] ?? '',
+                'tmp_name' => $files['tmp_name'][$i] ?? '',
+                'error' => $err,
+                'size' => $files['size'][$i] ?? 0,
+            ];
+            $upload = $doc->storeUpload($file, 'purchase_request_item', $itemId, __('line_attachment'));
+            if (!($upload['success'] ?? false)) {
+                continue;
+            }
+            if (!empty($upload['path'])) {
+                $model->update($itemId, [
+                    'attachment_path' => (string) $upload['path'],
+                    'attachment_name' => trim((string) ($files['name'][$i] ?? '')) ?: null,
+                ]);
+            }
+        }
+    }
+
     /** @return list<string> */
     public static function taxPresets(): array
     {
@@ -127,6 +183,10 @@ final class LineItems
                 'item_name' => $name,
                 'description' => trim((string) ($_POST['line_description'][$i] ?? '')),
                 'needed_by' => self::normalizeDate($_POST['line_needed_by'][$i] ?? null),
+                'supplier_id' => (int) ($_POST['line_supplier_id'][$i] ?? 0) ?: null,
+                'warehouse_id' => (int) ($_POST['line_warehouse_id'][$i] ?? 0) ?: null,
+                'attachment_path' => self::normalizeAttachmentKeep($_POST['line_attachment_keep'][$i] ?? null),
+                'attachment_name' => trim((string) ($_POST['line_attachment_name_keep'][$i] ?? '')) ?: null,
                 'sku' => trim((string) ($_POST['line_sku'][$i] ?? '')),
                 'quantity' => max(0.001, $qty),
                 'delivered_qty' => (float) ($_POST['line_delivered_qty'][$i] ?? 0),
@@ -226,15 +286,18 @@ final class LineItems
     /** @param array<int, array<string, mixed>> $lines */
     public static function syncPurchaseRequestItems(int $requestId, array $lines): float
     {
+        self::validatePurchaseRequestLines($lines);
         $model = new \Rateb\App\Models\PurchaseRequestItem();
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare('DELETE FROM rateb_purchase_request_items WHERE purchase_request_id = :rid')->execute(['rid' => $requestId]);
         $agg = self::aggregateTotals($lines);
-        foreach ($lines as $line) {
+        $itemIds = [];
+        foreach ($lines as $i => $line) {
             $payload = $line;
             unset($payload['delivered_qty'], $payload['invoiced_qty']);
-            $model->create(array_merge($payload, ['purchase_request_id' => $requestId]));
+            $itemIds[$i] = $model->create(array_merge($payload, ['purchase_request_id' => $requestId]));
         }
+        self::processPurchaseRequestLineAttachments($itemIds);
         return $agg['total'];
     }
 

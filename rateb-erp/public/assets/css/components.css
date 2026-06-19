@@ -610,7 +610,7 @@ html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {
 }
 
 .rateb-line-items-table--pr {
-    min-width: 1120px;
+    min-width: 1280px;
 }
 
 .rateb-line-items-table th {
@@ -634,6 +634,7 @@ html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {
 .rateb-line-items-table col.rateb-col-unit { width: 10%; }
 .rateb-line-items-table col.rateb-col-price { width: 7%; }
 .rateb-line-items-table col.rateb-col-needed-by { width: 8%; }
+.rateb-line-items-table col.rateb-col-pr-meta { width: 14%; }
 .rateb-line-items-table col.rateb-col-subtotal { width: 7%; }
 .rateb-line-items-table col.rateb-col-tax { width: 12%; }
 .rateb-line-items-table col.rateb-col-total { width: 7%; }
@@ -649,6 +650,16 @@ html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {
     margin-top: 0.2rem;
     font-size: 0.68rem;
     line-height: 1.2;
+}
+
+.rateb-line-pr-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.rateb-line-attach-hint {
+    font-size: 0.68rem;
 }
 
 .rateb-line-items-table td {

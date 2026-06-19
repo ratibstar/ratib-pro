@@ -78,10 +78,22 @@ final class ProcurementService
             throw new \RuntimeException(__('record_not_found'));
         }
         $lines = LineItems::loadPurchaseRequestItems($requestId);
+        $firstSupplier = null;
+        $firstWarehouse = null;
+        foreach ($lines as $line) {
+            if ($firstSupplier === null && !empty($line['supplier_id'])) {
+                $firstSupplier = (int) $line['supplier_id'];
+            }
+            if ($firstWarehouse === null && !empty($line['warehouse_id'])) {
+                $firstWarehouse = (int) $line['warehouse_id'];
+            }
+        }
         $poModel = new PurchaseOrder();
         $poId = $poModel->create([
             'order_no' => $poModel->generateOrderNo(),
             'purchase_request_id' => $requestId,
+            'supplier_id' => $firstSupplier,
+            'warehouse_id' => $firstWarehouse,
             'status' => 'draft',
             'order_date' => date('Y-m-d'),
             'expected_date' => $pr['expected_date'] ?? null,

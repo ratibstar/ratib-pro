@@ -248,12 +248,25 @@
         clone.querySelectorAll('input').forEach(function (input) {
             if (input.type === 'number') {
                 input.value = input.name.indexOf('quantity') >= 0 ? '1' : '0';
+            } else if (input.type === 'file') {
+                input.value = '';
             } else if (input.type === 'hidden' && input.hasAttribute('data-line-tax-rate')) {
                 input.value = useVat ? '15' : '0';
+            } else if (input.type === 'hidden' && (input.name === 'line_attachment_keep[]' || input.name === 'line_attachment_name_keep[]')) {
+                input.value = '';
             } else if (input.type !== 'hidden') {
                 input.value = '';
             }
         });
+        var attachHint = clone.querySelector('.rateb-line-attach-hint');
+        if (attachHint) {
+            attachHint.remove();
+        }
+        var stockHint = clone.querySelector('[data-stock-hint]');
+        if (stockHint) {
+            stockHint.style.display = 'none';
+            stockHint.textContent = '';
+        }
         clone.querySelectorAll('select').forEach(function (sel) {
             if (sel.name === 'line_unit[]') {
                 sel.selectedIndex = 0;
@@ -274,6 +287,8 @@
             } else if (sel.name === 'line_excluding_tax[]') {
                 sel.value = '1';
             } else if (sel.name === 'line_account_id[]') {
+                sel.selectedIndex = 0;
+            } else if (sel.name === 'line_supplier_id[]' || sel.name === 'line_warehouse_id[]') {
                 sel.selectedIndex = 0;
             }
         });

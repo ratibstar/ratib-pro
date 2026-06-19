@@ -267,6 +267,29 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
     {
         (new \Rateb\App\Services\ProcurementService())->saveQuoteAttachments('purchase_request', $id);
     }
+
+    public function downloadLineAttachment(array $params): void
+    {
+        $itemId = (int) ($params['itemId'] ?? 0);
+        $item = (new \Rateb\App\Models\PurchaseRequestItem())->find($itemId);
+        if (!$item || empty($item['attachment_path'])) {
+            http_response_code(404);
+            echo '404';
+            return;
+        }
+        $path = \Rateb\App\Helpers\StorageHelper::resolveFilePath((string) $item['attachment_path']);
+        if ($path === '' || !is_readable($path)) {
+            http_response_code(404);
+            echo '404';
+            return;
+        }
+        $name = (string) ($item['attachment_name'] ?? basename($path));
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . rawurlencode($name) . '"');
+        header('Content-Length: ' . (string) filesize($path));
+        readfile($path);
+        exit;
+    }
 }
 
 final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudController
