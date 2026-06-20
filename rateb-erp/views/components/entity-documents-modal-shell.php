@@ -1,4 +1,4 @@
-<div class="modal fade" id="ratebEntityDocsModal" tabindex="-1" aria-labelledby="ratebEntityDocsModalLabel" aria-hidden="true" data-bs-focus="false">
+<div class="modal fade rateb-entity-docs-modal" id="ratebEntityDocsModal" tabindex="-1" aria-labelledby="ratebEntityDocsModalLabel" aria-hidden="true" data-bs-focus="false">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -18,7 +18,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="ratebEntityEditDocModal" tabindex="-1" aria-hidden="true" data-bs-focus="false">
+<div class="modal fade rateb-entity-edit-doc-modal" id="ratebEntityEditDocModal" tabindex="-1" aria-hidden="true" data-bs-focus="false">
     <div class="modal-dialog">
         <form method="post" class="modal-content" id="ratebEntityEditDocForm" enctype="multipart/form-data" action="">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Csrf::token()); ?>">

@@ -219,17 +219,21 @@
     z-index: 1060;
 }
 
-#ratebImagePreviewModal + .modal-backdrop,
-.modal-backdrop.show {
+#ratebImagePreviewModal.show ~ .modal-backdrop {
     z-index: 1055;
 }
 
-#ratebEntityDocsModal {
-    z-index: 1055;
+#ratebEntityDocsModal.show {
+    z-index: 1060;
 }
 
-#ratebEntityEditDocModal {
-    z-index: 1065;
+#ratebEntityEditDocModal.show {
+    z-index: 1070;
+}
+
+#ratebEntityDocsModal .modal-dialog,
+#ratebEntityEditDocModal .modal-dialog {
+    pointer-events: auto;
 }
 
 #ratebEntityDocsModal .rateb-doc-actions a,

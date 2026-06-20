@@ -6,9 +6,15 @@
         return;
     }
 
+    var editModalEl = document.getElementById('ratebEntityEditDocModal');
+    [modalEl, editModalEl].forEach(function (el) {
+        if (el && el.parentElement && el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+    });
+
     var bodyEl = modalEl.querySelector('[data-entity-docs-body]');
     var titleEl = modalEl.querySelector('[data-entity-docs-title]');
-    var editModalEl = document.getElementById('ratebEntityEditDocModal');
     var editForm = document.getElementById('ratebEntityEditDocForm');
     var editTitleInput = document.getElementById('ratebEntityEditDocTitle');
     var editFileLabel = document.getElementById('ratebEntityEditDocCurrent');
