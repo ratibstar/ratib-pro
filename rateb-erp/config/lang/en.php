@@ -1381,7 +1381,7 @@ return [
     'cms_home' => 'RATEB ERP — Home',
     'cms_request_demo' => 'Request Demo',
     'cms_explore_features' => 'Explore Features',
-    'cms_erp_overview_short' => 'Unified ERP for healthcare & enterprise',
+    'cms_erp_overview_short' => 'Unified ERP for healthcare and enterprise',
     'cms_pricing_preview' => 'Pricing Plans',
     'cms_latest_articles' => 'Latest Articles',
     'cms_faq_preview' => 'FAQ',

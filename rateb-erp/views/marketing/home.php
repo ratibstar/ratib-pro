@@ -25,7 +25,23 @@ $slides = $slides ?? [];
             <div class="col-lg-5">
                 <div class="rateb-mkt-hero-card">
                     <i class="fas fa-chart-line"></i>
-                    <span><?php echo __('cms_erp_overview_short'); ?></span>
+                    <span><?php
+                    $heroCardText = __('cms_erp_overview_short');
+                    if ($hero) {
+                        $heroSettings = $hero['settings_json'] ?? null;
+                        if (is_string($heroSettings) && $heroSettings !== '') {
+                            $heroSettings = json_decode($heroSettings, true);
+                        }
+                        if (is_array($heroSettings)) {
+                            $cardKey = rateb_locale() === 'ar' ? 'hero_card_ar' : 'hero_card_en';
+                            $fromCms = trim((string) ($heroSettings[$cardKey] ?? ''));
+                            if ($fromCms !== '') {
+                                $heroCardText = $fromCms;
+                            }
+                        }
+                    }
+                    echo Rateb\App\Core\View::escape($heroCardText);
+                    ?></span>
                 </div>
             </div>
         </div>
