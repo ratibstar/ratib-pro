@@ -1094,7 +1094,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     }
 
     /** @param array<string, mixed>|null $item */
-    private function attachmentFieldData(?array $item): array
+    protected function attachmentFieldData(?array $item): array
     {
         $companyId = (int) TenantContext::companyId();
         if (!$item || (int) ($item['id'] ?? 0) < 1) {
@@ -1306,7 +1306,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
     }
 
     /** @param array<string, mixed>|null $item */
-    private function attachmentFieldData(?array $item): array
+    protected function attachmentFieldData(?array $item): array
     {
         $companyId = (int) TenantContext::companyId();
         if (!$item || (int) ($item['id'] ?? 0) < 1) {

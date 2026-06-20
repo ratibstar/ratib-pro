@@ -1951,7 +1951,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
     }
 
     /** @param array<string, mixed>|null $item */
-    private function attachmentFieldData(?array $item): ?array
+    protected function attachmentFieldData(?array $item): array
     {
         if (!$item || (int) ($item['id'] ?? 0) < 1) {
             return [
