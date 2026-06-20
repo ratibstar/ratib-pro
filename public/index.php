@@ -97,8 +97,8 @@ if (preg_match('#^/(?:profile|about)/?$#i', $path)) {
         exit;
     }
 }
-if (preg_match('#^/pages/([a-z0-9][a-z0-9_-]*\.php)$#i', $path, $pageMatch)) {
-    $candidate = $projectRoot . '/pages/' . $pageMatch[1];
+if (preg_match('#^/pages/([a-z0-9][a-z0-9_-]*)(?:\.php)?/?$#i', $path, $pageMatch)) {
+    $candidate = $projectRoot . '/pages/' . $pageMatch[1] . '.php';
     if (is_file($candidate)) {
         require $candidate;
         exit;

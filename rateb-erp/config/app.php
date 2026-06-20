@@ -327,7 +327,7 @@ if (!function_exists('rateb_locale_switch_url')) {
 if (!function_exists('rateb_marketing_partner_login_url')) {
     function rateb_marketing_partner_login_url(): string
     {
-        return rateb_site_origin() . '/pages/partner-portal-login.php';
+        return rateb_site_origin() . '/pages/partner-portal-login';
     }
 }
 

@@ -2269,3 +2269,26 @@ iframe.pp-worker-docs-preview-frame {
         min-height: 300px;
     }
 }
+
+/* Unified marketing — lightweight partner login header (no /home mega-nav bootstrap) */
+.partner-portal-lite-header {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(15, 23, 42, 0.92);
+}
+.partner-portal-lite-brand img {
+    display: block;
+    height: auto;
+}
+.partner-portal-lite-nav a,
+.partner-portal-lite-nav__current {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+.partner-portal-lite-nav a:hover {
+    color: #5eead4;
+}
+.partner-portal-lite-nav__current {
+    color: #5eead4;
+    font-weight: 600;
+}

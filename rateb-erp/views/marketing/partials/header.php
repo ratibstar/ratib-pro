@@ -65,8 +65,8 @@ $localeArUrl = function_exists('rateb_locale_switch_url') ? rateb_locale_switch_
                         <button type="button" class="btn btn-outline-secondary" data-mkt-theme="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
                     </div>
                     <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">
-                        <a href="<?php echo Rateb\App\Core\View::escape($localeEnUrl); ?>" class="btn btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>" lang="en">EN</a>
                         <a href="<?php echo Rateb\App\Core\View::escape($localeArUrl); ?>" class="btn btn-outline-secondary<?php echo rateb_locale() === 'ar' ? ' active' : ''; ?>" lang="ar">عربي</a>
+                        <a href="<?php echo Rateb\App\Core\View::escape($localeEnUrl); ?>" class="btn btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>" lang="en">EN</a>
                     </div>
                     <?php if ($headerContext === 'marketing') { ?>
                     <a href="<?php echo Rateb\App\Core\View::escape(rateb_marketing_partner_login_url()); ?>" class="btn btn-sm btn-outline-secondary d-none d-lg-inline-flex"><?php echo __('cms_partner_login'); ?></a>
