@@ -224,6 +224,20 @@
     z-index: 1055;
 }
 
+#ratebEntityDocsModal {
+    z-index: 1055;
+}
+
+#ratebEntityEditDocModal {
+    z-index: 1065;
+}
+
+#ratebEntityDocsModal .rateb-doc-actions a,
+#ratebEntityDocsModal .rateb-doc-actions button {
+    position: relative;
+    z-index: 2;
+}
+
 .rateb-actions .btn {
     margin-inline-end: 0.25rem;
 }

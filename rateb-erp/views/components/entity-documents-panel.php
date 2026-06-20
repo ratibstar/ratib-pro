@@ -13,7 +13,9 @@ $backLabel = (string) ($backLabel ?? __($entityName ?? 'record'));
 $modalMode = !empty($modalMode);
 $panelId = 'rateb-doc-panel-' . (int) $entityId;
 ?>
-<div class="rateb-entity-docs-panel" id="<?php echo Rateb\App\Core\View::escape($panelId); ?>" data-entity-id="<?php echo (int) $entityId; ?>">
+<div class="rateb-entity-docs-panel" id="<?php echo Rateb\App\Core\View::escape($panelId); ?>"
+     data-entity-id="<?php echo (int) $entityId; ?>"
+     data-docs-route-prefix="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/' . $entityId . '/documents/')); ?>">
     <?php if ($canManage ?? false) { ?>
     <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $entityId . '/documents'); ?>"
           enctype="multipart/form-data" class="row g-3 mb-4" data-entity-docs-upload>
@@ -91,7 +93,7 @@ $panelId = 'rateb-doc-panel-' . (int) $entityId;
     </div>
 </div>
 
-<?php if ($canManage ?? false) { ?>
+<?php if (!$modalMode && ($canManage ?? false)) { ?>
 <div class="modal fade rateb-edit-doc-modal" id="ratebEditDocModal-<?php echo (int) $entityId; ?>" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form method="post" class="modal-content rateb-edit-doc-form" action="" enctype="multipart/form-data"

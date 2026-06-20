@@ -164,9 +164,26 @@ abstract class CrudController extends Controller
     protected function guardManage(): void
     {
         if (function_exists('rateb_can_manage_entity') && !rateb_can_manage_entity($this->permissionResourceKey())) {
+            if ($this->isDocumentsModalRequest()) {
+                $this->rejectDocumentsModal((string) __('access_denied'));
+            }
             SessionManager::flash('error', __('access_denied'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+    }
+
+    protected function rejectDocumentsModal(string $message, int $count = 0): void
+    {
+        if (!$this->isDocumentsModalRequest()) {
+            return;
+        }
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            'success' => false,
+            'message' => $message,
+            'count' => $count,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     /** @return array<string, mixed> */
@@ -499,14 +516,19 @@ abstract class CrudController extends Controller
 
     public function storeDocument(array $params): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $this->guardManage();
         if (!$this->validateCsrf()) {
+            $this->rejectDocumentsModal((string) __('invalid_request'));
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
+            $this->rejectDocumentsModal((string) __('no_records'));
             SessionManager::flash('error', __('no_records'));
             $this->redirect(rateb_url($this->routePrefix));
         }
@@ -532,8 +554,12 @@ abstract class CrudController extends Controller
 
     public function updateDocument(array $params): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $this->guardManage();
         if (!$this->validateCsrf()) {
+            $this->rejectDocumentsModal((string) __('invalid_request'));
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
@@ -541,6 +567,7 @@ abstract class CrudController extends Controller
         $docId = (int) ($params['docId'] ?? 0);
         $item = $this->model->find($entityId);
         if (!$item || $docId < 1) {
+            $this->rejectDocumentsModal((string) __('no_records'));
             SessionManager::flash('error', __('no_records'));
             $this->redirect(rateb_url($this->routePrefix));
         }
@@ -567,8 +594,12 @@ abstract class CrudController extends Controller
 
     public function destroyDocument(array $params): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $this->guardManage();
         if (!$this->validateCsrf()) {
+            $this->rejectDocumentsModal((string) __('invalid_request'));
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
@@ -576,6 +607,7 @@ abstract class CrudController extends Controller
         $docId = (int) ($params['docId'] ?? 0);
         $item = $this->model->find($entityId);
         if (!$item || $docId < 1) {
+            $this->rejectDocumentsModal((string) __('no_records'));
             SessionManager::flash('error', __('no_records'));
             $this->redirect(rateb_url($this->routePrefix));
         }
