@@ -25,6 +25,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         $this->viewPrefix = 'company/inventory-batches';
         $this->routePrefix = rateb_app_route('inventory-batches');
         $this->entityName = 'inventory_batches';
+        $this->tenantForeignKeys = ['warehouse_id', 'inventory_id'];
         $this->indexFields = [
             ['name' => 'batch_no', 'label' => 'batch_id'],
             ['name' => 'item_name', 'label' => 'item_name'],
@@ -123,6 +124,20 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             SessionManager::flash('success', __('save') . ' OK');
         }
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function edit(array $params): void
+    {
+        rateb_bootstrap_ops_tenant();
+        rateb_require_manage('inventory-batches');
+        parent::edit($params);
+    }
+
+    public function update(array $params): void
+    {
+        rateb_bootstrap_ops_tenant();
+        rateb_require_manage('inventory-batches');
+        parent::update($params);
     }
 
     public function export(): void

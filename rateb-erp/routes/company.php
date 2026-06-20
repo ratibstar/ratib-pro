@@ -381,6 +381,8 @@ $invMw = rateb_erp_mw('inventory', '', 'inventory-batches');
 $router->get($app('inventory-batches'), [InventoryBatchesController::class, 'index'], $invMw);
 $router->get($app('inventory-batches/create'), [InventoryBatchesController::class, 'create'], $invMw);
 $router->post($app('inventory-batches'), [InventoryBatchesController::class, 'store'], $invMw);
+$router->get($app('inventory-batches/{id}/edit'), [InventoryBatchesController::class, 'edit'], $invMw);
+$router->post($app('inventory-batches/{id}'), [InventoryBatchesController::class, 'update'], $invMw);
 $router->post($app('inventory-batches/{id}/delete'), [InventoryBatchesController::class, 'destroy'], $invMw);
 $router->post($app('inventory-batches/bulk-delete'), [InventoryBatchesController::class, 'bulkDestroy'], $invMw);
 $router->get($app('inventory-batches/{id}/documents/panel'), [InventoryBatchesController::class, 'documentsPanel'], $invMw);
