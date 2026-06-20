@@ -80,7 +80,7 @@ jobs:
         if: steps.deploy.outcome == 'success'
         run: |
           SITE="${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}"
-          # home.php 302-redirects to /home — must follow redirects (-L). /home must NOT hit country_slug=home.
+          # Unified marketing at / — /home 301→/. Must follow redirects (-L).
           code() {
             local out code_try=1
             while [ "$code_try" -le 2 ]; do
@@ -94,7 +94,6 @@ jobs:
             done
             echo "${out:-000}"
           }
-          # Bypass LiteSpeed HTML cache before register/home probes.
           LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
             "${SITE}/public/rateb-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
@@ -104,15 +103,13 @@ jobs:
           fi
           P="$(code "${SITE}/profile/")"
           G="$(code "${SITE}/js/pages/rateb-profile-nav-guard.js")"
+          ROOT="$(code "${SITE}/")"
           H="$(code "${SITE}/home")"
           HLEG="$(code "${SITE}/pages/home.php")"
-          REG="${SITE}/home?open=register&plan=gold&years=1&_deploy_verify=1"
-          if [ -n "$LIVE_BUILD" ]; then
-            REG="${SITE}/home?v=${LIVE_BUILD}&open=register&plan=gold&years=1&_deploy_verify=1"
-          fi
-          HR="$(code "${REG}")"
-          BODY="$(curl -sS -L --connect-timeout 10 --max-time 35 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${REG}" 2>/dev/null | head -c 250000 || true)"
-          echo "profile/=$P home=$H home.php(legacy)=$HLEG register=$HR guard.js=$G live_build=${LIVE_BUILD}"
+          REG_URL="${SITE}/site/register?_deploy_verify=1"
+          HR="$(code "${REG_URL}")"
+          REG_BODY="$(curl -sS -L --connect-timeout 10 --max-time 35 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${REG_URL}" 2>/dev/null | head -c 250000 || true)"
+          echo "profile/=$P root/=$ROOT home(redirect)=$H home.php(legacy)=$HLEG register=$HR guard.js=$G live_build=${LIVE_BUILD}"
           GOV_BYTES="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | wc -c | tr -d ' ')"
           GOV_MAGIC="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | head -c 3 | xxd -p 2>/dev/null || echo 000000)"
           echo "gov-control-v2 bytes=${GOV_BYTES} magic=${GOV_MAGIC}"
@@ -124,21 +121,15 @@ jobs:
             echo "::error::gov-control-v2 not a valid image (magic ${GOV_MAGIC})"
             exit 1
           fi
-          HOME_URL="${SITE}/home"
-          if [ -n "$LIVE_BUILD" ]; then
-            HOME_URL="${HOME_URL}?v=${LIVE_BUILD}&_deploy_verify=1"
-          else
-            HOME_URL="${HOME_URL}?_deploy_verify=1"
-          fi
+          HOME_URL="${SITE}/?_deploy_verify=1"
           HOME_RAW="$(curl -sS -L --connect-timeout 8 --max-time 25 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
             "${HOME_URL}" 2>/dev/null | head -c 250000 || true)"
           BRAND_FAIL=0
           if ! grep -qi '<!DOCTYPE' <<< "$HOME_RAW"; then
-            echo "::error::home did not return HTML (body=${HOME_RAW:0:200})"
+            echo "::error::marketing home (/) did not return HTML (body=${HOME_RAW:0:200})"
             exit 1
           fi
-          # Use grep <<< "$var" (not echo "$var" | grep) — large HTML + grep -q closes the pipe early → SIGPIPE noise.
           if grep -qi 'RATEB Company' <<< "$HOME_RAW"; then
             echo "::error::home still contains RATEB Company"
             BRAND_FAIL=1
@@ -151,20 +142,32 @@ jobs:
             echo "::error::home still shows Software Foundation legal line"
             BRAND_FAIL=1
           fi
-          if grep -qE 'Telemetry Enterprise Base|rateb-brand-full__word--w3' <<< "$HOME_RAW"; then
-            echo "hero_expansion=ok"
+          if grep -q 'rateb-marketing' <<< "$HOME_RAW" && grep -q 'rateb-mkt-hero' <<< "$HOME_RAW"; then
+            echo "marketing_shell=ok"
           else
-            echo "::error::home hero missing Telemetry Enterprise Base expansion"
+            echo "::error::unified marketing home missing rateb-marketing / rateb-mkt-hero"
+            BRAND_FAIL=1
+          fi
+          if grep -q 'rateb-mkt-header' <<< "$HOME_RAW"; then
+            echo "marketing_header=ok"
+          else
+            echo "::error::unified home missing rateb-mkt-header"
+            BRAND_FAIL=1
+          fi
+          if grep -qE 'locale/en|locale/ar' <<< "$HOME_RAW"; then
+            echo "locale_switch=ok"
+          else
+            echo "::error::unified home missing EN/AR locale switch links"
+            BRAND_FAIL=1
+          fi
+          if grep -q 'data-mkt-theme' <<< "$HOME_RAW"; then
+            echo "theme_toggle=ok"
+          else
+            echo "::error::unified home missing light/dark theme toggle"
             BRAND_FAIL=1
           fi
           if grep -qiE 'country_slug=home|Country not found' <<< "$HOME_RAW"; then
             echo "::error::/home wrongly routed as country slug (check .htaccess home rule order)"
-            BRAND_FAIL=1
-          fi
-          if grep -q 'rateb-public-header-pin' <<< "$HOME_RAW"; then
-            echo "header_pin_markup=ok"
-          else
-            echo "::error::home missing rateb-public-header-pin (sticky header chrome)"
             BRAND_FAIL=1
           fi
           if [ -n "$LIVE_BUILD" ]; then
@@ -176,33 +179,29 @@ jobs:
           REGISTER_OK=0
           if [ "$HR" = "200" ]; then
             REGISTER_OK=1
-          elif grep -qi '<!DOCTYPE' <<< "$BODY"; then
+          elif grep -qi '<!DOCTYPE' <<< "$REG_BODY"; then
             echo "::warning::register HTTP=$HR but body is HTML (treating as OK)"
             REGISTER_OK=1
           fi
-          if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$REGISTER_OK" -eq 1 ]; then
-            HOMECSS="$(code "${SITE}/css/pages/home-public.css")"
-            echo "home-public.css=$HOMECSS"
-            if [ "$HOMECSS" != "200" ]; then
-              echo "::error::css/pages/home-public.css returned $HOMECSS (check .htaccess does not rewrite /css/pages/ as country_slug)"
+          if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$ROOT" = "200" ] && [ "$H" = "200" ] && [ "$REGISTER_OK" -eq 1 ]; then
+            MKTCSS="$(code "${SITE}/rateb-erp/public/assets/css/marketing.css")"
+            echo "marketing.css=$MKTCSS"
+            if [ "$MKTCSS" != "200" ]; then
+              echo "::error::rateb-erp/public/assets/css/marketing.css returned $MKTCSS"
               exit 1
             fi
-            if grep -qi '<!DOCTYPE' <<< "$BODY"; then
-              if grep -q 'register-section-hidden rateb-register-wrap' <<< "$BODY"; then
-                echo "::error::register section still hidden with open=register (deploy home.php?)"
-                exit 1
-              fi
-              if grep -q 'openRegister.:true' <<< "$BODY"; then
-                echo "::notice::Deploy OK (home HTML + openRegister)"
+            if grep -qi '<!DOCTYPE' <<< "$REG_BODY"; then
+              if grep -q 'rateb-mkt-form' <<< "$REG_BODY"; then
+                echo "::notice::Deploy OK (unified marketing + site/register form)"
                 exit 0
               fi
-              echo "::notice::Deploy OK (home returns HTML after redirect)"
+              echo "::notice::Deploy OK (unified marketing home HTML)"
               exit 0
             fi
-            echo "::error::home.php returned 200 but not HTML (likely PHP fatal): ${BODY:0:160}"
+            echo "::error::site/register returned non-HTML (likely PHP fatal): ${REG_BODY:0:160}"
             exit 1
           fi
-          echo "::error::verify failed profile/=$P home=$H home.php(legacy)=$HLEG guard.js=$G body=${BODY:0:160}"
+          echo "::error::verify failed profile/=$P root/=$ROOT home=$H home.php(legacy)=$HLEG guard.js=$G register=$HR body=${REG_BODY:0:160}"
           exit 1
 
       - name: Deploy failed
