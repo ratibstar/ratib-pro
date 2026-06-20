@@ -46,6 +46,11 @@ final class Request
             $uri = $m[1] ?? '/';
         }
 
+        // Folder alias without /public (bookmarks, old links)
+        if (preg_match('#^/rateb-erp/?$#', $uri)) {
+            $uri = '/';
+        }
+
         if ($uri === '/index.php' || substr($uri, -10) === '/index.php') {
             return '/';
         }

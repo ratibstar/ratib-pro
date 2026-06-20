@@ -193,6 +193,9 @@ RewriteCond %{REQUEST_URI} ^/rateb-erp/public/assets/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
+# RATEB ERP — folder alias (/rateb-erp/ without /public/)
+RewriteRule ^rateb-erp/?$ rateb-erp/public/admin [R=302,L]
+
 # RATEB ERP — front controller (before site catch-all; pass path as ?route=)
 RewriteCond %{REQUEST_URI} ^/rateb-erp/public/ [NC]
 RewriteCond %{REQUEST_URI} !^/rateb-erp/public/index\.php [NC]

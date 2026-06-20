@@ -34,6 +34,10 @@ require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
 /** @var Rateb\App\Core\Router $router */
 
+$router->get('/rateb-erp', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url('admin'), 302);
+});
+
 $router->get('/', static function (): void {
     if (\Rateb\App\Core\Auth::check()) {
         \Rateb\App\Core\Response::redirect(rateb_url(\Rateb\App\Core\Auth::homePath()));
