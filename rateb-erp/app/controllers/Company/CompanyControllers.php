@@ -1544,6 +1544,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         }
         unset($row);
 
+        $items = $this->enrichItemsWithDocumentCounts($items);
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $items,

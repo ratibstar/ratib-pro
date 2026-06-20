@@ -258,6 +258,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             $row['is_visible'] = !empty($row['is_visible']) ? 'yes' : 'no';
         }
         unset($row);
+        $items = $this->enrichItemsWithDocumentCounts($items);
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $items,
@@ -354,8 +355,12 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
+        $item = $this->model->find($id);
+        $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
         (new \Rateb\App\Services\AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('category_saved'));
+        if ($attachmentOk) {
+            SessionManager::flash('success', __('category_saved'));
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -387,8 +392,12 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
+        $item = $this->model->find($id);
+        $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
         (new \Rateb\App\Services\AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('category_saved'));
+        if ($attachmentOk) {
+            SessionManager::flash('success', __('category_saved'));
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 

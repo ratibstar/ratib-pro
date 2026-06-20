@@ -9,6 +9,7 @@ use Rateb\App\Core\Model;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AuditService;
+use Rateb\App\Services\DocumentService;
 use Rateb\App\Services\TenantFkValidator;
 
 abstract class CrudController extends Controller
@@ -44,9 +45,10 @@ abstract class CrudController extends Controller
 
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
+        $items = $this->model->all($limit, $offset, [], $search);
         return [
             'title' => __($this->entityName),
-            'items' => $this->model->all($limit, $offset, [], $search),
+            'items' => $this->enrichItemsWithDocumentCounts($items),
             'total' => $this->model->count([], $search),
             'page' => $page,
             'limit' => $limit,
@@ -59,6 +61,28 @@ abstract class CrudController extends Controller
             'actionsEnabled' => $this->actionsEnabled,
             'documentEntityType' => $this->filesEnabled ? $this->resolveDocumentEntityType() : '',
         ];
+    }
+
+    /** @param array<int, array<string, mixed>> $items */
+    protected function enrichItemsWithDocumentCounts(array $items): array
+    {
+        if (!$this->filesEnabled || $items === []) {
+            return $items;
+        }
+        $docSvc = new DocumentService();
+        $entityType = $this->resolveDocumentEntityType();
+        foreach ($items as &$row) {
+            $companyId = (int) ($row['company_id'] ?? 0);
+            if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                $companyId = rateb_resolve_ops_company_id();
+            }
+            $entityId = (int) ($row['id'] ?? 0);
+            $row['document_count'] = ($companyId > 0 && $entityId > 0)
+                ? $docSvc->countForEntity($entityType, $entityId, $companyId)
+                : 0;
+        }
+        unset($row);
+        return $items;
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -158,12 +182,85 @@ abstract class CrudController extends Controller
         if (is_array($item)) {
             $lookups = $lookupSvc->withMissingItemOptions($lookups, $fields, $item);
         }
-        return array_merge([
+        $data = array_merge([
             'routePrefix' => $this->routePrefix,
             'fields' => $fields,
             'csrf' => Csrf::token(),
             'lookups' => $lookups,
         ], $extra);
+        if ($this->filesEnabled && empty($data['attachment'])) {
+            $data['multipart'] = true;
+            $data['attachment'] = $this->attachmentFieldData(is_array($item) ? $item : null);
+            $entityId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
+            $companyId = (int) ($data['attachment']['companyId'] ?? 0);
+            if ($entityId > 0 && $companyId > 0 && !isset($data['existingDocuments'])) {
+                $data['existingDocuments'] = (new DocumentService())->listForEntity(
+                    $this->resolveDocumentEntityType(),
+                    $entityId,
+                    $companyId
+                );
+            }
+        }
+        if (!isset($data['existingDocuments'])) {
+            $data['existingDocuments'] = [];
+        }
+        return $data;
+    }
+
+    /** @param array<string, mixed>|null $item */
+    protected function attachmentFieldData(?array $item): array
+    {
+        $entityId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
+        $companyId = is_array($item) ? (int) ($item['company_id'] ?? 0) : 0;
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        return [
+            'entityType' => $this->resolveDocumentEntityType(),
+            'entityId' => $entityId,
+            'companyId' => $companyId,
+            'documentPath' => '',
+            'inputName' => 'entity_attachment',
+            'label' => __('attach_document'),
+        ];
+    }
+
+    protected function saveEntityAttachment(int $entityId, ?array $item = null): bool
+    {
+        if (!$this->filesEnabled || $entityId < 1) {
+            return true;
+        }
+        if (!isset($_FILES['entity_attachment'])
+            || ($_FILES['entity_attachment']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return true;
+        }
+        $item = $item ?? $this->model->find($entityId);
+        if (!is_array($item)) {
+            return true;
+        }
+        $companyId = (int) ($item['company_id'] ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        $title = trim((string) $this->input('doc_title', ''));
+        if ($title === '') {
+            $title = $this->recordLabel($item);
+        }
+        if ($title === '') {
+            $title = (string) __('attach_document');
+        }
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+            'entity_attachment',
+            $companyId,
+            $this->resolveDocumentEntityType(),
+            $entityId,
+            $title
+        );
+        if (!($upload['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($upload['error'] ?? __('save_ok_attachment_failed')));
+            return false;
+        }
+        return true;
     }
 
     public function create(): void
@@ -193,8 +290,12 @@ abstract class CrudController extends Controller
         }
         try {
             $id = $this->model->create($data);
+            $item = $this->model->find($id);
+            $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('create', $this->entityName, $id, $data);
-            SessionManager::flash('success', __('save') . ' OK');
+            if ($attachmentOk) {
+                SessionManager::flash('success', __('save') . ' OK');
+            }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
@@ -237,8 +338,12 @@ abstract class CrudController extends Controller
         }
         try {
             $this->model->update($id, $data);
+            $item = $this->model->find($id);
+            $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('update', $this->entityName, $id, $data);
-            SessionManager::flash('success', __('save') . ' OK');
+            if ($attachmentOk) {
+                SessionManager::flash('success', __('save') . ' OK');
+            }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
@@ -293,6 +398,9 @@ abstract class CrudController extends Controller
 
     public function documents(array $params): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -429,6 +537,14 @@ abstract class CrudController extends Controller
             'supplier_classifications' => 'supplier_classification',
             'product_categories' => 'product_category',
             'inventory_batches' => 'inventory_batch',
+            'inventory' => 'inventory',
+            'warehouses' => 'warehouse',
+            'assets' => 'asset',
+            'contracts' => 'contract',
+            'tenders' => 'tender',
+            'rfq' => 'rfq',
+            'quotations' => 'quotation',
+            'suppliers' => 'supplier',
             'medical_devices' => 'medical_device',
             'chart_of_accounts' => 'chart_of_account',
             'journal_entries' => 'journal_entry',
@@ -443,7 +559,7 @@ abstract class CrudController extends Controller
     /** @param array<string, mixed> $item */
     protected function recordLabel(array $item): string
     {
-        foreach (['title', 'name', 'item_name', 'request_no', 'order_no', 'contract_no', 'code', 'item_code', 'evaluation_no'] as $key) {
+        foreach (['batch_no', 'title', 'name', 'item_name', 'request_no', 'order_no', 'contract_no', 'code', 'item_code', 'evaluation_no'] as $key) {
             if (!empty($item[$key])) {
                 return (string) $item[$key];
             }

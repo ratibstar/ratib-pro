@@ -366,6 +366,7 @@ final class DocumentService
             'asset' => 'assets',
             'supplier' => 'suppliers',
             'inventory' => 'inventory',
+            'warehouse' => 'warehouses',
             'rfq' => 'rfq',
             'quotation' => 'quotations',
             'tender' => 'tenders',

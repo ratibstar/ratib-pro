@@ -35,6 +35,25 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
                 <?php if (!empty($attachment) && is_array($attachment)) {
                     Rateb\App\Core\View::partial('entity-attachment-field', $attachment);
                 } ?>
+                <?php if (!empty($existingDocuments) && is_array($existingDocuments)) { ?>
+                <div class="col-12">
+                    <label class="form-label rateb-form-label"><?php echo __('entity_documents'); ?></label>
+                    <ul class="list-unstyled small mb-0">
+                        <?php foreach ($existingDocuments as $doc) {
+                            $docId = (int) ($doc['id'] ?? 0); ?>
+                        <li class="mb-1 d-flex flex-wrap align-items-center gap-2">
+                            <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" target="_blank" rel="noopener">
+                                <i class="fas fa-paperclip"></i>
+                                <?php echo Rateb\App\Core\View::escape((string) ($doc['file_name'] ?? $doc['title'] ?? '')); ?>
+                            </a>
+                            <a href="<?php echo rateb_url('documents/download/' . $docId); ?>" class="btn btn-sm btn-outline-primary py-0">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </li>
+                        <?php } ?>
+                    </ul>
+                </div>
+                <?php } ?>
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>

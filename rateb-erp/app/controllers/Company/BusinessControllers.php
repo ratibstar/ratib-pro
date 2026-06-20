@@ -68,46 +68,6 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         ]), 'main');
     }
 
-    /** @return array<string, mixed> */
-    protected function formViewData(array $extra = []): array
-    {
-        $data = parent::formViewData($extra);
-        $data['multipart'] = true;
-        $item = $data['item'] ?? null;
-        $batchId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
-        $companyId = 0;
-        if (is_array($item) && $batchId > 0) {
-            $companyId = (int) ($item['company_id'] ?? 0);
-        } elseif (function_exists('rateb_resolve_ops_company_id')) {
-            $companyId = rateb_resolve_ops_company_id();
-        }
-        $data['attachment'] = [
-            'entityType' => 'inventory_batch',
-            'entityId' => $batchId,
-            'companyId' => $companyId,
-            'documentPath' => '',
-            'inputName' => 'entity_attachment',
-            'label' => __('attach_document'),
-        ];
-        if ($batchId > 0 && $companyId > 0) {
-            $data['existingDocuments'] = (new \Rateb\App\Services\DocumentService())
-                ->listForEntity('inventory_batch', $batchId, $companyId);
-        } else {
-            $data['existingDocuments'] = [];
-        }
-        return $data;
-    }
-
-    /** @param array<string, mixed> $item */
-    protected function recordLabel(array $item): string
-    {
-        $batchNo = trim((string) ($item['batch_no'] ?? ''));
-        if ($batchNo !== '') {
-            return $batchNo;
-        }
-        return parent::recordLabel($item);
-    }
-
     public function documents(array $params): void
     {
         rateb_bootstrap_ops_tenant();
@@ -117,18 +77,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
-        $items = (new InventoryWorkflowService())->listBatches(100);
-        $docSvc = new \Rateb\App\Services\DocumentService();
-        foreach ($items as &$row) {
-            $companyId = (int) ($row['company_id'] ?? 0);
-            if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-                $companyId = rateb_resolve_ops_company_id();
-            }
-            $row['document_count'] = ($companyId > 0 && (int) ($row['id'] ?? 0) > 0)
-                ? $docSvc->countForEntity('inventory_batch', (int) $row['id'], $companyId)
-                : 0;
-        }
-        unset($row);
+        $items = $this->enrichItemsWithDocumentCounts((new InventoryWorkflowService())->listBatches(100));
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __('inventory_batches'),
             'items' => $items,
@@ -162,27 +111,9 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $batch = $this->model->find($id);
-        $companyId = (int) ($batch['company_id'] ?? 0);
-        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-            $companyId = rateb_resolve_ops_company_id();
-        }
-        $title = trim((string) $this->input('doc_title', ''));
-        if ($title === '') {
-            $title = trim((string) ($batch['batch_no'] ?? '')) !== ''
-                ? (string) $batch['batch_no']
-                : __('attach_document');
-        }
-        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
-            'entity_attachment',
-            $companyId,
-            'inventory_batch',
-            $id,
-            $title
-        );
+        $attachmentOk = $this->saveEntityAttachment($id, is_array($batch) ? $batch : null);
         (new AuditService())->log('create', $this->entityName, $id, $data);
-        if (!($upload['success'] ?? false)) {
-            SessionManager::flash('error', (string) ($upload['error'] ?? __('save_ok_attachment_failed')));
-        } else {
+        if ($attachmentOk) {
             SessionManager::flash('success', __('save') . ' OK');
         }
         $this->redirect(rateb_url($this->routePrefix));
