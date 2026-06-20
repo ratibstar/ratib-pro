@@ -157,6 +157,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
         </main>
     </div>
 </div>
+<?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
@@ -167,5 +168,6 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 <script src="<?php echo rateb_asset('js/line-items.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/charts.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/cms-admin.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/entity-documents-modal.js'); ?>"></script>
 </body>
 </html>

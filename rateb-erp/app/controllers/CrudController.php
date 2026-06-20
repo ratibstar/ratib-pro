@@ -396,41 +396,105 @@ abstract class CrudController extends Controller
         $this->redirect(rateb_url($this->routePrefix));
     }
 
-    public function documents(array $params): void
+    /** @return array<string, mixed>|null */
+    protected function documentsViewData(int $id): ?array
     {
-        if (function_exists('rateb_bootstrap_ops_tenant')) {
-            rateb_bootstrap_ops_tenant();
-        }
-        $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
-            http_response_code(404);
-            $this->view('errors/404', ['title' => '404'], $this->layout());
-            return;
+            return null;
         }
         $entityType = $this->resolveDocumentEntityType();
-        $companyId = (int) ($item['company_id'] ?? \Rateb\App\Core\TenantContext::companyId() ?? 0);
+        $companyId = (int) ($item['company_id'] ?? TenantContext::companyId() ?? 0);
         if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
             $companyId = (int) rateb_resolve_ops_company_id();
         }
         $canManage = function_exists('rateb_can_manage_entity')
             ? rateb_can_manage_entity($this->permissionResourceKey())
             : true;
-        $this->view('shared/entity-documents', [
+
+        $documents = [];
+        if ($companyId > 0) {
+            try {
+                $documents = (new DocumentService())->listForEntity($entityType, $id, $companyId);
+            } catch (\Throwable $e) {
+                error_log('documentsViewData: ' . $e->getMessage());
+                SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            }
+        }
+
+        return [
             'title' => __('entity_documents') . ' — ' . $this->recordLabel($item),
             'entityName' => $this->entityName,
             'item' => $item,
             'entityType' => $entityType,
             'entityId' => $id,
             'companyId' => $companyId,
-            'documents' => $companyId > 0
-                ? (new \Rateb\App\Services\DocumentService())->listForEntity($entityType, $id, $companyId)
-                : [],
+            'documents' => $documents,
             'routePrefix' => $this->routePrefix,
             'backLabel' => __($this->entityName),
             'csrf' => Csrf::token(),
             'canManage' => $canManage,
-        ], $this->layout());
+        ];
+    }
+
+    protected function isDocumentsModalRequest(): bool
+    {
+        return (string) $this->input('rateb_doc_modal', '') === '1'
+            || (($_SERVER['HTTP_X_RATEB_DOC_MODAL'] ?? '') === '1');
+    }
+
+    /** @param array<string, mixed> $item */
+    protected function respondDocumentsAction(int $entityId, array $item, bool $success, string $message): void
+    {
+        if (!$this->isDocumentsModalRequest()) {
+            return;
+        }
+        $companyId = (int) ($item['company_id'] ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            'success' => $success,
+            'message' => $message,
+            'count' => ($companyId > 0 && $entityId > 0)
+                ? (new DocumentService())->countForEntity($this->resolveDocumentEntityType(), $entityId, $companyId)
+                : 0,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    public function documentsPanel(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->documentsViewData($id);
+        if ($data === null) {
+            http_response_code(404);
+            header('Content-Type: text/html; charset=UTF-8');
+            echo '<p class="text-danger p-3 mb-0">' . htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8') . '</p>';
+            return;
+        }
+        $data['modalMode'] = true;
+        header('Content-Type: text/html; charset=UTF-8');
+        \Rateb\App\Core\View::partial('entity-documents-panel', $data);
+    }
+
+    public function documents(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->documentsViewData($id);
+        if ($data === null) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+        $this->view('shared/entity-documents', $data, $this->layout());
     }
 
     public function storeDocument(array $params): void
@@ -456,8 +520,11 @@ abstract class CrudController extends Controller
             $title !== '' ? $title : __('attachment')
         );
         if (!($upload['success'] ?? false)) {
-            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+            $msg = (string) ($upload['error'] ?? __('upload_failed'));
+            $this->respondDocumentsAction($id, $item, false, $msg);
+            SessionManager::flash('error', $msg);
         } else {
+            $this->respondDocumentsAction($id, $item, true, (string) __('file_uploaded'));
             SessionManager::flash('success', __('file_uploaded'));
         }
         $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/documents'));
@@ -487,9 +554,12 @@ abstract class CrudController extends Controller
         $file = isset($_FILES['entity_attachment']) ? $_FILES['entity_attachment'] : null;
         $result = $svc->updateDocument($docId, $title, $file);
         if (!($result['success'] ?? false)) {
-            SessionManager::flash('error', (string) ($result['error'] ?? __('upload_failed')));
+            $msg = (string) ($result['error'] ?? __('upload_failed'));
+            $this->respondDocumentsAction($entityId, $item, false, $msg);
+            SessionManager::flash('error', $msg);
         } else {
             (new AuditService())->log('update_document', $this->entityName, $entityId, ['document_id' => $docId]);
+            $this->respondDocumentsAction($entityId, $item, true, (string) __('file_updated'));
             SessionManager::flash('success', __('file_updated'));
         }
         $this->redirect(rateb_url($this->routePrefix . '/' . $entityId . '/documents'));
@@ -517,8 +587,10 @@ abstract class CrudController extends Controller
         }
         if ($svc->deleteDocument($docId)) {
             (new AuditService())->log('delete_document', $this->entityName, $entityId, ['document_id' => $docId]);
+            $this->respondDocumentsAction($entityId, $item, true, (string) __('file_deleted'));
             SessionManager::flash('success', __('file_deleted'));
         } else {
+            $this->respondDocumentsAction($entityId, $item, false, (string) __('access_denied'));
             SessionManager::flash('error', __('access_denied'));
         }
         $this->redirect(rateb_url($this->routePrefix . '/' . $entityId . '/documents'));

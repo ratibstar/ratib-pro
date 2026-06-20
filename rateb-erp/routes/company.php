@@ -126,6 +126,7 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
     $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
+    $router->get($app($path . '/{id}/documents/panel'), [$class, 'documentsPanel'], $mw);
     $router->get($app($path . '/{id}/documents'), [$class, 'documents'], $mw);
     $router->post($app($path . '/{id}/documents'), [$class, 'storeDocument'], $mw);
     $router->post($app($path . '/{id}/documents/{docId}'), [$class, 'updateDocument'], $mw);
@@ -192,6 +193,7 @@ foreach ($hrCrudRoutes as $path => $cfg) {
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
     $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
+    $router->get($app($path . '/{id}/documents/panel'), [$class, 'documentsPanel'], $mw);
     $router->get($app($path . '/{id}/documents'), [$class, 'documents'], $mw);
     $router->post($app($path . '/{id}/documents'), [$class, 'storeDocument'], $mw);
     $router->post($app($path . '/{id}/documents/{docId}'), [$class, 'updateDocument'], $mw);
@@ -356,6 +358,7 @@ $router->get($app('product-categories/{id}/edit'), [ProductCategoriesController:
 $router->post($app('product-categories/{id}'), [ProductCategoriesController::class, 'update'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->post($app('product-categories/{id}/delete'), [ProductCategoriesController::class, 'destroy'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->post($app('product-categories/bulk-delete'), [ProductCategoriesController::class, 'bulkDestroy'], rateb_erp_mw('inventory', '', 'product-categories'));
+$router->get($app('product-categories/{id}/documents/panel'), [ProductCategoriesController::class, 'documentsPanel'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->get($app('product-categories/{id}/documents'), [ProductCategoriesController::class, 'documents'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->post($app('product-categories/{id}/documents'), [ProductCategoriesController::class, 'storeDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->post($app('product-categories/{id}/documents/{docId}'), [ProductCategoriesController::class, 'updateDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
@@ -380,6 +383,7 @@ $router->get($app('inventory-batches/create'), [InventoryBatchesController::clas
 $router->post($app('inventory-batches'), [InventoryBatchesController::class, 'store'], $invMw);
 $router->post($app('inventory-batches/{id}/delete'), [InventoryBatchesController::class, 'destroy'], $invMw);
 $router->post($app('inventory-batches/bulk-delete'), [InventoryBatchesController::class, 'bulkDestroy'], $invMw);
+$router->get($app('inventory-batches/{id}/documents/panel'), [InventoryBatchesController::class, 'documentsPanel'], $invMw);
 $router->get($app('inventory-batches/{id}/documents'), [InventoryBatchesController::class, 'documents'], $invMw);
 $router->post($app('inventory-batches/{id}/documents'), [InventoryBatchesController::class, 'storeDocument'], $invMw);
 $router->post($app('inventory-batches/{id}/documents/{docId}'), [InventoryBatchesController::class, 'updateDocument'], $invMw);
@@ -414,6 +418,7 @@ $router->get($app('supplier-classifications/{id}/edit'), [SupplierClassification
 $router->post($app('supplier-classifications/{id}'), [SupplierClassificationsController::class, 'update'], $supMw);
 $router->post($app('supplier-classifications/{id}/delete'), [SupplierClassificationsController::class, 'destroy'], $supMw);
 $router->post($app('supplier-classifications/bulk-delete'), [SupplierClassificationsController::class, 'bulkDestroy'], $supMw);
+$router->get($app('supplier-classifications/{id}/documents/panel'), [SupplierClassificationsController::class, 'documentsPanel'], $supMw);
 $router->get($app('supplier-classifications/{id}/documents'), [SupplierClassificationsController::class, 'documents'], $supMw);
 $router->post($app('supplier-classifications/{id}/documents'), [SupplierClassificationsController::class, 'storeDocument'], $supMw);
 $router->post($app('supplier-classifications/{id}/documents/{docId}'), [SupplierClassificationsController::class, 'updateDocument'], $supMw);

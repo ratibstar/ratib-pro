@@ -1037,6 +1037,7 @@ return [
     'export_pdf_print_hint' => 'من نافذة الطباعة اختر «حفظ كـ PDF» أو «Microsoft Print to PDF».',
     'report_generated_at' => 'تاريخ التصدير',
     'close' => 'إغلاق',
+    'loading' => 'جاري التحميل',
     'convert_to_po' => 'تحويل إلى أمر شراء',
     'submit_for_approval' => 'إرسال للاعتماد',
     'send_to_supplier' => 'إرسال للمورد',

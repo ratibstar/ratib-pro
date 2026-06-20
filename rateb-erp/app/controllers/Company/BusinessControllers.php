@@ -74,6 +74,12 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         parent::documents($params);
     }
 
+    public function documentsPanel(array $params): void
+    {
+        rateb_bootstrap_ops_tenant();
+        parent::documentsPanel($params);
+    }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();

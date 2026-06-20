@@ -37,6 +37,14 @@ if ($columns !== []) {
     }
 }
 $isCompanies = ($routePrefix ?? '') === 'admin/companies';
+$ratebRowRecordLabel = static function (array $row): string {
+    foreach (['batch_no', 'title', 'name', 'item_name', 'request_no', 'order_no', 'contract_no', 'code', 'item_code', 'evaluation_no'] as $key) {
+        if (!empty($row[$key])) {
+            return (string) $row[$key];
+        }
+    }
+    return '#' . (int) ($row['id'] ?? 0);
+};
 ?>
 <div class="rateb-card<?php echo empty($title) ? ' border-0 shadow-none' : ''; ?>">
     <?php if (!empty($title)) { ?>
@@ -170,13 +178,21 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         <?php } ?>
                         <?php if ($documentEntityType !== '') {
                             $docCount = (int) ($row['document_count'] ?? 0);
+                            $rowLabel = $ratebRowRecordLabel($row);
                         ?>
-                        <a href="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/documents'); ?>" class="btn btn-sm btn-outline-secondary position-relative" title="<?php echo __('view_files'); ?>">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary position-relative js-entity-docs-open"
+                                title="<?php echo __('view_files'); ?>"
+                                data-route-prefix="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix)); ?>"
+                                data-entity-id="<?php echo (int) $row['id']; ?>"
+                                data-record-label="<?php echo Rateb\App\Core\View::escape($rowLabel); ?>"
+                                data-docs-title="<?php echo Rateb\App\Core\View::escape(__('entity_documents')); ?>"
+                                data-doc-count="<?php echo $docCount; ?>">
                             <i class="fas fa-paperclip"></i>
                             <?php if ($docCount > 0) { ?>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary"><?php echo $docCount; ?></span>
                             <?php } ?>
-                        </a>
+                        </button>
                         <?php } ?>
                         <a href="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
                         <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">

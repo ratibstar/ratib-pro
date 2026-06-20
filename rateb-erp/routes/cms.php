@@ -80,6 +80,7 @@ foreach ($cmsCrud as $path => [$class, $perm]) {
     $router->post('/admin/cms/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
+    $router->get('/admin/cms/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_admin_mw($perm));
     $router->get('/admin/cms/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_admin_mw($perm));

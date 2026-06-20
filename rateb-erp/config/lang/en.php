@@ -1037,6 +1037,7 @@ return [
     'export_pdf_print_hint' => 'In the print dialog, choose Save as PDF or Microsoft Print to PDF.',
     'report_generated_at' => 'Generated at',
     'close' => 'Close',
+    'loading' => 'Loading',
     'convert_to_po' => 'Convert to purchase order',
     'submit_for_approval' => 'Submit for approval',
     'send_to_supplier' => 'Send to supplier',

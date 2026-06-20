@@ -100,10 +100,17 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                     <div class="mt-4 d-flex flex-wrap gap-2">
                         <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
                         <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
-                        <?php if ($isEdit) { ?>
-                        <a href="<?php echo rateb_url($routePrefix . '/' . $evalId . '/documents'); ?>" class="btn btn-outline-secondary">
+                        <?php if ($isEdit) {
+                            $evalLabel = !empty($item['evaluation_no']) ? (string) $item['evaluation_no'] : ('#' . $evalId);
+                        ?>
+                        <button type="button"
+                                class="btn btn-outline-secondary js-entity-docs-open"
+                                data-route-prefix="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix)); ?>"
+                                data-entity-id="<?php echo $evalId; ?>"
+                                data-record-label="<?php echo Rateb\App\Core\View::escape($evalLabel); ?>"
+                                data-docs-title="<?php echo Rateb\App\Core\View::escape(__('entity_documents')); ?>">
                             <i class="fas fa-folder-open"></i> <?php echo __('view_files'); ?>
-                        </a>
+                        </button>
                         <?php } ?>
                     </div>
                 </form>
