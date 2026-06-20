@@ -50,3 +50,13 @@ html[data-bs-theme="dark"] .rateb-portal-page .rateb-portal-action-btn:hover {
     border-color: var(--cms-primary);
     color: var(--cms-primary);
 }
+
+html[data-theme="dark"] .rateb-mkt-topbar,
+html[data-bs-theme="dark"] .rateb-mkt-topbar {
+    background: var(--cms-surface);
+}
+
+html[data-theme="dark"] .rateb-mkt-trust-card,
+html[data-bs-theme="dark"] .rateb-mkt-trust-card {
+    background: var(--cms-surface);
+}

@@ -74,8 +74,8 @@ RewriteCond %{REQUEST_URI} ^/(css|js|assets|modules|public|uploads)/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Marketing home (MUST be before country-slug catch-all — /home is not a country code)
-RewriteRule ^home/?$ pages/home.php [L,QSA]
+# Legacy English marketing URL → unified site at domain root (rateb-erp CMS)
+RewriteRule ^home/?$ / [R=301,L,QSA]
 
 # App login — MUST be before /{country}/login (otherwise /pages/login → country_slug=pages).
 RewriteRule ^pages/login/?$ pages/login.php [L,QSA]
@@ -140,9 +140,9 @@ RewriteRule ^admin/government-tracking/?$ /admin/government-tracking.php [L,QSA]
 
 # ── Extensionless page URLs (hide .php from browsers) ──
 
-# Redirect legacy /pages/home.php → /home (internal serve rule is above country catch-all)
+# Redirect legacy /pages/home.php → unified marketing home at /
 RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
-RewriteRule ^pages/home\.php$ /home [R=302,L,QSA]
+RewriteRule ^pages/home\.php$ / [R=301,L,QSA]
 
 # Browser requested .php under /pages/ → 301 to extensionless (home handled above)
 RewriteCond %{THE_REQUEST} \s/+pages/([^\s?]+)\.php[\s?] [NC]

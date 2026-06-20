@@ -53,4 +53,40 @@ final class Plan extends Model
         $monthly = $plan['price_monthly'] ?? $plan['price'] ?? 0;
         return number_format((float) $monthly, 0, '.', ',');
     }
+
+    /** @param array<string, mixed> $plan */
+    public static function marketingYearlyPrice(array $plan): string
+    {
+        $yearly = $plan['price_yearly'] ?? null;
+        if ($yearly !== null && (float) $yearly > 0) {
+            return number_format((float) $yearly, 0, '.', ',');
+        }
+        $monthly = (float) ($plan['price_monthly'] ?? $plan['price'] ?? 0);
+        return number_format($monthly * 12, 0, '.', ',');
+    }
+
+    /** @param array<string, mixed> $plan
+     * @return list<string>
+     */
+    public static function marketingFeatures(array $plan): array
+    {
+        $slug = trim((string) ($plan['slug'] ?? ''));
+        if ($slug === '') {
+            return [];
+        }
+        $key = 'plan_' . $slug . '_features';
+        $raw = __($key);
+        if ($raw === $key || trim($raw) === '') {
+            return [];
+        }
+        $lines = preg_split('/\r\n|\r|\n/', $raw) ?: [];
+        $out = [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line !== '') {
+                $out[] = $line;
+            }
+        }
+        return $out;
+    }
 }

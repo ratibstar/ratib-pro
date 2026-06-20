@@ -2067,6 +2067,9 @@ final class LocaleController extends Controller
         $locale = $params['locale'] ?? 'en';
         if (in_array($locale, RATEB_SUPPORTED_LOCALES, true)) {
             $_SESSION['rateb_locale'] = $locale;
+            if (function_exists('rateb_set_locale_cookie')) {
+                rateb_set_locale_cookie($locale);
+            }
         }
         Response::redirect($this->localeRedirectTarget());
     }

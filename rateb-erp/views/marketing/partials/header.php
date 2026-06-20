@@ -13,6 +13,8 @@ $portalNav = [
     'notifications' => ['label' => __('notifications'), 'url' => rateb_url('site/portal/notifications')],
 ];
 $brandUrl = $headerContext === 'portal' ? rateb_url('site/portal') : rateb_url('site');
+$localeEnUrl = function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('en') : rateb_url('locale/en');
+$localeArUrl = function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('ar') : rateb_url('locale/ar');
 ?>
 <header class="rateb-mkt-header rateb-mkt-header-<?php echo Rateb\App\Core\View::escape($headerContext); ?>">
     <nav class="navbar navbar-expand-lg">
@@ -56,15 +58,20 @@ $brandUrl = $headerContext === 'portal' ? rateb_url('site/portal') : rateb_url('
                     <?php } ?>
                 </ul>
                 <?php } ?>
-                <div class="d-flex align-items-center gap-2 rateb-mkt-actions">
+                <div class="d-flex align-items-center gap-2 rateb-mkt-actions flex-wrap">
                     <?php if ($headerContext !== 'auth') { ?>
                     <div class="btn-group btn-group-sm d-none d-md-inline-flex" role="group" aria-label="<?php echo __('theme_dark'); ?>">
                         <button type="button" class="btn btn-outline-secondary" data-mkt-theme="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
                         <button type="button" class="btn btn-outline-secondary" data-mkt-theme="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
                     </div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">
+                        <a href="<?php echo Rateb\App\Core\View::escape($localeEnUrl); ?>" class="btn btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>" lang="en">EN</a>
+                        <a href="<?php echo Rateb\App\Core\View::escape($localeArUrl); ?>" class="btn btn-outline-secondary<?php echo rateb_locale() === 'ar' ? ' active' : ''; ?>" lang="ar">عربي</a>
+                    </div>
+                    <?php if ($headerContext === 'marketing') { ?>
+                    <a href="<?php echo Rateb\App\Core\View::escape(rateb_marketing_partner_login_url()); ?>" class="btn btn-sm btn-outline-secondary d-none d-lg-inline-flex"><?php echo __('cms_partner_login'); ?></a>
                     <?php } ?>
-                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>">EN</a>
-                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'ar' ? ' active' : ''; ?>">عربي</a>
+                    <?php } ?>
                     <?php if ($isCompanyCustomer && $headerContext === 'marketing') { ?>
                     <a href="<?php echo rateb_url('site/portal'); ?>" class="btn btn-sm btn-primary"><?php echo __('portal_my_account'); ?></a>
                     <a href="<?php echo rateb_url('site/portal/logout'); ?>" class="btn btn-sm btn-outline-danger"><?php echo __('logout'); ?></a>

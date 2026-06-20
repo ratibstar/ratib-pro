@@ -79,6 +79,9 @@ final class Bootstrap
         self::loadConfig($basePath);
         self::ensureStorage($basePath);
         SessionManager::start();
+        if (function_exists('rateb_init_marketing_locale')) {
+            rateb_init_marketing_locale();
+        }
     }
 
     private static function registerAutoloader(string $basePath): void

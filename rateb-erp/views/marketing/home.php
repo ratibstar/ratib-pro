@@ -52,6 +52,31 @@ $slides = $slides ?? [];
 </section>
 <?php } ?>
 
+<?php if (!empty($content['trust']['blocks'])) {
+    $s = $content['trust']['section'] ?? []; ?>
+<section class="rateb-mkt-section rateb-mkt-trust">
+    <div class="container">
+        <?php if (!empty($s)) { ?>
+        <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'title')); ?></h2>
+        <?php if (trim(CmsService::pickLocale($s, 'body')) !== '') { ?>
+        <p class="rateb-mkt-section-lead text-center mb-4"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'body')); ?></p>
+        <?php } ?>
+        <?php } ?>
+        <div class="row g-3">
+            <?php foreach ($content['trust']['blocks'] as $block) { ?>
+            <div class="col-md-6 col-lg-3">
+                <div class="rateb-mkt-trust-card">
+                    <?php if (!empty($block['icon'])) { ?><i class="fas <?php echo Rateb\App\Core\View::escape($block['icon']); ?>"></i><?php } ?>
+                    <h3><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($block, 'title')); ?></h3>
+                    <p><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($block, 'content')); ?></p>
+                </div>
+            </div>
+            <?php } ?>
+        </div>
+    </div>
+</section>
+<?php } ?>
+
 <?php if (!empty($content['stats']['blocks'])) { ?>
 <section class="rateb-mkt-stats">
     <div class="container">
@@ -96,7 +121,7 @@ $slides = $slides ?? [];
         require RATEB_ROOT . '/views/marketing/partials/section-head-more.php';
         ?>
         <div class="row g-3">
-            <?php foreach ($testimonials as $t) { ?>
+            <?php foreach (array_slice($testimonials, 0, 3) as $t) { ?>
             <div class="col-md-4">
                 <blockquote class="rateb-mkt-testimonial">
                     <p><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($t, 'quote')); ?></p>
@@ -124,7 +149,7 @@ $slides = $slides ?? [];
 <?php } ?>
 
 <?php if (!empty($plans)) { ?>
-<section class="rateb-mkt-section">
+<section class="rateb-mkt-section" id="programs">
     <div class="container">
         <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($content['pricing_preview']['section'] ?? [], 'title') ?: __('cms_pricing_preview')); ?></h2>
         <div class="row g-3">
@@ -169,7 +194,7 @@ $slides = $slides ?? [];
         require RATEB_ROOT . '/views/marketing/partials/section-head-more.php';
         ?>
         <div class="accordion rateb-mkt-faq" id="homeFaq">
-            <?php foreach ($faqs as $i => $faq) { ?>
+            <?php foreach (array_slice($faqs, 0, 5) as $i => $faq) { ?>
             <div class="accordion-item">
                 <h3 class="accordion-header">
                     <button class="accordion-button<?php echo $i > 0 ? ' collapsed' : ''; ?>" type="button" data-bs-toggle="collapse" data-bs-target="#faq<?php echo $i; ?>">

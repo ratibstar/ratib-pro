@@ -1561,4 +1561,12 @@ return [
     'entry_date' => 'تاريخ القيد',
     'payment_date' => 'تاريخ الدفع',
     'description_ar' => 'الوصف (عربي)',
+    'cms_topbar_whatsapp' => 'مباشر على واتساب',
+    'cms_topbar_ops' => 'TLS 1.3 · RBAC · عزل المستأجرين',
+    'cms_partner_login' => 'دخول الشركاء',
+    'cms_billing_cycle' => 'دورة الفوترة',
+    'cms_plan_popular' => 'الأكثر طلباً',
+    'plan_starter_features' => "استشارة الباقة\nمراجعة جاهزية مساحة العمل\nإرشاد التكامل",
+    'plan_professional_features' => "حزمة مشتريات ومخزون\nصلاحيات متعددة المستخدمين\nجاهز للفوترة الإلكترونية\nدعم قياسي",
+    'plan_enterprise_features' => "كل ميزات الاحترافي\nمستخدمون غير محدودين\nدعم أولوية\nتحليلات متقدمة\nتكاملات مخصصة",
 ];

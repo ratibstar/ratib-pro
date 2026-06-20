@@ -42,6 +42,14 @@ $headerContext = 'marketing';
     <link href="<?php echo rateb_asset('css/marketing.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-rtl.css'); ?>" rel="stylesheet">
+    <?php
+    $hrefOrigin = rateb_site_origin();
+    $hrefPath = rateb_current_public_path('site');
+    $hrefCanonical = $hrefOrigin . rateb_url($hrefPath);
+    ?>
+    <link rel="alternate" hreflang="en" href="<?php echo Rateb\App\Core\View::escape($hrefCanonical); ?>">
+    <link rel="alternate" hreflang="ar" href="<?php echo Rateb\App\Core\View::escape($hrefCanonical); ?>">
+    <link rel="alternate" hreflang="x-default" href="<?php echo Rateb\App\Core\View::escape($hrefOrigin . rateb_url('site')); ?>">
     <?php require RATEB_ROOT . '/views/marketing/partials/analytics-head.php'; ?>
 </head>
 <body class="rateb-marketing<?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?>">
@@ -52,7 +60,11 @@ if ($gtmId !== '') {
     echo '<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=' . $gtmEsc . '" height="0" width="0" class="rateb-mkt-gtm-noscript" title="GTM"></iframe></noscript>';
 }
 ?>
-<?php require RATEB_ROOT . '/views/marketing/partials/header.php'; ?>
+<?php
+if (($headerContext ?? 'marketing') === 'marketing') {
+    require RATEB_ROOT . '/views/marketing/partials/topbar.php';
+}
+require RATEB_ROOT . '/views/marketing/partials/header.php'; ?>
 <main id="rateb-marketing-main">
     <?php Rateb\App\Core\View::partial('flash'); ?>
     <?php echo $pageContent; ?>

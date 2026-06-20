@@ -630,3 +630,147 @@ html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip,
 html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
     background: #172033;
 }
+
+/* Unified marketing topbar */
+.rateb-mkt-topbar {
+    background: var(--cms-surface);
+    border-bottom: 1px solid var(--cms-border);
+    font-size: 0.8125rem;
+    color: var(--cms-muted);
+}
+
+.rateb-mkt-topbar__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    min-height: 2.25rem;
+    padding: 0.35rem 0;
+}
+
+.rateb-mkt-topbar__left,
+.rateb-mkt-topbar__right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+}
+
+.rateb-mkt-topbar__link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.rateb-mkt-topbar__link:hover {
+    color: var(--cms-primary);
+}
+
+.rateb-mkt-topbar__wa .rateb-mkt-topbar__dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #22c55e;
+    margin-inline-end: 0.35rem;
+}
+
+.rateb-mkt-topbar__ops {
+    opacity: 0.85;
+}
+
+.rateb-mkt-trust-card {
+    background: var(--cms-surface);
+    border: 1px solid var(--cms-border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    height: 100%;
+}
+
+.rateb-mkt-trust-card i {
+    color: var(--cms-primary);
+    font-size: 1.35rem;
+    margin-bottom: 0.65rem;
+}
+
+.rateb-mkt-trust-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.rateb-mkt-trust-card p {
+    margin: 0;
+    color: var(--cms-muted);
+    font-size: 0.9rem;
+}
+
+.rateb-mkt-page-hero-lead {
+    color: var(--cms-muted);
+    max-width: 42rem;
+    margin-inline: auto;
+    margin-top: 0.75rem;
+}
+
+.rateb-mkt-pricing-toggle .btn.active {
+    background: var(--cms-primary);
+    border-color: var(--cms-primary);
+    color: #fff;
+}
+
+.rateb-mkt-plan-card--full {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.rateb-mkt-plan-card--featured {
+    border-color: var(--cms-primary);
+    box-shadow: 0 0 0 1px rgba(26, 95, 180, 0.15);
+}
+
+.rateb-mkt-plan-badge {
+    position: absolute;
+    top: 1rem;
+    inset-inline-end: 1rem;
+    background: var(--cms-primary);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+}
+
+.rateb-mkt-plan-desc {
+    color: var(--cms-muted);
+    min-height: 2.5rem;
+}
+
+.rateb-mkt-plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+    flex: 1;
+}
+
+.rateb-mkt-plan-features li {
+    position: relative;
+    padding-inline-start: 1.25rem;
+    margin-bottom: 0.45rem;
+    font-size: 0.9rem;
+}
+
+.rateb-mkt-plan-features li::before {
+    content: '✓';
+    position: absolute;
+    inset-inline-start: 0;
+    color: var(--cms-primary);
+    font-weight: 700;
+}
+
+.rateb-mkt-plan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: auto;
+}

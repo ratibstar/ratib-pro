@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260620-docs-modal-zindex');
+define('RATEB_ASSET_BUILD', '20260620-marketing-unified');
 
 if (!function_exists('rateb_erp_public_prefix')) {
     /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */
@@ -273,9 +273,68 @@ if (!function_exists('rateb_list_order_sql')) {
     }
 }
 
+if (!function_exists('rateb_init_marketing_locale')) {
+    function rateb_init_marketing_locale(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+        if (!empty($_SESSION['rateb_locale']) && in_array((string) $_SESSION['rateb_locale'], RATEB_SUPPORTED_LOCALES, true)) {
+            return;
+        }
+        if (!empty($_COOKIE['rateb_locale'])) {
+            $cookieLang = strtolower(trim((string) $_COOKIE['rateb_locale']));
+            if (in_array($cookieLang, RATEB_SUPPORTED_LOCALES, true)) {
+                $_SESSION['rateb_locale'] = $cookieLang;
+            }
+        }
+    }
+}
+
+if (!function_exists('rateb_set_locale_cookie')) {
+    function rateb_set_locale_cookie(string $locale): void
+    {
+        if (!in_array($locale, RATEB_SUPPORTED_LOCALES, true)) {
+            return;
+        }
+        $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        if (PHP_VERSION_ID >= 70300) {
+            setcookie('rateb_locale', $locale, [
+                'expires' => time() + 86400 * 365,
+                'path' => '/',
+                'secure' => $secure,
+                'httponly' => false,
+                'samesite' => 'Lax',
+            ]);
+        } else {
+            setcookie('rateb_locale', $locale, time() + 86400 * 365, '/', '', $secure, false);
+        }
+    }
+}
+
+if (!function_exists('rateb_locale_switch_url')) {
+    function rateb_locale_switch_url(string $locale): string
+    {
+        if (!in_array($locale, RATEB_SUPPORTED_LOCALES, true)) {
+            $locale = RATEB_DEFAULT_LOCALE;
+        }
+        return rateb_url_query(rateb_url('locale/' . $locale), [
+            'next' => rateb_current_public_path('site'),
+        ]);
+    }
+}
+
+if (!function_exists('rateb_marketing_partner_login_url')) {
+    function rateb_marketing_partner_login_url(): string
+    {
+        return rateb_site_origin() . '/pages/partner-portal-login.php';
+    }
+}
+
 if (!function_exists('rateb_locale')) {
     function rateb_locale(): string
     {
+        rateb_init_marketing_locale();
         $locale = $_SESSION['rateb_locale'] ?? RATEB_DEFAULT_LOCALE;
         return in_array($locale, RATEB_SUPPORTED_LOCALES, true) ? $locale : RATEB_DEFAULT_LOCALE;
     }
