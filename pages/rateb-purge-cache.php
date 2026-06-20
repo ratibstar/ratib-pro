@@ -1,6 +1,6 @@
 <?php
 /**
- * Purge LiteSpeed cache for this vhost, then redirect to profile.
+ * Purge LiteSpeed cache for this vhost, then redirect to unified marketing home (/).
  * https://rateb.sa/pages/rateb-purge-cache.php?key=rateb-deploy-sync-2026
  */
 declare(strict_types=1);

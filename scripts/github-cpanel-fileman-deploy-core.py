@@ -204,6 +204,8 @@ CRITICAL = [
     "pages/deploy-root.php",
     "pages/company-profile.php",
     "includes/rateb-public-base-url.php",
+    "includes/rateb-clean-url.php",
+    "pages/rateb-purge-cache.php",
     "includes/rateb-mega-nav-config.php",
     "includes/rateb-mega-nav-resolve.php",
     "includes/rateb-mega-nav-resolve.fallback.php",

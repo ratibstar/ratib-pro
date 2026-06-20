@@ -74,7 +74,9 @@ RewriteCond %{REQUEST_URI} ^/(css|js|assets|modules|public|uploads)/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Legacy English marketing URL → unified site at domain root (rateb-erp CMS)
+# Legacy /home deep links → unified marketing (rateb-erp at /)
+RewriteCond %{QUERY_STRING} (^|&)open=register(&|$) [NC]
+RewriteRule ^home/?$ /site/register [R=301,L,QSA]
 RewriteRule ^home/?$ / [R=301,L,QSA]
 
 # App login — MUST be before /{country}/login (otherwise /pages/login → country_slug=pages).
@@ -209,15 +211,13 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]
 
-# LiteSpeed full-page cache: bare /home served stale Profile→new-tab HTML. Force ?v= at the edge.
-RewriteCond %{THE_REQUEST} \s/+home[\s?] [NC]
-RewriteCond %{QUERY_STRING} !(^|&)v=
-RewriteRule ^home/?$ /home?v=rateb-nav-ia-v5-home-profile-20260524 [R=302,L,QSA]
-
-# LiteSpeed: do not cache marketing home/profile HTML (stale nav after deploy).
+# LiteSpeed: do not cache unified marketing HTML (/, /site/*, legacy /home redirect).
 <IfModule LiteSpeed>
+    CacheDisable public /
     CacheDisable public /home
+    CacheDisable public /site
     CacheDisable public /pages/home.php
+    CacheDisable public /pages/rateb-purge-cache.php
     CacheDisable public /profile
     CacheDisable public /pages/company-profile.php
     CacheDisable public /pages/about.php
@@ -241,7 +241,10 @@ RewriteRule ^home/?$ /home?v=rateb-nav-ia-v5-home-profile-20260524 [R=302,L,QSA]
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
 
-    # Bypass cache for home page + its JS/CSS + program preview SVGs (paths may include subdir installs).
+    # Bypass cache for unified marketing + legacy home paths.
+    SetEnvIf Request_URI "^/$" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "^/site" RATEB_NOCACHE=1
+    SetEnvIf Request_URI "^/locale/" RATEB_NOCACHE=1
     SetEnvIf Request_URI "/home" RATEB_NOCACHE=1
     SetEnvIf Request_URI "/pages/home\.php" RATEB_NOCACHE=1
     SetEnvIf Request_URI "/pages/about\.php" RATEB_NOCACHE=1

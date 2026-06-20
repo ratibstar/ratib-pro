@@ -76,6 +76,17 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
         run: bash scripts/run-rateb-erp-migrations.sh
 
+      - name: Purge LiteSpeed cache
+        if: steps.deploy.outcome == 'success'
+        run: |
+          SITE="${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}"
+          PURGE="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 15 --max-time 30 \
+            "${SITE}/pages/rateb-purge-cache.php?key=rateb-deploy-sync-2026" 2>/dev/null || echo 000)"
+          echo "litespeed_purge_http=${PURGE}"
+          if [ "$PURGE" != "302" ] && [ "$PURGE" != "200" ]; then
+            echo "::warning::LiteSpeed purge returned HTTP ${PURGE} — purge manually in cPanel if /home still shows old HTML"
+          fi
+
       - name: Verify live site (~20s)
         if: steps.deploy.outcome == 'success'
         run: |

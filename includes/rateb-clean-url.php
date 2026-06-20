@@ -23,10 +23,10 @@ if (!function_exists('rateb_clean_page_segment')) {
 }
 
 if (!function_exists('rateb_marketing_home_path')) {
-    /** Canonical marketing home path (no .php). */
+    /** Canonical marketing home path (unified rateb-erp CMS at domain root). */
     function rateb_marketing_home_path(): string
     {
-        return '/home';
+        return '/';
     }
 }
 

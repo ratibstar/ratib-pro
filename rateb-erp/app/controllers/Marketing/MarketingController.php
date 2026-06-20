@@ -104,8 +104,19 @@ final class MarketingController extends Controller
         exit;
     }
 
+    private function sendMarketingNoCacheHeaders(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
+        header('Pragma: no-cache');
+        header('X-LiteSpeed-Cache-Control: no-cache', false);
+    }
+
     private function renderPage(string $slug, string $template): void
     {
+        $this->sendMarketingNoCacheHeaders();
         $page = $this->cms->pageBySlug($slug);
         if ($page === null && $slug !== 'home') {
             $this->notFound();
@@ -179,6 +190,7 @@ final class MarketingController extends Controller
     private function notFound(): void
     {
         http_response_code(404);
+        $this->sendMarketingNoCacheHeaders();
         $this->view('marketing/404', [
             'title' => '404',
             'menuItems' => $this->cms->menuItems(),

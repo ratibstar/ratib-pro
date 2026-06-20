@@ -75,9 +75,9 @@ if (!function_exists('rateb_public_marketing_home_url')) {
         if ($baseUrl === '') {
             $baseUrl = rateb_public_site_base_url();
         }
-        $url = rtrim($baseUrl, '/') . (function_exists('rateb_marketing_home_path') ? rateb_marketing_home_path() : '/home');
+        $url = rtrim($baseUrl, '/') . (function_exists('rateb_marketing_home_path') ? rateb_marketing_home_path() : '/');
         $build = rateb_public_build_marker();
-        if ($build !== '') {
+        if ($build !== '' && !isset($query['v'])) {
             $query['v'] = $build;
         }
         if ($query !== []) {
@@ -102,7 +102,7 @@ if (!function_exists('rateb_public_nav_marketing_home_prefix')) {
             $baseUrl = rateb_public_site_base_url();
         }
 
-        return rtrim($baseUrl, '/') . (function_exists('rateb_marketing_home_path') ? rateb_marketing_home_path() : '/home');
+        return rtrim($baseUrl, '/') . (function_exists('rateb_marketing_home_path') ? rateb_marketing_home_path() : '/');
     }
 }
 
@@ -118,22 +118,24 @@ if (!function_exists('rateb_public_marketing_home_register_url')) {
         int $years = 1,
         array $extra = []
     ): string {
+        if ($baseUrl === '') {
+            $baseUrl = rateb_public_site_base_url();
+        }
         $query = array_merge(
             [
-                'open' => 'register',
                 'plan' => $plan,
                 'years' => $years,
             ],
             $extra
         );
-        if (function_exists('rateb_site_content_revision_token')) {
-            $rev = rateb_site_content_revision_token();
-            if ($rev !== '') {
-                $query['cms_rev'] = $rev;
-            }
+        unset($query['open'], $query['cms_rev']);
+
+        $url = rtrim($baseUrl, '/') . '/site/register';
+        if ($query !== []) {
+            $url .= '?' . http_build_query($query);
         }
 
-        return rateb_public_marketing_home_url($baseUrl, $query, '#register');
+        return $url;
     }
 }
 
