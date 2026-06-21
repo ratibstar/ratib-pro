@@ -129,10 +129,19 @@ function control_contact_center_assistant_api_url(): string
 function control_contact_center_asset_url(string $relativePath): string
 {
     $relativePath = ltrim(str_replace('\\', '/', $relativePath), '/');
-    if (function_exists('control_panel_page_with_control')) {
-        return control_panel_page_with_control('control/rcc-asset.php') . '&f=' . rawurlencode($relativePath);
+    if ($relativePath === '' || strpos($relativePath, '..') !== false) {
+        return control_contact_center_assets_base_url();
     }
-    return '/control-panel/pages/control/rcc-asset.php?control=1&f=' . rawurlencode($relativePath);
+
+    // Serve directly from /ratib-contact-center/public/assets/ (.htaccess sets MIME types).
+    // Avoids rcc-asset.php proxy 404/HTML when that file is missing on server.
+    $base = control_contact_center_assets_base_url();
+    $segments = explode('/', $relativePath);
+    $encoded = implode('/', array_map('rawurlencode', $segments));
+    $disk = control_contact_center_root_path() . '/public/assets/' . $relativePath;
+    $v = is_file($disk) ? (string) filemtime($disk) : (string) time();
+
+    return $base . '/' . $encoded . '?v=' . $v;
 }
 
 function control_contact_center_ws_url(): string

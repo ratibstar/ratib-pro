@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../includes/control/contact-center-bridge.php';
 
 if (empty($_SESSION['control_logged_in'])) {
     http_response_code(403);
+    header('Content-Type: text/plain; charset=utf-8');
     exit('Forbidden');
 }
 
