@@ -126,11 +126,19 @@
 
         if (sendAsIs) {
             sendAsIs.addEventListener('click', function () {
+                if (!self._conversationId) {
+                    alert('Select a conversation first (use "New demo chat").');
+                    return;
+                }
                 self._applyReply(false);
             });
         }
         if (editSend) {
             editSend.addEventListener('click', function () {
+                if (!self._conversationId) {
+                    alert('Select a conversation first (use "New demo chat").');
+                    return;
+                }
                 self._replyEditable = true;
                 if (reply) {
                     reply.readOnly = false;

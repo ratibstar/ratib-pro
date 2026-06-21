@@ -115,6 +115,16 @@ final class InboxApiController
                 $adapter = new WebChatChannelAdapter($this->engine(true));
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
+            case 'start_demo':
+                $adapter = new WebChatChannelAdapter($this->engine(true));
+                $conversation = $adapter->ingest($tenantId, [
+                    'message' => (string) ($input['message'] ?? 'Hello, I need help with my order.'),
+                    'email' => 'demo.customer@rateb.sa',
+                    'name' => 'Demo Customer',
+                    'session_id' => 'demo-' . gmdate('YmdHis'),
+                ]);
+                return ['ok' => true, 'conversation' => $conversation];
+
             default:
                 return $this->error('Unknown action: ' . $action);
         }

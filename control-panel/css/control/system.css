@@ -1210,6 +1210,17 @@ body.control-layout-no-header .control-content {
     box-shadow: var(--control-shadow);
 }
 
+body.control-layout-standalone .module-content .rcc-agent-desktop,
+body.control-layout-standalone .module-content .rcc-agent-desktop * {
+    pointer-events: auto;
+}
+
+body.control-layout-standalone .module-content .rcc-agent-desktop input,
+body.control-layout-standalone .module-content .rcc-agent-desktop textarea,
+body.control-layout-standalone .module-content .rcc-agent-desktop button {
+    pointer-events: auto;
+}
+
 .module-content {
     width: 100%;
     padding: 0;

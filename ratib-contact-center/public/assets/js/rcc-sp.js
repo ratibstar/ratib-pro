@@ -50,7 +50,11 @@
             self._webrtcConfig = res.webrtc;
             self.autoAnswer = !!res.auto_answer_queue_calls;
             self._connectRealtime(res.realtime_rooms || []);
-            return self._sipRegister(res.webrtc);
+            self.onStatus('api_ready', res);
+            return self._sipRegister(res.webrtc).catch(function (sipErr) {
+                self.onStatus('sip_unavailable', { detail: sipErr && sipErr.message ? sipErr.message : String(sipErr) });
+                return { registered: false, sip: false };
+            });
         });
     };
 
@@ -218,10 +222,12 @@
 
     RccSoftphone.prototype.dial = function (number) {
         var self = this;
-        if (!self._userAgent) {
-            return Promise.reject(new Error('Not registered'));
-        }
         return self._api('outbound', { destination: number }).then(function (res) {
+            if (!self._userAgent || typeof global.SIP === 'undefined' || !global.SIP.UserAgent) {
+                self._activeCall = res.call || res;
+                self.onConnected({ remote_number: number, direction: 'outbound', api_only: true }, { type: 'API_OUTBOUND' });
+                return res;
+            }
             var target = global.SIP.UserAgent.makeURI('sip:' + number + '@' + (self._webrtcConfig.domain || 'pbx'));
             var inviter = new global.SIP.Inviter(self._userAgent, target, {
                 sessionDescriptionHandlerOptions: { constraints: { audio: true, video: false } }

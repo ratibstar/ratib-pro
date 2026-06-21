@@ -51,6 +51,19 @@
         if (sendBtn) {
             sendBtn.addEventListener('click', function () { self.sendReply(); });
         }
+        var replyInput = self.root.querySelector('#rcc-inbox-reply');
+        if (replyInput) {
+            replyInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    self.sendReply();
+                }
+            });
+        }
+        var demoBtn = self.root.querySelector('#rcc-inbox-start-demo');
+        if (demoBtn) {
+            demoBtn.addEventListener('click', function () { self.startDemoConversation(); });
+        }
     };
 
     RccAgentInbox.prototype._loadInbox = function () {
@@ -94,6 +107,7 @@
     RccAgentInbox.prototype.sendReply = function () {
         var self = this;
         if (!self._activeId) {
+            self._flashComposerHint('Select a conversation first — or click "New demo chat".');
             return;
         }
         var input = self.root.querySelector('#rcc-inbox-reply');
@@ -115,6 +129,36 @@
             }
             self.selectConversation(self._activeId);
         });
+    };
+
+    RccAgentInbox.prototype.startDemoConversation = function () {
+        var self = this;
+        self._api('start_demo', {
+            tenant_id: self.tenantId,
+            agent_id: self.agentId
+        }).then(function (res) {
+            if (!res || !res.ok || !res.conversation) {
+                self._flashComposerHint((res && res.error) || 'Could not start demo chat');
+                return;
+            }
+            var c = res.conversation;
+            self._conversations[c.conversation_id] = c;
+            self._renderList();
+            self.selectConversation(c.conversation_id);
+        });
+    };
+
+    RccAgentInbox.prototype._flashComposerHint = function (msg) {
+        var input = this.root && this.root.querySelector('#rcc-inbox-reply');
+        if (!input) {
+            return;
+        }
+        input.placeholder = msg;
+        input.classList.add('rcc-inbox__composer--hint');
+        setTimeout(function () {
+            input.placeholder = 'Reply…';
+            input.classList.remove('rcc-inbox__composer--hint');
+        }, 3500);
     };
 
     RccAgentInbox.prototype._onRealtimeEvent = function (ev) {
@@ -159,7 +203,14 @@
                 '<div class="rcc-inbox__meta">' + self._esc(channels) + ' · SLA ' + self._esc(c.sla_status) + '</div>' +
                 '</div>';
         });
-        list.innerHTML = html || '<div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">📭</span>No conversations yet</div>';
+        list.innerHTML = html || '<div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">📭</span>No conversations yet' +
+            '<br><button type="button" class="rcc-inbox__demo-btn" id="rcc-inbox-start-demo">New demo chat</button></div>';
+        if (!html) {
+            var demoBtn = list.querySelector('#rcc-inbox-start-demo');
+            if (demoBtn) {
+                demoBtn.addEventListener('click', function () { self.startDemoConversation(); });
+            }
+        }
     };
 
     RccAgentInbox.prototype._renderThread = function (messages, conversation) {

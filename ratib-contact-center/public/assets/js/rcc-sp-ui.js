@@ -127,9 +127,19 @@
                     + '<div>SLA: ' + sla + '</div>';
             },
             onStatus: function (status) {
-                if (status === 'registered') { setAgentUi('ready'); if (els.dial) { els.dial.disabled = false; } }
+                if (status === 'registered' || status === 'api_ready' || status === 'sip_unavailable') {
+                    setAgentUi('ready');
+                    if (els.dial) { els.dial.disabled = false; }
+                    if (status === 'sip_unavailable' && els.queue) {
+                        els.queue.textContent = 'SIP offline — dial uses API only';
+                    }
+                }
             },
-            onError: function (err) { console.error('[RCC Softphone]', err); }
+            onError: function (err) {
+                console.error('[RCC Softphone]', err);
+                setAgentUi('ready');
+                if (els.dial) { els.dial.disabled = false; }
+            }
         });
 
         if (els.answer) {

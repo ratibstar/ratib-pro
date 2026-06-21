@@ -87,6 +87,9 @@ body.control-system-body .rcc-agent-desktop,
 
 .rcc-agent-desktop {
     display: grid;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
     grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(260px, 300px);
     grid-template-rows: auto minmax(420px, 1fr);
     gap: 0;
@@ -231,6 +234,25 @@ body.control-system-body .rcc-agent-desktop,
     font-size: 10px;
     color: var(--rcc-text-faint);
     margin-top: 4px;
+}
+
+.rcc-inbox__composer input.rcc-inbox__composer--hint::placeholder {
+    color: var(--rcc-warning, #f59e0b);
+}
+
+.rcc-inbox__demo-btn {
+    margin-top: 12px;
+    border: 1px solid var(--rcc-accent);
+    background: var(--rcc-accent-soft);
+    color: var(--rcc-accent);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.rcc-inbox__demo-btn:hover {
+    filter: brightness(1.05);
 }
 
 .rcc-inbox__composer {
