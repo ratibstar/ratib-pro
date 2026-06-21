@@ -80,7 +80,7 @@ $localeArUrl = function_exists('rateb_locale_switch_url') ? rateb_locale_switch_
                     <a href="<?php echo rateb_url('site/portal/logout'); ?>" class="btn btn-sm btn-outline-danger"><?php echo __('logout'); ?></a>
                     <?php } elseif ($headerContext !== 'auth') { ?>
                     <a href="<?php echo rateb_url('site/login'); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('cms_customer_login'); ?></a>
-                    <a href="<?php echo rateb_url('site/register'); ?>" class="btn btn-sm btn-primary"><?php echo __('cms_register'); ?></a>
+                    <a href="<?php echo Rateb\App\Core\View::escape(rateb_marketing_register_url()); ?>" class="btn btn-sm btn-primary"><?php echo __('cms_register'); ?></a>
                     <?php } ?>
                 </div>
             </div>

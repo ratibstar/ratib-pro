@@ -42,6 +42,15 @@ $headerContext = 'marketing';
     <link href="<?php echo rateb_asset('css/marketing.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-rtl.css'); ?>" rel="stylesheet">
+    <?php if (!empty($legacyHomePort)) {
+        $legacyCssOrigin = \Rateb\App\Services\LegacyHomeContentService::assetOrigin();
+        ?>
+    <link href="<?php echo Rateb\App\Core\View::escape($legacyCssOrigin . '/css/pages/home-marketing-focused.css?v=unified-home'); ?>" rel="stylesheet">
+    <link href="<?php echo Rateb\App\Core\View::escape($legacyCssOrigin . '/css/pages/home-public.css?v=unified-home'); ?>" rel="stylesheet">
+    <link href="<?php echo Rateb\App\Core\View::escape($legacyCssOrigin . '/css/pages/enterprise-trust-layer.css?v=unified-home'); ?>" rel="stylesheet">
+    <link href="<?php echo Rateb\App\Core\View::escape($legacyCssOrigin . '/css/pages/operational-proof.css?v=unified-home'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/marketing-home-legacy.css'); ?>" rel="stylesheet">
+    <?php } ?>
     <?php
     $hrefOrigin = rateb_site_origin();
     $hrefPath = rateb_current_public_path('site');

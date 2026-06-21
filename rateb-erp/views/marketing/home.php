@@ -1,6 +1,5 @@
 <?php
 /** @var array<string, array<string, mixed>> $content */
-use Rateb\App\Models\Plan;
 use Rateb\App\Services\CmsService;
 $hero = $content['hero']['section'] ?? null;
 $slides = $slides ?? [];
@@ -128,6 +127,10 @@ $slides = $slides ?? [];
 </section>
 <?php } ?>
 
+<?php if (!empty($legacyHomePort)) {
+    \Rateb\App\Services\LegacyHomeContentService::render((string) ($legacyHomeMode ?? 'full'));
+} ?>
+
 <?php if (!empty($testimonials)) { ?>
 <section class="rateb-mkt-section rateb-mkt-section-alt">
     <div class="container">
@@ -159,25 +162,6 @@ $slides = $slides ?? [];
             <a href="<?php echo rateb_url('site/reviews'); ?>" class="btn btn-outline-primary rateb-mkt-more-btn">
                 <i class="fas fa-circle-plus ms-1"></i><?php echo __('cms_view_all_reviews'); ?>
             </a>
-        </div>
-    </div>
-</section>
-<?php } ?>
-
-<?php if (!empty($plans)) { ?>
-<section class="rateb-mkt-section" id="programs">
-    <div class="container">
-        <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($content['pricing_preview']['section'] ?? [], 'title') ?: __('cms_pricing_preview')); ?></h2>
-        <div class="row g-3">
-            <?php foreach (array_slice($plans, 0, 3) as $plan) { ?>
-            <div class="col-md-4">
-                <div class="rateb-mkt-plan-card">
-                    <h3><?php echo Rateb\App\Core\View::escape(Plan::marketingName($plan)); ?></h3>
-                    <p class="rateb-mkt-plan-price"><?php echo Rateb\App\Core\View::escape(Plan::marketingPrice($plan)); ?> <?php echo __('sar'); ?></p>
-                    <a href="<?php echo rateb_url('site/pricing'); ?>" class="btn btn-outline-primary btn-sm"><?php echo __('cms_view_plans'); ?></a>
-                </div>
-            </div>
-            <?php } ?>
         </div>
     </div>
 </section>
@@ -228,17 +212,6 @@ $slides = $slides ?? [];
                 <i class="fas fa-circle-plus ms-1"></i><?php echo __('cms_view_all_faq'); ?>
             </a>
         </div>
-    </div>
-</section>
-<?php } ?>
-
-<?php if (!empty($content['contact_cta']['section'])) {
-    $s = $content['contact_cta']['section']; ?>
-<section class="rateb-mkt-cta">
-    <div class="container text-center">
-        <h2><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'title')); ?></h2>
-        <p><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'body')); ?></p>
-        <a href="<?php echo rateb_url('site/contact'); ?>" class="btn btn-light btn-lg"><?php echo __('cms_contact_us'); ?></a>
     </div>
 </section>
 <?php } ?>

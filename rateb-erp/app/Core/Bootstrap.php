@@ -67,6 +67,7 @@ final class Bootstrap
             '/app/Core/Response.php',
             '/app/Core/Middleware/Middleware.php',
             '/app/services/MigrationService.php',
+            '/app/services/LegacyHomeContentService.php',
             '/app/services/PlanLimitService.php',
             '/app/services/AccountingService.php',
             '/app/services/BillingService.php',
