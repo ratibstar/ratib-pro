@@ -26,6 +26,17 @@
         );
     }
 
+    function normalizeRccWsUrl(raw, mode) {
+        var u = (raw || '').trim().toLowerCase();
+        if (mode === 'polling' || !u || u === 'polling' || u === 'off' || u === 'disabled' || u === 'none') {
+            return 'polling';
+        }
+        if (u.indexOf('ws://') !== 0 && u.indexOf('wss://') !== 0) {
+            return 'polling';
+        }
+        return (raw || '').trim();
+    }
+
     function bootAgentDesktop() {
         var root = document.getElementById('rcc-agent-desktop');
         if (!root || !global.RccAgentInbox) {
@@ -52,11 +63,14 @@
             copilot.init();
         }
 
+        var rtMode = root.getAttribute('data-realtime-mode') || 'polling';
+        var wsUrl = normalizeRccWsUrl(root.getAttribute('data-ws'), rtMode);
+
         var inbox = new global.RccAgentInbox({
             tenantId: parseInt(root.getAttribute('data-tenant'), 10) || 0,
             agentId: parseInt(root.getAttribute('data-agent'), 10) || 0,
             apiBase: root.getAttribute('data-inbox-api') || '',
-            wsUrl: root.getAttribute('data-ws') || 'ws://127.0.0.1:9702',
+            wsUrl: wsUrl,
             root: root,
             onConversationSelect: function (conv) {
                 if (copilot) {

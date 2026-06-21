@@ -199,12 +199,17 @@
     document.addEventListener('DOMContentLoaded', function () {
         var panel = document.getElementById('rcc-softphone-panel');
         if (!panel) { return; }
+        var wsRaw = panel.getAttribute('data-ws') || 'polling';
+        var wsUrl = wsRaw;
+        if (!wsRaw || wsRaw === 'polling' || (wsRaw.indexOf('ws://') !== 0 && wsRaw.indexOf('wss://') !== 0)) {
+            wsUrl = 'polling';
+        }
         RccSoftphoneUi.mount({
             tenantId: parseInt(panel.getAttribute('data-tenant') || '0', 10),
             agentId: parseInt(panel.getAttribute('data-agent') || '0', 10),
             userId: panel.getAttribute('data-user') ? parseInt(panel.getAttribute('data-user'), 10) : null,
             apiBase: panel.getAttribute('data-api') || '/ratib-contact-center/public/api/v1/softphone.php',
-            wsUrl: panel.getAttribute('data-ws') || 'ws://127.0.0.1:9702'
+            wsUrl: wsUrl
         });
     });
 })(typeof window !== 'undefined' ? window : globalThis);

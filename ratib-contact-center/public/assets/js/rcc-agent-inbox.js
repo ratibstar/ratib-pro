@@ -8,7 +8,9 @@
         this.tenantId = options.tenantId || 0;
         this.agentId = options.agentId || 0;
         this.apiBase = options.apiBase || '';
-        this.wsUrl = options.wsUrl || 'ws://127.0.0.1:9702';
+        this.wsUrl = (options.wsUrl != null && String(options.wsUrl).trim() !== '')
+            ? String(options.wsUrl).trim()
+            : 'polling';
         this.root = options.root || document.getElementById('rcc-agent-desktop');
         this.onConversationSelect = options.onConversationSelect || function () {};
         this.onRealtimeEvent = options.onRealtimeEvent || function () {};

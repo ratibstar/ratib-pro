@@ -16,7 +16,9 @@
 
     function RccSoftphone(options) {
         this.apiBase = options.apiBase || '/ratib-contact-center/public/api/v1/softphone.php';
-        this.wsUrl = options.wsUrl || 'ws://127.0.0.1:9702';
+        this.wsUrl = (options.wsUrl != null && String(options.wsUrl).trim() !== '' && options.wsUrl !== 'polling')
+            ? String(options.wsUrl).trim()
+            : '';
         this.tenantId = options.tenantId || 0;
         this.agentId = options.agentId || 0;
         this.userId = options.userId || null;

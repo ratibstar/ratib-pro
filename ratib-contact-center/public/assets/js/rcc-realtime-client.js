@@ -6,7 +6,9 @@
     'use strict';
 
     function RccRealtimeClient(options) {
-        this.url = options.url || 'ws://127.0.0.1:9702';
+        this.url = (options.url != null && String(options.url).trim() !== '')
+            ? String(options.url).trim()
+            : 'polling';
         this.rooms = options.rooms || [];
         this.tenantId = options.tenantId || 0;
         this.onEvent = typeof options.onEvent === 'function' ? options.onEvent : function () {};
@@ -24,9 +26,14 @@
         if (self._stopped) {
             return;
         }
-        self.onStatus('connecting', self.url);
+        var url = (self.url || '').trim();
+        if (!url || url === 'polling' || url.indexOf('ws://') !== 0 && url.indexOf('wss://') !== 0) {
+            self.onStatus('offline', 'polling');
+            return;
+        }
+        self.onStatus('connecting', url);
         try {
-            self._ws = new WebSocket(self.url);
+            self._ws = new WebSocket(url);
         } catch (e) {
             self._scheduleReconnect();
             return;

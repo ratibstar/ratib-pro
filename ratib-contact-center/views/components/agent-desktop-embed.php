@@ -15,7 +15,13 @@ $tenantId = (int) ($tenantId ?? 1);
 $agentId = (int) ($agentId ?? 1);
 $inboxApiBase = (string) ($inboxApiBase ?? '');
 $softphoneApiBase = (string) ($softphoneApiBase ?? '');
-$wsUrl = (string) ($wsUrl ?? 'ws://127.0.0.1:9702');
+$rtMode = function_exists('control_contact_center_realtime_mode')
+    ? control_contact_center_realtime_mode()
+    : 'polling';
+$wsUrl = (string) ($wsUrl ?? '');
+if ($wsUrl === '' || $rtMode === 'polling') {
+    $wsUrl = 'polling';
+}
 $apiBase = $softphoneApiBase;
 $userId = null;
 
@@ -34,6 +40,7 @@ if (!function_exists('__')) {
      data-agent="<?php echo $agentId; ?>"
      data-inbox-api="<?php echo htmlspecialchars($inboxApiBase, ENT_QUOTES, 'UTF-8'); ?>"
      data-assistant-api="<?php echo htmlspecialchars($assistantApiBase ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+     data-realtime-mode="<?php echo htmlspecialchars($rtMode, ENT_QUOTES, 'UTF-8'); ?>"
      data-ws="<?php echo htmlspecialchars($wsUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="rcc-agent-desktop__top">
         <div class="rcc-softphone" id="rcc-softphone-panel"
