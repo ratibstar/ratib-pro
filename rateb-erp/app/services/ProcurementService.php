@@ -238,9 +238,10 @@ final class ProcurementService
         $agg = LineItems::aggregateTotals($lines);
         $discount = max(0, (float) ($data['discount_amount'] ?? 0));
         $shipping = max(0, (float) ($data['shipping_amount'] ?? 0));
+        $customs = max(0, (float) ($data['customs_clearance_amount'] ?? 0));
         $data['subtotal'] = $agg['subtotal'];
         $data['tax_amount'] = $agg['tax'];
-        $data['total_amount'] = round($agg['total'] - $discount + $shipping, 2);
+        $data['total_amount'] = round($agg['total'] - $discount + $shipping + $customs, 2);
     }
 
     public function stampRequestedBy(array &$data): void

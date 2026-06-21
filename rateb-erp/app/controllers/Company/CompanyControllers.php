@@ -311,6 +311,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'expected_date', 'label' => 'expected_date'],
             ['name' => 'status', 'label' => 'status'],
             ['name' => 'currency', 'label' => 'currency'],
+            ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'money'],
             ['name' => 'total_amount', 'label' => 'total'],
         ];
         $this->fields = [
@@ -323,6 +324,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'po_statuses'],
             ['name' => 'discount_amount', 'label' => 'discount', 'type' => 'number'],
             ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'number'],
+            ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'number'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'number'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
@@ -634,6 +636,38 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     protected function saveQuoteAttachment(int $id): void
     {
         (new \Rateb\App\Services\ProcurementService())->saveQuoteAttachments('purchase_order', $id);
+    }
+}
+
+final class CustomsClearanceCostsController extends PurchaseOrdersController
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->routePrefix = rateb_app_route('customs-clearance-costs');
+        $this->viewPrefix = 'company/customs-clearance-costs';
+        $this->entityName = 'customs_clearance_costs';
+        $this->permissionResource = 'purchase-orders';
+        $this->createEnabled = false;
+        $this->bulkEnabled = false;
+        $this->filesEnabled = false;
+        $this->indexFields = [
+            ['name' => 'order_no', 'label' => 'order_no'],
+            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'order_date', 'label' => 'order_date'],
+            ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'money'],
+            ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'money'],
+            ['name' => 'total_amount', 'label' => 'total', 'type' => 'money'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $data['actionsRoutePrefix'] = rateb_app_route('purchase-orders');
+        return $data;
     }
 }
 

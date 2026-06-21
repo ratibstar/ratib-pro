@@ -100,6 +100,12 @@ $footerColspan = 6 + ($showNeededBy ? 1 : 0) + ($showPrExtras ? 1 : 0) + ($showD
             <td class="text-end"><?php echo number_format((float) $order['shipping_amount'], 2); ?></td>
         </tr>
         <?php } ?>
+        <?php if ((float)($order['customs_clearance_amount'] ?? 0) > 0) { ?>
+        <tr>
+            <td colspan="<?php echo $footerColspan; ?>" class="text-end"><?php echo __('customs_clearance_costs'); ?></td>
+            <td class="text-end"><?php echo number_format((float) $order['customs_clearance_amount'], 2); ?></td>
+        </tr>
+        <?php } ?>
         <tr>
             <td colspan="<?php echo $footerColspan; ?>" class="text-end fw-semibold"><?php echo __('tax_amount'); ?></td>
             <td class="text-end"><?php echo number_format((float) ($order['tax_amount'] ?? 0), 2); ?></td>

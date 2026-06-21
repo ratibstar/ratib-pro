@@ -72,7 +72,7 @@ if ($entityType === 'purchase_request') {
                         <?php
                         continue;
                     }
-                    if (in_array($name, ['discount_amount', 'shipping_amount'], true)) {
+                    if (in_array($name, ['discount_amount', 'shipping_amount', 'customs_clearance_amount'], true)) {
                         ?>
                 <div class="col-md-6">
                     <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">

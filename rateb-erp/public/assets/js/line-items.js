@@ -201,13 +201,16 @@
         var form = table.closest('[data-procurement-form]');
         var discount = 0;
         var shipping = 0;
+        var customs = 0;
         if (form) {
             var discEl = form.querySelector('[name="discount_amount"]');
             var shipEl = form.querySelector('[name="shipping_amount"]');
+            var customsEl = form.querySelector('[name="customs_clearance_amount"]');
             if (discEl) { discount = parseNum(discEl.value); }
             if (shipEl) { shipping = parseNum(shipEl.value); }
+            if (customsEl) { customs = parseNum(customsEl.value); }
         }
-        grand = Math.round((grand - discount + shipping) * 100) / 100;
+        grand = Math.round((grand - discount + shipping + customs) * 100) / 100;
         var scope = form || table;
         var subEl = scope.querySelector('[data-procurement-subtotal]');
         var taxEl = scope.querySelector('[data-procurement-tax]');

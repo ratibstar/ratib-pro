@@ -23,6 +23,12 @@ return [
         'manage' => 'procurement.manage',
         'export' => 'reports.export',
     ],
+    'customs-clearance-costs' => [
+        'module' => 'procurement',
+        'view' => 'procurement.manage',
+        'manage' => 'procurement.manage',
+        'export' => 'reports.export',
+    ],
     'rfq' => [
         'module' => 'procurement',
         'view' => 'procurement.manage',

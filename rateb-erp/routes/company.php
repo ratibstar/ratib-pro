@@ -8,6 +8,7 @@ use Rateb\App\Controllers\Company\MedicalDevicesController;
 use Rateb\App\Controllers\Company\NotificationsController;
 use Rateb\App\Controllers\Company\ProfileController;
 use Rateb\App\Controllers\Company\PurchaseOrdersController;
+use Rateb\App\Controllers\Company\CustomsClearanceCostsController;
 use Rateb\App\Controllers\Company\PurchaseRequestsController;
 use Rateb\App\Controllers\Company\QuotationsController;
 use Rateb\App\Controllers\Company\ReportsController;
@@ -144,6 +145,7 @@ $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'wa
 $router->get($app('purchase-requests/export'), [PurchaseRequestsController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-requests'));
 $router->get($app('purchase-requests/line-attachment/{itemId}'), [PurchaseRequestsController::class, 'downloadLineAttachment'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->get($app('purchase-orders/export'), [PurchaseOrdersController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-orders'));
+$router->get($app('customs-clearance-costs'), [CustomsClearanceCostsController::class, 'index'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 
 $router->get($app('purchase-requests/{id}'), [PurchaseRequestsController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->post($app('purchase-requests/{id}/convert-to-po'), [PurchaseRequestsController::class, 'convertToPo'], rateb_erp_mw('procurement', '', 'purchase-requests'));

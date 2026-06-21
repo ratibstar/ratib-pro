@@ -1030,6 +1030,7 @@ return [
     'received' => 'مستلم',
     'discount' => 'الخصم',
     'shipping' => 'تكاليف الشحن',
+    'customs_clearance_costs' => 'تكاليف التخليص الجمركي',
     'before' => 'قبل',
     'after' => 'بعد',
     'print' => 'طباعة',

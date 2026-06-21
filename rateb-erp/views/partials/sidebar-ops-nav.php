@@ -10,6 +10,7 @@ require RATEB_ROOT . '/views/partials/sidebar-nav.php';
 $opsSection(__('procurement'), [
     ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
+    ['customs-clearance-costs', 'customs_clearance_costs', 'fa-passport', 'procurement'],
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
     ['workflows', 'workflows', 'fa-diagram-project', 'workflows'],

@@ -1030,6 +1030,7 @@ return [
     'received' => 'Received',
     'discount' => 'Discount',
     'shipping' => 'Shipping',
+    'customs_clearance_costs' => 'Customs clearance costs',
     'before' => 'Before',
     'after' => 'After',
     'print' => 'Print',
