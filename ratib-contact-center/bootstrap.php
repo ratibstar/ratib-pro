@@ -18,4 +18,6 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
-Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator::boot();
+if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
+    Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator::boot();
+}

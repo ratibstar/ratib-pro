@@ -126,6 +126,15 @@ function control_contact_center_assistant_api_url(): string
     return control_contact_center_public_base_url() . '/api/v1/assistant.php';
 }
 
+function control_contact_center_asset_url(string $relativePath): string
+{
+    $relativePath = ltrim(str_replace('\\', '/', $relativePath), '/');
+    if (function_exists('control_panel_page_with_control')) {
+        return control_panel_page_with_control('control/rcc-asset.php') . '&f=' . rawurlencode($relativePath);
+    }
+    return '/control-panel/pages/control/rcc-asset.php?control=1&f=' . rawurlencode($relativePath);
+}
+
 function control_contact_center_ws_url(): string
 {
     $host = defined('RATIB_CC_WS_HOST') ? (string) RATIB_CC_WS_HOST : (getenv('RCC_REALTIME_HUB_HOST') ?: '127.0.0.1');
@@ -175,6 +184,9 @@ function control_contact_center_db_test(): array
     }
     try {
         control_contact_center_apply_db_env();
+        if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
+            define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
+        }
         require_once control_contact_center_root_path() . '/bootstrap.php';
         \Ratib\ContactCenter\App\Core\Database::disconnect();
         $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
@@ -194,6 +206,9 @@ function control_contact_center_db_test(): array
 function control_contact_center_run_migrations(): array
 {
     control_contact_center_apply_db_env();
+    if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
+        define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
+    }
     require_once control_contact_center_root_path() . '/bootstrap.php';
     \Ratib\ContactCenter\App\Core\Database::disconnect();
     $pdo = \Ratib\ContactCenter\App\Core\Database::connection();

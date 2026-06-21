@@ -15,6 +15,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 define('RCC_ROOT', dirname(__DIR__));
+define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
 require RCC_ROOT . '/bootstrap.php';
 
 use Ratib\ContactCenter\App\Infrastructure\Realtime\WebSocketGateway;

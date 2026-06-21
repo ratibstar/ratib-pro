@@ -120,10 +120,20 @@ RATIB_CC_DB_PASS=your_mysql_password</pre>
 </div>
 
 <div class="control-settings-card mb-4">
-    <h3><i class="fas fa-server"></i> Runtime services</h3>
-    <p class="small">For live WebSocket updates, run on the server:</p>
-    <pre class="rateb-erp-migrate-log mb-0">php ratib-contact-center/bin/rcc-realtime-hub.php</pre>
-    <p class="small text-muted mb-0 mt-2">WebSocket: <?php echo htmlspecialchars(control_contact_center_ws_url(), ENT_QUOTES, 'UTF-8'); ?></p>
+    <h3><i class="fas fa-server"></i> Runtime services (Realtime Hub)</h3>
+    <p class="small mb-2">For live inbox/WebSocket updates, run the hub on the server. WebSocket URL:
+        <code><?php echo htmlspecialchars(control_contact_center_ws_url(), ENT_QUOTES, 'UTF-8'); ?></code></p>
+    <p class="small fw-bold mb-1">1) SSH — foreground (test)</p>
+    <pre class="rateb-erp-migrate-log mb-2">cd ~/domains/rateb.sa/public_html/ratib-contact-center
+php bin/rcc-realtime-hub.php</pre>
+    <p class="small fw-bold mb-1">2) SSH — background</p>
+    <pre class="rateb-erp-migrate-log mb-2">bash bin/start-realtime-hub.sh</pre>
+    <p class="small fw-bold mb-1">3) cPanel Cron — every 5 min (auto-restart if down)</p>
+    <pre class="rateb-erp-migrate-log mb-2">*/5 * * * * pgrep -f rcc-realtime-hub.php || /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/start-realtime-hub.sh</pre>
+    <p class="small fw-bold mb-1">4) cPanel Cron — @reboot</p>
+    <pre class="rateb-erp-migrate-log mb-2">@reboot php /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/rcc-realtime-hub.php &amp;</pre>
+    <p class="small fw-bold mb-1">5) systemd (VPS) — see <code>ratib-contact-center/bin/rcc-realtime-hub.service</code></p>
+    <p class="small text-muted mb-0">Open firewall TCP <strong>9702</strong> or use SSH tunnel. Full guide: <code>ratib-contact-center/bin/REALTIME-HUB-RUN.txt</code></p>
 </div>
 
 <?php endControlLayout(); ?>

@@ -16,12 +16,15 @@ use Ratib\ContactCenter\App\Infrastructure\Channels\WhatsAppChannelAdapter;
  */
 final class InboxApiController
 {
-    private ConversationEngine $engine;
+    private ?ConversationEngine $engine = null;
 
-    public function __construct(?ConversationEngine $engine = null)
+    private function engine(): ConversationEngine
     {
-        RealtimeOrchestrator::boot();
-        $this->engine = $engine ?? new ConversationEngine(EventBus::instance());
+        if ($this->engine === null) {
+            RealtimeOrchestrator::boot();
+            $this->engine = new ConversationEngine(EventBus::instance());
+        }
+        return $this->engine;
     }
 
     public function handle(): void
@@ -54,19 +57,22 @@ final class InboxApiController
         TenantContext::set($tenantId);
 
         switch ($action) {
+            case 'health':
+                return ['ok' => true, 'service' => 'rcc-inbox', 'php' => PHP_VERSION];
+
             case 'inbox':
                 $agentId = (int) ($input['agent_id'] ?? 0);
                 if ($agentId < 1) {
                     return $this->error('agent_id required');
                 }
-                return ['ok' => true, 'conversations' => $this->engine->inboxForAgent($tenantId, $agentId)];
+                return ['ok' => true, 'conversations' => $this->engine()->inboxForAgent($tenantId, $agentId)];
 
             case 'thread':
                 $conversationId = (int) ($input['conversation_id'] ?? 0);
                 if ($conversationId < 1) {
                     return $this->error('conversation_id required');
                 }
-                return ['ok' => true] + $this->engine->thread($tenantId, $conversationId);
+                return ['ok' => true] + $this->engine()->thread($tenantId, $conversationId);
 
             case 'send':
                 $conversationId = (int) ($input['conversation_id'] ?? 0);
@@ -76,7 +82,7 @@ final class InboxApiController
                 if ($conversationId < 1 || $agentId < 1 || $message === '') {
                     return $this->error('conversation_id, agent_id, message required');
                 }
-                $updated = $this->engine->sendOutbound($tenantId, $conversationId, $agentId, $channel, $message, is_array($input['payload'] ?? null) ? $input['payload'] : []);
+                $updated = $this->engine()->sendOutbound($tenantId, $conversationId, $agentId, $channel, $message, is_array($input['payload'] ?? null) ? $input['payload'] : []);
                 return ['ok' => true, 'conversation' => $updated];
 
             case 'close':
@@ -85,25 +91,22 @@ final class InboxApiController
                 if ($conversationId < 1) {
                     return $this->error('conversation_id required');
                 }
-                return ['ok' => true, 'conversation' => $this->engine->closeConversation($tenantId, $conversationId, $agentId)];
+                return ['ok' => true, 'conversation' => $this->engine()->closeConversation($tenantId, $conversationId, $agentId)];
 
             case 'webhook_whatsapp':
                 $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new WhatsAppChannelAdapter($this->engine);
+                $adapter = new WhatsAppChannelAdapter($this->engine());
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
             case 'webhook_email':
                 $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new EmailChannelAdapter($this->engine);
+                $adapter = new EmailChannelAdapter($this->engine());
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
             case 'webhook_chat':
                 $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new WebChatChannelAdapter($this->engine);
+                $adapter = new WebChatChannelAdapter($this->engine());
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
-
-            case 'health':
-                return ['ok' => true, 'service' => 'rcc-inbox'];
 
             default:
                 return $this->error('Unknown action: ' . $action);

@@ -1,0 +1,18 @@
+[Unit]
+Description=RATIB Contact Center Realtime Hub (WebSocket 9702)
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/domains/rateb.sa/public_html/ratib-contact-center
+Environment=RCC_REALTIME_HUB_HOST=127.0.0.1
+Environment=RCC_REALTIME_HUB_PORT=9701
+Environment=RCC_WEBSOCKET_HOST=0.0.0.0
+Environment=RCC_WEBSOCKET_PORT=9702
+ExecStart=/usr/local/bin/php /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/rcc-realtime-hub.php
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

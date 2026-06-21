@@ -1,0 +1,17 @@
+# cPanel → Cron Jobs → Add New Cron Job
+# Run at server reboot (@reboot) OR every 5 minutes to ensure hub stays up
+
+# --- Option A: @reboot (once after server restart) ---
+@reboot /usr/local/bin/php /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/rcc-realtime-hub.php >> /home/admin/rcc-realtime.log 2>&1 &
+
+# --- Option B: every 5 minutes — start only if port 9702 is closed ---
+*/5 * * * * pgrep -f rcc-realtime-hub.php >/dev/null || /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/start-realtime-hub.sh
+
+# --- Option C: SSH manual (foreground, for testing) ---
+# cd ~/domains/rateb.sa/public_html/ratib-contact-center && php bin/rcc-realtime-hub.php
+
+# --- Option D: systemd (VPS/root) ---
+# sudo cp bin/rcc-realtime-hub.service /etc/systemd/system/
+# sudo systemctl daemon-reload && sudo systemctl enable --now rcc-realtime-hub
+
+# Firewall: allow TCP 9702 (WebSocket) from your office IPs or via reverse proxy.

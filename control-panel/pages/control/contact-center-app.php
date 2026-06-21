@@ -41,13 +41,18 @@ if (!$dbTest['ok'] || !$dbTest['schema']) {
 }
 
 $rccAssets = control_contact_center_assets_base_url();
+$rccAsset = static function (string $path) use ($rccAssets): string {
+    return function_exists('control_contact_center_asset_url')
+        ? control_contact_center_asset_url($path)
+        : $rccAssets . '/' . ltrim($path, '/');
+};
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout(
     'Contact Center — Agent Desktop',
     [
-        $rccAssets . '/css/rcc-agent-inbox.css',
-        $rccAssets . '/css/rcc-softphone.css',
-        $rccAssets . '/css/rcc-ai-copilot.css',
+        $rccAsset('css/rcc-agent-inbox.css'),
+        $rccAsset('css/rcc-softphone.css'),
+        $rccAsset('css/rcc-ai-copilot.css'),
     ],
     [],
     ['standalone' => true]
@@ -67,11 +72,11 @@ if ($route === 'agent-desktop') {
 }
 
 endControlLayout([
-    $rccAssets . '/js/rcc-realtime-client.js',
+    $rccAsset('js/rcc-realtime-client.js'),
     'https://cdn.jsdelivr.net/npm/sip.js@0.21.2/dist/sip.min.js',
-    $rccAssets . '/js/rcc-softphone.js',
-    $rccAssets . '/js/rcc-softphone-ui.js',
-    $rccAssets . '/js/rcc-agent-inbox.js',
-    $rccAssets . '/js/rcc-ai-copilot.js',
-    $rccAssets . '/js/rcc-agent-desktop-ui.js',
+    $rccAsset('js/rcc-softphone.js'),
+    $rccAsset('js/rcc-softphone-ui.js'),
+    $rccAsset('js/rcc-agent-inbox.js'),
+    $rccAsset('js/rcc-ai-copilot.js'),
+    $rccAsset('js/rcc-agent-desktop-ui.js'),
 ]);
