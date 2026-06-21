@@ -22,7 +22,7 @@ if (!function_exists('__')) {
     function __(string $s): string { return $s; }
 }
 ?>
-<link rel="stylesheet" href="<?php echo htmlspecialchars($assetsBase . '/css/rcc-softphone.css', ENT_QUOTES, 'UTF-8'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars($assetsBase . '/css/rcc-sp.css', ENT_QUOTES, 'UTF-8'); ?>">
 
 <div class="rcc-softphone" id="rcc-softphone-panel"
      data-tenant="<?php echo $tenantId; ?>"
@@ -62,5 +62,5 @@ if (!function_exists('__')) {
 
 <script src="<?php echo htmlspecialchars($assetsBase . '/js/rcc-realtime-client.js', ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/sip.js@0.21.2/dist/sip.min.js"></script>
-<script src="<?php echo htmlspecialchars($assetsBase . '/js/rcc-softphone.js', ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($assetsBase . '/js/rcc-softphone-ui.js', ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($assetsBase . '/js/rcc-sp.js', ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($assetsBase . '/js/rcc-sp-ui.js', ENT_QUOTES, 'UTF-8'); ?>"></script>

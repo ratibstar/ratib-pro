@@ -8,11 +8,11 @@ declare(strict_types=1);
  */
 return [
     'inbox-css' => 'css/rcc-agent-inbox.css',
-    'softphone-css' => 'css/rcc-softphone.css',
+    'softphone-css' => 'css/rcc-sp.css',
     'copilot-css' => 'css/rcc-ai-copilot.css',
     'realtime-js' => 'js/rcc-realtime-client.js',
-    'softphone-js' => 'js/rcc-softphone.js',
-    'softphone-ui-js' => 'js/rcc-softphone-ui.js',
+    'softphone-js' => 'js/rcc-sp.js',
+    'softphone-ui-js' => 'js/rcc-sp-ui.js',
     'inbox-js' => 'js/rcc-agent-inbox.js',
     'copilot-js' => 'js/rcc-ai-copilot.js',
     'desktop-js' => 'js/rcc-agent-desktop-ui.js',
