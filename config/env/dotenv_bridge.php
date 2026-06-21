@@ -55,6 +55,22 @@ if (!function_exists('rateb_env_load_bridge_dotenv')) {
             'MOBILE_AUTH_SECRET',
             'RATEB_ERP_MIGRATE_TOKEN',
             'CPANEL_API_TOKEN',
+            'RATIB_CC_DB_NAME',
+            'RATIB_CC_DB_USER',
+            'RATIB_CC_DB_PASS',
+            'RATIB_CC_DB_HOST',
+            'RATIB_CC_DB_PORT',
+            'RATEB_CC_DB_PASS',
+            'RATIB_CC_WS_HOST',
+            'RCC_REALTIME_HUB_HOST',
+            'RCC_REALTIME_HUB_PORT',
+            'RCC_WEBSOCKET_HOST',
+            'RCC_WEBSOCKET_PORT',
+            'RCC_AI_ASSISTANT_ENABLED',
+            'RCC_AI_PROVIDER',
+            'RCC_SIP_WSS_URI',
+            'RCC_SIP_DOMAIN',
+            'RCC_SIP_DEFAULT_PASS',
         ];
         $lines = @file($path, FILE_IGNORE_NEW_LINES);
         if (!is_array($lines)) {

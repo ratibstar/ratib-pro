@@ -1,0 +1,87 @@
+# =============================================================================
+# ملف .env كامل — rateb.sa + Contact Center
+# =============================================================================
+#
+# 1) عدّل كل CHANGE_ME_* بكلمات مرور MySQL من cPanel
+# 2) احفظ الملف باسم:  .env   (بدون .txt)
+# 3) ارفعه إلى:  /home/admin/domains/rateb.sa/public_html/.env
+# 4) صلاحيات الملف: 600
+#
+# ⚠️ لا ترفع هذا الملف إلى GitHub بعد وضع كلمات المرور الحقيقية
+# =============================================================================
+
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://rateb.sa
+
+# --- MySQL رئيسي (RATEB Pro / admin_rateb) ---
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=admin_rateb
+DB_USER=admin_rateb
+DB_PASS=CHANGE_ME_MAIN_DB_PASSWORD
+
+RATEB_DB_PREFIX=admin
+
+# --- Control Panel ---
+CONTROL_PANEL_DB_NAME=admin_control_panel_db
+CONTROL_DB_HOST=127.0.0.1
+CONTROL_DB_PORT=3306
+CONTROL_DB_USER=admin_rateb
+CONTROL_DB_PASS=CHANGE_ME_CONTROL_DB_PASSWORD
+CONTROL_SITE_URL=https://rateb.sa
+
+# --- RATEB ERP ---
+RATEB_PRO_DB_NAME=admin_rateb
+RATEB_ERP_DB_NAME=admin_rateb-erp
+
+# --- Mobile portal (JWT) — ضع سر عشوائي طويل ---
+# openssl rand -base64 48
+MOBILE_AUTH_SECRET=CHANGE_ME_MOBILE_AUTH_SECRET
+
+# --- أمان API ---
+EXTERNAL_API_TOKEN=
+EXTERNAL_API_TOKENS=
+WEBHOOK_DISPATCH_TOKEN=
+WEBHOOK_SIGNING_SECRET=
+REQUEST_SIGNING_SECRET=
+REQUEST_SIGNING_MAX_SKEW_SEC=300
+
+SEC_RATE_LIMIT_WINDOW_SEC=60
+SEC_RATE_LIMIT_IP_MAX=120
+SEC_RATE_LIMIT_USER_MAX=240
+SEC_EXTERNAL_RATE_LIMIT_WINDOW_SEC=60
+SEC_EXTERNAL_RATE_LIMIT_MAX=100
+SEC_IP_DENY_LIST=
+SEC_IP_ALLOW_LIST=
+
+SYSTEM_MODE=commercial
+
+HEALTH_ACTIVE_WORKFLOWS_WARN=200
+HEALTH_WEBHOOK_BACKLOG_WARN=500
+HEALTH_FAILURE_RATE_WARN_PCT=20
+
+# =============================================================================
+# RATIB Contact Center — admin_call-center
+# cPanel → MySQL: أنشئ DB + User + ALL PRIVILEGES
+# =============================================================================
+
+RATIB_CC_DB_NAME=admin_call-center
+RATIB_CC_DB_USER=admin_call-center
+RATIB_CC_DB_PASS=CHANGE_ME_CALL_CENTER_MYSQL_PASSWORD
+RATIB_CC_DB_HOST=127.0.0.1
+RATIB_CC_DB_PORT=3306
+RATEB_CC_DB_PASS=CHANGE_ME_CALL_CENTER_MYSQL_PASSWORD
+
+# Realtime Hub (WebSocket) — شغّل ratib-contact-center/bin/rcc-realtime-hub.php
+RCC_REALTIME_HUB_HOST=127.0.0.1
+RCC_REALTIME_HUB_PORT=9701
+RCC_WEBSOCKET_HOST=0.0.0.0
+RCC_WEBSOCKET_PORT=9702
+
+# AI Copilot
+RCC_AI_ASSISTANT_ENABLED=1
+
+# Softphone / SIP — اختياري
+# RCC_SIP_WSS_URI=wss://pbx.rateb.sa:8089/ws
+# RCC_SIP_DOMAIN=pbx.ratib.sa
