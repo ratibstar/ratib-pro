@@ -86,6 +86,8 @@
     padding: 10px;
     border-radius: 8px;
     border: 1px solid var(--rcc-border-subtle);
+    unicode-bidi: plaintext;
+    text-align: start;
 }
 
 .rcc-ai-copilot textarea {
@@ -99,6 +101,8 @@
     background: var(--rcc-input-bg);
     color: var(--rcc-text);
     min-height: 72px;
+    unicode-bidi: plaintext;
+    text-align: start;
 }
 
 .rcc-ai-copilot textarea::placeholder {

@@ -55,16 +55,16 @@ final class AiAssistantApiController
 
         switch ($action) {
             case 'context':
-                $ctx = $this->engine->contextForConversation($tenantId, $conversationId);
+                $ctx = $this->engine->processEvent(RealtimeEvent::fromNormalized([
+                    'event_uuid' => bin2hex(random_bytes(16)),
+                    'type' => EventType::CONVERSATION_UPDATED,
+                    'tenant_id' => $tenantId,
+                    'timestamp' => gmdate('Y-m-d\TH:i:s.v\Z'),
+                    'payload' => ['conversation_id' => $conversationId],
+                    'agent_id' => isset($input['agent_id']) ? (int) $input['agent_id'] : null,
+                ]));
                 if ($ctx === null) {
-                    $ctx = $this->engine->processEvent(RealtimeEvent::fromNormalized([
-                        'event_uuid' => bin2hex(random_bytes(16)),
-                        'type' => EventType::CONVERSATION_UPDATED,
-                        'tenant_id' => $tenantId,
-                        'timestamp' => gmdate('Y-m-d\TH:i:s.v\Z'),
-                        'payload' => ['conversation_id' => $conversationId],
-                        'agent_id' => isset($input['agent_id']) ? (int) $input['agent_id'] : null,
-                    ]));
+                    $ctx = $this->engine->contextForConversation($tenantId, $conversationId);
                 }
                 return ['ok' => true, 'ai_context' => $ctx];
 

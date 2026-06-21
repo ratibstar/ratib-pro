@@ -134,6 +134,9 @@
                 input.value = '';
             }
             self.selectConversation(self._activeId);
+            if (global.__rccAiCopilot && typeof global.__rccAiCopilot.loadContext === 'function') {
+                global.__rccAiCopilot.loadContext(self._activeId);
+            }
         });
     };
 
@@ -228,8 +231,8 @@
             messages.forEach(function (m) {
                 html += '<div class="rcc-inbox__msg rcc-inbox__msg--' + m.direction + '">' +
                     '<span class="rcc-inbox__msg-channel">' + self._esc(m.channel) + '</span>' +
-                    '<div>' + self._esc(m.message) + '</div>' +
-                    '<time>' + self._esc(m.created_at || '') + '</time></div>';
+                    '<div class="rcc-inbox__msg-text" dir="auto">' + self._esc(m.message) + '</div>' +
+                    '<time dir="ltr">' + self._esc(m.created_at || '') + '</time></div>';
             });
             thread.innerHTML = html || '<div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">💬</span>No messages yet</div>';
             thread.scrollTop = thread.scrollHeight;

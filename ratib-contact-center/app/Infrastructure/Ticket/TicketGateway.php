@@ -58,11 +58,26 @@ final class TicketGateway implements TicketGatewayInterface
             'desc' => $description . "\n\n" . json_encode($context, JSON_UNESCAPED_UNICODE),
             'conv' => $conversationId,
             'cid' => $callId,
-            'ch' => (string) ($context['channel'] ?? 'omnichannel'),
+            'ch' => self::normalizeChannel((string) ($context['channel'] ?? 'web_chat')),
             'pri' => in_array($priority, ['low', 'normal', 'high', 'urgent'], true) ? $priority : 'normal',
             'auto' => $auto ? 1 : 0,
         ]);
 
         return (int) $pdo->lastInsertId();
+    }
+
+    private static function normalizeChannel(string $channel): string
+    {
+        $channel = strtolower(trim($channel));
+        $map = [
+            'chat' => 'web_chat',
+            'omnichannel' => 'web_chat',
+            'voice' => 'phone',
+            'phone' => 'phone',
+            'email' => 'email',
+            'whatsapp' => 'whatsapp',
+        ];
+
+        return $map[$channel] ?? ($channel !== '' ? $channel : 'web_chat');
     }
 }

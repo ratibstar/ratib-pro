@@ -189,7 +189,11 @@
             }).then(function (res) {
                 if (res.ok) {
                     alert('Ticket #' + res.ticket_id + ' created (advisory action confirmed by agent).');
+                } else {
+                    alert((res && res.error) || 'Could not create ticket — run DB migration 010 on the server.');
                 }
+            }).catch(function () {
+                alert('Could not create ticket — check server logs or run migration 010.');
             });
             return;
         }

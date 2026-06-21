@@ -19,6 +19,7 @@ return [
         'refund_request' => ['refund', 'money back', 'chargeback', 'استرداد', 'إرجاع'],
         'sales_opportunity' => ['buy', 'purchase', 'pricing', 'quote', 'demo', 'شراء', 'سعر'],
         'technical_issue' => ['error', 'bug', 'not working', 'broken', 'login', 'خطأ', 'لا يعمل'],
+        'account_registration' => ['register', 'regster', 'sign up', 'signup', 'create account', 'join', 'تسجيل', 'انضم'],
         'cancellation_risk' => ['cancel', 'terminate', 'leave', 'switch provider', 'إلغاء'],
     ],
 
@@ -64,6 +65,12 @@ return [
             'email' => "Dear Customer,\n\nWe are sorry you are experiencing a technical issue. Please describe the steps and any error messages.\n\nIT Support",
             'chat' => 'Let me troubleshoot this — what exactly happens when you try?',
             'voice' => 'Gather steps to reproduce, error text, and device/browser details.',
+        ],
+        'account_registration' => [
+            'whatsapp' => 'You can register at rateb.sa — open Sign Up, enter your company details, and verify your email. Need help with a specific step?',
+            'email' => "Dear Customer,\n\nTo register with Rateb, visit rateb.sa and choose Sign Up. Complete your profile and verify your email.\n\nOnboarding Team",
+            'chat' => 'Registration is at rateb.sa → Sign Up. Enter your business details and verify your email. Which step do you need help with?',
+            'voice' => 'Direct customer to rateb.sa registration; offer to stay on the line while they complete Sign Up.',
         ],
         'default' => [
             'whatsapp' => 'Thank you for contacting us. How can I assist you today?',

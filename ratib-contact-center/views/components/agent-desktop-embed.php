@@ -79,7 +79,7 @@ if (!function_exists('__')) {
             <div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">💬</span>Select a conversation to view messages</div>
         </div>
         <div class="rcc-inbox__composer">
-            <input type="text" id="rcc-inbox-reply" placeholder="Reply…" autocomplete="off">
+            <input type="text" id="rcc-inbox-reply" placeholder="Reply…" autocomplete="off" dir="auto">
             <button type="button" id="rcc-inbox-send">Send</button>
         </div>
     </div>
@@ -94,11 +94,11 @@ if (!function_exists('__')) {
                 <div class="rcc-ai-copilot__mood" id="rcc-ai-mood">😐 neutral</div>
                 <div class="rcc-ai-copilot__row"><span>Intent</span><strong id="rcc-ai-intent">—</strong></div>
                 <div class="rcc-ai-copilot__row"><span>Risk</span><strong id="rcc-ai-risk">—</strong></div>
-                <p class="rcc-ai-copilot__summary" id="rcc-ai-summary">Select a conversation for AI insights.</p>
+                <p class="rcc-ai-copilot__summary" id="rcc-ai-summary" dir="auto">Select a conversation for AI insights.</p>
             </div>
             <div class="rcc-ai-copilot__section">
                 <h4>Suggested reply</h4>
-                <textarea id="rcc-ai-reply" rows="4" readonly placeholder="AI reply suggestion…"></textarea>
+                <textarea id="rcc-ai-reply" rows="4" readonly placeholder="AI reply suggestion…" dir="auto"></textarea>
                 <div class="rcc-ai-copilot__btn-row">
                     <button type="button" class="rcc-ai-copilot__btn" id="rcc-ai-send-as-is">Send as-is</button>
                     <button type="button" class="rcc-ai-copilot__btn rcc-ai-copilot__btn--ghost" id="rcc-ai-edit-send">Edit before send</button>

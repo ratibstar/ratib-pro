@@ -213,6 +213,12 @@ body.control-system-body .rcc-agent-desktop,
     background: var(--rcc-msg-in);
     color: var(--rcc-text);
     border: 1px solid var(--rcc-border-subtle);
+    unicode-bidi: isolate;
+}
+
+.rcc-inbox__msg-text {
+    unicode-bidi: plaintext;
+    text-align: start;
 }
 
 .rcc-inbox__msg--outbound {

@@ -326,20 +326,26 @@ final class AiAssistantEngine implements EventSubscriberInterface
         }
 
         $subject = 'AI escalated: ' . str_replace('_', ' ', $intent);
-        $ticketId = ($this->ticketGateway ?? new TicketGateway())->createFromAssistant(
-            $tenantId,
-            $conversationId,
-            $conversation['call_id'] ?? null,
-            $subject,
-            $summary,
-            [
-                'sentiment' => $sentimentLabel,
-                'intent' => $intent,
-                'sla_status' => $slaStatus,
-                'auto_created' => true,
-            ],
-            'high'
-        );
+        try {
+            $ticketId = ($this->ticketGateway ?? new TicketGateway())->createFromAssistant(
+                $tenantId,
+                $conversationId,
+                $conversation['call_id'] ?? null,
+                $subject,
+                $summary,
+                [
+                    'sentiment' => $sentimentLabel,
+                    'intent' => $intent,
+                    'sla_status' => $slaStatus,
+                    'auto_created' => true,
+                    'channel' => (string) ($conversation['last_channel'] ?? 'web_chat'),
+                ],
+                'high'
+            );
+        } catch (\Throwable $e) {
+            error_log('[RCC AiAssistant] auto ticket: ' . $e->getMessage());
+            return null;
+        }
 
         ($this->eventBus ?? EventBus::instance())->emit([
             'type' => EventType::AI_TICKET_CREATED,
