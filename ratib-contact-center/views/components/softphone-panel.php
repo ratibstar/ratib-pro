@@ -52,7 +52,7 @@ if (!function_exists('__')) {
 
 <audio id="rcc-sp-remote-audio" autoplay playsinline class="rcc-softphone__hidden"></audio>
 
-<div class="rcc-softphone__popup hidden" id="rcc-sp-incoming-popup">
+<div class="rcc-softphone__popup d-none" id="rcc-sp-incoming-popup">
     <div class="rcc-softphone__popup-card">
         <div class="rcc-softphone__meta"><?php echo htmlspecialchars(__('Incoming call'), ENT_QUOTES, 'UTF-8'); ?></div>
         <div class="rcc-softphone__number" id="rcc-sp-popup-number">—</div>

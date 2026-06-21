@@ -54,12 +54,17 @@
             var num = payload.remote_number || payload.caller_number || '—';
             if (els.popupNumber) { els.popupNumber.textContent = num; }
             if (els.number) { els.number.textContent = num; }
-            if (els.popup) { els.popup.classList.remove('hidden'); }
+            if (els.popup) {
+                els.popup.classList.remove('d-none', 'hidden');
+            }
             if (els.answer) { els.answer.disabled = false; }
         }
 
         function hideIncoming() {
-            if (els.popup) { els.popup.classList.add('hidden'); }
+            if (els.popup) {
+                els.popup.classList.add('d-none');
+                els.popup.classList.remove('hidden');
+            }
         }
 
         function startUiTimer(phone) {

@@ -157,16 +157,23 @@ function control_contact_center_asset_url(string $assetKey): string
         return control_contact_center_assets_base_url();
     }
 
-    $base = control_contact_center_public_base_url();
+    $base = control_contact_center_assets_base_url();
     $disk = control_contact_center_root_path() . '/public/assets/' . $relativePath;
     $v = is_file($disk) ? (string) filemtime($disk) : (string) time();
-    $queryKey = isset($manifest[$assetKey]) ? $assetKey : 'legacy';
 
-    if (isset($manifest[$assetKey])) {
-        return $base . '/asset.php?k=' . rawurlencode($assetKey) . '&v=' . $v;
+    // Prefer direct static file (Apache/LiteSpeed MIME) — avoids asset.php 404/cache issues.
+    if (is_file($disk)) {
+        $segments = explode('/', $relativePath);
+        $encoded = implode('/', array_map('rawurlencode', $segments));
+
+        return $base . '/' . $encoded . '?v=' . $v;
     }
 
-    return $base . '/asset.php?f=' . rawurlencode($relativePath) . '&v=' . $v;
+    if (isset($manifest[$assetKey])) {
+        return control_contact_center_public_base_url() . '/asset.php?k=' . rawurlencode($assetKey) . '&v=' . $v;
+    }
+
+    return control_contact_center_public_base_url() . '/asset.php?f=' . rawurlencode($relativePath) . '&v=' . $v;
 }
 
 function control_contact_center_ws_url(): string

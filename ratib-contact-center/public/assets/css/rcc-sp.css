@@ -108,7 +108,8 @@
     z-index: 9999;
 }
 
-.rcc-softphone__popup.hidden { display: none; }
+.rcc-softphone__popup.hidden,
+.rcc-softphone__popup.d-none { display: none; }
 
 .rcc-softphone__popup-card {
     background: var(--rcc-sp-bg);
