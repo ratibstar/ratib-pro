@@ -33,6 +33,12 @@ final class AgentStateService implements EventSubscriberInterface
         if ($event->type === EventType::QUEUE_ASSIGNED && $event->agentId !== null) {
             $this->attachQueue($event->tenantId, $event->agentId, $event->queueId);
         }
+        if ($event->type === EventType::CALL_HOLD && $event->agentId !== null) {
+            $this->pause($event->tenantId, $event->agentId, 'on_call_hold');
+        }
+        if ($event->type === EventType::CALL_RESUME && $event->agentId !== null) {
+            $this->setBusy($event->tenantId, $event->agentId, $event->callId, $event->queueId);
+        }
     }
 
     public function login(int $tenantId, int $agentId, ?int $userId = null): array

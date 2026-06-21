@@ -13,6 +13,14 @@ final class EventType
     public const CALL_CONNECTED = 'CALL_CONNECTED';
     public const CALL_ENDED = 'CALL_ENDED';
     public const CALL_TRANSFERRED = 'CALL_TRANSFERRED';
+    public const CALL_ACCEPTED = 'CALL_ACCEPTED';
+    public const CALL_HOLD = 'CALL_HOLD';
+    public const CALL_RESUME = 'CALL_RESUME';
+
+    // Softphone / SIP
+    public const SIP_REGISTERED = 'SIP_REGISTERED';
+    public const SIP_UNREGISTERED = 'SIP_UNREGISTERED';
+    public const SOFTPHONE_STATE = 'SOFTPHONE_STATE';
 
     // IVR
     public const IVR_STARTED = 'IVR_STARTED';
@@ -45,6 +53,12 @@ final class EventType
             self::CALL_CONNECTED,
             self::CALL_ENDED,
             self::CALL_TRANSFERRED,
+            self::CALL_ACCEPTED,
+            self::CALL_HOLD,
+            self::CALL_RESUME,
+            self::SIP_REGISTERED,
+            self::SIP_UNREGISTERED,
+            self::SOFTPHONE_STATE,
             self::IVR_STARTED,
             self::IVR_NODE_ENTERED,
             self::IVR_WAITING_INPUT,

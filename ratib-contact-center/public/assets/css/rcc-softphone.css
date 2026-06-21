@@ -1,0 +1,122 @@
+/* RATIB Contact Center — Softphone UI (external CSS only) */
+
+.rcc-softphone {
+    --rcc-sp-bg: var(--rcc-panel-bg, #1a1d24);
+    --rcc-sp-border: var(--rcc-border, #2d3340);
+    --rcc-sp-text: var(--rcc-text, #e8eaed);
+    --rcc-sp-muted: var(--rcc-muted, #9aa0a6);
+    --rcc-sp-green: #34a853;
+    --rcc-sp-red: #ea4335;
+    --rcc-sp-yellow: #fbbc04;
+    font-family: inherit;
+    background: var(--rcc-sp-bg);
+    border: 1px solid var(--rcc-sp-border);
+    border-radius: 12px;
+    color: var(--rcc-sp-text);
+    max-width: 360px;
+    overflow: hidden;
+}
+
+.rcc-softphone__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rcc-sp-border);
+}
+
+.rcc-softphone__status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-inline-end: 8px;
+}
+
+.rcc-softphone__status-dot--ready { background: var(--rcc-sp-green); }
+.rcc-softphone__status-dot--busy { background: var(--rcc-sp-red); }
+.rcc-softphone__status-dot--wrapup { background: var(--rcc-sp-yellow); }
+.rcc-softphone__status-dot--offline { background: var(--rcc-sp-muted); }
+
+.rcc-softphone__body {
+    padding: 16px;
+}
+
+.rcc-softphone__number {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.rcc-softphone__meta {
+    font-size: 0.875rem;
+    color: var(--rcc-sp-muted);
+    margin-bottom: 12px;
+}
+
+.rcc-softphone__timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    text-align: center;
+    margin: 12px 0;
+}
+
+.rcc-softphone__erp {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.8125rem;
+    margin-bottom: 12px;
+}
+
+.rcc-softphone__erp-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.rcc-softphone__actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.rcc-softphone__btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    background: var(--rcc-sp-border);
+    color: var(--rcc-sp-text);
+}
+
+.rcc-softphone__btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.rcc-softphone__btn--answer { background: var(--rcc-sp-green); color: #fff; }
+.rcc-softphone__btn--hangup { background: var(--rcc-sp-red); color: #fff; }
+
+.rcc-softphone__popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.rcc-softphone__popup.hidden { display: none; }
+
+.rcc-softphone__popup-card {
+    background: var(--rcc-sp-bg);
+    border: 1px solid var(--rcc-sp-border);
+    border-radius: 16px;
+    padding: 24px;
+    min-width: 280px;
+    text-align: center;
+}
+
+.rcc-softphone__hidden { display: none !important; }
