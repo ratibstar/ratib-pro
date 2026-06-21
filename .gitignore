@@ -42,6 +42,7 @@ cache/
 *.sql
 !modules/infrastructure-marketplace/Migrations/*.sql
 !rateb-erp/migrations/*.sql
+!ratib-contact-center/migrations/*.sql
 *.sqlite
 
 # Editor/system files
