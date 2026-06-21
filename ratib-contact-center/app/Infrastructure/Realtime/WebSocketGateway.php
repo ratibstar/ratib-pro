@@ -50,6 +50,10 @@ final class WebSocketGateway
         if ($event->ivrSessionId !== null && $event->ivrSessionId > 0) {
             $rooms[] = 'ivr:' . $event->ivrSessionId;
         }
+        $conversationId = (int) ($event->payload['conversation_id'] ?? 0);
+        if ($conversationId > 0) {
+            $rooms[] = 'conversation:' . $conversationId;
+        }
         return array_values(array_unique($rooms));
     }
 

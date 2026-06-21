@@ -24,10 +24,12 @@ final class RealtimeOrchestrator
 
         $agentState = new AgentStateService($eventBus);
         $queueRealtime = new QueueRealtimeService($eventBus);
+        $conversationBridge = new ConversationEventBridge();
         $erpLogger = new ErpActivityLogger();
 
         $eventBus->subscribe($agentState);
         $eventBus->subscribe($queueRealtime);
+        $eventBus->subscribe($conversationBridge);
         $eventBus->subscribe($erpLogger);
 
         EventBus::setInstance($eventBus);

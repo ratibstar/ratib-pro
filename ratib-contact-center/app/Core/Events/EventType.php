@@ -48,6 +48,14 @@ final class EventType
     public const CALL_ASSIGNED = 'CALL_ASSIGNED';
     public const SLA_ESCALATED_CALL = 'SLA_ESCALATED_CALL';
 
+    // Unified conversations (omnichannel inbox)
+    public const CONVERSATION_CREATED = 'CONVERSATION_CREATED';
+    public const CONVERSATION_UPDATED = 'CONVERSATION_UPDATED';
+    public const MESSAGE_RECEIVED = 'MESSAGE_RECEIVED';
+    public const MESSAGE_SENT = 'MESSAGE_SENT';
+    public const CONVERSATION_ASSIGNED = 'CONVERSATION_ASSIGNED';
+    public const CONVERSATION_PRIORITY_CHANGED = 'CONVERSATION_PRIORITY_CHANGED';
+
     // Dashboard aggregates (derived, still event-driven)
     public const SLA_ALERT = 'SLA_ALERT';
 
@@ -83,6 +91,12 @@ final class EventType
             self::CALL_SCORING_COMPLETED,
             self::CALL_ASSIGNED,
             self::SLA_ESCALATED_CALL,
+            self::CONVERSATION_CREATED,
+            self::CONVERSATION_UPDATED,
+            self::MESSAGE_RECEIVED,
+            self::MESSAGE_SENT,
+            self::CONVERSATION_ASSIGNED,
+            self::CONVERSATION_PRIORITY_CHANGED,
             self::SLA_ALERT,
         ];
     }

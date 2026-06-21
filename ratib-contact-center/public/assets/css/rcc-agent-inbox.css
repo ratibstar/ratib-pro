@@ -1,0 +1,146 @@
+.rcc-agent-desktop {
+    display: grid;
+    grid-template-columns: 280px 1fr 260px;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    min-height: 520px;
+    border: 1px solid #dde3ea;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f7f9fc;
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+.rcc-agent-desktop__top {
+    grid-column: 1 / -1;
+    background: #1e293b;
+    color: #fff;
+    padding: 10px 14px;
+}
+
+.rcc-agent-desktop__col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: #fff;
+}
+
+.rcc-agent-desktop__col--list {
+    border-right: 1px solid #e5e7eb;
+}
+
+.rcc-agent-desktop__col--erp {
+    border-left: 1px solid #e5e7eb;
+    padding: 12px;
+    background: #fafbfc;
+}
+
+.rcc-inbox__list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.rcc-inbox__item {
+    padding: 12px;
+    border-bottom: 1px solid #eef2f7;
+    cursor: pointer;
+}
+
+.rcc-inbox__item.is-active,
+.rcc-inbox__item:hover {
+    background: #eff6ff;
+}
+
+.rcc-inbox__item-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.rcc-inbox__identity {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.rcc-inbox__priority {
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #e5e7eb;
+}
+
+.rcc-inbox__priority--vip { background: #fde68a; }
+.rcc-inbox__priority--high { background: #fecaca; }
+.rcc-inbox__priority--medium { background: #dbeafe; }
+
+.rcc-inbox__preview {
+    font-size: 13px;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rcc-inbox__meta {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.rcc-inbox__thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+}
+
+.rcc-inbox__msg {
+    max-width: 85%;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f1f5f9;
+}
+
+.rcc-inbox__msg--outbound {
+    margin-left: auto;
+    background: #dbeafe;
+}
+
+.rcc-inbox__msg-channel {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.rcc-inbox__composer {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.rcc-inbox__composer input {
+    flex: 1;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.rcc-inbox__composer button {
+    border: 0;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.rcc-inbox__empty {
+    padding: 20px;
+    color: #94a3b8;
+    text-align: center;
+}

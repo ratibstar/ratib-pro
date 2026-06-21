@@ -1,0 +1,25 @@
+{
+  "conversation_id": 8821,
+  "tenant_id": 1,
+  "customer_identity": "0500000000",
+  "customer_id": 5521,
+  "channels": ["voice", "whatsapp", "email"],
+  "status": "open",
+  "assigned_agent_id": 12,
+  "priority": "high",
+  "last_message": "Voice call connected with 0500000000",
+  "sla_status": "yellow",
+  "priority_score": 87,
+  "messages": [
+    {
+      "channel": "voice",
+      "direction": "inbound",
+      "message": "Incoming voice call from 0500000000"
+    },
+    {
+      "channel": "whatsapp",
+      "direction": "inbound",
+      "message": "Hello, I need help with my invoice"
+    }
+  ]
+}
