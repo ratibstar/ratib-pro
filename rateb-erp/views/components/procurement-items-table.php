@@ -5,6 +5,7 @@
 $items = $items ?? [];
 $order = $order ?? [];
 $showDeliveryCols = !empty($showDeliveryCols);
+$hideFooter = !empty($hideFooter);
 $currency = (string) ($order['currency'] ?? 'SAR');
 $lineAttachmentRoute = (string) ($lineAttachmentRoute ?? rateb_url(rateb_app_route('purchase-requests/line-attachment')));
 $lookup = new \Rateb\App\Services\FormLookupService();
@@ -82,7 +83,7 @@ $footerColspan = 6 + ($showNeededBy ? 1 : 0) + ($showPrExtras ? 1 : 0) + ($showD
         </tr>
         <?php } ?>
         </tbody>
-        <?php if (!empty($order)) { ?>
+        <?php if (!empty($order) && !$hideFooter) { ?>
         <tfoot>
         <tr>
             <td colspan="<?php echo $footerColspan; ?>" class="text-end fw-semibold"><?php echo __('subtotal'); ?></td>

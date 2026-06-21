@@ -1,13 +1,15 @@
 <?php
 /** @var array<string, mixed>|null $docBarcode */
+/** @var bool $compact */
 if (empty($docBarcode) || empty($docBarcode['barcode'])) {
     return;
 }
+$compact = !empty($compact);
 $uid = 'docbc-' . preg_replace('/[^a-z0-9]/i', '', (string) ($docBarcode['type'] ?? 'doc')) . '-' . (int) ($docBarcode['recordId'] ?? 0);
 $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'] ?? 'label')) ?: 'label';
 ?>
-<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=7">
-<div class="rateb-doc-barcode mt-4" data-rateb-barcodes
+<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=8">
+<div class="rateb-doc-barcode mt-3<?php echo $compact ? ' rateb-doc-barcode--compact' : ''; ?>" data-rateb-barcodes
     data-barcode="<?php echo Rateb\App\Core\View::escape((string) $docBarcode['barcode']); ?>"
     data-qr="<?php echo Rateb\App\Core\View::escape((string) ($docBarcode['qr_code'] ?? '')); ?>"
     data-label-title="<?php echo Rateb\App\Core\View::escape($safeFilename); ?>">
@@ -17,14 +19,20 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
             <?php Rateb\App\Core\View::partial('document-barcode-actions'); ?>
         </div>
         <div class="rateb-card-body">
+            <?php if (!$compact) { ?>
             <p class="text-muted small mb-3"><?php echo __('document_barcode_hint'); ?></p>
+            <?php } ?>
             <div class="rateb-doc-barcode-print-area" id="<?php echo Rateb\App\Core\View::escape($uid); ?>"
                 dir="<?php echo rateb_locale() === 'ar' ? 'rtl' : 'ltr'; ?>" lang="<?php echo Rateb\App\Core\View::escape(rateb_locale()); ?>">
+                <div class="rateb-doc-barcode-meta">
+                <?php if (!$compact) { ?>
                 <div class="rateb-doc-barcode-brand text-center mb-2"><?php echo __('rateb_erp'); ?></div>
+                <?php } ?>
                 <h5 class="text-center mb-1 rateb-doc-barcode-title"><?php echo Rateb\App\Core\View::escape((string) ($docBarcode['title'] ?? '')); ?></h5>
                 <?php if (!empty($docBarcode['subtitle'])) { ?>
                 <p class="text-center text-muted small mb-3 rateb-doc-barcode-subtitle"><?php echo Rateb\App\Core\View::escape((string) $docBarcode['subtitle']); ?></p>
                 <?php } ?>
+                </div>
                 <div class="text-center rateb-doc-barcode-codes">
                     <?php if (!empty($docBarcode['qr_code'])) { ?>
                     <img data-qr-img

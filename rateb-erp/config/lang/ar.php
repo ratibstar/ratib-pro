@@ -962,6 +962,7 @@ return [
     'item_name' => 'اسم الصنف',
     'order_no' => 'رقم الأمر',
     'order_date' => 'تاريخ الأمر',
+    'order_details' => 'تفاصيل الأمر',
     'request_no' => 'رقم الطلب',
     'created_at' => 'تاريخ الإنشاء',
     'notes' => 'ملاحظات',

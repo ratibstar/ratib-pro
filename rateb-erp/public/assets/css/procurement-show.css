@@ -1,0 +1,217 @@
+/* Purchase order / procurement detail view */
+.rateb-po-show {
+    --rateb-po-gap: 1rem;
+}
+
+.rateb-po-show-hero {
+    background: linear-gradient(135deg, var(--rateb-surface) 0%, var(--rateb-surface-elevated) 100%);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    padding: 1.25rem 1.5rem;
+}
+
+.rateb-po-show-hero-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.rateb-po-show-id {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--rateb-accent);
+    text-transform: uppercase;
+}
+
+[dir="rtl"] .rateb-po-show-id {
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.rateb-po-show-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0.25rem 0 0.5rem;
+    color: var(--rateb-text);
+}
+
+.rateb-po-show-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.rateb-po-status {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+}
+
+.rateb-po-status--draft { background: rgba(148, 163, 184, 0.2); color: var(--rateb-text-muted); }
+.rateb-po-status--confirmed,
+.rateb-po-status--sent { background: rgba(59, 130, 246, 0.18); color: #93c5fd; }
+.rateb-po-status--partial { background: rgba(251, 191, 36, 0.18); color: #fcd34d; }
+.rateb-po-status--received,
+.rateb-po-status--approved { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; }
+.rateb-po-status--cancelled,
+.rateb-po-status--rejected { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+
+.rateb-kv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.75rem 1.25rem;
+}
+
+.rateb-kv-item {
+    min-width: 0;
+}
+
+.rateb-kv-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--rateb-text-muted);
+    margin-bottom: 0.2rem;
+}
+
+.rateb-kv-value {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--rateb-text);
+    word-break: break-word;
+}
+
+.rateb-kv-value.rateb-ltr-num {
+    direction: ltr;
+    text-align: start;
+    font-variant-numeric: tabular-nums;
+}
+
+.rateb-po-notes {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rateb-border);
+}
+
+.rateb-po-customs-panel {
+    border-inline-start: 3px solid var(--rateb-accent);
+}
+
+.rateb-po-customs-panel .rateb-card-header {
+    background: rgba(45, 212, 191, 0.08);
+}
+
+.rateb-po-lines-card .rateb-card-body {
+    padding: 0;
+}
+
+.rateb-po-lines-card .rateb-table-wrap,
+.rateb-po-lines-card .table-responsive {
+    border-radius: 0 0 var(--rateb-radius) var(--rateb-radius);
+}
+
+.rateb-po-summary-card {
+    position: sticky;
+    top: 1rem;
+}
+
+.rateb-po-summary-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.rateb-po-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.9375rem;
+}
+
+.rateb-po-summary-row span:first-child {
+    color: var(--rateb-text-muted);
+}
+
+.rateb-po-summary-row span:last-child {
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    text-align: end;
+    font-weight: 600;
+    color: var(--rateb-text);
+    white-space: nowrap;
+}
+
+.rateb-po-summary-row--discount span:last-child {
+    color: var(--rateb-danger);
+}
+
+.rateb-po-summary-row--total {
+    margin-top: 0.35rem;
+    padding-top: 0.85rem;
+    border-top: 2px solid var(--rateb-border);
+    font-size: 1.05rem;
+}
+
+.rateb-po-summary-row--total span:first-child {
+    color: var(--rateb-text);
+    font-weight: 700;
+}
+
+.rateb-po-summary-row--total span:last-child {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--rateb-accent);
+}
+
+.rateb-po-grn-card .form-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--rateb-text-muted);
+}
+
+.rateb-po-grn-card .rateb-table td:has(input) {
+    max-width: 8rem !important;
+}
+
+.rateb-doc-barcode--compact .rateb-doc-barcode-print-area {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.rateb-doc-barcode--compact .rateb-doc-barcode-meta {
+    min-width: 0;
+}
+
+.rateb-doc-barcode--compact .rateb-doc-barcode-codes {
+    margin: 0;
+}
+
+.rateb-doc-barcode--compact .rateb-doc-qr-img,
+.rateb-doc-barcode--compact canvas[data-qr-canvas] {
+    width: 120px !important;
+    height: 120px !important;
+}
+
+.rateb-doc-barcode--compact .rateb-doc-barcode-code {
+    font-size: 0.8125rem;
+    margin-top: 0.5rem !important;
+}
+
+@media (max-width: 991.98px) {
+    .rateb-po-summary-card {
+        position: static;
+    }
+
+    .rateb-doc-barcode--compact .rateb-doc-barcode-print-area {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+}

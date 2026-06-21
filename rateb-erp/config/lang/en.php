@@ -963,6 +963,7 @@ return [
     'item_name' => 'Item name',
     'order_no' => 'Order No',
     'order_date' => 'Order Date',
+    'order_details' => 'Order details',
     'request_no' => 'Request No',
     'created_at' => 'Created at',
     'unit' => 'Unit',
