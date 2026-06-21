@@ -637,13 +637,9 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     {
         (new \Rateb\App\Services\ProcurementService())->saveQuoteAttachments('purchase_order', $id);
     }
-}
 
-final class CustomsClearanceCostsController extends PurchaseOrdersController
-{
-    public function __construct()
+    public function customsIndex(): void
     {
-        parent::__construct();
         $this->routePrefix = rateb_app_route('customs-clearance-costs');
         $this->viewPrefix = 'company/customs-clearance-costs';
         $this->entityName = 'customs_clearance_costs';
@@ -660,13 +656,16 @@ final class CustomsClearanceCostsController extends PurchaseOrdersController
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'money'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
+        $this->index();
     }
 
     /** @return array<string, mixed> */
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
         $data = parent::indexViewData($limit, $offset, $page, $search);
-        $data['actionsRoutePrefix'] = rateb_app_route('purchase-orders');
+        if ($this->entityName === 'customs_clearance_costs') {
+            $data['actionsRoutePrefix'] = rateb_app_route('purchase-orders');
+        }
         return $data;
     }
 }
