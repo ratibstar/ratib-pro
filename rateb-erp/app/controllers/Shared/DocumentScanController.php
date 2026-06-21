@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Controllers\Shared;
 
 use Rateb\App\Core\Controller;
+use Rateb\App\Services\DatabaseErrorService;
 use Rateb\App\Services\DocumentBarcodeService;
 
 final class DocumentScanController extends Controller
@@ -17,7 +18,16 @@ final class DocumentScanController extends Controller
             return;
         }
 
-        $doc = (new DocumentBarcodeService())->resolvePublic($code);
+        try {
+            $doc = (new DocumentBarcodeService())->resolvePublic($code);
+        } catch (\Throwable $e) {
+            if (DatabaseErrorService::isSchemaIssue($e)) {
+                DatabaseErrorService::renderHttpError($e);
+                return;
+            }
+            throw $e;
+        }
+
         if (!$doc) {
             http_response_code(404);
             $this->view('shared/document-scan-not-found', [

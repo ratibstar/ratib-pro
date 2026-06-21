@@ -84,13 +84,45 @@ final class DocumentBarcodeService
         if ($code === '') {
             return null;
         }
-        foreach (['inventory', 'invoice', 'contract', 'purchase_order'] as $type) {
-            $row = $this->findByBarcode($type, $code);
+        foreach ($this->typeOrderForCode($code) as $type) {
+            $row = $this->findByBarcodeSafe($type, $code);
             if ($row) {
                 return $this->publicCard($type, $row);
             }
         }
         return null;
+    }
+
+    /** @return list<string> */
+    private function typeOrderForCode(string $code): array
+    {
+        $all = ['inventory', 'invoice', 'contract', 'purchase_order'];
+        if (str_starts_with($code, 'PO')) {
+            return ['purchase_order', 'invoice', 'contract', 'inventory'];
+        }
+        if (str_starts_with($code, 'INV')) {
+            return ['invoice', 'purchase_order', 'contract', 'inventory'];
+        }
+        if (str_starts_with($code, 'CTR')) {
+            return ['contract', 'purchase_order', 'invoice', 'inventory'];
+        }
+        if (str_starts_with($code, 'RTB')) {
+            return ['inventory', 'purchase_order', 'invoice', 'contract'];
+        }
+        return $all;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function findByBarcodeSafe(string $type, string $code): ?array
+    {
+        try {
+            return $this->findByBarcode($type, $code);
+        } catch (\Throwable $e) {
+            if (DatabaseErrorService::isSchemaIssue($e)) {
+                return null;
+            }
+            throw $e;
+        }
     }
 
     /** @return array<string, mixed>|null */
