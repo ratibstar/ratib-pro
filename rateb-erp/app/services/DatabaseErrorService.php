@@ -90,9 +90,16 @@ final class DatabaseErrorService
         $locale = function_exists('rateb_locale') ? rateb_locale() : 'ar';
         $dir = $locale === 'ar' ? 'rtl' : 'ltr';
         $title = self::t('db_error_title');
-        $assetBase = defined('RATEB_CP_ASSETS_URL')
-            ? (string) RATEB_CP_ASSETS_URL
-            : (function_exists('rateb_asset') ? preg_replace('#/[^/]+$#', '', rateb_asset('css/variables.css')) : '/rateb-erp/public/assets');
+        if (function_exists('rateb_asset')) {
+            $varsCss = rateb_asset('css/variables.css');
+            $lightCss = rateb_asset('css/light.css');
+        } else {
+            $assetBase = defined('RATEB_CP_ASSETS_URL')
+                ? (string) RATEB_CP_ASSETS_URL
+                : '/rateb-erp/public/assets';
+            $varsCss = $assetBase . '/css/variables.css';
+            $lightCss = $assetBase . '/css/light.css';
+        }
         $homeUrl = function_exists('rateb_url') ? rateb_url('admin') : '/rateb-erp/public/admin';
         $migrateUrl = '';
         if (function_exists('control_rateb_erp_migrate_page_url')) {
@@ -105,8 +112,8 @@ final class DatabaseErrorService
         echo '<!DOCTYPE html><html lang="' . htmlspecialchars($locale, ENT_QUOTES, 'UTF-8') . '" dir="' . $dir . '" data-theme="light">';
         echo '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
         echo '<title>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>';
-        echo '<link href="' . htmlspecialchars($assetBase . '/css/variables.css', ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
-        echo '<link href="' . htmlspecialchars($assetBase . '/css/light.css', ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
+        echo '<link href="' . htmlspecialchars($varsCss, ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
+        echo '<link href="' . htmlspecialchars($lightCss, ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
         echo '<style>body{font-family:Tajawal,system-ui,sans-serif;background:#e8f0fa;color:#1a3354;margin:0;padding:2rem}.rateb-err{max-width:640px;margin:2rem auto;padding:1.5rem;background:#fff;border:1px solid #c5d9f0;border-radius:12px;box-shadow:0 4px 24px rgba(26,51,84,.08)}.rateb-err h1{font-size:1.25rem;margin:0 0 1rem}.rateb-err p{margin:0 0 1rem;line-height:1.6}.rateb-err .actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.25rem}</style>';
         echo '</head><body class="rateb-app"><div class="rateb-err">';
         echo '<h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';

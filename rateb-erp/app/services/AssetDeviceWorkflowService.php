@@ -427,7 +427,11 @@ final class AssetDeviceWorkflowService
     /** @return array<int, array<string, mixed>> */
     public function listAssignments(): array
     {
-        return $this->tenantList('rateb_asset_assignments m LEFT JOIN rateb_assets a ON a.id = m.asset_id', 'm.*, a.name AS asset_name');
+        return $this->tenantList(
+            'rateb_asset_assignments m LEFT JOIN rateb_assets a ON a.id = m.asset_id',
+            'm.*, a.name AS asset_name',
+            'm.assigned_at DESC, m.id DESC'
+        );
     }
 
     /** @return array<int, array<string, mixed>> */
