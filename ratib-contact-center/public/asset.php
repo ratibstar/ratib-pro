@@ -13,13 +13,21 @@ if ($file === '' || strpos($file, '..') !== false) {
     exit('Bad request');
 }
 
-$root = __DIR__ . '/assets/';
-$path = realpath($root . $file);
-$rootReal = realpath($root);
-if ($path === false || $rootReal === false || strpos($path, $rootReal) !== 0 || !is_file($path)) {
+$root = __DIR__ . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR;
+$candidate = $root . str_replace('/', DIRECTORY_SEPARATOR, $file);
+if (!is_file($candidate)) {
     http_response_code(404);
     header('Content-Type: text/plain; charset=utf-8');
     exit('Not found: ' . $file);
+}
+
+$path = $candidate;
+$rootReal = realpath($root);
+$pathReal = realpath($path);
+if ($rootReal !== false && $pathReal !== false && strpos($pathReal, $rootReal) !== 0) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('Forbidden');
 }
 
 $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));

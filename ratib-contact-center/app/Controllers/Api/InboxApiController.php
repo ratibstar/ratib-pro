@@ -24,7 +24,7 @@ final class InboxApiController
             if ($withRealtime) {
                 RealtimeOrchestrator::boot();
             }
-            $this->engine = new ConversationEngine(EventBus::instance());
+            $this->engine = new ConversationEngine(eventBus: EventBus::instance());
         }
         return $this->engine;
     }
@@ -52,6 +52,14 @@ final class InboxApiController
     /** @return array<string, mixed> */
     public function handleAction(string $action, array $input): array
     {
+        if ($action === 'health') {
+            return [
+                'ok' => true,
+                'service' => 'rcc-inbox',
+                'php' => PHP_VERSION,
+            ];
+        }
+
         $tenantId = (int) ($input['tenant_id'] ?? 0);
         if ($tenantId < 1) {
             return $this->error('tenant_id required');
@@ -59,9 +67,6 @@ final class InboxApiController
         TenantContext::set($tenantId);
 
         switch ($action) {
-            case 'health':
-                return ['ok' => true, 'service' => 'rcc-inbox', 'php' => PHP_VERSION];
-
             case 'inbox':
                 $agentId = (int) ($input['agent_id'] ?? 0);
                 if ($agentId < 1) {
