@@ -25,6 +25,7 @@ DEPLOY_ALLOW_PREFIXES = (
     "pages/",
     "control-panel/",
     "rateb-erp/",
+    "ratib-contact-center/",
     "js/",
     "css/",
     "api/",
@@ -192,6 +193,12 @@ FAST_FILES = [
     "includes/rateb-mega-nav-render.php",
     "includes/rateb-home-public-nav-bootstrap.php",
     "control-panel/includes/control/sidebar.php",
+    "control-panel/includes/control/contact-center-bridge.php",
+    "control-panel/includes/control/contact-center-nav.php",
+    "control-panel/pages/control/contact-center.php",
+    "control-panel/pages/control/contact-center-migrate.php",
+    "control-panel/pages/control/contact-center-app.php",
+    "ratib-contact-center/bootstrap.php",
     "assets/rateb-logo.svg",
     # Build marker — MUST stay last.
     "public/rateb-build.txt",
@@ -401,6 +408,59 @@ def rateb_erp_control_panel_files() -> list[str]:
             continue
         for name in os.listdir(root):
             if not name.startswith("rateb-erp"):
+                continue
+            rel = os.path.relpath(os.path.join(root, name), os.getcwd()).replace("\\", "/")
+            if os.path.isfile(os.path.join(os.getcwd(), rel)) and is_auto_deploy_path(rel):
+                out.append(rel)
+    return sorted(set(out))
+
+
+RATIB_CC_TRIGGER_PREFIXES = (
+    "ratib-contact-center/",
+    "control-panel/pages/control/contact-center",
+    "control-panel/includes/control/contact-center",
+)
+
+
+def needs_full_rcc_bundle(changed: list[str]) -> bool:
+    flag = os.environ.get("CPANEL_RCC_FULL_BUNDLE", "").strip().lower()
+    if flag in ("1", "true", "yes", "on"):
+        return True
+    if any(c.startswith("ratib-contact-center/migrations/") for c in changed):
+        return True
+    return any(
+        any(c.startswith(prefix) for prefix in RATIB_CC_TRIGGER_PREFIXES)
+        for c in changed
+    )
+
+
+def ratib_contact_center_bundle_files() -> list[str]:
+    """Upload full ratib-contact-center tree when CP contact-center files change."""
+    root = os.path.join(os.getcwd(), "ratib-contact-center")
+    if not os.path.isdir(root):
+        return []
+    out: list[str] = []
+    for dirpath, _dirnames, filenames in os.walk(root):
+        for name in filenames:
+            if name.endswith(".md"):
+                continue
+            rel = os.path.relpath(os.path.join(dirpath, name), os.getcwd()).replace("\\", "/")
+            if is_auto_deploy_path(rel):
+                out.append(rel)
+    return sorted(set(out))
+
+
+def ratib_cc_control_panel_files() -> list[str]:
+    cp_roots = [
+        os.path.join(os.getcwd(), "control-panel/pages/control"),
+        os.path.join(os.getcwd(), "control-panel/includes/control"),
+    ]
+    out: list[str] = []
+    for root in cp_roots:
+        if not os.path.isdir(root):
+            continue
+        for name in os.listdir(root):
+            if not name.startswith("contact-center"):
                 continue
             rel = os.path.relpath(os.path.join(root, name), os.getcwd()).replace("\\", "/")
             if os.path.isfile(os.path.join(os.getcwd(), rel)) and is_auto_deploy_path(rel):
@@ -726,6 +786,19 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
             added += 1
         if added:
             print(f"fast deploy: +{added} rateb-erp bundle file(s)", flush=True)
+    if needs_full_rcc_bundle(set(deployable)) or os.path.isdir(
+        os.path.join(os.getcwd(), "ratib-contact-center")
+    ):
+        bundle = ratib_contact_center_bundle_files() + ratib_cc_control_panel_files()
+        added = 0
+        for path in bundle:
+            if path in seen:
+                continue
+            extras.append(path)
+            seen.add(path)
+            added += 1
+        if added:
+            print(f"fast deploy: +{added} ratib-contact-center bundle file(s)", flush=True)
     files = core + extras + [marker]
     if extras:
         print(

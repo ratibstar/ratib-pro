@@ -17,6 +17,7 @@ require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD, 'control_system_settings', 'view_control_system_settings');
 
 $installed = control_contact_center_is_installed();
+$diag = control_contact_center_diagnostic();
 $log = [];
 $error = '';
 $success = false;
@@ -86,20 +87,41 @@ startControlLayout('Contact Center — Database Setup', ['css/system-settings.cs
 </div>
 <?php } ?>
 
+<?php if (!$installed) { ?>
+<div class="alert alert-warning mb-4">
+    <strong>Module files missing</strong> — upload <code>ratib-contact-center/</code> to
+    <code><?php echo htmlspecialchars(dirname($diag['resolved'] ?? control_contact_center_root_path()), ENT_QUOTES, 'UTF-8'); ?>/</code>
+    or push to <code>main</code> for auto-deploy.
+</div>
+<?php } elseif (!$dbTest['ok']) { ?>
+<div class="alert alert-danger mb-4">
+    <strong>Database connection failed.</strong> Fix MySQL user/database, then add to <code>.env</code>:<br>
+    <pre class="rateb-erp-migrate-log mb-0 mt-2">RATIB_CC_DB_PASS=your_mysql_password</pre>
+    <?php if (($dbTest['error'] ?? '') !== '') { ?>
+    <span class="small text-muted d-block mt-2"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></span>
+    <?php } ?>
+</div>
+<?php } ?>
+
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card">
         <h3><i class="fas fa-play"></i> Run migrations</h3>
         <p>Applies <code>001</code> through <code>008</code> SQL files (skips already applied).</p>
         <form method="post" action="<?php echo htmlspecialchars(control_contact_center_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
-            <button type="submit" name="run_migrations" value="1" class="btn btn-primary"<?php echo ($installed && $dbTest['ok']) ? '' : ' disabled'; ?>>
+            <button type="submit" name="run_migrations" value="1" class="btn btn-primary"<?php echo $installed ? '' : ' disabled'; ?>>
                 <i class="fas fa-database"></i> Run database setup
             </button>
         </form>
+        <?php if (!$installed) { ?>
+        <p class="small text-warning mb-0 mt-2">Disabled until <code>ratib-contact-center/bootstrap.php</code> exists on server.</p>
+        <?php } elseif (!$dbTest['ok']) { ?>
+        <p class="small text-warning mb-0 mt-2">Fix DB connection first, then run migrations.</p>
+        <?php } ?>
     </div>
     <div class="control-settings-card">
         <h3><i class="fas fa-headset"></i> Open Agent Desktop</h3>
-        <a href="<?php echo htmlspecialchars(control_contact_center_app_url('agent-desktop'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>">
+        <a href="<?php echo htmlspecialchars(control_contact_center_app_url('agent-desktop'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo ($installed && $schemaReady) ? '' : ' disabled'; ?>"<?php echo ($installed && $schemaReady) ? '' : ' aria-disabled="true" tabindex="-1"'; ?>>
             Agent Desktop
         </a>
         <a href="<?php echo htmlspecialchars(control_contact_center_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light ms-2">Hub</a>

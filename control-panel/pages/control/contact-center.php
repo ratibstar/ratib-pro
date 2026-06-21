@@ -51,17 +51,22 @@ startControlLayout('RATIB Contact Center', ['css/system-settings.css', 'css/cont
 <?php if (!$installed) { ?>
 <div class="alert alert-warning mb-4">
     <strong>Files not found on server</strong><br>
-    Expected: <code><?php echo htmlspecialchars($diag['resolved'] . '/bootstrap.php', ENT_QUOTES, 'UTF-8'); ?></code>
+    Expected: <code><?php echo htmlspecialchars($diag['resolved'] . '/bootstrap.php', ENT_QUOTES, 'UTF-8'); ?></code><br>
+    <span class="small">Push to <code>main</code> and wait for GitHub Actions deploy (ratib-contact-center bundle), or upload the folder via cPanel File Manager.</span>
 </div>
 <?php } elseif (!$dbTest['ok']) { ?>
 <div class="alert alert-danger mb-4">
-    <strong><i class="fas fa-database me-1"></i> MySQL permissions required</strong><br>
+    <strong><i class="fas fa-database me-1"></i> MySQL connection failed</strong><br>
     In cPanel → MySQL® Databases:<br>
     1. Create database <code><?php echo htmlspecialchars((string) $dbTest['db'], ENT_QUOTES, 'UTF-8'); ?></code><br>
-    2. Create user <code><?php echo htmlspecialchars((string) $dbTest['user'], ENT_QUOTES, 'UTF-8'); ?></code> (same name as DB is OK)<br>
+    2. Create user <code><?php echo htmlspecialchars((string) $dbTest['user'], ENT_QUOTES, 'UTF-8'); ?></code><br>
     3. <strong>Add User To Database</strong> → ALL PRIVILEGES<br>
+    4. Add to project <code>.env</code> on server:<br>
+    <pre class="rateb-erp-migrate-log mb-0 mt-2">RATIB_CC_DB_NAME=admin_call-center
+RATIB_CC_DB_USER=admin_call-center
+RATIB_CC_DB_PASS=your_mysql_password</pre>
     <?php if (($dbTest['error'] ?? '') !== '') { ?>
-    <span class="small text-muted"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></span>
+    <span class="small text-muted d-block mt-2"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></span>
     <?php } ?>
 </div>
 <?php } elseif (!$schemaReady) { ?>
@@ -79,8 +84,23 @@ startControlLayout('RATIB Contact Center', ['css/system-settings.css', 'css/cont
     <div class="control-settings-card" data-permission="control_dashboard,control_system_settings">
         <h3><i class="fas <?php echo htmlspecialchars($link['icon'], ENT_QUOTES, 'UTF-8'); ?>"></i> <?php echo htmlspecialchars($link['label'], ENT_QUOTES, 'UTF-8'); ?></h3>
         <p><?php echo htmlspecialchars($link['description'], ENT_QUOTES, 'UTF-8'); ?></p>
-        <a href="<?php echo htmlspecialchars($link['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
-            <i class="fas fa-arrow-right"></i> Open
+        <?php
+        if (!$installed) {
+            $openHref = control_contact_center_migrate_page_url();
+            $openLabel = 'Setup first';
+            $openClass = 'btn btn-warning';
+        } elseif ($link['key'] === 'agent-desktop' && !$schemaReady) {
+            $openHref = control_contact_center_migrate_page_url();
+            $openLabel = 'Run DB setup';
+            $openClass = 'btn btn-warning';
+        } else {
+            $openHref = $link['href'];
+            $openLabel = 'Open';
+            $openClass = 'btn btn-primary';
+        }
+        ?>
+        <a href="<?php echo htmlspecialchars($openHref, ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $openClass; ?>">
+            <i class="fas fa-arrow-right"></i> <?php echo htmlspecialchars($openLabel, ENT_QUOTES, 'UTF-8'); ?>
         </a>
     </div>
     <?php } ?>
