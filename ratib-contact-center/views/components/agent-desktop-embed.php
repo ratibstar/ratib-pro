@@ -23,7 +23,7 @@ if (!function_exists('__')) {
     function __(string $s): string { return $s; }
 }
 ?>
-<p class="mb-3">
+<p class="mb-3 rcc-agent-desktop-wrap">
     <a href="<?php echo htmlspecialchars(function_exists('control_contact_center_hub_page_url') ? control_contact_center_hub_page_url() : '#', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-secondary">
         <i class="fas fa-arrow-left"></i> Contact Center Hub
     </a>
@@ -71,10 +71,13 @@ if (!function_exists('__')) {
         </div>
     </div>
     <div class="rcc-agent-desktop__col rcc-agent-desktop__col--list">
+        <div class="rcc-inbox__list-header">Conversations</div>
         <div class="rcc-inbox__list" id="rcc-inbox-list"></div>
     </div>
-    <div class="rcc-agent-desktop__col">
-        <div class="rcc-inbox__thread" id="rcc-inbox-thread"></div>
+    <div class="rcc-agent-desktop__col rcc-agent-desktop__col--thread">
+        <div class="rcc-inbox__thread" id="rcc-inbox-thread">
+            <div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">💬</span>Select a conversation to view messages</div>
+        </div>
         <div class="rcc-inbox__composer">
             <input type="text" id="rcc-inbox-reply" placeholder="Reply…" autocomplete="off">
             <button type="button" id="rcc-inbox-send">Send</button>

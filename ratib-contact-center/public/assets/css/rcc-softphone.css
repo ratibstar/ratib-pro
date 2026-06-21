@@ -2,9 +2,9 @@
 
 .rcc-softphone {
     --rcc-sp-bg: var(--rcc-panel-bg, #1a1d24);
-    --rcc-sp-border: var(--rcc-border, #2d3340);
-    --rcc-sp-text: var(--rcc-text, #e8eaed);
-    --rcc-sp-muted: var(--rcc-muted, #9aa0a6);
+    --rcc-sp-border: var(--rcc-panel-border, #2d3340);
+    --rcc-sp-text: var(--rcc-panel-text, #e8eaed);
+    --rcc-sp-muted: var(--rcc-panel-muted, #9aa0a6);
     --rcc-sp-green: #34a853;
     --rcc-sp-red: #ea4335;
     --rcc-sp-yellow: #fbbc04;

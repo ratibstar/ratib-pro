@@ -150,7 +150,7 @@
                 '<div class="rcc-inbox__meta">' + self._esc(channels) + ' · SLA ' + self._esc(c.sla_status) + '</div>' +
                 '</div>';
         });
-        list.innerHTML = html || '<div class="rcc-inbox__empty">No conversations</div>';
+        list.innerHTML = html || '<div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">📭</span>No conversations yet</div>';
     };
 
     RccAgentInbox.prototype._renderThread = function (messages, conversation) {
@@ -165,7 +165,7 @@
                     '<div>' + self._esc(m.message) + '</div>' +
                     '<time>' + self._esc(m.created_at || '') + '</time></div>';
             });
-            thread.innerHTML = html || '<div class="rcc-inbox__empty">No messages yet</div>';
+            thread.innerHTML = html || '<div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">💬</span>No messages yet</div>';
             thread.scrollTop = thread.scrollHeight;
         }
         if (erp) {

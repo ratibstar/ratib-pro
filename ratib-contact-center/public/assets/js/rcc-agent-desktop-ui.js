@@ -4,10 +4,40 @@
 (function (global) {
     'use strict';
 
+    function syncRccTheme(root) {
+        if (!root) {
+            return;
+        }
+        if (document.body.classList.contains('control-system-body')) {
+            root.setAttribute('data-theme', 'dark');
+            return;
+        }
+        var stored = null;
+        try {
+            stored = localStorage.getItem('rcc-agent-theme');
+        } catch (e) { /* ignore */ }
+        if (stored === 'light' || stored === 'dark') {
+            root.setAttribute('data-theme', stored);
+            return;
+        }
+        root.setAttribute(
+            'data-theme',
+            global.matchMedia && global.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        );
+    }
+
     function bootAgentDesktop() {
         var root = document.getElementById('rcc-agent-desktop');
         if (!root || !global.RccAgentInbox) {
             return;
+        }
+        syncRccTheme(root);
+        if (global.matchMedia) {
+            global.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+                if (!document.body.classList.contains('control-system-body')) {
+                    syncRccTheme(root);
+                }
+            });
         }
 
         var copilot = null;

@@ -1,13 +1,12 @@
-.rcc-agent-desktop__col--ai {
-    border-left: 1px solid #e5e7eb;
-    overflow-y: auto;
-    max-height: 100%;
-}
+/**
+ * RATIB Contact Center — AI Copilot panel (inherits .rcc-agent-desktop theme vars).
+ */
 
 .rcc-ai-copilot {
-    padding: 12px;
+    padding: 14px;
     font-size: 13px;
-    color: #1e293b;
+    color: var(--rcc-text, #e5e7eb);
+    height: 100%;
 }
 
 .rcc-ai-copilot__header {
@@ -15,92 +14,130 @@
     align-items: center;
     gap: 8px;
     font-weight: 600;
-    margin-bottom: 12px;
-    color: #0f172a;
+    margin-bottom: 14px;
+    color: var(--rcc-text);
+    font-size: 14px;
+}
+
+.rcc-ai-copilot__header i {
+    color: var(--rcc-accent);
 }
 
 .rcc-ai-copilot__badge {
     margin-left: auto;
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    background: #e0e7ff;
-    color: #3730a3;
-    padding: 2px 8px;
+    background: var(--rcc-accent-soft);
+    color: var(--rcc-accent);
+    padding: 3px 8px;
     border-radius: 999px;
+    border: 1px solid var(--rcc-border);
 }
 
 .rcc-ai-copilot__section {
     margin-bottom: 14px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #eef2f7;
+    border-bottom: 1px solid var(--rcc-border-subtle);
+}
+
+.rcc-ai-copilot__section:last-child {
+    border-bottom: 0;
+    margin-bottom: 0;
 }
 
 .rcc-ai-copilot__section h4 {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #64748b;
+    color: var(--rcc-text-muted);
     margin: 0 0 8px;
 }
 
 .rcc-ai-copilot__mood {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     margin-bottom: 8px;
+    color: var(--rcc-text);
 }
 
 .rcc-ai-copilot__row {
     display: flex;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 4px;
-    color: #475569;
+    margin-bottom: 6px;
+    color: var(--rcc-text-muted);
+    font-size: 12px;
+}
+
+.rcc-ai-copilot__row strong {
+    color: var(--rcc-text);
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
 .rcc-ai-copilot__summary {
     margin: 8px 0 0;
     font-size: 12px;
-    line-height: 1.45;
-    color: #334155;
-    background: #f8fafc;
-    padding: 8px;
-    border-radius: 6px;
+    line-height: 1.5;
+    color: var(--rcc-text-muted);
+    background: var(--rcc-surface-2);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--rcc-border-subtle);
 }
 
 .rcc-ai-copilot textarea {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 8px;
+    border: 1px solid var(--rcc-input-border);
+    border-radius: 8px;
+    padding: 10px;
     font: inherit;
     resize: vertical;
-    background: #fff;
+    background: var(--rcc-input-bg);
+    color: var(--rcc-text);
+    min-height: 72px;
+}
+
+.rcc-ai-copilot textarea::placeholder {
+    color: var(--rcc-text-faint);
+}
+
+.rcc-ai-copilot textarea:focus {
+    outline: none;
+    border-color: var(--rcc-accent);
+    box-shadow: 0 0 0 2px var(--rcc-accent-soft);
 }
 
 .rcc-ai-copilot__btn-row {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     margin-top: 8px;
 }
 
 .rcc-ai-copilot__btn {
     flex: 1;
     border: none;
-    border-radius: 6px;
-    padding: 7px 10px;
+    border-radius: 8px;
+    padding: 8px 10px;
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    background: #2563eb;
+    background: var(--rcc-accent);
     color: #fff;
+    transition: filter 0.15s ease;
+}
+
+.rcc-ai-copilot__btn:hover {
+    filter: brightness(1.08);
 }
 
 .rcc-ai-copilot__btn--ghost {
-    background: #f1f5f9;
-    color: #334155;
-    border: 1px solid #cbd5e1;
+    background: var(--rcc-surface-2);
+    color: var(--rcc-text);
+    border: 1px solid var(--rcc-border);
 }
 
 .rcc-ai-copilot__actions {
@@ -111,19 +148,28 @@
 
 .rcc-ai-copilot__action {
     text-align: left;
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #991b1b;
-    border-radius: 6px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border-radius: 8px;
     padding: 8px 10px;
     font-size: 12px;
     cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.rcc-ai-copilot__action:hover {
+    background: rgba(239, 68, 68, 0.18);
 }
 
 .rcc-ai-copilot__action--neutral {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-    color: #334155;
+    border-color: var(--rcc-border);
+    background: var(--rcc-surface-2);
+    color: var(--rcc-text);
+}
+
+.rcc-ai-copilot__action--neutral:hover {
+    background: var(--rcc-surface-hover);
 }
 
 .rcc-ai-copilot__erp h4 {
@@ -131,9 +177,20 @@
 }
 
 .rcc-ai-copilot--risk-high .rcc-ai-copilot__mood {
-    color: #dc2626;
+    color: var(--rcc-danger, #ef4444);
 }
 
 .rcc-ai-copilot--risk-mid .rcc-ai-copilot__mood {
-    color: #d97706;
+    color: var(--rcc-warning, #f59e0b);
+}
+
+/* Light mode action button text fix */
+.rcc-agent-desktop[data-theme="light"] .rcc-ai-copilot__action {
+    color: #991b1b;
+    background: #fef2f2;
+}
+
+.rcc-agent-desktop[data-theme="light"] .rcc-ai-copilot__action--neutral {
+    color: var(--rcc-text);
+    background: var(--rcc-surface-2);
 }
