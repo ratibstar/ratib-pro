@@ -10,13 +10,34 @@ use Rateb\App\Helpers\StorageHelper;
 final class DocumentService
 {
     /** @var array<int, string> */
+    private const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx'];
+
+    /** @var array<int, string> */
     private const ALLOWED_MIMES = [
         'application/pdf',
         'image/jpeg',
+        'image/jpg',
+        'image/pjpeg',
         'image/png',
         'image/webp',
         'application/msword',
+        'application/vnd.ms-word',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/zip',
+        'application/x-zip-compressed',
+        'application/CDFV2',
+        'application/x-ole-storage',
+    ];
+
+    /** @var array<string, string> */
+    private const EXTENSION_MIMES = [
+        'pdf' => 'application/pdf',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
 
     /** @return array{success:bool,path?:string,error?:string} */
@@ -27,7 +48,7 @@ final class DocumentService
             return ['success' => true];
         }
         if ($uploadError !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'error' => __('upload_failed')];
+            return ['success' => false, 'error' => $this->uploadErrorMessage($uploadError)];
         }
 
         $size = (int) ($file['size'] ?? 0);
@@ -54,13 +75,13 @@ final class DocumentService
             return ['success' => false, 'error' => __('upload_failed')];
         }
 
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($tmpName) ?: '';
-        if (!in_array($mime, self::ALLOWED_MIMES, true)) {
+        $originalName = (string) ($file['name'] ?? 'file');
+        $mime = $this->resolveMimeType($tmpName, $originalName);
+        if ($mime === null) {
             return ['success' => false, 'error' => __('file_type_not_allowed')];
         }
 
-        $ext = pathinfo((string) ($file['name'] ?? 'file'), PATHINFO_EXTENSION);
+        $ext = pathinfo($originalName, PATHINFO_EXTENSION);
         $safeName = bin2hex(random_bytes(8)) . ($ext !== '' ? '.' . preg_replace('/[^a-zA-Z0-9]/', '', $ext) : '');
         $subdir = 'company_' . $companyId . '/' . preg_replace('/[^a-z0-9_\-]/i', '_', $entityType);
         $uploadsRoot = StorageHelper::uploadsRoot();
@@ -76,21 +97,29 @@ final class DocumentService
             return ['success' => false, 'error' => __('upload_save_failed')];
         }
 
-        $db = \Rateb\App\Core\Database::connection();
-        $db->prepare(
-            'INSERT INTO rateb_documents (company_id, entity_type, entity_id, title, file_name, file_path, mime_type, file_size, uploaded_by)
-             VALUES (:cid, :et, :eid, :title, :fn, :fp, :mime, :sz, :uid)'
-        )->execute([
-            'cid' => (int) $companyId,
-            'et' => $entityType,
-            'eid' => $entityId,
-            'title' => $title !== '' ? $title : (string) ($file['name'] ?? $safeName),
-            'fn' => (string) ($file['name'] ?? $safeName),
-            'fp' => $relative,
-            'mime' => $mime,
-            'sz' => $size,
-            'uid' => SessionManager::get('rateb_user_id'),
-        ]);
+        $displayName = $this->safeStoredName($originalName, $safeName);
+        $docTitle = $title !== '' ? $title : $displayName;
+
+        try {
+            $db = \Rateb\App\Core\Database::connection();
+            $db->prepare(
+                'INSERT INTO rateb_documents (company_id, entity_type, entity_id, title, file_name, file_path, mime_type, file_size, uploaded_by)
+                 VALUES (:cid, :et, :eid, :title, :fn, :fp, :mime, :sz, :uid)'
+            )->execute([
+                'cid' => (int) $companyId,
+                'et' => $entityType,
+                'eid' => $entityId,
+                'title' => $docTitle,
+                'fn' => $displayName,
+                'fp' => $relative,
+                'mime' => $mime,
+                'sz' => $size,
+                'uid' => SessionManager::get('rateb_user_id'),
+            ]);
+        } catch (\Throwable $e) {
+            @unlink($full);
+            return ['success' => false, 'error' => DatabaseErrorService::userMessage($e)];
+        }
 
         return ['success' => true, 'path' => $relative];
     }
@@ -185,7 +214,7 @@ final class DocumentService
     {
         $uploadError = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
         if ($uploadError !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'error' => __('upload_failed')];
+            return ['success' => false, 'error' => $this->uploadErrorMessage($uploadError)];
         }
 
         $size = (int) ($file['size'] ?? 0);
@@ -209,14 +238,14 @@ final class DocumentService
             return ['success' => false, 'error' => __('upload_failed')];
         }
 
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($tmpName) ?: '';
-        if (!in_array($mime, self::ALLOWED_MIMES, true)) {
+        $originalName = (string) ($file['name'] ?? 'file');
+        $mime = $this->resolveMimeType($tmpName, $originalName);
+        if ($mime === null) {
             return ['success' => false, 'error' => __('file_type_not_allowed')];
         }
 
         $entityType = (string) ($doc['entity_type'] ?? '');
-        $ext = pathinfo((string) ($file['name'] ?? 'file'), PATHINFO_EXTENSION);
+        $ext = pathinfo($originalName, PATHINFO_EXTENSION);
         $safeName = bin2hex(random_bytes(8)) . ($ext !== '' ? '.' . preg_replace('/[^a-zA-Z0-9]/', '', $ext) : '');
         $subdir = 'company_' . $companyId . '/' . preg_replace('/[^a-z0-9_\-]/i', '_', $entityType);
         $destDir = StorageHelper::uploadsRoot() . '/' . $subdir;
@@ -233,10 +262,11 @@ final class DocumentService
 
         $oldPath = StorageHelper::resolveFilePath((string) ($doc['file_path'] ?? ''));
         $db = \Rateb\App\Core\Database::connection();
+        $displayName = $this->safeStoredName($originalName, $safeName);
         $db->prepare(
             'UPDATE rateb_documents SET file_name = :fn, file_path = :fp, mime_type = :mime, file_size = :sz WHERE id = :id'
         )->execute([
-            'fn' => (string) ($file['name'] ?? $safeName),
+            'fn' => $displayName,
             'fp' => $relative,
             'mime' => $mime,
             'sz' => $size,
@@ -388,5 +418,61 @@ final class DocumentService
     {
         $name = preg_replace('/[^\w\.\-]+/u', '_', $name) ?? 'file';
         return $name !== '' ? $name : 'file';
+    }
+
+    private function uploadErrorMessage(int $code): string
+    {
+        if ($code === UPLOAD_ERR_INI_SIZE || $code === UPLOAD_ERR_FORM_SIZE) {
+            return __('file_too_large');
+        }
+        if ($code === UPLOAD_ERR_PARTIAL) {
+            return __('upload_failed');
+        }
+        return __('upload_failed');
+    }
+
+    private function resolveMimeType(string $tmpName, string $originalName): ?string
+    {
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $detected = strtolower(trim((string) ($finfo->file($tmpName) ?: '')));
+        if ($detected !== '' && in_array($detected, self::ALLOWED_MIMES, true)) {
+            return $detected;
+        }
+
+        $ext = strtolower(preg_replace('/[^a-z0-9]/', '', pathinfo($originalName, PATHINFO_EXTENSION)) ?? '');
+        if ($ext === '' || !in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
+            return null;
+        }
+
+        $fallbackMime = self::EXTENSION_MIMES[$ext] ?? '';
+        if ($fallbackMime === '') {
+            return null;
+        }
+
+        $generic = ['application/octet-stream', 'application/zip', 'application/x-zip-compressed', ''];
+        if ($detected === '' || in_array($detected, $generic, true)) {
+            return $fallbackMime;
+        }
+
+        if ($ext === 'docx' && str_contains($detected, 'zip')) {
+            return $fallbackMime;
+        }
+        if ($ext === 'doc' && (str_contains($detected, 'msword') || str_contains($detected, 'ole') || str_contains($detected, 'cdf'))) {
+            return $fallbackMime;
+        }
+
+        return null;
+    }
+
+    private function safeStoredName(string $originalName, string $fallback): string
+    {
+        $name = trim($originalName);
+        if ($name === '') {
+            return $fallback;
+        }
+        if (!mb_check_encoding($name, 'UTF-8')) {
+            return $fallback;
+        }
+        return mb_substr($name, 0, 255);
     }
 }

@@ -1760,10 +1760,13 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
             $id = $this->model->create($data);
-            $this->persistAttachments($id, (int) ($data['company_id'] ?? 0));
+            $attachError = $this->persistAttachments($id, (int) ($data['company_id'] ?? 0));
             (new \Rateb\App\Services\SupplierEvaluationService())->refreshSupplierRating((int) ($data['supplier_id'] ?? 0));
             (new AuditService())->log('create', $this->entityName, $id, $data);
             SessionManager::flash('success', __('evaluation_saved'));
+            if ($attachError !== null) {
+                SessionManager::flash('error', $attachError);
+            }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
@@ -1808,12 +1811,10 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $data['approved_at'] = null;
         }
         $this->model->update($id, $data);
-        try {
-            $this->persistAttachments($id, (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id()));
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
-        }
+        $attachError = $this->persistAttachments(
+            $id,
+            (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id())
+        );
         $svc = new \Rateb\App\Services\SupplierEvaluationService();
         $oldSupplierId = (int) ($existing['supplier_id'] ?? 0);
         $newSupplierId = (int) ($data['supplier_id'] ?? 0);
@@ -1823,6 +1824,9 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         }
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', $needsReapproval ? __('evaluation_resubmitted_for_approval') : __('evaluation_saved'));
+        if ($attachError !== null) {
+            SessionManager::flash('error', $attachError);
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -2028,10 +2032,13 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         return false;
     }
 
-    private function persistAttachments(int $evaluationId, int $companyId): void
+    private function persistAttachments(int $evaluationId, int $companyId): ?string
     {
         if ($evaluationId < 1 || $companyId < 1) {
-            return;
+            return null;
+        }
+        if (!$this->hasEvaluationAttachmentUpload()) {
+            return null;
         }
         $result = \Rateb\App\Helpers\EntityAttachment::handleMultipleFiles(
             'evaluation_attachments',
@@ -2042,8 +2049,27 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             __('evaluation_attachments')
         );
         if (!($result['success'] ?? false)) {
-            throw new \RuntimeException((string) ($result['error'] ?? __('upload_failed')));
+            return (string) ($result['error'] ?? __('save_ok_attachment_failed'));
         }
+        return null;
+    }
+
+    private function hasEvaluationAttachmentUpload(): bool
+    {
+        if (!isset($_FILES['evaluation_attachments'])) {
+            return false;
+        }
+        $files = $_FILES['evaluation_attachments'];
+        $errors = $files['error'] ?? null;
+        if (is_array($errors)) {
+            foreach ($errors as $error) {
+                if ((int) $error !== UPLOAD_ERR_NO_FILE) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return (int) $errors !== UPLOAD_ERR_NO_FILE;
     }
 
     protected function layout(): string
