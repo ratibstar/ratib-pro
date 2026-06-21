@@ -59,8 +59,12 @@
             if (!res || !res.ok) {
                 var list = self.root.querySelector('#rcc-inbox-list');
                 if (list) {
+                    var msg = (res && res.error) || 'Could not load inbox';
+                    if (res && res.detail) {
+                        msg += ': ' + res.detail;
+                    }
                     list.innerHTML = '<div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">⚠</span>' +
-                        self._esc((res && res.error) || 'Could not load inbox') + '</div>';
+                        self._esc(msg) + '</div>';
                 }
                 return;
             }

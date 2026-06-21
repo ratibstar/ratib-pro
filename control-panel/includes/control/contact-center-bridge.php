@@ -133,15 +133,12 @@ function control_contact_center_asset_url(string $relativePath): string
         return control_contact_center_assets_base_url();
     }
 
-    // Serve directly from /ratib-contact-center/public/assets/ (.htaccess sets MIME types).
-    // Avoids rcc-asset.php proxy 404/HTML when that file is missing on server.
-    $base = control_contact_center_assets_base_url();
-    $segments = explode('/', $relativePath);
-    $encoded = implode('/', array_map('rawurlencode', $segments));
+    // Serve via asset.php — reliable MIME on cPanel even when .htaccess static rules miss.
+    $base = control_contact_center_public_base_url();
     $disk = control_contact_center_root_path() . '/public/assets/' . $relativePath;
     $v = is_file($disk) ? (string) filemtime($disk) : (string) time();
 
-    return $base . '/' . $encoded . '?v=' . $v;
+    return $base . '/asset.php?f=' . rawurlencode($relativePath) . '&v=' . $v;
 }
 
 function control_contact_center_ws_url(): string

@@ -200,6 +200,7 @@ FAST_FILES = [
     "control-panel/pages/control/contact-center-app.php",
     "control-panel/pages/control/rcc-asset.php",
     "ratib-contact-center/bootstrap.php",
+    "ratib-contact-center/public/asset.php",
     "ratib-contact-center/public/assets/.htaccess",
     "assets/rateb-logo.svg",
     # Build marker — MUST stay last.

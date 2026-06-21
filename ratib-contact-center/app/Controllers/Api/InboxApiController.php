@@ -18,10 +18,12 @@ final class InboxApiController
 {
     private ?ConversationEngine $engine = null;
 
-    private function engine(): ConversationEngine
+    private function engine(bool $withRealtime = false): ConversationEngine
     {
         if ($this->engine === null) {
-            RealtimeOrchestrator::boot();
+            if ($withRealtime) {
+                RealtimeOrchestrator::boot();
+            }
             $this->engine = new ConversationEngine(EventBus::instance());
         }
         return $this->engine;
@@ -82,7 +84,7 @@ final class InboxApiController
                 if ($conversationId < 1 || $agentId < 1 || $message === '') {
                     return $this->error('conversation_id, agent_id, message required');
                 }
-                $updated = $this->engine()->sendOutbound($tenantId, $conversationId, $agentId, $channel, $message, is_array($input['payload'] ?? null) ? $input['payload'] : []);
+                $updated = $this->engine(true)->sendOutbound($tenantId, $conversationId, $agentId, $channel, $message, is_array($input['payload'] ?? null) ? $input['payload'] : []);
                 return ['ok' => true, 'conversation' => $updated];
 
             case 'close':
@@ -95,17 +97,17 @@ final class InboxApiController
 
             case 'webhook_whatsapp':
                 $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new WhatsAppChannelAdapter($this->engine());
+                $adapter = new WhatsAppChannelAdapter($this->engine(true));
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
             case 'webhook_email':
                 $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new EmailChannelAdapter($this->engine());
+                $adapter = new EmailChannelAdapter($this->engine(true));
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
             case 'webhook_chat':
                 $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new WebChatChannelAdapter($this->engine());
+                $adapter = new WebChatChannelAdapter($this->engine(true));
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
             default:

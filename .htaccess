@@ -196,6 +196,9 @@ RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
 # RATIB Contact Center — static assets + API scripts
+RewriteCond %{REQUEST_URI} ^/ratib-contact-center/public/asset\.php [NC]
+RewriteRule ^ - [L]
+
 RewriteCond %{REQUEST_URI} ^/ratib-contact-center/public/assets/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]

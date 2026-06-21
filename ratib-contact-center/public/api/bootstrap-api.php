@@ -42,4 +42,8 @@ set_exception_handler(static function (\Throwable $e): void {
     exit(1);
 });
 
+if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
+    define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
+}
+
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
