@@ -354,8 +354,13 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         if (($data['currency'] ?? '') === '') {
             $data['currency'] = 'SAR';
         }
-        if (array_key_exists('customs_broker_id', $data) && (string) ($data['customs_broker_id'] ?? '') === '') {
-            $data['customs_broker_id'] = null;
+        foreach (['cost_center_id', 'warehouse_id', 'customs_broker_id'] as $fk) {
+            if (array_key_exists($fk, $data) && (string) ($data[$fk] ?? '') === '') {
+                $data[$fk] = null;
+            }
+        }
+        if (array_key_exists('customs_clearance_date', $data) && trim((string) ($data['customs_clearance_date'] ?? '')) === '') {
+            $data['customs_clearance_date'] = null;
         }
         return $data;
     }
