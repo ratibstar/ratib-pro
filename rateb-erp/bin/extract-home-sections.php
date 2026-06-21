@@ -15,7 +15,7 @@ if (!is_dir($dir)) {
 
 file_put_contents(
     $dir . '/sections-body.php',
-    "<?php\n/** Ported from pages/home.php (unified marketing at /). Do not edit pages/home.php. */\n" . $out
+    "<?php\n/** Ported from pages/home.php (unified marketing at /). Do not edit pages/home.php. */\n?>\n" . $out
 );
 
 echo 'Wrote ' . strlen($out) . " bytes\n";

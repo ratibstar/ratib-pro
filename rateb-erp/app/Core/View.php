@@ -18,8 +18,15 @@ final class View
         $content = static function () use ($viewFile, $data): string {
             extract($data, EXTR_SKIP);
             ob_start();
-            include $viewFile;
-            return (string) ob_get_clean();
+            try {
+                include $viewFile;
+                return (string) ob_get_clean();
+            } catch (\Throwable $e) {
+                if (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                throw $e;
+            }
         };
 
         if ($layout === null) {

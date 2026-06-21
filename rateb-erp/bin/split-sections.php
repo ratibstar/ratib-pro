@@ -10,8 +10,8 @@ if ($p === false) {
     exit(1);
 }
 $head = substr($c, 0, $p);
-$tail = '<?php' . "\n/** Commerce: pricing + register + final CTA */\n" . substr($c, $p);
-$headOut = '<?php' . "\n/** Deep marketing sections (platform → API) */\n" . substr($head, strlen('<?php'));
+$tail = '<?php' . "\n/** Commerce: pricing + register + final CTA */\n?>\n" . substr($c, $p);
+$headOut = '<?php' . "\n/** Deep marketing sections (platform → API) */\n?>\n" . substr($head, strlen('<?php'));
 
 file_put_contents($root . '/includes/marketing-unified/sections-deep.php', $headOut);
 file_put_contents($root . '/includes/marketing-unified/sections-commerce.php', $tail);

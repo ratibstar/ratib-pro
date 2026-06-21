@@ -1,5 +1,6 @@
 <?php
 /** Commerce: pricing + register + final CTA */
+?>
 <section class="pricing-section rateb-pricing-saas" id="programs">
             <div class="rateb-container">
                 <header class="rateb-section__head">

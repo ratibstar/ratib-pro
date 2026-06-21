@@ -1,5 +1,6 @@
 <?php
 /** Ported from pages/home.php (unified marketing at /). Do not edit pages/home.php. */
+?>
         <section class="rateb-section rateb-trust" id="platform">
             <div class="rateb-container">
                 <header class="rateb-section__head">
