@@ -199,7 +199,7 @@ $req = static function (string $label): string {
                                     <?php foreach ($taxPresets as $preset) {
                                         $presetRate = strpos($preset, '15%') !== false ? 15 : (strpos($preset, '5%') !== false ? 5 : 0);
                                         ?>
-                                    <option value="<?php echo Rateb\App\Core\View::escape($preset); ?>" data-tax-rate="<?php echo $presetRate; ?>"<?php echo $taxName === $preset ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($preset); ?></option>
+                                    <option value="<?php echo Rateb\App\Core\View::escape($preset); ?>" data-tax-rate="<?php echo $presetRate; ?>"<?php echo $taxName === $preset ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape(\Rateb\App\Helpers\LineItems::taxPresetLabel($preset)); ?></option>
                                     <?php } ?>
                                 </select>
                                 <select class="form-select form-select-sm" name="line_excluding_tax[]" data-line-calc title="<?php echo __('excluding_tax'); ?>">

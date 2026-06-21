@@ -10,7 +10,7 @@ $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url($routePrefix);
 $entityType = (string) ($entityType ?? 'purchase_request');
 $totalField = (string) ($totalField ?? 'total_estimated');
-$defaultVat15 = !empty($defaultVat15);
+$defaultVat15 = !empty($defaultVat15) || $entityType === 'purchase_request';
 $workflow = $workflow ?? null;
 $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
 $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($fields);

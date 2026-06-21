@@ -316,6 +316,27 @@
         });
     }
 
+    function applyDefaultVatToRow(row, table) {
+        if (!defaultVatPreset(table)) {
+            return;
+        }
+        var hidden = row.querySelector('[data-line-tax-rate]');
+        if (!hidden || parseNum(hidden.value) > 0) {
+            return;
+        }
+        var select = row.querySelector('[data-line-tax-preset]');
+        if (!select) {
+            return;
+        }
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].getAttribute('data-tax-rate') === '15') {
+                select.selectedIndex = i;
+                syncTaxRate(select);
+                break;
+            }
+        }
+    }
+
     function bindTable(table) {
         var addBtn = document.querySelector('[data-line-items-add]');
         if (addBtn && !addBtn._bound) {
@@ -352,6 +373,9 @@
             }
         });
         table.querySelectorAll('[data-line-tax-preset]').forEach(syncTaxRate);
+        table.querySelectorAll('[data-line-items-row]').forEach(function (row) {
+            applyDefaultVatToRow(row, table);
+        });
         renumberLineRows(table);
         bindStockHints(table);
         updateTableTotals(table);

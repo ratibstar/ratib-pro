@@ -85,6 +85,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
+            'defaultVat15' => true,
         ]), $this->layout());
     }
 
@@ -104,6 +105,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
+            'defaultVat15' => true,
         ]), $this->layout());
     }
 
