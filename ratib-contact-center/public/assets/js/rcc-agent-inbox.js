@@ -15,7 +15,21 @@
         this._conversations = {};
         this._activeId = null;
         this._client = null;
+        this._pollTimer = null;
     }
+
+    RccAgentInbox.prototype._startPollingFallback = function () {
+        var self = this;
+        if (self._pollTimer) {
+            return;
+        }
+        self._pollTimer = setInterval(function () {
+            self._loadInbox();
+            if (self._activeId) {
+                self.selectConversation(self._activeId);
+            }
+        }, 12000);
+    };
 
     RccAgentInbox.prototype.init = function () {
         var self = this;
@@ -29,9 +43,16 @@
                 url: self.wsUrl,
                 tenantId: self.tenantId,
                 rooms: ['agent:' + self.agentId, 'tenant:' + self.tenantId],
-                onEvent: function (ev) { self._onRealtimeEvent(ev); }
+                onEvent: function (ev) { self._onRealtimeEvent(ev); },
+                onStatus: function (status) {
+                    if (status === 'offline' || status === 'error') {
+                        self._startPollingFallback();
+                    }
+                }
             });
             self._client.connect();
+        } else {
+            self._startPollingFallback();
         }
     };
 

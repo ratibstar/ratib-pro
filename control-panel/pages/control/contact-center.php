@@ -21,6 +21,14 @@ $installed = $diag['installed'];
 $dbTest = $installed ? control_contact_center_db_test() : ['ok' => false, 'schema' => false, 'db' => control_contact_center_db_name(), 'user' => control_contact_center_db_user(), 'error' => '', 'tables' => 0];
 $schemaReady = $dbTest['ok'] && $dbTest['schema'];
 $links = control_contact_center_nav_links();
+$realtimeStatus = $installed ? control_contact_center_realtime_hub_status() : ['running' => false, 'port' => 9702, 'ws_url' => control_contact_center_ws_url(), 'pid' => null, 'log' => '', 'error' => ''];
+$realtimeFlash = '';
+
+if ($installed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rcc_start_realtime_hub'])) {
+    $startResult = control_contact_center_start_realtime_hub();
+    $realtimeStatus = control_contact_center_realtime_hub_status();
+    $realtimeFlash = ($startResult['message'] ?? 'done') . ($realtimeStatus['running'] ? ' — Hub is running.' : ' — Port still closed; add cPanel cron below.');
+}
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('RATIB Contact Center', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
@@ -121,19 +129,32 @@ RATIB_CC_DB_PASS=your_mysql_password</pre>
 
 <div class="control-settings-card mb-4">
     <h3><i class="fas fa-server"></i> Runtime services (Realtime Hub)</h3>
-    <p class="small mb-2">For live inbox/WebSocket updates, run the hub on the server. WebSocket URL:
-        <code><?php echo htmlspecialchars(control_contact_center_ws_url(), ENT_QUOTES, 'UTF-8'); ?></code></p>
-    <p class="small fw-bold mb-1">1) SSH — foreground (test)</p>
+    <?php if ($realtimeFlash !== '') { ?>
+    <div class="alert alert-<?php echo $realtimeStatus['running'] ? 'success' : 'warning'; ?> py-2 small"><?php echo htmlspecialchars($realtimeFlash, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php } ?>
+    <p class="small mb-2">
+        WebSocket URL: <code><?php echo htmlspecialchars((string) $realtimeStatus['ws_url'], ENT_QUOTES, 'UTF-8'); ?></code><br>
+        Status:
+        <?php if ($realtimeStatus['running']) { ?>
+            <span class="text-success"><strong>Running</strong></span>
+            <?php if (!empty($realtimeStatus['pid'])) { ?> (PID <?php echo (int) $realtimeStatus['pid']; ?>)<?php } ?>
+        <?php } else { ?>
+            <span class="text-warning"><strong>Stopped</strong></span> — port <?php echo (int) $realtimeStatus['port']; ?> closed on server
+        <?php } ?>
+    </p>
+    <?php if ($installed) { ?>
+    <form method="post" class="mb-3">
+        <button type="submit" name="rcc_start_realtime_hub" value="1" class="btn btn-sm btn-primary">
+            <i class="fas fa-play"></i> Start Realtime Hub now
+        </button>
+    </form>
+    <?php } ?>
+    <p class="small fw-bold mb-1">cPanel Cron — every 5 min (keeps hub alive)</p>
+    <pre class="rateb-erp-migrate-log mb-2">*/5 * * * * pgrep -f rcc-realtime-hub.php >/dev/null || /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/start-realtime-hub.sh</pre>
+    <p class="small fw-bold mb-1">SSH — test foreground</p>
     <pre class="rateb-erp-migrate-log mb-2">cd ~/domains/rateb.sa/public_html/ratib-contact-center
 php bin/rcc-realtime-hub.php</pre>
-    <p class="small fw-bold mb-1">2) SSH — background</p>
-    <pre class="rateb-erp-migrate-log mb-2">bash bin/start-realtime-hub.sh</pre>
-    <p class="small fw-bold mb-1">3) cPanel Cron — every 5 min (auto-restart if down)</p>
-    <pre class="rateb-erp-migrate-log mb-2">*/5 * * * * pgrep -f rcc-realtime-hub.php || /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/start-realtime-hub.sh</pre>
-    <p class="small fw-bold mb-1">4) cPanel Cron — @reboot</p>
-    <pre class="rateb-erp-migrate-log mb-2">@reboot php /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/rcc-realtime-hub.php &amp;</pre>
-    <p class="small fw-bold mb-1">5) systemd (VPS) — see <code>ratib-contact-center/bin/rcc-realtime-hub.service</code></p>
-    <p class="small text-muted mb-0">Open firewall TCP <strong>9702</strong> or use SSH tunnel. Full guide: <code>ratib-contact-center/bin/REALTIME-HUB-RUN.txt</code></p>
+    <p class="small text-muted mb-0">After deploy, GitHub Actions tries to start the hub automatically. If <code>wss://rateb.sa:9702</code> still fails, open TCP <strong>9702</strong> in the server firewall (or inbox uses polling fallback). Guide: <code>ratib-contact-center/bin/REALTIME-HUB-RUN.txt</code></p>
 </div>
 
 <?php endControlLayout(); ?>

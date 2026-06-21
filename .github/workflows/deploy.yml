@@ -76,6 +76,20 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
         run: bash scripts/run-rateb-erp-migrations.sh
 
+      - name: Start RCC Realtime Hub (WebSocket)
+        if: steps.deploy.outcome == 'success'
+        env:
+          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
+          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
+          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
+          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+          DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/domains/rateb.sa/public_html' }}
+        run: bash scripts/run-rcc-realtime-hub.sh
+
       - name: Purge LiteSpeed cache
         if: steps.deploy.outcome == 'success'
         run: |

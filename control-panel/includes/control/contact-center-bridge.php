@@ -178,12 +178,120 @@ function control_contact_center_asset_url(string $assetKey): string
 
 function control_contact_center_ws_url(): string
 {
+    $public = getenv('RCC_WEBSOCKET_PUBLIC_URL');
+    if ($public !== false && trim((string) $public) !== '') {
+        return rtrim(trim((string) $public), '/');
+    }
+    if (defined('RATIB_CC_WS_URL') && (string) RATIB_CC_WS_URL !== '') {
+        return rtrim((string) RATIB_CC_WS_URL, '/');
+    }
     $host = defined('RATIB_CC_WS_HOST') ? (string) RATIB_CC_WS_HOST : (getenv('RCC_REALTIME_HUB_HOST') ?: '127.0.0.1');
     $port = (int) (getenv('RCC_WEBSOCKET_PORT') ?: 9702);
     $siteHost = parse_url(control_contact_center_site_base(), PHP_URL_HOST) ?: 'localhost';
     $useHost = ($host === '127.0.0.1' || $host === 'localhost') ? $siteHost : $host;
     $scheme = (strpos(control_contact_center_site_base(), 'https://') === 0) ? 'wss' : 'ws';
     return $scheme . '://' . $useHost . ':' . $port;
+}
+
+/** @return array{running:bool,port:int,ws_url:string,pid:int|null,log:string,error:string} */
+function control_contact_center_realtime_hub_status(): array
+{
+    $port = (int) (getenv('RCC_WEBSOCKET_PORT') ?: 9702);
+    $running = false;
+    $fp = @fsockopen('127.0.0.1', $port, $errno, $errstr, 1);
+    if (is_resource($fp)) {
+        $running = true;
+        fclose($fp);
+    }
+
+    $pid = null;
+    $root = control_contact_center_root_path();
+    $logPath = $root . '/storage/logs/rcc-realtime-hub.log';
+    if (!is_file($logPath)) {
+        $logPath = $root . '/storage/logs/rcc-realtime-hub.log';
+    }
+
+    $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+    if (function_exists('shell_exec') && !in_array('shell_exec', $disabled, true)) {
+        $out = trim((string) @shell_exec('pgrep -f rcc-realtime-hub.php 2>/dev/null | head -1'));
+        if ($out !== '' && ctype_digit($out)) {
+            $pid = (int) $out;
+            if (!$running) {
+                $running = true;
+            }
+        }
+    }
+
+    return [
+        'running' => $running,
+        'port' => $port,
+        'ws_url' => control_contact_center_ws_url(),
+        'pid' => $pid,
+        'log' => is_file($logPath) ? (string) file_get_contents($logPath) : '',
+        'error' => $running ? '' : ($errstr ?? 'port closed'),
+    ];
+}
+
+/** @return array{ok:bool,running:bool,message:string,error?:string} */
+function control_contact_center_start_realtime_hub(): array
+{
+    if (!control_contact_center_is_installed()) {
+        return ['ok' => false, 'running' => false, 'message' => 'module missing', 'error' => 'ratib-contact-center not found'];
+    }
+
+    $status = control_contact_center_realtime_hub_status();
+    if ($status['running']) {
+        return ['ok' => true, 'running' => true, 'message' => 'already running'];
+    }
+
+    $root = control_contact_center_root_path();
+    $script = $root . '/bin/start-realtime-hub.sh';
+    if (!is_file($script)) {
+        return ['ok' => false, 'running' => false, 'message' => 'start script missing', 'error' => $script];
+    }
+
+    @mkdir($root . '/storage/logs', 0755, true);
+    $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+    $launched = false;
+
+    if (function_exists('proc_open') && !in_array('proc_open', $disabled, true)) {
+        $cmd = 'bash ' . escapeshellarg($script);
+        $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $proc = @proc_open($cmd, $descriptors, $pipes, $root);
+        if (is_resource($proc)) {
+            if (isset($pipes[1])) {
+                fclose($pipes[1]);
+            }
+            if (isset($pipes[2])) {
+                fclose($pipes[2]);
+            }
+            proc_close($proc);
+            $launched = true;
+        }
+    } elseif (function_exists('shell_exec') && !in_array('shell_exec', $disabled, true)) {
+        @shell_exec('cd ' . escapeshellarg($root) . ' && bash bin/start-realtime-hub.sh >/dev/null 2>&1 &');
+        $launched = true;
+    } else {
+        @file_put_contents($root . '/storage/realtime-hub-start.requested', (string) time());
+        return [
+            'ok' => true,
+            'running' => false,
+            'message' => 'shell disabled — add cPanel cron: */5 * * * * pgrep -f rcc-realtime-hub.php || bash ' . $script,
+        ];
+    }
+
+    if (!$launched) {
+        return ['ok' => false, 'running' => false, 'message' => 'could not launch', 'error' => 'proc_open/shell_exec failed'];
+    }
+
+    usleep(800000);
+    $status = control_contact_center_realtime_hub_status();
+    return [
+        'ok' => $status['running'],
+        'running' => $status['running'],
+        'message' => $status['running'] ? 'started on port ' . $status['port'] : 'launch sent — port ' . $status['port'] . ' not open yet (check log or cron)',
+        'error' => $status['running'] ? '' : ($status['error'] ?? ''),
+    ];
 }
 
 function control_contact_center_hub_page_url(): string
