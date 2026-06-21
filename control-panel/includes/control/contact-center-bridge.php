@@ -126,17 +126,45 @@ function control_contact_center_assistant_api_url(): string
     return control_contact_center_public_base_url() . '/api/v1/assistant.php';
 }
 
-function control_contact_center_asset_url(string $relativePath): string
+function control_contact_center_asset_manifest(): array
 {
-    $relativePath = ltrim(str_replace('\\', '/', $relativePath), '/');
+    static $manifest = null;
+    if ($manifest !== null) {
+        return $manifest;
+    }
+    $path = control_contact_center_root_path() . '/config/assets-manifest.php';
+    if (!is_file($path)) {
+        $manifest = [];
+        return $manifest;
+    }
+    $loaded = require $path;
+    $manifest = is_array($loaded) ? $loaded : [];
+
+    return $manifest;
+}
+
+function control_contact_center_asset_url(string $assetKey): string
+{
+    $manifest = control_contact_center_asset_manifest();
+    $relativePath = $manifest[$assetKey] ?? null;
+    if ($relativePath === null) {
+        // Legacy: treat as relative path under public/assets/
+        $relativePath = ltrim(str_replace('\\', '/', $assetKey), '/');
+        $relativePath = preg_replace('/[^\x2E\x2F\x30-\x39\x41-\x5A\x5F\x61-\x7A-]/', '', $relativePath) ?? $relativePath;
+        $relativePath = str_replace(['sمنتphone', 'smtphone'], 'softphone', $relativePath);
+    }
     if ($relativePath === '' || strpos($relativePath, '..') !== false) {
         return control_contact_center_assets_base_url();
     }
 
-    // Serve via asset.php — reliable MIME on cPanel even when .htaccess static rules miss.
     $base = control_contact_center_public_base_url();
     $disk = control_contact_center_root_path() . '/public/assets/' . $relativePath;
     $v = is_file($disk) ? (string) filemtime($disk) : (string) time();
+    $queryKey = isset($manifest[$assetKey]) ? $assetKey : 'legacy';
+
+    if (isset($manifest[$assetKey])) {
+        return $base . '/asset.php?k=' . rawurlencode($assetKey) . '&v=' . $v;
+    }
 
     return $base . '/asset.php?f=' . rawurlencode($relativePath) . '&v=' . $v;
 }

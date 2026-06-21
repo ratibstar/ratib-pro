@@ -50,9 +50,9 @@ require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout(
     'Contact Center — Agent Desktop',
     [
-        $rccAsset('css/rcc-agent-inbox.css'),
-        $rccAsset('css/rcc-softphone.css'),
-        $rccAsset('css/rcc-ai-copilot.css'),
+        $rccAsset('inbox-css'),
+        $rccAsset('softphone-css'),
+        $rccAsset('copilot-css'),
     ],
     [],
     ['standalone' => true]
@@ -72,11 +72,11 @@ if ($route === 'agent-desktop') {
 }
 
 endControlLayout([
-    $rccAsset('js/rcc-realtime-client.js'),
+    $rccAsset('realtime-js'),
     'https://cdn.jsdelivr.net/npm/sip.js@0.21.2/dist/sip.min.js',
-    $rccAsset('js/rcc-softphone.js'),
-    $rccAsset('js/rcc-softphone-ui.js'),
-    $rccAsset('js/rcc-agent-inbox.js'),
-    $rccAsset('js/rcc-ai-copilot.js'),
-    $rccAsset('js/rcc-agent-desktop-ui.js'),
+    $rccAsset('softphone-js'),
+    $rccAsset('softphone-ui-js'),
+    $rccAsset('inbox-js'),
+    $rccAsset('copilot-js'),
+    $rccAsset('desktop-js'),
 ]);

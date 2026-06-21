@@ -4,9 +4,24 @@ declare(strict_types=1);
 /**
  * Serve RCC static assets with correct MIME (works even when .htaccess static rules fail).
  */
-$file = (string) ($_GET['f'] ?? '');
-$file = str_replace(['\\', "\0"], '/', $file);
-$file = ltrim($file, '/');
+$manifestPath = dirname(__DIR__) . '/config/assets-manifest.php';
+/** @var array<string, string> $manifest */
+$manifest = is_file($manifestPath) ? (require $manifestPath) : [];
+
+$file = '';
+$key = preg_replace('/[^a-z0-9_-]/', '', (string) ($_GET['k'] ?? ''));
+if ($key !== '' && isset($manifest[$key])) {
+    $file = $manifest[$key];
+}
+
+if ($file === '') {
+    $file = (string) ($_GET['f'] ?? '');
+    $file = str_replace(['\\', "\0"], '/', $file);
+    $file = ltrim($file, '/');
+    $file = preg_replace('/[^\x2E\x2F\x30-\x39\x41-\x5A\x5F\x61-\x7A-]/', '', $file) ?? $file;
+    $file = str_replace(['sمنتphone', 'smtphone'], 'softphone', $file);
+}
+
 if ($file === '' || strpos($file, '..') !== false) {
     http_response_code(400);
     header('Content-Type: text/plain; charset=utf-8');

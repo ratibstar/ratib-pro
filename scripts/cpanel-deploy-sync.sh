@@ -38,6 +38,7 @@ CRITICAL_FILES=(
   "control-panel/pages/control/rcc-asset.php"
   "ratib-contact-center/bootstrap.php"
   "ratib-contact-center/public/asset.php"
+  "ratib-contact-center/config/assets-manifest.php"
   "ratib-contact-center/public/assets/.htaccess"
   "control-panel/includes/control/registration-requests-content.php"
   "control-panel/pages/control/control-hub.php"
