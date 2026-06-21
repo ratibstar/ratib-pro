@@ -16,6 +16,9 @@ return [
     'nav.company_portal' => 'بوابة الشركة',
     'nav.erp_links' => 'روابط ERP',
     'nav.erp_db_setup' => 'إعداد قاعدة بيانات ERP',
+    'nav.contact_center' => 'مركز الاتصال',
+    'nav.contact_center_desktop' => 'سطح مكتب الوكيل',
+    'nav.contact_center_db_setup' => 'إعداد قاعدة مركز الاتصال',
     'nav.public_site_content' => 'محتوى الموقع العام',
     'nav.company_profile_live' => 'ملف الشركة (مباشر)',
     'nav.client_hub' => 'مركز العملاء',
@@ -45,6 +48,7 @@ return [
     'nav.logout' => 'تسجيل الخروج',
 
     'section.rateb_erp' => 'نظام رتب ERP',
+    'section.contact_center' => 'مركز الاتصال',
     'section.public_site' => 'الموقع العام',
     'section.client_platform' => 'منصة العملاء',
     'section.core_management' => 'الإدارة الأساسية',

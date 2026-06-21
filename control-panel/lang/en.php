@@ -16,6 +16,9 @@ return [
     'nav.company_portal' => 'Company portal',
     'nav.erp_links' => 'ERP links',
     'nav.erp_db_setup' => 'ERP Database Setup',
+    'nav.contact_center' => 'Contact Center Hub',
+    'nav.contact_center_desktop' => 'Agent Desktop',
+    'nav.contact_center_db_setup' => 'Contact Center DB Setup',
     'nav.public_site_content' => 'Public site content',
     'nav.company_profile_live' => 'Company profile (live)',
     'nav.client_hub' => 'Client Hub',
@@ -45,6 +48,7 @@ return [
     'nav.logout' => 'Logout',
 
     'section.rateb_erp' => 'RATEB ERP System',
+    'section.contact_center' => 'Contact Center',
     'section.public_site' => 'Public site',
     'section.client_platform' => 'Client Platform',
     'section.core_management' => 'Core Management',

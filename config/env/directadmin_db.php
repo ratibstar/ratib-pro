@@ -107,6 +107,28 @@ if (!function_exists('rateb_country_database_candidates')) {
     }
 }
 
+if (!function_exists('rateb_contact_center_database_name')) {
+    function rateb_contact_center_database_name(): string
+    {
+        $fromEnv = rateb_env('RATIB_CC_DB_NAME');
+        if ($fromEnv !== '') {
+            return $fromEnv;
+        }
+        return rateb_db_prefix() . '_call-center';
+    }
+}
+
+if (!function_exists('rateb_contact_center_db_user')) {
+    function rateb_contact_center_db_user(): string
+    {
+        $fromEnv = rateb_env('RATIB_CC_DB_USER');
+        if ($fromEnv !== '') {
+            return $fromEnv;
+        }
+        return rateb_contact_center_database_name();
+    }
+}
+
 if (!function_exists('rateb_all_country_database_names')) {
     /**
      * @return list<string>

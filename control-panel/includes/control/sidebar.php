@@ -6,6 +6,7 @@
 require_once __DIR__ . '/client-platform-nav.php';
 require_once __DIR__ . '/public-marketing-urls.php';
 require_once __DIR__ . '/rateb-erp-nav.php';
+require_once __DIR__ . '/contact-center-nav.php';
 require_once __DIR__ . '/sidebar-groups.php';
 $logoUrl = (file_exists(__DIR__ . '/../../assets/logo.png')) ? asset('assets/logo.png') : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect width='44' height='44' rx='10' fill='%236b21a8'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' fill='white' font-size='18' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E";
 $base = getBaseUrl();
@@ -55,6 +56,13 @@ $cpT = static function (string $key): string {
                 }
                 echo '<li><a href="' . htmlspecialchars($erpLink['href'], ENT_QUOTES, 'UTF-8') . '" class="sidebar-subitem' . $active . '" data-permission="control_dashboard"><i class="fas ' . htmlspecialchars($erpLink['icon'], ENT_QUOTES, 'UTF-8') . '"></i><span>' . htmlspecialchars($erpLabel, ENT_QUOTES, 'UTF-8') . '</span></a></li>';
             }
+            control_sidebar_group_close();
+            control_sidebar_group_open('contact-center', $cpT('section.contact_center'), 'fa-headset');
+            ?>
+            <li><a href="<?php echo htmlspecialchars(control_contact_center_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'contact-center.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-phone-volume"></i><span><?php echo htmlspecialchars($cpT('nav.contact_center'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_contact_center_app_url('agent-desktop'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'contact-center-app.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-headset"></i><span><?php echo htmlspecialchars($cpT('nav.contact_center_desktop'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_contact_center_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'contact-center-migrate.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-database"></i><span><?php echo htmlspecialchars($cpT('nav.contact_center_db_setup'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <?php
             control_sidebar_group_close();
             $ratebPublicProfileUrl = '';
             if (function_exists('control_rateb_pro_public_base_url')) {

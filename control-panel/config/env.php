@@ -35,6 +35,12 @@ define('SEC_RATE_LIMIT_IP_MAX', (int) $e('SEC_RATE_LIMIT_IP_MAX', '120'));
 define('REQUEST_SIGNING_SECRET', $e('REQUEST_SIGNING_SECRET', ''));
 /** RATEB Pro / N-Genius orders DB (admin_rateb). */
 define('RATEB_PRO_DB_NAME', $e('RATEB_PRO_DB_NAME', rateb_main_pro_database()));
+/** RATEB Contact Center — isolated database (admin_call-center). */
+define('RATIB_CC_DB_NAME', $e('RATIB_CC_DB_NAME', function_exists('rateb_contact_center_database_name') ? rateb_contact_center_database_name() : 'admin_call-center'));
+define('RATIB_CC_DB_USER', $e('RATIB_CC_DB_USER', function_exists('rateb_contact_center_db_user') ? rateb_contact_center_db_user() : 'admin_call-center'));
+define('RATIB_CC_DB_PASS', $e('RATIB_CC_DB_PASS', $e('RATEB_CC_DB_PASS', DB_PASS)));
+define('RATIB_CC_DB_HOST', $e('RATIB_CC_DB_HOST', DB_HOST));
+define('RATIB_CC_DB_PORT', (int) $e('RATIB_CC_DB_PORT', (string) DB_PORT));
 /** RATEB ERP — isolated database (admin_rateb-erp). */
 define('RATEB_ERP_DB_NAME', $e('RATEB_ERP_DB_NAME', rateb_erp_database_name()));
 /** Optional: dedicated MySQL user for ERP only (leave empty to use CONTROL_DB_USER / admin_rateb). */
