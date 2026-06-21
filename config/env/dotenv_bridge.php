@@ -64,6 +64,7 @@ if (!function_exists('rateb_env_load_bridge_dotenv')) {
             'RATIB_CC_WS_HOST',
             'RCC_REALTIME_HUB_HOST',
             'RCC_REALTIME_HUB_PORT',
+            'RCC_REALTIME_MODE',
             'RCC_WEBSOCKET_HOST',
             'RCC_WEBSOCKET_PORT',
             'RCC_WEBSOCKET_PUBLIC_URL',

@@ -1,27 +1,19 @@
-# RATIB Contact Center — Realtime Hub (WebSocket :9702)
-# .env on server (public_html/.env):
-#   RCC_REALTIME_HUB_HOST=127.0.0.1
-#   RCC_REALTIME_HUB_PORT=9701
-#   RCC_WEBSOCKET_HOST=0.0.0.0
-#   RCC_WEBSOCKET_PORT=9702
+# RATIB Contact Center — Live updates on rateb.sa
 
-# --- Automatic (preferred) ---
-# 1) GitHub Actions runs scripts/run-rcc-realtime-hub.sh after each deploy.
-# 2) Control Panel → Contact Center Hub → "Start Realtime Hub now"
-# 3) cPanel Cron (keeps hub alive):
+## Recommended: POLLING (default after deploy)
+- No port 9702
+- No Hetzner firewall rules for WebSocket
+- No cron / rcc-realtime-hub.php required for Agent Desktop
+- Inbox + AI Copilot refresh every 8 seconds over HTTPS (443)
 
-*/5 * * * * pgrep -f rcc-realtime-hub.php >/dev/null || /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/start-realtime-hub.sh
+.env (optional — polling is default in code):
+  RCC_REALTIME_MODE=polling
 
-# --- @reboot (optional) ---
-@reboot /usr/local/bin/php /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/rcc-realtime-hub.php >> /home/admin/rcc-realtime.log 2>&1 &
+## Optional: WebSocket (VPS / port 9702 open only)
+  RCC_REALTIME_MODE=websocket
+  RCC_WEBSOCKET_PORT=9702
+  Run: ratib-contact-center/bin/start-realtime-hub.sh (cron every */5)
 
-# --- SSH manual test ---
-# cd ~/domains/rateb.sa/public_html/ratib-contact-center && php bin/rcc-realtime-hub.php
-
-# --- Firewall ---
-# Browser connects to wss://rateb.sa:9702 — open TCP 9702 inbound on the server.
-# Shared hosting often blocks custom ports; inbox falls back to polling every 12s.
-
-# --- systemd (VPS/root) ---
-# sudo cp bin/rcc-realtime-hub.service /etc/systemd/system/
-# sudo systemctl daemon-reload && sudo systemctl enable --now rcc-realtime-hub
+## Hetzner firewall (website only)
+Keep inbound: HTTP 80, HTTPS 443 (+ DirectAdmin 2222 if needed).
+You do NOT need 9701–9702 for polling mode.

@@ -128,33 +128,33 @@ RATIB_CC_DB_PASS=your_mysql_password</pre>
 </div>
 
 <div class="control-settings-card mb-4">
-    <h3><i class="fas fa-server"></i> Runtime services (Realtime Hub)</h3>
+    <h3><i class="fas fa-sync-alt"></i> Live updates (Agent Desktop)</h3>
+    <?php
+    $rtMode = function_exists('control_contact_center_realtime_mode')
+        ? control_contact_center_realtime_mode()
+        : 'polling';
+    ?>
+    <div class="alert alert-success py-2 small mb-2">
+        <strong>Mode: <?php echo htmlspecialchars(strtoupper($rtMode), ENT_QUOTES, 'UTF-8'); ?></strong>
+        <?php if ($rtMode === 'polling') { ?>
+        — Inbox refreshes every 8 seconds over HTTPS. <strong>No port 9702, no Hetzner firewall rules needed.</strong>
+        <?php } else { ?>
+        — WebSocket at <code><?php echo htmlspecialchars((string) ($realtimeStatus['ws_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code>
+        <?php } ?>
+    </div>
+    <?php if ($rtMode === 'websocket') { ?>
     <?php if ($realtimeFlash !== '') { ?>
     <div class="alert alert-<?php echo $realtimeStatus['running'] ? 'success' : 'warning'; ?> py-2 small"><?php echo htmlspecialchars($realtimeFlash, ENT_QUOTES, 'UTF-8'); ?></div>
     <?php } ?>
-    <p class="small mb-2">
-        WebSocket URL: <code><?php echo htmlspecialchars((string) $realtimeStatus['ws_url'], ENT_QUOTES, 'UTF-8'); ?></code><br>
-        Status:
-        <?php if ($realtimeStatus['running']) { ?>
-            <span class="text-success"><strong>Running</strong></span>
-            <?php if (!empty($realtimeStatus['pid'])) { ?> (PID <?php echo (int) $realtimeStatus['pid']; ?>)<?php } ?>
-        <?php } else { ?>
-            <span class="text-warning"><strong>Stopped</strong></span> — port <?php echo (int) $realtimeStatus['port']; ?> closed on server
-        <?php } ?>
-    </p>
+    <p class="small mb-2">Hub status: <?php echo $realtimeStatus['running'] ? '<strong class="text-success">Running</strong>' : '<strong class="text-warning">Stopped</strong>'; ?></p>
     <?php if ($installed) { ?>
     <form method="post" class="mb-3">
-        <button type="submit" name="rcc_start_realtime_hub" value="1" class="btn btn-sm btn-primary">
-            <i class="fas fa-play"></i> Start Realtime Hub now
-        </button>
+        <button type="submit" name="rcc_start_realtime_hub" value="1" class="btn btn-sm btn-primary"><i class="fas fa-play"></i> Start Realtime Hub</button>
     </form>
     <?php } ?>
-    <p class="small fw-bold mb-1">cPanel Cron — every 5 min (keeps hub alive)</p>
-    <pre class="rateb-erp-migrate-log mb-2">*/5 * * * * pgrep -f rcc-realtime-hub.php >/dev/null || /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/start-realtime-hub.sh</pre>
-    <p class="small fw-bold mb-1">SSH — test foreground</p>
-    <pre class="rateb-erp-migrate-log mb-2">cd ~/domains/rateb.sa/public_html/ratib-contact-center
-php bin/rcc-realtime-hub.php</pre>
-    <p class="small text-muted mb-0">After deploy, GitHub Actions tries to start the hub automatically. If <code>wss://rateb.sa:9702</code> still fails, open TCP <strong>9702</strong> in the server firewall (or inbox uses polling fallback). Guide: <code>ratib-contact-center/bin/REALTIME-HUB-RUN.txt</code></p>
+    <?php } else { ?>
+    <p class="small text-muted mb-0">Optional: set <code>RCC_REALTIME_MODE=websocket</code> in <code>.env</code> only if you run the hub and open TCP 9702. Default <code>polling</code> is recommended for rateb.sa.</p>
+    <?php } ?>
 </div>
 
 <?php endControlLayout(); ?>

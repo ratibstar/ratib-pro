@@ -18,17 +18,26 @@
         this._pollTimer = null;
     }
 
+    RccAgentInbox.prototype._usePollingOnly = function () {
+        var u = (this.wsUrl || '').trim().toLowerCase();
+        return !u || u === 'polling' || u === 'off' || u === 'disabled' || u === 'none';
+    };
+
     RccAgentInbox.prototype._startPollingFallback = function () {
         var self = this;
         if (self._pollTimer) {
             return;
         }
-        self._pollTimer = setInterval(function () {
+        var tick = function () {
             self._loadInbox();
             if (self._activeId) {
                 self.selectConversation(self._activeId);
+                if (global.__rccAiCopilot && typeof global.__rccAiCopilot.loadContext === 'function') {
+                    global.__rccAiCopilot.loadContext(self._activeId);
+                }
             }
-        }, 12000);
+        };
+        self._pollTimer = setInterval(tick, 8000);
     };
 
     RccAgentInbox.prototype.init = function () {
@@ -38,6 +47,10 @@
         }
         self._bindUi();
         self._loadInbox();
+        if (self._usePollingOnly()) {
+            self._startPollingFallback();
+            return;
+        }
         if (global.RccRealtimeClient) {
             self._client = new global.RccRealtimeClient({
                 url: self.wsUrl,

@@ -60,7 +60,8 @@
 
     RccSoftphone.prototype._connectRealtime = function (rooms) {
         var self = this;
-        if (typeof global.RccRealtimeClient !== 'function') {
+        var ws = (self.wsUrl || '').trim();
+        if (!ws || typeof global.RccRealtimeClient !== 'function') {
             return;
         }
         var list = rooms.slice();

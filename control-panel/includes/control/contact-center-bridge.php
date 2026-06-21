@@ -176,8 +176,24 @@ function control_contact_center_asset_url(string $assetKey): string
     return control_contact_center_public_base_url() . '/asset.php?f=' . rawurlencode($relativePath) . '&v=' . $v;
 }
 
+function control_contact_center_realtime_mode(): string
+{
+    if (defined('RCC_REALTIME_MODE') && (string) RCC_REALTIME_MODE !== '') {
+        return strtolower((string) RCC_REALTIME_MODE) === 'websocket' ? 'websocket' : 'polling';
+    }
+    $mode = getenv('RCC_REALTIME_MODE');
+    if ($mode !== false && trim((string) $mode) !== '') {
+        return strtolower(trim((string) $mode)) === 'websocket' ? 'websocket' : 'polling';
+    }
+    // Default for rateb.sa / shared hosting: HTTPS polling — no port 9702 or firewall rules.
+    return 'polling';
+}
+
 function control_contact_center_ws_url(): string
 {
+    if (control_contact_center_realtime_mode() === 'polling') {
+        return '';
+    }
     $public = getenv('RCC_WEBSOCKET_PUBLIC_URL');
     if ($public !== false && trim((string) $public) !== '') {
         return rtrim(trim((string) $public), '/');
