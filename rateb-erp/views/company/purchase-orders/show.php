@@ -29,6 +29,35 @@ $canReceive = in_array((string)($order['status'] ?? ''), ['sent', 'confirmed', '
             <dd class="col-sm-9"><?php echo Rateb\App\Core\View::escape(__($order['status'] ?? '')); ?></dd>
             <dt class="col-sm-3"><?php echo __('currency'); ?></dt>
             <dd class="col-sm-9"><?php echo Rateb\App\Core\View::escape($order['currency'] ?? 'SAR'); ?></dd>
+            <?php if ((float)($order['customs_clearance_amount'] ?? 0) > 0
+                || !empty($order['customs_declaration_no'])
+                || !empty($order['customs_clearance_status'])) { ?>
+            <dt class="col-sm-3"><?php echo __('customs_clearance_section'); ?></dt>
+            <dd class="col-sm-9">
+                <dl class="mb-0">
+                    <?php if (!empty($order['customs_declaration_no'])) { ?>
+                    <dt class="small text-muted"><?php echo __('customs_declaration_no'); ?></dt>
+                    <dd><?php echo Rateb\App\Core\View::escape($order['customs_declaration_no']); ?></dd>
+                    <?php } ?>
+                    <?php if (!empty($order['customs_clearance_date'])) { ?>
+                    <dt class="small text-muted"><?php echo __('customs_clearance_date'); ?></dt>
+                    <dd><?php echo Rateb\App\Core\View::escape($order['customs_clearance_date']); ?></dd>
+                    <?php } ?>
+                    <?php if (!empty($brokerName)) { ?>
+                    <dt class="small text-muted"><?php echo __('customs_broker'); ?></dt>
+                    <dd><?php echo Rateb\App\Core\View::escape($brokerName); ?></dd>
+                    <?php } ?>
+                    <?php if (!empty($order['customs_clearance_status'])) { ?>
+                    <dt class="small text-muted"><?php echo __('customs_clearance_status'); ?></dt>
+                    <dd><?php echo Rateb\App\Core\View::escape(__($order['customs_clearance_status'])); ?></dd>
+                    <?php } ?>
+                    <?php if ((float)($order['customs_clearance_amount'] ?? 0) > 0) { ?>
+                    <dt class="small text-muted"><?php echo __('customs_clearance_costs'); ?></dt>
+                    <dd><?php echo number_format((float) $order['customs_clearance_amount'], 2); ?> <?php echo Rateb\App\Core\View::escape($order['currency'] ?? 'SAR'); ?></dd>
+                    <?php } ?>
+                </dl>
+            </dd>
+            <?php } ?>
             <dt class="col-sm-3"><?php echo __('notes'); ?></dt>
             <dd class="col-sm-9"><?php echo nl2br(Rateb\App\Core\View::escape($order['notes'] ?? '')); ?></dd>
         </dl>

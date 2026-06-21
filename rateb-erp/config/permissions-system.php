@@ -83,6 +83,12 @@ return [
         'reports.inventory_valuation.view',
     ],
 
+    /** Customs clearance permission slugs (procurement module). */
+    'customs_clearance_permission_slugs' => [
+        'customs_clearance.view',
+        'customs_clearance.manage',
+    ],
+
     /**
      * Permission slugs that must never be assigned to company-full-access
      * (even when module is shared, e.g. reports.executive).

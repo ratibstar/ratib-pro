@@ -87,9 +87,18 @@ if ($entityType === 'purchase_request') {
                         <?php
                         continue;
                     }
+                    if ($entityType === 'purchase_order' && in_array($name, ['customs_declaration_no', 'customs_clearance_date', 'customs_broker_id', 'customs_clearance_status'], true)) {
+                        continue;
+                    }
                     Rateb\App\Core\View::partial('form-field', [
                         'field' => $field,
                         'value' => $value,
+                        'lookups' => $lookups,
+                    ]);
+                } ?>
+                <?php if ($entityType === 'purchase_order') {
+                    Rateb\App\Core\View::partial('procurement-customs-fields', [
+                        'item' => $item,
                         'lookups' => $lookups,
                     ]);
                 } ?>
@@ -120,6 +129,7 @@ if ($entityType === 'purchase_request') {
                         'currency' => (string) ($item['currency'] ?? 'SAR'),
                         'discount' => (float) ($item['discount_amount'] ?? 0),
                         'shipping' => (float) ($item['shipping_amount'] ?? 0),
+                        'customs' => (float) ($item['customs_clearance_amount'] ?? 0),
                     ]);
                 } ?>
             </div>

@@ -337,6 +337,9 @@ final class FormLookupService
             case 'po_statuses':
                 $options = $this->staticOptions(['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled'], true);
                 break;
+            case 'customs_clearance_statuses':
+                $options = $this->staticOptions(['customs_pending', 'customs_in_progress', 'customs_cleared', 'customs_held', 'customs_rejected'], true);
+                break;
             case 'rfq_statuses':
                 $options = $this->staticOptions(['draft', 'published', 'closed', 'awarded', 'cancelled'], true);
                 break;

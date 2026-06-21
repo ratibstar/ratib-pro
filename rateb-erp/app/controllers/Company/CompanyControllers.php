@@ -302,7 +302,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->viewPrefix = 'company/purchase-orders';
         $this->routePrefix = rateb_app_route('purchase-orders');
         $this->entityName = 'purchase_orders';
-        $this->tenantForeignKeys = ['supplier_id'];
+        $this->tenantForeignKeys = ['supplier_id', 'customs_broker_id'];
         $this->indexFields = [
             ['name' => 'order_no', 'label' => 'order_no'],
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
@@ -325,6 +325,10 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'discount_amount', 'label' => 'discount', 'type' => 'number'],
             ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'number'],
             ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'number'],
+            ['name' => 'customs_declaration_no', 'label' => 'customs_declaration_no', 'type' => 'text'],
+            ['name' => 'customs_clearance_date', 'label' => 'customs_clearance_date', 'type' => 'date'],
+            ['name' => 'customs_broker_id', 'label' => 'customs_broker', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'customs_clearance_status', 'label' => 'customs_clearance_status', 'type' => 'select', 'lookup' => 'customs_clearance_statuses'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'number'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
@@ -349,6 +353,9 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         }
         if (($data['currency'] ?? '') === '') {
             $data['currency'] = 'SAR';
+        }
+        if (array_key_exists('customs_broker_id', $data) && (string) ($data['customs_broker_id'] ?? '') === '') {
+            $data['customs_broker_id'] = null;
         }
         return $data;
     }
@@ -536,11 +543,17 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $sup = (new \Rateb\App\Models\Supplier())->find((int) $item['supplier_id']);
             $supplierName = (string) ($sup['name'] ?? '');
         }
+        $brokerName = '';
+        if (!empty($item['customs_broker_id'])) {
+            $broker = (new \Rateb\App\Models\Supplier())->find((int) $item['customs_broker_id']);
+            $brokerName = (string) ($broker['name'] ?? '');
+        }
         $this->view('company/purchase-orders/show', [
             'title' => __('purchase_orders'),
             'order' => $item,
             'items' => $items,
             'supplierName' => $supplierName,
+            'brokerName' => $brokerName,
             'warehouses' => (new \Rateb\App\Models\Warehouse())->all(200, 0),
             'docBarcode' => $docBarcode,
             'csrf' => Csrf::token(),
@@ -643,20 +656,52 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->routePrefix = rateb_app_route('customs-clearance-costs');
         $this->viewPrefix = 'company/customs-clearance-costs';
         $this->entityName = 'customs_clearance_costs';
-        $this->permissionResource = 'purchase-orders';
+        $this->permissionResource = 'customs-clearance-costs';
         $this->createEnabled = false;
         $this->bulkEnabled = false;
         $this->filesEnabled = false;
         $this->indexFields = [
             ['name' => 'order_no', 'label' => 'order_no'],
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
-            ['name' => 'order_date', 'label' => 'order_date'],
+            ['name' => 'customs_declaration_no', 'label' => 'customs_declaration_no'],
+            ['name' => 'customs_clearance_date', 'label' => 'customs_clearance_date'],
+            ['name' => 'customs_broker_id', 'label' => 'customs_broker', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'customs_clearance_status', 'label' => 'customs_clearance_status', 'type' => 'status'],
             ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'money'],
-            ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'money'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'money'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
         $this->index();
+    }
+
+    public function customsExport(): void
+    {
+        $items = $this->model->listCustomsClearance(500, 0);
+        $brokerMap = (new \Rateb\App\Services\FormLookupService())->valueLabelMap('suppliers');
+        foreach ($items as &$row) {
+            $bid = (string) (int) ($row['customs_broker_id'] ?? 0);
+            $row['customs_broker_label'] = $brokerMap[$bid] ?? '';
+            $st = (string) ($row['customs_clearance_status'] ?? '');
+            $row['customs_clearance_status_label'] = $st !== '' ? __($st) : '';
+        }
+        unset($row);
+        $columns = [
+            ['name' => 'order_no', 'label' => __('order_no')],
+            ['name' => 'order_date', 'label' => __('order_date')],
+            ['name' => 'customs_declaration_no', 'label' => __('customs_declaration_no')],
+            ['name' => 'customs_clearance_date', 'label' => __('customs_clearance_date')],
+            ['name' => 'customs_broker_label', 'label' => __('customs_broker')],
+            ['name' => 'customs_clearance_status_label', 'label' => __('customs_clearance_status')],
+            ['name' => 'customs_clearance_amount', 'label' => __('customs_clearance_costs')],
+            ['name' => 'total_amount', 'label' => __('total')],
+        ];
+        \Rateb\App\Controllers\Shared\ExportController::send(
+            'customs_clearance_costs',
+            $columns,
+            $items,
+            __('customs_clearance_costs'),
+            'customs-clearance-costs'
+        );
     }
 
     /** @return array<string, mixed> */
@@ -664,7 +709,13 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     {
         $data = parent::indexViewData($limit, $offset, $page, $search);
         if ($this->entityName === 'customs_clearance_costs') {
+            $data['items'] = $this->model->listCustomsClearance($limit, $offset, $search);
+            $data['total'] = $this->model->countCustomsClearance($search);
             $data['actionsRoutePrefix'] = rateb_app_route('purchase-orders');
+            $data['exportRoute'] = rateb_app_url('customs-clearance-costs/export');
+            $data['exportEnabled'] = function_exists('rateb_can_export_entity')
+                ? rateb_can_export_entity('customs-clearance-costs')
+                : true;
         }
         return $data;
     }

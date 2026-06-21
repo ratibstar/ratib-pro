@@ -25,8 +25,8 @@ return [
     ],
     'customs-clearance-costs' => [
         'module' => 'procurement',
-        'view' => 'procurement.manage',
-        'manage' => 'procurement.manage',
+        'view' => 'customs_clearance.view',
+        'manage' => 'customs_clearance.manage',
         'export' => 'reports.export',
     ],
     'rfq' => [

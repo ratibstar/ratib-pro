@@ -171,8 +171,12 @@
             return;
         }
         var discEl = form.querySelector('[name="discount_amount"]');
+        var shipEl = form.querySelector('[name="shipping_amount"]');
+        var customsEl = form.querySelector('[name="customs_clearance_amount"]');
         var currencyEl = form.querySelector('[name="currency"]');
         var discount = discEl ? parseNum(discEl.value) : 0;
+        var shipping = shipEl ? parseNum(shipEl.value) : 0;
+        var customs = customsEl ? parseNum(customsEl.value) : 0;
         var currency = currencyEl ? currencyEl.value : 'SAR';
         var set = function (sel, val) {
             var el = form.querySelector(sel);
@@ -181,9 +185,11 @@
         set('[data-summary-subtotal]', subtotal.toFixed(2));
         set('[data-summary-tax]', tax.toFixed(2));
         set('[data-summary-discount]', discount.toFixed(2));
+        set('[data-summary-shipping]', shipping.toFixed(2));
+        set('[data-summary-customs]', customs.toFixed(2));
         set('[data-summary-grand]', grand.toFixed(2));
         set('[data-summary-currency]', currency);
-        form.querySelectorAll('[data-summary-currency-suffix], [data-summary-currency-suffix2], [data-summary-currency-suffix3], [data-summary-currency-suffix4]').forEach(function (el) {
+        form.querySelectorAll('[data-summary-currency-suffix], [data-summary-currency-suffix2], [data-summary-currency-suffix3], [data-summary-currency-suffix4], [data-summary-currency-suffix5], [data-summary-currency-suffix6]').forEach(function (el) {
             el.textContent = currency;
         });
     }
