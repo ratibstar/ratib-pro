@@ -11,7 +11,11 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) ? ' enctype="multipart/form-data"' : ''; ?>>
+        <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) ? ' enctype="multipart/form-data"' : ''; ?><?php
+            if (str_contains((string) ($routePrefix ?? ''), 'inventory-batches')) {
+                echo ' data-inventory-batch-form';
+            }
+            ?>>
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">
                 <?php foreach ($fields as $field) {

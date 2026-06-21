@@ -166,6 +166,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 <script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/form-fiscal-year.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/line-items.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/inventory-batch-form.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/charts.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/cms-admin.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/entity-documents-modal.js'); ?>"></script>

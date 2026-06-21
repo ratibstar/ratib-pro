@@ -322,6 +322,7 @@ return [
     'order_no' => 'رقم الأمر',
     'request_no' => 'رقم الطلب',
     'item_code' => 'رمز الصنف',
+    'item_code_from_inventory_hint' => 'يُعبّأ تلقائياً عند اختيار صنف من المخزون.',
     'movement_no' => 'رقم الحركة',
     'evaluation_no' => 'رقم التقييم',
     'asset_tag' => 'رمز الأصل',

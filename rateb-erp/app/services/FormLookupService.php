@@ -543,18 +543,17 @@ final class FormLookupService
             ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true, 'col' => 'col-md-4'],
             [
-                'name' => 'batch_no',
-                'label' => 'batch_id',
+                'name' => 'item_code',
+                'label' => 'item_code',
                 'type' => 'text',
+                'display_only' => true,
+                'readonly' => true,
                 'col' => 'col-md-4',
                 'attrs' => [
-                    'pattern' => '[A-Za-z]{2}[0-9]{4}',
-                    'placeholder' => 'IB0001',
-                    'maxlength' => '6',
-                    'title' => 'batch_id_format',
-                    'class' => 'form-control rateb-form-control rateb-ltr-num text-uppercase',
+                    'data-batch-item-code-display' => '1',
+                    'class' => 'form-control rateb-form-control rateb-ltr-num',
                 ],
-                'hint' => 'batch_id_format_auto',
+                'hint' => 'item_code_from_inventory_hint',
             ],
             ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'production_date', 'label' => 'production_date', 'type' => 'date', 'col' => 'col-md-4'],
@@ -815,9 +814,21 @@ final class FormLookupService
     {
         $out = [];
         foreach ((new Inventory())->all(500, 0) as $row) {
-            $sku = trim((string) ($row['sku'] ?? ''));
-            $label = $sku !== '' ? ($sku . ' — ' . ($row['item_name'] ?? '')) : (string) ($row['item_name'] ?? '');
-            $out[] = ['value' => (int) $row['id'], 'label' => $label];
+            $code = trim((string) ($row['item_code'] ?? ''));
+            $name = trim((string) ($row['item_name'] ?? ''));
+            if ($code !== '' && $name !== '') {
+                $label = $code . ' — ' . $name;
+            } elseif ($code !== '') {
+                $label = $code;
+            } else {
+                $sku = trim((string) ($row['sku'] ?? ''));
+                $label = $sku !== '' ? ($sku . ' — ' . $name) : $name;
+            }
+            $out[] = [
+                'value' => (int) $row['id'],
+                'label' => $label,
+                'item_code' => $code,
+            ];
         }
         return $out;
     }

@@ -39,7 +39,7 @@ final class InventoryWorkflowService
     public function listBatches(int $limit = 100): array
     {
         $companyId = TenantContext::companyId();
-        $sql = 'SELECT b.*, i.item_name, w.name AS warehouse_name
+        $sql = 'SELECT b.*, i.item_name, i.item_code, w.name AS warehouse_name
                 FROM rateb_inventory_batches b
                 LEFT JOIN rateb_inventory i ON i.id = b.inventory_id
                 LEFT JOIN rateb_warehouses w ON w.id = b.warehouse_id

@@ -8,6 +8,7 @@ $lookup = (string) ($field['lookup'] ?? '');
 $col = (string) ($field['col'] ?? 'col-md-6');
 $required = !empty($field['required']);
 $readonly = !empty($field['readonly']);
+$displayOnly = !empty($field['display_only']);
 $allowManual = !empty($field['allow_manual']) || $type === 'hybrid';
 $lookups = $lookups ?? [];
 $label = rateb_label((string) ($field['label'] ?? $name));
@@ -110,7 +111,12 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
                 continue;
             }
             ?>
-        <option value="<?php echo Rateb\App\Core\View::escape($optKey); ?>"<?php echo $selectedKey === $optKey ? ' selected' : ''; ?>>
+        <option value="<?php echo Rateb\App\Core\View::escape($optKey); ?>"<?php echo $selectedKey === $optKey ? ' selected' : ''; ?><?php
+            $itemCode = trim((string) ($opt['item_code'] ?? ''));
+            if ($itemCode !== '') {
+                echo ' data-item-code="' . Rateb\App\Core\View::escape($itemCode) . '"';
+            }
+            ?>>
             <?php echo Rateb\App\Core\View::escape($opt['label']); ?>
         </option>
         <?php } ?>
@@ -142,9 +148,9 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
     <?php } else { ?>
     <input class="<?php echo Rateb\App\Core\View::escape($inputClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
            id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
-           name="<?php echo Rateb\App\Core\View::escape($name); ?>"
+           <?php if (!$displayOnly) { ?>name="<?php echo Rateb\App\Core\View::escape($name); ?>" <?php } ?>
            value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
-           <?php echo $required ? ' required' : ''; ?><?php echo $readonly ? ' readonly' : ''; ?>
+           <?php echo $required && !$displayOnly ? ' required' : ''; ?><?php echo $readonly || $displayOnly ? ' readonly' : ''; ?>
            <?php echo $fieldAttrs; ?>
            <?php if (!empty($field['step'])) { ?>step="<?php echo Rateb\App\Core\View::escape((string) $field['step']); ?>"<?php } ?>
            <?php if (isset($field['min'])) { ?>min="<?php echo Rateb\App\Core\View::escape((string) $field['min']); ?>"<?php } ?>

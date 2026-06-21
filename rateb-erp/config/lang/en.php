@@ -322,6 +322,7 @@ return [
     'order_no' => 'Order No',
     'request_no' => 'Request No',
     'item_code' => 'Item Code',
+    'item_code_from_inventory_hint' => 'Filled automatically when you select an inventory item.',
     'movement_no' => 'Movement No',
     'evaluation_no' => 'Evaluation No',
     'asset_tag' => 'Asset Tag',

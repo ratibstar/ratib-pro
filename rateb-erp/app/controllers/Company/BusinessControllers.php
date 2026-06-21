@@ -27,7 +27,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         $this->entityName = 'inventory_batches';
         $this->tenantForeignKeys = ['warehouse_id', 'inventory_id'];
         $this->indexFields = [
-            ['name' => 'batch_no', 'label' => 'batch_id'],
+            ['name' => 'item_code', 'label' => 'item_code'],
             ['name' => 'item_name', 'label' => 'item_name'],
             ['name' => 'quantity', 'label' => 'quantity'],
             ['name' => 'production_date', 'label' => 'production_date'],
@@ -38,18 +38,17 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true, 'col' => 'col-md-4'],
             [
-                'name' => 'batch_no',
-                'label' => 'batch_id',
+                'name' => 'item_code',
+                'label' => 'item_code',
                 'type' => 'text',
+                'display_only' => true,
+                'readonly' => true,
                 'col' => 'col-md-4',
                 'attrs' => [
-                    'pattern' => '[A-Za-z]{2}[0-9]{4}',
-                    'placeholder' => 'IB0001',
-                    'maxlength' => '6',
-                    'title' => 'batch_id_format',
-                    'class' => 'form-control rateb-form-control rateb-ltr-num text-uppercase',
+                    'data-batch-item-code-display' => '1',
+                    'class' => 'form-control rateb-form-control rateb-ltr-num',
                 ],
-                'hint' => 'batch_id_format_auto',
+                'hint' => 'item_code_from_inventory_hint',
             ],
             ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0', 'col' => 'col-md-4'],
             ['name' => 'production_date', 'label' => 'production_date', 'type' => 'date', 'col' => 'col-md-4'],
@@ -58,6 +57,21 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
     }
 
     protected function layout(): string { return 'main'; }
+
+    /** @return array<string, mixed> */
+    protected function formViewData(array $extra = []): array
+    {
+        $data = parent::formViewData($extra);
+        $item = $data['item'] ?? null;
+        if (is_array($item) && !empty($item['inventory_id'])) {
+            $inv = (new \Rateb\App\Models\Inventory())->find((int) $item['inventory_id']);
+            if ($inv) {
+                $item['item_code'] = (string) ($inv['item_code'] ?? '');
+                $data['item'] = $item;
+            }
+        }
+        return $data;
+    }
 
     public function create(): void
     {
@@ -143,7 +157,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
     public function export(): void
     {
         ExportController::send('inventory_batches', [
-            ['name' => 'batch_no', 'label' => __('batch_id')],
+            ['name' => 'item_code', 'label' => __('item_code')],
             ['name' => 'item_name', 'label' => __('item_name')],
             ['name' => 'quantity', 'label' => __('quantity')],
             ['name' => 'production_date', 'label' => __('production_date')],
