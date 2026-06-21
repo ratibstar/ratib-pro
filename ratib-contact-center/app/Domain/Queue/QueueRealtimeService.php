@@ -27,6 +27,9 @@ final class QueueRealtimeService implements EventSubscriberInterface
         if (in_array($event->type, [
             EventType::QUEUE_JOINED,
             EventType::QUEUE_ASSIGNED,
+            EventType::CALL_ASSIGNED,
+            EventType::CALL_SCORING_COMPLETED,
+            EventType::SLA_ESCALATED_CALL,
             EventType::CALL_ENDED,
             EventType::AGENT_READY,
             EventType::AGENT_BUSY,

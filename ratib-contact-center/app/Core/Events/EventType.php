@@ -42,6 +42,12 @@ final class EventType
     public const QUEUE_WAIT_TIME_UPDATED = 'QUEUE_WAIT_TIME_UPDATED';
     public const QUEUE_SNAPSHOT = 'QUEUE_SNAPSHOT';
 
+    // AI Routing
+    public const CALL_SCORING_STARTED = 'CALL_SCORING_STARTED';
+    public const CALL_SCORING_COMPLETED = 'CALL_SCORING_COMPLETED';
+    public const CALL_ASSIGNED = 'CALL_ASSIGNED';
+    public const SLA_ESCALATED_CALL = 'SLA_ESCALATED_CALL';
+
     // Dashboard aggregates (derived, still event-driven)
     public const SLA_ALERT = 'SLA_ALERT';
 
@@ -73,6 +79,10 @@ final class EventType
             self::QUEUE_ASSIGNED,
             self::QUEUE_WAIT_TIME_UPDATED,
             self::QUEUE_SNAPSHOT,
+            self::CALL_SCORING_STARTED,
+            self::CALL_SCORING_COMPLETED,
+            self::CALL_ASSIGNED,
+            self::SLA_ESCALATED_CALL,
             self::SLA_ALERT,
         ];
     }

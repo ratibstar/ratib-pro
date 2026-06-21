@@ -1,0 +1,61 @@
+{
+  "input": {
+    "call_id": 9912,
+    "tenant_id": 1,
+    "queue": "support",
+    "customer_phone": "0500000000",
+    "ivr_input": "2",
+    "erp_customer_id": 5521,
+    "channel_id": "PJSIP/trunk-00000001"
+  },
+  "output": {
+    "selected_agent_id": 12,
+    "selected_queue_id": 3,
+    "selected_queue_code": "support",
+    "reason": "highest_skill_match + low_load + VIP_customer",
+    "sla_risk": "yellow",
+    "alternatives": [14, 9, 22],
+    "escalated": false,
+    "agent_extension": "1012",
+    "score_breakdown": {
+      "required_skill": "support",
+      "agent_scores": [
+        {
+          "agent_id": 12,
+          "final_score": 0.82,
+          "breakdown": {
+            "availability_score": 1.0,
+            "skill_score": 0.8,
+            "current_load": 0.2,
+            "erp_familiarity": 0.7,
+            "sla_risk_penalty": 0.5
+          }
+        }
+      ],
+      "sla": {
+        "level": "yellow",
+        "factors": {
+          "longest_wait_seconds": 210,
+          "sla_target_seconds": 300,
+          "wait_ratio": 0.7
+        }
+      }
+    },
+    "erp_context": {
+      "flags": {
+        "vip_customer": true,
+        "open_sla_breach": false,
+        "high_value_company": false,
+        "repeat_caller": true
+      },
+      "priority_multiplier": 1.5,
+      "applied_boosts": ["vip_customer", "repeat_caller"]
+    }
+  },
+  "events": [
+    { "type": "CALL_SCORING_STARTED", "call_id": 9912 },
+    { "type": "CALL_SCORING_COMPLETED", "call_id": 9912, "agent_id": 12 },
+    { "type": "CALL_ASSIGNED", "call_id": 9912, "agent_id": 12, "queue_id": 3 },
+    { "type": "QUEUE_ASSIGNED", "call_id": 9912, "agent_id": 12, "queue_id": 3 }
+  ]
+}

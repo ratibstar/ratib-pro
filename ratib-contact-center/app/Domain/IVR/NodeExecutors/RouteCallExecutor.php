@@ -55,15 +55,34 @@ final class RouteCallExecutor implements NodeExecutorInterface
         switch ($action) {
             case 'queue':
                 $queueCode = (string) ($matched['queue_code'] ?? 'default');
+                $decision = null;
+                if ($channelId !== '' && $this->queueGateway !== null) {
+                    $decision = $this->queueGateway->enqueueCaller(
+                        $session->tenantId,
+                        $session->callId,
+                        $queueCode,
+                        $channelId,
+                        [
+                            'ivr_input' => $input,
+                        ]
+                    );
+                }
                 if ($channelId !== '') {
-                    $pbx->routeToQueue($channelId, $queueCode, $session->tenantId);
-                    if ($this->queueGateway !== null) {
-                        $this->queueGateway->enqueueCaller(
-                            $session->tenantId,
-                            $session->callId,
-                            $queueCode,
-                            $channelId
+                    if (is_array($decision) && !empty($decision['escalated']) && !empty($decision['agent_extension'])) {
+                        $pbx->routeToExtension(
+                            $channelId,
+                            (string) $decision['agent_extension'],
+                            $session->tenantId
                         );
+                    } elseif (is_array($decision)) {
+                        $pbx->routeToQueue(
+                            $channelId,
+                            (string) ($decision['selected_queue_code'] ?? $queueCode),
+                            $session->tenantId,
+                            isset($decision['selected_agent_id']) ? (int) $decision['selected_agent_id'] : null
+                        );
+                    } else {
+                        $pbx->routeToQueue($channelId, $queueCode, $session->tenantId);
                     }
                 }
                 $nextNode = isset($matched['next_node_id']) ? (int) $matched['next_node_id'] : $node->nextNodeId;

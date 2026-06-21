@@ -60,13 +60,20 @@ final class AsteriskPbxCommandGateway implements PbxCommandGatewayInterface
         ]);
     }
 
-    public function routeToQueue(string $channelId, string $queueCode, int $tenantId): void
+    public function routeToQueue(string $channelId, string $queueCode, int $tenantId, ?int $preferredAgentId = null): void
     {
         $this->send('SetVar', [
             'Channel' => $channelId,
             'Variable' => 'RCC_TENANT_ID',
             'Value' => (string) $tenantId,
         ]);
+        if ($preferredAgentId !== null && $preferredAgentId > 0) {
+            $this->send('SetVar', [
+                'Channel' => $channelId,
+                'Variable' => 'RCC_PREFERRED_AGENT_ID',
+                'Value' => (string) $preferredAgentId,
+            ]);
+        }
         $this->send('Exec', [
             'Channel' => $channelId,
             'Application' => 'Queue',

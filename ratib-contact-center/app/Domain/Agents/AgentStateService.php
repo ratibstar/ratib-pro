@@ -33,6 +33,9 @@ final class AgentStateService implements EventSubscriberInterface
         if ($event->type === EventType::QUEUE_ASSIGNED && $event->agentId !== null) {
             $this->attachQueue($event->tenantId, $event->agentId, $event->queueId);
         }
+        if ($event->type === EventType::CALL_ASSIGNED && $event->agentId !== null) {
+            $this->attachQueue($event->tenantId, $event->agentId, $event->queueId);
+        }
         if ($event->type === EventType::CALL_HOLD && $event->agentId !== null) {
             $this->pause($event->tenantId, $event->agentId, 'on_call_hold');
         }
