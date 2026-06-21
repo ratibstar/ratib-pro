@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ratib\ContactCenter\App\Domain\IVR;
 
+use Ratib\ContactCenter\App\Application\Services\IvrStateStreamer;
 use Ratib\ContactCenter\App\Application\Contracts\IvrFlowRepositoryInterface;
 use Ratib\ContactCenter\App\Application\Contracts\IvrNodeRepositoryInterface;
 use Ratib\ContactCenter\App\Application\Contracts\IvrSessionRepositoryInterface;
@@ -26,7 +27,8 @@ final class IvrEngine
         private readonly IvrNodeRepositoryInterface $nodeRepository,
         private readonly IvrSessionRepositoryInterface $sessionRepository,
         private readonly NodeExecutorRegistry $executorRegistry,
-        private readonly PbxCommandGatewayInterface $pbxGateway
+        private readonly PbxCommandGatewayInterface $pbxGateway,
+        private readonly ?IvrStateStreamer $ivrStreamer = null
     ) {
     }
 
@@ -82,6 +84,15 @@ final class IvrEngine
             $state,
             $channelId,
             $locale
+        );
+
+        $this->ivrStreamer?->emitStarted(
+            $tenantId,
+            $session->id,
+            $callId,
+            $flow->id,
+            $entryNodeId,
+            $channelId
         );
 
         return $this->runUntilWaitOrComplete($session);
@@ -225,6 +236,7 @@ final class IvrEngine
             return;
         }
         $this->sessionRepository->finalize($sessionId, $tenantId, $status);
+        $this->ivrStreamer?->emitCompleted($tenantId, $sessionId, $session->callId, $status->value);
     }
 
     public function findSessionByChannel(string $channelId, int $tenantId): ?IvrSession
@@ -258,6 +270,15 @@ final class IvrEngine
                 break;
             }
 
+            $this->ivrStreamer?->emitNodeEntered(
+                $current->tenantId,
+                $current->id,
+                $current->callId,
+                $node->id,
+                $node->type->value,
+                $current->channelId
+            );
+
             $result = $this->executorRegistry->executeNode($current, $node, $this->pbxGateway);
 
             $state = array_merge($current->state, $result->statePatch);
@@ -275,6 +296,13 @@ final class IvrEngine
                         IvrSessionStatus::WaitingInput,
                         $result->retryCount
                     );
+                    $this->ivrStreamer?->emitWaitingInput(
+                        $current->tenantId,
+                        $current->id,
+                        $current->callId,
+                        $node->id,
+                        $node->timeoutSeconds
+                    );
                 } elseif ($result->sessionStatus === IvrSessionStatus::Completed
                     || $result->sessionStatus === IvrSessionStatus::Failed
                     || $result->sessionStatus === IvrSessionStatus::Timeout) {
@@ -287,6 +315,12 @@ final class IvrEngine
                         $result->retryCount
                     );
                     $this->sessionRepository->finalize($current->id, $current->tenantId, $result->sessionStatus);
+                    $this->ivrStreamer?->emitCompleted(
+                        $current->tenantId,
+                        $current->id,
+                        $current->callId,
+                        $result->sessionStatus->value
+                    );
                 }
                 break;
             }

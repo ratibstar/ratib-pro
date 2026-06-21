@@ -9,7 +9,11 @@ use Ratib\ContactCenter\App\Application\Contracts\IvrSessionRepositoryInterface;
 use Ratib\ContactCenter\App\Application\Contracts\PbxCommandGatewayInterface;
 use Ratib\ContactCenter\App\Application\Contracts\QueueGatewayInterface;
 use Ratib\ContactCenter\App\Application\Contracts\TicketGatewayInterface;
+use Ratib\ContactCenter\App\Application\Services\IvrStateStreamer;
+use Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator;
 use Ratib\ContactCenter\App\Core\Database;
+use Ratib\ContactCenter\App\Core\Events\EventBus;
+use Ratib\ContactCenter\App\Core\Events\EventType;
 use Ratib\ContactCenter\App\Core\TenantContext;
 use Ratib\ContactCenter\App\Domain\IVR\Enums\IvrSessionStatus;
 use Ratib\ContactCenter\App\Domain\IVR\IvrEngine;
@@ -59,6 +63,18 @@ final class IvrSessionManager
 
         $callId = $this->ensureCallRecord($tenantId, $callerNumber, $calleeNumber, $channelId, $callUuid);
 
+        EventBus::instance()->emit([
+            'type' => EventType::CALL_INCOMING,
+            'tenant_id' => $tenantId,
+            'call_id' => $callId,
+            'payload' => [
+                'caller_number' => $callerNumber,
+                'callee_number' => $calleeNumber,
+                'channel_id' => $channelId,
+                'call_uuid' => $callUuid,
+            ] + $callMeta,
+        ]);
+
         return $this->engine->startSession(
             $callId,
             $tenantId,
@@ -86,6 +102,14 @@ final class IvrSessionManager
         }
         $this->engine->finalizeSession($session->id, $tenantId, IvrSessionStatus::Completed);
         $this->markCallEnded($session->callId);
+
+        EventBus::instance()->emit([
+            'type' => EventType::CALL_ENDED,
+            'tenant_id' => $tenantId,
+            'call_id' => $session->callId,
+            'ivr_session_id' => $session->id,
+            'payload' => ['channel_id' => $channelId],
+        ]);
     }
 
     public function onDtmfTimeout(string $channelId, int $tenantId): ?IvrSession
@@ -97,9 +121,13 @@ final class IvrSessionManager
         return $this->engine->handleTimeout($session->id, $tenantId);
     }
 
-    public static function buildEngine(): IvrEngine
+    public static function buildEngine(?EventBus $eventBus = null): IvrEngine
     {
-        $queueGateway = new QueueEngineGateway();
+        RealtimeOrchestrator::boot($eventBus);
+        $bus = $eventBus ?? EventBus::instance();
+        $ivrStreamer = new IvrStateStreamer($bus);
+
+        $queueGateway = new QueueEngineGateway($bus);
         $ticketGateway = new TicketGateway();
         $pbx = new AsteriskPbxCommandGateway();
 
@@ -115,7 +143,8 @@ final class IvrSessionManager
             new IvrNodeRepository(),
             new IvrSessionRepository(),
             $registry,
-            $pbx
+            $pbx,
+            $ivrStreamer
         );
     }
 

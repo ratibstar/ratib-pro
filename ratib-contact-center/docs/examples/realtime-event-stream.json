@@ -1,0 +1,181 @@
+[
+  {
+    "event_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "type": "CALL_INCOMING",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "timestamp": "2026-06-21T14:30:01.123Z",
+    "payload": {
+      "tenant_id": 1,
+      "erp_company_id": 1,
+      "locale": "ar",
+      "caller_number": "0501234567",
+      "callee_number": "920000000",
+      "channel_id": "SIP/trunk-00001234",
+      "call_uuid": "linked-id-abc-123"
+    }
+  },
+  {
+    "event_uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "type": "IVR_STARTED",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "ivr_session_id": 501,
+    "timestamp": "2026-06-21T14:30:01.456Z",
+    "payload": {
+      "flow_id": 1,
+      "entry_node_id": 1,
+      "channel_id": "SIP/trunk-00001234",
+      "ivr_path": []
+    }
+  },
+  {
+    "event_uuid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "type": "IVR_NODE_ENTERED",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "ivr_session_id": 501,
+    "timestamp": "2026-06-21T14:30:02.100Z",
+    "payload": {
+      "node_id": 2,
+      "node_type": "collect_input",
+      "channel_id": "SIP/trunk-00001234"
+    }
+  },
+  {
+    "event_uuid": "d4e5f6a7-b8c9-0123-def0-234567890123",
+    "type": "IVR_WAITING_INPUT",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "ivr_session_id": 501,
+    "timestamp": "2026-06-21T14:30:02.200Z",
+    "payload": {
+      "node_id": 2,
+      "timeout_seconds": 10
+    }
+  },
+  {
+    "event_uuid": "e5f6a7b8-c9d0-1234-ef01-345678901234",
+    "type": "QUEUE_JOINED",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "queue_id": 3,
+    "timestamp": "2026-06-21T14:30:08.500Z",
+    "payload": {
+      "channel_id": "SIP/trunk-00001234",
+      "joined_at": "2026-06-21T14:30:08+00:00"
+    }
+  },
+  {
+    "event_uuid": "f6a7b8c9-d0e1-2345-f012-456789012345",
+    "type": "QUEUE_SNAPSHOT",
+    "tenant_id": 1,
+    "queue_id": 3,
+    "timestamp": "2026-06-21T14:30:08.520Z",
+    "payload": {
+      "queue_id": 3,
+      "queue_code": "sales",
+      "queue_name": "Sales Queue",
+      "waiting_count": 4,
+      "longest_wait_seconds": 127,
+      "avg_wait_seconds": 68,
+      "available_agents": 2,
+      "busy_agents": 3,
+      "sla_target_seconds": 300,
+      "sla_risk": "yellow",
+      "distribution_load": 2.0,
+      "computed_at": "2026-06-21T14:30:08+00:00"
+    }
+  },
+  {
+    "event_uuid": "a7b8c9d0-e1f2-3456-0123-567890123456",
+    "type": "SLA_ALERT",
+    "tenant_id": 1,
+    "queue_id": 3,
+    "timestamp": "2026-06-21T14:32:00.000Z",
+    "payload": {
+      "level": "red",
+      "longest_wait_seconds": 310,
+      "sla_target_seconds": 300,
+      "waiting_count": 6,
+      "available_agents": 0
+    }
+  },
+  {
+    "event_uuid": "b8c9d0e1-f2a3-4567-1234-678901234567",
+    "type": "QUEUE_ASSIGNED",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "queue_id": 3,
+    "agent_id": 12,
+    "timestamp": "2026-06-21T14:32:05.000Z",
+    "payload": {
+      "assigned_at": "2026-06-21T14:32:05+00:00"
+    }
+  },
+  {
+    "event_uuid": "c9d0e1f2-a3b4-5678-2345-789012345678",
+    "type": "AGENT_BUSY",
+    "tenant_id": 1,
+    "agent_id": 12,
+    "call_id": 9912,
+    "queue_id": 3,
+    "timestamp": "2026-06-21T14:32:05.010Z",
+    "payload": {
+      "agent_id": 12,
+      "tenant_id": 1,
+      "status": "busy",
+      "current_call_id": 9912,
+      "queue_id": 3,
+      "last_update": "2026-06-21 14:32:05.010"
+    }
+  },
+  {
+    "event_uuid": "d0e1f2a3-b4c5-6789-3456-890123456789",
+    "type": "CALL_CONNECTED",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "agent_id": 12,
+    "queue_id": 3,
+    "timestamp": "2026-06-21T14:32:06.000Z",
+    "payload": {
+      "channel_id": "SIP/trunk-00001234",
+      "connected_at": "2026-06-21T14:32:06+00:00"
+    }
+  },
+  {
+    "event_uuid": "e1f2a3b4-c5d6-7890-4567-901234567890",
+    "type": "CALL_ENDED",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "ivr_session_id": 501,
+    "timestamp": "2026-06-21T14:38:00.000Z",
+    "payload": {
+      "channel_id": "SIP/trunk-00001234"
+    }
+  },
+  {
+    "event_uuid": "f2a3b4c5-d6e7-8901-5678-012345678901",
+    "type": "AGENT_WRAPUP",
+    "tenant_id": 1,
+    "agent_id": 12,
+    "call_id": 9912,
+    "timestamp": "2026-06-21T14:38:00.050Z",
+    "payload": {
+      "agent_id": 12,
+      "status": "wrapup",
+      "current_call_id": 9912
+    }
+  },
+  {
+    "event_uuid": "a3b4c5d6-e7f8-9012-6789-123456789012",
+    "type": "IVR_COMPLETED",
+    "tenant_id": 1,
+    "call_id": 9912,
+    "ivr_session_id": 501,
+    "timestamp": "2026-06-21T14:38:00.100Z",
+    "payload": {
+      "final_status": "completed"
+    }
+  }
+]

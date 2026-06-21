@@ -4,26 +4,29 @@ declare(strict_types=1);
 namespace Ratib\ContactCenter\App\Infrastructure\Voice;
 
 use Ratib\ContactCenter\App\Application\Services\IvrSessionManager;
+use Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator;
+use Ratib\ContactCenter\App\Core\Events\EventBus;
+use Ratib\ContactCenter\App\Core\Events\EventType;
 use Ratib\ContactCenter\App\Core\TenantContext;
 
 /**
- * Asterisk AMI event adapter — delegates ALL IVR logic to IvrEngine via IvrSessionManager.
+ * Asterisk AMI event adapter — delegates IVR to engine; ALL live signals via EventBus.
  */
 final class AsteriskAmiAdapter
 {
     private IvrSessionManager $sessionManager;
+    private EventBus $eventBus;
 
     /** @var array<string, int> channel → tenantId cache from dialplan vars */
     private array $channelTenants = [];
 
-    public function __construct(?IvrSessionManager $sessionManager = null)
+    public function __construct(?IvrSessionManager $sessionManager = null, ?EventBus $eventBus = null)
     {
+        $this->eventBus = $eventBus ?? RealtimeOrchestrator::boot();
         $this->sessionManager = $sessionManager ?? new IvrSessionManager();
     }
 
     /**
-     * Newchannel / StasisStart / custom RCC inbound event.
-     *
      * @param array<string, mixed> $event
      */
     public function onIncomingCall(array $event): void
@@ -59,10 +62,50 @@ final class AsteriskAmiAdapter
     }
 
     /**
-     * DTMF / RCC custom digit event.
+     * Bridge / Link / AgentConnect — call answered.
      *
      * @param array<string, mixed> $event
      */
+    public function onCallConnected(array $event): void
+    {
+        $channelId = (string) ($event['Channel'] ?? '');
+        $tenantId = $this->resolveTenantId($event, $channelId);
+        if ($tenantId < 1) {
+            return;
+        }
+
+        TenantContext::set($tenantId);
+        $this->eventBus->emit([
+            'type' => EventType::CALL_CONNECTED,
+            'tenant_id' => $tenantId,
+            'call_id' => isset($event['RCC_CALL_ID']) ? (int) $event['RCC_CALL_ID'] : null,
+            'agent_id' => isset($event['RCC_AGENT_ID']) ? (int) $event['RCC_AGENT_ID'] : null,
+            'queue_id' => isset($event['RCC_QUEUE_ID']) ? (int) $event['RCC_QUEUE_ID'] : null,
+            'payload' => [
+                'channel_id' => $channelId,
+                'connected_at' => gmdate('c'),
+            ],
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     */
+    public function onCallTransferred(array $event): void
+    {
+        $tenantId = $this->resolveTenantId($event, (string) ($event['Channel'] ?? ''));
+        if ($tenantId < 1) {
+            return;
+        }
+        $this->eventBus->emit([
+            'type' => EventType::CALL_TRANSFERRED,
+            'tenant_id' => $tenantId,
+            'call_id' => isset($event['RCC_CALL_ID']) ? (int) $event['RCC_CALL_ID'] : null,
+            'payload' => $event,
+        ]);
+    }
+
+    /** @param array<string, mixed> $event */
     public function onDtmf(array $event): void
     {
         $channelId = (string) ($event['Channel'] ?? '');
@@ -77,11 +120,7 @@ final class AsteriskAmiAdapter
         $this->sessionManager->onDtmf($channelId, $tenantId, $digit);
     }
 
-    /**
-     * Hangup / ChannelDestroyed.
-     *
-     * @param array<string, mixed> $event
-     */
+    /** @param array<string, mixed> $event */
     public function onHangup(array $event): void
     {
         $channelId = (string) ($event['Channel'] ?? '');
@@ -96,11 +135,7 @@ final class AsteriskAmiAdapter
         unset($this->channelTenants[$channelId]);
     }
 
-    /**
-     * Custom timeout event from dialplan or ARI when Read() expires.
-     *
-     * @param array<string, mixed> $event
-     */
+    /** @param array<string, mixed> $event */
     public function onDtmfTimeout(array $event): void
     {
         $channelId = (string) ($event['Channel'] ?? '');
@@ -112,11 +147,7 @@ final class AsteriskAmiAdapter
         $this->sessionManager->onDtmfTimeout($channelId, $tenantId);
     }
 
-    /**
-     * Generic AMI dispatcher — wire to your AMI listener loop.
-     *
-     * @param array<string, mixed> $event
-     */
+    /** @param array<string, mixed> $event */
     public function dispatch(array $event): void
     {
         $name = (string) ($event['Event'] ?? '');
@@ -128,6 +159,16 @@ final class AsteriskAmiAdapter
                 if ($this->isInboundIvrContext($event)) {
                     $this->onIncomingCall($event);
                 }
+                break;
+            case 'BridgeEnter':
+            case 'AgentConnect':
+            case 'RCCCallConnected':
+                $this->onCallConnected($event);
+                break;
+            case 'BlindTransfer':
+            case 'AttendedTransfer':
+            case 'RCCCallTransferred':
+                $this->onCallTransferred($event);
                 break;
             case 'DTMF':
             case 'RCCDTMF':
@@ -147,7 +188,7 @@ final class AsteriskAmiAdapter
     private function isInboundIvrContext(array $event): bool
     {
         $context = (string) ($event['Context'] ?? '');
-        return str_starts_with($context, 'rcc-ivr') || isset($event['RCC_IVR']);
+        return (strpos($context, 'rcc-ivr') === 0) || isset($event['RCC_IVR']);
     }
 
     /** @param array<string, mixed> $event */
