@@ -17,8 +17,12 @@ final class SoftphoneApiController
 
     public function __construct(?CallControlEngine $engine = null)
     {
+        $this->engine = $engine ?? new CallControlEngine(eventBus: EventBus::instance());
+    }
+
+    private function bootRealtimeIfNeeded(): void
+    {
         RealtimeOrchestrator::boot();
-        $this->engine = $engine ?? new CallControlEngine(EventBus::instance());
     }
 
     public function handle(): void
@@ -35,6 +39,7 @@ final class SoftphoneApiController
 
             switch ($action) {
                 case 'register':
+                    $this->bootRealtimeIfNeeded();
                     $result = $this->engine->registerAgentSession(
                         $tenantId,
                         $agentId,

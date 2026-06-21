@@ -54,17 +54,12 @@
             var num = payload.remote_number || payload.caller_number || '—';
             if (els.popupNumber) { els.popupNumber.textContent = num; }
             if (els.number) { els.number.textContent = num; }
-            if (els.popup) {
-                els.popup.classList.remove('d-none', 'hidden');
-            }
+            if (els.popup) { els.popup.classList.remove('hidden'); }
             if (els.answer) { els.answer.disabled = false; }
         }
 
         function hideIncoming() {
-            if (els.popup) {
-                els.popup.classList.add('d-none');
-                els.popup.classList.remove('hidden');
-            }
+            if (els.popup) { els.popup.classList.add('hidden'); }
         }
 
         function startUiTimer(phone) {
@@ -127,19 +122,9 @@
                     + '<div>SLA: ' + sla + '</div>';
             },
             onStatus: function (status) {
-                if (status === 'registered' || status === 'api_ready' || status === 'sip_unavailable') {
-                    setAgentUi('ready');
-                    if (els.dial) { els.dial.disabled = false; }
-                    if (status === 'sip_unavailable' && els.queue) {
-                        els.queue.textContent = 'SIP offline — dial uses API only';
-                    }
-                }
+                if (status === 'registered') { setAgentUi('ready'); if (els.dial) { els.dial.disabled = false; } }
             },
-            onError: function (err) {
-                console.error('[RCC Softphone]', err);
-                setAgentUi('ready');
-                if (els.dial) { els.dial.disabled = false; }
-            }
+            onError: function (err) { console.error('[RCC Softphone]', err); }
         });
 
         if (els.answer) {
@@ -180,17 +165,7 @@
             });
         }
 
-        phone.init().catch(function (e) {
-            console.error('[RCC Softphone] init failed', e);
-            setAgentUi('ready');
-            if (els.dial) { els.dial.disabled = false; }
-            if (els.statusLabel) {
-                els.statusLabel.textContent = 'Ready (limited)';
-            }
-            if (els.queue) {
-                els.queue.textContent = (e && e.message) ? e.message : 'Softphone API unavailable';
-            }
-        });
+        phone.init().catch(function (e) { console.error(e); });
         global.__rccSoftphone = phone;
     };
 

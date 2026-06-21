@@ -85,6 +85,12 @@
                 self._conversations[c.conversation_id] = c;
             });
             self._renderList();
+            if (!self._activeId) {
+                var ids = Object.keys(self._conversations);
+                if (ids.length === 1) {
+                    self.selectConversation(parseInt(ids[0], 10));
+                }
+            }
         });
     };
 
