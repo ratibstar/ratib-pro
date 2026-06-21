@@ -56,6 +56,15 @@ final class EventType
     public const CONVERSATION_ASSIGNED = 'CONVERSATION_ASSIGNED';
     public const CONVERSATION_PRIORITY_CHANGED = 'CONVERSATION_PRIORITY_CHANGED';
 
+    // AI Copilot (advisory — does not override routing)
+    public const AI_SUMMARY_UPDATED = 'AI_SUMMARY_UPDATED';
+    public const AI_SENTIMENT_UPDATED = 'AI_SENTIMENT_UPDATED';
+    public const AI_INTENT_DETECTED = 'AI_INTENT_DETECTED';
+    public const AI_RECOMMENDATION_READY = 'AI_RECOMMENDATION_READY';
+    public const AI_REPLY_SUGGESTED = 'AI_REPLY_SUGGESTED';
+    public const AI_TICKET_CREATED = 'AI_TICKET_CREATED';
+    public const AI_ASSISTANT_UPDATE = 'AI_ASSISTANT_UPDATE';
+
     // Dashboard aggregates (derived, still event-driven)
     public const SLA_ALERT = 'SLA_ALERT';
 
@@ -97,6 +106,13 @@ final class EventType
             self::MESSAGE_SENT,
             self::CONVERSATION_ASSIGNED,
             self::CONVERSATION_PRIORITY_CHANGED,
+            self::AI_SUMMARY_UPDATED,
+            self::AI_SENTIMENT_UPDATED,
+            self::AI_INTENT_DETECTED,
+            self::AI_RECOMMENDATION_READY,
+            self::AI_REPLY_SUGGESTED,
+            self::AI_TICKET_CREATED,
+            self::AI_ASSISTANT_UPDATE,
             self::SLA_ALERT,
         ];
     }

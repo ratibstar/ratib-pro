@@ -47,6 +47,7 @@ startControlLayout(
     [
         $rccAssets . '/css/rcc-agent-inbox.css',
         $rccAssets . '/css/rcc-softphone.css',
+        $rccAssets . '/css/rcc-ai-copilot.css',
     ],
     [],
     ['standalone' => true]
@@ -56,6 +57,7 @@ $tenantId = 1;
 $agentId = 1;
 $inboxApiBase = control_contact_center_inbox_api_url();
 $softphoneApiBase = control_contact_center_softphone_api_url();
+$assistantApiBase = control_contact_center_assistant_api_url();
 $wsUrl = control_contact_center_ws_url();
 
 if ($route === 'agent-desktop') {
@@ -70,5 +72,6 @@ endControlLayout([
     $rccAssets . '/js/rcc-softphone.js',
     $rccAssets . '/js/rcc-softphone-ui.js',
     $rccAssets . '/js/rcc-agent-inbox.js',
+    $rccAssets . '/js/rcc-ai-copilot.js',
     $rccAssets . '/js/rcc-agent-desktop-ui.js',
 ]);

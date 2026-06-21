@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @var string $inboxApiBase
  * @var string $softphoneApiBase
  * @var string $wsUrl
+ * @var string $assistantApiBase
  */
 $tenantId = (int) ($tenantId ?? 1);
 $agentId = (int) ($agentId ?? 1);
@@ -32,6 +33,7 @@ if (!function_exists('__')) {
      data-tenant="<?php echo $tenantId; ?>"
      data-agent="<?php echo $agentId; ?>"
      data-inbox-api="<?php echo htmlspecialchars($inboxApiBase, ENT_QUOTES, 'UTF-8'); ?>"
+     data-assistant-api="<?php echo htmlspecialchars($assistantApiBase ?? '', ENT_QUOTES, 'UTF-8'); ?>"
      data-ws="<?php echo htmlspecialchars($wsUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="rcc-agent-desktop__top">
         <div class="rcc-softphone" id="rcc-softphone-panel"
@@ -78,7 +80,35 @@ if (!function_exists('__')) {
             <button type="button" id="rcc-inbox-send">Send</button>
         </div>
     </div>
-    <div class="rcc-agent-desktop__col rcc-agent-desktop__col--erp" id="rcc-inbox-erp">
-        <p class="rcc-inbox__empty">Select a conversation</p>
+    <div class="rcc-agent-desktop__col rcc-agent-desktop__col--ai" id="rcc-ai-panel">
+        <div class="rcc-ai-copilot" id="rcc-ai-copilot">
+            <div class="rcc-ai-copilot__header">
+                <i class="fas fa-robot"></i> AI Copilot
+                <span class="rcc-ai-copilot__badge" id="rcc-ai-advisory">Advisory</span>
+            </div>
+            <div class="rcc-ai-copilot__section rcc-ai-copilot__insights">
+                <h4>Live insights</h4>
+                <div class="rcc-ai-copilot__mood" id="rcc-ai-mood">😐 neutral</div>
+                <div class="rcc-ai-copilot__row"><span>Intent</span><strong id="rcc-ai-intent">—</strong></div>
+                <div class="rcc-ai-copilot__row"><span>Risk</span><strong id="rcc-ai-risk">—</strong></div>
+                <p class="rcc-ai-copilot__summary" id="rcc-ai-summary">Select a conversation for AI insights.</p>
+            </div>
+            <div class="rcc-ai-copilot__section">
+                <h4>Suggested reply</h4>
+                <textarea id="rcc-ai-reply" rows="4" readonly placeholder="AI reply suggestion…"></textarea>
+                <div class="rcc-ai-copilot__btn-row">
+                    <button type="button" class="rcc-ai-copilot__btn" id="rcc-ai-send-as-is">Send as-is</button>
+                    <button type="button" class="rcc-ai-copilot__btn rcc-ai-copilot__btn--ghost" id="rcc-ai-edit-send">Edit before send</button>
+                </div>
+            </div>
+            <div class="rcc-ai-copilot__section">
+                <h4>Actions</h4>
+                <div class="rcc-ai-copilot__actions" id="rcc-ai-actions"></div>
+            </div>
+            <div class="rcc-ai-copilot__section rcc-ai-copilot__erp" id="rcc-inbox-erp">
+                <h4>Customer</h4>
+                <p class="rcc-inbox__empty">Select a conversation</p>
+            </div>
+        </div>
     </div>
 </div>

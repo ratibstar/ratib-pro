@@ -11,6 +11,7 @@
         this.wsUrl = options.wsUrl || 'ws://127.0.0.1:9702';
         this.root = options.root || document.getElementById('rcc-agent-desktop');
         this.onConversationSelect = options.onConversationSelect || function () {};
+        this.onRealtimeEvent = options.onRealtimeEvent || function () {};
         this._conversations = {};
         this._activeId = null;
         this._client = null;
@@ -109,6 +110,7 @@
 
     RccAgentInbox.prototype._onRealtimeEvent = function (ev) {
         var self = this;
+        self.onRealtimeEvent(ev);
         var types = [
             'CONVERSATION_CREATED', 'CONVERSATION_UPDATED', 'MESSAGE_RECEIVED',
             'MESSAGE_SENT', 'CONVERSATION_ASSIGNED', 'CONVERSATION_PRIORITY_CHANGED'

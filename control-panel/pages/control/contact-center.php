@@ -72,7 +72,7 @@ RATIB_CC_DB_PASS=your_mysql_password</pre>
 <?php } elseif (!$schemaReady) { ?>
 <div class="control-settings-card mb-4">
     <h3><i class="fas fa-database"></i> First-time setup</h3>
-    <p>Runs migrations 001–008 on <code><?php echo htmlspecialchars(control_contact_center_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>.</p>
+    <p>Runs migrations 001–009 on <code><?php echo htmlspecialchars(control_contact_center_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>.</p>
     <a href="<?php echo htmlspecialchars(control_contact_center_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
         <i class="fas fa-play"></i> Run database setup
     </a>
@@ -114,6 +114,7 @@ RATIB_CC_DB_PASS=your_mysql_password</pre>
             <li>PHASE-4 Softphone</li>
             <li>PHASE-5 AI Routing</li>
             <li>PHASE-6 Omnichannel Inbox</li>
+            <li>PHASE-7 AI Copilot</li>
         </ul>
     </div>
 </div>

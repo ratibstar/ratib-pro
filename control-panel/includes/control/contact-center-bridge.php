@@ -121,6 +121,11 @@ function control_contact_center_softphone_api_url(): string
     return control_contact_center_public_base_url() . '/api/v1/softphone.php';
 }
 
+function control_contact_center_assistant_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/assistant.php';
+}
+
 function control_contact_center_ws_url(): string
 {
     $host = defined('RATIB_CC_WS_HOST') ? (string) RATIB_CC_WS_HOST : (getenv('RCC_REALTIME_HUB_HOST') ?: '127.0.0.1');
