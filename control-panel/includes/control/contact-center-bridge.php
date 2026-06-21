@@ -189,8 +189,8 @@ function control_contact_center_db_test(): array
 function control_contact_center_run_migrations(): array
 {
     control_contact_center_apply_db_env();
-    \Ratib\ContactCenter\App\Core\Database::disconnect();
     require_once control_contact_center_root_path() . '/bootstrap.php';
+    \Ratib\ContactCenter\App\Core\Database::disconnect();
     $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
     $dir = control_contact_center_root_path() . '/migrations';
     $files = glob($dir . '/*.sql') ?: [];
