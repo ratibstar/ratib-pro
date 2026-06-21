@@ -13,6 +13,7 @@
         this.onStatus = typeof options.onStatus === 'function' ? options.onStatus : function () {};
         this.reconnectMs = options.reconnectMs || 3000;
         this.maxReconnectMs = options.maxReconnectMs || 30000;
+        this.maxRetries = options.maxRetries != null ? options.maxRetries : 8;
         this._ws = null;
         this._retry = 0;
         this._stopped = false;
@@ -59,6 +60,10 @@
     RccRealtimeClient.prototype._scheduleReconnect = function () {
         var self = this;
         if (self._stopped) {
+            return;
+        }
+        if (self._retry >= self.maxRetries) {
+            self.onStatus('offline', 'Realtime hub unavailable');
             return;
         }
         var delay = Math.min(self.reconnectMs * Math.pow(2, self._retry), self.maxReconnectMs);

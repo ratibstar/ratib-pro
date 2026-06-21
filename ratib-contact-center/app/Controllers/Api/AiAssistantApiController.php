@@ -27,10 +27,16 @@ final class AiAssistantApiController
     public function handle(): void
     {
         header('Content-Type: application/json; charset=utf-8');
-        $action = (string) ($_GET['action'] ?? '');
-        $body = $this->parseJsonBody();
-        $input = array_merge($body, $_GET);
-        echo json_encode($this->handleAction($action, $input), JSON_UNESCAPED_UNICODE);
+        try {
+            $action = (string) ($_GET['action'] ?? '');
+            $body = $this->parseJsonBody();
+            $input = array_merge($body, $_GET);
+            echo json_encode($this->handleAction($action, $input), JSON_UNESCAPED_UNICODE);
+        } catch (\Throwable $e) {
+            error_log('[RCC AiAssistantApi] ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        }
     }
 
     /** @return array<string, mixed> */

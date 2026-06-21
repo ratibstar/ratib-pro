@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/config/env.php';
+
 /**
  * PSR-4 autoloader for Ratib\ContactCenter\App\
  */

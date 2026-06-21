@@ -139,8 +139,10 @@ final class ConversationRepository
     {
         $stmt = Database::connection()->prepare(
             "SELECT * FROM rcc_conversations
-             WHERE tenant_id = :tid AND assigned_agent_id = :aid AND status != 'closed'
-             ORDER BY last_message_at DESC LIMIT :lim"
+             WHERE tenant_id = :tid
+               AND status != 'closed'
+               AND (assigned_agent_id = :aid OR assigned_agent_id IS NULL)
+             ORDER BY last_message_at DESC, id DESC LIMIT :lim"
         );
         $stmt->bindValue('tid', $tenantId, \PDO::PARAM_INT);
         $stmt->bindValue('aid', $agentId, \PDO::PARAM_INT);

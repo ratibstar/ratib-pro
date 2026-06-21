@@ -27,11 +27,21 @@ final class InboxApiController
     public function handle(): void
     {
         header('Content-Type: application/json; charset=utf-8');
-        $action = (string) ($_GET['action'] ?? '');
-        $body = $this->parseJsonBody();
-        $input = array_merge($body, $_GET);
-        $result = $this->handleAction($action, $input);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE);
+        try {
+            $action = (string) ($_GET['action'] ?? '');
+            $body = $this->parseJsonBody();
+            $input = array_merge($body, $_GET);
+            $result = $this->handleAction($action, $input);
+            echo json_encode($result, JSON_UNESCAPED_UNICODE);
+        } catch (\Throwable $e) {
+            error_log('[RCC InboxApi] ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'ok' => false,
+                'error' => 'Inbox request failed',
+                'detail' => $e->getMessage(),
+            ], JSON_UNESCAPED_UNICODE);
+        }
     }
 
     /** @return array<string, mixed> */
@@ -91,6 +101,9 @@ final class InboxApiController
                 $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
                 $adapter = new WebChatChannelAdapter($this->engine);
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
+
+            case 'health':
+                return ['ok' => true, 'service' => 'rcc-inbox'];
 
             default:
                 return $this->error('Unknown action: ' . $action);

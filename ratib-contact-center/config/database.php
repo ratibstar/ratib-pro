@@ -16,15 +16,19 @@ if (!function_exists('rcc_database_name')) {
 }
 
 if (!defined('RCC_DB_HOST')) {
-    $host = getenv('RATIB_CC_DB_HOST') ?: getenv('DB_HOST') ?: '127.0.0.1';
-    $port = (int) (getenv('RATIB_CC_DB_PORT') ?: getenv('DB_PORT') ?: 3306);
-    $user = getenv('RATIB_CC_DB_USER') ?: getenv('DB_USER') ?: 'admin_call-center';
-    $pass = getenv('RATIB_CC_DB_PASS');
-    if ($pass === false) {
-        $pass = getenv('RATEB_CC_DB_PASS');
-    }
-    if ($pass === false) {
-        $pass = getenv('DB_PASS') ?: '';
+    $host = defined('RATIB_CC_DB_HOST') ? (string) RATIB_CC_DB_HOST : (getenv('RATIB_CC_DB_HOST') ?: getenv('DB_HOST') ?: '127.0.0.1');
+    $port = (int) (defined('RATIB_CC_DB_PORT') ? RATIB_CC_DB_PORT : (getenv('RATIB_CC_DB_PORT') ?: getenv('DB_PORT') ?: 3306));
+    $user = defined('RATIB_CC_DB_USER') ? (string) RATIB_CC_DB_USER : (getenv('RATIB_CC_DB_USER') ?: getenv('DB_USER') ?: 'admin_call-center');
+    if (defined('RATIB_CC_DB_PASS')) {
+        $pass = (string) RATIB_CC_DB_PASS;
+    } else {
+        $pass = getenv('RATIB_CC_DB_PASS');
+        if ($pass === false) {
+            $pass = getenv('RATEB_CC_DB_PASS');
+        }
+        if ($pass === false) {
+            $pass = getenv('DB_PASS') ?: '';
+        }
     }
 
     define('RCC_DB_HOST', (string) $host);

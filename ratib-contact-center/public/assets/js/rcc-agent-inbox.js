@@ -56,7 +56,12 @@
     RccAgentInbox.prototype._loadInbox = function () {
         var self = this;
         self._api('inbox', { tenant_id: self.tenantId, agent_id: self.agentId }).then(function (res) {
-            if (!res.ok) {
+            if (!res || !res.ok) {
+                var list = self.root.querySelector('#rcc-inbox-list');
+                if (list) {
+                    list.innerHTML = '<div class="rcc-inbox__empty"><span class="rcc-inbox__empty-icon">⚠</span>' +
+                        self._esc((res && res.error) || 'Could not load inbox') + '</div>';
+                }
                 return;
             }
             (res.conversations || []).forEach(function (c) {
@@ -184,7 +189,29 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
-        }).then(function (r) { return r.json(); });
+        }).then(function (r) {
+            return r.text().then(function (text) {
+                if (!text) {
+                    return { ok: false, error: 'Empty response (HTTP ' + r.status + ')' };
+                }
+                try {
+                    var data = JSON.parse(text);
+                    if (!r.ok && data && !data.error) {
+                        data.error = 'HTTP ' + r.status;
+                        data.ok = false;
+                    }
+                    return data;
+                } catch (err) {
+                    return {
+                        ok: false,
+                        error: 'Invalid JSON (HTTP ' + r.status + ')',
+                        detail: text.substring(0, 200)
+                    };
+                }
+            });
+        }).catch(function (err) {
+            return { ok: false, error: err && err.message ? err.message : 'Network error' };
+        });
     };
 
     RccAgentInbox.prototype._esc = function (s) {

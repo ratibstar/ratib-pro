@@ -1,0 +1,11 @@
+# Serve static assets directly (CSS/JS) with correct MIME types
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+</IfModule>
+
+<IfModule mod_mime.c>
+AddType text/css .css
+AddType application/javascript .js
+</IfModule>
