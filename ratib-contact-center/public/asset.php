@@ -18,8 +18,15 @@ if ($file === '') {
     $file = (string) ($_GET['f'] ?? '');
     $file = str_replace(['\\', "\0"], '/', $file);
     $file = ltrim($file, '/');
-    $file = preg_replace('/[^\x2E\x2F\x30-\x39\x41-\x5A\x5F\x61-\x7A-]/', '', $file) ?? $file;
-    $file = str_replace(['sمنتphone', 'smtphone'], 'softphone', $file);
+    $file = preg_replace('/[^\x2E\x2F\x30-\x39\x41-\x5A\x5F\x61-\x7A\x-]/', '', $file) ?? $file;
+    // RTL/bidi corruption: rcc-sمنtphone.css → rcc-softphone.css
+    if (preg_match('#^css/rcc-s.+tphone\.css$#', $file)) {
+        $file = 'css/rcc-softphone.css';
+    }
+    if (preg_match('#^js/rcc-s.+tphone#', $file)) {
+        $file = preg_match('#-ui\.js$#', $file) ? 'js/rcc-softphone-ui.js' : 'js/rcc-softphone.js';
+    }
+    $file = str_replace(['smtphone', 'sمنتphone'], 'softphone', $file);
 }
 
 if ($file === '' || strpos($file, '..') !== false) {

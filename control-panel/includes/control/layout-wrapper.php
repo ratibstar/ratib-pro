@@ -101,8 +101,9 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
         $cssAbs = (bool)preg_match('#^(https?://|/)#i', $css);
         $cssHref = $cssAbs ? $css : asset($css);
         $cssVer = $cssAbs ? '' : ('?v=' . time());
+        $cssDir = $cssAbs ? ' dir="ltr"' : '';
         ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssHref . $cssVer); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssHref . $cssVer); ?>"<?php echo $cssDir; ?>>
     <?php endforeach; ?>
 </head>
 <body class="control-system-body control-layout-no-header<?php echo $standalone ? ' control-layout-standalone' : ''; ?><?php echo $htmlDir === 'rtl' ? ' cp-rtl' : ''; ?>">
@@ -201,8 +202,9 @@ function endControlLayout($additionalJS = []) {
         $jsAbs = (bool)preg_match('#^(https?://|/)#i', $js);
         $jsSrc = $jsAbs ? $js : asset($js);
         $jsVer = $jsAbs ? '' : ('?v=' . time());
+        $jsDir = $jsAbs ? ' dir="ltr"' : '';
         ?>
-    <script src="<?php echo htmlspecialchars($jsSrc . $jsVer); ?>"></script>
+    <script src="<?php echo htmlspecialchars($jsSrc . $jsVer); ?>"<?php echo $jsDir; ?>></script>
     <?php endforeach; ?>
 </body>
 </html>
