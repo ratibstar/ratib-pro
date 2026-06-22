@@ -1668,6 +1668,9 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $svc->logTimeline($commId, $companyId, 'email_send', $msg, $recipient);
             if ($result['success'] ?? false) {
                 SessionManager::flash('info', $msg);
+            } elseif (!empty($result['smtp_config_required'])) {
+                $this->model->update($commId, ['send_status' => 'failed']);
+                SessionManager::flash('error', $msg);
             } else {
                 $mailto = $this->buildMailtoUrl($data);
                 if ($mailto !== '') {

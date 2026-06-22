@@ -74,6 +74,13 @@ if (!function_exists('rateb_env_load_bridge_dotenv')) {
             'RCC_SIP_WSS_URI',
             'RCC_SIP_DOMAIN',
             'RCC_SIP_DEFAULT_PASS',
+            'RATEB_ERP_SMTP_HOST',
+            'RATEB_ERP_SMTP_PORT',
+            'RATEB_ERP_SMTP_ENCRYPTION',
+            'RATEB_ERP_SMTP_USER',
+            'RATEB_ERP_SMTP_FROM_EMAIL',
+            'RATEB_ERP_SMTP_FROM_NAME',
+            'RATEB_ERP_SMTP_PASS',
         ];
         $lines = @file($path, FILE_IGNORE_NEW_LINES);
         if (!is_array($lines)) {

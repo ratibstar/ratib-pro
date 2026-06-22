@@ -216,6 +216,7 @@ final class SupplierCommService
                 'status' => 'failed',
                 'message' => __('comm_email_smtp_required'),
                 'recipient' => $email,
+                'smtp_config_required' => true,
             ];
         }
         $subject = trim((string) ($data['subject'] ?? ''));
