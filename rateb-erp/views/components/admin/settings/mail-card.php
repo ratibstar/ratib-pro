@@ -83,10 +83,12 @@ $mailLocalhost = !empty($mailLocalhost);
             </ul>
             <?php if (empty($mailDns['ready_for_external'])) { ?>
             <p class="text-danger mb-1"><?php echo __('mail_dns_not_ready'); ?></p>
-            <p class="text-muted mb-0"><?php echo __('mail_dns_directadmin_steps'); ?></p>
+            <p class="text-muted mb-1"><?php echo __('mail_dns_directadmin_steps'); ?></p>
+            <p class="text-muted mb-1"><?php echo __('mail_dns_hawsabah_hint'); ?></p>
             <?php } else { ?>
-            <p class="text-success mb-0"><?php echo __('mail_dns_ready'); ?></p>
+            <p class="text-success mb-1"><?php echo __('mail_dns_ready'); ?></p>
             <?php } ?>
+            <p class="text-warning mb-0"><?php echo __('mail_port25_blocked_hint'); ?></p>
         </div>
         <?php } ?>
         <form method="post" action="<?php echo rateb_url('admin/settings/test-mail'); ?>" class="row g-2 align-items-end border-top pt-3">

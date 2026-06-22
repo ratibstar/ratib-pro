@@ -33,8 +33,7 @@ final class MailDnsCheckService
     /** @return array{ok:bool,detail:string} */
     private function checkSpf(string $domain): array
     {
-        $records = $this->txtRecords($domain);
-        foreach ($records as $txt) {
+        foreach ($this->txtRecords($domain) as $txt) {
             if (stripos($txt, 'v=spf1') !== false) {
                 return ['ok' => true, 'detail' => $this->clip($txt)];
             }
@@ -47,8 +46,7 @@ final class MailDnsCheckService
     {
         foreach (self::DKIM_SELECTORS as $selector) {
             $host = $selector . '._domainkey.' . $domain;
-            $records = $this->txtRecords($host);
-            foreach ($records as $txt) {
+            foreach ($this->txtRecords($host) as $txt) {
                 if (stripos($txt, 'v=DKIM1') !== false || stripos($txt, 'k=rsa') !== false) {
                     return ['ok' => true, 'detail' => $selector . '._domainkey', 'selector' => $selector];
                 }
@@ -60,8 +58,7 @@ final class MailDnsCheckService
     /** @return array{ok:bool,detail:string} */
     private function checkDmarc(string $domain): array
     {
-        $records = $this->txtRecords('_dmarc.' . $domain);
-        foreach ($records as $txt) {
+        foreach ($this->txtRecords('_dmarc.' . $domain) as $txt) {
             if (stripos($txt, 'v=DMARC1') !== false) {
                 return ['ok' => true, 'detail' => $this->clip($txt)];
             }
@@ -72,28 +69,61 @@ final class MailDnsCheckService
     /** @return array{ok:bool,detail:string} */
     private function checkMx(string $domain): array
     {
-        $records = @dns_get_record($domain, DNS_MX);
-        if (!is_array($records) || $records === []) {
-            return ['ok' => false, 'detail' => __('mail_dns_mx_missing')];
-        }
+        $parts = $this->mxHosts($domain);
+        return [
+            'ok' => $parts !== [],
+            'detail' => $parts !== [] ? implode(', ', $parts) : __('mail_dns_mx_missing'),
+        ];
+    }
+
+    /** @return list<string> */
+    private function mxHosts(string $domain): array
+    {
         $parts = [];
+        foreach ($this->dnsAnswers($domain, 15) as $row) {
+            $data = trim((string) ($row['data'] ?? ''), " \t\".");
+            if ($data === '') {
+                continue;
+            }
+            if (preg_match('/^\d+\s+(.+)$/', $data, $m)) {
+                $parts[] = rtrim($m[1], '.');
+            } else {
+                $parts[] = rtrim($data, '.');
+            }
+        }
+        if ($parts !== []) {
+            return array_values(array_unique($parts));
+        }
+        $records = @dns_get_record($domain, DNS_MX);
+        if (!is_array($records)) {
+            return [];
+        }
         foreach ($records as $row) {
             $host = (string) ($row['target'] ?? '');
             if ($host !== '') {
                 $parts[] = $host;
             }
         }
-        return ['ok' => $parts !== [], 'detail' => $parts !== [] ? implode(', ', $parts) : __('mail_dns_mx_missing')];
+        return array_values(array_unique($parts));
     }
 
     /** @return list<string> */
     private function txtRecords(string $host): array
     {
+        $out = [];
+        foreach ($this->dnsAnswers($host, 16) as $row) {
+            $txt = $this->decodeTxt((string) ($row['data'] ?? ''));
+            if ($txt !== '') {
+                $out[] = $txt;
+            }
+        }
+        if ($out !== []) {
+            return $out;
+        }
         $records = @dns_get_record($host, DNS_TXT);
         if (!is_array($records)) {
             return [];
         }
-        $out = [];
         foreach ($records as $row) {
             $txt = (string) ($row['txt'] ?? '');
             if ($txt !== '') {
@@ -101,6 +131,35 @@ final class MailDnsCheckService
             }
         }
         return $out;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function dnsAnswers(string $name, int $type): array
+    {
+        $url = 'https://dns.google/resolve?name=' . rawurlencode($name) . '&type=' . $type;
+        $ctx = stream_context_create(['http' => ['timeout' => 6, 'header' => "Accept: application/dns-json\r\n"]]);
+        $raw = @file_get_contents($url, false, $ctx);
+        if (!is_string($raw) || $raw === '') {
+            return [];
+        }
+        $data = json_decode($raw, true);
+        if (!is_array($data) || (int) ($data['Status'] ?? 1) !== 0) {
+            return [];
+        }
+        $answers = $data['Answer'] ?? [];
+        return is_array($answers) ? $answers : [];
+    }
+
+    private function decodeTxt(string $data): string
+    {
+        $data = trim($data);
+        if ($data === '') {
+            return '';
+        }
+        if ($data[0] === '"' && substr($data, -1) === '"') {
+            return stripcslashes(substr($data, 1, -1));
+        }
+        return $data;
     }
 
     private function clip(string $text, int $max = 120): string
