@@ -96,6 +96,42 @@ final class EventType
     public const SUPERVISOR_ALERT_ACKNOWLEDGED = 'SUPERVISOR_ALERT_ACKNOWLEDGED';
     public const SUPERVISOR_AUDIT_LOGGED = 'SUPERVISOR_AUDIT_LOGGED';
 
+    // CRM (Phase 10A)
+    public const CRM_ACCOUNT_UPDATED = 'CRM_ACCOUNT_UPDATED';
+    public const CRM_CONTACT_UPDATED = 'CRM_CONTACT_UPDATED';
+    public const CRM_ACTIVITY_RECORDED = 'CRM_ACTIVITY_RECORDED';
+    public const CRM_NOTE_ADDED = 'CRM_NOTE_ADDED';
+    public const CRM_TAG_UPDATED = 'CRM_TAG_UPDATED';
+    public const CRM_DOCUMENT_UPLOADED = 'CRM_DOCUMENT_UPLOADED';
+    public const CRM_ERP_SYNCED = 'CRM_ERP_SYNCED';
+
+    // Ticketing (Phase 10B)
+    public const TICKET_CREATED = 'TICKET_CREATED';
+    public const TICKET_ASSIGNED = 'TICKET_ASSIGNED';
+    public const TICKET_ESCALATED = 'TICKET_ESCALATED';
+    public const TICKET_RESOLVED = 'TICKET_RESOLVED';
+    public const TICKET_REOPENED = 'TICKET_REOPENED';
+    public const TICKET_MERGED = 'TICKET_MERGED';
+    public const TICKET_SPLIT = 'TICKET_SPLIT';
+    public const TICKET_COMMENT_ADDED = 'TICKET_COMMENT_ADDED';
+    public const TICKET_SLA_BREACHED = 'TICKET_SLA_BREACHED';
+
+    // QA (Phase 10C)
+    public const QA_REVIEW_CREATED = 'QA_REVIEW_CREATED';
+    public const QA_REVIEW_COMPLETED = 'QA_REVIEW_COMPLETED';
+    public const QA_SCORE_UPDATED = 'QA_SCORE_UPDATED';
+
+    // Recordings (Phase 10D)
+    public const RECORDING_INGESTED = 'RECORDING_INGESTED';
+
+    // Analytics (Phase 10E)
+    public const ANALYTICS_AGGREGATED = 'ANALYTICS_AGGREGATED';
+
+    // AI insights (Phase 10G)
+    public const AI_QA_COMPLETED = 'AI_QA_COMPLETED';
+    public const AI_INSIGHT_CREATED = 'AI_INSIGHT_CREATED';
+    public const AI_RISK_DETECTED = 'AI_RISK_DETECTED';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -166,6 +202,30 @@ final class EventType
             self::SUPERVISOR_ALERT_RAISED,
             self::SUPERVISOR_ALERT_ACKNOWLEDGED,
             self::SUPERVISOR_AUDIT_LOGGED,
+            self::CRM_ACCOUNT_UPDATED,
+            self::CRM_CONTACT_UPDATED,
+            self::CRM_ACTIVITY_RECORDED,
+            self::CRM_NOTE_ADDED,
+            self::CRM_TAG_UPDATED,
+            self::CRM_DOCUMENT_UPLOADED,
+            self::CRM_ERP_SYNCED,
+            self::TICKET_CREATED,
+            self::TICKET_ASSIGNED,
+            self::TICKET_ESCALATED,
+            self::TICKET_RESOLVED,
+            self::TICKET_REOPENED,
+            self::TICKET_MERGED,
+            self::TICKET_SPLIT,
+            self::TICKET_COMMENT_ADDED,
+            self::TICKET_SLA_BREACHED,
+            self::QA_REVIEW_CREATED,
+            self::QA_REVIEW_COMPLETED,
+            self::QA_SCORE_UPDATED,
+            self::RECORDING_INGESTED,
+            self::ANALYTICS_AGGREGATED,
+            self::AI_QA_COMPLETED,
+            self::AI_INSIGHT_CREATED,
+            self::AI_RISK_DETECTED,
         ];
     }
 }

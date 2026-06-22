@@ -43,7 +43,9 @@ final class AuthContext
         }
         return self::can('rcc.ops.view')
             || self::can('rcc.supervisor.view')
-            || self::can('rcc.supervisor.dashboard');
+            || self::can('rcc.supervisor.dashboard')
+            || self::can('rcc.crm.view')
+            || self::can('rcc.command.view');
     }
 
     public static function requireAuth(): void

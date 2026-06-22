@@ -1,0 +1,36 @@
+/* RCC Executive Command Center */
+.rcc-cmd {
+    color: var(--rcc-cmd-text, #e8eaed);
+    background: var(--rcc-cmd-bg, #0f1419);
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 60vh;
+}
+@media (prefers-color-scheme: light) {
+    .rcc-cmd { --rcc-cmd-text: #1e293b; --rcc-cmd-bg: #f1f5f9; }
+}
+.rcc-cmd__header h2 { margin: 0 0 0.75rem; font-size: 1.2rem; }
+.rcc-cmd__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+.rcc-cmd__kpi {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+    border-top: 3px solid #3b82f6;
+}
+@media (prefers-color-scheme: light) { .rcc-cmd__kpi { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08); } }
+.rcc-cmd__kpi--warn { border-top-color: #f59e0b; }
+.rcc-cmd__kpi--critical { border-top-color: #ef4444; }
+.rcc-cmd__kpi-val { display: block; font-size: 1.4rem; font-weight: 700; }
+.rcc-cmd__kpi-label { font-size: 0.75rem; opacity: 0.85; }
+.rcc-cmd__wall ul { list-style: none; padding: 0; }
+.rcc-cmd__kpi-li--critical { color: #ef4444; }
+.rcc-cmd__kpi-li--warning { color: #f59e0b; }
+@media (max-width: 768px) {
+    .rcc-cmd__grid { grid-template-columns: repeat(2, 1fr); }
+}

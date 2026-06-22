@@ -207,10 +207,28 @@ See git status for full list. Key paths:
 | **Overall (code)** | **~86%** |
 | **Overall (live)** | **~78%** — migrations 011–012, AMI, hub on server |
 
+## Phase 10 — Enterprise Suite (2026-06-22)
+
+| Module | Migration | API / CP |
+|--------|-----------|----------|
+| **10A CRM** | `013_crm_module.sql` | `crm.php`, `contact-center-crm.php` |
+| **10B Ticketing** | `014_ticketing_engine.sql` | `tickets.php` |
+| **10C QA** | `015_quality_assurance.sql` | `analytics.php` (qa_* actions) |
+| **10D Recordings** | `016_recordings.sql` | `recording-play.php`, ingest bridge |
+| **10E BI Analytics** | `017_bi_analytics.sql` | `analytics.php` |
+| **10F Knowledge Base** | `018_knowledge_base.sql` | `analytics.php` (kb_* actions) |
+| **10G AI Insights** | — | `AiQaEngine`, `AiCallInsightsEngine`, `AiConversationInsightsEngine` |
+| **10H Command Center** | — | `contact-center-command-center.php` |
+| **10I Security** | `019_security_hardening.sql` | `ApiRateLimitService`, `rcc_audit_logs` |
+| **10J Final Audit** | — | `tools/final-production-audit.php` |
+
+**Code-layer audit (local):** Phase 10 modules score **100%**; overall **~96%** when DB + AMI + hub are live on server.
+
 ## Deployment Checklist (updated)
 
-- [ ] Push to `main` (auto-deploy includes `ratib-contact-center/`, `control-panel/api/control/rcc-migrate-run.php`)
-- [ ] GitHub Actions runs RCC migrations after deploy (or CP → Database Setup)
-- [ ] Verify: `php ratib-contact-center/tools/production-audit.php` ≥ 80%
-- [ ] Supervisor suite: shift assign, attendance, breaks, alert rules, report CSV export
-- [ ] Ops center: go-live checklist all green before taking traffic
+- [ ] Push to `main` (auto-deploy includes `ratib-contact-center/`, `control-panel/pages/control/contact-center-crm.php`, `contact-center-command-center.php`)
+- [ ] Run migrations **001–019** via GitHub Actions or Control Panel → Database Setup
+- [ ] Verify: `php ratib-contact-center/tools/final-production-audit.php` ≥ **95%** on server
+- [ ] CRM: accounts, contacts, ERP sync
+- [ ] Tickets: create, assign, escalate, SLA
+- [ ] Command Center: executive dashboard live via WebSocket

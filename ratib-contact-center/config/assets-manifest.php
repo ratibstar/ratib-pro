@@ -20,4 +20,8 @@ return [
     'ops-js' => 'js/rcc-ops-center.js',
     'supervisor-css' => 'css/rcc-supervisor-center.css',
     'supervisor-js' => 'js/rcc-supervisor-center.js',
+    'crm-css' => 'css/rcc-crm-center.css',
+    'crm-js' => 'js/rcc-crm-center.js',
+    'command-css' => 'css/rcc-command-center.css',
+    'command-js' => 'js/rcc-command-center.js',
 ];

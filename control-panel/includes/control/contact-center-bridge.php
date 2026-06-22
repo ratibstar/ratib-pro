@@ -395,6 +395,36 @@ function control_contact_center_supervisor_api_url(): string
     return control_contact_center_public_base_url() . '/api/v1/supervisor.php';
 }
 
+function control_contact_center_crm_page_url(string $route = 'accounts'): string
+{
+    $base = function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/contact-center-crm.php')
+        : '/control-panel/pages/control/contact-center-crm.php?control=1';
+    return $base . '&route=' . rawurlencode($route);
+}
+
+function control_contact_center_crm_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/crm.php';
+}
+
+function control_contact_center_tickets_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/tickets.php';
+}
+
+function control_contact_center_analytics_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/analytics.php';
+}
+
+function control_contact_center_command_page_url(): string
+{
+    return function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/contact-center-command-center.php')
+        : '/control-panel/pages/control/contact-center-command-center.php?control=1';
+}
+
 /** Resolve tenant for RCC UI/API — never hardcode; session first, else first active tenant. */
 function control_contact_center_resolve_tenant_id(): int
 {
@@ -573,6 +603,22 @@ function control_contact_center_nav_links(): array
             'key' => 'supervisor',
             'description' => 'Live wallboard, queue/agent monitors, SLA, workforce, shifts, alerts.',
         ],
+        'crm' => [
+            'route' => 'accounts',
+            'href' => control_contact_center_crm_page_url('accounts'),
+            'label' => 'Enterprise CRM',
+            'icon' => 'fa-address-book',
+            'key' => 'crm',
+            'description' => 'Accounts, contacts, timeline, tags, documents, ERP sync.',
+        ],
+        'command' => [
+            'route' => 'command',
+            'href' => control_contact_center_command_page_url(),
+            'label' => 'Command Center',
+            'icon' => 'fa-satellite-dish',
+            'key' => 'command',
+            'description' => 'Executive KPIs, live wallboard, ticket backlog, AI alerts.',
+        ],
         'hub' => [
             'route' => 'hub',
             'href' => control_contact_center_hub_page_url(),
@@ -593,6 +639,9 @@ function control_contact_center_verify_schema(): array
         'rcc_pbx_servers', 'rcc_ops_checklist_steps', 'rcc_ops_checklist_status',
         'rcc_wfm_shifts', 'rcc_wfm_shift_assignments', 'rcc_wfm_attendance', 'rcc_wfm_breaks',
         'rcc_supervisor_alerts', 'rcc_supervisor_alert_rules', 'rcc_audit_logs',
+        'rcc_accounts', 'rcc_contact_notes', 'rcc_ticket_comments', 'rcc_qa_forms',
+        'rcc_recordings', 'rcc_metrics_daily', 'rcc_kpis', 'rcc_kb_articles',
+        'rcc_api_rate_limits',
     ];
     $missing = [];
     try {
