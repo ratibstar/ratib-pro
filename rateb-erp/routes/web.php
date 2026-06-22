@@ -174,6 +174,7 @@ $router->post('/admin/queue-monitor/retry', [\Rateb\App\Controllers\Admin\QueueM
 $router->get('/admin/automation-health', [\Rateb\App\Controllers\Admin\AutomationDashboardController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
+$router->post('/admin/settings/save-mail', [SettingsController::class, 'saveMail'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings/test-mail', [SettingsController::class, 'testMail'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/tools/fix-arabic', [SettingsController::class, 'fixArabic'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));

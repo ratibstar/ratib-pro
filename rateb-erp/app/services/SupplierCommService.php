@@ -240,7 +240,7 @@ final class SupplierCommService
                 'smtp_config_required' => true,
             ];
         }
-        $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
+        $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam') : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
         if ($sent && $cc !== null) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
         }

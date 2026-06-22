@@ -1538,10 +1538,11 @@ final class SettingsController extends Controller
         $model = new \Rateb\App\Models\SystemSetting();
         $keys = $_POST['setting_key'] ?? [];
         $values = $_POST['setting_value'] ?? [];
+        $mailKeys = ['smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name'];
         if (is_array($keys)) {
             foreach ($keys as $i => $key) {
                 $key = trim((string) $key);
-                if ($key === '') {
+                if ($key === '' || in_array($key, $mailKeys, true)) {
                     continue;
                 }
                 $existing = $model->queryOne('SELECT id FROM rateb_system_settings WHERE setting_key = :k', ['k' => $key]);
@@ -1554,6 +1555,46 @@ final class SettingsController extends Controller
             }
         }
         SessionManager::flash('success', __('save') . ' OK');
+        Response::redirect(rateb_url('admin/settings'));
+    }
+
+    public function saveMail(): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/settings'));
+        }
+        $model = new \Rateb\App\Models\SystemSetting();
+        $host = trim((string) $this->input('smtp_host', 'localhost'));
+        $port = trim((string) $this->input('smtp_port', '587'));
+        $encryption = strtolower(trim((string) $this->input('smtp_encryption', 'tls')));
+        if (!ctype_digit($port)) {
+            SessionManager::flash('error', __('mail_error_port_invalid'));
+            Response::redirect(rateb_url('admin/settings'));
+        }
+        if (!in_array($encryption, ['tls', 'ssl', 'none'], true)) {
+            $encryption = 'tls';
+        }
+        $pairs = [
+            'smtp_host' => $host !== '' ? $host : 'localhost',
+            'smtp_port' => $port,
+            'smtp_encryption' => $encryption,
+            'smtp_user' => trim((string) $this->input('smtp_user', 'info@rateb.sa')),
+            'smtp_from_email' => trim((string) $this->input('smtp_from_email', 'info@rateb.sa')),
+            'smtp_from_name' => trim((string) $this->input('smtp_from_name', 'Rateb ERP')),
+        ];
+        $pass = trim((string) $this->input('smtp_pass', ''));
+        if ($pass !== '') {
+            $pairs['smtp_pass'] = $pass;
+        }
+        foreach ($pairs as $key => $val) {
+            $row = $model->queryOne('SELECT id FROM rateb_system_settings WHERE setting_key = :k', ['k' => $key]);
+            if ($row) {
+                $model->update((int) $row['id'], ['setting_value' => $val]);
+            } else {
+                $model->create(['setting_key' => $key, 'setting_value' => $val, 'setting_group' => 'mail']);
+            }
+        }
+        SessionManager::flash('success', __('mail_settings_saved'));
         Response::redirect(rateb_url('admin/settings'));
     }
 

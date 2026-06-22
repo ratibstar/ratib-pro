@@ -16,24 +16,54 @@ $mailPassSet = !empty($mailPassSet);
         <?php } ?>
     </div>
     <div class="rateb-card-body">
-        <p class="text-muted small"><?php echo __('mail_settings_hint'); ?></p>
-        <div class="row g-2 mb-3 small">
-            <div class="col-md-4"><strong><?php echo __('mail_smtp_host'); ?>:</strong> <?php echo Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? '')); ?></div>
-            <div class="col-md-2"><strong><?php echo __('mail_smtp_port'); ?>:</strong> <?php echo Rateb\App\Core\View::escape((string) ($mailCfg['port'] ?? '')); ?></div>
-            <div class="col-md-2"><strong>TLS:</strong> <?php echo Rateb\App\Core\View::escape((string) ($mailCfg['encryption'] ?? '')); ?></div>
-            <div class="col-md-4"><strong><?php echo __('mail_smtp_user'); ?>:</strong> <?php echo Rateb\App\Core\View::escape((string) ($mailCfg['user'] ?? '')); ?></div>
-            <div class="col-md-4"><strong><?php echo __('mail_from'); ?>:</strong> <?php echo Rateb\App\Core\View::escape((string) ($mailCfg['from_email'] ?? '')); ?></div>
-            <div class="col-md-4"><strong><?php echo __('mail_password'); ?>:</strong>
-                <?php echo $mailPassSet ? __('mail_password_set') : __('mail_password_missing'); ?>
+        <p class="text-muted small mb-2"><?php echo __('mail_settings_hint'); ?></p>
+        <p class="text-muted small mb-3"><?php echo __('mail_settings_ready_where'); ?></p>
+        <form method="post" action="<?php echo rateb_url('admin/settings/save-mail'); ?>" class="row g-2 mb-3">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <div class="col-md-4">
+                <label class="form-label small"><?php echo __('mail_smtp_host'); ?></label>
+                <input class="form-control form-control-sm" name="smtp_host" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? 'localhost')); ?>">
             </div>
-        </div>
-        <form method="post" action="<?php echo rateb_url('admin/settings/test-mail'); ?>" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small"><?php echo __('mail_smtp_port'); ?></label>
+                <input class="form-control form-control-sm" name="smtp_port" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['port'] ?? '587')); ?>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">TLS/SSL</label>
+                <select class="form-select form-select-sm" name="smtp_encryption">
+                    <?php foreach (['tls', 'ssl', 'none'] as $enc) { ?>
+                    <option value="<?php echo $enc; ?>" <?php echo (($mailCfg['encryption'] ?? 'tls') === $enc) ? 'selected' : ''; ?>><?php echo $enc; ?></option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small"><?php echo __('mail_smtp_user'); ?></label>
+                <input class="form-control form-control-sm" name="smtp_user" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['user'] ?? 'info@rateb.sa')); ?>">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small"><?php echo __('mail_from'); ?></label>
+                <input class="form-control form-control-sm" name="smtp_from_email" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['from_email'] ?? 'info@rateb.sa')); ?>">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small"><?php echo __('mail_password'); ?></label>
+                <input class="form-control form-control-sm" type="password" name="smtp_pass" autocomplete="new-password"
+                    placeholder="<?php echo $mailPassSet ? __('mail_password_set') : __('mail_password_missing'); ?>">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small"><?php echo __('mail_from_name'); ?></label>
+                <input class="form-control form-control-sm" name="smtp_from_name" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['from_name'] ?? 'Rateb ERP')); ?>">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> <?php echo __('mail_save_settings'); ?></button>
+            </div>
+        </form>
+        <form method="post" action="<?php echo rateb_url('admin/settings/test-mail'); ?>" class="row g-2 align-items-end border-top pt-3">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-6">
                 <label class="form-label"><?php echo __('mail_test_to'); ?></label>
                 <input class="form-control" type="email" name="test_to" required
                     value="<?php echo Rateb\App\Core\View::escape((string) ($testEmailDefault ?? 'info@rateb.sa')); ?>"
-                    placeholder="info@rateb.sa">
+                    placeholder="ratibstar@gmail.com">
             </div>
             <div class="col-md-6">
                 <button type="submit" class="btn btn-outline-primary" <?php echo $mailReady ? '' : 'disabled'; ?>>
@@ -43,6 +73,8 @@ $mailPassSet = !empty($mailPassSet);
         </form>
         <?php if (!$mailReady) { ?>
         <p class="text-warning small mt-2 mb-0"><?php echo __('mail_password_env_hint'); ?></p>
+        <?php } else { ?>
+        <p class="text-muted small mt-2 mb-0"><?php echo __('mail_check_spam_hint'); ?></p>
         <?php } ?>
     </div>
 </div>

@@ -25,6 +25,7 @@ final class MailConfigService
     {
         $this->bootstrapMailEnvFromDotenvFile();
         $settings = new SystemSetting();
+        $this->repairSwappedSmtpInDb($settings);
         $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'localhost');
         $port = (int) $this->envOrSetting('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587');
         $encryption = strtolower($this->envOrSetting('RATEB_ERP_SMTP_ENCRYPTION', 'smtp_encryption', $settings, 'tls'));
@@ -151,6 +152,40 @@ final class MailConfigService
             }
         }
         return '';
+    }
+
+    private function repairSwappedSmtpInDb(SystemSetting $settings): void
+    {
+        static $repaired = false;
+        if ($repaired) {
+            return;
+        }
+        $repaired = true;
+        $portRaw = trim((string) ($settings->get('smtp_port', '') ?? ''));
+        $encRaw = trim((string) ($settings->get('smtp_encryption', '') ?? ''));
+        $portIsEnc = in_array(strtolower($portRaw), ['tls', 'ssl', 'none'], true);
+        $encIsPort = $encRaw !== '' && ctype_digit($encRaw);
+        if ($portIsEnc && $encIsPort) {
+            $this->upsertSetting($settings, 'smtp_port', $encRaw);
+            $this->upsertSetting($settings, 'smtp_encryption', strtolower($portRaw));
+            return;
+        }
+        if ($portRaw !== '' && !ctype_digit($portRaw)) {
+            $this->upsertSetting($settings, 'smtp_port', '587');
+        }
+        if ($encRaw !== '' && !in_array(strtolower($encRaw), ['tls', 'ssl', 'none'], true)) {
+            $this->upsertSetting($settings, 'smtp_encryption', 'tls');
+        }
+    }
+
+    private function upsertSetting(SystemSetting $settings, string $key, string $value): void
+    {
+        $row = $settings->queryOne('SELECT id FROM rateb_system_settings WHERE setting_key = :k LIMIT 1', ['k' => $key]);
+        if ($row) {
+            $settings->update((int) $row['id'], ['setting_value' => $value]);
+        } else {
+            $settings->create(['setting_key' => $key, 'setting_value' => $value, 'setting_group' => 'mail']);
+        }
     }
 
     /** @return list<string> */
