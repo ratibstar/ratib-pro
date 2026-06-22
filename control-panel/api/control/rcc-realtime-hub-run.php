@@ -15,29 +15,7 @@ require_once __DIR__ . '/../../includes/control/contact-center-bridge.php';
 header('Content-Type: text/plain; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
-$provided = trim((string) ($_SERVER['HTTP_X_RATEB_MIGRATE_TOKEN'] ?? ''));
-if ($provided === '') {
-    http_response_code(403);
-    exit("Forbidden\n");
-}
-
-$expected = '';
-if (defined('RATEB_ERP_MIGRATE_TOKEN') && (string) RATEB_ERP_MIGRATE_TOKEN !== '') {
-    $expected = (string) RATEB_ERP_MIGRATE_TOKEN;
-}
-if ($expected === '') {
-    $fromEnv = getenv('CPANEL_API_TOKEN');
-    if ($fromEnv !== false && $fromEnv !== '') {
-        $expected = (string) $fromEnv;
-    }
-}
-$rccRoot = control_contact_center_root_path();
-$tokenFile = $rccRoot . '/storage/deploy-migrate-token';
-if ($expected === '' && is_file($tokenFile)) {
-    $expected = trim((string) file_get_contents($tokenFile));
-}
-
-if ($expected === '' || !hash_equals($expected, $provided)) {
+if (!control_contact_center_verify_migrate_token()) {
     http_response_code(403);
     exit("Forbidden\n");
 }

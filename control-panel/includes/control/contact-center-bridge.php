@@ -209,6 +209,43 @@ function control_contact_center_ws_url(): string
     return $scheme . '://' . $useHost . ':' . $port;
 }
 
+function control_contact_center_migrate_token_expected(): string
+{
+    if (defined('RATEB_ERP_MIGRATE_TOKEN') && (string) RATEB_ERP_MIGRATE_TOKEN !== '') {
+        return (string) RATEB_ERP_MIGRATE_TOKEN;
+    }
+    $fromEnv = getenv('CPANEL_API_TOKEN');
+    if ($fromEnv !== false && $fromEnv !== '') {
+        return (string) $fromEnv;
+    }
+    $rccRoot = control_contact_center_root_path();
+    $tokenPaths = [
+        $rccRoot . '/storage/deploy-migrate-token',
+        dirname($rccRoot) . '/rateb-erp/storage/deploy-migrate-token',
+    ];
+    foreach ($tokenPaths as $tokenFile) {
+        if (is_file($tokenFile)) {
+            return trim((string) file_get_contents($tokenFile));
+        }
+    }
+
+    return '';
+}
+
+function control_contact_center_verify_migrate_token(?string $provided = null): bool
+{
+    $provided = trim($provided ?? (string) ($_SERVER['HTTP_X_RATEB_MIGRATE_TOKEN'] ?? ''));
+    if ($provided === '') {
+        return false;
+    }
+    $expected = control_contact_center_migrate_token_expected();
+    if ($expected === '') {
+        return false;
+    }
+
+    return hash_equals($expected, $provided);
+}
+
 /** @return array{running:bool,port:int,ws_url:string,pid:int|null,log:string,error:string} */
 function control_contact_center_realtime_hub_status(): array
 {
@@ -378,7 +415,10 @@ function control_contact_center_run_migrations(): array
     \Ratib\ContactCenter\App\Core\Database::disconnect();
     $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
     $dir = control_contact_center_root_path() . '/migrations';
-    $files = glob($dir . '/*.sql') ?: [];
+    $files = array_values(array_filter(
+        glob($dir . '/*.sql') ?: [],
+        static fn (string $path): bool => is_file($path) && !str_contains($path, DIRECTORY_SEPARATOR . 'archive' . DIRECTORY_SEPARATOR)
+    ));
     sort($files);
     $log = [];
 

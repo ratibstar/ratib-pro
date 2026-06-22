@@ -108,9 +108,14 @@ final class ApiAuthMiddleware
 
     private function resolveAgentForControlUser(int $tenantId): int
     {
+        $sessionAgentId = (int) ($_SESSION['rcc_agent_id'] ?? 0);
+        if ($sessionAgentId > 0) {
+            return $sessionAgentId;
+        }
+
         $email = (string) ($_SESSION['control_user_email'] ?? $_SESSION['control_email'] ?? '');
         if ($email === '') {
-            return 1;
+            return 0;
         }
         try {
             $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->prepare(
@@ -121,9 +126,9 @@ final class ApiAuthMiddleware
             );
             $stmt->execute(['tid' => $tenantId, 'email' => $email]);
             $id = $stmt->fetchColumn();
-            return $id !== false ? (int) $id : 1;
+            return $id !== false ? (int) $id : 0;
         } catch (\Throwable $e) {
-            return 1;
+            return 0;
         }
     }
 }

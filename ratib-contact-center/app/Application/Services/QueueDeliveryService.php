@@ -70,19 +70,6 @@ final class QueueDeliveryService implements EventSubscriberInterface
                 $callId,
                 (int) ($queueId ?? 0)
             );
-
-            EventBus::instance()->emit([
-                'type' => EventType::QUEUE_ASSIGNED,
-                'tenant_id' => $event->tenantId,
-                'agent_id' => $agentId,
-                'call_id' => $callId,
-                'queue_id' => $queueId,
-                'payload' => [
-                    'channel_id' => $channelId,
-                    'extension' => $extension,
-                    'delivery' => 'ami_originate',
-                ],
-            ]);
         } catch (\Throwable $e) {
             error_log('[RCC QueueDelivery] ' . $e->getMessage());
         }

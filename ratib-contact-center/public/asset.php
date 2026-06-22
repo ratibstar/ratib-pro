@@ -19,17 +19,16 @@ if ($file === '') {
     $file = str_replace(['\\', "\0"], '/', $file);
     $file = ltrim($file, '/');
     $file = preg_replace('/[^\x2E\x2F\x30-\x39\x41-\x5A\x5F\x61-\x7A\x-]/', '', $file) ?? $file;
-    // RTL/bidi corruption or legacy names → deployed filenames (rcc-sp.*)
-    if (preg_match('#^css/rcc-s.+tphone\.css$#', $file) || $file === 'css/rcc-softphone.css') {
-        $file = 'css/rcc-sp.css';
-    }
-    if (preg_match('#^js/rcc-s.+tphone-ui\.js$#', $file) || $file === 'js/rcc-softphone-ui.js') {
-        $file = 'js/rcc-sp-ui.js';
-    }
-    if (preg_match('#^js/rcc-s.+tphone\.js$#', $file) || $file === 'js/rcc-softphone.js') {
-        $file = 'js/rcc-sp.js';
-    }
     $file = str_replace(['smtphone', 'sمنتphone'], 'softphone', $file);
+    if (preg_match('#^css/rcc-s.+tphone\.css$#', $file)) {
+        $file = 'css/rcc-softphone.css';
+    }
+    if (preg_match('#^js/rcc-s.+tphone-ui\.js$#', $file)) {
+        $file = 'js/rcc-softphone-ui.js';
+    }
+    if (preg_match('#^js/rcc-s.+tphone\.js$#', $file)) {
+        $file = 'js/rcc-softphone.js';
+    }
 }
 
 if ($file === '' || strpos($file, '..') !== false) {

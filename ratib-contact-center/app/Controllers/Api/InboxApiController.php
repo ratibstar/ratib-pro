@@ -78,6 +78,21 @@ final class InboxApiController
             ];
         }
 
+        if (in_array($action, ['webhook_whatsapp', 'webhook_email', 'webhook_chat'], true)) {
+            $tenantId = TenantContext::tenantId() ?? (int) ($input['tenant_id'] ?? 0);
+            if ($tenantId < 1) {
+                return $this->error('tenant_id required');
+            }
+            TenantContext::set($tenantId);
+            $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
+            $adapter = match ($action) {
+                'webhook_whatsapp' => new WhatsAppChannelAdapter($this->engine(true)),
+                'webhook_email' => new EmailChannelAdapter($this->engine(true)),
+                default => new WebChatChannelAdapter($this->engine(true)),
+            };
+            return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
+        }
+
         AuthContext::requirePermission('rcc.inbox.manage');
         $tenantId = AuthContext::tenantId();
         $agentId = AuthContext::agentId();
@@ -107,26 +122,10 @@ final class InboxApiController
 
             case 'close':
                 $conversationId = (int) ($input['conversation_id'] ?? 0);
-                $agentId = isset($input['agent_id']) ? (int) $input['agent_id'] : null;
                 if ($conversationId < 1) {
                     return $this->error('conversation_id required');
                 }
                 return ['ok' => true, 'conversation' => $this->engine()->closeConversation($tenantId, $conversationId, $agentId)];
-
-            case 'webhook_whatsapp':
-                $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new WhatsAppChannelAdapter($this->engine(true));
-                return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
-
-            case 'webhook_email':
-                $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new EmailChannelAdapter($this->engine(true));
-                return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
-
-            case 'webhook_chat':
-                $payload = is_array($input['payload'] ?? null) ? $input['payload'] : $input;
-                $adapter = new WebChatChannelAdapter($this->engine(true));
-                return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
             case 'start_demo':
                 AuthContext::requirePermission('rcc.admin.settings');

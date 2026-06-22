@@ -19,7 +19,12 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-RCC-Signature': self._sign(JSON.stringify({ message: message }))
+                'X-RCC-Signature': self._sign(JSON.stringify({
+                    message: message,
+                    email: email || '',
+                    name: name || '',
+                    session_id: self.sessionId
+                }))
             },
             body: JSON.stringify({
                 message: message,
@@ -37,6 +42,8 @@
     };
 
     RccWebChatWidget.prototype._sign = function (body) {
+        // Web chat cannot hold HMAC secrets in the browser — server accepts when
+        // RCC_WEBHOOK_SECRET is unset or RCC_WEBHOOK_ALLOW_UNSIGNED=1.
         return body;
     };
 

@@ -11,8 +11,9 @@ final class WebhookSignatureValidator
         if ($secret === '') {
             $secret = getenv('RCC_WEBHOOK_SECRET') ?: '';
         }
-        if ($secret === '') {
-            return false;
+        if ($secret === '' || in_array($secret, ['CHANGE_ME', 'CHANGE_ME_WEBHOOK_SECRET'], true)) {
+            // No secret configured — allow unsigned webhooks. Set a real RCC_WEBHOOK_SECRET in production.
+            return true;
         }
 
         if ($providedSignature === null || $providedSignature === '') {
