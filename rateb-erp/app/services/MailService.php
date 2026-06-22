@@ -7,19 +7,35 @@ use Rateb\App\Models\EmailTemplate;
 
 final class MailService
 {
-    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null): bool
+    private ?string $lastErrorCode = null;
+    private ?string $lastError = null;
+
+    public function lastError(): ?string
     {
+        return $this->lastError;
+    }
+
+    public function lastErrorCode(): ?string
+    {
+        return $this->lastErrorCode;
+    }
+
+    /** @return array{success:bool,error_code:?string,error:?string} */
+    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null): array
+    {
+        $this->lastError = null;
+        $this->lastErrorCode = null;
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = $cfg['from_email'] !== '' ? $cfg['from_email'] : 'info@rateb.sa';
         $fromName = $cfg['from_name'] !== '' ? $cfg['from_name'] : 'Rateb ERP';
-        $host = $cfg['host'];
 
-        if ($host === '' || $cfg['pass'] === '') {
-            return $this->sendPhpMail($fromEmail, $fromName, $to, $subject, $htmlBody, $recordQueue, $replyTo, $cc);
+        if ($cfg['host'] === '' || $cfg['pass'] === '') {
+            $this->setError('smtp_not_configured', __('comm_email_smtp_required'));
+            return ['success' => false, 'error_code' => $this->lastErrorCode, 'error' => $this->lastError];
         }
 
         $sent = $this->sendSmtp(
-            $host,
+            $cfg['host'],
             $cfg['port'],
             $cfg['encryption'],
             $cfg['user'],
@@ -33,13 +49,43 @@ final class MailService
             $cc
         );
 
-        if ($recordQueue) {
-            (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
+        if (!$sent && $this->lastErrorCode === 'smtp_connect' && $cfg['host'] !== 'localhost') {
+            $sent = $this->sendSmtp(
+                'localhost',
+                $cfg['port'],
+                $cfg['encryption'],
+                $cfg['user'],
+                $cfg['pass'],
+                $fromEmail,
+                $fromName,
+                $to,
+                $subject,
+                $htmlBody,
+                $replyTo,
+                $cc
+            );
         }
+
+        (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
         if (!$sent) {
-            Logger::warning('Email send failed', ['to' => $to, 'subject' => $subject]);
+            Logger::warning('Email send failed', [
+                'to' => $to,
+                'subject' => $subject,
+                'code' => $this->lastErrorCode,
+                'error' => $this->lastError,
+            ]);
         }
-        return $sent;
+        return [
+            'success' => $sent,
+            'error_code' => $this->lastErrorCode,
+            'error' => $this->lastError,
+        ];
+    }
+
+    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null): bool
+    {
+        $result = $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc);
+        return $result['success'];
     }
 
     public function isSmtpConfigured(): bool
@@ -72,34 +118,22 @@ final class MailService
         return $this->sendTemplate($to, $slug, $vars, true);
     }
 
-    private function sendPhpMail(string $fromEmail, string $fromName, string $to, string $subject, string $htmlBody, bool $recordQueue, ?string $replyTo = null, ?string $cc = null): bool
+    private function setError(string $code, string $message): void
     {
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-type: text/html; charset=UTF-8',
-            'From: ' . $this->encodeAddress($fromName, $fromEmail),
-            'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail),
-            'X-Mailer: RTAB-ERP',
-        ];
-        if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
-            $headers[] = 'Cc: ' . $cc;
-        }
-        $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $htmlBody, implode("\r\n", $headers));
-        if ($recordQueue) {
-            (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
-        }
-        return (bool) $sent;
+        $this->lastErrorCode = $code;
+        $this->lastError = $message;
     }
 
     private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null): bool
     {
         $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
-        $fp = @stream_socket_client($remote, $errno, $errstr, 20);
+        $fp = @stream_socket_client($remote, $errno, $errstr, 25);
         if (!$fp) {
-            Logger::error('SMTP connect failed', ['host' => $host, 'error' => $errstr]);
+            $this->setError('smtp_connect', __('mail_error_connect', ['host' => $host, 'port' => (string) $port, 'detail' => $errstr !== '' ? $errstr : (string) $errno]));
+            Logger::error('SMTP connect failed', ['host' => $host, 'port' => $port, 'error' => $errstr]);
             return false;
         }
-        stream_set_timeout($fp, 20);
+        stream_set_timeout($fp, 25);
         $read = static function () use ($fp): string {
             $data = '';
             while ($line = fgets($fp, 515)) {
@@ -115,7 +149,7 @@ final class MailService
         };
 
         $read();
-        $write('EHLO rateb-erp.local');
+        $write('EHLO rateb.sa');
         $ehlo = $read();
 
         if ($encryption === 'tls' && stripos($ehlo, 'STARTTLS') !== false) {
@@ -123,13 +157,16 @@ final class MailService
             $tlsResp = $read();
             if (strpos($tlsResp, '220') === false) {
                 fclose($fp);
+                $this->setError('smtp_tls', __('mail_error_tls'));
                 return false;
             }
-            if (!stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            $crypto = @stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            if ($crypto !== true) {
                 fclose($fp);
+                $this->setError('smtp_tls', __('mail_error_tls'));
                 return false;
             }
-            $write('EHLO rateb-erp.local');
+            $write('EHLO rateb.sa');
             $read();
         }
 
@@ -142,13 +179,24 @@ final class MailService
             $auth = $read();
             if (strpos($auth, '235') === false) {
                 fclose($fp);
+                $this->setError('smtp_auth', __('mail_error_auth', ['user' => $user]));
                 return false;
             }
         }
         $write('MAIL FROM:<' . $fromEmail . '>');
-        $read();
+        $fromResp = $read();
+        if (strpos($fromResp, '250') === false) {
+            fclose($fp);
+            $this->setError('smtp_from', __('mail_error_from', ['email' => $fromEmail]));
+            return false;
+        }
         $write('RCPT TO:<' . $to . '>');
-        $read();
+        $rcptResp = $read();
+        if (strpos($rcptResp, '250') === false && strpos($rcptResp, '251') === false) {
+            fclose($fp);
+            $this->setError('smtp_rcpt', __('mail_error_rcpt', ['email' => $to]));
+            return false;
+        }
         if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
             $write('RCPT TO:<' . $cc . '>');
             $read();
@@ -167,7 +215,11 @@ final class MailService
         $result = $read();
         $write('QUIT');
         fclose($fp);
-        return strpos($result, '250') !== false;
+        if (strpos($result, '250') === false) {
+            $this->setError('smtp_data', __('mail_error_data'));
+            return false;
+        }
+        return true;
     }
 
     /** @param array<string, string> $vars */

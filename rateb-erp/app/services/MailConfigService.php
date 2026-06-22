@@ -8,9 +8,22 @@ use Rateb\App\Models\SystemSetting;
 /** Resolves SMTP settings from DB, project .env, and optional mail.secrets.php */
 final class MailConfigService
 {
+    /** @var list<string> */
+    private const MAIL_ENV_KEYS = [
+        'RATEB_ERP_SMTP_HOST',
+        'RATEB_ERP_SMTP_PORT',
+        'RATEB_ERP_SMTP_ENCRYPTION',
+        'RATEB_ERP_SMTP_USER',
+        'RATEB_ERP_SMTP_FROM_EMAIL',
+        'RATEB_ERP_SMTP_FROM_NAME',
+        'RATEB_ERP_SMTP_PASS',
+        'SMTP_PASS',
+    ];
+
     /** @return array{host:string,port:int,encryption:string,user:string,pass:string,from_email:string,from_name:string} */
     public function resolve(): array
     {
+        $this->bootstrapMailEnvFromDotenvFile();
         $settings = new SystemSetting();
         $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'mail.rateb.sa');
         $port = (int) $this->envOrSetting('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587');
@@ -38,6 +51,59 @@ final class MailConfigService
     {
         $cfg = $this->resolve();
         return $cfg['host'] !== '' && $cfg['user'] !== '' && $cfg['pass'] !== '';
+    }
+
+    private function bootstrapMailEnvFromDotenvFile(): void
+    {
+        static $loaded = false;
+        if ($loaded) {
+            return;
+        }
+        $loaded = true;
+        foreach ($this->dotenvPaths() as $path) {
+            if (!is_readable($path)) {
+                continue;
+            }
+            $lines = @file($path, FILE_IGNORE_NEW_LINES);
+            if (!is_array($lines)) {
+                continue;
+            }
+            foreach ($lines as $line) {
+                $line = trim((string) $line);
+                if ($line === '' || $line[0] === '#') {
+                    continue;
+                }
+                if (strpos($line, '=') === false) {
+                    continue;
+                }
+                [$key, $val] = explode('=', $line, 2);
+                $key = trim($key);
+                if ($key === '' || !in_array($key, self::MAIL_ENV_KEYS, true)) {
+                    continue;
+                }
+                if (getenv($key) !== false && trim((string) getenv($key)) !== '') {
+                    continue;
+                }
+                $val = trim($val, " \t\"'");
+                if ($val !== '') {
+                    putenv($key . '=' . $val);
+                    $_ENV[$key] = $val;
+                    $_SERVER[$key] = $val;
+                }
+            }
+        }
+    }
+
+    /** @return list<string> */
+    private function dotenvPaths(): array
+    {
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $parent = dirname($root);
+        $paths = [$parent . '/.env', $root . '/.env'];
+        if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+            $paths[] = rtrim((string) $_SERVER['DOCUMENT_ROOT'], '/\\') . '/.env';
+        }
+        return array_values(array_unique($paths));
     }
 
     private function envOrSetting(string $envKey, string $settingKey, SystemSetting $settings, string $default = ''): string

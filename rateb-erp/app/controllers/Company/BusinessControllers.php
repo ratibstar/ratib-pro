@@ -1672,14 +1672,8 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
                 $this->model->update($commId, ['send_status' => 'failed']);
                 SessionManager::flash('error', $msg);
             } else {
-                $mailto = $this->buildMailtoUrl($data);
-                if ($mailto !== '') {
-                    SessionManager::set('rateb_comm_mailto', $mailto);
-                    $this->model->update($commId, ['send_status' => 'mailto']);
-                    SessionManager::flash('warning', $msg . ' — ' . __('comm_open_email_client'));
-                } else {
-                    SessionManager::flash('error', $msg);
-                }
+                $this->model->update($commId, ['send_status' => 'failed']);
+                SessionManager::flash('error', $msg);
             }
             return;
         }

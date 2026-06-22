@@ -229,8 +229,18 @@ final class SupplierCommService
             $cc = $ccEmail;
         }
         $reply = ($replyTo !== null && $replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) ? $replyTo : null;
-        $sent = $mail->send($email, $subject !== '' ? $subject : __('supplier_comms'), $html, null, true, $reply, $cc);
-        $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) : __('comm_email_failed');
+        $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc);
+        $sent = (bool) ($sendResult['success'] ?? false);
+        if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'message' => (string) ($sendResult['error'] ?? __('comm_email_smtp_required')),
+                'recipient' => $email,
+                'smtp_config_required' => true,
+            ];
+        }
+        $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
         if ($sent && $cc !== null) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
         }

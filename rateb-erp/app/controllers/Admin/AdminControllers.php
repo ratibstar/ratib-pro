@@ -1572,12 +1572,15 @@ final class SettingsController extends Controller
             SessionManager::flash('error', __('mail_password_env_hint'));
             Response::redirect(rateb_url('admin/settings'));
         }
-        $sent = (new \Rateb\App\Services\MailService())->send(
+        $mail = new \Rateb\App\Services\MailService();
+        $result = $mail->sendDetailed(
             $to,
             __('mail_test_subject'),
             '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>'
         );
-        SessionManager::flash($sent ? 'success' : 'error', $sent ? __('mail_test_ok', ['email' => $to]) : __('mail_test_failed'));
+        $sent = (bool) ($result['success'] ?? false);
+        $failMsg = (string) ($result['error'] ?? __('mail_test_failed'));
+        SessionManager::flash($sent ? 'success' : 'error', $sent ? __('mail_test_ok', ['email' => $to]) : $failMsg);
         Response::redirect(rateb_url('admin/settings'));
     }
 
