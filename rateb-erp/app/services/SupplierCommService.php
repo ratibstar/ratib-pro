@@ -251,6 +251,12 @@ final class SupplierCommService
         $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam') : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
         if ($sent && $this->isExternalEmail($email)) {
             $msg .= ' — ' . __('comm_email_external_dns_hint');
+            if (!empty($sendResult['via_localhost'])) {
+                $msg .= ' — ' . __('comm_email_localhost_relay_hint');
+            }
+        }
+        if (!$sent && $this->isExternalEmail($email) && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
+            $msg .= ' — ' . __('mail_password_env_hint');
         }
         if ($sent && $cc !== null) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);

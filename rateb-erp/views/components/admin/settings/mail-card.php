@@ -24,7 +24,7 @@ $mailLocalhost = !empty($mailLocalhost);
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
                 <label class="form-label small"><?php echo __('mail_smtp_host'); ?></label>
-                <input class="form-control form-control-sm" name="smtp_host" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? 'mail.rateb.sa')); ?>">
+                <input class="form-control form-control-sm" name="smtp_host" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? 'localhost')); ?>">
             </div>
             <div class="col-md-2">
                 <label class="form-label small"><?php echo __('mail_smtp_port'); ?></label>

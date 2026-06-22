@@ -1565,7 +1565,7 @@ final class SettingsController extends Controller
             Response::redirect(rateb_url('admin/settings'));
         }
         $model = new \Rateb\App\Models\SystemSetting();
-        $host = trim((string) $this->input('smtp_host', 'mail.rateb.sa'));
+        $host = trim((string) $this->input('smtp_host', 'localhost'));
         $port = trim((string) $this->input('smtp_port', '587'));
         $encryption = strtolower(trim((string) $this->input('smtp_encryption', 'tls')));
         if (!ctype_digit($port)) {
@@ -1576,7 +1576,7 @@ final class SettingsController extends Controller
             $encryption = 'tls';
         }
         $pairs = [
-            'smtp_host' => $host !== '' ? $host : 'mail.rateb.sa',
+            'smtp_host' => $host !== '' ? $host : 'localhost',
             'smtp_port' => $port,
             'smtp_encryption' => $encryption,
             'smtp_user' => trim((string) $this->input('smtp_user', 'info@rateb.sa')),

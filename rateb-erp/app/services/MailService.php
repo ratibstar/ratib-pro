@@ -74,9 +74,6 @@ final class MailService
         if (!$sent && $primaryError !== null) {
             $this->lastError = $primaryError;
         }
-        if (!$sent && $this->isExternalRecipient($to, $fromEmail) && ($this->lastErrorCode === null || $this->lastErrorCode === 'smtp_connect')) {
-            $this->setError('smtp_external_relay', __('mail_error_external_relay'));
-        }
 
         (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
         if ($sent) {
@@ -95,6 +92,7 @@ final class MailService
             'error_code' => $this->lastErrorCode,
             'error' => $this->lastError,
             'smtp_host' => $this->lastSmtpHost,
+            'via_localhost' => $sent && $this->lastSmtpHost !== null && $this->isLoopbackHost($this->lastSmtpHost),
         ];
     }
 
@@ -140,18 +138,23 @@ final class MailService
     private function smtpProfiles(array $cfg, string $to): array
     {
         $primary = ['host' => $cfg['host'], 'port' => $cfg['port'], 'encryption' => $cfg['encryption']];
-        $mailHost = ['host' => 'mail.rateb.sa', 'port' => 587, 'encryption' => 'tls'];
+        $mailTls = ['host' => 'mail.rateb.sa', 'port' => 587, 'encryption' => 'tls'];
+        $mailSsl = ['host' => 'mail.rateb.sa', 'port' => 465, 'encryption' => 'ssl'];
         $localhost = ['host' => 'localhost', 'port' => 587, 'encryption' => 'tls'];
         $loopback = ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'];
 
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
-            // External: only authenticated relay — localhost accepts mail but often won't deliver out.
-            $candidates = [$mailHost];
+            // DirectAdmin on same server: mail.rateb.sa may refuse PHP; localhost:587+AUTH usually works.
+            $candidates = [];
             if (!$this->isLoopbackHost($primary['host'])) {
                 $candidates[] = $primary;
             }
+            $candidates = array_merge($candidates, [$mailTls, $mailSsl, $localhost, $loopback]);
+            if ($this->isLoopbackHost($primary['host'])) {
+                array_unshift($candidates, $primary);
+            }
         } else {
-            $candidates = [$primary, $localhost, $loopback, $mailHost];
+            $candidates = [$primary, $localhost, $loopback, $mailTls];
         }
 
         $profiles = [];
