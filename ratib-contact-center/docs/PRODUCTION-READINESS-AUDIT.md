@@ -4,7 +4,9 @@
 **Scope:** `ratib-contact-center/` + Control Panel bridge (`control-panel/includes/control/contact-center-bridge.php`, hub/migrate/app pages)  
 **Method:** Code-only findings. Nothing marked working unless executable integration exists in the repo.
 
-**Implemented phases audited:** Phase 1 Core Foundation · Phase 2 IVR Runtime · Phase 3 Realtime Core · Phase 4 WebRTC Softphone · Phase 5 AI Routing · Phase 6 Omnichannel Inbox · Phase 7 AI Copilot
+**Implemented phases audited:** Phase 1 Core Foundation · Phase 2 IVR Runtime · Phase 3 Realtime Core · Phase 4 WebRTC Softphone · Phase 5 AI Routing · Phase 6 Omnichannel Inbox · Phase 7 AI Copilot · Phase 8 Production Operations
+
+> **Update (post-hardening):** Migrations `001`–`011`, AMI voice worker, Asterisk dialplan package, API auth, and Phase 8 Ops Center are now in the repo. Items below reflect the **original** audit baseline; see `PRODUCTION_READINESS_REPORT.md` and `PHASE-8-PRODUCTION-OPS.md` for current status.
 
 ---
 

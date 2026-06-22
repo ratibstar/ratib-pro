@@ -35,7 +35,7 @@ if ($fp) {
 $checks['ami_configured'] = (getenv('RCC_AMI_HOST') ?: '') !== '' && (getenv('RCC_AMI_PASS') ?: '') !== '';
 
 echo json_encode([
-    'ok' => $checks['database'] && $checks['tables'] >= 20,
+    'ok' => $checks['database'] && $checks['tables'] >= 25,
     'service' => 'rcc-health',
     'checks' => $checks,
     'timestamp' => gmdate('c'),

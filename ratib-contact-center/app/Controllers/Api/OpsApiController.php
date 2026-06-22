@@ -87,7 +87,10 @@ final class OpsApiController
             'agent_provision' => $this->requirePerm('rcc.ops.agents') ?: $this->ok($this->provisioning->provisionAgent($tenantId, $input, $userId)),
 
             'diag_ami' => $this->requirePerm('rcc.ops.diagnostics') ?: $this->ok($this->diagnostics->diagAmi($tenantId)),
-            'diag_webrtc' => $this->requirePerm('rcc.ops.diagnostics') ?: $this->ok($this->diagnostics->diagWebrtc($tenantId, (int) ($input['agent_id'] ?? AuthContext::agentId()))),
+            'diag_webrtc' => $this->requirePerm('rcc.ops.diagnostics') ?: $this->ok($this->diagnostics->diagWebrtc(
+                $tenantId,
+                (int) ($input['agent_id'] ?? 0) ?: AuthContext::agentIdOrZero()
+            )),
             'diag_hub' => $this->requirePerm('rcc.ops.diagnostics') ?: $this->ok($this->diagnostics->diagHub()),
             'diag_voice_worker' => $this->requirePerm('rcc.ops.diagnostics') ?: $this->ok($this->diagnostics->diagVoiceWorker()),
 

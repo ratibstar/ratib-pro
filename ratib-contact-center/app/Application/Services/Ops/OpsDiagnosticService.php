@@ -69,13 +69,21 @@ final class OpsDiagnosticService
 
         $percent = $max > 0 ? (int) round(($score / $max) * 100) : 0;
 
-        return [
+        $result = [
             'checks' => $checks,
             'score' => $score,
             'max' => $max,
             'percent' => $percent,
             'timestamp' => gmdate('c'),
         ];
+
+        EventBus::instance()->emit([
+            'type' => EventType::OPS_HEALTH_UPDATED,
+            'tenant_id' => $tenantId,
+            'payload' => ['percent' => $percent, 'score' => $score, 'max' => $max],
+        ]);
+
+        return $result;
     }
 
     /** @return array<string, mixed> */

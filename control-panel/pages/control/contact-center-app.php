@@ -58,8 +58,17 @@ startControlLayout(
     ['standalone' => true]
 );
 
-$tenantId = (int) ($_SESSION['rcc_tenant_id'] ?? 1);
-$agentId = (int) ($_SESSION['rcc_agent_id'] ?? 1);
+$tenantId = control_contact_center_resolve_tenant_id();
+$agentId = control_contact_center_resolve_agent_id($tenantId);
+if ($agentId < 1) {
+    require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
+    startControlLayout('Contact Center', ['css/system-settings.css'], []);
+    echo '<div class="alert alert-warning">No active RCC agent linked to your Control Panel account for this tenant.</div>';
+    echo '<p class="small">Provision an agent in <a href="' . htmlspecialchars(control_contact_center_ops_page_url('agents'), ENT_QUOTES, 'UTF-8') . '">Operations Center</a> using your CP email, or ask an administrator.</p>';
+    echo '<a href="' . htmlspecialchars(control_contact_center_hub_page_url(), ENT_QUOTES, 'UTF-8') . '" class="btn btn-outline-secondary">Back to hub</a>';
+    endControlLayout();
+    exit;
+}
 $inboxApiBase = control_contact_center_inbox_api_url();
 $softphoneApiBase = control_contact_center_softphone_api_url();
 $assistantApiBase = control_contact_center_assistant_api_url();

@@ -61,6 +61,7 @@ startControlLayout(
 $tenantId = control_contact_center_resolve_tenant_id();
 $opsApiBase = control_contact_center_ops_api_url();
 $wsUrl = control_contact_center_ws_url();
+$canManageTenants = !empty($_SESSION['control_is_admin']);
 $rtMode = control_contact_center_realtime_mode();
 if ($rtMode === 'polling' || $wsUrl === '') {
     $wsUrl = 'polling';

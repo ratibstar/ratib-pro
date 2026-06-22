@@ -9,6 +9,51 @@
     padding: 1rem;
 }
 
+.rcc-ops__tenant-bar {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+}
+
+.rcc-ops__tenant-bar select {
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: inherit;
+}
+
+.rcc-ops__queue-block {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    border: 1px solid #334155;
+    border-radius: 6px;
+}
+
+.rcc-ops__queue-block h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+}
+
+.rcc-ops__check {
+    display: block;
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.rcc-ops__form fieldset {
+    border: 1px solid #334155;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+}
+
+.rcc-ops__form legend {
+    font-size: 0.85rem;
+    padding: 0 0.25rem;
+}
+
 .rcc-ops__title {
     font-size: 1rem;
     margin: 0 0 1rem;

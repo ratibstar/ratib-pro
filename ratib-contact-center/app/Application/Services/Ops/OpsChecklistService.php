@@ -83,6 +83,7 @@ final class OpsChecklistService
             'agent_list' => count($this->provisioning->listAgents($tenantId)) > 0,
             'hub_status' => (bool) ($this->diagnostics->diagHub()['running'] ?? false),
             'diag_voice_worker' => (bool) ($this->diagnostics->diagVoiceWorker()['ok'] ?? false),
+            'diag_webrtc' => (bool) ($this->diagnostics->diagWebrtc($tenantId, 0)['ok'] ?? false),
             'checklist_summary' => $this->summary($tenantId)['ready'] ?? false,
             default => false,
         };

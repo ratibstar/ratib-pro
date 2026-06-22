@@ -8,11 +8,13 @@ declare(strict_types=1);
  * @var string $opsApiBase
  * @var string $wsUrl
  * @var string $route
+ * @var bool $canManageTenants
  */
 $tenantId = (int) ($tenantId ?? 0);
 $opsApiBase = (string) ($opsApiBase ?? '');
 $wsUrl = (string) ($wsUrl ?? 'polling');
 $route = (string) ($route ?? 'health');
+$canManageTenants = !empty($canManageTenants);
 
 $opsRoutes = [
     'health' => ['icon' => 'fa-heart-pulse', 'label' => 'Health Center'],
@@ -37,9 +39,11 @@ $opsRoutes = [
      data-tenant="<?php echo $tenantId; ?>"
      data-api="<?php echo htmlspecialchars($opsApiBase, ENT_QUOTES, 'UTF-8'); ?>"
      data-ws="<?php echo htmlspecialchars($wsUrl, ENT_QUOTES, 'UTF-8'); ?>"
-     data-route="<?php echo htmlspecialchars($route, ENT_QUOTES, 'UTF-8'); ?>">
+     data-route="<?php echo htmlspecialchars($route, ENT_QUOTES, 'UTF-8'); ?>"
+     data-can-manage-tenants="<?php echo $canManageTenants ? '1' : '0'; ?>">
     <aside class="rcc-ops__nav">
         <h2 class="rcc-ops__title"><i class="fas fa-screwdriver-wrench"></i> Operations</h2>
+        <div id="rcc-ops-tenant-bar" class="rcc-ops__tenant-bar" hidden></div>
         <nav>
             <?php foreach ($opsRoutes as $key => $meta) { ?>
             <a href="<?php echo htmlspecialchars(control_contact_center_ops_page_url($key), ENT_QUOTES, 'UTF-8'); ?>"

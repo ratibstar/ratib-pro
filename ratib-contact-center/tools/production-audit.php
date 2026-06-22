@@ -33,7 +33,7 @@ try {
     $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
     $tables = $pdo->query("SHOW TABLES LIKE 'rcc_%'")->rowCount();
     audit_check($checks, $score, $max, 'Database connection', true);
-    audit_check($checks, $score, $max, 'Schema tables (rcc_*)', $tables >= 20, (string) $tables . ' tables');
+    audit_check($checks, $score, $max, 'Schema tables (rcc_*)', $tables >= 25, (string) $tables . ' tables');
 } catch (\Throwable $e) {
     audit_check($checks, $score, $max, 'Database connection', false, $e->getMessage());
     audit_check($checks, $score, $max, 'Schema tables', false, 'N/A');
@@ -42,7 +42,7 @@ try {
 // Migrations
 $migDir = RCC_ROOT . '/migrations';
 $migFiles = glob($migDir . '/*.sql') ?: [];
-audit_check($checks, $score, $max, 'Migration files shipped', count($migFiles) >= 9, (string) count($migFiles) . ' files');
+audit_check($checks, $score, $max, 'Migration files shipped', count($migFiles) >= 11, (string) count($migFiles) . ' files');
 
 // AMI
 $amiHost = getenv('RCC_AMI_HOST') ?: '127.0.0.1';

@@ -85,35 +85,120 @@ final class ApiAuthMiddleware
             return false;
         }
 
-        $tenantId = (int) ($_SESSION['rcc_tenant_id'] ?? 1);
+        $tenantId = $this->resolveTenantForControlUser();
+        if ($tenantId < 1) {
+            return false;
+        }
+
         $agentId = (int) ($_SESSION['rcc_agent_id'] ?? 0);
         if ($agentId < 1) {
             $agentId = $this->resolveAgentForControlUser($tenantId);
         }
-        if ($agentId < 1) {
+
+        $userId = $this->resolveRccUserIdForControlUser($tenantId);
+        $permissions = $this->permissionsForControlBridge($tenantId, $userId);
+
+        if ($agentId < 1 && !in_array('rcc.ops.view', $permissions, true)) {
             return false;
         }
 
-        $permissions = ['rcc.access', 'rcc.agent.desktop', 'rcc.inbox.manage', 'rcc.calls.manage'];
+        AuthContext::set($tenantId, max(0, $agentId), $userId, $permissions);
+        return true;
+    }
+
+    /** @return list<string> */
+    private function permissionsForControlBridge(int $tenantId, ?int $userId): array
+    {
         if (!empty($_SESSION['control_is_admin'])) {
-            $permissions[] = 'rcc.admin.settings';
-            $permissions[] = 'rcc.supervisor.dashboard';
-            $permissions[] = 'rcc.reports.view';
-            $permissions[] = 'rcc.reports.export';
-            $permissions[] = 'rcc.ops.view';
-            $permissions[] = 'rcc.ops.pbx';
-            $permissions[] = 'rcc.ops.sip';
-            $permissions[] = 'rcc.ops.queues';
-            $permissions[] = 'rcc.ops.ivr';
-            $permissions[] = 'rcc.ops.agents';
-            $permissions[] = 'rcc.ops.diagnostics';
-            $permissions[] = 'rcc.ops.hub';
-            $permissions[] = 'rcc.ops.golive';
-            $permissions[] = 'rcc.tenants.manage';
+            return $this->adminPermissionBundle();
         }
 
-        AuthContext::set($tenantId, $agentId, null, $permissions);
-        return true;
+        if ($userId !== null && $userId > 0) {
+            $fromDb = $this->permissionsForUser($userId, $tenantId);
+            if ($fromDb !== []) {
+                return array_values(array_unique(array_merge(['rcc.access'], $fromDb)));
+            }
+        }
+
+        return ['rcc.access', 'rcc.agent.desktop', 'rcc.inbox.manage', 'rcc.calls.manage'];
+    }
+
+    /** @return list<string> */
+    private function adminPermissionBundle(): array
+    {
+        return [
+            'rcc.access',
+            'rcc.agent.desktop',
+            'rcc.inbox.manage',
+            'rcc.calls.manage',
+            'rcc.admin.settings',
+            'rcc.supervisor.dashboard',
+            'rcc.reports.view',
+            'rcc.reports.export',
+            'rcc.ops.view',
+            'rcc.ops.pbx',
+            'rcc.ops.sip',
+            'rcc.ops.queues',
+            'rcc.ops.ivr',
+            'rcc.ops.agents',
+            'rcc.ops.diagnostics',
+            'rcc.ops.hub',
+            'rcc.ops.golive',
+            'rcc.tenants.manage',
+        ];
+    }
+
+    /** @return list<string> */
+    private function permissionsForUser(int $userId, int $tenantId): array
+    {
+        try {
+            $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->prepare(
+                'SELECT DISTINCT p.slug
+                 FROM rcc_permissions p
+                 INNER JOIN rcc_role_permissions rp ON rp.permission_id = p.id
+                 INNER JOIN rcc_user_roles ur ON ur.role_id = rp.role_id
+                 WHERE ur.user_id = :uid AND ur.tenant_id = :tid'
+            );
+            $stmt->execute(['uid' => $userId, 'tid' => $tenantId]);
+            return array_map(static fn ($r) => (string) $r['slug'], $stmt->fetchAll() ?: []);
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    private function resolveTenantForControlUser(): int
+    {
+        $fromSession = (int) ($_SESSION['rcc_tenant_id'] ?? 0);
+        if ($fromSession > 0) {
+            return $fromSession;
+        }
+        try {
+            $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->query(
+                "SELECT id FROM rcc_tenants WHERE status = 'active' ORDER BY id ASC LIMIT 1"
+            );
+            $id = $stmt ? $stmt->fetchColumn() : false;
+            return $id !== false ? (int) $id : 0;
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    private function resolveRccUserIdForControlUser(int $tenantId): ?int
+    {
+        $email = (string) ($_SESSION['control_user_email'] ?? $_SESSION['control_email'] ?? '');
+        if ($email === '') {
+            return null;
+        }
+        try {
+            $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->prepare(
+                'SELECT id FROM rcc_users WHERE tenant_id = :tid AND email = :email AND status = \'active\' LIMIT 1'
+            );
+            $stmt->execute(['tid' => $tenantId, 'email' => $email]);
+            $id = $stmt->fetchColumn();
+            return $id !== false ? (int) $id : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     private function resolveAgentForControlUser(int $tenantId): int

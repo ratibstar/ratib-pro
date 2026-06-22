@@ -87,11 +87,24 @@ final class OpsProvisioningService
     /** @return list<array<string, mixed>> */
     public function listQueues(int $tenantId): array
     {
-        $stmt = Database::connection()->prepare(
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
             'SELECT id, code, name, name_ar, sla_target_seconds, status, strategy FROM rcc_queues WHERE tenant_id=:tid ORDER BY code'
         );
         $stmt->execute(['tid' => $tenantId]);
-        return $stmt->fetchAll() ?: [];
+        $queues = $stmt->fetchAll() ?: [];
+        $memberStmt = $pdo->prepare(
+            'SELECT agent_id FROM rcc_queue_members WHERE tenant_id = :tid AND queue_id = :qid'
+        );
+        foreach ($queues as &$queue) {
+            $memberStmt->execute(['tid' => $tenantId, 'qid' => (int) $queue['id']]);
+            $queue['member_agent_ids'] = array_map(
+                static fn ($id) => (int) $id,
+                $memberStmt->fetchAll(\PDO::FETCH_COLUMN) ?: []
+            );
+        }
+        unset($queue);
+        return $queues;
     }
 
     /** @param array<string, mixed> $data */

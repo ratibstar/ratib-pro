@@ -31,6 +31,7 @@ $expected = [
     '001_core_schema.sql', '002_security_rbac.sql', '003_realtime_core.sql',
     '004_ivr_runtime.sql', '005_agents_queues.sql', '006_softphone_webrtc.sql',
     '007_ai_routing_engine.sql', '008_omnichannel_conversations.sql', '009_ai_assistant.sql',
+    '010_seed_production.sql', '011_production_ops.sql',
 ];
 $found = [];
 foreach ($expected as $f) {
@@ -39,11 +40,11 @@ foreach ($expected as $f) {
         $found[] = $f;
     }
 }
-ev($results, 1, 'Migrations 001-009 exist', count($found) === 9,
+ev($results, 1, 'Migrations 001-011 exist', count($found) === 11,
     'migrations/', 'is_file', 'N/A',
-    'Found ' . count($found) . '/9: ' . implode(', ', $found));
+    'Found ' . count($found) . '/11: ' . implode(', ', $found));
 
-ev($results, 2, 'Exact migration filenames', count($found) === 9,
+ev($results, 2, 'Exact migration filenames', count($found) === 11,
     'migrations/', 'glob', 'N/A',
     implode("\n", array_map(static fn ($f) => '  - ' . $f, $found)));
 
@@ -52,7 +53,7 @@ try {
     $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
     $tables = $pdo->query("SHOW TABLES LIKE 'rcc\\_%'")->fetchAll(\PDO::FETCH_COLUMN);
     $count = count($tables);
-    ev($results, 3, 'rcc_* tables created', $count >= 20,
+    ev($results, 3, 'rcc_* tables created (>=25 after 011)', $count >= 25,
         'tools/verify-production-evidence.php', 'SHOW TABLES', 'N/A',
         $count . ' tables: ' . implode(', ', array_slice($tables, 0, 15)) . ($count > 15 ? '...' : ''));
 } catch (Throwable $e) {
@@ -171,11 +172,19 @@ try {
 AuthContext::set(1, 5, 1, ['rcc.inbox.manage']);
 $tenantFromAuth = AuthContext::tenantId();
 $agentFromAuth = AuthContext::agentId();
-$ignoresForgedBody = true; // controllers use AuthContext not $_POST tenant_id for protected routes
-ev($results, 9, 'Authenticated APIs reject forged tenant_id/agent_id', $rejectsUnauth && $tenantFromAuth === 1 && $agentFromAuth === 5,
+AuthContext::clear();
+AuthContext::set(1, 0, 1, ['rcc.access', 'rcc.ops.view']);
+$opsWithoutAgent = AuthContext::isAuthenticated() && AuthContext::tenantId() === 1;
+$opsAgentBlocked = false;
+try {
+    AuthContext::agentId();
+} catch (Throwable $e) {
+    $opsAgentBlocked = str_contains($e->getMessage(), 'Agent');
+}
+ev($results, 9, 'Authenticated APIs reject forged tenant_id/agent_id', $rejectsUnauth && $tenantFromAuth === 1 && $agentFromAuth === 5 && $opsWithoutAgent && $opsAgentBlocked,
     'app/Core/Security/AuthContext.php + InboxApiController.php', 'tenantId()/agentId()', '48-57 / 96-98',
     'Unauthenticated tenantId() throws=' . ($rejectsUnauth ? 'yes' : 'no') .
-    '; AuthContext set(1,5) returns tenant=1 agent=5 (body forgery ignored at controller)');
+    '; AuthContext set(1,5) tenant=1 agent=5; ops-only auth without agent=' . ($opsWithoutAgent ? 'yes' : 'no'));
 
 // --- 10 websocket default ---
 require_once dirname(RCC_ROOT) . '/control-panel/includes/control/contact-center-bridge.php';
@@ -286,6 +295,21 @@ $realChecks = str_contains($auditOut, '[PASS]') || str_contains($auditOut, '[FAI
 ev($results, 17, 'production-audit.php score from real checks', $realChecks && $scoreMatch !== [],
     'tools/production-audit.php', 'audit_check/fsockopen/is_file', '22-95',
     trim($auditOut));
+
+$opsFiles = is_file(RCC_ROOT . '/public/api/v1/ops.php')
+    && is_file(RCC_ROOT . '/app/Controllers/Api/OpsApiController.php')
+    && is_file(RCC_ROOT . '/migrations/011_production_ops.sql');
+ev($results, 18, 'Phase 8 ops layer files shipped', $opsFiles,
+    'public/api/v1/ops.php', 'is_file', 'N/A',
+    'ops.php=' . (is_file(RCC_ROOT . '/public/api/v1/ops.php') ? 'yes' : 'no') .
+    ' 011=' . (is_file(RCC_ROOT . '/migrations/011_production_ops.sql') ? 'yes' : 'no'));
+
+$checklistSrc = (string) file_get_contents(RCC_ROOT . '/app/Application/Services/Ops/OpsChecklistService.php');
+$hasWebrtcVerify = str_contains($checklistSrc, "'diag_webrtc'");
+$healthEmit = str_contains((string) file_get_contents(RCC_ROOT . '/app/Application/Services/Ops/OpsDiagnosticService.php'), 'OPS_HEALTH_UPDATED');
+ev($results, 19, 'Ops checklist auto-verify and health events', $hasWebrtcVerify && $healthEmit,
+    'app/Application/Services/Ops/OpsChecklistService.php', 'runVerifyAction match', '75-89',
+    'diag_webrtc in match=' . ($hasWebrtcVerify ? 'yes' : 'no') . ' OPS_HEALTH_UPDATED emit=' . ($healthEmit ? 'yes' : 'no'));
 
 echo json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 exit(0);

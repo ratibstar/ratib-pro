@@ -35,7 +35,13 @@ final class AuthContext
 
     public static function isAuthenticated(): bool
     {
-        return self::$tenantId !== null && self::$tenantId > 0 && self::$agentId !== null && self::$agentId > 0;
+        if (self::$tenantId === null || self::$tenantId < 1) {
+            return false;
+        }
+        if (self::$agentId !== null && self::$agentId > 0) {
+            return true;
+        }
+        return self::can('rcc.ops.view');
     }
 
     public static function requireAuth(): void
@@ -47,14 +53,24 @@ final class AuthContext
 
     public static function tenantId(): int
     {
-        self::requireAuth();
+        if (self::$tenantId === null || self::$tenantId < 1) {
+            throw new \RuntimeException('Authentication required.', 401);
+        }
         return (int) self::$tenantId;
     }
 
     public static function agentId(): int
     {
         self::requireAuth();
+        if (self::$agentId === null || self::$agentId < 1) {
+            throw new \RuntimeException('Agent context required.', 403);
+        }
         return (int) self::$agentId;
+    }
+
+    public static function agentIdOrZero(): int
+    {
+        return self::$agentId !== null && self::$agentId > 0 ? (int) self::$agentId : 0;
     }
 
     public static function userId(): ?int

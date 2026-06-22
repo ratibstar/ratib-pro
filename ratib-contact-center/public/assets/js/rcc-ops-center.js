@@ -17,6 +17,7 @@
         this.apiBase = root.getAttribute('data-api') || '';
         this.wsUrl = (root.getAttribute('data-ws') || '').trim();
         this.route = root.getAttribute('data-route') || 'health';
+        this.canManageTenants = root.getAttribute('data-can-manage-tenants') === '1';
         this.panel = document.getElementById('rcc-ops-panel');
         this.status = document.getElementById('rcc-ops-status');
         this._client = null;
@@ -27,26 +28,64 @@
         return !u || u === 'polling' || u === 'off';
     };
 
+    RccOpsCenter.prototype._connectRealtime = function () {
+        var self = this;
+        if (self._usePolling() || !global.RccRealtimeClient) {
+            return;
+        }
+        if (self._client && self._client.disconnect) {
+            self._client.disconnect();
+        }
+        self._client = new global.RccRealtimeClient({
+            url: self.wsUrl,
+            tenantId: self.tenantId,
+            rooms: ['tenant:' + self.tenantId, 'dashboard:' + self.tenantId],
+            onEvent: function (ev) {
+                if (!ev || !ev.type || ev.type.indexOf('OPS_') !== 0) {
+                    return;
+                }
+                self.setStatus('Live: ' + ev.type, 'info');
+                if (self.route === 'health' || self.route === 'hub' || self.route === 'golive') {
+                    self.renderPanel();
+                }
+            }
+        });
+        self._client.connect();
+    };
+
     RccOpsCenter.prototype.init = function () {
         var self = this;
+        self.renderTenantBar();
         self.renderPanel();
-        if (!self._usePolling() && global.RccRealtimeClient) {
-            self._client = new global.RccRealtimeClient({
-                url: self.wsUrl,
-                tenantId: self.tenantId,
-                rooms: ['tenant:' + self.tenantId, 'dashboard:' + self.tenantId],
-                onEvent: function (ev) {
-                    if (!ev || !ev.type || ev.type.indexOf('OPS_') !== 0) {
-                        return;
-                    }
-                    self.setStatus('Live: ' + ev.type, 'info');
-                    if (self.route === 'health' || self.route === 'hub' || self.route === 'golive') {
-                        self.renderPanel();
-                    }
-                }
-            });
-            self._client.connect();
+        self._connectRealtime();
+    };
+
+    RccOpsCenter.prototype.renderTenantBar = function () {
+        var self = this;
+        var bar = document.getElementById('rcc-ops-tenant-bar');
+        if (!bar || !self.canManageTenants) {
+            return;
         }
+        self.api('tenants_list').then(function (res) {
+            var tenants = (res && res.tenants) || [];
+            if (!res.ok || tenants.length < 2) {
+                return;
+            }
+            var html = '<label>Tenant <select id="rcc-ops-tenant-select">';
+            tenants.forEach(function (t) {
+                html += '<option value="' + esc(t.id) + '"' + (parseInt(t.id, 10) === self.tenantId ? ' selected' : '') + '>';
+                html += esc(t.name || t.code) + '</option>';
+            });
+            html += '</select></label>';
+            bar.innerHTML = html;
+            bar.hidden = false;
+            document.getElementById('rcc-ops-tenant-select').onchange = function (ev) {
+                self.tenantId = parseInt(ev.target.value, 10) || self.tenantId;
+                self.root.setAttribute('data-tenant', String(self.tenantId));
+                self._connectRealtime();
+                self.renderPanel();
+            };
+        });
     };
 
     RccOpsCenter.prototype.setStatus = function (msg, kind) {
@@ -195,20 +234,34 @@
 
     RccOpsCenter.prototype.renderQueues = function () {
         var self = this;
-        self.api('queue_list').then(function (res) {
-            if (!res.ok) {
-                self.panel.innerHTML = '<p>' + esc(res.error) + '</p>';
+        Promise.all([self.api('queue_list'), self.api('agent_list')]).then(function (results) {
+            var qRes = results[0];
+            var aRes = results[1];
+            if (!qRes.ok) {
+                self.panel.innerHTML = '<p>' + esc(qRes.error) + '</p>';
                 return;
             }
+            var agents = (aRes.ok ? aRes.agents : []) || [];
             var html = '<h3>Queue Manager</h3><form id="rcc-ops-queue-form" class="rcc-ops__form">';
             html += '<label>Code <input name="code" required></label>';
             html += '<label>Name <input name="name" required></label>';
             html += '<label>SLA seconds <input name="sla_target_seconds" type="number" value="300"></label>';
-            html += '<button type="submit" class="rcc-ops__btn">Create queue</button></form><ul>';
-            (res.queues || []).forEach(function (q) {
-                html += '<li>' + esc(q.code) + ' — ' + esc(q.name) + ' (SLA ' + esc(q.sla_target_seconds) + 's)</li>';
+            html += '<button type="submit" class="rcc-ops__btn">Create queue</button></form>';
+            (qRes.queues || []).forEach(function (q) {
+                var members = q.member_agent_ids || [];
+                html += '<div class="rcc-ops__queue-block"><h4>' + esc(q.code) + ' — ' + esc(q.name) + ' (SLA ' + esc(q.sla_target_seconds) + 's)</h4>';
+                html += '<form class="rcc-ops__form rcc-ops__queue-members" data-queue-id="' + esc(q.id) + '">';
+                html += '<fieldset><legend>Members</legend>';
+                if (agents.length === 0) {
+                    html += '<p class="muted">No agents — provision agents first.</p>';
+                }
+                agents.forEach(function (a) {
+                    var checked = members.indexOf(parseInt(a.id, 10)) >= 0 || members.indexOf(a.id) >= 0 ? ' checked' : '';
+                    html += '<label class="rcc-ops__check"><input type="checkbox" name="agent" value="' + esc(a.id) + '"' + checked + '> ';
+                    html += esc(a.display_name) + ' (ext ' + esc(a.extension) + ')</label>';
+                });
+                html += '</fieldset><button type="submit" class="rcc-ops__btn-sm">Save members</button></form></div>';
             });
-            html += '</ul>';
             self.panel.innerHTML = html;
             document.getElementById('rcc-ops-queue-form').onsubmit = function (ev) {
                 ev.preventDefault();
@@ -221,6 +274,20 @@
                     if (r.ok) { self.renderQueues(); }
                 });
             };
+            self.panel.querySelectorAll('.rcc-ops__queue-members').forEach(function (form) {
+                form.onsubmit = function (ev) {
+                    ev.preventDefault();
+                    var queueId = parseInt(form.getAttribute('data-queue-id'), 10);
+                    var ids = [];
+                    form.querySelectorAll('input[name="agent"]:checked').forEach(function (cb) {
+                        ids.push(parseInt(cb.value, 10));
+                    });
+                    self.api('queue_members_save', { queue_id: queueId, agent_ids: ids }).then(function (r) {
+                        self.setStatus(r.ok ? 'Members saved' : r.error, r.ok ? 'ok' : 'error');
+                        if (r.ok) { self.renderQueues(); }
+                    });
+                };
+            });
         });
     };
 

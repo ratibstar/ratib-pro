@@ -11,8 +11,8 @@ declare(strict_types=1);
  * @var string $wsUrl
  * @var string $assistantApiBase
  */
-$tenantId = (int) ($tenantId ?? 1);
-$agentId = (int) ($agentId ?? 1);
+$tenantId = (int) ($tenantId ?? 0);
+$agentId = (int) ($agentId ?? 0);
 $inboxApiBase = (string) ($inboxApiBase ?? '');
 $softphoneApiBase = (string) ($softphoneApiBase ?? '');
 $rtMode = function_exists('control_contact_center_realtime_mode')

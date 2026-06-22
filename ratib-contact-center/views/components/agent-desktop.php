@@ -11,8 +11,8 @@ declare(strict_types=1);
  * @var string $wsUrl
  * @var string $assetsBase
  */
-$tenantId = (int) ($tenantId ?? 1);
-$agentId = (int) ($agentId ?? 1);
+$tenantId = (int) ($tenantId ?? 0);
+$agentId = (int) ($agentId ?? 0);
 $inboxApiBase = (string) ($inboxApiBase ?? '/ratib-contact-center/public/api/v1/inbox.php');
 $softphoneApiBase = (string) ($softphoneApiBase ?? '/ratib-contact-center/public/api/v1/softphone.php');
 $wsUrl = (string) ($wsUrl ?? 'ws://127.0.0.1:9702');
