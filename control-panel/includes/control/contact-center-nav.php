@@ -15,5 +15,8 @@ function control_contact_center_active_key(): string
     if ($self === 'contact-center-app.php') {
         return trim((string) ($_GET['route'] ?? 'agent-desktop'), '/');
     }
+    if ($self === 'contact-center-ops.php') {
+        return trim((string) ($_GET['route'] ?? 'health'), '/');
+    }
     return '';
 }

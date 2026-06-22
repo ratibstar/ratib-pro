@@ -100,6 +100,16 @@ final class ApiAuthMiddleware
             $permissions[] = 'rcc.supervisor.dashboard';
             $permissions[] = 'rcc.reports.view';
             $permissions[] = 'rcc.reports.export';
+            $permissions[] = 'rcc.ops.view';
+            $permissions[] = 'rcc.ops.pbx';
+            $permissions[] = 'rcc.ops.sip';
+            $permissions[] = 'rcc.ops.queues';
+            $permissions[] = 'rcc.ops.ivr';
+            $permissions[] = 'rcc.ops.agents';
+            $permissions[] = 'rcc.ops.diagnostics';
+            $permissions[] = 'rcc.ops.hub';
+            $permissions[] = 'rcc.ops.golive';
+            $permissions[] = 'rcc.tenants.manage';
         }
 
         AuthContext::set($tenantId, $agentId, null, $permissions);

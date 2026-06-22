@@ -18,6 +18,7 @@ return [
     'nav.erp_db_setup' => 'ERP Database Setup',
     'nav.contact_center' => 'Contact Center Hub',
     'nav.contact_center_desktop' => 'Agent Desktop',
+    'nav.contact_center_ops' => 'Operations Center',
     'nav.contact_center_db_setup' => 'Contact Center DB Setup',
     'nav.public_site_content' => 'Public site content',
     'nav.company_profile_live' => 'Company profile (live)',

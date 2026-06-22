@@ -369,6 +369,42 @@ function control_contact_center_app_url(string $route = 'agent-desktop'): string
     return $base . '&route=' . rawurlencode($route);
 }
 
+function control_contact_center_ops_page_url(string $route = 'health'): string
+{
+    $base = function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/contact-center-ops.php')
+        : '/control-panel/pages/control/contact-center-ops.php?control=1';
+    return $base . '&route=' . rawurlencode($route);
+}
+
+function control_contact_center_ops_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/ops.php';
+}
+
+/** Resolve tenant for RCC UI/API — never hardcode; session first, else first active tenant. */
+function control_contact_center_resolve_tenant_id(): int
+{
+    $fromSession = (int) ($_SESSION['rcc_tenant_id'] ?? 0);
+    if ($fromSession > 0) {
+        return $fromSession;
+    }
+    try {
+        control_contact_center_apply_db_env();
+        if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
+            define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
+        }
+        require_once control_contact_center_root_path() . '/bootstrap.php';
+        $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->query(
+            "SELECT id FROM rcc_tenants WHERE status = 'active' ORDER BY id ASC LIMIT 1"
+        );
+        $id = $stmt ? $stmt->fetchColumn() : false;
+        return $id !== false ? (int) $id : 0;
+    } catch (Throwable $e) {
+        return 0;
+    }
+}
+
 /** @return array{ok:bool,schema:bool,db:string,user:string,error:string,tables:int} */
 function control_contact_center_db_test(): array
 {
@@ -474,6 +510,14 @@ function control_contact_center_nav_links(): array
             'key' => 'agent-desktop',
             'description' => 'Unified inbox + softphone — voice, WhatsApp, email, chat in one thread.',
         ],
+        'operations' => [
+            'route' => 'health',
+            'href' => control_contact_center_ops_page_url('health'),
+            'label' => 'Operations Center',
+            'icon' => 'fa-screwdriver-wrench',
+            'key' => 'operations',
+            'description' => 'PBX wizard, SIP, queues, IVR, agents, diagnostics, go-live checklist.',
+        ],
         'hub' => [
             'route' => 'hub',
             'href' => control_contact_center_hub_page_url(),
@@ -491,6 +535,7 @@ function control_contact_center_verify_schema(): array
         'rcc_tenants', 'rcc_users', 'rcc_realtime_events', 'rcc_ivr_flows', 'rcc_ivr_sessions',
         'rcc_agents', 'rcc_queues', 'rcc_sip_extensions', 'rcc_softphone_calls', 'rcc_routing_logs',
         'rcc_conversations', 'rcc_conversation_messages', 'rcc_ai_context', 'rcc_tickets',
+        'rcc_pbx_servers', 'rcc_ops_checklist_steps', 'rcc_ops_checklist_status',
     ];
     $missing = [];
     try {

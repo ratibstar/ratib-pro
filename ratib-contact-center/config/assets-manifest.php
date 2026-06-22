@@ -16,4 +16,6 @@ return [
     'inbox-js' => 'js/rcc-agent-inbox.js',
     'copilot-js' => 'js/rcc-ai-copilot.js',
     'desktop-js' => 'js/rcc-agent-desktop-ui.js',
+    'ops-css' => 'css/rcc-ops-center.css',
+    'ops-js' => 'js/rcc-ops-center.js',
 ];

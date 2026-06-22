@@ -79,6 +79,11 @@ audit_check($checks, $score, $max, 'SMTP outbound service', is_file(RCC_ROOT . '
 // Reporting
 audit_check($checks, $score, $max, 'Report service', is_file(RCC_ROOT . '/app/Application/Services/ReportService.php'));
 
+// Phase 8 operations
+audit_check($checks, $score, $max, 'Ops API', is_file(RCC_ROOT . '/public/api/v1/ops.php'));
+audit_check($checks, $score, $max, 'Ops controller', is_file(RCC_ROOT . '/app/Controllers/Api/OpsApiController.php'));
+audit_check($checks, $score, $max, 'Migration 011 ops', is_file(RCC_ROOT . '/migrations/011_production_ops.sql'));
+
 $percent = $max > 0 ? (int) round(($score / $max) * 100) : 0;
 
 echo "RATIB Contact Center — Production Audit\n";

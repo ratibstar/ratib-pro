@@ -68,6 +68,20 @@ final class EventType
     // Dashboard aggregates (derived, still event-driven)
     public const SLA_ALERT = 'SLA_ALERT';
 
+    // Production operations (Phase 8)
+    public const OPS_PBX_UPDATED = 'OPS_PBX_UPDATED';
+    public const OPS_PBX_ACTIVATED = 'OPS_PBX_ACTIVATED';
+    public const OPS_SIP_UPDATED = 'OPS_SIP_UPDATED';
+    public const OPS_QUEUE_UPDATED = 'OPS_QUEUE_UPDATED';
+    public const OPS_IVR_UPDATED = 'OPS_IVR_UPDATED';
+    public const OPS_IVR_PUBLISHED = 'OPS_IVR_PUBLISHED';
+    public const OPS_AGENT_PROVISIONED = 'OPS_AGENT_PROVISIONED';
+    public const OPS_DIAGNOSTIC_RUN = 'OPS_DIAGNOSTIC_RUN';
+    public const OPS_CHECKLIST_UPDATED = 'OPS_CHECKLIST_UPDATED';
+    public const OPS_CHECKLIST_AUTO_VERIFY = 'OPS_CHECKLIST_AUTO_VERIFY';
+    public const OPS_AUDIT_LOGGED = 'OPS_AUDIT_LOGGED';
+    public const OPS_HEALTH_UPDATED = 'OPS_HEALTH_UPDATED';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -114,6 +128,18 @@ final class EventType
             self::AI_TICKET_CREATED,
             self::AI_ASSISTANT_UPDATE,
             self::SLA_ALERT,
+            self::OPS_PBX_UPDATED,
+            self::OPS_PBX_ACTIVATED,
+            self::OPS_SIP_UPDATED,
+            self::OPS_QUEUE_UPDATED,
+            self::OPS_IVR_UPDATED,
+            self::OPS_IVR_PUBLISHED,
+            self::OPS_AGENT_PROVISIONED,
+            self::OPS_DIAGNOSTIC_RUN,
+            self::OPS_CHECKLIST_UPDATED,
+            self::OPS_CHECKLIST_AUTO_VERIFY,
+            self::OPS_AUDIT_LOGGED,
+            self::OPS_HEALTH_UPDATED,
         ];
     }
 }

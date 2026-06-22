@@ -1,0 +1,120 @@
+.rcc-ops {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1.25rem;
+    min-height: 70vh;
+    color: var(--rcc-ops-text, #e8eaed);
+    background: var(--rcc-ops-bg, #0f1419);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.rcc-ops__title {
+    font-size: 1rem;
+    margin: 0 0 1rem;
+    opacity: 0.9;
+}
+
+.rcc-ops__nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.rcc-ops__nav-link:hover,
+.rcc-ops__nav-link.is-active {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.rcc-ops__main {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+}
+
+.rcc-ops__status {
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    min-height: 1.25rem;
+}
+
+.rcc-ops__status--ok { color: #4ade80; }
+.rcc-ops__status--error { color: #f87171; }
+.rcc-ops__status--info { color: #93c5fd; }
+
+.rcc-ops__form label {
+    display: block;
+    margin-bottom: 0.65rem;
+    font-size: 0.85rem;
+}
+
+.rcc-ops__form input,
+.rcc-ops__form select {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    margin-top: 0.25rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.25);
+    color: inherit;
+}
+
+.rcc-ops__btn,
+.rcc-ops__btn-sm {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.45rem 0.9rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+
+.rcc-ops__btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    margin-left: 0.35rem;
+}
+
+.rcc-ops__checks {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+}
+
+.rcc-ops__checks li {
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.9rem;
+}
+
+.rcc-ops__checks li.pass { color: #4ade80; }
+.rcc-ops__checks li.fail { color: #f87171; }
+.rcc-ops__checks li.pending { color: #fbbf24; }
+
+.rcc-ops__score {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.rcc-ops pre {
+    background: rgba(0, 0, 0, 0.35);
+    padding: 0.75rem;
+    border-radius: 8px;
+    overflow: auto;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+    .rcc-ops {
+        grid-template-columns: 1fr;
+    }
+}
