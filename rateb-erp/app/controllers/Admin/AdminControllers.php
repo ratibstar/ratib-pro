@@ -1605,7 +1605,7 @@ final class SettingsController extends Controller
             Response::redirect(rateb_url('admin/settings'));
         }
         $to = trim((string) $this->input('test_to', ''));
-        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        if ($to === '' || !\Rateb\App\Helpers\Str::isValidEmail($to)) {
             SessionManager::flash('error', __('mail_test_invalid'));
             Response::redirect(rateb_url('admin/settings'));
         }
@@ -1616,7 +1616,7 @@ final class SettingsController extends Controller
         $mail = new \Rateb\App\Services\MailService();
         $cfg = (new \Rateb\App\Services\MailConfigService())->resolve();
         $from = trim((string) ($cfg['from_email'] ?? ''));
-        $bcc = ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL) && strcasecmp($from, $to) !== 0) ? $from : null;
+        $bcc = ($from !== '' && \Rateb\App\Helpers\Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) ? $from : null;
         $result = $mail->sendDetailed(
             $to,
             __('mail_test_subject'),

@@ -131,7 +131,7 @@ final class MailService
         $loopback = ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'];
 
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
-            // Gmail/external: avoid localhost-only relay (delivers locally but may not reach Gmail).
+            // External (any provider): prefer authenticated relay, not localhost-only.
             $candidates = [$mailHost, $primary, $localhost, $loopback];
         } else {
             $candidates = [$primary, $localhost, $loopback, $mailHost];
@@ -152,8 +152,8 @@ final class MailService
 
     private function isExternalRecipient(string $to, string $fromEmail): bool
     {
-        $toDomain = strtolower((string) substr(strrchr($to, '@') ?: '', 1));
-        $fromDomain = strtolower((string) substr(strrchr($fromEmail, '@') ?: '', 1));
+        $toDomain = \Rateb\App\Helpers\Str::emailDomain($to);
+        $fromDomain = \Rateb\App\Helpers\Str::emailDomain($fromEmail);
         if ($toDomain === '' || $fromDomain === '') {
             return true;
         }
@@ -270,11 +270,11 @@ final class MailService
             $this->setError('smtp_rcpt', __('mail_error_rcpt', ['email' => $to]));
             return false;
         }
-        if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
+        if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
             $write('RCPT TO:<' . $cc . '>');
             $read();
         }
-        if ($bcc !== null && $bcc !== '' && filter_var($bcc, FILTER_VALIDATE_EMAIL) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
+        if ($bcc !== null && $bcc !== '' && \Rateb\App\Helpers\Str::isValidEmail($bcc) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
             $write('RCPT TO:<' . $bcc . '>');
             $read();
         }
@@ -282,10 +282,10 @@ final class MailService
         $read();
         $headers = 'From: ' . $this->encodeAddress($fromName, $fromEmail) . "\r\n";
         $headers .= 'To: <' . $to . ">\r\n";
-        if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
+        if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
             $headers .= 'Cc: <' . $cc . ">\r\n";
         }
-        if ($bcc !== null && $bcc !== '' && filter_var($bcc, FILTER_VALIDATE_EMAIL) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
+        if ($bcc !== null && $bcc !== '' && \Rateb\App\Helpers\Str::isValidEmail($bcc) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
             $headers .= 'Bcc: <' . $bcc . ">\r\n";
         }
         $headers .= 'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail) . "\r\n";

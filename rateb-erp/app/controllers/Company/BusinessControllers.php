@@ -1216,7 +1216,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             ['name' => 'responsible_name', 'label' => 'comm_responsible', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
             ['name' => 'supplier_contact', 'label' => 'comm_supplier_contact', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
             ['name' => 'supplier_phone', 'label' => 'comm_supplier_phone', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
-            ['name' => 'supplier_email', 'label' => 'comm_supplier_email', 'type' => 'email', 'col' => 'col-xl-3 col-md-6'],
+            ['name' => 'supplier_email', 'label' => 'comm_supplier_email', 'type' => 'text', 'col' => 'col-xl-3 col-md-6', 'attrs' => ['placeholder' => 'supplier@company.com', 'inputmode' => 'email', 'autocomplete' => 'email']],
             ['name' => 'follow_up_date', 'label' => 'follow_up_date', 'type' => 'date', 'col' => 'col-xl-3 col-md-4'],
             ['name' => 'follow_up_priority', 'label' => 'follow_up_priority', 'type' => 'select', 'lookup' => 'follow_up_priorities', 'default' => 'medium', 'col' => 'col-xl-3 col-md-4'],
             ['name' => 'purchase_order_id', 'label' => 'link_purchase_order', 'type' => 'fk', 'lookup' => 'purchase_orders', 'col' => 'col-xl-3 col-md-6'],
@@ -1652,7 +1652,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $companyId = (int) ($data['company_id'] ?? rateb_resolve_ops_company_id());
         $channel = (string) ($data['channel'] ?? '');
         $supplierEmail = trim((string) ($data['supplier_email'] ?? ''));
-        $hasEmail = $supplierEmail !== '' && filter_var($supplierEmail, FILTER_VALIDATE_EMAIL);
+        $hasEmail = $supplierEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($supplierEmail);
         $user = \Rateb\App\Core\Auth::user();
         $userEmail = trim((string) ($user['email'] ?? ''));
 
@@ -1706,7 +1706,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     private function buildMailtoUrl(array $data): string
     {
         $email = trim((string) ($data['supplier_email'] ?? ''));
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
             return '';
         }
         $subject = rawurlencode((string) ($data['subject'] ?? ''));

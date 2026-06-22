@@ -16,4 +16,26 @@ final class Str
     {
         return bin2hex(random_bytes($bytes));
     }
+
+    /** Accepts Gmail, Outlook, Yahoo, Hotmail, and corporate domains. */
+    public static function isValidEmail(string $email): bool
+    {
+        $email = trim($email);
+        if ($email === '' || strlen($email) > 254) {
+            return false;
+        }
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return true;
+        }
+        return (bool) preg_match('/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/i', $email);
+    }
+
+    public static function emailDomain(string $email): string
+    {
+        $pos = strrpos($email, '@');
+        if ($pos === false) {
+            return '';
+        }
+        return strtolower(substr($email, $pos + 1));
+    }
 }

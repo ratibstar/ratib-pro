@@ -206,7 +206,7 @@ final class SupplierCommService
     public function sendEmail(array $data, ?string $ccEmail = null, ?string $replyTo = null): array
     {
         $email = trim((string) ($data['supplier_email'] ?? ''));
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
         }
         $mail = new MailService();
@@ -225,14 +225,14 @@ final class SupplierCommService
             . nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'))
             . '</div>';
         $cc = null;
-        if ($ccEmail !== null && $ccEmail !== '' && filter_var($ccEmail, FILTER_VALIDATE_EMAIL) && strcasecmp($ccEmail, $email) !== 0) {
+        if ($ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
             $cc = $ccEmail;
         }
-        $reply = ($replyTo !== null && $replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) ? $replyTo : null;
+        $reply = ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo)) ? $replyTo : null;
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = trim((string) ($cfg['from_email'] ?? ''));
         $bcc = null;
-        if ($fromEmail !== '' && filter_var($fromEmail, FILTER_VALIDATE_EMAIL)
+        if ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
             && strcasecmp($fromEmail, $email) !== 0
             && strcasecmp($fromEmail, (string) $cc) !== 0) {
             $bcc = $fromEmail;
@@ -268,7 +268,7 @@ final class SupplierCommService
 
     private function isExternalEmail(string $email): bool
     {
-        $domain = strtolower((string) substr(strrchr($email, '@') ?: '', 1));
+        $domain = \Rateb\App\Helpers\Str::emailDomain($email);
         return $domain !== '' && $domain !== 'rateb.sa';
     }
 

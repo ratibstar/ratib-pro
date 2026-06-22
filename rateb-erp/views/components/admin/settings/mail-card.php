@@ -61,9 +61,9 @@ $mailPassSet = !empty($mailPassSet);
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-6">
                 <label class="form-label"><?php echo __('mail_test_to'); ?></label>
-                <input class="form-control" type="email" name="test_to" required
+                <input class="form-control" type="text" name="test_to" required inputmode="email" autocomplete="email"
                     value="<?php echo Rateb\App\Core\View::escape((string) ($testEmailDefault ?? 'info@rateb.sa')); ?>"
-                    placeholder="ratibstar@gmail.com">
+                    placeholder="supplier@example.com">
             </div>
             <div class="col-md-6">
                 <button type="submit" class="btn btn-outline-primary" <?php echo $mailReady ? '' : 'disabled'; ?>>
@@ -76,7 +76,7 @@ $mailPassSet = !empty($mailPassSet);
         <?php } else { ?>
         <p class="text-muted small mt-2 mb-0"><?php echo __('mail_check_spam_hint'); ?></p>
         <p class="text-muted small mb-0"><?php echo __('mail_webmail_sent_note'); ?></p>
-        <p class="text-muted small mb-0"><?php echo __('mail_gmail_dns_hint'); ?></p>
+        <p class="text-muted small mb-0"><?php echo __('mail_external_dns_hint'); ?></p>
         <?php } ?>
     </div>
 </div>
