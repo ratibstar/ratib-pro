@@ -166,3 +166,51 @@ See git status for full list. Key paths:
 **Modified:** API controllers, `bootstrap-api.php`, `AsteriskPbxCommandGateway`, `TransferEngine`, `AsteriskAmiAdapter`, `RealtimeOrchestrator`, `RoutingEngine`, `contact-center-bridge.php`, `assets-manifest.php`, `contact-center-app.php`
 
 **Deleted:** `rcc-sp.js`, `rcc-sp-ui.js`, `rcc-sp.css`
+
+---
+
+## Phase 8 — Production Operations (2026-06-22)
+
+- **Migration `011_production_ops.sql`** — ops settings, checklist state, diagnostics snapshots, `rcc.ops.*` permissions
+- **API** — `public/api/v1/ops.php` (`OpsApiController`) with provisioning, PBX/SIP, queues, IVR, agents, diagnostics, go-live checklist
+- **Control Panel** — `contact-center-ops.php`, `rcc-ops-center.js/css`, tenant switcher, queue member management
+- **Checklist** — queue-with-members verification, WebRTC diagnostic step, health threshold aligned to ≥30 tables / 12 migrations
+
+## Phase 9 — Supervisor & Workforce Management (2026-06-22)
+
+- **Migration `012_supervisor_workforce.sql`** — WFM shifts, attendance, breaks, supervisor alerts/rules, `rcc.supervisor.*` permissions
+- **API** — `public/api/v1/supervisor.php` with dashboard, wallboard, monitors, SLA, WFM, alerts, reports
+- **Services** — `SupervisorDashboardService`, `SupervisorMonitorService`, `SupervisorSlaService`, `SupervisorWfmService`, `SupervisorAlertService`, `SupervisorAlertBridge` (dedup + rule-driven)
+- **Control Panel** — `contact-center-supervisor.php` with full WFM actions (shift assign, clock in/out, breaks, alert rules, CSV reports)
+- **Realtime** — `SUPERVISOR_*` events on EventBus; bridge evaluates SLA red, empty queues, long breaks
+
+## Gap-Fix Batch (post Phase 9 audit)
+
+| Fix | Status |
+|-----|--------|
+| Migrate UI documents migrations 001–012 | Done |
+| `verify_schema` includes `rcc_audit_logs` | Done |
+| Ops checklist uses queue-with-members check | Done |
+| AMI hold/resume via `AmiPbxCommandGateway` + `state_json` channel | Done |
+| Reports CSV download (`report-download.php`) | Done |
+| Supervisor UI: WFM actions, rules, reports | Done |
+| CI: `rcc-migrate-run.php` + `run-rcc-migrations.sh` in deploy workflow | Done |
+| Alert dedup, rule config, `agent_long_break` evaluation | Done |
+
+## Updated Production Readiness Score (Phases 8–9)
+
+| Area | After Phase 9 (code) |
+|------|----------------------|
+| Operations / go-live | **90%** |
+| Supervisor / WFM | **88%** |
+| Reporting (export) | **85%** |
+| **Overall (code)** | **~86%** |
+| **Overall (live)** | **~78%** — migrations 011–012, AMI, hub on server |
+
+## Deployment Checklist (updated)
+
+- [ ] Push to `main` (auto-deploy includes `ratib-contact-center/`, `control-panel/api/control/rcc-migrate-run.php`)
+- [ ] GitHub Actions runs RCC migrations after deploy (or CP → Database Setup)
+- [ ] Verify: `php ratib-contact-center/tools/production-audit.php` ≥ 80%
+- [ ] Supervisor suite: shift assign, attendance, breaks, alert rules, report CSV export
+- [ ] Ops center: go-live checklist all green before taking traffic

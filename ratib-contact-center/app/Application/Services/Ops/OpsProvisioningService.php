@@ -107,6 +107,17 @@ final class OpsProvisioningService
         return $queues;
     }
 
+    public function hasQueueWithMembers(int $tenantId): bool
+    {
+        $stmt = Database::connection()->prepare(
+            "SELECT COUNT(*) FROM rcc_queues q
+             INNER JOIN rcc_queue_members m ON m.queue_id = q.id AND m.tenant_id = q.tenant_id
+             WHERE q.tenant_id = :tid AND q.status = 'active'"
+        );
+        $stmt->execute(['tid' => $tenantId]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
     /** @param array<string, mixed> $data */
     public function saveQueue(int $tenantId, array $data, ?int $userId = null): array
     {

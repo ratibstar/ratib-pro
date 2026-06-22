@@ -147,6 +147,7 @@ final class SupervisorWfmService
     /** @return list<array<string, mixed>> */
     public function activeBreaks(int $tenantId): array
     {
+        $this->alerts->evaluateLongBreaks($tenantId);
         return $this->breaks->listActive($tenantId);
     }
 

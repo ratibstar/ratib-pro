@@ -31,6 +31,42 @@ final class SupervisorAlertRepository
         return (int) Database::connection()->lastInsertId();
     }
 
+    public function hasRecentOpenAlert(
+        int $tenantId,
+        string $alertType,
+        ?int $queueId = null,
+        ?int $agentId = null,
+        int $withinMinutes = 15
+    ): bool {
+        $sql = 'SELECT 1 FROM rcc_supervisor_alerts
+                WHERE tenant_id = :tid AND alert_type = :type AND acknowledged_at IS NULL
+                  AND created_at >= DATE_SUB(NOW(), INTERVAL :mins MINUTE)';
+        $params = ['tid' => $tenantId, 'type' => $alertType, 'mins' => max(1, $withinMinutes)];
+        if ($queueId !== null && $queueId > 0) {
+            $sql .= ' AND queue_id = :qid';
+            $params['qid'] = $queueId;
+        }
+        if ($agentId !== null && $agentId > 0) {
+            $sql .= ' AND agent_id = :aid';
+            $params['aid'] = $agentId;
+        }
+        $sql .= ' LIMIT 1';
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchColumn() !== false;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function getRule(int $tenantId, string $ruleKey): ?array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT * FROM rcc_supervisor_alert_rules WHERE tenant_id = :tid AND rule_key = :key LIMIT 1'
+        );
+        $stmt->execute(['tid' => $tenantId, 'key' => $ruleKey]);
+        $row = $stmt->fetch();
+        return $row !== false ? $row : null;
+    }
+
     /** @return list<array<string, mixed>> */
     public function list(int $tenantId, bool $openOnly = true, int $limit = 100): array
     {
@@ -82,11 +118,36 @@ final class SupervisorAlertRepository
 
     public function isRuleEnabled(int $tenantId, string $ruleKey): bool
     {
+        $row = $this->getRule($tenantId, $ruleKey);
+        if ($row === null) {
+            return true;
+        }
+        return (int) ($row['is_enabled'] ?? 1) === 1;
+    }
+
+    /** @return array<string, mixed> */
+    public function ruleConfig(int $tenantId, string $ruleKey): array
+    {
+        $row = $this->getRule($tenantId, $ruleKey);
+        if ($row === null || empty($row['config_json'])) {
+            return [];
+        }
+        $decoded = json_decode((string) $row['config_json'], true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function openBreaksExceedingMinutes(int $tenantId, int $maxMinutes): array
+    {
         $stmt = Database::connection()->prepare(
-            'SELECT is_enabled FROM rcc_supervisor_alert_rules WHERE tenant_id=:tid AND rule_key=:key LIMIT 1'
+            'SELECT b.*, a.display_name, a.extension,
+                    TIMESTAMPDIFF(MINUTE, b.started_at, NOW()) AS break_minutes
+             FROM rcc_wfm_breaks b
+             INNER JOIN rcc_agents a ON a.id = b.agent_id AND a.tenant_id = b.tenant_id
+             WHERE b.tenant_id = :tid AND b.ended_at IS NULL
+               AND TIMESTAMPDIFF(MINUTE, b.started_at, NOW()) >= :mins'
         );
-        $stmt->execute(['tid' => $tenantId, 'key' => $ruleKey]);
-        $val = $stmt->fetchColumn();
-        return $val === false || (int) $val === 1;
+        $stmt->execute(['tid' => $tenantId, 'mins' => max(1, $maxMinutes)]);
+        return $stmt->fetchAll() ?: [];
     }
 }

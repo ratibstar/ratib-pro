@@ -12,6 +12,7 @@ use Ratib\ContactCenter\App\Domain\Softphone\Enums\SoftphoneCallStatus;
 use Ratib\ContactCenter\App\Domain\Softphone\Enums\SoftphoneDirection;
 use Ratib\ContactCenter\App\Infrastructure\Persistence\Repositories\AgentSipSessionRepository;
 use Ratib\ContactCenter\App\Infrastructure\Persistence\Repositories\SoftphoneCallRepository;
+use Ratib\ContactCenter\App\Infrastructure\Voice\AmiPbxCommandGateway;
 use Ratib\ContactCenter\App\Infrastructure\WebRTC\SipGateway;
 
 /**
@@ -27,7 +28,8 @@ final class CallControlEngine
         private readonly TransferEngine $transferEngine = new TransferEngine(),
         private readonly AgentStateService $agentState = new AgentStateService(),
         private readonly SoftphoneErpService $erpService = new SoftphoneErpService(),
-        private readonly ?EventBus $eventBus = null
+        private readonly ?EventBus $eventBus = null,
+        private readonly ?AmiPbxCommandGateway $pbxGateway = null
     ) {
     }
 
@@ -155,6 +157,10 @@ final class CallControlEngine
             ],
         ]);
 
+        if ($channelId !== null && $channelId !== '') {
+            $this->calls->mergeStateJson((int) $call['id'], $tenantId, ['channel_id' => $channelId]);
+        }
+
         return $this->markConnected($tenantId, $agentId, (int) $call['id'], $callId, $queueId, $remoteNumber);
     }
 
@@ -199,8 +205,17 @@ final class CallControlEngine
     }
 
     /** @return array<string, mixed> */
-    public function holdCall(int $tenantId, int $agentId, int $softphoneCallId): array
+    public function holdCall(int $tenantId, int $agentId, int $softphoneCallId, ?string $channelId = null): array
     {
+        $before = $this->calls->findById($softphoneCallId, $tenantId);
+        if ($before === null) {
+            throw new \RuntimeException('Call not found.');
+        }
+        $resolvedChannel = $this->resolveChannelId($tenantId, $before, $channelId);
+        if ($resolvedChannel !== null) {
+            ($this->pbxGateway ?? new AmiPbxCommandGateway())->ami()->holdChannel($resolvedChannel);
+        }
+
         $call = $this->calls->updateStatus($softphoneCallId, $tenantId, SoftphoneCallStatus::Held);
         if ($call === null) {
             throw new \RuntimeException('Call not found.');
@@ -210,14 +225,23 @@ final class CallControlEngine
             'tenant_id' => $tenantId,
             'agent_id' => $agentId,
             'call_id' => $call['call_id'],
-            'payload' => ['softphone_call_id' => $softphoneCallId],
+            'payload' => ['softphone_call_id' => $softphoneCallId, 'channel_id' => $resolvedChannel],
         ]);
         return $this->mediaSessions->publishState($tenantId, $agentId, $call);
     }
 
     /** @return array<string, mixed> */
-    public function resumeCall(int $tenantId, int $agentId, int $softphoneCallId): array
+    public function resumeCall(int $tenantId, int $agentId, int $softphoneCallId, ?string $channelId = null): array
     {
+        $before = $this->calls->findById($softphoneCallId, $tenantId);
+        if ($before === null) {
+            throw new \RuntimeException('Call not found.');
+        }
+        $resolvedChannel = $this->resolveChannelId($tenantId, $before, $channelId);
+        if ($resolvedChannel !== null) {
+            ($this->pbxGateway ?? new AmiPbxCommandGateway())->ami()->resumeChannel($resolvedChannel);
+        }
+
         $call = $this->calls->updateStatus($softphoneCallId, $tenantId, SoftphoneCallStatus::Connected);
         if ($call === null) {
             throw new \RuntimeException('Call not found.');
@@ -291,5 +315,29 @@ final class CallControlEngine
     public function shouldAutoAnswer(int $tenantId): bool
     {
         return $this->mediaSessions->tenantAutoAnswerEnabled($tenantId);
+    }
+
+    /** @param array<string, mixed> $call */
+    private function resolveChannelId(int $tenantId, array $call, ?string $explicit = null): ?string
+    {
+        if ($explicit !== null && $explicit !== '') {
+            return $explicit;
+        }
+        $raw = $this->calls->getStateJson((int) $call['id'], $tenantId);
+        if (!empty($raw['channel_id'])) {
+            return (string) $raw['channel_id'];
+        }
+        $linkedCallId = $call['call_id'] ?? null;
+        if ($linkedCallId !== null && (int) $linkedCallId > 0) {
+            $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->prepare(
+                'SELECT channel_id FROM rcc_calls WHERE id = :id AND tenant_id = :tid LIMIT 1'
+            );
+            $stmt->execute(['id' => (int) $linkedCallId, 'tid' => $tenantId]);
+            $ch = $stmt->fetchColumn();
+            if ($ch !== false && (string) $ch !== '') {
+                return (string) $ch;
+            }
+        }
+        return null;
     }
 }

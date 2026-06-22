@@ -157,7 +157,7 @@ final class SupervisorApiController
     private function reportAction(int $tenantId, array $input): array
     {
         $type = (string) ($input['type'] ?? 'agents');
-        $from = (string) ($input['from'] ?? gmdate('Y-m-d 00:00:00'));
+        $from = (string) ($input['from'] ?? gmdate('Y-m-d 00:00:00', strtotime('-7 days')));
         $to = (string) ($input['to'] ?? gmdate('Y-m-d 23:59:59'));
         $rows = match ($type) {
             'queues' => $this->reports->queuePerformance($tenantId, $from, $to),
@@ -167,6 +167,20 @@ final class SupervisorApiController
             'ai' => $this->reports->aiReport($tenantId, $from, $to),
             default => $this->reports->agentPerformance($tenantId, $from, $to),
         };
+
+        if (!empty($input['export'])) {
+            AuthContext::requirePermission('rcc.reports.export');
+            $filename = 'rcc-' . $type . '-' . gmdate('YmdHis') . '.csv';
+            $path = $this->reports->exportCsv($filename, $rows);
+            $base = rtrim(dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/api/v1/supervisor.php')), '/');
+            return $this->ok([
+                'type' => $type,
+                'export' => basename($path),
+                'download_url' => $base . '/report-download.php?download=' . rawurlencode(basename($path)),
+                'rows' => count($rows),
+            ]);
+        }
+
         return $this->ok(['type' => $type, 'rows' => $rows, 'count' => count($rows)]);
     }
 

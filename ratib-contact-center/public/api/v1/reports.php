@@ -32,8 +32,16 @@ try {
 
     if ($export) {
         AuthContext::requirePermission('rcc.reports.export');
-        $path = $service->exportCsv('rcc-' . $type . '-' . gmdate('YmdHis') . '.csv', $rows);
-        echo json_encode(['ok' => true, 'export' => basename($path), 'rows' => count($rows)], JSON_UNESCAPED_UNICODE);
+        $filename = 'rcc-' . $type . '-' . gmdate('YmdHis') . '.csv';
+        $path = $service->exportCsv($filename, $rows);
+        $base = rtrim(dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/api/v1/reports.php')), '/');
+        $downloadUrl = $base . '/report-download.php?download=' . rawurlencode(basename($path));
+        echo json_encode([
+            'ok' => true,
+            'export' => basename($path),
+            'download_url' => $downloadUrl,
+            'rows' => count($rows),
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 

@@ -592,7 +592,7 @@ function control_contact_center_verify_schema(): array
         'rcc_conversations', 'rcc_conversation_messages', 'rcc_ai_context', 'rcc_tickets',
         'rcc_pbx_servers', 'rcc_ops_checklist_steps', 'rcc_ops_checklist_status',
         'rcc_wfm_shifts', 'rcc_wfm_shift_assignments', 'rcc_wfm_attendance', 'rcc_wfm_breaks',
-        'rcc_supervisor_alerts', 'rcc_supervisor_alert_rules',
+        'rcc_supervisor_alerts', 'rcc_supervisor_alert_rules', 'rcc_audit_logs',
     ];
     $missing = [];
     try {

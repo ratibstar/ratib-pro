@@ -23,7 +23,7 @@ if ($route === '') {
 
 $allowedRoutes = [
     'dashboard', 'wallboard', 'queues', 'agents', 'sla', 'wfm',
-    'shifts', 'attendance', 'breaks', 'occupancy', 'adherence', 'alerts',
+    'shifts', 'attendance', 'breaks', 'occupancy', 'adherence', 'alerts', 'reports',
 ];
 if (!in_array($route, $allowedRoutes, true)) {
     $route = 'dashboard';

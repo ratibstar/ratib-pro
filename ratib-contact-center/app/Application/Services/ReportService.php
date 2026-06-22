@@ -103,7 +103,7 @@ final class ReportService
     /** @param list<array<string, mixed>> $rows */
     public function exportCsv(string $filename, array $rows): string
     {
-        $dir = dirname(__DIR__, 2) . '/storage/exports';
+        $dir = dirname(__DIR__, 3) . '/storage/exports';
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }

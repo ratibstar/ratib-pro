@@ -101,6 +101,21 @@
         });
     };
 
+    RccSupervisorCenter.prototype.fetchAgents = function () {
+        return this.api('agent_monitor').then(function (res) {
+            return (res && res.ok ? res.agents : []) || [];
+        });
+    };
+
+    RccSupervisorCenter.prototype.agentSelectHtml = function (agents, name, selectedId) {
+        var html = '<label>Agent <select name="' + esc(name) + '">';
+        (agents || []).forEach(function (a) {
+            html += '<option value="' + esc(a.id) + '"' + (parseInt(a.id, 10) === parseInt(selectedId, 10) ? ' selected' : '') + '>' + esc(a.display_name) + ' (' + esc(a.extension) + ')</option>';
+        });
+        html += '</select></label>';
+        return html;
+    };
+
     RccSupervisorCenter.prototype.renderPanel = function () {
         var fn = {
             dashboard: this.renderDashboard,
@@ -114,7 +129,8 @@
             breaks: this.renderBreaks,
             occupancy: this.renderOccupancy,
             adherence: this.renderAdherence,
-            alerts: this.renderAlerts
+            alerts: this.renderAlerts,
+            reports: this.renderReports
         }[this.route];
         if (fn) fn.call(this);
     };
@@ -227,14 +243,30 @@
 
     RccSupervisorCenter.prototype.renderShifts = function () {
         var self = this;
-        Promise.all([self.api('shift_list'), self.api('shift_assignments', { from: new Date().toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) })]).then(function (arr) {
+        var today = new Date().toISOString().slice(0, 10);
+        Promise.all([
+            self.api('shift_list'),
+            self.api('shift_assignments', { from: today, to: today }),
+            self.fetchAgents()
+        ]).then(function (arr) {
             var shifts = arr[0];
             var assigns = arr[1];
+            var agents = arr[2];
             if (!shifts.ok) { self.panel.innerHTML = '<p>' + esc(shifts.error) + '</p>'; return; }
             var html = '<h3>Shift Planner</h3><form id="rcc-sup-shift-form" class="rcc-sup__form">';
             html += '<label>Code <input name="code" required></label><label>Name <input name="name" required></label>';
             html += '<label>Start <input name="start_time" type="time" value="09:00"></label><label>End <input name="end_time" type="time" value="17:00"></label>';
-            html += '<button type="submit" class="rcc-sup__btn">Save shift</button></form><h4>Shifts</h4><ul>';
+            html += '<button type="submit" class="rcc-sup__btn">Save shift</button></form>';
+            html += '<h4>Assign shift</h4><form id="rcc-sup-assign-form" class="rcc-sup__form">';
+            html += '<label>Date <input name="work_date" type="date" value="' + esc(today) + '"></label>';
+            html += '<label>Shift <select name="shift_id">';
+            (shifts.shifts || []).forEach(function (s) {
+                html += '<option value="' + esc(s.id) + '">' + esc(s.code) + ' ' + esc(s.name) + '</option>';
+            });
+            html += '</select></label>';
+            html += self.agentSelectHtml(agents, 'agent_id');
+            html += '<button type="submit" class="rcc-sup__btn">Assign</button></form>';
+            html += '<h4>Shifts</h4><ul>';
             (shifts.shifts || []).forEach(function (s) {
                 html += '<li>' + esc(s.code) + ' ' + esc(s.name) + ' (' + esc(s.start_time) + '–' + esc(s.end_time) + ')</li>';
             });
@@ -256,34 +288,91 @@
                     if (r.ok) self.renderShifts();
                 });
             };
+            document.getElementById('rcc-sup-assign-form').onsubmit = function (ev) {
+                ev.preventDefault();
+                var fd = new FormData(ev.target);
+                var body = {};
+                fd.forEach(function (v, k) { body[k] = v; });
+                self.api('shift_assign', body).then(function (r) {
+                    self.setStatus(r.ok ? 'Assigned' : r.error, r.ok ? 'ok' : 'error');
+                    if (r.ok) self.renderShifts();
+                });
+            };
         });
     };
 
     RccSupervisorCenter.prototype.renderAttendance = function () {
         var self = this;
         var today = new Date().toISOString().slice(0, 10);
-        self.api('attendance_list', { work_date: today }).then(function (res) {
+        Promise.all([self.api('attendance_list', { work_date: today }), self.fetchAgents()]).then(function (arr) {
+            var res = arr[0];
+            var agents = arr[1];
             if (!res.ok) { self.panel.innerHTML = '<p>' + esc(res.error) + '</p>'; return; }
-            var html = '<h3>Attendance — ' + esc(today) + '</h3><table class="rcc-sup__table"><thead><tr><th>Agent</th><th>Status</th><th>In</th><th>Out</th></tr></thead><tbody>';
+            var html = '<h3>Attendance — ' + esc(today) + '</h3>';
+            html += '<form id="rcc-sup-att-form" class="rcc-sup__form">';
+            html += self.agentSelectHtml(agents, 'agent_id');
+            html += '<button type="button" class="rcc-sup__btn" data-att="in">Clock in</button>';
+            html += '<button type="button" class="rcc-sup__btn" data-att="out">Clock out</button>';
+            html += '</form>';
+            html += '<table class="rcc-sup__table"><thead><tr><th>Agent</th><th>Status</th><th>In</th><th>Out</th></tr></thead><tbody>';
             (res.records || []).forEach(function (r) {
                 html += '<tr><td>' + esc(r.display_name) + '</td><td>' + esc(r.status) + '</td><td>' + esc(r.clock_in || '—') + '</td><td>' + esc(r.clock_out || '—') + '</td></tr>';
             });
             html += '</tbody></table>';
             self.panel.innerHTML = html;
+            self.panel.querySelector('[data-att="in"]').onclick = function () {
+                var agentId = parseInt(self.panel.querySelector('[name="agent_id"]').value, 10);
+                self.api('attendance_clock_in', { agent_id: agentId }).then(function (r) {
+                    self.setStatus(r.ok ? 'Clocked in' : r.error, r.ok ? 'ok' : 'error');
+                    if (r.ok) self.renderAttendance();
+                });
+            };
+            self.panel.querySelector('[data-att="out"]').onclick = function () {
+                var agentId = parseInt(self.panel.querySelector('[name="agent_id"]').value, 10);
+                self.api('attendance_clock_out', { agent_id: agentId }).then(function (r) {
+                    self.setStatus(r.ok ? 'Clocked out' : r.error, r.ok ? 'ok' : 'error');
+                    if (r.ok) self.renderAttendance();
+                });
+            };
         });
     };
 
     RccSupervisorCenter.prototype.renderBreaks = function () {
         var self = this;
-        self.api('break_list').then(function (res) {
+        Promise.all([self.api('break_list'), self.fetchAgents()]).then(function (arr) {
+            var res = arr[0];
+            var agents = arr[1];
             if (!res.ok) { self.panel.innerHTML = '<p>' + esc(res.error) + '</p>'; return; }
-            var html = '<h3>Active Breaks</h3><ul>';
+            var html = '<h3>Break Management</h3>';
+            html += '<form id="rcc-sup-break-form" class="rcc-sup__form">';
+            html += self.agentSelectHtml(agents, 'agent_id');
+            html += '<label>Type <select name="break_type"><option value="lunch">Lunch</option><option value="short">Short</option><option value="other">Other</option></select></label>';
+            html += '<label>Reason <input name="reason" placeholder="optional"></label>';
+            html += '<button type="button" class="rcc-sup__btn" data-break="start">Start break</button>';
+            html += '<button type="button" class="rcc-sup__btn" data-break="end">End break</button>';
+            html += '</form><h4>Active breaks</h4><ul>';
             (res.breaks || []).forEach(function (b) {
                 html += '<li>' + esc(b.display_name) + ' — ' + esc(b.break_type) + ' since ' + esc(b.started_at) + '</li>';
             });
             if (!(res.breaks || []).length) html += '<li class="muted">No active breaks</li>';
             html += '</ul>';
             self.panel.innerHTML = html;
+            self.panel.querySelector('[data-break="start"]').onclick = function () {
+                var fd = new FormData(self.panel.querySelector('#rcc-sup-break-form'));
+                var body = {};
+                fd.forEach(function (v, k) { body[k] = v; });
+                self.api('break_start', body).then(function (r) {
+                    self.setStatus(r.ok ? 'Break started' : r.error, r.ok ? 'ok' : 'error');
+                    if (r.ok) self.renderBreaks();
+                });
+            };
+            self.panel.querySelector('[data-break="end"]').onclick = function () {
+                var agentId = parseInt(self.panel.querySelector('[name="agent_id"]').value, 10);
+                self.api('break_end', { agent_id: agentId }).then(function (r) {
+                    self.setStatus(r.ok ? 'Break ended' : r.error, r.ok ? 'ok' : 'error');
+                    if (r.ok) self.renderBreaks();
+                });
+            };
         });
     };
 
@@ -315,7 +404,9 @@
 
     RccSupervisorCenter.prototype.renderAlerts = function () {
         var self = this;
-        self.api('alert_list').then(function (res) {
+        Promise.all([self.api('alert_list'), self.api('alert_rules_list')]).then(function (arr) {
+            var res = arr[0];
+            var rulesRes = arr[1];
             if (!res.ok) { self.panel.innerHTML = '<p>' + esc(res.error) + '</p>'; return; }
             var html = '<h3>Supervisor Alerts</h3><ul class="rcc-sup__alerts">';
             (res.alerts || []).forEach(function (a) {
@@ -324,6 +415,17 @@
             });
             if (!(res.alerts || []).length) html += '<li class="muted">No open alerts</li>';
             html += '</ul>';
+            html += '<h4>Alert rules</h4><table class="rcc-sup__table"><thead><tr><th>Rule</th><th>Enabled</th><th>Config</th><th></th></tr></thead><tbody>';
+            ((rulesRes.ok ? rulesRes.rules : []) || []).forEach(function (rule) {
+                var cfg = rule.config_json || '';
+                if (typeof cfg === 'object') cfg = JSON.stringify(cfg);
+                html += '<tr data-rule-key="' + esc(rule.rule_key) + '">';
+                html += '<td>' + esc(rule.rule_key) + '</td>';
+                html += '<td><input type="checkbox" class="rcc-sup-rule-en"' + (parseInt(rule.is_enabled, 10) ? ' checked' : '') + '></td>';
+                html += '<td><input type="text" class="rcc-sup-rule-cfg" value="' + esc(cfg) + '" style="width:100%"></td>';
+                html += '<td><button type="button" class="rcc-sup__btn-sm rcc-sup-rule-save">Save</button></td></tr>';
+            });
+            html += '</tbody></table>';
             self.panel.innerHTML = html;
             self.panel.querySelectorAll('[data-ack]').forEach(function (btn) {
                 btn.onclick = function () {
@@ -332,7 +434,66 @@
                     });
                 };
             });
+            self.panel.querySelectorAll('.rcc-sup-rule-save').forEach(function (btn) {
+                btn.onclick = function () {
+                    var row = btn.closest('tr');
+                    var ruleKey = row.getAttribute('data-rule-key');
+                    var enabled = row.querySelector('.rcc-sup-rule-en').checked;
+                    var cfgText = row.querySelector('.rcc-sup-rule-cfg').value || '{}';
+                    var cfg = {};
+                    try { cfg = JSON.parse(cfgText); } catch (e) { self.setStatus('Invalid JSON config', 'error'); return; }
+                    self.api('alert_rules_save', { rule_key: ruleKey, is_enabled: enabled ? 1 : 0, config: cfg }).then(function (r) {
+                        self.setStatus(r.ok ? 'Rule saved' : r.error, r.ok ? 'ok' : 'error');
+                    });
+                };
+            });
         });
+    };
+
+    RccSupervisorCenter.prototype.renderReports = function () {
+        var self = this;
+        var from = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10) + ' 00:00:00';
+        var to = new Date().toISOString().slice(0, 10) + ' 23:59:59';
+        var html = '<h3>Supervisor Reports</h3><form id="rcc-sup-report-form" class="rcc-sup__form">';
+        html += '<label>Type <select name="type"><option value="agents">Agents</option><option value="queues">Queues</option><option value="sla">SLA</option><option value="calls">Calls</option><option value="conversations">Conversations</option><option value="ai">AI</option></select></label>';
+        html += '<label>From <input name="from" type="datetime-local" value="' + esc(from.replace(' ', 'T').slice(0, 16)) + '"></label>';
+        html += '<label>To <input name="to" type="datetime-local" value="' + esc(to.replace(' ', 'T').slice(0, 16)) + '"></label>';
+        html += '<button type="button" class="rcc-sup__btn" data-report="view">Run report</button>';
+        html += '<button type="button" class="rcc-sup__btn" data-report="export">Export CSV</button>';
+        html += '</form><div id="rcc-sup-report-out"></div>';
+        self.panel.innerHTML = html;
+        function runReport(exportCsv) {
+            var fd = new FormData(self.panel.querySelector('#rcc-sup-report-form'));
+            var body = {};
+            fd.forEach(function (v, k) { body[k] = v; });
+            body.from = (body.from || '').replace('T', ' ') + ':00';
+            body.to = (body.to || '').replace('T', ' ') + ':59';
+            if (exportCsv) body.export = 1;
+            self.api('report', body).then(function (r) {
+                var out = document.getElementById('rcc-sup-report-out');
+                if (!r.ok) { out.innerHTML = '<p>' + esc(r.error) + '</p>'; return; }
+                if (r.download_url) {
+                    out.innerHTML = '<p>Exported ' + esc(r.rows) + ' rows. <a href="' + esc(r.download_url) + '" target="_blank" rel="noopener">Download CSV</a></p>';
+                    return;
+                }
+                var rows = r.rows || [];
+                if (!rows.length) { out.innerHTML = '<p class="muted">No rows</p>'; return; }
+                var keys = Object.keys(rows[0]);
+                var tbl = '<table class="rcc-sup__table"><thead><tr>';
+                keys.forEach(function (k) { tbl += '<th>' + esc(k) + '</th>'; });
+                tbl += '</tr></thead><tbody>';
+                rows.slice(0, 100).forEach(function (row) {
+                    tbl += '<tr>';
+                    keys.forEach(function (k) { tbl += '<td>' + esc(row[k]) + '</td>'; });
+                    tbl += '</tr>';
+                });
+                tbl += '</tbody></table>';
+                if (rows.length > 100) tbl += '<p class="muted">Showing first 100 of ' + rows.length + '</p>';
+                out.innerHTML = tbl;
+            });
+        }
+        self.panel.querySelector('[data-report="view"]').onclick = function () { runReport(false); };
+        self.panel.querySelector('[data-report="export"]').onclick = function () { runReport(true); };
     };
 
     function boot() {

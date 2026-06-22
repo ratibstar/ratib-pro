@@ -29,6 +29,7 @@ $routes = [
     'occupancy' => ['icon' => 'fa-chart-pie', 'label' => 'Occupancy', 'label_ar' => 'الإشغال'],
     'adherence' => ['icon' => 'fa-check-double', 'label' => 'Adherence', 'label_ar' => 'الالتزام'],
     'alerts' => ['icon' => 'fa-bell', 'label' => 'Alerts', 'label_ar' => 'التنبيهات'],
+    'reports' => ['icon' => 'fa-file-csv', 'label' => 'Reports', 'label_ar' => 'التقارير'],
 ];
 $isAr = function_exists('cp_locale') && cp_locale() === 'ar';
 ?>

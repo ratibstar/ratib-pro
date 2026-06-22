@@ -84,6 +84,36 @@ final class SoftphoneCallRepository
         return $this->findById($id, $tenantId);
     }
 
+    /** @return array<string, mixed> */
+    public function getStateJson(int $id, int $tenantId): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT state_json FROM rcc_softphone_calls WHERE id = :id AND tenant_id = :tid LIMIT 1'
+        );
+        $stmt->execute(['id' => $id, 'tid' => $tenantId]);
+        $raw = $stmt->fetchColumn();
+        if ($raw === false || $raw === null || $raw === '') {
+            return [];
+        }
+        $decoded = json_decode((string) $raw, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /** @param array<string, mixed> $patch */
+    public function mergeStateJson(int $id, int $tenantId, array $patch): void
+    {
+        $current = $this->getStateJson($id, $tenantId);
+        $merged = array_merge($current, $patch);
+        $stmt = Database::connection()->prepare(
+            'UPDATE rcc_softphone_calls SET state_json = :json WHERE id = :id AND tenant_id = :tid'
+        );
+        $stmt->execute([
+            'json' => json_encode($merged, JSON_UNESCAPED_UNICODE),
+            'id' => $id,
+            'tid' => $tenantId,
+        ]);
+    }
+
     /** @param array<string, mixed> $row */
     private function mapRow(array $row): array
     {

@@ -82,10 +82,20 @@ final class SoftphoneApiController
                     );
                     break;
                 case 'hold':
-                    $result = $this->engine->holdCall($tenantId, $agentId, (int) ($body['softphone_call_id'] ?? 0));
+                    $result = $this->engine->holdCall(
+                        $tenantId,
+                        $agentId,
+                        (int) ($body['softphone_call_id'] ?? 0),
+                        isset($body['channel_id']) ? (string) $body['channel_id'] : null
+                    );
                     break;
                 case 'resume':
-                    $result = $this->engine->resumeCall($tenantId, $agentId, (int) ($body['softphone_call_id'] ?? 0));
+                    $result = $this->engine->resumeCall(
+                        $tenantId,
+                        $agentId,
+                        (int) ($body['softphone_call_id'] ?? 0),
+                        isset($body['channel_id']) ? (string) $body['channel_id'] : null
+                    );
                     break;
                 case 'hangup':
                     $result = $this->engine->hangup($tenantId, $agentId, (int) ($body['softphone_call_id'] ?? 0));

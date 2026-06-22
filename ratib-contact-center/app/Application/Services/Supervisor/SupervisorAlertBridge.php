@@ -40,14 +40,16 @@ final class SupervisorAlertBridge implements EventSubscriberInterface
                 'source_event' => EventType::SLA_ALERT,
                 'queue_id' => $event->queueId,
                 'payload' => $payload,
-            ]);
+            ], 'sla_red');
         }
 
         if ($event->type === EventType::QUEUE_SNAPSHOT) {
             $p = $event->payload;
             $waiting = (int) ($p['waiting_count'] ?? 0);
             $available = (int) ($p['available_agents'] ?? 0);
-            if ($waiting > 0 && $available === 0) {
+            $cfg = $this->alerts->ruleConfig($event->tenantId, 'queue_no_agents');
+            $minWaiting = (int) ($cfg['min_waiting'] ?? 1);
+            if ($waiting >= $minWaiting && $available === 0) {
                 $this->alerts->raise($event->tenantId, [
                     'alert_type' => 'queue_no_agents',
                     'severity' => 'warning',
@@ -57,8 +59,12 @@ final class SupervisorAlertBridge implements EventSubscriberInterface
                     'source_event' => EventType::QUEUE_SNAPSHOT,
                     'queue_id' => $event->queueId,
                     'payload' => $p,
-                ]);
+                ], 'queue_no_agents');
             }
+        }
+
+        if ($event->type === EventType::SUPERVISOR_BREAK_STARTED) {
+            $this->alerts->evaluateLongBreaks($event->tenantId);
         }
     }
 }

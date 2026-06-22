@@ -78,7 +78,7 @@ final class OpsChecklistService
             'health_center' => ($this->diagnostics->healthCenter($tenantId)['percent'] ?? 0) >= 70,
             'diag_ami' => (bool) ($this->diagnostics->diagAmi($tenantId)['ok'] ?? false),
             'sip_list' => count($this->provisioning->listSipExtensions($tenantId)) > 0,
-            'queue_list' => count($this->provisioning->listQueues($tenantId)) > 0,
+            'queue_list' => $this->provisioning->hasQueueWithMembers($tenantId),
             'ivr_flows_list' => count($this->provisioning->listIvrFlows($tenantId)) > 0,
             'agent_list' => count($this->provisioning->listAgents($tenantId)) > 0,
             'hub_status' => (bool) ($this->diagnostics->diagHub()['running'] ?? false),
