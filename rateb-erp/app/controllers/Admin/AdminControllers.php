@@ -1526,6 +1526,7 @@ final class SettingsController extends Controller
             'mailCfg' => $mailCfg,
             'mailPassSet' => $mailCfg['pass'] !== '',
             'mailReady' => $mailSvc->isReady(),
+            'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
             'testEmailDefault' => trim((string) ($user['email'] ?? 'info@rateb.sa')) ?: 'info@rateb.sa',
         ], 'main');
     }
@@ -1564,7 +1565,7 @@ final class SettingsController extends Controller
             Response::redirect(rateb_url('admin/settings'));
         }
         $model = new \Rateb\App\Models\SystemSetting();
-        $host = trim((string) $this->input('smtp_host', 'localhost'));
+        $host = trim((string) $this->input('smtp_host', 'mail.rateb.sa'));
         $port = trim((string) $this->input('smtp_port', '587'));
         $encryption = strtolower(trim((string) $this->input('smtp_encryption', 'tls')));
         if (!ctype_digit($port)) {
@@ -1575,7 +1576,7 @@ final class SettingsController extends Controller
             $encryption = 'tls';
         }
         $pairs = [
-            'smtp_host' => $host !== '' ? $host : 'localhost',
+            'smtp_host' => $host !== '' ? $host : 'mail.rateb.sa',
             'smtp_port' => $port,
             'smtp_encryption' => $encryption,
             'smtp_user' => trim((string) $this->input('smtp_user', 'info@rateb.sa')),
@@ -1627,7 +1628,9 @@ final class SettingsController extends Controller
         );
         $sent = (bool) ($result['success'] ?? false);
         $failMsg = (string) ($result['error'] ?? __('mail_test_failed'));
-        SessionManager::flash($sent ? 'success' : 'error', $sent ? __('mail_test_ok', ['email' => $to]) : $failMsg);
+        SessionManager::flash($sent ? 'success' : 'error', $sent
+            ? __('mail_test_ok', ['email' => $to, 'host' => (string) ($result['smtp_host'] ?? $mail->lastSmtpHost() ?? 'mail.rateb.sa')])
+            : $failMsg);
         Response::redirect(rateb_url('admin/settings'));
     }
 

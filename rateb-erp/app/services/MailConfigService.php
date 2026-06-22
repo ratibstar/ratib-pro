@@ -26,7 +26,7 @@ final class MailConfigService
         $this->bootstrapMailEnvFromDotenvFile();
         $settings = new SystemSetting();
         $this->repairSwappedSmtpInDb($settings);
-        $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'localhost');
+        $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'mail.rateb.sa');
         $port = (int) $this->envOrSetting('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587');
         $encryption = strtolower($this->envOrSetting('RATEB_ERP_SMTP_ENCRYPTION', 'smtp_encryption', $settings, 'tls'));
         if (!in_array($encryption, ['tls', 'ssl', 'none'], true)) {
@@ -46,6 +46,11 @@ final class MailConfigService
             'from_email' => trim($fromEmail),
             'from_name' => trim($fromName),
         ];
+    }
+
+    public function isLocalRelayHost(string $host): bool
+    {
+        return in_array(strtolower(trim($host)), ['localhost', '127.0.0.1', '::1'], true);
     }
 
     public function isReady(): bool

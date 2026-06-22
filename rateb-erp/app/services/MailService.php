@@ -9,6 +9,12 @@ final class MailService
 {
     private ?string $lastErrorCode = null;
     private ?string $lastError = null;
+    private ?string $lastSmtpHost = null;
+
+    public function lastSmtpHost(): ?string
+    {
+        return $this->lastSmtpHost;
+    }
 
     public function lastError(): ?string
     {
@@ -20,11 +26,12 @@ final class MailService
         return $this->lastErrorCode;
     }
 
-    /** @return array{success:bool,error_code:?string,error:?string} */
+    /** @return array{success:bool,error_code:?string,error:?string,smtp_host:?string} */
     public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): array
     {
         $this->lastError = null;
         $this->lastErrorCode = null;
+        $this->lastSmtpHost = null;
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = $cfg['from_email'] !== '' ? $cfg['from_email'] : 'info@rateb.sa';
         $fromName = $cfg['from_name'] !== '' ? $cfg['from_name'] : 'Rateb ERP';
@@ -56,6 +63,7 @@ final class MailService
             );
             if ($ok) {
                 $sent = true;
+                $this->lastSmtpHost = $profile['host'];
                 break;
             }
             if ($primaryError === null) {
@@ -66,9 +74,14 @@ final class MailService
         if (!$sent && $primaryError !== null) {
             $this->lastError = $primaryError;
         }
+        if (!$sent && $this->isExternalRecipient($to, $fromEmail) && ($this->lastErrorCode === null || $this->lastErrorCode === 'smtp_connect')) {
+            $this->setError('smtp_external_relay', __('mail_error_external_relay'));
+        }
 
         (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
-        if (!$sent) {
+        if ($sent) {
+            Logger::info('Email sent', ['to' => $to, 'subject' => $subject, 'smtp_host' => $this->lastSmtpHost]);
+        } elseif (!$sent) {
             Logger::warning('Email send failed', [
                 'to' => $to,
                 'subject' => $subject,
@@ -81,6 +94,7 @@ final class MailService
             'success' => $sent,
             'error_code' => $this->lastErrorCode,
             'error' => $this->lastError,
+            'smtp_host' => $this->lastSmtpHost,
         ];
     }
 
@@ -131,8 +145,11 @@ final class MailService
         $loopback = ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'];
 
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
-            // External (any provider): prefer authenticated relay, not localhost-only.
-            $candidates = [$mailHost, $primary, $localhost, $loopback];
+            // External: only authenticated relay — localhost accepts mail but often won't deliver out.
+            $candidates = [$mailHost];
+            if (!$this->isLoopbackHost($primary['host'])) {
+                $candidates[] = $primary;
+            }
         } else {
             $candidates = [$primary, $localhost, $loopback, $mailHost];
         }
@@ -148,6 +165,11 @@ final class MailService
             $seen[] = $key;
         }
         return $profiles;
+    }
+
+    private function isLoopbackHost(string $host): bool
+    {
+        return in_array(strtolower(trim($host)), ['localhost', '127.0.0.1', '::1'], true);
     }
 
     private function isExternalRecipient(string $to, string $fromEmail): bool
@@ -284,9 +306,6 @@ final class MailService
         $headers .= 'To: <' . $to . ">\r\n";
         if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
             $headers .= 'Cc: <' . $cc . ">\r\n";
-        }
-        if ($bcc !== null && $bcc !== '' && \Rateb\App\Helpers\Str::isValidEmail($bcc) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
-            $headers .= 'Bcc: <' . $bcc . ">\r\n";
         }
         $headers .= 'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail) . "\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";

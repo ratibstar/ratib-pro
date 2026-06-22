@@ -5,6 +5,8 @@
 $mailCfg = $mailCfg ?? [];
 $mailReady = !empty($mailReady);
 $mailPassSet = !empty($mailPassSet);
+/** @var bool $mailLocalhost */
+$mailLocalhost = !empty($mailLocalhost);
 ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -22,7 +24,7 @@ $mailPassSet = !empty($mailPassSet);
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
                 <label class="form-label small"><?php echo __('mail_smtp_host'); ?></label>
-                <input class="form-control form-control-sm" name="smtp_host" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? 'localhost')); ?>">
+                <input class="form-control form-control-sm" name="smtp_host" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? 'mail.rateb.sa')); ?>">
             </div>
             <div class="col-md-2">
                 <label class="form-label small"><?php echo __('mail_smtp_port'); ?></label>
@@ -57,6 +59,9 @@ $mailPassSet = !empty($mailPassSet);
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> <?php echo __('mail_save_settings'); ?></button>
             </div>
         </form>
+        <?php if ($mailLocalhost) { ?>
+        <p class="text-danger small mb-2"><?php echo __('mail_localhost_warning'); ?></p>
+        <?php } ?>
         <form method="post" action="<?php echo rateb_url('admin/settings/test-mail'); ?>" class="row g-2 align-items-end border-top pt-3">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-6">
