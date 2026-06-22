@@ -190,11 +190,11 @@ final class SupplierCommService
     }
 
     /** @param array<string, mixed> $data */
-    public function sendViaChannel(array $data): array
+    public function sendViaChannel(array $data, ?string $ccEmail = null, ?string $replyTo = null): array
     {
         $channel = (string) ($data['channel'] ?? '');
-        if ($channel === 'email') {
-            return $this->sendEmail($data);
+        if ($channel === 'email' || trim((string) ($data['supplier_email'] ?? '')) !== '') {
+            return $this->sendEmail($data, $ccEmail, $replyTo);
         }
         if ($channel === 'sms' && trim((string) ($data['supplier_phone'] ?? '')) !== '') {
             return ['success' => true, 'status' => 'mailto', 'message' => __('comm_sms_queued')];
@@ -203,22 +203,41 @@ final class SupplierCommService
     }
 
     /** @param array<string, mixed> $data */
-    private function sendEmail(array $data): array
+    public function sendEmail(array $data, ?string $ccEmail = null, ?string $replyTo = null): array
     {
         $email = trim((string) ($data['supplier_email'] ?? ''));
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
+        }
+        $mail = new MailService();
+        if (!$mail->isSmtpConfigured()) {
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'message' => __('comm_email_smtp_required'),
+                'recipient' => $email,
+            ];
         }
         $subject = trim((string) ($data['subject'] ?? ''));
         $bodyText = trim((string) ($data['body'] ?? ''));
         $html = '<div dir="auto" style="font-family:Tajawal,sans-serif;line-height:1.6">'
             . nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'))
             . '</div>';
-        $sent = (new MailService())->send($email, $subject !== '' ? $subject : __('supplier_comms'), $html);
+        $cc = null;
+        if ($ccEmail !== null && $ccEmail !== '' && filter_var($ccEmail, FILTER_VALIDATE_EMAIL) && strcasecmp($ccEmail, $email) !== 0) {
+            $cc = $ccEmail;
+        }
+        $reply = ($replyTo !== null && $replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) ? $replyTo : null;
+        $sent = $mail->send($email, $subject !== '' ? $subject : __('supplier_comms'), $html, null, true, $reply, $cc);
+        $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) : __('comm_email_failed');
+        if ($sent && $cc !== null) {
+            $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
+        }
         return [
             'success' => $sent,
             'status' => $sent ? 'sent' : 'failed',
-            'message' => $sent ? __('comm_email_sent') : __('comm_email_failed'),
+            'message' => $msg,
+            'recipient' => $email,
         ];
     }
 

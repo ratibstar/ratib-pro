@@ -4,34 +4,33 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Models\EmailTemplate;
-use Rateb\App\Models\SystemSetting;
 
 final class MailService
 {
-    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true): bool
+    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null): bool
     {
-        $settings = new SystemSetting();
-        $fromEmail = $settings->get('smtp_from_email', 'noreply@rateb.sa');
-        $fromName = $settings->get('smtp_from_name', 'RTAB ERP');
-        $host = trim((string) $settings->get('smtp_host', ''));
+        $cfg = (new MailConfigService())->resolve();
+        $fromEmail = $cfg['from_email'] !== '' ? $cfg['from_email'] : 'info@rateb.sa';
+        $fromName = $cfg['from_name'] !== '' ? $cfg['from_name'] : 'Rateb ERP';
+        $host = $cfg['host'];
 
-        if ($host === '') {
-            return $this->sendPhpMail((string) $fromEmail, (string) $fromName, $to, $subject, $htmlBody, $recordQueue);
+        if ($host === '' || $cfg['pass'] === '') {
+            return $this->sendPhpMail($fromEmail, $fromName, $to, $subject, $htmlBody, $recordQueue, $replyTo, $cc);
         }
 
-        $port = (int) ($settings->get('smtp_port', '587') ?: 587);
-        $encryption = AutomationSettings::smtpEncryption();
         $sent = $this->sendSmtp(
             $host,
-            $port,
-            $encryption,
-            (string) $settings->get('smtp_user', ''),
-            (string) $settings->get('smtp_pass', ''),
-            (string) $fromEmail,
-            (string) $fromName,
+            $cfg['port'],
+            $cfg['encryption'],
+            $cfg['user'],
+            $cfg['pass'],
+            $fromEmail,
+            $fromName,
             $to,
             $subject,
-            $htmlBody
+            $htmlBody,
+            $replyTo,
+            $cc
         );
 
         if ($recordQueue) {
@@ -43,7 +42,11 @@ final class MailService
         return $sent;
     }
 
-    /** Queue for async delivery by cron worker. */
+    public function isSmtpConfigured(): bool
+    {
+        return (new MailConfigService())->isReady();
+    }
+
     public function queue(string $to, string $subject, string $htmlBody): bool
     {
         (new NotificationService())->queueEmail($to, $subject, $htmlBody, 'pending');
@@ -69,15 +72,18 @@ final class MailService
         return $this->sendTemplate($to, $slug, $vars, true);
     }
 
-    private function sendPhpMail(string $fromEmail, string $fromName, string $to, string $subject, string $htmlBody, bool $recordQueue): bool
+    private function sendPhpMail(string $fromEmail, string $fromName, string $to, string $subject, string $htmlBody, bool $recordQueue, ?string $replyTo = null, ?string $cc = null): bool
     {
         $headers = [
             'MIME-Version: 1.0',
             'Content-type: text/html; charset=UTF-8',
             'From: ' . $this->encodeAddress($fromName, $fromEmail),
-            'Reply-To: ' . $fromEmail,
+            'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail),
             'X-Mailer: RTAB-ERP',
         ];
+        if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
+            $headers[] = 'Cc: ' . $cc;
+        }
         $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $htmlBody, implode("\r\n", $headers));
         if ($recordQueue) {
             (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
@@ -85,7 +91,7 @@ final class MailService
         return (bool) $sent;
     }
 
-    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body): bool
+    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null): bool
     {
         $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
         $fp = @stream_socket_client($remote, $errno, $errstr, 20);
@@ -143,10 +149,18 @@ final class MailService
         $read();
         $write('RCPT TO:<' . $to . '>');
         $read();
+        if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
+            $write('RCPT TO:<' . $cc . '>');
+            $read();
+        }
         $write('DATA');
         $read();
         $headers = 'From: ' . $this->encodeAddress($fromName, $fromEmail) . "\r\n";
         $headers .= 'To: <' . $to . ">\r\n";
+        if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
+            $headers .= 'Cc: <' . $cc . ">\r\n";
+        }
+        $headers .= 'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail) . "\r\n";
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
         $headers .= "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n";
         $write($headers . $body . "\r\n.");

@@ -1651,15 +1651,21 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     {
         $companyId = (int) ($data['company_id'] ?? rateb_resolve_ops_company_id());
         $channel = (string) ($data['channel'] ?? '');
-        if ($channel === 'email') {
-            $result = $svc->sendViaChannel($data);
+        $supplierEmail = trim((string) ($data['supplier_email'] ?? ''));
+        $hasEmail = $supplierEmail !== '' && filter_var($supplierEmail, FILTER_VALIDATE_EMAIL);
+        $user = \Rateb\App\Core\Auth::user();
+        $userEmail = trim((string) ($user['email'] ?? ''));
+
+        if ($hasEmail) {
+            $result = $svc->sendViaChannel($data, $userEmail, $userEmail);
             $status = (string) ($result['status'] ?? 'failed');
             $this->model->update($commId, [
                 'send_status' => $status,
                 'sent_at' => $status === 'sent' ? date('Y-m-d H:i:s') : null,
             ]);
             $msg = (string) ($result['message'] ?? '');
-            $svc->logTimeline($commId, $companyId, 'email_send', $msg, (string) ($data['subject'] ?? ''));
+            $recipient = (string) ($result['recipient'] ?? $supplierEmail);
+            $svc->logTimeline($commId, $companyId, 'email_send', $msg, $recipient);
             if ($result['success'] ?? false) {
                 SessionManager::flash('info', $msg);
             } else {
@@ -1694,7 +1700,9 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
                 $svc->logTimeline($commId, $companyId, 'sms', __('comm_sms_opened'), $phone);
                 SessionManager::flash('info', __('comm_sms_open'));
             }
+            return;
         }
+        SessionManager::flash('warning', __('comm_save_send_no_email'));
     }
 
     /** @param array<string, mixed> $data */

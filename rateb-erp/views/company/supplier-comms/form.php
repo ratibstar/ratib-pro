@@ -64,6 +64,7 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                             'commSvc' => $commSvc,
                         ]); ?>
                         <div class="rateb-sc-form-actions">
+                            <p class="text-muted small w-100 mb-2"><?php echo __('comm_save_send_hint'); ?></p>
                             <button type="submit" name="form_action" value="save" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
                             <button type="submit" name="form_action" value="save_send" class="btn btn-outline-primary"><i class="fas fa-paper-plane"></i> <?php echo __('save_and_send'); ?></button>
                             <a href="<?php echo rateb_app_url('supplier-comms'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>

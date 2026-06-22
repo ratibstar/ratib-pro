@@ -1516,10 +1516,17 @@ final class SettingsController extends Controller
     public function index(): void
     {
         $model = new \Rateb\App\Models\SystemSetting();
+        $mailSvc = new \Rateb\App\Services\MailConfigService();
+        $mailCfg = $mailSvc->resolve();
+        $user = \Rateb\App\Core\Auth::user();
         $this->view('admin/settings/index', [
             'title' => __('settings'),
             'items' => $model->all(100, 0),
             'csrf' => Csrf::token(),
+            'mailCfg' => $mailCfg,
+            'mailPassSet' => $mailCfg['pass'] !== '',
+            'mailReady' => $mailSvc->isReady(),
+            'testEmailDefault' => trim((string) ($user['email'] ?? 'info@rateb.sa')) ?: 'info@rateb.sa',
         ], 'main');
     }
 
@@ -1547,6 +1554,30 @@ final class SettingsController extends Controller
             }
         }
         SessionManager::flash('success', __('save') . ' OK');
+        Response::redirect(rateb_url('admin/settings'));
+    }
+
+    public function testMail(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('admin/settings'));
+        }
+        $to = trim((string) $this->input('test_to', ''));
+        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            SessionManager::flash('error', __('mail_test_invalid'));
+            Response::redirect(rateb_url('admin/settings'));
+        }
+        if (!(new \Rateb\App\Services\MailConfigService())->isReady()) {
+            SessionManager::flash('error', __('mail_password_env_hint'));
+            Response::redirect(rateb_url('admin/settings'));
+        }
+        $sent = (new \Rateb\App\Services\MailService())->send(
+            $to,
+            __('mail_test_subject'),
+            '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>'
+        );
+        SessionManager::flash($sent ? 'success' : 'error', $sent ? __('mail_test_ok', ['email' => $to]) : __('mail_test_failed'));
         Response::redirect(rateb_url('admin/settings'));
     }
 
