@@ -34,26 +34,15 @@ final class MailService
             return ['success' => false, 'error_code' => $this->lastErrorCode, 'error' => $this->lastError];
         }
 
-        $sent = $this->sendSmtp(
-            $cfg['host'],
-            $cfg['port'],
-            $cfg['encryption'],
-            $cfg['user'],
-            $cfg['pass'],
-            $fromEmail,
-            $fromName,
-            $to,
-            $subject,
-            $htmlBody,
-            $replyTo,
-            $cc
-        );
+        $profiles = $this->smtpProfiles($cfg);
+        $primaryError = null;
+        $sent = false;
 
-        if (!$sent && $this->lastErrorCode === 'smtp_connect' && $cfg['host'] !== 'localhost') {
-            $sent = $this->sendSmtp(
-                'localhost',
-                $cfg['port'],
-                $cfg['encryption'],
+        foreach ($profiles as $profile) {
+            $ok = $this->sendSmtp(
+                $profile['host'],
+                $profile['port'],
+                $profile['encryption'],
                 $cfg['user'],
                 $cfg['pass'],
                 $fromEmail,
@@ -64,6 +53,17 @@ final class MailService
                 $replyTo,
                 $cc
             );
+            if ($ok) {
+                $sent = true;
+                break;
+            }
+            if ($primaryError === null) {
+                $primaryError = $this->lastError;
+            }
+        }
+
+        if (!$sent && $primaryError !== null) {
+            $this->lastError = $primaryError;
         }
 
         (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
@@ -73,6 +73,7 @@ final class MailService
                 'subject' => $subject,
                 'code' => $this->lastErrorCode,
                 'error' => $this->lastError,
+                'profiles' => $profiles,
             ]);
         }
         return [
@@ -84,8 +85,7 @@ final class MailService
 
     public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null): bool
     {
-        $result = $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc);
-        return $result['success'];
+        return $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc)['success'];
     }
 
     public function isSmtpConfigured(): bool
@@ -118,19 +118,75 @@ final class MailService
         return $this->sendTemplate($to, $slug, $vars, true);
     }
 
+    /**
+     * @param array{host:string,port:int,encryption:string,user:string,pass:string,from_email:string,from_name:string} $cfg
+     * @return list<array{host:string,port:int,encryption:string}>
+     */
+    private function smtpProfiles(array $cfg): array
+    {
+        $profiles = [
+            ['host' => $cfg['host'], 'port' => $cfg['port'], 'encryption' => $cfg['encryption']],
+        ];
+        $seen = [$this->profileKey($profiles[0])];
+
+        foreach ([
+            ['host' => 'localhost', 'port' => 587, 'encryption' => 'tls'],
+            ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'],
+            ['host' => 'mail.rateb.sa', 'port' => 587, 'encryption' => 'tls'],
+        ] as $candidate) {
+            $key = $this->profileKey($candidate);
+            if (!in_array($key, $seen, true)) {
+                $profiles[] = $candidate;
+                $seen[] = $key;
+            }
+        }
+        return $profiles;
+    }
+
+    /** @param array{host:string,port:int,encryption:string} $profile */
+    private function profileKey(array $profile): string
+    {
+        return strtolower($profile['host']) . ':' . $profile['port'] . ':' . $profile['encryption'];
+    }
+
     private function setError(string $code, string $message): void
     {
         $this->lastErrorCode = $code;
         $this->lastError = $message;
     }
 
+    private function tlsCryptoMethod(): int
+    {
+        $method = STREAM_CRYPTO_METHOD_TLS_CLIENT;
+        if (defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')) {
+            $method |= STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+        }
+        if (defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT')) {
+            $method |= STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT;
+        }
+        return $method;
+    }
+
     private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null): bool
     {
         $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
-        $fp = @stream_socket_client($remote, $errno, $errstr, 25);
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+            ],
+        ]);
+        $fp = @stream_socket_client($remote, $errno, $errstr, 25, STREAM_CLIENT_CONNECT, $context);
         if (!$fp) {
-            $this->setError('smtp_connect', __('mail_error_connect', ['host' => $host, 'port' => (string) $port, 'detail' => $errstr !== '' ? $errstr : (string) $errno]));
-            Logger::error('SMTP connect failed', ['host' => $host, 'port' => $port, 'error' => $errstr]);
+            $detail = trim($errstr) !== '' ? $errstr : __('mail_error_connect_unknown');
+            $this->setError('smtp_connect', __('mail_error_connect', [
+                'host' => $host,
+                'port' => (string) $port,
+                'enc' => $encryption,
+                'detail' => $detail,
+            ]));
+            Logger::error('SMTP connect failed', ['host' => $host, 'port' => $port, 'enc' => $encryption, 'error' => $errstr, 'errno' => $errno]);
             return false;
         }
         stream_set_timeout($fp, 25);
@@ -157,13 +213,13 @@ final class MailService
             $tlsResp = $read();
             if (strpos($tlsResp, '220') === false) {
                 fclose($fp);
-                $this->setError('smtp_tls', __('mail_error_tls'));
+                $this->setError('smtp_tls', __('mail_error_tls', ['host' => $host, 'port' => (string) $port]));
                 return false;
             }
-            $crypto = @stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            $crypto = @stream_socket_enable_crypto($fp, true, $this->tlsCryptoMethod());
             if ($crypto !== true) {
                 fclose($fp);
-                $this->setError('smtp_tls', __('mail_error_tls'));
+                $this->setError('smtp_tls', __('mail_error_tls', ['host' => $host, 'port' => (string) $port]));
                 return false;
             }
             $write('EHLO rateb.sa');

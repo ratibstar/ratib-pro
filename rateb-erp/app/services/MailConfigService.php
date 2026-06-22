@@ -25,7 +25,7 @@ final class MailConfigService
     {
         $this->bootstrapMailEnvFromDotenvFile();
         $settings = new SystemSetting();
-        $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'mail.rateb.sa');
+        $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'localhost');
         $port = (int) $this->envOrSetting('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587');
         $encryption = strtolower($this->envOrSetting('RATEB_ERP_SMTP_ENCRYPTION', 'smtp_encryption', $settings, 'tls'));
         if (!in_array($encryption, ['tls', 'ssl', 'none'], true)) {
