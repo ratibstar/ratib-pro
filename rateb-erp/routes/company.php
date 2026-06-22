@@ -440,6 +440,7 @@ $router->post($app('supplier-comms/{id}'), [\Rateb\App\Controllers\Company\Suppl
 $router->post($app('supplier-comms/{id}/delete'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'destroy'], $scMw);
 $router->post($app('supplier-comms/bulk-delete'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'bulkDestroy'], $scMw);
 $router->get($app('supplier-comms/history'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'supplierHistory'], $scMw);
+$router->get($app('supplier-comms/supplier-profile'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'supplierProfile'], $scMw);
 $router->get($app('supplier-comms/{id}/print'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'print'], $scMw);
 $router->post($app('supplier-comms/{id}/archive'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'archive'], $scMw);
 

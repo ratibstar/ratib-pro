@@ -157,3 +157,49 @@
 .rateb-sc-form-compact textarea.form-control {
     min-height: 4.5rem;
 }
+
+.rateb-sc-channel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.rateb-sc-timeline {
+    padding: 0.75rem 1rem;
+}
+
+.rateb-sc-timeline-item {
+    display: flex;
+    gap: 0.65rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--rateb-border);
+}
+
+.rateb-sc-timeline-item:last-child {
+    border-bottom: none;
+}
+
+.rateb-sc-timeline-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--rateb-surface-elevated);
+    border: 1px solid var(--rateb-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--rateb-primary);
+    flex-shrink: 0;
+}
+
+.rateb-sc-timeline-summary {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.rateb-sc-timeline-meta {
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+}

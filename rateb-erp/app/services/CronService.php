@@ -27,6 +27,7 @@ final class CronService
             'workflow_escalations' => (new WorkflowSlaService())->processEscalations(),
             'supplier_kpi_updated' => (new SupplierAutomationService())->updateAllKpis(),
             'supplier_alerts' => (new SupplierAutomationService())->processAlerts(),
+            'supplier_comm_automations' => (new SupplierCommService())->processAutomations(),
             'contract_status' => (new ContractAutomationService())->processStatusUpdates(),
             'contract_renewal_reminders' => (new ContractAutomationService())->processRenewalReminders(),
             'asset_maintenance' => (new AssetDeviceAutomationService())->processAssetMaintenanceReminders(),

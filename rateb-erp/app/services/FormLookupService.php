@@ -276,6 +276,22 @@ final class FormLookupService
                     ['value' => 'high', 'label' => __('comm_priority_high')],
                 ];
                 break;
+            case 'comm_response_ratings':
+                $options = [
+                    ['value' => 'excellent', 'label' => __('comm_rating_excellent')],
+                    ['value' => 'good', 'label' => __('comm_rating_good')],
+                    ['value' => 'fair', 'label' => __('comm_rating_fair')],
+                    ['value' => 'poor', 'label' => __('comm_rating_poor')],
+                ];
+                break;
+            case 'comm_attachment_types':
+                $options = [
+                    ['value' => 'contract', 'label' => __('comm_attach_contract')],
+                    ['value' => 'quotation', 'label' => __('comm_attach_quotation')],
+                    ['value' => 'invoice', 'label' => __('comm_attach_invoice')],
+                    ['value' => 'other', 'label' => __('comm_attach_other')],
+                ];
+                break;
             case 'priority_levels':
                 $options = $this->staticOptions(['low', 'normal', 'high', 'urgent'], true);
                 break;

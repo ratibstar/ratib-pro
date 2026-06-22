@@ -321,6 +321,8 @@ final class SupplierCommunication extends Model
         'body', 'responsible_name', 'supplier_contact', 'supplier_phone', 'supplier_email',
         'comm_status', 'follow_up_date', 'follow_up_priority',
         'purchase_order_id', 'rfq_id', 'is_archived', 'archived_at', 'created_by',
+        'send_status', 'sent_at', 'response_rating', 'response_notes',
+        'follow_up_reminded_at', 'no_response_notified_at',
     ];
     protected array $searchable = ['channel', 'subject', 'body', 'details', 'responsible_name', 'supplier_contact'];
 }

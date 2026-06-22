@@ -120,4 +120,178 @@ final class SupplierCommService
             default => 'primary',
         };
     }
+
+    public function sendStatusBadgeClass(string $status): string
+    {
+        return match ($status) {
+            'sent' => 'success',
+            'failed' => 'danger',
+            'mailto' => 'info',
+            default => 'secondary',
+        };
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function timelineForComm(int $commId, int $companyId): array
+    {
+        if ($commId < 1 || $companyId < 1) {
+            return [];
+        }
+        return (new SupplierCommunication())->query(
+            'SELECT t.*, u.name AS user_name
+             FROM rateb_supplier_comm_timeline t
+             LEFT JOIN rateb_users u ON u.id = t.created_by
+             WHERE t.comm_id = :cid AND t.company_id = :co
+             ORDER BY t.id DESC
+             LIMIT 50',
+            ['cid' => $commId, 'co' => $companyId]
+        );
+    }
+
+    public function logTimeline(
+        int $commId,
+        int $companyId,
+        string $eventType,
+        string $summary,
+        string $details = '',
+        ?int $userId = null
+    ): void {
+        if ($commId < 1 || $companyId < 1 || trim($summary) === '') {
+            return;
+        }
+        if ($userId === null) {
+            $userId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0) ?: null;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare(
+            'INSERT INTO rateb_supplier_comm_timeline (company_id, comm_id, event_type, summary, details, created_by)
+             VALUES (:co, :cid, :et, :sum, :det, :uid)'
+        )->execute([
+            'co' => $companyId,
+            'cid' => $commId,
+            'et' => substr($eventType, 0, 40),
+            'sum' => mb_substr($summary, 0, 255),
+            'det' => $details !== '' ? $details : null,
+            'uid' => $userId,
+        ]);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function supplierContactProfile(int $companyId, int $supplierId): ?array
+    {
+        if ($companyId < 1 || $supplierId < 1) {
+            return null;
+        }
+        $row = (new \Rateb\App\Models\Supplier())->queryOne(
+            'SELECT id, name, email, phone, address FROM rateb_suppliers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $supplierId, 'cid' => $companyId]
+        );
+        return $row ?: null;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function sendViaChannel(array $data): array
+    {
+        $channel = (string) ($data['channel'] ?? '');
+        if ($channel === 'email') {
+            return $this->sendEmail($data);
+        }
+        if ($channel === 'sms' && trim((string) ($data['supplier_phone'] ?? '')) !== '') {
+            return ['success' => true, 'status' => 'mailto', 'message' => __('comm_sms_queued')];
+        }
+        return ['success' => true, 'status' => 'not_sent', 'message' => ''];
+    }
+
+    /** @param array<string, mixed> $data */
+    private function sendEmail(array $data): array
+    {
+        $email = trim((string) ($data['supplier_email'] ?? ''));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
+        }
+        $subject = trim((string) ($data['subject'] ?? ''));
+        $bodyText = trim((string) ($data['body'] ?? ''));
+        $html = '<div dir="auto" style="font-family:Tajawal,sans-serif;line-height:1.6">'
+            . nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'))
+            . '</div>';
+        $sent = (new MailService())->send($email, $subject !== '' ? $subject : __('supplier_comms'), $html);
+        return [
+            'success' => $sent,
+            'status' => $sent ? 'sent' : 'failed',
+            'message' => $sent ? __('comm_email_sent') : __('comm_email_failed'),
+        ];
+    }
+
+    /** Follow-up reminders + no-response alerts (cron). */
+    public function processAutomations(): int
+    {
+        $count = 0;
+        $model = new SupplierCommunication();
+        $notifier = new NotificationService();
+        $today = date('Y-m-d');
+
+        $dueSoon = $model->query(
+            "SELECT c.*, s.name AS supplier_name
+             FROM rateb_supplier_communications c
+             LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id
+             WHERE c.is_archived = 0
+               AND c.follow_up_date IS NOT NULL
+               AND c.follow_up_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+               AND c.comm_status IN ('new', 'follow_up')
+               AND (c.follow_up_reminded_at IS NULL OR c.follow_up_reminded_at < c.follow_up_date)"
+        );
+        foreach ($dueSoon as $row) {
+            $companyId = (int) ($row['company_id'] ?? 0);
+            $commId = (int) ($row['id'] ?? 0);
+            $uid = (int) ($row['created_by'] ?? 0);
+            $title = __('comm_followup_reminder_title');
+            $msg = __('comm_followup_reminder_body', [
+                'supplier' => (string) ($row['supplier_name'] ?? ''),
+                'subject' => (string) ($row['subject'] ?? ''),
+                'date' => (string) ($row['follow_up_date'] ?? ''),
+            ]);
+            if ($uid > 0) {
+                $notifier->notifyUser($uid, $companyId, $title, $msg, 'warning', 'comm_followup', 'supplier_communication', $commId);
+            } else {
+                $notifier->notifyCompany($companyId, $title, $msg, 'warning', 'comm_followup', 'supplier_communication', $commId);
+            }
+            $model->update($commId, ['follow_up_reminded_at' => $today]);
+            $this->logTimeline($commId, $companyId, 'reminder', $title, $msg, $uid > 0 ? $uid : null);
+            $count++;
+        }
+
+        $overdue = $model->query(
+            "SELECT c.*, s.name AS supplier_name
+             FROM rateb_supplier_communications c
+             LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id
+             WHERE c.is_archived = 0
+               AND c.follow_up_date IS NOT NULL
+               AND c.follow_up_date < CURDATE()
+               AND c.comm_status IN ('new', 'follow_up')
+               AND c.no_response_notified_at IS NULL"
+        );
+        foreach ($overdue as $row) {
+            $companyId = (int) ($row['company_id'] ?? 0);
+            $commId = (int) ($row['id'] ?? 0);
+            $uid = (int) ($row['created_by'] ?? 0);
+            $title = __('comm_no_response_title');
+            $msg = __('comm_no_response_body', [
+                'supplier' => (string) ($row['supplier_name'] ?? ''),
+                'subject' => (string) ($row['subject'] ?? ''),
+            ]);
+            if ($uid > 0) {
+                $notifier->notifyUser($uid, $companyId, $title, $msg, 'danger', 'comm_no_response', 'supplier_communication', $commId);
+            } else {
+                $notifier->notifyCompany($companyId, $title, $msg, 'danger', 'comm_no_response', 'supplier_communication', $commId);
+            }
+            $model->update($commId, [
+                'no_response_notified_at' => date('Y-m-d H:i:s'),
+                'comm_status' => 'follow_up',
+            ]);
+            $this->logTimeline($commId, $companyId, 'no_response', $title, $msg, $uid > 0 ? $uid : null);
+            $count++;
+        }
+
+        return $count;
+    }
 }
