@@ -33,7 +33,7 @@ try {
     $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
     $tables = $pdo->query("SHOW TABLES LIKE 'rcc_%'")->rowCount();
     audit_check($checks, $score, $max, 'Database connection', true);
-    audit_check($checks, $score, $max, 'Schema tables (rcc_*)', $tables >= 25, (string) $tables . ' tables');
+    audit_check($checks, $score, $max, 'Schema tables (rcc_*)', $tables >= 30, (string) $tables . ' tables');
 } catch (\Throwable $e) {
     audit_check($checks, $score, $max, 'Database connection', false, $e->getMessage());
     audit_check($checks, $score, $max, 'Schema tables', false, 'N/A');
@@ -42,7 +42,7 @@ try {
 // Migrations
 $migDir = RCC_ROOT . '/migrations';
 $migFiles = glob($migDir . '/*.sql') ?: [];
-audit_check($checks, $score, $max, 'Migration files shipped', count($migFiles) >= 11, (string) count($migFiles) . ' files');
+audit_check($checks, $score, $max, 'Migration files shipped', count($migFiles) >= 12, (string) count($migFiles) . ' files');
 
 // AMI
 $amiHost = getenv('RCC_AMI_HOST') ?: '127.0.0.1';
@@ -83,6 +83,9 @@ audit_check($checks, $score, $max, 'Report service', is_file(RCC_ROOT . '/app/Ap
 audit_check($checks, $score, $max, 'Ops API', is_file(RCC_ROOT . '/public/api/v1/ops.php'));
 audit_check($checks, $score, $max, 'Ops controller', is_file(RCC_ROOT . '/app/Controllers/Api/OpsApiController.php'));
 audit_check($checks, $score, $max, 'Migration 011 ops', is_file(RCC_ROOT . '/migrations/011_production_ops.sql'));
+audit_check($checks, $score, $max, 'Supervisor API', is_file(RCC_ROOT . '/public/api/v1/supervisor.php'));
+audit_check($checks, $score, $max, 'Supervisor controller', is_file(RCC_ROOT . '/app/Controllers/Api/SupervisorApiController.php'));
+audit_check($checks, $score, $max, 'Migration 012 supervisor', is_file(RCC_ROOT . '/migrations/012_supervisor_workforce.sql'));
 
 $percent = $max > 0 ? (int) round(($score / $max) * 100) : 0;
 

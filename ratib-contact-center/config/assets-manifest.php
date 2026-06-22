@@ -18,4 +18,6 @@ return [
     'desktop-js' => 'js/rcc-agent-desktop-ui.js',
     'ops-css' => 'css/rcc-ops-center.css',
     'ops-js' => 'js/rcc-ops-center.js',
+    'supervisor-css' => 'css/rcc-supervisor-center.css',
+    'supervisor-js' => 'js/rcc-supervisor-center.js',
 ];

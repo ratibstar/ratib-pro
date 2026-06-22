@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Ratib\ContactCenter\App\Application\Services;
 
 use Ratib\ContactCenter\App\Application\Services\QueueDeliveryService;
+use Ratib\ContactCenter\App\Application\Services\Supervisor\SupervisorAlertBridge;
 use Ratib\ContactCenter\App\Core\Events\EventBus;
 use Ratib\ContactCenter\App\Domain\Agents\AgentStateService;
 use Ratib\ContactCenter\App\Domain\AI\Assistant\AiAssistantEngine;
@@ -29,12 +30,14 @@ final class RealtimeOrchestrator
         $conversationBridge = new ConversationEventBridge();
         $erpLogger = new ErpActivityLogger();
         $aiAssistant = new AiAssistantEngine($eventBus);
+        $supervisorAlerts = new SupervisorAlertBridge();
 
         $eventBus->subscribe($agentState);
         $eventBus->subscribe($queueRealtime);
         $eventBus->subscribe($conversationBridge);
         $eventBus->subscribe($erpLogger);
         $eventBus->subscribe($aiAssistant);
+        $eventBus->subscribe($supervisorAlerts);
         QueueDeliveryService::registerSubscriber();
 
         EventBus::setInstance($eventBus);

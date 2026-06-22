@@ -41,7 +41,9 @@ final class AuthContext
         if (self::$agentId !== null && self::$agentId > 0) {
             return true;
         }
-        return self::can('rcc.ops.view');
+        return self::can('rcc.ops.view')
+            || self::can('rcc.supervisor.view')
+            || self::can('rcc.supervisor.dashboard');
     }
 
     public static function requireAuth(): void

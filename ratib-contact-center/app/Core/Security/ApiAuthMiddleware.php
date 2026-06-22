@@ -98,7 +98,11 @@ final class ApiAuthMiddleware
         $userId = $this->resolveRccUserIdForControlUser($tenantId);
         $permissions = $this->permissionsForControlBridge($tenantId, $userId);
 
-        if ($agentId < 1 && !in_array('rcc.ops.view', $permissions, true)) {
+        if ($agentId < 1
+            && !in_array('rcc.ops.view', $permissions, true)
+            && !in_array('rcc.supervisor.view', $permissions, true)
+            && !in_array('rcc.supervisor.dashboard', $permissions, true)
+        ) {
             return false;
         }
 
@@ -133,6 +137,17 @@ final class ApiAuthMiddleware
             'rcc.calls.manage',
             'rcc.admin.settings',
             'rcc.supervisor.dashboard',
+            'rcc.supervisor.view',
+            'rcc.supervisor.wallboard',
+            'rcc.supervisor.queues',
+            'rcc.supervisor.agents',
+            'rcc.supervisor.sla',
+            'rcc.supervisor.wfm',
+            'rcc.supervisor.shifts',
+            'rcc.supervisor.attendance',
+            'rcc.supervisor.breaks',
+            'rcc.supervisor.alerts',
+            'rcc.supervisor.reports',
             'rcc.reports.view',
             'rcc.reports.export',
             'rcc.ops.view',

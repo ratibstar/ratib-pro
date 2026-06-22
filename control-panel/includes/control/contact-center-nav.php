@@ -18,5 +18,8 @@ function control_contact_center_active_key(): string
     if ($self === 'contact-center-ops.php') {
         return trim((string) ($_GET['route'] ?? 'health'), '/');
     }
+    if ($self === 'contact-center-supervisor.php') {
+        return trim((string) ($_GET['route'] ?? 'dashboard'), '/');
+    }
     return '';
 }

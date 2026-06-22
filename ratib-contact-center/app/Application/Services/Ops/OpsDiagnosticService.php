@@ -38,7 +38,7 @@ final class OpsDiagnosticService
             $pdo = Database::connection();
             $tables = $pdo->query("SHOW TABLES LIKE 'rcc_%'")->rowCount();
             $add('database', true, (string) $tables . ' tables');
-            $add('schema_minimum', $tables >= 25, 'expected >= 25 after 011');
+            $add('schema_minimum', $tables >= 30, 'expected >= 30 after 012');
         } catch (\Throwable $e) {
             $add('database', false, $e->getMessage());
             $add('schema_minimum', false, 'N/A');

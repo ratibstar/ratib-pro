@@ -382,6 +382,19 @@ function control_contact_center_ops_api_url(): string
     return control_contact_center_public_base_url() . '/api/v1/ops.php';
 }
 
+function control_contact_center_supervisor_page_url(string $route = 'dashboard'): string
+{
+    $base = function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/contact-center-supervisor.php')
+        : '/control-panel/pages/control/contact-center-supervisor.php?control=1';
+    return $base . '&route=' . rawurlencode($route);
+}
+
+function control_contact_center_supervisor_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/supervisor.php';
+}
+
 /** Resolve tenant for RCC UI/API — never hardcode; session first, else first active tenant. */
 function control_contact_center_resolve_tenant_id(): int
 {
@@ -552,6 +565,14 @@ function control_contact_center_nav_links(): array
             'key' => 'operations',
             'description' => 'PBX wizard, SIP, queues, IVR, agents, diagnostics, go-live checklist.',
         ],
+        'supervisor' => [
+            'route' => 'dashboard',
+            'href' => control_contact_center_supervisor_page_url('dashboard'),
+            'label' => 'Supervisor Suite',
+            'icon' => 'fa-chart-line',
+            'key' => 'supervisor',
+            'description' => 'Live wallboard, queue/agent monitors, SLA, workforce, shifts, alerts.',
+        ],
         'hub' => [
             'route' => 'hub',
             'href' => control_contact_center_hub_page_url(),
@@ -570,6 +591,8 @@ function control_contact_center_verify_schema(): array
         'rcc_agents', 'rcc_queues', 'rcc_sip_extensions', 'rcc_softphone_calls', 'rcc_routing_logs',
         'rcc_conversations', 'rcc_conversation_messages', 'rcc_ai_context', 'rcc_tickets',
         'rcc_pbx_servers', 'rcc_ops_checklist_steps', 'rcc_ops_checklist_status',
+        'rcc_wfm_shifts', 'rcc_wfm_shift_assignments', 'rcc_wfm_attendance', 'rcc_wfm_breaks',
+        'rcc_supervisor_alerts', 'rcc_supervisor_alert_rules',
     ];
     $missing = [];
     try {

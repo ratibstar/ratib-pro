@@ -31,7 +31,7 @@ $expected = [
     '001_core_schema.sql', '002_security_rbac.sql', '003_realtime_core.sql',
     '004_ivr_runtime.sql', '005_agents_queues.sql', '006_softphone_webrtc.sql',
     '007_ai_routing_engine.sql', '008_omnichannel_conversations.sql', '009_ai_assistant.sql',
-    '010_seed_production.sql', '011_production_ops.sql',
+    '010_seed_production.sql', '011_production_ops.sql', '012_supervisor_workforce.sql',
 ];
 $found = [];
 foreach ($expected as $f) {
@@ -40,11 +40,11 @@ foreach ($expected as $f) {
         $found[] = $f;
     }
 }
-ev($results, 1, 'Migrations 001-011 exist', count($found) === 11,
+ev($results, 1, 'Migrations 001-012 exist', count($found) === 12,
     'migrations/', 'is_file', 'N/A',
-    'Found ' . count($found) . '/11: ' . implode(', ', $found));
+    'Found ' . count($found) . '/12: ' . implode(', ', $found));
 
-ev($results, 2, 'Exact migration filenames', count($found) === 11,
+ev($results, 2, 'Exact migration filenames', count($found) === 12,
     'migrations/', 'glob', 'N/A',
     implode("\n", array_map(static fn ($f) => '  - ' . $f, $found)));
 
@@ -53,7 +53,7 @@ try {
     $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
     $tables = $pdo->query("SHOW TABLES LIKE 'rcc\\_%'")->fetchAll(\PDO::FETCH_COLUMN);
     $count = count($tables);
-    ev($results, 3, 'rcc_* tables created (>=25 after 011)', $count >= 25,
+    ev($results, 3, 'rcc_* tables created (>=30 after 012)', $count >= 30,
         'tools/verify-production-evidence.php', 'SHOW TABLES', 'N/A',
         $count . ' tables: ' . implode(', ', array_slice($tables, 0, 15)) . ($count > 15 ? '...' : ''));
 } catch (Throwable $e) {
@@ -310,6 +310,14 @@ $healthEmit = str_contains((string) file_get_contents(RCC_ROOT . '/app/Applicati
 ev($results, 19, 'Ops checklist auto-verify and health events', $hasWebrtcVerify && $healthEmit,
     'app/Application/Services/Ops/OpsChecklistService.php', 'runVerifyAction match', '75-89',
     'diag_webrtc in match=' . ($hasWebrtcVerify ? 'yes' : 'no') . ' OPS_HEALTH_UPDATED emit=' . ($healthEmit ? 'yes' : 'no'));
+
+$supFiles = is_file(RCC_ROOT . '/public/api/v1/supervisor.php')
+    && is_file(RCC_ROOT . '/app/Controllers/Api/SupervisorApiController.php')
+    && is_file(RCC_ROOT . '/migrations/012_supervisor_workforce.sql');
+ev($results, 20, 'Phase 9 supervisor suite files shipped', $supFiles,
+    'public/api/v1/supervisor.php', 'is_file', 'N/A',
+    'supervisor.php=' . (is_file(RCC_ROOT . '/public/api/v1/supervisor.php') ? 'yes' : 'no') .
+    ' 012=' . (is_file(RCC_ROOT . '/migrations/012_supervisor_workforce.sql') ? 'yes' : 'no'));
 
 echo json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 exit(0);

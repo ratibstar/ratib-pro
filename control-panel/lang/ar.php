@@ -19,6 +19,7 @@ return [
     'nav.contact_center' => 'مركز الاتصال',
     'nav.contact_center_desktop' => 'سطح مكتب الوكيل',
     'nav.contact_center_ops' => 'مركز العمليات',
+    'nav.contact_center_supervisor' => 'لوحة المشرف',
     'nav.contact_center_db_setup' => 'إعداد قاعدة مركز الاتصال',
     'nav.public_site_content' => 'محتوى الموقع العام',
     'nav.company_profile_live' => 'ملف الشركة (مباشر)',
