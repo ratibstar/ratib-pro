@@ -34,7 +34,7 @@ final class MailService
             return ['success' => false, 'error_code' => $this->lastErrorCode, 'error' => $this->lastError];
         }
 
-        $profiles = $this->smtpProfiles($cfg);
+        $profiles = $this->smtpProfiles($cfg, $to);
         $primaryError = null;
         $sent = false;
 
@@ -123,25 +123,41 @@ final class MailService
      * @param array{host:string,port:int,encryption:string,user:string,pass:string,from_email:string,from_name:string} $cfg
      * @return list<array{host:string,port:int,encryption:string}>
      */
-    private function smtpProfiles(array $cfg): array
+    private function smtpProfiles(array $cfg, string $to): array
     {
-        $profiles = [
-            ['host' => $cfg['host'], 'port' => $cfg['port'], 'encryption' => $cfg['encryption']],
-        ];
-        $seen = [$this->profileKey($profiles[0])];
+        $primary = ['host' => $cfg['host'], 'port' => $cfg['port'], 'encryption' => $cfg['encryption']];
+        $mailHost = ['host' => 'mail.rateb.sa', 'port' => 587, 'encryption' => 'tls'];
+        $localhost = ['host' => 'localhost', 'port' => 587, 'encryption' => 'tls'];
+        $loopback = ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'];
 
-        foreach ([
-            ['host' => 'localhost', 'port' => 587, 'encryption' => 'tls'],
-            ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'],
-            ['host' => 'mail.rateb.sa', 'port' => 587, 'encryption' => 'tls'],
-        ] as $candidate) {
+        if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
+            // Gmail/external: avoid localhost-only relay (delivers locally but may not reach Gmail).
+            $candidates = [$mailHost, $primary, $localhost, $loopback];
+        } else {
+            $candidates = [$primary, $localhost, $loopback, $mailHost];
+        }
+
+        $profiles = [];
+        $seen = [];
+        foreach ($candidates as $candidate) {
             $key = $this->profileKey($candidate);
-            if (!in_array($key, $seen, true)) {
-                $profiles[] = $candidate;
-                $seen[] = $key;
+            if (in_array($key, $seen, true)) {
+                continue;
             }
+            $profiles[] = $candidate;
+            $seen[] = $key;
         }
         return $profiles;
+    }
+
+    private function isExternalRecipient(string $to, string $fromEmail): bool
+    {
+        $toDomain = strtolower((string) substr(strrchr($to, '@') ?: '', 1));
+        $fromDomain = strtolower((string) substr(strrchr($fromEmail, '@') ?: '', 1));
+        if ($toDomain === '' || $fromDomain === '') {
+            return true;
+        }
+        return $toDomain !== $fromDomain;
     }
 
     /** @param array{host:string,port:int,encryption:string} $profile */
@@ -273,6 +289,8 @@ final class MailService
             $headers .= 'Bcc: <' . $bcc . ">\r\n";
         }
         $headers .= 'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail) . "\r\n";
+        $headers .= 'Date: ' . date('r') . "\r\n";
+        $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@rateb.sa>' . "\r\n";
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
         $headers .= "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n";
         $write($headers . $body . "\r\n.");

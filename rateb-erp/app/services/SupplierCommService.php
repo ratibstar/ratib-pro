@@ -249,6 +249,9 @@ final class SupplierCommService
             ];
         }
         $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam') : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
+        if ($sent && $this->isExternalEmail($email)) {
+            $msg .= ' — ' . __('comm_email_external_dns_hint');
+        }
         if ($sent && $cc !== null) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
         }
@@ -261,6 +264,12 @@ final class SupplierCommService
             'message' => $msg,
             'recipient' => $email,
         ];
+    }
+
+    private function isExternalEmail(string $email): bool
+    {
+        $domain = strtolower((string) substr(strrchr($email, '@') ?: '', 1));
+        return $domain !== '' && $domain !== 'rateb.sa';
     }
 
     /** Follow-up reminders + no-response alerts (cron). */
