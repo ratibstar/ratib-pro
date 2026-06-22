@@ -75,6 +75,7 @@ $mailPassSet = !empty($mailPassSet);
         <p class="text-warning small mt-2 mb-0"><?php echo __('mail_password_env_hint'); ?></p>
         <?php } else { ?>
         <p class="text-muted small mt-2 mb-0"><?php echo __('mail_check_spam_hint'); ?></p>
+        <p class="text-muted small mb-0"><?php echo __('mail_webmail_sent_note'); ?></p>
         <?php } ?>
     </div>
 </div>

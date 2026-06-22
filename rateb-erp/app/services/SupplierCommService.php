@@ -229,7 +229,15 @@ final class SupplierCommService
             $cc = $ccEmail;
         }
         $reply = ($replyTo !== null && $replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) ? $replyTo : null;
-        $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc);
+        $cfg = (new MailConfigService())->resolve();
+        $fromEmail = trim((string) ($cfg['from_email'] ?? ''));
+        $bcc = null;
+        if ($fromEmail !== '' && filter_var($fromEmail, FILTER_VALIDATE_EMAIL)
+            && strcasecmp($fromEmail, $email) !== 0
+            && strcasecmp($fromEmail, (string) $cc) !== 0) {
+            $bcc = $fromEmail;
+        }
+        $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc, $bcc);
         $sent = (bool) ($sendResult['success'] ?? false);
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
@@ -243,6 +251,9 @@ final class SupplierCommService
         $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam') : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
         if ($sent && $cc !== null) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
+        }
+        if ($sent && $bcc !== null) {
+            $msg .= ' — ' . __('comm_email_bcc_inbox', ['email' => $bcc]);
         }
         return [
             'success' => $sent,

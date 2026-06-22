@@ -1614,10 +1614,16 @@ final class SettingsController extends Controller
             Response::redirect(rateb_url('admin/settings'));
         }
         $mail = new \Rateb\App\Services\MailService();
+        $cfg = (new \Rateb\App\Services\MailConfigService())->resolve();
+        $from = trim((string) ($cfg['from_email'] ?? ''));
+        $bcc = ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL) && strcasecmp($from, $to) !== 0) ? $from : null;
         $result = $mail->sendDetailed(
             $to,
             __('mail_test_subject'),
-            '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>'
+            '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>',
+            null,
+            null,
+            $bcc
         );
         $sent = (bool) ($result['success'] ?? false);
         $failMsg = (string) ($result['error'] ?? __('mail_test_failed'));

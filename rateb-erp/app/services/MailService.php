@@ -21,7 +21,7 @@ final class MailService
     }
 
     /** @return array{success:bool,error_code:?string,error:?string} */
-    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null): array
+    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): array
     {
         $this->lastError = null;
         $this->lastErrorCode = null;
@@ -51,7 +51,8 @@ final class MailService
                 $subject,
                 $htmlBody,
                 $replyTo,
-                $cc
+                $cc,
+                $bcc
             );
             if ($ok) {
                 $sent = true;
@@ -83,9 +84,9 @@ final class MailService
         ];
     }
 
-    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null): bool
+    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): bool
     {
-        return $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc)['success'];
+        return $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc, $bcc)['success'];
     }
 
     public function isSmtpConfigured(): bool
@@ -167,7 +168,7 @@ final class MailService
         return $method;
     }
 
-    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null): bool
+    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): bool
     {
         $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
         $context = stream_context_create([
@@ -257,12 +258,19 @@ final class MailService
             $write('RCPT TO:<' . $cc . '>');
             $read();
         }
+        if ($bcc !== null && $bcc !== '' && filter_var($bcc, FILTER_VALIDATE_EMAIL) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
+            $write('RCPT TO:<' . $bcc . '>');
+            $read();
+        }
         $write('DATA');
         $read();
         $headers = 'From: ' . $this->encodeAddress($fromName, $fromEmail) . "\r\n";
         $headers .= 'To: <' . $to . ">\r\n";
         if ($cc !== null && $cc !== '' && filter_var($cc, FILTER_VALIDATE_EMAIL)) {
             $headers .= 'Cc: <' . $cc . ">\r\n";
+        }
+        if ($bcc !== null && $bcc !== '' && filter_var($bcc, FILTER_VALIDATE_EMAIL) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
+            $headers .= 'Bcc: <' . $bcc . ">\r\n";
         }
         $headers .= 'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail) . "\r\n";
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
