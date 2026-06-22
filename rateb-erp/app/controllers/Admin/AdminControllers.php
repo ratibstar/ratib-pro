@@ -1518,6 +1518,8 @@ final class SettingsController extends Controller
         $model = new \Rateb\App\Models\SystemSetting();
         $mailSvc = new \Rateb\App\Services\MailConfigService();
         $mailCfg = $mailSvc->resolve();
+        $fromDomain = \Rateb\App\Helpers\Str::emailDomain((string) ($mailCfg['from_email'] ?? 'info@rateb.sa'));
+        $mailDns = (new \Rateb\App\Services\MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
         $user = \Rateb\App\Core\Auth::user();
         $this->view('admin/settings/index', [
             'title' => __('settings'),
@@ -1527,6 +1529,7 @@ final class SettingsController extends Controller
             'mailPassSet' => $mailCfg['pass'] !== '',
             'mailReady' => $mailSvc->isReady(),
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
+            'mailDns' => $mailDns,
             'testEmailDefault' => trim((string) ($user['email'] ?? 'info@rateb.sa')) ?: 'info@rateb.sa',
         ], 'main');
     }
@@ -1617,7 +1620,10 @@ final class SettingsController extends Controller
         $mail = new \Rateb\App\Services\MailService();
         $cfg = (new \Rateb\App\Services\MailConfigService())->resolve();
         $from = trim((string) ($cfg['from_email'] ?? ''));
-        $bcc = ($from !== '' && \Rateb\App\Helpers\Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) ? $from : null;
+        $fromDomain = \Rateb\App\Helpers\Str::emailDomain($from);
+        $toDomain = \Rateb\App\Helpers\Str::emailDomain($to);
+        $isExternalTest = $toDomain !== '' && $fromDomain !== '' && strcasecmp($toDomain, $fromDomain) !== 0;
+        $bcc = (!$isExternalTest && $from !== '' && \Rateb\App\Helpers\Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) ? $from : null;
         $result = $mail->sendDetailed(
             $to,
             __('mail_test_subject'),
@@ -1628,6 +1634,13 @@ final class SettingsController extends Controller
         );
         $sent = (bool) ($result['success'] ?? false);
         $failMsg = (string) ($result['error'] ?? __('mail_test_failed'));
+        if ($sent && $isExternalTest) {
+            $dns = (new \Rateb\App\Services\MailDnsCheckService())->check($fromDomain);
+            if (!$dns['ready_for_external']) {
+                SessionManager::flash('warning', __('mail_test_external_dns_warn', ['email' => $to]));
+                Response::redirect(rateb_url('admin/settings'));
+            }
+        }
         SessionManager::flash($sent ? 'success' : 'error', $sent
             ? __('mail_test_ok', ['email' => $to, 'host' => (string) ($result['smtp_host'] ?? $mail->lastSmtpHost() ?? 'mail.rateb.sa')])
             : $failMsg);
