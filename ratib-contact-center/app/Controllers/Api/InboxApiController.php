@@ -5,6 +5,7 @@ namespace Ratib\ContactCenter\App\Controllers\Api;
 
 use Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator;
 use Ratib\ContactCenter\App\Core\Events\EventBus;
+use Ratib\ContactCenter\App\Core\Security\AuthContext;
 use Ratib\ContactCenter\App\Core\TenantContext;
 use Ratib\ContactCenter\App\Domain\Conversation\ConversationEngine;
 use Ratib\ContactCenter\App\Infrastructure\Channels\EmailChannelAdapter;
@@ -60,18 +61,30 @@ final class InboxApiController
             ];
         }
 
-        $tenantId = (int) ($input['tenant_id'] ?? 0);
-        if ($tenantId < 1) {
-            return $this->error('tenant_id required');
+        if ($action === 'chat_widget_config') {
+            $tenantId = (int) ($input['tenant_id'] ?? 0);
+            if ($tenantId < 1) {
+                return $this->error('tenant_id required');
+            }
+            $cfg = (array) require dirname(__DIR__, 3) . '/config/omnichannel.php';
+            return [
+                'ok' => true,
+                'widget' => [
+                    'enabled' => (bool) ($cfg['web_chat']['widget_enabled'] ?? true),
+                    'api_url' => '/ratib-contact-center/public/api/v1/inbox.php',
+                    'tenant_id' => $tenantId,
+                    'script' => '/ratib-contact-center/public/assets/js/rcc-webchat-widget.js',
+                ],
+            ];
         }
+
+        AuthContext::requirePermission('rcc.inbox.manage');
+        $tenantId = AuthContext::tenantId();
+        $agentId = AuthContext::agentId();
         TenantContext::set($tenantId);
 
         switch ($action) {
             case 'inbox':
-                $agentId = (int) ($input['agent_id'] ?? 0);
-                if ($agentId < 1) {
-                    return $this->error('agent_id required');
-                }
                 return ['ok' => true, 'conversations' => $this->engine()->inboxForAgent($tenantId, $agentId)];
 
             case 'thread':
@@ -83,13 +96,13 @@ final class InboxApiController
 
             case 'send':
                 $conversationId = (int) ($input['conversation_id'] ?? 0);
-                $agentId = (int) ($input['agent_id'] ?? 0);
                 $channel = (string) ($input['channel'] ?? 'chat');
                 $message = (string) ($input['message'] ?? '');
-                if ($conversationId < 1 || $agentId < 1 || $message === '') {
-                    return $this->error('conversation_id, agent_id, message required');
+                if ($conversationId < 1 || $message === '') {
+                    return $this->error('conversation_id and message required');
                 }
                 $updated = $this->engine(true)->sendOutbound($tenantId, $conversationId, $agentId, $channel, $message, is_array($input['payload'] ?? null) ? $input['payload'] : []);
+                $this->dispatchOutbound($tenantId, $conversationId, $channel, $message, $updated);
                 return ['ok' => true, 'conversation' => $updated];
 
             case 'close':
@@ -116,6 +129,7 @@ final class InboxApiController
                 return ['ok' => true, 'conversation' => $adapter->ingest($tenantId, $payload)];
 
             case 'start_demo':
+                AuthContext::requirePermission('rcc.admin.settings');
                 $adapter = new WebChatChannelAdapter($this->engine(true));
                 $conversation = $adapter->ingest($tenantId, [
                     'message' => (string) ($input['message'] ?? 'Hello, I need help with my order.'),
@@ -139,6 +153,13 @@ final class InboxApiController
         }
         $decoded = json_decode($raw, true);
         return is_array($decoded) ? $decoded : [];
+    }
+
+    /** @param array<string, mixed> $conversation */
+    private function dispatchOutbound(int $tenantId, int $conversationId, string $channel, string $message, array $conversation): void
+    {
+        $dispatcher = new \Ratib\ContactCenter\App\Infrastructure\Omnichannel\OutboundDispatcher();
+        $dispatcher->dispatch($tenantId, $conversationId, $channel, $message, $conversation);
     }
 
     /** @return array<string, mixed> */

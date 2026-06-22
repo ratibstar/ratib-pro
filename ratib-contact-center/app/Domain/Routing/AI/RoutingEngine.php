@@ -180,7 +180,9 @@ final class RoutingEngine
                 'call_id' => $context->callId,
                 'queue_id' => $queueId,
                 'agent_id' => $agentId,
-                'payload' => $decision->toArray(),
+                'payload' => array_merge($decision->toArray(), [
+                    'channel_id' => $context->channelId,
+                ]),
             ]);
         }
 

@@ -7,6 +7,7 @@ use Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator;
 use Ratib\ContactCenter\App\Core\Events\EventBus;
 use Ratib\ContactCenter\App\Core\Events\EventType;
 use Ratib\ContactCenter\App\Core\Events\RealtimeEvent;
+use Ratib\ContactCenter\App\Core\Security\AuthContext;
 use Ratib\ContactCenter\App\Core\TenantContext;
 use Ratib\ContactCenter\App\Domain\AI\Assistant\AiAssistantEngine;
 use Ratib\ContactCenter\App\Infrastructure\Ticket\TicketGateway;
@@ -42,10 +43,9 @@ final class AiAssistantApiController
     /** @return array<string, mixed> */
     public function handleAction(string $action, array $input): array
     {
-        $tenantId = (int) ($input['tenant_id'] ?? 0);
-        if ($tenantId < 1) {
-            return $this->error('tenant_id required');
-        }
+        AuthContext::requirePermission('rcc.agent.desktop');
+        $tenantId = AuthContext::tenantId();
+        $agentId = AuthContext::agentId();
         TenantContext::set($tenantId);
 
         $conversationId = (int) ($input['conversation_id'] ?? 0);
@@ -61,7 +61,7 @@ final class AiAssistantApiController
                     'tenant_id' => $tenantId,
                     'timestamp' => gmdate('Y-m-d\TH:i:s.v\Z'),
                     'payload' => ['conversation_id' => $conversationId],
-                    'agent_id' => isset($input['agent_id']) ? (int) $input['agent_id'] : null,
+                    'agent_id' => $agentId,
                 ]));
                 if ($ctx === null) {
                     $ctx = $this->engine->contextForConversation($tenantId, $conversationId);
@@ -84,7 +84,7 @@ final class AiAssistantApiController
                 EventBus::instance()->emit([
                     'type' => EventType::AI_TICKET_CREATED,
                     'tenant_id' => $tenantId,
-                    'agent_id' => isset($input['agent_id']) ? (int) $input['agent_id'] : null,
+                    'agent_id' => $agentId,
                     'payload' => [
                         'conversation_id' => $conversationId,
                         'ticket_id' => $ticketId,

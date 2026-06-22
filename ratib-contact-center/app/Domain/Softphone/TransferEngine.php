@@ -8,22 +8,21 @@ use Ratib\ContactCenter\App\Core\Events\EventType;
 use Ratib\ContactCenter\App\Domain\Agents\AgentStateService;
 use Ratib\ContactCenter\App\Domain\Queue\QueueRealtimeService;
 use Ratib\ContactCenter\App\Infrastructure\Persistence\Repositories\SoftphoneCallRepository;
-use Ratib\ContactCenter\App\Infrastructure\Voice\AsteriskPbxCommandGateway;
+use Ratib\ContactCenter\App\Infrastructure\Voice\AmiPbxCommandGateway;
 use Ratib\ContactCenter\App\Domain\Softphone\Enums\SoftphoneCallStatus;
-use Ratib\ContactCenter\App\Domain\Softphone\Enums\SoftphoneDirection;
 
-/**
- * Blind + attended transfer orchestration (signaling via PBX, state via EventBus).
- */
 final class TransferEngine
 {
+    private AmiPbxCommandGateway $pbx;
+
     public function __construct(
         private readonly SoftphoneCallRepository $calls = new SoftphoneCallRepository(),
         private readonly ?EventBus $eventBus = null,
-        private readonly ?AsteriskPbxCommandGateway $pbx = null,
+        ?AmiPbxCommandGateway $pbx = null,
         private readonly ?AgentStateService $agentState = null,
         private readonly ?QueueRealtimeService $queueRealtime = null
     ) {
+        $this->pbx = $pbx ?? new AmiPbxCommandGateway();
     }
 
     public function blindTransfer(
@@ -39,7 +38,7 @@ final class TransferEngine
         }
 
         if ($channelId !== null && $channelId !== '') {
-            ($this->pbx ?? new AsteriskPbxCommandGateway())->routeToExtension($channelId, $targetExtension, $tenantId);
+            $this->pbx->blindTransferChannel($channelId, $targetExtension, $tenantId);
         }
 
         $updated = $this->calls->updateStatus($softphoneCallId, $tenantId, SoftphoneCallStatus::Transferred);
@@ -62,12 +61,18 @@ final class TransferEngine
         int $tenantId,
         int $agentId,
         int $softphoneCallId,
-        string $targetExtension
+        string $targetExtension,
+        ?string $channelId = null
     ): array {
         $call = $this->calls->findById($softphoneCallId, $tenantId);
         if ($call === null) {
             throw new \RuntimeException('Call not found.');
         }
+
+        if ($channelId !== null && $channelId !== '') {
+            $this->pbx->attendedTransferConsult($channelId, $targetExtension, $tenantId);
+        }
+
         ($this->eventBus ?? EventBus::instance())->emit([
             'type' => EventType::CALL_TRANSFERRED,
             'tenant_id' => $tenantId,
@@ -92,6 +97,11 @@ final class TransferEngine
         if ($call === null) {
             throw new \RuntimeException('Call not found.');
         }
+
+        if ($channelId !== null && $channelId !== '') {
+            $this->pbx->attendedTransferConsult($channelId, (string) ($call['remote_number'] ?? ''), $tenantId);
+        }
+
         $updated = $this->calls->updateStatus($softphoneCallId, $tenantId, SoftphoneCallStatus::Transferred);
         ($this->eventBus ?? EventBus::instance())->emit([
             'type' => EventType::CALL_TRANSFERRED,

@@ -5,6 +5,7 @@ namespace Ratib\ContactCenter\App\Controllers\Api;
 
 use Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator;
 use Ratib\ContactCenter\App\Core\Events\EventBus;
+use Ratib\ContactCenter\App\Core\Security\AuthContext;
 use Ratib\ContactCenter\App\Core\TenantContext;
 use Ratib\ContactCenter\App\Domain\Softphone\CallControlEngine;
 
@@ -33,8 +34,9 @@ final class SoftphoneApiController
         $body = $this->parseJsonBody();
 
         try {
-            $tenantId = (int) ($body['tenant_id'] ?? $_GET['tenant_id'] ?? 0);
-            $agentId = (int) ($body['agent_id'] ?? $_GET['agent_id'] ?? 0);
+            AuthContext::requirePermission('rcc.calls.manage');
+            $tenantId = AuthContext::tenantId();
+            $agentId = AuthContext::agentId();
             TenantContext::set($tenantId);
 
             switch ($action) {

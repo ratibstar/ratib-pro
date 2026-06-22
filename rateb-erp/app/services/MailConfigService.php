@@ -53,6 +53,20 @@ final class MailConfigService
         return in_array(strtolower(trim($host)), ['localhost', '127.0.0.1', '::1'], true);
     }
 
+    public function isSmtpRelayHost(string $host): bool
+    {
+        $h = strtolower(trim($host));
+        if ($h === '' || $this->isLocalRelayHost($h) || $h === 'mail.rateb.sa') {
+            return false;
+        }
+        foreach (['sendgrid.net', 'mailgun.org', 'amazonaws.com', 'resend.com', 'smtp2go.com', 'elasticemail.com', 'brevo.com'] as $marker) {
+            if (str_contains($h, $marker)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function isReady(): bool
     {
         $cfg = $this->resolve();

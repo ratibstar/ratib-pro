@@ -144,14 +144,13 @@ final class MailService
         $loopback = ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'];
 
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
-            // DirectAdmin on same server: mail.rateb.sa may refuse PHP; localhost:587+AUTH usually works.
-            $candidates = [];
-            if (!$this->isLoopbackHost($primary['host'])) {
-                $candidates[] = $primary;
-            }
-            $candidates = array_merge($candidates, [$mailTls, $mailSsl, $localhost, $loopback]);
-            if ($this->isLoopbackHost($primary['host'])) {
-                array_unshift($candidates, $primary);
+            if ($this->isExternalSmtpRelay($primary['host'])) {
+                // Brevo/SendGrid/etc. — port 587 only; never fall back to localhost (false success).
+                $candidates = [$primary];
+            } elseif ($this->isLoopbackHost($primary['host'])) {
+                $candidates = [$primary, $mailTls, $mailSsl, $localhost, $loopback];
+            } else {
+                $candidates = [$primary, $mailTls, $mailSsl, $localhost, $loopback];
             }
         } else {
             $candidates = [$primary, $localhost, $loopback, $mailTls];
@@ -173,6 +172,20 @@ final class MailService
     private function isLoopbackHost(string $host): bool
     {
         return in_array(strtolower(trim($host)), ['localhost', '127.0.0.1', '::1'], true);
+    }
+
+    private function isExternalSmtpRelay(string $host): bool
+    {
+        $h = strtolower(trim($host));
+        if ($h === '' || $this->isLoopbackHost($h) || $h === 'mail.rateb.sa') {
+            return false;
+        }
+        foreach (['sendgrid.net', 'mailgun.org', 'amazonaws.com', 'postmarkapp.com', 'sparkpostmail.com', 'resend.com', 'smtp2go.com', 'elasticemail.com', 'brevo.com'] as $marker) {
+            if (str_contains($h, $marker)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private function isExternalRecipient(string $to, string $fromEmail): bool

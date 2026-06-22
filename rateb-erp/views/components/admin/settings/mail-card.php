@@ -7,6 +7,8 @@ $mailReady = !empty($mailReady);
 $mailPassSet = !empty($mailPassSet);
 /** @var bool $mailLocalhost */
 $mailLocalhost = !empty($mailLocalhost);
+/** @var bool $mailRelay */
+$mailRelay = !empty($mailRelay);
 ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -59,8 +61,11 @@ $mailLocalhost = !empty($mailLocalhost);
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> <?php echo __('mail_save_settings'); ?></button>
             </div>
         </form>
-        <?php if ($mailLocalhost) { ?>
+        <?php if ($mailRelay) { ?>
+        <p class="text-success small mb-2"><?php echo __('mail_relay_active', ['host' => Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? ''))]); ?></p>
+        <?php } elseif ($mailLocalhost) { ?>
         <p class="text-muted small mb-2"><?php echo __('mail_localhost_warning'); ?></p>
+        <div class="alert alert-warning small py-2 mb-2"><?php echo __('mail_relay_steps'); ?></div>
         <?php } ?>
         <?php
         $mailDns = $mailDns ?? null;

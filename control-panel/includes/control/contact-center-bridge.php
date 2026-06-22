@@ -185,8 +185,8 @@ function control_contact_center_realtime_mode(): string
     if ($mode !== false && trim((string) $mode) !== '') {
         return strtolower(trim((string) $mode)) === 'websocket' ? 'websocket' : 'polling';
     }
-    // Default for rateb.sa / shared hosting: HTTPS polling — no port 9702 or firewall rules.
-    return 'polling';
+    // Default: WebSocket realtime (set RCC_REALTIME_MODE=polling only when hub unavailable).
+    return 'websocket';
 }
 
 function control_contact_center_ws_url(): string
@@ -443,6 +443,33 @@ function control_contact_center_nav_links(): array
             'description' => 'Overview, database status, and module links.',
         ],
     ];
+}
+
+function control_contact_center_verify_schema(): array
+{
+    $required = [
+        'rcc_tenants', 'rcc_users', 'rcc_realtime_events', 'rcc_ivr_flows', 'rcc_ivr_sessions',
+        'rcc_agents', 'rcc_queues', 'rcc_sip_extensions', 'rcc_softphone_calls', 'rcc_routing_logs',
+        'rcc_conversations', 'rcc_conversation_messages', 'rcc_ai_context', 'rcc_tickets',
+    ];
+    $missing = [];
+    try {
+        control_contact_center_apply_db_env();
+        if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
+            define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
+        }
+        require_once control_contact_center_root_path() . '/bootstrap.php';
+        $pdo = \Ratib\ContactCenter\App\Core\Database::connection();
+        foreach ($required as $table) {
+            $stmt = $pdo->query("SHOW TABLES LIKE '" . str_replace("'", "''", $table) . "'");
+            if ($stmt === false || $stmt->rowCount() === 0) {
+                $missing[] = $table;
+            }
+        }
+    } catch (Throwable $e) {
+        return ['ok' => false, 'missing' => $required, 'error' => $e->getMessage()];
+    }
+    return ['ok' => $missing === [], 'missing' => $missing, 'error' => ''];
 }
 
 function control_contact_center_diagnostic(): array

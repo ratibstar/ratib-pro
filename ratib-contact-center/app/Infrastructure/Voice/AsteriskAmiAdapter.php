@@ -181,7 +181,66 @@ final class AsteriskAmiAdapter
             case 'RCCDTMFTimeout':
                 $this->onDtmfTimeout($event);
                 break;
+            case 'QueueCallerJoin':
+                $this->onQueueCallerJoin($event);
+                break;
+            case 'QueueCallerLeave':
+                $this->onQueueCallerLeave($event);
+                break;
+            case 'QueueMemberStatus':
+                $this->onQueueMemberStatus($event);
+                break;
         }
+    }
+
+    /** @param array<string, mixed> $event */
+    public function onQueueCallerJoin(array $event): void
+    {
+        $tenantId = $this->resolveTenantId($event, (string) ($event['Channel'] ?? ''));
+        if ($tenantId < 1) {
+            return;
+        }
+        $this->eventBus->emit([
+            'type' => EventType::QUEUE_JOINED,
+            'tenant_id' => $tenantId,
+            'queue_id' => isset($event['RCC_QUEUE_ID']) ? (int) $event['RCC_QUEUE_ID'] : null,
+            'call_id' => isset($event['RCC_CALL_ID']) ? (int) $event['RCC_CALL_ID'] : null,
+            'payload' => $event,
+        ]);
+    }
+
+    /** @param array<string, mixed> $event */
+    public function onQueueCallerLeave(array $event): void
+    {
+        $tenantId = $this->resolveTenantId($event, (string) ($event['Channel'] ?? ''));
+        if ($tenantId < 1) {
+            return;
+        }
+        $this->eventBus->emit([
+            'type' => EventType::CALL_ENDED,
+            'tenant_id' => $tenantId,
+            'call_id' => isset($event['RCC_CALL_ID']) ? (int) $event['RCC_CALL_ID'] : null,
+            'payload' => array_merge($event, ['queue_leave' => true]),
+        ]);
+    }
+
+    /** @param array<string, mixed> $event */
+    public function onQueueMemberStatus(array $event): void
+    {
+        $tenantId = $this->resolveTenantId($event);
+        if ($tenantId < 1) {
+            return;
+        }
+        $this->eventBus->emit([
+            'type' => EventType::AGENT_STATE_UPDATED,
+            'tenant_id' => $tenantId,
+            'agent_id' => isset($event['RCC_AGENT_ID']) ? (int) $event['RCC_AGENT_ID'] : null,
+            'payload' => [
+                'member_name' => $event['MemberName'] ?? null,
+                'status' => $event['Status'] ?? null,
+                'paused' => $event['Paused'] ?? null,
+            ],
+        ]);
     }
 
     /** @param array<string, mixed> $event */

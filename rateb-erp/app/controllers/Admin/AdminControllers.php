@@ -1529,6 +1529,7 @@ final class SettingsController extends Controller
             'mailPassSet' => $mailCfg['pass'] !== '',
             'mailReady' => $mailSvc->isReady(),
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
+            'mailRelay' => $mailSvc->isSmtpRelayHost((string) ($mailCfg['host'] ?? '')),
             'mailDns' => $mailDns,
             'testEmailDefault' => trim((string) ($user['email'] ?? 'info@rateb.sa')) ?: 'info@rateb.sa',
         ], 'main');

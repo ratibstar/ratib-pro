@@ -58,8 +58,8 @@ startControlLayout(
     ['standalone' => true]
 );
 
-$tenantId = 1;
-$agentId = 1;
+$tenantId = (int) ($_SESSION['rcc_tenant_id'] ?? 1);
+$agentId = (int) ($_SESSION['rcc_agent_id'] ?? 1);
 $inboxApiBase = control_contact_center_inbox_api_url();
 $softphoneApiBase = control_contact_center_softphone_api_url();
 $assistantApiBase = control_contact_center_assistant_api_url();

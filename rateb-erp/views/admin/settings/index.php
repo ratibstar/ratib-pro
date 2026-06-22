@@ -5,6 +5,7 @@ Rateb\App\Core\View::partial('admin/settings/mail-card', [
     'mailPassSet' => !empty($mailPassSet),
     'mailReady' => !empty($mailReady),
     'mailLocalhost' => !empty($mailLocalhost),
+    'mailRelay' => !empty($mailRelay),
     'mailDns' => $mailDns ?? null,
     'csrf' => $csrf ?? '',
     'testEmailDefault' => $testEmailDefault ?? 'info@rateb.sa',
