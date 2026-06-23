@@ -59,7 +59,7 @@ $migCount = count(glob(RCC_ROOT . '/migrations/*.sql') ?: []);
 audit_section($sections, $totalScore, $totalMax, 'Database', [
     chk($dbOk, 15, 'Database connection', $dbOk ? 'OK' : 'Failed'),
     chk($tableCount >= 50, 10, 'Schema tables (≥50)', (string) $tableCount),
-    chk($migCount >= 19, 10, 'Migrations shipped (≥19)', (string) $migCount),
+    chk($migCount >= 20, 10, 'Migrations shipped (≥20)', (string) $migCount),
     chk(is_file(RCC_ROOT . '/migrations/013_crm_module.sql'), 5, 'CRM migration'),
     chk(is_file(RCC_ROOT . '/migrations/019_security_hardening.sql'), 5, 'Security migration'),
 ]);

@@ -535,8 +535,31 @@ function control_contact_center_run_migrations(): array
     sort($files);
     $log = [];
 
+    // Legacy filenames removed during 001–012 renumber (Jun 2026). Mark applied so orphan
+    // copies left on the server by fast-deploy are never re-executed.
+    $retiredMigrations = [
+        '001_core_tenancy.sql',
+        '002_ivr_runtime_engine.sql',
+        '003_queue_ticket_stub.sql',
+        '004_ivr_example_flow.sql',
+        '005_realtime_core.sql',
+        '006_softphone.sql',
+        '010_rcc_tickets_ai_columns.sql',
+    ];
+    foreach ($retiredMigrations as $retired) {
+        try {
+            $ins = $pdo->prepare('INSERT IGNORE INTO rcc_migration_log (migration, batch) VALUES (:m, 0)');
+            $ins->execute(['m' => $retired]);
+        } catch (Throwable $e) {
+            // rcc_migration_log may not exist until 001 runs
+        }
+    }
+
     foreach ($files as $file) {
         $name = basename($file);
+        if (in_array($name, $retiredMigrations, true)) {
+            continue;
+        }
         try {
             $chk = $pdo->prepare('SELECT 1 FROM rcc_migration_log WHERE migration = :m LIMIT 1');
             $chk->execute(['m' => $name]);
@@ -549,7 +572,7 @@ function control_contact_center_run_migrations(): array
         }
 
         $sql = (string) file_get_contents($file);
-        control_contact_center_exec_sql_batch($pdo, $sql);
+        control_contact_center_exec_sql_batch($pdo, $sql, $log, $name);
         try {
             $ins = $pdo->prepare('INSERT INTO rcc_migration_log (migration, batch) VALUES (:m, 1)');
             $ins->execute(['m' => $name]);
@@ -562,7 +585,7 @@ function control_contact_center_run_migrations(): array
     return $log;
 }
 
-function control_contact_center_exec_sql_batch(\PDO $pdo, string $sql): void
+function control_contact_center_exec_sql_batch(\PDO $pdo, string $sql, ?array &$log = null, ?string $migration = null): void
 {
     $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? $sql;
     $parts = preg_split('/;\s*(?:\r?\n|$)/', $sql) ?: [];
@@ -571,7 +594,20 @@ function control_contact_center_exec_sql_batch(\PDO $pdo, string $sql): void
         if ($stmt === '') {
             continue;
         }
-        $pdo->exec($stmt);
+        try {
+            $pdo->exec($stmt);
+        } catch (\PDOException $e) {
+            $mysqlCode = (int) ($e->errorInfo[1] ?? 0);
+            // Idempotent re-runs: duplicate column/key, existing table/index (production drift).
+            $ignorable = [1050, 1060, 1061, 1062, 1091, 1826];
+            if (in_array($mysqlCode, $ignorable, true)) {
+                if ($log !== null) {
+                    $log[] = 'WARN ' . ($migration ?? 'sql') . ': ignored MySQL ' . $mysqlCode . ' — ' . $e->getMessage();
+                }
+                continue;
+            }
+            throw $e;
+        }
     }
 }
 

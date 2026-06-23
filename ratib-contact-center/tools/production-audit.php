@@ -42,7 +42,7 @@ try {
 // Migrations
 $migDir = RCC_ROOT . '/migrations';
 $migFiles = glob($migDir . '/*.sql') ?: [];
-audit_check($checks, $score, $max, 'Migration files shipped', count($migFiles) >= 19, (string) count($migFiles) . ' files');
+audit_check($checks, $score, $max, 'Migration files shipped', count($migFiles) >= 20, (string) count($migFiles) . ' files');
 
 // AMI
 $amiHost = getenv('RCC_AMI_HOST') ?: '127.0.0.1';

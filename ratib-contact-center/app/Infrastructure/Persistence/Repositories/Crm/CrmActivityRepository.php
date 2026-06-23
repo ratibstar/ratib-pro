@@ -68,9 +68,17 @@ final class CrmActivityRepository
         }
 
         $conv = $pdo->prepare(
-            'SELECT \'conversation\' AS kind, cv.id, cv.channel, cv.status, cv.subject, cv.updated_at AS occurred_at
+            "SELECT 'conversation' AS kind, cv.id, cv.channel, cv.status,
+                    COALESCE(cv.last_message, cv.customer_identity) AS subject, cv.updated_at AS occurred_at
              FROM rcc_conversations cv
-             WHERE cv.tenant_id = :tid AND cv.contact_id = :cid ORDER BY cv.updated_at DESC LIMIT 50'
+             INNER JOIN rcc_contacts ct ON ct.tenant_id = cv.tenant_id AND ct.deleted_at IS NULL
+               AND (
+                    cv.customer_id = ct.id
+                    OR (ct.phone_primary IS NOT NULL AND ct.phone_primary = cv.customer_identity)
+                    OR (ct.email IS NOT NULL AND ct.email = cv.customer_identity)
+               )
+             WHERE cv.tenant_id = :tid AND ct.id = :cid
+             ORDER BY cv.updated_at DESC LIMIT 50"
         );
         $conv->execute(['tid' => $tenantId, 'cid' => $contactId]);
         foreach ($conv->fetchAll() ?: [] as $row) {
