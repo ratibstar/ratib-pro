@@ -408,6 +408,63 @@ final class HrFleetController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
+    /** @return array<string, mixed>|null */
+    private function fleetDetail(int $id): ?array
+    {
+        HrService::bootstrapTenant();
+        return (new HrService())->fleetVehicleDetail($id);
+    }
+
+    public function show(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $detail = $this->fleetDetail($id);
+        if ($detail === null) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+        $vehicle = $detail['vehicle'];
+        $this->view($this->viewPrefix . '/show', array_merge($detail, [
+            'title' => __('hr_fleet') . ' — ' . (string) ($vehicle['plate_number'] ?? ''),
+            'routePrefix' => $this->routePrefix,
+            'employeeRoutePrefix' => rateb_app_route('hr/employees'),
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('hr-employees'),
+        ]), $this->layout());
+    }
+
+    public function print(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $detail = $this->fleetDetail($id);
+        if ($detail === null) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $vehicle = $detail['vehicle'];
+        $this->view($this->viewPrefix . '/print', array_merge($detail, [
+            'title' => __('print') . ' — ' . (string) ($vehicle['plate_number'] ?? ''),
+        ]), 'print');
+    }
+
+    public function employeeReceipt(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $detail = $this->fleetDetail($id);
+        if ($detail === null) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $vehicle = $detail['vehicle'];
+        $this->view($this->viewPrefix . '/receipt', array_merge($detail, [
+            'title' => __('fleet_employee_receipt') . ' — ' . (string) ($vehicle['plate_number'] ?? ''),
+            'receipt_date' => date('Y-m-d'),
+        ]), 'print');
+    }
+
     protected function layout(): string
     {
         return 'main';

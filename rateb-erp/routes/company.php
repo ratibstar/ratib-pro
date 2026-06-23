@@ -196,6 +196,11 @@ foreach ($hrCrudRoutes as $path => $cfg) {
         $router->get($app('hr/employees/export'), [HrEmployeesController::class, 'export'], $mw);
         $router->get($app('hr/employees/{id}'), [HrEmployeesController::class, 'show'], $mw);
     }
+    if ($path === 'hr/fleet') {
+        $router->get($app('hr/fleet/{id}'), [HrFleetController::class, 'show'], $mw);
+        $router->get($app('hr/fleet/{id}/print'), [HrFleetController::class, 'print'], $mw);
+        $router->get($app('hr/fleet/{id}/receipt'), [HrFleetController::class, 'employeeReceipt'], $mw);
+    }
     $router->get($app($path . '/{id}/edit'), [$class, 'edit'], $mw);
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);

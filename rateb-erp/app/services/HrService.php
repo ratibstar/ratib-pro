@@ -5,7 +5,9 @@ namespace Rateb\App\Services;
 
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\AttendanceRecord;
+use Rateb\App\Models\Company;
 use Rateb\App\Models\Employee;
+use Rateb\App\Models\HrFleetVehicle;
 use Rateb\App\Models\HrHoliday;
 use Rateb\App\Models\HrLoan;
 use Rateb\App\Models\HrPayrollStructure;
@@ -246,6 +248,36 @@ final class HrService
             'attendance_ytd' => $attendance ?: ['present' => 0, 'absent' => 0, 'on_leave' => 0],
             'recent_leaves' => $leaves,
             'leave_balances' => $balances,
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function fleetVehicleDetail(int $vehicleId): ?array
+    {
+        $vehicle = (new HrFleetVehicle())->find($vehicleId);
+        if (!$vehicle) {
+            return null;
+        }
+        $companyId = (int) ($vehicle['company_id'] ?? 0);
+        $company = (new Company())->find($companyId);
+        $lookup = new FormLookupService();
+        $empId = (int) ($vehicle['assigned_employee_id'] ?? 0);
+        $employee = null;
+        $departmentName = '';
+        if ($empId > 0) {
+            $employee = (new Employee())->find($empId);
+            if ($employee) {
+                $departmentName = $lookup->resolveFkLabel('hr_departments', $employee['department_id'] ?? 0);
+            }
+        }
+        return [
+            'vehicle' => $vehicle,
+            'company' => $company ?: [],
+            'company_name' => (string) ($company['name'] ?? ''),
+            'assigned_employee_name' => $lookup->resolveFkLabel('employees', $empId),
+            'department_name' => $departmentName,
+            'employee' => $employee,
+            'status_label' => __((string) ($vehicle['status'] ?? 'active')),
         ];
     }
 

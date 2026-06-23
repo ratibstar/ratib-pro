@@ -8,6 +8,8 @@ $createEnabled = $createEnabled ?? true;
 $actionsEnabled = $actionsEnabled ?? true;
 $exportEnabled = $exportEnabled ?? true;
 $viewEnabled = $viewEnabled ?? false;
+$printEnabled = $printEnabled ?? false;
+$employeeReceiptEnabled = $employeeReceiptEnabled ?? false;
 $customsInvoiceActions = !empty($customsInvoiceActions);
 $actionsRoutePrefix = $actionsRoutePrefix ?? ($routePrefix ?? '');
 if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
@@ -181,6 +183,12 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php } else { ?>
                         <?php if ($viewEnabled) { ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
+                        <?php } ?>
+                        <?php if ($printEnabled) { ?>
+                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/print'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('print'); ?>" target="_blank" rel="noopener"><i class="fas fa-print"></i></a>
+                        <?php } ?>
+                        <?php if ($employeeReceiptEnabled && (int) ($row['assigned_employee_id'] ?? 0) > 0) { ?>
+                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/receipt'); ?>" class="btn btn-sm btn-outline-success" title="<?php echo __('fleet_employee_receipt'); ?>" target="_blank" rel="noopener"><i class="fas fa-file-signature"></i></a>
                         <?php } ?>
                         <?php if ($documentEntityType !== '') {
                             $docCount = (int) ($row['document_count'] ?? 0);
