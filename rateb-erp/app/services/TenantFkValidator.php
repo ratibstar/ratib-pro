@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\Database;
 use Rateb\App\Core\TenantContext;
 
 final class TenantFkValidator
@@ -19,7 +20,6 @@ final class TenantFkValidator
         'purchase_order_id' => 'rateb_purchase_orders',
         'employee_id' => 'rateb_employees',
         'department_id' => 'rateb_hr_departments',
-        'inventory_id' => 'rateb_inventory',
         'account_id' => 'rateb_chart_of_accounts',
         'leave_type_id' => 'rateb_leave_types',
         'period_id' => 'rateb_payroll_periods',
@@ -29,9 +29,10 @@ final class TenantFkValidator
     public static function validate(array $data, array $fields): void
     {
         $companyId = TenantContext::companyId();
-        if (($companyId === null || $companyId < 1) && TenantContext::isSuperAdmin()
-            && function_exists('rateb_resolve_ops_company_id')) {
-            $companyId = rateb_resolve_ops_company_id();
+        if ($companyId === null || $companyId < 1) {
+            if (function_exists('rateb_resolve_ops_company_id')) {
+                $companyId = rateb_resolve_ops_company_id();
+            }
         }
         if ($companyId === null || $companyId < 1) {
             if (TenantContext::isSuperAdmin()) {
@@ -52,10 +53,28 @@ final class TenantFkValidator
             if ($table === '') {
                 continue;
             }
-            if (!TenantGuard::belongsToCompany($table, $id, $companyId)) {
+            if (!self::belongsToCompany($table, $id, (int) $companyId)) {
                 $msg = function_exists('__') ? __('db_fk_violation') : 'Invalid reference for ' . $field . '.';
                 throw new \RuntimeException($msg);
             }
         }
+    }
+
+    private static function belongsToCompany(string $table, int $id, int $companyId): bool
+    {
+        if ($id < 1 || $companyId < 1 || !in_array($table, self::allowedTables(), true)) {
+            return false;
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare("SELECT id FROM {$table} WHERE id = :id AND company_id = :cid LIMIT 1");
+        $stmt->execute(['id' => $id, 'cid' => $companyId]);
+
+        return (bool) $stmt->fetch();
+    }
+
+    /** @return array<int, string> */
+    private static function allowedTables(): array
+    {
+        return array_values(array_unique(self::FIELD_TABLE));
     }
 }

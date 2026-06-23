@@ -14,6 +14,7 @@ final class TenantGuard
         'rateb_medical_devices',
         'rateb_contracts',
         'rateb_suppliers',
+        'rateb_purchase_orders',
         'rateb_inventory',
         'rateb_warehouses',
         'rateb_product_categories',

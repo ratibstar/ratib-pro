@@ -73,7 +73,12 @@
             url += '&exclude_id=' + excludeId;
         }
         fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                if (!r.ok) {
+                    return { rows: [] };
+                }
+                return r.json();
+            })
             .then(function (data) { renderHistory(data.rows || []); })
             .catch(function () { renderHistory([]); });
     }
@@ -157,7 +162,12 @@
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },
         })
-            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                if (!r.ok) {
+                    return { profile: null, purchase_orders: [], rfqs: [] };
+                }
+                return r.json();
+            })
             .then(function (data) {
                 var profile = data.profile || null;
                 if (profile) {
