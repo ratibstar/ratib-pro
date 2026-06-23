@@ -195,6 +195,12 @@
     }
 
     function updateTableTotals(table) {
+        if (table.closest('[data-invoice-form]')) {
+            table.querySelectorAll('[data-line-items-row]').forEach(function (row) {
+                updateRowTotal(row);
+            });
+            return;
+        }
         var subtotal = 0;
         var tax = 0;
         var grand = 0;
@@ -454,9 +460,12 @@
                 updateStockHint(e.target);
             }
             if (e.target.matches('[data-procurement-adjust], [name="currency"]')) {
-                var table = document.querySelector('[data-line-items-table]');
-                if (table) { updateTableTotals(table); }
                 var form = e.target.closest('[data-procurement-form]');
+                if (!form) {
+                    return;
+                }
+                var table = form.querySelector('[data-line-items-table]');
+                if (table) { updateTableTotals(table); }
                 if (e.target.matches('[name="currency"]')) {
                     syncEstimatedCurrency(form);
                 }
@@ -464,7 +473,11 @@
         });
         document.addEventListener('input', function (e) {
             if (e.target.matches('[data-procurement-adjust]')) {
-                var table = document.querySelector('[data-line-items-table]');
+                var form = e.target.closest('[data-procurement-form]');
+                if (!form) {
+                    return;
+                }
+                var table = form.querySelector('[data-line-items-table]');
                 if (table) { updateTableTotals(table); }
             }
         });

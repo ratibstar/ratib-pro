@@ -10,6 +10,15 @@
         return (Math.round(n * 100) / 100).toFixed(2);
     }
 
+    function readJson(response) {
+        if (!response || !response.ok) {
+            return Promise.resolve(null);
+        }
+        return response.json().catch(function () {
+            return null;
+        });
+    }
+
     function addDays(dateStr, days) {
         if (!dateStr) return '';
         var d = new Date(dateStr + 'T12:00:00');
@@ -157,7 +166,7 @@
                 headers: { 'Accept': 'application/json' },
                 credentials: 'same-origin'
             })
-                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(readJson)
                 .then(function (data) {
                     refreshLineAccountSelects(data && data.accounts ? data.accounts : []);
                 })
@@ -193,7 +202,7 @@
                 headers: { 'Accept': 'application/json' },
                 credentials: 'same-origin'
             })
-                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(readJson)
                 .then(function (data) {
                     var profile = data && data.profile ? data.profile : {};
                     if (taxBuyerName) taxBuyerName.value = profile.legal_name || '';
@@ -218,7 +227,7 @@
                 headers: { 'Accept': 'application/json' },
                 credentials: 'same-origin'
             })
-                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(readJson)
                 .then(function (data) {
                     if (!data || !data.subscription || !subEl) return;
                     subEl.value = String(data.subscription.id);
@@ -402,9 +411,15 @@
         recalc();
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function bootInvoiceForms() {
         document.querySelectorAll('[data-invoice-form]').forEach(initInvoiceForm);
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootInvoiceForms);
+    } else {
+        bootInvoiceForms();
+    }
 
     window.ratebInitInvoiceForm = initInvoiceForm;
 })();

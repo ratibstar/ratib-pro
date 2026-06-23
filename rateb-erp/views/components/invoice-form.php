@@ -380,5 +380,75 @@ $subJson = json_encode(array_map(static function (array $sub): array {
             if (input) input.value = btn.getAttribute('data-set-action') || 'draft';
         });
     });
+
+    function parseInvoiceNum(val) {
+        var n = parseFloat(val);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function fmtInvoiceNum(n) {
+        return (Math.round(n * 100) / 100).toFixed(2);
+    }
+
+    function fallbackInvoiceRecalc(form) {
+        if (!form || form.dataset.invoiceBound === '1') {
+            return;
+        }
+        var amountEl = form.querySelector('[name="amount"]');
+        var taxRateEl = form.querySelector('[name="tax_rate"]');
+        var discountEl = form.querySelector('[name="discount_amount"]');
+        var discountTypeEl = form.querySelector('[name="discount_type"]');
+        var taxAmountEl = form.querySelector('[name="tax_amount"]');
+        var totalEl = form.querySelector('[name="total_amount"]');
+        if (!amountEl || !taxRateEl) {
+            return;
+        }
+        function recalc() {
+            var amount = Math.max(0, parseInvoiceNum(amountEl.value));
+            var taxRate = Math.max(0, parseInvoiceNum(taxRateEl.value));
+            var discVal = Math.max(0, parseInvoiceNum(discountEl && discountEl.value));
+            var discType = (discountTypeEl && discountTypeEl.value) || 'value';
+            var discount = discType === 'percent' ? Math.min(amount, amount * (discVal / 100)) : Math.min(amount, discVal);
+            var subtotal = Math.max(0, amount - discount);
+            var tax = Math.round(subtotal * (taxRate / 100) * 100) / 100;
+            var total = Math.round((subtotal + tax) * 100) / 100;
+            if (taxAmountEl) taxAmountEl.value = fmtInvoiceNum(tax);
+            if (totalEl) totalEl.value = fmtInvoiceNum(total);
+            var setText = function (sel, val) {
+                var el = form.querySelector(sel);
+                if (el) el.textContent = fmtInvoiceNum(val);
+            };
+            setText('[data-summary-subtotal]', amount);
+            setText('[data-summary-discount]', discount);
+            setText('[data-summary-tax]', tax);
+            setText('[data-summary-total]', total);
+            var taxLabel = form.querySelector('[data-summary-tax-label]');
+            if (taxLabel) taxLabel.textContent = taxRate + '%';
+        }
+        [amountEl, taxRateEl, discountEl].forEach(function (el) {
+            if (el) el.addEventListener('input', recalc);
+        });
+        form.querySelectorAll('[data-discount-mode]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (discountTypeEl) discountTypeEl.value = btn.getAttribute('data-discount-mode') || 'value';
+                recalc();
+            });
+        });
+        recalc();
+    }
+
+    function bootInvoiceFormUi() {
+        if (typeof window.ratebInitInvoiceForm === 'function') {
+            document.querySelectorAll('[data-invoice-form]').forEach(window.ratebInitInvoiceForm);
+            return;
+        }
+        document.querySelectorAll('[data-invoice-form]').forEach(fallbackInvoiceRecalc);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootInvoiceFormUi);
+    } else {
+        bootInvoiceFormUi();
+    }
 })();
 </script>
