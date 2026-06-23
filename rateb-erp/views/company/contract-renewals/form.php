@@ -6,7 +6,10 @@
 /** @var bool $canApprove */
 $item = $item ?? [];
 $id = (int) ($item['id'] ?? 0);
-$approval = (string) ($item['manager_approval'] ?? 'pending');
+$approval = (string) ($item['manager_approval_raw'] ?? $item['manager_approval'] ?? 'pending');
+if (str_starts_with($approval, 'manager_approval_')) {
+    $approval = substr($approval, strlen('manager_approval_'));
+}
 $canApprove = !empty($canApprove);
 ?>
 <div class="rateb-card mb-4">

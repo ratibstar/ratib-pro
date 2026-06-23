@@ -462,30 +462,45 @@ $router->post($app('supplier-comms/{id}/archive'), [\Rateb\App\Controllers\Compa
 $ctrMw = rateb_erp_mw('contracts', '', 'contract-renewals');
 $ctrWriteMw = rateb_erp_mw('contracts', 'contracts.manage', 'contract-renewals');
 $router->get($app('contract-renewals'), [ContractRenewalsController::class, 'index'], $ctrMw);
+$router->get($app('contract-renewals/export'), [ContractRenewalsController::class, 'export'], rateb_erp_mw('contracts', 'reports.export', 'contract-renewals'));
+$router->get($app('contract-renewals/{id}/print'), [ContractRenewalsController::class, 'print'], $ctrMw);
+$router->get($app('contract-renewals/{id}/download'), [ContractRenewalsController::class, 'download'], rateb_erp_mw('contracts', 'reports.export', 'contract-renewals'));
 $router->get($app('contract-renewals/{id}/edit'), [ContractRenewalsController::class, 'edit'], $ctrWriteMw);
+$router->get($app('contract-renewals/{id}'), [ContractRenewalsController::class, 'show'], $ctrMw);
 $router->post($app('contract-renewals'), [ContractRenewalsController::class, 'store'], $ctrWriteMw);
 $router->post($app('contract-renewals/{id}'), [ContractRenewalsController::class, 'update'], $ctrWriteMw);
 $router->post($app('contract-renewals/{id}/approve'), [ContractRenewalsController::class, 'approve'], $ctrWriteMw);
 $router->post($app('contract-renewals/{id}/reject'), [ContractRenewalsController::class, 'reject'], $ctrWriteMw);
 $router->post($app('contract-renewals/{id}/delete'), [ContractRenewalsController::class, 'destroy'], $ctrWriteMw);
 $router->post($app('contract-renewals/bulk-delete'), [ContractRenewalsController::class, 'bulkDestroy'], $ctrWriteMw);
-$router->get($app('contract-renewals/export'), [ContractRenewalsController::class, 'export'], rateb_erp_mw('contracts', 'reports.export', 'contract-renewals'));
 
 $astMw = rateb_erp_mw('assets', '', 'asset-maintenance');
 $astWriteMw = rateb_erp_mw('assets', 'asset_maintenance.manage', 'asset-maintenance');
+$astExpMw = rateb_erp_mw('assets', 'reports.export', 'asset-maintenance');
 $router->get($app('asset-maintenance'), [AssetMaintenanceController::class, 'index'], $astMw);
+$router->get($app('asset-maintenance/export'), [AssetMaintenanceController::class, 'export'], $astExpMw);
+$router->get($app('asset-maintenance/{id}/print'), [AssetMaintenanceController::class, 'print'], $astMw);
+$router->get($app('asset-maintenance/{id}/download'), [AssetMaintenanceController::class, 'download'], $astExpMw);
+$router->get($app('asset-maintenance/{id}'), [AssetMaintenanceController::class, 'show'], $astMw);
 $router->post($app('asset-maintenance'), [AssetMaintenanceController::class, 'store'], $astWriteMw);
+$router->post($app('asset-maintenance/{id}/approve'), [AssetMaintenanceController::class, 'approve'], $astWriteMw);
+$router->post($app('asset-maintenance/{id}/reject'), [AssetMaintenanceController::class, 'reject'], $astWriteMw);
 $router->post($app('asset-maintenance/{id}/delete'), [AssetMaintenanceController::class, 'destroy'], $astWriteMw);
 $router->post($app('asset-maintenance/bulk-delete'), [AssetMaintenanceController::class, 'bulkDestroy'], $astWriteMw);
-$router->get($app('asset-maintenance/export'), [AssetMaintenanceController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-maintenance'));
 
 $aaMw = rateb_erp_mw('assets', '', 'asset-assignments');
 $aaWriteMw = rateb_erp_mw('assets', 'asset_assignments.manage', 'asset-assignments');
+$aaExpMw = rateb_erp_mw('assets', 'reports.export', 'asset-assignments');
 $router->get($app('asset-assignments'), [AssetAssignmentsController::class, 'index'], $aaMw);
+$router->get($app('asset-assignments/export'), [AssetAssignmentsController::class, 'export'], $aaExpMw);
+$router->get($app('asset-assignments/{id}/print'), [AssetAssignmentsController::class, 'print'], $aaMw);
+$router->get($app('asset-assignments/{id}/download'), [AssetAssignmentsController::class, 'download'], $aaExpMw);
+$router->get($app('asset-assignments/{id}'), [AssetAssignmentsController::class, 'show'], $aaMw);
 $router->post($app('asset-assignments'), [AssetAssignmentsController::class, 'store'], $aaWriteMw);
+$router->post($app('asset-assignments/{id}/approve'), [AssetAssignmentsController::class, 'approve'], $aaWriteMw);
+$router->post($app('asset-assignments/{id}/reject'), [AssetAssignmentsController::class, 'reject'], $aaWriteMw);
 $router->post($app('asset-assignments/{id}/delete'), [AssetAssignmentsController::class, 'destroy'], $aaWriteMw);
 $router->post($app('asset-assignments/bulk-delete'), [AssetAssignmentsController::class, 'bulkDestroy'], $aaWriteMw);
-$router->get($app('asset-assignments/export'), [AssetAssignmentsController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-assignments'));
 
 $adMw = rateb_erp_mw('assets', '', 'asset-depreciation');
 $adWriteMw = rateb_erp_mw('assets', 'asset_depreciation.manage', 'asset-depreciation');
@@ -501,21 +516,41 @@ $router->post($app('asset-depreciation/bulk-delete'), [AssetDepreciationControll
 
 $devMw = rateb_erp_mw('medical_devices', '', 'device-maintenance');
 $devWriteMw = rateb_erp_mw('medical_devices', 'device_service.manage', 'device-maintenance');
+$devExpMw = rateb_erp_mw('medical_devices', 'reports.export', 'device-maintenance');
 $router->get($app('device-maintenance'), [DeviceMaintenanceController::class, 'index'], $devMw);
+$router->get($app('device-maintenance/export'), [DeviceMaintenanceController::class, 'export'], $devExpMw);
+$router->get($app('device-maintenance/{id}/print'), [DeviceMaintenanceController::class, 'print'], $devMw);
+$router->get($app('device-maintenance/{id}/download'), [DeviceMaintenanceController::class, 'download'], $devExpMw);
+$router->get($app('device-maintenance/{id}'), [DeviceMaintenanceController::class, 'show'], $devMw);
 $router->post($app('device-maintenance'), [DeviceMaintenanceController::class, 'store'], $devWriteMw);
+$router->post($app('device-maintenance/{id}/approve'), [DeviceMaintenanceController::class, 'approve'], $devWriteMw);
+$router->post($app('device-maintenance/{id}/reject'), [DeviceMaintenanceController::class, 'reject'], $devWriteMw);
 $router->post($app('device-maintenance/{id}/delete'), [DeviceMaintenanceController::class, 'destroy'], $devWriteMw);
 $router->post($app('device-maintenance/bulk-delete'), [DeviceMaintenanceController::class, 'bulkDestroy'], $devWriteMw);
-$router->get($app('device-maintenance/export'), [DeviceMaintenanceController::class, 'export'], rateb_erp_mw('medical_devices', 'reports.export', 'device-maintenance'));
 
 $dspMw = rateb_erp_mw('medical_devices', '', 'device-spare-parts');
 $dspWriteMw = rateb_erp_mw('medical_devices', 'device_spare_parts.manage', 'device-spare-parts');
+$dspExpMw = rateb_erp_mw('medical_devices', 'reports.export', 'device-spare-parts');
 $router->get($app('device-spare-parts'), [DeviceSparePartsController::class, 'index'], $dspMw);
+$router->get($app('device-spare-parts/export'), [DeviceSparePartsController::class, 'export'], $dspExpMw);
+$router->get($app('device-spare-parts/{id}/print'), [DeviceSparePartsController::class, 'print'], $dspMw);
+$router->get($app('device-spare-parts/{id}/download'), [DeviceSparePartsController::class, 'download'], $dspExpMw);
+$router->get($app('device-spare-parts/{id}'), [DeviceSparePartsController::class, 'show'], $dspMw);
 $router->post($app('device-spare-parts'), [DeviceSparePartsController::class, 'store'], $dspWriteMw);
+$router->post($app('device-spare-parts/{id}/approve'), [DeviceSparePartsController::class, 'approve'], $dspWriteMw);
+$router->post($app('device-spare-parts/{id}/reject'), [DeviceSparePartsController::class, 'reject'], $dspWriteMw);
 $router->post($app('device-spare-parts/{id}/delete'), [DeviceSparePartsController::class, 'destroy'], $dspWriteMw);
 $router->post($app('device-spare-parts/bulk-delete'), [DeviceSparePartsController::class, 'bulkDestroy'], $dspWriteMw);
-$router->get($app('device-spare-parts/export'), [DeviceSparePartsController::class, 'export'], rateb_erp_mw('medical_devices', 'reports.export', 'device-spare-parts'));
-$router->get($app('device-warranty'), [DeviceWarrantyController::class, 'index'], rateb_erp_mw('medical_devices', '', 'device-warranty'));
-$router->post($app('device-warranty/{id}'), [DeviceWarrantyController::class, 'update'], rateb_erp_mw('medical_devices', 'device_service.manage', 'device-warranty'));
+
+$dwMw = rateb_erp_mw('medical_devices', '', 'device-warranty');
+$dwWriteMw = rateb_erp_mw('medical_devices', 'device_service.manage', 'device-warranty');
+$dwExpMw = rateb_erp_mw('medical_devices', 'reports.export', 'device-warranty');
+$router->get($app('device-warranty'), [DeviceWarrantyController::class, 'index'], $dwMw);
+$router->get($app('device-warranty/export'), [DeviceWarrantyController::class, 'export'], $dwExpMw);
+$router->get($app('device-warranty/{id}/print'), [DeviceWarrantyController::class, 'print'], $dwMw);
+$router->get($app('device-warranty/{id}/download'), [DeviceWarrantyController::class, 'download'], $dwExpMw);
+$router->get($app('device-warranty/{id}'), [DeviceWarrantyController::class, 'show'], $dwMw);
+$router->post($app('device-warranty/{id}'), [DeviceWarrantyController::class, 'update'], $dwWriteMw);
 
 $procMw = rateb_erp_mw('procurement', '', 'reports/procurement');
 $repMw = rateb_erp_mw('reports', '', 'reports/kpi');

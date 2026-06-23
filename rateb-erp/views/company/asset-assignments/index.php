@@ -15,6 +15,7 @@ Rateb\App\Core\View::partial('workflow-index', [
         ['name' => 'department', 'label' => 'department'],
         ['name' => 'assigned_at', 'label' => 'assigned_at'],
         ['name' => 'returned_at', 'label' => 'returned_at'],
+        ['name' => 'manager_approval', 'label' => 'manager_approval', 'type' => 'status'],
         ['name' => 'notes', 'label' => 'notes', 'type' => 'notes'],
     ],
     'exportRoute' => $exportRoute ?? rateb_app_url('asset-assignments/export'),

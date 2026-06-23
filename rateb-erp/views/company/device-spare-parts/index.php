@@ -14,6 +14,7 @@ Rateb\App\Core\View::partial('workflow-index', [
         ['name' => 'part_name', 'label' => 'part_name'],
         ['name' => 'quantity', 'label' => 'quantity'],
         ['name' => 'reorder_level', 'label' => 'reorder_level'],
+        ['name' => 'manager_approval', 'label' => 'manager_approval', 'type' => 'status'],
     ],
     'exportRoute' => $exportRoute ?? rateb_app_url('device-spare-parts/export'),
     'exportEnabled' => $exportEnabled ?? true,

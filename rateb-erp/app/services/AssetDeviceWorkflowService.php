@@ -477,6 +477,92 @@ final class AssetDeviceWorkflowService
         $db = \Rateb\App\Core\Database::connection();
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+        $wf = new WorkflowRecordService();
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $wf->formatRow($row);
+        }
+        return $out;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findMaintenance(int $id): ?array
+    {
+        return $this->tenantFind(
+            'rateb_asset_maintenance m LEFT JOIN rateb_assets a ON a.id = m.asset_id LEFT JOIN rateb_users u ON u.id = m.approved_by',
+            'm.*, a.name AS asset_name, u.name AS approved_by_name',
+            $id
+        );
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findAssignment(int $id): ?array
+    {
+        return $this->tenantFind(
+            'rateb_asset_assignments m LEFT JOIN rateb_assets a ON a.id = m.asset_id LEFT JOIN rateb_users u ON u.id = m.approved_by',
+            'm.*, a.name AS asset_name, u.name AS approved_by_name',
+            $id
+        );
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findDeviceService(int $id): ?array
+    {
+        return $this->tenantFind(
+            'rateb_device_service_history m LEFT JOIN rateb_medical_devices d ON d.id = m.device_id LEFT JOIN rateb_users u ON u.id = m.approved_by',
+            'm.*, d.device_name, u.name AS approved_by_name',
+            $id
+        );
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findSparePart(int $id): ?array
+    {
+        return $this->tenantFind(
+            'rateb_device_spare_parts m LEFT JOIN rateb_medical_devices d ON d.id = m.device_id LEFT JOIN rateb_users u ON u.id = m.approved_by',
+            'm.*, d.device_name, u.name AS approved_by_name',
+            $id
+        );
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findMedicalDevice(int $id): ?array
+    {
+        $cid = TenantContext::companyId();
+        $sql = 'SELECT * FROM rateb_medical_devices WHERE id = :id';
+        $params = ['id' => $id];
+        if ($cid !== null && !TenantContext::isSuperAdmin()) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $cid;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function tenantFind(string $from, string $select, int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $cid = TenantContext::companyId();
+        $sql = "SELECT {$select} FROM {$from} WHERE m.id = :id";
+        $params = ['id' => $id];
+        if ($cid !== null && !TenantContext::isSuperAdmin()) {
+            $sql .= ' AND m.company_id = :cid';
+            $params['cid'] = $cid;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+        return (new WorkflowRecordService())->formatRow($row);
     }
 }

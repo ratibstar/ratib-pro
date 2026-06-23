@@ -14,11 +14,16 @@
 /** @var string|null $createUrl */
 /** @var bool|null $canApprove */
 /** @var bool|null $editEnabled */
+/** @var bool|null $viewActionsEnabled */
 /** @var string|null $formHint */
 $entitySlug = (string) ($entitySlug ?? '');
 $routePrefix = (string) ($routePrefix ?? rateb_app_route($entitySlug));
 $canManage = $canManage ?? rateb_can_manage_entity($entitySlug);
 $exportEnabled = $exportEnabled ?? rateb_can_export_entity($entitySlug);
+$viewActionsEnabled = $viewActionsEnabled ?? true;
+$approvalEnabled = $approvalEnabled ?? true;
+$editEnabled = $editEnabled ?? false;
+$canApprove = $canApprove ?? $canManage;
 $lookups = $lookups ?? [];
 if ($formFields !== null && $lookups === []) {
     $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($formFields);
@@ -59,9 +64,11 @@ if ($formFields !== null && $lookups === []) {
             'columns' => $columns,
             'bulkEnabled' => $canManage && !empty($formFields),
             'actionsEnabled' => $canManage && !empty($formFields),
+            'viewActionsEnabled' => !empty($viewActionsEnabled),
             'editEnabled' => !empty($editEnabled),
             'approvalEnabled' => !empty($approvalEnabled),
             'canApprove' => !empty($canApprove),
+            'exportEnabled' => !empty($exportEnabled),
             'routePrefix' => $routePrefix,
             'csrf' => $csrf,
         ]); ?>

@@ -15,6 +15,7 @@ Rateb\App\Core\View::partial('workflow-index', [
         ['name' => 'service_type', 'label' => 'service_type'],
         ['name' => 'provider', 'label' => 'provider'],
         ['name' => 'cost', 'label' => 'cost', 'type' => 'money'],
+        ['name' => 'manager_approval', 'label' => 'manager_approval', 'type' => 'status'],
         ['name' => 'notes', 'label' => 'notes', 'type' => 'notes'],
     ],
     'exportRoute' => $exportRoute ?? rateb_app_url('device-maintenance/export'),

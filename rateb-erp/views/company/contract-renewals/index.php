@@ -25,6 +25,8 @@ Rateb\App\Core\View::partial('workflow-index', [
     'canApprove' => $canApprove ?? false,
     'editEnabled' => true,
     'approvalEnabled' => true,
+    'viewActionsEnabled' => true,
+    'exportEnabled' => $exportEnabled ?? true,
     'formHint' => __('contract_renewal_pending_hint'),
 ]);
 ?>

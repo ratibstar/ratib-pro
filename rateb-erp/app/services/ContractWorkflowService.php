@@ -12,15 +12,24 @@ final class ContractWorkflowService
     public function listRenewals(int $limit = 100): array
     {
         $companyId = TenantContext::companyId();
-        $sql = 'SELECT r.*, c.contract_no, c.title AS contract_title FROM rateb_contract_renewals r
-                LEFT JOIN rateb_contracts c ON c.id = r.contract_id AND c.company_id = r.company_id WHERE 1=1';
+        $sql = 'SELECT r.*, c.contract_no, c.title AS contract_title, c.end_date AS contract_end_date, c.value AS contract_value,
+                       s.name AS supplier_name
+                FROM rateb_contract_renewals r
+                LEFT JOIN rateb_contracts c ON c.id = r.contract_id AND c.company_id = r.company_id
+                LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id AND s.company_id = r.company_id
+                WHERE 1=1';
         $params = [];
         if ($companyId !== null && !TenantContext::isSuperAdmin()) {
             $sql .= ' AND r.company_id = :cid';
             $params['cid'] = $companyId;
         }
         $sql .= ' ORDER BY ' . rateb_list_order_sql('r') . ' LIMIT ' . max(1, min(500, $limit));
-        return (new Contract())->query($sql, $params);
+        $rows = (new Contract())->query($sql, $params);
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->formatRenewalDisplay($row);
+        }
+        return $out;
     }
 
     /** @param array<string, mixed> $data */
@@ -56,8 +65,12 @@ final class ContractWorkflowService
             return null;
         }
         $companyId = TenantContext::companyId();
-        $sql = 'SELECT r.*, c.contract_no, c.title AS contract_title FROM rateb_contract_renewals r
+        $sql = 'SELECT r.*, c.contract_no, c.title AS contract_title, c.end_date AS contract_end_date, c.value AS contract_value,
+                       s.name AS supplier_name, u.name AS approved_by_name
+                FROM rateb_contract_renewals r
                 LEFT JOIN rateb_contracts c ON c.id = r.contract_id AND c.company_id = r.company_id
+                LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id AND s.company_id = r.company_id
+                LEFT JOIN rateb_users u ON u.id = r.approved_by
                 WHERE r.id = :id';
         $params = ['id' => $id];
         if ($companyId !== null && !TenantContext::isSuperAdmin()) {
@@ -65,7 +78,65 @@ final class ContractWorkflowService
             $params['cid'] = $companyId;
         }
         $row = (new Contract())->queryOne($sql, $params);
-        return $row ?: null;
+        return $row ? $this->formatRenewalDisplay($row) : null;
+    }
+
+    /** @return array<int, array{name:string,label:string}> */
+    public function exportColumns(): array
+    {
+        return [
+            ['name' => 'renewal_no', 'label' => __('record_id')],
+            ['name' => 'contract_no', 'label' => __('contract_no')],
+            ['name' => 'contract_title', 'label' => __('title')],
+            ['name' => 'supplier_name', 'label' => __('suppliers')],
+            ['name' => 'renewal_date', 'label' => __('renewal_date')],
+            ['name' => 'new_end_date', 'label' => __('new_end_date')],
+            ['name' => 'new_value', 'label' => __('new_value')],
+            ['name' => 'status_label', 'label' => __('status')],
+            ['name' => 'manager_approval_label', 'label' => __('manager_approval')],
+            ['name' => 'notes', 'label' => __('notes')],
+        ];
+    }
+
+    /** @param array<string, mixed> $row */
+    public function formatRenewalDisplay(array $row): array
+    {
+        if (empty($row['contract_no']) && (int) ($row['contract_id'] ?? 0) > 0) {
+            $row['contract_no'] = '#' . (int) $row['contract_id'];
+        }
+        $end = (string) ($row['new_end_date'] ?? '');
+        if ($end === '0000-00-00') {
+            $row['new_end_date'] = '';
+        }
+        $contractEnd = (string) ($row['contract_end_date'] ?? '');
+        if ($contractEnd === '0000-00-00') {
+            $row['contract_end_date'] = '';
+        }
+        $approval = (string) ($row['manager_approval'] ?? 'pending');
+        if (str_starts_with($approval, 'manager_approval_')) {
+            $approval = substr($approval, strlen('manager_approval_'));
+        }
+        $row['manager_approval_raw'] = $approval;
+        $row['manager_approval'] = 'manager_approval_' . $approval;
+        $row['manager_approval_label'] = __('manager_approval_' . $approval);
+        $status = (string) ($row['status'] ?? 'planned');
+        $row['status_label'] = __($status);
+        return $row;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listRenewalsForExport(int $limit = 500): array
+    {
+        return $this->listRenewals($limit);
+    }
+
+    private function approvalState(array $row): string
+    {
+        $approval = (string) ($row['manager_approval_raw'] ?? $row['manager_approval'] ?? 'pending');
+        if (str_starts_with($approval, 'manager_approval_')) {
+            $approval = substr($approval, strlen('manager_approval_'));
+        }
+        return $approval;
     }
 
     /** @param array<string, mixed> $data */
@@ -75,7 +146,7 @@ final class ContractWorkflowService
         if (!$row) {
             throw new \RuntimeException(__('no_records'));
         }
-        if ((string) ($row['manager_approval'] ?? '') === 'approved') {
+        if ($this->approvalState($row) === 'approved') {
             throw new \RuntimeException(__('contract_renewal_already_processed'));
         }
         $contractId = (int) ($data['contract_id'] ?? $row['contract_id'] ?? 0);
@@ -91,7 +162,7 @@ final class ContractWorkflowService
             'ned' => $newEnd,
             'nv' => (float) ($data['new_value'] ?? 0),
             'notes' => $data['notes'] ?? null,
-            'ma' => (string) ($row['manager_approval'] ?? '') === 'rejected' ? 'pending' : ($row['manager_approval'] ?? 'pending'),
+            'ma' => $this->approvalState($row) === 'rejected' ? 'pending' : $this->approvalState($row),
             'st' => 'planned',
             'id' => $id,
             'cid' => (int) $row['company_id'],
@@ -104,7 +175,7 @@ final class ContractWorkflowService
         if (!$row) {
             throw new \RuntimeException(__('no_records'));
         }
-        if ((string) ($row['manager_approval'] ?? '') !== 'pending') {
+        if ($this->approvalState($row) !== 'pending') {
             throw new \RuntimeException(__('contract_renewal_already_processed'));
         }
         $db = \Rateb\App\Core\Database::connection();
@@ -157,7 +228,7 @@ final class ContractWorkflowService
         if (!$row) {
             throw new \RuntimeException(__('no_records'));
         }
-        if ((string) ($row['manager_approval'] ?? '') !== 'pending') {
+        if ($this->approvalState($row) !== 'pending') {
             throw new \RuntimeException(__('contract_renewal_already_processed'));
         }
         \Rateb\App\Core\Database::connection()->prepare(
