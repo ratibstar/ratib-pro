@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+if (!defined('RCC_ROOT')) {
+    define('RCC_ROOT', __DIR__);
+}
+
 require_once __DIR__ . '/config/env.php';
 
 /**

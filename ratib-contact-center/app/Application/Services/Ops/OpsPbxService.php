@@ -110,7 +110,7 @@ final class OpsPbxService
     /** @return array<string, mixed> */
     public function dialplanPackageInfo(): array
     {
-        $root = dirname(__DIR__, 3);
+        $root = RCC_ROOT;
         $base = $root . '/deploy/asterisk';
         $files = ['extensions_rcc.conf', 'queues_rcc.conf', 'pjsip_rcc.conf', 'rtp_rcc.conf', 'INSTALL.md'];
         $present = [];

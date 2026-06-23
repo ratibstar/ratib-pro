@@ -53,7 +53,7 @@ final class OpsDiagnosticService
         $hub = $this->diagHub();
         $add('realtime_hub', (bool) ($hub['running'] ?? false), 'port ' . ($hub['port'] ?? ''));
 
-        $add('voice_worker_script', is_file(dirname(__DIR__, 3) . '/bin/rcc-voice-worker.php'));
+        $add('voice_worker_script', is_file(RCC_ROOT . '/bin/rcc-voice-worker.php'));
 
         $sipCount = $this->countActive('rcc_sip_extensions', $tenantId);
         $add('sip_extensions', $sipCount > 0, (string) $sipCount);
@@ -91,7 +91,7 @@ final class OpsDiagnosticService
     {
         $row = $this->pbx->findActive($tenantId);
         if ($row === null) {
-            $config = (array) require dirname(__DIR__, 3) . '/config/asterisk.php';
+            $config = (array) require RCC_ROOT . '/config/asterisk.php';
         } else {
             $secretRef = (string) $row['ami_secret_ref'];
             $secret = getenv($secretRef) !== false ? (string) getenv($secretRef) : (string) (getenv('RCC_AMI_PASS') ?: '');
@@ -148,14 +148,14 @@ final class OpsDiagnosticService
             'running' => $running,
             'port' => $port,
             'error' => $running ? '' : $errstr,
-            'script' => is_file(dirname(__DIR__, 3) . '/bin/rcc-realtime-hub.php'),
+            'script' => is_file(RCC_ROOT . '/bin/rcc-realtime-hub.php'),
         ];
     }
 
     /** @return array<string, mixed> */
     public function diagVoiceWorker(): array
     {
-        $path = dirname(__DIR__, 3) . '/bin/rcc-voice-worker.php';
+        $path = RCC_ROOT . '/bin/rcc-voice-worker.php';
         return [
             'ok' => is_file($path),
             'path' => 'bin/rcc-voice-worker.php',

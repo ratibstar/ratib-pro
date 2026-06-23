@@ -156,7 +156,7 @@ final class OpsApiController
     /** @return array<string, mixed> */
     private function startHub(): array
     {
-        $root = dirname(__DIR__, 3);
+        $root = defined('RCC_ROOT') ? RCC_ROOT : dirname(__DIR__, 3);
         $script = $root . '/bin/start-realtime-hub.sh';
         if (!is_file($script)) {
             return ['started' => false, 'message' => 'start script missing'];
