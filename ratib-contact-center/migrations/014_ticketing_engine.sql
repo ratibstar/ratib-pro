@@ -41,25 +41,37 @@ CREATE TABLE IF NOT EXISTS rcc_ticket_statuses (
     CONSTRAINT fk_rcc_ticket_status_tenant FOREIGN KEY (tenant_id) REFERENCES rcc_tenants (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE rcc_tickets ADD COLUMN category_id INT UNSIGNED NULL AFTER contact_id;
+ALTER TABLE rcc_tickets ADD COLUMN contact_id INT UNSIGNED NULL;
 
-ALTER TABLE rcc_tickets ADD COLUMN priority_id INT UNSIGNED NULL AFTER priority;
+ALTER TABLE rcc_tickets ADD COLUMN conversation_id INT UNSIGNED NULL;
 
-ALTER TABLE rcc_tickets ADD COLUMN status_id INT UNSIGNED NULL AFTER status;
+ALTER TABLE rcc_tickets ADD COLUMN source VARCHAR(64) NULL DEFAULT 'manual';
 
-ALTER TABLE rcc_tickets ADD COLUMN assigned_agent_id INT UNSIGNED NULL AFTER status_id;
+ALTER TABLE rcc_tickets ADD COLUMN auto_created TINYINT(1) NOT NULL DEFAULT 0;
 
-ALTER TABLE rcc_tickets ADD COLUMN assigned_by_user_id INT UNSIGNED NULL AFTER assigned_agent_id;
+ALTER TABLE rcc_tickets ADD COLUMN resolution_due TIMESTAMP NULL;
 
-ALTER TABLE rcc_tickets ADD COLUMN parent_ticket_id INT UNSIGNED NULL AFTER assigned_by_user_id;
+ALTER TABLE rcc_tickets ADD COLUMN updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP;
 
-ALTER TABLE rcc_tickets ADD COLUMN merged_into_id INT UNSIGNED NULL AFTER parent_ticket_id;
+ALTER TABLE rcc_tickets ADD COLUMN category_id INT UNSIGNED NULL;
 
-ALTER TABLE rcc_tickets ADD COLUMN first_response_at TIMESTAMP NULL AFTER resolution_due;
+ALTER TABLE rcc_tickets ADD COLUMN priority_id INT UNSIGNED NULL;
 
-ALTER TABLE rcc_tickets ADD COLUMN resolved_at TIMESTAMP NULL AFTER first_response_at;
+ALTER TABLE rcc_tickets ADD COLUMN status_id INT UNSIGNED NULL;
 
-ALTER TABLE rcc_tickets ADD COLUMN closed_at TIMESTAMP NULL AFTER resolved_at;
+ALTER TABLE rcc_tickets ADD COLUMN assigned_agent_id INT UNSIGNED NULL;
+
+ALTER TABLE rcc_tickets ADD COLUMN assigned_by_user_id INT UNSIGNED NULL;
+
+ALTER TABLE rcc_tickets ADD COLUMN parent_ticket_id INT UNSIGNED NULL;
+
+ALTER TABLE rcc_tickets ADD COLUMN merged_into_id INT UNSIGNED NULL;
+
+ALTER TABLE rcc_tickets ADD COLUMN first_response_at TIMESTAMP NULL;
+
+ALTER TABLE rcc_tickets ADD COLUMN resolved_at TIMESTAMP NULL;
+
+ALTER TABLE rcc_tickets ADD COLUMN closed_at TIMESTAMP NULL;
 
 ALTER TABLE rcc_tickets ADD KEY idx_rcc_tickets_assignee (tenant_id, assigned_agent_id, status);
 

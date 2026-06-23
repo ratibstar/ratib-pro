@@ -653,6 +653,22 @@ function control_contact_center_upgrade_legacy_schema(\PDO $pdo, ?array &$log = 
         }
     }
 
+    // 003_queue_ticket_stub rcc_tickets lacks columns expected by 009/014 when CREATE IF NOT EXISTS skipped.
+    if (control_contact_center_table_has_column($pdo, 'rcc_tickets', 'id')) {
+        foreach ([
+            'conversation_id' => 'ALTER TABLE rcc_tickets ADD COLUMN conversation_id INT UNSIGNED NULL',
+            'contact_id' => 'ALTER TABLE rcc_tickets ADD COLUMN contact_id INT UNSIGNED NULL',
+            'source' => "ALTER TABLE rcc_tickets ADD COLUMN source VARCHAR(64) NULL DEFAULT 'manual'",
+            'auto_created' => 'ALTER TABLE rcc_tickets ADD COLUMN auto_created TINYINT(1) NOT NULL DEFAULT 0',
+            'resolution_due' => 'ALTER TABLE rcc_tickets ADD COLUMN resolution_due TIMESTAMP NULL',
+            'updated_at' => 'ALTER TABLE rcc_tickets ADD COLUMN updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP',
+        ] as $col => $sql) {
+            if (!control_contact_center_table_has_column($pdo, 'rcc_tickets', $col)) {
+                control_contact_center_safe_alter($pdo, $sql, $log, 'tickets.' . $col);
+            }
+        }
+    }
+
     if ($log !== null) {
         $log[] = 'OK legacy schema upgrade';
     }

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS rcc_accounts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE rcc_contacts
-    ADD COLUMN account_id INT UNSIGNED NULL AFTER company_id;
+    ADD COLUMN account_id INT UNSIGNED NULL;
 
 ALTER TABLE rcc_contacts
     ADD KEY idx_rcc_contacts_account (tenant_id, account_id);
