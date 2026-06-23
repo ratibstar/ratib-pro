@@ -307,4 +307,7 @@ $lines[] = '  RCC  → Control Panel → Contact Center → Database Setup → R
 $lines[] = '  CP pollution → drop rateb_* / rcc_* from admin_control_panel_db (backup first)';
 
 echo implode(PHP_EOL, $lines) . PHP_EOL;
-exit($allPass ? 0 : 1);
+if ($isCli) {
+    exit($allPass ? 0 : 1);
+}
+exit(0);
