@@ -701,6 +701,32 @@ function control_contact_center_upgrade_legacy_schema(\PDO $pdo, ?array &$log = 
                 'agents.is_senior'
             );
         }
+        if (!control_contact_center_table_has_column($pdo, 'rcc_agents', 'status')) {
+            control_contact_center_safe_alter(
+                $pdo,
+                "ALTER TABLE rcc_agents ADD COLUMN status ENUM('active','inactive') NOT NULL DEFAULT 'active'",
+                $log,
+                'agents.status'
+            );
+        } else {
+            try {
+                $pdo->exec(
+                    "UPDATE rcc_agents SET status = 'active'
+                     WHERE status IS NULL OR TRIM(COALESCE(status, '')) = ''
+                        OR status NOT IN ('active','inactive')"
+                );
+            } catch (Throwable $e) {
+                if ($log !== null) {
+                    $log[] = 'WARN agents.status normalize: ' . $e->getMessage();
+                }
+            }
+            control_contact_center_safe_alter(
+                $pdo,
+                "ALTER TABLE rcc_agents MODIFY COLUMN status ENUM('active','inactive') NOT NULL DEFAULT 'active'",
+                $log,
+                'agents.status_enum'
+            );
+        }
     }
 
     // 003_queue_ticket_stub rcc_tickets lacks columns expected by 009/014 when CREATE IF NOT EXISTS skipped.

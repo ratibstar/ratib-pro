@@ -357,7 +357,7 @@
             document.getElementById('rcc-ops-agent-form').onsubmit = function (ev) {
                 ev.preventDefault();
                 var fd = new FormData(ev.target);
-                var body = {};
+                var body = { status: 'active' };
                 fd.forEach(function (v, k) { body[k] = v; });
                 body.provision_sip = !!fd.get('provision_sip');
                 self.api('agent_provision', body).then(function (r) {

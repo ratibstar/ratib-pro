@@ -268,14 +268,16 @@ final class OpsProvisioningService
     public function provisionAgent(int $tenantId, array $data, ?int $userId = null): array
     {
         $pdo = Database::connection();
+        $this->ensureAgentStatusSchema($pdo);
         $pdo->beginTransaction();
         try {
-            $email = (string) ($data['email'] ?? '');
-            $displayName = (string) ($data['display_name'] ?? '');
-            $extension = (string) ($data['extension'] ?? '');
+            $email = trim((string) ($data['email'] ?? ''));
+            $displayName = trim((string) ($data['display_name'] ?? ''));
+            $extension = trim((string) ($data['extension'] ?? ''));
             if ($email === '' || $displayName === '' || $extension === '') {
                 throw new \InvalidArgumentException('email, display_name, extension required');
             }
+            $agentStatus = $this->normalizeAgentStatus($data['status'] ?? 'active');
             $uid = isset($data['user_id']) ? (int) $data['user_id'] : 0;
             if ($uid < 1) {
                 $stmt = $pdo->prepare('SELECT id FROM rcc_users WHERE tenant_id=:tid AND email=:email LIMIT 1');
@@ -303,15 +305,15 @@ final class OpsProvisioningService
                      WHERE id=:id AND tenant_id=:tid'
                 )->execute([
                     'uid' => $uid, 'ext' => $extension, 'name' => $displayName, 'email' => $email,
-                    'st' => (string) ($data['status'] ?? 'active'), 'id' => $agentId, 'tid' => $tenantId,
+                    'st' => $agentStatus, 'id' => $agentId, 'tid' => $tenantId,
                 ]);
             } else {
                 $pdo->prepare(
                     'INSERT INTO rcc_agents (tenant_id, user_id, extension, display_name, email, is_senior, status)
-                     VALUES (:tid,:uid,:ext,:name,:email,:senior,\'active\')'
+                     VALUES (:tid,:uid,:ext,:name,:email,:senior,:st)'
                 )->execute([
                     'tid' => $tenantId, 'uid' => $uid, 'ext' => $extension, 'name' => $displayName,
-                    'email' => $email, 'senior' => !empty($data['is_senior']) ? 1 : 0,
+                    'email' => $email, 'senior' => !empty($data['is_senior']) ? 1 : 0, 'st' => $agentStatus,
                 ]);
                 $agentId = (int) $pdo->lastInsertId();
             }
@@ -345,5 +347,33 @@ final class OpsProvisioningService
         $this->audit->log($tenantId, 'ops.agent.provision', $userId, 'agent', $agentId, ['email' => $email]);
         EventBus::instance()->emit(['type' => EventType::OPS_AGENT_PROVISIONED, 'tenant_id' => $tenantId, 'agent_id' => $agentId, 'payload' => ['extension' => $extension]]);
         return ['agent_id' => $agentId, 'user_id' => $uid, 'extension' => $extension];
+    }
+
+    private function normalizeAgentStatus(mixed $status): string
+    {
+        $value = strtolower(trim((string) ($status ?? 'active')));
+        return in_array($value, ['active', 'inactive'], true) ? $value : 'active';
+    }
+
+    private function ensureAgentStatusSchema(\PDO $pdo): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        try {
+            $pdo->exec(
+                "UPDATE rcc_agents SET status = 'active'
+                 WHERE status IS NULL OR TRIM(COALESCE(status, '')) = ''
+                    OR status NOT IN ('active','inactive')"
+            );
+            $pdo->exec(
+                "ALTER TABLE rcc_agents
+                 MODIFY COLUMN status ENUM('active','inactive') NOT NULL DEFAULT 'active'"
+            );
+        } catch (\Throwable $e) {
+            error_log('[RCC OpsProvisioning] agent status schema: ' . $e->getMessage());
+        }
+        $done = true;
     }
 }
