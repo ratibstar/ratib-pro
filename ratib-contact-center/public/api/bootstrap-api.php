@@ -47,11 +47,18 @@ if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
 }
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
+require_once __DIR__ . '/control-panel-session.php';
 
 use Ratib\ContactCenter\App\Core\Security\ApiAuthMiddleware;
 use Ratib\ContactCenter\App\Core\Security\AuthContext;
 use Ratib\ContactCenter\App\Core\Security\WebhookSignatureValidator;
 use Ratib\ContactCenter\App\Core\TenantContext;
+
+/**
+ * Resume Control Panel session so RCC APIs see control_logged_in when called
+ * from ratib-contact-center/public/api/* with credentials: include.
+ */
+require_once __DIR__ . '/control-panel-session.php';
 
 $action = (string) ($_GET['action'] ?? '');
 $publicActions = ['health', 'webhook_whatsapp', 'webhook_email', 'webhook_chat', 'chat_widget_config'];

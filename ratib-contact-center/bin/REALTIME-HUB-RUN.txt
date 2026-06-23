@@ -1,19 +1,29 @@
 # RATIB Contact Center — Live updates on rateb.sa
 
-## Recommended: POLLING (default after deploy)
-- No port 9702
-- No Hetzner firewall rules for WebSocket
-- No cron / rcc-realtime-hub.php required for Agent Desktop
-- Inbox + AI Copilot refresh every 8 seconds over HTTPS (443)
+## ✅ موصى به (استضافة مشتركة): POLLING
+- لا تحتاج cron
+- لا تحتاج بورت 9702
+- Inbox + Copilot يتحدثون كل 8 ثوانٍ عبر HTTPS
 
-.env (optional — polling is default in code):
+في .env على السيرفر:
   RCC_REALTIME_MODE=polling
 
-## Optional: WebSocket (VPS / port 9702 open only)
-  RCC_REALTIME_MODE=websocket
+  RCC_REALTIME_HUB_HOST=127.0.0.1
+  RCC_REALTIME_HUB_PORT=9701
+  RCC_WEBSOCKET_HOST=0.0.0.0
   RCC_WEBSOCKET_PORT=9702
-  Run: ratib-contact-center/bin/start-realtime-hub.sh (cron every */5)
+  RCC_AI_ASSISTANT_ENABLED=1
 
-## Hetzner firewall (website only)
-Keep inbound: HTTP 80, HTTPS 443 (+ DirectAdmin 2222 if needed).
-You do NOT need 9701–9702 for polling mode.
+## اختياري: WebSocket (VPS + TCP 9702 مفتوح)
+  RCC_REALTIME_MODE=websocket
+
+cPanel / DirectAdmin → Cron Jobs → كل 5 دقائق:
+  */5 * * * * pgrep -f rcc-realtime-hub.php >/dev/null 2>&1 || /bin/bash /home/admin/domains/rateb.sa/public_html/ratib-contact-center/bin/start-realtime-hub.sh
+
+تحقق:
+  pgrep -f rcc-realtime-hub.php
+  tail -20 /home/admin/domains/rateb.sa/public_html/ratib-contact-center/storage/logs/rcc-realtime-hub.log
+
+## Firewall (Hetzner)
+افتح فقط: 80, 443 (+ 2222 DirectAdmin إن لزم).
+لا تحتاج 9701–9702 في وضع polling.

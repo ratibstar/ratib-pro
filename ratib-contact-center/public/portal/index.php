@@ -5,27 +5,44 @@ declare(strict_types=1);
  * RATIB Contact Center — Customer Self-Service Portal (Phase 11).
  */
 define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
-require_once dirname(__DIR__) . '/bootstrap.php';
+
+try {
+    require_once dirname(__DIR__, 2) . '/bootstrap.php';
+} catch (Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    exit('RCC bootstrap failed: ' . $e->getMessage());
+}
 
 use Ratib\ContactCenter\App\Application\Services\SaaS\WhiteLabelService;
 
 $tenantId = (int) ($_GET['tenant_id'] ?? 0);
-$whiteLabel = new WhiteLabelService();
-if ($tenantId < 1) {
-    $tenantId = $whiteLabel->resolveTenantByDomain((string) ($_SERVER['HTTP_HOST'] ?? ''));
+$branding = [];
+try {
+    $whiteLabel = new WhiteLabelService();
+    if ($tenantId < 1) {
+        $tenantId = $whiteLabel->resolveTenantByDomain((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    }
+    if ($tenantId < 1) {
+        $tenantId = 1;
+    }
+    $branding = $whiteLabel->branding($tenantId);
+} catch (Throwable $e) {
+    error_log('[RCC Portal] ' . $e->getMessage());
+    $tenantId = $tenantId > 0 ? $tenantId : 1;
 }
-if ($tenantId < 1) {
-    $tenantId = 1;
-}
-$branding = $whiteLabel->branding($tenantId);
+
 $companyName = $branding['company_name'] ?? 'Customer Portal';
 $logo = $branding['logo_url'] ?? '';
 $primary = $branding['primary_color'] ?? '#2563eb';
 $locale = $_GET['lang'] ?? 'ar';
 $isAr = $locale === 'ar';
 
-$assetBase = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/');
-$assetBase = preg_replace('#/portal$#', '', $assetBase);
+$scriptDir = str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+$assetBase = preg_replace('#/portal$#', '', rtrim($scriptDir, '/'));
+if ($assetBase === '') {
+    $assetBase = '/ratib-contact-center/public';
+}
 $cssUrl = $assetBase . '/asset.php?k=portal-css';
 $jsUrl = $assetBase . '/asset.php?k=portal-js';
 $apiBase = $assetBase . '/api/v1/customer-portal.php';

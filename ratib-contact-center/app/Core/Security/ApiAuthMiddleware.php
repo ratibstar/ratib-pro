@@ -79,6 +79,9 @@ final class ApiAuthMiddleware
     private function tryControlPanelBridge(): bool
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_name('rateb_control');
+            }
             @session_start();
         }
         if (empty($_SESSION['control_logged_in'])) {
@@ -98,10 +101,15 @@ final class ApiAuthMiddleware
         $userId = $this->resolveRccUserIdForControlUser($tenantId);
         $permissions = $this->permissionsForControlBridge($tenantId, $userId);
 
-        if ($agentId < 1
+        $isAdmin = !empty($_SESSION['control_is_admin']);
+        if ($agentId < 1 && !$isAdmin
             && !in_array('rcc.ops.view', $permissions, true)
             && !in_array('rcc.supervisor.view', $permissions, true)
             && !in_array('rcc.supervisor.dashboard', $permissions, true)
+            && !in_array('rcc.billing.view', $permissions, true)
+            && !in_array('rcc.crm.view', $permissions, true)
+            && !in_array('rcc.backup.view', $permissions, true)
+            && !in_array('rcc.marketplace.view', $permissions, true)
         ) {
             return false;
         }
@@ -196,6 +204,27 @@ final class ApiAuthMiddleware
             'rcc.security.approvals',
             'rcc.ai.qa',
             'rcc.ai.insights',
+            'rcc.billing.view',
+            'rcc.billing.manage',
+            'rcc.billing.invoices',
+            'rcc.billing.payments',
+            'rcc.billing.subscriptions',
+            'rcc.license.view',
+            'rcc.license.manage',
+            'rcc.whitelabel.manage',
+            'rcc.reseller.view',
+            'rcc.reseller.manage',
+            'rcc.provisioning.manage',
+            'rcc.portal.admin',
+            'rcc.backup.view',
+            'rcc.backup.manage',
+            'rcc.backup.restore',
+            'rcc.monitoring.view',
+            'rcc.monitoring.manage',
+            'rcc.pbx.cluster',
+            'rcc.marketplace.view',
+            'rcc.marketplace.manage',
+            'rcc.marketplace.subscribe',
         ];
     }
 
