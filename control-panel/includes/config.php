@@ -153,6 +153,17 @@ if (!empty($_SESSION['control_logged_in']) && isset($GLOBALS['control_conn']) &&
 
 require_once __DIR__ . '/control-permissions.php';
 
+if (!empty($_SESSION['control_logged_in'])) {
+    $un = strtolower(trim((string) ($_SESSION['control_username'] ?? '')));
+    $perms = $_SESSION['control_permissions'] ?? null;
+    $_SESSION['control_is_admin'] = hasControlPermission(CONTROL_PERM_ADMINS)
+        || hasControlPermission(CONTROL_PERM_SYSTEM_SETTINGS)
+        || $perms === null
+        || $perms === '*'
+        || (is_array($perms) && in_array('*', $perms, true))
+        || $un === 'admin';
+}
+
 // Handle agency switching and "own program"
 $ctrl = $GLOBALS['control_conn'] ?? null;
 if (!empty($_SESSION['control_logged_in']) && isset($_GET['own']) && $_GET['own'] === '1') {

@@ -101,7 +101,7 @@ final class ApiAuthMiddleware
         $userId = $this->resolveRccUserIdForControlUser($tenantId);
         $permissions = $this->permissionsForControlBridge($tenantId, $userId);
 
-        $isAdmin = !empty($_SESSION['control_is_admin']);
+        $isAdmin = $this->isControlPanelFullAccess();
         if ($agentId < 1 && !$isAdmin
             && !in_array('rcc.ops.view', $permissions, true)
             && !in_array('rcc.supervisor.view', $permissions, true)
@@ -121,7 +121,7 @@ final class ApiAuthMiddleware
     /** @return list<string> */
     private function permissionsForControlBridge(int $tenantId, ?int $userId): array
     {
-        if (!empty($_SESSION['control_is_admin'])) {
+        if ($this->isControlPanelFullAccess()) {
             return $this->adminPermissionBundle();
         }
 
@@ -133,6 +133,22 @@ final class ApiAuthMiddleware
         }
 
         return ['rcc.access', 'rcc.agent.desktop', 'rcc.inbox.manage', 'rcc.calls.manage'];
+    }
+
+    private function isControlPanelFullAccess(): bool
+    {
+        if (!empty($_SESSION['control_is_admin'])) {
+            return true;
+        }
+        $perms = $_SESSION['control_permissions'] ?? null;
+        if ($perms === null || $perms === '*') {
+            return true;
+        }
+        if (is_array($perms) && in_array('*', $perms, true)) {
+            return true;
+        }
+        $username = strtolower(trim((string) ($_SESSION['control_username'] ?? '')));
+        return $username === 'admin';
     }
 
     /** @return list<string> */
