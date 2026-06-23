@@ -30,40 +30,24 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-6">
+    <div class="col-12">
         <div class="rateb-card">
             <div class="rateb-card-header"><?php echo __('purchase_requests'); ?></div>
             <div class="rateb-card-body p-0">
-                <?php Rateb\App\Core\View::partial('crud-index', [
-                    'title' => '',
-                    'items' => $purchase_requests ?? [],
-                    'fields' => $prFields ?? [],
-                    'csrf' => $csrf,
-                    'routePrefix' => 'admin/oversight/procurement',
-                    'bulkEnabled' => false,
-                    'createEnabled' => false,
-                    'actionsEnabled' => false,
-                    'exportEnabled' => false,
-                    'searchEnabled' => false,
+                <?php Rateb\App\Core\View::partial('admin-oversight-table', [
+                    'columns' => $prColumns ?? [],
+                    'rows' => $purchase_requests ?? [],
                 ]); ?>
             </div>
         </div>
     </div>
-    <div class="col-lg-6">
+    <div class="col-12">
         <div class="rateb-card">
             <div class="rateb-card-header"><?php echo __('purchase_orders'); ?></div>
             <div class="rateb-card-body p-0">
-                <?php Rateb\App\Core\View::partial('crud-index', [
-                    'title' => '',
-                    'items' => $purchase_orders ?? [],
-                    'fields' => $poFields ?? [],
-                    'csrf' => $csrf,
-                    'routePrefix' => 'admin/oversight/procurement',
-                    'bulkEnabled' => false,
-                    'createEnabled' => false,
-                    'actionsEnabled' => false,
-                    'exportEnabled' => false,
-                    'searchEnabled' => false,
+                <?php Rateb\App\Core\View::partial('admin-oversight-table', [
+                    'columns' => $poColumns ?? [],
+                    'rows' => $purchase_orders ?? [],
                 ]); ?>
             </div>
         </div>

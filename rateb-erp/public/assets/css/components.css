@@ -729,3 +729,35 @@ html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {
 .rateb-line-items-table tbody tr:hover {
     background: var(--rateb-table-hover);
 }
+
+/* Admin oversight dashboards — avoid fixed-layout column crush in narrow cards */
+.rateb-oversight-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table.rateb-oversight-table {
+    width: 100%;
+    min-width: 52rem;
+    table-layout: auto;
+}
+
+table.rateb-oversight-table th,
+table.rateb-oversight-table td.rateb-oversight-cell {
+    max-width: none !important;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+
+table.rateb-oversight-table th {
+    white-space: nowrap;
+}
+
+table.rateb-oversight-table td.rateb-oversight-clip {
+    white-space: normal;
+    word-break: break-word;
+    min-width: 8rem;
+    max-width: 16rem;
+}

@@ -1774,33 +1774,40 @@ final class ProcurementController extends Controller
         $filters = $ofs->parse();
         $lookup = new \Rateb\App\Services\FormLookupService();
 
-        $prSql = 'SELECT * FROM rateb_purchase_requests WHERE 1=1';
+        $prSql = 'SELECT pr.*, c.name AS company_name
+            FROM rateb_purchase_requests pr
+            LEFT JOIN rateb_companies c ON c.id = pr.company_id
+            WHERE 1=1';
         $prParams = [];
-        $ofs->applyCompany($prSql, $prParams, 'company_id', $filters);
-        $ofs->applyStatus($prSql, $prParams, 'status', $filters);
-        $ofs->applyDateRange($prSql, $prParams, 'expected_date', $filters);
-        $prSql .= ' ORDER BY id DESC LIMIT 50';
+        $ofs->applyCompany($prSql, $prParams, 'pr.company_id', $filters);
+        $ofs->applyStatus($prSql, $prParams, 'pr.status', $filters);
+        $ofs->applyDateRange($prSql, $prParams, 'pr.expected_date', $filters);
+        $prSql .= ' ORDER BY pr.id DESC LIMIT 50';
 
-        $poSql = 'SELECT * FROM rateb_purchase_orders WHERE 1=1';
+        $poSql = 'SELECT po.*, c.name AS company_name, s.name AS supplier_name
+            FROM rateb_purchase_orders po
+            LEFT JOIN rateb_companies c ON c.id = po.company_id
+            LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+            WHERE 1=1';
         $poParams = [];
-        $ofs->applyCompany($poSql, $poParams, 'company_id', $filters);
-        $ofs->applyStatus($poSql, $poParams, 'status', $filters);
-        $ofs->applyDateRange($poSql, $poParams, 'order_date', $filters);
-        $poSql .= ' ORDER BY id DESC LIMIT 50';
+        $ofs->applyCompany($poSql, $poParams, 'po.company_id', $filters);
+        $ofs->applyStatus($poSql, $poParams, 'po.status', $filters);
+        $ofs->applyDateRange($poSql, $poParams, 'po.order_date', $filters);
+        $poSql .= ' ORDER BY po.id DESC LIMIT 50';
 
-        $prFields = [
-            ['name' => 'company_id', 'label' => 'companies', 'type' => 'fk', 'lookup' => 'companies'],
+        $prColumns = [
+            ['name' => 'company_name', 'label' => 'companies'],
             ['name' => 'request_no', 'label' => 'request_no'],
-            ['name' => 'title', 'label' => 'title', 'type' => 'clip'],
-            ['name' => 'department', 'label' => 'department', 'type' => 'clip'],
+            ['name' => 'title', 'label' => 'title', 'class' => 'rateb-oversight-clip'],
+            ['name' => 'department', 'label' => 'department', 'class' => 'rateb-oversight-clip'],
             ['name' => 'expected_date', 'label' => 'expected_date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
             ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'money'],
         ];
-        $poFields = [
-            ['name' => 'company_id', 'label' => 'companies', 'type' => 'fk', 'lookup' => 'companies'],
+        $poColumns = [
+            ['name' => 'company_name', 'label' => 'companies'],
             ['name' => 'order_no', 'label' => 'order_no'],
-            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'supplier_name', 'label' => 'supplier', 'class' => 'rateb-oversight-clip'],
             ['name' => 'order_date', 'label' => 'order_date'],
             ['name' => 'expected_date', 'label' => 'expected_date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
@@ -1811,8 +1818,8 @@ final class ProcurementController extends Controller
             'title' => __('procurement'),
             'purchase_requests' => $pr->query($prSql, $prParams),
             'purchase_orders' => $po->query($poSql, $poParams),
-            'prFields' => $prFields,
-            'poFields' => $poFields,
+            'prColumns' => $prColumns,
+            'poColumns' => $poColumns,
             'companies' => $ofs->companies(),
             'filters' => $filters,
             'statusOptions' => $lookup->get('pr_statuses'),
