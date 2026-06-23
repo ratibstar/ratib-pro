@@ -425,6 +425,55 @@ function control_contact_center_command_page_url(): string
         : '/control-panel/pages/control/contact-center-command-center.php?control=1';
 }
 
+function control_contact_center_billing_page_url(string $route = 'dashboard'): string
+{
+    $base = function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/contact-center-billing.php')
+        : '/control-panel/pages/control/contact-center-billing.php?control=1';
+    return $base . '&route=' . rawurlencode($route);
+}
+
+function control_contact_center_billing_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/billing.php';
+}
+
+function control_contact_center_backup_page_url(string $route = 'backups'): string
+{
+    $base = function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/contact-center-backup.php')
+        : '/control-panel/pages/control/contact-center-backup.php?control=1';
+    return $base . '&route=' . rawurlencode($route);
+}
+
+function control_contact_center_dr_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/disaster-recovery.php';
+}
+
+function control_contact_center_marketplace_page_url(): string
+{
+    return function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/contact-center-marketplace.php')
+        : '/control-panel/pages/control/contact-center-marketplace.php?control=1';
+}
+
+function control_contact_center_marketplace_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/marketplace.php';
+}
+
+function control_contact_center_portal_api_url(): string
+{
+    return control_contact_center_public_base_url() . '/api/v1/customer-portal.php';
+}
+
+function control_contact_center_portal_url(int $tenantId = 0): string
+{
+    $base = control_contact_center_public_base_url() . '/portal/';
+  return $tenantId > 0 ? $base . '?tenant_id=' . $tenantId : $base;
+}
+
 /** Resolve tenant for RCC UI/API — never hardcode; session first, else first active tenant. */
 function control_contact_center_resolve_tenant_id(): int
 {
@@ -828,6 +877,38 @@ function control_contact_center_nav_links(): array
             'key' => 'command',
             'description' => 'Executive KPIs, live wallboard, ticket backlog, AI alerts.',
         ],
+        'billing' => [
+            'route' => 'dashboard',
+            'href' => control_contact_center_billing_page_url('dashboard'),
+            'label' => 'SaaS Billing',
+            'icon' => 'fa-coins',
+            'key' => 'billing',
+            'description' => 'Plans, subscriptions, invoices, payments, licenses.',
+        ],
+        'marketplace' => [
+            'route' => 'marketplace',
+            'href' => control_contact_center_marketplace_page_url(),
+            'label' => 'Marketplace',
+            'icon' => 'fa-store',
+            'key' => 'marketplace',
+            'description' => 'Add-ons, integrations, AI Copilot Pro, channels.',
+        ],
+        'backup' => [
+            'route' => 'backups',
+            'href' => control_contact_center_backup_page_url('backups'),
+            'label' => 'Backup & DR',
+            'icon' => 'fa-shield-alt',
+            'key' => 'backup',
+            'description' => 'Automated backups, restore, monitoring, PBX HA clusters.',
+        ],
+        'portal' => [
+            'route' => 'portal',
+            'href' => control_contact_center_portal_url(),
+            'label' => 'Customer Portal',
+            'icon' => 'fa-user-circle',
+            'key' => 'portal',
+            'description' => 'Self-service: tickets, invoices, CRM profile, knowledge base.',
+        ],
         'hub' => [
             'route' => 'hub',
             'href' => control_contact_center_hub_page_url(),
@@ -850,7 +931,8 @@ function control_contact_center_verify_schema(): array
         'rcc_supervisor_alerts', 'rcc_supervisor_alert_rules', 'rcc_audit_logs',
         'rcc_accounts', 'rcc_contact_notes', 'rcc_ticket_comments', 'rcc_qa_forms',
         'rcc_recordings', 'rcc_metrics_daily', 'rcc_kpis', 'rcc_kb_articles',
-        'rcc_api_rate_limits',
+        'rcc_api_rate_limits', 'rcc_plans', 'rcc_subscriptions', 'rcc_invoices',
+        'rcc_portal_users', 'rcc_backups', 'rcc_marketplace_addons',
     ];
     $missing = [];
     try {

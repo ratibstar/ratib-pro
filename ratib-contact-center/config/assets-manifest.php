@@ -24,4 +24,12 @@ return [
     'crm-js' => 'js/rcc-crm-center.js',
     'command-css' => 'css/rcc-command-center.css',
     'command-js' => 'js/rcc-command-center.js',
+    'billing-css' => 'css/rcc-billing-center.css',
+    'billing-js' => 'js/rcc-billing-center.js',
+    'dr-css' => 'css/rcc-dr-center.css',
+    'dr-js' => 'js/rcc-dr-center.js',
+    'marketplace-css' => 'css/rcc-marketplace-center.css',
+    'marketplace-js' => 'js/rcc-marketplace-center.js',
+    'portal-css' => 'css/rcc-customer-portal.css',
+    'portal-js' => 'js/rcc-customer-portal.js',
 ];

@@ -1,0 +1,16 @@
+.rcc-billing, .rcc-dr, .rcc-marketplace { color: var(--rcc-saas-text, #e8eaed); background: var(--rcc-saas-bg, #0f1419); border-radius: 8px; padding: 1rem; min-height: 50vh; }
+@media (prefers-color-scheme: light) {
+    .rcc-billing, .rcc-dr, .rcc-marketplace { --rcc-saas-text: #1e293b; --rcc-saas-bg: #f8fafc; }
+}
+.rcc-billing { display: grid; grid-template-columns: minmax(200px, 240px) 1fr; gap: 1rem; }
+.rcc-billing__nav-link, .rcc-dr__nav-link { display: block; padding: 0.4rem 0.6rem; color: inherit; text-decoration: none; border-radius: 6px; font-size: 0.88rem; }
+.rcc-billing__nav-link.is-active, .rcc-dr__nav-link.is-active { background: rgba(59, 130, 246, 0.2); }
+.rcc-billing__btn, .rcc-dr__btn { padding: 0.4rem 0.8rem; border: none; border-radius: 6px; background: #3b82f6; color: #fff; cursor: pointer; margin: 0.25rem 0; }
+.rcc-billing__table, .rcc-dr__table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.75rem; }
+.rcc-billing__table th, .rcc-billing__table td, .rcc-dr__table th, .rcc-dr__table td { padding: 0.4rem; border-bottom: 1px solid #334155; text-align: left; }
+.rcc-billing__kpis { display: flex; flex-wrap: wrap; gap: 1rem; }
+.rcc-billing__kpi { padding: 0.75rem 1rem; border-radius: 8px; background: rgba(59, 130, 246, 0.15); }
+.rcc-billing__status--ok { color: #4ade80; }
+.rcc-billing__status--error { color: #f87171; }
+.rcc-billing__form input { display: block; width: 100%; max-width: 360px; margin: 0.25rem 0 0.5rem; padding: 0.35rem; border-radius: 4px; border: 1px solid #334155; background: #1e293b; color: inherit; }
+@media (max-width: 768px) { .rcc-billing { grid-template-columns: 1fr; } }

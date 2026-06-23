@@ -1,0 +1,3 @@
+.rcc-dr { display: grid; grid-template-columns: minmax(200px, 220px) 1fr; gap: 1rem; }
+.rcc-dr__status { margin-bottom: 0.5rem; font-size: 0.9rem; }
+@media (max-width: 768px) { .rcc-dr { grid-template-columns: 1fr; } }

@@ -132,6 +132,33 @@ final class EventType
     public const AI_INSIGHT_CREATED = 'AI_INSIGHT_CREATED';
     public const AI_RISK_DETECTED = 'AI_RISK_DETECTED';
 
+    // SaaS Billing (Phase 11)
+    public const BILLING_SUBSCRIPTION_UPDATED = 'BILLING_SUBSCRIPTION_UPDATED';
+    public const BILLING_INVOICE_CREATED = 'BILLING_INVOICE_CREATED';
+    public const BILLING_INVOICE_PAID = 'BILLING_INVOICE_PAID';
+    public const BILLING_PAYMENT_INITIATED = 'BILLING_PAYMENT_INITIATED';
+    public const BILLING_PAYMENT_SUCCEEDED = 'BILLING_PAYMENT_SUCCEEDED';
+    public const BILLING_USAGE_RECORDED = 'BILLING_USAGE_RECORDED';
+    public const BILLING_CYCLE_COMPLETED = 'BILLING_CYCLE_COMPLETED';
+    public const LICENSE_UPDATED = 'LICENSE_UPDATED';
+
+    // White label & reseller (Phase 11)
+    public const WHITELABEL_UPDATED = 'WHITELABEL_UPDATED';
+    public const RESELLER_UPDATED = 'RESELLER_UPDATED';
+    public const RESELLER_COMMISSION_RECORDED = 'RESELLER_COMMISSION_RECORDED';
+    public const TENANT_PROVISIONED = 'TENANT_PROVISIONED';
+
+    // Disaster recovery (Phase 11)
+    public const BACKUP_COMPLETED = 'BACKUP_COMPLETED';
+    public const RESTORE_QUEUED = 'RESTORE_QUEUED';
+    public const MONITOR_ALERT = 'MONITOR_ALERT';
+    public const PBX_CLUSTER_UPDATED = 'PBX_CLUSTER_UPDATED';
+    public const PBX_FAILOVER = 'PBX_FAILOVER';
+
+    // Marketplace (Phase 11)
+    public const MARKETPLACE_SUBSCRIBED = 'MARKETPLACE_SUBSCRIBED';
+    public const MARKETPLACE_UNSUBSCRIBED = 'MARKETPLACE_UNSUBSCRIBED';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -226,6 +253,25 @@ final class EventType
             self::AI_QA_COMPLETED,
             self::AI_INSIGHT_CREATED,
             self::AI_RISK_DETECTED,
+            self::BILLING_SUBSCRIPTION_UPDATED,
+            self::BILLING_INVOICE_CREATED,
+            self::BILLING_INVOICE_PAID,
+            self::BILLING_PAYMENT_INITIATED,
+            self::BILLING_PAYMENT_SUCCEEDED,
+            self::BILLING_USAGE_RECORDED,
+            self::BILLING_CYCLE_COMPLETED,
+            self::LICENSE_UPDATED,
+            self::WHITELABEL_UPDATED,
+            self::RESELLER_UPDATED,
+            self::RESELLER_COMMISSION_RECORDED,
+            self::TENANT_PROVISIONED,
+            self::BACKUP_COMPLETED,
+            self::RESTORE_QUEUED,
+            self::MONITOR_ALERT,
+            self::PBX_CLUSTER_UPDATED,
+            self::PBX_FAILOVER,
+            self::MARKETPLACE_SUBSCRIBED,
+            self::MARKETPLACE_UNSUBSCRIBED,
         ];
     }
 }

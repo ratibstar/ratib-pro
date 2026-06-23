@@ -59,8 +59,8 @@ $migCount = count(glob(RCC_ROOT . '/migrations/*.sql') ?: []);
 audit_section($sections, $totalScore, $totalMax, 'Database', [
     chk($dbOk, 15, 'Database connection', $dbOk ? 'OK' : 'Failed'),
     chk($tableCount >= 50, 10, 'Schema tables (≥50)', (string) $tableCount),
-    chk($migCount >= 20, 10, 'Migrations shipped (≥20)', (string) $migCount),
-    chk(is_file(RCC_ROOT . '/migrations/013_crm_module.sql'), 5, 'CRM migration'),
+    chk($migCount >= 24, 10, 'Migrations shipped (≥24)', (string) $migCount),
+    chk(is_file(RCC_ROOT . '/migrations/020_saas_billing.sql'), 5, 'SaaS billing migration'),
     chk(is_file(RCC_ROOT . '/migrations/019_security_hardening.sql'), 5, 'Security migration'),
 ]);
 
@@ -134,11 +134,27 @@ audit_section($sections, $totalScore, $totalMax, 'AI & Security', [
     chk(is_file(RCC_ROOT . '/app/Application/Services/RccAuditService.php'), 5, 'Central audit service'),
 ]);
 
+audit_section($sections, $totalScore, $totalMax, 'SaaS Platform (Phase 11)', [
+    chk(is_file(RCC_ROOT . '/public/api/v1/billing.php'), 6, 'Billing API'),
+    chk(is_file(RCC_ROOT . '/public/api/v1/customer-portal.php'), 6, 'Customer portal API'),
+    chk(is_file(RCC_ROOT . '/app/Application/Services/Billing/BillingEngine.php'), 5, 'Billing engine'),
+    chk(is_file(RCC_ROOT . '/app/Infrastructure/Payment/Drivers/StripeGateway.php'), 4, 'Stripe gateway'),
+    chk(is_file(RCC_ROOT . '/public/portal/index.php'), 4, 'Customer portal UI'),
+    chk(is_file(RCC_ROOT . '/../control-panel/pages/control/contact-center-billing.php'), 5, 'Billing CP page'),
+]);
+
+audit_section($sections, $totalScore, $totalMax, 'DR & Marketplace', [
+    chk(is_file(RCC_ROOT . '/public/api/v1/disaster-recovery.php'), 5, 'DR API'),
+    chk(is_file(RCC_ROOT . '/public/api/v1/marketplace.php'), 5, 'Marketplace API'),
+    chk(is_file(RCC_ROOT . '/app/Application/Services/DisasterRecovery/BackupRestoreService.php'), 5, 'Backup service'),
+    chk(is_file(RCC_ROOT . '/bin/rcc-monitor-runner.php'), 5, 'Monitor runner'),
+]);
+
 $overall = $totalMax > 0 ? round(($totalScore / $totalMax) * 100, 1) : 0;
 $target = 95.0;
 
 $infraNames = ['Database', 'Realtime', 'AMI & Queues'];
-$codeNames = ['RBAC', 'WebRTC', 'CRM', 'Tickets', 'QA & Recordings', 'Analytics & Command', 'AI & Security'];
+$codeNames = ['RBAC', 'WebRTC', 'CRM', 'Tickets', 'QA & Recordings', 'Analytics & Command', 'AI & Security', 'SaaS Platform (Phase 11)', 'DR & Marketplace'];
 $infraScore = 0;
 $infraMax = 0;
 $codeScore = 0;
@@ -156,7 +172,7 @@ $codePct = $codeMax > 0 ? round(($codeScore / $codeMax) * 100, 1) : 0;
 $infraPct = $infraMax > 0 ? round(($infraScore / $infraMax) * 100, 1) : 0;
 $pass = $codePct >= $target;
 
-echo "RATIB Contact Center — Final Production Audit (Phase 10)\n";
+echo "RATIB Contact Center — Final Production Audit (Phase 10–11)\n";
 echo str_repeat('=', 56) . "\n\n";
 
 foreach ($sections as $sec) {

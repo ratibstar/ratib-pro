@@ -80,7 +80,7 @@ RATIB_CC_DB_PASS=your_mysql_password</pre>
 <?php } elseif (!$schemaReady) { ?>
 <div class="control-settings-card mb-4">
     <h3><i class="fas fa-database"></i> First-time setup</h3>
-    <p>Runs migrations 001–020 on <code><?php echo htmlspecialchars(control_contact_center_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>.</p>
+    <p>Runs migrations 001–024 on <code><?php echo htmlspecialchars(control_contact_center_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>.</p>
     <a href="<?php echo htmlspecialchars(control_contact_center_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
         <i class="fas fa-play"></i> Run database setup
     </a>
