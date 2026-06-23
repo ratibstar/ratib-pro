@@ -142,7 +142,8 @@ function control_check_all_databases_run(): array
             'db' => control_check_all_databases_env('RATEB_PRO_DB_NAME', control_check_all_databases_env('DB_NAME', 'admin_rateb')),
             'user' => $defaultUser,
             'pass' => $defaultPass,
-            'expect' => ['rateb_max' => 5, 'rcc_max' => 0, 'required' => []],
+            // Main Pro DB legitimately uses many rateb_* tables (CMS, orders, etc.).
+            'expect' => ['rcc_max' => 0, 'required' => []],
         ],
         [
             'label' => 'RATEB ERP',
@@ -253,4 +254,83 @@ function control_check_all_databases_run(): array
     $lines[] = '  CP pollution -> drop rateb_* / rcc_* from admin_control_panel_db (backup first)';
 
     return [implode(PHP_EOL, $lines) . PHP_EOL, $allPass];
+}
+
+/** @return list<string> */
+function control_cleanup_cp_rateb_list_tables(): array
+{
+    $db = control_check_all_databases_env('CONTROL_PANEL_DB_NAME', 'admin_control_panel_db');
+    $erpDb = control_check_all_databases_env('RATEB_ERP_DB_NAME', 'admin_rateb-erp');
+    if ($db === '' || $db === $erpDb) {
+        throw new RuntimeException('Refusing cleanup: control panel DB name is invalid or matches ERP DB.');
+    }
+
+    [$user, $pass] = control_check_all_databases_creds('CONTROL_DB_USER', 'CONTROL_DB_PASS');
+    $host = control_check_all_databases_env('DB_HOST', control_check_all_databases_env('CONTROL_DB_HOST', '127.0.0.1'));
+    $port = (int) control_check_all_databases_env('DB_PORT', control_check_all_databases_env('CONTROL_DB_PORT', '3306'));
+
+    $pdo = control_check_all_databases_pdo($host, $port, $db, $user, $pass);
+    $stmt = $pdo->query(
+        "SELECT table_name FROM information_schema.tables
+         WHERE table_schema = DATABASE() AND table_name LIKE 'rateb\\_%'
+         ORDER BY table_name"
+    );
+    $tables = [];
+    if ($stmt) {
+        while ($row = $stmt->fetch()) {
+            $tables[] = (string) ($row['table_name'] ?? '');
+        }
+    }
+    return array_values(array_filter($tables));
+}
+
+/**
+ * Drop legacy rateb_* tables from control panel DB only (ERP lives on admin_rateb-erp).
+ *
+ * @return array{0:string,1:int} log text, tables dropped
+ */
+function control_cleanup_cp_rateb_pollution(bool $execute = false): array
+{
+    $db = control_check_all_databases_env('CONTROL_PANEL_DB_NAME', 'admin_control_panel_db');
+    $tables = control_cleanup_cp_rateb_list_tables();
+    $lines = [];
+    $lines[] = 'Control Panel DB cleanup — rateb_* pollution';
+    $lines[] = 'Database: ' . $db;
+    $lines[] = 'Found ' . count($tables) . ' rateb_* table(s).';
+    $lines[] = '';
+
+    if ($tables === []) {
+        $lines[] = 'Nothing to do — control panel DB is clean.';
+        return [implode(PHP_EOL, $lines) . PHP_EOL, 0];
+    }
+
+    foreach ($tables as $table) {
+        $lines[] = '  - ' . $table;
+    }
+    $lines[] = '';
+
+    if (!$execute) {
+        $lines[] = 'DRY RUN — no tables dropped.';
+        $lines[] = 'To execute, POST with confirm=DROP_CP_RATEB to:';
+        $lines[] = '  /control-panel/api/control/cleanup-cp-rateb-tables.php?control=1';
+        return [implode(PHP_EOL, $lines) . PHP_EOL, 0];
+    }
+
+    [$user, $pass] = control_check_all_databases_creds('CONTROL_DB_USER', 'CONTROL_DB_PASS');
+    $host = control_check_all_databases_env('DB_HOST', control_check_all_databases_env('CONTROL_DB_HOST', '127.0.0.1'));
+    $port = (int) control_check_all_databases_env('DB_PORT', control_check_all_databases_env('CONTROL_DB_PORT', '3306'));
+    $pdo = control_check_all_databases_pdo($host, $port, $db, $user, $pass);
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+    $dropped = 0;
+    foreach ($tables as $table) {
+        $safe = str_replace('`', '``', $table);
+        $pdo->exec('DROP TABLE IF EXISTS `' . $safe . '`');
+        $lines[] = 'Dropped: ' . $table;
+        $dropped++;
+    }
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+    $lines[] = '';
+    $lines[] = 'Done. Dropped ' . $dropped . ' table(s). Re-run check-all-databases to verify.';
+
+    return [implode(PHP_EOL, $lines) . PHP_EOL, $dropped];
 }
