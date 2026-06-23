@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS rcc_ticket_statuses (
     CONSTRAINT fk_rcc_ticket_status_tenant FOREIGN KEY (tenant_id) REFERENCES rcc_tenants (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 003_queue_ticket_stub used BIGINT id; 014 FK tables require INT UNSIGNED to match 009 schema.
+ALTER TABLE rcc_tickets MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT;
+
 ALTER TABLE rcc_tickets ADD COLUMN contact_id INT UNSIGNED NULL;
 
 ALTER TABLE rcc_tickets ADD COLUMN conversation_id INT UNSIGNED NULL;

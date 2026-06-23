@@ -667,6 +667,20 @@ function control_contact_center_upgrade_legacy_schema(\PDO $pdo, ?array &$log = 
                 control_contact_center_safe_alter($pdo, $sql, $log, 'tickets.' . $col);
             }
         }
+
+        $idTypeStmt = $pdo->query(
+            "SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rcc_tickets' AND COLUMN_NAME = 'id' LIMIT 1"
+        );
+        $idType = strtolower((string) ($idTypeStmt ? $idTypeStmt->fetchColumn() : ''));
+        if (str_contains($idType, 'bigint')) {
+            control_contact_center_safe_alter(
+                $pdo,
+                'ALTER TABLE rcc_tickets MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT',
+                $log,
+                'tickets.id_int'
+            );
+        }
     }
 
     if ($log !== null) {
