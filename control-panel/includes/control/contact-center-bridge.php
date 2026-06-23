@@ -821,7 +821,7 @@ function control_contact_center_exec_sql_batch(\PDO $pdo, string $sql, ?array &$
         } catch (\PDOException $e) {
             $mysqlCode = (int) ($e->errorInfo[1] ?? 0);
             // Idempotent re-runs: duplicate column/key, existing table/index (production drift).
-            $ignorable = [1050, 1060, 1061, 1062, 1091, 1826];
+            $ignorable = [1050, 1060, 1061, 1062, 1091, 121, 1826];
             if (in_array($mysqlCode, $ignorable, true)) {
                 if ($log !== null) {
                     $log[] = 'WARN ' . ($migration ?? 'sql') . ': ignored MySQL ' . $mysqlCode . ' — ' . $e->getMessage();

@@ -107,7 +107,7 @@ startControlLayout('Contact Center — Database Setup', ['css/system-settings.cs
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card">
         <h3><i class="fas fa-play"></i> Run migrations</h3>
-        <p>Applies <code>001_core_schema.sql</code> through <code>024_migration_reconcile.sql</code> (skips already applied).</p>
+        <p>Applies <code>001_core_schema.sql</code> through <code>025_dr_failover_fk_repair.sql</code> (skips already applied).</p>
         <form method="post" action="<?php echo htmlspecialchars(control_contact_center_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
             <button type="submit" name="run_migrations" value="1" class="btn btn-primary"<?php echo $installed ? '' : ' disabled'; ?>>

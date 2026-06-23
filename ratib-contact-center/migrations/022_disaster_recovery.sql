@@ -52,20 +52,6 @@ CREATE TABLE IF NOT EXISTS rcc_restore_jobs (
     CONSTRAINT fk_rcc_restore_jobs_tenant FOREIGN KEY (tenant_id) REFERENCES rcc_tenants (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS rcc_failover_events (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    cluster_id INT UNSIGNED NULL,
-    event_type ENUM('health_check','failover','failback','drill') NOT NULL,
-    from_node VARCHAR(128) NULL,
-    to_node VARCHAR(128) NULL,
-    status ENUM('started','completed','failed') NOT NULL DEFAULT 'started',
-    details_json JSON NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL,
-    PRIMARY KEY (id),
-    KEY idx_rcc_failover_cluster (cluster_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE IF NOT EXISTS rcc_pbx_clusters (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     tenant_id INT UNSIGNED NULL,
@@ -99,8 +85,20 @@ CREATE TABLE IF NOT EXISTS rcc_pbx_cluster_nodes (
     CONSTRAINT fk_rcc_pbx_cluster_nodes_cluster FOREIGN KEY (cluster_id) REFERENCES rcc_pbx_clusters (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE rcc_failover_events
-    ADD CONSTRAINT fk_rcc_failover_cluster FOREIGN KEY (cluster_id) REFERENCES rcc_pbx_clusters (id) ON DELETE SET NULL;
+CREATE TABLE IF NOT EXISTS rcc_failover_events (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    cluster_id INT UNSIGNED NULL,
+    event_type ENUM('health_check','failover','failback','drill') NOT NULL,
+    from_node VARCHAR(128) NULL,
+    to_node VARCHAR(128) NULL,
+    status ENUM('started','completed','failed') NOT NULL DEFAULT 'started',
+    details_json JSON NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    PRIMARY KEY (id),
+    KEY idx_rcc_failover_events_cluster (cluster_id, created_at),
+    CONSTRAINT fk_rcc_failover_events_pbx_cluster FOREIGN KEY (cluster_id) REFERENCES rcc_pbx_clusters (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS rcc_monitors (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
