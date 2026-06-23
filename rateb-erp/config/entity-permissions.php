@@ -24,7 +24,7 @@ return [
         'export' => 'reports.export',
     ],
     'customs-clearance-costs' => [
-        'module' => 'procurement',
+        'module' => 'accounting',
         'view' => 'customs_clearance.view',
         'manage' => 'customs_clearance.manage',
         'export' => 'reports.export',

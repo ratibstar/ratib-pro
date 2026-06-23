@@ -8,6 +8,7 @@ $createEnabled = $createEnabled ?? true;
 $actionsEnabled = $actionsEnabled ?? true;
 $exportEnabled = $exportEnabled ?? true;
 $viewEnabled = $viewEnabled ?? false;
+$customsInvoiceActions = !empty($customsInvoiceActions);
 $actionsRoutePrefix = $actionsRoutePrefix ?? ($routePrefix ?? '');
 if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $canManage = rateb_can_manage_entity((string) $permissionResource);
@@ -174,6 +175,10 @@ $ratebRowRecordLabel = static function (array $row): string {
                     <?php if ($actionsEnabled) { ?>
                     <td class="rateb-actions-cell text-nowrap">
                         <div class="rateb-actions">
+                        <?php if ($customsInvoiceActions) { ?>
+                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+                        <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($row['purchase_order_id'] ?? 0)); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('purchase_orders'); ?>"><i class="fas fa-eye"></i></a>
+                        <?php } else { ?>
                         <?php if ($viewEnabled) { ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                         <?php } ?>
@@ -209,6 +214,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-play"></i></button>
                         </form>
+                        <?php } ?>
                         <?php } ?>
                         </div>
                     </td>

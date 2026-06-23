@@ -120,6 +120,42 @@ final class PurchaseInvoiceService
         return $id;
     }
 
+    /** @return array{invoice: array<string, mixed>, order: array<string, mixed>}|null */
+    public function findInvoiceContext(int $invoiceId): ?array
+    {
+        $invoice = (new PurchaseInvoice())->find($invoiceId);
+        if (!$invoice) {
+            return null;
+        }
+        $poId = (int) ($invoice['purchase_order_id'] ?? 0);
+        $order = $poId > 0 ? (new PurchaseOrder())->find($poId) : null;
+        if (!$order) {
+            return null;
+        }
+        return ['invoice' => $invoice, 'order' => $order];
+    }
+
+    /** @param array<string, mixed> $data */
+    public function saveByInvoiceId(int $invoiceId, array $data): int
+    {
+        $ctx = $this->findInvoiceContext($invoiceId);
+        if (!$ctx) {
+            throw new \RuntimeException(__('record_not_found'));
+        }
+        $invoice = $ctx['invoice'];
+        $poId = (int) ($invoice['purchase_order_id'] ?? 0);
+        if (trim((string) ($data['invoice_no'] ?? '')) === '' && trim((string) ($invoice['invoice_no'] ?? '')) !== '') {
+            $data['invoice_no'] = (string) $invoice['invoice_no'];
+        }
+        if (trim((string) ($data['invoice_date'] ?? '')) === '' && !empty($invoice['invoice_date'])) {
+            $data['invoice_date'] = (string) $invoice['invoice_date'];
+        }
+        if (!isset($data['status']) || trim((string) $data['status']) === '') {
+            $data['status'] = (string) ($invoice['status'] ?? 'draft');
+        }
+        return $this->save($poId, $data);
+    }
+
     public function applyLandedCostsToInventory(int $invoiceId): void
     {
         $invoice = (new PurchaseInvoice())->find($invoiceId);

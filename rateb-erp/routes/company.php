@@ -145,8 +145,10 @@ $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'wa
 $router->get($app('purchase-requests/export'), [PurchaseRequestsController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-requests'));
 $router->get($app('purchase-requests/line-attachment/{itemId}'), [PurchaseRequestsController::class, 'downloadLineAttachment'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->get($app('purchase-orders/export'), [PurchaseOrdersController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-orders'));
-$router->get($app('customs-clearance-costs/export'), [PurchaseOrdersController::class, 'customsExport'], rateb_erp_mw('procurement', 'reports.export', 'customs-clearance-costs'));
-$router->get($app('customs-clearance-costs'), [PurchaseOrdersController::class, 'customsIndex'], rateb_erp_mw('procurement', '', 'customs-clearance-costs'));
+$router->get($app('customs-clearance-costs/export'), [PurchaseOrdersController::class, 'customsExport'], rateb_erp_mw('accounting', 'reports.export', 'customs-clearance-costs'));
+$router->get($app('customs-clearance-costs'), [PurchaseOrdersController::class, 'customsIndex'], rateb_erp_mw('accounting', '', 'customs-clearance-costs'));
+$router->get($app('customs-clearance-costs/{id}/edit'), [PurchaseOrdersController::class, 'customsEdit'], rateb_erp_mw('accounting', 'customs_clearance.manage', 'customs-clearance-costs'));
+$router->post($app('customs-clearance-costs/{id}'), [PurchaseOrdersController::class, 'customsUpdate'], rateb_erp_mw('accounting', 'customs_clearance.manage', 'customs-clearance-costs'));
 
 $router->get($app('purchase-requests/{id}'), [PurchaseRequestsController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->post($app('purchase-requests/{id}/convert-to-po'), [PurchaseRequestsController::class, 'convertToPo'], rateb_erp_mw('procurement', '', 'purchase-requests'));

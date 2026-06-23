@@ -676,6 +676,63 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->index();
     }
 
+    public function customsEdit(array $params): void
+    {
+        if (!rateb_can_manage_entity('customs-clearance-costs')) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('customs-clearance-costs'));
+        }
+        $invoiceId = (int) ($params['id'] ?? 0);
+        $ctx = (new \Rateb\App\Services\PurchaseInvoiceService())->findInvoiceContext($invoiceId);
+        if (!$ctx) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], 'main');
+            return;
+        }
+        $lookups = (new \Rateb\App\Services\FormLookupService())->forFields([
+            ['lookup' => 'suppliers'],
+            ['lookup' => 'customs_clearance_statuses'],
+        ]);
+        $this->view('company/customs-clearance-costs/form', [
+            'title' => __('customs_clearance_costs'),
+            'order' => $ctx['order'],
+            'invoice' => $ctx['invoice'],
+            'lookups' => $lookups,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('customs-clearance-costs'),
+        ], 'main');
+    }
+
+    public function customsUpdate(array $params): void
+    {
+        rateb_require_post('customs-clearance-costs');
+        if (!rateb_can_manage_entity('customs-clearance-costs') || !$this->validateCsrf()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('customs-clearance-costs'));
+        }
+        $invoiceId = (int) ($params['id'] ?? 0);
+        $data = [
+            'invoice_no' => trim((string) ($_POST['invoice_no'] ?? '')),
+            'invoice_date' => trim((string) ($_POST['invoice_date'] ?? '')),
+            'status' => trim((string) ($_POST['status'] ?? 'draft')),
+            'shipping_amount' => (float) ($_POST['shipping_amount'] ?? 0),
+            'customs_clearance_amount' => (float) ($_POST['customs_clearance_amount'] ?? 0),
+            'customs_declaration_no' => trim((string) ($_POST['customs_declaration_no'] ?? '')),
+            'customs_clearance_date' => trim((string) ($_POST['customs_clearance_date'] ?? '')),
+            'customs_broker_id' => (int) ($_POST['customs_broker_id'] ?? 0) ?: null,
+            'customs_clearance_status' => trim((string) ($_POST['customs_clearance_status'] ?? '')),
+            'notes' => trim((string) ($_POST['notes'] ?? '')),
+        ];
+        try {
+            (new \Rateb\App\Services\PurchaseInvoiceService())->saveByInvoiceId($invoiceId, $data);
+            SessionManager::flash('success', __('purchase_invoice_saved'));
+            Response::redirect(rateb_app_url('customs-clearance-costs'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            Response::redirect(rateb_app_url('customs-clearance-costs/' . $invoiceId . '/edit'));
+        }
+    }
+
     public function invoiceForm(array $params): void
     {
         $poId = (int) ($params['id'] ?? 0);
@@ -769,7 +826,8 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         if ($this->entityName === 'customs_clearance_costs') {
             $data['items'] = $this->model->listCustomsClearance($limit, $offset, $search);
             $data['total'] = $this->model->countCustomsClearance($search);
-            $data['actionsRoutePrefix'] = rateb_app_route('purchase-orders');
+            $data['actionsRoutePrefix'] = rateb_app_route('customs-clearance-costs');
+            $data['customsInvoiceActions'] = true;
             $data['exportRoute'] = rateb_app_url('customs-clearance-costs/export');
             $data['exportEnabled'] = function_exists('rateb_can_export_entity')
                 ? rateb_can_export_entity('customs-clearance-costs')

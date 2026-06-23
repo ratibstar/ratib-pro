@@ -71,11 +71,6 @@ final class PurchaseInvoice extends Model
     private function customsScopeSql(): string
     {
         [$tenantSql] = $this->tenantFilterClause('pi');
-        return $tenantSql . " AND (
-            pi.customs_clearance_amount > 0
-            OR pi.shipping_amount > 0
-            OR (pi.customs_declaration_no IS NOT NULL AND pi.customs_declaration_no <> '')
-            OR (pi.customs_clearance_status IS NOT NULL AND pi.customs_clearance_status <> '')
-        )";
+        return $tenantSql;
     }
 }

@@ -10,7 +10,6 @@ require RATEB_ROOT . '/views/partials/sidebar-nav.php';
 $opsSection(__('procurement'), [
     ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
-    ['customs-clearance-costs', 'customs_clearance_costs', 'fa-passport', 'procurement'],
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
     ['workflows', 'workflows', 'fa-diagram-project', 'workflows'],
@@ -42,6 +41,7 @@ $opsSection(__('accounting_module'), [
     ['journal-entries', 'journal_entries', 'fa-book', 'accounting'],
     ['accounting/entry-approval', 'entry_approval', 'fa-check-double', 'accounting', 'accounting.view'],
     ['accounting/supplier-payments', 'supplier_payments', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
+    ['customs-clearance-costs', 'customs_clearance_costs', 'fa-passport', 'accounting', 'customs_clearance.view'],
     ['cash-vouchers', 'cash_vouchers', 'fa-money-bill-wave', 'accounting'],
     ['accounting/voucher-approval', 'voucher_approval', 'fa-stamp', 'accounting', 'accounting.view'],
     ['fiscal-periods', 'fiscal_periods', 'fa-calendar-days', 'accounting'],

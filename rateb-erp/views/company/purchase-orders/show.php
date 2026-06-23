@@ -50,8 +50,14 @@ if ($customsStatus === 'customs_cleared') {
                 <?php } ?>
             </div>
             <div class="rateb-po-show-actions">
-                <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/invoice'); ?>" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-file-invoice-dollar"></i> <?php echo __('manage_purchase_invoice'); ?>
+                <?php
+                $invoiceId = (int) ($inv['id'] ?? 0);
+                $invoiceManageUrl = $invoiceId > 0 && function_exists('rateb_can_view_entity') && rateb_can_view_entity('customs-clearance-costs')
+                    ? rateb_app_url('customs-clearance-costs/' . $invoiceId . '/edit')
+                    : rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/invoice');
+                ?>
+                <a href="<?php echo $invoiceManageUrl; ?>" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-file-invoice-dollar"></i> <?php echo $invoiceId > 0 ? __('customs_clearance_costs') : __('manage_purchase_invoice'); ?>
                 </a>
                 <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/edit'); ?>" class="btn btn-sm btn-primary">
                     <i class="fas fa-edit"></i> <?php echo __('edit'); ?>
