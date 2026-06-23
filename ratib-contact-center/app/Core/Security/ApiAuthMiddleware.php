@@ -93,12 +93,8 @@ final class ApiAuthMiddleware
             return false;
         }
 
-        $agentId = (int) ($_SESSION['rcc_agent_id'] ?? 0);
-        if ($agentId < 1) {
-            $agentId = $this->resolveAgentForControlUser($tenantId);
-        }
-
-        $userId = $this->resolveRccUserIdForControlUser($tenantId);
+        $agentId = ControlPanelIdentityResolver::resolveAgentId($tenantId);
+        $userId = ControlPanelIdentityResolver::resolveUserId($tenantId);
         $permissions = $this->permissionsForControlBridge($tenantId, $userId);
 
         $isAdmin = $this->isControlPanelFullAccess();
@@ -281,45 +277,11 @@ final class ApiAuthMiddleware
 
     private function resolveRccUserIdForControlUser(int $tenantId): ?int
     {
-        $email = (string) ($_SESSION['control_user_email'] ?? $_SESSION['control_email'] ?? '');
-        if ($email === '') {
-            return null;
-        }
-        try {
-            $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->prepare(
-                'SELECT id FROM rcc_users WHERE tenant_id = :tid AND email = :email AND status = \'active\' LIMIT 1'
-            );
-            $stmt->execute(['tid' => $tenantId, 'email' => $email]);
-            $id = $stmt->fetchColumn();
-            return $id !== false ? (int) $id : null;
-        } catch (\Throwable $e) {
-            return null;
-        }
+        return ControlPanelIdentityResolver::resolveUserId($tenantId);
     }
 
     private function resolveAgentForControlUser(int $tenantId): int
     {
-        $sessionAgentId = (int) ($_SESSION['rcc_agent_id'] ?? 0);
-        if ($sessionAgentId > 0) {
-            return $sessionAgentId;
-        }
-
-        $email = (string) ($_SESSION['control_user_email'] ?? $_SESSION['control_email'] ?? '');
-        if ($email === '') {
-            return 0;
-        }
-        try {
-            $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->prepare(
-                'SELECT a.id FROM rcc_agents a
-                 INNER JOIN rcc_users u ON u.id = a.user_id AND u.tenant_id = a.tenant_id
-                 WHERE a.tenant_id = :tid AND u.email = :email AND a.status = \'active\'
-                 LIMIT 1'
-            );
-            $stmt->execute(['tid' => $tenantId, 'email' => $email]);
-            $id = $stmt->fetchColumn();
-            return $id !== false ? (int) $id : 0;
-        } catch (\Throwable $e) {
-            return 0;
-        }
+        return ControlPanelIdentityResolver::resolveAgentId($tenantId);
     }
 }

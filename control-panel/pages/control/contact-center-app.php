@@ -61,10 +61,12 @@ startControlLayout(
 $tenantId = control_contact_center_resolve_tenant_id();
 $agentId = control_contact_center_resolve_agent_id($tenantId);
 if ($agentId < 1) {
+    $expectedEmails = control_contact_center_cp_candidate_emails();
+    $expectedHint = $expectedEmails !== [] ? htmlspecialchars($expectedEmails[0], ENT_QUOTES, 'UTF-8') : 'your-username@rateb.sa';
     require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
     startControlLayout('Contact Center', ['css/system-settings.css'], []);
     echo '<div class="alert alert-warning">No active RCC agent linked to your Control Panel account for this tenant.</div>';
-    echo '<p class="small">Provision an agent in <a href="' . htmlspecialchars(control_contact_center_ops_page_url('agents'), ENT_QUOTES, 'UTF-8') . '">Operations Center</a> using your CP email, or ask an administrator.</p>';
+    echo '<p class="small">Provision an agent in <a href="' . htmlspecialchars(control_contact_center_ops_page_url('agents'), ENT_QUOTES, 'UTF-8') . '">Operations Center</a> with email <code>' . $expectedHint . '</code> (matches CP username <strong>' . htmlspecialchars((string) ($_SESSION['control_username'] ?? ''), ENT_QUOTES, 'UTF-8') . '</strong>), or ask an administrator.</p>';
     echo '<a href="' . htmlspecialchars(control_contact_center_hub_page_url(), ENT_QUOTES, 'UTF-8') . '" class="btn btn-outline-secondary">Back to hub</a>';
     endControlLayout();
     exit;

@@ -497,18 +497,10 @@ function control_contact_center_resolve_tenant_id(): int
     }
 }
 
-/** Resolve agent for RCC UI — session first, else match CP user email to rcc_agents. */
+/** Resolve agent for RCC UI — session first, else match CP username/email to rcc_agents. */
 function control_contact_center_resolve_agent_id(int $tenantId): int
 {
     if ($tenantId < 1) {
-        return 0;
-    }
-    $fromSession = (int) ($_SESSION['rcc_agent_id'] ?? 0);
-    if ($fromSession > 0) {
-        return $fromSession;
-    }
-    $email = (string) ($_SESSION['control_user_email'] ?? $_SESSION['control_email'] ?? '');
-    if ($email === '') {
         return 0;
     }
     try {
@@ -517,17 +509,26 @@ function control_contact_center_resolve_agent_id(int $tenantId): int
             define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
         }
         require_once control_contact_center_root_path() . '/bootstrap.php';
-        $stmt = \Ratib\ContactCenter\App\Core\Database::connection()->prepare(
-            'SELECT a.id FROM rcc_agents a
-             INNER JOIN rcc_users u ON u.id = a.user_id AND u.tenant_id = a.tenant_id
-             WHERE a.tenant_id = :tid AND u.email = :email AND a.status = \'active\'
-             LIMIT 1'
-        );
-        $stmt->execute(['tid' => $tenantId, 'email' => $email]);
-        $id = $stmt->fetchColumn();
-        return $id !== false ? (int) $id : 0;
+
+        return \Ratib\ContactCenter\App\Core\Security\ControlPanelIdentityResolver::resolveAgentId($tenantId);
     } catch (Throwable $e) {
         return 0;
+    }
+}
+
+/** @return list<string> */
+function control_contact_center_cp_candidate_emails(): array
+{
+    try {
+        control_contact_center_apply_db_env();
+        if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
+            define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
+        }
+        require_once control_contact_center_root_path() . '/bootstrap.php';
+
+        return \Ratib\ContactCenter\App\Core\Security\ControlPanelIdentityResolver::candidateEmailsFromSession();
+    } catch (Throwable $e) {
+        return [];
     }
 }
 
