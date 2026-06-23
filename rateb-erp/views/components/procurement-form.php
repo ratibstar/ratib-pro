@@ -122,9 +122,7 @@ if ($entityType === 'purchase_request') {
                     Rateb\App\Core\View::partial('procurement-summary', [
                         'currency' => (string) ($item['currency'] ?? 'SAR'),
                         'discount' => (float) ($item['discount_amount'] ?? 0),
-                        'shipping' => 0,
-                        'customs' => 0,
-                        'invoiceNote' => true,
+                        'hideLandedCosts' => true,
                     ]);
                 } ?>
             </div>

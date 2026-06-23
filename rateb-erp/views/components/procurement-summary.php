@@ -3,10 +3,12 @@
 /** @var float $discount */
 /** @var float $shipping */
 /** @var float $customs */
+/** @var bool $hideLandedCosts */
 $currency = (string) ($currency ?? 'SAR');
 $discount = (float) ($discount ?? 0);
 $shipping = (float) ($shipping ?? 0);
 $customs = (float) ($customs ?? 0);
+$hideLandedCosts = !empty($hideLandedCosts);
 ?>
 <div class="col-12">
     <div class="rateb-card border-primary">
@@ -31,6 +33,7 @@ $customs = (float) ($customs ?? 0);
                     <div class="text-muted small"><?php echo __('discount'); ?></div>
                     <div class="fw-bold text-danger">-<span data-summary-discount><?php echo number_format($discount, 2); ?></span> <span data-summary-currency-suffix3><?php echo Rateb\App\Core\View::escape($currency); ?></span></div>
                 </div>
+                <?php if (!$hideLandedCosts) { ?>
                 <div class="col-md-4 col-6">
                     <div class="text-muted small"><?php echo __('shipping'); ?></div>
                     <div class="fw-bold"><span data-summary-shipping><?php echo number_format($shipping, 2); ?></span> <span data-summary-currency-suffix5><?php echo Rateb\App\Core\View::escape($currency); ?></span></div>
@@ -39,13 +42,14 @@ $customs = (float) ($customs ?? 0);
                     <div class="text-muted small"><?php echo __('customs_clearance_costs'); ?></div>
                     <div class="fw-bold"><span data-summary-customs><?php echo number_format($customs, 2); ?></span> <span data-summary-currency-suffix6><?php echo Rateb\App\Core\View::escape($currency); ?></span></div>
                 </div>
+                <?php } ?>
             </div>
             <hr>
             <div class="d-flex justify-content-between align-items-center">
                 <span class="fs-5 fw-bold"><?php echo __('grand_total'); ?></span>
                 <span class="fs-4 fw-bold text-primary"><span data-summary-grand>0.00</span> <span data-summary-currency-suffix4><?php echo Rateb\App\Core\View::escape($currency); ?></span></span>
             </div>
-            <?php if (!empty($invoiceNote)) { ?>
+            <?php if (!empty($invoiceNote) && !$hideLandedCosts) { ?>
             <p class="small text-muted mt-3 mb-0"><?php echo __('purchase_invoice_landed_costs_help'); ?></p>
             <?php } ?>
         </div>
