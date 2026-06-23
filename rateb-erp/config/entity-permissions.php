@@ -189,6 +189,16 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.view',
     ],
+    'account-statement' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'partners-subsidiary-ledger' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
     'chart-of-accounts' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

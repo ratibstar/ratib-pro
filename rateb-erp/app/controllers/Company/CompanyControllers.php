@@ -302,7 +302,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->viewPrefix = 'company/purchase-orders';
         $this->routePrefix = rateb_app_route('purchase-orders');
         $this->entityName = 'purchase_orders';
-        $this->tenantForeignKeys = ['supplier_id', 'customs_broker_id'];
+        $this->tenantForeignKeys = ['supplier_id'];
         $this->indexFields = [
             ['name' => 'order_no', 'label' => 'order_no'],
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
@@ -311,7 +311,6 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'expected_date', 'label' => 'expected_date'],
             ['name' => 'status', 'label' => 'status'],
             ['name' => 'currency', 'label' => 'currency'],
-            ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'money'],
             ['name' => 'total_amount', 'label' => 'total'],
         ];
         $this->fields = [
@@ -323,12 +322,6 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'po_statuses'],
             ['name' => 'discount_amount', 'label' => 'discount', 'type' => 'number'],
-            ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'number'],
-            ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'number'],
-            ['name' => 'customs_declaration_no', 'label' => 'customs_declaration_no', 'type' => 'text'],
-            ['name' => 'customs_clearance_date', 'label' => 'customs_clearance_date', 'type' => 'date'],
-            ['name' => 'customs_broker_id', 'label' => 'customs_broker', 'type' => 'fk', 'lookup' => 'suppliers'],
-            ['name' => 'customs_clearance_status', 'label' => 'customs_clearance_status', 'type' => 'select', 'lookup' => 'customs_clearance_statuses'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'number'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
@@ -354,14 +347,13 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         if (($data['currency'] ?? '') === '') {
             $data['currency'] = 'SAR';
         }
-        foreach (['cost_center_id', 'warehouse_id', 'customs_broker_id'] as $fk) {
+        foreach (['cost_center_id', 'warehouse_id'] as $fk) {
             if (array_key_exists($fk, $data) && (string) ($data[$fk] ?? '') === '') {
                 $data[$fk] = null;
             }
         }
-        if (array_key_exists('customs_clearance_date', $data) && trim((string) ($data['customs_clearance_date'] ?? '')) === '') {
-            $data['customs_clearance_date'] = null;
-        }
+        $data['shipping_amount'] = 0;
+        $data['customs_clearance_amount'] = 0;
         return $data;
     }
 
@@ -549,8 +541,9 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $supplierName = (string) ($sup['name'] ?? '');
         }
         $brokerName = '';
-        if (!empty($item['customs_broker_id'])) {
-            $broker = (new \Rateb\App\Models\Supplier())->find((int) $item['customs_broker_id']);
+        $invoice = (new \Rateb\App\Services\PurchaseInvoiceService())->findOrDraftForOrder($id);
+        if ($invoice && !empty($invoice['customs_broker_id'])) {
+            $broker = (new \Rateb\App\Models\Supplier())->find((int) $invoice['customs_broker_id']);
             $brokerName = (string) ($broker['name'] ?? '');
         }
         $this->view('company/purchase-orders/show', [
@@ -559,6 +552,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'items' => $items,
             'supplierName' => $supplierName,
             'brokerName' => $brokerName,
+            'purchaseInvoice' => $invoice,
             'warehouses' => (new \Rateb\App\Models\Warehouse())->all(200, 0),
             'docBarcode' => $docBarcode,
             'csrf' => Csrf::token(),
@@ -658,6 +652,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
 
     public function customsIndex(): void
     {
+        $this->model = new \Rateb\App\Models\PurchaseInvoice();
         $this->routePrefix = rateb_app_route('customs-clearance-costs');
         $this->viewPrefix = 'company/customs-clearance-costs';
         $this->entityName = 'customs_clearance_costs';
@@ -668,10 +663,12 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->indexFields = [
             ['name' => 'order_no', 'label' => 'order_no'],
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'invoice_no', 'label' => 'purchase_invoice_no'],
             ['name' => 'customs_declaration_no', 'label' => 'customs_declaration_no'],
             ['name' => 'customs_clearance_date', 'label' => 'customs_clearance_date'],
             ['name' => 'customs_broker_id', 'label' => 'customs_broker', 'type' => 'fk', 'lookup' => 'suppliers'],
             ['name' => 'customs_clearance_status', 'label' => 'customs_clearance_status', 'type' => 'status'],
+            ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'money'],
             ['name' => 'customs_clearance_amount', 'label' => 'customs_clearance_costs', 'type' => 'money'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'money'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
@@ -679,9 +676,65 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->index();
     }
 
+    public function invoiceForm(array $params): void
+    {
+        $poId = (int) ($params['id'] ?? 0);
+        $po = $this->model->find($poId);
+        if (!$po) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], 'main');
+            return;
+        }
+        $invoice = (new \Rateb\App\Services\PurchaseInvoiceService())->findOrDraftForOrder($poId);
+        $lookups = (new \Rateb\App\Services\FormLookupService())->forFields([
+            ['lookup' => 'suppliers'],
+            ['lookup' => 'customs_clearance_statuses'],
+        ]);
+        $this->view('company/purchase-orders/invoice-form', [
+            'title' => __('purchase_invoice'),
+            'order' => $po,
+            'invoice' => $invoice,
+            'lookups' => $lookups,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function saveInvoice(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $poId = (int) ($params['id'] ?? 0);
+        $po = $this->model->find($poId);
+        if (!$po) {
+            SessionManager::flash('error', __('record_not_found'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = [
+            'invoice_no' => trim((string) ($_POST['invoice_no'] ?? '')),
+            'invoice_date' => trim((string) ($_POST['invoice_date'] ?? '')),
+            'status' => trim((string) ($_POST['status'] ?? 'draft')),
+            'shipping_amount' => (float) ($_POST['shipping_amount'] ?? 0),
+            'customs_clearance_amount' => (float) ($_POST['customs_clearance_amount'] ?? 0),
+            'customs_declaration_no' => trim((string) ($_POST['customs_declaration_no'] ?? '')),
+            'customs_clearance_date' => trim((string) ($_POST['customs_clearance_date'] ?? '')),
+            'customs_broker_id' => (int) ($_POST['customs_broker_id'] ?? 0) ?: null,
+            'customs_clearance_status' => trim((string) ($_POST['customs_clearance_status'] ?? '')),
+            'notes' => trim((string) ($_POST['notes'] ?? '')),
+        ];
+        try {
+            (new \Rateb\App\Services\PurchaseInvoiceService())->save($poId, $data);
+            SessionManager::flash('success', __('purchase_invoice_saved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url($this->routePrefix . '/' . $poId));
+    }
+
     public function customsExport(): void
     {
-        $items = $this->model->listCustomsClearance(500, 0);
+        $items = (new \Rateb\App\Models\PurchaseInvoice())->listCustomsClearance(500, 0);
         $brokerMap = (new \Rateb\App\Services\FormLookupService())->valueLabelMap('suppliers');
         foreach ($items as &$row) {
             $bid = (string) (int) ($row['customs_broker_id'] ?? 0);

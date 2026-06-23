@@ -151,6 +151,8 @@ $router->get($app('purchase-requests/{id}'), [PurchaseRequestsController::class,
 $router->post($app('purchase-requests/{id}/convert-to-po'), [PurchaseRequestsController::class, 'convertToPo'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->post($app('purchase-requests/{id}/submit'), [PurchaseRequestsController::class, 'submit'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->get($app('purchase-orders/{id}'), [PurchaseOrdersController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-orders'));
+$router->get($app('purchase-orders/{id}/invoice'), [PurchaseOrdersController::class, 'invoiceForm'], rateb_erp_mw('procurement', '', 'purchase-orders'));
+$router->post($app('purchase-orders/{id}/invoice'), [PurchaseOrdersController::class, 'saveInvoice'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('purchase-orders/{id}/print'), [PurchaseOrdersController::class, 'print'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->post($app('purchase-orders/{id}/receive'), [PurchaseOrdersController::class, 'receive'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->post($app('purchase-orders/{id}/submit'), [PurchaseOrdersController::class, 'submit'], rateb_erp_mw('procurement', '', 'purchase-orders'));
@@ -245,6 +247,8 @@ $router->get($app('accounting'), [CompanyAccountingDashboardController::class, '
 $router->get($app('accounting/reports'), [CompanyAccountingDashboardController::class, 'reportsHub'], rateb_erp_mw('accounting', '', 'accounting-reports'));
 $router->get($app('accounting/trial-balance'), [CompanyAccountingDashboardController::class, 'trialBalanceReport'], rateb_erp_mw('accounting', '', 'trial-balance'));
 $router->get($app('accounting/journal-register'), [CompanyAccountingDashboardController::class, 'journalRegister'], rateb_erp_mw('accounting', '', 'journal-register'));
+$router->get($app('accounting/account-statement'), [CompanyAccountingDashboardController::class, 'accountStatement'], rateb_erp_mw('accounting', '', 'account-statement'));
+$router->get($app('accounting/partners-subsidiary-ledger'), [CompanyAccountingDashboardController::class, 'partnersSubsidiaryLedger'], rateb_erp_mw('accounting', '', 'partners-subsidiary-ledger'));
 $router->post($app('accounting/sync'), [CompanyAccountingDashboardController::class, 'sync'], rateb_erp_mw('accounting', 'accounting.post'));
 $router->get($app('accounting/accounts-payable'), [CompanyAccountingDashboardController::class, 'accountsPayable'], rateb_erp_mw('accounting', '', 'accounts-payable'));
 $router->get($app('accounting/accounts-receivable'), [CompanyAccountingDashboardController::class, 'accountsReceivable'], rateb_erp_mw('accounting', '', 'accounts-receivable'));

@@ -217,6 +217,16 @@ final class AccountingService
             }
         }
 
+        $piSql = "SELECT * FROM rateb_purchase_invoices WHERE status = 'posted'";
+        if ($companyId !== null) {
+            $piSql .= ' AND company_id = ' . (int) $companyId;
+        }
+        foreach ($pdo->query($piSql)->fetchAll() as $pi) {
+            if ($this->postPurchaseInvoice((array) $pi)) {
+                $count++;
+            }
+        }
+
         return $count;
     }
 
@@ -310,8 +320,11 @@ final class AccountingService
 
         $total = (float) ($po['total_amount'] ?? 0);
         $tax = (float) ($po['tax_amount'] ?? 0);
-        $net = max(0, $total - $tax);
-        if ($total <= 0) {
+        $net = max(0, (float) ($po['subtotal'] ?? 0) - (float) ($po['discount_amount'] ?? 0));
+        if ($net <= 0 && $tax <= 0) {
+            $net = max(0, $total - $tax);
+        }
+        if ($total <= 0 && $net <= 0) {
             return false;
         }
 
@@ -338,6 +351,55 @@ final class AccountingService
             'Purchase order ' . ($po['order_no'] ?? ''),
             'أمر شراء ' . ($po['order_no'] ?? ''),
             (string) ($po['order_date'] ?? date('Y-m-d'))
+        ) !== null;
+    }
+
+    public function autoPostPurchaseInvoice(int $purchaseInvoiceId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_purchase_invoices WHERE id = :id LIMIT 1',
+            ['id' => $purchaseInvoiceId]
+        );
+        if (!$row || (string) ($row['status'] ?? '') !== 'posted') {
+            return false;
+        }
+        return $this->postPurchaseInvoice((array) $row);
+    }
+
+    public function postPurchaseInvoice(array $invoice): bool
+    {
+        $companyId = (int) ($invoice['company_id'] ?? 0);
+        if ($this->entryExists('purchase_invoice', (int) $invoice['id'])) {
+            return false;
+        }
+
+        $shipping = max(0, (float) ($invoice['shipping_amount'] ?? 0));
+        $customs = max(0, (float) ($invoice['customs_clearance_amount'] ?? 0));
+        $landed = round($shipping + $customs, 2);
+        if ($landed <= 0) {
+            return false;
+        }
+
+        $inventory = $this->accountIdByCode($companyId, '1300');
+        $ap = $this->accountIdByCode($companyId, '2100');
+        if (!$inventory || !$ap) {
+            return false;
+        }
+
+        $po = (new JournalEntry())->queryOne(
+            'SELECT order_no, cost_center_id FROM rateb_purchase_orders WHERE id = :id LIMIT 1',
+            ['id' => (int) ($invoice['purchase_order_id'] ?? 0)]
+        );
+        $ccId = isset($po['cost_center_id']) && (int) $po['cost_center_id'] > 0 ? (int) $po['cost_center_id'] : null;
+        $ref = (string) ($invoice['invoice_no'] ?? $invoice['id']);
+        $poNo = (string) ($po['order_no'] ?? '');
+
+        return $this->createPostedEntry($companyId, 'purchase_invoice', (int) $invoice['id'], [
+            ['account_id' => $inventory, 'debit' => $landed, 'credit' => 0, 'memo' => 'Landed costs PI ' . $ref, 'cost_center_id' => $ccId],
+            ['account_id' => $ap, 'debit' => 0, 'credit' => $landed, 'memo' => 'AP landed costs PO ' . $poNo],
+        ], 'Purchase invoice landed costs ' . $ref,
+            'تكاليف إضافية فاتورة شراء ' . $ref,
+            (string) ($invoice['invoice_date'] ?? date('Y-m-d'))
         ) !== null;
     }
 
@@ -1745,6 +1807,127 @@ final class AccountingService
             'dpo_days' => round($dpo, 1),
             'procurement_ytd' => (float) ($this->financialSummary($companyId)['procurement_received'] ?? 0),
         ];
+    }
+
+    /**
+     * General account statement (كشف حساب عام) with opening balance and running totals.
+     *
+     * @return array<string, mixed>
+     */
+    public function accountStatement(?int $companyId, int $accountId, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        if ($companyId === null || $companyId < 1 || $accountId < 1) {
+            return ['account' => null, 'lines' => [], 'opening' => 0.0, 'closing' => 0.0, 'total_debit' => 0.0, 'total_credit' => 0.0];
+        }
+        $account = (new ChartOfAccount())->queryOne(
+            'SELECT * FROM rateb_chart_of_accounts WHERE id = :id AND company_id <=> :cid LIMIT 1',
+            ['id' => $accountId, 'cid' => $companyId]
+        );
+        if (!$account) {
+            return ['account' => null, 'lines' => [], 'opening' => 0.0, 'closing' => 0.0, 'total_debit' => 0.0, 'total_credit' => 0.0];
+        }
+
+        $opening = 0.0;
+        if ($fromDate) {
+            $openRow = (new JournalEntry())->queryOne(
+                'SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr
+                 FROM rateb_journal_lines l
+                 JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
+                 WHERE l.account_id = :aid AND e.company_id = :cid AND e.entry_date < :from',
+                ['posted' => 'posted', 'aid' => $accountId, 'cid' => $companyId, 'from' => $fromDate]
+            );
+            $opening = (float) ($openRow['dr'] ?? 0) - (float) ($openRow['cr'] ?? 0);
+        }
+
+        $sql = 'SELECT e.entry_no, e.entry_date, e.description, e.description_ar, e.source_type,
+                       l.debit, l.credit, l.memo
+                FROM rateb_journal_lines l
+                JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
+                WHERE l.account_id = :aid AND e.company_id = :cid';
+        $params = ['posted' => 'posted', 'aid' => $accountId, 'cid' => $companyId];
+        if ($fromDate) {
+            $sql .= ' AND e.entry_date >= :from';
+            $params['from'] = $fromDate;
+        }
+        if ($toDate) {
+            $sql .= ' AND e.entry_date <= :to';
+            $params['to'] = $toDate;
+        }
+        $sql .= ' ORDER BY e.entry_date, e.id, l.id';
+        $rawLines = (new JournalEntry())->query($sql, $params);
+
+        $balance = $opening;
+        $totalDebit = 0.0;
+        $totalCredit = 0.0;
+        $lines = [];
+        foreach ($rawLines as $row) {
+            $dr = (float) ($row['debit'] ?? 0);
+            $cr = (float) ($row['credit'] ?? 0);
+            $totalDebit += $dr;
+            $totalCredit += $cr;
+            $balance += $dr - $cr;
+            $row['balance'] = round($balance, 2);
+            $lines[] = $row;
+        }
+
+        return [
+            'account' => $account,
+            'lines' => $lines,
+            'opening' => round($opening, 2),
+            'closing' => round($balance, 2),
+            'total_debit' => round($totalDebit, 2),
+            'total_credit' => round($totalCredit, 2),
+            'from' => $fromDate,
+            'to' => $toDate,
+        ];
+    }
+
+    /**
+     * Partner subsidiary ledger (كشف حساب مساعد للشركاء) — equity partner capital accounts.
+     *
+     * @return array<string, mixed>
+     */
+    public function partnersSubsidiaryLedger(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return ['accounts' => [], 'from' => $fromDate, 'to' => $toDate];
+        }
+        $parent = (new ChartOfAccount())->queryOne(
+            'SELECT id FROM rateb_chart_of_accounts WHERE company_id <=> :cid AND code = :code LIMIT 1',
+            ['cid' => $companyId, 'code' => '3200']
+        );
+        $parentId = (int) ($parent['id'] ?? 0);
+        $sql = 'SELECT * FROM rateb_chart_of_accounts
+                WHERE company_id <=> :cid AND is_active = 1 AND account_type = :eq';
+        $params = ['cid' => $companyId, 'eq' => 'equity'];
+        if ($parentId > 0) {
+            $sql .= ' AND (parent_id = :pid OR code LIKE :pfx)';
+            $params['pid'] = $parentId;
+            $params['pfx'] = '321%';
+        } else {
+            $sql .= ' AND code LIKE :pfx';
+            $params['pfx'] = '321%';
+        }
+        $sql .= ' ORDER BY code';
+        $partnerAccounts = (new ChartOfAccount())->query($sql, $params);
+
+        $accounts = [];
+        foreach ($partnerAccounts as $acct) {
+            $stmt = $this->accountStatement($companyId, (int) $acct['id'], $fromDate, $toDate);
+            if ($stmt['lines'] === [] && abs($stmt['closing']) < 0.01 && abs($stmt['opening']) < 0.01) {
+                continue;
+            }
+            $accounts[] = [
+                'account' => $acct,
+                'opening' => $stmt['opening'],
+                'closing' => $stmt['closing'],
+                'total_debit' => $stmt['total_debit'],
+                'total_credit' => $stmt['total_credit'],
+                'lines' => $stmt['lines'],
+            ];
+        }
+
+        return ['accounts' => $accounts, 'from' => $fromDate, 'to' => $toDate];
     }
 
     /** @return array<int, array<string, mixed>> */

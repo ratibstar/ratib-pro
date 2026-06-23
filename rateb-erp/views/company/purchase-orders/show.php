@@ -1,13 +1,16 @@
 <?php
 $order = $order ?? [];
 $items = $items ?? [];
+$purchaseInvoice = $purchaseInvoice ?? null;
 $canReceive = in_array((string) ($order['status'] ?? ''), ['sent', 'confirmed', 'partial'], true);
 $orderNo = (string) ($order['order_no'] ?? '');
 $status = (string) ($order['status'] ?? '');
 $currency = (string) ($order['currency'] ?? 'SAR');
-$hasCustoms = (float) ($order['customs_clearance_amount'] ?? 0) > 0
-    || !empty($order['customs_declaration_no'])
-    || !empty($order['customs_clearance_status']);
+$inv = is_array($purchaseInvoice) ? $purchaseInvoice : [];
+$hasCustoms = (float) ($inv['customs_clearance_amount'] ?? 0) > 0
+    || (float) ($inv['shipping_amount'] ?? 0) > 0
+    || !empty($inv['customs_declaration_no'])
+    || !empty($inv['customs_clearance_status']);
 
 $statusClass = 'rateb-po-status--draft';
 if (in_array($status, ['sent', 'confirmed'], true)) {
@@ -20,7 +23,7 @@ if (in_array($status, ['sent', 'confirmed'], true)) {
     $statusClass = 'rateb-po-status--cancelled';
 }
 
-$customsStatus = (string) ($order['customs_clearance_status'] ?? '');
+$customsStatus = (string) ($inv['customs_clearance_status'] ?? '');
 $customsStatusClass = 'rateb-po-status--draft';
 if ($customsStatus === 'customs_cleared') {
     $customsStatusClass = 'rateb-po-status--received';
@@ -47,6 +50,9 @@ if ($customsStatus === 'customs_cleared') {
                 <?php } ?>
             </div>
             <div class="rateb-po-show-actions">
+                <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/invoice'); ?>" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-file-invoice-dollar"></i> <?php echo __('manage_purchase_invoice'); ?>
+                </a>
                 <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/edit'); ?>" class="btn btn-sm btn-primary">
                     <i class="fas fa-edit"></i> <?php echo __('edit'); ?>
                 </a>
@@ -106,16 +112,16 @@ if ($customsStatus === 'customs_cleared') {
                 </div>
                 <div class="rateb-card-body">
                     <div class="rateb-kv-grid">
-                        <?php if (!empty($order['customs_declaration_no'])) { ?>
+                        <?php if (!empty($inv['customs_declaration_no'])) { ?>
                         <div class="rateb-kv-item">
                             <span class="rateb-kv-label"><?php echo __('customs_declaration_no'); ?></span>
-                            <span class="rateb-kv-value"><?php echo Rateb\App\Core\View::escape($order['customs_declaration_no']); ?></span>
+                            <span class="rateb-kv-value"><?php echo Rateb\App\Core\View::escape($inv['customs_declaration_no']); ?></span>
                         </div>
                         <?php } ?>
-                        <?php if (!empty($order['customs_clearance_date'])) { ?>
+                        <?php if (!empty($inv['customs_clearance_date'])) { ?>
                         <div class="rateb-kv-item">
                             <span class="rateb-kv-label"><?php echo __('customs_clearance_date'); ?></span>
-                            <span class="rateb-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($order['customs_clearance_date']); ?></span>
+                            <span class="rateb-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($inv['customs_clearance_date']); ?></span>
                         </div>
                         <?php } ?>
                         <?php if (!empty($brokerName)) { ?>
@@ -134,11 +140,19 @@ if ($customsStatus === 'customs_cleared') {
                             </span>
                         </div>
                         <?php } ?>
-                        <?php if ((float) ($order['customs_clearance_amount'] ?? 0) > 0) { ?>
+                        <?php if ((float) ($inv['customs_clearance_amount'] ?? 0) > 0) { ?>
                         <div class="rateb-kv-item">
                             <span class="rateb-kv-label"><?php echo __('customs_clearance_costs'); ?></span>
                             <span class="rateb-kv-value rateb-ltr-num">
-                                <?php echo number_format((float) $order['customs_clearance_amount'], 2); ?> <?php echo Rateb\App\Core\View::escape($currency); ?>
+                                <?php echo number_format((float) $inv['customs_clearance_amount'], 2); ?> <?php echo Rateb\App\Core\View::escape($currency); ?>
+                            </span>
+                        </div>
+                        <?php } ?>
+                        <?php if ((float) ($inv['shipping_amount'] ?? 0) > 0) { ?>
+                        <div class="rateb-kv-item">
+                            <span class="rateb-kv-label"><?php echo __('shipping'); ?></span>
+                            <span class="rateb-kv-value rateb-ltr-num">
+                                <?php echo number_format((float) $inv['shipping_amount'], 2); ?> <?php echo Rateb\App\Core\View::escape($currency); ?>
                             </span>
                         </div>
                         <?php } ?>

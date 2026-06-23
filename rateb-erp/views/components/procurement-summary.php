@@ -45,6 +45,9 @@ $customs = (float) ($customs ?? 0);
                 <span class="fs-5 fw-bold"><?php echo __('grand_total'); ?></span>
                 <span class="fs-4 fw-bold text-primary"><span data-summary-grand>0.00</span> <span data-summary-currency-suffix4><?php echo Rateb\App\Core\View::escape($currency); ?></span></span>
             </div>
+            <?php if (!empty($invoiceNote)) { ?>
+            <p class="small text-muted mt-3 mb-0"><?php echo __('purchase_invoice_landed_costs_help'); ?></p>
+            <?php } ?>
         </div>
     </div>
 </div>

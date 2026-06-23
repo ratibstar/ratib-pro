@@ -237,11 +237,12 @@ final class ProcurementService
         }
         $agg = LineItems::aggregateTotals($lines);
         $discount = max(0, (float) ($data['discount_amount'] ?? 0));
-        $shipping = max(0, (float) ($data['shipping_amount'] ?? 0));
-        $customs = max(0, (float) ($data['customs_clearance_amount'] ?? 0));
         $data['subtotal'] = $agg['subtotal'];
         $data['tax_amount'] = $agg['tax'];
-        $data['total_amount'] = round($agg['total'] - $discount + $shipping + $customs, 2);
+        // Landed costs (shipping, customs) belong on purchase invoice — not PO total.
+        $data['shipping_amount'] = 0;
+        $data['customs_clearance_amount'] = 0;
+        $data['total_amount'] = round($agg['total'] - $discount, 2);
     }
 
     public function stampRequestedBy(array &$data): void

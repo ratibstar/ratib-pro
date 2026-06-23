@@ -72,7 +72,7 @@ if ($entityType === 'purchase_request') {
                         <?php
                         continue;
                     }
-                    if (in_array($name, ['discount_amount', 'shipping_amount', 'customs_clearance_amount'], true)) {
+                    if (in_array($name, ['discount_amount'], true)) {
                         ?>
                 <div class="col-md-6">
                     <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">
@@ -87,18 +87,12 @@ if ($entityType === 'purchase_request') {
                         <?php
                         continue;
                     }
-                    if ($entityType === 'purchase_order' && in_array($name, ['customs_declaration_no', 'customs_clearance_date', 'customs_broker_id', 'customs_clearance_status'], true)) {
+                    if ($entityType === 'purchase_order' && in_array($name, ['customs_declaration_no', 'customs_clearance_date', 'customs_broker_id', 'customs_clearance_status', 'shipping_amount', 'customs_clearance_amount'], true)) {
                         continue;
                     }
                     Rateb\App\Core\View::partial('form-field', [
                         'field' => $field,
                         'value' => $value,
-                        'lookups' => $lookups,
-                    ]);
-                } ?>
-                <?php if ($entityType === 'purchase_order') {
-                    Rateb\App\Core\View::partial('procurement-customs-fields', [
-                        'item' => $item,
                         'lookups' => $lookups,
                     ]);
                 } ?>
@@ -128,8 +122,9 @@ if ($entityType === 'purchase_request') {
                     Rateb\App\Core\View::partial('procurement-summary', [
                         'currency' => (string) ($item['currency'] ?? 'SAR'),
                         'discount' => (float) ($item['discount_amount'] ?? 0),
-                        'shipping' => (float) ($item['shipping_amount'] ?? 0),
-                        'customs' => (float) ($item['customs_clearance_amount'] ?? 0),
+                        'shipping' => 0,
+                        'customs' => 0,
+                        'invoiceNote' => true,
                     ]);
                 } ?>
             </div>

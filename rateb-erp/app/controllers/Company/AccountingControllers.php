@@ -159,6 +159,54 @@ final class AccountingDashboardController extends Controller
         ], 'main');
     }
 
+    public function accountStatement(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $accountId = (int) ($_GET['account_id'] ?? 0);
+        $service = new AccountingService();
+        $report = $accountId > 0 && $companyId > 0
+            ? $service->accountStatement($companyId, $accountId, $from !== '' ? $from : null, $to !== '' ? $to : null)
+            : ['account' => null, 'lines' => [], 'opening' => 0.0, 'closing' => 0.0, 'total_debit' => 0.0, 'total_credit' => 0.0];
+        $accounts = $companyId > 0
+            ? (new ChartOfAccount())->query(
+                'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts WHERE company_id <=> :cid AND is_active = 1 ORDER BY code',
+                ['cid' => $companyId]
+            )
+            : [];
+        $this->view('company/accounting/account-statement', [
+            'title' => __('general_account_statement'),
+            'report' => $report,
+            'accounts' => $accounts,
+            'accountId' => $accountId,
+            'from' => $from,
+            'to' => $to,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function partnersSubsidiaryLedger(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $report = $companyId > 0
+            ? (new AccountingService())->partnersSubsidiaryLedger(
+                $companyId,
+                $from !== '' ? $from : null,
+                $to !== '' ? $to : null
+            )
+            : ['accounts' => []];
+        $this->view('company/accounting/partners-subsidiary-ledger', [
+            'title' => __('partners_subsidiary_ledger'),
+            'report' => $report,
+            'from' => $from,
+            'to' => $to,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
     public function balanceSheet(): void
     {
         $companyId = rateb_resolve_ops_company_id();

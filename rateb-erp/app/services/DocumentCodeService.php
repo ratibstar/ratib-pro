@@ -10,6 +10,7 @@ final class DocumentCodeService
 {
     public const PREFIX_PURCHASE_REQUEST = 'PR-';
     public const PREFIX_PURCHASE_ORDER = 'PO-';
+    public const PREFIX_PURCHASE_INVOICE = 'PI-';
     public const PREFIX_RFQ = 'RF-';
     public const PREFIX_QUOTATION = 'QT-';
     public const PREFIX_CONTRACT = 'CT-';

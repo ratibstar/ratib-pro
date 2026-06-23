@@ -14,6 +14,8 @@ return [
             ['entity' => 'profit-loss', 'route' => 'accounting/profit-loss', 'label' => 'profit_loss', 'desc' => 'accounting_report_profit_loss_desc', 'icon' => 'fa-chart-line', 'export' => 'accounting/export/profit-loss'],
             ['entity' => 'balance-sheet', 'route' => 'accounting/balance-sheet', 'label' => 'balance_sheet', 'desc' => 'accounting_report_balance_sheet_desc', 'icon' => 'fa-landmark', 'export' => 'accounting/export/balance-sheet'],
             ['entity' => 'cost-of-sales', 'route' => 'accounting/cost-of-sales', 'label' => 'cost_of_sales', 'desc' => 'accounting_report_cost_of_sales_desc', 'icon' => 'fa-boxes-stacked'],
+            ['entity' => 'account-statement', 'route' => 'accounting/account-statement', 'label' => 'general_account_statement', 'desc' => 'accounting_report_account_statement_desc', 'icon' => 'fa-file-lines'],
+            ['entity' => 'partners-subsidiary-ledger', 'route' => 'accounting/partners-subsidiary-ledger', 'label' => 'partners_subsidiary_ledger', 'desc' => 'accounting_report_partners_ledger_desc', 'icon' => 'fa-users'],
         ],
     ],
     [
