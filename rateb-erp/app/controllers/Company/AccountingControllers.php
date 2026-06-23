@@ -1197,15 +1197,12 @@ final class JournalEntriesController extends Controller
             ['id' => $id, 'cid' => $companyId]
         );
         $service = new AccountingService();
-        if ($entry && $service->periodBlocksPosting($companyId, (string) ($entry['entry_date'] ?? ''))) {
-            SessionManager::flash('error', __('fiscal_period_closed_block'));
-            Response::redirect(rateb_app_url('accounting/entry-approval'));
-        }
-        if ($entry && $service->postDraftEntry($id, $companyId)) {
+        $reason = $entry ? $service->postDraftEntryReason($id, $companyId) : 'journal_post_failed';
+        if ($reason === null) {
             (new AuditService())->log('post', 'journal_entry', $id, []);
             SessionManager::flash('success', __('journal_approved'));
         } else {
-            SessionManager::flash('error', __('journal_post_failed'));
+            SessionManager::flash('error', __($reason));
         }
         Response::redirect(rateb_app_url('accounting/entry-approval'));
     }
@@ -1321,18 +1318,23 @@ final class JournalEntriesController extends Controller
         $companyId = rateb_require_ops_company();
         $service = new AccountingService();
         $approved = 0;
+        $lastReason = null;
         foreach ($ids as $id) {
-            $entry = (new JournalEntry())->queryOne(
-                'SELECT entry_date FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
-                ['id' => $id, 'cid' => $companyId]
-            );
-            if ($entry && !$service->periodBlocksPosting($companyId, (string) ($entry['entry_date'] ?? ''))
-                && $service->postDraftEntry((int) $id, $companyId)) {
+            $reason = $service->postDraftEntryReason((int) $id, $companyId);
+            if ($reason === null) {
                 $approved++;
                 (new AuditService())->log('post', 'journal_entry', (int) $id, []);
+            } else {
+                $lastReason = $reason;
             }
         }
-        SessionManager::flash('success', __('bulk_approved', ['count' => $approved]));
+        if ($approved > 0) {
+            SessionManager::flash('success', __('bulk_approved', ['count' => $approved]));
+        } elseif ($lastReason !== null) {
+            SessionManager::flash('error', __($lastReason));
+        } else {
+            SessionManager::flash('error', __('journal_post_failed'));
+        }
         Response::redirect(rateb_app_url('accounting/entry-approval'));
     }
 

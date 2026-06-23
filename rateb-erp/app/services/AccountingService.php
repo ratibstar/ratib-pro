@@ -544,20 +544,28 @@ final class AccountingService
         $this->ensureDefaultAccounts($companyId);
         $companyId = $this->normalizeCompanyId($companyId);
         $entryModel = new JournalEntry();
-        $entryId = $entryModel->create([
-            'company_id' => $companyId,
-            'entry_no' => $this->nextEntryNo($companyId),
-            'entry_date' => $entryDate,
-            'description' => $description,
-            'description_ar' => $descriptionAr,
-            'source_type' => 'manual',
-            'source_id' => null,
-            'status' => 'draft',
-            'created_by' => $createdBy,
-            'posted_at' => null,
-        ]);
-        $this->replaceJournalLines($entryId, $lines);
-        return $entryId;
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+        try {
+            $entryId = $entryModel->create([
+                'company_id' => $companyId,
+                'entry_no' => $this->nextEntryNo($companyId),
+                'entry_date' => $entryDate,
+                'description' => $description,
+                'description_ar' => $descriptionAr,
+                'source_type' => 'manual',
+                'source_id' => null,
+                'status' => 'draft',
+                'created_by' => $createdBy,
+                'posted_at' => null,
+            ]);
+            $this->replaceJournalLines($entryId, $lines);
+            $pdo->commit();
+            return $entryId;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
     }
 
     /** @param array<int, array{account_id:int,debit:float,credit:float,memo?:string}> $lines */
@@ -581,31 +589,51 @@ final class AccountingService
             'description' => $description,
             'description_ar' => $descriptionAr,
         ]);
-        $this->replaceJournalLines($entryId, $lines);
-        return true;
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+        try {
+            $this->replaceJournalLines($entryId, $lines);
+            $pdo->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
     }
 
-    public function postDraftEntry(int $entryId, ?int $companyId): bool
+    /** Post manual draft; returns null on success or a lang key for the failure reason. */
+    public function postDraftEntryReason(int $entryId, ?int $companyId): ?string
     {
         $entry = $this->findEntryForCompany($entryId, $companyId);
-        if (!$entry || ($entry['status'] ?? '') !== 'draft') {
-            return false;
+        if (!$entry) {
+            return 'journal_post_failed';
+        }
+        if (($entry['status'] ?? '') !== 'draft') {
+            return 'journal_post_not_draft';
         }
         if ((string) ($entry['source_type'] ?? '') !== 'manual') {
-            return false;
+            return 'journal_post_not_manual';
         }
         $lines = $this->loadEntryLines($entryId);
+        if ($lines === []) {
+            return 'journal_no_lines';
+        }
         if (!$this->isBalanced($lines)) {
-            return false;
+            return 'journal_not_balanced';
         }
         if (!$this->isPeriodOpen($companyId, (string) ($entry['entry_date'] ?? date('Y-m-d')))) {
-            return false;
+            return 'fiscal_period_closed_block';
         }
         (new JournalEntry())->update($entryId, [
             'status' => 'posted',
             'posted_at' => date('Y-m-d H:i:s'),
         ]);
-        return true;
+        return null;
+    }
+
+    public function postDraftEntry(int $entryId, ?int $companyId): bool
+    {
+        return $this->postDraftEntryReason($entryId, $companyId) === null;
     }
 
     public function voidPostedEntry(int $entryId, ?int $companyId, ?array $allowedSourceTypes = null): bool
