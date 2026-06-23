@@ -278,6 +278,11 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.manage',
     ],
+    'customers' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
     'cost-center-report' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

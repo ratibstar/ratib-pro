@@ -125,6 +125,16 @@ final class CostCenter extends Model
     protected array $fillable = ['company_id', 'code', 'name', 'name_ar', 'parent_id', 'is_active'];
 }
 
+final class Customer extends Model
+{
+    protected string $table = 'rateb_customers';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'code', 'name', 'name_ar', 'phone', 'email', 'tax_id',
+        'cost_center_id', 'notes', 'is_active',
+    ];
+}
+
 final class FiscalPeriod extends Model
 {
     protected string $table = 'rateb_fiscal_periods';
@@ -137,7 +147,7 @@ final class CashVoucher extends Model
     protected string $table = 'rateb_cash_vouchers';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'company_id', 'voucher_no', 'voucher_type', 'voucher_date', 'amount', 'party_name',
+        'company_id', 'voucher_no', 'voucher_type', 'voucher_date', 'amount', 'party_name', 'customer_id',
         'description', 'description_ar', 'counter_account_id', 'bank_account_id', 'status', 'journal_entry_id',
         'created_by', 'posted_at',
     ];

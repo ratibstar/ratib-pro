@@ -26,6 +26,7 @@ final class DocumentCodeService
     public const PREFIX_MOVEMENT = 'SM-';
     public const PREFIX_WAREHOUSE = 'WH-';
     public const PREFIX_SUPPLIER = 'SU-';
+    public const PREFIX_CUSTOMER = 'CU-';
     public const PREFIX_ASSET = 'AS-';
     public const PREFIX_EVALUATION = 'SE-';
     public const PREFIX_EMPLOYEE = 'EM-';

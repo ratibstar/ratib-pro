@@ -20,6 +20,10 @@ $item = $voucher;
             'item' => $item,
             'lookups' => $lookups,
         ]); ?>
+        <p class="text-muted small mb-0 mt-2">
+            <?php echo __('customers_hint'); ?>
+            <a href="<?php echo rateb_app_url('customers/create'); ?>"><?php echo __('customers'); ?></a>
+        </p>
     </div>
     <div class="rateb-card-footer d-flex gap-2">
         <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>

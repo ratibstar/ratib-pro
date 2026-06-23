@@ -45,6 +45,7 @@ use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntr
 use Rateb\App\Controllers\Company\CashVouchersController as CompanyCashVouchersController;
 use Rateb\App\Controllers\Company\FiscalPeriodsController as CompanyFiscalPeriodsController;
 use Rateb\App\Controllers\Company\CostCentersController as CompanyCostCentersController;
+use Rateb\App\Controllers\Company\CustomersController as CompanyCustomersController;
 use Rateb\App\Controllers\Company\BankAccountsController as CompanyBankAccountsController;
 use Rateb\App\Controllers\Company\InventoryBatchesController;
 use Rateb\App\Controllers\Company\InventoryAuditsController;
@@ -342,6 +343,14 @@ $router->get($app('cost-centers/{id}/edit'), [CompanyCostCentersController::clas
 $router->post($app('cost-centers/{id}'), [CompanyCostCentersController::class, 'update'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
 $router->post($app('cost-centers/{id}/delete'), [CompanyCostCentersController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
 $router->post($app('cost-centers/bulk-delete'), [CompanyCostCentersController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
+
+$router->get($app('customers'), [CompanyCustomersController::class, 'index'], rateb_erp_mw('accounting', '', 'customers'));
+$router->get($app('customers/create'), [CompanyCustomersController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
+$router->post($app('customers'), [CompanyCustomersController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
+$router->get($app('customers/{id}/edit'), [CompanyCustomersController::class, 'edit'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
+$router->post($app('customers/{id}'), [CompanyCustomersController::class, 'update'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
+$router->post($app('customers/{id}/delete'), [CompanyCustomersController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
+$router->post($app('customers/bulk-delete'), [CompanyCustomersController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
 
 $router->get($app('reports'), [ReportsController::class, 'index'], rateb_erp_mw('reports', '', 'reports'));
 $router->get($app('reports/export'), [ReportsController::class, 'export'], rateb_erp_mw('reports', 'reports.export', 'reports'));

@@ -17,6 +17,7 @@ use Rateb\App\Models\CmsSection;
 use Rateb\App\Models\CmsServiceCategory;
 use Rateb\App\Models\Contract;
 use Rateb\App\Models\CostCenter;
+use Rateb\App\Models\Customer;
 use Rateb\App\Models\Employee;
 use Rateb\App\Models\FiscalPeriod;
 use Rateb\App\Models\HrDepartment;
@@ -78,6 +79,9 @@ final class FormLookupService
                 break;
             case 'cost_centers':
                 $options = $this->costCenterOptions();
+                break;
+            case 'customers':
+                $options = $this->customerOptions();
                 break;
             case 'inventory':
                 $options = $this->inventoryOptions();
@@ -660,6 +664,7 @@ final class FormLookupService
             ['name' => 'voucher_date', 'label' => 'voucher_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
             ['name' => 'amount', 'label' => 'amount', 'type' => 'number', 'step' => '0.01', 'min' => '0.01', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'party_name', 'label' => 'party_name', 'type' => 'hybrid', 'lookup' => 'party_names', 'col' => 'col-md-6'],
+            ['name' => 'customer_id', 'label' => 'customer_analysis', 'type' => 'fk', 'lookup' => 'customers', 'col' => 'col-md-6'],
             ['name' => 'counter_account_id', 'label' => 'counter_account', 'type' => 'fk', 'lookup' => 'chart_of_accounts', 'required' => true, 'col' => 'col-md-6'],
             ['name' => 'bank_account_id', 'label' => 'bank_account', 'type' => 'fk', 'lookup' => 'bank_accounts', 'col' => 'col-md-6'],
             ['name' => 'description', 'label' => 'description', 'type' => 'text', 'col' => 'col-md-6'],
@@ -780,6 +785,19 @@ final class FormLookupService
     {
         $out = [];
         foreach ((new CostCenter())->all(300, 0) as $row) {
+            $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : ($row['name'] ?? '');
+            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['code'] ?? '') . ' — ' . $name)];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function customerOptions(): array
+    {
+        $out = [];
+        foreach ((new Customer())->query(
+            'SELECT id, code, name, name_ar FROM rateb_customers WHERE is_active = 1 ORDER BY name LIMIT 500'
+        ) as $row) {
             $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : ($row['name'] ?? '');
             $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['code'] ?? '') . ' — ' . $name)];
         }

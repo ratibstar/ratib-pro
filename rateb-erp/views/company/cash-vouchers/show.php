@@ -17,6 +17,19 @@ $displayStatus = $st === 'draft' ? 'pending' : ($st === 'posted' ? 'approved' : 
         <p class="mb-1"><strong><?php echo __('evaluation_date'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($voucher['voucher_date'] ?? ''); ?></p>
         <p class="mb-1"><strong><?php echo __('amount'); ?>:</strong> <?php echo number_format((float) ($voucher['amount'] ?? 0), 2); ?> SAR</p>
         <p class="mb-1"><strong><?php echo __('party_name'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($voucher['party_name'] ?? '—'); ?></p>
+        <?php
+        $customerLabel = '';
+        if (!empty($voucher['customer_name']) || !empty($voucher['customer_name_ar'])) {
+            $customerLabel = rateb_locale() === 'ar' && !empty($voucher['customer_name_ar'])
+                ? (string) $voucher['customer_name_ar']
+                : (string) ($voucher['customer_name'] ?? '');
+            if (!empty($voucher['customer_code'])) {
+                $customerLabel = trim((string) $voucher['customer_code'] . ' — ' . $customerLabel);
+            }
+        }
+        if ($customerLabel !== '') { ?>
+        <p class="mb-1"><strong><?php echo __('customer_analysis'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($customerLabel); ?></p>
+        <?php } ?>
         <p class="mb-1"><strong><?php echo __('account'); ?>:</strong> <?php echo Rateb\App\Core\View::escape(($voucher['counter_code'] ?? '') . ' — ' . $counterName); ?></p>
         <?php if (!empty($voucher['reject_reason'])) { ?>
         <p class="mb-1"><strong><?php echo __('reject_reason'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($voucher['reject_reason']); ?></p>

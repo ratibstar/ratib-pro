@@ -1576,6 +1576,7 @@ final class CashVouchersController extends Controller
             'voucher_date' => trim((string) ($_POST['voucher_date'] ?? '')) ?: date('Y-m-d'),
             'amount' => $amount,
             'party_name' => trim((string) ($_POST['party_name'] ?? '')),
+            'customer_id' => (int) ($_POST['customer_id'] ?? 0) ?: null,
             'description' => trim((string) ($_POST['description'] ?? '')) ?: ($type === 'receipt' ? 'Cash receipt' : 'Cash payment'),
             'description_ar' => trim((string) ($_POST['description_ar'] ?? '')),
             'counter_account_id' => $counter,
@@ -1634,6 +1635,7 @@ final class CashVouchersController extends Controller
             'voucher_date' => trim((string) ($_POST['voucher_date'] ?? '')) ?: date('Y-m-d'),
             'amount' => (float) ($_POST['amount'] ?? 0),
             'party_name' => trim((string) ($_POST['party_name'] ?? '')),
+            'customer_id' => (int) ($_POST['customer_id'] ?? 0) ?: null,
             'description' => trim((string) ($_POST['description'] ?? '')),
             'description_ar' => trim((string) ($_POST['description_ar'] ?? '')),
             'counter_account_id' => (int) ($_POST['counter_account_id'] ?? 0),
@@ -1760,9 +1762,11 @@ final class CashVouchersController extends Controller
         $companyId = rateb_resolve_ops_company_id();
         $id = (int) ($params['id'] ?? 0);
         $voucher = (new JournalEntry())->queryOne(
-            'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar
+            'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar,
+                    c.code AS customer_code, c.name AS customer_name, c.name_ar AS customer_name_ar
              FROM rateb_cash_vouchers v
              JOIN rateb_chart_of_accounts a ON a.id = v.counter_account_id
+             LEFT JOIN rateb_customers c ON c.id = v.customer_id
              WHERE v.id = :id AND v.company_id = :cid',
             ['id' => $id, 'cid' => $companyId]
         );
@@ -2151,6 +2155,80 @@ final class CostCentersController extends \Rateb\App\Controllers\CrudController
         $data = parent::collectData();
         $data['company_id'] = rateb_require_ops_company();
         $data['is_active'] = 1;
+        return $data;
+    }
+
+    protected function layout(): string
+    {
+        return 'main';
+    }
+}
+
+final class CustomersController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new \Rateb\App\Models\Customer();
+        $this->viewPrefix = 'company/customers';
+        $this->routePrefix = rateb_app_route('customers');
+        $this->entityName = 'customers';
+        $this->indexFields = [
+            ['name' => 'code', 'label' => 'code'],
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'phone', 'label' => 'phone'],
+            ['name' => 'email', 'label' => 'email'],
+            ['name' => 'cost_center_id', 'label' => 'cost_centers', 'type' => 'fk', 'lookup' => 'cost_centers'],
+        ];
+        $this->fields = [
+            ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true],
+            ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
+            ['name' => 'phone', 'label' => 'phone', 'type' => 'text'],
+            ['name' => 'email', 'label' => 'email', 'type' => 'email'],
+            ['name' => 'tax_id', 'label' => 'vat_number', 'type' => 'text'],
+            ['name' => 'cost_center_id', 'label' => 'cost_centers', 'type' => 'fk', 'lookup' => 'cost_centers'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'rows' => 2],
+        ];
+    }
+
+    public function index(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
+        $items = $companyId > 0
+            ? $this->model->query(
+                'SELECT c.*, cc.code AS cost_center_code
+                 FROM rateb_customers c
+                 LEFT JOIN rateb_cost_centers cc ON cc.id = c.cost_center_id
+                 WHERE c.company_id = :cid AND c.is_active = 1
+                 ORDER BY c.name',
+                ['cid' => $companyId]
+            )
+            : [];
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
+            'title' => __($this->entityName),
+            'items' => $items,
+            'total' => count($items),
+            'page' => 1,
+            'limit' => 100,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->indexFields,
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled && $companyId > 0,
+            'actionsEnabled' => $this->actionsEnabled,
+        ]), $this->layout());
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $data['company_id'] = rateb_require_ops_company();
+        $data['is_active'] = 1;
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_CUSTOMER, 'code');
+        $ccId = (int) ($data['cost_center_id'] ?? 0);
+        $data['cost_center_id'] = $ccId > 0 ? $ccId : null;
         return $data;
     }
 

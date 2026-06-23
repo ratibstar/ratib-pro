@@ -1970,6 +1970,39 @@ final class AccountingService
         return $this->accountIdByCode($companyId, '1100');
     }
 
+    /** @param array<string, mixed> $voucher */
+    private function resolveCashVoucherCostCenter(?int $companyId, array $voucher): ?int
+    {
+        $customerId = (int) ($voucher['customer_id'] ?? 0);
+        if ($customerId < 1 || $companyId === null || $companyId < 1) {
+            return null;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT cost_center_id FROM rateb_customers WHERE id = :id AND company_id = :cid AND is_active = 1 LIMIT 1',
+            ['id' => $customerId, 'cid' => $companyId]
+        );
+        $ccId = (int) ($row['cost_center_id'] ?? 0);
+        return $ccId > 0 ? $ccId : null;
+    }
+
+    /** @param array<string, mixed> $voucher */
+    private function cashVoucherCustomerMemo(?int $companyId, array $voucher): string
+    {
+        $customerId = (int) ($voucher['customer_id'] ?? 0);
+        if ($customerId < 1 || $companyId === null || $companyId < 1) {
+            return '';
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT name, name_ar FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $customerId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return '';
+        }
+        $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? (string) $row['name_ar'] : (string) ($row['name'] ?? '');
+        return $name !== '' ? ' — ' . $name : '';
+    }
+
     private function chartAccountBalance(?int $companyId, int $accountId, float $opening): float
     {
         if ($accountId < 1) {
@@ -2010,8 +2043,8 @@ final class AccountingService
         $no = $this->nextVoucherNo($companyId, (string) ($data['voucher_type'] ?? 'receipt'));
         $stmt = $pdo->prepare(
             'INSERT INTO rateb_cash_vouchers
-             (company_id, voucher_no, voucher_type, voucher_date, amount, party_name, description, description_ar, counter_account_id, bank_account_id, status, created_by)
-             VALUES (:cid, :no, :type, :dt, :amt, :party, :desc, :desc_ar, :acct, :bank, :st, :uid)'
+             (company_id, voucher_no, voucher_type, voucher_date, amount, party_name, customer_id, description, description_ar, counter_account_id, bank_account_id, status, created_by)
+             VALUES (:cid, :no, :type, :dt, :amt, :party, :cust, :desc, :desc_ar, :acct, :bank, :st, :uid)'
         );
         $stmt->execute([
             'cid' => $companyId,
@@ -2020,6 +2053,7 @@ final class AccountingService
             'dt' => $data['voucher_date'],
             'amt' => $data['amount'],
             'party' => $data['party_name'] ?? null,
+            'cust' => isset($data['customer_id']) && (int) $data['customer_id'] > 0 ? (int) $data['customer_id'] : null,
             'desc' => $data['description'],
             'desc_ar' => $data['description_ar'] ?? null,
             'acct' => $data['counter_account_id'],
@@ -2052,15 +2086,17 @@ final class AccountingService
             return false;
         }
         $type = (string) ($v['voucher_type'] ?? 'receipt');
+        $ccId = $this->resolveCashVoucherCostCenter($companyId, $v);
+        $customerMemo = $this->cashVoucherCustomerMemo($companyId, $v);
         if ($type === 'receipt') {
             $lines = [
-                ['account_id' => $cash, 'debit' => $amount, 'credit' => 0, 'memo' => 'Receipt'],
-                ['account_id' => $counter, 'debit' => 0, 'credit' => $amount, 'memo' => 'Receipt offset'],
+                ['account_id' => $cash, 'debit' => $amount, 'credit' => 0, 'memo' => 'Receipt' . $customerMemo, 'cost_center_id' => $ccId],
+                ['account_id' => $counter, 'debit' => 0, 'credit' => $amount, 'memo' => 'Receipt offset' . $customerMemo, 'cost_center_id' => $ccId],
             ];
         } else {
             $lines = [
-                ['account_id' => $counter, 'debit' => $amount, 'credit' => 0, 'memo' => 'Payment'],
-                ['account_id' => $cash, 'debit' => 0, 'credit' => $amount, 'memo' => 'Cash out'],
+                ['account_id' => $counter, 'debit' => $amount, 'credit' => 0, 'memo' => 'Payment' . $customerMemo, 'cost_center_id' => $ccId],
+                ['account_id' => $cash, 'debit' => 0, 'credit' => $amount, 'memo' => 'Cash out' . $customerMemo, 'cost_center_id' => $ccId],
             ];
         }
         $entryId = $this->createPostedEntry(
@@ -2283,6 +2319,7 @@ final class AccountingService
             'voucher_date' => (string) ($data['voucher_date'] ?? date('Y-m-d')),
             'amount' => $amount,
             'party_name' => trim((string) ($data['party_name'] ?? '')) ?: null,
+            'customer_id' => isset($data['customer_id']) && (int) $data['customer_id'] > 0 ? (int) $data['customer_id'] : null,
             'description' => trim((string) ($data['description'] ?? '')) ?: ($type === 'receipt' ? 'Cash receipt' : 'Cash payment'),
             'description_ar' => trim((string) ($data['description_ar'] ?? '')) ?: null,
             'counter_account_id' => $counter,
