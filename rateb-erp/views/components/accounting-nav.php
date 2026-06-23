@@ -24,6 +24,7 @@ $tabs = [
     ['path' => rateb_app_route('asset-depreciation'), 'label' => __('asset_depreciation'), 'match' => [rateb_app_route('asset-depreciation')]],
 ];
 if ($accountingActive === 'admin' || rateb_is_super_admin()) {
+    $tabs[] = ['path' => 'admin/accounting', 'label' => __('platform_accounting'), 'match' => ['admin/accounting']];
     $tabs[] = ['path' => 'admin/invoices', 'label' => __('invoices'), 'match' => ['admin/invoices']];
     $tabs[] = ['path' => 'admin/payments', 'label' => __('payments'), 'match' => ['admin/payments']];
     $tabs[] = ['path' => 'admin/subscriptions', 'label' => __('subscriptions'), 'match' => ['admin/subscriptions']];

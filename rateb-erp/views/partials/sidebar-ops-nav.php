@@ -52,6 +52,9 @@ $opsSection(__('accounting_module'), [
     ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
+    ['@admin/accounting', 'platform_accounting', 'fa-gauge-high', '', 'accounting.view'],
+    ['@admin/invoices', 'invoices', 'fa-file-invoice', '', 'accounting.view'],
+    ['@admin/payments', 'payments', 'fa-money-bill-wave', '', 'accounting.view'],
 ], 'fa-calculator');
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
