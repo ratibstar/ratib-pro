@@ -4,24 +4,14 @@ declare(strict_types=1);
 /**
  * Unified ERP sidebar — platform oversight for super admin, company operations for tenant users.
  */
-$resolveOpsNavRoute = static function (string $resourcePath): string {
-    if (str_starts_with($resourcePath, '@')) {
-        return ltrim($resourcePath, '@');
-    }
-    return rateb_app_route($resourcePath);
-};
-
 $opsLink = static function (
     string $resourcePath,
     string $labelKey,
     string $icon,
     string $module = '',
     string $perm = ''
-) use ($navActive, $resolveOpsNavRoute): void {
-    if (str_starts_with($resourcePath, '@') && !rateb_is_super_admin()) {
-        return;
-    }
-    $entity = rateb_entity_perms(ltrim($resourcePath, '@'));
+) use ($navActive): void {
+    $entity = rateb_entity_perms($resourcePath);
     $permission = $perm !== '' ? $perm : $entity['view'];
     $module = $module !== '' ? $module : $entity['module'];
     if ($permission === '' && $module === '') {
@@ -31,7 +21,7 @@ $opsLink = static function (
     } elseif (!rateb_nav_can($permission, $module)) {
         return;
     }
-    $route = $resolveOpsNavRoute($resourcePath);
+    $route = rateb_app_route($resourcePath);
     $active = $navActive($route) ? ' active' : '';
     echo '<a href="' . rateb_url($route) . '" class="rateb-nav-link' . $active . '">';
     echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span></a>';
@@ -59,15 +49,12 @@ $opsSection = static function (
     string $title,
     array $links,
     string $groupIcon = 'fa-folder-open'
-) use ($opsLink, $navActive, $renderNavGroup, $resolveOpsNavRoute): void {
+) use ($opsLink, $navActive, $renderNavGroup): void {
     $hasActive = false;
     $hasVisible = false;
     foreach ($links as $link) {
         [$path, , , $module, $perm] = array_pad($link, 5, '');
-        if (str_starts_with($path, '@') && !rateb_is_super_admin()) {
-            continue;
-        }
-        $entity = rateb_entity_perms(ltrim($path, '@'));
+        $entity = rateb_entity_perms($path);
         $permission = $perm !== '' ? $perm : $entity['view'];
         $module = $module !== '' ? $module : $entity['module'];
         $can = false;
@@ -80,7 +67,7 @@ $opsSection = static function (
             continue;
         }
         $hasVisible = true;
-        if ($navActive($resolveOpsNavRoute($path))) {
+        if ($navActive(rateb_app_route($path))) {
             $hasActive = true;
         }
     }

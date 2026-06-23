@@ -10,7 +10,6 @@ $tabs = [
     ['path' => rateb_app_route('journal-entries'), 'label' => __('journal_entries'), 'match' => [rateb_app_route('journal-entries')]],
     ['path' => rateb_app_route('accounting/entry-approval'), 'label' => __('entry_approval'), 'match' => [rateb_app_route('accounting/entry-approval')]],
     ['path' => rateb_app_route('accounting/supplier-payments'), 'label' => __('supplier_payments'), 'match' => [rateb_app_route('accounting/supplier-payments')]],
-    ['path' => rateb_app_route('customs-clearance-costs'), 'label' => __('customs_clearance_costs'), 'match' => [rateb_app_route('customs-clearance-costs')]],
     ['path' => rateb_app_route('cash-vouchers'), 'label' => __('cash_vouchers'), 'match' => [rateb_app_route('cash-vouchers')]],
     ['path' => rateb_app_route('accounting/voucher-approval'), 'label' => __('voucher_approval'), 'match' => [rateb_app_route('accounting/voucher-approval')]],
     ['path' => rateb_app_route('fiscal-periods'), 'label' => __('fiscal_periods'), 'match' => [rateb_app_route('fiscal-periods')]],
@@ -24,7 +23,6 @@ $tabs = [
     ['path' => rateb_app_route('asset-depreciation'), 'label' => __('asset_depreciation'), 'match' => [rateb_app_route('asset-depreciation')]],
 ];
 if ($accountingActive === 'admin' || rateb_is_super_admin()) {
-    $tabs[] = ['path' => 'admin/accounting', 'label' => __('platform_accounting'), 'match' => ['admin/accounting']];
     $tabs[] = ['path' => 'admin/invoices', 'label' => __('invoices'), 'match' => ['admin/invoices']];
     $tabs[] = ['path' => 'admin/payments', 'label' => __('payments'), 'match' => ['admin/payments']];
     $tabs[] = ['path' => 'admin/subscriptions', 'label' => __('subscriptions'), 'match' => ['admin/subscriptions']];

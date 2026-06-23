@@ -41,7 +41,6 @@ $opsSection(__('accounting_module'), [
     ['journal-entries', 'journal_entries', 'fa-book', 'accounting'],
     ['accounting/entry-approval', 'entry_approval', 'fa-check-double', 'accounting', 'accounting.view'],
     ['accounting/supplier-payments', 'supplier_payments', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
-    ['customs-clearance-costs', 'customs_clearance_costs', 'fa-passport', 'accounting', 'customs_clearance.view'],
     ['cash-vouchers', 'cash_vouchers', 'fa-money-bill-wave', 'accounting'],
     ['accounting/voucher-approval', 'voucher_approval', 'fa-stamp', 'accounting', 'accounting.view'],
     ['fiscal-periods', 'fiscal_periods', 'fa-calendar-days', 'accounting'],
@@ -52,9 +51,6 @@ $opsSection(__('accounting_module'), [
     ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
-    ['@admin/accounting', 'platform_accounting', 'fa-gauge-high', '', 'accounting.view'],
-    ['@admin/invoices', 'invoices', 'fa-file-invoice', '', 'accounting.view'],
-    ['@admin/payments', 'payments', 'fa-money-bill-wave', '', 'accounting.view'],
 ], 'fa-calculator');
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
