@@ -14,13 +14,18 @@ Rateb\App\Core\View::partial('workflow-index', [
         ['name' => 'renewal_date', 'label' => 'renewal_date'],
         ['name' => 'new_end_date', 'label' => 'new_end_date'],
         ['name' => 'new_value', 'label' => 'new_value', 'type' => 'money'],
-        ['name' => 'status', 'label' => 'status'],
+        ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+        ['name' => 'manager_approval', 'label' => 'manager_approval', 'type' => 'status'],
         ['name' => 'notes', 'label' => 'notes', 'type' => 'notes'],
     ],
     'exportRoute' => $exportRoute ?? rateb_app_url('contract-renewals/export'),
     'exportEnabled' => $exportEnabled ?? true,
     'csrf' => $csrf,
     'canManage' => $canManage ?? null,
+    'canApprove' => $canApprove ?? false,
+    'editEnabled' => true,
+    'approvalEnabled' => true,
+    'formHint' => __('contract_renewal_pending_hint'),
 ]);
 ?>
 <?php if (!empty($expiring)) { ?>

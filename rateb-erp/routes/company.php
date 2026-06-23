@@ -462,7 +462,11 @@ $router->post($app('supplier-comms/{id}/archive'), [\Rateb\App\Controllers\Compa
 $ctrMw = rateb_erp_mw('contracts', '', 'contract-renewals');
 $ctrWriteMw = rateb_erp_mw('contracts', 'contracts.manage', 'contract-renewals');
 $router->get($app('contract-renewals'), [ContractRenewalsController::class, 'index'], $ctrMw);
+$router->get($app('contract-renewals/{id}/edit'), [ContractRenewalsController::class, 'edit'], $ctrWriteMw);
 $router->post($app('contract-renewals'), [ContractRenewalsController::class, 'store'], $ctrWriteMw);
+$router->post($app('contract-renewals/{id}'), [ContractRenewalsController::class, 'update'], $ctrWriteMw);
+$router->post($app('contract-renewals/{id}/approve'), [ContractRenewalsController::class, 'approve'], $ctrWriteMw);
+$router->post($app('contract-renewals/{id}/reject'), [ContractRenewalsController::class, 'reject'], $ctrWriteMw);
 $router->post($app('contract-renewals/{id}/delete'), [ContractRenewalsController::class, 'destroy'], $ctrWriteMw);
 $router->post($app('contract-renewals/bulk-delete'), [ContractRenewalsController::class, 'bulkDestroy'], $ctrWriteMw);
 $router->get($app('contract-renewals/export'), [ContractRenewalsController::class, 'export'], rateb_erp_mw('contracts', 'reports.export', 'contract-renewals'));

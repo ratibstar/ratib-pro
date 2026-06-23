@@ -13,7 +13,7 @@ final class ContractWorkflowService
     {
         $companyId = TenantContext::companyId();
         $sql = 'SELECT r.*, c.contract_no, c.title AS contract_title FROM rateb_contract_renewals r
-                LEFT JOIN rateb_contracts c ON c.id = r.contract_id WHERE 1=1';
+                LEFT JOIN rateb_contracts c ON c.id = r.contract_id AND c.company_id = r.company_id WHERE 1=1';
         $params = [];
         if ($companyId !== null && !TenantContext::isSuperAdmin()) {
             $sql .= ' AND r.company_id = :cid';
@@ -31,20 +31,154 @@ final class ContractWorkflowService
         TenantGuard::assertContract($contractId, $cid);
         $db = \Rateb\App\Core\Database::connection();
         $no = (new WorkflowTableService())->generateRecordNo('contract-renewals');
+        $newEnd = $this->normalizeDate($data['new_end_date'] ?? null);
         $db->prepare(
-            'INSERT INTO rateb_contract_renewals (company_id, renewal_no, contract_id, renewal_date, new_end_date, new_value, status, notes)
-             VALUES (:cid, :no, :contract_id, :rd, :ned, :nv, :st, :notes)'
+            'INSERT INTO rateb_contract_renewals (company_id, renewal_no, contract_id, renewal_date, new_end_date, new_value, status, manager_approval, notes)
+             VALUES (:cid, :no, :contract_id, :rd, :ned, :nv, :st, :ma, :notes)'
         )->execute([
             'cid' => $cid,
             'no' => $no,
             'contract_id' => $contractId,
             'rd' => $data['renewal_date'] ?? date('Y-m-d'),
-            'ned' => $data['new_end_date'] ?? null,
+            'ned' => $newEnd,
             'nv' => (float) ($data['new_value'] ?? 0),
-            'st' => $data['status'] ?? 'planned',
+            'st' => 'planned',
+            'ma' => 'pending',
             'notes' => $data['notes'] ?? null,
         ]);
         return (int) $db->lastInsertId();
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findRenewal(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $companyId = TenantContext::companyId();
+        $sql = 'SELECT r.*, c.contract_no, c.title AS contract_title FROM rateb_contract_renewals r
+                LEFT JOIN rateb_contracts c ON c.id = r.contract_id AND c.company_id = r.company_id
+                WHERE r.id = :id';
+        $params = ['id' => $id];
+        if ($companyId !== null && !TenantContext::isSuperAdmin()) {
+            $sql .= ' AND r.company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $row = (new Contract())->queryOne($sql, $params);
+        return $row ?: null;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateRenewal(int $id, array $data): void
+    {
+        $row = $this->findRenewal($id);
+        if (!$row) {
+            throw new \RuntimeException(__('no_records'));
+        }
+        if ((string) ($row['manager_approval'] ?? '') === 'approved') {
+            throw new \RuntimeException(__('contract_renewal_already_processed'));
+        }
+        $contractId = (int) ($data['contract_id'] ?? $row['contract_id'] ?? 0);
+        TenantGuard::assertContract($contractId, (int) $row['company_id']);
+        $newEnd = $this->normalizeDate($data['new_end_date'] ?? null);
+        \Rateb\App\Core\Database::connection()->prepare(
+            'UPDATE rateb_contract_renewals SET contract_id = :contract_id, renewal_date = :rd, new_end_date = :ned,
+             new_value = :nv, notes = :notes, manager_approval = :ma, status = :st
+             WHERE id = :id AND company_id = :cid'
+        )->execute([
+            'contract_id' => $contractId,
+            'rd' => $data['renewal_date'] ?? $row['renewal_date'],
+            'ned' => $newEnd,
+            'nv' => (float) ($data['new_value'] ?? 0),
+            'notes' => $data['notes'] ?? null,
+            'ma' => (string) ($row['manager_approval'] ?? '') === 'rejected' ? 'pending' : ($row['manager_approval'] ?? 'pending'),
+            'st' => 'planned',
+            'id' => $id,
+            'cid' => (int) $row['company_id'],
+        ]);
+    }
+
+    public function approveRenewal(int $id, int $userId): void
+    {
+        $row = $this->findRenewal($id);
+        if (!$row) {
+            throw new \RuntimeException(__('no_records'));
+        }
+        if ((string) ($row['manager_approval'] ?? '') !== 'pending') {
+            throw new \RuntimeException(__('contract_renewal_already_processed'));
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $db->beginTransaction();
+        try {
+            $db->prepare(
+                'UPDATE rateb_contract_renewals SET manager_approval = :ma, status = :st, approved_by = :uid, approved_at = NOW()
+                 WHERE id = :id AND company_id = :cid'
+            )->execute([
+                'ma' => 'approved',
+                'st' => 'completed',
+                'uid' => $userId > 0 ? $userId : null,
+                'id' => $id,
+                'cid' => (int) $row['company_id'],
+            ]);
+            $contractId = (int) ($row['contract_id'] ?? 0);
+            if ($contractId > 0) {
+                $newEnd = $this->normalizeDate($row['new_end_date'] ?? null);
+                $newValue = (float) ($row['new_value'] ?? 0);
+                $sets = ['renewal_date = :rd'];
+                $params = [
+                    'rd' => $row['renewal_date'] ?? date('Y-m-d'),
+                    'id' => $contractId,
+                    'cid' => (int) $row['company_id'],
+                ];
+                if ($newEnd !== null) {
+                    $sets[] = 'end_date = :ned';
+                    $params['ned'] = $newEnd;
+                }
+                if ($newValue > 0) {
+                    $sets[] = 'value = :nv';
+                    $params['nv'] = $newValue;
+                }
+                $sets[] = 'status = :cst';
+                $params['cst'] = 'active';
+                $db->prepare(
+                    'UPDATE rateb_contracts SET ' . implode(', ', $sets) . ' WHERE id = :id AND company_id = :cid'
+                )->execute($params);
+            }
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function rejectRenewal(int $id, int $userId): void
+    {
+        $row = $this->findRenewal($id);
+        if (!$row) {
+            throw new \RuntimeException(__('no_records'));
+        }
+        if ((string) ($row['manager_approval'] ?? '') !== 'pending') {
+            throw new \RuntimeException(__('contract_renewal_already_processed'));
+        }
+        \Rateb\App\Core\Database::connection()->prepare(
+            'UPDATE rateb_contract_renewals SET manager_approval = :ma, status = :st, approved_by = :uid, approved_at = NOW()
+             WHERE id = :id AND company_id = :cid'
+        )->execute([
+            'ma' => 'rejected',
+            'st' => 'cancelled',
+            'uid' => $userId > 0 ? $userId : null,
+            'id' => $id,
+            'cid' => (int) $row['company_id'],
+        ]);
+    }
+
+    private function normalizeDate(mixed $value): ?string
+    {
+        $s = trim((string) $value);
+        if ($s === '' || $s === '0000-00-00') {
+            return null;
+        }
+        return $s;
     }
 
     /** @return array<int, array<string, mixed>> */

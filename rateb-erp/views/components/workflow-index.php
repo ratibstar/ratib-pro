@@ -12,6 +12,9 @@
 /** @var bool|null $exportEnabled */
 /** @var array<string, list<array{value: string|int, label: string}>>|null $lookups */
 /** @var string|null $createUrl */
+/** @var bool|null $canApprove */
+/** @var bool|null $editEnabled */
+/** @var string|null $formHint */
 $entitySlug = (string) ($entitySlug ?? '');
 $routePrefix = (string) ($routePrefix ?? rateb_app_route($entitySlug));
 $canManage = $canManage ?? rateb_can_manage_entity($entitySlug);
@@ -41,6 +44,9 @@ if ($formFields !== null && $lookups === []) {
     </div>
     <div class="rateb-card-body">
         <?php if ($canManage && !empty($formFields) && !empty($formAction)) { ?>
+        <?php if (!empty($formHint)) { ?>
+        <p class="text-muted small"><?php echo Rateb\App\Core\View::escape((string) $formHint); ?></p>
+        <?php } ?>
         <?php Rateb\App\Core\View::partial('workflow-form', [
             'formFields' => $formFields,
             'formAction' => $formAction,
@@ -53,6 +59,9 @@ if ($formFields !== null && $lookups === []) {
             'columns' => $columns,
             'bulkEnabled' => $canManage && !empty($formFields),
             'actionsEnabled' => $canManage && !empty($formFields),
+            'editEnabled' => !empty($editEnabled),
+            'approvalEnabled' => !empty($approvalEnabled),
+            'canApprove' => !empty($canApprove),
             'routePrefix' => $routePrefix,
             'csrf' => $csrf,
         ]); ?>

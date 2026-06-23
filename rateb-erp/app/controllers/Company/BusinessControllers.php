@@ -375,15 +375,119 @@ final class ContractRenewalsController extends Controller
         if ($companyId > 0) {
             TenantContext::setCompanyId($companyId);
         }
+        $renewals = (new ContractWorkflowService())->listRenewals(100);
+        foreach ($renewals as &$row) {
+            if (empty($row['contract_no']) && (int) ($row['contract_id'] ?? 0) > 0) {
+                $row['contract_no'] = '#' . (int) $row['contract_id'];
+            }
+            $end = (string) ($row['new_end_date'] ?? '');
+            if ($end === '0000-00-00') {
+                $row['new_end_date'] = '';
+            }
+            $approval = (string) ($row['manager_approval'] ?? 'pending');
+            $row['manager_approval'] = 'manager_approval_' . $approval;
+        }
+        unset($row);
         $this->view('company/contract-renewals/index', [
             'title' => __('contract_renewals'),
-            'renewals' => (new ContractWorkflowService())->listRenewals(100),
+            'renewals' => $renewals,
             'expiring' => (new ContractWorkflowService())->expiringContracts(60),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('contract-renewals'),
+            'canApprove' => rateb_can('contracts.manage'),
             'exportRoute' => rateb_app_url('contract-renewals/export'),
             'exportEnabled' => rateb_can_export_entity('contract-renewals'),
         ], 'main');
+    }
+
+    public function edit(array $params): void
+    {
+        rateb_require_manage('contract-renewals');
+        rateb_bootstrap_ops_tenant();
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new ContractWorkflowService())->findRenewal($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], 'main');
+            return;
+        }
+        if ((string) ($item['manager_approval'] ?? '') === 'approved') {
+            SessionManager::flash('error', __('contract_renewal_already_processed'));
+            $this->redirect(rateb_app_url('contract-renewals'));
+        }
+        $fields = FormLookupService::contractRenewalFormFields();
+        $lookups = (new FormLookupService())->forFields($fields);
+        $this->view('company/contract-renewals/form', [
+            'title' => __('edit') . ' — ' . __('contract_renewals'),
+            'item' => $item,
+            'formFields' => $fields,
+            'lookups' => $lookups,
+            'csrf' => Csrf::token(),
+            'canApprove' => rateb_can('contracts.manage'),
+        ], 'main');
+    }
+
+    public function update(array $params): void
+    {
+        rateb_require_manage('contract-renewals');
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_app_url('contract-renewals'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new ContractWorkflowService())->updateRenewal($id, [
+                'contract_id' => (int) $this->input('contract_id', 0),
+                'renewal_date' => (string) $this->input('renewal_date', date('Y-m-d')),
+                'new_end_date' => (string) $this->input('new_end_date', ''),
+                'new_value' => (float) $this->input('new_value', 0),
+                'notes' => trim((string) $this->input('notes', '')),
+            ]);
+            (new AuditService())->log('update', 'contract_renewal', $id);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_app_url('contract-renewals/' . $id . '/edit'));
+    }
+
+    public function approve(array $params): void
+    {
+        if (!rateb_can('contracts.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_app_url('contract-renewals'));
+        }
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_app_url('contract-renewals'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new ContractWorkflowService())->approveRenewal($id, (int) SessionManager::get('rateb_user_id'));
+            (new AuditService())->log('approve', 'contract_renewal', $id);
+            SessionManager::flash('success', __('contract_renewal_approved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_app_url('contract-renewals'));
+    }
+
+    public function reject(array $params): void
+    {
+        if (!rateb_can('contracts.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_app_url('contract-renewals'));
+        }
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_app_url('contract-renewals'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new ContractWorkflowService())->rejectRenewal($id, (int) SessionManager::get('rateb_user_id'));
+            (new AuditService())->log('reject', 'contract_renewal', $id);
+            SessionManager::flash('success', __('contract_renewal_rejected'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_app_url('contract-renewals'));
     }
 
     public function store(): void
@@ -397,7 +501,6 @@ final class ContractRenewalsController extends Controller
             'renewal_date' => (string) $this->input('renewal_date', date('Y-m-d')),
             'new_end_date' => (string) $this->input('new_end_date', ''),
             'new_value' => (float) $this->input('new_value', 0),
-            'status' => (string) $this->input('status', 'planned'),
             'notes' => trim((string) $this->input('notes', '')),
         ]);
         (new AuditService())->log('create', 'contract_renewal', $id);
@@ -415,6 +518,7 @@ final class ContractRenewalsController extends Controller
             ['name' => 'new_end_date', 'label' => __('new_end_date')],
             ['name' => 'new_value', 'label' => __('new_value')],
             ['name' => 'status', 'label' => __('status')],
+            ['name' => 'manager_approval', 'label' => __('manager_approval')],
             ['name' => 'notes', 'label' => __('notes')],
         ], (new ContractWorkflowService())->listRenewals(500), __('contract_renewals'), 'contract-renewals');
     }

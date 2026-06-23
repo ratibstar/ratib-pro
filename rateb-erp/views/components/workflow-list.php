@@ -5,8 +5,14 @@
 /** @var bool $actionsEnabled */
 /** @var string $routePrefix */
 /** @var string $csrf */
+/** @var bool $approvalEnabled */
+/** @var bool $editEnabled */
+/** @var bool $canApprove */
 $bulkEnabled = !empty($bulkEnabled);
 $actionsEnabled = !empty($actionsEnabled);
+$editEnabled = !empty($editEnabled);
+$approvalEnabled = !empty($approvalEnabled);
+$canApprove = !empty($canApprove);
 $routePrefix = (string) ($routePrefix ?? '');
 $csrf = (string) ($csrf ?? '');
 $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
@@ -82,10 +88,31 @@ foreach ($columns as $c) {
                 <?php if ($actionsEnabled && $routePrefix !== '' && !$hasActionLink) { ?>
                 <td class="rateb-actions-cell text-nowrap">
                     <div class="rateb-actions">
+                    <?php
+                    $rowApproval = (string) ($row['manager_approval'] ?? '');
+                    if (str_starts_with($rowApproval, 'manager_approval_')) {
+                        $rowApproval = substr($rowApproval, strlen('manager_approval_'));
+                    }
+                    $rowApproved = $rowApproval === 'approved';
+                    if ($editEnabled && !$rowApproved) { ?>
+                    <a href="<?php echo rateb_url($routePrefix . '/' . (int) ($row['id'] ?? 0) . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+                    <?php }
+                    if ($approvalEnabled && $canApprove && $rowApproval === 'pending') { ?>
+                    <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) ($row['id'] ?? 0) . '/approve'); ?>" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-success" title="<?php echo __('approve'); ?>"><i class="fas fa-check"></i></button>
+                    </form>
+                    <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) ($row['id'] ?? 0) . '/reject'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_reject')); ?>">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" title="<?php echo __('reject'); ?>"><i class="fas fa-times"></i></button>
+                    </form>
+                    <?php }
+                    if (!$rowApproved) { ?>
                     <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) ($row['id'] ?? 0) . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-trash"></i></button>
                     </form>
+                    <?php } ?>
                     </div>
                 </td>
                 <?php } ?>

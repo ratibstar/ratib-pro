@@ -704,7 +704,6 @@ final class FormLookupService
             ['name' => 'renewal_date', 'label' => 'renewal_date', 'type' => 'date', 'col' => 'col-md-2', 'default' => date('Y-m-d')],
             ['name' => 'new_end_date', 'label' => 'new_end_date', 'type' => 'date', 'col' => 'col-md-2'],
             ['name' => 'new_value', 'label' => 'new_value', 'type' => 'number', 'step' => '0.01', 'col' => 'col-md-2'],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'renewal_statuses', 'col' => 'col-md-2'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
         ];
     }
