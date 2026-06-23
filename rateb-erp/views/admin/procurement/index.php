@@ -4,7 +4,7 @@
         'companies' => $companies ?? [],
         'filters' => $filters ?? [],
         'statusOptions' => $statusOptions ?? [],
-        'formAction' => $formAction ?? rateb_url('admin/procurement'),
+        'formAction' => $formAction ?? rateb_url('admin/oversight/procurement'),
     ]); ?>
     <div class="col-md-6">
         <div class="rateb-card">
@@ -34,7 +34,18 @@
         <div class="rateb-card">
             <div class="rateb-card-header"><?php echo __('purchase_requests'); ?></div>
             <div class="rateb-card-body p-0">
-                <?php Rateb\App\Core\View::partial('crud-index', ['title' => '', 'items' => $purchase_requests ?? [], 'csrf' => $csrf, 'routePrefix' => 'admin/procurement', 'bulkEnabled' => false, 'createEnabled' => false, 'actionsEnabled' => false]); ?>
+                <?php Rateb\App\Core\View::partial('crud-index', [
+                    'title' => '',
+                    'items' => $purchase_requests ?? [],
+                    'fields' => $prFields ?? [],
+                    'csrf' => $csrf,
+                    'routePrefix' => 'admin/oversight/procurement',
+                    'bulkEnabled' => false,
+                    'createEnabled' => false,
+                    'actionsEnabled' => false,
+                    'exportEnabled' => false,
+                    'searchEnabled' => false,
+                ]); ?>
             </div>
         </div>
     </div>
@@ -42,7 +53,18 @@
         <div class="rateb-card">
             <div class="rateb-card-header"><?php echo __('purchase_orders'); ?></div>
             <div class="rateb-card-body p-0">
-                <?php Rateb\App\Core\View::partial('crud-index', ['title' => '', 'items' => $purchase_orders ?? [], 'csrf' => $csrf, 'routePrefix' => 'admin/procurement', 'bulkEnabled' => false, 'createEnabled' => false, 'actionsEnabled' => false]); ?>
+                <?php Rateb\App\Core\View::partial('crud-index', [
+                    'title' => '',
+                    'items' => $purchase_orders ?? [],
+                    'fields' => $poFields ?? [],
+                    'csrf' => $csrf,
+                    'routePrefix' => 'admin/oversight/procurement',
+                    'bulkEnabled' => false,
+                    'createEnabled' => false,
+                    'actionsEnabled' => false,
+                    'exportEnabled' => false,
+                    'searchEnabled' => false,
+                ]); ?>
             </div>
         </div>
     </div>

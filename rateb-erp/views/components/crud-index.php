@@ -7,6 +7,7 @@ $bulkEnabled = $bulkEnabled ?? true;
 $createEnabled = $createEnabled ?? true;
 $actionsEnabled = $actionsEnabled ?? true;
 $exportEnabled = $exportEnabled ?? true;
+$searchEnabled = $searchEnabled ?? true;
 $viewEnabled = $viewEnabled ?? false;
 $printEnabled = $printEnabled ?? false;
 $employeeReceiptEnabled = $employeeReceiptEnabled ?? false;
@@ -80,12 +81,14 @@ $ratebRowRecordLabel = static function (array $row): string {
         <?php } ?>
     </div>
     <?php } ?>
-    <div class="rateb-card-body p-0" data-rateb-server-search="1">
-        <?php Rateb\App\Core\View::partial('table-search', [
-            'mode' => 'server',
-            'search' => $search ?? '',
-            'routePrefix' => $routePrefix ?? '',
-        ]); ?>
+    <div class="rateb-card-body p-0"<?php echo $searchEnabled ? ' data-rateb-server-search="1"' : ''; ?>>
+        <?php if ($searchEnabled) {
+            Rateb\App\Core\View::partial('table-search', [
+                'mode' => 'server',
+                'search' => $search ?? '',
+                'routePrefix' => $routePrefix ?? '',
+            ]);
+        } ?>
         <div class="rateb-table-wrap">
             <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>

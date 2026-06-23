@@ -1788,14 +1788,35 @@ final class ProcurementController extends Controller
         $ofs->applyDateRange($poSql, $poParams, 'order_date', $filters);
         $poSql .= ' ORDER BY id DESC LIMIT 50';
 
+        $prFields = [
+            ['name' => 'company_id', 'label' => 'companies', 'type' => 'fk', 'lookup' => 'companies'],
+            ['name' => 'request_no', 'label' => 'request_no'],
+            ['name' => 'title', 'label' => 'title', 'type' => 'clip'],
+            ['name' => 'department', 'label' => 'department', 'type' => 'clip'],
+            ['name' => 'expected_date', 'label' => 'expected_date'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+            ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'money'],
+        ];
+        $poFields = [
+            ['name' => 'company_id', 'label' => 'companies', 'type' => 'fk', 'lookup' => 'companies'],
+            ['name' => 'order_no', 'label' => 'order_no'],
+            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'order_date', 'label' => 'order_date'],
+            ['name' => 'expected_date', 'label' => 'expected_date'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+            ['name' => 'total_amount', 'label' => 'total', 'type' => 'money'],
+        ];
+
         $this->view('admin/procurement/index', [
             'title' => __('procurement'),
             'purchase_requests' => $pr->query($prSql, $prParams),
             'purchase_orders' => $po->query($poSql, $poParams),
+            'prFields' => $prFields,
+            'poFields' => $poFields,
             'companies' => $ofs->companies(),
             'filters' => $filters,
             'statusOptions' => $lookup->get('pr_statuses'),
-            'formAction' => rateb_url('admin/procurement'),
+            'formAction' => rateb_url('admin/oversight/procurement'),
             'pr_stats' => $this->statusCounts('rateb_purchase_requests', $filters),
             'po_stats' => $this->statusCounts('rateb_purchase_orders', $filters),
             'csrf' => Csrf::token(),
