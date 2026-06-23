@@ -517,6 +517,147 @@ function control_contact_center_db_test(): array
     return $result;
 }
 
+function control_contact_center_table_has_column(\PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT 1 FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c LIMIT 1'
+    );
+    $stmt->execute(['t' => $table, 'c' => $column]);
+
+    return $stmt->fetchColumn() !== false;
+}
+
+function control_contact_center_safe_alter(\PDO $pdo, string $sql, ?array &$log = null, string $label = ''): void
+{
+    try {
+        $pdo->exec($sql);
+    } catch (\PDOException $e) {
+        $mysqlCode = (int) ($e->errorInfo[1] ?? 0);
+        if (in_array($mysqlCode, [1060, 1061, 1091], true)) {
+            if ($log !== null) {
+                $log[] = 'WARN legacy-upgrade: ignored MySQL ' . $mysqlCode
+                    . ($label !== '' ? ' (' . $label . ')' : '');
+            }
+            return;
+        }
+        throw $e;
+    }
+}
+
+/** Upgrade tables created by Jun 2025 bootstrap (001_core_tenancy.sql) before 010 seed runs. */
+function control_contact_center_upgrade_legacy_schema(\PDO $pdo, ?array &$log = null): void
+{
+    if (!control_contact_center_table_has_column($pdo, 'rcc_tenants', 'id')) {
+        return;
+    }
+
+    if (control_contact_center_table_has_column($pdo, 'rcc_tenants', 'slug')) {
+        if (!control_contact_center_table_has_column($pdo, 'rcc_tenants', 'code')) {
+            control_contact_center_safe_alter(
+                $pdo,
+                'ALTER TABLE rcc_tenants ADD COLUMN code VARCHAR(64) NULL AFTER id',
+                $log,
+                'tenants.code'
+            );
+            $pdo->exec(
+                "UPDATE rcc_tenants SET code = slug
+                 WHERE (code IS NULL OR code = '') AND slug IS NOT NULL AND slug <> ''"
+            );
+            $pdo->exec(
+                "UPDATE rcc_tenants SET code = CONCAT('tenant-', id) WHERE code IS NULL OR code = ''"
+            );
+            control_contact_center_safe_alter(
+                $pdo,
+                'ALTER TABLE rcc_tenants MODIFY COLUMN code VARCHAR(64) NOT NULL',
+                $log,
+                'tenants.code_not_null'
+            );
+        }
+        if (
+            !control_contact_center_table_has_column($pdo, 'rcc_tenants', 'locale')
+            && control_contact_center_table_has_column($pdo, 'rcc_tenants', 'default_locale')
+        ) {
+            control_contact_center_safe_alter(
+                $pdo,
+                "ALTER TABLE rcc_tenants ADD COLUMN locale VARCHAR(8) NOT NULL DEFAULT 'ar'",
+                $log,
+                'tenants.locale'
+            );
+            $pdo->exec('UPDATE rcc_tenants SET locale = default_locale WHERE default_locale IS NOT NULL');
+        }
+    }
+
+    foreach ([
+        'name_ar' => 'ALTER TABLE rcc_tenants ADD COLUMN name_ar VARCHAR(255) NULL AFTER name',
+        'timezone' => "ALTER TABLE rcc_tenants ADD COLUMN timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Riyadh'",
+        'settings_json' => 'ALTER TABLE rcc_tenants ADD COLUMN settings_json JSON NULL',
+    ] as $col => $sql) {
+        if (!control_contact_center_table_has_column($pdo, 'rcc_tenants', $col)) {
+            control_contact_center_safe_alter($pdo, $sql, $log, 'tenants.' . $col);
+        }
+    }
+
+    control_contact_center_safe_alter(
+        $pdo,
+        'ALTER TABLE rcc_tenants ADD UNIQUE KEY uq_rcc_tenants_code (code)',
+        $log,
+        'tenants.uq_code'
+    );
+
+    if (control_contact_center_table_has_column($pdo, 'rcc_queues', 'id')) {
+        foreach ([
+            'name_ar' => 'ALTER TABLE rcc_queues ADD COLUMN name_ar VARCHAR(255) NULL AFTER name',
+            'sla_target_seconds' => 'ALTER TABLE rcc_queues ADD COLUMN sla_target_seconds INT UNSIGNED NOT NULL DEFAULT 300',
+            'strategy' => "ALTER TABLE rcc_queues ADD COLUMN strategy VARCHAR(32) NOT NULL DEFAULT 'rrmemory'",
+        ] as $col => $sql) {
+            if (!control_contact_center_table_has_column($pdo, 'rcc_queues', $col)) {
+                control_contact_center_safe_alter($pdo, $sql, $log, 'queues.' . $col);
+            }
+        }
+    }
+
+    if (control_contact_center_table_has_column($pdo, 'rcc_agents', 'id')) {
+        if (!control_contact_center_table_has_column($pdo, 'rcc_agents', 'display_name')) {
+            control_contact_center_safe_alter(
+                $pdo,
+                'ALTER TABLE rcc_agents ADD COLUMN display_name VARCHAR(255) NULL AFTER extension',
+                $log,
+                'agents.display_name'
+            );
+            $pdo->exec(
+                "UPDATE rcc_agents SET display_name = extension WHERE display_name IS NULL OR display_name = ''"
+            );
+            control_contact_center_safe_alter(
+                $pdo,
+                'ALTER TABLE rcc_agents MODIFY COLUMN display_name VARCHAR(255) NOT NULL',
+                $log,
+                'agents.display_name_not_null'
+            );
+        }
+        if (!control_contact_center_table_has_column($pdo, 'rcc_agents', 'email')) {
+            control_contact_center_safe_alter(
+                $pdo,
+                'ALTER TABLE rcc_agents ADD COLUMN email VARCHAR(255) NULL',
+                $log,
+                'agents.email'
+            );
+        }
+        if (!control_contact_center_table_has_column($pdo, 'rcc_agents', 'is_senior')) {
+            control_contact_center_safe_alter(
+                $pdo,
+                'ALTER TABLE rcc_agents ADD COLUMN is_senior TINYINT(1) NOT NULL DEFAULT 0',
+                $log,
+                'agents.is_senior'
+            );
+        }
+    }
+
+    if ($log !== null) {
+        $log[] = 'OK legacy schema upgrade';
+    }
+}
+
 /** @return list<string> */
 function control_contact_center_run_migrations(): array
 {
@@ -534,6 +675,8 @@ function control_contact_center_run_migrations(): array
     ));
     sort($files);
     $log = [];
+
+    control_contact_center_upgrade_legacy_schema($pdo, $log);
 
     // Legacy filenames removed during 001–012 renumber (Jun 2026). Mark applied so orphan
     // copies left on the server by fast-deploy are never re-executed.
