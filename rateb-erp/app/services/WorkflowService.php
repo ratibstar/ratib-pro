@@ -253,15 +253,25 @@ final class WorkflowService
 
     public function approve(int $instanceId, ?string $comment = null): bool
     {
-        return $this->decide($instanceId, 'approve', $comment);
+        return $this->decide($instanceId, 'approve', $comment, false);
     }
 
     public function reject(int $instanceId, ?string $comment = null): bool
     {
-        return $this->decide($instanceId, 'reject', $comment);
+        return $this->decide($instanceId, 'reject', $comment, false);
     }
 
-    private function decide(int $instanceId, string $action, ?string $comment): bool
+    public function approveAsOversight(int $instanceId, ?string $comment = null): bool
+    {
+        return $this->decide($instanceId, 'approve', $comment, true);
+    }
+
+    public function rejectAsOversight(int $instanceId, ?string $comment = null): bool
+    {
+        return $this->decide($instanceId, 'reject', $comment, true);
+    }
+
+    private function decide(int $instanceId, string $action, ?string $comment, bool $oversight): bool
     {
         try {
             $row = TenantGuard::assertApprovalInstance($instanceId);
@@ -274,7 +284,10 @@ final class WorkflowService
 
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         $authz = new AuthorizationService();
-        if (!$authz->companyUserCan($userId, 'workflows.approve', 'workflows')) {
+        if (!$oversight && !$authz->companyUserCan($userId, 'workflows.approve', 'workflows')) {
+            return false;
+        }
+        if ($oversight && !rateb_is_super_admin()) {
             return false;
         }
 

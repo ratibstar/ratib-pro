@@ -21,9 +21,9 @@ $routePrefix = (string) ($routePrefix ?? rateb_app_route($entitySlug));
 $canManage = $canManage ?? rateb_can_manage_entity($entitySlug);
 $exportEnabled = $exportEnabled ?? rateb_can_export_entity($entitySlug);
 $viewActionsEnabled = $viewActionsEnabled ?? true;
-$approvalEnabled = $approvalEnabled ?? true;
+$approvalEnabled = $approvalEnabled ?? false;
 $editEnabled = $editEnabled ?? false;
-$canApprove = $canApprove ?? $canManage;
+$canApprove = $canApprove ?? false;
 $lookups = $lookups ?? [];
 if ($formFields !== null && $lookups === []) {
     $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($formFields);

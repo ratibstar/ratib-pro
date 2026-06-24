@@ -146,6 +146,8 @@ return [
         'admin/oversight/rfq' => 'procurement.manage',
         'admin/oversight/inventory' => 'inventory.manage',
         'admin/oversight/approvals' => 'workflows.view',
+        'admin/oversight/approvals/approve' => 'workflows.manage',
+        'admin/oversight/approvals/reject' => 'workflows.manage',
         'admin/oversight/supplier-evaluations' => 'procurement.manage',
         'admin/oversight/workflows' => 'workflows.view',
         'admin/oversight/workflows/store' => 'workflows.manage',

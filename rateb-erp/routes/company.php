@@ -68,6 +68,18 @@ require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
 $app = static fn (string $sub): string => '/' . rateb_app_route($sub);
 
+$redirectApprovalsOversight = static function (): void {
+    if (rateb_is_super_admin()) {
+        Response::redirect(rateb_url('admin/oversight/approvals'), 302);
+    }
+    \Rateb\App\Core\SessionManager::flash('error', __('approvals_admin_only'));
+    Response::redirect(rateb_url('admin'));
+};
+$blockCompanyApprovalAction = static function (): void {
+    \Rateb\App\Core\SessionManager::flash('error', __('approvals_admin_only'));
+    Response::redirect(rateb_is_super_admin() ? rateb_url('admin/oversight/approvals') : rateb_url('admin'), 302);
+};
+
 // Legacy /company URLs → unified /admin shell
 $router->get('/company/login', static function (): void {
     Response::redirect(rateb_url('login'), 301);
@@ -135,10 +147,10 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
 }
 
 $seMw = rateb_erp_mw('suppliers', '', 'supplier-evaluations');
-$router->get($app('supplier-evaluations/approvals'), [SupplierEvaluationsController::class, 'approvals'], $seMw);
+$router->get($app('supplier-evaluations/approvals'), $redirectApprovalsOversight, $seMw);
 $router->get($app('supplier-evaluations/history'), [SupplierEvaluationsController::class, 'supplierHistory'], $seMw);
-$router->post($app('supplier-evaluations/{id}/approve'), [SupplierEvaluationsController::class, 'approve'], $seMw);
-$router->post($app('supplier-evaluations/{id}/reject'), [SupplierEvaluationsController::class, 'reject'], $seMw);
+$router->post($app('supplier-evaluations/{id}/approve'), $blockCompanyApprovalAction, $seMw);
+$router->post($app('supplier-evaluations/{id}/reject'), $blockCompanyApprovalAction, $seMw);
 
 $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'warehouseItemsJson'], rateb_erp_mw('inventory', '', 'inventory'));
 
@@ -279,7 +291,7 @@ $router->get($app('accounting/export/balance-sheet'), [CompanyAccountingDashboar
 $router->get($app('accounting/export/vat-report'), [CompanyAccountingDashboardController::class, 'exportVatReport'], rateb_erp_mw('accounting', 'reports.export', 'accounting'));
 $router->get($app('accounting/supplier-payments/create'), [CompanyAccountingDashboardController::class, 'supplierPaymentForm'], rateb_erp_mw('accounting', 'accounting.post', 'accounts-payable'));
 $router->post($app('accounting/supplier-payments'), [CompanyAccountingDashboardController::class, 'storeSupplierPayment'], rateb_erp_mw('accounting', 'accounting.post', 'accounts-payable'));
-$router->get($app('accounting/entry-approval'), [CompanyJournalEntriesController::class, 'entryApproval'], rateb_erp_mw('accounting', '', 'entry-approval'));
+$router->get($app('accounting/entry-approval'), $redirectApprovalsOversight, rateb_erp_mw('accounting', '', 'entry-approval'));
 $router->get($app('accounting/supplier-payments'), [CompanyAccountingDashboardController::class, 'supplierPayments'], rateb_erp_mw('accounting', '', 'supplier-payments'));
 $router->get($app('accounting/supplier-payments/export'), [CompanyAccountingDashboardController::class, 'exportSupplierPayments'], rateb_erp_mw('accounting', 'reports.export', 'supplier-payments'));
 $router->post($app('accounting/supplier-payments/{id}/void'), [CompanyAccountingDashboardController::class, 'voidSupplierPayment'], rateb_erp_mw('accounting', 'accounting.post', 'supplier-payments'));
@@ -312,7 +324,7 @@ $router->post($app('journal-entries/{id}/void'), [CompanyJournalEntriesControlle
 $router->post($app('journal-entries/{id}/delete'), [CompanyJournalEntriesController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->get($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'show'], rateb_erp_mw('accounting', '', 'journal-entries'));
 
-$router->get($app('accounting/voucher-approval'), [CompanyCashVouchersController::class, 'voucherApproval'], rateb_erp_mw('accounting', '', 'voucher-approval'));
+$router->get($app('accounting/voucher-approval'), $redirectApprovalsOversight, rateb_erp_mw('accounting', '', 'voucher-approval'));
 $router->get($app('cash-vouchers'), [CompanyCashVouchersController::class, 'index'], rateb_erp_mw('accounting', '', 'cash-vouchers'));
 $router->get($app('cash-vouchers/create'), [CompanyCashVouchersController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->post($app('cash-vouchers'), [CompanyCashVouchersController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
@@ -369,9 +381,9 @@ $router->get($app('stock-movements/export'), [StockMovementsController::class, '
 $router->get($app('documents'), [DocumentsController::class, 'index'], rateb_erp_mw('documents', '', 'documents'));
 $router->post($app('documents'), [DocumentsController::class, 'store'], rateb_erp_mw('documents', '', 'documents'));
 
-$router->get($app('workflows'), [WorkflowsController::class, 'index'], rateb_erp_mw('workflows', '', 'workflows'));
-$router->post($app('workflows/{id}/approve'), [WorkflowsController::class, 'approve'], rateb_erp_mw('workflows', 'workflows.approve'));
-$router->post($app('workflows/{id}/reject'), [WorkflowsController::class, 'reject'], rateb_erp_mw('workflows', 'workflows.approve'));
+$router->get($app('workflows'), $redirectApprovalsOversight, rateb_erp_mw('workflows', '', 'workflows'));
+$router->post($app('workflows/{id}/approve'), $blockCompanyApprovalAction, rateb_erp_mw('workflows', 'workflows.approve'));
+$router->post($app('workflows/{id}/reject'), $blockCompanyApprovalAction, rateb_erp_mw('workflows', 'workflows.approve'));
 
 $router->get($app('product-categories'), [ProductCategoriesController::class, 'index'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->get($app('product-categories/create'), [ProductCategoriesController::class, 'create'], rateb_erp_mw('inventory', '', 'product-categories'));

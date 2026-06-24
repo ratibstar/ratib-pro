@@ -39,21 +39,11 @@ $displayStatus = $st === 'draft' ? 'pending' : ($st === 'posted' ? 'approved' : 
 </div>
 <div class="d-flex flex-wrap gap-2">
     <a href="<?php echo rateb_app_url('cash-vouchers'); ?>" class="btn btn-outline-secondary"><?php echo __('cash_vouchers'); ?></a>
-    <a href="<?php echo rateb_app_url('accounting/voucher-approval'); ?>" class="btn btn-outline-secondary"><i class="fas fa-check-double"></i> <?php echo __('voucher_approval'); ?></a>
+    <?php if (rateb_is_super_admin() && $st === 'draft') { ?>
+    <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-outline-warning"><i class="fas fa-check-double"></i> <?php echo __('approvals_oversight'); ?></a>
+    <?php } ?>
     <?php if (($canManage ?? false) && $st === 'draft') { ?>
     <a href="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
-    <?php } ?>
-    <?php if (($canApprove ?? false) && $st === 'draft') { ?>
-    <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/post'); ?>" class="d-inline">
-        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> <?php echo __('approve_voucher'); ?></button>
-    </form>
-    <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/reject'); ?>" class="d-inline"
-          onsubmit="return confirm('<?php echo __('bulk_confirm_reject'); ?>');">
-        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <input type="text" name="reject_reason" class="form-control form-control-sm d-inline-block" style="width:10rem" placeholder="<?php echo Rateb\App\Core\View::escape(__('reject_reason')); ?>">
-        <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> <?php echo __('reject'); ?></button>
-    </form>
     <?php } ?>
     <?php if (($canApprove ?? false) && $st === 'posted') { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/void'); ?>" class="d-inline"

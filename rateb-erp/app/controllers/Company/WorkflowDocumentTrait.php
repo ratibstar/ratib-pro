@@ -35,7 +35,7 @@ trait WorkflowDocumentTrait
 
     protected function workflowCanApprove(): bool
     {
-        return rateb_can_manage_entity($this->workflowSlug());
+        return false;
     }
 
     public function show(array $params): void

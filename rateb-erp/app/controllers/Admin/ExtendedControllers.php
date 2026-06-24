@@ -230,6 +230,51 @@ final class AdminApprovalsController extends Controller
             'csrf' => Csrf::token(),
         ], 'main');
     }
+
+    public function approve(): void
+    {
+        $this->decide('approve');
+    }
+
+    public function reject(): void
+    {
+        $this->decide('reject');
+    }
+
+    private function decide(string $action): void
+    {
+        if (!rateb_is_super_admin()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_url('admin'));
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('admin/oversight/approvals'));
+        }
+        $sourceKey = trim((string) $this->input('source_key', ''));
+        $recordId = (int) $this->input('record_id', 0);
+        $companyId = (int) $this->input('company_id', 0);
+        try {
+            (new ApprovalOversightService())->process($sourceKey, $recordId, $companyId, $action);
+            (new AuditService())->log($action, 'approval_oversight', $recordId, [
+                'source' => $sourceKey,
+                'company_id' => $companyId,
+            ]);
+            SessionManager::flash('success', $action === 'approve' ? __('approved') : __('rejected'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $qs = [];
+        if ($companyId > 0) {
+            $qs['company_id'] = $companyId;
+        }
+        $type = trim((string) $this->input('type_filter', ''));
+        if ($type !== '') {
+            $qs['type'] = $type;
+        }
+        $url = rateb_url('admin/oversight/approvals' . ($qs !== [] ? '?' . http_build_query($qs) : ''));
+        Response::redirect($url);
+    }
 }
 
 final class AdminMedicalDevicesController extends Controller

@@ -12,7 +12,6 @@ $opsSection(__('procurement'), [
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
-    ['workflows', 'workflows', 'fa-diagram-project', 'workflows'],
 ], 'fa-cart-shopping');
 $opsSection(__('inventory'), [
     ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
@@ -28,7 +27,6 @@ $opsSection(__('suppliers'), [
     ['suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
     ['supplier-comms', 'supplier_comms', 'fa-comments', 'suppliers'],
     ['supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke', 'suppliers'],
-    ['supplier-evaluations/approvals', 'evaluation_approvals', 'fa-clipboard-check', 'suppliers', 'evaluations.manage'],
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
 ], 'fa-truck-field');
@@ -39,10 +37,8 @@ $opsSection(__('accounting_module'), [
     ['chart-of-accounts', 'chart_of_accounts', 'fa-list', 'accounting'],
     ['accounting/coa-tree', 'coa_full_tree', 'fa-sitemap', 'accounting', 'accounting.view'],
     ['journal-entries', 'journal_entries', 'fa-book', 'accounting'],
-    ['accounting/entry-approval', 'entry_approval', 'fa-check-double', 'accounting', 'accounting.view'],
     ['accounting/supplier-payments', 'supplier_payments', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
     ['cash-vouchers', 'cash_vouchers', 'fa-money-bill-wave', 'accounting'],
-    ['accounting/voucher-approval', 'voucher_approval', 'fa-stamp', 'accounting', 'accounting.view'],
     ['fiscal-periods', 'fiscal_periods', 'fa-calendar-days', 'accounting'],
     ['cost-centers', 'cost_centers', 'fa-diagram-project', 'accounting'],
     ['bank-accounts', 'bank_accounts', 'fa-building-columns', 'accounting'],

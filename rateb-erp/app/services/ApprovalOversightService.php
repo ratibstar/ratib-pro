@@ -9,6 +9,17 @@ use PDO;
 /** Cross-company pending approvals for admin oversight (مراقبة الإدارة). */
 final class ApprovalOversightService
 {
+    /** Sources where reject is not supported from oversight UI. */
+    public static function rejectDisabledSources(): array
+    {
+        return ['asset_depreciation', 'hr_payroll'];
+    }
+
+    public static function canReject(string $sourceKey): bool
+    {
+        return !in_array($sourceKey, self::rejectDisabledSources(), true);
+    }
+
     /** @return array<string, string> */
     public static function typeOptions(): array
     {
@@ -46,6 +57,7 @@ final class ApprovalOversightService
             }
             foreach ($this->fetchSource($source, $companyFilter, $perSource) as $row) {
                 $row['source_key'] = $key;
+                $row['can_reject'] = self::canReject($key);
                 $items[] = $row;
             }
         }
@@ -277,10 +289,10 @@ final class ApprovalOversightService
                 'company_id' => $companyId,
                 'company_name' => (string) ($row['company_name'] ?? ''),
                 'reference' => $ref,
+                'record_id' => $entityId,
                 'entity_id' => $entityId,
                 'submitted_at' => (string) ($row['submitted_at'] ?? ''),
                 'view_url' => $this->opsUrl($route . '/' . $entityId, $companyId),
-                'queue_url' => $this->opsUrl($queueRoute, $companyId),
             ];
         }
         return $out;
@@ -366,16 +378,17 @@ final class ApprovalOversightService
             $entityType = (string) ($row['entity_type'] ?? '');
             $entityId = (int) ($row['entity_id'] ?? 0);
             $companyId = (int) ($row['company_id'] ?? 0);
+            $instanceId = (int) ($row['id'] ?? 0);
             $out[] = [
                 'category' => 'workflow',
                 'type_label' => WorkflowService::entityTypeLabel($entityType),
                 'company_id' => $companyId,
                 'company_name' => (string) ($row['company_name'] ?? ''),
                 'reference' => WorkflowService::entityTypeLabel($entityType) . ' #' . $entityId,
-                'entity_id' => (int) ($row['id'] ?? 0),
+                'record_id' => $instanceId,
+                'entity_id' => $entityId,
                 'submitted_at' => (string) ($row['created_at'] ?? ''),
                 'view_url' => WorkflowService::entityDocumentUrl($entityType, $entityId, $companyId),
-                'queue_url' => $this->opsUrl('workflows', $companyId),
                 'workflow_name' => (string) ($row['workflow_name'] ?? ''),
             ];
         }
@@ -404,6 +417,253 @@ final class ApprovalOversightService
             return $exists;
         } catch (\Throwable $e) {
             return false;
+        }
+    }
+
+    /** @return array<string, string> */
+    private function managerSlugs(): array
+    {
+        return [
+            'contract_renewal' => 'contract-renewals',
+            'asset_maintenance' => 'asset-maintenance',
+            'asset_assignment' => 'asset-assignments',
+            'device_maintenance' => 'device-maintenance',
+            'device_spare_part' => 'device-spare-parts',
+        ];
+    }
+
+    public function process(string $sourceKey, int $recordId, int $companyId, string $action): void
+    {
+        if ($recordId < 1) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        $action = $action === 'reject' ? 'reject' : 'approve';
+        $this->bootstrapCompany($companyId);
+        $uid = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0);
+
+        if ($sourceKey === 'workflow_instance') {
+            $wf = new WorkflowService();
+            $ok = $action === 'approve'
+                ? $wf->approveAsOversight($recordId)
+                : $wf->rejectAsOversight($recordId);
+            if (!$ok) {
+                throw new \RuntimeException(__('manager_approval_already_processed'));
+            }
+            return;
+        }
+
+        if ($sourceKey === 'supplier_evaluation') {
+            $model = new \Rateb\App\Models\SupplierEvaluation();
+            $item = $model->find($recordId);
+            if (!$item || (string) ($item['manager_approval'] ?? '') !== 'pending') {
+                throw new \RuntimeException(__('manager_approval_already_processed'));
+            }
+            $model->update($recordId, [
+                'manager_approval' => $action === 'approve' ? 'approved' : 'rejected',
+                'approved_by' => $uid > 0 ? $uid : null,
+                'approved_at' => date('Y-m-d H:i:s'),
+            ]);
+            if ($action === 'approve') {
+                (new SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
+            }
+            return;
+        }
+
+        if ($sourceKey === 'contract_renewal') {
+            $svc = new ContractWorkflowService();
+            if ($action === 'approve') {
+                $svc->approveRenewal($recordId, $uid);
+            } else {
+                $svc->rejectRenewal($recordId, $uid);
+            }
+            return;
+        }
+
+        if ($sourceKey === 'inventory_audit') {
+            $this->setManagerApproval('rateb_inventory_audits', $recordId, $companyId, $action, $uid);
+            return;
+        }
+
+        if (isset($this->managerSlugs()[$sourceKey])) {
+            $rec = new WorkflowRecordService();
+            if ($action === 'approve') {
+                $rec->approve($this->managerSlugs()[$sourceKey], $recordId);
+            } else {
+                $rec->reject($this->managerSlugs()[$sourceKey], $recordId);
+            }
+            return;
+        }
+
+        if ($sourceKey === 'journal_entry') {
+            $acct = new AccountingService();
+            if ($action === 'approve') {
+                if ($acct->postDraftEntryReason($recordId, $companyId > 0 ? $companyId : null) !== null) {
+                    throw new \RuntimeException(__('journal_post_failed'));
+                }
+            } elseif (!$acct->rejectManualDraft($recordId, $companyId > 0 ? $companyId : null, '', $uid > 0 ? $uid : null)) {
+                throw new \RuntimeException(__('journal_reject_failed'));
+            }
+            return;
+        }
+
+        if ($sourceKey === 'cash_voucher') {
+            $acct = new AccountingService();
+            if ($action === 'approve') {
+                if (!$acct->postCashVoucher($recordId, $companyId > 0 ? $companyId : null)) {
+                    throw new \RuntimeException(__('voucher_post_failed'));
+                }
+            } elseif (!$acct->rejectCashVoucherDraft($recordId, $companyId > 0 ? $companyId : null, '', $uid > 0 ? $uid : null)) {
+                throw new \RuntimeException(__('voucher_reject_failed'));
+            }
+            return;
+        }
+
+        if ($sourceKey === 'warehouse_transfer') {
+            $inv = new InventoryWorkflowService();
+            if ($action === 'approve') {
+                if (!$inv->approveTransfer($recordId)) {
+                    throw new \RuntimeException(__('invalid_request'));
+                }
+            } else {
+                $db = Database::connection();
+                $sql = 'UPDATE rateb_warehouse_transfers SET status = :st WHERE id = :id AND status = :pending';
+                $params = ['st' => 'rejected', 'id' => $recordId, 'pending' => 'pending'];
+                if ($companyId > 0) {
+                    $sql .= ' AND company_id = :cid';
+                    $params['cid'] = $companyId;
+                }
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+                if ($stmt->rowCount() < 1) {
+                    throw new \RuntimeException(__('invalid_request'));
+                }
+            }
+            return;
+        }
+
+        if ($sourceKey === 'asset_depreciation') {
+            $asset = new AssetDeviceWorkflowService();
+            if ($action === 'approve') {
+                if (!$asset->approveDepreciation($recordId)) {
+                    throw new \RuntimeException(__('invalid_request'));
+                }
+            } else {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            return;
+        }
+
+        if ($sourceKey === 'contract') {
+            $db = Database::connection();
+            $stmt = $db->prepare(
+                'UPDATE rateb_contracts SET approval_status = :st WHERE id = :id'
+                . ($companyId > 0 ? ' AND company_id = :cid' : '')
+            );
+            $params = ['st' => $action === 'approve' ? 'approved' : 'rejected', 'id' => $recordId];
+            if ($companyId > 0) {
+                $params['cid'] = $companyId;
+            }
+            $stmt->execute($params);
+            if ($stmt->rowCount() < 1) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            return;
+        }
+
+        $hr = new HrService();
+        if ($sourceKey === 'hr_leave') {
+            if ($action === 'approve') {
+                $hr->approveLeave($recordId, $uid);
+            } else {
+                $hr->rejectLeave($recordId, $uid);
+            }
+            return;
+        }
+        if ($sourceKey === 'hr_permission') {
+            $this->setHrStatus('rateb_hr_permission_requests', $recordId, $companyId, $action, $uid);
+            return;
+        }
+        if ($sourceKey === 'hr_request') {
+            $this->setEmployeeRequestStatus($recordId, $companyId, $action, $uid);
+            return;
+        }
+        if ($sourceKey === 'hr_payroll') {
+            if ($action === 'approve') {
+                $hr->approvePayroll($recordId);
+            } else {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            return;
+        }
+
+        throw new \RuntimeException(__('invalid_request'));
+    }
+
+    private function bootstrapCompany(int $companyId): void
+    {
+        if ($companyId > 0) {
+            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $companyId);
+            \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        }
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+    }
+
+    private function setManagerApproval(string $table, int $id, int $companyId, string $action, int $uid): void
+    {
+        $state = $action === 'approve' ? 'approved' : 'rejected';
+        $db = Database::connection();
+        $sql = sprintf(
+            'UPDATE %s SET manager_approval = :st, approved_by = :uid, approved_at = NOW() WHERE id = :id AND manager_approval = :pending',
+            $table
+        );
+        $params = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id, 'pending' => 'pending'];
+        if ($companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() < 1) {
+            throw new \RuntimeException(__('manager_approval_already_processed'));
+        }
+    }
+
+    private function setHrStatus(string $table, int $id, int $companyId, string $action, int $uid): void
+    {
+        $state = $action === 'approve' ? 'approved' : 'rejected';
+        $db = Database::connection();
+        $sql = sprintf(
+            'UPDATE %s SET status = :st, approved_by = :uid, approved_at = NOW() WHERE id = :id AND status = :pending',
+            $table
+        );
+        $params = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id, 'pending' => 'pending'];
+        if ($companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() < 1) {
+            throw new \RuntimeException(__('leave_not_pending'));
+        }
+    }
+
+    private function setEmployeeRequestStatus(int $id, int $companyId, string $action, int $uid): void
+    {
+        $state = $action === 'approve' ? 'approved' : 'rejected';
+        $db = Database::connection();
+        $sql = 'UPDATE rateb_hr_employee_requests SET status = :st, processed_by = :uid, processed_at = NOW() WHERE id = :id AND status = :pending';
+        $params = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id, 'pending' => 'pending'];
+        if ($companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->rowCount() < 1) {
+            throw new \RuntimeException(__('leave_not_pending'));
         }
     }
 }

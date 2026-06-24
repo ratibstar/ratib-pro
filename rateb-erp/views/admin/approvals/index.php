@@ -5,7 +5,8 @@
 /** @var array<int, array<string, mixed>> $companies */
 /** @var array{company_id:int,status:string,date_from:string,date_to:string} $filters */
 $typeFilter = (string) ($typeFilter ?? '');
-Rateb\App\Core\View::partial('admin-company-portal-banner');
+$csrfToken = (string) ($csrf ?? '');
+Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
 ?>
 <div class="row g-3">
     <div class="col-12">
@@ -105,13 +106,18 @@ Rateb\App\Core\View::partial('admin-company-portal-banner');
                             <th><?php echo __('approval_type'); ?></th>
                             <th><?php echo __('reference'); ?></th>
                             <th><?php echo __('created_at'); ?></th>
-                            <th><?php echo __('actions'); ?></th>
+                            <th class="rateb-actions-cell"><?php echo __('actions'); ?></th>
                         </tr>
                         </thead>
                         <tbody>
                         <?php if (empty($items)) { ?>
                         <tr><td colspan="5" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
-                        <?php } else { foreach ($items as $row) { ?>
+                        <?php } else { foreach ($items as $row) {
+                            $sourceKey = (string) ($row['source_key'] ?? '');
+                            $recordId = (int) ($row['record_id'] ?? 0);
+                            $companyId = (int) ($row['company_id'] ?? 0);
+                            $canReject = !empty($row['can_reject']);
+                            ?>
                         <tr>
                             <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
                             <td>
@@ -122,17 +128,36 @@ Rateb\App\Core\View::partial('admin-company-portal-banner');
                             </td>
                             <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['reference'] ?? '')); ?></td>
                             <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['submitted_at'] ?? '')); ?></td>
-                            <td class="text-nowrap">
-                                <?php if (!empty($row['view_url'])) { ?>
-                                <a href="<?php echo Rateb\App\Core\View::escape((string) $row['view_url']); ?>" class="btn btn-sm btn-outline-info" target="_blank" rel="noopener">
-                                    <i class="fas fa-eye"></i> <?php echo __('view'); ?>
-                                </a>
-                                <?php } ?>
-                                <?php if (!empty($row['queue_url'])) { ?>
-                                <a href="<?php echo Rateb\App\Core\View::escape((string) $row['queue_url']); ?>" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">
-                                    <i class="fas fa-check-double"></i> <?php echo __('open_operations'); ?>
-                                </a>
-                                <?php } ?>
+                            <td class="rateb-actions-cell">
+                                <div class="rateb-actions d-flex flex-wrap gap-1 justify-content-end">
+                                    <?php if (!empty($row['view_url'])) { ?>
+                                    <a href="<?php echo Rateb\App\Core\View::escape((string) $row['view_url']); ?>" class="btn btn-sm btn-outline-info" target="_blank" rel="noopener" title="<?php echo __('view'); ?>">
+                                        <i class="fas fa-eye"></i><span class="d-none d-xl-inline ms-1"><?php echo __('view'); ?></span>
+                                    </a>
+                                    <?php } ?>
+                                    <form method="post" action="<?php echo rateb_url('admin/oversight/approvals/approve'); ?>" class="d-inline">
+                                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrfToken); ?>">
+                                        <input type="hidden" name="source_key" value="<?php echo Rateb\App\Core\View::escape($sourceKey); ?>">
+                                        <input type="hidden" name="record_id" value="<?php echo $recordId; ?>">
+                                        <input type="hidden" name="company_id" value="<?php echo $companyId; ?>">
+                                        <input type="hidden" name="type_filter" value="<?php echo Rateb\App\Core\View::escape($typeFilter); ?>">
+                                        <button type="submit" class="btn btn-sm btn-success" title="<?php echo __('approve'); ?>">
+                                            <i class="fas fa-check"></i><span class="d-none d-xl-inline ms-1"><?php echo __('approve'); ?></span>
+                                        </button>
+                                    </form>
+                                    <?php if ($canReject) { ?>
+                                    <form method="post" action="<?php echo rateb_url('admin/oversight/approvals/reject'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_reject')); ?>">
+                                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrfToken); ?>">
+                                        <input type="hidden" name="source_key" value="<?php echo Rateb\App\Core\View::escape($sourceKey); ?>">
+                                        <input type="hidden" name="record_id" value="<?php echo $recordId; ?>">
+                                        <input type="hidden" name="company_id" value="<?php echo $companyId; ?>">
+                                        <input type="hidden" name="type_filter" value="<?php echo Rateb\App\Core\View::escape($typeFilter); ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('reject'); ?>">
+                                            <i class="fas fa-times"></i><span class="d-none d-xl-inline ms-1"><?php echo __('reject'); ?></span>
+                                        </button>
+                                    </form>
+                                    <?php } ?>
+                                </div>
                             </td>
                         </tr>
                         <?php } } ?>
