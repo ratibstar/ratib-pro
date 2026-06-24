@@ -63,7 +63,7 @@
         return res.json().then(function (data) {
             if (!res.ok || data.ok === false) {
                 var err = new Error(data.message || labels.error || 'Error');
-                if (data.sql_error) {
+                if (data.sql_error && data.message.indexOf(data.sql_error) === -1) {
                     err.message += ' — ' + data.sql_error;
                 }
                 err.status = res.status;

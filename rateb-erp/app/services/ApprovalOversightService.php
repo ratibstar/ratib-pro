@@ -560,7 +560,12 @@ final class ApprovalOversightService
             if ($action === 'approve') {
                 $reason = $acct->postCashVoucherReason($recordId, $cid);
                 if ($reason !== null) {
-                    throw new \RuntimeException(__($reason));
+                    $msg = __($reason);
+                    $detail = $acct->lastVoucherPostDetail();
+                    if ($detail !== '' && !str_contains($msg, $detail)) {
+                        $msg .= ' — ' . $detail;
+                    }
+                    throw new \RuntimeException($msg);
                 }
             } elseif (!$acct->rejectCashVoucherDraft($recordId, $cid, '', $uid > 0 ? $uid : null)) {
                 throw new \RuntimeException(__('voucher_reject_failed'));

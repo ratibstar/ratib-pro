@@ -10,6 +10,13 @@ use PDO;
 
 final class AccountingService
 {
+    private string $lastVoucherPostDetail = '';
+
+    public function lastVoucherPostDetail(): string
+    {
+        return $this->lastVoucherPostDetail;
+    }
+
     /** @var array<string, array{code:string,name:string,name_ar:string,type:string,parent?:string}> */
     /** Standard COA tree — keeps existing posting codes (1100, 1200, 1210, …). */
     private const DEFAULT_ACCOUNTS = [
@@ -425,32 +432,44 @@ final class AccountingService
         $entryModel = new JournalEntry();
         $entryNo = $this->nextEntryNo($companyId);
         $companyId = $this->normalizeCompanyId($companyId);
-        $entryId = $entryModel->create([
-            'company_id' => $companyId,
-            'entry_no' => $entryNo,
-            'entry_date' => $entryDate,
-            'description' => $description,
-            'description_ar' => $descriptionAr,
-            'source_type' => $sourceType,
-            'source_id' => $sourceId,
-            'status' => 'posted',
-            'posted_at' => date('Y-m-d H:i:s'),
-        ]);
+        try {
+            $entryId = $entryModel->create([
+                'company_id' => $companyId,
+                'entry_no' => $entryNo,
+                'entry_date' => $entryDate,
+                'description' => $description,
+                'description_ar' => $descriptionAr,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'status' => 'posted',
+                'posted_at' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable $e) {
+            throw $e instanceof \PDOException
+                ? $e
+                : ($e->getPrevious() instanceof \PDOException ? $e->getPrevious() : $e);
+        }
 
         $pdo = Database::connection();
-        $stmt = $pdo->prepare(
-            'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :aid, :cc, :dr, :cr, :memo)'
-        );
+        $withCostCenter = $this->journalLinesHaveCostCenter();
+        $sql = $withCostCenter
+            ? 'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :aid, :cc, :dr, :cr, :memo)'
+            : 'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, debit, credit, memo) VALUES (:eid, :aid, :dr, :cr, :memo)';
+        $stmt = $pdo->prepare($sql);
         foreach ($lines as $line) {
-            $cc = isset($line['cost_center_id']) && (int) $line['cost_center_id'] > 0 ? (int) $line['cost_center_id'] : null;
-            $stmt->execute([
+            $params = [
                 'eid' => $entryId,
                 'aid' => (int) $line['account_id'],
-                'cc' => $cc,
                 'dr' => $line['debit'],
                 'cr' => $line['credit'],
                 'memo' => $line['memo'] ?? null,
-            ]);
+            ];
+            if ($withCostCenter) {
+                $params['cc'] = isset($line['cost_center_id']) && (int) $line['cost_center_id'] > 0
+                    ? (int) $line['cost_center_id']
+                    : null;
+            }
+            $stmt->execute($params);
         }
 
         return (int) $entryId;
@@ -2106,6 +2125,7 @@ final class AccountingService
     /** Post cash voucher draft; returns null on success or a lang key for the failure reason. */
     public function postCashVoucherReason(int $voucherId, ?int $companyId): ?string
     {
+        $this->lastVoucherPostDetail = '';
         $companyId = $this->normalizeCompanyId($companyId);
         if ($companyId === null || $companyId < 1) {
             return 'voucher_post_failed';
@@ -2117,7 +2137,13 @@ final class AccountingService
         if (!$v || ($v['status'] ?? '') !== 'draft') {
             return 'voucher_post_not_draft';
         }
-        if (!$this->isPeriodOpen($companyId, (string) ($v['voucher_date'] ?? date('Y-m-d')))) {
+        $voucherDate = (string) ($v['voucher_date'] ?? date('Y-m-d'));
+        try {
+            $this->ensureFiscalPeriodForDate($companyId, $voucherDate);
+        } catch (\Throwable $e) {
+            $this->lastVoucherPostDetail = DatabaseErrorService::technicalDetail($e);
+        }
+        if (!$this->isPeriodOpen($companyId, $voucherDate)) {
             return 'fiscal_period_closed_block';
         }
         $amount = (float) ($v['amount'] ?? 0);
@@ -2131,10 +2157,10 @@ final class AccountingService
         }
         $cash = $this->resolveCashAccountId($companyId, $v);
         $counter = (int) ($v['counter_account_id'] ?? 0);
-        if (!$cash) {
+        if (!$cash || !$this->accountBelongsToCompany($cash, $companyId)) {
             return 'voucher_no_cash_account';
         }
-        if ($counter < 1) {
+        if ($counter < 1 || !$this->accountBelongsToCompany($counter, $companyId)) {
             return 'voucher_no_counter_account';
         }
         $type = (string) ($v['voucher_type'] ?? 'receipt');
@@ -2159,12 +2185,20 @@ final class AccountingService
                 $lines,
                 (string) $v['description'],
                 (string) ($v['description_ar'] ?? $v['description']),
-                (string) $v['voucher_date']
+                $voucherDate
             );
-        } catch (\PDOException $e) {
+        } catch (\Throwable $e) {
+            $this->lastVoucherPostDetail = DatabaseErrorService::technicalDetail($e);
             return 'voucher_post_failed';
         }
-        if ($entryId === null) {
+        if ($entryId === null || $entryId < 1) {
+            if (!$this->isBalanced($lines)) {
+                $this->lastVoucherPostDetail = 'journal lines not balanced';
+            } elseif (!$this->isPeriodOpen($companyId, $voucherDate)) {
+                $this->lastVoucherPostDetail = 'fiscal period closed for ' . $voucherDate;
+            } else {
+                $this->lastVoucherPostDetail = 'createPostedEntry returned empty';
+            }
             return 'voucher_post_failed';
         }
         try {
@@ -2172,6 +2206,7 @@ final class AccountingService
                 'UPDATE rateb_cash_vouchers SET status = :st, journal_entry_id = :jid, posted_at = NOW() WHERE id = :id'
             )->execute(['st' => 'posted', 'jid' => $entryId, 'id' => $voucherId]);
         } catch (\PDOException $e) {
+            $this->lastVoucherPostDetail = DatabaseErrorService::technicalDetail($e);
             return 'voucher_post_failed';
         }
         return null;
@@ -2263,6 +2298,68 @@ final class AccountingService
         } catch (\Throwable $e) {
             // Host may block ALTER; migration 115 fixes via ERP migrate.
         }
+    }
+
+    private function journalLinesHaveCostCenter(): bool
+    {
+        static $has = null;
+        if ($has !== null) {
+            return $has;
+        }
+        try {
+            $db = Database::connection();
+            $stmt = $db->query(
+                "SHOW COLUMNS FROM rateb_journal_lines LIKE 'cost_center_id'"
+            );
+            $has = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            $has = false;
+        }
+        return $has;
+    }
+
+    private function accountBelongsToCompany(int $accountId, int $companyId): bool
+    {
+        if ($accountId < 1 || $companyId < 1) {
+            return false;
+        }
+        $row = (new ChartOfAccount())->queryOne(
+            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id <=> :cid AND is_active = 1 LIMIT 1',
+            ['id' => $accountId, 'cid' => $companyId]
+        );
+        return $row !== null;
+    }
+
+    public function ensureFiscalPeriodForDate(?int $companyId, string $date): void
+    {
+        if ($companyId === null || $companyId < 1 || strlen($date) < 4) {
+            return;
+        }
+        $year = (int) substr($date, 0, 4);
+        if ($year < 2000 || $year > 2100) {
+            return;
+        }
+        $start = $year . '-01-01';
+        $end = $year . '-12-31';
+        $exists = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_fiscal_periods WHERE company_id = :cid AND start_date <= :dt AND end_date >= :dt LIMIT 1',
+            ['cid' => $companyId, 'dt' => $date]
+        );
+        if ($exists) {
+            return;
+        }
+        Database::connection()->prepare(
+            'INSERT INTO rateb_fiscal_periods (company_id, name, start_date, end_date, status) VALUES (:cid, :n, :s, :e, :st)'
+        )->execute([
+            'cid' => $companyId,
+            'n' => (string) $year,
+            's' => $start,
+            'e' => $end,
+            'st' => 'open',
+        ]);
     }
 
     private function isPeriodOpen(?int $companyId, string $entryDate): bool
