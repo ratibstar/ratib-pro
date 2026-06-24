@@ -420,6 +420,8 @@ final class AccountingService
             return null;
         }
 
+        $this->ensureJournalSourceTypeEnum();
+
         $entryModel = new JournalEntry();
         $entryNo = $this->nextEntryNo($companyId);
         $companyId = $this->normalizeCompanyId($companyId);
@@ -2241,6 +2243,26 @@ final class AccountingService
         }
         $sql .= ' GROUP BY cc.id ORDER BY cc.code';
         return ['lines' => (new JournalEntry())->query($sql, $params)];
+    }
+
+    private function ensureJournalSourceTypeEnum(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        try {
+            Database::connection()->exec(
+                "ALTER TABLE rateb_journal_entries MODIFY source_type ENUM(
+                    'manual','invoice','payment','purchase_order','subscription',
+                    'cash_voucher','stock_movement','purchase_invoice',
+                    'supplier_payment','year_end_close'
+                ) NOT NULL DEFAULT 'manual'"
+            );
+        } catch (\Throwable $e) {
+            // Host may block ALTER; migration 115 fixes via ERP migrate.
+        }
     }
 
     private function isPeriodOpen(?int $companyId, string $entryDate): bool
