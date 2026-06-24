@@ -746,34 +746,46 @@ table.rateb-oversight-table:not(.rateb-approvals-table) {
 table.rateb-approvals-table.rateb-oversight-table {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
     table-layout: fixed;
 }
 
+table.rateb-approvals-table col.rateb-col-approval-company { width: 20%; }
+table.rateb-approvals-table col.rateb-col-approval-type { width: 24%; }
+table.rateb-approvals-table col.rateb-col-approval-ref { width: 9%; }
+table.rateb-approvals-table col.rateb-col-approval-date { width: 13%; }
+table.rateb-approvals-table col.rateb-col-approval-actions { width: 34%; }
+
 table.rateb-approvals-table th,
 table.rateb-approvals-table td {
-    padding: 0.45rem 0.5rem;
+    padding: 0.4rem 0.45rem;
+    vertical-align: middle;
+}
+
+table.rateb-approvals-table td.rateb-approval-cell-clip {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 0;
+}
+
+table.rateb-approvals-table td.rateb-approval-cell-ref {
+    font-size: 0.82rem;
+}
+
+table.rateb-approvals-table td.rateb-approval-cell-date {
+    font-size: 0.78rem;
+    white-space: nowrap;
 }
 
 table.rateb-approvals-table th:nth-child(1),
-table.rateb-approvals-table td:nth-child(1) {
-    width: 19%;
-}
-
+table.rateb-approvals-table td:nth-child(1),
 table.rateb-approvals-table th:nth-child(2),
-table.rateb-approvals-table td:nth-child(2) {
-    width: 20%;
-}
-
+table.rateb-approvals-table td:nth-child(2),
 table.rateb-approvals-table th:nth-child(3),
-table.rateb-approvals-table td:nth-child(3) {
-    width: 11%;
-}
-
+table.rateb-approvals-table td:nth-child(3),
 table.rateb-approvals-table th:nth-child(4),
-table.rateb-approvals-table td:nth-child(4) {
-    width: 15%;
-}
-
+table.rateb-approvals-table td:nth-child(4),
 table.rateb-approvals-table th:nth-child(5),
 table.rateb-approvals-table td:nth-child(5) {
     width: auto;
@@ -802,19 +814,55 @@ table.rateb-oversight-table td.rateb-oversight-clip {
 table.rateb-approvals-table th.rateb-th-actions,
 table.rateb-approvals-table td.rateb-actions-cell {
     min-width: 0;
-    width: 11rem;
-    max-width: 12rem;
+    width: auto;
+    max-width: none;
     white-space: nowrap;
-    padding-inline: 0.35rem;
+    padding-inline: 0.3rem;
+    text-align: end;
 }
 
-.rateb-approval-ops {
+[dir="rtl"] table.rateb-approvals-table td.rateb-actions-cell {
+    text-align: start;
+}
+
+.rateb-approvals-table .rateb-approval-ops {
     display: inline-flex;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-end;
     gap: 0.2rem;
+    width: 100%;
+}
+
+.rateb-approvals-table .rateb-approval-btn span {
+    display: none;
+}
+
+@media (min-width: 1200px) {
+    .rateb-approvals-table .rateb-approval-btn span {
+        display: inline;
+    }
+}
+
+.rateb-approvals-table .rateb-approval-btn {
+    padding: 0.28rem 0.42rem;
+}
+
+.rateb-approval-ops-detail {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.rateb-approval-ops-detail .rateb-approval-btn span {
+    display: inline;
+}
+
+.rateb-approval-ops-detail .rateb-approval-btn {
+    padding: 0.32rem 0.65rem;
 }
 
 .rateb-approval-btn {

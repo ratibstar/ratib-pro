@@ -25,6 +25,7 @@ $approvalsConfig = [
         'open_in_ops' => __('open_in_operations'),
         'approval_detail' => __('approval_detail'),
         'close' => __('close'),
+        'error' => __('system_error_generic'),
     ],
 ];
 ?>
@@ -120,6 +121,13 @@ $approvalsConfig = [
             <div class="rateb-card-body p-0">
                 <div class="table-responsive rateb-oversight-table-wrap">
                     <table class="table rateb-table rateb-oversight-table rateb-approvals-table mb-0">
+                        <colgroup>
+                            <col class="rateb-col-approval-company">
+                            <col class="rateb-col-approval-type">
+                            <col class="rateb-col-approval-ref">
+                            <col class="rateb-col-approval-date">
+                            <col class="rateb-col-approval-actions">
+                        </colgroup>
                         <thead>
                         <tr>
                             <th><?php echo __('companies'); ?></th>
@@ -144,15 +152,15 @@ $approvalsConfig = [
                             data-record-id="<?php echo $recordId; ?>"
                             data-company-id="<?php echo $companyId; ?>"
                             data-can-reject="<?php echo $canReject ? '1' : '0'; ?>">
-                            <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
-                            <td>
+                            <td class="rateb-approval-cell-clip"><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
+                            <td class="rateb-approval-cell-clip">
                                 <?php echo Rateb\App\Core\View::escape((string) ($row['type_label'] ?? '')); ?>
                                 <?php if (!empty($row['workflow_name'])) { ?>
                                 <div class="small text-muted"><?php echo Rateb\App\Core\View::escape((string) $row['workflow_name']); ?></div>
                                 <?php } ?>
                             </td>
-                            <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['reference'] ?? '')); ?></td>
-                            <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['submitted_at'] ?? '')); ?></td>
+                            <td class="rateb-ltr-num rateb-approval-cell-ref"><?php echo Rateb\App\Core\View::escape((string) ($row['reference'] ?? '')); ?></td>
+                            <td class="rateb-ltr-num rateb-approval-cell-date"><?php echo Rateb\App\Core\View::escape((string) ($row['submitted_at'] ?? '')); ?></td>
                             <td class="rateb-actions-cell">
                                 <div class="rateb-approval-ops">
                                     <button type="button" class="rateb-approval-btn rateb-approval-btn-view" data-action="view" title="<?php echo __('view'); ?>">
@@ -169,7 +177,7 @@ $approvalsConfig = [
                                 </div>
                             </td>
                         </tr>
-                        <tr class="rateb-approval-detail-row d-none" data-detail-for="<?php echo Rateb\App\Core\View::escape($rowKey); ?>">
+                        <tr class="rateb-approval-detail-row d-none" data-detail-for="<?php echo Rateb\App\Core\View::escape($rowKey); ?>" data-approval-row="<?php echo Rateb\App\Core\View::escape($rowKey); ?>">
                             <td colspan="5" class="p-0">
                                 <div class="rateb-approval-detail-pane">
                                     <div class="rateb-approval-detail-loading text-muted py-3 px-3">

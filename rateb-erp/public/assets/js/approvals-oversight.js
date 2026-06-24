@@ -17,20 +17,27 @@
     var activeRowKey = null;
 
     function csrf() {
-        return config.csrf || document.querySelector('meta[name="rateb-csrf"]')?.getAttribute('content') || '';
+        return config.csrf || (document.querySelector('meta[name="rateb-csrf"]') || {}).getAttribute('content') || '';
     }
 
     function rowKeyFromEl(el) {
-        var row = el.closest('[data-approval-row]');
-        return row ? row.getAttribute('data-approval-row') : null;
+        var dataTr = el.closest('tr.rateb-approval-data-row[data-approval-row]');
+        if (dataTr) {
+            return dataTr.getAttribute('data-approval-row');
+        }
+        var detailTr = el.closest('tr.rateb-approval-detail-row[data-detail-for]');
+        if (detailTr) {
+            return detailTr.getAttribute('data-detail-for');
+        }
+        return activeRowKey;
     }
 
     function dataRow(key) {
-        return root.querySelector('[data-approval-row="' + key + '"]');
+        return root.querySelector('tr.rateb-approval-data-row[data-approval-row="' + key + '"]');
     }
 
     function detailRow(key) {
-        return root.querySelector('[data-detail-for="' + key + '"]');
+        return root.querySelector('tr[data-detail-for="' + key + '"]');
     }
 
     function closeAllDetails() {
@@ -47,6 +54,15 @@
         var div = document.createElement('div');
         div.textContent = text == null ? '' : String(text);
         return div.innerHTML;
+    }
+
+    function parseJsonResponse(res) {
+        return res.json().then(function (data) {
+            if (!res.ok || data.ok === false) {
+                throw new Error(data.message || labels.error || 'Error');
+            }
+            return data;
+        });
     }
 
     function renderDetailBody(detail) {
@@ -110,10 +126,10 @@
         fetch(config.detailUrl + '?' + params.toString(), {
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
-            .then(function (res) { return res.json(); })
+            .then(parseJsonResponse)
             .then(function (data) {
-                if (!data.ok || !data.detail) {
-                    throw new Error(data.message || 'Error');
+                if (!data.detail) {
+                    throw new Error(labels.error || 'Error');
                 }
                 body.innerHTML = renderDetailBody(data.detail);
                 loading.classList.add('d-none');
@@ -144,9 +160,26 @@
         detailTr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function postAction(action, key) {
+    function setRowBusy(key, busy) {
         var row = dataRow(key);
         if (!row) {
+            return;
+        }
+        row.querySelectorAll('.rateb-approval-btn[data-action]').forEach(function (btn) {
+            btn.disabled = !!busy;
+        });
+        var detailTr = detailRow(key);
+        if (detailTr) {
+            detailTr.querySelectorAll('.rateb-approval-btn[data-action]').forEach(function (btn) {
+                btn.disabled = !!busy;
+            });
+        }
+    }
+
+    function postAction(action, key) {
+        var row = dataRow(key);
+        if (!row || !key) {
+            flashToast(labels.error || 'Error', 'danger');
             return;
         }
         var urlMap = {
@@ -174,16 +207,20 @@
             form.append('type_filter', config.typeFilter);
         }
 
+        setRowBusy(key, true);
+
         fetch(url, {
             method: 'POST',
             body: form,
-            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf()
+            },
+            credentials: 'same-origin'
         })
-            .then(function (res) { return res.json(); })
+            .then(parseJsonResponse)
             .then(function (data) {
-                if (!data.ok) {
-                    throw new Error(data.message || 'Error');
-                }
                 if (action === 'approve' || action === 'reject') {
                     var detailTr = detailRow(key);
                     if (data.detail && data.detail.can_undo) {
@@ -211,9 +248,12 @@
                     }
                 } else if (action === 'undo') {
                     if (data.detail && data.detail.can_approve) {
-                        var pane = detailRow(key)?.querySelector('.rateb-approval-detail-body');
+                        var pane = detailRow(key);
                         if (pane) {
-                            pane.innerHTML = renderDetailBody(data.detail);
+                            var bodyEl = pane.querySelector('.rateb-approval-detail-body');
+                            if (bodyEl) {
+                                bodyEl.innerHTML = renderDetailBody(data.detail);
+                            }
                         }
                         row.classList.remove('rateb-approval-processed');
                     } else {
@@ -228,11 +268,14 @@
                     }
                 }
                 if (data.message) {
-                    flashToast(data.message);
+                    flashToast(data.message, 'success');
                 }
             })
             .catch(function (err) {
                 flashToast(err.message || 'Error', 'danger');
+            })
+            .finally(function () {
+                setRowBusy(key, false);
             });
     }
 
@@ -252,8 +295,13 @@
             return;
         }
         var action = btn.getAttribute('data-action');
+        if (action === 'close-detail') {
+            e.preventDefault();
+            closeAllDetails();
+            return;
+        }
         var key = rowKeyFromEl(btn);
-        if (!key && action !== 'close-detail') {
+        if (!key) {
             return;
         }
         if (action === 'view') {
@@ -261,16 +309,10 @@
             openDetail(key);
             return;
         }
-        if (action === 'close-detail') {
-            e.preventDefault();
-            closeAllDetails();
-            return;
-        }
         if (action === 'approve' || action === 'reject' || action === 'undo') {
             e.preventDefault();
-            if (btn.closest('.rateb-approval-detail-body') || btn.closest('.rateb-approval-ops')) {
-                postAction(action, key);
-            }
+            e.stopPropagation();
+            postAction(action, key);
         }
     });
 })();
