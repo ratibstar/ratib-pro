@@ -1,5 +1,6 @@
--- RATEB ERP — company branches (الفروع)
+-- RATEB ERP — company branches (UNHEX; deploy-safe)
 SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 CREATE TABLE IF NOT EXISTS rateb_branches (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -19,20 +20,19 @@ CREATE TABLE IF NOT EXISTS rateb_branches (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
-('View Branches', 'عرض الفروع', 'branches.view', 'branches', 'View company branch list', 'عرض قائمة فروع الشركة'),
-('Manage Branches', 'إدارة الفروع', 'branches.manage', 'branches', 'Create and edit company branches', 'إنشاء وتعديل فروع الشركة')
+('View Branches', 'View Branches', 'branches.view', 'branches', 'View company branch list', 'View company branch list'),
+('Manage Branches', 'Manage Branches', 'branches.manage', 'branches', 'Create and edit company branches', 'Create and edit company branches')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
-    name_ar = VALUES(name_ar),
-    module = VALUES(module),
-    description = VALUES(description),
-    description_ar = VALUES(description_ar);
+    description = VALUES(description);
 
-INSERT INTO rateb_role_permissions (role_id, permission_id)
+UPDATE rateb_permissions SET name_ar = CONVERT(UNHEX('D8B9D8B1D8B620D8A7D984D981D8B1D988D8B9') USING utf8mb4), description_ar = CONVERT(UNHEX('D8B9D8B1D8B620D982D8A7D8A6D985D8A920D981D8B1D988D8B920D8A7D984D8B4D8B1D983D8A9') USING utf8mb4) WHERE slug = 'branches.view';
+UPDATE rateb_permissions SET name_ar = CONVERT(UNHEX('D8A5D8AFD8A7D8B1D8A920D8A7D984D981D8B1D988D8B9') USING utf8mb4), description_ar = CONVERT(UNHEX('D8A5D986D8B4D8A7D8A120D988D8AAD8B9D8AFD98AD98420D981D8B1D988D8B920D8A7D984D8B4D8B1D983D8A9') USING utf8mb4) WHERE slug = 'branches.manage';
+
+INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r
 JOIN rateb_permissions p ON p.slug IN ('branches.view', 'branches.manage')
-WHERE r.slug IN ('super-admin', 'company-full-access')
-ON DUPLICATE KEY UPDATE role_id = role_id;
+WHERE r.slug IN ('super-admin', 'company-full-access');
 
 SET @cid = (SELECT id FROM rateb_companies WHERE slug = 'demo-company' LIMIT 1);
 
