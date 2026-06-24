@@ -74,6 +74,37 @@
         });
     }
 
+    function confirmAction(message, variant) {
+        var confirmFn = window.ratebConfirm || window.confirm;
+        if (confirmFn === window.confirm) {
+            return Promise.resolve(confirmFn(message));
+        }
+        return confirmFn(message, { variant: variant || 'primary' });
+    }
+
+    function confirmMessageForAction(action) {
+        if (action === 'approve') {
+            return labels.confirm_approve || 'Approve this request?';
+        }
+        if (action === 'reject') {
+            return labels.confirm_reject || 'Confirm reject?';
+        }
+        if (action === 'undo') {
+            return labels.confirm_undo || 'Confirm undo?';
+        }
+        return null;
+    }
+
+    function variantForAction(action) {
+        if (action === 'reject') {
+            return 'danger';
+        }
+        if (action === 'approve') {
+            return 'primary';
+        }
+        return 'primary';
+    }
+
     function rowUrls(row) {
         return {
             view: row.getAttribute('data-view-url') || '',
@@ -311,12 +342,7 @@
             return;
         }
 
-        var confirmMsg = null;
-        if (action === 'reject') {
-            confirmMsg = labels.confirm_reject || 'Confirm reject?';
-        } else if (action === 'undo') {
-            confirmMsg = labels.confirm_undo || 'Confirm undo?';
-        }
+        var confirmMsg = confirmMessageForAction(action);
 
         function runPost() {
             var form = new FormData();
@@ -360,11 +386,7 @@
         }
 
         if (confirmMsg) {
-            var confirmFn = window.ratebConfirm || window.confirm;
-            var promise = confirmFn === window.confirm
-                ? Promise.resolve(confirmFn(confirmMsg))
-                : confirmFn(confirmMsg, { variant: action === 'undo' ? 'primary' : 'danger' });
-            promise.then(function (ok) {
+            confirmAction(confirmMsg, variantForAction(action)).then(function (ok) {
                 if (ok) {
                     runPost();
                 }
@@ -386,6 +408,24 @@
     }
 
     root.addEventListener('click', function (e) {
+        var navLink = e.target.closest('a.rateb-approval-btn-edit, a.rateb-approval-btn-link');
+        if (navLink && root.contains(navLink)) {
+            e.preventDefault();
+            var href = navLink.getAttribute('href') || '';
+            if (!href) {
+                return;
+            }
+            var msg = navLink.classList.contains('rateb-approval-btn-edit')
+                ? (labels.confirm_edit || 'Open edit page?')
+                : (labels.confirm_open_ops || 'Open in operations?');
+            confirmAction(msg, 'primary').then(function (ok) {
+                if (ok) {
+                    window.open(href, '_blank', 'noopener,noreferrer');
+                }
+            });
+            return;
+        }
+
         var btn = e.target.closest('[data-action]');
         if (!btn || !root.contains(btn)) {
             return;
