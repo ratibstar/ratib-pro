@@ -11,6 +11,7 @@ $searchEnabled = $searchEnabled ?? true;
 $viewEnabled = $viewEnabled ?? false;
 $printEnabled = $printEnabled ?? false;
 $employeeReceiptEnabled = $employeeReceiptEnabled ?? false;
+$statusToggleEnabled = $statusToggleEnabled ?? false;
 $customsInvoiceActions = !empty($customsInvoiceActions);
 $actionsRoutePrefix = $actionsRoutePrefix ?? ($routePrefix ?? '');
 $showActionsCol = $viewEnabled || ($actionsEnabled ?? true);
@@ -225,6 +226,17 @@ $ratebRowRecordLabel = static function (array $row): string {
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary"><?php echo $docCount; ?></span>
                             <?php } ?>
                         </button>
+                        <?php } ?>
+                        <?php if (!empty($statusToggleEnabled)) {
+                            $rowActive = (string) ($row['status'] ?? '') === 'active';
+                            ?>
+                        <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/toggle-status'); ?>" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-<?php echo $rowActive ? 'warning' : 'success'; ?>"
+                                title="<?php echo Rateb\App\Core\View::escape($rowActive ? __('deactivate_branch') : __('activate_branch')); ?>">
+                                <i class="fas fa-<?php echo $rowActive ? 'pause' : 'play'; ?>"></i>
+                            </button>
+                        </form>
                         <?php } ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
                         <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">

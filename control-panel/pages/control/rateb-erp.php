@@ -83,6 +83,9 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
         <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
             <i class="fas fa-user-shield"></i> دخول الإدارة
         </a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/ops/branches'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
+            <i class="fas fa-store"></i> الفروع
+        </a>
     </div>
     <p class="small text-muted mb-0 mt-2"><code dir="ltr"><?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?></code></p>
 </div>

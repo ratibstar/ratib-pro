@@ -157,6 +157,7 @@ function control_rateb_erp_nav_links(): array
         'procurement' => ['route' => 'admin/procurement', 'label' => 'Procurement', 'icon' => 'fa-cart-shopping', 'description' => 'Purchase requests and orders across all companies.'],
         'inventory' => ['route' => 'admin/inventory', 'label' => 'Inventory', 'icon' => 'fa-boxes-stacked', 'description' => 'Stock levels, warehouses, and inventory value.'],
         'suppliers' => ['route' => 'admin/suppliers', 'label' => 'Suppliers', 'icon' => 'fa-truck-field', 'description' => 'Supplier directory and status.'],
+        'branches' => ['route' => 'admin/ops/branches', 'label' => 'Branches', 'icon' => 'fa-store', 'description' => 'Company branches — list, add, activate or deactivate per company.'],
         'assets' => ['route' => 'admin/assets', 'label' => 'Assets', 'icon' => 'fa-toolbox', 'description' => 'Fixed assets and medical equipment registry.'],
         'contracts' => ['route' => 'admin/contracts', 'label' => 'Contracts', 'icon' => 'fa-file-contract', 'description' => 'Healthcare and procurement contracts.'],
         'reports' => ['route' => 'admin/reports', 'label' => 'Reports', 'icon' => 'fa-chart-pie', 'description' => 'Platform analytics and export views.'],

@@ -205,6 +205,7 @@ return [
     'erp.procurement' => 'المشتريات',
     'erp.inventory' => 'المخزون',
     'erp.suppliers' => 'الموردون',
+    'erp.branches' => 'الفروع',
     'erp.assets' => 'الأصول',
     'erp.contracts' => 'العقود',
     'erp.reports' => 'التقارير',

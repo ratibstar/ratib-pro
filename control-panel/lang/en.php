@@ -205,6 +205,7 @@ return [
     'erp.procurement' => 'Procurement',
     'erp.inventory' => 'Inventory',
     'erp.suppliers' => 'Suppliers',
+    'erp.branches' => 'Branches',
     'erp.assets' => 'Assets',
     'erp.contracts' => 'Contracts',
     'erp.reports' => 'Reports',

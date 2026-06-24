@@ -1412,7 +1412,48 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
     {
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $data['title'] = __('branch_list');
+        $data['statusToggleEnabled'] = function_exists('rateb_can_manage_entity')
+            ? rateb_can_manage_entity('branches')
+            : true;
         return $data;
+    }
+
+    public function toggleStatus(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $row = $this->model->find($id);
+        if (!is_array($row)) {
+            \Rateb\App\Core\SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $current = (string) ($row['status'] ?? 'active');
+        $next = $current === 'active' ? 'inactive' : 'active';
+        if ($next === 'inactive') {
+            $companyId = (int) ($row['company_id'] ?? 0);
+            $activeCount = $this->model->count(['company_id' => $companyId, 'status' => 'active']);
+            if ($activeCount <= 1 && $current === 'active') {
+                \Rateb\App\Core\SessionManager::flash('error', __('branch_last_active'));
+                $this->redirect(rateb_url($this->routePrefix));
+            }
+        }
+        $this->model->update($id, ['status' => $next]);
+        (new \Rateb\App\Services\AuditService())->log('toggle_status', $this->entityName, $id, [
+            'from' => $current,
+            'to' => $next,
+        ]);
+        \Rateb\App\Core\SessionManager::flash(
+            'success',
+            $next === 'active' ? __('branch_activated') : __('branch_deactivated')
+        );
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     protected function collectData(): array
