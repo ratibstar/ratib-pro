@@ -58,18 +58,20 @@ final class WorkflowRecordService
             $companyId = rateb_resolve_ops_company_id();
         }
         $db = Database::connection();
-        $sql = sprintf(
-            'SELECT id, manager_approval FROM %s WHERE id = :id',
-            (string) $cfg['table']
-        );
+        $table = (string) $cfg['table'];
+        $sql = sprintf('SELECT * FROM %s WHERE id = :id', $table);
         $params = ['id' => $id];
         if ($companyId > 0 && !TenantContext::isSuperAdmin()) {
             $sql .= ' AND company_id = :cid';
             $params['cid'] = $companyId;
         }
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $existing = $stmt->fetch();
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $existing = $stmt->fetch();
+        } catch (\PDOException $e) {
+            throw DatabaseErrorService::toRuntimeException($e);
+        }
         if (!$existing) {
             throw new \RuntimeException(__('no_records'));
         }
@@ -79,11 +81,10 @@ final class WorkflowRecordService
         }
         $uid = (int) SessionManager::get('rateb_user_id');
         $table = (string) $cfg['table'];
-        $built = ManagerApprovalSchema::pendingApprovalUpdate($table, $id, $state, $uid, $companyId);
-        $stmt = $db->prepare($built['sql']);
-        $stmt->execute($built['params']);
-        if ($stmt->rowCount() < 1) {
-            throw new \RuntimeException(__('manager_approval_already_processed'));
+        try {
+            ManagerApprovalSchema::executePendingApproval($table, $id, $state, $uid, $companyId);
+        } catch (\PDOException $e) {
+            throw DatabaseErrorService::toRuntimeException($e);
         }
     }
 

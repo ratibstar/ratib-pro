@@ -624,10 +624,14 @@ final class AccountingService
         if (!$this->isPeriodOpen($companyId, (string) ($entry['entry_date'] ?? date('Y-m-d')))) {
             return 'fiscal_period_closed_block';
         }
-        (new JournalEntry())->update($entryId, [
-            'status' => 'posted',
-            'posted_at' => date('Y-m-d H:i:s'),
-        ]);
+        try {
+            (new JournalEntry())->update($entryId, [
+                'status' => 'posted',
+                'posted_at' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\PDOException $e) {
+            return 'journal_post_failed';
+        }
         return null;
     }
 

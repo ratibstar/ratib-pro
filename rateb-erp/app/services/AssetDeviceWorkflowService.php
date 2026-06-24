@@ -193,7 +193,7 @@ final class AssetDeviceWorkflowService
                 $db->rollBack();
                 return false;
             }
-            if ($assetId > 0) {
+            if ($assetId > 0 && ManagerApprovalSchema::hasColumn('rateb_assets', 'current_value')) {
                 $db->prepare('UPDATE rateb_assets SET current_value = :v WHERE id = :id AND company_id = :cid')
                     ->execute(['v' => $after, 'id' => $assetId, 'cid' => $companyId]);
             }

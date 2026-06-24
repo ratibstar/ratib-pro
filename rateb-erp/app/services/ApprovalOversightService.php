@@ -489,11 +489,13 @@ final class ApprovalOversightService
 
         if ($sourceKey === 'contract_renewal') {
             $svc = new ContractWorkflowService();
-            if ($action === 'approve') {
-                $svc->approveRenewal($recordId, $uid);
-            } else {
-                $svc->rejectRenewal($recordId, $uid);
-            }
+            $this->runDb(function () use ($svc, $recordId, $uid, $action): void {
+                if ($action === 'approve') {
+                    $svc->approveRenewal($recordId, $uid);
+                } else {
+                    $svc->rejectRenewal($recordId, $uid);
+                }
+            });
             return;
         }
 
@@ -944,13 +946,7 @@ final class ApprovalOversightService
         if ($table === '') {
             throw new \RuntimeException(__('invalid_request'));
         }
-        $built = ManagerApprovalSchema::resetApprovalUpdate($table, $id, $companyId);
-        $db = Database::connection();
-        $stmt = $db->prepare($built['sql']);
-        $stmt->execute($built['params']);
-        if ($stmt->rowCount() < 1) {
-            throw new \RuntimeException(__('manager_approval_already_processed'));
-        }
+        ManagerApprovalSchema::executeResetApproval($table, $id, $companyId);
     }
 
     private function resetHrStatus(string $table, int $id, int $companyId): void
@@ -1023,13 +1019,7 @@ final class ApprovalOversightService
     {
         $state = $action === 'approve' ? 'approved' : 'rejected';
         $this->runDb(function () use ($table, $id, $companyId, $state, $uid): void {
-            $built = ManagerApprovalSchema::pendingApprovalUpdate($table, $id, $state, $uid, $companyId);
-            $db = Database::connection();
-            $stmt = $db->prepare($built['sql']);
-            $stmt->execute($built['params']);
-            if ($stmt->rowCount() < 1) {
-                throw new \RuntimeException(__('manager_approval_already_processed'));
-            }
+            ManagerApprovalSchema::executePendingApproval($table, $id, $state, $uid, $companyId);
         });
     }
 
