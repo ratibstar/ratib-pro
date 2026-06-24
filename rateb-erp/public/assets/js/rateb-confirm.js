@@ -46,11 +46,6 @@
             modalEl.setAttribute('aria-hidden', 'true');
         }
 
-        bsModal = window.ratebModalPrepare ? window.ratebModalPrepare(modalEl) : bootstrap.Modal.getOrCreateInstance(modalEl);
-        if (!bsModal) {
-            return false;
-        }
-
         modalEl.addEventListener('hidden.bs.modal', function () {
             if (resolvePending) {
                 settle(alertMode ? undefined : false);
@@ -64,7 +59,10 @@
             var resolve = resolvePending;
             resolvePending = null;
             var result = alertMode ? undefined : true;
-            bsModal.hide();
+            var inst = getBsModal();
+            if (inst) {
+                inst.hide();
+            }
             resolve(result);
         });
 
@@ -74,7 +72,10 @@
             }
             var resolve = resolvePending;
             resolvePending = null;
-            bsModal.hide();
+            var inst = getBsModal();
+            if (inst) {
+                inst.hide();
+            }
             resolve(false);
         });
 
@@ -113,6 +114,16 @@
         }
     }
 
+    function getBsModal() {
+        if (!modalEl && !initModal()) {
+            return null;
+        }
+        if (!bsModal) {
+            bsModal = window.ratebModalPrepare ? window.ratebModalPrepare(modalEl) : null;
+        }
+        return bsModal;
+    }
+
     function show(message, options) {
         options = Object.assign({}, options || {}, { message: message || '' });
         if (!modalEl && !initModal()) {
@@ -125,7 +136,18 @@
         applyOptions(options);
         return new Promise(function (resolve) {
             resolvePending = resolve;
-            bsModal.show();
+            var inst = getBsModal();
+            if (!inst) {
+                if (options.alert) {
+                    window.alert(message);
+                    resolve(undefined);
+                } else {
+                    resolve(window.confirm(message));
+                }
+                resolvePending = null;
+                return;
+            }
+            inst.show();
         });
     }
 

@@ -3,8 +3,6 @@
 
     var modalEl = null;
     var editModalEl = null;
-    var docsModal = null;
-    var editModal = null;
     var bodyEl = null;
     var titleEl = null;
     var editForm = null;
@@ -134,10 +132,6 @@
         }
 
         editModalEl = document.getElementById('ratebEntityEditDocModal');
-        docsModal = window.ratebModalPrepare(modalEl);
-        if (editModalEl) {
-            editModal = window.ratebModalPrepare(editModalEl);
-        }
 
         bodyEl = modalEl.querySelector('[data-entity-docs-body]');
         titleEl = modalEl.querySelector('[data-entity-docs-title]');
@@ -180,13 +174,15 @@
 
         bodyEl.addEventListener('click', function (e) {
             var editBtn = e.target.closest('.js-edit-doc');
-            if (editBtn && editForm && editModal) {
+            if (editBtn && editForm && editModalEl) {
                 e.preventDefault();
                 var docId = editBtn.getAttribute('data-doc-id');
                 editTitleInput.value = editBtn.getAttribute('data-doc-title') || '';
                 editFileLabel.textContent = editBtn.getAttribute('data-doc-file') || '';
                 editForm.action = activeDocsRoutePrefix + docId;
-                editModal.show();
+                if (window.ratebModalShow) {
+                    window.ratebModalShow(editModalEl);
+                }
                 return;
             }
 
@@ -202,8 +198,8 @@
                 e.preventDefault();
                 postForm(editForm)
                     .then(function (data) {
-                        if (editModal) {
-                            editModal.hide();
+                        if (window.ratebModalHide) {
+                            window.ratebModalHide(editModalEl);
                         }
                         handleActionResult(data);
                     })
@@ -223,12 +219,14 @@
             var routePrefix = btn.getAttribute('data-route-prefix') || '';
             var entityId = parseInt(btn.getAttribute('data-entity-id') || '0', 10);
             var label = btn.getAttribute('data-record-label') || '';
-            if (!routePrefix || entityId < 1 || !docsModal) {
+            if (!routePrefix || entityId < 1) {
                 return;
             }
             var docsTitle = btn.getAttribute('data-docs-title') || '';
             loadPanel(routePrefix, entityId, docsTitle ? docsTitle + ' — ' + label : label);
-            docsModal.show();
+            if (window.ratebModalShow) {
+                window.ratebModalShow(modalEl);
+            }
         });
     }
 

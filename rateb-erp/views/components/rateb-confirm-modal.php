@@ -11,7 +11,7 @@
                     <i class="fas fa-question-circle me-2" data-rateb-confirm-icon aria-hidden="true"></i>
                     <span data-rateb-confirm-title><?php echo __('confirm_action'); ?></span>
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo __('close'); ?>"></button>
+                <button type="button" class="btn-close" data-rateb-modal-close aria-label="<?php echo __('close'); ?>"></button>
             </div>
             <div class="modal-body pt-2 pb-3" data-rateb-confirm-message></div>
             <div class="modal-footer border-0 pt-0 gap-2">

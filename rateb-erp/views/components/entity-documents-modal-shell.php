@@ -7,13 +7,13 @@
                     <i class="fas fa-paperclip"></i>
                     <span data-entity-docs-title><?php echo __('entity_documents'); ?></span>
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-rateb-modal-close aria-label="Close"></button>
             </div>
             <div class="modal-body" data-entity-docs-body>
                 <div class="text-center text-muted py-4"><?php echo __('loading'); ?>…</div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo __('close'); ?></button>
+                <button type="button" class="btn btn-secondary" data-rateb-modal-close><?php echo __('close'); ?></button>
             </div>
         </div>
     </div>
@@ -27,7 +27,7 @@
             <input type="hidden" name="rateb_doc_modal" value="1">
             <div class="modal-header">
                 <h5 class="modal-title" id="ratebEntityEditDocModalLabel"><i class="fas fa-edit"></i> <?php echo __('edit_file'); ?></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-rateb-modal-close aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
@@ -44,7 +44,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo __('cancel'); ?></button>
+                <button type="button" class="btn btn-secondary" data-rateb-modal-close><?php echo __('cancel'); ?></button>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
             </div>
         </form>
