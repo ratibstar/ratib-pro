@@ -1,12 +1,6 @@
--- RATEB ERP — HQ permission to see/manage all company branches (UNHEX; deploy-safe)
+-- RATEB ERP — fix Arabic labels for branches.access_all if 122 UPDATE failed
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
-
-INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
-('Access All Branches', 'Access All Branches', 'branches.access_all', 'branches', 'View and operate on all branches of the company', 'View and operate on all branches of the company')
-ON DUPLICATE KEY UPDATE
-    name = VALUES(name),
-    description = VALUES(description);
 
 UPDATE rateb_permissions SET
     name_ar = CONVERT(UNHEX('D8A7D984D988D8B5D988D98420D984D983D98420D8A7D984D981D8B1D988D8B9') USING utf8mb4),
