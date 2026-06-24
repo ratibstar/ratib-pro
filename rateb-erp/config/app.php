@@ -264,6 +264,9 @@ if (!function_exists('rateb_bootstrap_ops_tenant')) {
     {
         $cid = \Rateb\App\Core\TenantContext::companyId();
         if ($cid !== null && $cid > 0) {
+            if (function_exists('rateb_bootstrap_branch_context')) {
+                rateb_bootstrap_branch_context((int) $cid);
+            }
             return;
         }
         $sessionCid = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
@@ -276,6 +279,9 @@ if (!function_exists('rateb_bootstrap_ops_tenant')) {
             if ($id > 0) {
                 \Rateb\App\Core\TenantContext::setCompanyId($id);
             }
+        }
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context();
         }
     }
 }
@@ -662,6 +668,69 @@ if (!function_exists('rateb_is_super_admin')) {
     }
 }
 
+if (!function_exists('rateb_bootstrap_branch_context')) {
+    function rateb_bootstrap_branch_context(?int $companyId = null): void
+    {
+        (new \Rateb\App\Services\BranchAccessService())->bootstrap($companyId);
+    }
+}
+
+if (!function_exists('rateb_branch_access_all')) {
+    function rateb_branch_access_all(): bool
+    {
+        rateb_bootstrap_branch_context();
+        return \Rateb\App\Core\BranchContext::accessAll();
+    }
+}
+
+if (!function_exists('rateb_allowed_branch_ids')) {
+    /** @return array<int, int> */
+    function rateb_allowed_branch_ids(): array
+    {
+        return (new \Rateb\App\Services\BranchAccessService())->allowedBranchIds();
+    }
+}
+
+if (!function_exists('rateb_can_access_branch')) {
+    function rateb_can_access_branch(int $branchId): bool
+    {
+        return (new \Rateb\App\Services\BranchAccessService())->canAccessBranch($branchId);
+    }
+}
+
+if (!function_exists('rateb_can_manage_all_branches')) {
+    function rateb_can_manage_all_branches(): bool
+    {
+        return (new \Rateb\App\Services\BranchAccessService())->canManageAllBranches();
+    }
+}
+
+if (!function_exists('rateb_branch_filter_sql')) {
+    /**
+     * @return array{0:string,1:array<string,mixed>}
+     */
+    function rateb_branch_filter_sql(string $alias = '', string $column = 'branch_id'): array
+    {
+        rateb_bootstrap_branch_context();
+        if (\Rateb\App\Core\BranchContext::accessAll()) {
+            return ['', []];
+        }
+        $ids = \Rateb\App\Core\BranchContext::allowedIds();
+        if ($ids === []) {
+            return [' AND 1=0', []];
+        }
+        $col = ($alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '') . preg_replace('/[^a-z_]/', '', $column);
+        $parts = [];
+        $params = [];
+        foreach ($ids as $i => $id) {
+            $key = 'bf_' . $i;
+            $parts[] = ':' . $key;
+            $params[$key] = $id;
+        }
+        return [' AND ' . $col . ' IN (' . implode(',', $parts) . ')', $params];
+    }
+}
+
 /** Resolve active company for ops routes (session, then ?company_id=, then ops session). */
 if (!function_exists('rateb_ops_company_exists')) {
     function rateb_ops_company_exists(int $companyId): bool
@@ -686,6 +755,7 @@ if (!function_exists('rateb_clear_ops_company_session')) {
             \Rateb\App\Core\SessionManager::set('rateb_company_id', 0);
         }
         \Rateb\App\Core\TenantContext::setCompanyId(null);
+        \Rateb\App\Core\BranchContext::reset();
     }
 }
 

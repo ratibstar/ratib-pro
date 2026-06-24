@@ -5,6 +5,9 @@ declare(strict_types=1);
  * Company operations nav — full CRUD routes under unified /admin shell.
  * Shown for company users and super admins (permissions + plan modules apply).
  */
+if (function_exists('rateb_bootstrap_ops_tenant')) {
+    rateb_bootstrap_ops_tenant();
+}
 $opsSection(__('procurement'), [
     ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
@@ -65,10 +68,13 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
 ], 'fa-briefcase');
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');
-$opsSection(__('branches'), [
+$branchNavItems = [
     ['branches', 'branch_list', 'fa-list', '', 'branches.view'],
-    ['branches/create', 'add_branch', 'fa-plus', '', 'branches.manage'],
-], 'fa-store');
+];
+if (!function_exists('rateb_can_manage_all_branches') || rateb_can_manage_all_branches()) {
+    $branchNavItems[] = ['branches/create', 'add_branch', 'fa-plus', '', 'branches.manage'];
+}
+$opsSection(__('branches'), $branchNavItems, 'fa-store');
 if (rateb_is_super_admin()) {
     echo '<a href="' . rateb_url(rateb_app_route('branches/setup-check')) . '" class="rateb-nav-link' . ($navActive(rateb_app_route('branches/setup-check')) ? ' active' : '') . '">';
     echo '<i class="fas fa-clipboard-check"></i><span>' . __('branch_setup_check') . '</span></a>';

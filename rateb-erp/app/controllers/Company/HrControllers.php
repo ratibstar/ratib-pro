@@ -66,6 +66,12 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
     protected function collectData(): array
     {
         $data = parent::collectData();
+        if (empty($data['branch_id']) && function_exists('rateb_allowed_branch_ids')) {
+            $ids = rateb_allowed_branch_ids();
+            if (count($ids) === 1) {
+                $data['branch_id'] = $ids[0];
+            }
+        }
         $this->assignDocumentCode($data, DocumentCodeService::PREFIX_EMPLOYEE, 'employee_code');
         return $data;
     }

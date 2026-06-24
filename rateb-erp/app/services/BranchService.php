@@ -116,6 +116,13 @@ final class BranchService
             }
             $out[] = ['value' => (int) $row['id'], 'label' => $label];
         }
+        if (function_exists('rateb_branch_access_all') && !rateb_branch_access_all()) {
+            $allowed = array_flip(rateb_allowed_branch_ids());
+            $out = array_values(array_filter(
+                $out,
+                static fn (array $opt): bool => isset($allowed[(int) ($opt['value'] ?? 0)])
+            ));
+        }
         return $out;
     }
 

@@ -1370,6 +1370,12 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
     protected function collectData(): array
     {
         $data = parent::collectData();
+        if (empty($data['branch_id']) && function_exists('rateb_allowed_branch_ids')) {
+            $ids = rateb_allowed_branch_ids();
+            if (count($ids) === 1) {
+                $data['branch_id'] = $ids[0];
+            }
+        }
         $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_WAREHOUSE, 'code');
         return $data;
     }
@@ -1418,15 +1424,18 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
         }
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $data['title'] = __('branch_list');
-        $data['statusToggleEnabled'] = function_exists('rateb_can_manage_entity')
-            ? rateb_can_manage_entity('branches')
-            : true;
+        $data['statusToggleEnabled'] = function_exists('rateb_can_manage_all_branches')
+            && rateb_can_manage_all_branches();
         $companyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
         $branchSvc = new \Rateb\App\Services\BranchService();
         $stats = $branchSvc->stats($companyId);
         $data['branchStats'] = $stats;
         $data['exportRoute'] = rateb_url($this->routePrefix . '/export');
-        $data['createEnabled'] = ($data['createEnabled'] ?? true) && $branchSvc->canAddBranch($companyId);
+        $canManageAll = function_exists('rateb_can_manage_all_branches') && rateb_can_manage_all_branches();
+        $data['createEnabled'] = ($data['createEnabled'] ?? true)
+            && $canManageAll
+            && $branchSvc->canAddBranch($companyId);
+        $data['actionsEnabled'] = ($data['actionsEnabled'] ?? true) && $canManageAll;
         return $data;
     }
 
@@ -1436,6 +1445,10 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
             rateb_bootstrap_ops_tenant();
         }
         $companyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        if (!function_exists('rateb_can_manage_all_branches') || !rateb_can_manage_all_branches()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('branch_access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         if ($companyId > 0 && !(new \Rateb\App\Services\BranchService())->canAddBranch($companyId)) {
             \Rateb\App\Core\SessionManager::flash('error', __('branch_limit_reached'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -1464,6 +1477,10 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
     public function toggleStatus(array $params): void
     {
         $this->guardManage();
+        if (!function_exists('rateb_can_manage_all_branches') || !rateb_can_manage_all_branches()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('branch_access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         if (!$this->validateCsrf()) {
             \Rateb\App\Core\SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));

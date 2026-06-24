@@ -16,6 +16,9 @@ abstract class Model
     protected array $searchable = [];
     protected bool $tenantScoped = false;
     protected string $tenantColumn = 'company_id';
+    /** Apply branch_id IN (...) filter when column exists on table. */
+    protected bool $branchScoped = false;
+    protected string $branchColumn = 'branch_id';
 
     public function __construct()
     {
@@ -85,6 +88,15 @@ abstract class Model
         return [" AND {$col} = :admin_company_filter", ['admin_company_filter' => $filterId]];
     }
 
+    /** @return array{0:string,1:array<string,mixed>} */
+    protected function branchFilterClause(string $alias = ''): array
+    {
+        if (!$this->branchScoped || !function_exists('rateb_branch_filter_sql')) {
+            return ['', []];
+        }
+        return rateb_branch_filter_sql($alias, $this->branchColumn);
+    }
+
     public function find(int $id): ?array
     {
         $sql = "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = :id";
@@ -93,6 +105,10 @@ abstract class Model
         [$extra, $extraParams] = $this->tenantFilterClause();
         $sql .= $extra;
         $params = array_merge($params, $extraParams);
+
+        [$branchExtra, $branchParams] = $this->branchFilterClause();
+        $sql .= $branchExtra;
+        $params = array_merge($params, $branchParams);
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -108,6 +124,10 @@ abstract class Model
         [$extra, $extraParams] = $this->tenantFilterClause();
         $sql .= $extra;
         $params = array_merge($params, $extraParams);
+
+        [$branchExtra, $branchParams] = $this->branchFilterClause();
+        $sql .= $branchExtra;
+        $params = array_merge($params, $branchParams);
 
         foreach ($filters as $column => $value) {
             if ($value === null || $value === '') {
@@ -141,6 +161,10 @@ abstract class Model
         [$extra, $extraParams] = $this->tenantFilterClause();
         $sql .= $extra;
         $params = array_merge($params, $extraParams);
+
+        [$branchExtra, $branchParams] = $this->branchFilterClause();
+        $sql .= $branchExtra;
+        $params = array_merge($params, $branchParams);
 
         foreach ($filters as $column => $value) {
             if ($value === null || $value === '') {

@@ -233,6 +233,8 @@ return [
     'branch_check_users_link' => 'ربط المستخدمين بالفروع',
     'branch_check_employees_link' => 'ربط الموظفين بالفروع',
     'branch_setup_complete' => 'اكتملت مرحلة الربط الأساسية للفروع.',
+    'branch_access_denied' => 'لا تملك صلاحية إدارة كل فروع الشركة.',
+    'branches_access_all' => 'الوصول لكل الفروع',
     'branch_check_limit' => 'عداد الفروع وحد الباقة',
     'branch_check_export' => 'تصدير Excel وطباعة',
     'branch_check_main_branch' => 'الفرع الرئيسي التلقائي',

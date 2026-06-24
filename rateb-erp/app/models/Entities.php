@@ -9,6 +9,7 @@ final class Warehouse extends Model
 {
     protected string $table = 'rateb_warehouses';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = ['name', 'code', 'location', 'manager_name', 'status', 'branch_id'];
 }
 
@@ -16,6 +17,8 @@ final class Branch extends Model
 {
     protected string $table = 'rateb_branches';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
+    protected string $branchColumn = 'id';
     protected array $fillable = ['name', 'code', 'address', 'phone', 'email', 'map_url', 'status', 'is_main'];
 }
 

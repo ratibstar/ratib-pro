@@ -16,6 +16,7 @@ final class Employee extends Model
 {
     protected string $table = 'rateb_employees';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'employee_code', 'name', 'email', 'phone', 'national_id',
         'department_id', 'branch_id', 'job_title', 'hire_date', 'salary_base', 'user_id', 'status', 'notes',

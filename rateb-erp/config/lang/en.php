@@ -233,6 +233,8 @@ return [
     'branch_check_users_link' => 'Link users to branches',
     'branch_check_employees_link' => 'Link employees to branches',
     'branch_setup_complete' => 'Core branch linking phase is complete.',
+    'branch_access_denied' => 'You do not have permission to manage all company branches.',
+    'branches_access_all' => 'Access all branches',
     'branch_check_limit' => 'Branch counter and plan limit',
     'branch_check_export' => 'Excel export and print',
     'branch_check_main_branch' => 'Auto main branch',
