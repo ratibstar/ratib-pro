@@ -180,6 +180,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/lang.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/rateb-modal.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/app.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>"></script>

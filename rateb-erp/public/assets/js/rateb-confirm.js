@@ -46,29 +46,12 @@
             modalEl.setAttribute('aria-hidden', 'true');
         }
 
-        bsModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
-            backdrop: true,
-            keyboard: true,
-            focus: false
-        });
-
-        modalEl.addEventListener('show.bs.modal', function () {
-            modalEl.removeAttribute('aria-hidden');
-            modalEl.setAttribute('aria-modal', 'true');
-        }, true);
-
-        modalEl.addEventListener('shown.bs.modal', function () {
-            modalEl.removeAttribute('aria-hidden');
-            modalEl.setAttribute('aria-modal', 'true');
-            var focusTarget = okBtn && !okBtn.classList.contains('d-none') ? okBtn : cancelBtn;
-            if (focusTarget) {
-                focusTarget.focus({ preventScroll: true });
-            }
-        });
+        bsModal = window.ratebModalPrepare ? window.ratebModalPrepare(modalEl) : bootstrap.Modal.getOrCreateInstance(modalEl);
+        if (!bsModal) {
+            return false;
+        }
 
         modalEl.addEventListener('hidden.bs.modal', function () {
-            modalEl.setAttribute('aria-hidden', 'true');
-            modalEl.removeAttribute('aria-modal');
             if (resolvePending) {
                 settle(alertMode ? undefined : false);
             }

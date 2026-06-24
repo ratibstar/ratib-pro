@@ -1,57 +1,19 @@
 (function () {
     'use strict';
 
-    var modalEl = document.getElementById('ratebEntityDocsModal');
-    if (!modalEl) {
-        return;
-    }
-
-    var editModalEl = document.getElementById('ratebEntityEditDocModal');
-    [modalEl, editModalEl].forEach(function (el) {
-        if (el && el.parentElement && el.parentElement !== document.body) {
-            document.body.appendChild(el);
-        }
-    });
-
-    var bodyEl = modalEl.querySelector('[data-entity-docs-body]');
-    var titleEl = modalEl.querySelector('[data-entity-docs-title]');
-    var editForm = document.getElementById('ratebEntityEditDocForm');
-    var editTitleInput = document.getElementById('ratebEntityEditDocTitle');
-    var editFileLabel = document.getElementById('ratebEntityEditDocCurrent');
+    var modalEl = null;
+    var editModalEl = null;
+    var docsModal = null;
+    var editModal = null;
+    var bodyEl = null;
+    var titleEl = null;
+    var editForm = null;
+    var editTitleInput = null;
+    var editFileLabel = null;
     var activeBtn = null;
     var activeRoutePrefix = '';
     var activeEntityId = 0;
     var activeDocsRoutePrefix = '';
-
-    function initModalA11y(el) {
-        if (!el || typeof bootstrap === 'undefined') {
-            return;
-        }
-        if (!el.classList.contains('show')) {
-            el.setAttribute('aria-hidden', 'true');
-        }
-        el.addEventListener('show.bs.modal', function () {
-            el.removeAttribute('aria-hidden');
-            el.setAttribute('aria-modal', 'true');
-        }, true);
-        el.addEventListener('shown.bs.modal', function () {
-            el.removeAttribute('aria-hidden');
-            el.setAttribute('aria-modal', 'true');
-            var focusTarget = el.querySelector('.btn-close')
-                || el.querySelector('[data-bs-dismiss="modal"]')
-                || el.querySelector('.btn-primary');
-            if (focusTarget) {
-                focusTarget.focus({ preventScroll: true });
-            }
-        });
-        el.addEventListener('hidden.bs.modal', function () {
-            el.setAttribute('aria-hidden', 'true');
-            el.removeAttribute('aria-modal');
-        });
-    }
-
-    initModalA11y(modalEl);
-    initModalA11y(editModalEl);
 
     function panelUrl(routePrefix, entityId) {
         return routePrefix.replace(/\/$/, '') + '/' + entityId + '/documents/panel';
@@ -76,13 +38,21 @@
     }
 
     function showAlert(message, isError) {
-        if (!message) {
+        if (!message || !bodyEl) {
             return;
         }
         var alert = document.createElement('div');
         alert.className = 'alert alert-' + (isError ? 'danger' : 'success') + ' alert-dismissible fade show';
         alert.setAttribute('role', 'alert');
-        alert.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close';
+        closeBtn.setAttribute('aria-label', 'Close');
+        closeBtn.addEventListener('click', function () {
+            alert.remove();
+        });
+        alert.appendChild(document.createTextNode(message));
+        alert.appendChild(closeBtn);
         bodyEl.insertBefore(alert, bodyEl.firstChild);
         window.setTimeout(function () {
             if (alert.parentNode) {
@@ -157,90 +127,114 @@
             });
     }
 
-    bodyEl.addEventListener('submit', function (e) {
-        var form = e.target;
-        if (!form || form.tagName !== 'FORM') {
+    function init() {
+        modalEl = document.getElementById('ratebEntityDocsModal');
+        if (!modalEl) {
             return;
         }
-        if (form.matches('[data-entity-docs-upload], [data-entity-docs-delete]')) {
-            e.preventDefault();
-            if (form.hasAttribute('data-entity-docs-delete')) {
-                var msg = form.getAttribute('data-confirm') || 'Confirm?';
-                var confirmFn = window.ratebConfirm || window.confirm;
-                var promise = confirmFn === window.confirm
-                    ? Promise.resolve(confirmFn(msg))
-                    : confirmFn(msg, { variant: 'danger' });
-                promise.then(function (ok) {
-                    if (!ok) {
-                        return;
-                    }
-                    postForm(form)
-                        .then(handleActionResult)
-                        .catch(function (err) {
-                            showAlert(err && err.message ? err.message : 'Error', true);
-                        });
-                });
+
+        editModalEl = document.getElementById('ratebEntityEditDocModal');
+        docsModal = window.ratebModalPrepare(modalEl);
+        if (editModalEl) {
+            editModal = window.ratebModalPrepare(editModalEl);
+        }
+
+        bodyEl = modalEl.querySelector('[data-entity-docs-body]');
+        titleEl = modalEl.querySelector('[data-entity-docs-title]');
+        editForm = document.getElementById('ratebEntityEditDocForm');
+        editTitleInput = document.getElementById('ratebEntityEditDocTitle');
+        editFileLabel = document.getElementById('ratebEntityEditDocCurrent');
+
+        bodyEl.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!form || form.tagName !== 'FORM') {
                 return;
             }
-            postForm(form)
-                .then(handleActionResult)
-                .catch(function (err) {
-                    showAlert(err && err.message ? err.message : 'Error', true);
-                });
-        }
-    });
+            if (form.matches('[data-entity-docs-upload], [data-entity-docs-delete]')) {
+                e.preventDefault();
+                if (form.hasAttribute('data-entity-docs-delete')) {
+                    var msg = form.getAttribute('data-confirm') || 'Confirm?';
+                    var confirmFn = window.ratebConfirm || window.confirm;
+                    var promise = confirmFn === window.confirm
+                        ? Promise.resolve(confirmFn(msg))
+                        : confirmFn(msg, { variant: 'danger' });
+                    promise.then(function (ok) {
+                        if (!ok) {
+                            return;
+                        }
+                        postForm(form)
+                            .then(handleActionResult)
+                            .catch(function (err) {
+                                showAlert(err && err.message ? err.message : 'Error', true);
+                            });
+                    });
+                    return;
+                }
+                postForm(form)
+                    .then(handleActionResult)
+                    .catch(function (err) {
+                        showAlert(err && err.message ? err.message : 'Error', true);
+                    });
+            }
+        });
 
-    bodyEl.addEventListener('click', function (e) {
-        var editBtn = e.target.closest('.js-edit-doc');
-        if (editBtn && editForm && editModalEl) {
-            e.preventDefault();
-            var docId = editBtn.getAttribute('data-doc-id');
-            editTitleInput.value = editBtn.getAttribute('data-doc-title') || '';
-            editFileLabel.textContent = editBtn.getAttribute('data-doc-file') || '';
-            editForm.action = activeDocsRoutePrefix + docId;
-            bootstrap.Modal.getOrCreateInstance(editModalEl, { focus: false }).show();
-            return;
+        bodyEl.addEventListener('click', function (e) {
+            var editBtn = e.target.closest('.js-edit-doc');
+            if (editBtn && editForm && editModal) {
+                e.preventDefault();
+                var docId = editBtn.getAttribute('data-doc-id');
+                editTitleInput.value = editBtn.getAttribute('data-doc-title') || '';
+                editFileLabel.textContent = editBtn.getAttribute('data-doc-file') || '';
+                editForm.action = activeDocsRoutePrefix + docId;
+                editModal.show();
+                return;
+            }
+
+            var fileLink = e.target.closest('.rateb-doc-actions a[href]');
+            if (fileLink) {
+                e.preventDefault();
+                window.open(fileLink.href, '_blank', 'noopener,noreferrer');
+            }
+        });
+
+        if (editForm) {
+            editForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                postForm(editForm)
+                    .then(function (data) {
+                        if (editModal) {
+                            editModal.hide();
+                        }
+                        handleActionResult(data);
+                    })
+                    .catch(function (err) {
+                        showAlert(err && err.message ? err.message : 'Error', true);
+                    });
+            });
         }
 
-        var fileLink = e.target.closest('.rateb-doc-actions a[href]');
-        if (fileLink) {
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.js-entity-docs-open');
+            if (!btn) {
+                return;
+            }
             e.preventDefault();
-            window.open(fileLink.href, '_blank', 'noopener,noreferrer');
-        }
-    });
-
-    if (editForm) {
-        editForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            postForm(editForm)
-                .then(function (data) {
-                    var inst = bootstrap.Modal.getInstance(editModalEl);
-                    if (inst) {
-                        inst.hide();
-                    }
-                    handleActionResult(data);
-                })
-                .catch(function (err) {
-                    showAlert(err && err.message ? err.message : 'Error', true);
-                });
+            activeBtn = btn;
+            var routePrefix = btn.getAttribute('data-route-prefix') || '';
+            var entityId = parseInt(btn.getAttribute('data-entity-id') || '0', 10);
+            var label = btn.getAttribute('data-record-label') || '';
+            if (!routePrefix || entityId < 1 || !docsModal) {
+                return;
+            }
+            var docsTitle = btn.getAttribute('data-docs-title') || '';
+            loadPanel(routePrefix, entityId, docsTitle ? docsTitle + ' — ' + label : label);
+            docsModal.show();
         });
     }
 
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.js-entity-docs-open');
-        if (!btn) {
-            return;
-        }
-        e.preventDefault();
-        activeBtn = btn;
-        var routePrefix = btn.getAttribute('data-route-prefix') || '';
-        var entityId = parseInt(btn.getAttribute('data-entity-id') || '0', 10);
-        var label = btn.getAttribute('data-record-label') || '';
-        if (!routePrefix || entityId < 1) {
-            return;
-        }
-        var docsTitle = btn.getAttribute('data-docs-title') || '';
-        loadPanel(routePrefix, entityId, docsTitle ? docsTitle + ' — ' + label : label);
-        bootstrap.Modal.getOrCreateInstance(modalEl, { focus: false }).show();
-    });
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
