@@ -79,42 +79,171 @@ final class AccountingService
         return $id > 0 ? $id : null;
     }
 
+    /** @return array<string, mixed>|null */
+    private function findCoaByCode(?int $companyId, string $code): ?array
+    {
+        $pdo = Database::connection();
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            $stmt = $pdo->prepare(
+                'SELECT * FROM rateb_chart_of_accounts WHERE company_id IS NULL AND code = :code LIMIT 1'
+            );
+            $stmt->execute(['code' => $code]);
+        } else {
+            $stmt = $pdo->prepare(
+                'SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1'
+            );
+            $stmt->execute(['cid' => $companyId, 'code' => $code]);
+        }
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    /** @param array<string, mixed> $def */
+    private function insertCoaRow(?int $companyId, array $def, ?int $parentId = null): int
+    {
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            'INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
+             VALUES (:cid, :code, :name, :name_ar, :type, :parent, 1)'
+        );
+        $stmt->execute([
+            'cid' => $this->normalizeCompanyId($companyId),
+            'code' => (string) ($def['code'] ?? ''),
+            'name' => (string) ($def['name'] ?? ''),
+            'name_ar' => $def['name_ar'] ?? null,
+            'type' => (string) ($def['account_type'] ?? $def['type'] ?? 'asset'),
+            'parent' => $parentId,
+        ]);
+        return (int) $pdo->lastInsertId();
+    }
+
+    /** @param array<string, mixed> $def */
+    private function touchCoaRow(int $id, array $def): void
+    {
+        Database::connection()->prepare(
+            'UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id'
+        )->execute([
+            'id' => $id,
+            'name' => (string) ($def['name'] ?? ''),
+            'name_ar' => $def['name_ar'] ?? null,
+        ]);
+    }
+
+    /**
+     * Ensure a company COA code exists (clone platform template or create from defaults).
+     *
+     * @param array<string, int> $codeToId
+     */
+    private function provisionCompanyCoaCode(int $companyId, string $code, array $def, array $codeToId): int
+    {
+        $existing = $this->findCoaByCode($companyId, $code);
+        if ($existing) {
+            return (int) $existing['id'];
+        }
+        $parentId = null;
+        if (!empty($def['parent'])) {
+            if (isset($codeToId[$def['parent']])) {
+                $parentId = $codeToId[$def['parent']];
+            } else {
+                $parentRow = $this->findCoaByCode($companyId, (string) $def['parent']);
+                if ($parentRow) {
+                    $parentId = (int) $parentRow['id'];
+                }
+            }
+        }
+        $template = $this->findCoaByCode(null, $code);
+        try {
+            if ($template) {
+                return $this->insertCoaRow($companyId, [
+                    'code' => $code,
+                    'name' => (string) $template['name'],
+                    'name_ar' => $template['name_ar'] ?? ($def['name_ar'] ?? null),
+                    'account_type' => (string) ($template['account_type'] ?? $def['type'] ?? 'asset'),
+                ], $parentId);
+            }
+            return $this->insertCoaRow($companyId, $def, $parentId);
+        } catch (\Throwable $e) {
+            $again = $this->findCoaByCode($companyId, $code);
+            if ($again) {
+                return (int) $again['id'];
+            }
+            throw $e;
+        }
+    }
+
+    public function ensureCompanyCoaCode(int $companyId, string $code): ?int
+    {
+        $companyId = $this->normalizeCompanyId($companyId) ?? 0;
+        if ($companyId < 1) {
+            return null;
+        }
+        $def = null;
+        foreach (self::DEFAULT_ACCOUNTS as $d) {
+            if ($d['code'] === $code) {
+                $def = $d;
+                break;
+            }
+        }
+        if ($def === null) {
+            $row = $this->findCoaByCode($companyId, $code);
+            return $row ? (int) $row['id'] : null;
+        }
+        $id = $this->provisionCompanyCoaCode($companyId, $code, $def, []);
+        return $id > 0 ? $id : null;
+    }
+
+    /** Company-owned account or shared platform template (company_id IS NULL). */
+    private function accountUsableForCompany(int $accountId, int $companyId): bool
+    {
+        if ($accountId < 1 || $companyId < 1) {
+            return false;
+        }
+        $stmt = Database::connection()->prepare(
+            'SELECT company_id FROM rateb_chart_of_accounts WHERE id = :id AND is_active = 1 LIMIT 1'
+        );
+        $stmt->execute(['id' => $accountId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return false;
+        }
+        $owner = $row['company_id'];
+        if ($owner === null || $owner === '') {
+            return true;
+        }
+        return (int) $owner === $companyId;
+    }
+
     public function ensureDefaultAccounts(?int $companyId): void
     {
-        $coa = new ChartOfAccount();
         $normalized = $this->normalizeCompanyId($companyId);
         $codeToId = [];
         foreach (self::DEFAULT_ACCOUNTS as $def) {
-            $exists = $coa->queryOne(
-                'SELECT id FROM rateb_chart_of_accounts WHERE company_id <=> :cid AND code = :code LIMIT 1',
-                ['cid' => $normalized, 'code' => $def['code']]
-            );
-            if ($exists) {
-                $id = (int) $exists['id'];
-                $codeToId[$def['code']] = $id;
-                $coa->update($id, [
-                    'is_active' => 1,
-                    'name' => $def['name'],
-                    'name_ar' => $def['name_ar'],
-                ]);
-                continue;
+            $code = (string) $def['code'];
+            if ($normalized !== null && $normalized > 0) {
+                $row = $this->findCoaByCode($normalized, $code);
+                if ($row) {
+                    $id = (int) $row['id'];
+                    $this->touchCoaRow($id, $def);
+                } else {
+                    $id = $this->provisionCompanyCoaCode($normalized, $code, $def, $codeToId);
+                }
+            } else {
+                $row = $this->findCoaByCode(null, $code);
+                if ($row) {
+                    $id = (int) $row['id'];
+                    $this->touchCoaRow($id, $def);
+                } else {
+                    $parentId = null;
+                    if (!empty($def['parent']) && isset($codeToId[$def['parent']])) {
+                        $parentId = $codeToId[$def['parent']];
+                    }
+                    $id = $this->insertCoaRow(null, $def, $parentId);
+                }
             }
-            $parentId = null;
-            if (!empty($def['parent']) && isset($codeToId[$def['parent']])) {
-                $parentId = $codeToId[$def['parent']];
-            }
-            $id = $coa->create([
-                'company_id' => $normalized,
-                'code' => $def['code'],
-                'name' => $def['name'],
-                'name_ar' => $def['name_ar'],
-                'account_type' => $def['type'],
-                'parent_id' => $parentId,
-                'is_active' => 1,
-            ]);
-            $codeToId[$def['code']] = $id;
+            $codeToId[$code] = $id;
         }
-        $this->linkCoaParents($normalized, $coa);
+        $this->linkCoaParents($normalized, null);
     }
 
     /** Backfill parent_id for existing COA rows (company or platform template). */
@@ -177,11 +306,16 @@ final class AccountingService
 
     public function accountIdByCode(?int $companyId, string $code): ?int
     {
-        $row = (new ChartOfAccount())->queryOne(
-            'SELECT id FROM rateb_chart_of_accounts WHERE company_id <=> :cid AND code = :code LIMIT 1',
-            ['cid' => $companyId, 'code' => $code]
-        );
-        return $row ? (int) $row['id'] : null;
+        $normalized = $this->normalizeCompanyId($companyId);
+        $row = $this->findCoaByCode($normalized, $code);
+        if ($row) {
+            return (int) $row['id'];
+        }
+        if ($normalized !== null && $normalized > 0) {
+            $template = $this->findCoaByCode(null, $code);
+            return $template ? (int) $template['id'] : null;
+        }
+        return null;
     }
 
     public function syncFromSources(?int $companyId): int
@@ -2010,6 +2144,10 @@ final class AccountingService
 
     private function resolveCashAccountId(?int $companyId, array $voucher): ?int
     {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return null;
+        }
         $bankId = (int) ($voucher['bank_account_id'] ?? 0);
         if ($bankId > 0) {
             $ba = (new JournalEntry())->queryOne(
@@ -2017,7 +2155,10 @@ final class AccountingService
                 ['id' => $bankId, 'cid' => $companyId]
             );
             if ($ba) {
-                return (int) $ba['chart_account_id'];
+                $acctId = (int) $ba['chart_account_id'];
+                if ($this->accountUsableForCompany($acctId, $companyId)) {
+                    return $acctId;
+                }
             }
         }
         return $this->accountIdByCode($companyId, '1100');
@@ -2157,11 +2298,15 @@ final class AccountingService
             return 'voucher_no_cash_account';
         }
         $cash = $this->resolveCashAccountId($companyId, $v);
+        if (!$cash || !$this->accountUsableForCompany($cash, $companyId)) {
+            $cash = $this->ensureCompanyCoaCode($companyId, '1100') ?? $this->accountIdByCode($companyId, '1100');
+        }
         $counter = (int) ($v['counter_account_id'] ?? 0);
-        if (!$cash || !$this->accountBelongsToCompany($cash, $companyId)) {
+        if (!$cash || !$this->accountUsableForCompany($cash, $companyId)) {
+            $this->lastVoucherPostDetail = 'cash account 1100 not found for company ' . $companyId;
             return 'voucher_no_cash_account';
         }
-        if ($counter < 1 || !$this->accountBelongsToCompany($counter, $companyId)) {
+        if ($counter < 1 || !$this->accountUsableForCompany($counter, $companyId)) {
             return 'voucher_no_counter_account';
         }
         $type = (string) ($v['voucher_type'] ?? 'receipt');
@@ -2324,14 +2469,7 @@ final class AccountingService
 
     private function accountBelongsToCompany(int $accountId, int $companyId): bool
     {
-        if ($accountId < 1 || $companyId < 1) {
-            return false;
-        }
-        $row = (new ChartOfAccount())->queryOne(
-            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id <=> :cid AND is_active = 1 LIMIT 1',
-            ['id' => $accountId, 'cid' => $companyId]
-        );
-        return $row !== null;
+        return $this->accountUsableForCompany($accountId, $companyId);
     }
 
     public function ensureFiscalPeriodForDate(?int $companyId, string $date): void
