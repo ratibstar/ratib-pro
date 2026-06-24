@@ -7,6 +7,8 @@ $filters = $filters ?? ['company_id' => 0, 'status' => '', 'date_from' => '', 'd
 $companies = $companies ?? [];
 $statusOptions = $statusOptions ?? [];
 $formAction = $formAction ?? '';
+$hideStatus = !empty($hideStatus);
+$hideDates = !empty($hideDates);
 ?>
 <div class="col-12">
     <form method="get" action="<?php echo Rateb\App\Core\View::escape($formAction); ?>" class="rateb-card">
@@ -25,7 +27,7 @@ $formAction = $formAction ?? '';
                     </select>
                 </div>
                 <?php } ?>
-                <?php if ($statusOptions !== []) { ?>
+                <?php if (!$hideStatus && $statusOptions !== []) { ?>
                 <div class="col-md-3">
                     <label class="form-label rateb-form-label"><?php echo __('status'); ?></label>
                     <select class="form-select" name="status">
@@ -38,6 +40,7 @@ $formAction = $formAction ?? '';
                     </select>
                 </div>
                 <?php } ?>
+                <?php if (!$hideDates) { ?>
                 <div class="col-md-2">
                     <label class="form-label rateb-form-label"><?php echo __('date_from'); ?></label>
                     <input class="form-control" type="date" name="date_from" dir="ltr" lang="en" autocomplete="off" value="<?php echo Rateb\App\Core\View::escape($filters['date_from']); ?>">
@@ -46,6 +49,7 @@ $formAction = $formAction ?? '';
                     <label class="form-label rateb-form-label"><?php echo __('date_to'); ?></label>
                     <input class="form-control" type="date" name="date_to" dir="ltr" lang="en" autocomplete="off" value="<?php echo Rateb\App\Core\View::escape($filters['date_to']); ?>">
                 </div>
+                <?php } ?>
                 <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1"><?php echo __('filter'); ?></button>
                     <a href="<?php echo Rateb\App\Core\View::escape($formAction); ?>" class="btn btn-outline-secondary"><?php echo __('reset'); ?></a>

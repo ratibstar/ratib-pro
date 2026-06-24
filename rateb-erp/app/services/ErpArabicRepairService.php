@@ -23,6 +23,7 @@ final class ErpArabicRepairService
         $updated += $this->repairChartOfAccounts($pdo);
         $updated += $this->repairEmailTemplates($pdo);
         $updated += $this->repairDemoOperational($pdo);
+        $updated += $this->repairWorkflows($pdo);
 
         $sample = '';
         $stmt = $pdo->query("SELECT name_ar FROM rateb_permissions WHERE slug = 'dashboard.view' LIMIT 1");
@@ -172,6 +173,37 @@ final class ErpArabicRepairService
             ['n' => 'صرف تجريبي', 'r' => 'demo_seed', 'm' => 'out', 'bad' => '%?%']
         );
 
+        return $updated;
+    }
+
+    private function repairWorkflows(PDO $pdo): int
+    {
+        $updated = 0;
+        $patch = static function (string $sql, array $params) use ($pdo): int {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->rowCount();
+        };
+        $updated += $patch(
+            'UPDATE rateb_approval_workflows SET name = :n WHERE entity_type = :et',
+            ['n' => 'اعتماد طلبات الشراء', 'et' => 'purchase_request']
+        );
+        $updated += $patch(
+            'UPDATE rateb_approval_workflows SET name = :n WHERE entity_type = :et',
+            ['n' => 'اعتماد أوامر الشراء', 'et' => 'purchase_order']
+        );
+        $updated += $patch(
+            'UPDATE rateb_approval_workflow_steps s
+             INNER JOIN rateb_approval_workflows w ON w.id = s.workflow_id
+             SET s.label = :l WHERE w.entity_type = :et',
+            ['l' => 'اعتماد طلب الشراء', 'et' => 'purchase_request']
+        );
+        $updated += $patch(
+            'UPDATE rateb_approval_workflow_steps s
+             INNER JOIN rateb_approval_workflows w ON w.id = s.workflow_id
+             SET s.label = :l WHERE w.entity_type = :et',
+            ['l' => 'اعتماد أمر الشراء', 'et' => 'purchase_order']
+        );
         return $updated;
     }
 

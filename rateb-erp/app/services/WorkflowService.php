@@ -24,6 +24,176 @@ final class WorkflowService
         return $stmt->fetchAll();
     }
 
+    /** @return array<int, string> */
+    public static function entityTypeOptions(): array
+    {
+        return [
+            'purchase_request' => 'purchase_requests',
+            'purchase_order' => 'purchase_orders',
+            'contract' => 'contracts',
+            'supplier' => 'suppliers',
+        ];
+    }
+
+    public static function entityTypeLabel(string $entityType): string
+    {
+        $key = self::entityTypeOptions()[$entityType] ?? $entityType;
+        return __($key);
+    }
+
+    public static function entityDocumentUrl(string $entityType, int $entityId, int $companyId): string
+    {
+        $routes = [
+            'purchase_request' => 'purchase-requests',
+            'purchase_order' => 'purchase-orders',
+            'contract' => 'contracts',
+            'supplier' => 'suppliers',
+        ];
+        $slug = $routes[$entityType] ?? '';
+        if ($slug === '' || $entityId < 1) {
+            return '';
+        }
+        $url = rateb_url(rateb_app_route($slug . '/' . $entityId));
+        if ($companyId > 0) {
+            $url .= (str_contains($url, '?') ? '&' : '?') . 'company_id=' . $companyId;
+        }
+        return $url;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listWorkflowsDetailed(?int $companyFilter = null): array
+    {
+        $sql = 'SELECT w.*, c.name AS company_name,
+            (SELECT COUNT(*) FROM rateb_approval_workflow_steps s WHERE s.workflow_id = w.id) AS step_count
+            FROM rateb_approval_workflows w
+            LEFT JOIN rateb_companies c ON c.id = w.company_id
+            WHERE 1=1';
+        $params = [];
+        if ($companyFilter !== null && $companyFilter > 0) {
+            $sql .= ' AND (w.company_id IS NULL OR w.company_id = :cid)';
+            $params['cid'] = $companyFilter;
+        }
+        $sql .= ' ORDER BY w.name';
+        $db = Database::connection();
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findWorkflow(int $id): ?array
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT w.*, c.name AS company_name
+             FROM rateb_approval_workflows w
+             LEFT JOIN rateb_companies c ON c.id = w.company_id
+             WHERE w.id = :id LIMIT 1'
+        );
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listSteps(int $workflowId): array
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT s.*, r.name AS role_name
+             FROM rateb_approval_workflow_steps s
+             LEFT JOIN rateb_roles r ON r.id = s.role_id
+             WHERE s.workflow_id = :wid
+             ORDER BY s.step_order ASC'
+        );
+        $stmt->execute(['wid' => $workflowId]);
+        return $stmt->fetchAll();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listPending(?int $companyFilter = null, int $limit = 100): array
+    {
+        $sql = 'SELECT i.*, w.name AS workflow_name, c.name AS company_name
+            FROM rateb_approval_instances i
+            JOIN rateb_approval_workflows w ON w.id = i.workflow_id
+            LEFT JOIN rateb_companies c ON c.id = i.company_id
+            WHERE i.status = \'pending\'';
+        $params = [];
+        if ($companyFilter !== null && $companyFilter > 0) {
+            $sql .= ' AND i.company_id = :cid';
+            $params['cid'] = $companyFilter;
+        }
+        $sql .= ' ORDER BY i.id DESC LIMIT ' . max(1, min(500, $limit));
+        $db = Database::connection();
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function updateWorkflow(int $id, string $name, ?int $companyId, string $entityType, bool $isActive): bool
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'UPDATE rateb_approval_workflows
+             SET name = :name, company_id = :cid, entity_type = :et, is_active = :active
+             WHERE id = :id'
+        );
+        $stmt->execute([
+            'name' => $name,
+            'cid' => $companyId > 0 ? $companyId : null,
+            'et' => $entityType,
+            'active' => $isActive ? 1 : 0,
+            'id' => $id,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function deleteWorkflow(int $id): bool
+    {
+        $db = Database::connection();
+        $pending = $db->prepare('SELECT COUNT(*) AS c FROM rateb_approval_instances WHERE workflow_id = :id AND status = \'pending\'');
+        $pending->execute(['id' => $id]);
+        if ((int) ($pending->fetch()['c'] ?? 0) > 0) {
+            return false;
+        }
+        $stmt = $db->prepare('DELETE FROM rateb_approval_workflows WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function toggleWorkflow(int $id): bool
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare('UPDATE rateb_approval_workflows SET is_active = IF(is_active = 1, 0, 1) WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function addStep(int $workflowId, string $label, ?int $roleId = null): int
+    {
+        $db = Database::connection();
+        $orderStmt = $db->prepare('SELECT COALESCE(MAX(step_order), 0) + 1 AS n FROM rateb_approval_workflow_steps WHERE workflow_id = :wid');
+        $orderStmt->execute(['wid' => $workflowId]);
+        $stepOrder = (int) ($orderStmt->fetch()['n'] ?? 1);
+        $db->prepare(
+            'INSERT INTO rateb_approval_workflow_steps (workflow_id, step_order, role_id, label) VALUES (:wid, :ord, :rid, :label)'
+        )->execute([
+            'wid' => $workflowId,
+            'ord' => $stepOrder,
+            'rid' => $roleId > 0 ? $roleId : null,
+            'label' => $label,
+        ]);
+        return (int) $db->lastInsertId();
+    }
+
+    public function deleteStep(int $stepId): bool
+    {
+        $db = Database::connection();
+        $stmt = $db->prepare('DELETE FROM rateb_approval_workflow_steps WHERE id = :id');
+        $stmt->execute(['id' => $stepId]);
+        return $stmt->rowCount() > 0;
+    }
+
     public function submit(string $entityType, int $entityId, int $companyId, int $workflowId): int
     {
         $db = Database::connection();

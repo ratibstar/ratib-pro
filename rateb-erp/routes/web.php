@@ -222,3 +222,9 @@ $router->get('/admin/oversight/rfq', [RfqOversightController::class, 'index'], r
 $router->get('/admin/oversight/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
 $router->get('/admin/oversight/workflows', [AdminWorkflowsController::class, 'index'], rateb_admin_mw('workflows.view'));
 $router->post('/admin/oversight/workflows', [AdminWorkflowsController::class, 'store'], rateb_admin_mw('workflows.manage'));
+$router->get('/admin/oversight/workflows/{id}/edit', [AdminWorkflowsController::class, 'edit'], rateb_admin_mw('workflows.view'));
+$router->post('/admin/oversight/workflows/{id}', [AdminWorkflowsController::class, 'update'], rateb_admin_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/delete', [AdminWorkflowsController::class, 'destroy'], rateb_admin_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/toggle', [AdminWorkflowsController::class, 'toggle'], rateb_admin_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/steps', [AdminWorkflowsController::class, 'storeStep'], rateb_admin_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/steps/{stepId}/delete', [AdminWorkflowsController::class, 'destroyStep'], rateb_admin_mw('workflows.manage'));
