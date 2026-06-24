@@ -43,16 +43,20 @@ $badgeClass = $st === 'posted' ? 'success' : ($st === 'rejected' ? 'danger' : ($
 </div>
 <div class="d-flex flex-wrap gap-2">
     <a href="<?php echo rateb_app_url('cash-vouchers'); ?>" class="btn btn-outline-secondary"><?php echo __('cash_vouchers'); ?></a>
-    <?php if (($canManage ?? false) && $st === 'draft') { ?>
+    <?php
+    $isEditable = $acctSvc->isCashVoucherEditable($voucher);
+    $isDraft = $st === 'draft';
+    ?>
+    <?php if (($canManage ?? false) && $isEditable) { ?>
     <a href="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
-    <?php if (($canManage ?? false) && $st === 'draft' && !$submitted) { ?>
+    <?php if (($canManage ?? false) && $isDraft && !$submitted) { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/submit-approval'); ?>" class="d-inline"
           data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape(rateb_app_url('cash-vouchers/' . (int) $voucher['id'])); ?>">
         <button type="submit" class="btn btn-success rateb-btn-submit-approval"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span class="rateb-btn-label"><?php echo __('submit_for_approval'); ?></span></button>
     </form>
-    <?php } elseif (($canManage ?? false) && $st === 'draft' && $submitted) { ?>
+    <?php } elseif (($canManage ?? false) && $isDraft && $submitted) { ?>
     <span class="badge bg-warning text-dark align-self-center"><?php echo __('awaiting_oversight_approval'); ?></span>
     <?php } ?>
     <?php } ?>

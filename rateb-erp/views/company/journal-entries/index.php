@@ -37,7 +37,8 @@ $oversightOnly = !empty($oversightOnly);
                     $desc = rateb_locale() === 'ar' && !empty($row['description_ar']) ? $row['description_ar'] : $row['description'];
                     $st = (string) ($row['status'] ?? '');
                     $isManual = ($row['source_type'] ?? '') === 'manual';
-                    $isManualDraft = $isManual && $st === 'draft';
+                    $isEditable = $isManual && $acctSvc->isManualJournalEditable($row);
+                    $isDraft = $st === 'draft';
                     $submitted = $acctSvc->isSubmittedForApproval($row);
                     $displayStatus = $acctSvc->accountingRowDisplayStatus($row);
                     $id = (int) $row['id'];
@@ -53,13 +54,13 @@ $oversightOnly = !empty($oversightOnly);
                             'csrf' => $csrf,
                             'id' => $id,
                             'viewUrl' => rateb_app_url('journal-entries/' . $id),
-                            'editUrl' => $isManualDraft ? rateb_app_url('journal-entries/' . $id . '/edit') : null,
-                            'canEdit' => $canManage && $isManualDraft,
-                            'canSubmit' => $canManage && $isManualDraft,
-                            'canDelete' => $canManage && $isManualDraft && !$submitted,
+                            'editUrl' => $isEditable ? rateb_app_url('journal-entries/' . $id . '/edit') : null,
+                            'canEdit' => $canManage && $isEditable,
+                            'canSubmit' => $canManage && $isDraft && $isManual && !$submitted,
+                            'canDelete' => $canManage && $acctSvc->canDeleteManualJournal($row),
                             'deleteUrl' => rateb_app_url('journal-entries/' . $id . '/delete'),
                             'submitUrl' => rateb_app_url('journal-entries/' . $id . '/submit-approval'),
-                            'submitted' => $submitted && $isManualDraft,
+                            'submitted' => $submitted && $isDraft && $isManual,
                             'redirectTo' => rateb_app_url('journal-entries/' . $id),
                         ]); ?>
                     </td>

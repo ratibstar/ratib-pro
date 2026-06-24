@@ -736,8 +736,16 @@ final class AccountingService
             throw new \InvalidArgumentException('Journal entry is not balanced.');
         }
         $entry = $this->findEntryForCompany($entryId, $companyId);
-        if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
+        if (!$entry || !$this->isManualJournalEditable($entry)) {
             return false;
+        }
+        if (in_array((string) ($entry['status'] ?? ''), ['rejected', 'void'], true)) {
+            (new JournalEntry())->update($entryId, [
+                'status' => 'draft',
+                'reject_reason' => null,
+                'rejected_at' => null,
+                'rejected_by' => null,
+            ]);
         }
         (new JournalEntry())->update($entryId, [
             'entry_date' => $entryDate,
@@ -764,6 +772,7 @@ final class AccountingService
             return;
         }
         $done = true;
+        $this->ensureAccountingStatusEnums();
         $pdo = Database::connection();
         foreach (['rateb_journal_entries', 'rateb_cash_vouchers'] as $table) {
             try {
@@ -781,6 +790,60 @@ final class AccountingService
                 // Migration 116 or host permissions may apply later.
             }
         }
+    }
+
+    public function ensureAccountingStatusEnums(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        $pdo = Database::connection();
+        foreach ([
+            'rateb_journal_entries' => "ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
+            'rateb_cash_vouchers' => "ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
+        ] as $table => $enumDef) {
+            try {
+                $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'status'");
+                if ($stmt !== false && $stmt->fetch() !== false) {
+                    $pdo->exec("ALTER TABLE {$table} MODIFY status {$enumDef}");
+                }
+                if ($stmt instanceof \PDOStatement) {
+                    $stmt->closeCursor();
+                }
+            } catch (\Throwable $e) {
+                // Host may block ALTER; migration 117 applies on deploy.
+            }
+        }
+    }
+
+    /** @param array<string, mixed> $entry */
+    public function isManualJournalEditable(array $entry): bool
+    {
+        if (($entry['source_type'] ?? '') !== 'manual') {
+            return false;
+        }
+
+        return in_array((string) ($entry['status'] ?? ''), ['draft', 'rejected', 'void'], true);
+    }
+
+    /** @param array<string, mixed> $entry */
+    public function canDeleteManualJournal(array $entry): bool
+    {
+        return $this->isManualJournalEditable($entry) && !$this->isSubmittedForApproval($entry);
+    }
+
+    /** @param array<string, mixed> $row */
+    public function isCashVoucherEditable(array $row): bool
+    {
+        return in_array((string) ($row['status'] ?? ''), ['draft', 'rejected', 'void'], true);
+    }
+
+    /** @param array<string, mixed> $row */
+    public function canDeleteCashVoucher(array $row): bool
+    {
+        return $this->isCashVoucherEditable($row) && !$this->isSubmittedForApproval($row);
     }
 
     /** @param array<string, mixed> $row */
@@ -2681,7 +2744,7 @@ final class AccountingService
     public function deleteManualDraft(int $entryId, ?int $companyId): bool
     {
         $entry = $this->findEntryForCompany($entryId, $companyId);
-        if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
+        if (!$entry || !$this->canDeleteManualJournal($entry)) {
             return false;
         }
         $pdo = Database::connection();
@@ -2691,6 +2754,7 @@ final class AccountingService
 
     public function rejectManualDraft(int $entryId, ?int $companyId, ?string $reason, ?int $userId): bool
     {
+        $this->ensureAccountingStatusEnums();
         $entry = $this->findEntryForCompany($entryId, $companyId);
         if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
             return false;
@@ -2760,8 +2824,13 @@ final class AccountingService
             'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid LIMIT 1',
             ['id' => $voucherId, 'cid' => $companyId]
         );
-        if (!$v || ($v['status'] ?? '') !== 'draft') {
+        if (!$v || !$this->isCashVoucherEditable($v)) {
             return false;
+        }
+        if (in_array((string) ($v['status'] ?? ''), ['rejected', 'void'], true)) {
+            Database::connection()->prepare(
+                'UPDATE rateb_cash_vouchers SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL WHERE id = :id'
+            )->execute(['st' => 'draft', 'id' => $voucherId]);
         }
         $amount = (float) ($data['amount'] ?? 0);
         $counter = (int) ($data['counter_account_id'] ?? 0);
@@ -2821,6 +2890,7 @@ final class AccountingService
 
     public function rejectCashVoucherDraft(int $voucherId, ?int $companyId, ?string $reason, ?int $userId): bool
     {
+        $this->ensureAccountingStatusEnums();
         $v = (new JournalEntry())->queryOne(
             'SELECT id FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid AND status = :st LIMIT 1',
             ['id' => $voucherId, 'cid' => $companyId, 'st' => 'draft']

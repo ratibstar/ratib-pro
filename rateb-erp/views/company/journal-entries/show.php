@@ -5,6 +5,8 @@ $sourceType = (string) ($entry['source_type'] ?? '');
 $acctSvc = new \Rateb\App\Services\AccountingService();
 $submitted = $acctSvc->isSubmittedForApproval($entry);
 $displayStatus = $acctSvc->accountingRowDisplayStatus($entry);
+$isEditable = $acctSvc->isManualJournalEditable($entry);
+$isDraft = $status === 'draft';
 $oversightOnly = rateb_accounting_final_post_oversight_only();
 $sourceId = (int) ($entry['source_id'] ?? 0);
 $sourceUrl = null;
@@ -87,16 +89,16 @@ $badgeClass = $status === 'posted' ? 'success' : ($status === 'rejected' ? 'dang
 </div>
 <div class="d-flex flex-wrap gap-2 mt-3">
     <a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary"><i class="fas fa-list"></i> <?php echo __('journal_entries'); ?></a>
-    <?php if (($canManage ?? false) && $status === 'draft' && $sourceType === 'manual') { ?>
+    <?php if (($canManage ?? false) && $isEditable) { ?>
     <a href="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
-    <?php if (($canManage ?? false) && $status === 'draft' && $sourceType === 'manual' && !$submitted) { ?>
+    <?php if (($canManage ?? false) && $isDraft && !$submitted) { ?>
     <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/submit-approval'); ?>" class="d-inline"
           data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape(rateb_app_url('journal-entries/' . (int) $entry['id'])); ?>">
         <button type="submit" class="btn btn-success rateb-btn-submit-approval"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span class="rateb-btn-label"><?php echo __('submit_for_approval'); ?></span></button>
     </form>
-    <?php } elseif (($canManage ?? false) && $status === 'draft' && $sourceType === 'manual' && $submitted) { ?>
+    <?php } elseif (($canManage ?? false) && $isDraft && $submitted) { ?>
     <span class="badge bg-warning text-dark align-self-center"><?php echo __('awaiting_oversight_approval'); ?></span>
     <?php } ?>
     <?php } ?>

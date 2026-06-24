@@ -550,6 +550,7 @@ final class ApprovalOversightService
         }
 
         if ($sourceKey === 'journal_entry') {
+            $this->ensureAccountingSubmitSchema();
             $acct = new AccountingService();
             $cid = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
             if ($action === 'approve') {
@@ -564,6 +565,7 @@ final class ApprovalOversightService
         }
 
         if ($sourceKey === 'cash_voucher') {
+            $this->ensureAccountingSubmitSchema();
             $acct = new AccountingService();
             $cid = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
             if ($action === 'approve') {
@@ -1047,7 +1049,9 @@ final class ApprovalOversightService
 
     private function ensureAccountingSubmitSchema(): void
     {
-        (new AccountingService())->ensureApprovalSubmitColumns();
+        $acct = new AccountingService();
+        $acct->ensureApprovalSubmitColumns();
+        $acct->ensureAccountingStatusEnums();
     }
 
     private function bootstrapCompany(int $companyId): void

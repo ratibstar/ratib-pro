@@ -136,9 +136,10 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                         $displayStatus = $acctSvc->accountingRowDisplayStatus($row);
                         $badgeClass = $displayStatus === 'awaiting_oversight_approval' ? 'info'
                             : ($isPending ? 'warning' : ($isApproved ? 'success' : ($isRejected ? 'danger' : 'secondary')));
+                        $isEditable = $acctSvc->isCashVoucherEditable($row);
                         $canSelect = ($bulkApprove && $isPending && $submitted)
                             || ($bulkApprove && $isApproved)
-                            || ($bulkManage && $isPending && !$submitted);
+                            || ($bulkManage && $isEditable && !$submitted);
                         $rejectReason = trim((string) ($row['reject_reason'] ?? ''));
                         $id = (int) $row['id'];
                         ?>
@@ -161,10 +162,10 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                                 'csrf' => $csrf,
                                 'id' => $id,
                                 'viewUrl' => rateb_app_url('cash-vouchers/' . $id),
-                                'editUrl' => ($bulkManage && $isPending) ? rateb_app_url('cash-vouchers/' . $id . '/edit') : null,
-                                'canEdit' => $bulkManage && $isPending,
-                                'canSubmit' => $bulkManage && $isPending,
-                                'canDelete' => $bulkManage && $isPending && !$submitted,
+                                'editUrl' => ($bulkManage && $isEditable) ? rateb_app_url('cash-vouchers/' . $id . '/edit') : null,
+                                'canEdit' => $bulkManage && $isEditable,
+                                'canSubmit' => $bulkManage && $isPending && !$submitted,
+                                'canDelete' => $bulkManage && $acctSvc->canDeleteCashVoucher($row),
                                 'deleteUrl' => rateb_app_url('cash-vouchers/' . $id . '/delete'),
                                 'submitUrl' => rateb_app_url('cash-vouchers/' . $id . '/submit-approval'),
                                 'submitted' => $submitted && $isPending,

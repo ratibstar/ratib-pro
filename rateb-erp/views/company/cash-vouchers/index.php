@@ -36,6 +36,7 @@ $oversightOnly = !empty($oversightOnly);
                 <?php } else { foreach ($items as $row) {
                     $st = (string) ($row['status'] ?? '');
                     $isDraft = $st === 'draft';
+                    $isEditable = $acctSvc->isCashVoucherEditable($row);
                     $submitted = $acctSvc->isSubmittedForApproval($row);
                     $displayStatus = $acctSvc->accountingRowDisplayStatus($row);
                     $id = (int) $row['id'];
@@ -52,10 +53,10 @@ $oversightOnly = !empty($oversightOnly);
                             'csrf' => $csrf,
                             'id' => $id,
                             'viewUrl' => rateb_app_url('cash-vouchers/' . $id),
-                            'editUrl' => $isDraft ? rateb_app_url('cash-vouchers/' . $id . '/edit') : null,
-                            'canEdit' => $canManage && $isDraft,
-                            'canSubmit' => $canManage && $isDraft,
-                            'canDelete' => $canManage && $isDraft && !$submitted,
+                            'editUrl' => $isEditable ? rateb_app_url('cash-vouchers/' . $id . '/edit') : null,
+                            'canEdit' => $canManage && $isEditable,
+                            'canSubmit' => $canManage && $isDraft && !$submitted,
+                            'canDelete' => $canManage && $acctSvc->canDeleteCashVoucher($row),
                             'deleteUrl' => rateb_app_url('cash-vouchers/' . $id . '/delete'),
                             'submitUrl' => rateb_app_url('cash-vouchers/' . $id . '/submit-approval'),
                             'submitted' => $submitted && $isDraft,

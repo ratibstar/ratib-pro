@@ -136,9 +136,10 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                         $displayStatus = $acctSvc->accountingRowDisplayStatus($row);
                         $badgeClass = $displayStatus === 'awaiting_oversight_approval' ? 'info'
                             : ($isPending ? 'warning' : ($isApproved ? 'success' : ($isRejected ? 'danger' : 'secondary')));
+                        $isEditable = $isManual && $acctSvc->isManualJournalEditable($row);
                         $canSelect = ($bulkApprove && $isPending && $isManual)
                             || ($bulkApprove && $isApproved && $isManual)
-                            || ($bulkManage && $isPending && $isManual && !$submitted);
+                            || ($bulkManage && $isEditable && !$submitted);
                         $rejectReason = trim((string) ($row['reject_reason'] ?? ''));
                         $id = (int) $row['id'];
                         ?>
@@ -160,10 +161,10 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                                 'csrf' => $csrf,
                                 'id' => $id,
                                 'viewUrl' => rateb_app_url('journal-entries/' . $id),
-                                'editUrl' => ($bulkManage && $isPending && $isManual) ? rateb_app_url('journal-entries/' . $id . '/edit') : null,
-                                'canEdit' => $bulkManage && $isPending && $isManual,
-                                'canSubmit' => $bulkManage && $isPending && $isManual,
-                                'canDelete' => $bulkManage && $isPending && $isManual && !$submitted,
+                                'editUrl' => ($bulkManage && $isEditable) ? rateb_app_url('journal-entries/' . $id . '/edit') : null,
+                                'canEdit' => $bulkManage && $isEditable,
+                                'canSubmit' => $bulkManage && $isPending && $isManual && !$submitted,
+                                'canDelete' => $bulkManage && $acctSvc->canDeleteManualJournal($row),
                                 'deleteUrl' => rateb_app_url('journal-entries/' . $id . '/delete'),
                                 'submitUrl' => rateb_app_url('journal-entries/' . $id . '/submit-approval'),
                                 'submitted' => $submitted && $isPending && $isManual,

@@ -1181,7 +1181,7 @@ final class JournalEntriesController extends Controller
             'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
             ['id' => $id, 'cid' => $companyId]
         );
-        if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
+        if (!$entry || !(new AccountingService())->isManualJournalEditable($entry)) {
             SessionManager::flash('error', __('journal_edit_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
@@ -1695,7 +1695,7 @@ final class CashVouchersController extends Controller
             'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid',
             ['id' => $id, 'cid' => $companyId]
         );
-        if (!$voucher || ($voucher['status'] ?? '') !== 'draft') {
+        if (!$voucher || !(new AccountingService())->isCashVoucherEditable($voucher)) {
             SessionManager::flash('error', __('voucher_edit_denied'));
             Response::redirect(rateb_app_url('cash-vouchers/' . $id));
         }
