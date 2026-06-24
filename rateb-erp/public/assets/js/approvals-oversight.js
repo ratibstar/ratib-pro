@@ -232,18 +232,18 @@
                 }
             })
             .catch(function (err) {
-                window.alert(err.message || 'Error');
+                flashToast(err.message || 'Error', 'danger');
             });
     }
 
-    function flashToast(message) {
+    function flashToast(message, type) {
         var el = document.createElement('div');
-        el.className = 'alert alert-success rateb-approval-toast';
+        el.className = 'alert alert-' + (type || 'success') + ' rateb-approval-toast';
         el.textContent = message;
         root.prepend(el);
         window.setTimeout(function () {
             el.remove();
-        }, 3200);
+        }, 5200);
     }
 
     root.addEventListener('click', function (e) {

@@ -168,7 +168,15 @@ final class AssetDeviceWorkflowService
     public function approveDepreciation(int $id): bool
     {
         $cid = TenantGuard::requireCompanyId();
-        $row = $this->findDepreciation($id);
+        return $this->approveDepreciationForCompany($id, $cid);
+    }
+
+    public function approveDepreciationForCompany(int $id, int $companyId): bool
+    {
+        if ($id < 1 || $companyId < 1) {
+            return false;
+        }
+        $row = $this->findDepreciationForCompany($id, $companyId);
         if (!$row || (string) ($row['status'] ?? '') !== 'draft') {
             return false;
         }
@@ -177,16 +185,17 @@ final class AssetDeviceWorkflowService
         $db = \Rateb\App\Core\Database::connection();
         $db->beginTransaction();
         try {
-            $ok = $db->prepare(
+            $stmt = $db->prepare(
                 'UPDATE rateb_asset_depreciation SET status = \'approved\' WHERE id = :id AND company_id = :cid AND status = \'draft\''
-            )->execute(['id' => $id, 'cid' => $cid]);
-            if (!$ok) {
+            );
+            $stmt->execute(['id' => $id, 'cid' => $companyId]);
+            if ($stmt->rowCount() < 1) {
                 $db->rollBack();
                 return false;
             }
             if ($assetId > 0) {
                 $db->prepare('UPDATE rateb_assets SET current_value = :v WHERE id = :id AND company_id = :cid')
-                    ->execute(['v' => $after, 'id' => $assetId, 'cid' => $cid]);
+                    ->execute(['v' => $after, 'id' => $assetId, 'cid' => $companyId]);
             }
             $db->commit();
             return true;
@@ -194,6 +203,19 @@ final class AssetDeviceWorkflowService
             $db->rollBack();
             throw $e;
         }
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findDepreciationForCompany(int $id, int $companyId): ?array
+    {
+        if ($id < 1 || $companyId < 1) {
+            return null;
+        }
+        $row = (new \Rateb\App\Models\Asset())->queryOne(
+            'SELECT * FROM rateb_asset_depreciation WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        return $row ? (array) $row : null;
     }
 
     /** @return array<string, mixed>|null */

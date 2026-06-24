@@ -2118,7 +2118,11 @@ final class AccountingService
         if ($amount <= 0) {
             return 'voucher_no_amount';
         }
-        $this->ensureDefaultAccounts($companyId);
+        try {
+            $this->ensureDefaultAccounts($companyId);
+        } catch (\PDOException $e) {
+            return 'voucher_no_cash_account';
+        }
         $cash = $this->resolveCashAccountId($companyId, $v);
         $counter = (int) ($v['counter_account_id'] ?? 0);
         if (!$cash) {
@@ -2157,9 +2161,13 @@ final class AccountingService
         if ($entryId === null) {
             return 'voucher_post_failed';
         }
-        Database::connection()->prepare(
-            'UPDATE rateb_cash_vouchers SET status = :st, journal_entry_id = :jid, posted_at = NOW() WHERE id = :id'
-        )->execute(['st' => 'posted', 'jid' => $entryId, 'id' => $voucherId]);
+        try {
+            Database::connection()->prepare(
+                'UPDATE rateb_cash_vouchers SET status = :st, journal_entry_id = :jid, posted_at = NOW() WHERE id = :id'
+            )->execute(['st' => 'posted', 'jid' => $entryId, 'id' => $voucherId]);
+        } catch (\PDOException $e) {
+            return 'voucher_post_failed';
+        }
         return null;
     }
 

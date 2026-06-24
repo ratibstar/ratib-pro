@@ -450,6 +450,10 @@ final class ApprovalOversightService
             throw new \RuntimeException(__('invalid_request'));
         }
         $action = $action === 'reject' ? 'reject' : 'approve';
+        $resolvedCompanyId = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
+        if ($resolvedCompanyId !== null && $resolvedCompanyId > 0) {
+            $companyId = $resolvedCompanyId;
+        }
         $this->bootstrapCompany($companyId);
         $uid = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0);
 
@@ -470,13 +474,19 @@ final class ApprovalOversightService
             if (!$item || (string) ($item['manager_approval'] ?? '') !== 'pending') {
                 throw new \RuntimeException(__('manager_approval_already_processed'));
             }
-            $model->update($recordId, [
-                'manager_approval' => $action === 'approve' ? 'approved' : 'rejected',
-                'approved_by' => $uid > 0 ? $uid : null,
-                'approved_at' => date('Y-m-d H:i:s'),
-            ]);
+            $this->runDb(function () use ($model, $recordId, $action, $uid): void {
+                $model->update($recordId, [
+                    'manager_approval' => $action === 'approve' ? 'approved' : 'rejected',
+                    'approved_by' => $uid > 0 ? $uid : null,
+                    'approved_at' => date('Y-m-d H:i:s'),
+                ]);
+            });
             if ($action === 'approve') {
-                (new SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
+                try {
+                    (new SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
+                } catch (\PDOException $e) {
+                    throw DatabaseErrorService::toRuntimeException($e);
+                }
             }
             return;
         }
@@ -498,11 +508,14 @@ final class ApprovalOversightService
 
         if (isset($this->managerSlugs()[$sourceKey])) {
             $rec = new WorkflowRecordService();
-            if ($action === 'approve') {
-                $rec->approve($this->managerSlugs()[$sourceKey], $recordId);
-            } else {
-                $rec->reject($this->managerSlugs()[$sourceKey], $recordId);
-            }
+            $slug = $this->managerSlugs()[$sourceKey];
+            $this->runDb(static function () use ($rec, $slug, $recordId, $action): void {
+                if ($action === 'approve') {
+                    $rec->approve($slug, $recordId);
+                } else {
+                    $rec->reject($slug, $recordId);
+                }
+            });
             return;
         }
 
@@ -560,8 +573,15 @@ final class ApprovalOversightService
         if ($sourceKey === 'asset_depreciation') {
             $asset = new AssetDeviceWorkflowService();
             if ($action === 'approve') {
-                if (!$asset->approveDepreciation($recordId)) {
-                    throw new \RuntimeException(__('invalid_request'));
+                if ($companyId < 1) {
+                    throw new \RuntimeException(__('select_company_ops'));
+                }
+                try {
+                    if (!$asset->approveDepreciationForCompany($recordId, $companyId)) {
+                        throw new \RuntimeException(__('invalid_request'));
+                    }
+                } catch (\PDOException $e) {
+                    throw DatabaseErrorService::toRuntimeException($e);
                 }
             } else {
                 throw new \RuntimeException(__('invalid_request'));
@@ -962,6 +982,13 @@ final class ApprovalOversightService
         if ($companyId > 0) {
             return $companyId;
         }
+        if ($sourceKey === 'workflow_instance') {
+            $db = Database::connection();
+            $stmt = $db->prepare('SELECT company_id FROM rateb_approval_instances WHERE id = :id LIMIT 1');
+            $stmt->execute(['id' => $recordId]);
+            $cid = (int) ($stmt->fetchColumn() ?: 0);
+            return $cid > 0 ? $cid : null;
+        }
         $sources = $this->sources();
         $table = (string) ($sources[$sourceKey]['table'] ?? '');
         if ($table === '') {
@@ -988,20 +1015,31 @@ final class ApprovalOversightService
     private function setManagerApproval(string $table, int $id, int $companyId, string $action, int $uid): void
     {
         $state = $action === 'approve' ? 'approved' : 'rejected';
-        $db = Database::connection();
-        $sql = sprintf(
-            'UPDATE %s SET manager_approval = :st, approved_by = :uid, approved_at = NOW() WHERE id = :id AND manager_approval = :pending',
-            $table
-        );
-        $params = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id, 'pending' => 'pending'];
-        if ($companyId > 0) {
-            $sql .= ' AND company_id = :cid';
-            $params['cid'] = $companyId;
-        }
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        if ($stmt->rowCount() < 1) {
-            throw new \RuntimeException(__('manager_approval_already_processed'));
+        $this->runDb(function () use ($table, $id, $companyId, $state, $uid): void {
+            $db = Database::connection();
+            $sql = sprintf(
+                'UPDATE %s SET manager_approval = :st, approved_by = :uid, approved_at = NOW() WHERE id = :id AND manager_approval = :pending',
+                $table
+            );
+            $params = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id, 'pending' => 'pending'];
+            if ($companyId > 0) {
+                $sql .= ' AND company_id = :cid';
+                $params['cid'] = $companyId;
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            if ($stmt->rowCount() < 1) {
+                throw new \RuntimeException(__('manager_approval_already_processed'));
+            }
+        });
+    }
+
+    private function runDb(callable $fn): void
+    {
+        try {
+            $fn();
+        } catch (\PDOException $e) {
+            throw DatabaseErrorService::toRuntimeException($e);
         }
     }
 
