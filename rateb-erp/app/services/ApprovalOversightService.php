@@ -742,6 +742,24 @@ final class ApprovalOversightService
 
     public function undo(string $sourceKey, int $recordId, int $companyId): void
     {
+        try {
+            $this->undoOnce($sourceKey, $recordId, $companyId);
+        } catch (\Throwable $e) {
+            if (!$this->shouldAutoMigrate($e)) {
+                throw $e;
+            }
+            try {
+                (new MigrationService())->runAll();
+                ManagerApprovalSchema::clearCache();
+            } catch (\Throwable $ignored) {
+                // Retry with whatever schema we have.
+            }
+            $this->undoOnce($sourceKey, $recordId, $companyId);
+        }
+    }
+
+    private function undoOnce(string $sourceKey, int $recordId, int $companyId): void
+    {
         if ($recordId < 1 || !self::canUndo($sourceKey)) {
             throw new \RuntimeException(__('invalid_request'));
         }
@@ -777,52 +795,16 @@ final class ApprovalOversightService
         }
         if ($sourceKey === 'journal_entry') {
             $acct = new AccountingService();
-            $db = Database::connection();
-            $stmt = $db->prepare('SELECT status FROM rateb_journal_entries WHERE id = :id' . ($companyId > 0 ? ' AND company_id = :cid' : ''));
-            $params = ['id' => $recordId];
-            if ($companyId > 0) {
-                $params['cid'] = $companyId;
-            }
-            $stmt->execute($params);
-            $st = (string) ($stmt->fetchColumn() ?: '');
-            if ($st === 'posted') {
-                if (!$acct->voidPostedEntry($recordId, $companyId > 0 ? $companyId : null, ['manual'])) {
-                    throw new \RuntimeException(__('journal_post_failed'));
-                }
-                $db->prepare('UPDATE rateb_journal_entries SET status = :st, posted_at = NULL, submitted_for_approval_at = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
-            } elseif ($st === 'rejected') {
-                $db->prepare(
-                    'UPDATE rateb_journal_entries SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL WHERE id = :id'
-                )->execute(['st' => 'draft', 'id' => $recordId]);
-            } elseif ($st === 'draft') {
-                return;
-            } else {
+            $cid = $companyId > 0 ? $companyId : null;
+            if (!$acct->undoJournalFromOversight($recordId, $cid)) {
                 throw new \RuntimeException(__('invalid_request'));
             }
             return;
         }
         if ($sourceKey === 'cash_voucher') {
             $acct = new AccountingService();
-            $db = Database::connection();
-            $stmt = $db->prepare('SELECT status FROM rateb_cash_vouchers WHERE id = :id' . ($companyId > 0 ? ' AND company_id = :cid' : ''));
-            $params = ['id' => $recordId];
-            if ($companyId > 0) {
-                $params['cid'] = $companyId;
-            }
-            $stmt->execute($params);
-            $st = (string) ($stmt->fetchColumn() ?: '');
-            if ($st === 'posted') {
-                if (!$acct->voidCashVoucher($recordId, $companyId > 0 ? $companyId : null)) {
-                    throw new \RuntimeException(__('voucher_post_failed'));
-                }
-                $db->prepare('UPDATE rateb_cash_vouchers SET status = :st, posted_at = NULL, journal_entry_id = NULL, submitted_for_approval_at = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
-            } elseif ($st === 'rejected') {
-                $db->prepare(
-                    'UPDATE rateb_cash_vouchers SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL WHERE id = :id'
-                )->execute(['st' => 'draft', 'id' => $recordId]);
-            } elseif ($st === 'draft') {
-                return;
-            } else {
+            $cid = $companyId > 0 ? $companyId : null;
+            if (!$acct->undoCashVoucherFromOversight($recordId, $cid)) {
                 throw new \RuntimeException(__('invalid_request'));
             }
             return;
@@ -1066,7 +1048,7 @@ final class ApprovalOversightService
     {
         $acct = new AccountingService();
         $acct->ensureApprovalSubmitColumns();
-        $acct->ensureAccountingStatusEnums();
+        $acct->ensureAccountingRejectColumns();
     }
 
     private function bootstrapCompany(int $companyId): void

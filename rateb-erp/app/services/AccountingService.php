@@ -773,6 +773,7 @@ final class AccountingService
         }
         $done = true;
         $this->ensureAccountingStatusEnums();
+        $this->ensureAccountingRejectColumns();
         $pdo = Database::connection();
         foreach (['rateb_journal_entries', 'rateb_cash_vouchers'] as $table) {
             try {
@@ -816,6 +817,98 @@ final class AccountingService
                 // Host may block ALTER; migration 117 applies on deploy.
             }
         }
+    }
+
+    public function ensureAccountingRejectColumns(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        $pdo = Database::connection();
+        $columnDdls = [
+            'reject_reason' => 'ADD COLUMN reject_reason VARCHAR(500) NULL AFTER status',
+            'rejected_at' => 'ADD COLUMN rejected_at DATETIME NULL AFTER reject_reason',
+            'rejected_by' => 'ADD COLUMN rejected_by INT UNSIGNED NULL AFTER rejected_at',
+        ];
+        foreach (['rateb_journal_entries', 'rateb_cash_vouchers'] as $table) {
+            foreach ($columnDdls as $column => $ddl) {
+                try {
+                    $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE " . $pdo->quote($column));
+                    $has = $stmt !== false && $stmt->fetch() !== false;
+                    if ($stmt instanceof \PDOStatement) {
+                        $stmt->closeCursor();
+                    }
+                    if (!$has) {
+                        $pdo->exec("ALTER TABLE {$table} {$ddl}");
+                    }
+                } catch (\Throwable $e) {
+                    // Migration 118 or host permissions may apply later.
+                }
+            }
+        }
+    }
+
+    public function undoJournalFromOversight(int $entryId, ?int $companyId): bool
+    {
+        $this->ensureApprovalSubmitColumns();
+        $this->ensureAccountingRejectColumns();
+        $entry = $this->findEntryForCompany($entryId, $companyId);
+        if (!$entry) {
+            return false;
+        }
+        $st = (string) ($entry['status'] ?? '');
+        $db = Database::connection();
+        if ($st === 'posted') {
+            if (!$this->voidPostedEntry($entryId, $companyId, ['manual'])) {
+                return false;
+            }
+            $db->prepare(
+                'UPDATE rateb_journal_entries SET status = :st, posted_at = NULL, submitted_for_approval_at = NULL WHERE id = :id'
+            )->execute(['st' => 'draft', 'id' => $entryId]);
+            return true;
+        }
+        if ($st === 'rejected') {
+            $db->prepare(
+                'UPDATE rateb_journal_entries SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL, submitted_for_approval_at = NULL WHERE id = :id'
+            )->execute(['st' => 'draft', 'id' => $entryId]);
+            return true;
+        }
+
+        return $st === 'draft';
+    }
+
+    public function undoCashVoucherFromOversight(int $voucherId, ?int $companyId): bool
+    {
+        $this->ensureApprovalSubmitColumns();
+        $this->ensureAccountingRejectColumns();
+        $v = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_cash_vouchers WHERE id = :id' . ($companyId !== null && $companyId > 0 ? ' AND company_id = :cid' : '') . ' LIMIT 1',
+            $companyId !== null && $companyId > 0 ? ['id' => $voucherId, 'cid' => $companyId] : ['id' => $voucherId]
+        );
+        if (!$v) {
+            return false;
+        }
+        $st = (string) ($v['status'] ?? '');
+        $db = Database::connection();
+        if ($st === 'posted') {
+            if (!$this->voidCashVoucher($voucherId, $companyId)) {
+                return false;
+            }
+            $db->prepare(
+                'UPDATE rateb_cash_vouchers SET status = :st, posted_at = NULL, journal_entry_id = NULL, submitted_for_approval_at = NULL WHERE id = :id'
+            )->execute(['st' => 'draft', 'id' => $voucherId]);
+            return true;
+        }
+        if ($st === 'rejected') {
+            $db->prepare(
+                'UPDATE rateb_cash_vouchers SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL, submitted_for_approval_at = NULL WHERE id = :id'
+            )->execute(['st' => 'draft', 'id' => $voucherId]);
+            return true;
+        }
+
+        return $st === 'draft';
     }
 
     /** @param array<string, mixed> $entry */
@@ -2755,6 +2848,7 @@ final class AccountingService
     public function rejectManualDraft(int $entryId, ?int $companyId, ?string $reason, ?int $userId): bool
     {
         $this->ensureAccountingStatusEnums();
+        $this->ensureAccountingRejectColumns();
         $entry = $this->findEntryForCompany($entryId, $companyId);
         if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
             return false;
@@ -2891,6 +2985,7 @@ final class AccountingService
     public function rejectCashVoucherDraft(int $voucherId, ?int $companyId, ?string $reason, ?int $userId): bool
     {
         $this->ensureAccountingStatusEnums();
+        $this->ensureAccountingRejectColumns();
         $v = (new JournalEntry())->queryOne(
             'SELECT id FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid AND status = :st LIMIT 1',
             ['id' => $voucherId, 'cid' => $companyId, 'st' => 'draft']
