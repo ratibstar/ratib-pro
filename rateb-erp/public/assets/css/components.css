@@ -40,8 +40,8 @@
 }
 
 /* Clip cell content — applies to all data tables system-wide */
-.rateb-table td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-bulk-th):not(.rateb-bulk-td),
-.rateb-content table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table) td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-bulk-td) {
+.rateb-table td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-accounting-actions-col):not(.rateb-bulk-th):not(.rateb-bulk-td),
+.rateb-content table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table) td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-accounting-actions-col):not(.rateb-bulk-td) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -94,12 +94,18 @@
 
 .rateb-table th.rateb-th-actions,
 .rateb-table td.rateb-actions:not(.rateb-actions-cell),
-.rateb-table td.rateb-actions-cell {
+.rateb-table td.rateb-actions-cell,
+.rateb-table th.rateb-accounting-actions-col,
+.rateb-table td.rateb-accounting-actions-col {
     width: auto;
     min-width: 7.5rem;
     max-width: none !important;
-    overflow: visible;
+    overflow: visible !important;
     white-space: nowrap;
+}
+
+.rateb-table td.rateb-accounting-actions-col {
+    min-width: 18rem;
 }
 
 .rateb-table td.rateb-actions-cell {
@@ -298,12 +304,18 @@
 }
 
 /* Accounting — ترحيل للاعتماد must stay readable in table rows */
+.rateb-actions.rateb-accounting-actions {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
 .rateb-actions .rateb-btn-submit-approval {
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
-    padding-inline: 0.6rem 0.75rem;
+    min-width: 8.5rem;
+    padding-inline: 0.75rem 0.85rem;
     border-width: 2px;
-    box-shadow: 0 1px 4px rgba(25, 135, 84, 0.35);
+    box-shadow: 0 1px 6px rgba(25, 135, 84, 0.45);
 }
 
 .rateb-actions .rateb-btn-submit-approval .rateb-btn-label,
@@ -326,7 +338,9 @@
 .rateb-table td:has(.rateb-badge-awaiting-approval),
 .rateb-table th.rateb-accounting-actions-col,
 .rateb-table td.rateb-accounting-actions-col {
-    min-width: 15rem;
+    min-width: 18rem;
+    max-width: none !important;
+    overflow: visible !important;
 }
 
 .rateb-approval-actions .rateb-btn-submit-approval {

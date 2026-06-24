@@ -120,7 +120,7 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                         <?php if ($bulkAny) { ?>
                         <th class="rateb-bulk-th text-center"><input type="checkbox" class="form-check-input" data-rateb-select-all></th>
                         <?php } ?>
-                        <th class="text-end"><?php echo __('actions'); ?></th>
+                        <th class="text-end rateb-accounting-actions-col"><?php echo __('actions'); ?></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -155,7 +155,7 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                             <?php } ?>
                         </td>
                         <?php } ?>
-                        <td class="text-end text-nowrap rateb-approval-actions">
+                        <td class="text-end text-nowrap rateb-approval-actions rateb-accounting-actions-col rateb-actions-cell">
                             <?php Rateb\App\Core\View::partial('accounting-row-actions', [
                                 'csrf' => $csrf,
                                 'id' => $id,
