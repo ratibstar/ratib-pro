@@ -48,7 +48,11 @@
             focus: true
         });
 
+        modalEl.addEventListener('show.bs.modal', function () {
+            modalEl.removeAttribute('aria-hidden');
+        });
         modalEl.addEventListener('hidden.bs.modal', function () {
+            modalEl.setAttribute('aria-hidden', 'true');
             if (resolvePending) {
                 settle(alertMode ? undefined : false);
             }

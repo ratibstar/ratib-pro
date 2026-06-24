@@ -554,7 +554,7 @@ final class ApprovalOversightService
             $acct = new AccountingService();
             $cid = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
             if ($action === 'approve') {
-                $reason = $acct->postDraftEntryReason($recordId, $cid);
+                $reason = $acct->postDraftEntryReason($recordId, $cid, true);
                 if ($reason !== null) {
                     throw new \RuntimeException(__($reason));
                 }
@@ -569,7 +569,7 @@ final class ApprovalOversightService
             $acct = new AccountingService();
             $cid = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
             if ($action === 'approve') {
-                $reason = $acct->postCashVoucherReason($recordId, $cid);
+                $reason = $acct->postCashVoucherReason($recordId, $cid, true);
                 if ($reason !== null) {
                     $msg = __($reason);
                     $detail = $acct->lastVoucherPostDetail();

@@ -1036,6 +1036,22 @@ final class AccountingService
         }
     }
 
+    private function stampJournalSubmittedForApproval(int $entryId): void
+    {
+        $this->ensureApprovalSubmitColumns();
+        Database::connection()->prepare(
+            'UPDATE rateb_journal_entries SET submitted_for_approval_at = NOW() WHERE id = :id AND submitted_for_approval_at IS NULL'
+        )->execute(['id' => $entryId]);
+    }
+
+    private function stampCashVoucherSubmittedForApproval(int $voucherId): void
+    {
+        $this->ensureApprovalSubmitColumns();
+        Database::connection()->prepare(
+            'UPDATE rateb_cash_vouchers SET submitted_for_approval_at = NOW() WHERE id = :id AND submitted_for_approval_at IS NULL'
+        )->execute(['id' => $voucherId]);
+    }
+
     private function clearCashVoucherSubmission(int $voucherId): void
     {
         $this->ensureApprovalSubmitColumns();
@@ -1049,8 +1065,9 @@ final class AccountingService
     }
 
     /** Post manual draft; returns null on success or a lang key for the failure reason. */
-    public function postDraftEntryReason(int $entryId, ?int $companyId): ?string
+    public function postDraftEntryReason(int $entryId, ?int $companyId, bool $fromOversight = false): ?string
     {
+        $this->ensureApprovalSubmitColumns();
         $entry = $this->findEntryForCompany($entryId, $companyId);
         if (!$entry) {
             return 'journal_post_failed';
@@ -1062,7 +1079,10 @@ final class AccountingService
             return 'journal_post_not_manual';
         }
         if (!$this->isSubmittedForApproval($entry)) {
-            return 'not_submitted_for_approval';
+            if (!$fromOversight) {
+                return 'not_submitted_for_approval';
+            }
+            $this->stampJournalSubmittedForApproval($entryId);
         }
         $lines = $this->loadEntryLines($entryId);
         if ($lines === []) {
@@ -2559,9 +2579,10 @@ final class AccountingService
     }
 
     /** Post cash voucher draft; returns null on success or a lang key for the failure reason. */
-    public function postCashVoucherReason(int $voucherId, ?int $companyId): ?string
+    public function postCashVoucherReason(int $voucherId, ?int $companyId, bool $fromOversight = false): ?string
     {
         $this->lastVoucherPostDetail = '';
+        $this->ensureApprovalSubmitColumns();
         $companyId = $this->normalizeCompanyId($companyId);
         if ($companyId === null || $companyId < 1) {
             return 'voucher_post_failed';
@@ -2574,7 +2595,10 @@ final class AccountingService
             return 'voucher_post_not_draft';
         }
         if (!$this->isSubmittedForApproval($v)) {
-            return 'not_submitted_for_approval';
+            if (!$fromOversight) {
+                return 'not_submitted_for_approval';
+            }
+            $this->stampCashVoucherSubmittedForApproval($voucherId);
         }
         $voucherDate = (string) ($v['voucher_date'] ?? date('Y-m-d'));
         try {

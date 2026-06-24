@@ -108,6 +108,7 @@ final class JournalEntry extends Model
     protected array $fillable = [
         'company_id', 'entry_no', 'entry_date', 'description', 'description_ar',
         'source_type', 'source_id', 'status', 'created_by', 'posted_at',
+        'submitted_for_approval_at', 'reject_reason', 'rejected_at', 'rejected_by',
     ];
 }
 
@@ -149,7 +150,7 @@ final class CashVoucher extends Model
     protected array $fillable = [
         'company_id', 'voucher_no', 'voucher_type', 'voucher_date', 'amount', 'party_name', 'customer_id',
         'description', 'description_ar', 'counter_account_id', 'bank_account_id', 'status', 'journal_entry_id',
-        'created_by', 'posted_at',
+        'created_by', 'posted_at', 'submitted_for_approval_at', 'reject_reason', 'rejected_at', 'rejected_by',
     ];
 }
 
