@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260624-accounting-submit-approval');
+define('RATEB_ASSET_BUILD', '20260624-accounting-submit-btn');
 
 if (!function_exists('rateb_erp_public_prefix')) {
     /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */
@@ -998,11 +998,11 @@ if (!function_exists('rateb_can_approve_entity')) {
     }
 }
 
-/** Journal / cash voucher final post (ترحيل محاسبي) is oversight-only for company tenants. */
+/** Final accounting post always goes through management oversight (company UI never posts directly). */
 if (!function_exists('rateb_accounting_final_post_oversight_only')) {
     function rateb_accounting_final_post_oversight_only(): bool
     {
-        return !rateb_is_super_admin();
+        return true;
     }
 }
 

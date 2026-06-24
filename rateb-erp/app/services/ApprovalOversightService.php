@@ -41,6 +41,7 @@ final class ApprovalOversightService
     /** @return array<string, int> */
     public function summary(?int $companyFilter = null): array
     {
+        $this->ensureAccountingSubmitSchema();
         $counts = [];
         foreach ($this->sources() as $key => $source) {
             $counts[$key] = $this->countSource($source, $companyFilter);
@@ -54,6 +55,7 @@ final class ApprovalOversightService
      */
     public function listPending(?int $companyFilter = null, ?string $typeFilter = null, int $limit = 200): array
     {
+        $this->ensureAccountingSubmitSchema();
         $items = [];
         $perSource = max(10, (int) ceil($limit / max(1, count($this->sources()))));
         foreach ($this->sources() as $key => $source) {
@@ -149,7 +151,7 @@ final class ApprovalOversightService
                 'label' => 'journal_entries',
                 'table' => 'rateb_journal_entries',
                 'no_column' => 'entry_no',
-                'date_column' => 'entry_date',
+                'date_column' => 'submitted_for_approval_at',
                 'status_column' => 'status',
                 'status_value' => 'draft',
                 'fixed_filters' => ['source_type' => 'manual'],
@@ -162,7 +164,7 @@ final class ApprovalOversightService
                 'label' => 'cash_vouchers',
                 'table' => 'rateb_cash_vouchers',
                 'no_column' => 'voucher_no',
-                'date_column' => 'voucher_date',
+                'date_column' => 'submitted_for_approval_at',
                 'status_column' => 'status',
                 'status_value' => 'draft',
                 'requires_submission' => true,
@@ -1041,6 +1043,11 @@ final class ApprovalOversightService
         $stmt->execute(['id' => $recordId]);
         $cid = (int) ($stmt->fetchColumn() ?: 0);
         return $cid > 0 ? $cid : null;
+    }
+
+    private function ensureAccountingSubmitSchema(): void
+    {
+        (new AccountingService())->ensureApprovalSubmitColumns();
     }
 
     private function bootstrapCompany(int $companyId): void

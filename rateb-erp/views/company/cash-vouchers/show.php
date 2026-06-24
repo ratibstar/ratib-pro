@@ -48,18 +48,18 @@ $badgeClass = $st === 'posted' ? 'success' : ($st === 'rejected' ? 'danger' : ($
     <?php } ?>
     <?php if (($canManage ?? false) && $st === 'draft') { ?>
     <a href="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
-    <?php if ($oversightOnly && !$submitted) { ?>
+    <?php if (($canManage ?? false) && $st === 'draft' && !$submitted) { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/submit-approval'); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape(rateb_app_url('cash-vouchers/' . (int) $voucher['id'])); ?>">
         <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> <?php echo __('submit_for_approval'); ?></button>
     </form>
-    <?php } elseif ($oversightOnly && $submitted) { ?>
+    <?php } elseif (($canManage ?? false) && $st === 'draft' && $submitted) { ?>
     <span class="badge bg-warning text-dark align-self-center"><?php echo __('awaiting_oversight_approval'); ?></span>
     <?php } ?>
     <?php } ?>
-    <?php if (($canApprove ?? false) && !$oversightOnly && $st === 'posted') { ?>
+    <?php if (($canApprove ?? false) && $st === 'posted') { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/void'); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
