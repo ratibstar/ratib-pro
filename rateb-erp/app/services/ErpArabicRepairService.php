@@ -179,31 +179,15 @@ final class ErpArabicRepairService
     private function repairWorkflows(PDO $pdo): int
     {
         $updated = 0;
-        $patch = static function (string $sql, array $params) use ($pdo): int {
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->rowCount();
-        };
-        $updated += $patch(
-            'UPDATE rateb_approval_workflows SET name = :n WHERE entity_type = :et',
-            ['n' => 'اعتماد طلبات الشراء', 'et' => 'purchase_request']
-        );
-        $updated += $patch(
-            'UPDATE rateb_approval_workflows SET name = :n WHERE entity_type = :et',
-            ['n' => 'اعتماد أوامر الشراء', 'et' => 'purchase_order']
-        );
-        $updated += $patch(
-            'UPDATE rateb_approval_workflow_steps s
-             INNER JOIN rateb_approval_workflows w ON w.id = s.workflow_id
-             SET s.label = :l WHERE w.entity_type = :et',
-            ['l' => 'اعتماد طلب الشراء', 'et' => 'purchase_request']
-        );
-        $updated += $patch(
-            'UPDATE rateb_approval_workflow_steps s
-             INNER JOIN rateb_approval_workflows w ON w.id = s.workflow_id
-             SET s.label = :l WHERE w.entity_type = :et',
-            ['l' => 'اعتماد أمر الشراء', 'et' => 'purchase_order']
-        );
+        $statements = [
+            "UPDATE rateb_approval_workflows SET name = CONVERT(UNHEX('D8A7D8B9D8AAD985D8A7D8AF20D8B7D984D8A8D8A7D8AA20D8A7D984D8B4D8B1D8A7D8A1') USING utf8mb4) WHERE entity_type = 'purchase_request'",
+            "UPDATE rateb_approval_workflows SET name = CONVERT(UNHEX('D8A7D8B9D8AAD985D8A7D8AF20D8A3D988D8A7D985D8B120D8A7D984D8B4D8B1D8A7D8A1') USING utf8mb4) WHERE entity_type = 'purchase_order'",
+            "UPDATE rateb_approval_workflow_steps s INNER JOIN rateb_approval_workflows w ON w.id = s.workflow_id SET s.label = CONVERT(UNHEX('D8A7D8B9D8AAD985D8A7D8AF20D8B7D984D8A820D8A7D984D8B4D8B1D8A7D8A1') USING utf8mb4) WHERE w.entity_type = 'purchase_request'",
+            "UPDATE rateb_approval_workflow_steps s INNER JOIN rateb_approval_workflows w ON w.id = s.workflow_id SET s.label = CONVERT(UNHEX('D8A7D8B9D8AAD985D8A7D8AF20D8A3D985D8B120D8A7D984D8B4D8B1D8A7D8A1') USING utf8mb4) WHERE w.entity_type = 'purchase_order'",
+        ];
+        foreach ($statements as $sql) {
+            $updated += (int) $pdo->exec($sql);
+        }
         return $updated;
     }
 
