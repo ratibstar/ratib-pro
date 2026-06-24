@@ -10,6 +10,8 @@ use PDO;
 
 final class AccountingService
 {
+    use AccountingBranchScope;
+
     private string $lastVoucherPostDetail = '';
 
     public function lastVoucherPostDetail(): string
@@ -1369,6 +1371,7 @@ final class AccountingService
             $params['to'] = $toDate;
         }
         $sql .= ' GROUP BY a.id ORDER BY a.code';
+        [$sql, $params] = $this->scopeJournalLineSql($sql, $params, 'l', 'e');
         $lines = (new ChartOfAccount())->query($sql, $params);
         $revenue = 0.0;
         $expenses = 0.0;
@@ -1410,6 +1413,7 @@ final class AccountingService
             $params['to'] = $toDate;
         }
         $accountSql .= ' GROUP BY a.id ORDER BY a.code';
+        [$accountSql, $params] = $this->scopeJournalLineSql($accountSql, $params, 'l', 'e');
         $accounts = (new ChartOfAccount())->query($accountSql, $params);
 
         $total = 0.0;
@@ -1435,6 +1439,7 @@ final class AccountingService
             $entryParams['to'] = $toDate;
         }
         $entrySql .= ' ORDER BY e.entry_date DESC, e.id DESC, l.id ASC';
+        [$entrySql, $entryParams] = $this->scopeJournalLineSql($entrySql, $entryParams, 'l', 'e');
         $entries = (new JournalEntry())->query($entrySql, $entryParams);
 
         return ['total' => $total, 'accounts' => $accounts, 'entries' => $entries];
@@ -1456,6 +1461,7 @@ final class AccountingService
         }
         $sql .= ' WHERE a.company_id <=> :cid AND a.is_active = 1
                   GROUP BY a.id ORDER BY a.code';
+        [$sql, $params] = $this->scopeJournalLineSql($sql, $params, 'l', 'e');
         $lines = (new ChartOfAccount())->query($sql, $params);
         $assets = 0.0;
         $liabilities = 0.0;
@@ -1499,13 +1505,15 @@ final class AccountingService
     {
         $pdo = Database::connection();
         $pdo->prepare('DELETE FROM rateb_journal_lines WHERE journal_entry_id = :id')->execute(['id' => $entryId]);
+        $branchId = $this->resolveJournalLineBranchId($entryId);
         $stmt = $pdo->prepare(
-            'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :aid, :cc, :dr, :cr, :memo)'
+            'INSERT INTO rateb_journal_lines (journal_entry_id, branch_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :bid, :aid, :cc, :dr, :cr, :memo)'
         );
         foreach ($lines as $line) {
             $cc = isset($line['cost_center_id']) && (int) $line['cost_center_id'] > 0 ? (int) $line['cost_center_id'] : null;
             $stmt->execute([
                 'eid' => $entryId,
+                'bid' => $branchId > 0 ? $branchId : null,
                 'aid' => (int) $line['account_id'],
                 'cc' => $cc,
                 'dr' => $line['debit'],
@@ -1534,8 +1542,8 @@ final class AccountingService
             "SELECT COALESCE(SUM(amount), 0) AS t, COUNT(*) AS c FROM rateb_payments WHERE status = 'completed'" . $cidSql
         )->fetch() ?: ['t' => 0, 'c' => 0];
 
-        $journal = (new JournalEntry())->queryOne(
-            'SELECT COUNT(*) AS c FROM rateb_journal_entries WHERE status = :st' . ($companyId !== null ? ' AND company_id = :cid' : ''),
+        $journal = $this->journalScopedQueryOne(
+            'SELECT COUNT(*) AS c FROM rateb_journal_entries e WHERE e.status = :st' . ($companyId !== null ? ' AND e.company_id = :cid' : ''),
             array_merge(['st' => 'posted'], $cidParam)
         ) ?: ['c' => 0];
 
@@ -1572,7 +1580,8 @@ final class AccountingService
             LEFT JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
             WHERE a.company_id <=> :cid AND a.is_active = 1
             GROUP BY a.id ORDER BY a.code';
-        return (new ChartOfAccount())->query($sql, ['cid' => $companyId, 'posted' => 'posted']);
+        [$sql, $params] = $this->scopeJournalLineSql($sql, ['cid' => $companyId, 'posted' => 'posted'], 'l', 'e');
+        return (new ChartOfAccount())->query($sql, $params);
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -1874,7 +1883,7 @@ final class AccountingService
             'SELECT b.*, a.code AS account_code
              FROM rateb_bank_accounts b
              JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_id
-             WHERE b.company_id = :cid AND b.is_active = 1
+             WHERE b.company_id = :cid AND b.is_active = 1' . $this->scopeBankAccountSql('b') . '
              ORDER BY b.is_default DESC, b.name',
             ['cid' => $companyId]
         );
@@ -2356,14 +2365,14 @@ final class AccountingService
 
         $opening = 0.0;
         if ($fromDate) {
-            $openRow = (new JournalEntry())->queryOne(
+            $openRow = $this->journalScopedQueryOne(
                 'SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr
                  FROM rateb_journal_lines l
                  JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
                  WHERE l.account_id = :aid AND e.company_id = :cid AND e.entry_date < :from',
                 ['posted' => 'posted', 'aid' => $accountId, 'cid' => $companyId, 'from' => $fromDate]
             );
-            $opening = (float) ($openRow['dr'] ?? 0) - (float) ($openRow['cr'] ?? 0);
+            $opening = $openRow ? (float) (($openRow['dr'] ?? 0) - ($openRow['cr'] ?? 0)) : 0.0;
         }
 
         $sql = 'SELECT e.entry_no, e.entry_date, e.description, e.description_ar, e.source_type,
@@ -2381,7 +2390,7 @@ final class AccountingService
             $params['to'] = $toDate;
         }
         $sql .= ' ORDER BY e.entry_date, e.id, l.id';
-        $rawLines = (new JournalEntry())->query($sql, $params);
+        $rawLines = $this->journalScopedQuery($sql, $params, 'e');
 
         $balance = $opening;
         $totalDebit = 0.0;
@@ -2479,7 +2488,7 @@ final class AccountingService
             $params['to'] = $toDate;
         }
         $sql .= ' ORDER BY e.entry_date, e.id, l.id';
-        return (new JournalEntry())->query($sql, $params);
+        return $this->journalScopedQuery($sql, $params, 'e');
     }
 
     private function resolveCashAccountId(?int $companyId, array $voucher): ?int
@@ -2542,7 +2551,7 @@ final class AccountingService
         if ($accountId < 1) {
             return $opening;
         }
-        $row = (new JournalEntry())->queryOne(
+        $row = $this->journalScopedQueryOne(
             'SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr
              FROM rateb_journal_lines l
              JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted

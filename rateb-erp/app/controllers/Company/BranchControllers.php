@@ -189,3 +189,104 @@ final class InterBranchTransfersController extends Controller
         $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
     }
 }
+
+final class BranchFinancialReportsController extends Controller
+{
+    public function index(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $branches = (new BranchService())->listForCompany($companyId);
+        $this->view('company/branch-financial/index', [
+            'title' => __('branch_financial_reports'),
+            'branches' => $branches,
+            'canConsolidated' => function_exists('rateb_can') && rateb_can('branch.financial.consolidated'),
+        ]);
+    }
+
+    public function profitLoss(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $branchId = (int) ($_GET['branch_id'] ?? 0);
+        $from = trim((string) ($_GET['from'] ?? date('Y-01-01')));
+        $to = trim((string) ($_GET['to'] ?? date('Y-m-d')));
+        $report = $branchId > 0
+            ? (new BranchFinancialReportingService())->profitAndLossByBranch($companyId, $branchId, $from, $to)
+            : null;
+        $this->renderFinancial('company/branch-financial/pl', __('branch_pl_report'), $report, $companyId, $branchId, $from, $to);
+    }
+
+    public function balanceSheet(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $branchId = (int) ($_GET['branch_id'] ?? 0);
+        $asOf = trim((string) ($_GET['as_of'] ?? date('Y-m-d')));
+        $report = $branchId > 0
+            ? (new BranchFinancialReportingService())->balanceSheetByBranch($companyId, $branchId, $asOf)
+            : null;
+        $this->view('company/branch-financial/bs', [
+            'title' => __('branch_bs_report'),
+            'report' => $report,
+            'branchId' => $branchId,
+            'asOf' => $asOf,
+            'branches' => (new BranchService())->listForCompany($companyId),
+        ], $this->layout());
+    }
+
+    public function cashFlow(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $branchId = (int) ($_GET['branch_id'] ?? 0);
+        $from = trim((string) ($_GET['from'] ?? date('Y-01-01')));
+        $to = trim((string) ($_GET['to'] ?? date('Y-m-d')));
+        $report = $branchId > 0
+            ? (new BranchFinancialReportingService())->cashFlowByBranch($companyId, $branchId, $from, $to)
+            : null;
+        $this->renderFinancial('company/branch-financial/cf', __('branch_cf_report'), $report, $companyId, $branchId, $from, $to);
+    }
+
+    public function consolidated(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $from = trim((string) ($_GET['from'] ?? date('Y-01-01')));
+        $to = trim((string) ($_GET['to'] ?? date('Y-m-d')));
+        $type = (string) ($_GET['type'] ?? 'pl');
+        $svc = new BranchFinancialReportingService();
+        $report = match ($type) {
+            'bs' => $svc->consolidatedBalanceSheet($companyId, $to),
+            'cf' => $svc->consolidatedCashFlow($companyId, $from, $to),
+            default => $svc->consolidatedProfitAndLoss($companyId, $from, $to),
+        };
+        $interBranch = (new ConsolidationEliminationService())->interBranchBalances($companyId);
+        $this->view('company/branch-financial/consolidated', [
+            'title' => __('consolidated_financial_reports'),
+            'report' => $report,
+            'type' => $type,
+            'from' => $from,
+            'to' => $to,
+            'interBranch' => $interBranch,
+        ], $this->layout());
+    }
+
+    /** @param array<string, mixed>|null $report */
+    private function renderFinancial(string $view, string $title, ?array $report, int $companyId, int $branchId, string $from, string $to): void
+    {
+        $this->view($view, [
+            'title' => $title,
+            'report' => $report,
+            'branchId' => $branchId,
+            'from' => $from,
+            'to' => $to,
+            'branches' => (new BranchService())->listForCompany($companyId),
+        ], $this->layout());
+    }
+
+    private function layout(): string
+    {
+        return 'main';
+    }
+}

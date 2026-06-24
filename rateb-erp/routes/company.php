@@ -18,7 +18,7 @@ use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
 use Rateb\App\Controllers\Company\BranchesController;
 use Rateb\App\Controllers\Company\BranchDashboardController;
-use Rateb\App\Controllers\Company\InterBranchTransfersController;
+use Rateb\App\Controllers\Company\BranchFinancialReportsController;
 use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
 use Rateb\App\Controllers\Company\HrDashboardController;
 use Rateb\App\Controllers\Company\HrEmployeesController;
@@ -610,3 +610,13 @@ $router->get($app('branch-transfers'), [InterBranchTransfersController::class, '
 $router->get($app('branch-transfers/create'), [InterBranchTransfersController::class, 'create'], $branchTransfersWriteMw);
 $router->post($app('branch-transfers'), [InterBranchTransfersController::class, 'store'], $branchTransfersWriteMw);
 $router->post($app('branch-transfers/{id}/approve'), [InterBranchTransfersController::class, 'approve'], $branchTransfersWriteMw);
+
+$branchFinPlMw = rateb_erp_mw('accounting', 'branch.financial.pl');
+$branchFinBsMw = rateb_erp_mw('accounting', 'branch.financial.bs');
+$branchFinCfMw = rateb_erp_mw('accounting', 'branch.financial.cf');
+$branchFinConMw = rateb_erp_mw('accounting', 'branch.financial.consolidated');
+$router->get($app('branch-financial'), [BranchFinancialReportsController::class, 'index'], $branchFinPlMw);
+$router->get($app('branch-financial/profit-loss'), [BranchFinancialReportsController::class, 'profitLoss'], $branchFinPlMw);
+$router->get($app('branch-financial/balance-sheet'), [BranchFinancialReportsController::class, 'balanceSheet'], $branchFinBsMw);
+$router->get($app('branch-financial/cash-flow'), [BranchFinancialReportsController::class, 'cashFlow'], $branchFinCfMw);
+$router->get($app('branch-financial/consolidated'), [BranchFinancialReportsController::class, 'consolidated'], $branchFinConMw);

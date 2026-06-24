@@ -2296,9 +2296,7 @@ final class CostCentersController extends \Rateb\App\Controllers\CrudController
         if ($companyId > 0) {
             TenantContext::setCompanyId($companyId);
         }
-        $items = $companyId > 0
-            ? $this->model->query('SELECT * FROM rateb_cost_centers WHERE company_id = :cid ORDER BY code', ['cid' => $companyId])
-            : [];
+        $items = $companyId > 0 ? $this->model->all(500, 0, [], '') : [];
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $items,
@@ -2320,6 +2318,12 @@ final class CostCentersController extends \Rateb\App\Controllers\CrudController
         $data = parent::collectData();
         $data['company_id'] = rateb_require_ops_company();
         $data['is_active'] = 1;
+        if (function_exists('rateb_resolve_create_branch_id')) {
+            $bid = rateb_resolve_create_branch_id();
+            if ($bid > 0) {
+                $data['branch_id'] = $bid;
+            }
+        }
         return $data;
     }
 
