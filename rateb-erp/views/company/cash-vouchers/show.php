@@ -3,12 +3,16 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
 $desc = rateb_locale() === 'ar' && !empty($voucher['description_ar']) ? $voucher['description_ar'] : $voucher['description'];
 $counterName = rateb_locale() === 'ar' && !empty($voucher['counter_name_ar']) ? $voucher['counter_name_ar'] : $voucher['counter_name'];
 $st = (string) ($voucher['status'] ?? '');
-$displayStatus = $st === 'draft' ? 'pending' : ($st === 'posted' ? 'approved' : $st);
+$acctSvc = new \Rateb\App\Services\AccountingService();
+$submitted = $acctSvc->isSubmittedForApproval($voucher);
+$displayStatus = $acctSvc->accountingRowDisplayStatus($voucher);
+$oversightOnly = rateb_accounting_final_post_oversight_only();
+$badgeClass = $st === 'posted' ? 'success' : ($st === 'rejected' ? 'danger' : ($st === 'void' ? 'secondary' : ($displayStatus === 'awaiting_oversight_approval' ? 'info' : 'warning')));
 ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center">
         <span><?php echo Rateb\App\Core\View::escape($voucher['voucher_no'] ?? ''); ?></span>
-        <span class="badge bg-<?php echo $st === 'posted' ? 'success' : ($st === 'rejected' ? 'danger' : ($st === 'void' ? 'secondary' : 'warning')); ?>">
+        <span class="badge bg-<?php echo $badgeClass; ?>">
             <?php echo __($displayStatus); ?>
         </span>
     </div>
@@ -44,8 +48,18 @@ $displayStatus = $st === 'draft' ? 'pending' : ($st === 'posted' ? 'approved' : 
     <?php } ?>
     <?php if (($canManage ?? false) && $st === 'draft') { ?>
     <a href="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
+    <?php if ($oversightOnly && !$submitted) { ?>
+    <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/submit-approval'); ?>" class="d-inline"
+          onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>');">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape(rateb_app_url('cash-vouchers/' . (int) $voucher['id'])); ?>">
+        <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> <?php echo __('submit_for_approval'); ?></button>
+    </form>
+    <?php } elseif ($oversightOnly && $submitted) { ?>
+    <span class="badge bg-warning text-dark align-self-center"><?php echo __('awaiting_oversight_approval'); ?></span>
     <?php } ?>
-    <?php if (($canApprove ?? false) && $st === 'posted') { ?>
+    <?php } ?>
+    <?php if (($canApprove ?? false) && !$oversightOnly && $st === 'posted') { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/void'); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

@@ -1,0 +1,53 @@
+<?php
+/** @var string $csrf */
+/** @var int $id */
+/** @var string $viewUrl */
+/** @var string|null $editUrl */
+/** @var bool $canEdit */
+/** @var bool $canSubmit */
+/** @var bool $canDelete */
+/** @var string|null $deleteUrl */
+/** @var string|null $submitUrl */
+/** @var bool $submitted */
+$csrf = (string) ($csrf ?? '');
+$id = (int) ($id ?? 0);
+$viewUrl = (string) ($viewUrl ?? '');
+$editUrl = $editUrl ?? null;
+$canEdit = !empty($canEdit);
+$canSubmit = !empty($canSubmit) && empty($submitted);
+$canDelete = !empty($canDelete);
+$deleteUrl = $deleteUrl ?? null;
+$submitUrl = $submitUrl ?? null;
+?>
+<div class="rateb-actions text-nowrap">
+    <?php if ($viewUrl !== '') { ?>
+    <a href="<?php echo Rateb\App\Core\View::escape($viewUrl); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>">
+        <i class="fas fa-eye"></i><span class="d-none d-md-inline ms-1"><?php echo __('view'); ?></span>
+    </a>
+    <?php } ?>
+    <?php if ($canEdit && $editUrl) { ?>
+    <a href="<?php echo Rateb\App\Core\View::escape($editUrl); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>">
+        <i class="fas fa-edit"></i><span class="d-none d-md-inline ms-1"><?php echo __('edit'); ?></span>
+    </a>
+    <?php } ?>
+    <?php if ($canSubmit && $submitUrl) { ?>
+    <form method="post" action="<?php echo Rateb\App\Core\View::escape($submitUrl); ?>" class="d-inline"
+          onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>');">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <button type="submit" class="btn btn-sm btn-success" title="<?php echo __('submit_for_approval'); ?>">
+            <i class="fas fa-paper-plane"></i><span class="d-none d-md-inline ms-1"><?php echo __('submit_for_approval'); ?></span>
+        </button>
+    </form>
+    <?php } elseif (!empty($submitted)) { ?>
+    <span class="badge bg-warning text-dark"><?php echo __('awaiting_oversight_approval'); ?></span>
+    <?php } ?>
+    <?php if ($canDelete && $deleteUrl) { ?>
+    <form method="post" action="<?php echo Rateb\App\Core\View::escape($deleteUrl); ?>" class="d-inline"
+          onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>');">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>">
+            <i class="fas fa-trash"></i>
+        </button>
+    </form>
+    <?php } ?>
+</div>

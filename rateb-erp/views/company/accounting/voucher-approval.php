@@ -1,7 +1,8 @@
 <?php
 /** Voucher approval table */
+$acctSvc = new \Rateb\App\Services\AccountingService();
 $bulkManage = $canManage ?? false;
-$bulkApprove = $canApprove ?? false;
+$bulkApprove = ($canApprove ?? false) && empty($oversightOnly);
 $bulkAny = $bulkManage || $bulkApprove;
 $statusFilter = (string) ($statusFilter ?? 'all');
 $dateFrom = (string) ($dateFrom ?? '');
@@ -131,10 +132,15 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                         $isPending = $st === 'draft';
                         $isApproved = $st === 'posted';
                         $isRejected = $st === 'rejected';
-                        $displayStatus = $isPending ? 'pending' : ($isApproved ? 'approved' : ($isRejected ? 'rejected' : $st));
-                        $badgeClass = $isPending ? 'warning' : ($isApproved ? 'success' : ($isRejected ? 'danger' : 'secondary'));
-                        $canSelect = ($bulkApprove && $isPending) || ($bulkApprove && $isApproved);
+                        $submitted = $acctSvc->isSubmittedForApproval($row);
+                        $displayStatus = $acctSvc->accountingRowDisplayStatus($row);
+                        $badgeClass = $displayStatus === 'awaiting_oversight_approval' ? 'info'
+                            : ($isPending ? 'warning' : ($isApproved ? 'success' : ($isRejected ? 'danger' : 'secondary')));
+                        $canSelect = ($bulkApprove && $isPending && $submitted)
+                            || ($bulkApprove && $isApproved)
+                            || ($bulkManage && $isPending && !$submitted);
                         $rejectReason = trim((string) ($row['reject_reason'] ?? ''));
+                        $id = (int) $row['id'];
                         ?>
                     <tr>
                         <td class="fw-semibold"><?php echo Rateb\App\Core\View::escape($row['voucher_no']); ?></td>
@@ -151,22 +157,31 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                         </td>
                         <?php } ?>
                         <td class="text-end text-nowrap rateb-approval-actions">
-                            <a href="<?php echo rateb_app_url('cash-vouchers/' . (int) $row['id']); ?>" class="btn btn-sm btn-primary">
-                                <i class="fas fa-eye"></i> <?php echo __('view'); ?>
-                            </a>
-                            <?php if ($canApprove && $isPending) { ?>
-                            <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $row['id'] . '/post'); ?>" class="d-inline">
+                            <?php Rateb\App\Core\View::partial('accounting-row-actions', [
+                                'csrf' => $csrf,
+                                'id' => $id,
+                                'viewUrl' => rateb_app_url('cash-vouchers/' . $id),
+                                'editUrl' => ($bulkManage && $isPending) ? rateb_app_url('cash-vouchers/' . $id . '/edit') : null,
+                                'canEdit' => $bulkManage && $isPending,
+                                'canSubmit' => $bulkManage && $isPending && !empty($oversightOnly),
+                                'canDelete' => $bulkManage && $isPending && !$submitted,
+                                'deleteUrl' => rateb_app_url('cash-vouchers/' . $id . '/delete'),
+                                'submitUrl' => rateb_app_url('cash-vouchers/' . $id . '/submit-approval'),
+                                'submitted' => $submitted && $isPending,
+                            ]); ?>
+                            <?php if ($bulkApprove && $isPending && $submitted) { ?>
+                            <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . $id . '/post'); ?>" class="d-inline">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-check"></i> <?php echo __('approve'); ?></button>
                             </form>
-                            <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $row['id'] . '/reject'); ?>" class="d-inline"
+                            <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . $id . '/reject'); ?>" class="d-inline"
                                   onsubmit="return confirm('<?php echo __('bulk_confirm_reject'); ?>');">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <input type="text" name="reject_reason" class="form-control form-control-sm d-inline-block mb-1" style="width:7rem" placeholder="<?php echo Rateb\App\Core\View::escape(__('reject_reason')); ?>">
                                 <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-times"></i> <?php echo __('reject'); ?></button>
                             </form>
-                            <?php } elseif ($canApprove && $isApproved) { ?>
-                            <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $row['id'] . '/void'); ?>" class="d-inline"
+                            <?php } elseif ($bulkApprove && $isApproved) { ?>
+                            <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . $id . '/void'); ?>" class="d-inline"
                                   onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <button type="submit" class="btn btn-sm btn-warning"><i class="fas fa-undo"></i> <?php echo __('undo'); ?></button>

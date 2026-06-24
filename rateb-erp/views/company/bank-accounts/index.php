@@ -35,12 +35,12 @@ $actionsEnabled = $actionsEnabled ?? false;
                 <th><?php echo __('account_number'); ?></th>
                 <th><?php echo __('code'); ?></th>
                 <th class="text-end"><?php echo __('book_balance'); ?></th>
-                <?php if ($actionsEnabled) { ?><th></th><?php } ?>
+                <th class="text-end"><?php echo __('actions'); ?></th>
             </tr>
             </thead>
             <tbody>
             <?php if (empty($items)) { ?>
-            <tr><td colspan="<?php echo ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0) + 5; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
+            <tr><td colspan="<?php echo ($bulkEnabled ? 1 : 0) + 6; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
             <?php } else { foreach ($items as $row) { ?>
             <tr>
                 <?php if ($bulkEnabled) { ?>
@@ -58,16 +58,17 @@ $actionsEnabled = $actionsEnabled ?? false;
                 <td><?php echo Rateb\App\Core\View::escape((string) ($row['account_number'] ?? '')); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($row['account_code'] ?? ''); ?></td>
                 <td class="text-end"><?php echo number_format((float) ($row['book_balance'] ?? 0), 2); ?></td>
-                <?php if ($actionsEnabled) { ?>
-                <td class="text-nowrap">
-                    <a href="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                <td class="text-nowrap text-end">
+                    <a href="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
+                    <?php if ($actionsEnabled) { ?>
+                    <a href="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
                     <form method="post" action="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id'] . '/delete'); ?>" class="d-inline"
                           onsubmit="return confirm('<?php echo __('bulk_confirm_deactivate'); ?>');">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-ban"></i></button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-ban"></i></button>
                     </form>
+                    <?php } ?>
                 </td>
-                <?php } ?>
             </tr>
             <?php } } ?>
             </tbody>

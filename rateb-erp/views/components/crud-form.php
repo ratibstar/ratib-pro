@@ -5,13 +5,14 @@
 /** @var string $csrf */
 /** @var array<string, list<array{value: string|int, label: string}>> $lookups */
 $isEdit = is_array($item) && (int) ($item['id'] ?? 0) > 0;
+$readonly = !empty($readonly);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url($routePrefix);
 $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields($fields);
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) ? ' enctype="multipart/form-data"' : ''; ?><?php
+        <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) && !$readonly ? ' enctype="multipart/form-data"' : ''; ?><?php
             if (str_contains((string) ($routePrefix ?? ''), 'inventory-batches')) {
                 echo ' data-inventory-batch-form';
             }
@@ -22,7 +23,7 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
                     $name = $field['name'];
                     $value = $item[$name] ?? ($field['default'] ?? '');
                     Rateb\App\Core\View::partial('form-field', [
-                        'field' => $field,
+                        'field' => array_merge($field, $readonly ? ['readonly' => true] : []),
                         'value' => $value,
                         'lookups' => $lookups,
                     ]);
@@ -60,8 +61,13 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
                 <?php } ?>
             </div>
             <div class="mt-4 d-flex gap-2">
+                <?php if (!$readonly) { ?>
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
+                <?php } ?>
                 <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+                <?php if ($readonly && $isEdit && function_exists('rateb_can_manage_entity') && rateb_can_manage_entity((string) preg_replace('#^admin/(ops/)?#', '', $routePrefix ?? ''))) { ?>
+                <a href="<?php echo rateb_url($routePrefix . '/' . (int) $item['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
+                <?php } ?>
             </div>
         </form>
     </div>

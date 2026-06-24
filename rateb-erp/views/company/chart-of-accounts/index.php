@@ -29,12 +29,12 @@ $routePrefix = $routePrefix ?? rateb_app_route('chart-of-accounts');
                     <th><?php echo __('parent_account'); ?></th>
                     <th><?php echo __('account_type'); ?></th>
                     <th class="text-end"><?php echo __('balance'); ?></th>
-                    <?php if ($canManage) { ?><th></th><?php } ?>
+                    <th class="text-end"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
                 <?php if (empty($items)) { ?>
-                <tr><td colspan="<?php echo $canManage ? 6 : 5; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
+                <tr><td colspan="6" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
                 <?php } else { foreach ($items as $row) {
                     $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : ($row['name'] ?? '');
                     $parentLabel = '—';
@@ -49,11 +49,12 @@ $routePrefix = $routePrefix ?? rateb_app_route('chart-of-accounts');
                     <td class="small text-muted"><?php echo Rateb\App\Core\View::escape($parentLabel); ?></td>
                     <td><span class="badge bg-secondary-subtle text-secondary"><?php echo __((string) ($row['account_type'] ?? '')); ?></span></td>
                     <td class="text-end"><?php echo number_format((float) ($row['balance'] ?? 0), 2); ?></td>
-                    <?php if ($canManage) { ?>
                     <td class="text-end text-nowrap">
-                        <a href="<?php echo rateb_app_url('chart-of-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                        <a href="<?php echo rateb_app_url('chart-of-accounts/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
+                        <?php if ($canManage) { ?>
+                        <a href="<?php echo rateb_app_url('chart-of-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+                        <?php } ?>
                     </td>
-                    <?php } ?>
                 </tr>
                 <?php } } ?>
                 </tbody>

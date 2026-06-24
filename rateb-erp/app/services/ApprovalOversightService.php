@@ -153,6 +153,7 @@ final class ApprovalOversightService
                 'status_column' => 'status',
                 'status_value' => 'draft',
                 'fixed_filters' => ['source_type' => 'manual'],
+                'requires_submission' => true,
                 'route' => 'journal-entries',
                 'queue_route' => 'accounting/entry-approval',
             ],
@@ -164,6 +165,7 @@ final class ApprovalOversightService
                 'date_column' => 'voucher_date',
                 'status_column' => 'status',
                 'status_value' => 'draft',
+                'requires_submission' => true,
                 'route' => 'cash-vouchers',
                 'queue_route' => 'accounting/voucher-approval',
             ],
@@ -335,6 +337,10 @@ final class ApprovalOversightService
             $paramKey = 'ff_' . preg_replace('/[^a-z0-9_]/', '_', (string) $col);
             $where .= ' AND ' . $alias . '.' . $col . ' = :' . $paramKey;
             $params[$paramKey] = (string) $val;
+        }
+
+        if (!empty($source['requires_submission'])) {
+            $where .= ' AND ' . $alias . '.submitted_for_approval_at IS NOT NULL';
         }
 
         if ($countOnly) {
@@ -764,7 +770,7 @@ final class ApprovalOversightService
                 if (!$acct->voidPostedEntry($recordId, $companyId > 0 ? $companyId : null, ['manual'])) {
                     throw new \RuntimeException(__('journal_post_failed'));
                 }
-                $db->prepare('UPDATE rateb_journal_entries SET status = :st, posted_at = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
+                $db->prepare('UPDATE rateb_journal_entries SET status = :st, posted_at = NULL, submitted_for_approval_at = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
             } elseif ($st === 'rejected') {
                 $db->prepare(
                     'UPDATE rateb_journal_entries SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL WHERE id = :id'
@@ -790,7 +796,7 @@ final class ApprovalOversightService
                 if (!$acct->voidCashVoucher($recordId, $companyId > 0 ? $companyId : null)) {
                     throw new \RuntimeException(__('voucher_post_failed'));
                 }
-                $db->prepare('UPDATE rateb_cash_vouchers SET status = :st, posted_at = NULL, journal_entry_id = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
+                $db->prepare('UPDATE rateb_cash_vouchers SET status = :st, posted_at = NULL, journal_entry_id = NULL, submitted_for_approval_at = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
             } elseif ($st === 'rejected') {
                 $db->prepare(
                     'UPDATE rateb_cash_vouchers SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL WHERE id = :id'

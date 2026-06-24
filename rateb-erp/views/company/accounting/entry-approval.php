@@ -1,7 +1,8 @@
 <?php
 /** Entry approval table — manual journal drafts only */
+$acctSvc = new \Rateb\App\Services\AccountingService();
 $bulkManage = $canManage ?? false;
-$bulkApprove = $canApprove ?? false;
+$bulkApprove = ($canApprove ?? false) && empty($oversightOnly);
 $bulkAny = $bulkManage || $bulkApprove;
 $statusFilter = (string) ($statusFilter ?? 'all');
 $dateFrom = (string) ($dateFrom ?? '');
@@ -131,12 +132,15 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                         $isPending = $st === 'draft';
                         $isApproved = $st === 'posted';
                         $isRejected = $st === 'rejected';
-                        $displayStatus = $isPending ? 'pending' : ($isApproved ? 'approved' : ($isRejected ? 'rejected' : $st));
-                        $badgeClass = $isPending ? 'warning' : ($isApproved ? 'success' : ($isRejected ? 'danger' : 'secondary'));
+                        $submitted = $acctSvc->isSubmittedForApproval($row);
+                        $displayStatus = $acctSvc->accountingRowDisplayStatus($row);
+                        $badgeClass = $displayStatus === 'awaiting_oversight_approval' ? 'info'
+                            : ($isPending ? 'warning' : ($isApproved ? 'success' : ($isRejected ? 'danger' : 'secondary')));
                         $canSelect = ($bulkApprove && $isPending && $isManual)
                             || ($bulkApprove && $isApproved && $isManual)
-                            || ($bulkManage && $isPending && $isManual);
+                            || ($bulkManage && $isPending && $isManual && !$submitted);
                         $rejectReason = trim((string) ($row['reject_reason'] ?? ''));
+                        $id = (int) $row['id'];
                         ?>
                     <tr>
                         <td class="fw-semibold"><?php echo Rateb\App\Core\View::escape($row['entry_no']); ?></td>
@@ -152,22 +156,31 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                         </td>
                         <?php } ?>
                         <td class="text-end text-nowrap rateb-approval-actions">
-                            <a href="<?php echo rateb_app_url('journal-entries/' . (int) $row['id']); ?>" class="btn btn-sm btn-primary">
-                                <i class="fas fa-eye"></i> <?php echo __('view'); ?>
-                            </a>
-                            <?php if ($canApprove && $isPending && $isManual) { ?>
-                            <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $row['id'] . '/post'); ?>" class="d-inline">
+                            <?php Rateb\App\Core\View::partial('accounting-row-actions', [
+                                'csrf' => $csrf,
+                                'id' => $id,
+                                'viewUrl' => rateb_app_url('journal-entries/' . $id),
+                                'editUrl' => ($bulkManage && $isPending && $isManual) ? rateb_app_url('journal-entries/' . $id . '/edit') : null,
+                                'canEdit' => $bulkManage && $isPending && $isManual,
+                                'canSubmit' => $bulkManage && $isPending && $isManual && !empty($oversightOnly),
+                                'canDelete' => $bulkManage && $isPending && $isManual && !$submitted,
+                                'deleteUrl' => rateb_app_url('journal-entries/' . $id . '/delete'),
+                                'submitUrl' => rateb_app_url('journal-entries/' . $id . '/submit-approval'),
+                                'submitted' => $submitted && $isPending && $isManual,
+                            ]); ?>
+                            <?php if ($bulkApprove && $isPending && $isManual && $submitted) { ?>
+                            <form method="post" action="<?php echo rateb_app_url('journal-entries/' . $id . '/post'); ?>" class="d-inline">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-check"></i> <?php echo __('approve'); ?></button>
                             </form>
-                            <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $row['id'] . '/reject'); ?>" class="d-inline"
+                            <form method="post" action="<?php echo rateb_app_url('journal-entries/' . $id . '/reject'); ?>" class="d-inline"
                                   onsubmit="return confirm('<?php echo __('bulk_confirm_reject'); ?>');">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <input type="text" name="reject_reason" class="form-control form-control-sm d-inline-block mb-1" style="width:7rem" placeholder="<?php echo Rateb\App\Core\View::escape(__('reject_reason')); ?>">
                                 <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-times"></i> <?php echo __('reject'); ?></button>
                             </form>
-                            <?php } elseif ($canApprove && $isApproved && $isManual) { ?>
-                            <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $row['id'] . '/void'); ?>" class="d-inline"
+                            <?php } elseif ($bulkApprove && $isApproved && $isManual) { ?>
+                            <form method="post" action="<?php echo rateb_app_url('journal-entries/' . $id . '/void'); ?>" class="d-inline"
                                   onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <button type="submit" class="btn btn-sm btn-warning"><i class="fas fa-undo"></i> <?php echo __('undo'); ?></button>

@@ -13,6 +13,7 @@ $printEnabled = $printEnabled ?? false;
 $employeeReceiptEnabled = $employeeReceiptEnabled ?? false;
 $customsInvoiceActions = !empty($customsInvoiceActions);
 $actionsRoutePrefix = $actionsRoutePrefix ?? ($routePrefix ?? '');
+$showActionsCol = $viewEnabled || ($actionsEnabled ?? true);
 if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $canManage = rateb_can_manage_entity((string) $permissionResource);
     $createEnabled = $createEnabled && $canManage;
@@ -30,7 +31,7 @@ if (empty($columns) && !empty($items)) {
         $columns[] = ['name' => $key, 'label' => $key];
     }
 }
-$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
+$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsCol ? 1 : 0);
 $documentEntityType = (string) ($documentEntityType ?? '');
 $fkLabelMaps = [];
 if ($columns !== []) {
@@ -177,7 +178,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
                         } ?>
                     <?php } ?>
-                    <?php if ($actionsEnabled) { ?>
+                    <?php if ($showActionsCol) { ?>
                     <td class="rateb-actions-cell text-nowrap">
                         <div class="rateb-actions">
                         <?php if ($customsInvoiceActions) { ?>
@@ -187,6 +188,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php if ($viewEnabled) { ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                         <?php } ?>
+                        <?php if ($actionsEnabled) { ?>
                         <?php if ($printEnabled) { ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/print'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('print'); ?>" target="_blank" rel="noopener"><i class="fas fa-print"></i></a>
                         <?php } ?>
@@ -225,6 +227,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-play"></i></button>
                         </form>
+                        <?php } ?>
                         <?php } ?>
                         <?php } ?>
                         </div>

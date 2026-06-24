@@ -337,6 +337,25 @@ abstract class CrudController extends Controller
         ]), $this->layout());
     }
 
+    public function show(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('view') . ' ' . __($this->entityName),
+            'item' => $item,
+            'readonly' => true,
+        ]), $this->layout());
+    }
+
     public function update(array $params): void
     {
         $this->guardManage();

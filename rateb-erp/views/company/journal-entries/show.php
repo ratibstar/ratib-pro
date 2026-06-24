@@ -2,6 +2,10 @@
 $desc = rateb_locale() === 'ar' && !empty($entry['description_ar']) ? $entry['description_ar'] : $entry['description'];
 $status = (string) ($entry['status'] ?? '');
 $sourceType = (string) ($entry['source_type'] ?? '');
+$acctSvc = new \Rateb\App\Services\AccountingService();
+$submitted = $acctSvc->isSubmittedForApproval($entry);
+$displayStatus = $acctSvc->accountingRowDisplayStatus($entry);
+$oversightOnly = rateb_accounting_final_post_oversight_only();
 $sourceId = (int) ($entry['source_id'] ?? 0);
 $sourceUrl = null;
 $sourceLabel = '';
@@ -24,13 +28,13 @@ if ($sourceId > 0) {
             break;
     }
 }
-$displayStatus = $status === 'draft' ? 'pending' : ($status === 'posted' ? 'approved' : $status);
+$badgeClass = $status === 'posted' ? 'success' : ($status === 'rejected' ? 'danger' : ($status === 'void' ? 'secondary' : ($displayStatus === 'awaiting_oversight_approval' ? 'info' : 'warning')));
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center">
         <span><?php echo Rateb\App\Core\View::escape($entry['entry_no'] ?? ''); ?></span>
-        <span class="badge bg-<?php echo $status === 'posted' ? 'success' : ($status === 'rejected' ? 'danger' : ($status === 'void' ? 'secondary' : 'warning')); ?>">
+        <span class="badge bg-<?php echo $badgeClass; ?>">
             <?php echo __($displayStatus); ?>
         </span>
     </div>
@@ -88,8 +92,18 @@ $displayStatus = $status === 'draft' ? 'pending' : ($status === 'posted' ? 'appr
     <?php } ?>
     <?php if (($canManage ?? false) && $status === 'draft' && $sourceType === 'manual') { ?>
     <a href="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
+    <?php if ($oversightOnly && !$submitted) { ?>
+    <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/submit-approval'); ?>" class="d-inline"
+          onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>');">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape(rateb_app_url('journal-entries/' . (int) $entry['id'])); ?>">
+        <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> <?php echo __('submit_for_approval'); ?></button>
+    </form>
+    <?php } elseif ($oversightOnly && $submitted) { ?>
+    <span class="badge bg-warning text-dark align-self-center"><?php echo __('awaiting_oversight_approval'); ?></span>
     <?php } ?>
-    <?php if (($canApprove ?? false) && $status === 'posted' && $sourceType === 'manual') { ?>
+    <?php } ?>
+    <?php if (($canApprove ?? false) && !$oversightOnly && $status === 'posted' && $sourceType === 'manual') { ?>
     <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/void'); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

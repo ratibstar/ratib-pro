@@ -744,6 +744,7 @@ final class AccountingService
             'description' => $description,
             'description_ar' => $descriptionAr,
         ]);
+        $this->clearJournalSubmission($entryId);
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
@@ -753,6 +754,141 @@ final class AccountingService
         } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
+        }
+    }
+
+    public function ensureApprovalSubmitColumns(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        $pdo = Database::connection();
+        foreach (['rateb_journal_entries', 'rateb_cash_vouchers'] as $table) {
+            try {
+                $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'submitted_for_approval_at'");
+                $has = $stmt !== false && $stmt->fetch() !== false;
+                if ($stmt instanceof \PDOStatement) {
+                    $stmt->closeCursor();
+                }
+                if (!$has) {
+                    $pdo->exec(
+                        "ALTER TABLE {$table} ADD COLUMN submitted_for_approval_at DATETIME NULL AFTER posted_at"
+                    );
+                }
+            } catch (\Throwable $e) {
+                // Migration 116 or host permissions may apply later.
+            }
+        }
+    }
+
+    /** @param array<string, mixed> $row */
+    public function accountingRowDisplayStatus(array $row, string $statusKey = 'status'): string
+    {
+        $st = (string) ($row[$statusKey] ?? '');
+        $submitted = trim((string) ($row['submitted_for_approval_at'] ?? '')) !== '';
+        if ($st === 'draft' && $submitted) {
+            return 'awaiting_oversight_approval';
+        }
+        if ($st === 'draft') {
+            return 'draft';
+        }
+        if ($st === 'posted') {
+            return 'approved';
+        }
+        return $st;
+    }
+
+    /** @param array<string, mixed> $row */
+    public function isSubmittedForApproval(array $row): bool
+    {
+        return trim((string) ($row['submitted_for_approval_at'] ?? '')) !== '';
+    }
+
+    public function submitJournalForApproval(int $entryId, ?int $companyId): ?string
+    {
+        $this->ensureApprovalSubmitColumns();
+        $entry = $this->findEntryForCompany($entryId, $companyId);
+        if (!$entry) {
+            return 'invalid_request';
+        }
+        if (($entry['status'] ?? '') !== 'draft' || ($entry['source_type'] ?? '') !== 'manual') {
+            return 'journal_post_not_draft';
+        }
+        if ($this->isSubmittedForApproval($entry)) {
+            return 'approval_already_submitted';
+        }
+        $lines = $this->loadEntryLines($entryId);
+        if ($lines === []) {
+            return 'journal_no_lines';
+        }
+        if (!$this->isBalanced($lines)) {
+            return 'journal_not_balanced';
+        }
+        if (!$this->isPeriodOpen($companyId, (string) ($entry['entry_date'] ?? date('Y-m-d')))) {
+            return 'fiscal_period_closed_block';
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_journal_entries SET submitted_for_approval_at = NOW() WHERE id = :id'
+        )->execute(['id' => $entryId]);
+        return null;
+    }
+
+    public function submitCashVoucherForApproval(int $voucherId, ?int $companyId): ?string
+    {
+        $this->ensureApprovalSubmitColumns();
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null || $companyId < 1) {
+            return 'invalid_request';
+        }
+        $v = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $voucherId, 'cid' => $companyId]
+        );
+        if (!$v || ($v['status'] ?? '') !== 'draft') {
+            return 'voucher_post_not_draft';
+        }
+        if ($this->isSubmittedForApproval($v)) {
+            return 'approval_already_submitted';
+        }
+        $amount = (float) ($v['amount'] ?? 0);
+        if ($amount <= 0) {
+            return 'voucher_no_amount';
+        }
+        if ((int) ($v['counter_account_id'] ?? 0) < 1) {
+            return 'voucher_no_counter_account';
+        }
+        if (!$this->isPeriodOpen($companyId, (string) ($v['voucher_date'] ?? date('Y-m-d')))) {
+            return 'fiscal_period_closed_block';
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_cash_vouchers SET submitted_for_approval_at = NOW() WHERE id = :id'
+        )->execute(['id' => $voucherId]);
+        return null;
+    }
+
+    private function clearJournalSubmission(int $entryId): void
+    {
+        $this->ensureApprovalSubmitColumns();
+        try {
+            Database::connection()->prepare(
+                'UPDATE rateb_journal_entries SET submitted_for_approval_at = NULL WHERE id = :id'
+            )->execute(['id' => $entryId]);
+        } catch (\Throwable $e) {
+            // Column may be missing until migration runs.
+        }
+    }
+
+    private function clearCashVoucherSubmission(int $voucherId): void
+    {
+        $this->ensureApprovalSubmitColumns();
+        try {
+            Database::connection()->prepare(
+                'UPDATE rateb_cash_vouchers SET submitted_for_approval_at = NULL WHERE id = :id'
+            )->execute(['id' => $voucherId]);
+        } catch (\Throwable $e) {
+            // Column may be missing until migration runs.
         }
     }
 
@@ -768,6 +904,9 @@ final class AccountingService
         }
         if ((string) ($entry['source_type'] ?? '') !== 'manual') {
             return 'journal_post_not_manual';
+        }
+        if (!$this->isSubmittedForApproval($entry)) {
+            return 'not_submitted_for_approval';
         }
         $lines = $this->loadEntryLines($entryId);
         if ($lines === []) {
@@ -2278,6 +2417,9 @@ final class AccountingService
         if (!$v || ($v['status'] ?? '') !== 'draft') {
             return 'voucher_post_not_draft';
         }
+        if (!$this->isSubmittedForApproval($v)) {
+            return 'not_submitted_for_approval';
+        }
         $voucherDate = (string) ($v['voucher_date'] ?? date('Y-m-d'));
         try {
             $this->ensureFiscalPeriodForDate($companyId, $voucherDate);
@@ -2630,17 +2772,23 @@ final class AccountingService
         if (!in_array($type, ['receipt', 'payment'], true)) {
             $type = 'receipt';
         }
-        (new JournalEntry())->update($voucherId, [
-            'voucher_type' => $type,
-            'voucher_date' => (string) ($data['voucher_date'] ?? date('Y-m-d')),
-            'amount' => $amount,
-            'party_name' => trim((string) ($data['party_name'] ?? '')) ?: null,
-            'customer_id' => isset($data['customer_id']) && (int) $data['customer_id'] > 0 ? (int) $data['customer_id'] : null,
-            'description' => trim((string) ($data['description'] ?? '')) ?: ($type === 'receipt' ? 'Cash receipt' : 'Cash payment'),
-            'description_ar' => trim((string) ($data['description_ar'] ?? '')) ?: null,
-            'counter_account_id' => $counter,
-            'bank_account_id' => isset($data['bank_account_id']) && (int) $data['bank_account_id'] > 0
+        Database::connection()->prepare(
+            'UPDATE rateb_cash_vouchers SET voucher_type = :type, voucher_date = :dt, amount = :amt,
+             party_name = :party, customer_id = :cust, description = :desc, description_ar = :desc_ar,
+             counter_account_id = :acct, bank_account_id = :bank, submitted_for_approval_at = NULL
+             WHERE id = :id'
+        )->execute([
+            'type' => $type,
+            'dt' => (string) ($data['voucher_date'] ?? date('Y-m-d')),
+            'amt' => $amount,
+            'party' => trim((string) ($data['party_name'] ?? '')) ?: null,
+            'cust' => isset($data['customer_id']) && (int) $data['customer_id'] > 0 ? (int) $data['customer_id'] : null,
+            'desc' => trim((string) ($data['description'] ?? '')) ?: ($type === 'receipt' ? 'Cash receipt' : 'Cash payment'),
+            'desc_ar' => trim((string) ($data['description_ar'] ?? '')) ?: null,
+            'acct' => $counter,
+            'bank' => isset($data['bank_account_id']) && (int) $data['bank_account_id'] > 0
                 ? (int) $data['bank_account_id'] : null,
+            'id' => $voucherId,
         ]);
         return true;
     }

@@ -890,6 +890,37 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
         ]), $this->layout());
     }
 
+    public function show(array $params): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->queryOne(
+            'SELECT a.*, p.code AS parent_code, p.name AS parent_name, p.name_ar AS parent_name_ar
+             FROM rateb_chart_of_accounts a
+             LEFT JOIN rateb_chart_of_accounts p ON p.id = a.parent_id
+             WHERE a.id = :id AND a.company_id = :cid',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $balance = 0.0;
+        foreach ((new AccountingService())->trialBalance($companyId) as $row) {
+            if ((int) ($row['id'] ?? 0) === $id) {
+                $balance = (float) $row['total_debit'] - (float) $row['total_credit'];
+                break;
+            }
+        }
+        $this->view($this->viewPrefix . '/show', [
+            'title' => __('chart_of_accounts'),
+            'item' => $item,
+            'balance' => $balance,
+            'canManage' => rateb_can_manage_entity('chart-of-accounts'),
+        ], $this->layout());
+    }
+
     /** @return array<string, mixed> */
     protected function formViewData(array $extra = []): array
     {
@@ -996,6 +1027,8 @@ final class JournalEntriesController extends Controller
             'title' => __('journal_entries'),
             'items' => $items,
             'canManage' => rateb_can_manage_entity('journal-entries'),
+            'csrf' => Csrf::token(),
+            'oversightOnly' => rateb_accounting_final_post_oversight_only(),
         ], 'main');
     }
 
@@ -1058,7 +1091,28 @@ final class JournalEntriesController extends Controller
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('journal-entries'),
             'canApprove' => rateb_can_approve_entity('journal-entries'),
+            'oversightOnly' => rateb_accounting_final_post_oversight_only(),
         ], 'main');
+    }
+
+    public function submitForApproval(array $params): void
+    {
+        rateb_require_post('journal-entries');
+        if (!rateb_can_manage_entity('journal-entries') || !$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        $reason = (new AccountingService())->submitJournalForApproval($id, $companyId);
+        if ($reason === null) {
+            (new AuditService())->log('submit_approval', 'journal_entry', $id, []);
+            SessionManager::flash('success', __('approval_submitted'));
+        } else {
+            SessionManager::flash('error', __($reason));
+        }
+        $back = trim((string) ($_POST['redirect_to'] ?? ''));
+        Response::redirect($back !== '' ? $back : rateb_app_url('accounting/entry-approval'));
     }
 
     public function create(): void
@@ -1185,6 +1239,10 @@ final class JournalEntriesController extends Controller
 
     public function postEntry(array $params): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
+        }
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('access_denied'));
@@ -1227,6 +1285,10 @@ final class JournalEntriesController extends Controller
 
     public function rejectEntry(array $params): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
+        }
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('access_denied'));
@@ -1247,6 +1309,10 @@ final class JournalEntriesController extends Controller
 
     public function bulkReject(): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
+        }
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/entry-approval'));
@@ -1306,6 +1372,10 @@ final class JournalEntriesController extends Controller
 
     public function bulkApprove(): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
+        }
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/entry-approval'));
@@ -1388,6 +1458,7 @@ final class JournalEntriesController extends Controller
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('journal-entries'),
             'canApprove' => rateb_can_approve_entity('journal-entries'),
+            'oversightOnly' => rateb_accounting_final_post_oversight_only(),
         ], 'main');
     }
 
@@ -1468,6 +1539,8 @@ final class CashVouchersController extends Controller
             'title' => __('cash_vouchers'),
             'items' => (new AccountingService())->listCashVouchers($companyId),
             'canManage' => rateb_can_manage_entity('cash-vouchers'),
+            'csrf' => Csrf::token(),
+            'oversightOnly' => rateb_accounting_final_post_oversight_only(),
         ], 'main');
     }
 
@@ -1532,7 +1605,27 @@ final class CashVouchersController extends Controller
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('cash-vouchers'),
             'canApprove' => rateb_can_approve_entity('cash-vouchers'),
+            'oversightOnly' => rateb_accounting_final_post_oversight_only(),
         ], 'main');
+    }
+
+    public function submitForApproval(array $params): void
+    {
+        rateb_require_post('cash-vouchers');
+        if (!rateb_can_manage_entity('cash-vouchers') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        $reason = (new AccountingService())->submitCashVoucherForApproval($id, $companyId);
+        if ($reason === null) {
+            (new AuditService())->log('submit_approval', 'cash_voucher', $id, []);
+            SessionManager::flash('success', __('approval_submitted'));
+        } else {
+            SessionManager::flash('error', __($reason));
+        }
+        $back = trim((string) ($_POST['redirect_to'] ?? ''));
+        Response::redirect($back !== '' ? $back : rateb_app_url('accounting/voucher-approval'));
     }
 
     public function create(): void
@@ -1690,6 +1783,10 @@ final class CashVouchersController extends Controller
 
     public function bulkApprove(): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/voucher-approval'));
@@ -1719,6 +1816,10 @@ final class CashVouchersController extends Controller
 
     public function bulkReject(): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/voucher-approval'));
@@ -1783,11 +1884,16 @@ final class CashVouchersController extends Controller
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('cash-vouchers'),
             'canApprove' => rateb_can_approve_entity('cash-vouchers'),
+            'oversightOnly' => rateb_accounting_final_post_oversight_only(),
         ], 'main');
     }
 
     public function postVoucher(array $params): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/voucher-approval'));
@@ -1815,6 +1921,10 @@ final class CashVouchersController extends Controller
 
     public function rejectVoucher(array $params): void
     {
+        if (rateb_accounting_final_post_oversight_only()) {
+            SessionManager::flash('error', __('accounting_oversight_approve_only'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/voucher-approval'));
@@ -2043,6 +2153,29 @@ final class BankAccountsController extends Controller
         ], 'main');
     }
 
+    public function show(array $params): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new JournalEntry())->queryOne(
+            'SELECT b.*, a.code AS account_code
+             FROM rateb_bank_accounts b
+             LEFT JOIN rateb_chart_of_accounts a ON a.id = b.coa_account_id
+             WHERE b.id = :id AND b.company_id = :cid AND b.is_active = 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view('company/bank-accounts/show', [
+            'title' => __('bank_accounts'),
+            'item' => $item,
+            'canManage' => rateb_can_manage_entity('bank-accounts'),
+        ], 'main');
+    }
+
     public function update(array $params): void
     {
         rateb_require_post('bank-accounts');
@@ -2150,6 +2283,7 @@ final class CostCentersController extends \Rateb\App\Controllers\CrudController
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled && $companyId > 0,
             'actionsEnabled' => $this->actionsEnabled,
+            'viewEnabled' => true,
         ]), $this->layout());
     }
 
@@ -2221,6 +2355,7 @@ final class CustomersController extends \Rateb\App\Controllers\CrudController
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled && $companyId > 0,
             'actionsEnabled' => $this->actionsEnabled,
+            'viewEnabled' => true,
         ]), $this->layout());
     }
 
