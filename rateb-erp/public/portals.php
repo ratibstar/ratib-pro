@@ -12,7 +12,6 @@ $links = [
     ['لوحة النظام (بعد الدخول)', 'admin', 'fa-chart-line', 'outline'],
     ['طلبات الشراء', rateb_app_route('purchase-requests'), 'fa-file-circle-plus', 'outline'],
     ['المخزون', rateb_app_route('inventory'), 'fa-boxes-stacked', 'outline'],
-    ['الفروع', rateb_app_route('branches'), 'fa-store', 'outline'],
 ];
 ?>
 <!DOCTYPE html>

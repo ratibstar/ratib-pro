@@ -96,7 +96,6 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage'],
-                ['admin/ops/branches', 'branches', 'fa-store', 'branches.view'],
                 ['admin/oversight/supplier-evaluations', 'supplier_evaluations_oversight', 'fa-star-half-stroke', 'procurement.manage'],
                 ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view'],
                 ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
