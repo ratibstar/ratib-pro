@@ -133,6 +133,24 @@ if (!function_exists('rateb_url')) {
     }
 }
 
+if (!function_exists('rateb_external_url')) {
+    /** Ensure href opens externally (prepend https:// when user omits scheme). */
+    function rateb_external_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        if (preg_match('#^(https?:)?//#i', $url)) {
+            return str_starts_with($url, '//') ? 'https:' . $url : $url;
+        }
+        if (preg_match('#^(mailto:|tel:)#i', $url)) {
+            return $url;
+        }
+        return 'https://' . ltrim($url, '/');
+    }
+}
+
 if (!function_exists('rateb_normalize_erp_route')) {
     function rateb_normalize_erp_route(string $route): string
     {

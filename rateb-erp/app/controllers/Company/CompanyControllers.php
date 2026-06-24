@@ -1419,6 +1419,9 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
     {
         $data = parent::collectData();
         $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_BRANCH, 'code');
+        if (!empty($data['map_url'])) {
+            $data['map_url'] = rateb_external_url((string) $data['map_url']);
+        }
         return $data;
     }
 

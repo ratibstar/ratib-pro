@@ -153,7 +153,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php } ?>
                     </td>
                         <?php } elseif ($colType === 'map_link') {
-                            $mapUrl = trim((string) $val);
+                            $mapUrl = rateb_external_url(trim((string) $val));
                             ?>
                     <td class="rateb-map-link-cell">
                         <?php if ($mapUrl !== '') { ?>
