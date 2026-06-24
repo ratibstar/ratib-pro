@@ -95,6 +95,11 @@ $router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'ac
 $router->post('/admin/companies/bulk-delete', [CompaniesController::class, 'bulkDestroy'], rateb_admin_mw('companies.manage'));
 $router->post('/admin/companies/bulk-suspend', [CompaniesController::class, 'bulkSuspend'], rateb_admin_mw('companies.manage'));
 $router->post('/admin/companies/bulk-activate', [CompaniesController::class, 'bulkActivate'], rateb_admin_mw('companies.manage'));
+$router->get('/admin/companies/{id}/documents/panel', [CompaniesController::class, 'documentsPanel'], rateb_admin_mw('companies.view'));
+$router->get('/admin/companies/{id}/documents', [CompaniesController::class, 'documents'], rateb_admin_mw('companies.view'));
+$router->post('/admin/companies/{id}/documents', [CompaniesController::class, 'storeDocument'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies/{id}/documents/{docId}', [CompaniesController::class, 'updateDocument'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies/{id}/documents/{docId}/delete', [CompaniesController::class, 'destroyDocument'], rateb_admin_mw('companies.manage'));
 
 $router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));
 $router->get('/admin/access-control/matrix', [AccessControlController::class, 'matrix'], rateb_admin_mw('access.manage'));

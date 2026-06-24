@@ -23,6 +23,36 @@
     var activeEntityId = 0;
     var activeDocsRoutePrefix = '';
 
+    function initModalA11y(el) {
+        if (!el || typeof bootstrap === 'undefined') {
+            return;
+        }
+        if (!el.classList.contains('show')) {
+            el.setAttribute('aria-hidden', 'true');
+        }
+        el.addEventListener('show.bs.modal', function () {
+            el.removeAttribute('aria-hidden');
+            el.setAttribute('aria-modal', 'true');
+        }, true);
+        el.addEventListener('shown.bs.modal', function () {
+            el.removeAttribute('aria-hidden');
+            el.setAttribute('aria-modal', 'true');
+            var focusTarget = el.querySelector('.btn-close')
+                || el.querySelector('[data-bs-dismiss="modal"]')
+                || el.querySelector('.btn-primary');
+            if (focusTarget) {
+                focusTarget.focus({ preventScroll: true });
+            }
+        });
+        el.addEventListener('hidden.bs.modal', function () {
+            el.setAttribute('aria-hidden', 'true');
+            el.removeAttribute('aria-modal');
+        });
+    }
+
+    initModalA11y(modalEl);
+    initModalA11y(editModalEl);
+
     function panelUrl(routePrefix, entityId) {
         return routePrefix.replace(/\/$/, '') + '/' + entityId + '/documents/panel';
     }
@@ -168,7 +198,7 @@
             editTitleInput.value = editBtn.getAttribute('data-doc-title') || '';
             editFileLabel.textContent = editBtn.getAttribute('data-doc-file') || '';
             editForm.action = activeDocsRoutePrefix + docId;
-            bootstrap.Modal.getOrCreateInstance(editModalEl).show();
+            bootstrap.Modal.getOrCreateInstance(editModalEl, { focus: false }).show();
             return;
         }
 
@@ -211,6 +241,6 @@
         }
         var docsTitle = btn.getAttribute('data-docs-title') || '';
         loadPanel(routePrefix, entityId, docsTitle ? docsTitle + ' — ' + label : label);
-        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        bootstrap.Modal.getOrCreateInstance(modalEl, { focus: false }).show();
     });
 })();

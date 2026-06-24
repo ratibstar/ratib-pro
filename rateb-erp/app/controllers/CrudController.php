@@ -74,10 +74,7 @@ abstract class CrudController extends Controller
         $docSvc = new DocumentService();
         $entityType = $this->resolveDocumentEntityType();
         foreach ($items as &$row) {
-            $companyId = (int) ($row['company_id'] ?? 0);
-            if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-                $companyId = rateb_resolve_ops_company_id();
-            }
+            $companyId = $this->resolveDocumentCompanyId($row);
             $entityId = (int) ($row['id'] ?? 0);
             $row['document_count'] = ($companyId > 0 && $entityId > 0)
                 ? $docSvc->countForEntity($entityType, $entityId, $companyId)
@@ -230,10 +227,7 @@ abstract class CrudController extends Controller
     protected function attachmentFieldData(?array $item): array
     {
         $entityId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
-        $companyId = is_array($item) ? (int) ($item['company_id'] ?? 0) : 0;
-        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-            $companyId = rateb_resolve_ops_company_id();
-        }
+        $companyId = is_array($item) ? $this->resolveDocumentCompanyId($item) : 0;
         return [
             'entityType' => $this->resolveDocumentEntityType(),
             'entityId' => $entityId,
@@ -257,10 +251,7 @@ abstract class CrudController extends Controller
         if (!is_array($item)) {
             return true;
         }
-        $companyId = (int) ($item['company_id'] ?? 0);
-        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-            $companyId = rateb_resolve_ops_company_id();
-        }
+        $companyId = $this->resolveDocumentCompanyId($item);
         $title = trim((string) $this->input('doc_title', ''));
         if ($title === '') {
             $title = $this->recordLabel($item);
@@ -451,10 +442,7 @@ abstract class CrudController extends Controller
             return null;
         }
         $entityType = $this->resolveDocumentEntityType();
-        $companyId = (int) ($item['company_id'] ?? TenantContext::companyId() ?? 0);
-        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-            $companyId = (int) rateb_resolve_ops_company_id();
-        }
+        $companyId = $this->resolveDocumentCompanyId($item);
         $canManage = function_exists('rateb_can_manage_entity')
             ? rateb_can_manage_entity($this->permissionResourceKey())
             : true;
@@ -496,10 +484,7 @@ abstract class CrudController extends Controller
         if (!$this->isDocumentsModalRequest()) {
             return;
         }
-        $companyId = (int) ($item['company_id'] ?? 0);
-        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-            $companyId = rateb_resolve_ops_company_id();
-        }
+        $companyId = $this->resolveDocumentCompanyId($item);
         header('Content-Type: application/json; charset=UTF-8');
         echo json_encode([
             'success' => $success,
@@ -562,7 +547,7 @@ abstract class CrudController extends Controller
             SessionManager::flash('error', __('no_records'));
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $companyId = (int) ($item['company_id'] ?? \Rateb\App\Core\TenantContext::companyId() ?? 0);
+        $companyId = $this->resolveDocumentCompanyId($item);
         $title = trim((string) $this->input('doc_title', $this->recordLabel($item)));
         $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
             'entity_attachment',
@@ -656,6 +641,22 @@ abstract class CrudController extends Controller
             SessionManager::flash('error', __('access_denied'));
         }
         $this->redirect(rateb_url($this->routePrefix . '/' . $entityId . '/documents'));
+    }
+
+    /** @param array<string, mixed> $item */
+    protected function resolveDocumentCompanyId(array $item): int
+    {
+        $companyId = (int) ($item['company_id'] ?? 0);
+        if ($companyId < 1 && $this->entityName === 'companies') {
+            $companyId = (int) ($item['id'] ?? 0);
+        }
+        if ($companyId < 1) {
+            $companyId = (int) (TenantContext::companyId() ?? 0);
+        }
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
+        return $companyId;
     }
 
     protected function resolveDocumentEntityType(): string

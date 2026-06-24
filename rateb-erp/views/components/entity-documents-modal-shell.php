@@ -1,4 +1,5 @@
-<div class="modal fade rateb-entity-docs-modal" id="ratebEntityDocsModal" tabindex="-1" aria-labelledby="ratebEntityDocsModalLabel" aria-hidden="true" data-bs-focus="false">
+<div class="modal fade rateb-entity-docs-modal" id="ratebEntityDocsModal" tabindex="-1" role="dialog"
+     aria-labelledby="ratebEntityDocsModalLabel" data-bs-focus="false"
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -18,13 +19,14 @@
     </div>
 </div>
 
-<div class="modal fade rateb-entity-edit-doc-modal" id="ratebEntityEditDocModal" tabindex="-1" aria-hidden="true" data-bs-focus="false">
+<div class="modal fade rateb-entity-edit-doc-modal" id="ratebEntityEditDocModal" tabindex="-1" role="dialog"
+     aria-labelledby="ratebEntityEditDocModalLabel" data-bs-focus="false">
     <div class="modal-dialog">
         <form method="post" class="modal-content" id="ratebEntityEditDocForm" enctype="multipart/form-data" action="">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Csrf::token()); ?>">
             <input type="hidden" name="rateb_doc_modal" value="1">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-edit"></i> <?php echo __('edit_file'); ?></h5>
+                <h5 class="modal-title" id="ratebEntityEditDocModalLabel"><i class="fas fa-edit"></i> <?php echo __('edit_file'); ?></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
