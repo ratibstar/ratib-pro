@@ -1,4 +1,5 @@
-<div class="modal fade rateb-confirm-modal" id="ratebConfirmModal" tabindex="-1" aria-labelledby="ratebConfirmModalLabel" aria-hidden="true"
+<div class="modal fade rateb-confirm-modal" id="ratebConfirmModal" tabindex="-1" role="dialog"
+     aria-labelledby="ratebConfirmModalLabel" data-bs-focus="false"
      data-label-yes="<?php echo Rateb\App\Core\View::escape(__('yes')); ?>"
      data-label-cancel="<?php echo Rateb\App\Core\View::escape(__('cancel')); ?>"
      data-label-ok="<?php echo Rateb\App\Core\View::escape(__('ok')); ?>"

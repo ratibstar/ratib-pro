@@ -176,6 +176,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
 <?php Rateb\App\Core\View::partial('rateb-confirm-modal'); ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?php echo rateb_asset('js/rateb-console-quiet.js'); ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/lang.js'); ?>"></script>

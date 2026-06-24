@@ -42,17 +42,33 @@
         cancelBtn = modalEl.querySelector('[data-rateb-confirm-cancel]');
         titleEl = modalEl.querySelector('[data-rateb-confirm-title]');
         iconEl = modalEl.querySelector('[data-rateb-confirm-icon]');
+        if (!modalEl.classList.contains('show')) {
+            modalEl.setAttribute('aria-hidden', 'true');
+        }
+
         bsModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
             backdrop: true,
             keyboard: true,
-            focus: true
+            focus: false
         });
 
         modalEl.addEventListener('show.bs.modal', function () {
             modalEl.removeAttribute('aria-hidden');
+            modalEl.setAttribute('aria-modal', 'true');
+        }, true);
+
+        modalEl.addEventListener('shown.bs.modal', function () {
+            modalEl.removeAttribute('aria-hidden');
+            modalEl.setAttribute('aria-modal', 'true');
+            var focusTarget = okBtn && !okBtn.classList.contains('d-none') ? okBtn : cancelBtn;
+            if (focusTarget) {
+                focusTarget.focus({ preventScroll: true });
+            }
         });
+
         modalEl.addEventListener('hidden.bs.modal', function () {
             modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.removeAttribute('aria-modal');
             if (resolvePending) {
                 settle(alertMode ? undefined : false);
             }
