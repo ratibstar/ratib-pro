@@ -63,7 +63,7 @@ $actionsEnabled = $actionsEnabled ?? false;
                     <?php if ($actionsEnabled) { ?>
                     <a href="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
                     <form method="post" action="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id'] . '/delete'); ?>" class="d-inline"
-                          onsubmit="return confirm('<?php echo __('bulk_confirm_deactivate'); ?>');">
+                          data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_deactivate')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-ban"></i></button>
                     </form>

@@ -239,6 +239,8 @@ return [
     'logout' => 'تسجيل الخروج',
     'save' => 'حفظ',
     'cancel' => 'إلغاء',
+    'ok' => 'حسناً',
+    'confirm_action' => 'تأكيد الإجراء',
     'create' => 'إنشاء',
     'new' => 'جديد',
     'coming_soon' => 'قريباً',

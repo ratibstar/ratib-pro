@@ -17,9 +17,6 @@ Rateb\App\Core\View::partial('admin-company-portal-banner');
             <a href="<?php echo rateb_url('admin/oversight/supplier-evaluations?pending=1'); ?>" class="btn btn-sm <?php echo !empty($pendingOnly) ? 'btn-warning' : 'btn-outline-warning'; ?>">
                 <?php echo __('manager_approval_pending'); ?>
             </a>
-            <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-check-double"></i> <?php echo __('approvals_oversight'); ?>
-            </a>
         </div>
     </div>
     <div class="col-12">

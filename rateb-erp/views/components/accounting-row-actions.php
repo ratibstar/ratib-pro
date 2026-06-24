@@ -23,7 +23,7 @@ $submitUrl = $submitUrl ?? null;
 <div class="rateb-actions rateb-accounting-actions text-nowrap">
     <?php if ($canSubmit && $submitUrl) { ?>
     <form method="post" action="<?php echo Rateb\App\Core\View::escape($submitUrl); ?>" class="d-inline rateb-submit-approval-form"
-          onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>');">
+          data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <?php if (!empty($redirectTo)) { ?>
         <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape((string) $redirectTo); ?>">
@@ -48,7 +48,7 @@ $submitUrl = $submitUrl ?? null;
     <?php } ?>
     <?php if ($canDelete && $deleteUrl) { ?>
     <form method="post" action="<?php echo Rateb\App\Core\View::escape($deleteUrl); ?>" class="d-inline"
-          onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>');">
+          data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>">
             <i class="fas fa-trash" aria-hidden="true"></i>

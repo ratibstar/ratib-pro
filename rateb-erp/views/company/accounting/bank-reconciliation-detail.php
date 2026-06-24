@@ -126,7 +126,7 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                                 <button type="submit" class="btn btn-xs btn-outline-success btn-sm"><?php echo __('mark_reconciled'); ?></button>
                             </form>
                             <form method="post" action="<?php echo rateb_app_url('accounting/bank-reconciliation/lines/' . (int) $line['id'] . '/delete'); ?>" class="d-inline"
-                                  onsubmit="return confirm('<?php echo __('bulk_confirm_delete'); ?>');">
+                                  data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_delete')); ?>">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <input type="hidden" name="bank_account_id" value="<?php echo (int) $bankId; ?>">
                                 <button type="submit" class="btn btn-xs btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>

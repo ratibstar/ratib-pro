@@ -43,14 +43,11 @@ $badgeClass = $st === 'posted' ? 'success' : ($st === 'rejected' ? 'danger' : ($
 </div>
 <div class="d-flex flex-wrap gap-2">
     <a href="<?php echo rateb_app_url('cash-vouchers'); ?>" class="btn btn-outline-secondary"><?php echo __('cash_vouchers'); ?></a>
-    <?php if (rateb_is_super_admin() && $st === 'draft') { ?>
-    <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-outline-warning"><i class="fas fa-check-double"></i> <?php echo __('approvals_oversight'); ?></a>
-    <?php } ?>
     <?php if (($canManage ?? false) && $st === 'draft') { ?>
     <a href="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
     <?php if (($canManage ?? false) && $st === 'draft' && !$submitted) { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/submit-approval'); ?>" class="d-inline"
-          onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>');">
+          data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape(rateb_app_url('cash-vouchers/' . (int) $voucher['id'])); ?>">
         <button type="submit" class="btn btn-success rateb-btn-submit-approval"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span class="rateb-btn-label"><?php echo __('submit_for_approval'); ?></span></button>
@@ -61,7 +58,7 @@ $badgeClass = $st === 'posted' ? 'success' : ($st === 'rejected' ? 'danger' : ($
     <?php } ?>
     <?php if (($canApprove ?? false) && $st === 'posted') { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/void'); ?>" class="d-inline"
-          onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
+          data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_undo')); ?>">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <button type="submit" class="btn btn-warning"><i class="fas fa-undo"></i> <?php echo __('undo'); ?></button>
     </form>

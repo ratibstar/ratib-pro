@@ -319,7 +319,7 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                             <?php } ?>
                             <a href="<?php echo rateb_url('documents/download/' . $docId); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('download_file'); ?></a>
                             <?php if ($isEdit) { ?>
-                            <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $invoiceId . '/documents/' . $docId . '/delete'); ?>" class="d-inline" onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_delete_file')); ?>');">
+                            <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $invoiceId . '/documents/' . $docId . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete_file')); ?>">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><?php echo __('delete_file'); ?></button>
                             </form>

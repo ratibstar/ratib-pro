@@ -35,14 +35,14 @@
                     <a href="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                     <?php if (($canManage ?? false) && $st === 'open') { ?>
                     <form method="post" action="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id'] . '/delete'); ?>" class="d-inline"
-                          onsubmit="return confirm('<?php echo __('bulk_confirm_delete'); ?>');">
+                          data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_delete')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                     </form>
                     <?php } ?>
                     <?php if (($canPost ?? false) && $st === 'open') { ?>
                     <form method="post" action="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id'] . '/close'); ?>" class="d-inline"
-                          onsubmit="return confirm('<?php echo __('fiscal_period_close_confirm'); ?>');">
+                          data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('fiscal_period_close_confirm')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <div class="form-check form-check-inline mb-1">
                             <input class="form-check-input" type="checkbox" name="with_closing_entry" value="1" id="close_<?php echo (int) $row['id']; ?>">
@@ -52,7 +52,7 @@
                     </form>
                     <?php } elseif (($canPost ?? false) && $st === 'closed') { ?>
                     <form method="post" action="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id'] . '/reopen'); ?>" class="d-inline"
-                          onsubmit="return confirm('<?php echo __('fiscal_period_reopen_confirm'); ?>');">
+                          data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('fiscal_period_reopen_confirm')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-success"><?php echo __('reopen_period'); ?></button>
                     </form>

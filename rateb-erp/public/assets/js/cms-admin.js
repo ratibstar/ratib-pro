@@ -24,7 +24,8 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (!data || !data.items || !data.items.length) {
-                    window.alert('No images in media library.');
+                    var alertFn = window.ratebAlert || window.alert;
+                    alertFn('No images in media library.');
                     return;
                 }
                 var list = data.items.map(function (it, i) {
@@ -37,7 +38,8 @@
                 }
             })
             .catch(function () {
-                window.alert('Could not load media library.');
+                var alertFn = window.ratebAlert || window.alert;
+                alertFn('Could not load media library.');
             });
     }
 

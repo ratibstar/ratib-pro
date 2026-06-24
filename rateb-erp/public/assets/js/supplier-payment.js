@@ -221,12 +221,14 @@
         var hasInv = invoiceIdInput && parseInt(invoiceIdInput.value, 10) > 0;
         if ((type === 'po' && !hasPo) || (type === 'invoice' && !hasInv)) {
             ev.preventDefault();
-            alert((window.ratebSpLabels && ratebSpLabels.select_document) || 'Select a purchase order or invoice.');
+            var alertFn = window.ratebAlert || window.alert;
+            alertFn((window.ratebSpLabels && ratebSpLabels.select_document) || 'Select a purchase order or invoice.');
             return;
         }
         if (!supplierIdInput || parseInt(supplierIdInput.value, 10) < 1) {
             ev.preventDefault();
-            alert((window.ratebSpLabels && ratebSpLabels.select_supplier) || 'Select a supplier.');
+            var alertFn2 = window.ratebAlert || window.alert;
+            alertFn2((window.ratebSpLabels && ratebSpLabels.select_supplier) || 'Select a supplier.');
         }
     });
 

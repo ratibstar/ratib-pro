@@ -61,8 +61,33 @@
                             return;
                         }
                         var msg = form.getAttribute('data-confirm-delete');
-                        if (msg && !window.confirm(msg)) {
+                        if (msg) {
                             e.preventDefault();
+                            e.stopImmediatePropagation();
+                            var promise = window.ratebConfirm
+                                ? window.ratebConfirm(msg, { variant: 'danger' })
+                                : Promise.resolve(window.confirm(msg));
+                            promise.then(function (ok) {
+                                if (!ok) {
+                                    return;
+                                }
+                                form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
+                                    el.remove();
+                                });
+                                ids.forEach(function (id) {
+                                    var input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = 'ids[]';
+                                    input.value = id;
+                                    form.appendChild(input);
+                                });
+                                form.dataset.ratebConfirmed = '1';
+                                if (typeof form.requestSubmit === 'function') {
+                                    form.requestSubmit(e.submitter || null);
+                                } else {
+                                    form.submit();
+                                }
+                            });
                             return;
                         }
                         form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
@@ -287,15 +312,6 @@
                 var alert = btn.closest('.rateb-flash');
                 if (alert) {
                     alert.remove();
-                }
-            });
-        });
-
-        document.querySelectorAll('form[data-confirm-delete]').forEach(function (form) {
-            form.addEventListener('submit', function (e) {
-                var msg = form.getAttribute('data-confirm-delete') || 'Delete?';
-                if (!window.confirm(msg)) {
-                    e.preventDefault();
                 }
             });
         });

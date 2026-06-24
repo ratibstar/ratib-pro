@@ -44,7 +44,7 @@
                     <form method="post" action="<?php echo rateb_url('admin/cms/newsletter/campaign/send'); ?>" class="d-inline">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <input type="hidden" name="id" value="<?php echo (int) ($c['id'] ?? 0); ?>">
-                        <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('<?php echo __('cms_confirm_send'); ?>')"><?php echo __('cms_send_campaign'); ?></button>
+                        <button type="submit" class="btn btn-sm btn-primary" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_send')); ?>"><?php echo __('cms_send_campaign'); ?></button>
                     </form>
                     <?php } ?>
                 </td>

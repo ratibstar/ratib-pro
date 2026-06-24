@@ -141,13 +141,6 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 <h1 class="h5 mb-0"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></h1>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <?php if (rateb_nav_can('workflows.view') && $oversightPendingApprovals > 0) { ?>
-                <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-outline-warning btn-sm rateb-topbar-approvals position-relative" title="<?php echo __('approvals_oversight'); ?>">
-                    <i class="fas fa-bell"></i>
-                    <span class="rateb-topbar-badge"><?php echo (int) $oversightPendingApprovals; ?></span>
-                    <span class="d-none d-md-inline ms-1"><?php echo __('approvals_oversight'); ?></span>
-                </a>
-                <?php } ?>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
                     <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
@@ -190,10 +183,12 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
     </div>
 </div>
 <?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
+<?php Rateb\App\Core\View::partial('rateb-confirm-modal'); ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/lang.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/app.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/form-fiscal-year.js'); ?>"></script>

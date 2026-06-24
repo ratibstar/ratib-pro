@@ -35,7 +35,7 @@
         </p>
         <?php } ?>
         <form method="post" action="<?php echo Rateb\App\Core\View::escape($regenerateAction); ?>" class="d-inline"
-            onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('barcode_regenerate_confirm')); ?>');">
+            data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('barcode_regenerate_confirm')); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <button type="submit" class="btn btn-outline-warning btn-sm">
                 <i class="fas fa-rotate"></i> <?php echo __('barcode_regenerate'); ?>

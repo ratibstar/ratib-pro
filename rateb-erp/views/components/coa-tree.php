@@ -70,7 +70,7 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
                 <a href="<?php echo $editUrl($nodeId); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
                 <?php if (!$isGroup) { ?>
                 <form method="post" action="<?php echo $deleteUrl($nodeId); ?>" class="d-inline"
-                      onsubmit="return confirm('<?php echo __('bulk_confirm_delete'); ?>');">
+                      data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_delete')); ?>">
                     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                     <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                 </form>

@@ -175,14 +175,14 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                                 <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-check"></i> <?php echo __('approve'); ?></button>
                             </form>
                             <form method="post" action="<?php echo rateb_app_url('journal-entries/' . $id . '/reject'); ?>" class="d-inline"
-                                  onsubmit="return confirm('<?php echo __('bulk_confirm_reject'); ?>');">
+                                  data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_reject')); ?>">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <input type="text" name="reject_reason" class="form-control form-control-sm d-inline-block mb-1" style="width:7rem" placeholder="<?php echo Rateb\App\Core\View::escape(__('reject_reason')); ?>">
                                 <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-times"></i> <?php echo __('reject'); ?></button>
                             </form>
                             <?php } elseif ($bulkApprove && $isApproved && $isManual) { ?>
                             <form method="post" action="<?php echo rateb_app_url('journal-entries/' . $id . '/void'); ?>" class="d-inline"
-                                  onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
+                                  data-rateb-confirm="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_undo')); ?>">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <button type="submit" class="btn btn-sm btn-warning"><i class="fas fa-undo"></i> <?php echo __('undo'); ?></button>
                             </form>

@@ -1087,3 +1087,19 @@ table.rateb-approvals-table td.rateb-actions-cell {
 .rateb-approvals-alert {
     border-inline-start: 4px solid #ffc107;
 }
+
+.rateb-confirm-modal .modal-content {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.45);
+}
+
+.rateb-confirm-modal .modal-body {
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--bs-body-color);
+    white-space: pre-wrap;
+}
+
+.rateb-confirm-modal .modal-footer .btn {
+    min-width: 5.5rem;
+}

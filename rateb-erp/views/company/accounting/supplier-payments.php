@@ -114,7 +114,7 @@ $canPost = $canPost ?? false;
                     <?php } ?>
                     <?php if ($canPost && $st === 'posted') { ?>
                     <form method="post" action="<?php echo rateb_app_url('accounting/supplier-payments/' . (int) $row['id'] . '/void'); ?>" class="d-inline"
-                          onsubmit="return confirm('<?php echo __('bulk_confirm_void'); ?>');">
+                          data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_void')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('void'); ?>"><i class="fas fa-ban"></i></button>
                     </form>

@@ -136,9 +136,21 @@
             e.preventDefault();
             if (form.hasAttribute('data-entity-docs-delete')) {
                 var msg = form.getAttribute('data-confirm') || 'Confirm?';
-                if (!window.confirm(msg)) {
-                    return;
-                }
+                var confirmFn = window.ratebConfirm || window.confirm;
+                var promise = confirmFn === window.confirm
+                    ? Promise.resolve(confirmFn(msg))
+                    : confirmFn(msg, { variant: 'danger' });
+                promise.then(function (ok) {
+                    if (!ok) {
+                        return;
+                    }
+                    postForm(form)
+                        .then(handleActionResult)
+                        .catch(function (err) {
+                            showAlert(err && err.message ? err.message : 'Error', true);
+                        });
+                });
+                return;
             }
             postForm(form)
                 .then(handleActionResult)

@@ -310,56 +310,69 @@
             flashToast(labels.error || 'Error', 'danger');
             return;
         }
-        if (action === 'reject' && !window.confirm(labels.confirm_reject || 'Confirm reject?')) {
-            return;
-        }
-        if (action === 'undo' && !window.confirm(labels.confirm_undo || 'Confirm undo?')) {
-            return;
-        }
 
-        var form = new FormData();
-        form.append('_csrf', csrf());
-        form.append('decision', action);
-        form.append('source_key', row.getAttribute('data-source-key') || '');
-        form.append('record_id', row.getAttribute('data-record-id') || '');
-        form.append('company_id', row.getAttribute('data-company-id') || '');
-        if (config.typeFilter) {
-            form.append('type_filter', config.typeFilter);
+        var confirmMsg = null;
+        if (action === 'reject') {
+            confirmMsg = labels.confirm_reject || 'Confirm reject?';
+        } else if (action === 'undo') {
+            confirmMsg = labels.confirm_undo || 'Confirm undo?';
         }
 
-        setRowBusy(key, true);
+        function runPost() {
+            var form = new FormData();
+            form.append('_csrf', csrf());
+            form.append('decision', action);
+            form.append('source_key', row.getAttribute('data-source-key') || '');
+            form.append('record_id', row.getAttribute('data-record-id') || '');
+            form.append('company_id', row.getAttribute('data-company-id') || '');
+            if (config.typeFilter) {
+                form.append('type_filter', config.typeFilter);
+            }
 
-        fetch(url, {
-            method: 'POST',
-            body: form,
-            cache: 'no-store',
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': csrf()
-            },
-            credentials: 'same-origin'
-        })
-            .then(parseJsonResponse)
-            .then(function (data) {
-                if (action === 'approve' || action === 'reject' || action === 'undo') {
-                    syncRowAfterAction(key, data);
-                }
-                if (data.message) {
-                    flashToast(data.message, 'success');
-                }
+            setRowBusy(key, true);
+
+            fetch(url, {
+                method: 'POST',
+                body: form,
+                cache: 'no-store',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrf()
+                },
+                credentials: 'same-origin'
             })
-            .catch(function (err) {
-                var msg = err.message || labels.error || 'Error';
-                if (typeof console !== 'undefined' && console.error) {
-                    console.error('approvals oversight:', msg);
+                .then(parseJsonResponse)
+                .then(function (data) {
+                    if (action === 'approve' || action === 'reject' || action === 'undo') {
+                        syncRowAfterAction(key, data);
+                    }
+                    if (data.message) {
+                        flashToast(data.message, 'success');
+                    }
+                })
+                .catch(function (err) {
+                    flashToast(err && err.message ? err.message : (labels.error || 'Error'), 'danger');
+                })
+                .finally(function () {
+                    setRowBusy(key, false);
+                });
+        }
+
+        if (confirmMsg) {
+            var confirmFn = window.ratebConfirm || window.confirm;
+            var promise = confirmFn === window.confirm
+                ? Promise.resolve(confirmFn(confirmMsg))
+                : confirmFn(confirmMsg, { variant: action === 'undo' ? 'primary' : 'danger' });
+            promise.then(function (ok) {
+                if (ok) {
+                    runPost();
                 }
-                flashToast(msg, 'danger');
-                loadDetail(key);
-            })
-            .finally(function () {
-                setRowBusy(key, false);
             });
+            return;
+        }
+
+        runPost();
     }
 
     function flashToast(message, type) {

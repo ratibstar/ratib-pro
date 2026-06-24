@@ -239,6 +239,8 @@ return [
     'logout' => 'Logout',
     'save' => 'Save',
     'cancel' => 'Cancel',
+    'ok' => 'OK',
+    'confirm_action' => 'Confirm action',
     'create' => 'Create',
     'new' => 'New',
     'coming_soon' => 'Coming soon',

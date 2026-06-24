@@ -105,21 +105,4 @@ Rateb\App\Core\View::partial('admin-company-portal-banner');
             </div>
         </div>
     </div>
-
-    <div class="col-12">
-        <div class="rateb-card border-warning">
-            <div class="rateb-card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <strong><?php echo __('pending_approvals'); ?></strong>
-                    <div class="text-muted small"><?php echo __('workflow_pending_moved_hint'); ?></div>
-                </div>
-                <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-warning">
-                    <i class="fas fa-check-double"></i> <?php echo __('approvals_oversight'); ?>
-                    <?php if (!empty($pending)) { ?>
-                    <span class="badge bg-dark ms-1"><?php echo count($pending); ?></span>
-                    <?php } ?>
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
