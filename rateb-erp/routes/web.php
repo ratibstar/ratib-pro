@@ -24,7 +24,9 @@ use Rateb\App\Controllers\Admin\UsersController;
 use Rateb\App\Controllers\Admin\AccessControlController;
 use Rateb\App\Controllers\Admin\AccountingDashboardController;
 use Rateb\App\Controllers\Admin\ChartOfAccountsController;
+use Rateb\App\Controllers\Admin\AdminApprovalsController;
 use Rateb\App\Controllers\Admin\AdminWorkflowsController;
+use Rateb\App\Controllers\Admin\SupplierEvaluationsController;
 use Rateb\App\Controllers\Admin\JournalEntriesController as AdminJournalEntriesController;
 use Rateb\App\Controllers\Admin\ExecutiveDashboardController;
 use Rateb\App\Core\Middleware\ErpAuthMiddleware;
@@ -194,7 +196,7 @@ $router->get('/admin/stock-movements/export', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('stock-movements') . '/export'), 301);
 }, [ErpAuthMiddleware::class]);
 $router->get('/admin/supplier-evaluations', static function (): void {
-    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('supplier-evaluations')), 301);
+    \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/supplier-evaluations'), 301);
 }, [ErpAuthMiddleware::class]);
 $router->get('/admin/medical-devices', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('medical-devices')), 301);
@@ -217,6 +219,8 @@ $router->get('/admin/workflows', static function (): void {
 $router->post('/admin/workflows', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 307);
 }, [ErpAuthMiddleware::class]);
+$router->get('/admin/oversight/approvals', [AdminApprovalsController::class, 'index'], rateb_admin_mw('workflows.view'));
+$router->get('/admin/oversight/supplier-evaluations', [SupplierEvaluationsController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/oversight/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/oversight/rfq', [RfqOversightController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/oversight/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));

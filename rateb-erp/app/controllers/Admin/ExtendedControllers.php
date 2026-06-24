@@ -9,6 +9,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\Company;
+use Rateb\App\Services\ApprovalOversightService;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\BillingService;
 use Rateb\App\Services\OversightFilterService;
@@ -205,6 +206,29 @@ final class AdminWorkflowsController extends Controller
             $out[] = ['id' => (int) ($row['id'] ?? 0), 'name' => (string) ($row['name'] ?? '')];
         }
         return $out;
+    }
+}
+
+final class AdminApprovalsController extends Controller
+{
+    public function index(): void
+    {
+        $ofs = new OversightFilterService();
+        $filters = $ofs->parse();
+        $companyFilter = $filters['company_id'] > 0 ? $filters['company_id'] : null;
+        $typeFilter = trim((string) ($_GET['type'] ?? ''));
+        $svc = new ApprovalOversightService();
+        $this->view('admin/approvals/index', [
+            'title' => __('approvals_oversight'),
+            'items' => $svc->listPending($companyFilter, $typeFilter !== '' ? $typeFilter : null),
+            'summary' => $svc->summary($companyFilter),
+            'typeOptions' => ApprovalOversightService::typeOptions(),
+            'typeFilter' => $typeFilter,
+            'companies' => $ofs->companies(),
+            'filters' => $filters,
+            'formAction' => rateb_url('admin/oversight/approvals'),
+            'csrf' => Csrf::token(),
+        ], 'main');
     }
 }
 

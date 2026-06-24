@@ -32,6 +32,21 @@ final class WorkflowService
             'purchase_order' => 'purchase_orders',
             'contract' => 'contracts',
             'supplier' => 'suppliers',
+            'supplier_evaluation' => 'supplier_evaluations',
+            'contract_renewal' => 'contract_renewals',
+            'journal_entry' => 'journal_entries',
+            'cash_voucher' => 'cash_vouchers',
+            'warehouse_transfer' => 'warehouse_transfers',
+            'asset_depreciation' => 'asset_depreciation',
+            'asset_maintenance' => 'asset_maintenance',
+            'asset_assignment' => 'asset_assignments',
+            'device_maintenance' => 'device_maintenance',
+            'device_spare_part' => 'device_spare_parts',
+            'inventory_audit' => 'inventory_audits',
+            'hr_leave' => 'hr_leaves',
+            'hr_permission_request' => 'hr_permission_requests',
+            'hr_employee_request' => 'hr_employee_requests',
+            'hr_payroll' => 'hr_payroll',
         ];
     }
 
@@ -48,6 +63,21 @@ final class WorkflowService
             'purchase_order' => 'purchase-orders',
             'contract' => 'contracts',
             'supplier' => 'suppliers',
+            'supplier_evaluation' => 'supplier-evaluations',
+            'contract_renewal' => 'contract-renewals',
+            'journal_entry' => 'journal-entries',
+            'cash_voucher' => 'cash-vouchers',
+            'warehouse_transfer' => 'warehouse-transfers',
+            'asset_depreciation' => 'asset-depreciation',
+            'asset_maintenance' => 'asset-maintenance',
+            'asset_assignment' => 'asset-assignments',
+            'device_maintenance' => 'device-maintenance',
+            'device_spare_part' => 'device-spare-parts',
+            'inventory_audit' => 'inventory-audits',
+            'hr_leave' => 'hr/leaves',
+            'hr_permission_request' => 'hr/permission-requests',
+            'hr_employee_request' => 'hr/requests',
+            'hr_payroll' => 'hr/payroll',
         ];
         $slug = $routes[$entityType] ?? '';
         if ($slug === '' || $entityId < 1) {

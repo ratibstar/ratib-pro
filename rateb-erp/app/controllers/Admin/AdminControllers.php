@@ -1880,7 +1880,7 @@ final class RfqOversightController extends Controller
             'companies' => $ofs->companies(),
             'filters' => $filters,
             'statusOptions' => $lookup->get('rfq_statuses'),
-            'formAction' => rateb_url('admin/rfq'),
+            'formAction' => rateb_url('admin/oversight/rfq'),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -1935,7 +1935,7 @@ final class InventoryController extends Controller
             'companies' => $ofs->companies(),
             'filters' => $filters,
             'statusOptions' => $lookup->get('inventory_statuses'),
-            'formAction' => rateb_url('admin/inventory'),
+            'formAction' => rateb_url('admin/oversight/inventory'),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -2163,6 +2163,7 @@ final class SupplierEvaluationsController extends Controller
         $ofs = new \Rateb\App\Services\OversightFilterService();
         $filters = $ofs->parse();
         $lookup = new \Rateb\App\Services\FormLookupService();
+        $pendingOnly = trim((string) ($_GET['pending'] ?? '')) === '1';
         $sql = 'SELECT e.*, s.name AS supplier_name, c.name AS company_name
              FROM rateb_supplier_evaluations e
              LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
@@ -2172,15 +2173,20 @@ final class SupplierEvaluationsController extends Controller
         $ofs->applyCompany($sql, $params, 'e.company_id', $filters);
         $ofs->applyStatus($sql, $params, 'e.status', $filters);
         $ofs->applyDateRange($sql, $params, 'e.evaluation_date', $filters);
+        if ($pendingOnly) {
+            $sql .= ' AND e.manager_approval = :_pending';
+            $params['_pending'] = 'pending';
+        }
         $sql .= ' ORDER BY e.id DESC LIMIT 100';
 
         $this->view('admin/supplier-evaluations/index', [
-            'title' => __('supplier_evaluations'),
+            'title' => __('supplier_evaluations_oversight'),
             'items' => (new \Rateb\App\Models\SupplierEvaluation())->query($sql, $params),
             'companies' => $ofs->companies(),
             'filters' => $filters,
             'statusOptions' => $lookup->get('evaluation_statuses'),
-            'formAction' => rateb_url('admin/supplier-evaluations'),
+            'formAction' => rateb_url('admin/oversight/supplier-evaluations'),
+            'pendingOnly' => $pendingOnly,
             'csrf' => Csrf::token(),
         ], 'main');
     }

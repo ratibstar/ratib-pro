@@ -107,59 +107,18 @@ Rateb\App\Core\View::partial('admin-company-portal-banner');
     </div>
 
     <div class="col-12">
-        <div class="rateb-card">
-            <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span><?php echo __('pending_approvals'); ?></span>
-                <a href="<?php echo rateb_url(rateb_app_route('workflows')); ?>" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-check-double"></i> <?php echo __('open_operations'); ?>
-                </a>
-            </div>
-            <div class="rateb-card-body p-0">
-                <div class="table-responsive rateb-oversight-table-wrap">
-                    <table class="table rateb-table rateb-oversight-table mb-0">
-                        <thead>
-                        <tr>
-                            <th><?php echo __('companies'); ?></th>
-                            <th><?php echo __('workflows'); ?></th>
-                            <th><?php echo __('entity_type'); ?></th>
-                            <th><?php echo __('created_at'); ?></th>
-                            <th><?php echo __('status'); ?></th>
-                            <th><?php echo __('actions'); ?></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php if (empty($pending)) { ?>
-                        <tr><td colspan="6" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
-                        <?php } else { foreach ($pending as $row) {
-                            $entityType = (string) ($row['entity_type'] ?? '');
-                            $entityId = (int) ($row['entity_id'] ?? 0);
-                            $companyId = (int) ($row['company_id'] ?? 0);
-                            $docUrl = \Rateb\App\Services\WorkflowService::entityDocumentUrl($entityType, $entityId, $companyId);
-                            $status = (string) ($row['status'] ?? 'pending');
-                            ?>
-                        <tr>
-                            <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
-                            <td><?php echo Rateb\App\Core\View::escape((string) ($row['workflow_name'] ?? '')); ?></td>
-                            <td>
-                                <?php echo Rateb\App\Core\View::escape(\Rateb\App\Services\WorkflowService::entityTypeLabel($entityType)); ?>
-                                <span class="text-muted rateb-ltr-num">#<?php echo $entityId; ?></span>
-                            </td>
-                            <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['created_at'] ?? '')); ?></td>
-                            <td><span class="badge bg-warning text-dark"><?php echo __('workflow_status_' . $status); ?></span></td>
-                            <td>
-                                <?php if ($docUrl !== '') { ?>
-                                <a href="<?php echo Rateb\App\Core\View::escape($docUrl); ?>" class="btn btn-sm btn-outline-info" target="_blank" rel="noopener">
-                                    <i class="fas fa-eye"></i> <?php echo __('view'); ?>
-                                </a>
-                                <?php } else { ?>
-                                <span class="text-muted">—</span>
-                                <?php } ?>
-                            </td>
-                        </tr>
-                        <?php } } ?>
-                        </tbody>
-                    </table>
+        <div class="rateb-card border-warning">
+            <div class="rateb-card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong><?php echo __('pending_approvals'); ?></strong>
+                    <div class="text-muted small"><?php echo __('workflow_pending_moved_hint'); ?></div>
                 </div>
+                <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-warning">
+                    <i class="fas fa-check-double"></i> <?php echo __('approvals_oversight'); ?>
+                    <?php if (!empty($pending)) { ?>
+                    <span class="badge bg-dark ms-1"><?php echo count($pending); ?></span>
+                    <?php } ?>
+                </a>
             </div>
         </div>
     </div>

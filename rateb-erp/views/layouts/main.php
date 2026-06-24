@@ -82,9 +82,11 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             $adminSection(__('admin_oversight_section'), [
                 ['admin/companies', 'companies', 'fa-building', 'companies.view'],
                 ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
+                ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view'],
                 ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage'],
+                ['admin/oversight/supplier-evaluations', 'supplier_evaluations_oversight', 'fa-star-half-stroke', 'procurement.manage'],
                 ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view'],
                 ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
                 ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
