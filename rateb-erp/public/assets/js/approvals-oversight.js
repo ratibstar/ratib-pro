@@ -129,6 +129,7 @@
         });
 
         fetch(config.detailUrl + '?' + params.toString(), {
+            cache: 'no-store',
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
             .then(parseJsonResponse)
@@ -222,6 +223,7 @@
         fetch(url, {
             method: 'POST',
             body: form,
+            cache: 'no-store',
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -282,7 +284,11 @@
                 }
             })
             .catch(function (err) {
-                flashToast(err.message || labels.error || 'Error', 'danger');
+                var msg = err.message || labels.error || 'Error';
+                if (typeof console !== 'undefined' && console.error) {
+                    console.error('approvals oversight:', msg);
+                }
+                flashToast(msg, 'danger');
             })
             .finally(function () {
                 setRowBusy(key, false);

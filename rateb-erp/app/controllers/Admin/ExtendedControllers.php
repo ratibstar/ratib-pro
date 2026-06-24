@@ -214,6 +214,9 @@ final class AdminApprovalsController extends Controller
 {
     public function index(): void
     {
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+        }
         $ofs = new OversightFilterService();
         $filters = $ofs->parse();
         $companyFilter = $filters['company_id'] > 0 ? $filters['company_id'] : null;
@@ -320,6 +323,9 @@ final class AdminApprovalsController extends Controller
         $sourceKey = trim((string) $this->input('source_key', ''));
         $recordId = (int) $this->input('record_id', 0);
         $companyId = (int) $this->input('company_id', 0);
+        if ($sourceKey === '' || $recordId < 1) {
+            $this->respondDecision(false, __('invalid_request'));
+        }
         $svc = new ApprovalOversightService();
         try {
             $svc->process($sourceKey, $recordId, $companyId, $action);

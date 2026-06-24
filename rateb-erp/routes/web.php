@@ -223,6 +223,7 @@ $router->get('/admin/oversight/approvals', [AdminApprovalsController::class, 'in
 $router->get('/admin/oversight/approvals/count', [AdminApprovalsController::class, 'count'], rateb_admin_mw('workflows.view'));
 $router->get('/admin/oversight/approvals/detail', [AdminApprovalsController::class, 'detail'], rateb_admin_mw('workflows.view'));
 $router->post('/admin/oversight/approvals/decide', [AdminApprovalsController::class, 'decideAction'], rateb_admin_mw('workflows.manage'));
+$router->post('/admin/oversight/approvals/action', [AdminApprovalsController::class, 'decideAction'], rateb_admin_mw('workflows.manage'));
 $router->post('/admin/oversight/approvals/approve', [AdminApprovalsController::class, 'approve'], rateb_admin_mw('workflows.manage'));
 $router->post('/admin/oversight/approvals/reject', [AdminApprovalsController::class, 'reject'], rateb_admin_mw('workflows.manage'));
 $router->post('/admin/oversight/approvals/undo', [AdminApprovalsController::class, 'undo'], rateb_admin_mw('workflows.manage'));

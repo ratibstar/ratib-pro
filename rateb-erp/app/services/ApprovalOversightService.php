@@ -656,7 +656,7 @@ final class ApprovalOversightService
         $db = Database::connection();
         $sql = 'SELECT t.*, c.name AS company_name FROM ' . $table . ' t LEFT JOIN rateb_companies c ON c.id = t.company_id WHERE t.id = :id';
         $params = ['id' => $recordId];
-        if ($companyId > 0) {
+        if ($companyId > 0 && !\Rateb\App\Core\TenantContext::isSuperAdmin()) {
             $sql .= ' AND t.company_id = :cid';
             $params['cid'] = $companyId;
         }
@@ -835,7 +835,7 @@ final class ApprovalOversightService
                 LEFT JOIN rateb_companies c ON c.id = i.company_id
                 WHERE i.id = :id';
         $params = ['id' => $instanceId];
-        if ($companyId > 0) {
+        if ($companyId > 0 && !\Rateb\App\Core\TenantContext::isSuperAdmin()) {
             $sql .= ' AND i.company_id = :cid';
             $params['cid'] = $companyId;
         }
