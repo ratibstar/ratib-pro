@@ -75,10 +75,7 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
     </p>
     <div class="d-flex flex-wrap gap-2 mt-2">
         <a href="<?php echo htmlspecialchars(control_rateb_erp_branches_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
-            <i class="fas fa-store"></i> روابط الفروع
-        </a>
-        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('admin/ops/branches'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
-            <i class="fas fa-cog"></i> إدارة الفروع
+            <i class="fas fa-store"></i> الشركات والفروع
         </a>
         <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('portals.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-info<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
             <i class="fas fa-list"></i> كل الروابط

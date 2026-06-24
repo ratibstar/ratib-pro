@@ -1419,12 +1419,6 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
 
     private function guardBranchesCpAdminOnly(): void
     {
-        if (rateb_is_super_admin()) {
-            return;
-        }
-        if (function_exists('rateb_can_manage_all_branches') && rateb_can_manage_all_branches()) {
-            return;
-        }
         \Rateb\App\Core\SessionManager::flash('error', __('branches_cp_only'));
         $this->redirect(rateb_url('admin'));
     }

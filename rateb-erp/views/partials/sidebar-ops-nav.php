@@ -68,14 +68,3 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
 ], 'fa-briefcase');
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');
-if (rateb_is_super_admin() || (function_exists('rateb_can_manage_all_branches') && rateb_can_manage_all_branches())) {
-    $branchNavItems = [
-        ['branches', 'branch_list', 'fa-list', '', 'branches.view'],
-        ['branches/create', 'add_branch', 'fa-plus', '', 'branches.manage'],
-    ];
-    $opsSection(__('branches'), $branchNavItems, 'fa-store');
-} elseif (function_exists('rateb_branch_access_all') && !rateb_branch_access_all() && rateb_can('branches.view')) {
-    $opsSection(__('branches'), [
-        ['branches', 'branch_list', 'fa-list', '', 'branches.view'],
-    ], 'fa-store');
-}

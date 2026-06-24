@@ -176,11 +176,177 @@ function control_rateb_erp_branch_portal_url(int $branchId, ?array $branchRow = 
 
 function control_rateb_erp_branch_manage_url(int $companyId = 0): string
 {
-    $url = control_rateb_erp_app_url('admin/ops/branches');
+    $url = control_rateb_erp_branches_hub_page_url();
     if ($companyId > 0) {
         $url .= (strpos($url, '?') !== false ? '&' : '?') . 'company_id=' . $companyId;
     }
     return $url;
+}
+
+function control_rateb_erp_pdo(): ?\PDO
+{
+    if (!control_rateb_erp_schema_ready()) {
+        return null;
+    }
+    control_rateb_erp_ensure_root();
+    require_once RATEB_ROOT . '/config/database.php';
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+    return \Rateb\App\Core\Database::connection();
+}
+
+function control_rateb_erp_load_branch_stack(): void
+{
+    control_rateb_erp_ensure_root();
+    require_once RATEB_ROOT . '/config/app.php';
+    require_once RATEB_ROOT . '/config/database.php';
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+    require_once RATEB_ROOT . '/app/Core/Model.php';
+    require_once RATEB_ROOT . '/app/Core/TenantContext.php';
+    require_once RATEB_ROOT . '/app/models/Company.php';
+    require_once RATEB_ROOT . '/app/models/Entities.php';
+    require_once RATEB_ROOT . '/app/services/BranchService.php';
+}
+
+/** @return array<int, array<string, mixed>> */
+function control_rateb_erp_companies_branch_overview(): array
+{
+    $pdo = control_rateb_erp_pdo();
+    if (!$pdo) {
+        return [];
+    }
+    try {
+        $stmt = $pdo->query(
+            'SELECT c.id, c.name, c.slug, c.status, c.branch_limit, c.plan_id,
+                    COUNT(b.id) AS branch_count
+             FROM rateb_companies c
+             LEFT JOIN rateb_branches b ON b.company_id = c.id
+             GROUP BY c.id, c.name, c.slug, c.status, c.branch_limit, c.plan_id
+             ORDER BY c.name ASC'
+        );
+        $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+        if (!is_array($rows) || $rows === []) {
+            return [];
+        }
+        control_rateb_erp_load_branch_stack();
+        $svc = new \Rateb\App\Services\BranchService();
+        foreach ($rows as &$row) {
+            $cid = (int) ($row['id'] ?? 0);
+            $stats = $svc->stats($cid);
+            $row['branch_count'] = (int) ($stats['count'] ?? $row['branch_count'] ?? 0);
+            $row['branch_limit_effective'] = (int) ($stats['limit'] ?? 0);
+            $row['can_add_branch'] = $svc->canAddBranch($cid);
+        }
+        unset($row);
+        return $rows;
+    } catch (\Throwable $e) {
+        error_log('control_rateb_erp_companies_branch_overview: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/** @return array<int, array<string, mixed>> */
+function control_rateb_erp_company_branches(int $companyId): array
+{
+    if ($companyId < 1) {
+        return [];
+    }
+    $pdo = control_rateb_erp_pdo();
+    if (!$pdo) {
+        return [];
+    }
+    $stmt = $pdo->prepare(
+        'SELECT b.id, b.name, b.code, b.status, b.is_main, b.address, b.phone, b.email, b.company_id,
+                c.name AS company_name, c.slug AS company_slug
+         FROM rateb_branches b
+         INNER JOIN rateb_companies c ON c.id = b.company_id
+         WHERE b.company_id = :cid
+         ORDER BY b.is_main DESC, b.name ASC'
+    );
+    $stmt->execute(['cid' => $companyId]);
+    $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    return is_array($rows) ? $rows : [];
+}
+
+function control_rateb_erp_company_set_branch_limit(int $companyId, int $limit): bool
+{
+    $pdo = control_rateb_erp_pdo();
+    if (!$pdo || $companyId < 1) {
+        return false;
+    }
+    $stmt = $pdo->prepare('UPDATE rateb_companies SET branch_limit = :lim WHERE id = :id');
+    return $stmt->execute(['lim' => max(0, $limit), 'id' => $companyId]);
+}
+
+/** @return array{ok:bool, branch?:array<string,mixed>, portal_url?:string, error?:string} */
+function control_rateb_erp_branch_create(int $companyId, array $data): array
+{
+    if ($companyId < 1) {
+        return ['ok' => false, 'error' => 'invalid_company'];
+    }
+    control_rateb_erp_load_branch_stack();
+    \Rateb\App\Core\TenantContext::setSuperAdmin(true);
+    \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+    $svc = new \Rateb\App\Services\BranchService();
+    $svc->ensureMainBranch($companyId);
+    if (!$svc->canAddBranch($companyId)) {
+        return ['ok' => false, 'error' => 'branch_limit_reached'];
+    }
+    $name = trim((string) ($data['name'] ?? ''));
+    if ($name === '') {
+        return ['ok' => false, 'error' => 'branch_name_required'];
+    }
+    $code = trim((string) ($data['code'] ?? ''));
+    if ($code === '') {
+        $n = $svc->countForCompany($companyId) + 1;
+        do {
+            $code = 'BR' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
+            $exists = (new \Rateb\App\Models\Branch())->queryOne(
+                'SELECT id FROM rateb_branches WHERE company_id = :cid AND code = :code LIMIT 1',
+                ['cid' => $companyId, 'code' => $code]
+            );
+            $n++;
+        } while ($exists);
+    }
+    try {
+        $id = (new \Rateb\App\Models\Branch())->create([
+            'name' => $name,
+            'code' => $code,
+            'address' => trim((string) ($data['address'] ?? '')),
+            'phone' => trim((string) ($data['phone'] ?? '')),
+            'email' => trim((string) ($data['email'] ?? '')),
+            'map_url' => trim((string) ($data['map_url'] ?? '')),
+            'status' => 'active',
+            'is_main' => 0,
+        ]);
+        $row = (new \Rateb\App\Models\Branch())->queryOne(
+            'SELECT b.*, c.name AS company_name, c.slug AS company_slug
+             FROM rateb_branches b
+             INNER JOIN rateb_companies c ON c.id = b.company_id
+             WHERE b.id = :id LIMIT 1',
+            ['id' => $id]
+        );
+        if (!$row) {
+            return ['ok' => false, 'error' => 'create_failed'];
+        }
+        return [
+            'ok' => true,
+            'branch' => $row,
+            'portal_url' => control_rateb_erp_branch_portal_url($id, $row),
+        ];
+    } catch (\Throwable $e) {
+        error_log('control_rateb_erp_branch_create: ' . $e->getMessage());
+        return ['ok' => false, 'error' => $e->getMessage()];
+    }
+}
+
+function control_rateb_erp_branch_set_status(int $branchId, string $status): bool
+{
+    if ($branchId < 1 || !in_array($status, ['active', 'inactive'], true)) {
+        return false;
+    }
+    control_rateb_erp_load_branch_stack();
+    \Rateb\App\Core\TenantContext::setSuperAdmin(true);
+    return (new \Rateb\App\Models\Branch())->update($branchId, ['status' => $status]);
 }
 
 /** @return array<int, array<string, mixed>> */
@@ -219,7 +385,6 @@ function control_rateb_erp_nav_links(): array
         'procurement' => ['route' => 'admin/procurement', 'label' => 'Procurement', 'icon' => 'fa-cart-shopping', 'description' => 'Purchase requests and orders across all companies.'],
         'inventory' => ['route' => 'admin/inventory', 'label' => 'Inventory', 'icon' => 'fa-boxes-stacked', 'description' => 'Stock levels, warehouses, and inventory value.'],
         'suppliers' => ['route' => 'admin/suppliers', 'label' => 'Suppliers', 'icon' => 'fa-truck-field', 'description' => 'Supplier directory and status.'],
-        'branches' => ['route' => 'admin/ops/branches', 'label' => 'Branches', 'icon' => 'fa-store', 'description' => 'Company branches — list, add, activate or deactivate per company.'],
         'assets' => ['route' => 'admin/assets', 'label' => 'Assets', 'icon' => 'fa-toolbox', 'description' => 'Fixed assets and medical equipment registry.'],
         'contracts' => ['route' => 'admin/contracts', 'label' => 'Contracts', 'icon' => 'fa-file-contract', 'description' => 'Healthcare and procurement contracts.'],
         'reports' => ['route' => 'admin/reports', 'label' => 'Reports', 'icon' => 'fa-chart-pie', 'description' => 'Platform analytics and export views.'],
