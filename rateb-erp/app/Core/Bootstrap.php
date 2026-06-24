@@ -58,6 +58,7 @@ final class Bootstrap
             '/app/controllers/Company/HrExtendedControllers.php',
             '/app/controllers/Company/ExtendedControllers.php',
             '/app/controllers/Company/AccountingControllers.php',
+            '/app/controllers/Company/BranchControllers.php',
             '/app/controllers/Company/BusinessControllers.php',
             '/app/controllers/Shared/PasswordResetController.php',
             '/app/controllers/Shared/LoginController.php',

@@ -3,15 +3,17 @@ declare(strict_types=1);
 
 namespace Rateb\App\Controllers\Company;
 
-use Rateb\App\Controllers\Controller;
+use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\BranchTransfer;
 use Rateb\App\Services\BranchAccessService;
+use Rateb\App\Services\BranchFinancialReportingService;
 use Rateb\App\Services\BranchIsolationService;
 use Rateb\App\Services\BranchReportingService;
 use Rateb\App\Services\BranchService;
+use Rateb\App\Services\ConsolidationEliminationService;
 
 final class BranchDashboardController extends Controller
 {

@@ -1052,7 +1052,7 @@ if (!function_exists('rateb_app_route')) {
             'cost-centers', 'cash-vouchers', 'fiscal-periods', 'bank-accounts',
             'rfq', 'quotations', 'purchase-requests', 'purchase-orders',
             'warehouses', 'warehouse-transfers', 'product-categories',
-            'branches',
+            'branches', 'branch-dashboard', 'branch-financial', 'branch-transfers',
             'inventory-batches', 'inventory-audits', 'inventory-forecast',
             'supplier-comms', 'supplier-classifications', 'supplier-kpi',
             'contract-renewals', 'tenders', 'asset-maintenance', 'asset-assignments',

@@ -1879,14 +1879,14 @@ final class AccountingService
         if ($companyId === null || $companyId < 1) {
             return [];
         }
-        $rows = (new JournalEntry())->query(
-            'SELECT b.*, a.code AS account_code
+        $sql = 'SELECT b.*, a.code AS account_code
              FROM rateb_bank_accounts b
              JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_id
-             WHERE b.company_id = :cid AND b.is_active = 1' . $this->scopeBankAccountSql('b') . '
-             ORDER BY b.is_default DESC, b.name',
-            ['cid' => $companyId]
-        );
+             WHERE b.company_id = :cid AND b.is_active = 1
+             ORDER BY b.is_default DESC, b.name';
+        $params = ['cid' => $companyId];
+        [$sql, $params] = $this->scopeBankAccountSql($sql, $params, 'b');
+        $rows = (new JournalEntry())->query($sql, $params);
         foreach ($rows as &$row) {
             $row['book_balance'] = $this->chartAccountBalance($companyId, (int) $row['chart_account_id'], (float) ($row['opening_balance'] ?? 0));
         }
