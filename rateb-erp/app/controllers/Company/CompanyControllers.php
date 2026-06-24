@@ -1377,6 +1377,57 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
     }
 }
 
+final class BranchesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new \Rateb\App\Models\Branch();
+        $this->viewPrefix = 'company/branches';
+        $this->routePrefix = rateb_app_route('branches');
+        $this->entityName = 'branches';
+        $this->permissionResource = 'branches';
+        $this->filesEnabled = false;
+        $this->indexFields = [
+            ['name' => 'id', 'label' => 'number', 'type' => 'id'],
+            ['name' => 'name', 'label' => 'branch_name'],
+            ['name' => 'code', 'label' => 'branch_code'],
+            ['name' => 'address', 'label' => 'address'],
+            ['name' => 'phone', 'label' => 'phone'],
+            ['name' => 'email', 'label' => 'email'],
+            ['name' => 'map_url', 'label' => 'location', 'type' => 'map_link'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+        ];
+        $this->fields = [
+            ['name' => 'name', 'label' => 'branch_name', 'type' => 'text', 'required' => true],
+            ['name' => 'code', 'label' => 'branch_code', 'type' => 'text', 'col' => 'col-md-4'],
+            ['name' => 'address', 'label' => 'address', 'type' => 'text', 'col' => 'col-12'],
+            ['name' => 'phone', 'label' => 'phone', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'email', 'label' => 'email', 'type' => 'email', 'col' => 'col-md-6'],
+            ['name' => 'map_url', 'label' => 'map_url', 'type' => 'text', 'col' => 'col-12'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'active_inactive_statuses', 'translate_options' => true],
+        ];
+    }
+
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $data['title'] = __('branch_list');
+        return $data;
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_BRANCH, 'code');
+        return $data;
+    }
+
+    protected function layout(): string
+    {
+        return 'main';
+    }
+}
+
 final class AssetsController extends \Rateb\App\Controllers\CrudController
 {
     public function __construct()

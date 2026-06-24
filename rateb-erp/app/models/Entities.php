@@ -12,6 +12,13 @@ final class Warehouse extends Model
     protected array $fillable = ['name', 'code', 'location', 'manager_name', 'status'];
 }
 
+final class Branch extends Model
+{
+    protected string $table = 'rateb_branches';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['name', 'code', 'address', 'phone', 'email', 'map_url', 'status'];
+}
+
 final class Asset extends Model
 {
     protected string $table = 'rateb_assets';

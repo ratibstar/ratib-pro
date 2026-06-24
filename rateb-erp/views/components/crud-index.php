@@ -152,6 +152,19 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <span class="text-muted">—</span>
                         <?php } ?>
                     </td>
+                        <?php } elseif ($colType === 'map_link') {
+                            $mapUrl = trim((string) $val);
+                            ?>
+                    <td class="rateb-map-link-cell">
+                        <?php if ($mapUrl !== '') { ?>
+                        <a href="<?php echo Rateb\App\Core\View::escape($mapUrl); ?>" target="_blank" rel="noopener noreferrer"
+                            class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-map-marker-alt"></i> <?php echo __('show_location'); ?>
+                        </a>
+                        <?php } else { ?>
+                        <span class="text-muted">—</span>
+                        <?php } ?>
+                    </td>
                         <?php } elseif ($colType === 'fk') {
                             $map = $fkLabelMaps[$colName] ?? [];
                             $idKey = (string) (int) $val;

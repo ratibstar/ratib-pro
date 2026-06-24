@@ -65,3 +65,7 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
 ], 'fa-briefcase');
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');
+$opsSection(__('branches'), [
+    ['branches', 'branch_list', 'fa-list', '', 'branches.view'],
+    ['branches/create', 'add_branch', 'fa-plus', '', 'branches.manage'],
+], 'fa-store');

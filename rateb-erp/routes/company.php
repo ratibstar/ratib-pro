@@ -16,6 +16,7 @@ use Rateb\App\Controllers\Company\SupplierEvaluationsController;
 use Rateb\App\Controllers\Company\SuppliersController;
 use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
+use Rateb\App\Controllers\Company\BranchesController;
 use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
 use Rateb\App\Controllers\Company\HrDashboardController;
 use Rateb\App\Controllers\Company\HrEmployeesController;
@@ -124,6 +125,7 @@ $moduleRoutes = [
     'supplier-evaluations' => [SupplierEvaluationsController::class, 'suppliers'],
     'inventory' => [InventoryController::class, 'inventory'],
     'warehouses' => [WarehousesController::class, 'inventory'],
+    'branches' => [BranchesController::class, ''],
     'assets' => [AssetsController::class, 'assets'],
     'medical-devices' => [MedicalDevicesController::class, 'medical_devices'],
     'contracts' => [ContractsController::class, 'contracts'],

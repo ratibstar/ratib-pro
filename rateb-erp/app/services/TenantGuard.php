@@ -18,6 +18,7 @@ final class TenantGuard
         'rateb_purchase_orders',
         'rateb_inventory',
         'rateb_warehouses',
+        'rateb_branches',
         'rateb_product_categories',
         'rateb_approval_instances',
         'rateb_chart_of_accounts',

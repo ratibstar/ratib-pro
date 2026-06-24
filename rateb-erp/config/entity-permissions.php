@@ -54,6 +54,11 @@ return [
         'view' => 'inventory.manage',
         'manage' => 'inventory.manage',
     ],
+    'branches' => [
+        'module' => '',
+        'view' => 'branches.view',
+        'manage' => 'branches.manage',
+    ],
     'stock-movements' => [
         'module' => 'inventory',
         'view' => 'stock_movements.view',
