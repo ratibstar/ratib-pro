@@ -181,16 +181,23 @@ final class ContractWorkflowService
         $db = \Rateb\App\Core\Database::connection();
         $db->beginTransaction();
         try {
-            $db->prepare(
-                'UPDATE rateb_contract_renewals SET manager_approval = :ma, status = :st, approved_by = :uid, approved_at = NOW()
-                 WHERE id = :id AND company_id = :cid'
-            )->execute([
+            $sets = ['manager_approval = :ma', 'status = :st'];
+            $params = [
                 'ma' => 'approved',
                 'st' => 'completed',
-                'uid' => $userId > 0 ? $userId : null,
                 'id' => $id,
                 'cid' => (int) $row['company_id'],
-            ]);
+            ];
+            if (ManagerApprovalSchema::hasColumn('rateb_contract_renewals', 'approved_by')) {
+                $sets[] = 'approved_by = :uid';
+                $params['uid'] = $userId > 0 ? $userId : null;
+            }
+            if (ManagerApprovalSchema::hasColumn('rateb_contract_renewals', 'approved_at')) {
+                $sets[] = 'approved_at = NOW()';
+            }
+            $db->prepare(
+                'UPDATE rateb_contract_renewals SET ' . implode(', ', $sets) . ' WHERE id = :id AND company_id = :cid'
+            )->execute($params);
             $contractId = (int) ($row['contract_id'] ?? 0);
             if ($contractId > 0) {
                 $newEnd = $this->normalizeDate($row['new_end_date'] ?? null);
@@ -231,16 +238,23 @@ final class ContractWorkflowService
         if ($this->approvalState($row) !== 'pending') {
             throw new \RuntimeException(__('contract_renewal_already_processed'));
         }
-        \Rateb\App\Core\Database::connection()->prepare(
-            'UPDATE rateb_contract_renewals SET manager_approval = :ma, status = :st, approved_by = :uid, approved_at = NOW()
-             WHERE id = :id AND company_id = :cid'
-        )->execute([
+        $sets = ['manager_approval = :ma', 'status = :st'];
+        $params = [
             'ma' => 'rejected',
             'st' => 'cancelled',
-            'uid' => $userId > 0 ? $userId : null,
             'id' => $id,
             'cid' => (int) $row['company_id'],
-        ]);
+        ];
+        if (ManagerApprovalSchema::hasColumn('rateb_contract_renewals', 'approved_by')) {
+            $sets[] = 'approved_by = :uid';
+            $params['uid'] = $userId > 0 ? $userId : null;
+        }
+        if (ManagerApprovalSchema::hasColumn('rateb_contract_renewals', 'approved_at')) {
+            $sets[] = 'approved_at = NOW()';
+        }
+        \Rateb\App\Core\Database::connection()->prepare(
+            'UPDATE rateb_contract_renewals SET ' . implode(', ', $sets) . ' WHERE id = :id AND company_id = :cid'
+        )->execute($params);
     }
 
     private function normalizeDate(mixed $value): ?string

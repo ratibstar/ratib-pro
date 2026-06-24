@@ -944,18 +944,10 @@ final class ApprovalOversightService
         if ($table === '') {
             throw new \RuntimeException(__('invalid_request'));
         }
+        $built = ManagerApprovalSchema::resetApprovalUpdate($table, $id, $companyId);
         $db = Database::connection();
-        $sql = sprintf(
-            'UPDATE %s SET manager_approval = :st, approved_by = NULL, approved_at = NULL WHERE id = :id AND manager_approval IN (\'approved\', \'rejected\')',
-            $table
-        );
-        $params = ['st' => 'pending', 'id' => $id];
-        if ($companyId > 0 && !\Rateb\App\Core\TenantContext::isSuperAdmin()) {
-            $sql .= ' AND company_id = :cid';
-            $params['cid'] = $companyId;
-        }
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
+        $stmt = $db->prepare($built['sql']);
+        $stmt->execute($built['params']);
         if ($stmt->rowCount() < 1) {
             throw new \RuntimeException(__('manager_approval_already_processed'));
         }
@@ -1031,18 +1023,10 @@ final class ApprovalOversightService
     {
         $state = $action === 'approve' ? 'approved' : 'rejected';
         $this->runDb(function () use ($table, $id, $companyId, $state, $uid): void {
+            $built = ManagerApprovalSchema::pendingApprovalUpdate($table, $id, $state, $uid, $companyId);
             $db = Database::connection();
-            $sql = sprintf(
-                'UPDATE %s SET manager_approval = :st, approved_by = :uid, approved_at = NOW() WHERE id = :id AND manager_approval = :pending',
-                $table
-            );
-            $params = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id, 'pending' => 'pending'];
-            if ($companyId > 0 && !\Rateb\App\Core\TenantContext::isSuperAdmin()) {
-                $sql .= ' AND company_id = :cid';
-                $params['cid'] = $companyId;
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
+            $stmt = $db->prepare($built['sql']);
+            $stmt->execute($built['params']);
             if ($stmt->rowCount() < 1) {
                 throw new \RuntimeException(__('manager_approval_already_processed'));
             }

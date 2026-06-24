@@ -78,16 +78,13 @@ final class WorkflowRecordService
             throw new \RuntimeException(__('manager_approval_already_processed'));
         }
         $uid = (int) SessionManager::get('rateb_user_id');
-        $upd = sprintf(
-            'UPDATE %s SET manager_approval = :st, approved_by = :uid, approved_at = NOW() WHERE id = :id',
-            (string) $cfg['table']
-        );
-        $updParams = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id];
-        if ($companyId > 0 && !TenantContext::isSuperAdmin()) {
-            $upd .= ' AND company_id = :cid';
-            $updParams['cid'] = $companyId;
+        $table = (string) $cfg['table'];
+        $built = ManagerApprovalSchema::pendingApprovalUpdate($table, $id, $state, $uid, $companyId);
+        $stmt = $db->prepare($built['sql']);
+        $stmt->execute($built['params']);
+        if ($stmt->rowCount() < 1) {
+            throw new \RuntimeException(__('manager_approval_already_processed'));
         }
-        $db->prepare($upd)->execute($updParams);
     }
 
     /** @param array<int, array{name:string,label:string,type?:string}> $columns */
