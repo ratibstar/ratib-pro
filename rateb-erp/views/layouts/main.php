@@ -106,11 +106,6 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
                 ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
             ], 'fa-shield-halved', $oversightPendingApprovals > 0 ? (int) $oversightPendingApprovals : 0);
-            $adminSection(__('platform_billing'), [
-                ['admin/accounting', 'platform_accounting', 'fa-gauge-high', 'accounting.view'],
-                ['admin/invoices', 'invoices', 'fa-file-invoice', 'accounting.view'],
-                ['admin/payments', 'payments', 'fa-money-bill-wave', 'accounting.view'],
-            ], 'fa-file-invoice-dollar');
             if (rateb_nav_can('cms.view')) {
                 $adminSection(__('cms_section'), [
                     ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],
