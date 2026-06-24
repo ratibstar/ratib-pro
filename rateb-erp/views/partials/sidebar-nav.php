@@ -31,13 +31,17 @@ $renderNavGroup = static function (
     string $title,
     string $groupIcon,
     bool $hasActive,
-    callable $renderBody
+    callable $renderBody,
+    int $sectionBadge = 0
 ): void {
     $openClass = $hasActive ? ' is-open' : '';
     echo '<div class="rateb-nav-group' . $openClass . '" data-nav-group>';
     echo '<button type="button" class="rateb-nav-group-toggle" aria-expanded="' . ($hasActive ? 'true' : 'false') . '" data-nav-group-toggle>';
     echo '<i class="fas ' . Rateb\App\Core\View::escape($groupIcon) . ' rateb-nav-group-icon"></i>';
     echo '<span class="rateb-nav-group-label">' . Rateb\App\Core\View::escape($title) . '</span>';
+    if ($sectionBadge > 0) {
+        echo '<span class="rateb-nav-badge rateb-nav-group-badge" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $sectionBadge . '</span>';
+    }
     echo '<i class="fas fa-chevron-down rateb-nav-group-chevron" aria-hidden="true"></i>';
     echo '</button>';
     echo '<div class="rateb-nav-group-body">';
@@ -84,7 +88,8 @@ $opsSection = static function (
 $adminSection = static function (
     string $title,
     array $links,
-    string $groupIcon = 'fa-folder-open'
+    string $groupIcon = 'fa-folder-open',
+    int $sectionBadge = 0
 ) use ($navActive, $renderNavGroup): void {
     $visibleLinks = [];
     foreach ($links as $link) {
@@ -106,13 +111,9 @@ $adminSection = static function (
     $renderNavGroup($title, $groupIcon, $hasActive, static function () use ($visibleLinks, $navActive): void {
         foreach ($visibleLinks as $link) {
             $active = $navActive($link[0]) ? ' active' : '';
-            $badge = (isset($link[4]) && is_numeric($link[4])) ? (int) $link[4] : 0;
             echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
             echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
-            if ($badge > 0) {
-                echo '<span class="rateb-nav-badge">' . $badge . '</span>';
-            }
             echo '</a>';
         }
-    });
+    }, $sectionBadge);
 };

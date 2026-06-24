@@ -161,7 +161,8 @@ $approvalsConfig = [
                             data-company-id="<?php echo $companyId; ?>"
                             data-view-url="<?php echo Rateb\App\Core\View::escape($viewUrl); ?>"
                             data-edit-url="<?php echo Rateb\App\Core\View::escape($editUrl); ?>"
-                            data-can-reject="<?php echo $canReject ? '1' : '0'; ?>">
+                            data-can-reject="<?php echo $canReject ? '1' : '0'; ?>"
+                            data-can-undo="<?php echo \Rateb\App\Services\ApprovalOversightService::canUndo($sourceKey) ? '1' : '0'; ?>">
                             <td class="rateb-approval-cell-clip"><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
                             <td class="rateb-approval-cell-clip">
                                 <?php echo Rateb\App\Core\View::escape((string) ($row['type_label'] ?? '')); ?>

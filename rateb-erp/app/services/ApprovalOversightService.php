@@ -22,7 +22,7 @@ final class ApprovalOversightService
 
     public static function canUndo(string $sourceKey): bool
     {
-        return !in_array($sourceKey, ['workflow_instance', 'asset_depreciation', 'hr_payroll'], true);
+        return !in_array($sourceKey, ['workflow_instance', 'hr_payroll'], true);
     }
 
     /** @return array<string, string> */
@@ -758,6 +758,21 @@ final class ApprovalOversightService
         if (isset($this->managerSlugs()[$sourceKey])) {
             $source = $this->sources()[$sourceKey];
             $this->resetManagerApproval((string) ($source['table'] ?? ''), $recordId, $companyId);
+            if ($sourceKey === 'contract_renewal') {
+                Database::connection()->prepare(
+                    "UPDATE rateb_contract_renewals SET status = 'planned' WHERE id = :id AND status = 'cancelled'"
+                )->execute(['id' => $recordId]);
+            }
+            return;
+        }
+        if ($sourceKey === 'asset_depreciation') {
+            $cid = $companyId > 0 ? $companyId : ($this->resolveCompanyId($sourceKey, $recordId, $companyId) ?? 0);
+            if ($cid < 1) {
+                throw new \RuntimeException(__('select_company_ops'));
+            }
+            if (!(new AssetDeviceWorkflowService())->undoDepreciationForCompany($recordId, $cid)) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
             return;
         }
         if ($sourceKey === 'journal_entry') {
@@ -944,7 +959,7 @@ final class ApprovalOversightService
     private function canActOnStatus(string $status, string $action): bool
     {
         $pendingLike = ['pending', 'draft'];
-        $doneLike = ['approved', 'posted', 'rejected', 'void'];
+        $doneLike = ['approved', 'posted', 'rejected', 'void', 'cancelled'];
         if ($action === 'approve' || $action === 'reject') {
             return in_array($status, $pendingLike, true);
         }

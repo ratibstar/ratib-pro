@@ -344,6 +344,14 @@ final class AdminApprovalsController extends Controller
             } catch (\Throwable $e) {
                 // Approval saved; detail panel is optional.
             }
+            if ($detail === null) {
+                $detail = [
+                    'can_approve' => false,
+                    'can_reject' => false,
+                    'can_undo' => ApprovalOversightService::canUndo($sourceKey),
+                    'status_label' => $action === 'approve' ? __('approved') : __('rejected'),
+                ];
+            }
             $this->respondDecision(true, $msg, $detail);
         } catch (\Throwable $e) {
             $this->respondDecision(false, DatabaseErrorService::userMessage($e), null, $e);

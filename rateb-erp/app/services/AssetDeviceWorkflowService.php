@@ -205,6 +205,40 @@ final class AssetDeviceWorkflowService
         }
     }
 
+    public function undoDepreciationForCompany(int $id, int $companyId): bool
+    {
+        if ($id < 1 || $companyId < 1) {
+            return false;
+        }
+        $row = $this->findDepreciationForCompany($id, $companyId);
+        if (!$row || (string) ($row['status'] ?? '') !== 'approved') {
+            return false;
+        }
+        $assetId = (int) ($row['asset_id'] ?? 0);
+        $before = (float) ($row['book_value_before'] ?? 0);
+        $db = \Rateb\App\Core\Database::connection();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare(
+                'UPDATE rateb_asset_depreciation SET status = \'draft\' WHERE id = :id AND company_id = :cid AND status = \'approved\''
+            );
+            $stmt->execute(['id' => $id, 'cid' => $companyId]);
+            if ($stmt->rowCount() < 1) {
+                $db->rollBack();
+                return false;
+            }
+            if ($assetId > 0 && ManagerApprovalSchema::hasColumn('rateb_assets', 'current_value')) {
+                $db->prepare('UPDATE rateb_assets SET current_value = :v WHERE id = :id AND company_id = :cid')
+                    ->execute(['v' => $before, 'id' => $assetId, 'cid' => $companyId]);
+            }
+            $db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
     /** @return array<string, mixed>|null */
     public function findDepreciationForCompany(int $id, int $companyId): ?array
     {

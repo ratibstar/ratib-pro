@@ -136,12 +136,14 @@
         }
 
         var canReject = detail ? detail.can_reject : row.getAttribute('data-can-reject') === '1';
-        if (canReject) {
+        if (canReject && (!detail || detail.can_reject)) {
             html += '<button type="button" class="rateb-approval-btn rateb-approval-btn-reject" data-action="reject" title="' + escapeHtml(labels.reject || 'Reject') + '">'
                 + '<i class="fas fa-times"></i><span>' + escapeHtml(labels.reject || 'Reject') + '</span></button>';
         }
 
-        if (detail && detail.can_undo) {
+        var showUndo = (detail && detail.can_undo)
+            || (row.getAttribute('data-processed') === '1' && row.getAttribute('data-can-undo') === '1');
+        if (showUndo) {
             html += '<button type="button" class="rateb-approval-btn rateb-approval-btn-undo" data-action="undo" title="' + escapeHtml(labels.undo || 'Undo') + '">'
                 + '<i class="fas fa-rotate-left"></i><span>' + escapeHtml(labels.undo || 'Undo') + '</span></button>';
         }
@@ -166,6 +168,9 @@
         } else {
             row.classList.add('rateb-approval-processed');
             row.setAttribute('data-processed', '1');
+            if (detail.can_undo && row.getAttribute('data-can-undo') !== '0') {
+                row.setAttribute('data-can-undo', '1');
+            }
         }
         renderMainRowActions(detail, row);
 

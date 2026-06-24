@@ -19,6 +19,9 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 if (isset($_GET['dismiss_approvals_alert']) && rateb_is_super_admin()) {
     \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
 }
+if ($navActive('admin/oversight/approvals') && rateb_is_super_admin()) {
+    \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
+}
 $oversightPendingApprovals = rateb_oversight_pending_approvals_count();
 $oversightApprovalsNew = 0;
 if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
@@ -93,7 +96,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             $adminSection(__('admin_oversight_section'), [
                 ['admin/companies', 'companies', 'fa-building', 'companies.view'],
                 ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
-                ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view', $oversightPendingApprovals],
+                ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view'],
                 ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage'],
@@ -101,7 +104,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view'],
                 ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
                 ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
-            ], 'fa-shield-halved');
+            ], 'fa-shield-halved', $oversightPendingApprovals > 0 ? (int) $oversightPendingApprovals : 0);
             $adminSection(__('platform_billing'), [
                 ['admin/accounting', 'platform_accounting', 'fa-gauge-high', 'accounting.view'],
                 ['admin/invoices', 'invoices', 'fa-file-invoice', 'accounting.view'],
@@ -157,18 +160,6 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
         </header>
         <main class="rateb-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
-            <?php if ($oversightApprovalsNew > 0 && !$navActive('admin/oversight/approvals')) {
-                $reqUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-                $dismissSep = str_contains($reqUri, '?') ? '&' : '?';
-                $dismissApprovalsUrl = $reqUri . $dismissSep . 'dismiss_approvals_alert=1';
-            ?>
-            <div class="alert alert-warning alert-dismissible fade show rateb-approvals-alert" role="alert">
-                <i class="fas fa-bell me-2"></i>
-                <?php echo __('approvals_new_alert', ['count' => (int) $oversightApprovalsNew]); ?>
-                <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="alert-link ms-2"><?php echo __('approvals_open_oversight'); ?></a>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" data-rateb-dismiss-approvals="<?php echo Rateb\App\Core\View::escape($dismissApprovalsUrl); ?>" aria-label="<?php echo __('close'); ?>"></button>
-            </div>
-            <?php } ?>
             <?php
             $showOpsCompanyPicker = rateb_is_super_admin() && (
                 rateb_is_ops_route($erpRoute)

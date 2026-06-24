@@ -1053,7 +1053,8 @@ table.rateb-approvals-table td.rateb-actions-cell {
 }
 
 .rateb-topbar-approvals .rateb-topbar-badge,
-.rateb-nav-link .rateb-nav-badge {
+.rateb-nav-link .rateb-nav-badge,
+.rateb-nav-group-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1080,8 +1081,20 @@ table.rateb-approvals-table td.rateb-actions-cell {
     position: relative;
 }
 
+.rateb-nav-group-toggle {
+    position: relative;
+}
+
 .rateb-nav-link .rateb-nav-badge {
     margin-inline-start: auto;
+}
+
+.rateb-nav-group-badge {
+    margin-inline-end: auto;
+}
+
+.rateb-nav-group-toggle .rateb-nav-group-chevron {
+    margin-inline-start: 0;
 }
 
 .rateb-approvals-alert {
