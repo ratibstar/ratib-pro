@@ -2,13 +2,13 @@
     'use strict';
 
     var instances = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
-    var instanceBag = instances || null;
+    var fallbackBag = null;
 
     function bagGet(el) {
         if (instances) {
             return instances.get(el) || null;
         }
-        return instanceBag && instanceBag[el.id] ? instanceBag[el.id] : null;
+        return fallbackBag && el.id ? fallbackBag[el.id] || null : null;
     }
 
     function bagSet(el, inst) {
@@ -16,11 +16,11 @@
             instances.set(el, inst);
             return;
         }
-        if (!instanceBag) {
-            instanceBag = {};
+        if (!fallbackBag) {
+            fallbackBag = {};
         }
         if (el.id) {
-            instanceBag[el.id] = inst;
+            fallbackBag[el.id] = inst;
         }
     }
 
@@ -28,10 +28,33 @@
         return !!(
             el
             && el.nodeType === 1
-            && el.classList
             && el.classList.contains('modal')
             && el.querySelector('.modal-dialog')
         );
+    }
+
+    function clearAriaHidden(el) {
+        if (!el) {
+            return;
+        }
+        el.removeAttribute('aria-hidden');
+        el.setAttribute('aria-modal', 'true');
+    }
+
+    function bindA11y(el) {
+        if (!el || el.dataset.ratebModalA11y) {
+            return;
+        }
+        el.dataset.ratebModalA11y = '1';
+        el.addEventListener('show.bs.modal', function () {
+            clearAriaHidden(el);
+        }, true);
+        el.addEventListener('shown.bs.modal', function () {
+            clearAriaHidden(el);
+        });
+        el.addEventListener('hide.bs.modal', function () {
+            clearAriaHidden(el);
+        }, true);
     }
 
     function prepareElement(el) {
@@ -41,20 +64,7 @@
         if (el.parentElement && el.parentElement !== document.body) {
             document.body.appendChild(el);
         }
-        if (!el.classList.contains('show')) {
-            el.setAttribute('aria-hidden', 'true');
-        }
-        if (!el.dataset.ratebModalA11y) {
-            el.dataset.ratebModalA11y = '1';
-            el.addEventListener('show.bs.modal', function () {
-                el.removeAttribute('aria-hidden');
-                el.setAttribute('aria-modal', 'true');
-            });
-            el.addEventListener('hidden.bs.modal', function () {
-                el.setAttribute('aria-hidden', 'true');
-                el.removeAttribute('aria-modal');
-            });
-        }
+        bindA11y(el);
         return el;
     }
 
@@ -85,9 +95,16 @@
     };
 
     window.ratebModalShow = function (el) {
+        if (!el) {
+            return null;
+        }
+        clearAriaHidden(el);
         var inst = getInstance(el);
         if (inst) {
             inst.show();
+            window.requestAnimationFrame(function () {
+                clearAriaHidden(el);
+            });
         }
         return inst;
     };

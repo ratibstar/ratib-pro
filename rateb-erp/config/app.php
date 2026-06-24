@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260624-entity-docs-modal-fix');
+define('RATEB_ASSET_BUILD', '20260624-console-clean-modal');
 
 if (!function_exists('rateb_erp_public_prefix')) {
     /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */

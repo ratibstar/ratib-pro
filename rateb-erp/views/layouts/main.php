@@ -49,6 +49,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
         } catch (e) {}
     })();
     </script>
+    <script src="<?php echo rateb_asset('js/rateb-console-quiet.js'); ?>"></script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -176,7 +177,6 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
 <?php Rateb\App\Core\View::partial('rateb-confirm-modal'); ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?php echo rateb_asset('js/rateb-console-quiet.js'); ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/lang.js'); ?>"></script>

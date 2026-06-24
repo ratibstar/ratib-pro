@@ -15,4 +15,10 @@
     console.info = noop;
     console.debug = noop;
     console.warn = noop;
+    console.error = noop;
+    console.trace = noop;
+    console.table = noop;
+    console.group = noop;
+    console.groupCollapsed = noop;
+    console.groupEnd = noop;
 })();
