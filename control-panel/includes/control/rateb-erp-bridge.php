@@ -154,13 +154,22 @@ function control_rateb_erp_branches_hub_page_url(): string
         : '/control-panel/pages/control/rateb-erp-branches.php?control=1';
 }
 
-function control_rateb_erp_branch_portal_url(int $branchId): string
+function control_rateb_erp_branch_portal_url(int $branchId, ?array $branchRow = null): string
 {
+    if (function_exists('rateb_branch_portal_url')) {
+        control_rateb_erp_ensure_root();
+        require_once RATEB_ROOT . '/config/app.php';
+        return rateb_branch_portal_url($branchId, $branchRow);
+    }
+    if (is_array($branchRow)) {
+        $slug = trim((string) ($branchRow['company_slug'] ?? ''));
+        $code = trim((string) ($branchRow['code'] ?? ''));
+        if ($slug !== '' && $code !== '') {
+            return control_rateb_erp_public_url('login?company=' . rawurlencode($slug) . '&branch=' . rawurlencode($code));
+        }
+    }
     if ($branchId < 1) {
         return control_rateb_erp_public_url('login');
-    }
-    if (function_exists('rateb_branch_portal_url')) {
-        return rateb_branch_portal_url($branchId);
     }
     return control_rateb_erp_public_url('login?branch_id=' . $branchId);
 }

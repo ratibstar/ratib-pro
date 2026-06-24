@@ -669,12 +669,31 @@ if (!function_exists('rateb_is_super_admin')) {
 }
 
 if (!function_exists('rateb_branch_portal_url')) {
-    function rateb_branch_portal_url(int $branchId): string
+    function rateb_branch_portal_url(int $branchId, ?array $branchRow = null): string
     {
+        if (is_array($branchRow)) {
+            $slug = trim((string) ($branchRow['company_slug'] ?? ''));
+            $code = trim((string) ($branchRow['code'] ?? ''));
+            if ($slug !== '' && $code !== '') {
+                return rateb_public_url('login?company=' . rawurlencode($slug) . '&branch=' . rawurlencode($code));
+            }
+        }
         if ($branchId < 1) {
             return rateb_public_url('login');
         }
         return rateb_public_url('login?branch_id=' . $branchId);
+    }
+}
+
+if (!function_exists('rateb_branch_portal_url_by_code')) {
+    function rateb_branch_portal_url_by_code(string $companySlug, string $branchCode): string
+    {
+        $companySlug = trim($companySlug);
+        $branchCode = trim($branchCode);
+        if ($companySlug === '' || $branchCode === '') {
+            return rateb_public_url('login');
+        }
+        return rateb_public_url('login?company=' . rawurlencode($companySlug) . '&branch=' . rawurlencode($branchCode));
     }
 }
 

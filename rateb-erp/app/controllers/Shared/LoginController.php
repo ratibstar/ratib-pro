@@ -59,12 +59,13 @@ final class LoginController extends Controller
     /** @return array<string, mixed>|null */
     private function resolveBranchPortalFromRequest(): ?array
     {
-        $branchId = (int) ($_GET['branch_id'] ?? 0);
+        $branchSvc = new \Rateb\App\Services\BranchService();
+        $branchId = $branchSvc->resolvePortalBranchIdFromRequest();
         if ($branchId < 1) {
             SessionManager::forget('_rateb_login_branch_id');
             return null;
         }
-        $branch = (new \Rateb\App\Services\BranchService())->findActiveForPortal($branchId);
+        $branch = $branchSvc->findActiveForPortal($branchId);
         if (!$branch) {
             SessionManager::flash('error', __('branch_portal_invalid'));
             SessionManager::forget('_rateb_login_branch_id');
@@ -103,7 +104,7 @@ final class LoginController extends Controller
 
         $branchId = (int) SessionManager::get('_rateb_login_branch_id', 0);
         if ($branchId < 1) {
-            $branchId = (int) $this->input('branch_id', 0);
+            $branchId = (new \Rateb\App\Services\BranchService())->resolvePortalBranchIdFromRequest();
             if ($branchId > 0) {
                 SessionManager::set('_rateb_login_branch_id', $branchId);
             }

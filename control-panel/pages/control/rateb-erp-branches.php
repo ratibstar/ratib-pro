@@ -85,7 +85,7 @@ startControlLayout('روابط الفروع — نظام رتب ERP', ['css/syst
             <tbody>
             <?php foreach ($company['branches'] as $branch) {
                 $bid = (int) ($branch['id'] ?? 0);
-                $portalUrl = control_rateb_erp_branch_portal_url($bid);
+                $portalUrl = control_rateb_erp_branch_portal_url($bid, $branch);
                 $isMain = !empty($branch['is_main']);
                 ?>
             <tr>
@@ -118,5 +118,32 @@ startControlLayout('روابط الفروع — نظام رتب ERP', ['css/syst
     رابط <code>company/login</code> العام لم يعد مناسباً للفروع — استخدم رابط كل فرع أعلاه. بعد الدخول يرى المستخدم بيانات فرعه فقط.
 </p>
 <?php } ?>
+
+<div class="control-settings-card mb-4 border-info">
+    <h3 class="h5"><i class="fas fa-flask text-info"></i> أمثلة تجريبية (بعد هجرة 124)</h3>
+    <p class="small text-muted mb-3">شركة <strong>example-medical</strong> — كلمة المرور للمستخدمين: <code>password</code></p>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>الفرع</th><th>المستخدم</th><th>رابط الدخول</th></tr></thead>
+            <tbody>
+            <?php
+            $examples = [
+                ['الفرع الرئيسي MB001', 'hq@example.rateb.sa', 'example-medical', 'MB001'],
+                ['فرع جدة BR002', 'branch@example.rateb.sa', 'example-medical', 'BR002'],
+            ];
+            foreach ($examples as [$label, $email, $co, $br]) {
+                $url = control_rateb_erp_public_url('login?company=' . rawurlencode($co) . '&branch=' . rawurlencode($br));
+                ?>
+            <tr>
+                <td><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><code><?php echo htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?></code></td>
+                <td><code class="user-select-all"><?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?></code></td>
+            </tr>
+            <?php } ?>
+            </tbody>
+        </table>
+    </div>
+    <p class="small text-muted mt-2 mb-0">إدارة الفروع: <code>rateb-erp-app.php?route=admin/ops/branches&amp;company_id=…</code> من زر «إدارة الفروع».</p>
+</div>
 
 <?php endControlLayout(); ?>

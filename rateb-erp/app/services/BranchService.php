@@ -70,6 +70,39 @@ final class BranchService
     }
 
     /** @return array<string, mixed>|null */
+    public function findActiveForPortalByCode(string $companySlug, string $branchCode): ?array
+    {
+        $companySlug = trim($companySlug);
+        $branchCode = trim($branchCode);
+        if ($companySlug === '' || $branchCode === '') {
+            return null;
+        }
+        $row = (new Branch())->queryOne(
+            'SELECT b.*, c.name AS company_name, c.slug AS company_slug
+             FROM rateb_branches b
+             INNER JOIN rateb_companies c ON c.id = b.company_id
+             WHERE c.slug = :slug AND b.code = :code AND b.status = :st LIMIT 1',
+            ['slug' => $companySlug, 'code' => $branchCode, 'st' => 'active']
+        );
+        return $row ?: null;
+    }
+
+    public function resolvePortalBranchIdFromRequest(): int
+    {
+        $branchId = (int) ($_GET['branch_id'] ?? $_POST['branch_id'] ?? 0);
+        if ($branchId > 0) {
+            return $branchId;
+        }
+        $companySlug = trim((string) ($_GET['company'] ?? $_POST['company'] ?? ''));
+        $branchCode = trim((string) ($_GET['branch'] ?? $_POST['branch'] ?? ''));
+        if ($companySlug === '' || $branchCode === '') {
+            return 0;
+        }
+        $row = $this->findActiveForPortalByCode($companySlug, $branchCode);
+        return $row ? (int) ($row['id'] ?? 0) : 0;
+    }
+
+    /** @return array<string, mixed>|null */
     public function findActiveForPortal(int $branchId): ?array
     {
         if ($branchId < 1) {
