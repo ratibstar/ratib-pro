@@ -794,6 +794,7 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
         $this->routePrefix = rateb_app_route('chart-of-accounts');
         $this->entityName = 'chart_of_accounts';
         $this->permissionResource = 'chart-of-accounts';
+        $this->redirectToShowAfterSave = true;
         $this->fields = [
             ['name' => 'code', 'label' => 'code', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -1112,7 +1113,7 @@ final class JournalEntriesController extends Controller
             SessionManager::flash('error', __($reason));
         }
         $back = trim((string) ($_POST['redirect_to'] ?? ''));
-        Response::redirect($back !== '' ? $back : rateb_app_url('accounting/entry-approval'));
+        Response::redirect($back !== '' ? $back : rateb_app_url('journal-entries/' . $id));
     }
 
     public function create(): void
@@ -1157,7 +1158,7 @@ final class JournalEntriesController extends Controller
             );
             (new AuditService())->log('create', 'journal_entry', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('journal_draft_saved'));
-            Response::redirect(rateb_app_url('accounting/entry-approval'));
+            Response::redirect(rateb_app_url('journal-entries/' . $id));
         } catch (\InvalidArgumentException $e) {
             SessionManager::flash('error', __('journal_not_balanced'));
             Response::redirect(rateb_app_url('journal-entries/create'));
@@ -1230,7 +1231,7 @@ final class JournalEntriesController extends Controller
             }
             (new AuditService())->log('update', 'journal_entry', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('journal_draft_saved'));
-            Response::redirect(rateb_app_url('accounting/entry-approval'));
+            Response::redirect(rateb_app_url('journal-entries/' . $id));
         } catch (\InvalidArgumentException $e) {
             SessionManager::flash('error', __('journal_not_balanced'));
             Response::redirect(rateb_app_url('journal-entries/' . $id . '/edit'));
@@ -1239,17 +1240,17 @@ final class JournalEntriesController extends Controller
 
     public function postEntry(array $params): void
     {
+        $id = (int) ($params['id'] ?? 0);
         if (rateb_accounting_final_post_oversight_only()) {
             SessionManager::flash('error', __('accounting_oversight_approve_only'));
-            Response::redirect(rateb_app_url('accounting/entry-approval'));
+            Response::redirect($id > 0 ? rateb_app_url('journal-entries/' . $id) : rateb_app_url('journal-entries'));
         }
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('access_denied'));
-            Response::redirect(rateb_app_url('accounting/entry-approval'));
+            Response::redirect($id > 0 ? rateb_app_url('journal-entries/' . $id) : rateb_app_url('journal-entries'));
         }
         $companyId = rateb_require_ops_company();
-        $id = (int) ($params['id'] ?? 0);
         $entry = (new JournalEntry())->queryOne(
             'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
             ['id' => $id, 'cid' => $companyId]
@@ -1262,7 +1263,7 @@ final class JournalEntriesController extends Controller
         } else {
             SessionManager::flash('error', __($reason));
         }
-        Response::redirect(rateb_app_url('accounting/entry-approval'));
+        Response::redirect(rateb_app_url('journal-entries/' . $id));
     }
 
     public function voidEntry(array $params): void
@@ -1280,7 +1281,7 @@ final class JournalEntriesController extends Controller
         } else {
             SessionManager::flash('error', __('journal_void_failed'));
         }
-        Response::redirect(rateb_app_url('accounting/entry-approval'));
+        Response::redirect(rateb_app_url('journal-entries/' . $id));
     }
 
     public function rejectEntry(array $params): void
@@ -1304,7 +1305,7 @@ final class JournalEntriesController extends Controller
         } else {
             SessionManager::flash('error', __('journal_reject_failed'));
         }
-        Response::redirect(rateb_app_url('accounting/entry-approval'));
+        Response::redirect(rateb_app_url('journal-entries/' . $id));
     }
 
     public function bulkReject(): void
@@ -1625,7 +1626,7 @@ final class CashVouchersController extends Controller
             SessionManager::flash('error', __($reason));
         }
         $back = trim((string) ($_POST['redirect_to'] ?? ''));
-        Response::redirect($back !== '' ? $back : rateb_app_url('accounting/voucher-approval'));
+        Response::redirect($back !== '' ? $back : rateb_app_url('cash-vouchers/' . $id));
     }
 
     public function create(): void
@@ -1679,7 +1680,7 @@ final class CashVouchersController extends Controller
         ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
         (new AuditService())->log('create', 'cash_voucher', $id, ['status' => 'draft']);
         SessionManager::flash('success', __('voucher_saved'));
-        Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
     }
 
     public function edit(array $params): void
@@ -1738,7 +1739,7 @@ final class CashVouchersController extends Controller
         ])) {
             (new AuditService())->log('update', 'cash_voucher', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('voucher_saved'));
-            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+            Response::redirect(rateb_app_url('cash-vouchers/' . $id));
         }
         SessionManager::flash('error', __('voucher_edit_denied'));
         Response::redirect(rateb_app_url('cash-vouchers/' . $id . '/edit'));
@@ -1890,16 +1891,16 @@ final class CashVouchersController extends Controller
 
     public function postVoucher(array $params): void
     {
+        $id = (int) ($params['id'] ?? 0);
         if (rateb_accounting_final_post_oversight_only()) {
             SessionManager::flash('error', __('accounting_oversight_approve_only'));
-            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+            Response::redirect($id > 0 ? rateb_app_url('cash-vouchers/' . $id) : rateb_app_url('cash-vouchers'));
         }
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+            Response::redirect($id > 0 ? rateb_app_url('cash-vouchers/' . $id) : rateb_app_url('cash-vouchers'));
         }
         $companyId = rateb_require_ops_company();
-        $id = (int) ($params['id'] ?? 0);
         $voucher = (new JournalEntry())->queryOne(
             'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid',
             ['id' => $id, 'cid' => $companyId]
@@ -1907,7 +1908,7 @@ final class CashVouchersController extends Controller
         $service = new AccountingService();
         if ($voucher && $service->periodBlocksPosting($companyId, (string) ($voucher['voucher_date'] ?? ''))) {
             SessionManager::flash('error', __('fiscal_period_closed_block'));
-            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+            Response::redirect(rateb_app_url('cash-vouchers/' . $id));
         }
         $reason = $voucher ? $service->postCashVoucherReason($id, $companyId) : 'voucher_post_failed';
         if ($reason === null) {
@@ -1916,7 +1917,7 @@ final class CashVouchersController extends Controller
         } else {
             SessionManager::flash('error', __($reason));
         }
-        Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
     }
 
     public function rejectVoucher(array $params): void
@@ -1939,7 +1940,7 @@ final class CashVouchersController extends Controller
         } else {
             SessionManager::flash('error', __('voucher_reject_failed'));
         }
-        Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
     }
 
     public function voidVoucher(array $params): void
@@ -1956,7 +1957,7 @@ final class CashVouchersController extends Controller
         } else {
             SessionManager::flash('error', __('voucher_void_failed'));
         }
-        Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
     }
 
     /** @return array<int, int> */
@@ -2013,10 +2014,32 @@ final class FiscalPeriodsController extends Controller
         if ($id) {
             (new AuditService())->log('create', 'fiscal_period', $id, []);
             SessionManager::flash('success', __('fiscal_period_created'));
-        } else {
-            SessionManager::flash('error', __('fiscal_period_create_failed'));
+            Response::redirect(rateb_app_url('fiscal-periods/' . $id));
         }
+        SessionManager::flash('error', __('fiscal_period_create_failed'));
         Response::redirect(rateb_app_url('fiscal-periods'));
+    }
+
+    public function show(array $params): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_fiscal_periods WHERE id = :id AND company_id = :cid',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view('company/fiscal-periods/show', [
+            'title' => __('fiscal_periods'),
+            'item' => $item,
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('fiscal-periods'),
+            'canPost' => rateb_can_post_entity('fiscal-periods'),
+        ], 'main');
     }
 
     public function destroy(array $params): void
@@ -2055,7 +2078,7 @@ final class FiscalPeriodsController extends Controller
         } else {
             SessionManager::flash('error', __('fiscal_period_close_failed'));
         }
-        Response::redirect(rateb_app_url('fiscal-periods'));
+        Response::redirect(rateb_app_url('fiscal-periods/' . $id));
     }
 
     public function reopen(array $params): void
@@ -2072,7 +2095,7 @@ final class FiscalPeriodsController extends Controller
         } else {
             SessionManager::flash('error', __('fiscal_period_reopen_failed'));
         }
-        Response::redirect(rateb_app_url('fiscal-periods'));
+        Response::redirect(rateb_app_url('fiscal-periods/' . $id));
     }
 }
 
@@ -2126,7 +2149,7 @@ final class BankAccountsController extends Controller
         ]);
         (new AuditService())->log('create', 'bank_account', $id, []);
         SessionManager::flash('success', __('bank_account_saved'));
-        Response::redirect(rateb_app_url('bank-accounts'));
+        Response::redirect(rateb_app_url('bank-accounts/' . $id));
     }
 
     public function edit(array $params): void
@@ -2195,7 +2218,7 @@ final class BankAccountsController extends Controller
         } else {
             SessionManager::flash('error', __('invalid_request'));
         }
-        Response::redirect(rateb_app_url('bank-accounts'));
+        Response::redirect(rateb_app_url('bank-accounts/' . $id));
     }
 
     public function destroy(array $params): void
@@ -2254,6 +2277,7 @@ final class CostCentersController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/cost-centers';
         $this->routePrefix = rateb_app_route('cost-centers');
         $this->entityName = 'cost_centers';
+        $this->redirectToShowAfterSave = true;
         $this->fields = [
             ['name' => 'code', 'label' => 'code', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -2309,6 +2333,7 @@ final class CustomersController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/customers';
         $this->routePrefix = rateb_app_route('customers');
         $this->entityName = 'customers';
+        $this->redirectToShowAfterSave = true;
         $this->indexFields = [
             ['name' => 'code', 'label' => 'code'],
             ['name' => 'name', 'label' => 'name'],

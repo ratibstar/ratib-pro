@@ -167,6 +167,7 @@ $listUrl = rateb_app_url('accounting/entry-approval');
                                 'deleteUrl' => rateb_app_url('journal-entries/' . $id . '/delete'),
                                 'submitUrl' => rateb_app_url('journal-entries/' . $id . '/submit-approval'),
                                 'submitted' => $submitted && $isPending && $isManual,
+                                'redirectTo' => rateb_app_url('journal-entries/' . $id),
                             ]); ?>
                             <?php if ($bulkApprove && $isPending && $isManual && $submitted) { ?>
                             <form method="post" action="<?php echo rateb_app_url('journal-entries/' . $id . '/post'); ?>" class="d-inline">

@@ -32,6 +32,7 @@
                 <td><?php echo Rateb\App\Core\View::escape($row['end_date']); ?></td>
                 <td><span class="badge bg-<?php echo $st === 'open' ? 'success' : 'secondary'; ?>"><?php echo __($st); ?></span></td>
                 <td class="text-nowrap">
+                    <a href="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                     <?php if (($canManage ?? false) && $st === 'open') { ?>
                     <form method="post" action="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id'] . '/delete'); ?>" class="d-inline"
                           onsubmit="return confirm('<?php echo __('bulk_confirm_delete'); ?>');">

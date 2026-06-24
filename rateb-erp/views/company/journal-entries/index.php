@@ -60,6 +60,7 @@ $oversightOnly = !empty($oversightOnly);
                             'deleteUrl' => rateb_app_url('journal-entries/' . $id . '/delete'),
                             'submitUrl' => rateb_app_url('journal-entries/' . $id . '/submit-approval'),
                             'submitted' => $submitted && $isManualDraft,
+                            'redirectTo' => rateb_app_url('journal-entries/' . $id),
                         ]); ?>
                     </td>
                 </tr>

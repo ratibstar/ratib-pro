@@ -168,6 +168,7 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                                 'deleteUrl' => rateb_app_url('cash-vouchers/' . $id . '/delete'),
                                 'submitUrl' => rateb_app_url('cash-vouchers/' . $id . '/submit-approval'),
                                 'submitted' => $submitted && $isPending,
+                                'redirectTo' => rateb_app_url('cash-vouchers/' . $id),
                             ]); ?>
                             <?php if ($bulkApprove && $isPending && $submitted) { ?>
                             <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . $id . '/post'); ?>" class="d-inline">

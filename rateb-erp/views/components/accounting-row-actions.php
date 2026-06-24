@@ -9,6 +9,7 @@
 /** @var string|null $deleteUrl */
 /** @var string|null $submitUrl */
 /** @var bool $submitted */
+/** @var string|null $redirectTo */
 $csrf = (string) ($csrf ?? '');
 $id = (int) ($id ?? 0);
 $viewUrl = (string) ($viewUrl ?? '');
@@ -34,6 +35,9 @@ $submitUrl = $submitUrl ?? null;
     <form method="post" action="<?php echo Rateb\App\Core\View::escape($submitUrl); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_submit_for_approval')); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <?php if (!empty($redirectTo)) { ?>
+        <input type="hidden" name="redirect_to" value="<?php echo Rateb\App\Core\View::escape((string) $redirectTo); ?>">
+        <?php } ?>
         <button type="submit" class="btn btn-sm btn-success" title="<?php echo __('submit_for_approval'); ?>">
             <i class="fas fa-paper-plane"></i><span class="d-none d-md-inline ms-1"><?php echo __('submit_for_approval'); ?></span>
         </button>

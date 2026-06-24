@@ -346,6 +346,7 @@ $router->post($app('cash-vouchers/{id}/delete'), [CompanyCashVouchersController:
 $router->get($app('fiscal-periods'), [CompanyFiscalPeriodsController::class, 'index'], rateb_erp_mw('accounting', '', 'fiscal-periods'));
 $router->get($app('fiscal-periods/create'), [CompanyFiscalPeriodsController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'fiscal-periods'));
 $router->post($app('fiscal-periods'), [CompanyFiscalPeriodsController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'fiscal-periods'));
+$router->get($app('fiscal-periods/{id}'), [CompanyFiscalPeriodsController::class, 'show'], rateb_erp_mw('accounting', '', 'fiscal-periods'));
 $router->post($app('fiscal-periods/{id}/delete'), [CompanyFiscalPeriodsController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'fiscal-periods'));
 $router->post($app('fiscal-periods/{id}/close'), [CompanyFiscalPeriodsController::class, 'close'], rateb_erp_mw('accounting', 'accounting.post', 'fiscal-periods'));
 $router->post($app('fiscal-periods/{id}/reopen'), [CompanyFiscalPeriodsController::class, 'reopen'], rateb_erp_mw('accounting', 'accounting.post', 'fiscal-periods'));

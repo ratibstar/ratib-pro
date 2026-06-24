@@ -59,6 +59,7 @@ $oversightOnly = !empty($oversightOnly);
                             'deleteUrl' => rateb_app_url('cash-vouchers/' . $id . '/delete'),
                             'submitUrl' => rateb_app_url('cash-vouchers/' . $id . '/submit-approval'),
                             'submitted' => $submitted && $isDraft,
+                            'redirectTo' => rateb_app_url('cash-vouchers/' . $id),
                         ]); ?>
                     </td>
                 </tr>

@@ -27,6 +27,8 @@ abstract class CrudController extends Controller
     protected bool $filesEnabled = true;
     protected string $documentEntityType = '';
     protected string $permissionResource = '';
+    /** After create/update, redirect to record show page instead of list. */
+    protected bool $redirectToShowAfterSave = false;
     /** @var array<int, string> */
     protected array $tenantForeignKeys = [];
 
@@ -317,6 +319,15 @@ abstract class CrudController extends Controller
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
+        $this->redirectAfterSave($id);
+    }
+
+    protected function redirectAfterSave(int $id): void
+    {
+        if ($this->redirectToShowAfterSave && $id > 0) {
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id));
+            return;
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -384,7 +395,7 @@ abstract class CrudController extends Controller
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
-        $this->redirect(rateb_url($this->routePrefix));
+        $this->redirectAfterSave($id);
     }
 
     public function destroy(array $params): void
