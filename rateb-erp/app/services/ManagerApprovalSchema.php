@@ -97,6 +97,7 @@ final class ManagerApprovalSchema
 
     private static function runCorePendingUpdate(string $table, int $id, string $state, int $companyId): void
     {
+        self::normalizeManagerApprovalEnum($table);
         $built = self::corePendingUpdate($table, $id, $state, $companyId);
         try {
             $stmt = Database::connection()->prepare($built['sql']);
@@ -202,6 +203,39 @@ final class ManagerApprovalSchema
             if (self::hasColumn($table, 'approved_at')) {
                 $db->prepare('UPDATE `' . $table . '` SET approved_at = NULL WHERE id = :id')->execute(['id' => $id]);
             }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
+    private static function normalizeManagerApprovalEnum(string $table): void
+    {
+        $table = self::sanitizeTable($table);
+        if ($table === '' || !self::hasColumn($table, 'manager_approval')) {
+            return;
+        }
+        try {
+            Database::connection()->exec(
+                'ALTER TABLE `' . $table . '` MODIFY COLUMN manager_approval '
+                . "ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending'"
+            );
+            self::$columnCache[$table . '.manager_approval'] = true;
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
+    public static function normalizeContractApprovalStatus(): void
+    {
+        if (!self::hasColumn('rateb_contracts', 'approval_status')) {
+            return;
+        }
+        try {
+            Database::connection()->exec(
+                'ALTER TABLE rateb_contracts MODIFY COLUMN approval_status '
+                . "ENUM('draft','pending','approved','rejected') NOT NULL DEFAULT 'draft'"
+            );
+            self::$columnCache['rateb_contracts.approval_status'] = true;
         } catch (\Throwable $e) {
             // ignore
         }

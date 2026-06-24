@@ -346,17 +346,23 @@ final class AdminApprovalsController extends Controller
             }
             $this->respondDecision(true, $msg, $detail);
         } catch (\Throwable $e) {
-            $this->respondDecision(false, DatabaseErrorService::userMessage($e));
+            $this->respondDecision(false, DatabaseErrorService::userMessage($e), null, $e);
         }
     }
 
     /** @param array<string, mixed>|null $detail */
-    private function respondDecision(bool $ok, string $message, ?array $detail = null): void
+    private function respondDecision(bool $ok, string $message, ?array $detail = null, ?\Throwable $error = null): void
     {
         if ($this->wantsJson()) {
             $payload = ['ok' => $ok, 'message' => $message];
             if ($detail !== null) {
                 $payload['detail'] = $detail;
+            }
+            if (!$ok && $error !== null && rateb_is_super_admin()) {
+                $sqlError = DatabaseErrorService::technicalDetail($error);
+                if ($sqlError !== '') {
+                    $payload['sql_error'] = $sqlError;
+                }
             }
             Response::json($payload, $ok ? 200 : 400);
         }

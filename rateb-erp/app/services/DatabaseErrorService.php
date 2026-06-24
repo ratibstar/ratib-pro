@@ -51,6 +51,9 @@ final class DatabaseErrorService
         if (self::isDbAccessDenied($raw)) {
             return self::t('db_access_denied');
         }
+        if (self::isDataTruncation($raw)) {
+            return self::t('db_schema_outdated') . ' [enum]';
+        }
         if ($e instanceof PDOException || $e->getPrevious() instanceof PDOException) {
             return self::t('db_operation_failed');
         }
@@ -64,12 +67,26 @@ final class DatabaseErrorService
     public static function isSchemaIssue(\Throwable $e): bool
     {
         $raw = self::rawMessage($e);
-        return self::isMissingColumn($raw) || self::isMissingTable($raw);
+        return self::isMissingColumn($raw) || self::isMissingTable($raw) || self::isDataTruncation($raw);
     }
 
     public static function isCompanyFkIssue(\Throwable $e): bool
     {
         return self::isCompanyFkViolation(self::rawMessage($e));
+    }
+
+    public static function technicalDetail(\Throwable $e): string
+    {
+        $parts = [];
+        $cur = $e;
+        while ($cur instanceof \Throwable) {
+            $msg = trim($cur->getMessage());
+            if ($msg !== '' && (self::looksLikePdoMessage($msg) || !self::looksLikeUserFacingMessage($msg))) {
+                $parts[] = $msg;
+            }
+            $cur = $cur->getPrevious();
+        }
+        return implode(' | ', array_values(array_unique($parts)));
     }
 
     public static function toRuntimeException(PDOException $e): \RuntimeException
@@ -200,6 +217,22 @@ final class DatabaseErrorService
         return stripos($raw, 'rateb_companies') !== false
             || stripos($raw, 'fk_pc_company') !== false
             || stripos($raw, 'company_id') !== false;
+    }
+
+    private static function isDataTruncation(string $raw): bool
+    {
+        return strpos($raw, '1265') !== false
+            || strpos($raw, '1366') !== false
+            || stripos($raw, 'Data truncated') !== false
+            || stripos($raw, 'Incorrect enum value') !== false
+            || stripos($raw, 'truncated incorrect') !== false;
+    }
+
+    private static function looksLikeUserFacingMessage(string $msg): bool
+    {
+        $generic = self::t('db_operation_failed');
+        $schema = self::t('db_schema_outdated');
+        return $msg === $generic || $msg === $schema || str_starts_with($msg, $schema);
     }
 
     private static function isDbAccessDenied(string $raw): bool

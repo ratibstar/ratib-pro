@@ -34,6 +34,52 @@ try {
     $pdo = \Rateb\App\Core\Database::connection();
     $steps[] = 'DB connection OK (' . \Rateb\App\Core\Database::resolvedDatabaseName() . ')';
 
+    if ($probe === 'approvals') {
+        header('Content-Type: application/json; charset=UTF-8');
+        $report = ['db' => \Rateb\App\Core\Database::resolvedDatabaseName(), 'tables' => [], 'pending_test' => null];
+        $tables = [
+            'rateb_supplier_evaluations' => ['manager_approval', 'approved_by', 'approved_at'],
+            'rateb_contracts' => ['approval_status'],
+            'rateb_inventory_audits' => ['manager_approval', 'approved_by', 'approved_at'],
+            'rateb_asset_assignments' => ['manager_approval', 'approved_by', 'approved_at'],
+        ];
+        foreach ($tables as $table => $cols) {
+            $entry = ['columns' => []];
+            foreach ($cols as $col) {
+                $stmt = $pdo->query(
+                    'SHOW COLUMNS FROM `' . $table . '` LIKE ' . $pdo->quote($col)
+                );
+                $row = $stmt !== false ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+                if ($stmt instanceof \PDOStatement) {
+                    $stmt->closeCursor();
+                }
+                $entry['columns'][$col] = is_array($row) ? (string) ($row['Type'] ?? 'yes') : false;
+            }
+            $report['tables'][$table] = $entry;
+        }
+        $row = $pdo->query(
+            "SELECT id, company_id, manager_approval FROM rateb_supplier_evaluations WHERE manager_approval = 'pending' ORDER BY id DESC LIMIT 1"
+        )->fetch(\PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            $id = (int) ($row['id'] ?? 0);
+            try {
+                $pdo->beginTransaction();
+                $pdo->prepare(
+                    'UPDATE rateb_supplier_evaluations SET manager_approval = :st WHERE id = :id AND manager_approval = :pending'
+                )->execute(['st' => 'approved', 'id' => $id, 'pending' => 'pending']);
+                $pdo->rollBack();
+                $report['pending_test'] = ['id' => $id, 'ok' => true];
+            } catch (\Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                $report['pending_test'] = ['id' => $id, 'ok' => false, 'error' => $e->getMessage()];
+            }
+        }
+        echo json_encode($report, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
     if ($probe === 'routes' || $probe === 'dispatch' || $dispatchRoute !== '') {
         \Rateb\App\Core\Auth::bootstrapFromSession();
         $router = new \Rateb\App\Core\Router();

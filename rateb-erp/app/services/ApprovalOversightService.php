@@ -612,6 +612,7 @@ final class ApprovalOversightService
 
         if ($sourceKey === 'contract') {
             ManagerApprovalSchema::ensureContractApprovalStatus();
+            ManagerApprovalSchema::normalizeContractApprovalStatus();
             try {
                 $db = Database::connection();
                 $sql = 'UPDATE rateb_contracts SET approval_status = :st WHERE id = :id AND approval_status = :pending';
