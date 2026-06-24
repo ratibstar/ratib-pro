@@ -447,6 +447,34 @@ final class ApprovalOversightService
 
     public function process(string $sourceKey, int $recordId, int $companyId, string $action): void
     {
+        try {
+            $this->processOnce($sourceKey, $recordId, $companyId, $action);
+        } catch (\Throwable $e) {
+            if (!$this->shouldAutoMigrate($e)) {
+                throw $e;
+            }
+            try {
+                (new MigrationService())->runAll();
+                ManagerApprovalSchema::clearCache();
+            } catch (\Throwable $ignored) {
+                // Retry with whatever schema we have.
+            }
+            $this->processOnce($sourceKey, $recordId, $companyId, $action);
+        }
+    }
+
+    private function shouldAutoMigrate(\Throwable $e): bool
+    {
+        if (DatabaseErrorService::isSchemaIssue($e)) {
+            return true;
+        }
+        $msg = trim($e->getMessage());
+        $generic = __('db_operation_failed');
+        return $msg === $generic || str_contains($msg, __('db_schema_outdated'));
+    }
+
+    private function processOnce(string $sourceKey, int $recordId, int $companyId, string $action): void
+    {
         if ($recordId < 1) {
             throw new \RuntimeException(__('invalid_request'));
         }
@@ -586,18 +614,17 @@ final class ApprovalOversightService
             ManagerApprovalSchema::ensureContractApprovalStatus();
             try {
                 $db = Database::connection();
-                $stmt = $db->prepare(
-                    'UPDATE rateb_contracts SET approval_status = :st WHERE id = :id AND approval_status = :pending'
-                    . ($companyId > 0 ? ' AND company_id = :cid' : '')
-                );
+                $sql = 'UPDATE rateb_contracts SET approval_status = :st WHERE id = :id AND approval_status = :pending';
                 $params = [
                     'st' => $action === 'approve' ? 'approved' : 'rejected',
                     'id' => $recordId,
                     'pending' => 'pending',
                 ];
-                if ($companyId > 0) {
+                if ($companyId > 0 && !(function_exists('rateb_is_super_admin') && rateb_is_super_admin())) {
+                    $sql .= ' AND company_id = :cid';
                     $params['cid'] = $companyId;
                 }
+                $stmt = $db->prepare($sql);
                 $stmt->execute($params);
                 if ($stmt->rowCount() < 1) {
                     throw new \RuntimeException(__('manager_approval_already_processed'));
