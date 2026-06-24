@@ -2094,24 +2094,38 @@ final class AccountingService
 
     public function postCashVoucher(int $voucherId, ?int $companyId): bool
     {
+        return $this->postCashVoucherReason($voucherId, $companyId) === null;
+    }
+
+    /** Post cash voucher draft; returns null on success or a lang key for the failure reason. */
+    public function postCashVoucherReason(int $voucherId, ?int $companyId): ?string
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null || $companyId < 1) {
+            return 'voucher_post_failed';
+        }
         $v = (new JournalEntry())->queryOne(
             'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid LIMIT 1',
             ['id' => $voucherId, 'cid' => $companyId]
         );
         if (!$v || ($v['status'] ?? '') !== 'draft') {
-            return false;
+            return 'voucher_post_not_draft';
         }
         if (!$this->isPeriodOpen($companyId, (string) ($v['voucher_date'] ?? date('Y-m-d')))) {
-            return false;
+            return 'fiscal_period_closed_block';
         }
         $amount = (float) ($v['amount'] ?? 0);
         if ($amount <= 0) {
-            return false;
+            return 'voucher_no_amount';
         }
+        $this->ensureDefaultAccounts($companyId);
         $cash = $this->resolveCashAccountId($companyId, $v);
         $counter = (int) ($v['counter_account_id'] ?? 0);
-        if (!$cash || $counter < 1) {
-            return false;
+        if (!$cash) {
+            return 'voucher_no_cash_account';
+        }
+        if ($counter < 1) {
+            return 'voucher_no_counter_account';
         }
         $type = (string) ($v['voucher_type'] ?? 'receipt');
         $ccId = $this->resolveCashVoucherCostCenter($companyId, $v);
@@ -2127,22 +2141,26 @@ final class AccountingService
                 ['account_id' => $cash, 'debit' => 0, 'credit' => $amount, 'memo' => 'Cash out' . $customerMemo, 'cost_center_id' => $ccId],
             ];
         }
-        $entryId = $this->createPostedEntry(
-            $companyId,
-            'cash_voucher',
-            $voucherId,
-            $lines,
-            (string) $v['description'],
-            (string) ($v['description_ar'] ?? $v['description']),
-            (string) $v['voucher_date']
-        );
+        try {
+            $entryId = $this->createPostedEntry(
+                $companyId,
+                'cash_voucher',
+                $voucherId,
+                $lines,
+                (string) $v['description'],
+                (string) ($v['description_ar'] ?? $v['description']),
+                (string) $v['voucher_date']
+            );
+        } catch (\PDOException $e) {
+            return 'voucher_post_failed';
+        }
         if ($entryId === null) {
-            return false;
+            return 'voucher_post_failed';
         }
         Database::connection()->prepare(
             'UPDATE rateb_cash_vouchers SET status = :st, journal_entry_id = :jid, posted_at = NOW() WHERE id = :id'
         )->execute(['st' => 'posted', 'jid' => $entryId, 'id' => $voucherId]);
-        return true;
+        return null;
     }
 
     public function voidCashVoucher(int $voucherId, ?int $companyId): bool

@@ -12,6 +12,7 @@ use Rateb\App\Models\Company;
 use Rateb\App\Services\ApprovalOversightService;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\BillingService;
+use Rateb\App\Services\DatabaseErrorService;
 use Rateb\App\Services\OversightFilterService;
 use Rateb\App\Services\StockMovementService;
 use Rateb\App\Services\WorkflowService;
@@ -290,7 +291,7 @@ final class AdminApprovalsController extends Controller
             $detail = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
             $this->respondDecision(true, __('approval_undone'), $detail);
         } catch (\Throwable $e) {
-            $this->respondDecision(false, $e->getMessage());
+            $this->respondDecision(false, DatabaseErrorService::userMessage($e));
         }
     }
 
@@ -315,7 +316,7 @@ final class AdminApprovalsController extends Controller
             $detail = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
             $this->respondDecision(true, $msg, $detail);
         } catch (\Throwable $e) {
-            $this->respondDecision(false, $e->getMessage());
+            $this->respondDecision(false, DatabaseErrorService::userMessage($e));
         }
     }
 

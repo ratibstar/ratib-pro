@@ -1803,11 +1803,12 @@ final class CashVouchersController extends Controller
             SessionManager::flash('error', __('fiscal_period_closed_block'));
             Response::redirect(rateb_app_url('accounting/voucher-approval'));
         }
-        if ($voucher && $service->postCashVoucher($id, $companyId)) {
+        $reason = $voucher ? $service->postCashVoucherReason($id, $companyId) : 'voucher_post_failed';
+        if ($reason === null) {
             (new AuditService())->log('post', 'cash_voucher', $id, []);
             SessionManager::flash('success', __('voucher_approved'));
         } else {
-            SessionManager::flash('error', __('voucher_post_failed'));
+            SessionManager::flash('error', __($reason));
         }
         Response::redirect(rateb_app_url('accounting/voucher-approval'));
     }

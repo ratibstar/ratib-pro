@@ -152,6 +152,7 @@ final class ApprovalOversightService
                 'date_column' => 'entry_date',
                 'status_column' => 'status',
                 'status_value' => 'draft',
+                'fixed_filters' => ['source_type' => 'manual'],
                 'route' => 'journal-entries',
                 'queue_route' => 'accounting/entry-approval',
             ],
@@ -329,6 +330,12 @@ final class ApprovalOversightService
             $params['cid'] = $companyFilter;
         }
 
+        foreach ($source['fixed_filters'] ?? [] as $col => $val) {
+            $paramKey = 'ff_' . preg_replace('/[^a-z0-9_]/', '_', (string) $col);
+            $where .= ' AND ' . $alias . '.' . $col . ' = :' . $paramKey;
+            $params[$paramKey] = (string) $val;
+        }
+
         if ($countOnly) {
             return [
                 'sql' => 'SELECT COUNT(*) FROM ' . $table . ' ' . $alias . $where,
@@ -501,11 +508,13 @@ final class ApprovalOversightService
 
         if ($sourceKey === 'journal_entry') {
             $acct = new AccountingService();
+            $cid = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
             if ($action === 'approve') {
-                if ($acct->postDraftEntryReason($recordId, $companyId > 0 ? $companyId : null) !== null) {
-                    throw new \RuntimeException(__('journal_post_failed'));
+                $reason = $acct->postDraftEntryReason($recordId, $cid);
+                if ($reason !== null) {
+                    throw new \RuntimeException(__($reason));
                 }
-            } elseif (!$acct->rejectManualDraft($recordId, $companyId > 0 ? $companyId : null, '', $uid > 0 ? $uid : null)) {
+            } elseif (!$acct->rejectManualDraft($recordId, $cid, '', $uid > 0 ? $uid : null)) {
                 throw new \RuntimeException(__('journal_reject_failed'));
             }
             return;
@@ -513,11 +522,13 @@ final class ApprovalOversightService
 
         if ($sourceKey === 'cash_voucher') {
             $acct = new AccountingService();
+            $cid = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
             if ($action === 'approve') {
-                if (!$acct->postCashVoucher($recordId, $companyId > 0 ? $companyId : null)) {
-                    throw new \RuntimeException(__('voucher_post_failed'));
+                $reason = $acct->postCashVoucherReason($recordId, $cid);
+                if ($reason !== null) {
+                    throw new \RuntimeException(__($reason));
                 }
-            } elseif (!$acct->rejectCashVoucherDraft($recordId, $companyId > 0 ? $companyId : null, '', $uid > 0 ? $uid : null)) {
+            } elseif (!$acct->rejectCashVoucherDraft($recordId, $cid, '', $uid > 0 ? $uid : null)) {
                 throw new \RuntimeException(__('voucher_reject_failed'));
             }
             return;
@@ -559,18 +570,26 @@ final class ApprovalOversightService
         }
 
         if ($sourceKey === 'contract') {
-            $db = Database::connection();
-            $stmt = $db->prepare(
-                'UPDATE rateb_contracts SET approval_status = :st WHERE id = :id'
-                . ($companyId > 0 ? ' AND company_id = :cid' : '')
-            );
-            $params = ['st' => $action === 'approve' ? 'approved' : 'rejected', 'id' => $recordId];
-            if ($companyId > 0) {
-                $params['cid'] = $companyId;
-            }
-            $stmt->execute($params);
-            if ($stmt->rowCount() < 1) {
-                throw new \RuntimeException(__('invalid_request'));
+            try {
+                $db = Database::connection();
+                $stmt = $db->prepare(
+                    'UPDATE rateb_contracts SET approval_status = :st WHERE id = :id AND approval_status = :pending'
+                    . ($companyId > 0 ? ' AND company_id = :cid' : '')
+                );
+                $params = [
+                    'st' => $action === 'approve' ? 'approved' : 'rejected',
+                    'id' => $recordId,
+                    'pending' => 'pending',
+                ];
+                if ($companyId > 0) {
+                    $params['cid'] = $companyId;
+                }
+                $stmt->execute($params);
+                if ($stmt->rowCount() < 1) {
+                    throw new \RuntimeException(__('manager_approval_already_processed'));
+                }
+            } catch (\PDOException $e) {
+                throw DatabaseErrorService::toRuntimeException($e);
             }
             return;
         }
@@ -936,6 +955,23 @@ final class ApprovalOversightService
         if ($stmt->rowCount() < 1) {
             throw new \RuntimeException(__('leave_not_pending'));
         }
+    }
+
+    private function resolveCompanyId(string $sourceKey, int $recordId, int $companyId): ?int
+    {
+        if ($companyId > 0) {
+            return $companyId;
+        }
+        $sources = $this->sources();
+        $table = (string) ($sources[$sourceKey]['table'] ?? '');
+        if ($table === '') {
+            return null;
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare('SELECT company_id FROM ' . $table . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $recordId]);
+        $cid = (int) ($stmt->fetchColumn() ?: 0);
+        return $cid > 0 ? $cid : null;
     }
 
     private function bootstrapCompany(int $companyId): void
