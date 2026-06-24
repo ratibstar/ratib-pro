@@ -27,8 +27,9 @@ final class AttendanceRecord extends Model
 {
     protected string $table = 'rateb_attendance_records';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
-        'company_id', 'employee_id', 'attendance_date', 'check_in', 'check_out', 'status', 'notes',
+        'company_id', 'employee_id', 'attendance_date', 'check_in', 'check_out', 'status', 'notes', 'branch_id',
     ];
 }
 
@@ -43,9 +44,10 @@ final class LeaveRequest extends Model
 {
     protected string $table = 'rateb_leave_requests';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'employee_id', 'leave_type_id', 'start_date', 'end_date',
-        'days', 'reason', 'status', 'approved_by', 'approved_at',
+        'days', 'reason', 'status', 'approved_by', 'approved_at', 'branch_id',
     ];
 }
 
@@ -53,16 +55,18 @@ final class PayrollPeriod extends Model
 {
     protected string $table = 'rateb_payroll_periods';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['company_id', 'period_year', 'period_month', 'status', 'notes'];
+    protected bool $branchScoped = true;
+    protected array $fillable = ['company_id', 'period_year', 'period_month', 'status', 'notes', 'branch_id'];
 }
 
 final class PayrollLine extends Model
 {
     protected string $table = 'rateb_payroll_lines';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'period_id', 'employee_id', 'basic_salary',
-        'allowances', 'deductions', 'net_salary', 'notes',
+        'allowances', 'deductions', 'net_salary', 'notes', 'branch_id',
     ];
 }
 

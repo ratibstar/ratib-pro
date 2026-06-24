@@ -44,6 +44,7 @@ final class BranchAccessService
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             $all = $this->branchIdsForCompany($companyId);
             BranchContext::setBootstrapped($companyId, true, $all);
+            $this->applyHeadOfficeBranchFilter();
             return;
         }
 
@@ -56,8 +57,9 @@ final class BranchAccessService
         $assigned = (new BranchService())->getUserBranchIds($userId);
         $companyBranchIds = $this->branchIdsForCompany($companyId);
 
-        if ($assigned === [] || $this->userHasAccessAllPermission()) {
+        if ($assigned === [] || $this->userHasAccessAllPermission() || $this->userHasHeadOfficeRole()) {
             BranchContext::setBootstrapped($companyId, true, $companyBranchIds);
+            $this->applyHeadOfficeBranchFilter();
             return;
         }
 
@@ -68,6 +70,63 @@ final class BranchAccessService
         }
 
         BranchContext::setBootstrapped($companyId, false, $allowed);
+    }
+
+    /** HQ users with access_all may narrow to one branch via session switcher. */
+    private function applyHeadOfficeBranchFilter(): void
+    {
+        if (!BranchContext::accessAll()) {
+            return;
+        }
+        $filterId = (int) SessionManager::get('rateb_active_branch_filter', 0);
+        if ($filterId > 0 && $this->canAccessBranch($filterId)) {
+            BranchContext::setActiveFilterBranchId($filterId);
+        }
+    }
+
+    public function setActiveBranchFilter(int $branchId): bool
+    {
+        $this->bootstrap();
+        if ($branchId < 1) {
+            SessionManager::forget('rateb_active_branch_filter');
+            BranchContext::setActiveFilterBranchId(null);
+            return true;
+        }
+        if (!BranchContext::accessAll() || !$this->canAccessBranch($branchId)) {
+            return false;
+        }
+        SessionManager::set('rateb_active_branch_filter', $branchId);
+        BranchContext::setActiveFilterBranchId($branchId);
+        return true;
+    }
+
+    public function clearActiveBranchFilter(): void
+    {
+        SessionManager::forget('rateb_active_branch_filter');
+        BranchContext::setActiveFilterBranchId(null);
+    }
+
+    public function userBranchRoleSlug(): string
+    {
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        if ($userId < 1) {
+            return '';
+        }
+        $row = (new \Rateb\App\Models\User())->queryOne(
+            'SELECT r.slug FROM rateb_user_roles ur
+             INNER JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid
+               AND (r.company_id IS NULL OR r.company_id = 0 OR r.company_id = :cid)
+             ORDER BY FIELD(r.slug, \'hq_admin\', \'hq_manager\', \'branch_manager\', \'branch_user\', \'company-full-access\') ASC
+             LIMIT 1',
+            ['uid' => $userId, 'cid' => BranchContext::companyId()]
+        );
+        return (string) ($row['slug'] ?? '');
+    }
+
+    public function isHeadOfficeUser(): bool
+    {
+        return BranchContext::accessAll();
     }
 
     public function canManageAllBranches(): bool
@@ -122,6 +181,12 @@ final class BranchAccessService
     private function userHasAccessAllPermission(): bool
     {
         return function_exists('rateb_can') && rateb_can('branches.access_all');
+    }
+
+    private function userHasHeadOfficeRole(): bool
+    {
+        $slug = $this->userBranchRoleSlug();
+        return in_array($slug, ['hq_admin', 'hq_manager', 'company-full-access', 'super-admin'], true);
     }
 
     /** @return array<int, int> */

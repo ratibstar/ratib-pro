@@ -9,11 +9,12 @@ final class PurchaseInvoice extends Model
 {
     protected string $table = 'rateb_purchase_invoices';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'purchase_order_id', 'supplier_id', 'invoice_no', 'invoice_date', 'status', 'currency',
         'line_subtotal', 'discount_amount', 'tax_amount', 'shipping_amount', 'customs_clearance_amount',
         'total_amount', 'customs_declaration_no', 'customs_clearance_date', 'customs_broker_id',
-        'customs_clearance_status', 'notes',
+        'customs_clearance_status', 'notes', 'branch_id',
     ];
 
     public function generateInvoiceNo(): string

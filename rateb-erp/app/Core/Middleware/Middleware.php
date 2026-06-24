@@ -107,6 +107,9 @@ final class ApiAuthMiddleware implements MiddlewareInterface
         \Rateb\App\Core\TenantContext::setApiModules(is_array($abilities) ? $abilities : []);
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
         \Rateb\App\Core\TenantContext::setSuperAdmin(false);
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
         return true;
     }
 }
@@ -376,5 +379,47 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
         return preg_match('#/(close|reopen)(/|$)#', $path) === 1
             || preg_match('#/accounting/sync$#', $path) === 1;
+    }
+}
+
+/** Bootstrap branch context and optional HQ branch switcher on every ops route. */
+final class BranchScopeMiddleware implements MiddlewareInterface
+{
+    public function handle(): bool
+    {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            rateb_resolve_ops_company_id();
+        }
+
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId > 0 ? $companyId : null);
+        }
+
+        $filterParam = $_GET['active_branch_id'] ?? $_POST['active_branch_id'] ?? null;
+        if ($filterParam === 'all' || $filterParam === '0' || (string) ($_GET['branch_filter'] ?? '') === 'all') {
+            (new \Rateb\App\Services\BranchAccessService())->clearActiveBranchFilter();
+            if (function_exists('rateb_bootstrap_branch_context')) {
+                \Rateb\App\Core\BranchContext::reset();
+                rateb_bootstrap_branch_context($companyId > 0 ? $companyId : null);
+            }
+            return true;
+        }
+
+        if ($filterParam !== null && $filterParam !== '') {
+            $branchId = (int) $filterParam;
+            if ($branchId > 0) {
+                $ok = (new \Rateb\App\Services\BranchAccessService())->setActiveBranchFilter($branchId);
+                if (!$ok) {
+                    SessionManager::flash('error', __('branch_access_denied'));
+                }
+            }
+        }
+
+        return true;
     }
 }

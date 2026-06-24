@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use Rateb\App\Core\Middleware\BranchScopeMiddleware;
 use Rateb\App\Core\Middleware\CompanyModuleMiddleware;
 use Rateb\App\Core\Middleware\CompanyPermissionMiddleware;
 use Rateb\App\Core\Middleware\CompanySaaSMiddleware;
@@ -59,7 +60,7 @@ if (!function_exists('rateb_erp_mw')) {
      */
     function rateb_erp_mw(string $module = '', string $permission = '', string $resource = ''): array
     {
-        $stack = [ErpAuthMiddleware::class, CompanySaaSMiddleware::class];
+        $stack = [ErpAuthMiddleware::class, CompanySaaSMiddleware::class, BranchScopeMiddleware::class];
         if ($module !== '') {
             $stack[] = [CompanyModuleMiddleware::class, $module];
         }

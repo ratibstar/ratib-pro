@@ -1,0 +1,191 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Controllers\Company;
+
+use Rateb\App\Controllers\Controller;
+use Rateb\App\Core\Csrf;
+use Rateb\App\Core\SessionManager;
+use Rateb\App\Core\TenantContext;
+use Rateb\App\Models\BranchTransfer;
+use Rateb\App\Services\BranchAccessService;
+use Rateb\App\Services\BranchIsolationService;
+use Rateb\App\Services\BranchReportingService;
+use Rateb\App\Services\BranchService;
+
+final class BranchDashboardController extends Controller
+{
+    public function index(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $rows = (new BranchReportingService())->branchesOverview($companyId);
+        $branches = (new BranchAccessService())->allowedBranchIds($companyId);
+
+        $this->view('company/branch-dashboard/index', [
+            'title' => __('branch_dashboard'),
+            'rows' => $rows,
+            'branches' => $this->branchOptions($companyId, $branches),
+            'activeFilter' => function_exists('rateb_active_branch_filter_id') ? rateb_active_branch_filter_id() : 0,
+            'isHeadOffice' => (new BranchAccessService())->isHeadOfficeUser(),
+            'csrf' => Csrf::token(),
+        ]);
+    }
+
+    public function compare(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $branchA = (int) $this->input('branch_a', 0);
+        $branchB = (int) $this->input('branch_b', 0);
+        $data = null;
+        if ($branchA > 0 && $branchB > 0 && $branchA !== $branchB) {
+            try {
+                $data = (new BranchReportingService())->compareBranches($companyId, $branchA, $branchB);
+            } catch (\Throwable $e) {
+                SessionManager::flash('error', $e->getMessage());
+            }
+        }
+
+        $allowed = (new BranchAccessService())->allowedBranchIds($companyId);
+        $this->view('company/branch-dashboard/compare', [
+            'title' => __('branch_comparison'),
+            'comparison' => $data,
+            'branchA' => $branchA,
+            'branchB' => $branchB,
+            'branches' => $this->branchOptions($companyId, $allowed),
+            'csrf' => Csrf::token(),
+        ]);
+    }
+
+    public function reports(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $type = (string) $this->input('type', 'sales');
+        $svc = new BranchReportingService();
+        $rows = match ($type) {
+            'profit' => $svc->reportProfitByBranch($companyId),
+            'expenses' => $svc->reportExpensesByBranch($companyId),
+            'inventory' => $svc->reportInventoryByBranch($companyId),
+            'employees' => $svc->reportEmployeesByBranch($companyId),
+            default => $svc->reportSalesByBranch($companyId),
+        };
+
+        $this->view('company/branch-dashboard/reports', [
+            'title' => __('branch_reports'),
+            'type' => $type,
+            'rows' => $rows,
+            'csrf' => Csrf::token(),
+        ]);
+    }
+
+    /** @param array<int, int> $allowedIds */
+    /** @return array<int, array<string, mixed>> */
+    private function branchOptions(int $companyId, array $allowedIds): array
+    {
+        $all = (new BranchService())->listForCompany($companyId);
+        if ($allowedIds === []) {
+            return $all;
+        }
+        return array_values(array_filter($all, static fn (array $b): bool => in_array((int) ($b['id'] ?? 0), $allowedIds, true)));
+    }
+}
+
+final class InterBranchTransfersController extends Controller
+{
+    public function index(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
+        [$filter, $params] = (new BranchIsolationService())->sqlFilter('t', 'source_branch_id');
+        $rows = (new BranchTransfer())->query(
+            "SELECT t.*, sb.name AS source_name, db.name AS dest_name
+             FROM rateb_branch_transfers t
+             LEFT JOIN rateb_branches sb ON sb.id = t.source_branch_id
+             LEFT JOIN rateb_branches db ON db.id = t.dest_branch_id
+             WHERE t.company_id = :cid{$filter}
+             ORDER BY t.id DESC LIMIT 100",
+            array_merge(['cid' => $companyId], $params)
+        );
+
+        $this->view('company/branch-transfers/index', [
+            'title' => __('branch_transfers'),
+            'items' => $rows,
+            'csrf' => Csrf::token(),
+        ]);
+    }
+
+    public function create(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $this->view('company/branch-transfers/form', [
+            'title' => __('create') . ' ' . __('branch_transfers'),
+            'branches' => (new BranchService())->listForCompany($companyId),
+            'csrf' => Csrf::token(),
+        ]);
+    }
+
+    public function store(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        Csrf::verifyOrAbort();
+        $companyId = (int) TenantContext::companyId();
+        $source = (int) $this->input('source_branch_id', 0);
+        $dest = (int) $this->input('dest_branch_id', 0);
+        $type = (string) $this->input('transfer_type', 'inventory');
+
+        if ($source < 1 || $dest < 1 || $source === $dest) {
+            SessionManager::flash('error', __('branch_transfer_invalid'));
+            $this->redirect(rateb_url(rateb_app_route('branch-transfers/create')));
+            return;
+        }
+
+        $isolation = new BranchIsolationService();
+        $isolation->assertCanAccess($source);
+        $isolation->assertCanAccess($dest);
+
+        $model = new BranchTransfer();
+        $no = $model->generateTransferNo();
+        $data = $isolation->stampCreate([
+            'company_id' => $companyId,
+            'transfer_no' => $no,
+            'transfer_type' => $type,
+            'source_branch_id' => $source,
+            'dest_branch_id' => $dest,
+            'source_entity_type' => trim((string) $this->input('source_entity_type', '')),
+            'source_entity_id' => (int) $this->input('source_entity_id', 0) ?: null,
+            'quantity' => (float) $this->input('quantity', 0) ?: null,
+            'amount' => (float) $this->input('amount', 0) ?: null,
+            'status' => 'pending',
+            'notes' => trim((string) $this->input('notes', '')),
+            'created_by' => (int) SessionManager::get('rateb_user_id', 0) ?: null,
+        ]);
+        $model->create($data);
+        SessionManager::flash('success', __('saved'));
+        $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+    }
+
+    public function approve(int $id): void
+    {
+        rateb_bootstrap_ops_tenant();
+        Csrf::verifyOrAbort();
+        $row = (new BranchTransfer())->find($id);
+        if (!$row) {
+            SessionManager::flash('error', __('not_found'));
+            $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+            return;
+        }
+        (new BranchIsolationService())->assertCanAccess((int) $row['dest_branch_id']);
+        (new BranchTransfer())->update($id, [
+            'status' => 'approved',
+            'approved_by' => (int) SessionManager::get('rateb_user_id', 0) ?: null,
+        ]);
+        SessionManager::flash('success', __('approved'));
+        $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+    }
+}

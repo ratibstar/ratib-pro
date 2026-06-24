@@ -170,6 +170,23 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             </div>
             <?php }
             } ?>
+            <?php if (function_exists('rateb_branch_access_all') && rateb_branch_access_all() && !rateb_is_portal_branch_session()) {
+                $hoBranches = (new \Rateb\App\Services\BranchService())->listForCompany((int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? rateb_resolve_ops_company_id()));
+                if ($hoBranches !== []) {
+                    Rateb\App\Core\View::partial('branch-filter-switcher', [
+                        'branches' => $hoBranches,
+                        'activeFilter' => function_exists('rateb_active_branch_filter_id') ? rateb_active_branch_filter_id() : 0,
+                    ]);
+                }
+            ?>
+            <div class="alert alert-secondary py-2 mb-3">
+                <?php if (function_exists('rateb_active_branch_filter_id') && rateb_active_branch_filter_id() > 0) { ?>
+                <i class="fas fa-filter"></i> <?php echo Rateb\App\Core\View::escape(__('branch_filter')); ?>: <strong><?php echo Rateb\App\Core\View::escape(function_exists('rateb_branch_filter_label') ? rateb_branch_filter_label() : ''); ?></strong>
+                <?php } else { ?>
+                <i class="fas fa-building"></i> <?php echo Rateb\App\Core\View::escape(__('branch_filter_all')); ?>
+                <?php } ?>
+            </div>
+            <?php } ?>
             <?php
             $showOpsCompanyPicker = rateb_is_super_admin() && (
                 rateb_is_ops_route($erpRoute)

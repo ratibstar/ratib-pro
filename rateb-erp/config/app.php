@@ -716,11 +716,22 @@ if (!function_exists('rateb_resolve_create_branch_id')) {
     function rateb_resolve_create_branch_id(): int
     {
         rateb_bootstrap_branch_context();
-        if (\Rateb\App\Core\BranchContext::accessAll()) {
-            return 0;
+        $filter = \Rateb\App\Core\BranchContext::activeFilterBranchId();
+        if ($filter !== null && $filter > 0) {
+            return $filter;
         }
-        $ids = \Rateb\App\Core\BranchContext::allowedIds();
-        return $ids[0] ?? 0;
+        if (!\Rateb\App\Core\BranchContext::accessAll()) {
+            $ids = \Rateb\App\Core\BranchContext::allowedIds();
+            return $ids[0] ?? 0;
+        }
+        $companyId = \Rateb\App\Core\BranchContext::companyId();
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        if ($companyId > 0) {
+            return (new \Rateb\App\Services\BranchService())->defaultBranchId($companyId);
+        }
+        return 0;
     }
 }
 
@@ -828,12 +839,12 @@ if (!function_exists('rateb_branch_filter_sql')) {
     function rateb_branch_filter_sql(string $alias = '', string $column = 'branch_id'): array
     {
         rateb_bootstrap_branch_context();
-        if (\Rateb\App\Core\BranchContext::accessAll()) {
-            return ['', []];
-        }
-        $ids = \Rateb\App\Core\BranchContext::allowedIds();
+        $ids = \Rateb\App\Core\BranchContext::effectiveFilterIds();
         if ($ids === []) {
-            return [' AND 1=0', []];
+            if (!\Rateb\App\Core\BranchContext::accessAll()) {
+                return [' AND 1=0', []];
+            }
+            return ['', []];
         }
         $col = ($alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '') . preg_replace('/[^a-z_]/', '', $column);
         $parts = [];
@@ -844,6 +855,37 @@ if (!function_exists('rateb_branch_filter_sql')) {
             $params[$key] = $id;
         }
         return [' AND ' . $col . ' IN (' . implode(',', $parts) . ')', $params];
+    }
+}
+
+if (!function_exists('rateb_active_branch_filter_id')) {
+    function rateb_active_branch_filter_id(): int
+    {
+        rateb_bootstrap_branch_context();
+        return (int) (\Rateb\App\Core\BranchContext::activeFilterBranchId() ?? 0);
+    }
+}
+
+if (!function_exists('rateb_branch_filter_label')) {
+    function rateb_branch_filter_label(): string
+    {
+        $id = rateb_active_branch_filter_id();
+        if ($id < 1) {
+            return __('branch_filter_all');
+        }
+        $row = (new \Rateb\App\Models\Branch())->queryOne(
+            'SELECT name, code FROM rateb_branches WHERE id = :id LIMIT 1',
+            ['id' => $id]
+        );
+        if (!$row) {
+            return (string) $id;
+        }
+        $name = trim((string) ($row['name'] ?? ''));
+        $code = trim((string) ($row['code'] ?? ''));
+        if ($name === '') {
+            return $code;
+        }
+        return $code !== '' ? $name . ' (' . $code . ')' : $name;
     }
 }
 

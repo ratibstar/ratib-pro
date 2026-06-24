@@ -170,6 +170,18 @@ final class BranchService
         }
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function listForCompany(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        return (new Branch())->query(
+            'SELECT id, name, code, is_main FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, name ASC',
+            ['cid' => $companyId, 'st' => 'active']
+        );
+    }
+
     /** @return array<int, array{value:int,label:string}> */
     public function activeOptions(int $companyId): array
     {

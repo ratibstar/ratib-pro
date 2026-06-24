@@ -441,6 +441,7 @@ abstract class Model
 
     public function query(string $sql, array $params = []): array
     {
+        [$sql, $params] = $this->applyBranchScopeToRawSql($sql, $params);
         [$sql, $params] = $this->expandDuplicateNamedParams($sql, $params);
         $stmt = $this->db->prepare($sql);
         $this->executePrepared($stmt, $params);
@@ -449,11 +450,51 @@ abstract class Model
 
     public function queryOne(string $sql, array $params = []): ?array
     {
+        [$sql, $params] = $this->applyBranchScopeToRawSql($sql, $params);
         [$sql, $params] = $this->expandDuplicateNamedParams($sql, $params);
         $stmt = $this->db->prepare($sql);
         $this->executePrepared($stmt, $params);
         $row = $stmt->fetch();
         return $row ?: null;
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return array{0:string,1:array<string,mixed>}
+     */
+    protected function applyBranchScopeToRawSql(string $sql, array $params): array
+    {
+        if (!$this->branchScoped || stripos($sql, $this->table) === false) {
+            return [$sql, $params];
+        }
+        [$extra, $extraParams] = $this->branchFilterClause($this->detectSqlAlias($sql));
+        if ($extra === '') {
+            return [$sql, $params];
+        }
+        return [$this->injectSqlAndClause($sql, $extra), array_merge($params, $extraParams)];
+    }
+
+    private function detectSqlAlias(string $sql): string
+    {
+        if (preg_match('/\b' . preg_quote($this->table, '/') . '\s+(\w+)/i', $sql, $m)) {
+            return $m[1];
+        }
+        return '';
+    }
+
+    private function injectSqlAndClause(string $sql, string $clause): string
+    {
+        $upper = strtoupper($sql);
+        foreach ([' GROUP BY ', ' ORDER BY ', ' LIMIT ', ' FOR UPDATE'] as $token) {
+            $pos = strpos($upper, $token);
+            if ($pos !== false) {
+                return substr($sql, 0, $pos) . $clause . substr($sql, $pos);
+            }
+        }
+        if (preg_match('/\bWHERE\b/i', $sql)) {
+            return $sql . $clause;
+        }
+        return preg_replace('/\b(FROM\s+' . preg_quote($this->table, '/') . '(?:\s+\w+)?)/i', '$1 WHERE 1=1', $sql, 1) . $clause;
     }
 
     /**

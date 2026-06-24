@@ -17,6 +17,8 @@ use Rateb\App\Controllers\Company\SuppliersController;
 use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
 use Rateb\App\Controllers\Company\BranchesController;
+use Rateb\App\Controllers\Company\BranchDashboardController;
+use Rateb\App\Controllers\Company\InterBranchTransfersController;
 use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
 use Rateb\App\Controllers\Company\HrDashboardController;
 use Rateb\App\Controllers\Company\HrEmployeesController;
@@ -595,3 +597,16 @@ $router->get($app('reports/supplier-performance'), [AnalyticsReportsController::
 $router->get($app('reports/supplier-performance/export'), [AnalyticsReportsController::class, 'exportSupplierPerformance'], rateb_erp_mw('reports', 'reports.export', 'reports/supplier-performance'));
 $router->get($app('reports/inventory-valuation'), [AnalyticsReportsController::class, 'inventoryValuation'], rateb_erp_mw('inventory', '', 'reports/inventory-valuation'));
 $router->get($app('reports/inventory-valuation/export'), [AnalyticsReportsController::class, 'exportInventoryValuation'], rateb_erp_mw('reports', 'reports.export', 'reports/inventory-valuation'));
+
+$branchDashMw = rateb_erp_mw('', 'branch.dashboard.view');
+$branchCompareMw = rateb_erp_mw('', 'branch.dashboard.compare');
+$branchReportsMw = rateb_erp_mw('', 'branch.reports.view');
+$branchTransfersMw = rateb_erp_mw('', 'branch.transfers.view');
+$branchTransfersWriteMw = rateb_erp_mw('', 'branch.transfers.manage');
+$router->get($app('branch-dashboard'), [BranchDashboardController::class, 'index'], $branchDashMw);
+$router->get($app('branch-dashboard/compare'), [BranchDashboardController::class, 'compare'], $branchCompareMw);
+$router->get($app('branch-dashboard/reports'), [BranchDashboardController::class, 'reports'], $branchReportsMw);
+$router->get($app('branch-transfers'), [InterBranchTransfersController::class, 'index'], $branchTransfersMw);
+$router->get($app('branch-transfers/create'), [InterBranchTransfersController::class, 'create'], $branchTransfersWriteMw);
+$router->post($app('branch-transfers'), [InterBranchTransfersController::class, 'store'], $branchTransfersWriteMw);
+$router->post($app('branch-transfers/{id}/approve'), [InterBranchTransfersController::class, 'approve'], $branchTransfersWriteMw);

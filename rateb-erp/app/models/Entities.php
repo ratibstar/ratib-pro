@@ -77,8 +77,9 @@ final class SupplierQuotation extends Model
 {
     protected string $table = 'rateb_supplier_quotations';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
-        'rfq_id', 'supplier_id', 'quotation_no', 'amount', 'status', 'valid_until', 'notes',
+        'rfq_id', 'supplier_id', 'quotation_no', 'amount', 'status', 'valid_until', 'notes', 'branch_id',
     ];
 }
 
@@ -146,9 +147,10 @@ final class Customer extends Model
 {
     protected string $table = 'rateb_customers';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'code', 'name', 'name_ar', 'phone', 'email', 'tax_id',
-        'cost_center_id', 'notes', 'is_active',
+        'cost_center_id', 'notes', 'is_active', 'branch_id',
     ];
 }
 
@@ -185,12 +187,13 @@ final class SupplierEvaluation extends Model
 {
     protected string $table = 'rateb_supplier_evaluations';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'evaluation_no', 'supplier_id', 'evaluated_by', 'evaluator_name',
         'evaluation_date', 'period_start', 'period_end',
         'quality_score', 'delivery_score', 'price_score', 'service_score',
         'overall_score', 'score_percent', 'rating_tier', 'comments', 'status',
-        'manager_approval', 'approved_by', 'approved_at',
+        'manager_approval', 'approved_by', 'approved_at', 'branch_id',
     ];
 
     public function recalculateOverall(array $scores): float
@@ -307,8 +310,9 @@ final class Document extends Model
 {
     protected string $table = 'rateb_documents';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
-        'entity_type', 'entity_id', 'title', 'file_name', 'file_path', 'mime_type', 'file_size', 'uploaded_by',
+        'entity_type', 'entity_id', 'title', 'file_name', 'file_path', 'mime_type', 'file_size', 'uploaded_by', 'branch_id',
     ];
 }
 
@@ -323,7 +327,8 @@ final class InventoryBatch extends Model
 {
     protected string $table = 'rateb_inventory_batches';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['inventory_id', 'batch_no', 'quantity', 'production_date', 'expiry_date', 'warehouse_id'];
+    protected bool $branchScoped = true;
+    protected array $fillable = ['inventory_id', 'batch_no', 'quantity', 'production_date', 'expiry_date', 'warehouse_id', 'branch_id'];
 }
 
 final class InventoryAudit extends Model
@@ -344,13 +349,14 @@ final class SupplierCommunication extends Model
 {
     protected string $table = 'rateb_supplier_communications';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'supplier_id', 'channel', 'subject', 'comm_date', 'comm_time', 'details',
         'body', 'responsible_name', 'supplier_contact', 'supplier_phone', 'supplier_email',
         'comm_status', 'follow_up_date', 'follow_up_priority',
         'purchase_order_id', 'rfq_id', 'is_archived', 'archived_at', 'created_by',
         'send_status', 'sent_at', 'response_rating', 'response_notes',
-        'follow_up_reminded_at', 'no_response_notified_at',
+        'follow_up_reminded_at', 'no_response_notified_at', 'branch_id',
     ];
     protected array $searchable = ['channel', 'subject', 'body', 'details', 'responsible_name', 'supplier_contact'];
 }
@@ -409,8 +415,9 @@ final class ApiToken extends Model
 final class SupportTicket extends Model
 {
     protected string $table = 'rateb_support_tickets';
-    protected bool $tenantScoped = false;
+    protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
-        'company_id', 'user_id', 'ticket_no', 'subject', 'priority', 'status', 'message', 'assigned_to',
+        'company_id', 'user_id', 'ticket_no', 'subject', 'priority', 'status', 'message', 'assigned_to', 'branch_id',
     ];
 }
