@@ -13,6 +13,22 @@
     var activeEntityId = 0;
     var activeDocsRoutePrefix = '';
 
+    function showEntityModal(el) {
+        if (!el) {
+            return;
+        }
+        if (window.ratebModalShow) {
+            window.ratebModalShow(el);
+            return;
+        }
+        if (typeof bootstrap !== 'undefined' && el.classList.contains('modal') && el.querySelector('.modal-dialog')) {
+            if (el.parentElement !== document.body) {
+                document.body.appendChild(el);
+            }
+            bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true, focus: false }).show();
+        }
+    }
+
     function panelUrl(routePrefix, entityId) {
         return routePrefix.replace(/\/$/, '') + '/' + entityId + '/documents/panel';
     }
@@ -182,6 +198,8 @@
                 editForm.action = activeDocsRoutePrefix + docId;
                 if (window.ratebModalShow) {
                     window.ratebModalShow(editModalEl);
+                } else {
+                    showEntityModal(editModalEl);
                 }
                 return;
             }
@@ -224,9 +242,7 @@
             }
             var docsTitle = btn.getAttribute('data-docs-title') || '';
             loadPanel(routePrefix, entityId, docsTitle ? docsTitle + ' — ' + label : label);
-            if (window.ratebModalShow) {
-                window.ratebModalShow(modalEl);
-            }
+            showEntityModal(modalEl);
         });
     }
 

@@ -1,5 +1,5 @@
 <div class="modal fade rateb-entity-docs-modal" id="ratebEntityDocsModal" tabindex="-1" role="dialog"
-     aria-labelledby="ratebEntityDocsModalLabel" data-bs-focus="false"
+     aria-labelledby="ratebEntityDocsModalLabel" data-bs-focus="false">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
