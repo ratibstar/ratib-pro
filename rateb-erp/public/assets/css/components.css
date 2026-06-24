@@ -897,6 +897,21 @@ table.rateb-approvals-table td.rateb-actions-cell {
     color: #5bc0de;
 }
 
+.rateb-approval-btn-edit {
+    border-color: rgba(13, 110, 253, 0.45);
+    color: #6ea8fe;
+    background: rgba(13, 110, 253, 0.08);
+}
+
+.rateb-approval-data-row.rateb-approval-processed {
+    background: rgba(25, 135, 84, 0.06);
+}
+
+.rateb-approval-data-row.rateb-approval-processed .rateb-approval-btn-approve,
+.rateb-approval-data-row.rateb-approval-processed .rateb-approval-btn-reject {
+    display: none;
+}
+
 .rateb-approval-btn-approve {
     border-color: rgba(25, 135, 84, 0.5);
     color: #75d49a;

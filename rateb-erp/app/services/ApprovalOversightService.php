@@ -299,6 +299,7 @@ final class ApprovalOversightService
                 'entity_id' => $entityId,
                 'submitted_at' => (string) ($row['submitted_at'] ?? ''),
                 'view_url' => $this->opsUrl($route . '/' . $entityId, $companyId),
+                'edit_url' => $this->opsUrl($route . '/' . $entityId . '/edit', $companyId),
             ];
         }
         return $out;
@@ -722,6 +723,7 @@ final class ApprovalOversightService
             'status_label' => $this->statusLabel($status),
             'fields' => $this->detailFields($sourceKey, $row),
             'view_url' => $this->opsUrl($route . '/' . $recordId, (int) ($row['company_id'] ?? $companyId)),
+            'edit_url' => $this->opsUrl($route . '/' . $recordId . '/edit', (int) ($row['company_id'] ?? $companyId)),
             'can_approve' => $this->canActOnStatus($status, 'approve'),
             'can_reject' => $this->canActOnStatus($status, 'reject') && self::canReject($sourceKey),
             'can_undo' => $this->canActOnStatus($status, 'undo') && self::canUndo($sourceKey),

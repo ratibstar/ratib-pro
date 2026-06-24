@@ -107,7 +107,7 @@ $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsColumn ? 1 : 
                     <a href="<?php echo rateb_url_query(rateb_url($routePrefix . '/' . $rowId . '/download'), ['format' => 'pdf']); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('print_save_pdf'); ?>" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i></a>
                     <?php } }
                     if ($actionsEnabled) {
-                    if ($editEnabled && !$rowApproved) { ?>
+                    if ($editEnabled) { ?>
                     <a href="<?php echo rateb_url($routePrefix . '/' . $rowId . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
                     <?php }
                     if ($approvalEnabled && $canApprove && $rowApproval === 'pending') { ?>

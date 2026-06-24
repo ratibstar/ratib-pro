@@ -17,6 +17,7 @@ $approvalsConfig = [
     'typeFilter' => $typeFilter,
     'labels' => [
         'view' => __('view'),
+        'edit' => __('edit'),
         'approve' => __('approve'),
         'reject' => __('reject'),
         'undo' => __('undo'),
@@ -27,6 +28,7 @@ $approvalsConfig = [
         'approval_detail' => __('approval_detail'),
         'close' => __('close'),
         'error' => __('system_error_generic'),
+        'already_processed' => __('manager_approval_already_processed'),
     ],
 ];
 ?>
@@ -146,12 +148,16 @@ $approvalsConfig = [
                             $recordId = (int) ($row['record_id'] ?? 0);
                             $companyId = (int) ($row['company_id'] ?? 0);
                             $canReject = !empty($row['can_reject']);
+                            $viewUrl = (string) ($row['view_url'] ?? '');
+                            $editUrl = (string) ($row['edit_url'] ?? '');
                             $rowKey = $sourceKey . '-' . $recordId;
                             ?>
                         <tr class="rateb-approval-data-row" data-approval-row="<?php echo Rateb\App\Core\View::escape($rowKey); ?>"
                             data-source-key="<?php echo Rateb\App\Core\View::escape($sourceKey); ?>"
                             data-record-id="<?php echo $recordId; ?>"
                             data-company-id="<?php echo $companyId; ?>"
+                            data-view-url="<?php echo Rateb\App\Core\View::escape($viewUrl); ?>"
+                            data-edit-url="<?php echo Rateb\App\Core\View::escape($editUrl); ?>"
                             data-can-reject="<?php echo $canReject ? '1' : '0'; ?>">
                             <td class="rateb-approval-cell-clip"><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
                             <td class="rateb-approval-cell-clip">
@@ -167,6 +173,11 @@ $approvalsConfig = [
                                     <button type="button" class="rateb-approval-btn rateb-approval-btn-view" data-action="view" title="<?php echo __('view'); ?>">
                                         <i class="fas fa-eye"></i><span><?php echo __('view'); ?></span>
                                     </button>
+                                    <?php if ($editUrl !== '') { ?>
+                                    <a href="<?php echo Rateb\App\Core\View::escape($editUrl); ?>" class="rateb-approval-btn rateb-approval-btn-edit" target="_blank" rel="noopener" title="<?php echo __('edit'); ?>">
+                                        <i class="fas fa-edit"></i><span><?php echo __('edit'); ?></span>
+                                    </a>
+                                    <?php } ?>
                                     <button type="button" class="rateb-approval-btn rateb-approval-btn-approve" data-action="approve" title="<?php echo __('approve'); ?>">
                                         <i class="fas fa-check"></i><span><?php echo __('approve'); ?></span>
                                     </button>
@@ -174,6 +185,11 @@ $approvalsConfig = [
                                     <button type="button" class="rateb-approval-btn rateb-approval-btn-reject" data-action="reject" title="<?php echo __('reject'); ?>">
                                         <i class="fas fa-times"></i><span><?php echo __('reject'); ?></span>
                                     </button>
+                                    <?php } ?>
+                                    <?php if ($viewUrl !== '') { ?>
+                                    <a href="<?php echo Rateb\App\Core\View::escape($viewUrl); ?>" class="rateb-approval-btn rateb-approval-btn-link" target="_blank" rel="noopener" title="<?php echo __('open_in_operations'); ?>">
+                                        <i class="fas fa-external-link-alt"></i><span><?php echo __('open_in_operations'); ?></span>
+                                    </a>
                                     <?php } ?>
                                 </div>
                             </td>
