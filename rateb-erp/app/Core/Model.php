@@ -402,56 +402,78 @@ abstract class Model
 
     public function query(string $sql, array $params = []): array
     {
+        [$sql, $params] = $this->expandDuplicateNamedParams($sql, $params);
         $stmt = $this->db->prepare($sql);
-        $this->executePrepared($stmt, $sql, $params);
+        $this->executePrepared($stmt, $params);
         return $stmt->fetchAll();
     }
 
     public function queryOne(string $sql, array $params = []): ?array
     {
+        [$sql, $params] = $this->expandDuplicateNamedParams($sql, $params);
         $stmt = $this->db->prepare($sql);
-        $this->executePrepared($stmt, $sql, $params);
+        $this->executePrepared($stmt, $params);
         $row = $stmt->fetch();
         return $row ?: null;
     }
 
-    /** @param array<string, mixed> $params */
-    private function executePrepared(\PDOStatement $stmt, string $sql, array $params): void
+    /**
+     * Native MySQL PDO treats duplicate :name tokens as one parameter; expand to :name_2, etc.
+     *
+     * @param array<string, mixed> $params
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function expandDuplicateNamedParams(string $sql, array $params): array
     {
         if (!preg_match_all('/:(\w+)/', $sql, $matches) || $matches[1] === []) {
-            try {
-                $stmt->execute();
-            } catch (\PDOException $e) {
-                throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
-            }
-            return;
+            return [$sql, $params];
         }
-        $pos = 1;
+        $seen = [];
         foreach ($matches[1] as $name) {
-            if (!array_key_exists($name, $params)) {
-                throw new \InvalidArgumentException("Missing SQL parameter :{$name}");
-            }
-            $stmt->bindValue($pos++, $params[$name], $this->pdoParamType($params[$name]));
+            $seen[$name] = ($seen[$name] ?? 0) + 1;
         }
+        $hasDupes = false;
+        foreach ($seen as $count) {
+            if ($count > 1) {
+                $hasDupes = true;
+                break;
+            }
+        }
+        if (!$hasDupes) {
+            return [$sql, $params];
+        }
+
+        $occurrence = [];
+        $newParams = [];
+        $newSql = preg_replace_callback(
+            '/:(\w+)/',
+            function (array $m) use (&$occurrence, $params, &$newParams): string {
+                $name = $m[1];
+                if (!array_key_exists($name, $params)) {
+                    throw new \InvalidArgumentException("Missing SQL parameter :{$name}");
+                }
+                $occurrence[$name] = ($occurrence[$name] ?? 0) + 1;
+                $n = $occurrence[$name];
+                $newName = $n === 1 ? $name : $name . '_' . $n;
+                $newParams[$newName] = $params[$name];
+                return ':' . $newName;
+            },
+            $sql
+        );
+        return [$newSql, $newParams];
+    }
+
+    /** @param array<string, mixed> $params */
+    private function executePrepared(\PDOStatement $stmt, array $params): void
+    {
         try {
-            $stmt->execute();
+            if ($params === []) {
+                $stmt->execute();
+            } else {
+                $stmt->execute($params);
+            }
         } catch (\PDOException $e) {
             throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
         }
-    }
-
-    /** @param mixed $value */
-    private function pdoParamType($value): int
-    {
-        if (is_int($value)) {
-            return PDO::PARAM_INT;
-        }
-        if (is_bool($value)) {
-            return PDO::PARAM_BOOL;
-        }
-        if ($value === null) {
-            return PDO::PARAM_NULL;
-        }
-        return PDO::PARAM_STR;
     }
 }

@@ -2152,7 +2152,8 @@ final class AccountingService
         }
         try {
             $this->ensureDefaultAccounts($companyId);
-        } catch (\PDOException $e) {
+        } catch (\Throwable $e) {
+            $this->lastVoucherPostDetail = DatabaseErrorService::technicalDetail($e);
             return 'voucher_no_cash_account';
         }
         $cash = $this->resolveCashAccountId($companyId, $v);
@@ -2345,7 +2346,7 @@ final class AccountingService
         $start = $year . '-01-01';
         $end = $year . '-12-31';
         $exists = (new JournalEntry())->queryOne(
-            'SELECT id FROM rateb_fiscal_periods WHERE company_id = :cid AND start_date <= :dt AND end_date >= :dt LIMIT 1',
+            'SELECT id FROM rateb_fiscal_periods WHERE company_id = :cid AND :dt BETWEEN start_date AND end_date LIMIT 1',
             ['cid' => $companyId, 'dt' => $date]
         );
         if ($exists) {
