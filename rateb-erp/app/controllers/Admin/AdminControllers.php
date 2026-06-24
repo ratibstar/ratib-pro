@@ -28,6 +28,30 @@ final class DashboardController extends Controller
 {
     public function index(): void
     {
+        if (function_exists('rateb_is_portal_branch_session') && rateb_is_portal_branch_session()) {
+            $branchId = rateb_portal_branch_id();
+            $branch = (new \Rateb\App\Services\BranchService())->findActiveForPortal($branchId);
+            if ($branch) {
+                $companyId = (int) ($branch['company_id'] ?? 0);
+                TenantContext::setCompanyId($companyId);
+                $service = new DashboardService();
+                $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
+                $userCount = (new User())->count(['company_id' => $companyId]);
+                $invSvc = new \Rateb\App\Services\InventoryWorkflowService();
+                $ctrSvc = new \Rateb\App\Services\ContractWorkflowService();
+                $this->view('company/dashboard', [
+                    'title' => __('dashboard'),
+                    'metrics' => $service->companyMetrics($companyId),
+                    'limits' => $limits,
+                    'userCount' => $userCount,
+                    'expiringInventory' => $invSvc->expiringItems(30),
+                    'expiringContracts' => $ctrSvc->expiringContracts(60),
+                    'csrf' => Csrf::token(),
+                ], 'main');
+                return;
+            }
+        }
+
         if (SessionManager::get('rateb_is_super_admin')) {
             $service = new DashboardService();
             $this->view('admin/dashboard', [

@@ -238,6 +238,7 @@ return [
     'branch_portal_invalid' => 'Invalid or inactive branch link.',
     'branch_portal_denied' => 'Your account is not assigned to this branch.',
     'branch_portal_login_hint' => 'Branch login: :branch — :company',
+    'branch_portal_active_banner' => 'You are working in branch: :branch — only this branch\'s data is shown.',
     'branches_access_all' => 'Access all branches',
     'branch_check_limit' => 'Branch counter and plan limit',
     'branch_check_export' => 'Excel export and print',

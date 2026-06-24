@@ -10,6 +10,7 @@ use Rateb\App\Core\IpRateLimiter;
 use Rateb\App\Core\RateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\User;
 use Rateb\App\Services\AccountLockoutService;
 use Rateb\App\Services\AuditService;
@@ -47,6 +48,28 @@ final class LoginController extends Controller
         }
 
         $branchPortal = $this->resolveBranchPortalFromRequest();
+
+        if (Auth::check() && $branchPortal) {
+            $branchId = (int) ($branchPortal['id'] ?? 0);
+            if ($branchId > 0) {
+                $user = Auth::user();
+                $companyId = (int) ($user['company_id'] ?? 0);
+                $branchSvc = new \Rateb\App\Services\BranchService();
+                $isSuper = (bool) SessionManager::get('rateb_is_super_admin');
+                if ($isSuper || $branchSvc->userMayUsePortalBranch((int) $user['id'], $branchId, $companyId)) {
+                    if ($isSuper) {
+                        $cid = (int) ($branchPortal['company_id'] ?? 0);
+                        if ($cid > 0) {
+                            SessionManager::set('rateb_ops_company_id', $cid);
+                            TenantContext::setCompanyId($cid);
+                        }
+                    }
+                    SessionManager::set('rateb_portal_branch_id', $branchId);
+                    \Rateb\App\Core\BranchContext::reset();
+                    Response::redirect(rateb_url(Auth::homePath()));
+                }
+            }
+        }
 
         $this->view('shared/auth/login', [
             'title' => __('login'),
@@ -165,10 +188,19 @@ final class LoginController extends Controller
         if ($branchId > 0) {
             $companyId = (int) ($user['company_id'] ?? 0);
             $branchSvc = new \Rateb\App\Services\BranchService();
+            $isSuper = (bool) SessionManager::get('rateb_is_super_admin');
             if (!$branchSvc->userMayUsePortalBranch((int) $user['id'], $branchId, $companyId)) {
                 Auth::logout();
                 SessionManager::flash('error', __('branch_portal_denied'));
                 Response::redirect(rateb_branch_portal_url($branchId));
+            }
+            if ($isSuper) {
+                $branch = $branchSvc->findActiveForPortal($branchId);
+                $cid = (int) ($branch['company_id'] ?? 0);
+                if ($cid > 0) {
+                    SessionManager::set('rateb_ops_company_id', $cid);
+                    TenantContext::setCompanyId($cid);
+                }
             }
             SessionManager::set('rateb_portal_branch_id', $branchId);
             SessionManager::forget('_rateb_login_branch_id');

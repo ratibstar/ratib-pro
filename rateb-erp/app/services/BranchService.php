@@ -81,7 +81,9 @@ final class BranchService
             'SELECT b.*, c.name AS company_name, c.slug AS company_slug
              FROM rateb_branches b
              INNER JOIN rateb_companies c ON c.id = b.company_id
-             WHERE c.slug = :slug AND b.code = :code AND b.status = :st LIMIT 1',
+             WHERE b.code = :code AND b.status = :st
+               AND (c.slug = :slug OR CAST(c.id AS CHAR) = :slug)
+             LIMIT 1',
             ['slug' => $companySlug, 'code' => $branchCode, 'st' => 'active']
         );
         return $row ?: null;
@@ -120,11 +122,17 @@ final class BranchService
 
     public function userMayUsePortalBranch(int $userId, int $branchId, int $companyId): bool
     {
-        if ($userId < 1 || $branchId < 1 || $companyId < 1) {
+        if ($userId < 1 || $branchId < 1) {
             return false;
         }
         $branch = $this->findActiveForPortal($branchId);
-        if (!$branch || (int) ($branch['company_id'] ?? 0) !== $companyId) {
+        if (!$branch) {
+            return false;
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return (int) ($branch['company_id'] ?? 0) > 0;
+        }
+        if ($companyId < 1 || (int) ($branch['company_id'] ?? 0) !== $companyId) {
             return false;
         }
         $assigned = $this->getUserBranchIds($userId);

@@ -9,13 +9,14 @@ final class PurchaseOrder extends Model
 {
     protected string $table = 'rateb_purchase_orders';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'order_no', 'barcode', 'qr_code', 'supplier_id', 'cost_center_id', 'warehouse_id',
         'purchase_request_id', 'quotation_id', 'status', 'order_date',
         'expected_date', 'subtotal', 'tax_amount', 'total_amount', 'currency',
         'discount_amount', 'shipping_amount', 'customs_clearance_amount',
         'customs_declaration_no', 'customs_clearance_date', 'customs_broker_id', 'customs_clearance_status',
-        'notes', 'notes_history',
+        'notes', 'notes_history', 'branch_id',
     ];
 
     public function generateOrderNo(): string
@@ -54,13 +55,15 @@ final class PurchaseOrder extends Model
     private function customsScopeParams(): array
     {
         [, $extraParams] = $this->tenantFilterClause();
-        return $extraParams;
+        [, $branchParams] = $this->branchFilterClause();
+        return array_merge($extraParams, $branchParams);
     }
 
     private function customsScopeSql(): string
     {
         [$tenantSql, ] = $this->tenantFilterClause();
-        return $tenantSql . " AND (
+        [$branchSql, ] = $this->branchFilterClause();
+        return $tenantSql . $branchSql . " AND (
             customs_clearance_amount > 0
             OR (customs_declaration_no IS NOT NULL AND customs_declaration_no <> '')
             OR (customs_clearance_status IS NOT NULL AND customs_clearance_status <> '')

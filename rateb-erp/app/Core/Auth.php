@@ -169,6 +169,9 @@ final class Auth
         TenantContext::setSuperAdmin((bool) SessionManager::get('rateb_is_super_admin'));
         $companyId = SessionManager::get('rateb_company_id');
         TenantContext::setCompanyId($companyId !== null ? (int) $companyId : null);
+        if (function_exists('rateb_bootstrap_portal_branch_from_request')) {
+            rateb_bootstrap_portal_branch_from_request();
+        }
         if (function_exists('rateb_bootstrap_branch_context')) {
             rateb_bootstrap_branch_context($companyId !== null ? (int) $companyId : null);
         }

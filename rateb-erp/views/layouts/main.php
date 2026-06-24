@@ -161,6 +161,15 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
         </header>
         <main class="rateb-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
+            <?php if (function_exists('rateb_is_portal_branch_session') && rateb_is_portal_branch_session()) {
+                $branchLabel = function_exists('rateb_portal_branch_label') ? rateb_portal_branch_label() : '';
+                if ($branchLabel !== '') { ?>
+            <div class="alert alert-info py-2 mb-3 d-flex align-items-center gap-2">
+                <i class="fas fa-store"></i>
+                <span><?php echo Rateb\App\Core\View::escape(__('branch_portal_active_banner', ['branch' => $branchLabel])); ?></span>
+            </div>
+            <?php }
+            } ?>
             <?php
             $showOpsCompanyPicker = rateb_is_super_admin() && (
                 rateb_is_ops_route($erpRoute)

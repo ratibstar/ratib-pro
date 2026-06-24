@@ -26,9 +26,10 @@ final class Asset extends Model
 {
     protected string $table = 'rateb_assets';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'asset_tag', 'name', 'category', 'purchase_date', 'purchase_cost',
-        'current_value', 'location', 'status',
+        'current_value', 'location', 'status', 'branch_id',
     ];
 }
 
@@ -46,9 +47,10 @@ final class Contract extends Model
 {
     protected string $table = 'rateb_contracts';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'contract_no', 'title', 'supplier_id', 'contract_type', 'start_date',
-        'end_date', 'renewal_date', 'alert_days', 'approval_status', 'value', 'status', 'document_path',
+        'end_date', 'renewal_date', 'alert_days', 'approval_status', 'value', 'status', 'document_path', 'branch_id',
     ];
 }
 
@@ -56,9 +58,10 @@ final class Tender extends Model
 {
     protected string $table = 'rateb_tenders';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'tender_no', 'title', 'description', 'publish_date', 'closing_date',
-        'estimated_value', 'status',
+        'estimated_value', 'status', 'branch_id',
     ];
 }
 
@@ -66,7 +69,8 @@ final class Rfq extends Model
 {
     protected string $table = 'rateb_rfq';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['rfq_no', 'title', 'status', 'deadline', 'description'];
+    protected bool $branchScoped = true;
+    protected array $fillable = ['rfq_no', 'title', 'status', 'deadline', 'description', 'branch_id'];
 }
 
 final class SupplierQuotation extends Model
@@ -82,9 +86,10 @@ final class StockMovement extends Model
 {
     protected string $table = 'rateb_stock_movements';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'movement_no', 'inventory_id', 'warehouse_id', 'movement_type', 'quantity',
-        'reference_type', 'reference_id', 'notes', 'created_by',
+        'reference_type', 'reference_id', 'notes', 'created_by', 'branch_id',
     ];
 }
 
@@ -114,7 +119,8 @@ final class ChartOfAccount extends Model
 final class JournalEntry extends Model
 {
     protected string $table = 'rateb_journal_entries';
-    protected bool $tenantScoped = false;
+    protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'entry_no', 'entry_date', 'description', 'description_ar',
         'source_type', 'source_id', 'status', 'created_by', 'posted_at', 'branch_id',
@@ -157,10 +163,11 @@ final class CashVoucher extends Model
 {
     protected string $table = 'rateb_cash_vouchers';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'voucher_no', 'voucher_type', 'voucher_date', 'amount', 'party_name', 'customer_id',
         'description', 'description_ar', 'counter_account_id', 'bank_account_id', 'status', 'journal_entry_id',
-        'created_by', 'posted_at', 'submitted_for_approval_at', 'reject_reason', 'rejected_at', 'rejected_by',
+        'created_by', 'posted_at', 'submitted_for_approval_at', 'reject_reason', 'rejected_at', 'rejected_by', 'branch_id',
     ];
 }
 

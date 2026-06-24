@@ -238,6 +238,7 @@ return [
     'branch_portal_invalid' => 'رابط الفرع غير صالح أو الفرع غير نشط.',
     'branch_portal_denied' => 'حسابك غير مرتبط بهذا الفرع.',
     'branch_portal_login_hint' => 'تسجيل دخول فرع: :branch — شركة :company',
+    'branch_portal_active_banner' => 'أنت تعمل داخل فرع: :branch — البيانات المعروضة خاصة بهذا الفرع فقط.',
     'branches_access_all' => 'الوصول لكل الفروع',
     'branch_check_limit' => 'عداد الفروع وحد الباقة',
     'branch_check_export' => 'تصدير Excel وطباعة',

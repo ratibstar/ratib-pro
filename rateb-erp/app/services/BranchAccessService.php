@@ -29,7 +29,7 @@ final class BranchAccessService
         }
 
         $portalBranch = (int) SessionManager::get('rateb_portal_branch_id', 0);
-        if ($portalBranch > 0 && !rateb_is_super_admin()) {
+        if ($portalBranch > 0) {
             $row = (new Branch())->queryOne(
                 'SELECT id FROM rateb_branches WHERE id = :id AND company_id = :cid AND status = :st LIMIT 1',
                 ['id' => $portalBranch, 'cid' => $companyId, 'st' => 'active']

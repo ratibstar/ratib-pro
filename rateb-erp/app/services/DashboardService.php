@@ -63,6 +63,9 @@ final class DashboardService
     public function companyMetrics(int $companyId): array
     {
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
         return [
             'purchase_requests' => (new PurchaseRequest())->count(),
             'purchase_orders' => (new PurchaseOrder())->count(),

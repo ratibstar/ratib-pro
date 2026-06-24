@@ -251,6 +251,13 @@ abstract class Model
 
         $data = $this->filterFillable($data);
 
+        if ($this->branchScoped && empty($data[$this->branchColumn]) && function_exists('rateb_resolve_create_branch_id')) {
+            $branchId = rateb_resolve_create_branch_id();
+            if ($branchId > 0) {
+                $data[$this->branchColumn] = $branchId;
+            }
+        }
+
         if ($this->tenantScoped) {
             if ($tenantExplicitNull) {
                 $data[$this->tenantColumn] = null;
@@ -303,6 +310,10 @@ abstract class Model
         $sql .= $extra;
         $data = array_merge($data, $extraParams);
 
+        [$branchExtra, $branchParams] = $this->branchFilterClause();
+        $sql .= $branchExtra;
+        $data = array_merge($data, $branchParams);
+
         $stmt = $this->db->prepare($sql);
         try {
             return $stmt->execute($data);
@@ -319,6 +330,10 @@ abstract class Model
         [$extra, $extraParams] = $this->tenantFilterClause();
         $sql .= $extra;
         $params = array_merge($params, $extraParams);
+
+        [$branchExtra, $branchParams] = $this->branchFilterClause();
+        $sql .= $branchExtra;
+        $params = array_merge($params, $branchParams);
 
         $stmt = $this->db->prepare($sql);
         try {

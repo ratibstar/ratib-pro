@@ -704,6 +704,86 @@ if (!function_exists('rateb_portal_branch_id')) {
     }
 }
 
+if (!function_exists('rateb_is_portal_branch_session')) {
+    function rateb_is_portal_branch_session(): bool
+    {
+        return rateb_portal_branch_id() > 0;
+    }
+}
+
+if (!function_exists('rateb_resolve_create_branch_id')) {
+    /** Branch id to stamp on new records when the session is branch-scoped. */
+    function rateb_resolve_create_branch_id(): int
+    {
+        rateb_bootstrap_branch_context();
+        if (\Rateb\App\Core\BranchContext::accessAll()) {
+            return 0;
+        }
+        $ids = \Rateb\App\Core\BranchContext::allowedIds();
+        return $ids[0] ?? 0;
+    }
+}
+
+if (!function_exists('rateb_portal_branch_label')) {
+    function rateb_portal_branch_label(): string
+    {
+        $id = rateb_portal_branch_id();
+        if ($id < 1) {
+            return '';
+        }
+        $row = (new \Rateb\App\Models\Branch())->queryOne(
+            'SELECT name, code FROM rateb_branches WHERE id = :id LIMIT 1',
+            ['id' => $id]
+        );
+        if (!$row) {
+            return '';
+        }
+        $name = trim((string) ($row['name'] ?? ''));
+        $code = trim((string) ($row['code'] ?? ''));
+        if ($name === '') {
+            return $code;
+        }
+        return $code !== '' ? $name . ' (' . $code . ')' : $name;
+    }
+}
+
+if (!function_exists('rateb_bootstrap_portal_branch_from_request')) {
+    /** When URL has ?company=&branch= or ?branch_id=, lock session to that branch (even if already logged in). */
+    function rateb_bootstrap_portal_branch_from_request(): void
+    {
+        if (PHP_SAPI === 'cli') {
+            return;
+        }
+        $svc = new \Rateb\App\Services\BranchService();
+        $branchId = $svc->resolvePortalBranchIdFromRequest();
+        if ($branchId < 1) {
+            return;
+        }
+        $branch = $svc->findActiveForPortal($branchId);
+        if (!$branch) {
+            return;
+        }
+        $userId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
+        if ($userId > 0) {
+            $isSuper = (bool) (\Rateb\App\Core\SessionManager::get('rateb_is_super_admin', false) ?? false);
+            if ($isSuper) {
+                $companyId = (int) ($branch['company_id'] ?? 0);
+                if ($companyId > 0) {
+                    \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $companyId);
+                    \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+                }
+            } else {
+                $companyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+                if (!$svc->userMayUsePortalBranch($userId, $branchId, $companyId)) {
+                    return;
+                }
+            }
+        }
+        \Rateb\App\Core\SessionManager::set('rateb_portal_branch_id', $branchId);
+        \Rateb\App\Core\BranchContext::reset();
+    }
+}
+
 if (!function_exists('rateb_bootstrap_branch_context')) {
     function rateb_bootstrap_branch_context(?int $companyId = null): void
     {

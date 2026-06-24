@@ -9,9 +9,10 @@ final class PurchaseRequest extends Model
 {
     protected string $table = 'rateb_purchase_requests';
     protected bool $tenantScoped = true;
+    protected bool $branchScoped = true;
     protected array $fillable = [
         'request_no', 'title', 'department', 'priority', 'status', 'expected_date',
-        'requested_by', 'approved_by', 'total_estimated', 'currency', 'notes', 'notes_history',
+        'requested_by', 'approved_by', 'total_estimated', 'currency', 'notes', 'notes_history', 'branch_id',
     ];
 
     public function generateRequestNo(): string
