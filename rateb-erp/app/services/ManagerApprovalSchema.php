@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
-use Rateb\App\Core\TenantContext;
 use PDOException;
 
 /** Detect manager-approval audit columns and build safe UPDATE statements. */
@@ -15,8 +14,8 @@ final class ManagerApprovalSchema
 
     public static function hasColumn(string $table, string $column): bool
     {
-        $table = preg_replace('/[^a-z0-9_]/', '', $table) ?? '';
-        $column = preg_replace('/[^a-z0-9_]/', '', $column) ?? '';
+        $table = self::sanitizeTable($table);
+        $column = self::sanitizeColumn($column);
         if ($table === '' || $column === '') {
             return false;
         }
@@ -35,11 +34,17 @@ final class ManagerApprovalSchema
         int $uid,
         int $companyId
     ): void {
+        self::ensureApprovalColumns($table);
+
         $includeBy = self::hasColumn($table, 'approved_by');
         $includeAt = self::hasColumn($table, 'approved_at');
+        $last = null;
 
-        for ($attempt = 0; $attempt < 4; $attempt++) {
+        for ($attempt = 0; $attempt < 8; $attempt++) {
             try {
+                if (!self::hasColumn($table, 'manager_approval')) {
+                    throw new \RuntimeException(__('db_schema_outdated') . ' [manager_approval]');
+                }
                 $built = self::pendingApprovalUpdate($table, $id, $state, $uid, $companyId, $includeBy, $includeAt);
                 $db = Database::connection();
                 $stmt = $db->prepare($built['sql']);
@@ -48,7 +53,10 @@ final class ManagerApprovalSchema
                     throw new \RuntimeException(__('manager_approval_already_processed'));
                 }
                 return;
+            } catch (\RuntimeException $e) {
+                throw $e;
             } catch (PDOException $e) {
+                $last = $e;
                 $missing = self::missingColumnFromError($e);
                 if ($missing === 'approved_by' && $includeBy) {
                     $includeBy = false;
@@ -60,20 +68,34 @@ final class ManagerApprovalSchema
                     unset(self::$columnCache[$table . '.approved_at']);
                     continue;
                 }
+                if ($missing !== '') {
+                    self::tryAddColumn($table, $missing);
+                    unset(self::$columnCache[$table . '.' . $missing]);
+                    continue;
+                }
                 throw DatabaseErrorService::toRuntimeException($e);
             }
         }
 
+        if ($last instanceof PDOException) {
+            throw DatabaseErrorService::toRuntimeException($last);
+        }
         throw new \RuntimeException(__('db_operation_failed'));
     }
 
     public static function executeResetApproval(string $table, int $id, int $companyId): void
     {
+        self::ensureApprovalColumns($table);
+
         $includeBy = self::hasColumn($table, 'approved_by');
         $includeAt = self::hasColumn($table, 'approved_at');
+        $last = null;
 
-        for ($attempt = 0; $attempt < 4; $attempt++) {
+        for ($attempt = 0; $attempt < 8; $attempt++) {
             try {
+                if (!self::hasColumn($table, 'manager_approval')) {
+                    throw new \RuntimeException(__('db_schema_outdated') . ' [manager_approval]');
+                }
                 $built = self::resetApprovalUpdate($table, $id, $companyId, $includeBy, $includeAt);
                 $db = Database::connection();
                 $stmt = $db->prepare($built['sql']);
@@ -82,7 +104,10 @@ final class ManagerApprovalSchema
                     throw new \RuntimeException(__('manager_approval_already_processed'));
                 }
                 return;
+            } catch (\RuntimeException $e) {
+                throw $e;
             } catch (PDOException $e) {
+                $last = $e;
                 $missing = self::missingColumnFromError($e);
                 if ($missing === 'approved_by' && $includeBy) {
                     $includeBy = false;
@@ -94,10 +119,18 @@ final class ManagerApprovalSchema
                     unset(self::$columnCache[$table . '.approved_at']);
                     continue;
                 }
+                if ($missing !== '') {
+                    self::tryAddColumn($table, $missing);
+                    unset(self::$columnCache[$table . '.' . $missing]);
+                    continue;
+                }
                 throw DatabaseErrorService::toRuntimeException($e);
             }
         }
 
+        if ($last instanceof PDOException) {
+            throw DatabaseErrorService::toRuntimeException($last);
+        }
         throw new \RuntimeException(__('db_operation_failed'));
     }
 
@@ -111,7 +144,7 @@ final class ManagerApprovalSchema
         ?bool $includeApprovedBy = null,
         ?bool $includeApprovedAt = null
     ): array {
-        $table = preg_replace('/[^a-z0-9_]/', '', $table) ?? '';
+        $table = self::sanitizeTable($table);
         if ($table === '' || $id < 1) {
             throw new \RuntimeException(__('invalid_request'));
         }
@@ -130,7 +163,7 @@ final class ManagerApprovalSchema
         }
 
         $sql = sprintf('UPDATE %s SET %s WHERE id = :id AND manager_approval = :pending', $table, implode(', ', $sets));
-        if ($companyId > 0 && !TenantContext::isSuperAdmin() && self::hasColumn($table, 'company_id')) {
+        if ($companyId > 0 && !self::isOversightSuperAdmin() && self::hasColumn($table, 'company_id')) {
             $sql .= ' AND company_id = :cid';
             $params['cid'] = $companyId;
         }
@@ -146,7 +179,7 @@ final class ManagerApprovalSchema
         ?bool $includeApprovedBy = null,
         ?bool $includeApprovedAt = null
     ): array {
-        $table = preg_replace('/[^a-z0-9_]/', '', $table) ?? '';
+        $table = self::sanitizeTable($table);
         if ($table === '' || $id < 1) {
             throw new \RuntimeException(__('invalid_request'));
         }
@@ -168,12 +201,80 @@ final class ManagerApprovalSchema
             $table,
             implode(', ', $sets)
         );
-        if ($companyId > 0 && !TenantContext::isSuperAdmin() && self::hasColumn($table, 'company_id')) {
+        if ($companyId > 0 && !self::isOversightSuperAdmin() && self::hasColumn($table, 'company_id')) {
             $sql .= ' AND company_id = :cid';
             $params['cid'] = $companyId;
         }
 
         return ['sql' => $sql, 'params' => $params];
+    }
+
+    public static function ensureApprovalColumns(string $table): void
+    {
+        $table = self::sanitizeTable($table);
+        if ($table === '') {
+            return;
+        }
+        if (!self::hasColumn($table, 'manager_approval')) {
+            self::tryAddColumn($table, 'manager_approval');
+        }
+        if (!self::hasColumn($table, 'approved_by')) {
+            self::tryAddColumn($table, 'approved_by');
+        }
+        if (!self::hasColumn($table, 'approved_at')) {
+            self::tryAddColumn($table, 'approved_at');
+        }
+    }
+
+    public static function ensureContractApprovalStatus(): void
+    {
+        if (self::hasColumn('rateb_contracts', 'approval_status')) {
+            return;
+        }
+        self::tryAddColumn('rateb_contracts', 'approval_status');
+    }
+
+    private static function tryAddColumn(string $table, string $column): void
+    {
+        $table = self::sanitizeTable($table);
+        $column = self::sanitizeColumn($column);
+        if ($table === '' || $column === '') {
+            return;
+        }
+        $ddl = match ($column) {
+            'manager_approval' => 'ADD COLUMN manager_approval ENUM(\'pending\',\'approved\',\'rejected\') NOT NULL DEFAULT \'pending\'',
+            'approved_by' => 'ADD COLUMN approved_by INT UNSIGNED NULL',
+            'approved_at' => 'ADD COLUMN approved_at DATETIME NULL',
+            'approval_status' => 'ADD COLUMN approval_status ENUM(\'draft\',\'pending\',\'approved\',\'rejected\') NOT NULL DEFAULT \'draft\'',
+            default => '',
+        };
+        if ($ddl === '') {
+            return;
+        }
+        try {
+            Database::connection()->exec('ALTER TABLE `' . $table . '` ' . $ddl);
+            self::$columnCache[$table . '.' . $column] = true;
+        } catch (\Throwable $e) {
+            self::$columnCache[$table . '.' . $column] = false;
+        }
+    }
+
+    private static function isOversightSuperAdmin(): bool
+    {
+        if (\Rateb\App\Core\TenantContext::isSuperAdmin()) {
+            return true;
+        }
+        return function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+    }
+
+    private static function sanitizeTable(string $table): string
+    {
+        return preg_replace('/[^a-z0-9_]/', '', $table) ?? '';
+    }
+
+    private static function sanitizeColumn(string $column): string
+    {
+        return preg_replace('/[^a-z0-9_]/', '', $column) ?? '';
     }
 
     private static function probeColumn(string $table, string $column): bool
@@ -184,26 +285,21 @@ final class ManagerApprovalSchema
                 'SHOW COLUMNS FROM `' . $table . '` LIKE ' . $db->quote($column)
             );
             if ($stmt === false) {
-                return self::fallbackAssumeColumn($column);
+                return false;
             }
             $exists = $stmt->fetch() !== false;
             $stmt->closeCursor();
             return $exists;
         } catch (\Throwable $e) {
-            return self::fallbackAssumeColumn($column);
+            return false;
         }
-    }
-
-    private static function fallbackAssumeColumn(string $column): bool
-    {
-        return in_array($column, ['manager_approval', 'company_id'], true);
     }
 
     private static function missingColumnFromError(PDOException $e): string
     {
         $raw = $e->getMessage();
         if (preg_match("/Unknown column '([^']+)'/i", $raw, $m)) {
-            return (string) $m[1];
+            return self::sanitizeColumn((string) $m[1]);
         }
         return '';
     }

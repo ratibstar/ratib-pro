@@ -338,7 +338,12 @@ final class AdminApprovalsController extends Controller
                 // Do not block approval if audit log insert fails.
             }
             $msg = $action === 'approve' ? __('approved') : __('rejected');
-            $detail = $svc->detail($sourceKey, $recordId, $companyId);
+            $detail = null;
+            try {
+                $detail = $svc->detail($sourceKey, $recordId, $companyId);
+            } catch (\Throwable $e) {
+                // Approval saved; detail panel is optional.
+            }
             $this->respondDecision(true, $msg, $detail);
         } catch (\Throwable $e) {
             $this->respondDecision(false, DatabaseErrorService::userMessage($e));

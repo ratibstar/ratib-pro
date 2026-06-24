@@ -583,6 +583,7 @@ final class ApprovalOversightService
         }
 
         if ($sourceKey === 'contract') {
+            ManagerApprovalSchema::ensureContractApprovalStatus();
             try {
                 $db = Database::connection();
                 $stmt = $db->prepare(
@@ -1003,8 +1004,10 @@ final class ApprovalOversightService
 
     private function bootstrapCompany(int $companyId): void
     {
+        if (function_exists('rateb_is_super_admin')) {
+            \Rateb\App\Core\TenantContext::setSuperAdmin(rateb_is_super_admin());
+        }
         if ($companyId > 0) {
-            // List filters use ?company_id= in the URL; mutations must scope to the record's company.
             $_GET['company_id'] = (string) $companyId;
             $_POST['company_id'] = (string) $companyId;
             \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $companyId);

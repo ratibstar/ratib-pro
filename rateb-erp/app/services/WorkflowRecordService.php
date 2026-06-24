@@ -61,7 +61,7 @@ final class WorkflowRecordService
         $table = (string) $cfg['table'];
         $sql = sprintf('SELECT * FROM %s WHERE id = :id', $table);
         $params = ['id' => $id];
-        if ($companyId > 0 && !TenantContext::isSuperAdmin()) {
+        if ($companyId > 0 && !TenantContext::isSuperAdmin() && !(function_exists('rateb_is_super_admin') && rateb_is_super_admin())) {
             $sql .= ' AND company_id = :cid';
             $params['cid'] = $companyId;
         }
