@@ -62,7 +62,9 @@
     function parseJsonResponse(res) {
         return res.json().then(function (data) {
             if (!res.ok || data.ok === false) {
-                throw new Error(data.message || labels.error || 'Error');
+                var err = new Error(data.message || labels.error || 'Error');
+                err.status = res.status;
+                throw err;
             }
             return data;
         });
@@ -280,7 +282,7 @@
                 }
             })
             .catch(function (err) {
-                flashToast(err.message || 'Error', 'danger');
+                flashToast(err.message || labels.error || 'Error', 'danger');
             })
             .finally(function () {
                 setRowBusy(key, false);

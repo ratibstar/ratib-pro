@@ -470,23 +470,18 @@ final class ApprovalOversightService
         }
 
         if ($sourceKey === 'supplier_evaluation') {
-            $model = new \Rateb\App\Models\SupplierEvaluation();
-            $item = $model->find($recordId);
-            if (!$item || (string) ($item['manager_approval'] ?? '') !== 'pending') {
-                throw new \RuntimeException(__('manager_approval_already_processed'));
-            }
-            $this->runDb(function () use ($model, $recordId, $action, $uid): void {
-                $model->update($recordId, [
-                    'manager_approval' => $action === 'approve' ? 'approved' : 'rejected',
-                    'approved_by' => $uid > 0 ? $uid : null,
-                    'approved_at' => date('Y-m-d H:i:s'),
-                ]);
-            });
+            $this->setManagerApproval('rateb_supplier_evaluations', $recordId, $companyId, $action, $uid);
             if ($action === 'approve') {
                 try {
-                    (new SupplierEvaluationService())->refreshSupplierRating((int) ($item['supplier_id'] ?? 0));
-                } catch (\PDOException $e) {
-                    throw DatabaseErrorService::toRuntimeException($e);
+                    $db = Database::connection();
+                    $stmt = $db->prepare('SELECT supplier_id FROM rateb_supplier_evaluations WHERE id = :id LIMIT 1');
+                    $stmt->execute(['id' => $recordId]);
+                    $supplierId = (int) ($stmt->fetchColumn() ?: 0);
+                    if ($supplierId > 0) {
+                        (new SupplierEvaluationService())->refreshSupplierRating($supplierId);
+                    }
+                } catch (\Throwable $e) {
+                    // Rating refresh is optional; approval already saved.
                 }
             }
             return;
@@ -1021,6 +1016,9 @@ final class ApprovalOversightService
     private function bootstrapCompany(int $companyId): void
     {
         if ($companyId > 0) {
+            // List filters use ?company_id= in the URL; mutations must scope to the record's company.
+            $_GET['company_id'] = (string) $companyId;
+            $_POST['company_id'] = (string) $companyId;
             \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $companyId);
             \Rateb\App\Core\TenantContext::setCompanyId($companyId);
         }

@@ -294,10 +294,14 @@ final class AdminApprovalsController extends Controller
         $companyId = (int) $this->input('company_id', 0);
         try {
             (new ApprovalOversightService())->undo($sourceKey, $recordId, $companyId);
-            (new AuditService())->log('undo', 'approval_oversight', $recordId, [
-                'source' => $sourceKey,
-                'company_id' => $companyId,
-            ]);
+            try {
+                (new AuditService())->log('undo', 'approval_oversight', $recordId, [
+                    'source' => $sourceKey,
+                    'company_id' => $companyId,
+                ]);
+            } catch (\Throwable $e) {
+                // Do not block undo if audit log insert fails.
+            }
             $detail = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
             $this->respondDecision(true, __('approval_undone'), $detail);
         } catch (\Throwable $e) {
@@ -319,10 +323,14 @@ final class AdminApprovalsController extends Controller
         $svc = new ApprovalOversightService();
         try {
             $svc->process($sourceKey, $recordId, $companyId, $action);
-            (new AuditService())->log($action, 'approval_oversight', $recordId, [
-                'source' => $sourceKey,
-                'company_id' => $companyId,
-            ]);
+            try {
+                (new AuditService())->log($action, 'approval_oversight', $recordId, [
+                    'source' => $sourceKey,
+                    'company_id' => $companyId,
+                ]);
+            } catch (\Throwable $e) {
+                // Do not block approval if audit log insert fails.
+            }
             $msg = $action === 'approve' ? __('approved') : __('rejected');
             $detail = $svc->detail($sourceKey, $recordId, $companyId);
             $this->respondDecision(true, $msg, $detail);
