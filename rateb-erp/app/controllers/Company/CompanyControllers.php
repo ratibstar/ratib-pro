@@ -1429,6 +1429,20 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
     {
         return 'main';
     }
+
+    /** Temporary setup / QA page (super admin). */
+    public function setupCheck(): void
+    {
+        if (!rateb_is_super_admin()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('access_denied'));
+            \Rateb\App\Core\Response::redirect(rateb_url('admin'));
+        }
+        $report = (new \Rateb\App\Services\BranchesSetupService())->report();
+        $this->view('company/branches/setup-check', [
+            'title' => __('branch_setup_check'),
+            'report' => $report,
+        ], 'main');
+    }
 }
 
 final class AssetsController extends \Rateb\App\Controllers\CrudController

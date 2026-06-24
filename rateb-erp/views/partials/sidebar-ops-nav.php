@@ -69,3 +69,7 @@ $opsSection(__('branches'), [
     ['branches', 'branch_list', 'fa-list', '', 'branches.view'],
     ['branches/create', 'add_branch', 'fa-plus', '', 'branches.manage'],
 ], 'fa-store');
+if (rateb_is_super_admin()) {
+    echo '<a href="' . rateb_url(rateb_app_route('branches/setup-check')) . '" class="rateb-nav-link' . ($navActive(rateb_app_route('branches/setup-check')) ? ' active' : '') . '">';
+    echo '<i class="fas fa-clipboard-check"></i><span>' . __('branch_setup_check') . '</span></a>';
+}

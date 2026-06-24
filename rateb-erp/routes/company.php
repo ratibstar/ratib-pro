@@ -132,6 +132,9 @@ $moduleRoutes = [
     'tenders' => [TendersController::class, 'tenders'],
 ];
 
+$branchesMw = rateb_erp_mw('', '', 'branches');
+$router->get($app('branches/setup-check'), [BranchesController::class, 'setupCheck'], $branchesMw);
+
 foreach ($moduleRoutes as $path => [$class, $module]) {
     $mw = rateb_erp_mw($module, '', $path);
     $router->get($app($path), [$class, 'index'], $mw);
