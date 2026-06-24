@@ -81,18 +81,13 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             <span><?php echo __('rateb_erp'); ?></span>
         </div>
         <nav>
+            <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>
             <?php if (rateb_nav_can('dashboard.view')) { ?>
             <a href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
             <?php } ?>
-            <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
             <?php if (rateb_is_super_admin()) { ?>
-            <?php if (rateb_nav_can('executive.dashboard.view')) { ?>
-            <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>">
-                <i class="fas fa-gauge-high"></i><span><?php echo __('executive_dashboard'); ?></span>
-            </a>
-            <?php } ?>
             <?php
             $adminSection(__('admin_oversight_section'), [
                 ['admin/companies', 'companies', 'fa-building', 'companies.view'],
@@ -106,6 +101,16 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
                 ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
             ], 'fa-shield-halved', $oversightPendingApprovals > 0 ? (int) $oversightPendingApprovals : 0);
+            ?>
+            <?php } ?>
+            <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
+            <?php if (rateb_is_super_admin()) { ?>
+            <?php if (rateb_nav_can('executive.dashboard.view')) { ?>
+            <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>">
+                <i class="fas fa-gauge-high"></i><span><?php echo __('executive_dashboard'); ?></span>
+            </a>
+            <?php } ?>
+            <?php
             if (rateb_nav_can('cms.view')) {
                 $adminSection(__('cms_section'), [
                     ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],

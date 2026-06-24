@@ -5,8 +5,6 @@ declare(strict_types=1);
  * Company operations nav — full CRUD routes under unified /admin shell.
  * Shown for company users and super admins (permissions + plan modules apply).
  */
-require RATEB_ROOT . '/views/partials/sidebar-nav.php';
-
 $opsSection(__('procurement'), [
     ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
