@@ -27,7 +27,7 @@ $oversightOnly = !empty($oversightOnly);
                     <th><?php echo __('description'); ?></th>
                     <th><?php echo __('source_type'); ?></th>
                     <th><?php echo __('status'); ?></th>
-                    <th class="text-end"><?php echo __('actions'); ?></th>
+                    <th class="text-end rateb-accounting-actions-col"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -48,7 +48,7 @@ $oversightOnly = !empty($oversightOnly);
                     <td><?php echo Rateb\App\Core\View::escape((string) $desc); ?></td>
                     <td><?php echo __((string) ($row['source_type'] ?? '')); ?></td>
                     <td><?php echo __($displayStatus); ?></td>
-                    <td class="text-end">
+                    <td class="text-end rateb-accounting-actions-col">
                         <?php Rateb\App\Core\View::partial('accounting-row-actions', [
                             'csrf' => $csrf,
                             'id' => $id,

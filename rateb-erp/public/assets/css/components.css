@@ -297,6 +297,42 @@
     margin: 0;
 }
 
+/* Accounting — ترحيل للاعتماد must stay readable in table rows */
+.rateb-actions .rateb-btn-submit-approval {
+    font-weight: 600;
+    white-space: nowrap;
+    padding-inline: 0.6rem 0.75rem;
+    border-width: 2px;
+    box-shadow: 0 1px 4px rgba(25, 135, 84, 0.35);
+}
+
+.rateb-actions .rateb-btn-submit-approval .rateb-btn-label,
+.rateb-actions .btn .rateb-btn-label {
+    display: inline !important;
+    margin-inline-start: 0.35rem;
+}
+
+.rateb-actions .rateb-badge-awaiting-approval {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.45em 0.65em;
+    white-space: normal;
+    max-width: 9rem;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.rateb-table td:has(.rateb-btn-submit-approval),
+.rateb-table td:has(.rateb-badge-awaiting-approval),
+.rateb-table th.rateb-accounting-actions-col,
+.rateb-table td.rateb-accounting-actions-col {
+    min-width: 15rem;
+}
+
+.rateb-approval-actions .rateb-btn-submit-approval {
+    font-weight: 600;
+}
+
 .rateb-flash {
     border-radius: var(--rateb-radius);
     margin-bottom: 1rem;

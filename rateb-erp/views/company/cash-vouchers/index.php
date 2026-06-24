@@ -27,7 +27,7 @@ $oversightOnly = !empty($oversightOnly);
                     <th><?php echo __('party_name'); ?></th>
                     <th class="text-end"><?php echo __('amount'); ?></th>
                     <th><?php echo __('status'); ?></th>
-                    <th class="text-end"><?php echo __('actions'); ?></th>
+                    <th class="text-end rateb-accounting-actions-col"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -47,7 +47,7 @@ $oversightOnly = !empty($oversightOnly);
                     <td><?php echo Rateb\App\Core\View::escape($row['party_name'] ?? '—'); ?></td>
                     <td class="text-end"><?php echo number_format((float) ($row['amount'] ?? 0), 2); ?></td>
                     <td><?php echo __($displayStatus); ?></td>
-                    <td class="text-end">
+                    <td class="text-end rateb-accounting-actions-col">
                         <?php Rateb\App\Core\View::partial('accounting-row-actions', [
                             'csrf' => $csrf,
                             'id' => $id,
