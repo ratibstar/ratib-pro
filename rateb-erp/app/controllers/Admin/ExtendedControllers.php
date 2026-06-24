@@ -218,10 +218,12 @@ final class AdminApprovalsController extends Controller
         $companyFilter = $filters['company_id'] > 0 ? $filters['company_id'] : null;
         $typeFilter = trim((string) ($_GET['type'] ?? ''));
         $svc = new ApprovalOversightService();
+        $summary = $svc->summary($companyFilter);
+        SessionManager::set('rateb_oversight_approvals_seen', (int) ($summary['total'] ?? 0));
         $this->view('admin/approvals/index', [
             'title' => __('approvals_oversight'),
             'items' => $svc->listPending($companyFilter, $typeFilter !== '' ? $typeFilter : null),
-            'summary' => $svc->summary($companyFilter),
+            'summary' => $summary,
             'typeOptions' => ApprovalOversightService::typeOptions(),
             'typeFilter' => $typeFilter,
             'companies' => $ofs->companies(),
@@ -229,6 +231,33 @@ final class AdminApprovalsController extends Controller
             'formAction' => rateb_url('admin/oversight/approvals'),
             'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    public function count(): void
+    {
+        if (!rateb_is_super_admin()) {
+            Response::json(['total' => 0], 403);
+        }
+        $companyFilter = (int) ($_GET['company_id'] ?? 0);
+        $svc = new ApprovalOversightService();
+        $total = (int) ($svc->summary($companyFilter > 0 ? $companyFilter : null)['total'] ?? 0);
+        Response::json(['total' => $total]);
+    }
+
+    public function detail(): void
+    {
+        if (!rateb_is_super_admin()) {
+            Response::json(['ok' => false, 'message' => __('access_denied')], 403);
+        }
+        $sourceKey = trim((string) ($_GET['source_key'] ?? ''));
+        $recordId = (int) ($_GET['record_id'] ?? 0);
+        $companyId = (int) ($_GET['company_id'] ?? 0);
+        try {
+            $data = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
+            Response::json(['ok' => true, 'detail' => $data]);
+        } catch (\Throwable $e) {
+            Response::json(['ok' => false, 'message' => $e->getMessage()], 400);
+        }
     }
 
     public function approve(): void
@@ -241,15 +270,37 @@ final class AdminApprovalsController extends Controller
         $this->decide('reject');
     }
 
+    public function undo(): void
+    {
+        if (!rateb_is_super_admin()) {
+            $this->respondDecision(false, __('access_denied'));
+        }
+        if (!$this->validateCsrf()) {
+            $this->respondDecision(false, __('invalid_request'));
+        }
+        $sourceKey = trim((string) $this->input('source_key', ''));
+        $recordId = (int) $this->input('record_id', 0);
+        $companyId = (int) $this->input('company_id', 0);
+        try {
+            (new ApprovalOversightService())->undo($sourceKey, $recordId, $companyId);
+            (new AuditService())->log('undo', 'approval_oversight', $recordId, [
+                'source' => $sourceKey,
+                'company_id' => $companyId,
+            ]);
+            $detail = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
+            $this->respondDecision(true, __('approval_undone'), $detail);
+        } catch (\Throwable $e) {
+            $this->respondDecision(false, $e->getMessage());
+        }
+    }
+
     private function decide(string $action): void
     {
         if (!rateb_is_super_admin()) {
-            SessionManager::flash('error', __('access_denied'));
-            Response::redirect(rateb_url('admin'));
+            $this->respondDecision(false, __('access_denied'));
         }
         if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_url('admin/oversight/approvals'));
+            $this->respondDecision(false, __('invalid_request'));
         }
         $sourceKey = trim((string) $this->input('source_key', ''));
         $recordId = (int) $this->input('record_id', 0);
@@ -260,11 +311,31 @@ final class AdminApprovalsController extends Controller
                 'source' => $sourceKey,
                 'company_id' => $companyId,
             ]);
-            SessionManager::flash('success', $action === 'approve' ? __('approved') : __('rejected'));
+            $msg = $action === 'approve' ? __('approved') : __('rejected');
+            $detail = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
+            $this->respondDecision(true, $msg, $detail);
         } catch (\Throwable $e) {
-            SessionManager::flash('error', $e->getMessage());
+            $this->respondDecision(false, $e->getMessage());
+        }
+    }
+
+    /** @param array<string, mixed>|null $detail */
+    private function respondDecision(bool $ok, string $message, ?array $detail = null): void
+    {
+        if ($this->wantsJson()) {
+            $payload = ['ok' => $ok, 'message' => $message];
+            if ($detail !== null) {
+                $payload['detail'] = $detail;
+            }
+            Response::json($payload, $ok ? 200 : 400);
+        }
+        if ($ok) {
+            SessionManager::flash('success', $message);
+        } else {
+            SessionManager::flash('error', $message);
         }
         $qs = [];
+        $companyId = (int) $this->input('company_id', 0);
         if ($companyId > 0) {
             $qs['company_id'] = $companyId;
         }
@@ -274,6 +345,13 @@ final class AdminApprovalsController extends Controller
         }
         $url = rateb_url('admin/oversight/approvals' . ($qs !== [] ? '?' . http_build_query($qs) : ''));
         Response::redirect($url);
+    }
+
+    private function wantsJson(): bool
+    {
+        $accept = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+        $xhr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+        return str_contains($accept, 'application/json') || $xhr === 'xmlhttprequest';
     }
 }
 

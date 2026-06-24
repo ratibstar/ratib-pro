@@ -761,3 +761,178 @@ table.rateb-oversight-table td.rateb-oversight-clip {
     min-width: 8rem;
     max-width: 16rem;
 }
+
+/* Approvals oversight — horizontal action chips + inline detail panel */
+table.rateb-approvals-table th.rateb-th-actions,
+table.rateb-approvals-table td.rateb-actions-cell {
+    min-width: 14rem;
+    width: 14rem;
+    white-space: nowrap;
+}
+
+.rateb-approval-ops {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+}
+
+.rateb-approval-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.32rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--rateb-border);
+    background: var(--rateb-bg-elevated, var(--rateb-bg));
+    color: var(--rateb-text);
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.rateb-approval-btn i {
+    font-size: 0.85rem;
+}
+
+.rateb-approval-btn:hover {
+    filter: brightness(1.08);
+}
+
+.rateb-approval-btn-view {
+    border-color: rgba(13, 202, 240, 0.45);
+    color: #5bc0de;
+}
+
+.rateb-approval-btn-approve {
+    border-color: rgba(25, 135, 84, 0.5);
+    color: #75d49a;
+    background: rgba(25, 135, 84, 0.12);
+}
+
+.rateb-approval-btn-reject {
+    border-color: rgba(220, 53, 69, 0.45);
+    color: #f0808f;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.rateb-approval-btn-undo {
+    border-color: rgba(255, 193, 7, 0.5);
+    color: #ffd666;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.rateb-approval-btn-link {
+    border-color: rgba(108, 117, 125, 0.45);
+    color: var(--rateb-muted);
+}
+
+.rateb-approval-btn-close {
+    border-color: var(--rateb-border);
+    color: var(--rateb-muted);
+}
+
+.rateb-approval-data-row.is-expanded {
+    background: var(--rateb-table-hover);
+}
+
+.rateb-approval-detail-pane {
+    background: var(--rateb-bg-elevated, rgba(255, 255, 255, 0.03));
+    border-top: 1px solid var(--rateb-border);
+    border-bottom: 1px solid var(--rateb-border);
+}
+
+.rateb-approval-detail-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1.1rem 0.5rem;
+}
+
+.rateb-approval-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.rateb-approval-detail-chip {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: var(--rateb-bg);
+    border: 1px solid var(--rateb-border);
+}
+
+.rateb-approval-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: 0.75rem 1rem;
+    padding: 0.5rem 1.1rem 1rem;
+}
+
+.rateb-approval-detail-label {
+    font-size: 0.72rem;
+    color: var(--rateb-muted);
+    margin-bottom: 0.15rem;
+}
+
+.rateb-approval-detail-value {
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.rateb-approval-ops-detail {
+    padding: 0 1.1rem 1rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.rateb-approval-toast {
+    margin-bottom: 0.75rem;
+}
+
+.rateb-topbar-approvals .rateb-topbar-badge,
+.rateb-nav-link .rateb-nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.3rem;
+    margin-inline-start: 0.35rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    background: #dc3545;
+    color: #fff;
+}
+
+.rateb-topbar-approvals .rateb-topbar-badge {
+    position: absolute;
+    top: -0.35rem;
+    inset-inline-end: -0.35rem;
+    margin: 0;
+}
+
+.rateb-nav-link {
+    position: relative;
+}
+
+.rateb-nav-link .rateb-nav-badge {
+    margin-inline-start: auto;
+}
+
+.rateb-approvals-alert {
+    border-inline-start: 4px solid #ffc107;
+}

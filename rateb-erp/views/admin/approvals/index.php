@@ -7,8 +7,28 @@
 $typeFilter = (string) ($typeFilter ?? '');
 $csrfToken = (string) ($csrf ?? '');
 Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
+$approvalsConfig = [
+    'csrf' => $csrfToken,
+    'detailUrl' => rateb_url('admin/oversight/approvals/detail'),
+    'approveUrl' => rateb_url('admin/oversight/approvals/approve'),
+    'rejectUrl' => rateb_url('admin/oversight/approvals/reject'),
+    'undoUrl' => rateb_url('admin/oversight/approvals/undo'),
+    'typeFilter' => $typeFilter,
+    'labels' => [
+        'view' => __('view'),
+        'approve' => __('approve'),
+        'reject' => __('reject'),
+        'undo' => __('undo'),
+        'loading' => __('loading'),
+        'confirm_reject' => __('confirm_reject'),
+        'confirm_undo' => __('confirm_undo'),
+        'open_in_ops' => __('open_in_operations'),
+        'approval_detail' => __('approval_detail'),
+        'close' => __('close'),
+    ],
+];
 ?>
-<div class="row g-3">
+<div class="row g-3" id="rateb-approvals-oversight" data-config="<?php echo Rateb\App\Core\View::escape(json_encode($approvalsConfig, JSON_UNESCAPED_UNICODE)); ?>">
     <div class="col-12">
         <form method="get" action="<?php echo Rateb\App\Core\View::escape($formAction ?? rateb_url('admin/oversight/approvals')); ?>" class="rateb-card">
             <div class="rateb-card-body">
@@ -99,14 +119,14 @@ Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
             </div>
             <div class="rateb-card-body p-0">
                 <div class="table-responsive rateb-oversight-table-wrap">
-                    <table class="table rateb-table rateb-oversight-table mb-0">
+                    <table class="table rateb-table rateb-oversight-table rateb-approvals-table mb-0">
                         <thead>
                         <tr>
                             <th><?php echo __('companies'); ?></th>
                             <th><?php echo __('approval_type'); ?></th>
                             <th><?php echo __('reference'); ?></th>
                             <th><?php echo __('created_at'); ?></th>
-                            <th class="rateb-actions-cell"><?php echo __('actions'); ?></th>
+                            <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
                         </tr>
                         </thead>
                         <tbody>
@@ -117,8 +137,13 @@ Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
                             $recordId = (int) ($row['record_id'] ?? 0);
                             $companyId = (int) ($row['company_id'] ?? 0);
                             $canReject = !empty($row['can_reject']);
+                            $rowKey = $sourceKey . '-' . $recordId;
                             ?>
-                        <tr>
+                        <tr class="rateb-approval-data-row" data-approval-row="<?php echo Rateb\App\Core\View::escape($rowKey); ?>"
+                            data-source-key="<?php echo Rateb\App\Core\View::escape($sourceKey); ?>"
+                            data-record-id="<?php echo $recordId; ?>"
+                            data-company-id="<?php echo $companyId; ?>"
+                            data-can-reject="<?php echo $canReject ? '1' : '0'; ?>">
                             <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
                             <td>
                                 <?php echo Rateb\App\Core\View::escape((string) ($row['type_label'] ?? '')); ?>
@@ -129,34 +154,28 @@ Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
                             <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['reference'] ?? '')); ?></td>
                             <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['submitted_at'] ?? '')); ?></td>
                             <td class="rateb-actions-cell">
-                                <div class="rateb-actions d-flex flex-wrap gap-1 justify-content-end">
-                                    <?php if (!empty($row['view_url'])) { ?>
-                                    <a href="<?php echo Rateb\App\Core\View::escape((string) $row['view_url']); ?>" class="btn btn-sm btn-outline-info" target="_blank" rel="noopener" title="<?php echo __('view'); ?>">
-                                        <i class="fas fa-eye"></i><span class="d-none d-xl-inline ms-1"><?php echo __('view'); ?></span>
-                                    </a>
-                                    <?php } ?>
-                                    <form method="post" action="<?php echo rateb_url('admin/oversight/approvals/approve'); ?>" class="d-inline">
-                                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrfToken); ?>">
-                                        <input type="hidden" name="source_key" value="<?php echo Rateb\App\Core\View::escape($sourceKey); ?>">
-                                        <input type="hidden" name="record_id" value="<?php echo $recordId; ?>">
-                                        <input type="hidden" name="company_id" value="<?php echo $companyId; ?>">
-                                        <input type="hidden" name="type_filter" value="<?php echo Rateb\App\Core\View::escape($typeFilter); ?>">
-                                        <button type="submit" class="btn btn-sm btn-success" title="<?php echo __('approve'); ?>">
-                                            <i class="fas fa-check"></i><span class="d-none d-xl-inline ms-1"><?php echo __('approve'); ?></span>
-                                        </button>
-                                    </form>
+                                <div class="rateb-approval-ops">
+                                    <button type="button" class="rateb-approval-btn rateb-approval-btn-view" data-action="view" title="<?php echo __('view'); ?>">
+                                        <i class="fas fa-eye"></i><span><?php echo __('view'); ?></span>
+                                    </button>
+                                    <button type="button" class="rateb-approval-btn rateb-approval-btn-approve" data-action="approve" title="<?php echo __('approve'); ?>">
+                                        <i class="fas fa-check"></i><span><?php echo __('approve'); ?></span>
+                                    </button>
                                     <?php if ($canReject) { ?>
-                                    <form method="post" action="<?php echo rateb_url('admin/oversight/approvals/reject'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_reject')); ?>">
-                                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrfToken); ?>">
-                                        <input type="hidden" name="source_key" value="<?php echo Rateb\App\Core\View::escape($sourceKey); ?>">
-                                        <input type="hidden" name="record_id" value="<?php echo $recordId; ?>">
-                                        <input type="hidden" name="company_id" value="<?php echo $companyId; ?>">
-                                        <input type="hidden" name="type_filter" value="<?php echo Rateb\App\Core\View::escape($typeFilter); ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('reject'); ?>">
-                                            <i class="fas fa-times"></i><span class="d-none d-xl-inline ms-1"><?php echo __('reject'); ?></span>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="rateb-approval-btn rateb-approval-btn-reject" data-action="reject" title="<?php echo __('reject'); ?>">
+                                        <i class="fas fa-times"></i><span><?php echo __('reject'); ?></span>
+                                    </button>
                                     <?php } ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="rateb-approval-detail-row d-none" data-detail-for="<?php echo Rateb\App\Core\View::escape($rowKey); ?>">
+                            <td colspan="5" class="p-0">
+                                <div class="rateb-approval-detail-pane">
+                                    <div class="rateb-approval-detail-loading text-muted py-3 px-3">
+                                        <i class="fas fa-spinner fa-spin me-2"></i><?php echo __('loading'); ?>
+                                    </div>
+                                    <div class="rateb-approval-detail-body d-none"></div>
                                 </div>
                             </td>
                         </tr>

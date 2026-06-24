@@ -106,8 +106,13 @@ $adminSection = static function (
     $renderNavGroup($title, $groupIcon, $hasActive, static function () use ($visibleLinks, $navActive): void {
         foreach ($visibleLinks as $link) {
             $active = $navActive($link[0]) ? ' active' : '';
+            $badge = (isset($link[4]) && is_numeric($link[4])) ? (int) $link[4] : 0;
             echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-            echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
+            echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
+            if ($badge > 0) {
+                echo '<span class="rateb-nav-badge">' . $badge . '</span>';
+            }
+            echo '</a>';
         }
     });
 };

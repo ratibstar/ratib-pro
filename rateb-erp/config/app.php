@@ -826,6 +826,25 @@ if (!function_exists('rateb_app_url')) {
     }
 }
 
+if (!function_exists('rateb_oversight_pending_approvals_count')) {
+    function rateb_oversight_pending_approvals_count(): int
+    {
+        if (!rateb_is_super_admin() || !rateb_nav_can('workflows.view')) {
+            return 0;
+        }
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $cached = (int) ((new \Rateb\App\Services\ApprovalOversightService())->summary(null)['total'] ?? 0);
+        } catch (\Throwable $e) {
+            $cached = 0;
+        }
+        return $cached;
+    }
+}
+
 if (!function_exists('rateb_nav_can')) {
     function rateb_nav_can(string $permission = '', string $module = ''): bool
     {

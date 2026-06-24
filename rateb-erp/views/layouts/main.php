@@ -16,6 +16,17 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
     }
     return strpos($currentPath, $route) !== false;
 };
+if (isset($_GET['dismiss_approvals_alert']) && rateb_is_super_admin()) {
+    \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
+}
+$oversightPendingApprovals = rateb_oversight_pending_approvals_count();
+$oversightApprovalsNew = 0;
+if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
+    $seenApprovals = (int) (\Rateb\App\Core\SessionManager::get('rateb_oversight_approvals_seen') ?? 0);
+    if ($oversightPendingApprovals > $seenApprovals) {
+        $oversightApprovalsNew = $oversightPendingApprovals - $seenApprovals;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
@@ -82,7 +93,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             $adminSection(__('admin_oversight_section'), [
                 ['admin/companies', 'companies', 'fa-building', 'companies.view'],
                 ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
-                ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view'],
+                ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view', $oversightPendingApprovals],
                 ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage'],
@@ -130,6 +141,13 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 <h1 class="h5 mb-0"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></h1>
             </div>
             <div class="d-flex align-items-center gap-2">
+                <?php if (rateb_nav_can('workflows.view') && $oversightPendingApprovals > 0) { ?>
+                <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-outline-warning btn-sm rateb-topbar-approvals position-relative" title="<?php echo __('approvals_oversight'); ?>">
+                    <i class="fas fa-bell"></i>
+                    <span class="rateb-topbar-badge"><?php echo (int) $oversightPendingApprovals; ?></span>
+                    <span class="d-none d-md-inline ms-1"><?php echo __('approvals_oversight'); ?></span>
+                </a>
+                <?php } ?>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
                     <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
@@ -146,6 +164,18 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
         </header>
         <main class="rateb-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
+            <?php if ($oversightApprovalsNew > 0 && !$navActive('admin/oversight/approvals')) {
+                $reqUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+                $dismissSep = str_contains($reqUri, '?') ? '&' : '?';
+                $dismissApprovalsUrl = $reqUri . $dismissSep . 'dismiss_approvals_alert=1';
+            ?>
+            <div class="alert alert-warning alert-dismissible fade show rateb-approvals-alert" role="alert">
+                <i class="fas fa-bell me-2"></i>
+                <?php echo __('approvals_new_alert', ['count' => (int) $oversightApprovalsNew]); ?>
+                <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="alert-link ms-2"><?php echo __('approvals_open_oversight'); ?></a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" data-rateb-dismiss-approvals="<?php echo Rateb\App\Core\View::escape($dismissApprovalsUrl); ?>" aria-label="<?php echo __('close'); ?>"></button>
+            </div>
+            <?php } ?>
             <?php
             $showOpsCompanyPicker = rateb_is_super_admin() && (
                 rateb_is_ops_route($erpRoute)
@@ -172,5 +202,8 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 <script src="<?php echo rateb_asset('js/charts.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/cms-admin.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/entity-documents-modal.js'); ?>"></script>
+<?php if ($navActive('admin/oversight/approvals')) { ?>
+<script src="<?php echo rateb_asset('js/approvals-oversight.js'); ?>"></script>
+<?php } ?>
 </body>
 </html>

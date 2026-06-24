@@ -393,4 +393,18 @@
             });
         }
     }
+
+    document.querySelectorAll('.rateb-approvals-alert .btn-close[data-rateb-dismiss-approvals]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var url = btn.getAttribute('data-rateb-dismiss-approvals');
+            if (!url) {
+                return;
+            }
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(url);
+            } else {
+                fetch(url, { credentials: 'same-origin', keepalive: true }).catch(function () {});
+            }
+        });
+    });
 })();
