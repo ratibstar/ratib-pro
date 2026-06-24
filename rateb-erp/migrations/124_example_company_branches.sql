@@ -30,7 +30,7 @@ WHERE @ex_cid IS NOT NULL
 INSERT INTO rateb_branches (company_id, name, code, address, phone, email, status, is_main)
 SELECT @ex_cid,
        CONVERT(UNHEX('D981D8B1D8B920D8ACD8AFD8A9') USING utf8mb4),
-       'BR002', CONVERT(UNHEX('D8ACD8AF8A920D8A7D984D8B1D98AD8A7D8B6') USING utf8mb4), '+966500000102', 'jeddah@example.rateb.sa', 'active', 0
+       'BR002', CONVERT(UNHEX('D8ACD8AFD8A9202D20D8A7D984D8B1D98AD8A7D8B6') USING utf8mb4), '+966500000102', 'jeddah@example.rateb.sa', 'active', 0
 FROM DUAL
 WHERE @ex_cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM rateb_branches WHERE company_id = @ex_cid AND code = 'BR002' LIMIT 1);
