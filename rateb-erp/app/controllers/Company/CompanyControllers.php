@@ -1354,14 +1354,17 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
         $this->indexFields = [
             ['name' => 'code', 'label' => 'code'],
             ['name' => 'name', 'label' => 'name'],
+            ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches'],
             ['name' => 'location', 'label' => 'location'],
             ['name' => 'status', 'label' => 'status'],
         ];
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches', 'col' => 'col-md-6'],
             ['name' => 'location', 'label' => 'location', 'type' => 'hybrid', 'lookup' => 'warehouse_locations'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'warehouse_statuses'],
         ];
+        $this->tenantForeignKeys = ['branch_id'];
     }
 
     protected function collectData(): array
@@ -1410,12 +1413,52 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
 
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $data['title'] = __('branch_list');
         $data['statusToggleEnabled'] = function_exists('rateb_can_manage_entity')
             ? rateb_can_manage_entity('branches')
             : true;
+        $companyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        $branchSvc = new \Rateb\App\Services\BranchService();
+        $stats = $branchSvc->stats($companyId);
+        $data['branchStats'] = $stats;
+        $data['exportRoute'] = rateb_url($this->routePrefix . '/export');
+        $data['createEnabled'] = ($data['createEnabled'] ?? true) && $branchSvc->canAddBranch($companyId);
         return $data;
+    }
+
+    public function store(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        if ($companyId > 0 && !(new \Rateb\App\Services\BranchService())->canAddBranch($companyId)) {
+            \Rateb\App\Core\SessionManager::flash('error', __('branch_limit_reached'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        parent::store();
+    }
+
+    public function export(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $items = $this->model->all(2000, 0, [], trim((string) ($_GET['q'] ?? '')));
+        \Rateb\App\Controllers\Shared\ExportController::send('branches', [
+            ['name' => 'id', 'label' => __('number')],
+            ['name' => 'name', 'label' => __('branch_name')],
+            ['name' => 'code', 'label' => __('branch_code')],
+            ['name' => 'address', 'label' => __('address')],
+            ['name' => 'phone', 'label' => __('phone')],
+            ['name' => 'email', 'label' => __('email')],
+            ['name' => 'map_url', 'label' => __('map_url')],
+            ['name' => 'status', 'label' => __('status')],
+        ], $items, __('branch_list'), 'branches');
     }
 
     public function toggleStatus(array $params): void

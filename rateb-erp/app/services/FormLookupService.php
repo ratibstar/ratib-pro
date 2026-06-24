@@ -7,6 +7,7 @@ use Rateb\App\Core\TenantContext;
 use Rateb\App\Helpers\LineItems;
 use Rateb\App\Models\Asset;
 use Rateb\App\Models\BankAccount;
+use Rateb\App\Models\Branch;
 use Rateb\App\Models\ChartOfAccount;
 use Rateb\App\Models\CmsBlogAuthor;
 use Rateb\App\Models\CmsBlogCategory;
@@ -76,6 +77,13 @@ final class FormLookupService
                 break;
             case 'warehouses':
                 $options = $this->warehouseOptions();
+                break;
+            case 'branches':
+                $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+                if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                    $companyId = rateb_resolve_ops_company_id();
+                }
+                $options = (new \Rateb\App\Services\BranchService())->activeOptions($companyId);
                 break;
             case 'cost_centers':
                 $options = $this->costCenterOptions();
@@ -620,6 +628,7 @@ final class FormLookupService
     {
         return [
             ['name' => 'entry_date', 'label' => 'entry_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches', 'col' => 'col-md-4'],
             ['name' => 'description', 'label' => 'description', 'type' => 'text', 'col' => 'col-md-4'],
             ['name' => 'description_ar', 'label' => 'description_ar', 'type' => 'text', 'col' => 'col-md-4'],
         ];
@@ -662,6 +671,7 @@ final class FormLookupService
         return [
             ['name' => 'voucher_type', 'label' => 'voucher_type', 'type' => 'select', 'lookup' => 'voucher_types', 'translate_options' => false, 'required' => true, 'col' => 'col-md-4', 'default' => 'receipt'],
             ['name' => 'voucher_date', 'label' => 'voucher_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches', 'col' => 'col-md-4'],
             ['name' => 'amount', 'label' => 'amount', 'type' => 'number', 'step' => '0.01', 'min' => '0.01', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'party_name', 'label' => 'party_name', 'type' => 'hybrid', 'lookup' => 'party_names', 'col' => 'col-md-6'],
             ['name' => 'customer_id', 'label' => 'customer_analysis', 'type' => 'fk', 'lookup' => 'customers', 'col' => 'col-md-6'],
@@ -1282,6 +1292,7 @@ final class FormLookupService
             'hr_payroll_components' => (string) ((new \Rateb\App\Models\HrPayrollComponent())->find($id)['name'] ?? ''),
             'suppliers' => (string) ((new Supplier())->find($id)['name'] ?? ''),
             'warehouses' => (string) ((new Warehouse())->find($id)['name'] ?? ''),
+            'branches' => (string) ((new Branch())->find($id)['name'] ?? ''),
             default => '',
         };
     }

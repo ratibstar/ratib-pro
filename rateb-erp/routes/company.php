@@ -135,6 +135,7 @@ $moduleRoutes = [
 $branchesMw = rateb_erp_mw('', '', 'branches');
 $router->get($app('branches/setup-check'), [BranchesController::class, 'setupCheck'], $branchesMw);
 $router->post($app('branches/{id}/toggle-status'), [BranchesController::class, 'toggleStatus'], $branchesMw);
+$router->get($app('branches/export'), [BranchesController::class, 'export'], rateb_erp_mw('', 'reports.export', 'branches'));
 
 foreach ($moduleRoutes as $path => [$class, $module]) {
     $mw = rateb_erp_mw($module, '', $path);

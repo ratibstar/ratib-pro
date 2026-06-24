@@ -17,6 +17,7 @@ $lookupSvc = new FormLookupService();
 $lookups = $lookupSvc->forFields(array_merge($headerFields, [
     ['lookup' => 'chart_of_accounts'],
     ['lookup' => 'cost_centers'],
+    ['lookup' => 'branches'],
 ]));
 $coaOptions = $lookups['chart_of_accounts'] ?? [];
 $ccOptions = $lookups['cost_centers'] ?? [];

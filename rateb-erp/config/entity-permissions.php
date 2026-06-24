@@ -58,6 +58,7 @@ return [
         'module' => '',
         'view' => 'branches.view',
         'manage' => 'branches.manage',
+        'export' => 'reports.export',
     ],
     'stock-movements' => [
         'module' => 'inventory',

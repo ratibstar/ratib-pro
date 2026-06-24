@@ -74,9 +74,25 @@ final class PlanLimitService
         return [
             'user_limit' => $userLimit,
             'storage_limit_mb' => $storageMb,
+            'branch_limit' => $this->branchLimitForCompany($company, $plan),
             'modules' => $modules,
             'plan_name' => $planName,
         ];
+    }
+
+    private function branchLimitForCompany(array $company, ?array $plan): int
+    {
+        $limit = (int) ($company['branch_limit'] ?? 0);
+        if ($limit > 0) {
+            return $limit;
+        }
+        if ($plan) {
+            $planLimit = (int) ($plan['max_branches'] ?? 0);
+            if ($planLimit > 0) {
+                return $planLimit;
+            }
+        }
+        return 10;
     }
 
     /** @param array<string,mixed> $company @param array<string,mixed>|null $plan */

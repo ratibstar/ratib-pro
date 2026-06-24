@@ -5,6 +5,8 @@
 /** @var array<int, int> $selectedRoles */
 /** @var string|null $loginBarcode */
 /** @var string|null $badgeQrUrl */
+/** @var array<int, int> $selectedBranches */
+/** @var array<int, array<int, array{value:int,label:string}>> $branchesByCompany */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 ?>
@@ -72,6 +74,11 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     </div>
                 </div>
             </div>
+            <div class="mt-4" id="user-branches-section" style="display:none">
+                <h3 class="h6 mb-2"><?php echo __('assign_branches'); ?></h3>
+                <p class="small text-muted mb-2"><?php echo __('branch_access_all_hint'); ?></p>
+                <div class="row g-2" id="user-branches-list"></div>
+            </div>
             <div class="mt-4">
                 <h3 class="h6 mb-2"><?php echo __('assign_roles'); ?></h3>
                 <div class="row g-2">
@@ -96,3 +103,39 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
         </form>
     </div>
 </div>
+<script>
+(function () {
+    var byCompany = <?php echo json_encode($branchesByCompany ?? [], JSON_UNESCAPED_UNICODE); ?>;
+    var selected = <?php echo json_encode(array_values($selectedBranches ?? []), JSON_UNESCAPED_UNICODE); ?>;
+    var companySelect = document.querySelector('select[name="company_id"]');
+    var section = document.getElementById('user-branches-section');
+    var list = document.getElementById('user-branches-list');
+    if (!companySelect || !section || !list) {
+        return;
+    }
+    function renderBranches() {
+        var cid = parseInt(companySelect.value, 10) || 0;
+        list.innerHTML = '';
+        if (cid < 1 || !byCompany[cid] || !byCompany[cid].length) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = '';
+        byCompany[cid].forEach(function (b) {
+            var col = document.createElement('div');
+            col.className = 'col-md-4';
+            var checked = selected.indexOf(b.value) !== -1 ? ' checked' : '';
+            col.innerHTML = '<div class="form-check">'
+                + '<input class="form-check-input" type="checkbox" name="branch_ids[]" value="' + b.value + '" id="branch_' + b.value + '"' + checked + '>'
+                + '<label class="form-check-label" for="branch_' + b.value + '">' + b.label + '</label>'
+                + '</div>';
+            list.appendChild(col);
+        });
+    }
+    companySelect.addEventListener('change', function () {
+        selected = [];
+        renderBranches();
+    });
+    renderBranches();
+})();
+</script>

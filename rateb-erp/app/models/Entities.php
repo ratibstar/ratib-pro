@@ -9,14 +9,14 @@ final class Warehouse extends Model
 {
     protected string $table = 'rateb_warehouses';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['name', 'code', 'location', 'manager_name', 'status'];
+    protected array $fillable = ['name', 'code', 'location', 'manager_name', 'status', 'branch_id'];
 }
 
 final class Branch extends Model
 {
     protected string $table = 'rateb_branches';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['name', 'code', 'address', 'phone', 'email', 'map_url', 'status'];
+    protected array $fillable = ['name', 'code', 'address', 'phone', 'email', 'map_url', 'status', 'is_main'];
 }
 
 final class Asset extends Model
@@ -114,7 +114,7 @@ final class JournalEntry extends Model
     protected bool $tenantScoped = false;
     protected array $fillable = [
         'company_id', 'entry_no', 'entry_date', 'description', 'description_ar',
-        'source_type', 'source_id', 'status', 'created_by', 'posted_at',
+        'source_type', 'source_id', 'status', 'created_by', 'posted_at', 'branch_id',
         'submitted_for_approval_at', 'reject_reason', 'rejected_at', 'rejected_by',
     ];
 }

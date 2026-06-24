@@ -75,6 +75,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['pending', 'active', 'suspended']],
             ['name' => 'plan_id', 'label' => 'plan_id', 'type' => 'number'],
             ['name' => 'user_limit', 'label' => 'user_limit', 'type' => 'number'],
+            ['name' => 'branch_limit', 'label' => 'branch_limit', 'type' => 'number'],
             ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
         ];
     }
@@ -134,6 +135,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 if (empty($data['user_limit'])) {
                     $data['user_limit'] = (int) ($plan['max_users'] ?? 10);
                 }
+                if (empty($data['branch_limit'])) {
+                    $data['branch_limit'] = (int) ($plan['max_branches'] ?? 10);
+                }
                 if (empty($data['storage_limit_mb'])) {
                     $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
                 }
@@ -146,6 +150,26 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             }
         }
         return $data;
+    }
+
+    public function store(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        try {
+            $id = $this->model->create($data);
+            (new \Rateb\App\Services\BranchService())->ensureMainBranch($id);
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     public function suspend(array $params): void
@@ -377,6 +401,7 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             ['name' => 'price_monthly', 'label' => 'Monthly', 'type' => 'number'],
             ['name' => 'price_yearly', 'label' => 'Yearly', 'type' => 'number'],
             ['name' => 'max_users', 'label' => 'Max Users', 'type' => 'number'],
+            ['name' => 'max_branches', 'label' => 'max_branches', 'type' => 'number'],
             ['name' => 'max_storage_mb', 'label' => 'Storage MB', 'type' => 'number'],
         ];
     }
@@ -438,6 +463,9 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         }
         if ((int) ($data['max_users'] ?? 0) < 1) {
             $data['max_users'] = 10;
+        }
+        if ((int) ($data['max_branches'] ?? 0) < 1) {
+            $data['max_branches'] = 10;
         }
         if ((int) ($data['max_storage_mb'] ?? 0) < 1) {
             $data['max_storage_mb'] = 1024;
@@ -537,6 +565,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                 $badgeLoginUrl = $barcodeSvc->badgeLoginUrl($barcode);
             }
         }
+        $branchSvc = new \Rateb\App\Services\BranchService();
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('users'),
             'item' => $item,
@@ -546,6 +575,8 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'roles' => $authz->allRoles(),
             'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
             'selectedRoles' => $userId > 0 ? $authz->getUserRoleIds($userId) : [],
+            'selectedBranches' => $userId > 0 ? $branchSvc->getUserBranchIds($userId) : [],
+            'branchesByCompany' => $branchSvc->optionsByCompany(),
             'isSuperAdmin' => !empty($item['is_super_admin']),
             'loginBarcode' => $barcode,
             'badgeScanQrUrl' => $badgeScanQrUrl,
@@ -569,6 +600,8 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $id = $this->model->create($data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+        $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
+        (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
         if ((string) ($data['status'] ?? '') === 'active') {
             (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
         }
@@ -601,6 +634,8 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $this->model->update($id, $data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+        $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
+        (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
         if ((string) ($data['status'] ?? '') === 'active') {
             (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
         }

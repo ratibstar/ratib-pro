@@ -79,6 +79,18 @@ final class AccountingService
         return $id > 0 ? $id : null;
     }
 
+    private function resolveBranchId(?int $companyId, ?int $branchId): int
+    {
+        if ($branchId !== null && $branchId > 0) {
+            return $branchId;
+        }
+        $companyId = (int) ($this->normalizeCompanyId($companyId) ?? 0);
+        if ($companyId < 1) {
+            return 0;
+        }
+        return (new BranchService())->defaultBranchId($companyId);
+    }
+
     /** @return array<string, mixed>|null */
     private function findCoaByCode(?int $companyId, string $code): ?array
     {
@@ -691,18 +703,20 @@ final class AccountingService
         string $description,
         string $descriptionAr,
         array $lines,
-        ?int $createdBy = null
+        ?int $createdBy = null,
+        ?int $branchId = null
     ): int {
         if (!$this->isBalanced($lines)) {
             throw new \InvalidArgumentException('Journal entry is not balanced.');
         }
         $this->ensureDefaultAccounts($companyId);
         $companyId = $this->normalizeCompanyId($companyId);
+        $branchId = $this->resolveBranchId($companyId, $branchId);
         $entryModel = new JournalEntry();
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
-            $entryId = $entryModel->create([
+            $entryData = [
                 'company_id' => $companyId,
                 'entry_no' => $this->nextEntryNo($companyId),
                 'entry_date' => $entryDate,
@@ -713,7 +727,11 @@ final class AccountingService
                 'status' => 'draft',
                 'created_by' => $createdBy,
                 'posted_at' => null,
-            ]);
+            ];
+            if ($branchId > 0) {
+                $entryData['branch_id'] = $branchId;
+            }
+            $entryId = $entryModel->create($entryData);
             $this->replaceJournalLines($entryId, $lines);
             $pdo->commit();
             return $entryId;
@@ -730,7 +748,8 @@ final class AccountingService
         string $entryDate,
         string $description,
         string $descriptionAr,
-        array $lines
+        array $lines,
+        ?int $branchId = null
     ): bool {
         if (!$this->isBalanced($lines)) {
             throw new \InvalidArgumentException('Journal entry is not balanced.');
@@ -747,11 +766,17 @@ final class AccountingService
                 'rejected_by' => null,
             ]);
         }
-        (new JournalEntry())->update($entryId, [
+        $companyId = $this->normalizeCompanyId($companyId);
+        $branchId = $this->resolveBranchId($companyId, $branchId);
+        $update = [
             'entry_date' => $entryDate,
             'description' => $description,
             'description_ar' => $descriptionAr,
-        ]);
+        ];
+        if ($branchId > 0) {
+            $update['branch_id'] = $branchId;
+        }
+        (new JournalEntry())->update($entryId, $update);
         $this->clearJournalSubmission($entryId);
         $pdo = Database::connection();
         $pdo->beginTransaction();
@@ -2549,14 +2574,17 @@ final class AccountingService
     {
         $this->ensureDefaultAccounts($companyId);
         $pdo = Database::connection();
+        $companyId = $this->normalizeCompanyId($companyId);
+        $branchId = $this->resolveBranchId($companyId, isset($data['branch_id']) ? (int) $data['branch_id'] : null);
         $no = $this->nextVoucherNo($companyId, (string) ($data['voucher_type'] ?? 'receipt'));
         $stmt = $pdo->prepare(
             'INSERT INTO rateb_cash_vouchers
-             (company_id, voucher_no, voucher_type, voucher_date, amount, party_name, customer_id, description, description_ar, counter_account_id, bank_account_id, status, created_by)
-             VALUES (:cid, :no, :type, :dt, :amt, :party, :cust, :desc, :desc_ar, :acct, :bank, :st, :uid)'
+             (company_id, branch_id, voucher_no, voucher_type, voucher_date, amount, party_name, customer_id, description, description_ar, counter_account_id, bank_account_id, status, created_by)
+             VALUES (:cid, :bid, :no, :type, :dt, :amt, :party, :cust, :desc, :desc_ar, :acct, :bank, :st, :uid)'
         );
         $stmt->execute([
             'cid' => $companyId,
+            'bid' => $branchId > 0 ? $branchId : null,
             'no' => $no,
             'type' => $data['voucher_type'],
             'dt' => $data['voucher_date'],
@@ -2962,7 +2990,7 @@ final class AccountingService
         Database::connection()->prepare(
             'UPDATE rateb_cash_vouchers SET voucher_type = :type, voucher_date = :dt, amount = :amt,
              party_name = :party, customer_id = :cust, description = :desc, description_ar = :desc_ar,
-             counter_account_id = :acct, bank_account_id = :bank, submitted_for_approval_at = NULL
+             counter_account_id = :acct, bank_account_id = :bank, branch_id = :bid, submitted_for_approval_at = NULL
              WHERE id = :id'
         )->execute([
             'type' => $type,
@@ -2975,6 +3003,7 @@ final class AccountingService
             'acct' => $counter,
             'bank' => isset($data['bank_account_id']) && (int) $data['bank_account_id'] > 0
                 ? (int) $data['bank_account_id'] : null,
+            'bid' => $this->resolveBranchId($companyId, isset($data['branch_id']) ? (int) $data['branch_id'] : null) ?: null,
             'id' => $voucherId,
         ]);
         return true;

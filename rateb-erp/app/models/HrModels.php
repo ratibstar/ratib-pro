@@ -18,7 +18,7 @@ final class Employee extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'company_id', 'employee_code', 'name', 'email', 'phone', 'national_id',
-        'department_id', 'job_title', 'hire_date', 'salary_base', 'user_id', 'status', 'notes',
+        'department_id', 'branch_id', 'job_title', 'hire_date', 'salary_base', 'user_id', 'status', 'notes',
     ];
 }
 

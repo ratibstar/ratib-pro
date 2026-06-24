@@ -38,11 +38,12 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = rateb_app_route('hr/employees');
         $this->entityName = 'hr_employees';
         $this->permissionResource = 'hr-employees';
-        $this->tenantForeignKeys = ['department_id'];
+        $this->tenantForeignKeys = ['department_id', 'branch_id'];
         $this->indexFields = [
             ['name' => 'employee_code', 'label' => 'employee_code'],
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'department_id', 'label' => 'department', 'type' => 'fk', 'lookup' => 'hr_departments'],
+            ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches'],
             ['name' => 'job_title', 'label' => 'job_title'],
             ['name' => 'salary_base', 'label' => 'salary_base'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
@@ -53,6 +54,7 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'phone', 'label' => 'phone', 'type' => 'text'],
             ['name' => 'national_id', 'label' => 'national_id', 'type' => 'text'],
             ['name' => 'department_id', 'label' => 'department', 'type' => 'fk', 'lookup' => 'hr_departments'],
+            ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches'],
             ['name' => 'job_title', 'label' => 'job_title', 'type' => 'text'],
             ['name' => 'hire_date', 'label' => 'hire_date', 'type' => 'date'],
             ['name' => 'salary_base', 'label' => 'salary_base', 'type' => 'number', 'step' => '0.01', 'min' => '0', 'attrs' => ['class' => 'form-control rateb-form-control rateb-ltr-num']],

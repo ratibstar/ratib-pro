@@ -93,6 +93,8 @@ final class CustomerRegistrationService
 
             (new BarcodeLoginService())->ensureUserBarcode($userId);
 
+            (new BranchService())->ensureMainBranch($companyId);
+
             $db->commit();
             return ['company_id' => $companyId, 'user_id' => $userId];
         } catch (\Throwable $e) {

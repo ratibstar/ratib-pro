@@ -11,7 +11,7 @@ final class Plan extends Model
     protected bool $tenantScoped = false;
     protected array $fillable = [
         'name', 'slug', 'description', 'price_monthly', 'price_yearly',
-        'max_users', 'max_storage_mb', 'modules', 'is_active',
+        'max_users', 'max_storage_mb', 'max_branches', 'modules', 'is_active',
     ];
 
     public function getActive(): array

@@ -39,7 +39,10 @@ $pct = (int) ($report['total_checks'] ?? 0) > 0
                 <div class="border rounded p-3 h-100">
                     <div class="text-muted small"><?php echo __('branch_setup_company'); ?></div>
                     <div class="fw-bold">#<?php echo (int) ($report['company_id'] ?? 0); ?></div>
-                    <div class="text-muted small mt-1"><?php echo __('branch_setup_branch_count'); ?>: <?php echo (int) ($report['branch_count'] ?? 0); ?></div>
+                    <div class="text-muted small mt-1"><?php echo __('branch_count_limit', [
+                        'count' => (int) ($report['branch_count'] ?? 0),
+                        'limit' => (int) ($report['branch_limit'] ?? 0),
+                    ]); ?></div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -78,6 +81,11 @@ $pct = (int) ($report['total_checks'] ?? 0) > 0
         <div class="rateb-card h-100">
             <div class="rateb-card-header"><?php echo __('branch_setup_next'); ?></div>
             <ul class="list-group list-group-flush">
+                <?php if ($pending === []) { ?>
+                <li class="list-group-item text-success">
+                    <i class="fas fa-check-circle me-1"></i> <?php echo __('branch_setup_complete'); ?>
+                </li>
+                <?php } ?>
                 <?php foreach ($pending as $item) { ?>
                 <li class="list-group-item">
                     <span class="badge bg-info me-1"><?php echo __('branch_phase'); ?> <?php echo (int) ($item['phase'] ?? 0); ?></span>

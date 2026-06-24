@@ -1154,7 +1154,8 @@ final class JournalEntriesController extends Controller
                 $this->description(),
                 $this->descriptionAr(),
                 $this->collectLines(),
-                (int) SessionManager::get('rateb_user_id', 0) ?: null
+                (int) SessionManager::get('rateb_user_id', 0) ?: null,
+                (int) ($_POST['branch_id'] ?? 0) ?: null
             );
             (new AuditService())->log('create', 'journal_entry', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('journal_draft_saved'));
@@ -1224,7 +1225,8 @@ final class JournalEntriesController extends Controller
                 $this->entryDate(),
                 $this->description(),
                 $this->descriptionAr(),
-                $this->collectLines()
+                $this->collectLines(),
+                (int) ($_POST['branch_id'] ?? 0) ?: null
             )) {
                 SessionManager::flash('error', __('journal_edit_denied'));
                 Response::redirect(rateb_app_url('journal-entries/' . $id));
@@ -1670,6 +1672,7 @@ final class CashVouchersController extends Controller
         $id = (new AccountingService())->createCashVoucherDraft($companyId, [
             'voucher_type' => $type,
             'voucher_date' => trim((string) ($_POST['voucher_date'] ?? '')) ?: date('Y-m-d'),
+            'branch_id' => (int) ($_POST['branch_id'] ?? 0) ?: null,
             'amount' => $amount,
             'party_name' => trim((string) ($_POST['party_name'] ?? '')),
             'customer_id' => (int) ($_POST['customer_id'] ?? 0) ?: null,
@@ -1729,6 +1732,7 @@ final class CashVouchersController extends Controller
         if ($service->updateCashVoucherDraft($id, $companyId, [
             'voucher_type' => $type,
             'voucher_date' => trim((string) ($_POST['voucher_date'] ?? '')) ?: date('Y-m-d'),
+            'branch_id' => (int) ($_POST['branch_id'] ?? 0) ?: null,
             'amount' => (float) ($_POST['amount'] ?? 0),
             'party_name' => trim((string) ($_POST['party_name'] ?? '')),
             'customer_id' => (int) ($_POST['customer_id'] ?? 0) ?: null,
