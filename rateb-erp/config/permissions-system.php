@@ -148,6 +148,7 @@ return [
         'admin/oversight/approvals' => 'workflows.view',
         'admin/oversight/approvals/count' => 'workflows.view',
         'admin/oversight/approvals/detail' => 'workflows.view',
+        'admin/oversight/approvals/decide' => 'workflows.manage',
         'admin/oversight/approvals/approve' => 'workflows.manage',
         'admin/oversight/approvals/reject' => 'workflows.manage',
         'admin/oversight/approvals/undo' => 'workflows.manage',

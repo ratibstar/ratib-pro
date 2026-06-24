@@ -649,6 +649,10 @@ final class ApprovalOversightService
         if ($recordId < 1 || !isset($this->sources()[$sourceKey])) {
             throw new \RuntimeException(__('invalid_request'));
         }
+        $resolvedCompanyId = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
+        if ($resolvedCompanyId !== null && $resolvedCompanyId > 0) {
+            $companyId = $resolvedCompanyId;
+        }
         $this->bootstrapCompany($companyId);
         if ($sourceKey === 'workflow_instance') {
             return $this->detailWorkflowInstance($recordId, $companyId);
@@ -702,6 +706,10 @@ final class ApprovalOversightService
         if ($recordId < 1 || !self::canUndo($sourceKey)) {
             throw new \RuntimeException(__('invalid_request'));
         }
+        $resolvedCompanyId = $this->resolveCompanyId($sourceKey, $recordId, $companyId);
+        if ($resolvedCompanyId !== null && $resolvedCompanyId > 0) {
+            $companyId = $resolvedCompanyId;
+        }
         $this->bootstrapCompany($companyId);
 
         if ($sourceKey === 'supplier_evaluation') {
@@ -732,6 +740,10 @@ final class ApprovalOversightService
                     throw new \RuntimeException(__('journal_post_failed'));
                 }
                 $db->prepare('UPDATE rateb_journal_entries SET status = :st, posted_at = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
+            } elseif ($st === 'rejected') {
+                $db->prepare(
+                    'UPDATE rateb_journal_entries SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL WHERE id = :id'
+                )->execute(['st' => 'draft', 'id' => $recordId]);
             } elseif ($st === 'draft') {
                 return;
             } else {
@@ -754,6 +766,10 @@ final class ApprovalOversightService
                     throw new \RuntimeException(__('voucher_post_failed'));
                 }
                 $db->prepare('UPDATE rateb_cash_vouchers SET status = :st, posted_at = NULL, journal_entry_id = NULL WHERE id = :id')->execute(['st' => 'draft', 'id' => $recordId]);
+            } elseif ($st === 'rejected') {
+                $db->prepare(
+                    'UPDATE rateb_cash_vouchers SET status = :st, reject_reason = NULL, rejected_at = NULL, rejected_by = NULL WHERE id = :id'
+                )->execute(['st' => 'draft', 'id' => $recordId]);
             } elseif ($st === 'draft') {
                 return;
             } else {

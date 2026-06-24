@@ -10,9 +10,7 @@ Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
 $approvalsConfig = [
     'csrf' => $csrfToken,
     'detailUrl' => rateb_url('admin/oversight/approvals/detail'),
-    'approveUrl' => rateb_url('admin/oversight/approvals/approve'),
-    'rejectUrl' => rateb_url('admin/oversight/approvals/reject'),
-    'undoUrl' => rateb_url('admin/oversight/approvals/undo'),
+    'decideUrl' => rateb_url('admin/oversight/approvals/decide'),
     'typeFilter' => $typeFilter,
     'labels' => [
         'view' => __('view'),
@@ -29,7 +27,7 @@ $approvalsConfig = [
     ],
 ];
 ?>
-<div class="row g-3" id="rateb-approvals-oversight" data-config="<?php echo Rateb\App\Core\View::escape(json_encode($approvalsConfig, JSON_UNESCAPED_UNICODE)); ?>">
+<div class="row g-3" id="rateb-approvals-oversight">
     <div class="col-12">
         <form method="get" action="<?php echo Rateb\App\Core\View::escape($formAction ?? rateb_url('admin/oversight/approvals')); ?>" class="rateb-card">
             <div class="rateb-card-body">
@@ -195,3 +193,4 @@ $approvalsConfig = [
         </div>
     </div>
 </div>
+<script type="application/json" id="rateb-approvals-config-json"><?php echo json_encode($approvalsConfig, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP); ?></script>

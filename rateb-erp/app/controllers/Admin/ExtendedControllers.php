@@ -271,6 +271,16 @@ final class AdminApprovalsController extends Controller
         $this->decide('reject');
     }
 
+    public function decideAction(): void
+    {
+        $action = trim((string) $this->input('decision', 'approve'));
+        if ($action === 'undo') {
+            $this->undo();
+            return;
+        }
+        $this->decide($action === 'reject' ? 'reject' : 'approve');
+    }
+
     public function undo(): void
     {
         if (!rateb_is_super_admin()) {

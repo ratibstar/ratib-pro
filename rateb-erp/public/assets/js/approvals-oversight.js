@@ -7,10 +7,13 @@
     }
 
     var config = {};
-    try {
-        config = JSON.parse(root.getAttribute('data-config') || '{}');
-    } catch (e) {
-        config = {};
+    var configEl = document.getElementById('rateb-approvals-config-json');
+    if (configEl) {
+        try {
+            config = JSON.parse(configEl.textContent || '{}');
+        } catch (e) {
+            config = {};
+        }
     }
 
     var labels = config.labels || {};
@@ -182,13 +185,17 @@
             flashToast(labels.error || 'Error', 'danger');
             return;
         }
-        var urlMap = {
-            approve: config.approveUrl,
-            reject: config.rejectUrl,
-            undo: config.undoUrl
-        };
-        var url = urlMap[action];
+        var url = config.decideUrl;
         if (!url) {
+            var urlMap = {
+                approve: config.approveUrl,
+                reject: config.rejectUrl,
+                undo: config.undoUrl
+            };
+            url = urlMap[action];
+        }
+        if (!url) {
+            flashToast(labels.error || 'Error', 'danger');
             return;
         }
         if (action === 'reject' && !window.confirm(labels.confirm_reject || 'Confirm reject?')) {
@@ -200,6 +207,7 @@
 
         var form = new FormData();
         form.append('_csrf', csrf());
+        form.append('decision', action);
         form.append('source_key', row.getAttribute('data-source-key') || '');
         form.append('record_id', row.getAttribute('data-record-id') || '');
         form.append('company_id', row.getAttribute('data-company-id') || '');
