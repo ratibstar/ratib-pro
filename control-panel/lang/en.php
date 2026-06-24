@@ -13,6 +13,7 @@ return [
     'nav.control_hub' => 'Control hub',
     'nav.help_center' => 'Help center',
     'nav.rateb_erp' => 'RATEB ERP System',
+    'nav.erp_branch_links' => 'Branch links',
     'nav.company_portal' => 'Company portal',
     'nav.erp_links' => 'ERP links',
     'nav.erp_db_setup' => 'ERP Database Setup',

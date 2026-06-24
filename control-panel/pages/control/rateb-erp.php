@@ -71,23 +71,22 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
 <div class="alert alert-primary mb-4" role="region" aria-label="روابط مباشرة">
     <h2 class="h5 mb-2"><i class="fas fa-link me-2"></i>روابط مباشرة — بدون تسجيل لوحة التحكم</h2>
     <p class="small mb-2">
-        بعد تسجيل الخروج من لوحة التحكم استخدم هذه الروابط. لإضافة <strong>مشتريات</strong> أو <strong>مخزون</strong> افتح <strong>بوابة الشركة</strong>.
+        <strong>إدارة الفروع</strong> من لوحة التحكم فقط. لكل فرع رابط دخول خاص — لا تستخدم <code>company/login</code> للفروع الفرعية.
     </p>
     <div class="d-flex flex-wrap gap-2 mt-2">
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_branches_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
+            <i class="fas fa-store"></i> روابط الفروع
+        </a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('admin/ops/branches'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
+            <i class="fas fa-cog"></i> إدارة الفروع
+        </a>
         <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('portals.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-info<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
             <i class="fas fa-list"></i> كل الروابط
-        </a>
-        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
-            <i class="fas fa-building"></i> بوابة الشركة
         </a>
         <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
             <i class="fas fa-user-shield"></i> دخول الإدارة
         </a>
-        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/ops/branches'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
-            <i class="fas fa-store"></i> الفروع
-        </a>
     </div>
-    <p class="small text-muted mb-0 mt-2"><code dir="ltr"><?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?></code></p>
 </div>
 
 <div class="control-settings-intro mb-2"><strong>Super Admin modules</strong> <span class="text-muted small">(مراقبة — قراءة فقط للمشتريات والمخزون)</span></div>

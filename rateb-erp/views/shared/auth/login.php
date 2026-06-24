@@ -15,6 +15,16 @@
 
 <form method="post" action="<?php echo rateb_url('login'); ?>" id="password-form" class="login-panel">
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+    <?php if (!empty($branchPortal)) { ?>
+    <input type="hidden" name="branch_id" value="<?php echo (int) ($branchPortal['id'] ?? 0); ?>">
+    <div class="alert alert-info py-2 small mb-3">
+        <i class="fas fa-store me-1"></i>
+        <?php echo __('branch_portal_login_hint', [
+            'branch' => (string) ($branchPortal['name'] ?? ''),
+            'company' => (string) ($branchPortal['company_name'] ?? ''),
+        ]); ?>
+    </div>
+    <?php } ?>
     <?php if (!empty($next)) { ?>
     <input type="hidden" name="next" value="<?php echo Rateb\App\Core\View::escape((string) $next); ?>">
     <?php } ?>

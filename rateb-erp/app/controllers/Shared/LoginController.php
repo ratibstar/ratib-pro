@@ -46,11 +46,32 @@ final class LoginController extends Controller
             return;
         }
 
+        $branchPortal = $this->resolveBranchPortalFromRequest();
+
         $this->view('shared/auth/login', [
             'title' => __('login'),
             'csrf' => Csrf::token(),
             'next' => $this->safeNextUrl((string) ($_GET['next'] ?? '')),
+            'branchPortal' => $branchPortal,
         ], 'auth');
+    }
+
+    /** @return array<string, mixed>|null */
+    private function resolveBranchPortalFromRequest(): ?array
+    {
+        $branchId = (int) ($_GET['branch_id'] ?? 0);
+        if ($branchId < 1) {
+            SessionManager::forget('_rateb_login_branch_id');
+            return null;
+        }
+        $branch = (new \Rateb\App\Services\BranchService())->findActiveForPortal($branchId);
+        if (!$branch) {
+            SessionManager::flash('error', __('branch_portal_invalid'));
+            SessionManager::forget('_rateb_login_branch_id');
+            return null;
+        }
+        SessionManager::set('_rateb_login_branch_id', $branchId);
+        return $branch;
     }
 
     public function login(): void
@@ -78,6 +99,14 @@ final class LoginController extends Controller
             (new LoginActivityService())->record($preUser ? (int) $preUser['id'] : null, $email, false);
             SessionManager::flash('error', __('account_locked'));
             Response::redirect(rateb_url('login'));
+        }
+
+        $branchId = (int) SessionManager::get('_rateb_login_branch_id', 0);
+        if ($branchId < 1) {
+            $branchId = (int) $this->input('branch_id', 0);
+            if ($branchId > 0) {
+                SessionManager::set('_rateb_login_branch_id', $branchId);
+            }
         }
 
         $user = Auth::attemptAuto($email, $password);
@@ -131,6 +160,19 @@ final class LoginController extends Controller
     /** @param array<string, mixed> $user */
     private function finishLogin(array $user, string $next): void
     {
+        $branchId = (int) SessionManager::get('_rateb_login_branch_id', 0);
+        if ($branchId > 0) {
+            $companyId = (int) ($user['company_id'] ?? 0);
+            $branchSvc = new \Rateb\App\Services\BranchService();
+            if (!$branchSvc->userMayUsePortalBranch((int) $user['id'], $branchId, $companyId)) {
+                Auth::logout();
+                SessionManager::flash('error', __('branch_portal_denied'));
+                Response::redirect(rateb_branch_portal_url($branchId));
+            }
+            SessionManager::set('rateb_portal_branch_id', $branchId);
+            SessionManager::forget('_rateb_login_branch_id');
+        }
+
         if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
             $_SESSION['rateb_locale'] = $user['locale'];
         }

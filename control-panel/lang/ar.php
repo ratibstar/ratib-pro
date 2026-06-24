@@ -13,6 +13,7 @@ return [
     'nav.control_hub' => 'مركز التحكم',
     'nav.help_center' => 'مركز المساعدة',
     'nav.rateb_erp' => 'نظام رتب ERP',
+    'nav.erp_branch_links' => 'روابط الفروع',
     'nav.company_portal' => 'بوابة الشركة',
     'nav.erp_links' => 'روابط ERP',
     'nav.erp_db_setup' => 'إعداد قاعدة بيانات ERP',

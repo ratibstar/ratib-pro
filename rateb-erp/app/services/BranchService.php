@@ -69,6 +69,38 @@ final class BranchService
         return (int) ($row['id'] ?? 0);
     }
 
+    /** @return array<string, mixed>|null */
+    public function findActiveForPortal(int $branchId): ?array
+    {
+        if ($branchId < 1) {
+            return null;
+        }
+        $row = (new Branch())->queryOne(
+            'SELECT b.*, c.name AS company_name, c.slug AS company_slug
+             FROM rateb_branches b
+             INNER JOIN rateb_companies c ON c.id = b.company_id
+             WHERE b.id = :id AND b.status = :st LIMIT 1',
+            ['id' => $branchId, 'st' => 'active']
+        );
+        return $row ?: null;
+    }
+
+    public function userMayUsePortalBranch(int $userId, int $branchId, int $companyId): bool
+    {
+        if ($userId < 1 || $branchId < 1 || $companyId < 1) {
+            return false;
+        }
+        $branch = $this->findActiveForPortal($branchId);
+        if (!$branch || (int) ($branch['company_id'] ?? 0) !== $companyId) {
+            return false;
+        }
+        $assigned = $this->getUserBranchIds($userId);
+        if ($assigned === []) {
+            return true;
+        }
+        return in_array($branchId, $assigned, true);
+    }
+
     public function ensureMainBranch(int $companyId): int
     {
         if ($companyId < 1) {

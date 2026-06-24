@@ -668,6 +668,23 @@ if (!function_exists('rateb_is_super_admin')) {
     }
 }
 
+if (!function_exists('rateb_branch_portal_url')) {
+    function rateb_branch_portal_url(int $branchId): string
+    {
+        if ($branchId < 1) {
+            return rateb_public_url('login');
+        }
+        return rateb_public_url('login?branch_id=' . $branchId);
+    }
+}
+
+if (!function_exists('rateb_portal_branch_id')) {
+    function rateb_portal_branch_id(): int
+    {
+        return (int) (\Rateb\App\Core\SessionManager::get('rateb_portal_branch_id', 0) ?? 0);
+    }
+}
+
 if (!function_exists('rateb_bootstrap_branch_context')) {
     function rateb_bootstrap_branch_context(?int $companyId = null): void
     {

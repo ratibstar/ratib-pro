@@ -28,6 +28,9 @@ function control_rateb_erp_active_key(): string
     if ($self === 'rateb-erp-migrate.php') {
         return 'migrate';
     }
+    if ($self === 'rateb-erp-branches.php') {
+        return 'branches_hub';
+    }
     if ($self === 'rateb-erp-app.php') {
         $route = trim((string) ($_GET['route'] ?? ''), '/');
         foreach (control_rateb_erp_nav_links() as $key => $link) {

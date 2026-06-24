@@ -147,6 +147,59 @@ function control_rateb_erp_migrate_page_url(): string
         : '/control-panel/pages/control/rateb-erp-migrate.php?control=1';
 }
 
+function control_rateb_erp_branches_hub_page_url(): string
+{
+    return function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/rateb-erp-branches.php')
+        : '/control-panel/pages/control/rateb-erp-branches.php?control=1';
+}
+
+function control_rateb_erp_branch_portal_url(int $branchId): string
+{
+    if ($branchId < 1) {
+        return control_rateb_erp_public_url('login');
+    }
+    if (function_exists('rateb_branch_portal_url')) {
+        return rateb_branch_portal_url($branchId);
+    }
+    return control_rateb_erp_public_url('login?branch_id=' . $branchId);
+}
+
+function control_rateb_erp_branch_manage_url(int $companyId = 0): string
+{
+    $url = control_rateb_erp_app_url('admin/ops/branches');
+    if ($companyId > 0) {
+        $url .= (strpos($url, '?') !== false ? '&' : '?') . 'company_id=' . $companyId;
+    }
+    return $url;
+}
+
+/** @return array<int, array<string, mixed>> */
+function control_rateb_erp_branches_catalog(): array
+{
+    if (!control_rateb_erp_schema_ready()) {
+        return [];
+    }
+    try {
+        control_rateb_erp_ensure_root();
+        require_once RATEB_ROOT . '/config/database.php';
+        require_once RATEB_ROOT . '/app/Core/Database.php';
+        $pdo = \Rateb\App\Core\Database::connection();
+        $stmt = $pdo->query(
+            'SELECT b.id, b.name, b.code, b.status, b.is_main, b.company_id,
+                    c.name AS company_name, c.slug AS company_slug
+             FROM rateb_branches b
+             INNER JOIN rateb_companies c ON c.id = b.company_id
+             ORDER BY c.name ASC, b.is_main DESC, b.name ASC'
+        );
+        $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+        return is_array($rows) ? $rows : [];
+    } catch (\Throwable $e) {
+        error_log('control_rateb_erp_branches_catalog: ' . $e->getMessage());
+        return [];
+    }
+}
+
 /** @return array<string, array{href:string,label:string,icon:string,key:string,description?:string,route:string}> */
 function control_rateb_erp_nav_links(): array
 {

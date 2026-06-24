@@ -68,13 +68,6 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
 ], 'fa-briefcase');
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');
-$branchNavItems = [
-    ['branches', 'branch_list', 'fa-list', '', 'branches.view'],
-];
-if (!function_exists('rateb_can_manage_all_branches') || rateb_can_manage_all_branches()) {
-    $branchNavItems[] = ['branches/create', 'add_branch', 'fa-plus', '', 'branches.manage'];
-}
-$opsSection(__('branches'), $branchNavItems, 'fa-store');
 if (rateb_is_super_admin()) {
     echo '<a href="' . rateb_url(rateb_app_route('branches/setup-check')) . '" class="rateb-nav-link' . ($navActive(rateb_app_route('branches/setup-check')) ? ' active' : '') . '">';
     echo '<i class="fas fa-clipboard-check"></i><span>' . __('branch_setup_check') . '</span></a>';

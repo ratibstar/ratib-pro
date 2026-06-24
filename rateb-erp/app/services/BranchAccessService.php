@@ -28,6 +28,19 @@ final class BranchAccessService
             return;
         }
 
+        $portalBranch = (int) SessionManager::get('rateb_portal_branch_id', 0);
+        if ($portalBranch > 0 && !rateb_is_super_admin()) {
+            $row = (new Branch())->queryOne(
+                'SELECT id FROM rateb_branches WHERE id = :id AND company_id = :cid AND status = :st LIMIT 1',
+                ['id' => $portalBranch, 'cid' => $companyId, 'st' => 'active']
+            );
+            if ($row) {
+                BranchContext::setBootstrapped($companyId, false, [(int) $row['id']]);
+                return;
+            }
+            SessionManager::forget('rateb_portal_branch_id');
+        }
+
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             $all = $this->branchIdsForCompany($companyId);
             BranchContext::setBootstrapped($companyId, true, $all);

@@ -1417,6 +1417,32 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
+    private function guardBranchesCpAdminOnly(): void
+    {
+        if (!rateb_is_super_admin()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('branches_cp_only'));
+            $this->redirect(rateb_url('admin'));
+        }
+    }
+
+    public function index(): void
+    {
+        $this->guardBranchesCpAdminOnly();
+        parent::index();
+    }
+
+    public function create(): void
+    {
+        $this->guardBranchesCpAdminOnly();
+        parent::create();
+    }
+
+    public function edit(array $params): void
+    {
+        $this->guardBranchesCpAdminOnly();
+        parent::edit($params);
+    }
+
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
         if (function_exists('rateb_bootstrap_ops_tenant')) {
@@ -1441,6 +1467,7 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
 
     public function store(): void
     {
+        $this->guardBranchesCpAdminOnly();
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
@@ -1456,8 +1483,21 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
         parent::store();
     }
 
+    public function update(array $params): void
+    {
+        $this->guardBranchesCpAdminOnly();
+        parent::update($params);
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardBranchesCpAdminOnly();
+        parent::destroy($params);
+    }
+
     public function export(): void
     {
+        $this->guardBranchesCpAdminOnly();
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
@@ -1476,6 +1516,7 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
 
     public function toggleStatus(array $params): void
     {
+        $this->guardBranchesCpAdminOnly();
         $this->guardManage();
         if (!function_exists('rateb_can_manage_all_branches') || !rateb_can_manage_all_branches()) {
             \Rateb\App\Core\SessionManager::flash('error', __('branch_access_denied'));

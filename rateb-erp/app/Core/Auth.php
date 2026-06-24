@@ -123,6 +123,9 @@ final class Auth
             return 'admin';
         }
         if ((int) SessionManager::get('rateb_company_id', 0) > 0) {
+            if (function_exists('rateb_portal_branch_id') && rateb_portal_branch_id() > 0) {
+                return 'admin';
+            }
             return 'site/portal';
         }
         return 'admin';
