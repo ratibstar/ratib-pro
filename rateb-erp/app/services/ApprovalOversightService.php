@@ -441,6 +441,7 @@ final class ApprovalOversightService
             'asset_assignment' => 'asset-assignments',
             'device_maintenance' => 'device-maintenance',
             'device_spare_part' => 'device-spare-parts',
+            'inventory_audit' => 'inventory-audits',
         ];
     }
 
@@ -498,11 +499,6 @@ final class ApprovalOversightService
             } else {
                 $svc->rejectRenewal($recordId, $uid);
             }
-            return;
-        }
-
-        if ($sourceKey === 'inventory_audit') {
-            $this->setManagerApproval('rateb_inventory_audits', $recordId, $companyId, $action, $uid);
             return;
         }
 
@@ -714,10 +710,6 @@ final class ApprovalOversightService
 
         if ($sourceKey === 'supplier_evaluation') {
             $this->resetManagerApproval('rateb_supplier_evaluations', $recordId, $companyId);
-            return;
-        }
-        if ($sourceKey === 'inventory_audit') {
-            $this->resetManagerApproval('rateb_inventory_audits', $recordId, $companyId);
             return;
         }
         if (isset($this->managerSlugs()[$sourceKey])) {
@@ -963,7 +955,7 @@ final class ApprovalOversightService
             $table
         );
         $params = ['st' => 'pending', 'id' => $id];
-        if ($companyId > 0) {
+        if ($companyId > 0 && !\Rateb\App\Core\TenantContext::isSuperAdmin()) {
             $sql .= ' AND company_id = :cid';
             $params['cid'] = $companyId;
         }
@@ -995,8 +987,17 @@ final class ApprovalOversightService
 
     private function resolveCompanyId(string $sourceKey, int $recordId, int $companyId): ?int
     {
-        if ($companyId > 0) {
-            return $companyId;
+        $fromRecord = $this->fetchRecordCompanyId($sourceKey, $recordId);
+        if ($fromRecord !== null && $fromRecord > 0) {
+            return $fromRecord;
+        }
+        return $companyId > 0 ? $companyId : null;
+    }
+
+    private function fetchRecordCompanyId(string $sourceKey, int $recordId): ?int
+    {
+        if ($recordId < 1) {
+            return null;
         }
         if ($sourceKey === 'workflow_instance') {
             $db = Database::connection();
@@ -1007,7 +1008,7 @@ final class ApprovalOversightService
         }
         $sources = $this->sources();
         $table = (string) ($sources[$sourceKey]['table'] ?? '');
-        if ($table === '') {
+        if ($table === '' || !$this->tableExists($table)) {
             return null;
         }
         $db = Database::connection();
@@ -1038,7 +1039,7 @@ final class ApprovalOversightService
                 $table
             );
             $params = ['st' => $state, 'uid' => $uid > 0 ? $uid : null, 'id' => $id, 'pending' => 'pending'];
-            if ($companyId > 0) {
+            if ($companyId > 0 && !\Rateb\App\Core\TenantContext::isSuperAdmin()) {
                 $sql .= ' AND company_id = :cid';
                 $params['cid'] = $companyId;
             }

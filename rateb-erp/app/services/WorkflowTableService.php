@@ -49,6 +49,12 @@ final class WorkflowTableService
                 'prefix' => 'SP',
                 'entity' => 'device_spare_parts',
             ],
+            'inventory-audits' => [
+                'table' => 'rateb_inventory_audits',
+                'no_column' => 'audit_no',
+                'prefix' => 'IA',
+                'entity' => 'inventory_audits',
+            ],
         ];
     }
 

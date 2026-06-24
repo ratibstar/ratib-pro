@@ -316,14 +316,15 @@ final class AdminApprovalsController extends Controller
         $sourceKey = trim((string) $this->input('source_key', ''));
         $recordId = (int) $this->input('record_id', 0);
         $companyId = (int) $this->input('company_id', 0);
+        $svc = new ApprovalOversightService();
         try {
-            (new ApprovalOversightService())->process($sourceKey, $recordId, $companyId, $action);
+            $svc->process($sourceKey, $recordId, $companyId, $action);
             (new AuditService())->log($action, 'approval_oversight', $recordId, [
                 'source' => $sourceKey,
                 'company_id' => $companyId,
             ]);
             $msg = $action === 'approve' ? __('approved') : __('rejected');
-            $detail = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
+            $detail = $svc->detail($sourceKey, $recordId, $companyId);
             $this->respondDecision(true, $msg, $detail);
         } catch (\Throwable $e) {
             $this->respondDecision(false, DatabaseErrorService::userMessage($e));
