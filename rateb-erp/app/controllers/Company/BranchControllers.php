@@ -100,18 +100,26 @@ final class InterBranchTransfersController extends Controller
     {
         rateb_bootstrap_ops_tenant();
         $companyId = (int) TenantContext::companyId();
-        if (function_exists('rateb_bootstrap_branch_context')) {
-            rateb_bootstrap_branch_context($companyId);
+        if (!$this->transfersTableReady()) {
+            $this->view('company/branch-transfers/index', [
+                'title' => __('branch_transfers'),
+                'items' => [],
+                'schemaMissing' => true,
+                'csrf' => Csrf::token(),
+            ]);
+            return;
         }
-        [$filter, $params] = (new BranchIsolationService())->sqlFilter('t', 'source_branch_id');
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId > 0 ? $companyId : null);
+        }
         $rows = (new BranchTransfer())->query(
             "SELECT t.*, sb.name AS source_name, db.name AS dest_name
              FROM rateb_branch_transfers t
              LEFT JOIN rateb_branches sb ON sb.id = t.source_branch_id
              LEFT JOIN rateb_branches db ON db.id = t.dest_branch_id
-             WHERE t.company_id = :cid{$filter}
+             WHERE t.company_id = :cid
              ORDER BY t.id DESC LIMIT 100",
-            array_merge(['cid' => $companyId], $params)
+            ['cid' => $companyId > 0 ? $companyId : -1]
         );
 
         $this->view('company/branch-transfers/index', [
@@ -172,10 +180,16 @@ final class InterBranchTransfersController extends Controller
         $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
     }
 
-    public function approve(int $id): void
+    public function approve(array $params): void
     {
         rateb_bootstrap_ops_tenant();
         Csrf::verifyOrAbort();
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+            return;
+        }
         $row = (new BranchTransfer())->find($id);
         if (!$row) {
             SessionManager::flash('error', __('not_found'));
@@ -189,6 +203,17 @@ final class InterBranchTransfersController extends Controller
         ]);
         SessionManager::flash('success', __('approved'));
         $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+    }
+
+    private function transfersTableReady(): bool
+    {
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_branch_transfers'");
+            return $stmt !== false && $stmt->fetch() !== false;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }
 
