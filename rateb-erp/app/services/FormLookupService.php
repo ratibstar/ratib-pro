@@ -472,6 +472,15 @@ final class FormLookupService
         }
     }
 
+    private function resolveLookupCompanyId(): int
+    {
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        return $companyId;
+    }
+
     /** @return array<int, array<string, mixed>> */
     public static function assetMaintenanceFormFields(): array
     {
@@ -779,8 +788,18 @@ final class FormLookupService
     /** @return list<FormOption> */
     private function warehouseOptions(): array
     {
+        $companyId = $this->resolveLookupCompanyId();
+        if ($companyId < 1 && !TenantContext::isSuperAdmin()) {
+            return [];
+        }
+        if ($companyId > 0) {
+            (new WarehouseService())->ensureDefaultWarehouse($companyId);
+            $rows = (new WarehouseService())->listActiveForCompany($companyId);
+        } else {
+            $rows = (new Warehouse())->all(300, 0, ['status' => 'active']);
+        }
         $out = [];
-        foreach ((new Warehouse())->all(300, 0) as $row) {
+        foreach ($rows as $row) {
             $label = trim((string) ($row['code'] ?? '')) !== ''
                 ? ($row['code'] . ' — ' . ($row['name'] ?? ''))
                 : (string) ($row['name'] ?? '');
@@ -1194,9 +1213,21 @@ final class FormLookupService
     /** @return list<FormOption> */
     private function productCategoryOptions(): array
     {
-        $rows = (new ProductCategory())->query(
-            'SELECT id, parent_id, name, name_ar, code FROM rateb_product_categories ORDER BY sort_order ASC, name ASC LIMIT 500'
-        );
+        $companyId = $this->resolveLookupCompanyId();
+        if ($companyId < 1 && !TenantContext::isSuperAdmin()) {
+            return [];
+        }
+        if ($companyId > 0) {
+            (new ProductCategoryService())->ensureDefaultCategory($companyId);
+        }
+        $sql = 'SELECT id, parent_id, name, name_ar, code FROM rateb_product_categories WHERE is_active = 1';
+        $params = [];
+        if ($companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $sql .= ' ORDER BY sort_order ASC, name ASC LIMIT 500';
+        $rows = (new ProductCategory())->query($sql, $params);
         $out = [];
         $walk = static function (?int $parentId, int $depth) use (&$walk, $rows, &$out): void {
             foreach ($rows as $row) {

@@ -333,4 +333,35 @@ final class ProductCategoryService
         }
         return $out;
     }
+
+    /** Create a default category when the company has none (inventory / PO forms). */
+    public function ensureDefaultCategory(int $companyId): int
+    {
+        if ($companyId < 1) {
+            return 0;
+        }
+        $row = (new ProductCategory())->queryOne(
+            'SELECT id FROM rateb_product_categories WHERE company_id = :cid AND is_active = 1 LIMIT 1',
+            ['cid' => $companyId]
+        );
+        if ($row) {
+            return (int) ($row['id'] ?? 0);
+        }
+
+        $prev = TenantContext::companyId();
+        TenantContext::setCompanyId($companyId);
+        try {
+            return (new ProductCategory())->create([
+                'company_id' => $companyId,
+                'code' => 'GEN',
+                'name' => 'General',
+                'name_ar' => 'عام',
+                'is_active' => 1,
+                'is_visible' => 1,
+                'sort_order' => 0,
+            ]);
+        } finally {
+            TenantContext::setCompanyId($prev);
+        }
+    }
 }

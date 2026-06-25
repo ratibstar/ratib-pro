@@ -17,6 +17,27 @@ $itemCode = $isEdit ? (string) ($item['item_code'] ?? '') : '';
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
+        <?php
+        $opsCompanyId = (int) ($opsCompanyId ?? 0);
+        $warehouseOptionsCount = (int) ($warehouseOptionsCount ?? count($lookups['warehouses'] ?? []));
+        $categoryOptionsCount = (int) ($categoryOptionsCount ?? count($lookups['product_categories'] ?? []));
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin() && $opsCompanyId < 1) { ?>
+        <div class="alert alert-warning"><?php echo __('select_company_ops'); ?></div>
+        <?php } elseif ($warehouseOptionsCount < 1) { ?>
+        <div class="alert alert-warning">
+            <?php echo __('inventory_no_warehouses'); ?>
+            <?php if (!empty($warehousesCreateUrl)) { ?>
+            <a class="alert-link ms-1" href="<?php echo Rateb\App\Core\View::escape($warehousesCreateUrl); ?>"><?php echo __('warehouses'); ?></a>
+            <?php } ?>
+        </div>
+        <?php } elseif ($categoryOptionsCount < 1) { ?>
+        <div class="alert alert-info py-2">
+            <?php echo __('inventory_no_categories'); ?>
+            <?php if (!empty($categoriesCreateUrl)) { ?>
+            <a class="alert-link ms-1" href="<?php echo Rateb\App\Core\View::escape($categoriesCreateUrl); ?>"><?php echo __('product_categories'); ?></a>
+            <?php } ?>
+        </div>
+        <?php } ?>
         <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data" data-inventory-form
               data-warehouse-items-url="<?php echo Rateb\App\Core\View::escape($warehouseItemsUrl ?? ''); ?>"
               data-is-edit="<?php echo $isEdit ? '1' : '0'; ?>"

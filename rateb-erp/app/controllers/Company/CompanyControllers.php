@@ -1065,10 +1065,17 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     private function inventoryFormData(array $extra): array
     {
         $lookupSvc = new \Rateb\App\Services\FormLookupService();
+        $lookups = $lookupSvc->forFields(array_merge($this->fields, [
+            ['lookup' => 'inventory_movement_types'],
+        ]));
+        $opsCompanyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
         return $this->formViewData(array_merge($extra, [
-            'lookups' => $lookupSvc->forFields(array_merge($this->fields, [
-                ['lookup' => 'inventory_movement_types'],
-            ])),
+            'lookups' => $lookups,
+            'opsCompanyId' => $opsCompanyId,
+            'warehouseOptionsCount' => count($lookups['warehouses'] ?? []),
+            'categoryOptionsCount' => count($lookups['product_categories'] ?? []),
+            'warehousesCreateUrl' => rateb_url(rateb_app_route('warehouses/create')),
+            'categoriesCreateUrl' => rateb_url(rateb_app_route('product-categories/create')),
             'warehouseItemsUrl' => rateb_url($this->routePrefix . '/warehouse-items'),
             'assetJs' => rateb_asset('js/inventory-form.js'),
         ]));
