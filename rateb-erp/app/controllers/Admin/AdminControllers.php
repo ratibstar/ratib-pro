@@ -28,6 +28,19 @@ final class DashboardController extends Controller
 {
     public function index(): void
     {
+        try {
+            $this->renderDashboard();
+        } catch (\Throwable $e) {
+            if (class_exists(\Rateb\App\Services\DatabaseErrorService::class)) {
+                \Rateb\App\Services\DatabaseErrorService::renderHttpError($e);
+                return;
+            }
+            throw $e;
+        }
+    }
+
+    private function renderDashboard(): void
+    {
         if (function_exists('rateb_is_portal_branch_session') && rateb_is_portal_branch_session()) {
             $branchId = rateb_portal_branch_id();
             $branch = (new \Rateb\App\Services\BranchService())->findActiveForPortal($branchId);
