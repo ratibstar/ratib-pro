@@ -93,7 +93,8 @@ $adminSection = static function (
 ) use ($navActive, $renderNavGroup): void {
     $visibleLinks = [];
     foreach ($links as $link) {
-        if (!rateb_nav_can($link[3])) {
+        $module = $link[4] ?? '';
+        if (!rateb_nav_can($link[3], $module)) {
             continue;
         }
         $visibleLinks[] = $link;

@@ -91,6 +91,11 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             <?php
             $adminSection(__('admin_oversight_section'), [
                 ['admin/companies', 'companies', 'fa-building', 'companies.view'],
+                ['admin/ops/branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branch.dashboard.view', 'branches'],
+                ['admin/ops/branch-financial', 'branch_financial_reports', 'fa-file-invoice-dollar', 'branch.financial.pl', 'accounting'],
+                ['admin/ops/branch-dashboard/compare', 'branch_comparison', 'fa-scale-balanced', 'branch.dashboard.compare', 'branches'],
+                ['admin/ops/branch-dashboard/reports', 'branch_reports', 'fa-chart-column', 'branch.reports.view', 'branches'],
+                ['admin/ops/branch-transfers', 'branch_transfers', 'fa-shuffle', 'branch.transfers.view', 'branches'],
                 ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
                 ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view'],
                 ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],

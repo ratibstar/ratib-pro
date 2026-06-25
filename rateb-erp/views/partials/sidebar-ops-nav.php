@@ -8,13 +8,15 @@ declare(strict_types=1);
 if (function_exists('rateb_bootstrap_ops_tenant')) {
     rateb_bootstrap_ops_tenant();
 }
-$opsSection(__('branches'), [
-    ['branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branches', 'branch.dashboard.view'],
-    ['branch-financial', 'branch_financial_reports', 'fa-file-invoice-dollar', 'accounting', 'branch.financial.pl'],
-    ['branch-dashboard/compare', 'branch_comparison', 'fa-scale-balanced', 'branches', 'branch.dashboard.compare'],
-    ['branch-dashboard/reports', 'branch_reports', 'fa-chart-column', 'branches', 'branch.reports.view'],
-    ['branch-transfers', 'branch_transfers', 'fa-shuffle', 'branches', 'branch.transfers.view'],
-], 'fa-code-branch');
+if (!rateb_is_super_admin()) {
+    $opsSection(__('branches'), [
+        ['branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branches', 'branch.dashboard.view'],
+        ['branch-financial', 'branch_financial_reports', 'fa-file-invoice-dollar', 'accounting', 'branch.financial.pl'],
+        ['branch-dashboard/compare', 'branch_comparison', 'fa-scale-balanced', 'branches', 'branch.dashboard.compare'],
+        ['branch-dashboard/reports', 'branch_reports', 'fa-chart-column', 'branches', 'branch.reports.view'],
+        ['branch-transfers', 'branch_transfers', 'fa-shuffle', 'branches', 'branch.transfers.view'],
+    ], 'fa-code-branch');
+}
 $opsSection(__('procurement'), [
     ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
