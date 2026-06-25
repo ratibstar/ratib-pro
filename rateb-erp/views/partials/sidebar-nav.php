@@ -87,34 +87,86 @@ $opsSection = static function (
 
 $adminSection = static function (
     string $title,
-    array $links,
+    array $items,
     string $groupIcon = 'fa-folder-open',
     int $sectionBadge = 0
 ) use ($navActive, $renderNavGroup): void {
-    $visibleLinks = [];
-    foreach ($links as $link) {
+    $renderAdminLink = static function (array $link) use ($navActive): void {
+        $active = $navActive($link[0]) ? ' active' : '';
+        echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
+        echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
+        echo '</a>';
+    };
+
+    $renderAdminSubGroup = static function (array $subGroup) use ($navActive, $renderAdminLink): void {
+        $subOpen = false;
+        foreach ($subGroup['links'] as $link) {
+            if ($navActive($link[0])) {
+                $subOpen = true;
+                break;
+            }
+        }
+        $openClass = $subOpen ? ' is-open' : '';
+        echo '<div class="rateb-nav-subgroup' . $openClass . '" data-nav-group>';
+        echo '<button type="button" class="rateb-nav-subgroup-toggle" data-nav-group-toggle aria-expanded="' . ($subOpen ? 'true' : 'false') . '">';
+        echo '<i class="fas ' . Rateb\App\Core\View::escape($subGroup['icon']) . '"></i>';
+        echo '<span>' . Rateb\App\Core\View::escape($subGroup['label']) . '</span>';
+        echo '<i class="fas fa-chevron-down rateb-nav-subgroup-chevron" aria-hidden="true"></i>';
+        echo '</button><div class="rateb-nav-subgroup-body">';
+        foreach ($subGroup['links'] as $link) {
+            $renderAdminLink($link);
+        }
+        echo '</div></div>';
+    };
+
+    $visibleItems = [];
+    $hasActive = false;
+    foreach ($items as $item) {
+        if (($item['type'] ?? 'link') === 'subgroup') {
+            $subLinks = [];
+            foreach ($item['links'] ?? [] as $link) {
+                $module = $link[4] ?? '';
+                if (!rateb_nav_can($link[3], $module)) {
+                    continue;
+                }
+                $subLinks[] = $link;
+                if ($navActive($link[0])) {
+                    $hasActive = true;
+                }
+            }
+            if ($subLinks === []) {
+                continue;
+            }
+            $visibleItems[] = [
+                'type' => 'subgroup',
+                'label' => (string) ($item['label'] ?? ''),
+                'icon' => (string) ($item['icon'] ?? 'fa-folder'),
+                'links' => $subLinks,
+            ];
+            continue;
+        }
+        $link = $item['link'] ?? $item;
         $module = $link[4] ?? '';
         if (!rateb_nav_can($link[3], $module)) {
             continue;
         }
-        $visibleLinks[] = $link;
-    }
-    if ($visibleLinks === []) {
-        return;
-    }
-    $hasActive = false;
-    foreach ($visibleLinks as $link) {
         if ($navActive($link[0])) {
             $hasActive = true;
-            break;
         }
+        $visibleItems[] = ['type' => 'link', 'link' => $link];
     }
-    $renderNavGroup($title, $groupIcon, $hasActive, static function () use ($visibleLinks, $navActive): void {
-        foreach ($visibleLinks as $link) {
-            $active = $navActive($link[0]) ? ' active' : '';
-            echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-            echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
-            echo '</a>';
+
+    if ($visibleItems === []) {
+        return;
+    }
+
+    $renderNavGroup($title, $groupIcon, $hasActive, static function () use ($visibleItems, $renderAdminLink, $renderAdminSubGroup): void {
+        foreach ($visibleItems as $item) {
+            if ($item['type'] === 'subgroup') {
+                $renderAdminSubGroup($item);
+                continue;
+            }
+            $renderAdminLink($item['link']);
         }
     }, $sectionBadge);
 };
