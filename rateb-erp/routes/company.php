@@ -19,6 +19,7 @@ use Rateb\App\Controllers\Company\WarehousesController;
 use Rateb\App\Controllers\Company\BranchesController;
 use Rateb\App\Controllers\Company\BranchDashboardController;
 use Rateb\App\Controllers\Company\BranchFinancialReportsController;
+use Rateb\App\Controllers\Company\InterBranchTransfersController;
 use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
 use Rateb\App\Controllers\Company\HrDashboardController;
 use Rateb\App\Controllers\Company\HrEmployeesController;

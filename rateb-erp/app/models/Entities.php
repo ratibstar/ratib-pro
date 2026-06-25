@@ -17,8 +17,8 @@ final class Branch extends Model
 {
     protected string $table = 'rateb_branches';
     protected bool $tenantScoped = true;
-    protected bool $branchScoped = true;
-    protected string $branchColumn = 'id';
+    /** Branch rows define access; never self-filter via BranchContext (avoids bootstrap recursion). */
+    protected bool $branchScoped = false;
     protected array $fillable = ['name', 'code', 'address', 'phone', 'email', 'map_url', 'status', 'is_main'];
 }
 

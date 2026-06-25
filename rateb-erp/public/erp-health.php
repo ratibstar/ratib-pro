@@ -129,6 +129,52 @@ try {
         exit;
     }
 
+    if ($probe === 'branch-ops') {
+        header('Content-Type: application/json; charset=UTF-8');
+        $report = ['ok' => true, 'steps' => []];
+        $adminRow = $pdo->query('SELECT id FROM rateb_users WHERE is_super_admin = 1 AND status = \'active\' ORDER BY id ASC LIMIT 1')->fetch(\PDO::FETCH_ASSOC);
+        if (!is_array($adminRow)) {
+            echo json_encode(['ok' => false, 'error' => 'no super admin user'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        }
+        $adminId = (int) ($adminRow['id'] ?? 0);
+        \Rateb\App\Core\SessionManager::start();
+        $_SESSION['rateb_user_id'] = $adminId;
+        $_SESSION['rateb_is_super_admin'] = 1;
+        $_SESSION['rateb_company_id'] = null;
+        $_GET['company_id'] = (string) max(1, (int) ($_GET['company_id'] ?? 3));
+        \Rateb\App\Core\Auth::bootstrapFromSession();
+        $report['steps'][] = 'session user_id=' . $adminId . ' company_id=' . $_GET['company_id'];
+        $router = new \Rateb\App\Core\Router();
+        require RATEB_ROOT . '/routes/web.php';
+        require RATEB_ROOT . '/routes/marketing.php';
+        require RATEB_ROOT . '/routes/cms.php';
+        require RATEB_ROOT . '/routes/company.php';
+        require RATEB_ROOT . '/routes/api.php';
+        $report['steps'][] = 'routes loaded';
+        foreach ([
+            'branch_dashboard' => '/admin/ops/branch-dashboard',
+            'branch_financial' => '/admin/ops/branch-financial',
+            'branch_compare' => '/admin/ops/branch-dashboard/compare',
+            'branch_reports' => '/admin/ops/branch-dashboard/reports',
+        ] as $key => $path) {
+            ob_start();
+            try {
+                $router->dispatch('GET', $path);
+                $body = (string) ob_get_clean();
+                $report[$key] = ['ok' => true, 'body_len' => strlen($body)];
+            } catch (\Throwable $e) {
+                if (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                $report['ok'] = false;
+                $report[$key] = ['ok' => false, 'error' => $e->getMessage(), 'file' => $e->getFile() . ':' . $e->getLine()];
+            }
+        }
+        echo json_encode($report, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
     if ($probe === 'admin-live') {
         header('Content-Type: application/json; charset=UTF-8');
         $report = ['ok' => true, 'steps' => []];

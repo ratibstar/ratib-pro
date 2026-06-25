@@ -14,72 +14,104 @@ use Rateb\App\Services\BranchIsolationService;
 use Rateb\App\Services\BranchReportingService;
 use Rateb\App\Services\BranchService;
 use Rateb\App\Services\ConsolidationEliminationService;
+use Rateb\App\Services\DatabaseErrorService;
+
+trait BranchOpsErrorHandling
+{
+    /** @param callable(): void $action */
+    private function branchOpsSafe(callable $action): void
+    {
+        try {
+            $action();
+        } catch (\Throwable $e) {
+            DatabaseErrorService::renderHttpError($e);
+        }
+    }
+}
 
 final class BranchDashboardController extends Controller
 {
+    use BranchOpsErrorHandling;
+
     public function index(): void
     {
-        rateb_bootstrap_ops_tenant();
-        $companyId = (int) TenantContext::companyId();
-        $rows = (new BranchReportingService())->branchesOverview($companyId);
-        $branches = (new BranchAccessService())->allowedBranchIds($companyId);
+        $this->branchOpsSafe(function (): void {
+            rateb_bootstrap_ops_tenant();
+            $companyId = (int) TenantContext::companyId();
+            $rows = (new BranchReportingService())->branchesOverview($companyId);
+            $branches = (new BranchAccessService())->allowedBranchIds($companyId);
 
-        $this->view('company/branch-dashboard/index', [
-            'title' => __('branch_dashboard'),
-            'rows' => $rows,
-            'branches' => $this->branchOptions($companyId, $branches),
-            'activeFilter' => function_exists('rateb_active_branch_filter_id') ? rateb_active_branch_filter_id() : 0,
-            'isHeadOffice' => (new BranchAccessService())->isHeadOfficeUser(),
-            'csrf' => Csrf::token(),
-        ]);
+            $this->view('company/branch-dashboard/index', [
+                'title' => __('branch_dashboard'),
+                'rows' => $rows,
+                'branches' => $this->branchOptions($companyId, $branches),
+                'activeFilter' => function_exists('rateb_active_branch_filter_id') ? rateb_active_branch_filter_id() : 0,
+                'isHeadOffice' => (new BranchAccessService())->isHeadOfficeUser(),
+                'csrf' => Csrf::token(),
+            ]);
+        });
     }
 
     public function compare(): void
     {
-        rateb_bootstrap_ops_tenant();
-        $companyId = (int) TenantContext::companyId();
-        $branchA = (int) $this->input('branch_a', 0);
-        $branchB = (int) $this->input('branch_b', 0);
-        $data = null;
-        if ($branchA > 0 && $branchB > 0 && $branchA !== $branchB) {
-            try {
-                $data = (new BranchReportingService())->compareBranches($companyId, $branchA, $branchB);
-            } catch (\Throwable $e) {
-                SessionManager::flash('error', $e->getMessage());
+        $this->branchOpsSafe(function (): void {
+            rateb_bootstrap_ops_tenant();
+            $companyId = (int) TenantContext::companyId();
+            $branchA = (int) $this->input('branch_a', 0);
+            $branchB = (int) $this->input('branch_b', 0);
+            $data = null;
+            if ($branchA > 0 && $branchB > 0 && $branchA !== $branchB) {
+                try {
+                    $data = (new BranchReportingService())->compareBranches($companyId, $branchA, $branchB);
+                } catch (\Throwable $e) {
+                    SessionManager::flash('error', $e->getMessage());
+                }
             }
-        }
 
-        $allowed = (new BranchAccessService())->allowedBranchIds($companyId);
-        $this->view('company/branch-dashboard/compare', [
-            'title' => __('branch_comparison'),
-            'comparison' => $data,
-            'branchA' => $branchA,
-            'branchB' => $branchB,
-            'branches' => $this->branchOptions($companyId, $allowed),
-            'csrf' => Csrf::token(),
-        ]);
+            $allowed = (new BranchAccessService())->allowedBranchIds($companyId);
+            $this->view('company/branch-dashboard/compare', [
+                'title' => __('branch_comparison'),
+                'comparison' => $data,
+                'branchA' => $branchA,
+                'branchB' => $branchB,
+                'branches' => $this->branchOptions($companyId, $allowed),
+                'csrf' => Csrf::token(),
+            ]);
+        });
     }
 
     public function reports(): void
     {
-        rateb_bootstrap_ops_tenant();
-        $companyId = (int) TenantContext::companyId();
-        $type = (string) $this->input('type', 'sales');
-        $svc = new BranchReportingService();
-        $rows = match ($type) {
-            'profit' => $svc->reportProfitByBranch($companyId),
-            'expenses' => $svc->reportExpensesByBranch($companyId),
-            'inventory' => $svc->reportInventoryByBranch($companyId),
-            'employees' => $svc->reportEmployeesByBranch($companyId),
-            default => $svc->reportSalesByBranch($companyId),
-        };
+        $this->branchOpsSafe(function (): void {
+            rateb_bootstrap_ops_tenant();
+            $companyId = (int) TenantContext::companyId();
+            $type = (string) $this->input('type', 'sales');
+            $svc = new BranchReportingService();
+            switch ($type) {
+                case 'profit':
+                    $rows = $svc->reportProfitByBranch($companyId);
+                    break;
+                case 'expenses':
+                    $rows = $svc->reportExpensesByBranch($companyId);
+                    break;
+                case 'inventory':
+                    $rows = $svc->reportInventoryByBranch($companyId);
+                    break;
+                case 'employees':
+                    $rows = $svc->reportEmployeesByBranch($companyId);
+                    break;
+                default:
+                    $rows = $svc->reportSalesByBranch($companyId);
+                    break;
+            }
 
-        $this->view('company/branch-dashboard/reports', [
-            'title' => __('branch_reports'),
-            'type' => $type,
-            'rows' => $rows,
-            'csrf' => Csrf::token(),
-        ]);
+            $this->view('company/branch-dashboard/reports', [
+                'title' => __('branch_reports'),
+                'type' => $type,
+                'rows' => $rows,
+                'csrf' => Csrf::token(),
+            ]);
+        });
     }
 
     /** @param array<int, int> $allowedIds */
@@ -96,8 +128,11 @@ final class BranchDashboardController extends Controller
 
 final class InterBranchTransfersController extends Controller
 {
+    use BranchOpsErrorHandling;
+
     public function index(): void
     {
+        $this->branchOpsSafe(function (): void {
         rateb_bootstrap_ops_tenant();
         $companyId = (int) TenantContext::companyId();
         if (!$this->transfersTableReady()) {
@@ -127,10 +162,12 @@ final class InterBranchTransfersController extends Controller
             'items' => $rows,
             'csrf' => Csrf::token(),
         ]);
+        });
     }
 
     public function create(): void
     {
+        $this->branchOpsSafe(function (): void {
         rateb_bootstrap_ops_tenant();
         $companyId = (int) TenantContext::companyId();
         $this->view('company/branch-transfers/form', [
@@ -138,10 +175,12 @@ final class InterBranchTransfersController extends Controller
             'branches' => (new BranchService())->listForCompany($companyId),
             'csrf' => Csrf::token(),
         ]);
+        });
     }
 
     public function store(): void
     {
+        $this->branchOpsSafe(function (): void {
         rateb_bootstrap_ops_tenant();
         Csrf::verifyOrAbort();
         $companyId = (int) TenantContext::companyId();
@@ -178,10 +217,12 @@ final class InterBranchTransfersController extends Controller
         $model->create($data);
         SessionManager::flash('success', __('saved'));
         $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+        });
     }
 
     public function approve(array $params): void
     {
+        $this->branchOpsSafe(function () use ($params): void {
         rateb_bootstrap_ops_tenant();
         Csrf::verifyOrAbort();
         $id = (int) ($params['id'] ?? 0);
@@ -203,6 +244,7 @@ final class InterBranchTransfersController extends Controller
         ]);
         SessionManager::flash('success', __('approved'));
         $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+        });
     }
 
     private function transfersTableReady(): bool
@@ -219,16 +261,20 @@ final class InterBranchTransfersController extends Controller
 
 final class BranchFinancialReportsController extends Controller
 {
+    use BranchOpsErrorHandling;
+
     public function index(): void
     {
-        rateb_bootstrap_ops_tenant();
-        $companyId = (int) TenantContext::companyId();
-        $branches = (new BranchService())->listForCompany($companyId);
-        $this->view('company/branch-financial/index', [
-            'title' => __('branch_financial_reports'),
-            'branches' => $branches,
-            'canConsolidated' => function_exists('rateb_can') && rateb_can('branch.financial.consolidated'),
-        ]);
+        $this->branchOpsSafe(function (): void {
+            rateb_bootstrap_ops_tenant();
+            $companyId = (int) TenantContext::companyId();
+            $branches = (new BranchService())->listForCompany($companyId);
+            $this->view('company/branch-financial/index', [
+                'title' => __('branch_financial_reports'),
+                'branches' => $branches,
+                'canConsolidated' => function_exists('rateb_can') && rateb_can('branch.financial.consolidated'),
+            ]);
+        });
     }
 
     public function profitLoss(): void
@@ -283,11 +329,17 @@ final class BranchFinancialReportsController extends Controller
         $to = trim((string) ($_GET['to'] ?? date('Y-m-d')));
         $type = (string) ($_GET['type'] ?? 'pl');
         $svc = new BranchFinancialReportingService();
-        $report = match ($type) {
-            'bs' => $svc->consolidatedBalanceSheet($companyId, $to),
-            'cf' => $svc->consolidatedCashFlow($companyId, $from, $to),
-            default => $svc->consolidatedProfitAndLoss($companyId, $from, $to),
-        };
+        switch ($type) {
+            case 'bs':
+                $report = $svc->consolidatedBalanceSheet($companyId, $to);
+                break;
+            case 'cf':
+                $report = $svc->consolidatedCashFlow($companyId, $from, $to);
+                break;
+            default:
+                $report = $svc->consolidatedProfitAndLoss($companyId, $from, $to);
+                break;
+        }
         $interBranch = (new ConsolidationEliminationService())->interBranchBalances($companyId);
         $this->view('company/branch-financial/consolidated', [
             'title' => __('consolidated_financial_reports'),

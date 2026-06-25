@@ -16,12 +16,26 @@ use Rateb\App\Models\Branch;
  */
 final class BranchAccessService
 {
+    private static bool $bootstrapping = false;
+
     public function bootstrap(?int $companyId = null): void
     {
         if (BranchContext::isBootstrapped()) {
             return;
         }
+        if (self::$bootstrapping) {
+            return;
+        }
+        self::$bootstrapping = true;
+        try {
+            $this->doBootstrap($companyId);
+        } finally {
+            self::$bootstrapping = false;
+        }
+    }
 
+    private function doBootstrap(?int $companyId): void
+    {
         $companyId = $this->resolveCompanyId($companyId);
         if ($companyId < 1) {
             BranchContext::setBootstrapped(0, true, []);

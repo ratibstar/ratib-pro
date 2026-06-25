@@ -52,49 +52,105 @@ final class BranchReportingService
     {
         TenantContext::setCompanyId($companyId);
 
-        $sales = (new PurchaseOrder())->queryOne(
+        $salesTotal = $this->branchMetricSum(
+            'rateb_purchase_orders',
             "SELECT COALESCE(SUM(total_amount), 0) AS total FROM rateb_purchase_orders
              WHERE company_id = :cid AND branch_id = :bid AND status IN ('approved','completed','received')",
             ['cid' => $companyId, 'bid' => $branchId]
         );
-        $purchases = (new PurchaseOrder())->queryOne(
+        $purchasesTotal = $this->branchMetricSum(
+            'rateb_purchase_orders',
             "SELECT COALESCE(SUM(total_amount), 0) AS total FROM rateb_purchase_orders
              WHERE company_id = :cid AND branch_id = :bid",
             ['cid' => $companyId, 'bid' => $branchId]
         );
-        $expenses = (new JournalEntry())->queryOne(
+        $expenseTotal = $this->branchMetricSum(
+            'rateb_journal_entries',
             "SELECT COALESCE(SUM(jl.debit), 0) AS total
              FROM rateb_journal_entries je
              INNER JOIN rateb_journal_lines jl ON jl.journal_entry_id = je.id
              WHERE je.company_id = :cid AND je.branch_id = :bid AND je.status = 'posted'",
-            ['cid' => $companyId, 'bid' => $branchId]
+            ['cid' => $companyId, 'bid' => $branchId],
+            'branch_id'
         );
-        $employees = (new Employee())->queryOne(
-            'SELECT COUNT(*) AS c FROM rateb_employees WHERE company_id = :cid AND branch_id = :bid AND status = :st',
+        $employeesCount = (int) $this->branchMetricSum(
+            'rateb_employees',
+            'SELECT COUNT(*) AS total FROM rateb_employees WHERE company_id = :cid AND branch_id = :bid AND status = :st',
             ['cid' => $companyId, 'bid' => $branchId, 'st' => 'active']
         );
-        $inventoryValue = (new Inventory())->queryOne(
+        $inventoryValue = $this->branchMetricSum(
+            'rateb_inventory',
             "SELECT COALESCE(SUM(quantity * unit_cost), 0) AS total FROM rateb_inventory
              WHERE company_id = :cid AND branch_id = :bid",
             ['cid' => $companyId, 'bid' => $branchId]
         );
-        $purchaseRequests = (new PurchaseRequest())->queryOne(
-            'SELECT COUNT(*) AS c FROM rateb_purchase_requests WHERE company_id = :cid AND branch_id = :bid',
+        $purchaseRequestsCount = (int) $this->branchMetricSum(
+            'rateb_purchase_requests',
+            'SELECT COUNT(*) AS total FROM rateb_purchase_requests WHERE company_id = :cid AND branch_id = :bid',
             ['cid' => $companyId, 'bid' => $branchId]
         );
 
-        $salesTotal = (float) ($sales['total'] ?? 0);
-        $expenseTotal = (float) ($expenses['total'] ?? 0);
-
         return [
             'sales_total' => $salesTotal,
-            'purchases_total' => (float) ($purchases['total'] ?? 0),
+            'purchases_total' => $purchasesTotal,
             'expenses_total' => $expenseTotal,
             'profit_total' => $salesTotal - $expenseTotal,
-            'employees_count' => (int) ($employees['c'] ?? 0),
-            'inventory_value' => (float) ($inventoryValue['total'] ?? 0),
-            'purchase_requests_count' => (int) ($purchaseRequests['c'] ?? 0),
+            'employees_count' => $employeesCount,
+            'inventory_value' => $inventoryValue,
+            'purchase_requests_count' => $purchaseRequestsCount,
         ];
+    }
+
+    /** @param array<string, mixed> $params */
+    private function branchMetricSum(string $table, string $sql, array $params, string $branchColumn = 'branch_id'): float
+    {
+        if (!$this->tableHasColumn($table, $branchColumn)) {
+            return 0.0;
+        }
+        try {
+            $model = match ($table) {
+                'rateb_purchase_orders' => new PurchaseOrder(),
+                'rateb_journal_entries' => new JournalEntry(),
+                'rateb_employees' => new Employee(),
+                'rateb_inventory' => new Inventory(),
+                'rateb_purchase_requests' => new PurchaseRequest(),
+                default => null,
+            };
+            if ($model === null) {
+                return 0.0;
+            }
+            $row = $model->queryOne($sql, $params);
+            return (float) ($row['total'] ?? 0);
+        } catch (\Throwable $e) {
+            if (DatabaseErrorService::isSchemaIssue($e)) {
+                return 0.0;
+            }
+            throw $e;
+        }
+    }
+
+    /** @var array<string, bool> */
+    private static array $columnCache = [];
+
+    private function tableHasColumn(string $table, string $column): bool
+    {
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, self::$columnCache)) {
+            return self::$columnCache[$key];
+        }
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query(
+                'SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE ' . $pdo->quote($column)
+            );
+            self::$columnCache[$key] = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            self::$columnCache[$key] = false;
+        }
+        return self::$columnCache[$key];
     }
 
     /** @return array<string, mixed> */

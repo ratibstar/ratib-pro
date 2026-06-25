@@ -46,7 +46,11 @@ final class View
 
     public static function partial(string $partial, array $data = []): void
     {
-        $file = RATEB_VIEWS_PATH . '/components/' . str_replace('.', '/', $partial) . '.php';
+        $rel = str_replace('.', '/', $partial) . '.php';
+        $file = RATEB_VIEWS_PATH . '/components/' . $rel;
+        if (!is_file($file)) {
+            $file = RATEB_VIEWS_PATH . '/partials/' . $rel;
+        }
         if (!is_file($file)) {
             return;
         }
