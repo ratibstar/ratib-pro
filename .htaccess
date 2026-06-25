@@ -54,6 +54,8 @@ RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/site/?[\s?] [NC]
 RewriteRule ^rateb-erp/public/site/?$ / [R=301,L,QSA]
 RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/(\S*) [NC]
 RewriteCond %1 !^assets/ [NC]
+RewriteCond %1 !^(erp-health|run-migrations|fix-erp-arabic|fix-cms-arabic)\.php [NC]
+RewriteCond %1 !^admin [NC]
 RewriteRule ^rateb-erp/public/(.*)$ /$1 [R=301,L]
 
 # rateb.sa — ERP marketing site at domain root (not /rateb-erp/public/site)
@@ -209,6 +211,12 @@ RewriteRule ^ - [L]
 
 # RATEB ERP — folder alias (/rateb-erp/ without /public/)
 RewriteRule ^rateb-erp/?$ rateb-erp/public/admin [R=302,L]
+
+# RATEB ERP — utility scripts (legacy 301 may land on /erp-health.php etc.)
+RewriteRule ^erp-health\.php$ rateb-erp/public/erp-health.php [L,QSA]
+RewriteRule ^run-migrations\.php$ rateb-erp/public/run-migrations.php [L,QSA]
+RewriteRule ^fix-erp-arabic\.php$ rateb-erp/public/fix-erp-arabic.php [L,QSA]
+RewriteRule ^fix-cms-arabic\.php$ rateb-erp/public/fix-cms-arabic.php [L,QSA]
 
 # RATEB ERP — front controller (before site catch-all; pass path as ?route=)
 RewriteCond %{REQUEST_URI} ^/rateb-erp/public/ [NC]

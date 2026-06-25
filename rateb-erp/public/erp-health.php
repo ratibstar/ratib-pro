@@ -1,9 +1,30 @@
 <?php
 declare(strict_types=1);
 
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 header('Content-Type: text/plain; charset=UTF-8');
 
 define('RATEB_ENV_NO_SESSION', true);
+define('RATEB_HEALTH_PROBE', true);
+
+register_shutdown_function(static function (): void {
+    $err = error_get_last();
+    if ($err === null || !in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        return;
+    }
+    if (headers_sent()) {
+        return;
+    }
+    http_response_code(500);
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode([
+        'ok' => false,
+        'fatal' => $err['message'] ?? 'unknown',
+        'file' => ($err['file'] ?? '') . ':' . ($err['line'] ?? 0),
+    ], JSON_UNESCAPED_UNICODE);
+});
 
 $ratebRoot = realpath(dirname(__FILE__, 2));
 if ($ratebRoot === false) {
@@ -15,6 +36,12 @@ if (!defined('RATEB_ROOT')) {
 
 $probe = isset($_GET['probe']) ? (string) $_GET['probe'] : '';
 $dispatchRoute = isset($_GET['dispatch']) ? (string) $_GET['dispatch'] : '';
+
+if ($probe === 'ping') {
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => true, 'probe' => 'ping', 'php' => PHP_VERSION, 'ts' => time()], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 $steps = [];
 try {
@@ -86,7 +113,7 @@ try {
                 'title' => 'Dashboard probe',
                 'metrics' => $report['dashboard']['metrics'] ?? [],
                 'charts' => $report['dashboard']['charts'] ?? [],
-                'csrf' => \Rateb\App\Core\Csrf::token(),
+                'csrf' => 'probe',
             ], 'main');
             $html = (string) ob_get_clean();
             $report['dashboard']['render_len'] = strlen($html);
@@ -111,6 +138,7 @@ try {
             exit;
         }
         $adminId = (int) ($adminRow['id'] ?? 0);
+        \Rateb\App\Core\SessionManager::start();
         $_SESSION['rateb_user_id'] = $adminId;
         $_SESSION['rateb_is_super_admin'] = 1;
         $_SESSION['rateb_company_id'] = null;

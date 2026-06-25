@@ -80,7 +80,9 @@ final class Bootstrap
         }
         self::loadConfig($basePath);
         self::ensureStorage($basePath);
-        SessionManager::start();
+        if (!defined('RATEB_HEALTH_PROBE') || !RATEB_HEALTH_PROBE) {
+            SessionManager::start();
+        }
         if (function_exists('rateb_init_marketing_locale')) {
             rateb_init_marketing_locale();
         }
