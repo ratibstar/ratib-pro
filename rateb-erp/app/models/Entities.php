@@ -412,7 +412,7 @@ final class ApiToken extends Model
 {
     protected string $table = 'rateb_api_tokens';
     protected bool $tenantScoped = false;
-    protected array $fillable = ['user_id', 'company_id', 'token_hash', 'name', 'abilities', 'last_used_at', 'expires_at'];
+    protected array $fillable = ['user_id', 'company_id', 'branch_id', 'token_hash', 'name', 'abilities', 'last_used_at', 'expires_at'];
 }
 
 final class SupportTicket extends Model

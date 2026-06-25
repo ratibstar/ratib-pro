@@ -146,4 +146,57 @@ trait AccountingBranchScope
         $row = (new JournalEntry())->queryOne($sql, $params);
         return $row ?: null;
     }
+
+    /**
+     * Branch filter on operational tables (purchase_orders, suppliers, etc.).
+     *
+     * @param array<string, mixed> $params
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    protected function scopeOperationalSql(string $sql, array $params, string $alias, string $table, ?int $branchId = null): array
+    {
+        if ($branchId !== null && $branchId > 0) {
+            $col = ($alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '') . 'branch_id';
+            $key = '_ops_bf_single';
+            return [$sql . (preg_match('/\bWHERE\b/i', $sql) ? ' AND ' : ' WHERE ') . $col . ' = :' . $key, array_merge($params, [$key => $branchId])];
+        }
+        if (!$this->tableColumnExists($table, 'branch_id')) {
+            return [$sql, $params];
+        }
+        return $this->accountingBranch()->appendFilter($sql, $params, $alias, 'branch_id');
+    }
+
+    /**
+     * LEFT JOIN journal entries — keep rows without JE; constrain when JE exists.
+     *
+     * @param array<string, mixed> $params
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    protected function scopeOptionalJournalEntrySql(string $sql, array $params, string $alias = 'je', ?int $branchId = null): array
+    {
+        $safe = preg_replace('/[^a-z_]/', '', $alias);
+        if ($branchId !== null && $branchId > 0) {
+            $key = '_oje_bf_single';
+            return [$sql . ' AND (' . $safe . '.id IS NULL OR ' . $safe . '.branch_id = :' . $key . ')', array_merge($params, [$key => $branchId])];
+        }
+        $ids = $this->accountingBranch()->effectiveBranchIds();
+        if ($ids === []) {
+            return [$sql, $params];
+        }
+        $parts = [];
+        $extra = [];
+        foreach ($ids as $i => $id) {
+            $key = '_oje_bf_' . $i;
+            $parts[] = ':' . $key;
+            $extra[$key] = $id;
+        }
+        return [$sql . ' AND (' . $safe . '.id IS NULL OR ' . $safe . '.branch_id IN (' . implode(',', $parts) . '))', array_merge($params, $extra)];
+    }
+
+    /** @param array<string, mixed> $params @return array<int, array<string, mixed>> */
+    protected function operationalScopedQuery(string $sql, array $params, string $alias, string $table): array
+    {
+        [$sql, $params] = $this->scopeOperationalSql($sql, $params, $alias, $table);
+        return (new JournalEntry())->query($sql, $params);
+    }
 }

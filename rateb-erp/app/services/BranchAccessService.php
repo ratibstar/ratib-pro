@@ -72,6 +72,68 @@ final class BranchAccessService
         BranchContext::setBootstrapped($companyId, false, $allowed);
     }
 
+    /** API tokens: no session — resolve branch access from user + optional token branch claim. */
+    public function bootstrapForApi(int $companyId, int $userId, ?int $tokenBranchId = null): void
+    {
+        BranchContext::reset();
+        if ($companyId < 1) {
+            BranchContext::setBootstrapped(0, true, []);
+            return;
+        }
+
+        $companyBranchIds = $this->branchIdsForCompany($companyId);
+        if ($userId < 1) {
+            BranchContext::setBootstrapped($companyId, true, $companyBranchIds);
+            if ($tokenBranchId !== null && $tokenBranchId > 0) {
+                BranchContext::setBootstrapped($companyId, false, [$tokenBranchId]);
+            }
+            return;
+        }
+
+        $assigned = (new BranchService())->getUserBranchIds($userId);
+        $accessAll = $assigned === [] || $this->userHasAccessAllPermissionForUser($userId, $companyId)
+            || $this->userHasHeadOfficeRoleForUser($userId, $companyId);
+
+        if ($accessAll) {
+            BranchContext::setBootstrapped($companyId, true, $companyBranchIds);
+        } else {
+            $allowed = array_values(array_intersect($assigned, $companyBranchIds));
+            if ($allowed === []) {
+                $main = (new BranchService())->defaultBranchId($companyId);
+                $allowed = $main > 0 ? [$main] : [];
+            }
+            BranchContext::setBootstrapped($companyId, false, $allowed);
+        }
+
+        if ($tokenBranchId !== null && $tokenBranchId > 0) {
+            if (!$this->canAccessBranch($tokenBranchId)) {
+                BranchContext::setBootstrapped($companyId, false, []);
+                return;
+            }
+            BranchContext::setBootstrapped($companyId, false, [$tokenBranchId]);
+            BranchContext::setActiveFilterBranchId($tokenBranchId);
+        }
+    }
+
+    private function userHasAccessAllPermissionForUser(int $userId, int $companyId): bool
+    {
+        return (new AuthorizationService())->userHasPermission($userId, 'branch.access_all');
+    }
+
+    private function userHasHeadOfficeRoleForUser(int $userId, int $companyId): bool
+    {
+        $row = (new \Rateb\App\Models\User())->queryOne(
+            'SELECT r.slug FROM rateb_user_roles ur
+             INNER JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid
+               AND (r.company_id IS NULL OR r.company_id = 0 OR r.company_id = :cid)
+               AND r.slug IN (\'hq_admin\', \'hq_manager\', \'company-full-access\')
+             LIMIT 1',
+            ['uid' => $userId, 'cid' => $companyId]
+        );
+        return $row !== null;
+    }
+
     /** HQ users with access_all may narrow to one branch via session switcher. */
     private function applyHeadOfficeBranchFilter(): void
     {

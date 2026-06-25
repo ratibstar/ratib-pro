@@ -107,9 +107,13 @@ final class ApiAuthMiddleware implements MiddlewareInterface
         \Rateb\App\Core\TenantContext::setApiModules(is_array($abilities) ? $abilities : []);
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
         \Rateb\App\Core\TenantContext::setSuperAdmin(false);
-        if (function_exists('rateb_bootstrap_branch_context')) {
-            rateb_bootstrap_branch_context($companyId);
+        $userId = (int) ($tokenRow['user_id'] ?? 0);
+        $tokenBranchId = isset($tokenRow['branch_id']) ? (int) $tokenRow['branch_id'] : null;
+        if ($tokenBranchId !== null && $tokenBranchId < 1) {
+            $tokenBranchId = null;
         }
+        \Rateb\App\Core\BranchContext::reset();
+        (new \Rateb\App\Services\BranchAccessService())->bootstrapForApi($companyId, $userId, $tokenBranchId);
         return true;
     }
 }

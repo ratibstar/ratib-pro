@@ -20,13 +20,27 @@ final class ApiTokenService
 
         $expiresAt = $expiresDays ? date('Y-m-d H:i:s', time() + ($expiresDays * 86400)) : null;
         $modules = [];
+        $branchId = null;
         if (!empty($user['company_id'])) {
             $modules = (new PlanLimitService())->getLimits((int) $user['company_id'])['modules'] ?? [];
+        }
+        if (function_exists('rateb_resolve_create_branch_id')) {
+            $resolved = rateb_resolve_create_branch_id();
+            if ($resolved > 0) {
+                $branchId = $resolved;
+            }
+        }
+        if ($branchId === null) {
+            $portalBranch = (int) (\Rateb\App\Core\SessionManager::get('rateb_portal_branch_id', 0) ?? 0);
+            if ($portalBranch > 0) {
+                $branchId = $portalBranch;
+            }
         }
 
         (new ApiToken())->create([
             'user_id' => $userId,
             'company_id' => $user['company_id'],
+            'branch_id' => $branchId,
             'token_hash' => $hash,
             'name' => $name,
             'abilities' => json_encode($modules),

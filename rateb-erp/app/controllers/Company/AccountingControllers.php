@@ -1018,10 +1018,12 @@ final class JournalEntriesController extends Controller
     public function index(): void
     {
         $companyId = rateb_resolve_ops_company_id();
+        rateb_bootstrap_branch_context($companyId > 0 ? $companyId : null);
+        [$branchFilter, $branchParams] = (new \Rateb\App\Services\BranchIsolationService())->sqlFilter('', 'branch_id');
         $model = new JournalEntry();
         $items = $companyId > 0 ? $model->query(
-            'SELECT * FROM rateb_journal_entries WHERE company_id = :cid ORDER BY id DESC LIMIT 100',
-            ['cid' => $companyId]
+            'SELECT * FROM rateb_journal_entries WHERE company_id = :cid' . $branchFilter . ' ORDER BY id DESC LIMIT 100',
+            array_merge(['cid' => $companyId], $branchParams)
         ) : [];
 
         $this->view('company/journal-entries/index', [
@@ -1036,6 +1038,8 @@ final class JournalEntriesController extends Controller
     public function entryApproval(): void
     {
         $companyId = rateb_resolve_ops_company_id();
+        rateb_bootstrap_branch_context($companyId > 0 ? $companyId : null);
+        [$branchFilter, $branchParams] = (new \Rateb\App\Services\BranchIsolationService())->sqlFilter('', 'branch_id');
         $statusFilter = trim((string) ($_GET['status'] ?? 'all'));
         $dateFrom = trim((string) ($_GET['from'] ?? ''));
         $dateTo = trim((string) ($_GET['to'] ?? ''));
@@ -1067,14 +1071,14 @@ final class JournalEntriesController extends Controller
         $sql .= ' ORDER BY id DESC LIMIT ' . $perPage;
 
         $model = new JournalEntry();
-        $items = $companyId > 0 ? $model->query($sql, $params) : [];
+        $items = $companyId > 0 ? $model->query($sql . $branchFilter, array_merge($params, $branchParams)) : [];
         $statsRow = $companyId > 0 ? $model->queryOne(
             'SELECT COUNT(*) AS total,
                     SUM(status = :draft) AS pending,
                     SUM(status = :posted) AS approved
              FROM rateb_journal_entries
-             WHERE company_id = :cid AND source_type = :manual',
-            ['cid' => $companyId, 'manual' => 'manual', 'draft' => 'draft', 'posted' => 'posted']
+             WHERE company_id = :cid AND source_type = :manual' . $branchFilter,
+            array_merge(['cid' => $companyId, 'manual' => 'manual', 'draft' => 'draft', 'posted' => 'posted'], $branchParams)
         ) : null;
 
         $this->view('company/accounting/entry-approval', [

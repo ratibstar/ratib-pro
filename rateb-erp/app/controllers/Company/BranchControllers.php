@@ -274,6 +274,76 @@ final class BranchFinancialReportsController extends Controller
         ], $this->layout());
     }
 
+    public function consolidatedTrialBalance(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $report = (new BranchFinancialReportingService())->consolidatedTrialBalance($companyId);
+        $this->view('company/branch-financial/consolidated-tb', [
+            'title' => __('consolidated_trial_balance'),
+            'report' => $report,
+        ], $this->layout());
+    }
+
+    public function consolidatedGeneralLedger(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $from = trim((string) ($_GET['from'] ?? date('Y-01-01')));
+        $to = trim((string) ($_GET['to'] ?? date('Y-m-d')));
+        $report = (new BranchFinancialReportingService())->consolidatedGeneralLedger($companyId, $from, $to);
+        $this->view('company/branch-financial/consolidated-gl', [
+            'title' => __('consolidated_general_ledger'),
+            'report' => $report,
+            'from' => $from,
+            'to' => $to,
+        ], $this->layout());
+    }
+
+    public function branchArAging(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $report = (new BranchFinancialReportingService())->branchArAging($companyId);
+        $this->view('company/branch-financial/ar-aging', [
+            'title' => __('branch_ar_aging'),
+            'report' => $report,
+        ], $this->layout());
+    }
+
+    public function branchApAging(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $report = (new BranchFinancialReportingService())->branchApAging($companyId);
+        $this->view('company/branch-financial/ap-aging', [
+            'title' => __('branch_ap_aging'),
+            'report' => $report,
+        ], $this->layout());
+    }
+
+    public function branchReceivables(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $report = (new BranchFinancialReportingService())->branchReceivables($companyId);
+        $this->view('company/branch-financial/receivables', [
+            'title' => __('branch_receivables'),
+            'report' => $report,
+        ], $this->layout());
+    }
+
+    public function branchPayables(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) TenantContext::companyId();
+        $report = (new BranchFinancialReportingService())->branchPayables($companyId);
+        $this->view('company/branch-financial/payables', [
+            'title' => __('branch_payables'),
+            'report' => $report,
+        ], $this->layout());
+    }
+
     /** @param array<string, mixed>|null $report */
     private function renderFinancial(string $view, string $title, ?array $report, int $companyId, int $branchId, string $from, string $to): void
     {

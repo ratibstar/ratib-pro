@@ -1157,7 +1157,6 @@ final class AccountingService
     /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_posted: float} */
     public function accountsPayable(?int $companyId): array
     {
-        $pdo = Database::connection();
         $sql = "SELECT po.id, po.order_no, po.order_date, po.status, po.total_amount, po.supplier_id,
                        s.name AS supplier_name, s.code AS supplier_code,
                        je.id AS journal_id, je.entry_no,
@@ -1178,10 +1177,10 @@ final class AccountingService
             $sql .= ' AND po.company_id = :cid';
             $params['cid'] = $companyId;
         }
+        [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
+        [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
         $sql .= ' ORDER BY po.order_date DESC, po.id DESC LIMIT 200';
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $rows = (new JournalEntry())->query($sql, $params);
         $totalOpen = 0.0;
         $totalPosted = 0.0;
         foreach ($rows as $row) {
@@ -1201,8 +1200,7 @@ final class AccountingService
         if ($companyId === null || $companyId < 1 || $supplierId < 1) {
             return 0.0;
         }
-        $row = (new JournalEntry())->queryOne(
-            "SELECT COALESCE(SUM(GREATEST(po.total_amount - COALESCE(sp.paid, 0), 0)), 0) AS due
+        $sql = "SELECT COALESCE(SUM(GREATEST(po.total_amount - COALESCE(sp.paid, 0), 0)), 0) AS due
              FROM rateb_purchase_orders po
              INNER JOIN rateb_journal_entries je ON je.source_type = 'purchase_order'
                  AND je.source_id = po.id AND je.status = 'posted'
@@ -1212,9 +1210,11 @@ final class AccountingService
                  GROUP BY purchase_order_id
              ) sp ON sp.purchase_order_id = po.id
              WHERE po.company_id = :cid AND po.supplier_id = :sid
-               AND po.status IN ('sent','confirmed','partial','received')",
-            ['cid' => $companyId, 'sid' => $supplierId]
-        );
+               AND po.status IN ('sent','confirmed','partial','received')";
+        $params = ['cid' => $companyId, 'sid' => $supplierId];
+        [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
+        [$sql, $params] = $this->scopeJournalEntrySql($sql, $params, 'je');
+        $row = (new JournalEntry())->queryOne($sql, $params);
 
         return (float) ($row['due'] ?? 0);
     }
@@ -1225,15 +1225,17 @@ final class AccountingService
         if ($companyId === null || $companyId < 1 || $poId < 1) {
             return null;
         }
-        $po = (new JournalEntry())->queryOne(
-            'SELECT po.*, s.name AS supplier_name, je.id AS journal_id
+        $sql = 'SELECT po.*, s.name AS supplier_name, je.id AS journal_id
              FROM rateb_purchase_orders po
              LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
              LEFT JOIN rateb_journal_entries je ON je.source_type = \'purchase_order\'
                  AND je.source_id = po.id AND je.status = \'posted\'
-             WHERE po.id = :id AND po.company_id = :cid LIMIT 1',
-            ['id' => $poId, 'cid' => $companyId]
-        );
+             WHERE po.id = :id AND po.company_id = :cid';
+        $params = ['id' => $poId, 'cid' => $companyId];
+        [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
+        [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
+        $sql .= ' LIMIT 1';
+        $po = (new JournalEntry())->queryOne($sql, $params);
         if (!$po || empty($po['journal_id'])) {
             return null;
         }
@@ -1286,6 +1288,8 @@ final class AccountingService
             $params['sid'] = $supplierId;
         }
         $sql .= ' ORDER BY po.order_date DESC, po.id DESC LIMIT 300';
+        [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
+        [$sql, $params] = $this->scopeJournalEntrySql($sql, $params, 'je');
 
         return (new JournalEntry())->query($sql, $params);
     }
@@ -1317,6 +1321,7 @@ final class AccountingService
             $params['ono'] = $orderNo;
         }
         $sql .= ' ORDER BY i.due_date ASC, i.id DESC LIMIT 200';
+        [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
 
         return (new JournalEntry())->query($sql, $params);
     }
@@ -1327,17 +1332,29 @@ final class AccountingService
         if ($companyId === null) {
             return ['rows' => [], 'total_open' => 0.0, 'total_paid' => 0.0];
         }
-        $pdo = Database::connection();
-        $stmt = $pdo->prepare(
-            "SELECT i.*, je.id AS journal_id, je.entry_no
+        $sql = "SELECT i.*, je.id AS journal_id, je.entry_no
              FROM rateb_invoices i
              LEFT JOIN rateb_journal_entries je ON je.source_type = 'invoice'
                  AND je.source_id = i.id AND je.status = 'posted'
-             WHERE i.company_id = :cid AND i.status != 'cancelled'
-             ORDER BY i.issued_at DESC, i.id DESC LIMIT 200"
-        );
-        $stmt->execute(['cid' => $companyId]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+             WHERE i.company_id = :cid AND i.status != 'cancelled'";
+        $params = ['cid' => $companyId];
+        [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
+        $branchIds = $this->accountingBranch()->effectiveBranchIds();
+        if ($branchIds !== []) {
+            $parts = [];
+            foreach ($branchIds as $i => $bid) {
+                $key = '_ar_pob_' . $i;
+                $parts[] = ':' . $key;
+                $params[$key] = $bid;
+            }
+            $sql .= ' AND (je.id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM rateb_purchase_orders _arpo
+                WHERE _arpo.company_id = i.company_id AND _arpo.order_no = i.po_number
+                  AND _arpo.branch_id IN (' . implode(',', $parts) . ')
+            ))';
+        }
+        $sql .= ' ORDER BY i.issued_at DESC, i.id DESC LIMIT 200';
+        $rows = (new JournalEntry())->query($sql, $params);
         $totalOpen = 0.0;
         $totalPaid = 0.0;
         foreach ($rows as $row) {
@@ -1719,10 +1736,17 @@ final class AccountingService
             $poSql .= ' AND order_date <= :to';
             $params['to'] = $toDate;
         }
+        $invParams = $params;
+        $poParams = $params;
+        if ($companyId !== null) {
+            [$invSql, $invParams] = $this->scopeOperationalSql($invSql, $invParams, '', 'rateb_invoices');
+        }
+        [$poSql, $poParams] = $this->scopeOperationalSql($poSql, $poParams, '', 'rateb_purchase_orders');
+        $pdo = Database::connection();
         $invStmt = $pdo->prepare($invSql);
-        $invStmt->execute($params);
+        $invStmt->execute($invParams);
         $poStmt = $pdo->prepare($poSql);
-        $poStmt->execute($params);
+        $poStmt->execute($poParams);
         $invoiceTax = (float) (($invStmt->fetch(PDO::FETCH_ASSOC) ?: [])['t'] ?? 0);
         $poTax = (float) (($poStmt->fetch(PDO::FETCH_ASSOC) ?: [])['t'] ?? 0);
         return [
@@ -1753,6 +1777,7 @@ final class AccountingService
             $sql .= ' AND e.entry_date <= :to';
             $params['to'] = $to;
         }
+        [$sql, $params] = $this->scopeJournalLineSql($sql, $params, 'l', 'e');
         $row = (new JournalEntry())->queryOne($sql, $params) ?: ['dr' => 0, 'cr' => 0];
         $dr = (float) ($row['dr'] ?? 0);
         $cr = (float) ($row['cr'] ?? 0);
@@ -1928,29 +1953,30 @@ final class AccountingService
         if ($companyId === null || $companyId < 1) {
             return null;
         }
-        $bank = (new JournalEntry())->queryOne(
-            'SELECT b.*, a.code AS account_code
+        $bankSql = 'SELECT b.*, a.code AS account_code
              FROM rateb_bank_accounts b
              JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_id
-             WHERE b.id = :id AND b.company_id = :cid LIMIT 1',
-            ['id' => $bankAccountId, 'cid' => $companyId]
-        );
+             WHERE b.id = :id AND b.company_id = :cid';
+        $bankParams = ['id' => $bankAccountId, 'cid' => $companyId];
+        [$bankSql, $bankParams] = $this->scopeBankAccountSql($bankSql, $bankParams, 'b');
+        $bankSql .= ' LIMIT 1';
+        $bank = (new JournalEntry())->queryOne($bankSql, $bankParams);
         if (!$bank) {
             return null;
         }
         $coaId = (int) ($bank['chart_account_id'] ?? 0);
         $bookBalance = $this->chartAccountBalance($companyId, $coaId, (float) ($bank['opening_balance'] ?? 0));
-        $bookLines = (new JournalEntry())->query(
-            'SELECT e.id, e.entry_no, e.entry_date, e.description, e.source_type,
+        $bookSql = 'SELECT e.id, e.entry_no, e.entry_date, e.description, e.source_type,
                     SUM(l.debit) AS debit, SUM(l.credit) AS credit
              FROM rateb_journal_lines l
              JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
              WHERE l.account_id = :aid AND e.company_id = :cid
              GROUP BY e.id
              ORDER BY e.entry_date DESC, e.id DESC
-             LIMIT 100',
-            ['posted' => 'posted', 'aid' => $coaId, 'cid' => $companyId]
-        );
+             LIMIT 100';
+        $bookParams = ['posted' => 'posted', 'aid' => $coaId, 'cid' => $companyId];
+        [$bookSql, $bookParams] = $this->scopeJournalLineSql($bookSql, $bookParams, 'l', 'e');
+        $bookLines = (new JournalEntry())->query($bookSql, $bookParams);
         $statementLines = $this->listBankStatementLines($companyId, $bankAccountId);
         $statementBalance = $this->bankStatementBalance($companyId, $bankAccountId);
         return [
@@ -1970,10 +1996,11 @@ final class AccountingService
         if ($companyId === null) {
             return ['imported' => 0, 'batch' => ''];
         }
-        $bank = (new JournalEntry())->queryOne(
-            'SELECT id FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid LIMIT 1',
-            ['id' => $bankAccountId, 'cid' => $companyId]
-        );
+        $bankLookupSql = 'SELECT b.id FROM rateb_bank_accounts b WHERE b.id = :id AND b.company_id = :cid';
+        $bankLookupParams = ['id' => $bankAccountId, 'cid' => $companyId];
+        [$bankLookupSql, $bankLookupParams] = $this->scopeBankAccountSql($bankLookupSql, $bankLookupParams, 'b');
+        $bankLookupSql .= ' LIMIT 1';
+        $bank = (new JournalEntry())->queryOne($bankLookupSql, $bankLookupParams);
         if (!$bank) {
             return ['imported' => 0, 'batch' => ''];
         }
@@ -2290,9 +2317,11 @@ final class AccountingService
                 GROUP BY a.id, b.amount
                 HAVING budget_amount > 0 OR total_debit > 0 OR total_credit > 0
                 ORDER BY a.code';
-        $rows = (new ChartOfAccount())->query($sql, [
+        $params = [
             'cid' => $companyId, 'cid_b' => $companyId, 'yr' => $fiscalYear, 'posted' => 'posted', 'from' => $from, 'to' => $to,
-        ]);
+        ];
+        [$sql, $params] = $this->scopeJournalLineSql($sql, $params, 'l', 'e');
+        $rows = (new ChartOfAccount())->query($sql, $params);
         $budgetTotal = 0.0;
         $actualTotal = 0.0;
         foreach ($rows as &$row) {

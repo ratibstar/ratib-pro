@@ -13,6 +13,7 @@ use Rateb\App\Models\PurchaseOrder;
 use Rateb\App\Models\PurchaseRequest;
 use Rateb\App\Models\Supplier;
 use Rateb\App\Services\AccountLockoutService;
+use Rateb\App\Services\ApiBranchGuardService;
 use Rateb\App\Services\ApiTokenService;
 use Rateb\App\Services\DashboardService;
 use Rateb\App\Services\Logger;
@@ -20,6 +21,13 @@ use Rateb\App\Services\PlanLimitService;
 
 final class ApiController extends Controller
 {
+    private ApiBranchGuardService $branchGuard;
+
+    public function __construct()
+    {
+        $this->branchGuard = new ApiBranchGuardService();
+    }
+
     public function index(): void
     {
         Response::json([
@@ -82,11 +90,10 @@ final class ApiController extends Controller
             Response::json(['success' => false, 'message' => 'Forbidden'], 403);
             return;
         }
-        $companyId = TenantContext::companyId();
-        if (!$companyId) {
-            Response::json(['success' => false, 'message' => 'No company context'], 403);
+        if (!$this->branchGuard->assertCompanyContext()) {
             return;
         }
+        $companyId = (int) TenantContext::companyId();
         $service = new DashboardService();
         Response::json(['success' => true, 'data' => $service->companyMetrics($companyId)]);
     }
@@ -108,70 +115,114 @@ final class ApiController extends Controller
 
     public function listSuppliers(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         Response::json(['success' => true, 'data' => (new Supplier())->all(100, 0)]);
     }
 
     public function createSupplier(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
-        $id = (new Supplier())->create([
+        if (!$this->branchGuard->rejectForeignBranchId($body)) {
+            return;
+        }
+        $payload = $this->branchGuard->stampCreate([
             'name' => trim((string) ($body['name'] ?? '')),
             'email' => trim((string) ($body['email'] ?? '')),
             'status' => 'active',
+            'branch_id' => isset($body['branch_id']) ? (int) $body['branch_id'] : null,
         ]);
+        $id = (new Supplier())->create($payload);
         Response::json(['success' => true, 'id' => $id], 201);
     }
 
     public function listPurchaseRequests(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         Response::json(['success' => true, 'data' => (new PurchaseRequest())->all(100, 0)]);
     }
 
     public function createPurchaseRequest(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
+        if (!$this->branchGuard->rejectForeignBranchId($body)) {
+            return;
+        }
         $model = new PurchaseRequest();
-        $id = $model->create([
+        $payload = $this->branchGuard->stampCreate([
             'request_no' => $model->generateRequestNo(),
             'title' => trim((string) ($body['title'] ?? '')),
             'status' => 'draft',
             'priority' => $body['priority'] ?? 'medium',
+            'branch_id' => isset($body['branch_id']) ? (int) $body['branch_id'] : null,
         ]);
+        $id = $model->create($payload);
         Response::json(['success' => true, 'id' => $id], 201);
     }
 
     public function listPurchaseOrders(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         Response::json(['success' => true, 'data' => (new PurchaseOrder())->all(100, 0)]);
     }
 
     public function createPurchaseOrder(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
+        if (!$this->branchGuard->rejectForeignBranchId($body)) {
+            return;
+        }
         $model = new PurchaseOrder();
-        $id = $model->create([
+        $payload = $this->branchGuard->stampCreate([
             'order_no' => $model->generateOrderNo(),
             'order_date' => date('Y-m-d'),
             'status' => 'draft',
             'total_amount' => (float) ($body['total_amount'] ?? 0),
+            'branch_id' => isset($body['branch_id']) ? (int) $body['branch_id'] : null,
         ]);
+        $id = $model->create($payload);
         Response::json(['success' => true, 'id' => $id], 201);
     }
 
     public function listInventory(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         Response::json(['success' => true, 'data' => (new Inventory())->all(100, 0)]);
     }
 
     public function createInventory(): void
     {
+        if (!$this->branchGuard->assertCompanyContext()) {
+            return;
+        }
         $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
-        $id = (new Inventory())->create([
+        if (!$this->branchGuard->rejectForeignBranchId($body)) {
+            return;
+        }
+        $payload = $this->branchGuard->stampCreate([
             'item_name' => trim((string) ($body['item_name'] ?? '')),
             'quantity' => (float) ($body['quantity'] ?? 0),
             'unit_cost' => (float) ($body['unit_cost'] ?? 0),
             'status' => 'active',
+            'branch_id' => isset($body['branch_id']) ? (int) $body['branch_id'] : null,
         ]);
+        $id = (new Inventory())->create($payload);
         Response::json(['success' => true, 'id' => $id], 201);
     }
 }
