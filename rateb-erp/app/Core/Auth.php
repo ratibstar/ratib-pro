@@ -169,17 +169,19 @@ final class Auth
             }
         } catch (\Throwable $e) {
             error_log('RATEB remember-me bootstrap: ' . $e->getMessage());
-            SessionManager::forget('rateb_user_id');
-            SessionManager::forget('rateb_is_super_admin');
-            SessionManager::forget('rateb_company_id');
+            self::clearSessionIdentity();
         }
 
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId > 0) {
-            $user = (new User())->find($userId);
-            if (!$user || (string) ($user['status'] ?? '') !== 'active') {
-                self::logout();
-                return;
+            try {
+                $user = (new User())->find($userId);
+                if (!$user || (string) ($user['status'] ?? '') !== 'active') {
+                    self::clearSessionIdentity();
+                }
+            } catch (\Throwable $e) {
+                error_log('RATEB session user lookup: ' . $e->getMessage());
+                self::clearSessionIdentity();
             }
         }
 
@@ -198,5 +200,18 @@ final class Auth
             SessionManager::forget('rateb_portal_branch_id');
             \Rateb\App\Core\BranchContext::reset();
         }
+    }
+
+    /** Clear stale ERP session keys without audit/remember-me side effects (safe during bootstrap). */
+    private static function clearSessionIdentity(): void
+    {
+        SessionManager::forget('rateb_user_id');
+        SessionManager::forget('rateb_is_super_admin');
+        SessionManager::forget('rateb_company_id');
+        SessionManager::forget('rateb_portal_branch_id');
+        SessionManager::forget('rateb_portal');
+        TenantContext::setSuperAdmin(false);
+        TenantContext::setCompanyId(null);
+        \Rateb\App\Core\BranchContext::reset();
     }
 }

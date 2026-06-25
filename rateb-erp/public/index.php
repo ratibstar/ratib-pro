@@ -5,6 +5,11 @@ if (!defined('RATEB_ENV_NO_SESSION')) {
     define('RATEB_ENV_NO_SESSION', true);
 }
 
+if (!headers_sent()) {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+}
+
 register_shutdown_function(static function (): void {
     $err = error_get_last();
     if ($err === null || !in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
@@ -31,10 +36,6 @@ try {
     Rateb\App\Core\Bootstrap::init($ratebRootHint);
 
     Rateb\App\Core\Auth::bootstrapFromSession();
-
-    if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'GET' && session_status() === PHP_SESSION_ACTIVE) {
-        session_write_close();
-    }
 
     $router = new Rateb\App\Core\Router();
 
