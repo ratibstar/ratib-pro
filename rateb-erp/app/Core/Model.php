@@ -88,10 +88,38 @@ abstract class Model
         return [" AND {$col} = :admin_company_filter", ['admin_company_filter' => $filterId]];
     }
 
+    /** @var array<string, bool> */
+    private static array $branchColumnCache = [];
+
+    protected function tableHasBranchColumn(): bool
+    {
+        if (!$this->branchScoped) {
+            return false;
+        }
+        $key = $this->table . '.' . $this->branchColumn;
+        if (array_key_exists($key, self::$branchColumnCache)) {
+            return self::$branchColumnCache[$key];
+        }
+        try {
+            $stmt = $this->db->query(
+                'SHOW COLUMNS FROM `' . str_replace('`', '', $this->table) . '` LIKE '
+                . $this->db->quote($this->branchColumn)
+            );
+            $ok = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+            self::$branchColumnCache[$key] = $ok;
+        } catch (\Throwable $e) {
+            self::$branchColumnCache[$key] = false;
+        }
+        return self::$branchColumnCache[$key];
+    }
+
     /** @return array{0:string,1:array<string,mixed>} */
     protected function branchFilterClause(string $alias = ''): array
     {
-        if (!$this->branchScoped || !function_exists('rateb_branch_filter_sql')) {
+        if (!$this->branchScoped || !function_exists('rateb_branch_filter_sql') || !$this->tableHasBranchColumn()) {
             return ['', []];
         }
         return rateb_branch_filter_sql($alias, $this->branchColumn);

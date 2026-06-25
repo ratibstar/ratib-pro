@@ -9,6 +9,38 @@ use Rateb\App\Models\JournalEntry;
 trait AccountingBranchScope
 {
     private ?BranchIsolationService $accountingBranchIsolation = null;
+    private static ?bool $journalLineBranchColumnExists = null;
+
+    protected function tableColumnExists(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query(
+                'SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE ' . $pdo->quote($column)
+            );
+            $cache[$key] = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            $cache[$key] = false;
+        }
+        return $cache[$key];
+    }
+
+    protected function journalLineBranchColumnExists(): bool
+    {
+        if (self::$journalLineBranchColumnExists !== null) {
+            return self::$journalLineBranchColumnExists;
+        }
+        self::$journalLineBranchColumnExists = $this->tableColumnExists('rateb_journal_lines', 'branch_id');
+        return self::$journalLineBranchColumnExists;
+    }
 
     protected function accountingBranch(): BranchIsolationService
     {
@@ -47,7 +79,7 @@ trait AccountingBranchScope
             $key = '_jl_bf_single';
             return [$sql . ' AND ' . $col . ' = :' . $key, array_merge($params, [$key => $branchId])];
         }
-        if (stripos($sql, 'rateb_journal_lines') !== false) {
+        if (stripos($sql, 'rateb_journal_lines') !== false && $this->journalLineBranchColumnExists()) {
             return $this->accountingBranch()->appendFilter($sql, $params, $lineAlias, 'branch_id');
         }
         return [$sql, $params];
@@ -64,7 +96,7 @@ trait AccountingBranchScope
             $key = '_ba_bf_single';
             return [$sql . (preg_match('/\bWHERE\b/i', $sql) ? ' AND ' : ' WHERE ') . $col . ' = :' . $key, array_merge($params, [$key => $branchId])];
         }
-        if (stripos($sql, 'rateb_bank_accounts') === false) {
+        if (stripos($sql, 'rateb_bank_accounts') === false || !$this->tableColumnExists('rateb_bank_accounts', 'branch_id')) {
             return [$sql, $params];
         }
         return $this->accountingBranch()->appendFilter($sql, $params, $alias, 'branch_id');
@@ -81,7 +113,7 @@ trait AccountingBranchScope
             $key = '_cc_bf_single';
             return [$sql . (preg_match('/\bWHERE\b/i', $sql) ? ' AND ' : ' WHERE ') . $col . ' = :' . $key, array_merge($params, [$key => $branchId])];
         }
-        if (stripos($sql, 'rateb_cost_centers') === false) {
+        if (stripos($sql, 'rateb_cost_centers') === false || !$this->tableColumnExists('rateb_cost_centers', 'branch_id')) {
             return [$sql, $params];
         }
         return $this->accountingBranch()->appendFilter($sql, $params, $alias, 'branch_id');

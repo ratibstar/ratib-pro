@@ -1506,20 +1506,30 @@ final class AccountingService
         $pdo = Database::connection();
         $pdo->prepare('DELETE FROM rateb_journal_lines WHERE journal_entry_id = :id')->execute(['id' => $entryId]);
         $branchId = $this->resolveJournalLineBranchId($entryId);
-        $stmt = $pdo->prepare(
-            'INSERT INTO rateb_journal_lines (journal_entry_id, branch_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :bid, :aid, :cc, :dr, :cr, :memo)'
-        );
+        $hasBranchCol = $this->journalLineBranchColumnExists();
+        if ($hasBranchCol) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO rateb_journal_lines (journal_entry_id, branch_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :bid, :aid, :cc, :dr, :cr, :memo)'
+            );
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :aid, :cc, :dr, :cr, :memo)'
+            );
+        }
         foreach ($lines as $line) {
             $cc = isset($line['cost_center_id']) && (int) $line['cost_center_id'] > 0 ? (int) $line['cost_center_id'] : null;
-            $stmt->execute([
+            $params = [
                 'eid' => $entryId,
-                'bid' => $branchId > 0 ? $branchId : null,
                 'aid' => (int) $line['account_id'],
                 'cc' => $cc,
                 'dr' => $line['debit'],
                 'cr' => $line['credit'],
                 'memo' => $line['memo'] ?? null,
-            ]);
+            ];
+            if ($hasBranchCol) {
+                $params['bid'] = $branchId > 0 ? $branchId : null;
+            }
+            $stmt->execute($params);
         }
     }
 
