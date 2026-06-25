@@ -68,6 +68,12 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
 </div>
 <?php } ?>
 
+<div class="alert alert-info mb-4" role="note">
+    <strong><i class="fas fa-route me-1"></i> الرابط الثابت للنظام</strong>
+    <p class="small mb-2">استخدم دائماً <code>/rateb-erp/public/…</code> — لا تستخدم <code>/admin</code> أو <code>/login</code> في جذر الموقع (تطبيقات أخرى).</p>
+    <code><?php echo htmlspecialchars(control_rateb_erp_public_url('admin'), ENT_QUOTES, 'UTF-8'); ?></code>
+</div>
+
 <div class="alert alert-primary mb-4" role="region" aria-label="روابط مباشرة">
     <h2 class="h5 mb-2"><i class="fas fa-link me-2"></i>روابط مباشرة — بدون تسجيل لوحة التحكم</h2>
     <p class="small mb-2">

@@ -49,14 +49,9 @@ RewriteRule ^pages/enterprise-pack/?$ /enterprise-pack/ [R=302,L]
 RewriteRule ^sitemap\.xml$ public/sitemap.xml [L]
 RewriteRule ^robots\.txt$ public/robots.txt [L]
 
-# Legacy ERP public URLs → clean paths (keep /rateb-erp/public/assets/ for CSS/JS)
+# Legacy ERP marketing URL only (do NOT 301 /rateb-erp/public/admin|login|*.php — conflicts with site /admin, /login)
 RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/site/?[\s?] [NC]
 RewriteRule ^rateb-erp/public/site/?$ / [R=301,L,QSA]
-RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/(\S*) [NC]
-RewriteCond %1 !^assets/ [NC]
-RewriteCond %1 !^(erp-health|run-migrations|fix-erp-arabic|fix-cms-arabic)\.php [NC]
-RewriteCond %1 !^admin [NC]
-RewriteRule ^rateb-erp/public/(.*)$ /$1 [R=301,L]
 
 # rateb.sa — ERP marketing site at domain root (not /rateb-erp/public/site)
 RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
@@ -234,6 +229,9 @@ RewriteRule ^(.*)$ public/index.php [QSA,L]
 # LiteSpeed: do not cache unified marketing HTML (/, /site/*, legacy /home redirect).
 <IfModule LiteSpeed>
     CacheDisable public /
+    CacheDisable public /rateb-erp
+    CacheDisable public /rateb-erp/public
+    CacheDisable public /erp-health.php
     CacheDisable public /home
     CacheDisable public /site
     CacheDisable public /pages/home.php

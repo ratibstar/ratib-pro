@@ -160,20 +160,43 @@ final class Auth
 
     public static function bootstrapFromSession(): void
     {
-        if (!SessionManager::get('rateb_user_id')) {
-            $user = (new RememberMeService())->tryLogin();
-            if ($user && self::loginUser($user)) {
-                (new User())->updateLastLogin((int) $user['id']);
+        try {
+            if (!SessionManager::get('rateb_user_id')) {
+                $user = (new RememberMeService())->tryLogin();
+                if ($user && self::loginUser($user)) {
+                    (new User())->updateLastLogin((int) $user['id']);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('RATEB remember-me bootstrap: ' . $e->getMessage());
+            SessionManager::forget('rateb_user_id');
+            SessionManager::forget('rateb_is_super_admin');
+            SessionManager::forget('rateb_company_id');
+        }
+
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        if ($userId > 0) {
+            $user = (new User())->find($userId);
+            if (!$user || (string) ($user['status'] ?? '') !== 'active') {
+                self::logout();
+                return;
             }
         }
+
         TenantContext::setSuperAdmin((bool) SessionManager::get('rateb_is_super_admin'));
         $companyId = SessionManager::get('rateb_company_id');
         TenantContext::setCompanyId($companyId !== null ? (int) $companyId : null);
-        if (function_exists('rateb_bootstrap_portal_branch_from_request')) {
-            rateb_bootstrap_portal_branch_from_request();
-        }
-        if (function_exists('rateb_bootstrap_branch_context')) {
-            rateb_bootstrap_branch_context($companyId !== null ? (int) $companyId : null);
+        try {
+            if (function_exists('rateb_bootstrap_portal_branch_from_request')) {
+                rateb_bootstrap_portal_branch_from_request();
+            }
+            if (function_exists('rateb_bootstrap_branch_context')) {
+                rateb_bootstrap_branch_context($companyId !== null ? (int) $companyId : null);
+            }
+        } catch (\Throwable $e) {
+            error_log('RATEB branch bootstrap: ' . $e->getMessage());
+            SessionManager::forget('rateb_portal_branch_id');
+            \Rateb\App\Core\BranchContext::reset();
         }
     }
 }

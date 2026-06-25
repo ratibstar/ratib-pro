@@ -38,6 +38,13 @@ final class SessionManager
         }
     }
 
+    private static function ensureActive(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE || session_name() !== 'rateb_erp') {
+            self::start();
+        }
+    }
+
     public static function get(string $key, $default = null)
     {
         return $_SESSION[$key] ?? $default;
@@ -45,6 +52,7 @@ final class SessionManager
 
     public static function set(string $key, $value): void
     {
+        self::ensureActive();
         $_SESSION[$key] = $value;
     }
 
@@ -55,6 +63,7 @@ final class SessionManager
 
     public static function flash(string $key, $value = null)
     {
+        self::ensureActive();
         if ($value !== null) {
             $_SESSION['_flash'][$key] = $value;
             return null;

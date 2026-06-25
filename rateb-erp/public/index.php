@@ -32,6 +32,10 @@ try {
 
     Rateb\App\Core\Auth::bootstrapFromSession();
 
+    if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'GET' && session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
     $router = new Rateb\App\Core\Router();
 
     require RATEB_ROOT . '/routes/web.php';

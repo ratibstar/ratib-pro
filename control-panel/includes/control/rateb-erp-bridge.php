@@ -63,22 +63,28 @@ function control_rateb_erp_app_base_url(): string
 }
 
 /**
- * Open ERP module through Control Panel (no /rateb-erp/public/ URL needed).
+ * Open ERP module inside Control Panel (embedded iframe-style via rateb-erp-app.php).
  */
 function control_rateb_erp_app_url(string $route = 'admin'): string
 {
-    return control_rateb_erp_public_url($route);
-}
-
-/** Direct ERP URL — no Control Panel login required. */
-function control_rateb_erp_public_url(string $route = 'admin'): string
-{
-    if (function_exists('rateb_public_url')) {
-        return rateb_public_url($route !== '' ? $route : 'admin');
-    }
     $route = trim($route, '/');
     if ($route === '') {
         $route = 'admin';
+    }
+    $base = control_rateb_erp_app_base_url();
+    $sep = strpos($base, '?') !== false ? '&' : '?';
+    return $base . $sep . 'route=' . rawurlencode($route);
+}
+
+/** Direct canonical ERP URL — always /rateb-erp/public/{route} on rateb.sa (never clean /admin). */
+function control_rateb_erp_public_url(string $route = 'admin'): string
+{
+    $route = trim($route, '/');
+    if ($route === '') {
+        $route = 'admin';
+    }
+    if (function_exists('rateb_public_url')) {
+        return rateb_public_url($route);
     }
     $site = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');
     if ($site === '') {
@@ -95,9 +101,9 @@ function control_rateb_erp_public_url(string $route = 'admin'): string
 
         return $site . '/' . $route;
     }
-    $prefix = $atRoot ? '/rateb-erp/public' : '/rateb-erp/public';
+    $prefix = '/rateb-erp/public';
 
-    return $site . $prefix . '/' . $route;
+    return rtrim($site, '/') . $prefix . '/' . $route;
 }
 
 function control_rateb_erp_ensure_root(): string
