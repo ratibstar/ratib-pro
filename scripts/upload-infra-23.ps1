@@ -1,6 +1,6 @@
 # Upload the 23 infrastructure marketplace files via cPanel Fileman API.
 # Requires: CPANEL_HOST, CPANEL_USER, CPANEL_API_TOKEN (same as GitHub Actions secrets).
-# Optional: CPANEL_PORT (default 2083), CPANEL_REMOTE_BASE (default /home/outratib/public_html)
+# Optional: CPANEL_PORT (default 2083), CPANEL_REMOTE_BASE (default /home/admin/public_html)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -13,7 +13,7 @@ foreach ($name in @('CPANEL_HOST', 'CPANEL_USER', 'CPANEL_API_TOKEN')) {
 }
 
 if (-not $env:CPANEL_PORT) { $env:CPANEL_PORT = '2083' }
-if (-not $env:CPANEL_REMOTE_BASE) { $env:CPANEL_REMOTE_BASE = '/home/outratib/public_html' }
+if (-not $env:CPANEL_REMOTE_BASE) { $env:CPANEL_REMOTE_BASE = '/home/admin/public_html' }
 $env:CPANEL_DEPLOY_MODE = 'list'
 $env:CPANEL_DEPLOY_FILELIST = 'scripts/infra-deploy-23-files.list'
 

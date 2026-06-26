@@ -95,8 +95,7 @@ RATIB ERP — نظام ERP متعدد المستأجرين والفروع:
 
 - `financialSummary()` company-scoped فقط
 - تقارير HQ تتطلب migrations 131–135
-- seed/load tests تحتاج Staging
-- `erp-health.php` على out.ratib.sa — build أساسي بدون JSON probes
+- seed/load tests تحتاج Staging على **rateb.sa**
 
 ### مسار الترقية
 
@@ -182,7 +181,7 @@ RATIB ERP — نظام ERP متعدد المستأجرين والفروع:
 
 ## 5. تقرير الأمان (Security)
 
-**الطريقة:** مراجعة ثابتة + probe على `out.ratib.sa`
+**الطريقة:** مراجعة ثابتة + probe على `rateb.sa`
 
 ### الملخص
 
@@ -277,7 +276,7 @@ httponly ✅ · SameSite Lax · Secure عند HTTPS · cookie `rateb_erp`
 |---------|--------|
 | health ping | ~1–2s |
 | PHP | 7.4.33 |
-| DB | `outratib_rateb-erp` |
+| DB | `admin_rateb-erp` |
 
 ### أبطأ 10 صفحات (تقديري)
 
@@ -326,7 +325,7 @@ ab -n 5000 -c 100 ${RATEB_STAGING_URL}/erp-health.php?probe=ping
 
 ## 7. Production Checklist
 
-**مُدقق:** 2026-06-24 — `out.ratib.sa`
+**مُدقق:** 2026-06-24 — `rateb.sa`
 
 ### Database
 
@@ -389,7 +388,7 @@ ab -n 5000 -c 100 ${RATEB_STAGING_URL}/erp-health.php?probe=ping
 
 ## 8. Deployment Checklist
 
-**الهدف:** Production (`out.ratib.sa`)  
+**الهدف:** Production (`rateb.sa`)  
 **الطريقة:** GitHub Actions fast deploy + sync يدوي لـ `rateb-erp/`
 
 ### Pre-deploy
@@ -507,7 +506,7 @@ SELECT COUNT(*) FROM rateb_branch_transfers WHERE status IN ('completed','failed
 # FINAL RELEASE CERTIFICATION
 
 **تاريخ التنفيذ:** 2026-06-26  
-**البيئة المُختبرة:** Repository محلي + Production `https://out.ratib.sa` (probes فقط)  
+**البيئة المُختبرة:** Repository محلي + Production `https://rateb.sa` (probes فقط)  
 **Staging مستقل:** غير متوفر / غير قابل للوصول من بيئة التدقيق
 
 ---
@@ -525,7 +524,7 @@ SELECT COUNT(*) FROM rateb_branch_transfers WHERE status IN ('completed','failed
 | # | الاختبار | النتيجة | الدليل |
 |---|----------|---------|--------|
 | 1 | PHP syntax — 149 ملف `app/` | **PASS** | `PHP_APP_FILES=149 SYNTAX_ERRORS=0` |
-| 2 | Production DB ping | **PASS** | `erp-health.php` → DB `outratib_rateb-erp` OK |
+| 2 | Production DB ping | **PASS** | `erp-health.php` → DB `admin_rateb-erp` OK |
 | 3 | Production login page | **PASS** | HTTP **200**, **0.72s** |
 | 4 | Production admin redirect | **PASS** | HTTP **302** (auth redirect), **0.39s** |
 | 5 | `BranchAccessService` class | **PASS** | enterprise-test |
@@ -630,7 +629,7 @@ SELECT COUNT(*) FROM rateb_branch_transfers WHERE status IN ('completed','failed
 
 | الفحص | Production | Local/CI |
 |-------|------------|----------|
-| اتصال | ✅ `outratib_rateb-erp` | ❌ connection refused |
+| اتصال | ✅ `admin_rateb-erp` | ❌ connection refused |
 | Migration 135 | ❌ غير مُتحقق | ملف موجود في repo |
 | Migrations 129–134 | ❌ غير مُتحقق | — |
 
@@ -763,4 +762,33 @@ SELECT COUNT(*) FROM rateb_branch_transfers WHERE status IN ('completed','failed
 ---
 
 *FINAL RELEASE CERTIFICATION — 2026-06-26 — ❌ RELEASE BLOCKED*
+
+---
+
+## POST-DEPLOY RE-AUDIT (2026-06-26 بعد push `0b402d9c`)
+
+### Production: rateb.sa — ✅ RC1 منشور
+
+| الفحص | النتيجة الفعلية |
+|-------|----------------|
+| `ratib-erp-build.txt` | `rateb-erp-rc1-20260626-full-bundle` |
+| `?probe=ping` | JSON `{"ok":true,"php":"8.3.31"}` |
+| Migration **135** | **applied** |
+| Migrations 129–134 | **applied** |
+| `erp-security-cert.php` | `ok:true`, critical=**0**, high=**0** |
+| `?probe=branch-ops&company_id=3` | `ok:true` |
+| `/login` | HTTP 200 |
+| `/admin` | HTTP 302 |
+
+**DB:** `admin_rateb-erp` · **PHP:** 8.3.31 · **Deploy:** GitHub Actions → `/home/admin/public_html`
+
+> **الإنتاج الوحيد:** **rateb.sa** (`/home/admin/public_html`)
+
+### القرار بعد إعادة التدقيق
+
+| البيئة | الحالة |
+|--------|--------|
+| **rateb.sa (Production)** | بنية RC1 + migration 135 **منشورة** — تفتقد Staging seed / k6 / E2E / restore |
+| **الشهادة العامة** | **❌ RELEASE BLOCKED** حتى إكمال اختبارات Staging على rateb.sa |
+
 

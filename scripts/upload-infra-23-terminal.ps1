@@ -15,7 +15,7 @@ if ($hasCpanel.Count -eq 3) {
     $env:CPANEL_DEPLOY_MODE = 'list'
     $env:CPANEL_DEPLOY_FILELIST = 'scripts/infra-deploy-23-files.list'
     if (-not $env:CPANEL_PORT) { $env:CPANEL_PORT = '2083' }
-    if (-not $env:CPANEL_REMOTE_BASE) { $env:CPANEL_REMOTE_BASE = '/home/outratib/public_html' }
+    if (-not $env:CPANEL_REMOTE_BASE) { $env:CPANEL_REMOTE_BASE = '/home/admin/public_html' }
     $py = Get-Command python -ErrorAction SilentlyContinue
     if (-not $py) { $py = Get-Command python3 -ErrorAction SilentlyContinue }
     if (-not $py) { throw 'Python not found on PATH' }
