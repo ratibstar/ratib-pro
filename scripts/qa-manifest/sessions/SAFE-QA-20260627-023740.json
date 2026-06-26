@@ -1,0 +1,183 @@
+﻿{
+    "site":  "https://rateb.sa",
+    "finishedAt":  "2026-06-27T02:38:11.3903371+03:00",
+    "productionTouched":  false,
+    "startedAt":  "2026-06-27T02:37:40.7052622+03:00",
+    "sessionTag":  "SAFE-QA-20260627-023740",
+    "stopped":  false,
+    "cleanup":  [
+
+                ],
+    "stopReason":  null,
+    "writes":  [
+                   {
+                       "objectType":  "company",
+                       "objectId":  18,
+                       "action":  "create",
+                       "time":  "2026-06-27T02:37:42.9191667+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "subscription",
+                       "objectId":  6,
+                       "action":  "create_auto_provision",
+                       "time":  "2026-06-27T02:37:44.2105346+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "user",
+                       "objectId":  22,
+                       "action":  "create",
+                       "time":  "2026-06-27T02:37:46.4958476+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "user",
+                       "objectId":  23,
+                       "action":  "delete_verified",
+                       "time":  "2026-06-27T02:38:05.0742601+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "user",
+                       "objectId":  22,
+                       "action":  "delete_verified",
+                       "time":  "2026-06-27T02:38:06.5424008+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "role",
+                       "objectId":  39,
+                       "action":  "delete_verified",
+                       "time":  "2026-06-27T02:38:08.0348447+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "subscription",
+                       "objectId":  6,
+                       "action":  "delete_verified",
+                       "time":  "2026-06-27T02:38:09.6399188+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "company",
+                       "objectId":  18,
+                       "action":  "delete_verified",
+                       "time":  "2026-06-27T02:38:11.0943073+03:00",
+                       "extra":  {
+
+                                 }
+                   }
+               ],
+    "objects":  [
+                    {
+                        "type":  "company",
+                        "id":  18,
+                        "uuid":  "",
+                        "slug":  "QA-COMPANY-20260627023738",
+                        "email":  "",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  null,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023740",
+                        "createdAt":  "2026-06-27T02:37:42.9101595+03:00",
+                        "deletedAt":  "2026-06-27T02:38:11.0943073+03:00",
+                        "extra":  {
+
+                                  }
+                    },
+                    {
+                        "type":  "subscription",
+                        "id":  6,
+                        "uuid":  "",
+                        "slug":  "",
+                        "email":  "",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  18,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023740",
+                        "createdAt":  "2026-06-27T02:37:44.2105346+03:00",
+                        "deletedAt":  "2026-06-27T02:38:09.6399188+03:00",
+                        "extra":  {
+
+                                  }
+                    },
+                    {
+                        "type":  "user",
+                        "id":  22,
+                        "uuid":  "",
+                        "slug":  "",
+                        "email":  "QA-USER-20260627023738@test.local",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  18,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023740",
+                        "createdAt":  "2026-06-27T02:37:46.4958476+03:00",
+                        "deletedAt":  "2026-06-27T02:38:06.5424008+03:00",
+                        "extra":  {
+
+                                  }
+                    },
+                    {
+                        "type":  "role",
+                        "id":  39,
+                        "uuid":  "",
+                        "slug":  "QA-ROLE-RESTRICTED-20260627023738",
+                        "email":  "",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  null,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023740",
+                        "createdAt":  "2026-06-27T02:37:51.7240503+03:00",
+                        "deletedAt":  "2026-06-27T02:38:08.0348447+03:00",
+                        "extra":  {
+
+                                  }
+                    },
+                    {
+                        "type":  "user",
+                        "id":  23,
+                        "uuid":  "",
+                        "slug":  "",
+                        "email":  "QA-USER-RESTRICTED-20260627023738@test.local",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  18,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023740",
+                        "createdAt":  "2026-06-27T02:37:54.0584411+03:00",
+                        "deletedAt":  "2026-06-27T02:38:05.0706588+03:00",
+                        "extra":  {
+
+                                  }
+                    }
+                ]
+}

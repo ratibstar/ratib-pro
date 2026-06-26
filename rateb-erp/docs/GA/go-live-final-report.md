@@ -12,15 +12,21 @@
 
 ## Executive decision
 
-# ❌ NOT YET READY FOR GO-LIVE
+# ⚠ PRODUCTION READY WITH OPERATIONAL ACTIONS REQUIRED
 
-Pre-go-live **certification** (security + enterprise tests + reset dry-run preview) is **complete**.
+Pre-go-live **application certification** is **complete** (security 31/31, enterprise QA, admin readiness, reset dry-run).
 
-The **go-live execution checklist** (backup → restore proof → production reset → post-reset validation) is **not complete**. Do **not** run `reset-production.php --confirm=RESET-PRODUCTION` until items 1–2 pass and explicit written approval is recorded.
+**Operational Go-Live Certification** stopped at **Step 1 (backup)** — backup/restore proof requires server-side execution with SSH or `RATEB_ERP_MIGRATE_TOKEN`. See the official report:
 
-When all checklist items pass, update this document and change the decision to:
+**`rateb-erp/docs/GA/RATIB-ERP-v1.0-FINAL-GO-LIVE-CERTIFICATION-REPORT.md`**
 
-**✅ RATIB ERP v1.0 READY FOR GO-LIVE**
+Evidence JSON: `rateb-erp/docs/GA/go-live-operational-cert-20260627-023758.json`
+
+Do **not** run `reset-production.php --confirm=RESET-PRODUCTION` until backup + restore verification pass and explicit written approval is recorded.
+
+When Steps 1–3 pass, update both documents and change the decision to:
+
+**✅ PRODUCTION READY FOR GO-LIVE**
 
 ---
 

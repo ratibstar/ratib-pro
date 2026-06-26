@@ -1,0 +1,132 @@
+﻿{
+    "startedAt":  "2026-06-27T02:37:44.0282466+03:00",
+    "site":  "https://rateb.sa",
+    "steps":  {
+                  "6_reset_dry_run":  {
+                                          "non_admin_users_to_delete":  2,
+                                          "ok":  true,
+                                          "database":  "admin_rateb-erp",
+                                          "preserved_super_admins":  [
+                                                                         "admin@rateb.sa",
+                                                                         "ahmedashrafabdalmonem77@gmail.com"
+                                                                     ],
+                                          "tables_to_truncate":  94
+                                      },
+                  "5_readiness":  {
+                                      "api":  {
+                                                  "ok":  true,
+                                                  "status":  200
+                                              },
+                                      "companies":  {
+                                                        "ok":  true,
+                                                        "status":  200
+                                                    },
+                                      "permissions":  {
+                                                          "ok":  true,
+                                                          "status":  200
+                                                      },
+                                      "portal":  {
+                                                     "ok":  true,
+                                                     "status":  200
+                                                 },
+                                      "customers":  {
+                                                        "ok":  true,
+                                                        "status":  200
+                                                    },
+                                      "branches":  {
+                                                       "ok":  true,
+                                                       "status":  200
+                                                   },
+                                      "roles":  {
+                                                    "ok":  true,
+                                                    "status":  200
+                                                },
+                                      "notifications":  {
+                                                            "ok":  true,
+                                                            "status":  200
+                                                        },
+                                      "dashboard":  {
+                                                        "ok":  true,
+                                                        "status":  200
+                                                    },
+                                      "login_activity":  {
+                                                             "ok":  true,
+                                                             "status":  200
+                                                         },
+                                      "audit":  {
+                                                    "ok":  true,
+                                                    "status":  200
+                                                },
+                                      "billing_invoices":  {
+                                                               "ok":  true,
+                                                               "status":  200
+                                                           },
+                                      "queue":  {
+                                                    "ok":  true,
+                                                    "status":  200
+                                                },
+                                      "reports":  {
+                                                      "ok":  true,
+                                                      "status":  200
+                                                  },
+                                      "automation":  {
+                                                         "ok":  true,
+                                                         "status":  200
+                                                     },
+                                      "settings":  {
+                                                       "ok":  true,
+                                                       "status":  200
+                                                   },
+                                      "hr":  {
+                                                 "ok":  true,
+                                                 "status":  200
+                                             },
+                                      "login":  {
+                                                    "ok":  true,
+                                                    "uri":  "https://rateb.sa/rateb-erp/public/admin"
+                                                }
+                                  },
+                  "1_backup":  {
+                                   "status":  "BLOCKED",
+                                   "reason":  "RATEB_ERP_MIGRATE_TOKEN not available in agent environment"
+                               },
+                  "3_backup_verify":  {
+                                          "status":  "BLOCKED",
+                                          "reason":  "Requires server-side backup file path"
+                                      },
+                  "4_infrastructure":  {
+                                           "ping":  {
+                                                        "body":  "RATEB ERP OK — PHP 8.3.31",
+                                                        "status":  200
+                                                    },
+                                           "enterprise_cert":  {
+                                                                   "suite_failed":  0,
+                                                                   "status":  200,
+                                                                   "suite_total":  31,
+                                                                   "suite_passed":  31
+                                                               },
+                                           "build_marker":  "rateb-erp-ga-security-20260626",
+                                           "robots":  {
+                                                          "url":  "https://rateb.sa/site/robots.txt",
+                                                          "status":  200
+                                                      },
+                                           "health":  {
+                                                          "body":  "{\"status\":\"ok\"}",
+                                                          "status":  200
+                                                      },
+                                           "security_headers":  {
+                                                                    "xfo":  "SAMEORIGIN,SAMEORIGIN",
+                                                                    "xcto":  "nosniff,nosniff",
+                                                                    "csp":  true,
+                                                                    "hsts":  true
+                                                                }
+                                       },
+                  "2_restore":  {
+                                    "status":  "BLOCKED",
+                                    "reason":  "Requires server CLI + temporary database"
+                                }
+              },
+    "stopped":  false,
+    "stopReason":  null,
+    "finishedAt":  "2026-06-27T02:37:58.6729016+03:00"
+}

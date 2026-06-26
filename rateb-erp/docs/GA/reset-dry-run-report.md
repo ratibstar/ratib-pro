@@ -1,9 +1,9 @@
 # Production Reset Dry-Run Report
 
 **Mode:** dry-run (no data modified)
-**Database:** `admin_rateb-erp`
-**Started:** 2026-06-26T23:32:31+03:00
-**Finished:** 2026-06-26T23:32:31+03:00
+**Database:** admin_rateb-erp
+**Started:** 2026-06-27T02:37:31+03:00
+**Finished:** 2026-06-27T02:37:31+03:00
 **Probe:** `https://rateb.sa/rateb-erp/public/erp-security-cert.php?enterprise=1&reset_dry_run=1`
 
 ## Preserved (never truncated)
@@ -15,12 +15,12 @@
 
 ## Users
 
-- Non-super-admin users to delete: **2**
+- Non-super-admin users to delete: **0**
 
 ### Preserved super-admins
 
-- id=1 `admin@rateb.sa`
-- id=2 `ahmedashrafabdalmonem77@gmail.com`
+- id=10 `admin@rateb.sa`
+- id=11 `ahmedashrafabdalmonem77@gmail.com`
 
 ## Tables to truncate
 
@@ -39,17 +39,17 @@
 | `rateb_asset_maintenance` | 1 | TRUNCATE |
 | `rateb_assets` | 1 | TRUNCATE |
 | `rateb_attendance_records` | 3 | TRUNCATE |
-| `rateb_audit_logs` | 336 | TRUNCATE |
+| `rateb_audit_logs` | 478 | TRUNCATE |
 | `rateb_bank_accounts` | 6 | TRUNCATE |
 | `rateb_bank_statement_lines` | 0 | TRUNCATE |
 | `rateb_blood_donors` | 0 | TRUNCATE |
 | `rateb_blood_units` | 0 | TRUNCATE |
 | `rateb_branch_transfers` | 0 | TRUNCATE |
-| `rateb_branches` | 7 | TRUNCATE |
+| `rateb_branches` | 8 | TRUNCATE |
 | `rateb_budget_lines` | 0 | TRUNCATE |
 | `rateb_cash_vouchers` | 6 | TRUNCATE |
-| `rateb_chart_of_accounts` | 179 | TRUNCATE |
-| `rateb_companies` | 6 | TRUNCATE |
+| `rateb_chart_of_accounts` | 181 | TRUNCATE |
+| `rateb_companies` | 7 | TRUNCATE |
 | `rateb_company_tax_profiles` | 0 | TRUNCATE |
 | `rateb_contract_renewals` | 5 | TRUNCATE |
 | `rateb_contracts` | 9 | TRUNCATE |
@@ -86,7 +86,7 @@
 | `rateb_leave_types` | 11 | TRUNCATE |
 | `rateb_lims_results` | 0 | TRUNCATE |
 | `rateb_lims_samples` | 0 | TRUNCATE |
-| `rateb_login_activity` | 53 | TRUNCATE |
+| `rateb_login_activity` | 122 | TRUNCATE |
 | `rateb_login_barcode_pairs` | 1 | TRUNCATE |
 | `rateb_medical_devices` | 1 | TRUNCATE |
 | `rateb_notification_queue` | 26 | TRUNCATE |
@@ -103,7 +103,7 @@
 | `rateb_purchase_orders` | 5 | TRUNCATE |
 | `rateb_purchase_request_items` | 9 | TRUNCATE |
 | `rateb_purchase_requests` | 7 | TRUNCATE |
-| `rateb_remember_tokens` | 2 | TRUNCATE |
+| `rateb_remember_tokens` | 3 | TRUNCATE |
 | `rateb_rfq` | 5 | TRUNCATE |
 | `rateb_stock_movements` | 14 | TRUNCATE |
 | `rateb_subscriptions` | 3 | TRUNCATE |
@@ -119,16 +119,16 @@
 | `rateb_tenders` | 1 | TRUNCATE |
 | `rateb_two_factor_backup_codes` | 0 | TRUNCATE |
 | `rateb_user_branches` | 1 | TRUNCATE |
-| `rateb_user_roles` | 1 | TRUNCATE |
+| `rateb_user_roles` | 2 | TRUNCATE |
 | `rateb_warehouse_transfers` | 1 | TRUNCATE |
 | `rateb_warehouses` | 16 | TRUNCATE |
 
 ## Upload / cache files
 
 - `/home/admin/domains/rateb.sa/public_html/rateb-erp/storage/uploads`: would remove **64** files
-- `/home/admin/domains/rateb.sa/public_html/rateb-erp/storage/rate-limit`: would remove **25** files
+- `/home/admin/domains/rateb.sa/public_html/rateb-erp/storage/rate-limit`: would remove **26** files
 
 ## NOT executed
 
 `php bin/reset-production.php --confirm=RESET-PRODUCTION` was **not** run.
-Execute only after explicit approval and a verified backup (`php bin/erp-backup.php`).
+Execute only after explicit approval and a verified backup.

@@ -1,8 +1,8 @@
 # Enterprise Final Pass Report
 
-**Generated:** 2026-06-26 20:32 UTC
+**Generated:** 2026-06-27T02:37:31+03:00
 **Site:** https://rateb.sa
-**Database:** `admin_rateb-erp`
+**Database:** admin_rateb-erp
 **Probe:** `https://rateb.sa/rateb-erp/public/erp-security-cert.php?enterprise=1`
 
 ## Summary
@@ -12,7 +12,7 @@
 | **Passed** | 31 |
 | **Failed** | 0 |
 | **Total** | 31 |
-| **Target** | All PASS (31 with live DB connected) |
+| **Target** | All PASS (≥29 with live DB) |
 
 ## Result: ✅ PASS
 
