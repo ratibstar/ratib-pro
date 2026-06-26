@@ -15,6 +15,7 @@ use Rateb\App\Services\BranchReportingService;
 use Rateb\App\Services\BranchService;
 use Rateb\App\Services\ConsolidationEliminationService;
 use Rateb\App\Services\DatabaseErrorService;
+use Rateb\App\Services\InterBranchTransferService;
 
 trait BranchOpsErrorHandling
 {
@@ -182,7 +183,11 @@ final class InterBranchTransfersController extends Controller
     {
         $this->branchOpsSafe(function (): void {
         rateb_bootstrap_ops_tenant();
-        Csrf::verifyOrAbort();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('branch-transfers/create')));
+            return;
+        }
         $companyId = (int) TenantContext::companyId();
         $source = (int) $this->input('source_branch_id', 0);
         $dest = (int) $this->input('dest_branch_id', 0);
@@ -224,7 +229,11 @@ final class InterBranchTransfersController extends Controller
     {
         $this->branchOpsSafe(function () use ($params): void {
         rateb_bootstrap_ops_tenant();
-        Csrf::verifyOrAbort();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
+            return;
+        }
         $id = (int) ($params['id'] ?? 0);
         if ($id < 1) {
             SessionManager::flash('error', __('invalid_request'));
