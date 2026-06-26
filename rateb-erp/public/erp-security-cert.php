@@ -180,8 +180,24 @@ foreach ($findings as $f) {
 $open = array_values(array_filter($findings, static fn (array $f): bool => empty($f['fixed'])));
 
 $enterpriseSuite = null;
+$resetDryRun = null;
 if (isset($_GET['enterprise']) && (string) $_GET['enterprise'] === '1') {
     $enterpriseSuite = rateb_enterprise_suite();
+    if (isset($_GET['reset_dry_run']) && (string) $_GET['reset_dry_run'] === '1') {
+        try {
+            require_once RATEB_ROOT . '/bin/ProductionResetRunner.php';
+            $pdo = \Rateb\App\Core\Database::connection();
+            ob_start();
+            $runner = new ProductionResetRunner($pdo);
+            $runner->run(true);
+            $resetDryRun = [
+                'output' => ob_get_clean(),
+                'report' => $runner->report(),
+            ];
+        } catch (\Throwable $e) {
+            $resetDryRun = ['error' => $e->getMessage()];
+        }
+    }
 }
 
 echo json_encode([
@@ -209,5 +225,6 @@ echo json_encode([
         'document_scan' => 'DocumentBarcodeService::canViewBarcodeRecord + ErpAuthMiddleware on /scan/doc',
     ],
     'enterprise_suite' => $enterpriseSuite,
+    'reset_dry_run' => $resetDryRun,
     'ts' => time(),
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
