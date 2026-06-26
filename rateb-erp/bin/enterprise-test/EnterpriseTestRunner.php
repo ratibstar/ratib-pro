@@ -118,7 +118,7 @@ final class EnterpriseTestRunner
                 $liabAdj = (float) ($elim['liability_adjustment'] ?? 0);
                 $tests[] = $this->test(
                     'Elimination asset/liability symmetric',
-                    abs($assetAdj + $liabAdj) < 0.01 || ($assetAdj === 0.0 && $liabAdj === 0.0)
+                    abs($assetAdj - $liabAdj) < 0.01 || ($assetAdj === 0.0 && $liabAdj === 0.0)
                 );
             } catch (\Throwable $e) {
                 $tests[] = $this->test('Elimination adjustments run', false, $e->getMessage());
@@ -232,7 +232,11 @@ final class EnterpriseTestRunner
         );
         $tests[] = $this->test('SecurityHeaders helper exists', is_file(RATEB_ROOT . '/app/Core/SecurityHeaders.php'));
         $tests[] = $this->test('ApiRateLimiter helper exists', is_file(RATEB_ROOT . '/app/Core/ApiRateLimiter.php'));
-        $tests[] = $this->test('Production reset script exists', is_file(RATEB_ROOT . '/bin/reset-production.php'));
+        $tests[] = $this->test(
+            'Production reset script exists',
+            is_file(RATEB_ROOT . '/bin/reset-production.php')
+                && is_file(RATEB_ROOT . '/bin/ProductionResetRunner.php')
+        );
         return $this->suiteResult($tests);
     }
 

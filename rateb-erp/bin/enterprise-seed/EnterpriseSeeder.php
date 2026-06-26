@@ -31,6 +31,13 @@ final class EnterpriseSeeder
         $this->db = Database::connection();
     }
 
+    /** Idempotent GL + role backfill for companies added after migrations 128/132. */
+    public function backfillPrerequisites(): void
+    {
+        $this->ensureInterBranchGlAccounts();
+        $this->ensureEnterpriseRoles();
+    }
+
     public function seedCompanies(): void
     {
         $existing = (int) $this->db->query('SELECT COUNT(*) FROM rateb_companies')->fetchColumn();
@@ -52,7 +59,34 @@ final class EnterpriseSeeder
             'SELECT id FROM rateb_companies ORDER BY id ASC LIMIT ' . self::TARGET_COMPANIES
         )->fetchAll(\PDO::FETCH_COLUMN));
         $this->ensureInterBranchGlAccounts();
+        $this->ensureEnterpriseRoles();
         echo '  companies: ' . count($this->companyIds) . "\n";
+    }
+
+    /** Backfill HO/branch roles for companies created after migration 128. */
+    private function ensureEnterpriseRoles(): void
+    {
+        if (!$this->tableExists('rateb_roles')) {
+            return;
+        }
+        $this->db->exec(
+            "INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+             SELECT c.id, 'HQ Admin', 'hq_admin', 'Head office — all branches', 1
+             FROM rateb_companies c
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_roles r WHERE r.company_id = c.id AND r.slug = 'hq_admin')"
+        );
+        $this->db->exec(
+            "INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+             SELECT c.id, 'HQ Manager', 'hq_manager', 'Head office manager — all branches read/compare', 1
+             FROM rateb_companies c
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_roles r WHERE r.company_id = c.id AND r.slug = 'hq_manager')"
+        );
+        $this->db->exec(
+            "INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+             SELECT c.id, 'Branch Manager', 'branch_manager', 'Single-branch manager', 1
+             FROM rateb_companies c
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_roles r WHERE r.company_id = c.id AND r.slug = 'branch_manager')"
+        );
     }
 
     private function ensureInterBranchGlAccounts(): void

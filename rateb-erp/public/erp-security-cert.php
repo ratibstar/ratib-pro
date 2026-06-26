@@ -143,6 +143,24 @@ function rateb_security_findings(): array
     return $findings;
 }
 
+/** @return array<string, mixed>|null */
+function rateb_enterprise_suite(): ?array
+{
+    try {
+        require_once RATEB_ROOT . '/bin/enterprise-seed/EnterpriseSeeder.php';
+        (new EnterpriseSeeder())->backfillPrerequisites();
+        require_once RATEB_ROOT . '/bin/enterprise-test/EnterpriseTestRunner.php';
+        return (new EnterpriseTestRunner())->runAll();
+    } catch (\Throwable $e) {
+        return [
+            'passed' => 0,
+            'failed' => 1,
+            'total' => 0,
+            'error' => $e->getMessage(),
+        ];
+    }
+}
+
 $findings = rateb_security_findings();
 $counts = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0];
 foreach ($findings as $f) {
@@ -156,6 +174,11 @@ foreach ($findings as $f) {
 }
 
 $open = array_values(array_filter($findings, static fn (array $f): bool => empty($f['fixed'])));
+
+$enterpriseSuite = null;
+if (isset($_GET['enterprise']) && (string) $_GET['enterprise'] === '1') {
+    $enterpriseSuite = rateb_enterprise_suite();
+}
 
 echo json_encode([
     'ok' => $counts['critical'] === 0 && $counts['high'] === 0,
@@ -181,5 +204,6 @@ echo json_encode([
         'health_probe' => 'erp-health.php public status ok only; admin probes require X-Rateb-Health-Token',
         'document_scan' => 'DocumentBarcodeService::canViewBarcodeRecord + ErpAuthMiddleware on /scan/doc',
     ],
+    'enterprise_suite' => $enterpriseSuite,
     'ts' => time(),
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
