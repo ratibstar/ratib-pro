@@ -1,4 +1,5 @@
 -- RATEB ERP Phase 6 — inter-branch transfer execution (failed status + journal source)
+-- RC1 deploy bundle trigger: 2026-06-26
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
