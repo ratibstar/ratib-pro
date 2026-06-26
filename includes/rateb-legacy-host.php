@@ -9,9 +9,6 @@ if (!function_exists('rateb_legacy_ratib_hosts')) {
     function rateb_legacy_ratib_hosts(): array
     {
         return [
-            // Deprecated hosts — rewrite stored URLs to rateb.sa
-            'out.ratib.sa',
-            'www.out.ratib.sa',
             'ratib.sa',
             'www.ratib.sa',
         ];
