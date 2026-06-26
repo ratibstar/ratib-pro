@@ -205,21 +205,29 @@ jobs:
             echo "::error::/home wrongly routed as country slug (check .htaccess home rule order)"
             BRAND_FAIL=1
           fi
-          ERP_HEALTH_CLEAN="$(curl -sS -o /tmp/erp-health-dash.json -w "%{http_code}" --connect-timeout 8 --max-time 30 \
+          ERP_HEALTH_CLEAN="$(curl -sS -o /tmp/erp-health.json -w "%{http_code}" --connect-timeout 8 --max-time 30 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
-            "${SITE}/erp-health.php?probe=admin-dash" 2>/dev/null || echo "000")"
+            "${SITE}/rateb-erp/public/erp-health.php" 2>/dev/null || echo "000")"
           ERP_HEALTH_CANON="$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 8 --max-time 15 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
-            "${SITE}/rateb-erp/public/erp-health.php?probe=ping" 2>/dev/null || echo "000")"
+            "${SITE}/erp-health.php" 2>/dev/null || echo "000")"
           echo "erp-health-clean=$ERP_HEALTH_CLEAN erp-health-canonical=$ERP_HEALTH_CANON"
           if [ "$ERP_HEALTH_CLEAN" != "200" ] || [ "$ERP_HEALTH_CANON" != "200" ]; then
             echo "::error::ERP health probes failed (clean=$ERP_HEALTH_CLEAN canonical=$ERP_HEALTH_CANON)"
             BRAND_FAIL=1
-          elif ! grep -q '"ok": true' /tmp/erp-health-dash.json 2>/dev/null; then
-            echo "::error::ERP admin-dash probe body not ok: $(head -c 180 /tmp/erp-health-dash.json 2>/dev/null)"
+          elif ! grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' /tmp/erp-health.json 2>/dev/null; then
+            echo "::error::ERP health body missing status ok: $(head -c 180 /tmp/erp-health.json 2>/dev/null)"
             BRAND_FAIL=1
           else
-            echo "erp_admin_dash=ok"
+            echo "erp_health=ok"
+          fi
+          ERP_PROBE_BLOCKED="$(curl -sS -o /tmp/erp-health-probe.json -w "%{http_code}" --connect-timeout 8 --max-time 15 \
+            "${SITE}/rateb-erp/public/erp-health.php?probe=branch-ops" 2>/dev/null || echo "000")"
+          if [ "$ERP_PROBE_BLOCKED" = "200" ]; then
+            echo "::error::ERP branch-ops health probe must be blocked (got HTTP 200)"
+            BRAND_FAIL=1
+          else
+            echo "erp_health_probe_blocked=ok"
           fi
           if [ -n "$LIVE_BUILD" ]; then
             echo "rebrand_build_marker=ok"

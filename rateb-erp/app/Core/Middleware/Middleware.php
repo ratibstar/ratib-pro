@@ -85,13 +85,22 @@ final class ApiAuthMiddleware implements MiddlewareInterface
     public function handle(): bool
     {
         $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        if (!preg_match('/Bearer\s+(\S+)/i', $header, $m)) {
+        $bearer = '';
+        if (preg_match('/Bearer\s+(\S+)/i', $header, $m)) {
+            $bearer = $m[1];
+        }
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if (!\Rateb\App\Core\ApiRateLimiter::allowRequest($method, $bearer !== '' ? $bearer : null)) {
+            Response::json(['success' => false, 'message' => 'Too many requests'], 429);
+            return false;
+        }
+        if ($bearer === '') {
             Response::json(['success' => false, 'message' => 'Unauthorized'], 401);
             return false;
         }
 
         $tokenService = new \Rateb\App\Services\ApiTokenService();
-        $tokenRow = $tokenService->validateToken($m[1]);
+        $tokenRow = $tokenService->validateToken($bearer);
         if (!$tokenRow) {
             Response::json(['success' => false, 'message' => 'Invalid token'], 401);
             return false;

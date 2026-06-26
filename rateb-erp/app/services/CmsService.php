@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Core\HtmlSanitizer;
 use Rateb\App\Core\Response;
 use Rateb\App\Models\CmsAbout;
 use Rateb\App\Models\CmsAnalytics;
@@ -48,8 +49,7 @@ final class CmsService
 
     public static function sanitizeHtml(string $html): string
     {
-        $allowed = '<p><br><strong><b><em><i><u><ul><ol><li><a><h1><h2><h3><h4><h5><h6><img><blockquote><span><div>';
-        return strip_tags($html, $allowed);
+        return HtmlSanitizer::sanitizeRichHtml($html);
     }
 
     /** @return array<int, array<string, mixed>> */

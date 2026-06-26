@@ -218,6 +218,20 @@ final class EnterpriseTestRunner
         $tests[] = $this->test('erp-restore script exists', is_file(RATEB_ROOT . '/bin/erp-restore.php'));
         $tests[] = $this->test('Migration 135 file exists', is_file(RATEB_ROOT . '/migrations/135_phase6_interbranch_execution.sql'));
         $tests[] = $this->test('Enterprise seed guard exists', is_file(RATEB_ROOT . '/bin/enterprise-seed/guard.php'));
+        $healthFile = RATEB_ROOT . '/public/erp-health.php';
+        $healthSrc = is_file($healthFile) ? (string) file_get_contents($healthFile) : '';
+        $tests[] = $this->test(
+            'Health endpoint has no session impersonation',
+            $healthSrc !== '' && strpos($healthSrc, "\$_SESSION['rateb_is_super_admin']") === false
+        );
+        $barcodeFile = RATEB_ROOT . '/app/services/DocumentBarcodeService.php';
+        $barcodeSrc = is_file($barcodeFile) ? (string) file_get_contents($barcodeFile) : '';
+        $tests[] = $this->test(
+            'Document barcode tenant gate present',
+            $barcodeSrc !== '' && strpos($barcodeSrc, 'canViewBarcodeRecord') !== false
+        );
+        $tests[] = $this->test('SecurityHeaders helper exists', is_file(RATEB_ROOT . '/app/Core/SecurityHeaders.php'));
+        $tests[] = $this->test('ApiRateLimiter helper exists', is_file(RATEB_ROOT . '/app/Core/ApiRateLimiter.php'));
         return $this->suiteResult($tests);
     }
 

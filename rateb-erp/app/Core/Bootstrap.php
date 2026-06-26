@@ -80,6 +80,10 @@ final class Bootstrap
         }
         self::loadConfig($basePath);
         self::ensureStorage($basePath);
+        if (is_file($basePath . '/app/Core/SecurityHeaders.php')) {
+            require_once $basePath . '/app/Core/SecurityHeaders.php';
+            SecurityHeaders::send();
+        }
         if (!defined('RATEB_HEALTH_PROBE') || !RATEB_HEALTH_PROBE) {
             SessionManager::start();
         }

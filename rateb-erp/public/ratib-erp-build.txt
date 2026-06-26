@@ -1,1 +1,1 @@
-rateb-erp-rc1-20260626-full-bundle
+rateb-erp-ga-security-20260626

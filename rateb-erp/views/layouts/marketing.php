@@ -84,7 +84,7 @@ require RATEB_ROOT . '/views/marketing/partials/header.php'; ?>
 <?php
 $analytics = $analytics ?? null;
 if ($analytics && !empty($analytics['custom_body_code'])) {
-    echo $analytics['custom_body_code'];
+    echo \Rateb\App\Core\HtmlSanitizer::sanitizeAnalyticsEmbed((string) $analytics['custom_body_code']);
 }
 ?>
 </body>

@@ -30,6 +30,11 @@ final class ApiController extends Controller
 
     public function index(): void
     {
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        if (!IpRateLimiter::attempt('api_index_' . md5($ip), 120, 60)) {
+            Response::json(['success' => false, 'message' => 'Too many requests'], 429);
+            return;
+        }
         Response::json([
             'success' => true,
             'version' => 'v1',

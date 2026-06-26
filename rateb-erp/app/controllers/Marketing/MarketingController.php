@@ -311,6 +311,13 @@ final class MarketingMediaController extends Controller
             exit;
         }
         $mime = mime_content_type($found) ?: 'application/octet-stream';
+        if (str_contains(strtolower($mime), 'svg')) {
+            \Rateb\App\Core\SecurityHeaders::sendRestrictedMediaHeaders($mime);
+            readfile($found);
+            exit;
+        }
+        \Rateb\App\Core\SecurityHeaders::send();
+        header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . (string) filesize($found));
         readfile($found);

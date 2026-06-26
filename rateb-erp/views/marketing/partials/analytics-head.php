@@ -21,5 +21,5 @@ if (!empty($analytics['tiktok_pixel_id'])) {
     echo '<script src="' . rateb_asset('js/cms-tiktok-pixel.js') . '" data-pixel-id="' . $px . '"></script>';
 }
 if (!empty($analytics['custom_head_code'])) {
-    echo $analytics['custom_head_code'];
+    echo \Rateb\App\Core\HtmlSanitizer::sanitizeAnalyticsEmbed((string) $analytics['custom_head_code']);
 }

@@ -10,7 +10,7 @@ final class CmsMediaService
     private const MAX_BYTES = 10485760;
     /** @var array<int, string> */
     private const ALLOWED_MIME = [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'application/pdf', 'video/mp4', 'video/webm',
     ];
 
@@ -34,6 +34,9 @@ final class CmsMediaService
         }
         $ext = pathinfo((string) ($file['name'] ?? 'file'), PATHINFO_EXTENSION);
         $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'bin';
+        if (strtolower($ext) === 'svg') {
+            return ['ok' => false, 'error' => 'SVG uploads are disabled for security'];
+        }
         $dir = RATEB_STORAGE_PATH . '/cms-media/' . date('Y/m');
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
             return ['ok' => false, 'error' => 'Storage unavailable'];

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\Auth;
+use Rateb\App\Core\TenantContext;
+use Rateb\App\Services\BranchAccessService;
 use Rateb\App\Models\Contract;
 use Rateb\App\Models\Inventory;
 use Rateb\App\Models\Invoice;
@@ -80,17 +83,67 @@ final class DocumentBarcodeService
     /** @return array<string, mixed>|null */
     public function resolvePublic(string $code): ?array
     {
+        return $this->resolveForAuthenticatedUser($code);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function resolveForAuthenticatedUser(string $code): ?array
+    {
+        if (!Auth::check()) {
+            return null;
+        }
         $code = strtoupper(trim($code));
         if ($code === '') {
             return null;
         }
         foreach ($this->typeOrderForCode($code) as $type) {
             $row = $this->findByBarcodeSafe($type, $code);
-            if ($row) {
+            if ($row && $this->canViewBarcodeRecord($type, $row)) {
                 return $this->publicCard($type, $row);
             }
         }
         return null;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function canViewBarcodeRecord(string $type, array $row): bool
+    {
+        if (TenantContext::isSuperAdmin()) {
+            return true;
+        }
+        $companyId = (int) TenantContext::companyId();
+        if ($companyId < 1 || $companyId !== (int) ($row['company_id'] ?? 0)) {
+            return false;
+        }
+        $branchId = isset($row['branch_id']) ? (int) $row['branch_id'] : 0;
+        if ($branchId > 0) {
+            $access = new BranchAccessService();
+            if (!$access->canAccessBranch($branchId)) {
+                return false;
+            }
+        }
+        $resource = $this->resourceForType($type);
+        if ($resource !== '' && function_exists('rateb_can_view_entity')) {
+            return rateb_can_view_entity($resource);
+        }
+        return function_exists('rateb_can') && rateb_can('documents.view');
+    }
+
+    private function resourceForType(string $type): string
+    {
+        if ($type === 'invoice') {
+            return 'invoices';
+        }
+        if ($type === 'contract') {
+            return 'contracts';
+        }
+        if ($type === 'inventory') {
+            return 'inventory';
+        }
+        if ($type === 'purchase_order') {
+            return 'purchase-orders';
+        }
+        return '';
     }
 
     /** @return list<string> */

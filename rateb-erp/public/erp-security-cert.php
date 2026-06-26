@@ -76,6 +76,50 @@ function rateb_security_findings(): array
         $add('low', 'API Override', 'Cross-company listCompanies blocked (403)', 'ApiController.php', true);
     }
 
+    $healthFile = (string) file_get_contents(RATEB_ROOT . '/public/erp-health.php');
+    if (str_contains($healthFile, "\$_SESSION['rateb_is_super_admin']")
+        || str_contains($healthFile, "probe === 'branch-ops'")
+        || str_contains($healthFile, "probe === 'admin-live'")) {
+        $add('critical', 'Health Probe', 'erp-health.php contains privilege escalation paths', 'erp-health.php');
+    } else {
+        $add('low', 'Health Probe', 'erp-health.php has no session impersonation', 'erp-health.php', true);
+    }
+    if (!str_contains($healthFile, '"status"') || !str_contains($healthFile, "'status'")) {
+        $add('medium', 'Health Probe', 'erp-health.php missing public status response', 'erp-health.php');
+    } else {
+        $add('low', 'Health Probe', 'erp-health.php returns status ok for public GET', 'erp-health.php', true);
+    }
+
+    $barcodeSvc = is_readable(RATEB_ROOT . '/app/services/DocumentBarcodeService.php')
+        ? (string) file_get_contents(RATEB_ROOT . '/app/services/DocumentBarcodeService.php')
+        : '';
+    if (!str_contains($barcodeSvc, 'canViewBarcodeRecord')) {
+        $add('high', 'IDOR', 'Document barcode scan lacks tenant permission gate', 'DocumentBarcodeService.php');
+    } else {
+        $add('low', 'IDOR', 'Document barcode scan enforces company/branch/permission', 'DocumentBarcodeService.php', true);
+    }
+
+    if (!is_readable(RATEB_ROOT . '/app/Core/SecurityHeaders.php')) {
+        $add('high', 'Headers', 'SecurityHeaders helper missing', 'SecurityHeaders.php');
+    } else {
+        $add('low', 'Headers', 'SecurityHeaders helper present', 'SecurityHeaders.php', true);
+    }
+
+    if (!str_contains($apiMw, 'ApiRateLimiter')) {
+        $add('high', 'API Security', 'ApiAuthMiddleware missing ApiRateLimiter', 'Middleware.php');
+    } else {
+        $add('low', 'API Security', 'ApiAuthMiddleware applies ApiRateLimiter', 'Middleware.php', true);
+    }
+
+    $cmsMedia = is_readable(RATEB_ROOT . '/app/services/CmsMediaService.php')
+        ? (string) file_get_contents(RATEB_ROOT . '/app/services/CmsMediaService.php')
+        : '';
+    if (str_contains($cmsMedia, "'image/svg+xml'")) {
+        $add('high', 'XSS', 'CMS still allows SVG upload MIME', 'CmsMediaService.php');
+    } else {
+        $add('low', 'XSS', 'SVG uploads disabled in CMS media', 'CmsMediaService.php', true);
+    }
+
     try {
         $pdo = \Rateb\App\Core\Database::connection();
         $stmt = $pdo->prepare('SELECT id FROM rateb_migrations WHERE filename = :f LIMIT 1');
@@ -115,7 +159,7 @@ $open = array_values(array_filter($findings, static fn (array $f): bool => empty
 
 echo json_encode([
     'ok' => $counts['critical'] === 0 && $counts['high'] === 0,
-    'phase' => 5,
+    'phase' => 6,
     'certification' => $counts,
     'target' => ['critical' => 0, 'high' => 0],
     'open_findings' => $open,
@@ -132,8 +176,10 @@ echo json_encode([
         'multi_company' => 'TenantContext::companyId() + Model tenantScoped + ApiAuthMiddleware company_id from token',
         'multi_branch' => 'BranchContext + BranchIsolationService + migration 126/131 branch_id columns',
         'financial_isolation' => 'AccountingBranchScope trait on AccountingService + scoped AP/AR/VAT/budget/bank methods',
-        'api_security' => 'ApiBranchGuardService + bootstrapForApi + token branch_id (migration 133)',
+        'api_security' => 'ApiBranchGuardService + ApiRateLimiter + bootstrapForApi + token branch_id (migration 133)',
         'reporting' => 'BranchFinancialReportingService consolidated TB/GL + branch AR/AP aging (HQ permissions)',
+        'health_probe' => 'erp-health.php public status ok only; admin probes require X-Rateb-Health-Token',
+        'document_scan' => 'DocumentBarcodeService::canViewBarcodeRecord + ErpAuthMiddleware on /scan/doc',
     ],
     'ts' => time(),
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

@@ -686,8 +686,8 @@ final class CmsAnalyticsController extends Controller
             'google_tag_manager_id' => (string) $this->input('google_tag_manager_id', ''),
             'meta_pixel_id' => (string) $this->input('meta_pixel_id', ''),
             'tiktok_pixel_id' => (string) $this->input('tiktok_pixel_id', ''),
-            'custom_head_code' => (string) $this->input('custom_head_code', ''),
-            'custom_body_code' => (string) $this->input('custom_body_code', ''),
+            'custom_head_code' => \Rateb\App\Core\HtmlSanitizer::sanitizeAnalyticsEmbed((string) $this->input('custom_head_code', '')),
+            'custom_body_code' => \Rateb\App\Core\HtmlSanitizer::sanitizeAnalyticsEmbed((string) $this->input('custom_body_code', '')),
         ];
         if (!empty($rows[0]['id'])) {
             $model->update((int) $rows[0]['id'], $data);

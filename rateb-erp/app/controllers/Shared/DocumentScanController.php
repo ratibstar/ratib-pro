@@ -19,7 +19,7 @@ final class DocumentScanController extends Controller
         }
 
         try {
-            $doc = (new DocumentBarcodeService())->resolvePublic($code);
+            $doc = (new DocumentBarcodeService())->resolveForAuthenticatedUser($code);
         } catch (\Throwable $e) {
             if (DatabaseErrorService::isSchemaIssue($e)) {
                 DatabaseErrorService::renderHttpError($e);
