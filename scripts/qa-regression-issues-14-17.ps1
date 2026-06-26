@@ -123,24 +123,17 @@ Add-SafeQaObject -Manifest $manifest -Type 'company' -Id $companyId -Slug $coSlu
 Register-SafeQaWrite -Manifest $manifest -Type 'company' -Id $companyId -Action 'create'
 Save-ManifestNow
 
-# Ensure subscription exists (proves root cause when auto-provision not yet deployed)
+# Ensure subscription auto-provisioned (Blocker B — must exist without manual create)
+Start-Sleep -Seconds 1
 $subResolve = Invoke-QaManifestResolve -Site $Site -WebSession $sess -Type 'subscription' -CompanyId $companyId
 if (-not $subResolve.ok) {
-    $subCreate = Invoke-WebRequest -Uri "$base/admin/subscriptions/create" -WebSession $sess -UseBasicParsing
-    Invoke-WebRequest -Uri "$base/admin/subscriptions" -Method POST -WebSession $sess -Body @{
-        _csrf = (Get-Csrf $subCreate.Content); company_id = $companyId; plan_id = '1'
-        status = 'trial'; billing_cycle = 'yearly'; amount = '0'; starts_at = (Get-Date -Format 'yyyy-MM-dd')
-        ends_at = (Get-Date).AddYears(1).ToString('yyyy-MM-dd')
-    } -UseBasicParsing -MaximumRedirection 10 | Out-Null
-    Start-Sleep -Seconds 1
-    $subId = Invoke-Resolve -Type 'subscription' -CompanyId $companyId
-    Add-SafeQaObject -Manifest $manifest -Type 'subscription' -Id $subId -ParentCompanyId $companyId | Out-Null
-    Register-SafeQaWrite -Manifest $manifest -Type 'subscription' -Id $subId -Action 'create'
-    Save-ManifestNow
-} else {
-    $subId = [int]$subResolve.id
-    Add-SafeQaObject -Manifest $manifest -Type 'subscription' -Id $subId -ParentCompanyId $companyId | Out-Null
+    Stop-SafeQaSession -Manifest $manifest -Reason "Blocker B FAIL: no subscription for QA company id=$companyId error=$($subResolve.error)"
 }
+$subId = [int]$subResolve.id
+Add-SafeQaObject -Manifest $manifest -Type 'subscription' -Id $subId -ParentCompanyId $companyId | Out-Null
+Register-SafeQaWrite -Manifest $manifest -Type 'subscription' -Id $subId -Action 'create_auto_provision'
+Save-ManifestNow
+$report.regression['subscription_auto_provision'] = @{ ok = $true; subscriptionId = $subId; status = $subResolve.meta.status }
 
 # --- Issue 2: password reset ---
 $userEmail = "QA-USER-$ts@test.local"
@@ -198,13 +191,14 @@ Start-Sleep -Seconds 1
 $restUserId = Invoke-Resolve -Type 'user' -Email $restEmail
 Add-SafeQaObject -Manifest $manifest -Type 'user' -Id $restUserId -Email $restEmail -ParentCompanyId $companyId | Out-Null
 
-$restLogin = Test-CompanyPortalLogin -Email $restEmail -Password $tempPass
 $sessR = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 $lpR = Invoke-WebRequest -Uri "$base/login" -WebSession $sessR -UseBasicParsing
-Invoke-WebRequest -Uri "$base/login" -Method POST -WebSession $sessR -Body @{
-    email = $restEmail; password = $tempPass; _csrf = (Get-Csrf $lpR.Content)
-} -UseBasicParsing -MaximumRedirection 10 | Out-Null
+$lrR = Invoke-WebRequest -Uri "$base/login" -Method POST -WebSession $sessR -Body @{
+    email = $restEmail; password = $tempPass; remember = '1'; _csrf = (Get-Csrf $lpR.Content)
+} -UseBasicParsing -MaximumRedirection 10
+$rmCookie = $sessR.Cookies.GetCookies([Uri]"$base/") | Where-Object { $_.Name -match 'remember|rateb' }
 $dashR = Invoke-WebRequest -Uri "$base/site/portal" -WebSession $sessR -UseBasicParsing -ErrorAction SilentlyContinue
+$restLogin = @{ ok = ([string]$lrR.BaseResponse.ResponseUri -match '/site/portal'); uri = [string]$lrR.BaseResponse.ResponseUri; status = $lrR.StatusCode }
 $portalOk = ($dashR.StatusCode -eq 200) -and ($dashR.Content -notmatch 'password-form')
 $denied = Invoke-WebRequest -Uri "$base/admin/companies/create" -WebSession $sessR -UseBasicParsing -ErrorAction SilentlyContinue
 $accessDenied = ($denied.StatusCode -eq 403) -or ($denied.Content -match '403|Forbidden|access|permission|unauthorized|غير مصرح')
@@ -223,6 +217,45 @@ $dash = Invoke-WebRequest -Uri "$base/admin" -WebSession $sess -UseBasicParsing
 $report.regression['audit_logs'] = @{ ok = ($audit.StatusCode -eq 200); status = $audit.StatusCode }
 $report.regression['notifications'] = @{ ok = ($notif.StatusCode -eq 200); status = $notif.StatusCode }
 $report.regression['dashboard'] = @{ ok = ($dash.Content -match 'rateb-widget'); status = $dash.StatusCode }
+
+# Remember Me cookie from restricted-user login (remember=1 on POST above)
+$report.regression['remember_me'] = @{
+    ok = ($null -ne $rmCookie -and @($rmCookie).Count -gt 0)
+    cookies = @($rmCookie | ForEach-Object { $_.Name })
+}
+
+# Logout (company portal session — does not burn admin rate limit)
+$portalLo = Invoke-WebRequest -Uri "$base/site/portal/logout" -WebSession $sessR -UseBasicParsing -MaximumRedirection 10
+$report.regression['logout'] = @{
+    ok = ($portalLo.BaseResponse.ResponseUri -match '/login' -or $portalLo.Content -match 'password-form')
+    uri = [string]$portalLo.BaseResponse.ResponseUri
+}
+
+# --- Tests 18–22 (read-only, same admin session) ---
+$testRoutes = [ordered]@{
+    '18' = @{ name = 'queue-monitor'; url = "$base/admin/queue-monitor" }
+    '19' = @{ name = 'automation-health'; url = "$base/admin/automation-health" }
+    '20' = @{ name = 'reports'; url = "$base/admin/reports" }
+    '21' = @{ name = 'executive-dashboard'; url = "$base/admin/executive-dashboard" }
+    '22' = @{ name = 'settings-read'; url = "$base/admin/settings" }
+}
+$report.tests = @{}
+foreach ($num in $testRoutes.Keys) {
+    $tr = $testRoutes[$num]
+    try {
+        $resp = Invoke-WebRequest -Uri $tr.url -WebSession $sess -UseBasicParsing
+        $isLogin = ($resp.Content -match 'password-form')
+        $missing = [regex]::Match($resp.Content, 'Class &quot;([^&]+)&quot; not found')
+        $report.tests[$num] = @{
+            result = if ($resp.StatusCode -eq 200 -and -not $isLogin -and -not $missing.Success) { 'PASS' } else { 'PARTIAL' }
+            url = $tr.url; status = $resp.StatusCode; name = $tr.name
+            redirectedToLogin = $isLogin; missingClass = if ($missing.Success) { $missing.Groups[1].Value } else { $null }
+        }
+    } catch {
+        $code = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
+        $report.tests[$num] = @{ result = 'FAIL'; url = $tr.url; status = $code; error = $_.Exception.Message; name = $tr.name }
+    }
+}
 
 # --- Cleanup: users → roles → subscription → company ---
 Remove-ManifestObject -Type 'user' -Id $restUserId -Route 'users'
