@@ -54,16 +54,6 @@ $warnings = $health['cron_warnings'] ?? [];
             <?php } elseif (($health['backup']['count'] ?? 0) > 0) { ?>
                 <p class="text-danger small mb-0"><?php echo __('backup_verify_fail'); ?>: <?php echo Rateb\App\Core\View::escape((string) ($health['backup']['verify_error'] ?? '')); ?></p>
             <?php } ?>
-            <p class="small text-muted mb-2"><?php echo __('backup_download_hint'); ?></p>
-            <a href="<?php echo rateb_url('admin/backup/download?fresh=1&format=b64'); ?>" class="btn btn-sm btn-primary">
-                <i class="fas fa-shield-alt"></i> <?php echo __('backup_download_safe'); ?>
-            </a>
-            <a href="<?php echo rateb_url('admin/backup/download?fresh=1&format=zip'); ?>" class="btn btn-sm btn-outline-primary ms-1">
-                <i class="fas fa-file-archive"></i> ZIP
-            </a>
-            <a href="<?php echo rateb_url('admin/backup/download?format=b64'); ?>" class="btn btn-sm btn-outline-secondary ms-1">
-                <i class="fas fa-history"></i> <?php echo __('backup_download_latest'); ?>
-            </a>
         </div></div>
     </div>
     <div class="col-md-4">

@@ -140,7 +140,6 @@ return [
         'admin/login-activity' => 'settings.manage',
         'admin/queue-monitor' => 'settings.manage',
         'admin/automation-health' => 'settings.manage',
-        'admin/backup/download' => 'settings.manage',
         'admin/settings' => 'settings.manage',
         'admin/reports' => 'reports.view',
         'admin/oversight/procurement' => 'procurement.manage',
