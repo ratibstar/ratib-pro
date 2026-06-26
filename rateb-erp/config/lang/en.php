@@ -246,6 +246,8 @@ return [
     'branch_reports' => 'Branch reports',
     'branch_transfers' => 'Inter-branch transfers',
     'branch_transfer_invalid' => 'Choose distinct source and destination branches.',
+    'branch_transfer_completed' => 'Inter-branch transfer completed successfully.',
+    'branch_transfer_failed' => 'Inter-branch transfer failed',
     'branch_a' => 'Branch A',
     'branch_b' => 'Branch B',
     'compare' => 'Compare',

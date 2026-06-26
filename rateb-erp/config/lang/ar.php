@@ -246,6 +246,8 @@ return [
     'branch_reports' => 'تقارير الفروع',
     'branch_transfers' => 'التحويلات بين الفروع',
     'branch_transfer_invalid' => 'اختر فرع مصدر ووجهة مختلفين.',
+    'branch_transfer_completed' => 'تم تنفيذ التحويل بين الفروع بنجاح.',
+    'branch_transfer_failed' => 'فشل تنفيذ التحويل بين الفروع',
     'branch_a' => 'الفرع أ',
     'branch_b' => 'الفرع ب',
     'compare' => 'مقارنة',

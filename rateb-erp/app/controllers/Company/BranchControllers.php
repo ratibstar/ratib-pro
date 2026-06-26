@@ -238,11 +238,13 @@ final class InterBranchTransfersController extends Controller
             return;
         }
         (new BranchIsolationService())->assertCanAccess((int) $row['dest_branch_id']);
-        (new BranchTransfer())->update($id, [
-            'status' => 'approved',
-            'approved_by' => (int) SessionManager::get('rateb_user_id', 0) ?: null,
-        ]);
-        SessionManager::flash('success', __('approved'));
+        $approvedBy = (int) SessionManager::get('rateb_user_id', 0);
+        try {
+            (new InterBranchTransferService())->approveAndExecute($id, $approvedBy);
+            SessionManager::flash('success', __('branch_transfer_completed'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', __('branch_transfer_failed') . ': ' . $e->getMessage());
+        }
         $this->redirect(rateb_url(rateb_app_route('branch-transfers')));
         });
     }
