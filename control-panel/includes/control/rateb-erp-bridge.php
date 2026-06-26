@@ -153,6 +153,26 @@ function control_rateb_erp_migrate_page_url(): string
         : '/control-panel/pages/control/rateb-erp-migrate.php?control=1';
 }
 
+function control_rateb_erp_backup_download_url(bool $fresh = false, string $format = 'b64'): string
+{
+    $base = function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/rateb-erp-backup-download.php')
+        : '/control-panel/pages/control/rateb-erp-backup-download.php?control=1';
+    $params = [];
+    if ($fresh) {
+        $params['fresh'] = '1';
+    }
+    if ($format !== '' && $format !== 'b64') {
+        $params['format'] = $format;
+    }
+    if ($params === []) {
+        return $base;
+    }
+    $sep = strpos($base, '?') !== false ? '&' : '?';
+
+    return $base . $sep . http_build_query($params);
+}
+
 function control_rateb_erp_branches_hub_page_url(): string
 {
     return function_exists('control_panel_page_with_control')

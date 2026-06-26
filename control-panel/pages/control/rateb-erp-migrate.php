@@ -194,6 +194,23 @@ RATEB_ERP_DB_NAME=<?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?><
             <i class="fas fa-th-large"></i> ERP hub
         </a>
     </div>
+    <div class="control-settings-card">
+        <h3><i class="fas fa-download"></i> نسخة احتياطية لقاعدة ERP</h3>
+        <div class="alert alert-warning py-2 small mb-3">
+            <strong>ليست مشكلة في السيرفر.</strong> ويندوز / كروم يحجبان أي ملف <code>.sql</code> أو <code>.sql.gz</code> من phpMyAdmin (رسالة «تم اكتشاف فيروس») — حتى من رابط <code>da.direct</code>.
+            <br>استخدم الزر الأول أدناه من <strong>rateb.sa</strong> (ملف نصي آمن)، أو File Manager على السيرفر.
+        </div>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_backup_download_url(true, 'b64'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo ($installed && $dbTest['ok']) ? '' : ' disabled'; ?>">
+            <i class="fas fa-shield-alt"></i> تحميل آمن لويندوز (.txt)
+        </a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_backup_download_url(true, 'zip'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary ms-2<?php echo ($installed && $dbTest['ok']) ? '' : ' disabled'; ?>">
+            <i class="fas fa-file-archive"></i> ZIP
+        </a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_backup_download_url(false, 'b64'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary ms-2<?php echo ($installed && $dbTest['ok']) ? '' : ' disabled'; ?>">
+            <i class="fas fa-history"></i> آخر نسخة محفوظة
+        </a>
+        <p class="small text-muted mt-2 mb-0">بعد التحميل: افتح الملف النصي، انسخ السطور بعد التعليمات، فكّ الترميز Base64 واحفظ باسم <code>…sql.gz</code>.</p>
+    </div>
 </div>
 
 <?php endControlLayout(); ?>

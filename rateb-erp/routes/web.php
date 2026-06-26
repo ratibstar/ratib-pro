@@ -179,6 +179,7 @@ $router->get('/admin/login-activity', [\Rateb\App\Controllers\Admin\LoginActivit
 $router->get('/admin/queue-monitor', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/queue-monitor/retry', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'retry'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/automation-health', [\Rateb\App\Controllers\Admin\AutomationDashboardController::class, 'index'], rateb_admin_mw('settings.manage'));
+$router->get('/admin/backup/download', [\Rateb\App\Controllers\Admin\BackupDownloadController::class, 'download'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings/save-mail', [SettingsController::class, 'saveMail'], rateb_admin_mw('settings.manage'));

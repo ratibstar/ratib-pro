@@ -1,0 +1,179 @@
+﻿{
+    "passed": 15,
+    "failed": 13,
+    "total": 28,
+    "suites": {
+        "branch_isolation": {
+            "passed": 1,
+            "total": 6,
+            "tests": [
+                {
+                    "name": "BranchAccessService class loads",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "rateb_user_branches table exists",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "rateb_branches table exists",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "Branch-scoped tables have branch_id",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "HQ roles defined",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "Branch manager role defined",
+                    "passed": false,
+                    "reason": "database unavailable"
+                }
+            ]
+        },
+        "financial": {
+            "passed": 2,
+            "total": 4,
+            "tests": [
+                {
+                    "name": "BranchFinancialReportingService available",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "ConsolidationEliminationService available",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "Inter-branch GL accounts 1350\/2150 seeded",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "Company data for financial tests",
+                    "passed": false,
+                    "reason": "database unavailable"
+                }
+            ]
+        },
+        "transfers": {
+            "passed": 1,
+            "total": 6,
+            "tests": [
+                {
+                    "name": "InterBranchTransferService class exists",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "rateb_branch_transfers table exists",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "Transfer status supports failed",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "Journal source_type supports branch_transfer",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "Audit log table ready",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "Notifications table ready",
+                    "passed": false,
+                    "reason": "database unavailable"
+                }
+            ]
+        },
+        "api_security": {
+            "passed": 2,
+            "total": 3,
+            "tests": [
+                {
+                    "name": "ApiBranchGuardService available",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "API tokens table exists",
+                    "passed": false,
+                    "reason": "database unavailable"
+                },
+                {
+                    "name": "erp-security-cert probe file exists",
+                    "passed": true,
+                    "reason": null
+                }
+            ]
+        },
+        "infrastructure": {
+            "passed": 9,
+            "total": 9,
+            "tests": [
+                {
+                    "name": "erp-health probe exists",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "erp-backup script exists",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "erp-restore script exists",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "Migration 135 file exists",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "Enterprise seed guard exists",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "Health endpoint has no session impersonation",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "Document barcode tenant gate present",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "SecurityHeaders helper exists",
+                    "passed": true,
+                    "reason": null
+                },
+                {
+                    "name": "ApiRateLimiter helper exists",
+                    "passed": true,
+                    "reason": null
+                }
+            ]
+        }
+    },
+    "generated_at": "2026-06-26T21:52:09+03:00"
+}
+
