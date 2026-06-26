@@ -111,7 +111,8 @@ function Add-SafeQaObject {
 function Invoke-QaManifestResolve {
     param(
         [Parameter(Mandatory)][string]$Site,
-        [Parameter(Mandatory)][string]$Token,
+        [string]$Token = '',
+        [Microsoft.PowerShell.Commands.WebRequestSession]$WebSession = $null,
         [Parameter(Mandatory)][string]$Type,
         [string]$Slug,
         [string]$Email,
@@ -126,21 +127,19 @@ function Invoke-QaManifestResolve {
         'branch'  { $body.code = $Code; $body.company_id = $CompanyId }
     }
     $json = $body | ConvertTo-Json -Compress
-    $req = [System.Net.HttpWebRequest]::Create("$Site/rateb-erp/public/qa-manifest-resolve.php")
-    $req.Method = 'POST'
-    $req.ContentType = 'application/json; charset=utf-8'
-    $req.Headers.Add('X-Rateb-Migrate-Token', $Token)
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
-    $req.ContentLength = $bytes.Length
-    $stream = $req.GetRequestStream()
-    $stream.Write($bytes, 0, $bytes.Length)
-    $stream.Close()
-    $resp = $req.GetResponse()
-    $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
-    $text = $reader.ReadToEnd()
-    $reader.Close()
-    $resp.Close()
-    return ($text | ConvertFrom-Json)
+    $headers = @{}
+    if ($Token -ne '') { $headers['X-Rateb-Migrate-Token'] = $Token }
+    $params = @{
+        Uri             = "$Site/rateb-erp/public/qa-manifest-resolve.php"
+        Method          = 'POST'
+        Body            = $json
+        ContentType     = 'application/json; charset=utf-8'
+        UseBasicParsing = $true
+    }
+    if ($headers.Count -gt 0) { $params.Headers = $headers }
+    if ($null -ne $WebSession) { $params.WebSession = $WebSession }
+    $resp = Invoke-WebRequest @params
+    return ($resp.Content | ConvertFrom-Json)
 }
 
 function Register-SafeQaWrite {

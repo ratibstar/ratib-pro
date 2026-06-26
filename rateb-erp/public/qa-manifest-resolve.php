@@ -13,10 +13,23 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
 define('RATEB_ROOT', str_replace('\\', '/', realpath(dirname(__DIR__)) ?: dirname(__DIR__)));
-define('RATEB_ENV_NO_SESSION', true);
 
+$tokenOk = false;
 require_once RATEB_ROOT . '/app/Core/HealthProbeAuth.php';
-if (!\Rateb\App\Core\HealthProbeAuth::verifyRequest()) {
+if (\Rateb\App\Core\HealthProbeAuth::verifyRequest()) {
+    $tokenOk = true;
+}
+
+$sessionOk = false;
+if (!$tokenOk) {
+    require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
+    \Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
+    if (\Rateb\App\Core\Auth::check() && (int) (\Rateb\App\Core\SessionManager::get('rateb_is_super_admin') ?? 0) === 1) {
+        $sessionOk = true;
+    }
+}
+
+if (!$tokenOk && !$sessionOk) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'Forbidden'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -36,8 +49,10 @@ if (!is_array($body)) {
     exit;
 }
 
-require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
-\Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
+if (!$sessionOk) {
+    require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
+    \Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
+}
 require_once RATEB_ROOT . '/bin/QaManifestResolver.php';
 
 $type = strtolower(trim((string) ($body['type'] ?? '')));
