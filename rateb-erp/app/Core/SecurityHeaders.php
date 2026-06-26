@@ -27,16 +27,17 @@ final class SecurityHeaders
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }
 
+        $cdn = 'https://cdn.jsdelivr.net https://cdnjs.cloudflare.com';
         $csp = implode('; ', [
             "default-src 'self'",
             "base-uri 'self'",
             "form-action 'self'",
             "frame-ancestors 'self'",
             "object-src 'none'",
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.google-analytics.com",
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
+            "script-src 'self' 'unsafe-inline' {$cdn} https://www.googletagmanager.com https://www.google-analytics.com",
+            "style-src 'self' 'unsafe-inline' {$cdn} https://fonts.googleapis.com",
             "img-src 'self' data: blob: https:",
-            "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com",
+            "font-src 'self' data: {$cdn} https://fonts.gstatic.com",
             "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com",
             "media-src 'self' blob:",
         ]);
