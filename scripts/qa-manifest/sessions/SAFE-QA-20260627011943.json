@@ -1,0 +1,42 @@
+{
+  "sessionTag": "SAFE-QA-20260627011943",
+  "site": "https://rateb.sa",
+  "startedAt": "2026-06-27T01:19:43+03:00",
+  "finishedAt": null,
+  "note": "Legacy session — objects created before manifest v2; IDs verified via edit pages 2026-06-27",
+  "objects": [
+    {
+      "type": "company",
+      "id": 10,
+      "slug": "QA-COMPANY-20260627011943",
+      "email": null,
+      "code": null,
+      "companyId": null,
+      "branchId": null,
+      "parentCompanyId": null,
+      "parentRoleId": null,
+      "sessionTag": "SAFE-QA-20260627011943",
+      "createdAt": "2026-06-27T01:19:43+03:00",
+      "deletedAt": null
+    },
+    {
+      "type": "user",
+      "id": 12,
+      "slug": null,
+      "email": "QA-USER-20260627011943@test.local",
+      "code": null,
+      "companyId": null,
+      "branchId": null,
+      "parentCompanyId": 10,
+      "parentRoleId": null,
+      "sessionTag": "SAFE-QA-20260627011943",
+      "createdAt": "2026-06-27T01:19:43+03:00",
+      "deletedAt": null
+    }
+  ],
+  "writes": [],
+  "cleanup": [],
+  "stopped": true,
+  "stopReason": "v1 runner: user ID not captured before stop",
+  "productionTouched": false
+}
