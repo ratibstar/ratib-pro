@@ -8,6 +8,7 @@ $script:QaPrefixRules = @{
     role         = '^QA-ROLE-'
     branch       = '^QA-BRANCH-'
     subscription = '^QA-COMPANY-'
+    ticket       = '^QA-TICKET-'
 }
 
 function New-SafeQaSession {
@@ -72,6 +73,7 @@ function Add-SafeQaObject {
         [int]$ParentCompanyId = 0,
         [int]$ParentRoleId = 0,
         [string]$Uuid = $null,
+        [string]$TicketNo = $null,
         [hashtable]$Extra = @{}
     )
     if ($Id -lt 1) {
@@ -85,6 +87,10 @@ function Add-SafeQaObject {
         'subscription' {
             if ($ParentCompanyId -lt 1) { throw 'subscription requires parentCompanyId' }
             $ParentCompanyId
+        }
+        'ticket' {
+            if (-not (Test-QaPrefix ticket $TicketNo)) { throw 'ticket_no missing QA-TICKET- prefix' }
+            $TicketNo
         }
         default   { throw "unsupported type $Type" }
     }
@@ -100,6 +106,7 @@ function Add-SafeQaObject {
         slug             = $Slug
         email            = $Email
         code             = $Code
+        ticketNo         = $TicketNo
         companyId        = $(if ($CompanyId -gt 0) { $CompanyId } else { $null })
         branchId         = $(if ($BranchId -gt 0) { $BranchId } else { $null })
         parentCompanyId  = $(if ($ParentCompanyId -gt 0) { $ParentCompanyId } else { $null })
@@ -122,6 +129,7 @@ function Invoke-QaManifestResolve {
         [string]$Slug,
         [string]$Email,
         [string]$Code,
+        [string]$TicketNo = '',
         [int]$CompanyId = 0
     )
     $body = @{ type = $Type }
@@ -131,6 +139,7 @@ function Invoke-QaManifestResolve {
         'role'    { $body.slug = $Slug }
         'branch'  { $body.code = $Code; $body.company_id = $CompanyId }
         'subscription' { $body.company_id = $CompanyId }
+        'ticket'       { $body.ticket_no = $TicketNo }
     }
     $json = $body | ConvertTo-Json -Compress
     $headers = @{}

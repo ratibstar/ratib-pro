@@ -68,6 +68,7 @@ try {
             trim((string) ($body['code'] ?? ''))
         ),
         'subscription' => $resolver->resolveSubscriptionByCompanyId((int) ($body['company_id'] ?? 0)),
+        'ticket' => $resolver->resolveSupportTicketByTicketNo(trim((string) ($body['ticket_no'] ?? ''))),
         default => ['ok' => false, 'error' => 'unknown_type'],
     };
     echo json_encode($result, JSON_UNESCAPED_UNICODE);

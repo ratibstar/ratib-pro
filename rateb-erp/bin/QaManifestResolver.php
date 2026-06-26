@@ -162,6 +162,34 @@ final class QaManifestResolver
         ];
     }
 
+    /** @var list<string> */
+    private const TICKET_NO_PREFIXES = ['QA-TICKET-'];
+
+    /** @return array{ok:bool, id?:int, error?:string, meta?:array<string,mixed>} */
+    public function resolveSupportTicketByTicketNo(string $ticketNo): array
+    {
+        if (!$this->hasPrefix($ticketNo, self::TICKET_NO_PREFIXES)) {
+            return ['ok' => false, 'error' => 'ticket_not_qa_prefixed'];
+        }
+        $stmt = $this->db->prepare(
+            'SELECT id, ticket_no, subject, status FROM rateb_support_tickets WHERE ticket_no = :tn LIMIT 1'
+        );
+        $stmt->execute(['tn' => $ticketNo]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            return ['ok' => false, 'error' => 'not_found'];
+        }
+        return [
+            'ok' => true,
+            'id' => (int) $row['id'],
+            'meta' => [
+                'ticket_no' => (string) $row['ticket_no'],
+                'subject' => (string) ($row['subject'] ?? ''),
+                'status' => (string) ($row['status'] ?? ''),
+            ],
+        ];
+    }
+
     /** @param list<string> $prefixes */
     private function hasPrefix(string $value, array $prefixes): bool
     {
