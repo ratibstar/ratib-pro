@@ -200,6 +200,10 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         try {
             $id = $this->model->create($data);
             (new \Rateb\App\Services\BranchService())->ensureMainBranch($id);
+            $planId = (int) ($data['plan_id'] ?? 0);
+            if ($planId > 0 && (string) ($data['status'] ?? '') === 'active') {
+                (new \Rateb\App\Services\BillingService())->ensureInitialSubscription($id, $planId, 'active');
+            }
             (new AuditService())->log('create', $this->entityName, $id, $data);
             SessionManager::flash('success', __('save') . ' OK');
         } catch (\Throwable $e) {
@@ -228,6 +232,13 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         }
         $id = (int) ($params['id'] ?? 0);
         $this->model->activate($id);
+        $company = $this->model->find($id);
+        if ($company) {
+            $planId = (int) ($company['plan_id'] ?? 0);
+            if ($planId > 0) {
+                (new \Rateb\App\Services\BillingService())->ensureInitialSubscription($id, $planId, 'active');
+            }
+        }
         (new AuditService())->log('activate', 'company', $id);
         SessionManager::flash('success', __('save') . ' OK');
         Response::redirect(rateb_url('admin/companies'));

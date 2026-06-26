@@ -38,7 +38,7 @@ Invoke-WebRequest -Uri "$site/rateb-erp/public/login" -Method POST -WebSession $
     email = $email; password = $pw; _csrf = (Get-Csrf $lp.Content)
 } -UseBasicParsing | Out-Null
 
-$order = @('user', 'role', 'branch', 'company')
+$order = @('user', 'role', 'subscription', 'branch', 'company')
 $remaining = @()
 
 foreach ($type in $order) {
@@ -47,6 +47,7 @@ foreach ($type in $order) {
         $route = switch ($type) {
             'user' { 'users' }
             'role' { 'roles' }
+            'subscription' { 'subscriptions' }
             'company' { 'companies' }
             'branch' { throw 'branch delete not implemented in ERP admin — skip or CP manual' }
         }

@@ -3,10 +3,11 @@
 Set-StrictMode -Version Latest
 
 $script:QaPrefixRules = @{
-    company = '^QA-COMPANY-'
-    user    = '^QA-USER-'
-    role    = '^QA-ROLE-'
-    branch  = '^QA-BRANCH-'
+    company      = '^QA-COMPANY-'
+    user         = '^QA-USER-'
+    role         = '^QA-ROLE-'
+    branch       = '^QA-BRANCH-'
+    subscription = '^QA-COMPANY-'
 }
 
 function New-SafeQaSession {
@@ -81,6 +82,10 @@ function Add-SafeQaObject {
         'user'    { if (-not (Test-QaPrefix user $Email)) { throw 'user email missing QA-USER- prefix' }; $Email }
         'role'    { if (-not (Test-QaPrefix role $Slug)) { throw 'role slug missing QA-ROLE- prefix' }; $Slug }
         'branch'  { if (-not (Test-QaPrefix branch $Code)) { throw 'branch code missing QA-BRANCH- prefix' }; $Code }
+        'subscription' {
+            if ($ParentCompanyId -lt 1) { throw 'subscription requires parentCompanyId' }
+            $ParentCompanyId
+        }
         default   { throw "unsupported type $Type" }
     }
     foreach ($existing in $Manifest.objects) {
@@ -125,6 +130,7 @@ function Invoke-QaManifestResolve {
         'user'    { $body.email = $Email }
         'role'    { $body.slug = $Slug }
         'branch'  { $body.code = $Code; $body.company_id = $CompanyId }
+        'subscription' { $body.company_id = $CompanyId }
     }
     $json = $body | ConvertTo-Json -Compress
     $headers = @{}

@@ -236,4 +236,42 @@ final class BillingService
         }
         return $out;
     }
+
+    /**
+     * Ensure a new company can authenticate: company portal login requires a valid subscription row.
+     * Idempotent — skips when any subscription already exists for the company.
+     */
+    public function ensureInitialSubscription(int $companyId, int $planId, string $companyStatus = 'active'): void
+    {
+        if ($companyId < 1 || $planId < 1 || $companyStatus !== 'active') {
+            return;
+        }
+        if (!$this->companyExists($companyId) || !$this->planExists($planId)) {
+            return;
+        }
+        $existing = (new Subscription())->queryOne(
+            'SELECT id FROM rateb_subscriptions WHERE company_id = :cid LIMIT 1',
+            ['cid' => $companyId]
+        );
+        if ($existing) {
+            return;
+        }
+        $plan = (new Plan())->find($planId);
+        if (!$plan) {
+            return;
+        }
+        $startsAt = date('Y-m-d');
+        $endsAt = date('Y-m-d', strtotime('+1 year'));
+        (new Subscription())->create([
+            'company_id' => $companyId,
+            'plan_id' => $planId,
+            'status' => 'trial',
+            'billing_cycle' => 'yearly',
+            'amount' => (float) ($plan['price_yearly'] ?? $plan['price_monthly'] ?? 0),
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'auto_renew' => 1,
+        ]);
+        (new PlanLimitService())->syncFromPlan($companyId, $planId);
+    }
 }

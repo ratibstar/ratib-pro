@@ -67,6 +67,7 @@ try {
             (int) ($body['company_id'] ?? 0),
             trim((string) ($body['code'] ?? ''))
         ),
+        'subscription' => $resolver->resolveSubscriptionByCompanyId((int) ($body['company_id'] ?? 0)),
         default => ['ok' => false, 'error' => 'unknown_type'],
     };
     echo json_encode($result, JSON_UNESCAPED_UNICODE);

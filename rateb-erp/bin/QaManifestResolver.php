@@ -131,6 +131,37 @@ final class QaManifestResolver
         ];
     }
 
+    /** @return array{ok:bool, id?:int, error?:string, meta?:array<string,mixed>} */
+    public function resolveSubscriptionByCompanyId(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return ['ok' => false, 'error' => 'invalid_company_id'];
+        }
+        $co = $this->db->prepare('SELECT id, slug FROM rateb_companies WHERE id = :id LIMIT 1');
+        $co->execute(['id' => $companyId]);
+        $company = $co->fetch(\PDO::FETCH_ASSOC);
+        if (!$company || !$this->hasPrefix((string) $company['slug'], self::COMPANY_SLUG_PREFIXES)) {
+            return ['ok' => false, 'error' => 'company_not_qa_prefixed'];
+        }
+        $stmt = $this->db->prepare(
+            'SELECT id, company_id, plan_id, status FROM rateb_subscriptions WHERE company_id = :cid ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute(['cid' => $companyId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            return ['ok' => false, 'error' => 'not_found'];
+        }
+        return [
+            'ok' => true,
+            'id' => (int) $row['id'],
+            'meta' => [
+                'company_id' => (int) $row['company_id'],
+                'plan_id' => (int) ($row['plan_id'] ?? 0),
+                'status' => (string) ($row['status'] ?? ''),
+            ],
+        ];
+    }
+
     /** @param list<string> $prefixes */
     private function hasPrefix(string $value, array $prefixes): bool
     {
