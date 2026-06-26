@@ -170,14 +170,11 @@ abstract class Model
 
         $sql .= $this->buildSearchClause($search, $params);
 
-        $sql .= ' ORDER BY ' . $this->listOrderSql() . ' LIMIT :limit OFFSET :offset';
+        $safeLimit = max(1, min(500, $limit));
+        $safeOffset = max(0, $offset);
+        $sql .= ' ORDER BY ' . $this->listOrderSql() . ' LIMIT ' . $safeLimit . ' OFFSET ' . $safeOffset;
         $stmt = $this->db->prepare($sql);
-        foreach ($params as $k => $v) {
-            $stmt->bindValue(':' . $k, $v);
-        }
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
+        $this->executePrepared($stmt, $params);
         return $stmt->fetchAll();
     }
 
@@ -208,7 +205,7 @@ abstract class Model
         $sql .= $this->buildSearchClause($search, $params);
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $this->executePrepared($stmt, $params);
         return (int) ($stmt->fetch()['c'] ?? 0);
     }
 
@@ -243,6 +240,9 @@ abstract class Model
         $parts = [];
         foreach ($cols as $col) {
             if (!preg_match('/^[a-z_]+$/', $col)) {
+                continue;
+            }
+            if (!$this->tableHasColumn($col)) {
                 continue;
             }
             $key = 'search_' . $col;
@@ -408,6 +408,35 @@ abstract class Model
             return "{$prefix}created_at DESC, {$pk} DESC";
         }
         return "{$pk} DESC";
+    }
+
+    /** @var array<string, bool> */
+    private static array $columnCache = [];
+
+    protected function tableHasColumn(string $column): bool
+    {
+        $column = preg_replace('/[^a-z_]/', '', $column) ?? '';
+        if ($column === '') {
+            return false;
+        }
+        $key = $this->table . '.' . $column;
+        if (array_key_exists($key, self::$columnCache)) {
+            return self::$columnCache[$key];
+        }
+        try {
+            $stmt = $this->db->query(
+                'SHOW COLUMNS FROM `' . str_replace('`', '', $this->table) . '` LIKE '
+                . $this->db->quote($column)
+            );
+            $ok = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+            self::$columnCache[$key] = $ok;
+        } catch (\Throwable $e) {
+            self::$columnCache[$key] = false;
+        }
+        return self::$columnCache[$key];
     }
 
     protected function tableHasCreatedAt(): bool

@@ -42,6 +42,11 @@ final class BranchAccessService
             return;
         }
 
+        if (!BranchService::branchesTableExists()) {
+            BranchContext::setBootstrapped($companyId, true, []);
+            return;
+        }
+
         $portalBranch = (int) SessionManager::get('rateb_portal_branch_id', 0);
         if ($portalBranch > 0) {
             $row = (new Branch())->queryOne(
@@ -269,7 +274,8 @@ final class BranchAccessService
     private function branchIdsForCompany(int $companyId): array
     {
         $rows = (new Branch())->query(
-            'SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, id ASC',
+            'SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY '
+            . BranchService::branchOrderSql(),
             ['cid' => $companyId, 'st' => 'active']
         );
         return array_map('intval', array_column($rows, 'id'));

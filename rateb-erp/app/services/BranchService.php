@@ -12,6 +12,76 @@ final class BranchService
 {
     public const MAIN_CODE = 'MB001';
 
+    private static ?bool $branchesTableExists = null;
+    private static ?bool $userBranchesTableExists = null;
+    private static ?bool $branchesHaveIsMain = null;
+
+    public static function branchesTableExists(): bool
+    {
+        if (self::$branchesTableExists !== null) {
+            return self::$branchesTableExists;
+        }
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query('SHOW TABLES LIKE \'rateb_branches\'');
+            self::$branchesTableExists = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            self::$branchesTableExists = false;
+        }
+        return self::$branchesTableExists;
+    }
+
+    public static function userBranchesTableExists(): bool
+    {
+        if (self::$userBranchesTableExists !== null) {
+            return self::$userBranchesTableExists;
+        }
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query('SHOW TABLES LIKE \'rateb_user_branches\'');
+            self::$userBranchesTableExists = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            self::$userBranchesTableExists = false;
+        }
+        return self::$userBranchesTableExists;
+    }
+
+    public static function branchesHaveIsMainColumn(): bool
+    {
+        if (!self::branchesTableExists()) {
+            return false;
+        }
+        if (self::$branchesHaveIsMain !== null) {
+            return self::$branchesHaveIsMain;
+        }
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query('SHOW COLUMNS FROM rateb_branches LIKE \'is_main\'');
+            self::$branchesHaveIsMain = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            self::$branchesHaveIsMain = false;
+        }
+        return self::$branchesHaveIsMain;
+    }
+
+    public static function branchOrderSql(string $alias = ''): string
+    {
+        $prefix = $alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '';
+        if (self::branchesHaveIsMainColumn()) {
+            return $prefix . 'is_main DESC, ' . $prefix . 'id ASC';
+        }
+        return $prefix . 'id ASC';
+    }
+
     public function countForCompany(int $companyId): int
     {
         if ($companyId < 1) {
@@ -63,7 +133,8 @@ final class BranchService
             return 0;
         }
         $row = (new Branch())->queryOne(
-            'SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, id ASC LIMIT 1',
+            'SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY '
+            . self::branchOrderSql() . ' LIMIT 1',
             ['cid' => $companyId, 'st' => 'active']
         );
         return (int) ($row['id'] ?? 0);
@@ -148,7 +219,7 @@ final class BranchService
             return 0;
         }
         $existing = (new Branch())->queryOne(
-            'SELECT id FROM rateb_branches WHERE company_id = :cid ORDER BY is_main DESC, id ASC LIMIT 1',
+            'SELECT id FROM rateb_branches WHERE company_id = :cid ORDER BY ' . self::branchOrderSql() . ' LIMIT 1',
             ['cid' => $companyId]
         );
         if ($existing) {
@@ -157,13 +228,16 @@ final class BranchService
         $prev = TenantContext::companyId();
         TenantContext::setCompanyId($companyId);
         try {
-            $id = (new Branch())->create([
+            $data = [
                 'company_id' => $companyId,
                 'name' => __('main_branch'),
                 'code' => self::MAIN_CODE,
                 'status' => 'active',
-                'is_main' => 1,
-            ]);
+            ];
+            if (self::branchesHaveIsMainColumn()) {
+                $data['is_main'] = 1;
+            }
+            $id = (new Branch())->create($data);
             return $id;
         } finally {
             TenantContext::setCompanyId($prev);
@@ -176,8 +250,10 @@ final class BranchService
         if ($companyId < 1) {
             return [];
         }
+        $isMainSelect = self::branchesHaveIsMainColumn() ? 'is_main' : '0 AS is_main';
         return (new Branch())->query(
-            'SELECT id, name, code, is_main FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, name ASC',
+            'SELECT id, name, code, ' . $isMainSelect . ' FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY '
+            . self::branchOrderSql() . ', name ASC',
             ['cid' => $companyId, 'st' => 'active']
         );
     }
@@ -189,7 +265,8 @@ final class BranchService
             return [];
         }
         $rows = (new Branch())->query(
-            'SELECT id, name, code FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, name ASC',
+            'SELECT id, name, code FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY '
+            . self::branchOrderSql() . ', name ASC',
             ['cid' => $companyId, 'st' => 'active']
         );
         $out = [];
@@ -215,7 +292,8 @@ final class BranchService
     public function optionsByCompany(): array
     {
         $rows = (new Branch())->query(
-            'SELECT id, company_id, name, code FROM rateb_branches WHERE status = :st ORDER BY company_id ASC, is_main DESC, name ASC',
+            'SELECT id, company_id, name, code FROM rateb_branches WHERE status = :st ORDER BY company_id ASC, '
+            . self::branchOrderSql() . ', name ASC',
             ['st' => 'active']
         );
         $out = [];
@@ -237,7 +315,7 @@ final class BranchService
     /** @return array<int, int> */
     public function getUserBranchIds(int $userId): array
     {
-        if ($userId < 1) {
+        if ($userId < 1 || !self::userBranchesTableExists()) {
             return [];
         }
         $rows = (new Branch())->query(
@@ -250,7 +328,7 @@ final class BranchService
     /** @param array<int, int|string> $branchIds */
     public function syncUserBranches(int $userId, int $companyId, array $branchIds): void
     {
-        if ($userId < 1) {
+        if ($userId < 1 || !self::userBranchesTableExists()) {
             return;
         }
         $db = \Rateb\App\Core\Database::connection();

@@ -72,17 +72,21 @@ try {
             'classes' => [],
             'dashboard' => [],
         ];
-        foreach (['131_financial_branch_isolation.sql', '132_interbranch_gl_consolidation.sql', '133_phase5_api_branch_hq_reports.sql', '129_inter_branch_transfers.sql'] as $mf) {
+        foreach (['131_financial_branch_isolation.sql', '132_interbranch_gl_consolidation.sql', '133_phase5_api_branch_hq_reports.sql', '134_contracts_branch_catchup.sql', '129_inter_branch_transfers.sql'] as $mf) {
             $stmt = $pdo->prepare('SELECT id FROM rateb_migrations WHERE filename = :f LIMIT 1');
             $stmt->execute(['f' => $mf]);
             $report['migrations'][$mf] = $stmt->fetch() ? 'applied' : 'missing';
         }
         foreach ([
-            'rateb_journal_lines' => 'branch_id',
-            'rateb_cost_centers' => 'branch_id',
-            'rateb_bank_accounts' => 'branch_id',
-            'rateb_journal_entries' => 'branch_id',
-        ] as $table => $col) {
+            ['rateb_journal_lines', 'branch_id'],
+            ['rateb_cost_centers', 'branch_id'],
+            ['rateb_bank_accounts', 'branch_id'],
+            ['rateb_journal_entries', 'branch_id'],
+            ['rateb_contracts', 'branch_id'],
+            ['rateb_contracts', 'approval_status'],
+            ['rateb_contracts', 'barcode'],
+            ['rateb_branches', 'is_main'],
+        ] as [$table, $col]) {
             $stmt = $pdo->query('SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE ' . $pdo->quote($col));
             $report['columns'][$table . '.' . $col] = ($stmt !== false && $stmt->fetch()) ? 'yes' : 'no';
             if ($stmt instanceof \PDOStatement) {
@@ -157,6 +161,7 @@ try {
             'branch_financial' => '/admin/ops/branch-financial',
             'branch_compare' => '/admin/ops/branch-dashboard/compare',
             'branch_reports' => '/admin/ops/branch-dashboard/reports',
+            'contracts' => '/admin/ops/contracts',
         ] as $key => $path) {
             ob_start();
             try {

@@ -67,7 +67,18 @@ final class DatabaseErrorService
     public static function isSchemaIssue(\Throwable $e): bool
     {
         $raw = self::rawMessage($e);
-        return self::isMissingColumn($raw) || self::isMissingTable($raw) || self::isDataTruncation($raw);
+        if (self::isMissingColumn($raw) || self::isMissingTable($raw) || self::isDataTruncation($raw)) {
+            return true;
+        }
+        $cur = $e;
+        while ($cur instanceof \Throwable) {
+            $msg = $cur->getMessage();
+            if (self::isMissingColumn($msg) || self::isMissingTable($msg) || self::isDataTruncation($msg)) {
+                return true;
+            }
+            $cur = $cur->getPrevious();
+        }
+        return false;
     }
 
     public static function isCompanyFkIssue(\Throwable $e): bool
@@ -135,9 +146,16 @@ final class DatabaseErrorService
         echo '</head><body class="rateb-app"><div class="rateb-err">';
         echo '<h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
         echo '<p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
+        $tech = self::technicalDetail($e);
+        if ($tech !== '' && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            echo '<p style="font-size:.85rem;color:#5a6a7e;margin-top:.75rem"><code style="white-space:pre-wrap">'
+                . htmlspecialchars($tech, ENT_QUOTES, 'UTF-8') . '</code></p>';
+        }
         echo '<div class="actions">';
         echo '<a class="btn btn-primary btn-sm" href="' . htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('dashboard'), ENT_QUOTES, 'UTF-8') . '</a>';
         if ($schema && $migrateUrl !== '') {
+            echo '<a class="btn btn-outline-primary btn-sm" href="' . htmlspecialchars($migrateUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('run_erp_migrations'), ENT_QUOTES, 'UTF-8') . '</a>';
+        } elseif (!$schema && $migrateUrl !== '' && ($e instanceof PDOException || $e->getPrevious() instanceof PDOException)) {
             echo '<a class="btn btn-outline-primary btn-sm" href="' . htmlspecialchars($migrateUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('run_erp_migrations'), ENT_QUOTES, 'UTF-8') . '</a>';
         }
         if ($company) {
