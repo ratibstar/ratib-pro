@@ -51,7 +51,29 @@ final class EnterpriseSeeder
         $this->companyIds = array_map('intval', $this->db->query(
             'SELECT id FROM rateb_companies ORDER BY id ASC LIMIT ' . self::TARGET_COMPANIES
         )->fetchAll(\PDO::FETCH_COLUMN));
+        $this->ensureInterBranchGlAccounts();
         echo '  companies: ' . count($this->companyIds) . "\n";
+    }
+
+    private function ensureInterBranchGlAccounts(): void
+    {
+        if (!$this->tableExists('rateb_chart_of_accounts')) {
+            return;
+        }
+        $this->db->exec(
+            "INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
+             SELECT c.id, '1350', 'Due From Branches', 'Due From Branches', 'asset', p.id, 1
+             FROM rateb_companies c
+             LEFT JOIN rateb_chart_of_accounts p ON p.company_id = c.id AND p.code = '1000'
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_chart_of_accounts x WHERE x.company_id = c.id AND x.code = '1350')"
+        );
+        $this->db->exec(
+            "INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
+             SELECT c.id, '2150', 'Due To Branches', 'Due To Branches', 'liability', p.id, 1
+             FROM rateb_companies c
+             LEFT JOIN rateb_chart_of_accounts p ON p.company_id = c.id AND p.code = '2000'
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_chart_of_accounts x WHERE x.company_id = c.id AND x.code = '2150')"
+        );
     }
 
     public function seedBranches(): void

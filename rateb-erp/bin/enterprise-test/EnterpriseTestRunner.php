@@ -232,6 +232,7 @@ final class EnterpriseTestRunner
         );
         $tests[] = $this->test('SecurityHeaders helper exists', is_file(RATEB_ROOT . '/app/Core/SecurityHeaders.php'));
         $tests[] = $this->test('ApiRateLimiter helper exists', is_file(RATEB_ROOT . '/app/Core/ApiRateLimiter.php'));
+        $tests[] = $this->test('Production reset script exists', is_file(RATEB_ROOT . '/bin/reset-production.php'));
         return $this->suiteResult($tests);
     }
 
@@ -289,9 +290,14 @@ final class EnterpriseTestRunner
             return false;
         }
         $row = $this->db->query(
-            "SELECT COUNT(DISTINCT code) AS c FROM rateb_chart_of_accounts WHERE code IN ('1350','2150')"
+            "SELECT COUNT(*) FROM (
+                SELECT company_id FROM rateb_chart_of_accounts
+                WHERE code IN ('1350','2150')
+                GROUP BY company_id
+                HAVING COUNT(DISTINCT code) >= 2
+            ) AS seeded"
         )->fetch(\PDO::FETCH_ASSOC);
-        return (int) ($row['c'] ?? 0) >= 2;
+        return (int) ($row['COUNT(*)'] ?? 0) >= 1;
     }
 
     private function transferStatusIncludes(string $value): bool
