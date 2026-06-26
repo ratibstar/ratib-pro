@@ -209,7 +209,8 @@ RATEB_ERP_DB_NAME=<?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?><
         <a href="<?php echo htmlspecialchars(control_rateb_erp_backup_download_url(false, 'b64'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary ms-2<?php echo ($installed && $dbTest['ok']) ? '' : ' disabled'; ?>">
             <i class="fas fa-history"></i> آخر نسخة محفوظة
         </a>
-        <p class="small text-muted mt-2 mb-0">بعد التحميل: افتح الملف النصي، انسخ السطور بعد التعليمات، فكّ الترميز Base64 واحفظ باسم <code>…sql.gz</code>.</p>
+        <p class="small text-muted mt-2 mb-0">بعد التحميل: افتح الملف النصي، انسخ السطور بعد التعليمات، فكّ الترميز Base64 واحفظ باسم <code>…sql.gz</code>.<br>
+        يدوياً من File Manager: <code>public_html/rateb-erp/storage/backups</code> (وليس <code>admin_backups</code>).</p>
     </div>
 </div>
 

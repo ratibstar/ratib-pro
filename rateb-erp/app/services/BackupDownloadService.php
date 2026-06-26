@@ -101,25 +101,54 @@ final class BackupDownloadService
 
     private function createFreshGzipPath(): ?string
     {
-        if (!function_exists('exec')) {
-            $this->failFreshBackup('exec() معطّل على السيرفر — استخدم File Manager أو SFTP لنسخ الملف من storage/backups.');
-        }
-
-        $dbName = Database::resolvedDatabaseName();
-        $host = getenv('RATEB_ERP_DB_HOST') ?: getenv('DB_HOST') ?: 'localhost';
-        $user = getenv('RATEB_ERP_DB_USER') ?: getenv('DB_USER') ?: '';
-        $pass = getenv('RATEB_ERP_DB_PASS') ?: getenv('DB_PASS') ?: '';
-
-        if ($user === '') {
-            $this->failFreshBackup('بيانات الاتصال بقاعدة البيانات غير مضبوطة.');
-        }
-
         $dir = $this->backupDirectory();
         if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
             $this->failFreshBackup('تعذّر إنشاء مجلد storage/backups.');
         }
 
         $tmp = $dir . '/.download-' . bin2hex(random_bytes(8)) . '.sql.gz';
+
+        if ($this->canUseShellDump()) {
+            $path = $this->createFreshGzipViaShell($tmp);
+            if ($path !== null) {
+                return $path;
+            }
+        }
+
+        try {
+            (new PhpDatabaseDumpService())->writeGzipFile($tmp);
+        } catch (\Throwable $e) {
+            @unlink($tmp);
+            $this->failFreshBackup(
+                'فشل إنشاء النسخة: ' . $e->getMessage()
+                . ' — المسار اليدوي: public_html/rateb-erp/storage/backups'
+            );
+        }
+
+        return $tmp;
+    }
+
+    private function canUseShellDump(): bool
+    {
+        if (!function_exists('exec')) {
+            return false;
+        }
+        $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+
+        return !in_array('exec', $disabled, true);
+    }
+
+    private function createFreshGzipViaShell(string $tmp): ?string
+    {
+        $dbName = Database::resolvedDatabaseName();
+        $host = getenv('RATEB_ERP_DB_HOST') ?: getenv('DB_HOST') ?: 'localhost';
+        $user = getenv('RATEB_ERP_DB_USER') ?: getenv('DB_USER') ?: '';
+        $pass = getenv('RATEB_ERP_DB_PASS') ?: getenv('DB_PASS') ?: '';
+
+        if ($user === '') {
+            return null;
+        }
+
         $cmd = sprintf(
             'mysqldump --host=%s --user=%s %s %s 2>&1 | gzip > %s',
             escapeshellarg($host),
@@ -132,7 +161,7 @@ final class BackupDownloadService
         exec($cmd, $output, $code);
         if ($code !== 0 || !is_file($tmp) || (filesize($tmp) ?: 0) < 100) {
             @unlink($tmp);
-            $this->failFreshBackup('فشل mysqldump على السيرفر.');
+            return null;
         }
 
         return $tmp;
