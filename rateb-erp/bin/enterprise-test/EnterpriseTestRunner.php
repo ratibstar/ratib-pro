@@ -10,11 +10,20 @@ use Rateb\App\Services\InterBranchTransferService;
 
 final class EnterpriseTestRunner
 {
-    private \PDO $db;
+    private ?\PDO $db = null;
 
     public function __construct()
     {
-        $this->db = Database::connection();
+        try {
+            $this->db = Database::connection();
+        } catch (\Throwable $e) {
+            $this->db = null;
+        }
+    }
+
+    private function dbReady(): bool
+    {
+        return $this->db instanceof \PDO;
     }
 
     /** @return array<string,mixed> */
@@ -54,6 +63,14 @@ final class EnterpriseTestRunner
     {
         $tests = [];
         $tests[] = $this->test('BranchAccessService class loads', class_exists(BranchAccessService::class));
+        if (!$this->dbReady()) {
+            $tests[] = $this->test('rateb_user_branches table exists', false, 'database unavailable');
+            $tests[] = $this->test('rateb_branches table exists', false, 'database unavailable');
+            $tests[] = $this->test('Branch-scoped tables have branch_id', false, 'database unavailable');
+            $tests[] = $this->test('HQ roles defined', false, 'database unavailable');
+            $tests[] = $this->test('Branch manager role defined', false, 'database unavailable');
+            return $this->suiteResult($tests);
+        }
         $tests[] = $this->test('rateb_user_branches table exists', $this->tableExists('rateb_user_branches'));
         $tests[] = $this->test('rateb_branches table exists', $this->tableExists('rateb_branches'));
         $tests[] = $this->test(
@@ -84,6 +101,11 @@ final class EnterpriseTestRunner
             'ConsolidationEliminationService available',
             class_exists(ConsolidationEliminationService::class)
         );
+        if (!$this->dbReady()) {
+            $tests[] = $this->test('Inter-branch GL accounts 1350/2150 seeded', false, 'database unavailable');
+            $tests[] = $this->test('Company data for financial tests', false, 'database unavailable');
+            return $this->suiteResult($tests);
+        }
         $tests[] = $this->test(
             'Inter-branch GL accounts 1350/2150 seeded',
             $this->interBranchAccountsExist()
@@ -126,6 +148,14 @@ final class EnterpriseTestRunner
             'InterBranchTransferService class exists',
             class_exists(InterBranchTransferService::class)
         );
+        if (!$this->dbReady()) {
+            $tests[] = $this->test('rateb_branch_transfers table exists', false, 'database unavailable');
+            $tests[] = $this->test('Transfer status supports failed', false, 'database unavailable');
+            $tests[] = $this->test('Journal source_type supports branch_transfer', false, 'database unavailable');
+            $tests[] = $this->test('Audit log table ready', false, 'database unavailable');
+            $tests[] = $this->test('Notifications table ready', false, 'database unavailable');
+            return $this->suiteResult($tests);
+        }
         $tests[] = $this->test(
             'rateb_branch_transfers table exists',
             $this->tableExists('rateb_branch_transfers')
@@ -157,6 +187,11 @@ final class EnterpriseTestRunner
             'ApiBranchGuardService available',
             class_exists(ApiBranchGuardService::class)
         );
+        if (!$this->dbReady()) {
+            $tests[] = $this->test('API tokens table exists', false, 'database unavailable');
+            $tests[] = $this->test('erp-security-cert probe file exists', is_file(RATEB_ROOT . '/public/erp-security-cert.php'));
+            return $this->suiteResult($tests);
+        }
         $tests[] = $this->test(
             'API tokens table exists',
             $this->tableExists('rateb_api_tokens')
@@ -206,12 +241,18 @@ final class EnterpriseTestRunner
 
     private function tableExists(string $table): bool
     {
+        if (!$this->dbReady()) {
+            return false;
+        }
         $stmt = $this->db->query("SHOW TABLES LIKE " . $this->db->quote($table));
         return $stmt !== false && $stmt->fetch() !== false;
     }
 
     private function columnExists(string $table, string $column): bool
     {
+        if (!$this->dbReady()) {
+            return false;
+        }
         $stmt = $this->db->prepare(
             'SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c'
         );
@@ -221,12 +262,18 @@ final class EnterpriseTestRunner
 
     private function firstCompanyId(): int
     {
+        if (!$this->dbReady()) {
+            return 0;
+        }
         $id = $this->db->query('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1')->fetchColumn();
         return (int) ($id ?: 0);
     }
 
     private function interBranchAccountsExist(): bool
     {
+        if (!$this->dbReady()) {
+            return false;
+        }
         $row = $this->db->query(
             "SELECT COUNT(DISTINCT code) AS c FROM rateb_chart_of_accounts WHERE code IN ('1350','2150')"
         )->fetch(\PDO::FETCH_ASSOC);
@@ -235,6 +282,9 @@ final class EnterpriseTestRunner
 
     private function transferStatusIncludes(string $value): bool
     {
+        if (!$this->dbReady()) {
+            return false;
+        }
         $row = $this->db->query(
             "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rateb_branch_transfers' AND COLUMN_NAME = 'status'"
@@ -244,6 +294,9 @@ final class EnterpriseTestRunner
 
     private function journalSourceIncludes(string $value): bool
     {
+        if (!$this->dbReady()) {
+            return false;
+        }
         $row = $this->db->query(
             "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rateb_journal_entries' AND COLUMN_NAME = 'source_type'"

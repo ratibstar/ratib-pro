@@ -501,3 +501,266 @@ SELECT COUNT(*) FROM rateb_branch_transfers WHERE status IN ('completed','failed
 ---
 
 *وثيقة موحدة — RATIB ERP v1.0 RC1 — آخر تحديث 2026-06-24*
+
+---
+
+# FINAL RELEASE CERTIFICATION
+
+**تاريخ التنفيذ:** 2026-06-26  
+**البيئة المُختبرة:** Repository محلي + Production `https://out.ratib.sa` (probes فقط)  
+**Staging مستقل:** غير متوفر / غير قابل للوصول من بيئة التدقيق
+
+---
+
+## القرار النهائي
+
+# ❌ RELEASE BLOCKED
+
+الشهادة **مرفوضة**. لا يمكن إصدار RC1 للإنتاج العام بدون إكمال الاختبارات على Staging مع قاعدة بيانات حية.
+
+---
+
+## 1. Passed Tests (نتائج فعلية)
+
+| # | الاختبار | النتيجة | الدليل |
+|---|----------|---------|--------|
+| 1 | PHP syntax — 149 ملف `app/` | **PASS** | `PHP_APP_FILES=149 SYNTAX_ERRORS=0` |
+| 2 | Production DB ping | **PASS** | `erp-health.php` → DB `outratib_rateb-erp` OK |
+| 3 | Production login page | **PASS** | HTTP **200**, **0.72s** |
+| 4 | Production admin redirect | **PASS** | HTTP **302** (auth redirect), **0.39s** |
+| 5 | `BranchAccessService` class | **PASS** | enterprise-test |
+| 6 | `BranchFinancialReportingService` class | **PASS** | enterprise-test |
+| 7 | `ConsolidationEliminationService` class | **PASS** | enterprise-test |
+| 8 | `InterBranchTransferService` class | **PASS** | enterprise-test |
+| 9 | `ApiBranchGuardService` class | **PASS** | enterprise-test |
+| 10 | `erp-security-cert.php` في repo | **PASS** | ملف موجود |
+| 11 | Infrastructure scripts (5/5) | **PASS** | backup, restore, health, migration 135 file, seed guard |
+| 12 | RC1-C01 CSRF hotfix في repo | **PASS** | `validateCsrf()` في `BranchControllers.php` |
+| 13 | RC1-C02 import hotfix في repo | **PASS** | `use InterBranchTransferService` |
+| 14 | `verifyOrAbort` removed | **PASS** | لا يوجد في الكود (grep) |
+
+**إجمالي enterprise-test (بدون DB محلي): 11 / 24**
+
+---
+
+## 2. Failed Tests (نتائج فعلية)
+
+| # | الاختبار | النتيجة | السبب |
+|---|----------|---------|--------|
+| 1 | Migration 135 على Production | **FAIL** | `?probe=schema` لا يعيد JSON — `erp-health.php` قديم على السيرفر |
+| 2 | Hotfixes منشورة على Production | **FAIL** | `probe=ping` نصّي وليس JSON — الكود الجديد غير مفعّل على السيرفر |
+| 3 | `erp-security-cert.php` على Production | **FAIL** | HTTP **404** |
+| 4 | enterprise-test DB suites (13 اختبار) | **FAIL** | لا MySQL محلي؛ لا Staging |
+| 5 | Enterprise Seed (10 شركات …) | **NOT RUN** | لا اتصال DB |
+| 6 | Functional HR/Accounting/Inventory/CRM/Procurement/Contracts | **NOT RUN** | يتطلب Staging + بيانات |
+| 7 | Call Center | **N/A** | لا routes/module في `rateb-erp/routes` |
+| 8 | Branch Transfer E2E (4 أنواع) | **NOT RUN** | لا Staging |
+| 9 | Accounting TB/BS/PL/CF بالأرقام | **NOT RUN** | لا Staging |
+| 10 | Consolidated + Elimination مطابقة | **NOT RUN** | لا Staging |
+| 11 | Security penetration (SQLi/XSS/IDOR…) | **NOT RUN** | يتطلب بيئة حية |
+| 12 | k6 load 100–1000 users | **NOT RUN** | لا Staging URL |
+| 13 | Apache Bench | **NOT RUN** | — |
+| 14 | MySQL EXPLAIN / slow log | **NOT RUN** | — |
+| 15 | Restore drill كامل | **NOT RUN** | — |
+| 16 | JavaScript console errors (صفحات) | **NOT RUN** | يتطلب browser automation |
+| 17 | PHP Warnings على Production logs | **NOT VERIFIED** | لا وصول لسجلات السيرفر |
+| 18 | API `/api/v1/health` | **FAIL** | HTTP **404** على Production |
+
+---
+
+## 3. Fixed Bugs (في Git — commit `8bb512e9`, `9b81220e`)
+
+| ID | الوصف | الحالة |
+|----|-------|--------|
+| RC1-C01 | `Csrf::verifyOrAbort()` fatal | **Fixed** — `validateCsrf()` |
+| RC1-C02 | Missing `InterBranchTransferService` import | **Fixed** |
+| — | `InterBranchTransferService` + Phase 6 execution | **Added** في `8bb512e9` |
+| — | `AuditService::logTransfer()` | **Added** |
+| — | enterprise-test DB graceful fail | **Fixed** `EnterpriseTestRunner` |
+
+---
+
+## 4. Remaining Bugs
+
+### Critical / High (تمنع الإصدار)
+
+| ID | الوصف |
+|----|-------|
+| RC1-C03 | كود RC1/Phase 6 **غير مفعّل** على Production (health قديم) |
+| RC1-H01 | Migration **135** غير مُتحقق على Production |
+| RC1-H02 | `erp-health.php` probes غير منشورة |
+| RC1-H03 | `erp-security-cert.php` → 404 |
+| RC1-H04 | لا Staging — لا شهادة وظيفية/محاسبية/أداء |
+
+### Medium / Low
+
+انظر القسم 4 في هذا الملف (RC1-M01 … RC1-L04) — لم تُغلق؛ مؤجلة لـ v1.1.
+
+---
+
+## 5. Security Report (فعلي)
+
+| الشدة | العدد المفتوح | ملاحظة |
+|-------|---------------|--------|
+| Critical | **1** | Production deploy drift (كود التحويلات غير مُثبت على السيرفر) |
+| High | **3** | migration 135، security-cert 404، health exposure |
+| Medium | **6+** | API rate limit، SVG CMS، إلخ |
+| Low | **4** | informational |
+
+**اختبارات اختراق حية:** لم تُنفَّذ — **لا شهادة أمنية كاملة**.
+
+---
+
+## 6. Performance Report (فعلي)
+
+| المقياس | القيمة المقاسة | المصدر |
+|---------|----------------|--------|
+| `/public/login` | **0.72s**, HTTP 200 | curl Production |
+| `/public/admin` | **0.39s**, HTTP 302 | curl Production |
+| health ping | **~1–2s** | curl سابق |
+| k6 P95/P99 | **N/A** | لم يُشغَّل |
+| ab concurrent | **N/A** | لم يُشغَّل |
+| CPU/RAM تحت حمل | **N/A** | — |
+| أبطأ 20 query | **N/A** | لا slow log |
+| أبطأ 20 صفحة | **N/A** | لا profiler |
+
+---
+
+## 7. Database Health
+
+| الفحص | Production | Local/CI |
+|-------|------------|----------|
+| اتصال | ✅ `outratib_rateb-erp` | ❌ connection refused |
+| Migration 135 | ❌ غير مُتحقق | ملف موجود في repo |
+| Migrations 129–134 | ❌ غير مُتحقق | — |
+
+---
+
+## 8. Backup Status
+
+| البند | الحالة |
+|-------|--------|
+| `bin/erp-backup.php` | ✅ موجود في repo |
+| آخر backup على Production | **NOT VERIFIED** — لا وصول لـ `storage/backups/` |
+| جدولة cron ليلي | **NOT VERIFIED** |
+
+---
+
+## 9. Restore Status
+
+| البند | الحالة |
+|-------|--------|
+| `bin/erp-restore.php` | ✅ موجود |
+| Restore drill منفّذ | **NO** |
+| RTO مقاس | **N/A** |
+| RPO مقاس | **N/A** |
+
+---
+
+## 10. Deployment Checklist
+
+انظر القسم 8 أعلاه في هذا الملف — **0 من post-deploy smoke مُكتمل** على Production الحالي.
+
+---
+
+## 11. Rollback Checklist
+
+جاهز في repo — **لم يُختبر** عملياً.
+
+---
+
+## 12. Monitoring Checklist
+
+| البند | Production |
+|-------|------------|
+| health ping نصي | ✅ |
+| health JSON schema | ❌ |
+| security-cert | ❌ 404 |
+| UptimeRobot / external | NOT VERIFIED |
+
+---
+
+## 13. Production Checklist
+
+| Pass | Fail | Verify | Not Run |
+|------|------|--------|---------|
+| 4 | 6 | 14 | 8+ |
+
+التفاصيل: القسم 7 في هذا الملف.
+
+---
+
+## 14. Release Notes (ملخص RC1)
+
+- Code Freeze نشط
+- Phase 6 inter-branch execution في Git
+- RC1 hotfixes في Git
+- **الإصدار محظور** حتى Staging + نشر + migration 135 + اختبارات كاملة
+
+---
+
+## 15. Files Modified (commits `8bb512e9`, `9b81220e`)
+
+- `rateb-erp/app/controllers/Company/BranchControllers.php`
+- `rateb-erp/app/services/AuditService.php`
+- `rateb-erp/public/erp-health.php`
+- `rateb-erp/config/lang/en.php`, `ar.php`
+- `rateb-erp/bin/enterprise-test/EnterpriseTestRunner.php` (هذا التدقيق)
+- `rateb-erp/docs/RC1/RATIB_ERP_v1.0_RC1.md`
+
+---
+
+## 16. Files Added (commit `8bb512e9`)
+
+- `rateb-erp/app/services/InterBranchTransferService.php`
+- `rateb-erp/migrations/135_phase6_interbranch_execution.sql`
+- `rateb-erp/public/erp-security-cert.php` (في repo — غير على Production)
+- `rateb-erp/bin/enterprise-seed/*`
+- `rateb-erp/bin/enterprise-test/*`
+- `rateb-erp/bin/enterprise-dr-validate.php`
+- `rateb-erp/bin/enterprise-perf/*`
+- `rateb-erp/docs/PHASE6_ENTERPRISE_CERTIFICATION.md`
+
+---
+
+## 17. Database Changes (مطلوبة — migration 135)
+
+```sql
+-- rateb_branch_transfers.status + failed
+-- rateb_journal_entries.source_type + branch_transfer
+```
+
+**حالة التطبيق على Production:** **غير مُؤكد** — يجب التحقق بعد نشر `erp-health.php` وتشغيل migrate.
+
+---
+
+## أسباب الحظر التفصيلية
+
+1. **لا Staging** — Phases 2–8 من طلب الشهادة لم تُنفَّذ (seed، functional، accounting numbers، k6، restore).
+2. **Production لم يستلم الكود** — دليل: `probe=ping` يعيد نصاً بينما الكود في Git يعيد JSON.
+3. **Migration 135** — لا يمكن التحقق عن بُعد؛ التنفيذ على Production غير مُثبت.
+4. **erp-security-cert.php** — 404 على Production.
+5. **11/24** اختبار enterprise فقط؛ **13 فشل** بسبب DB؛ **0** اختبار E2E للتحويلات.
+6. **Call Center** — خارج نطاق الكود الحالي.
+7. **لا أدلة أداء** (k6/ab/slow log).
+8. **لا restore drill**.
+9. **شهادة أمنية اختراقية** — لم تُنفَّذ.
+
+---
+
+## الحد الأدنى لـ ✅ READY FOR RELEASE
+
+1. نشر كامل `rateb-erp/` (بما فيه health + security-cert + InterBranchTransferService)
+2. تطبيق migration **135** والتحقق عبر `?probe=schema`
+3. بيئة **Staging** مع `RATEB_ENV=staging` + enterprise seed كامل
+4. `php bin/enterprise-test/run.php` → **24/24**
+5. E2E: 4 أنواع تحويل فرع → completed + audit + notifications
+6. TB/BS/PL/CF فرع + موحد بعد elimination — أرقام متطابقة
+7. k6 على Staging — توثيق P95/P99
+8. Restore drill موثق مع RTO/RPO
+9. `erp-security-cert.php` → critical=0, high=0
+
+---
+
+*FINAL RELEASE CERTIFICATION — 2026-06-26 — ❌ RELEASE BLOCKED*
+
