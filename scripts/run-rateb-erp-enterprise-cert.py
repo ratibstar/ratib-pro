@@ -187,8 +187,8 @@ def main() -> int:
         format_enterprise_report(test_resp, db=resolved_db, site=site),
     )
 
-    if failed > 0 or total < 29:
-        print(f"::error::Enterprise tests {passed}/{total} — need 29/29 PASS", flush=True)
+    if failed > 0 or passed < 29:
+        print(f"::error::Enterprise tests {passed}/{total} — need all PASS (min 29)", flush=True)
         return 1
 
     print(f"Enterprise tests {passed}/{total} PASS", flush=True)

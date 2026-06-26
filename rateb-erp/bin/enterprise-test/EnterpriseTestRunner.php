@@ -125,11 +125,14 @@ final class EnterpriseTestRunner
             }
             try {
                 $svc = new BranchFinancialReportingService();
-                if (method_exists($svc, 'trialBalance')) {
+                if (method_exists($svc, 'consolidatedTrialBalance')) {
+                    $tb = $svc->consolidatedTrialBalance($companyId);
+                    $tests[] = $this->test('Trial balance returns array', is_array($tb));
+                } elseif (method_exists($svc, 'trialBalance')) {
                     $tb = $svc->trialBalance($companyId, null, null, null);
                     $tests[] = $this->test('Trial balance returns array', is_array($tb));
                 } else {
-                    $tests[] = $this->test('Trial balance method exists', false, 'trialBalance missing');
+                    $tests[] = $this->test('Trial balance method exists', false, 'consolidatedTrialBalance missing');
                 }
             } catch (\Throwable $e) {
                 $tests[] = $this->test('Trial balance executes', false, $e->getMessage());

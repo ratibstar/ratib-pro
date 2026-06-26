@@ -31,10 +31,11 @@ final class EnterpriseSeeder
         $this->db = Database::connection();
     }
 
-    /** Idempotent GL backfill for companies added after migration 132. */
+    /** Idempotent GL + platform role backfill when migrations 128/132 were not applied. */
     public function backfillPrerequisites(): void
     {
         $this->ensureInterBranchGlAccounts();
+        $this->ensurePlatformEnterpriseRoles();
     }
 
     public function seedCompanies(): void
@@ -80,6 +81,37 @@ final class EnterpriseSeeder
              LEFT JOIN rateb_chart_of_accounts p ON p.company_id = c.id AND p.code = '2000'
              WHERE NOT EXISTS (SELECT 1 FROM rateb_chart_of_accounts x WHERE x.company_id = c.id AND x.code = '2150')"
         );
+    }
+
+    /** Insert HO/branch roles once per slug (rateb_roles.slug is globally unique). */
+    private function ensurePlatformEnterpriseRoles(): void
+    {
+        if (!$this->tableExists('rateb_roles')) {
+            return;
+        }
+        $companyId = (int) $this->db->query('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1')->fetchColumn();
+        if ($companyId < 1) {
+            return;
+        }
+        $roles = [
+            ['HQ Admin', 'hq_admin', 'Head office — all branches'],
+            ['HQ Manager', 'hq_manager', 'Head office manager — all branches read/compare'],
+            ['Branch Manager', 'branch_manager', 'Single-branch manager'],
+        ];
+        $insert = $this->db->prepare(
+            'INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+             SELECT :cid, :name, :slug, :desc, 1
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_roles r WHERE r.slug = :slug_chk)'
+        );
+        foreach ($roles as [$name, $slug, $desc]) {
+            $insert->execute([
+                'cid' => $companyId,
+                'name' => $name,
+                'slug' => $slug,
+                'desc' => $desc,
+                'slug_chk' => $slug,
+            ]);
+        }
     }
 
     public function seedBranches(): void
