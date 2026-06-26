@@ -32,11 +32,14 @@ $canApprove = !empty($canApprove);
                 <div><?php echo Rateb\App\Core\View::escape(__((string) ($item['status'] ?? 'planned'))); ?></div>
             </div>
         </div>
-        <form method="post" action="<?php echo rateb_app_url('contract-renewals/' . $id); ?>" class="row g-3">
+        <form method="post" action="<?php echo rateb_app_url('contract-renewals/' . $id); ?>" class="row g-3" data-contract-renewal-form="1">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <?php foreach ($formFields as $field) {
                 $name = (string) ($field['name'] ?? '');
                 $value = (string) ($item[$name] ?? ($field['default'] ?? ''));
+                if ($name === 'contract_current_value') {
+                    $value = (string) ($item['contract_value'] ?? $value);
+                }
                 if ($name === 'new_end_date' && $value === '0000-00-00') {
                     $value = '';
                 }

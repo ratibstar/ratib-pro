@@ -1387,6 +1387,8 @@ return [
     'performance_kpi' => 'مؤشر الأداء',
     'rating' => 'التقييم',
     'contract_renewals' => 'تجديد العقود',
+    'contract_current_value' => 'قيمة العقد الحالي',
+    'contract_pending_approval_on_edit' => 'تُغيَّر حالة العقد إلى بانتظار موافقة المراقب بعد أي تعديل',
     'contract_renewal_approved' => 'تم اعتماد تجديد العقد وتحديث بيانات العقد',
     'contract_renewal_rejected' => 'تم رفض تجديد العقد',
     'contract_renewal_already_processed' => 'تمت معالجة هذا التجديد مسبقاً',

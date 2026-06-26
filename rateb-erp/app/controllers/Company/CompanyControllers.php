@@ -1781,6 +1781,9 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         }
         $id = (int) ($params['id'] ?? 0);
         $data = $this->collectData();
+        if (\Rateb\App\Services\ManagerApprovalSchema::hasColumn('rateb_contracts', 'approval_status')) {
+            $data['approval_status'] = 'pending';
+        }
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {

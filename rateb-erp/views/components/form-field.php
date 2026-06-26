@@ -116,6 +116,13 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
             if ($itemCode !== '') {
                 echo ' data-item-code="' . Rateb\App\Core\View::escape($itemCode) . '"';
             }
+            if (isset($opt['contract_value'])) {
+                echo ' data-contract-value="' . Rateb\App\Core\View::escape((string) $opt['contract_value']) . '"';
+            }
+            $contractEnd = trim((string) ($opt['end_date'] ?? ''));
+            if ($contractEnd !== '') {
+                echo ' data-end-date="' . Rateb\App\Core\View::escape($contractEnd) . '"';
+            }
             ?>>
             <?php echo Rateb\App\Core\View::escape($opt['label']); ?>
         </option>

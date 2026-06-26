@@ -1386,6 +1386,8 @@ return [
     'performance_kpi' => 'Performance KPI',
     'rating' => 'Rating',
     'contract_renewals' => 'Contract Renewals',
+    'contract_current_value' => 'Current contract value',
+    'contract_pending_approval_on_edit' => 'Contract status is set to pending management approval after any edit',
     'contract_renewal_approved' => 'Contract renewal approved and contract updated',
     'contract_renewal_rejected' => 'Contract renewal rejected',
     'contract_renewal_already_processed' => 'This renewal was already processed',

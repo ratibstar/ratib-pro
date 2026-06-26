@@ -6,6 +6,9 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
+        <?php if ($isEdit) { ?>
+        <p class="text-muted small mb-3"><?php echo __('contract_pending_approval_on_edit'); ?></p>
+        <?php } ?>
         <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">

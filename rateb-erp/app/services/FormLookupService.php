@@ -720,6 +720,19 @@ final class FormLookupService
     {
         return [
             ['name' => 'contract_id', 'label' => 'contracts', 'type' => 'fk', 'lookup' => 'contracts', 'required' => true, 'col' => 'col-md-4'],
+            [
+                'name' => 'contract_current_value',
+                'label' => 'contract_current_value',
+                'type' => 'number',
+                'step' => '0.01',
+                'display_only' => true,
+                'readonly' => true,
+                'col' => 'col-md-2',
+                'attrs' => [
+                    'data-contract-current-value-display' => '1',
+                    'class' => 'form-control rateb-form-control rateb-ltr-num',
+                ],
+            ],
             ['name' => 'renewal_date', 'label' => 'renewal_date', 'type' => 'date', 'col' => 'col-md-2', 'default' => date('Y-m-d')],
             ['name' => 'new_end_date', 'label' => 'new_end_date', 'type' => 'date', 'col' => 'col-md-2'],
             ['name' => 'new_value', 'label' => 'new_value', 'type' => 'number', 'step' => '0.01', 'col' => 'col-md-2'],
@@ -910,7 +923,16 @@ final class FormLookupService
     {
         $out = [];
         foreach ((new Contract())->all(300, 0) as $row) {
-            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['contract_no'] ?? '') . ' — ' . ($row['title'] ?? ''))];
+            $end = (string) ($row['end_date'] ?? '');
+            if ($end === '0000-00-00') {
+                $end = '';
+            }
+            $out[] = [
+                'value' => (int) $row['id'],
+                'label' => trim(($row['contract_no'] ?? '') . ' — ' . ($row['title'] ?? '')),
+                'contract_value' => (float) ($row['value'] ?? 0),
+                'end_date' => $end,
+            ];
         }
         return $out;
     }

@@ -225,6 +225,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <script src="<?php echo rateb_asset('js/form-fiscal-year.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/line-items.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/inventory-batch-form.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/contract-renewal-form.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/charts.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/cms-admin.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/entity-documents-modal.js'); ?>"></script>

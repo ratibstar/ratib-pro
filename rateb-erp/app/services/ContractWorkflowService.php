@@ -38,6 +38,12 @@ final class ContractWorkflowService
         $cid = TenantGuard::requireCompanyId();
         $contractId = (int) ($data['contract_id'] ?? 0);
         TenantGuard::assertContract($contractId, $cid);
+        $contract = (new Contract())->find($contractId);
+        $contractValue = is_array($contract) ? (float) ($contract['value'] ?? 0) : 0.0;
+        $newValue = (float) ($data['new_value'] ?? 0);
+        if ($newValue <= 0 && $contractValue > 0) {
+            $newValue = $contractValue;
+        }
         $db = \Rateb\App\Core\Database::connection();
         $no = (new WorkflowTableService())->generateRecordNo('contract-renewals');
         $newEnd = $this->normalizeDate($data['new_end_date'] ?? null);
@@ -50,7 +56,7 @@ final class ContractWorkflowService
             'contract_id' => $contractId,
             'rd' => $data['renewal_date'] ?? date('Y-m-d'),
             'ned' => $newEnd,
-            'nv' => (float) ($data['new_value'] ?? 0),
+            'nv' => $newValue,
             'st' => 'planned',
             'ma' => 'pending',
             'notes' => $data['notes'] ?? null,
@@ -162,7 +168,7 @@ final class ContractWorkflowService
             'ned' => $newEnd,
             'nv' => (float) ($data['new_value'] ?? 0),
             'notes' => $data['notes'] ?? null,
-            'ma' => $this->approvalState($row) === 'rejected' ? 'pending' : $this->approvalState($row),
+            'ma' => 'pending',
             'st' => 'planned',
             'id' => $id,
             'cid' => (int) $row['company_id'],
