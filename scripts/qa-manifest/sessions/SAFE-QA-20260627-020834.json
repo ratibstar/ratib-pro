@@ -1,0 +1,18 @@
+﻿{
+    "sessionTag":  "SAFE-QA-20260627-020834",
+    "site":  "https://rateb.sa",
+    "startedAt":  "2026-06-27T02:08:34.4273583+03:00",
+    "finishedAt":  null,
+    "objects":  [
+
+                ],
+    "writes":  [
+
+               ],
+    "cleanup":  [
+
+                ],
+    "stopped":  false,
+    "stopReason":  null,
+    "productionTouched":  false
+}

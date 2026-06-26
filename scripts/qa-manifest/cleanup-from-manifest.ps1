@@ -28,7 +28,7 @@ function Invoke-ErpDelete {
     param([string]$Route, [int]$Id, $Session)
     $list = Invoke-WebRequest -Uri "$site/rateb-erp/public/admin/$Route" -WebSession $Session -UseBasicParsing
     $csrf = Get-Csrf $list.Content
-    $null = Invoke-WebRequest -Uri "$site/rateb-erp/public/admin/${Route}/$Id/delete" -Method POST -WebSession $Session -Body @{ _csrf = $csrf } -UseBasicParsing -MaximumRedirection 5
+    $null = Invoke-WebRequest -Uri "$site/rateb-erp/public/admin/${Route}/$Id/delete" -Method POST -WebSession $Session -Body @{ _csrf = $csrf } -UseBasicParsing -MaximumRedirection 10
 }
 
 # Login
@@ -57,10 +57,10 @@ foreach ($type in $order) {
             $verify = Invoke-WebRequest -Uri "$site/rateb-erp/public/admin/${route}/$id/edit" -WebSession $sess -UseBasicParsing -ErrorAction SilentlyContinue
             $gone = ($verify.StatusCode -ne 200) -or ($verify.Content -match '404')
             if (-not $gone) {
-                $remaining += "$type:$id still exists after delete"
+                $remaining += "${type}:${id} still exists after delete"
             }
         } catch {
-            $remaining += "$type:$id delete error: $($_.Exception.Message)"
+            $remaining += "${type}:${id} delete error: $($_.Exception.Message)"
         }
     }
 }

@@ -1,0 +1,97 @@
+﻿{
+    "site":  "https://rateb.sa",
+    "finishedAt":  null,
+    "productionTouched":  false,
+    "startedAt":  "2026-06-27T02:10:15.5534659+03:00",
+    "sessionTag":  "SAFE-QA-20260627-021015",
+    "stopped":  false,
+    "cleanup":  [
+
+                ],
+    "stopReason":  null,
+    "writes":  [
+                   {
+                       "objectType":  "company",
+                       "objectId":  12,
+                       "action":  "create",
+                       "time":  "2026-06-27T02:10:17.7200618+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "user",
+                       "objectId":  14,
+                       "action":  "create",
+                       "time":  "2026-06-27T02:10:20.0376520+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "user",
+                       "objectId":  14,
+                       "action":  "update_password",
+                       "time":  "2026-06-27T02:10:21.0698851+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "user",
+                       "objectId":  14,
+                       "action":  "disable",
+                       "time":  "2026-06-27T02:10:22.6868337+03:00",
+                       "extra":  {
+
+                                 }
+                   },
+                   {
+                       "objectType":  "user",
+                       "objectId":  14,
+                       "action":  "delete_verified",
+                       "time":  "2026-06-27T02:10:24.1580676+03:00",
+                       "extra":  {
+
+                                 }
+                   }
+               ],
+    "objects":  [
+                    {
+                        "type":  "company",
+                        "id":  12,
+                        "uuid":  "",
+                        "slug":  "QA-COMPANY-20260627021014",
+                        "email":  "",
+                        "code":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  null,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-021015",
+                        "createdAt":  "2026-06-27T02:10:17.7200618+03:00",
+                        "deletedAt":  null,
+                        "extra":  {
+
+                                  }
+                    },
+                    {
+                        "type":  "user",
+                        "id":  14,
+                        "uuid":  "",
+                        "slug":  "",
+                        "email":  "QA-USER-20260627021014@test.local",
+                        "code":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  12,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-021015",
+                        "createdAt":  "2026-06-27T02:10:20.0376520+03:00",
+                        "deletedAt":  null,
+                        "extra":  {
+
+                                  }
+                    }
+                ]
+}

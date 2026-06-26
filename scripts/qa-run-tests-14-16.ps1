@@ -30,7 +30,7 @@ function Remove-ManifestObject {
     $list = Invoke-WebRequest -Uri "$base/admin/$Route" -WebSession $sess -UseBasicParsing
     Invoke-WebRequest -Uri "$base/admin/${Route}/$Id/delete" -Method POST -WebSession $sess -Body @{
         _csrf = (Get-Csrf $list.Content)
-    } -UseBasicParsing | Out-Null
+    } -UseBasicParsing -MaximumRedirection 10 | Out-Null
     Start-Sleep -Milliseconds 400
     try {
         $v = Invoke-WebRequest -Uri "$base/admin/${Route}/$Id/edit" -WebSession $sess -UseBasicParsing -MaximumRedirection 0
@@ -41,7 +41,17 @@ function Remove-ManifestObject {
     if (-not $gone) {
         Stop-SafeQaSession -Manifest $manifest -Reason "Delete verification failed: $Type id=$Id still exists"
     }
+    foreach ($obj in $manifest.objects) {
+        if ([string]$obj.type -eq $Type -and [int]$obj.id -eq $Id) {
+            $obj.deletedAt = (Get-Date).ToString('o')
+        }
+    }
     Register-SafeQaWrite -Manifest $manifest -Type $Type -Id $Id -Action 'delete_verified'
+    Save-ManifestNow
+}
+
+function Save-ManifestNow {
+    Save-SafeQaManifest -Manifest $manifest -Path $manifestPath
 }
 
 # --- Session + manifest ---
@@ -68,6 +78,7 @@ Start-Sleep -Seconds 1
 $companyId = Invoke-Resolve -Type 'company' -Slug $coSlug
 Add-SafeQaObject -Manifest $manifest -Type 'company' -Id $companyId -Slug $coSlug | Out-Null
 Register-SafeQaWrite -Manifest $manifest -Type 'company' -Id $companyId -Action 'create'
+Save-ManifestNow
 
 $report = [ordered]@{ tests = @{}; cleanup = @(); manifestPath = $manifestPath }
 
@@ -105,8 +116,10 @@ Invoke-WebRequest -Uri "$base/admin/users/$userId" -Method POST -WebSession $ses
     name = "QA-USER-$ts-EDITED"; email = $userEmail; company_id = $companyId; status = 'inactive'; locale = 'ar'
 } -UseBasicParsing | Out-Null
 Register-SafeQaWrite -Manifest $manifest -Type 'user' -Id $userId -Action 'disable'
+Save-ManifestNow
 
 Remove-ManifestObject -Type 'user' -Id $userId -Route 'users'
+Save-ManifestNow
 $report.tests['14'] = @{
     result = if ($userLoginOk) { 'PASS' } else { 'PARTIAL' }
     userId = $userId; userEmail = $userEmail; passwordResetLogin = $userLoginOk
@@ -120,8 +133,8 @@ $perm = ([regex]::Matches($rc.Content, 'name="permission_ids\[\]"\s+value="(\d+)
 if (-not $perm) { Stop-SafeQaSession -Manifest $manifest -Reason 'No permissions on role form' }
 Invoke-WebRequest -Uri "$base/admin/roles" -Method POST -WebSession $sess -Body @{
     _csrf = (Get-Csrf $rc.Content); name = $roleSlug; slug = $roleSlug; description = 'Safe QA v2 role'
-    'permission_ids[0]' = $perm.Groups[1].Value
-} -UseBasicParsing | Out-Null
+    'permission_ids[]' = $perm.Groups[1].Value
+} -UseBasicParsing -MaximumRedirection 10 | Out-Null
 Start-Sleep -Seconds 1
 $roleId = Invoke-Resolve -Type 'role' -Slug $roleSlug
 Add-SafeQaObject -Manifest $manifest -Type 'role' -Id $roleId -Slug $roleSlug | Out-Null
@@ -130,8 +143,8 @@ $restSlug = "QA-ROLE-RESTRICTED-$ts"
 $rc2 = Invoke-WebRequest -Uri "$base/admin/roles/create" -WebSession $sess -UseBasicParsing
 Invoke-WebRequest -Uri "$base/admin/roles" -Method POST -WebSession $sess -Body @{
     _csrf = (Get-Csrf $rc2.Content); name = $restSlug; slug = $restSlug; description = 'restricted'
-    'permission_ids[0]' = $perm.Groups[1].Value
-} -UseBasicParsing | Out-Null
+    'permission_ids[]' = $perm.Groups[1].Value
+} -UseBasicParsing -MaximumRedirection 10 | Out-Null
 Start-Sleep -Seconds 1
 $restRoleId = Invoke-Resolve -Type 'role' -Slug $restSlug
 Add-SafeQaObject -Manifest $manifest -Type 'role' -Id $restRoleId -Slug $restSlug | Out-Null

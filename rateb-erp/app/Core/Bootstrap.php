@@ -45,6 +45,7 @@ final class Bootstrap
             '/app/helpers/LineItems.php',
             '/app/services/AuditService.php',
             '/app/controllers/Admin/AdminControllers.php',
+            '/app/controllers/Admin/AutomationControllers.php',
             '/app/controllers/Admin/BusinessControllers.php',
             '/app/controllers/Admin/ExtendedControllers.php',
             '/app/controllers/Admin/AccountingControllers.php',
