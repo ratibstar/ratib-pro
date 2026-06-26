@@ -150,22 +150,22 @@ $catalog = @(
     @{ n = 54; m = 'Ops Stock Movements'; u = "$base/admin/ops/stock-movements"; mm = @('stock|movement|rateb') }
     @{ n = 55; m = 'Ops Documents'; u = "$base/admin/ops/documents"; mm = @('document|rateb') }
     @{ n = 56; m = 'Ops Workflows'; u = "$base/admin/ops/workflows"; mm = @('workflow|rateb') }
-    @{ n = 57; m = 'HR Dashboard'; u = "$base/admin/ops/hr"; mm = @('hr|rateb') }
-    @{ n = 58; m = 'HR Employees'; u = "$base/admin/ops/hr/employees"; mm = @('employee|rateb') }
-    @{ n = 59; m = 'HR Attendance'; u = "$base/admin/ops/hr/attendance"; mm = @('attendance|rateb') }
-    @{ n = 60; m = 'HR Leaves'; u = "$base/admin/ops/hr/leaves"; mm = @('leave|rateb') }
-    @{ n = 61; m = 'HR Payroll'; u = "$base/admin/ops/hr/payroll"; mm = @('payroll|rateb') }
-    @{ n = 62; m = 'HR Departments'; u = "$base/admin/ops/hr/departments"; mm = @('department|rateb') }
+    @{ n = 57; m = 'HR Dashboard'; u = "$base/admin/hr"; mm = @('hr|rateb') }
+    @{ n = 58; m = 'HR Employees'; u = "$base/admin/hr/employees"; mm = @('employee|rateb') }
+    @{ n = 59; m = 'HR Attendance'; u = "$base/admin/hr/attendance"; mm = @('attendance|rateb') }
+    @{ n = 60; m = 'HR Leaves'; u = "$base/admin/hr/leaves"; mm = @('leave|rateb') }
+    @{ n = 61; m = 'HR Payroll'; u = "$base/admin/hr/payroll"; mm = @('payroll|rateb') }
+    @{ n = 62; m = 'HR Departments'; u = "$base/admin/hr/departments"; mm = @('department|rateb') }
     @{ n = 63; m = 'Ops Accounting'; u = "$base/admin/ops/accounting"; mm = @('accounting|rateb') }
     @{ n = 64; m = 'Ops Chart of Accounts'; u = "$base/admin/ops/chart-of-accounts"; mm = @('chart|account|rateb') }
     @{ n = 65; m = 'Ops Journal Entries'; u = "$base/admin/ops/journal-entries"; mm = @('journal|rateb') }
-    @{ n = 66; m = 'Ops Customers'; u = "$base/admin/ops/customers"; mm = @('customer|rateb') }
+    @{ n = 66; m = 'Ops Customers'; u = "$base/admin/customers"; mm = @('customer|rateb') }
     @{ n = 67; m = 'Ops Cash Vouchers'; u = "$base/admin/ops/cash-vouchers"; mm = @('voucher|cash|rateb') }
     @{ n = 68; m = 'Ops Fiscal Periods'; u = "$base/admin/ops/fiscal-periods"; mm = @('fiscal|rateb') }
     @{ n = 69; m = 'Ops Bank Accounts'; u = "$base/admin/ops/bank-accounts"; mm = @('bank|rateb') }
     @{ n = 70; m = 'Ops Cost Centers'; u = "$base/admin/ops/cost-centers"; mm = @('cost|center|rateb') }
     @{ n = 71; m = 'Ops Product Categories'; u = "$base/admin/ops/product-categories"; mm = @('product|category|rateb') }
-    @{ n = 72; m = 'Ops Analytics Reports'; u = "$base/admin/ops/analytics-reports"; mm = @('report|analytics|rateb') }
+    @{ n = 72; m = 'Analytics KPI Reports'; u = "$base/admin/ops/reports/kpi"; mm = @('report|kpi|rateb') }
     @{ n = 73; m = 'Ops Reports'; u = "$base/admin/ops/reports"; mm = @('report|rateb') }
     @{ n = 74; m = 'Ops Notifications'; u = "$base/admin/ops/notifications"; mm = @('notification|rateb') }
     @{ n = 75; m = 'Ops Profile'; u = "$base/admin/ops/profile"; mm = @('profile|rateb') }
@@ -175,7 +175,7 @@ $catalog = @(
     @{ n = 79; m = 'Locale EN'; u = "$base/locale/en"; mm = @(); al = $true }
     @{ n = 80; m = 'Locale AR'; u = "$base/locale/ar"; mm = @(); al = $true }
     @{ n = 81; m = 'Password Forgot'; u = "$base/password/forgot"; mm = @('password|email|form'); al = $true }
-    @{ n = 82; m = 'Login Scan'; u = "$base/login/scan"; mm = @('barcode|scan|login'); al = $true }
+    @{ n = 82; m = 'Login Scan'; u = "$base/login/scan"; mm = @('scan|qr|barcode|login'); al = $true }
     @{ n = 83; m = 'Marketing Site'; u = "$Site/site"; mm = @('rateb|site|html') }
     @{ n = 84; m = 'Marketing Robots'; u = "$Site/site/robots.txt"; mm = @('User-agent|Disallow') }
 )

@@ -1,0 +1,1405 @@
+﻿{
+    "sessionTag":  "SAFE-QA-20260627-023048",
+    "manifestPath":  "C:\\Users\\انا\\Desktop\\ratibprogram\\scripts\\qa-manifest\\sessions\\SAFE-QA-20260627-023048.json",
+    "startedAt":  "2026-06-27T02:30:48.2969339+03:00",
+    "finishedAt":  "2026-06-27T02:31:19.7453908+03:00",
+    "total":  78,
+    "pass":  68,
+    "partial":  9,
+    "fail":  0,
+    "blocked":  1,
+    "cleanupVerified":  true,
+    "tests":  [
+                  {
+                      "test":  23,
+                      "module":  "Plans",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/plans",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  323,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/plans",
+                                       "length":  43169
+                                   }
+                  },
+                  {
+                      "test":  24,
+                      "module":  "Subscriptions",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/subscriptions",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  240,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/subscriptions",
+                                       "length":  44136
+                                   }
+                  },
+                  {
+                      "test":  25,
+                      "module":  "Payments",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/payments",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  240,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/payments",
+                                       "length":  37643
+                                   }
+                  },
+                  {
+                      "test":  26,
+                      "module":  "Invoices",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/invoices",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  298,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/invoices",
+                                       "length":  40763
+                                   }
+                  },
+                  {
+                      "test":  27,
+                      "module":  "Email Templates",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/email-templates",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  313,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/email-templates",
+                                       "length":  48127
+                                   }
+                  },
+                  {
+                      "test":  28,
+                      "module":  "SMS Templates",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/sms-templates",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  253,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/sms-templates",
+                                       "length":  39095
+                                   }
+                  },
+                  {
+                      "test":  29,
+                      "module":  "Support Tickets",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/support-tickets",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  211,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/support-tickets",
+                                       "length":  37283
+                                   }
+                  },
+                  {
+                      "test":  30,
+                      "module":  "Access Control",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/access-control",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  208,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/access-control",
+                                       "length":  35436
+                                   }
+                  },
+                  {
+                      "test":  31,
+                      "module":  "Permission Matrix",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/access-control/matrix",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  512,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/access-control/matrix",
+                                       "length":  334032
+                                   }
+                  },
+                  {
+                      "test":  32,
+                      "module":  "Permissions (read)",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/permissions",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  297,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/permissions",
+                                       "length":  70852
+                                   }
+                  },
+                  {
+                      "test":  33,
+                      "module":  "Accounting Dashboard",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/accounting",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  270,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/accounting",
+                                       "length":  51804
+                                   }
+                  },
+                  {
+                      "test":  34,
+                      "module":  "Chart of Accounts",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/chart-of-accounts",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  298,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/chart-of-accounts",
+                                       "length":  65167
+                                   }
+                  },
+                  {
+                      "test":  35,
+                      "module":  "COA Tree",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/coa-tree",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  309,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/coa-tree",
+                                       "length":  81581
+                                   }
+                  },
+                  {
+                      "test":  36,
+                      "module":  "Journal Entries",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/journal-entries",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  236,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/journal-entries",
+                                       "length":  44816
+                                   }
+                  },
+                  {
+                      "test":  37,
+                      "module":  "Procurement Oversight",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/oversight/procurement",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  255,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/oversight/procurement",
+                                       "length":  46644
+                                   }
+                  },
+                  {
+                      "test":  38,
+                      "module":  "RFQ Oversight",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/oversight/rfq",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  256,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/oversight/rfq",
+                                       "length":  39243
+                                   }
+                  },
+                  {
+                      "test":  39,
+                      "module":  "Inventory Oversight",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/oversight/inventory",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  277,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/oversight/inventory",
+                                       "length":  65180
+                                   }
+                  },
+                  {
+                      "test":  40,
+                      "module":  "Workflows Oversight",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/oversight/workflows",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  233,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/oversight/workflows",
+                                       "length":  43978
+                                   }
+                  },
+                  {
+                      "test":  41,
+                      "module":  "Approvals Oversight",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/oversight/approvals",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  259,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/oversight/approvals",
+                                       "length":  40986
+                                   }
+                  },
+                  {
+                      "test":  42,
+                      "module":  "Supplier Evaluations",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/oversight/supplier-evaluations",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  264,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/oversight/supplier-evaluations",
+                                       "length":  49829
+                                   }
+                  },
+                  {
+                      "test":  43,
+                      "module":  "Ops Purchase Requests",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  226,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+                                       "length":  58346
+                                   }
+                  },
+                  {
+                      "test":  44,
+                      "module":  "Ops Purchase Orders",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/purchase-orders",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  251,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/purchase-orders",
+                                       "length":  52605
+                                   }
+                  },
+                  {
+                      "test":  45,
+                      "module":  "Ops RFQ",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/rfq",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  254,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/rfq",
+                                       "length":  38292
+                                   }
+                  },
+                  {
+                      "test":  46,
+                      "module":  "Ops Suppliers",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/suppliers",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  252,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/suppliers",
+                                       "length":  56575
+                                   }
+                  },
+                  {
+                      "test":  47,
+                      "module":  "Ops Inventory",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  286,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+                                       "length":  80546
+                                   }
+                  },
+                  {
+                      "test":  48,
+                      "module":  "Ops Warehouses",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/warehouses",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  267,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/warehouses",
+                                       "length":  78748
+                                   }
+                  },
+                  {
+                      "test":  49,
+                      "module":  "Ops Branches",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/branches",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  384,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin",
+                                       "length":  36343
+                                   }
+                  },
+                  {
+                      "test":  50,
+                      "module":  "Ops Assets",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/assets",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  212,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/assets",
+                                       "length":  39513
+                                   }
+                  },
+                  {
+                      "test":  51,
+                      "module":  "Ops Contracts",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/contracts",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  224,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/contracts",
+                                       "length":  61879
+                                   }
+                  },
+                  {
+                      "test":  52,
+                      "module":  "Ops Tenders",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/tenders",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  248,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/tenders",
+                                       "length":  39466
+                                   }
+                  },
+                  {
+                      "test":  53,
+                      "module":  "Ops Medical Devices",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/medical-devices",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  237,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/medical-devices",
+                                       "length":  39801
+                                   }
+                  },
+                  {
+                      "test":  54,
+                      "module":  "Ops Stock Movements",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/stock-movements",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  283,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/stock-movements",
+                                       "length":  55110
+                                   }
+                  },
+                  {
+                      "test":  55,
+                      "module":  "Ops Documents",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/documents",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  253,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/documents",
+                                       "length":  37468
+                                   }
+                  },
+                  {
+                      "test":  56,
+                      "module":  "Ops Workflows",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/workflows",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  433,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/oversight/approvals",
+                                       "length":  40986
+                                   }
+                  },
+                  {
+                      "test":  57,
+                      "module":  "HR Dashboard",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/hr",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  180,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  58,
+                      "module":  "HR Employees",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/hr/employees",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  156,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  59,
+                      "module":  "HR Attendance",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/hr/attendance",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  152,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  60,
+                      "module":  "HR Leaves",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/hr/leaves",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  165,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  61,
+                      "module":  "HR Payroll",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/hr/payroll",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  158,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  62,
+                      "module":  "HR Departments",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/hr/departments",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  172,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  63,
+                      "module":  "Ops Accounting",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/accounting",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  247,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/accounting",
+                                       "length":  40166
+                                   }
+                  },
+                  {
+                      "test":  64,
+                      "module":  "Ops Chart of Accounts",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/chart-of-accounts",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  251,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/chart-of-accounts",
+                                       "length":  38519
+                                   }
+                  },
+                  {
+                      "test":  65,
+                      "module":  "Ops Journal Entries",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/journal-entries",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  242,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/journal-entries",
+                                       "length":  38272
+                                   }
+                  },
+                  {
+                      "test":  66,
+                      "module":  "Ops Customers",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/customers",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  168,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  67,
+                      "module":  "Ops Cash Vouchers",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/cash-vouchers",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  239,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/cash-vouchers",
+                                       "length":  38358
+                                   }
+                  },
+                  {
+                      "test":  68,
+                      "module":  "Ops Fiscal Periods",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/fiscal-periods",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  248,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/fiscal-periods",
+                                       "length":  38131
+                                   }
+                  },
+                  {
+                      "test":  69,
+                      "module":  "Ops Bank Accounts",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/bank-accounts",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  238,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/bank-accounts",
+                                       "length":  38073
+                                   }
+                  },
+                  {
+                      "test":  70,
+                      "module":  "Ops Cost Centers",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/cost-centers",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  240,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/cost-centers",
+                                       "length":  39262
+                                   }
+                  },
+                  {
+                      "test":  71,
+                      "module":  "Ops Product Categories",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/product-categories",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  290,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/product-categories",
+                                       "length":  69962
+                                   }
+                  },
+                  {
+                      "test":  72,
+                      "module":  "Ops Analytics Reports",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/analytics-reports",
+                      "expected":  "200 authenticated page",
+                      "actual":  "Error 404",
+                      "status":  404,
+                      "ms":  156,
+                      "result":  "PARTIAL",
+                      "risk":  "Medium",
+                      "severity":  "Medium",
+                      "networkError":  "The remote server returned an error: (404) Not Found.",
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  73,
+                      "module":  "Ops Reports",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/reports",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  234,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/reports",
+                                       "length":  35182
+                                   }
+                  },
+                  {
+                      "test":  74,
+                      "module":  "Ops Notifications",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/notifications",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  229,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/notifications",
+                                       "length":  35515
+                                   }
+                  },
+                  {
+                      "test":  75,
+                      "module":  "Ops Profile",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/profile",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  224,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/profile",
+                                       "length":  37962
+                                   }
+                  },
+                  {
+                      "test":  76,
+                      "module":  "Branch Dashboard",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/branch-dashboard",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  206,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/branch-dashboard",
+                                       "length":  34471
+                                   }
+                  },
+                  {
+                      "test":  77,
+                      "module":  "Branch Financial",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/branch-financial",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  207,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/branch-financial",
+                                       "length":  36123
+                                   }
+                  },
+                  {
+                      "test":  78,
+                      "module":  "Branch Transfers",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/branch-transfers",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  210,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/branch-transfers",
+                                       "length":  34493
+                                   }
+                  },
+                  {
+                      "test":  79,
+                      "module":  "Locale EN",
+                      "url":  "https://rateb.sa/rateb-erp/public/locale/en",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  394,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin",
+                                       "length":  35920
+                                   }
+                  },
+                  {
+                      "test":  80,
+                      "module":  "Locale AR",
+                      "url":  "https://rateb.sa/rateb-erp/public/locale/ar",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  385,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin",
+                                       "length":  36141
+                                   }
+                  },
+                  {
+                      "test":  81,
+                      "module":  "Password Forgot",
+                      "url":  "https://rateb.sa/rateb-erp/public/password/forgot",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  373,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin",
+                                       "length":  36141
+                                   }
+                  },
+                  {
+                      "test":  82,
+                      "module":  "Login Scan",
+                      "url":  "https://rateb.sa/rateb-erp/public/login/scan",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  393,
+                      "result":  "PARTIAL",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin",
+                                       "length":  36141
+                                   }
+                  },
+                  {
+                      "test":  83,
+                      "module":  "Marketing Site",
+                      "url":  "https://rateb.sa/site",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  1458,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/site",
+                                       "length":  108236
+                                   }
+                  },
+                  {
+                      "test":  84,
+                      "module":  "Marketing Robots",
+                      "url":  "https://rateb.sa/site/robots.txt",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  166,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/site/robots.txt",
+                                       "length":  66
+                                   }
+                  },
+                  {
+                      "test":  85,
+                      "module":  "API v1 Index",
+                      "url":  "https://rateb.sa/rateb-erp/public/api/v1",
+                      "expected":  "JSON API root",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  164,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "csp":  "present",
+                                       "xfo":  "SAMEORIGIN,SAMEORIGIN"
+                                   }
+                  },
+                  {
+                      "test":  86,
+                      "module":  "ERP Health",
+                      "url":  "https://rateb.sa/rateb-erp/public/erp-health.php",
+                      "expected":  "{\"status\":\"ok\"}",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  107,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "csp":  "present",
+                                       "xfo":  "SAMEORIGIN,SAMEORIGIN"
+                                   }
+                  },
+                  {
+                      "test":  87,
+                      "module":  "Ping",
+                      "url":  "https://rateb.sa/rateb-erp/public/ping.php",
+                      "expected":  "pong or ok",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  104,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "xfo":  "SAMEORIGIN"
+                                   }
+                  },
+                  {
+                      "test":  88,
+                      "module":  "Security Cert",
+                      "url":  "https://rateb.sa/rateb-erp/public/erp-security-cert.php",
+                      "status":  200,
+                      "result":  "PASS",
+                      "expected":  "cert page or gate",
+                      "actual":  "HTTP 200",
+                      "ms":  0,
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "length":  3698
+                                   }
+                  },
+                  {
+                      "test":  89,
+                      "module":  "Security Headers",
+                      "url":  "https://rateb.sa/rateb-erp/public/login",
+                      "status":  200,
+                      "result":  "PASS",
+                      "expected":  "CSP present",
+                      "actual":  "CSP present",
+                      "ms":  0,
+                      "risk":  "Low",
+                      "severity":  "Medium",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "csp":  true,
+                                       "xfo":  "SAMEORIGIN,SAMEORIGIN"
+                                   }
+                  },
+                  {
+                      "test":  90,
+                      "module":  "CSRF Token",
+                      "url":  "https://rateb.sa/rateb-erp/public/login",
+                      "status":  200,
+                      "result":  "PASS",
+                      "expected":  "_csrf field",
+                      "actual":  "present",
+                      "ms":  0,
+                      "risk":  "High",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  91,
+                      "module":  "Support Ticket Write",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/support-tickets",
+                      "status":  200,
+                      "result":  "BLOCKED",
+                      "expected":  "QA ticket create+resolver+cleanup",
+                      "actual":  "resolver unavailable or create failed",
+                      "ms":  0,
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "ticketId":  0,
+                                       "ticketNo":  "QA-TICKET-20260627023047"
+                                   }
+                  },
+                  {
+                      "test":  92,
+                      "module":  "Company Portal",
+                      "url":  "https://rateb.sa/rateb-erp/public/site/portal",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  168,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/site/portal",
+                                       "length":  11046
+                                   }
+                  },
+                  {
+                      "test":  93,
+                      "module":  "Portal Profile",
+                      "url":  "https://rateb.sa/rateb-erp/public/site/portal/profile",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  177,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/site/portal/profile",
+                                       "length":  8277
+                                   }
+                  },
+                  {
+                      "test":  94,
+                      "module":  "Portal Notifications",
+                      "url":  "https://rateb.sa/rateb-erp/public/site/portal/notifications",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  174,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/site/portal/notifications",
+                                       "length":  6041
+                                   }
+                  },
+                  {
+                      "test":  95,
+                      "module":  "Search Pagination",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/companies?q=\u0026page=1",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  348,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/companies?q=\u0026page=1",
+                                       "length":  67400
+                                   }
+                  },
+                  {
+                      "test":  96,
+                      "module":  "Mobile Responsive",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin",
+                      "status":  200,
+                      "result":  "PASS",
+                      "expected":  "viewport meta",
+                      "actual":  "present",
+                      "ms":  0,
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  97,
+                      "module":  "RTL Layout",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  224,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin",
+                                       "length":  36435
+                                   }
+                  },
+                  {
+                      "test":  98,
+                      "module":  "LTR Locale Switch",
+                      "url":  "https://rateb.sa/rateb-erp/public/locale/en",
+                      "status":  200,
+                      "result":  "PASS",
+                      "expected":  "EN locale",
+                      "actual":  "locale switched",
+                      "ms":  0,
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+
+                                   }
+                  },
+                  {
+                      "test":  99,
+                      "module":  "PR Export",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests/export",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  382,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests/export",
+                                       "length":  33
+                                   }
+                  },
+                  {
+                      "test":  100,
+                      "module":  "Branch Export",
+                      "url":  "https://rateb.sa/rateb-erp/public/admin/ops/branches/export",
+                      "expected":  "200 authenticated page",
+                      "actual":  "HTTP 200",
+                      "status":  200,
+                      "ms":  476,
+                      "result":  "PASS",
+                      "risk":  "Low",
+                      "severity":  "Info",
+                      "networkError":  null,
+                      "phpError":  null,
+                      "evidence":  {
+                                       "finalUri":  "https://rateb.sa/rateb-erp/public/admin",
+                                       "length":  36443
+                                   }
+                  }
+              ]
+}

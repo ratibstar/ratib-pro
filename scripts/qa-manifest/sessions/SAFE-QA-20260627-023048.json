@@ -1,0 +1,82 @@
+﻿{
+    "site":  "https://rateb.sa",
+    "finishedAt":  "2026-06-27T02:31:19.7453908+03:00",
+    "productionTouched":  false,
+    "startedAt":  "2026-06-27T02:30:48.2969339+03:00",
+    "sessionTag":  "SAFE-QA-20260627-023048",
+    "stopped":  false,
+    "cleanup":  [
+
+                ],
+    "stopReason":  null,
+    "writes":  [
+                   {
+                       "objectType":  "company",
+                       "objectId":  17,
+                       "action":  "create",
+                       "time":  "2026-06-27T02:31:10.8106053+03:00",
+                       "extra":  {
+
+                                 }
+                   }
+               ],
+    "objects":  [
+                    {
+                        "type":  "company",
+                        "id":  17,
+                        "uuid":  "",
+                        "slug":  "QA-COMPANY-20260627023047",
+                        "email":  "",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  null,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023048",
+                        "createdAt":  "2026-06-27T02:31:10.8106053+03:00",
+                        "deletedAt":  "2026-06-27T02:31:19.4895734+03:00",
+                        "extra":  {
+
+                                  }
+                    },
+                    {
+                        "type":  "subscription",
+                        "id":  5,
+                        "uuid":  "",
+                        "slug":  "",
+                        "email":  "",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  17,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023048",
+                        "createdAt":  "2026-06-27T02:31:11.0763541+03:00",
+                        "deletedAt":  "2026-06-27T02:31:18.6281702+03:00",
+                        "extra":  {
+
+                                  }
+                    },
+                    {
+                        "type":  "user",
+                        "id":  21,
+                        "uuid":  "",
+                        "slug":  "",
+                        "email":  "QA-USER-20260627023047@test.local",
+                        "code":  "",
+                        "ticketNo":  "",
+                        "companyId":  null,
+                        "branchId":  null,
+                        "parentCompanyId":  17,
+                        "parentRoleId":  null,
+                        "sessionTag":  "SAFE-QA-20260627-023048",
+                        "createdAt":  "2026-06-27T02:31:13.3602511+03:00",
+                        "deletedAt":  "2026-06-27T02:31:17.7620304+03:00",
+                        "extra":  {
+
+                                  }
+                    }
+                ]
+}
