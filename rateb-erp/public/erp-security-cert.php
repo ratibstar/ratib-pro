@@ -148,7 +148,11 @@ function rateb_enterprise_suite(): ?array
 {
     try {
         require_once RATEB_ROOT . '/bin/enterprise-seed/EnterpriseSeeder.php';
-        (new EnterpriseSeeder())->backfillPrerequisites();
+        try {
+            (new EnterpriseSeeder())->backfillPrerequisites();
+        } catch (\Throwable $backfillErr) {
+            // Non-fatal — tests report missing GL/roles independently.
+        }
         require_once RATEB_ROOT . '/bin/enterprise-test/EnterpriseTestRunner.php';
         return (new EnterpriseTestRunner())->runAll();
     } catch (\Throwable $e) {

@@ -88,7 +88,11 @@ try {
         $report['ok'] = true;
     } elseif ($action === 'test') {
         require_once RATEB_ROOT . '/bin/enterprise-seed/EnterpriseSeeder.php';
-        (new EnterpriseSeeder())->backfillPrerequisites();
+        try {
+            (new EnterpriseSeeder())->backfillPrerequisites();
+        } catch (\Throwable $backfillErr) {
+            $report['errors'][] = 'backfill: ' . $backfillErr->getMessage();
+        }
         require_once RATEB_ROOT . '/bin/enterprise-test/EnterpriseTestRunner.php';
         $runner = new EnterpriseTestRunner();
         $report['result'] = $runner->runAll();
