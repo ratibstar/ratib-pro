@@ -10,6 +10,8 @@ declare(strict_types=1);
  *   action=seed          — requires X-Rateb-Cert-Confirm: ENTERPRISE-SEED
  *   action=backup        — php bin/erp-backup.php (summary only in JSON)
  *   action=reset-dry-run — php bin/reset-production.php --dry-run output
+ *   action=super-admin-forensic — read-only auth state (no DB writes)
+ *   action=restore-super-admins — requires X-Rateb-Restore-Confirm: RESTORE-SUPER-ADMINS
  *
  * Env (set before bootstrap via headers or server .env):
  *   RATEB_OFFICIAL_DEV_DB=1, RATEB_ENV=development, RATEB_ERP_DB_NAME=admin_rateb_erp
@@ -110,6 +112,23 @@ try {
         passthru('php ' . escapeshellarg(RATEB_ROOT . '/bin/erp-backup.php') . ' 2>&1', $code);
         $report['result'] = ['exit_code' => $code, 'output' => ob_get_clean()];
         $report['ok'] = $code === 0;
+    } elseif ($action === 'super-admin-forensic') {
+        require_once RATEB_ROOT . '/bin/SuperAdminRestoreRunner.php';
+        $runner = new SuperAdminRestoreRunner();
+        $report['result'] = $runner->forensic();
+        $report['ok'] = true;
+    } elseif ($action === 'restore-super-admins') {
+        $confirm = trim((string) ($_SERVER['HTTP_X_RATEB_RESTORE_CONFIRM'] ?? ''));
+        if ($confirm !== 'RESTORE-SUPER-ADMINS') {
+            http_response_code(400);
+            $report['errors'][] = 'Missing X-Rateb-Restore-Confirm: RESTORE-SUPER-ADMINS';
+        } else {
+            require_once RATEB_ROOT . '/bin/SuperAdminRestoreRunner.php';
+            $resetPw = trim((string) ($_SERVER['HTTP_X_RATEB_RESTORE_RESET_PASSWORDS'] ?? '1')) !== '0';
+            $runner = new SuperAdminRestoreRunner();
+            $report['result'] = $runner->restore($resetPw);
+            $report['ok'] = empty($report['result']['errors']);
+        }
     } else {
         http_response_code(400);
         $report['errors'][] = 'Unknown action';
