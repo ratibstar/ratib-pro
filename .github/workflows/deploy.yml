@@ -76,18 +76,6 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
         run: bash scripts/run-rateb-erp-migrations.sh
 
-      - name: Run RATEB ERP enterprise certification
-        if: steps.deploy.outcome == 'success'
-        env:
-          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
-          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-          RATEB_OFFICIAL_DEV_DB: "1"
-          RATEB_ENV: development
-          RATEB_ENTERPRISE_SEED: ${{ vars.RATEB_ENTERPRISE_SEED || '0' }}
-        run: bash scripts/run-rateb-erp-enterprise-cert.sh
-
       - name: Run RCC migrations
         if: steps.deploy.outcome == 'success'
         env:
@@ -122,6 +110,16 @@ jobs:
           if [ "$PURGE" != "302" ] && [ "$PURGE" != "200" ]; then
             echo "::warning::LiteSpeed purge returned HTTP ${PURGE} — purge manually in cPanel if /home still shows old HTML"
           fi
+
+      - name: Run RATEB ERP enterprise certification
+        if: steps.deploy.outcome == 'success'
+        env:
+          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
+          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
+          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
+          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+          RATEB_ENTERPRISE_SEED: ${{ vars.RATEB_ENTERPRISE_SEED || '0' }}
+        run: bash scripts/run-rateb-erp-enterprise-cert.sh
 
       - name: Verify live site (~20s)
         if: steps.deploy.outcome == 'success'

@@ -98,19 +98,29 @@ final class EnterpriseSeeder
             ['HQ Manager', 'hq_manager', 'Head office manager — all branches read/compare'],
             ['Branch Manager', 'branch_manager', 'Single-branch manager'],
         ];
+        $exists = $this->db->prepare('SELECT COUNT(*) FROM rateb_roles WHERE slug = :slug');
         $insert = $this->db->prepare(
             'INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
-             SELECT :cid, :name, :slug, :desc, 1
-             WHERE NOT EXISTS (SELECT 1 FROM rateb_roles r WHERE r.slug = :slug_chk)'
+             VALUES (:cid, :name, :slug, :desc, 1)'
         );
         foreach ($roles as [$name, $slug, $desc]) {
-            $insert->execute([
-                'cid' => $companyId,
-                'name' => $name,
-                'slug' => $slug,
-                'desc' => $desc,
-                'slug_chk' => $slug,
-            ]);
+            $exists->execute(['slug' => $slug]);
+            if ((int) $exists->fetchColumn() > 0) {
+                continue;
+            }
+            try {
+                $insert->execute([
+                    'cid' => $companyId,
+                    'name' => $name,
+                    'slug' => $slug,
+                    'desc' => $desc,
+                ]);
+            } catch (\PDOException $e) {
+                // Concurrent deploy or partial migration — slug already present.
+                if ($e->getCode() !== '23000') {
+                    throw $e;
+                }
+            }
         }
     }
 
