@@ -54,5 +54,23 @@ cache/
 .DS_Store
 Thumbs.db
 
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# QA / certification temporary outputs (keep framework, ignore session noise)
+scripts/qa-manifest/sessions/regression-output.json
+scripts/qa-manifest/sessions/SAFE-QA-PROBE-*.json
+docs/v1.0.1/*-local-*.json
+
+# Generated certification / ops reports (keep committed GA closeout docs)
+rateb-erp/docs/GA/go-live-operational-cert-*.json
+
+# Local backup/restore drill artifacts (server paths gitignored via *.gz above)
+rateb-erp/storage/backups/*.sql.gz
+rateb-erp/storage/backups/*.tar.gz
+!rateb-erp/storage/backups/.gitkeep
+
 # Keep Designed folder out of repo operations by default
 Designed/

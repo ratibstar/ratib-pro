@@ -10,8 +10,8 @@ define('RATEB_VIEWS_PATH', RATEB_ROOT . DIRECTORY_SEPARATOR . 'views');
 define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
-define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260626-csp-cdnjs-fix');
+define('RATEB_APP_VERSION', '1.0.1');
+define('RATEB_ASSET_BUILD', '20260627-v1.0.1-maintenance');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool

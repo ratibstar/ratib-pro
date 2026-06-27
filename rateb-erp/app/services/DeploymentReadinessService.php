@@ -9,6 +9,9 @@ final class DeploymentReadinessService
 {
     private const MIGRATION_023 = '023_automation_hardening.sql';
 
+    /** Max decompressed bytes scanned for SQL dump signatures (MariaDB preamble-safe). */
+    private const BACKUP_VERIFY_SCAN_BYTES = 262144;
+
     /** @return array{applied:bool,schema_ok:bool,missing:array<int,string>} */
     public function verifyMigration023(): array
     {
@@ -67,19 +70,61 @@ final class DeploymentReadinessService
         if ($magic !== "\x1f\x8b") {
             return ['valid' => false, 'error' => 'not_gzip', 'size' => $size, 'path' => $path];
         }
-        $gz = @gzopen($path, 'rb');
-        if ($gz === false) {
-            return ['valid' => false, 'error' => 'gzip_corrupt', 'size' => $size, 'path' => $path];
-        }
-        $chunk = gzread($gz, 512);
-        gzclose($gz);
-        if ($chunk === false || strlen($chunk) < 10) {
+        $sample = $this->readGzipSample($path, self::BACKUP_VERIFY_SCAN_BYTES);
+        if ($sample === '') {
             return ['valid' => false, 'error' => 'gzip_empty', 'size' => $size, 'path' => $path];
         }
-        if (stripos($chunk, 'CREATE TABLE') === false && stripos($chunk, 'INSERT') === false) {
+        if (!$this->isSqlDumpSample($sample)) {
             return ['valid' => false, 'error' => 'not_sql_dump', 'size' => $size, 'path' => $path];
         }
         return ['valid' => true, 'error' => null, 'size' => $size, 'path' => $path];
+    }
+
+    private function readGzipSample(string $path, int $maxBytes): string
+    {
+        $gz = @gzopen($path, 'rb');
+        if ($gz === false) {
+            return '';
+        }
+        $buffer = '';
+        while (!gzeof($gz) && strlen($buffer) < $maxBytes) {
+            $read = gzread($gz, min(65536, $maxBytes - strlen($buffer)));
+            if ($read === false || $read === '') {
+                break;
+            }
+            $buffer .= $read;
+        }
+        gzclose($gz);
+
+        return $buffer;
+    }
+
+    private function isSqlDumpSample(string $sample): bool
+    {
+        if (strlen($sample) < 10) {
+            return false;
+        }
+
+        $hasDumpHeader = preg_match(
+            '/(?:MariaDB dump|MySQL dump|mysqldump)/i',
+            $sample
+        ) === 1 || stripos($sample, '-- Host:') !== false;
+
+        $hasCreate = stripos($sample, 'CREATE TABLE') !== false
+            || stripos($sample, 'CREATE DATABASE') !== false;
+
+        $hasInsert = preg_match('/\bINSERT\s+INTO\b/i', $sample) === 1;
+
+        if (!$hasDumpHeader && !$hasCreate) {
+            return false;
+        }
+
+        if (!$hasCreate) {
+            return false;
+        }
+
+        // Schema-only dumps are valid; INSERT lines optional when tables exist in preamble-only edge cases.
+        return $hasCreate && ($hasDumpHeader || $hasInsert || stripos($sample, 'DROP TABLE') !== false);
     }
 
     /** @return array<int, string> */

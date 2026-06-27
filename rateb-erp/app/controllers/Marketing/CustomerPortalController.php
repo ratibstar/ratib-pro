@@ -91,7 +91,7 @@ final class CustomerPortalController extends Controller
     {
         Auth::logout();
         SessionManager::flash('success', __('logout_ok'));
-        Response::redirect(rateb_url('site'));
+        Response::redirect(rateb_url('login'));
     }
 
     /** @param array<string, mixed> $extra */
