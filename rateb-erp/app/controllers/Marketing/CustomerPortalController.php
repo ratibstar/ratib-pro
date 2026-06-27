@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+/** v1.0.1 production deploy — portal logout → ERP login. */
 namespace Rateb\App\Controllers\Marketing;
 
 use Rateb\App\Core\Auth;

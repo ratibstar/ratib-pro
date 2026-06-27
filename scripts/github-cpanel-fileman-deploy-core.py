@@ -47,6 +47,7 @@ DEPLOY_ALLOW_FILES = frozenset({
     "index.php",
     "rateb-profile-fix.php",
     "config/env.php",
+    "config/test-control-db.php",
 })
 DEPLOY_DENY_PREFIXES = (
     "Designed/",
@@ -206,7 +207,8 @@ FAST_FILES = [
     "ratib-contact-center/config/assets-manifest.php",
     "ratib-contact-center/public/assets/.htaccess",
     "assets/rateb-logo.svg",
-    # Build marker — MUST stay last.
+    "rateb-erp/public/ratib-erp-build.txt",
+    # Marketing build marker — MUST stay last.
     "public/rateb-build.txt",
 ]
 

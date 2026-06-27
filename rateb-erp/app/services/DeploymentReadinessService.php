@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+/** v1.0.1 production deploy — backup verifier (MariaDB-safe scan). */
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
