@@ -54,7 +54,10 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                 <td><?php echo Rateb\App\Core\View::escape($inv['invoice_no']); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($inv['issued_at']); ?></td>
                 <td class="text-end"><?php echo number_format((float) ($inv['total_amount'] ?? 0), 2); ?></td>
-                <td><?php echo __((string) ($inv['zatca_status'] ?? 'not_applicable')); ?></td>
+                <td><?php
+                    $st = preg_replace('/[^a-z_]/', '', (string) ($inv['zatca_status'] ?? 'not_applicable'));
+                    echo __('zatca_invoice_' . ($st !== '' ? $st : 'not_applicable'));
+                ?></td>
                 <td>
                     <?php if (($canManage ?? false) && !empty($inv['zatca_qr'])) { ?>
                     <span class="badge bg-success"><?php echo __('zatca_qr_ready'); ?></span>
