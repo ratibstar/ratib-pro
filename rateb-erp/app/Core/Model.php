@@ -524,7 +524,11 @@ abstract class Model
         if (!$this->branchScoped || stripos($sql, $this->table) === false) {
             return [$sql, $params];
         }
-        [$extra, $extraParams] = $this->branchFilterClause($this->detectSqlAlias($sql));
+        $alias = $this->detectSqlAlias($sql);
+        if ($alias === '') {
+            $alias = preg_replace('/[^a-z_0-9]/', '', $this->table) ?? $this->table;
+        }
+        [$extra, $extraParams] = $this->branchFilterClause($alias);
         if ($extra === '') {
             return [$sql, $params];
         }
@@ -533,19 +537,29 @@ abstract class Model
 
     private function detectSqlAlias(string $sql): string
     {
-        $pattern = '/\bFROM\s+' . preg_quote($this->table, '/') . '\s+(?:AS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)/i';
-        if (!preg_match($pattern, $sql, $m)) {
-            return '';
-        }
-        $alias = strtolower($m[1]);
+        $table = preg_quote($this->table, '/');
         static $keywords = [
             'where', 'join', 'left', 'right', 'inner', 'outer', 'cross', 'on', 'using',
             'group', 'order', 'limit', 'having', 'union', 'set', 'values', 'into', 'natural',
         ];
-        if (in_array($alias, $keywords, true)) {
-            return '';
+        $patterns = [
+            '/\bFROM\s+' . $table . '\s+(?:AS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)/i',
+            '/\b(?:(?:LEFT|RIGHT|INNER|CROSS|NATURAL)\s+(?:OUTER\s+)?)?JOIN\s+' . $table . '\s+(?:AS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)/i',
+        ];
+        foreach ($patterns as $pattern) {
+            if (!preg_match($pattern, $sql, $m)) {
+                continue;
+            }
+            $alias = strtolower($m[1]);
+            if (in_array($alias, $keywords, true)) {
+                continue;
+            }
+            $clean = preg_replace('/[^a-z_0-9]/', '', $alias) ?? '';
+            if ($clean !== '') {
+                return $clean;
+            }
         }
-        return preg_replace('/[^a-z_0-9]/', '', $alias) ?? '';
+        return '';
     }
 
     private function injectSqlAndClause(string $sql, string $clause): string
