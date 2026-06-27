@@ -22,6 +22,7 @@ final class TenantFkValidator
         'purchase_order_id' => 'rateb_purchase_orders',
         'employee_id' => 'rateb_employees',
         'department_id' => 'rateb_hr_departments',
+        'job_title_id' => 'rateb_hr_job_titles',
         'account_id' => 'rateb_chart_of_accounts',
         'leave_type_id' => 'rateb_leave_types',
         'period_id' => 'rateb_payroll_periods',

@@ -40,6 +40,7 @@ return [
     'hr_select_company_hint' => 'اختر الشركة من القائمة أعلاه لعرض إحصائيات الموارد البشرية.',
     'hr_coming_soon' => 'قريباً — قيد التطوير',
     'hr_departments' => 'الأقسام',
+    'hr_job_titles' => 'المسميات الوظيفية',
     'hr_present_today' => 'حاضرون اليوم',
     'hr_absent_today' => 'غائبون اليوم',
     'hr_pending_leaves' => 'إجازات معلقة',

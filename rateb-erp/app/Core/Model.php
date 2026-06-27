@@ -533,10 +533,19 @@ abstract class Model
 
     private function detectSqlAlias(string $sql): string
     {
-        if (preg_match('/\b' . preg_quote($this->table, '/') . '\s+(\w+)/i', $sql, $m)) {
-            return $m[1];
+        $pattern = '/\bFROM\s+' . preg_quote($this->table, '/') . '\s+(?:AS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)/i';
+        if (!preg_match($pattern, $sql, $m)) {
+            return '';
         }
-        return '';
+        $alias = strtolower($m[1]);
+        static $keywords = [
+            'where', 'join', 'left', 'right', 'inner', 'outer', 'cross', 'on', 'using',
+            'group', 'order', 'limit', 'having', 'union', 'set', 'values', 'into', 'natural',
+        ];
+        if (in_array($alias, $keywords, true)) {
+            return '';
+        }
+        return preg_replace('/[^a-z_0-9]/', '', $alias) ?? '';
     }
 
     private function injectSqlAndClause(string $sql, string $clause): string

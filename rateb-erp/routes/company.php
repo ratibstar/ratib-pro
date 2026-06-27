@@ -24,6 +24,7 @@ use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccoun
 use Rateb\App\Controllers\Company\HrDashboardController;
 use Rateb\App\Controllers\Company\HrEmployeesController;
 use Rateb\App\Controllers\Company\HrDepartmentsController;
+use Rateb\App\Controllers\Company\HrJobTitlesController;
 use Rateb\App\Controllers\Company\HrAttendanceController;
 use Rateb\App\Controllers\Company\HrLeavesController;
 use Rateb\App\Controllers\Company\HrLeaveTypesController;
@@ -192,6 +193,7 @@ $router->post($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 's
 $hrCrudRoutes = [
     'hr/employees' => ['class' => HrEmployeesController::class, 'entity' => 'hr-employees'],
     'hr/departments' => ['class' => HrDepartmentsController::class, 'entity' => 'hr-employees'],
+    'hr/job-titles' => ['class' => HrJobTitlesController::class, 'entity' => 'hr-employees'],
     'hr/holidays' => ['class' => HrHolidaysController::class, 'entity' => 'hr-leaves'],
     'hr/workplaces' => ['class' => HrWorkplacesController::class, 'entity' => 'hr-attendance'],
     'hr/permission-requests' => ['class' => HrPermissionRequestsController::class, 'entity' => 'hr-attendance'],

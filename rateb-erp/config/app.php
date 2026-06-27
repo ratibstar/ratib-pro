@@ -863,7 +863,12 @@ if (!function_exists('rateb_branch_filter_sql')) {
             }
             return ['', []];
         }
-        $col = ($alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '') . preg_replace('/[^a-z_]/', '', $column);
+        $safeAlias = preg_replace('/[^a-z_0-9]/', '', strtolower($alias)) ?? '';
+        static $keywords = ['where', 'join', 'left', 'right', 'inner', 'outer', 'cross', 'on', 'using', 'group', 'order', 'limit', 'having', 'union'];
+        if ($safeAlias === '' || in_array($safeAlias, $keywords, true)) {
+            $safeAlias = '';
+        }
+        $col = ($safeAlias !== '' ? $safeAlias . '.' : '') . preg_replace('/[^a-z_0-9]/', '', $column);
         $parts = [];
         $params = [];
         foreach ($ids as $i => $id) {

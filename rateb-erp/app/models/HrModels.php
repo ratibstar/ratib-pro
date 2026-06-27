@@ -12,6 +12,13 @@ final class HrDepartment extends Model
     protected array $fillable = ['company_id', 'name', 'code', 'status'];
 }
 
+final class HrJobTitle extends Model
+{
+    protected string $table = 'rateb_hr_job_titles';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['company_id', 'name', 'code', 'status'];
+}
+
 final class Employee extends Model
 {
     protected string $table = 'rateb_employees';
@@ -19,7 +26,7 @@ final class Employee extends Model
     protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'employee_code', 'name', 'email', 'phone', 'national_id',
-        'department_id', 'branch_id', 'job_title', 'hire_date', 'salary_base', 'user_id', 'status', 'notes',
+        'department_id', 'job_title_id', 'branch_id', 'job_title', 'hire_date', 'salary_base', 'user_id', 'status', 'notes',
     ];
 }
 

@@ -114,6 +114,9 @@ final class FormLookupService
             case 'hr_departments':
                 $options = $this->mapRows((new HrDepartment())->all(200, 0), 'id', 'name');
                 break;
+            case 'hr_job_titles':
+                $options = $this->mapRows((new \Rateb\App\Models\HrJobTitle())->all(200, 0), 'id', 'name');
+                break;
             case 'employees':
                 $options = $this->mapRows((new Employee())->all(500, 0), 'id', 'name');
                 break;
@@ -1339,6 +1342,7 @@ final class FormLookupService
     {
         return match ($lookup) {
             'hr_departments' => (string) ((new HrDepartment())->find($id)['name'] ?? ''),
+            'hr_job_titles' => (string) ((new \Rateb\App\Models\HrJobTitle())->find($id)['name'] ?? ''),
             'employees' => (string) ((new Employee())->find($id)['name'] ?? ''),
             'leave_types' => (string) ((new LeaveType())->find($id)['name'] ?? ''),
             'loan_types' => (string) ((new \Rateb\App\Models\HrLoanType())->find($id)['name'] ?? ''),

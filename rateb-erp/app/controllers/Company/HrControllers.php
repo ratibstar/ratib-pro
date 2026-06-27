@@ -38,13 +38,13 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = rateb_app_route('hr/employees');
         $this->entityName = 'hr_employees';
         $this->permissionResource = 'hr-employees';
-        $this->tenantForeignKeys = ['department_id', 'branch_id'];
+        $this->tenantForeignKeys = ['department_id', 'branch_id', 'job_title_id'];
         $this->indexFields = [
             ['name' => 'employee_code', 'label' => 'employee_code'],
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'department_id', 'label' => 'department', 'type' => 'fk', 'lookup' => 'hr_departments'],
             ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches'],
-            ['name' => 'job_title', 'label' => 'job_title'],
+            ['name' => 'job_title_id', 'label' => 'job_title', 'type' => 'fk', 'lookup' => 'hr_job_titles'],
             ['name' => 'salary_base', 'label' => 'salary_base'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
@@ -55,7 +55,7 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'national_id', 'label' => 'national_id', 'type' => 'text'],
             ['name' => 'department_id', 'label' => 'department', 'type' => 'fk', 'lookup' => 'hr_departments'],
             ['name' => 'branch_id', 'label' => 'branches', 'type' => 'fk', 'lookup' => 'branches'],
-            ['name' => 'job_title', 'label' => 'job_title', 'type' => 'text'],
+            ['name' => 'job_title_id', 'label' => 'job_title', 'type' => 'fk', 'lookup' => 'hr_job_titles'],
             ['name' => 'hire_date', 'label' => 'hire_date', 'type' => 'date'],
             ['name' => 'salary_base', 'label' => 'salary_base', 'type' => 'number', 'step' => '0.01', 'min' => '0', 'attrs' => ['class' => 'form-control rateb-form-control rateb-ltr-num']],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'employee_statuses', 'translate_options' => true],
@@ -71,6 +71,15 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
             if (count($ids) === 1) {
                 $data['branch_id'] = $ids[0];
             }
+        }
+        $jobTitleId = (int) ($data['job_title_id'] ?? 0);
+        if ($jobTitleId > 0) {
+            $title = (new \Rateb\App\Models\HrJobTitle())->find($jobTitleId);
+            if ($title) {
+                $data['job_title'] = (string) ($title['name'] ?? '');
+            }
+        } elseif (empty($data['job_title_id'])) {
+            $data['job_title_id'] = null;
         }
         $this->assignDocumentCode($data, DocumentCodeService::PREFIX_EMPLOYEE, 'employee_code');
         return $data;
@@ -102,15 +111,21 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
         foreach ($lookups as $opt) {
             $deptMap[(string) $opt['value']] = (string) $opt['label'];
         }
+        $titleLookups = (new \Rateb\App\Services\FormLookupService())->get('hr_job_titles');
+        $titleMap = [];
+        foreach ($titleLookups as $opt) {
+            $titleMap[(string) $opt['value']] = (string) $opt['label'];
+        }
         $exportRows = [];
         foreach ($rows as $row) {
+            $jobTitle = $titleMap[(string) ($row['job_title_id'] ?? '')] ?? (string) ($row['job_title'] ?? '');
             $exportRows[] = [
                 'employee_code' => $row['employee_code'] ?? '',
                 'name' => $row['name'] ?? '',
                 'email' => $row['email'] ?? '',
                 'phone' => $row['phone'] ?? '',
                 'department' => $deptMap[(string) ($row['department_id'] ?? '')] ?? '',
-                'job_title' => $row['job_title'] ?? '',
+                'job_title' => $jobTitle,
                 'hire_date' => $row['hire_date'] ?? '',
                 'salary_base' => $row['salary_base'] ?? '',
                 'status' => __((string) ($row['status'] ?? 'active')),
@@ -143,6 +158,33 @@ final class HrDepartmentsController extends \Rateb\App\Controllers\CrudControlle
         $this->viewPrefix = 'company/hr/departments';
         $this->routePrefix = rateb_app_route('hr/departments');
         $this->entityName = 'hr_departments';
+        $this->permissionResource = 'hr-employees';
+        $this->indexFields = [
+            ['name' => 'code', 'label' => 'code'],
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
+        $this->fields = [
+            ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true],
+            ['name' => 'code', 'label' => 'code', 'type' => 'text'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'active_inactive_statuses', 'translate_options' => true],
+        ];
+    }
+
+    protected function layout(): string
+    {
+        return 'main';
+    }
+}
+
+final class HrJobTitlesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new \Rateb\App\Models\HrJobTitle();
+        $this->viewPrefix = 'company/hr/job-titles';
+        $this->routePrefix = rateb_app_route('hr/job-titles');
+        $this->entityName = 'hr_job_titles';
         $this->permissionResource = 'hr-employees';
         $this->indexFields = [
             ['name' => 'code', 'label' => 'code'],

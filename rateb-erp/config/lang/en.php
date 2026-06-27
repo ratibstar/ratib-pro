@@ -40,6 +40,7 @@ return [
     'hr_select_company_hint' => 'Select a company from the list above to view HR statistics.',
     'hr_coming_soon' => 'Coming soon',
     'hr_departments' => 'Departments',
+    'hr_job_titles' => 'Job titles',
     'hr_present_today' => 'Present today',
     'hr_absent_today' => 'Absent today',
     'hr_pending_leaves' => 'Pending leaves',
