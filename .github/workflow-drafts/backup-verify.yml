@@ -1,0 +1,16 @@
+# DRAFT — INACTIVE
+name: Draft — Backup Verification
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    if: false
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    steps:
+      - name: Verify latest backup (token-gated HTTP)
+        run: |
+          echo "Invoke enterprise-cert-run.php action=backup then verify — operator step"
+          echo "See rateb-erp/docs/GA/PRODUCTION-HANDOVER.md"

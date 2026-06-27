@@ -1,0 +1,22 @@
+# DRAFT — INACTIVE until copied to .github/workflows/
+# PR validation for release/v1.0.1 → main merges
+name: Draft — PR Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Manual test only
+        required: false
+
+jobs:
+  validate:
+    if: false  # INACTIVE — draft only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: PHP syntax (rateb-erp)
+        run: |
+          find rateb-erp -name '*.php' -not -path '*/vendor/*' | head -200 | xargs -L1 php -l
+      - name: Enterprise test (no DB)
+        run: php rateb-erp/bin/enterprise-test/run.php || true

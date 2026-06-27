@@ -1,0 +1,18 @@
+# DRAFT — INACTIVE
+name: Draft — Rollback Checklist
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_tag:
+        description: Tag or commit to roll back to (e.g. v1.0.0)
+        required: true
+
+jobs:
+  checklist:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Rollback checklist for ${{ inputs.target_tag }}"
+          echo "1. Stop cron  2. Restore DB  3. Deploy commit  4. Health + enterprise cert"

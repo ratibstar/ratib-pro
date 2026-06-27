@@ -1,0 +1,16 @@
+# DRAFT — INACTIVE
+name: Draft — Tag Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tags:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: List annotated tags
+        run: git tag -l --format='%(refname:short) %(objecttype) %(contents:subject)'
