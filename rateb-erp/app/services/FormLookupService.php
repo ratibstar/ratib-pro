@@ -121,7 +121,7 @@ final class FormLookupService
                 $options = $this->mapRows((new Employee())->all(500, 0), 'id', 'name');
                 break;
             case 'leave_types':
-                $options = $this->mapRows((new LeaveType())->all(100, 0), 'id', 'name');
+                $options = $this->leaveTypeOptions();
                 break;
             case 'loan_types':
                 $options = $this->mapRows((new \Rateb\App\Models\HrLoanType())->all(100, 0), 'id', 'name');
@@ -1344,7 +1344,7 @@ final class FormLookupService
             'hr_departments' => (string) ((new HrDepartment())->find($id)['name'] ?? ''),
             'hr_job_titles' => (string) ((new \Rateb\App\Models\HrJobTitle())->find($id)['name'] ?? ''),
             'employees' => (string) ((new Employee())->find($id)['name'] ?? ''),
-            'leave_types' => (string) ((new LeaveType())->find($id)['name'] ?? ''),
+            'leave_types' => $this->localizeLeaveType((new LeaveType())->find($id) ?? []),
             'loan_types' => (string) ((new \Rateb\App\Models\HrLoanType())->find($id)['name'] ?? ''),
             'hr_payroll_components' => (string) ((new \Rateb\App\Models\HrPayrollComponent())->find($id)['name'] ?? ''),
             'suppliers' => (string) ((new Supplier())->find($id)['name'] ?? ''),
@@ -1352,6 +1352,47 @@ final class FormLookupService
             'branches' => (string) ((new Branch())->find($id)['name'] ?? ''),
             default => '',
         };
+    }
+
+    /** @return list<FormOption> */
+    private function leaveTypeOptions(): array
+    {
+        $out = [];
+        foreach ((new LeaveType())->all(200, 0) as $row) {
+            $out[] = [
+                'value' => (string) ($row['id'] ?? ''),
+                'label' => $this->localizeLeaveType($row),
+            ];
+        }
+        return $out;
+    }
+
+    /** @param array<string, mixed> $row */
+    public function localizeLeaveType(array $row): string
+    {
+        $code = preg_replace('/[^a-z_0-9]/', '', strtolower((string) ($row['code'] ?? ''))) ?? '';
+        if ($code !== '' && function_exists('__')) {
+            $key = 'leave_type_' . $code;
+            $label = __($key);
+            if ($label !== $key) {
+                return $label;
+            }
+        }
+        $name = trim((string) ($row['name'] ?? ''));
+        if ($name !== '' && function_exists('__')) {
+            $legacy = [
+                'Annual leave' => 'leave_type_annual',
+                'Sick leave' => 'leave_type_sick',
+                'Unpaid leave' => 'leave_type_unpaid',
+            ];
+            if (isset($legacy[$name])) {
+                $label = __($legacy[$name]);
+                if ($label !== $legacy[$name]) {
+                    return $label;
+                }
+            }
+        }
+        return $name !== '' ? $name : ('#' . (int) ($row['id'] ?? 0));
     }
 
     private function mapRows(array $rows, string $valueKey, string $labelKey): array

@@ -304,7 +304,7 @@ abstract class CrudController extends Controller
             $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('create', $this->entityName, $id, $data);
             if ($attachmentOk) {
-                SessionManager::flash('success', __('save') . ' OK');
+                SessionManager::flash('success', __('saved_ok'));
             }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
@@ -380,7 +380,7 @@ abstract class CrudController extends Controller
             $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('update', $this->entityName, $id, $data);
             if ($attachmentOk) {
-                SessionManager::flash('success', __('save') . ' OK');
+                SessionManager::flash('success', __('saved_ok'));
             }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));

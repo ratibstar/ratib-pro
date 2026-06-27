@@ -202,6 +202,18 @@ final class HrJobTitlesController extends \Rateb\App\Controllers\CrudController
     {
         return 'main';
     }
+
+    public function index(): void
+    {
+        HrService::bootstrapTenant();
+        parent::index();
+    }
+
+    public function create(): void
+    {
+        HrService::bootstrapTenant();
+        parent::create();
+    }
 }
 
 final class HrAttendanceController extends \Rateb\App\Controllers\CrudController
@@ -335,7 +347,6 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'end_date', 'label' => 'end_date', 'type' => 'date', 'required' => true],
             ['name' => 'days', 'label' => 'days', 'type' => 'number', 'step' => '0.5', 'min' => '0.5'],
             ['name' => 'reason', 'label' => 'reason', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 3],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'leave_request_statuses', 'translate_options' => true],
         ];
     }
 
@@ -677,6 +688,19 @@ final class HrLeaveTypesController extends \Rateb\App\Controllers\CrudController
     {
         HrService::bootstrapTenant();
         parent::index();
+    }
+
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $lookup = new \Rateb\App\Services\FormLookupService();
+        foreach ($data['items'] as &$row) {
+            if (is_array($row)) {
+                $row['name'] = $lookup->localizeLeaveType($row);
+            }
+        }
+        unset($row);
+        return $data;
     }
 
     protected function layout(): string

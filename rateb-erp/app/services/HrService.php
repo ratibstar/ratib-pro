@@ -72,17 +72,50 @@ final class HrService
             return;
         }
         $defaults = [
-            ['name' => 'Annual leave', 'paid' => 1, 'days_per_year' => 21],
-            ['name' => 'Sick leave', 'paid' => 1, 'days_per_year' => 30],
-            ['name' => 'Unpaid leave', 'paid' => 0, 'days_per_year' => null],
+            ['code' => 'annual', 'paid' => 1, 'days_per_year' => 21],
+            ['code' => 'sick', 'paid' => 1, 'days_per_year' => 30],
+            ['code' => 'unpaid', 'paid' => 0, 'days_per_year' => null],
         ];
         $model = new LeaveType();
         foreach ($defaults as $row) {
+            $code = (string) $row['code'];
             $model->create([
                 'company_id' => $companyId,
-                'name' => $row['name'],
+                'code' => $code,
+                'name' => function_exists('__') ? __('leave_type_' . $code) : $code,
                 'paid' => $row['paid'],
                 'days_per_year' => $row['days_per_year'],
+                'status' => 'active',
+            ]);
+        }
+    }
+
+    public function ensureDefaultJobTitles(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $count = (new \Rateb\App\Models\HrJobTitle())->count(['company_id' => $companyId]);
+        if ($count > 0) {
+            return;
+        }
+        $defaults = [
+            ['code' => 'GM', 'key' => 'job_title_general_manager'],
+            ['code' => 'HR', 'key' => 'job_title_hr_manager'],
+            ['code' => 'ACC', 'key' => 'job_title_accountant'],
+            ['code' => 'PROC', 'key' => 'job_title_procurement'],
+            ['code' => 'WH', 'key' => 'job_title_warehouse_keeper'],
+            ['code' => 'DRV', 'key' => 'job_title_driver'],
+            ['code' => 'TEC', 'key' => 'job_title_technician'],
+            ['code' => 'ADM', 'key' => 'job_title_admin_staff'],
+            ['code' => 'SAL', 'key' => 'job_title_sales'],
+        ];
+        $model = new \Rateb\App\Models\HrJobTitle();
+        foreach ($defaults as $row) {
+            $model->create([
+                'company_id' => $companyId,
+                'code' => $row['code'],
+                'name' => function_exists('__') ? __($row['key']) : $row['code'],
                 'status' => 'active',
             ]);
         }
@@ -213,7 +246,9 @@ final class HrService
     {
         $companyId = TenantContext::companyId();
         if ($companyId !== null && $companyId > 0) {
-            (new self())->ensureDefaultLeaveTypes($companyId);
+            $svc = new self();
+            $svc->ensureDefaultLeaveTypes($companyId);
+            $svc->ensureDefaultJobTitles($companyId);
         }
     }
 

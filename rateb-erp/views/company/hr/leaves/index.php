@@ -51,16 +51,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'leave-requests']);
                     <td><?php echo __($status); ?></td>
                     <td class="rateb-actions-cell text-nowrap">
                         <div class="rateb-actions">
-                        <?php if ($canManage && $status === 'pending') { ?>
-                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/approve'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-success" title="<?php echo __('approve'); ?>"><i class="fas fa-check"></i></button>
-                        </form>
-                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/reject'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-warning" title="<?php echo __('reject'); ?>"><i class="fas fa-times"></i></button>
-                        </form>
-                        <?php } ?>
+                        <?php Rateb\App\Core\View::partial('hr-pending-oversight', ['status' => $status]); ?>
                         <?php if ($canManage) { ?>
                         <a href="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
                         <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">

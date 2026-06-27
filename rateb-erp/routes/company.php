@@ -237,12 +237,12 @@ foreach ($hrCrudRoutes as $path => $cfg) {
 }
 
 $hrLeaveMw = rateb_erp_mw('hr', '', 'hr-leaves');
-$router->post($app('hr/leaves/{id}/approve'), [HrLeavesController::class, 'approve'], $hrLeaveMw);
-$router->post($app('hr/leaves/{id}/reject'), [HrLeavesController::class, 'reject'], $hrLeaveMw);
-$router->post($app('hr/permission-requests/{id}/approve'), [HrPermissionRequestsController::class, 'approve'], $hrAttMw);
-$router->post($app('hr/permission-requests/{id}/reject'), [HrPermissionRequestsController::class, 'reject'], $hrAttMw);
-$router->post($app('hr/requests/{id}/approve'), [HrEmployeeRequestsController::class, 'approve'], $hrLeaveMw);
-$router->post($app('hr/requests/{id}/reject'), [HrEmployeeRequestsController::class, 'reject'], $hrLeaveMw);
+$router->post($app('hr/leaves/{id}/approve'), $blockCompanyApprovalAction, $hrLeaveMw);
+$router->post($app('hr/leaves/{id}/reject'), $blockCompanyApprovalAction, $hrLeaveMw);
+$router->post($app('hr/permission-requests/{id}/approve'), $blockCompanyApprovalAction, $hrAttMw);
+$router->post($app('hr/permission-requests/{id}/reject'), $blockCompanyApprovalAction, $hrAttMw);
+$router->post($app('hr/requests/{id}/approve'), $blockCompanyApprovalAction, $hrLeaveMw);
+$router->post($app('hr/requests/{id}/reject'), $blockCompanyApprovalAction, $hrLeaveMw);
 
 $hrPayMw = rateb_erp_mw('hr', '', 'hr-payroll');
 $hrPayrollSubRoutes = [
@@ -265,7 +265,7 @@ $router->get($app('hr/payroll/{id}/edit'), [HrPayrollController::class, 'edit'],
 $router->post($app('hr/payroll/{id}'), [HrPayrollController::class, 'update'], $hrPayMw);
 $router->post($app('hr/payroll/{id}/delete'), [HrPayrollController::class, 'destroy'], $hrPayMw);
 $router->post($app('hr/payroll/{id}/generate'), [HrPayrollController::class, 'generate'], $hrPayMw);
-$router->post($app('hr/payroll/{id}/approve'), [HrPayrollController::class, 'approve'], $hrPayMw);
+$router->post($app('hr/payroll/{id}/approve'), $blockCompanyApprovalAction, $hrPayMw);
 $router->post($app('hr/payroll/{id}/post'), [HrPayrollController::class, 'post'], $hrPayMw);
 $router->get($app('hr/payroll/{id}/export'), [HrPayrollController::class, 'export'], $hrPayMw);
 $router->get($app('hr/payroll/{id}/payslip/{lineId}'), [HrPayrollController::class, 'payslip'], $hrPayMw);

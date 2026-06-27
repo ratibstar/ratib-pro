@@ -44,7 +44,7 @@ final class LeaveType extends Model
 {
     protected string $table = 'rateb_leave_types';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['company_id', 'name', 'paid', 'days_per_year', 'status'];
+    protected array $fillable = ['company_id', 'code', 'name', 'paid', 'days_per_year', 'status'];
 }
 
 final class LeaveRequest extends Model
