@@ -62,27 +62,54 @@ final class HrService
         ];
     }
 
+    /** @return list<array{code:string,paid:int,days_per_year:float|null}> */
+    public static function defaultLeaveTypeDefinitions(): array
+    {
+        return [
+            ['code' => 'annual', 'paid' => 1, 'days_per_year' => 21.0],
+            ['code' => 'sick', 'paid' => 1, 'days_per_year' => 30.0],
+            ['code' => 'unpaid', 'paid' => 0, 'days_per_year' => null],
+            ['code' => 'emergency', 'paid' => 1, 'days_per_year' => 5.0],
+            ['code' => 'maternity', 'paid' => 1, 'days_per_year' => 70.0],
+            ['code' => 'paternity', 'paid' => 1, 'days_per_year' => 3.0],
+            ['code' => 'hajj', 'paid' => 1, 'days_per_year' => 15.0],
+            ['code' => 'marriage', 'paid' => 1, 'days_per_year' => 5.0],
+            ['code' => 'bereavement', 'paid' => 1, 'days_per_year' => 5.0],
+            ['code' => 'study', 'paid' => 1, 'days_per_year' => null],
+            ['code' => 'exam', 'paid' => 1, 'days_per_year' => null],
+            ['code' => 'compensatory', 'paid' => 1, 'days_per_year' => null],
+            ['code' => 'work_injury', 'paid' => 1, 'days_per_year' => null],
+            ['code' => 'iddah', 'paid' => 1, 'days_per_year' => 130.0],
+        ];
+    }
+
     public function ensureDefaultLeaveTypes(int $companyId): void
     {
         if ($companyId < 1) {
             return;
         }
-        $count = (new LeaveType())->count(['company_id' => $companyId]);
-        if ($count > 0) {
-            return;
-        }
-        $defaults = [
-            ['code' => 'annual', 'paid' => 1, 'days_per_year' => 21],
-            ['code' => 'sick', 'paid' => 1, 'days_per_year' => 30],
-            ['code' => 'unpaid', 'paid' => 0, 'days_per_year' => null],
-        ];
         $model = new LeaveType();
-        foreach ($defaults as $row) {
+        $existing = $model->query(
+            'SELECT id, code, name FROM rateb_leave_types WHERE company_id = :cid',
+            ['cid' => $companyId]
+        );
+        $byCode = [];
+        foreach ($existing as $row) {
+            $code = strtolower(trim((string) ($row['code'] ?? '')));
+            if ($code !== '') {
+                $byCode[$code] = (int) ($row['id'] ?? 0);
+            }
+        }
+        foreach (self::defaultLeaveTypeDefinitions() as $row) {
             $code = (string) $row['code'];
+            if (isset($byCode[$code])) {
+                continue;
+            }
+            $label = function_exists('__') ? __('leave_type_' . $code) : $code;
             $model->create([
                 'company_id' => $companyId,
                 'code' => $code,
-                'name' => function_exists('__') ? __('leave_type_' . $code) : $code,
+                'name' => $label !== 'leave_type_' . $code ? $label : $code,
                 'paid' => $row['paid'],
                 'days_per_year' => $row['days_per_year'],
                 'status' => 'active',
