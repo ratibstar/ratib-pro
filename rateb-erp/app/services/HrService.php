@@ -117,34 +117,75 @@ final class HrService
         }
     }
 
+    /** @return list<array{code:string,key:string}> */
+    public static function defaultJobTitleDefinitions(): array
+    {
+        return [
+            ['code' => 'JT-01', 'key' => 'job_title_general_manager'],
+            ['code' => 'JT-02', 'key' => 'job_title_hr_manager'],
+            ['code' => 'JT-03', 'key' => 'job_title_accountant'],
+            ['code' => 'JT-04', 'key' => 'job_title_procurement'],
+            ['code' => 'JT-05', 'key' => 'job_title_warehouse_keeper'],
+            ['code' => 'JT-06', 'key' => 'job_title_driver'],
+            ['code' => 'JT-07', 'key' => 'job_title_technician'],
+            ['code' => 'JT-08', 'key' => 'job_title_admin_staff'],
+            ['code' => 'JT-09', 'key' => 'job_title_sales'],
+        ];
+    }
+
+    public function nextJobTitleCode(int $companyId): string
+    {
+        if ($companyId < 1) {
+            return 'JT-01';
+        }
+        $rows = (new \Rateb\App\Models\HrJobTitle())->query(
+            'SELECT code FROM rateb_hr_job_titles WHERE company_id = :cid',
+            ['cid' => $companyId]
+        );
+        $used = [];
+        foreach ($rows as $row) {
+            $used[strtoupper(trim((string) ($row['code'] ?? '')))] = true;
+        }
+        foreach (self::defaultJobTitleDefinitions() as $def) {
+            $code = strtoupper($def['code']);
+            if (!isset($used[$code])) {
+                return $def['code'];
+            }
+        }
+        for ($n = 10; $n < 100; $n++) {
+            $code = 'JT-' . str_pad((string) $n, 2, '0', STR_PAD_LEFT);
+            if (!isset($used[$code])) {
+                return $code;
+            }
+        }
+        return 'JT-99';
+    }
+
     public function ensureDefaultJobTitles(int $companyId): void
     {
         if ($companyId < 1) {
             return;
         }
-        $count = (new \Rateb\App\Models\HrJobTitle())->count(['company_id' => $companyId]);
-        if ($count > 0) {
-            return;
-        }
-        $defaults = [
-            ['code' => 'GM', 'key' => 'job_title_general_manager'],
-            ['code' => 'HR', 'key' => 'job_title_hr_manager'],
-            ['code' => 'ACC', 'key' => 'job_title_accountant'],
-            ['code' => 'PROC', 'key' => 'job_title_procurement'],
-            ['code' => 'WH', 'key' => 'job_title_warehouse_keeper'],
-            ['code' => 'DRV', 'key' => 'job_title_driver'],
-            ['code' => 'TEC', 'key' => 'job_title_technician'],
-            ['code' => 'ADM', 'key' => 'job_title_admin_staff'],
-            ['code' => 'SAL', 'key' => 'job_title_sales'],
-        ];
         $model = new \Rateb\App\Models\HrJobTitle();
-        foreach ($defaults as $row) {
+        $existing = $model->query(
+            'SELECT code FROM rateb_hr_job_titles WHERE company_id = :cid',
+            ['cid' => $companyId]
+        );
+        $used = [];
+        foreach ($existing as $row) {
+            $used[strtoupper(trim((string) ($row['code'] ?? '')))] = true;
+        }
+        foreach (self::defaultJobTitleDefinitions() as $row) {
+            if (isset($used[strtoupper($row['code'])])) {
+                continue;
+            }
             $model->create([
                 'company_id' => $companyId,
                 'code' => $row['code'],
                 'name' => function_exists('__') ? __($row['key']) : $row['code'],
                 'status' => 'active',
             ]);
+            $used[strtoupper($row['code'])] = true;
         }
     }
 
@@ -415,7 +456,7 @@ final class HrService
         }
         $start = sprintf('%04d-%02d-01', $year, $month);
         $end = date('Y-m-t', strtotime($start));
-        $attendance = (new AttendanceRecord())->query(
+        $attendance = (new Employee())->query(
             "SELECT e.employee_code, e.name,
                     SUM(CASE WHEN ar.status IN ('present','late') THEN 1 ELSE 0 END) AS present_days,
                     SUM(CASE WHEN ar.status = 'absent' THEN 1 ELSE 0 END) AS absent_days,

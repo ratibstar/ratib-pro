@@ -166,9 +166,15 @@ final class HrDepartmentsController extends \Rateb\App\Controllers\CrudControlle
         ];
         $this->fields = [
             ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true],
-            ['name' => 'code', 'label' => 'code', 'type' => 'text'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'active_inactive_statuses', 'translate_options' => true],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, DocumentCodeService::PREFIX_HR_DEPARTMENT, 'code');
+        return $data;
     }
 
     protected function layout(): string
@@ -193,9 +199,23 @@ final class HrJobTitlesController extends \Rateb\App\Controllers\CrudController
         ];
         $this->fields = [
             ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true],
-            ['name' => 'code', 'label' => 'code', 'type' => 'text'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'active_inactive_statuses', 'translate_options' => true],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        if (trim((string) ($data['code'] ?? '')) === '') {
+            $companyId = (int) (TenantContext::companyId() ?? 0);
+            if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                $companyId = rateb_resolve_ops_company_id();
+            }
+            if ($companyId > 0) {
+                $data['code'] = (new HrService())->nextJobTitleCode($companyId);
+            }
+        }
+        return $data;
     }
 
     protected function layout(): string
@@ -236,8 +256,8 @@ final class HrAttendanceController extends \Rateb\App\Controllers\CrudController
         $this->fields = [
             ['name' => 'employee_id', 'label' => 'hr_employees', 'type' => 'fk', 'lookup' => 'employees', 'required' => true],
             ['name' => 'attendance_date', 'label' => 'attendance_date', 'type' => 'date', 'required' => true],
-            ['name' => 'check_in', 'label' => 'check_in', 'type' => 'text', 'attrs' => ['class' => 'form-control rateb-form-control rateb-ltr-num', 'placeholder' => '09:00']],
-            ['name' => 'check_out', 'label' => 'check_out', 'type' => 'text', 'attrs' => ['class' => 'form-control rateb-form-control rateb-ltr-num', 'placeholder' => '17:00']],
+            ['name' => 'check_in', 'label' => 'check_in', 'type' => 'select', 'lookup' => 'hr_time_slots', 'default' => '09:00'],
+            ['name' => 'check_out', 'label' => 'check_out', 'type' => 'select', 'lookup' => 'hr_time_slots', 'default' => '17:00'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'attendance_statuses', 'translate_options' => true],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
         ];

@@ -117,6 +117,9 @@ final class FormLookupService
             case 'hr_job_titles':
                 $options = $this->mapRows((new \Rateb\App\Models\HrJobTitle())->all(200, 0), 'id', 'name');
                 break;
+            case 'hr_time_slots':
+                $options = $this->timeSlotOptions();
+                break;
             case 'employees':
                 $options = $this->mapRows((new Employee())->all(500, 0), 'id', 'name');
                 break;
@@ -1352,6 +1355,22 @@ final class FormLookupService
             'branches' => (string) ((new Branch())->find($id)['name'] ?? ''),
             default => '',
         };
+    }
+
+    /** @return list<FormOption> */
+    private function timeSlotOptions(): array
+    {
+        $out = [];
+        for ($hour = 6; $hour <= 23; $hour++) {
+            foreach ([0, 30] as $minute) {
+                if ($hour === 23 && $minute > 30) {
+                    continue;
+                }
+                $time = sprintf('%02d:%02d', $hour, $minute);
+                $out[] = ['value' => $time, 'label' => $time];
+            }
+        }
+        return $out;
     }
 
     /** @return list<FormOption> */

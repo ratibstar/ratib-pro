@@ -141,10 +141,9 @@ final class HrPermissionRequestsController extends \Rateb\App\Controllers\CrudCo
         $this->fields = [
             ['name' => 'employee_id', 'label' => 'hr_employees', 'type' => 'fk', 'lookup' => 'employees', 'required' => true],
             ['name' => 'permission_date', 'label' => 'permission_date', 'type' => 'date', 'required' => true],
-            ['name' => 'time_from', 'label' => 'time_from', 'type' => 'text', 'attrs' => ['class' => 'form-control rateb-form-control rateb-ltr-num', 'placeholder' => '09:00']],
-            ['name' => 'time_to', 'label' => 'time_to', 'type' => 'text', 'attrs' => ['class' => 'form-control rateb-form-control rateb-ltr-num', 'placeholder' => '11:00']],
+            ['name' => 'time_from', 'label' => 'time_from', 'type' => 'select', 'lookup' => 'hr_time_slots', 'default' => '09:00', 'required' => true],
+            ['name' => 'time_to', 'label' => 'time_to', 'type' => 'select', 'lookup' => 'hr_time_slots', 'default' => '11:00', 'required' => true],
             ['name' => 'reason', 'label' => 'reason', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'leave_request_statuses', 'translate_options' => true],
         ];
     }
 

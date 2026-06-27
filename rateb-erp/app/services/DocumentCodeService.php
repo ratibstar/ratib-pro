@@ -34,6 +34,7 @@ final class DocumentCodeService
     public const PREFIX_LOAN = 'LN-';
     public const PREFIX_HR_REQUEST = 'RQ-';
     public const PREFIX_PRODUCT_CATEGORY = 'PC-';
+    public const PREFIX_HR_DEPARTMENT = 'DP-';
 
     public function generate(Model $model, string $prefix, string $column): string
     {

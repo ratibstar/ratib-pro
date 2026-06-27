@@ -17,6 +17,12 @@ final class HrJobTitle extends Model
     protected string $table = 'rateb_hr_job_titles';
     protected bool $tenantScoped = true;
     protected array $fillable = ['company_id', 'name', 'code', 'status'];
+
+    protected function listOrderSql(string $alias = ''): string
+    {
+        $prefix = $alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '';
+        return "{$prefix}code ASC, {$prefix}id ASC";
+    }
 }
 
 final class Employee extends Model
