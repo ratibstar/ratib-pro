@@ -183,8 +183,9 @@ final class MigrationService
         $statements = [];
         $buffer = '';
         foreach (preg_split('/\R/', $sql) ?: [] as $line) {
+            $line = preg_replace('/^\xEF\xBB\xBF/', '', $line) ?? $line;
             $trimmed = trim($line);
-            if ($trimmed === '' || preg_match('/^\s*--/', $trimmed) === 1) {
+            if ($trimmed === '' || str_starts_with($trimmed, '--')) {
                 continue;
             }
             $buffer .= $line . "\n";

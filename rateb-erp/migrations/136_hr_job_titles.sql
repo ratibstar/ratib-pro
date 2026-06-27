@@ -1,4 +1,4 @@
--- HR job titles (المسميات الوظيفية) + link on employees
+-- HR job titles lookup table + job_title_id on rateb_employees (136)
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
