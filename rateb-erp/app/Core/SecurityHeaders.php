@@ -38,7 +38,7 @@ final class SecurityHeaders
             "style-src 'self' 'unsafe-inline' {$cdn} https://fonts.googleapis.com",
             "img-src 'self' data: blob: https:",
             "font-src 'self' data: {$cdn} https://fonts.gstatic.com",
-            "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com",
+            "connect-src 'self' {$cdn} https://www.google-analytics.com https://www.googletagmanager.com",
             "media-src 'self' blob:",
         ]);
         header('Content-Security-Policy: ' . $csp);
