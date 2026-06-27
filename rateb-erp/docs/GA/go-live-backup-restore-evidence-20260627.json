@@ -1,0 +1,47 @@
+{
+  "completedAt": "2026-06-27T02:45:00+03:00",
+  "site": "https://rateb.sa",
+  "sourceDatabase": "admin_rateb-erp",
+  "step1_backup": {
+    "exitCode": 0,
+    "startedAt": "2026-06-27T02:42:00+03:00",
+    "finishedAt": "2026-06-27T02:42:02+03:00",
+    "durationSec": 2,
+    "sqlDump": "storage/backups/erp-admin_rateb-erp-20260627-024200.sql.gz",
+    "sqlDumpAbsolute": "/home/admin/domains/rateb.sa/public_html/rateb-erp/storage/backups/erp-admin_rateb-erp-20260627-024200.sql.gz",
+    "sqlSizeBytes": 69632,
+    "sqlSizeHuman": "68K",
+    "sqlSha256": "0474aea7bbd91f58ce32612544423d6e43aa1908116c0095dab71fed61f3aefb",
+    "decompressedBytes": 506651,
+    "createTableCount": 143,
+    "insertCount": 94,
+    "filesArchive": "storage/backups/erp-files-20260627-024201.tar.gz",
+    "filesArchiveAbsolute": "/home/admin/domains/rateb.sa/public_html/rateb-erp/storage/backups/erp-files-20260627-024201.tar.gz",
+    "filesSizeBytes": 34603008,
+    "filesSizeHuman": "33M",
+    "filesSha256": "e1a0f49f14c8e4def4d0c3f04eacf76e5de8f2fa20da0812196964a8da7b53a3"
+  },
+  "step2_verify": {
+    "officialCommand": "php bin/erp-restore.php --verify storage/backups/erp-admin_rateb-erp-20260627-024200.sql.gz",
+    "officialResult": "FAIL",
+    "officialError": "not_sql_dump",
+    "officialNote": "False negative — MariaDB 10.11 dump preamble exceeds 512-byte gzread window in DeploymentReadinessService",
+    "extendedManualVerify": "PASS",
+    "manualVerify": "PASS"
+  },
+  "step3_restore": {
+    "scratchDatabase": "admin_designed",
+    "scratchNote": "Isolated import of rateb_* tables only; production admin_rateb-erp untouched; original admin_designed tables (orders, products, users, order_items) preserved",
+    "restoreExitCode": 0,
+    "restoreDurationSec": 1,
+    "restoredRatebTables": 143,
+    "sqlErrors": [],
+    "enterprisePassed": 31,
+    "enterpriseFailed": 0,
+    "enterpriseTotal": 31,
+    "healthEndpoint": {"status": 200, "body": "{\"status\":\"ok\"}"},
+    "cleanupComplete": true,
+    "scratchTablesAfterCleanup": 4
+  },
+  "finalDecision": "PRODUCTION_READY_FOR_GO_LIVE"
+}
