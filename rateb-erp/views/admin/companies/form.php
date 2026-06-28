@@ -31,11 +31,18 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('status'); ?></label>
-                    <select class="form-select" name="status">
-                        <?php foreach (['pending', 'active', 'suspended'] as $st) { ?>
-                        <option value="<?php echo $st; ?>"<?php echo ($item['status'] ?? '') === $st ? ' selected' : ''; ?>><?php echo __( $st); ?></option>
-                        <?php } ?>
-                    </select>
+                    <?php
+                    $currentStatus = (string) ($item['status'] ?? 'pending');
+                    $statusBadge = match ($currentStatus) {
+                        'active' => 'success',
+                        'suspended' => 'warning',
+                        default => 'info',
+                    };
+                    ?>
+                    <div class="form-control-plaintext">
+                        <span class="badge bg-<?php echo $statusBadge; ?>"><?php echo __($currentStatus); ?></span>
+                    </div>
+                    <p class="form-text mb-0"><?php echo __('company_status_oversight_hint'); ?></p>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('plans'); ?></label>

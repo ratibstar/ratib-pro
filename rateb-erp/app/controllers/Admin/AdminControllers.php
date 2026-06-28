@@ -199,20 +199,80 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $this->collectData();
+        $data['status'] = 'pending';
         try {
             $id = $this->model->create($data);
             (new \Rateb\App\Services\BranchService())->ensureMainBranch($id);
-            $planId = (int) ($data['plan_id'] ?? 0);
-            if ($planId > 0 && (string) ($data['status'] ?? '') === 'active') {
-                (new \Rateb\App\Services\BillingService())->ensureInitialSubscription($id, $planId, 'active');
-            }
             (new AuditService())->log('create', $this->entityName, $id, $data);
-            SessionManager::flash('success', __('save') . ' OK');
+            \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
+                $id,
+                'company_registration',
+                (string) ($data['name'] ?? ('#' . $id)),
+                $id
+            );
+            SessionManager::flash('success', __('company_saved_pending_oversight'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
+        $this->redirect(rateb_url('admin/oversight/companies-approvals'));
+    }
+
+    public function update(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $old = $this->model->find($id);
+        if (!$old) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        unset($data['status']);
+        $oldStatus = (string) ($old['status'] ?? 'pending');
+        if ($oldStatus === 'suspended') {
+            $data['status'] = 'suspended';
+        } elseif ($oldStatus === 'active' && $this->companyProfileChanged($old, $data)) {
+            $data['status'] = 'pending';
+        } else {
+            $data['status'] = $oldStatus;
+        }
+        try {
+            $this->model->update($id, $data);
+            (new AuditService())->log('update', $this->entityName, $id, $data);
+            if (($data['status'] ?? '') === 'pending' && $oldStatus === 'active') {
+                \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
+                    $id,
+                    'company_registration',
+                    (string) ($data['name'] ?? ($old['name'] ?? ('#' . $id))),
+                    $id
+                );
+                SessionManager::flash('success', __('company_edit_pending_oversight'));
+                $this->redirect(rateb_url('admin/oversight/companies-approvals'));
+            }
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @param array<string, mixed> $before @param array<string, mixed> $after */
+    private function companyProfileChanged(array $before, array $after): bool
+    {
+        foreach (['name', 'slug', 'email', 'phone', 'plan_id', 'user_limit', 'branch_limit', 'storage_limit_mb', 'modules'] as $key) {
+            $a = trim((string) ($after[$key] ?? ''));
+            $b = trim((string) ($before[$key] ?? ''));
+            if ($a !== $b) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function suspend(array $params): void
@@ -229,21 +289,8 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
     public function activate(array $params): void
     {
-        if (!$this->validateCsrf()) {
-            Response::redirect(rateb_url('admin/companies'));
-        }
-        $id = (int) ($params['id'] ?? 0);
-        $this->model->activate($id);
-        $company = $this->model->find($id);
-        if ($company) {
-            $planId = (int) ($company['plan_id'] ?? 0);
-            if ($planId > 0) {
-                (new \Rateb\App\Services\BillingService())->ensureInitialSubscription($id, $planId, 'active');
-            }
-        }
-        (new AuditService())->log('activate', 'company', $id);
-        SessionManager::flash('success', __('save') . ' OK');
-        Response::redirect(rateb_url('admin/companies'));
+        SessionManager::flash('info', __('company_approve_in_oversight'));
+        Response::redirect(rateb_url('admin/oversight/companies-approvals'));
     }
 
     public function bulkSuspend(): void
@@ -263,17 +310,8 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
     public function bulkActivate(): void
     {
-        if (!$this->validateCsrf()) {
-            Response::redirect(rateb_url('admin/companies'));
-        }
-        $count = 0;
-        foreach ($this->parseBulkIds() as $id) {
-            $this->model->activate($id);
-            (new AuditService())->log('bulk_activate', 'company', $id);
-            $count++;
-        }
-        SessionManager::flash('success', __('bulk_activated', ['count' => $count]));
-        Response::redirect(rateb_url('admin/companies'));
+        SessionManager::flash('info', __('company_approve_in_oversight'));
+        Response::redirect(rateb_url('admin/oversight/companies-approvals'));
     }
 }
 

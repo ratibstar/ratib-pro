@@ -81,6 +81,7 @@ $approvalsConfig = [
             <?php
             $cards = [
                 ['key' => 'total', 'label' => 'approvals_total_pending', 'class' => 'primary'],
+                ['key' => 'company_registration', 'label' => 'companies_approvals_oversight', 'class' => 'info'],
                 ['key' => 'workflow_instance', 'label' => 'approval_category_workflow', 'class' => 'warning'],
                 ['key' => 'journal_entry', 'label' => 'approval_category_accounting', 'class' => 'info'],
                 ['key' => 'supplier_evaluation', 'label' => 'approval_category_manager', 'class' => 'secondary'],

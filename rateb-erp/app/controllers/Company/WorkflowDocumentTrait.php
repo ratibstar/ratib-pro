@@ -5,6 +5,7 @@ namespace Rateb\App\Controllers\Company;
 
 use Rateb\App\Controllers\Shared\ExportController;
 use Rateb\App\Core\Csrf;
+use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\WorkflowRecordService;
@@ -100,6 +101,11 @@ trait WorkflowDocumentTrait
 
     public function approve(array $params): void
     {
+        if (function_exists('rateb_oversight_approve_only') && rateb_oversight_approve_only()) {
+            SessionManager::flash('error', __('approvals_admin_only'));
+            Response::redirect(rateb_url('admin/oversight/approvals'));
+            return;
+        }
         if (!$this->workflowCanApprove()) {
             SessionManager::flash('error', __('access_denied'));
             $this->workflowRedirect();
@@ -124,6 +130,11 @@ trait WorkflowDocumentTrait
 
     public function reject(array $params): void
     {
+        if (function_exists('rateb_oversight_approve_only') && rateb_oversight_approve_only()) {
+            SessionManager::flash('error', __('approvals_admin_only'));
+            Response::redirect(rateb_url('admin/oversight/approvals'));
+            return;
+        }
         if (!$this->workflowCanApprove()) {
             SessionManager::flash('error', __('access_denied'));
             $this->workflowRedirect();

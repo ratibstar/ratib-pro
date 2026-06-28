@@ -82,10 +82,6 @@ $ratebRowRecordLabel = static function (array $row): string {
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <button type="submit" class="btn btn-warning btn-sm"><i class="fas fa-pause"></i> <?php echo __('bulk_suspend'); ?></button>
         </form>
-        <form method="post" action="<?php echo rateb_url('admin/companies/bulk-activate'); ?>" class="d-inline" data-rateb-bulk-form="activate">
-            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-            <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-play"></i> <?php echo __('bulk_activate'); ?></button>
-        </form>
         <?php } ?>
     </div>
     <?php } ?>
@@ -260,16 +256,18 @@ $ratebRowRecordLabel = static function (array $row): string {
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                         </form>
-                        <?php if ($isCompanies) { ?>
+                        <?php if ($isCompanies) {
+                            $companyStatus = (string) ($row['status'] ?? '');
+                            if ($companyStatus === 'active') { ?>
                         <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/suspend'); ?>" class="d-inline">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-warning"><i class="fas fa-pause"></i></button>
+                            <button type="submit" class="btn btn-sm btn-outline-warning" title="<?php echo Rateb\App\Core\View::escape(__('bulk_suspend')); ?>"><i class="fas fa-pause"></i></button>
                         </form>
-                        <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/activate'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-play"></i></button>
-                        </form>
-                        <?php } ?>
+                        <?php }
+                            if ($companyStatus === 'pending') { ?>
+                        <a href="<?php echo rateb_url('admin/oversight/companies-approvals'); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape(__('companies_approvals_oversight')); ?>"><i class="fas fa-check-double"></i></a>
+                        <?php }
+                        } ?>
                         <?php } ?>
                         <?php } ?>
                         </div>

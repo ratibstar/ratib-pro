@@ -1378,6 +1378,12 @@ table.rateb-approvals-table td.rateb-actions-cell {
     color: #fff;
 }
 
+.rateb-nav-badge--pending,
+.rateb-nav-group-badge.rateb-nav-badge--pending {
+    background: #b8652a;
+    color: #fff8f2;
+}
+
 .rateb-topbar-approvals .rateb-topbar-badge {
     position: absolute;
     top: -0.35rem;

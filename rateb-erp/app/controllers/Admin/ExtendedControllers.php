@@ -212,6 +212,12 @@ final class AdminWorkflowsController extends Controller
 
 final class AdminApprovalsController extends Controller
 {
+    public function companiesApprovals(): void
+    {
+        $_GET['type'] = 'companies';
+        $this->index();
+    }
+
     public function index(): void
     {
         if (!headers_sent()) {

@@ -108,6 +108,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             <?php
             $oversightCounts = rateb_oversight_menu_counts();
             $oversightLinkBadges = [
+                'admin/oversight/companies-approvals' => rateb_nav_can('companies.view') ? (int) (($oversightCounts['company_pending'] ?? 0)) : 0,
                 'admin/oversight/approvals' => rateb_nav_can('workflows.view') ? (int) ($oversightCounts['approvals'] ?? 0) : 0,
                 'admin/oversight/procurement' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['procurement'] ?? 0) : 0,
                 'admin/oversight/rfq' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['rfq'] ?? 0) : 0,
@@ -116,6 +117,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             ];
             $adminSection(__('admin_oversight_section'), [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
+                ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.view']],
                 [
                     'type' => 'subgroup',
                     'label' => __('branches'),
@@ -137,7 +139,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 ['type' => 'link', 'link' => ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view']],
                 ['type' => 'link', 'link' => ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view']],
                 ['type' => 'link', 'link' => ['admin/settings', 'settings', 'fa-gear', 'settings.manage']],
-            ], 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges);
+            ], 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges, 'rateb-nav-badge--pending');
             ?>
             <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>

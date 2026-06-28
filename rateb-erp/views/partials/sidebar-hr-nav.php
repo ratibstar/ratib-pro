@@ -49,18 +49,25 @@ $renderHrLink = static function (array $item) use ($hrRouteActive): void {
     }
     $active = $hrRouteActive($route) ? ' active' : '';
     $url = rateb_url_with_ops_company(rateb_app_route($route));
+    $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($route) : 0;
     echo '<a href="' . Rateb\App\Core\View::escape($url) . '" class="rateb-nav-link' . $active . '">';
     echo '<i class="fas ' . Rateb\App\Core\View::escape((string) ($item['icon'] ?? 'fa-circle')) . '"></i>';
     echo '<span>' . Rateb\App\Core\View::escape(__((string) ($item['label'] ?? ''))) . '</span>';
+    if ($badge > 0) {
+        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $badge . '</span>';
+    }
     echo '</a>';
 };
 
 $renderHrSubgroup = static function (array $item) use ($hrRouteActive, $renderHrLink): void {
     $open = false;
+    $subBadge = 0;
     foreach ($item['children'] ?? [] as $child) {
         if ($hrRouteActive((string) ($child['route'] ?? ''))) {
             $open = true;
-            break;
+        }
+        if (function_exists('rateb_ops_nav_pending_badge')) {
+            $subBadge += rateb_ops_nav_pending_badge((string) ($child['route'] ?? ''));
         }
     }
     $openClass = $open ? ' is-open' : '';
@@ -68,6 +75,9 @@ $renderHrSubgroup = static function (array $item) use ($hrRouteActive, $renderHr
     echo '<button type="button" class="rateb-nav-subgroup-toggle" data-nav-group-toggle aria-expanded="' . ($open ? 'true' : 'false') . '">';
     echo '<i class="fas ' . Rateb\App\Core\View::escape((string) ($item['icon'] ?? 'fa-folder')) . '"></i>';
     echo '<span>' . Rateb\App\Core\View::escape(__((string) ($item['label'] ?? ''))) . '</span>';
+    if ($subBadge > 0) {
+        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $subBadge . '</span>';
+    }
     echo '<i class="fas fa-chevron-down rateb-nav-subgroup-chevron" aria-hidden="true"></i>';
     echo '</button><div class="rateb-nav-subgroup-body">';
     foreach ($item['children'] ?? [] as $child) {
@@ -75,6 +85,19 @@ $renderHrSubgroup = static function (array $item) use ($hrRouteActive, $renderHr
     }
     echo '</div></div>';
 };
+
+$hrSectionBadge = 0;
+foreach ($menu as $hrItem) {
+    if (!empty($hrItem['children'])) {
+        foreach ($hrItem['children'] as $child) {
+            if (function_exists('rateb_ops_nav_pending_badge')) {
+                $hrSectionBadge += rateb_ops_nav_pending_badge((string) ($child['route'] ?? ''));
+            }
+        }
+    } elseif (function_exists('rateb_ops_nav_pending_badge')) {
+        $hrSectionBadge += rateb_ops_nav_pending_badge((string) ($hrItem['route'] ?? ''));
+    }
+}
 
 $renderNavGroup(__('human_resources'), 'fa-users-gear', $hrSectionActive, static function () use ($menu, $renderHrLink, $renderHrSubgroup): void {
     foreach ($menu as $item) {
@@ -84,4 +107,4 @@ $renderNavGroup(__('human_resources'), 'fa-users-gear', $hrSectionActive, static
             $renderHrLink($item);
         }
     }
-});
+}, $hrSectionBadge, 'rateb-nav-badge--pending');

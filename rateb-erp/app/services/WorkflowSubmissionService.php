@@ -35,6 +35,7 @@ final class WorkflowSubmissionService
         $instanceId = (new WorkflowService())->submit($entityType, $entityId, $companyId, $workflowId);
         (new WorkflowSlaService())->setDueDate($instanceId, $workflowId, 1);
         $this->notifyStepApprovers($companyId, $workflowId, 1, $entityType, $entityId);
+        ApprovalOversightService::notifyPendingSubmission($companyId, $entityType, $entityType . ' #' . $entityId, $entityId);
     }
 
     /** @return array<string, mixed>|null */

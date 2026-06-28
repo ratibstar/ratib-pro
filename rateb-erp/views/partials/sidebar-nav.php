@@ -23,8 +23,13 @@ $opsLink = static function (
     }
     $route = rateb_app_route($resourcePath);
     $active = $navActive($route) ? ' active' : '';
+    $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
     echo '<a href="' . rateb_url($route) . '" class="rateb-nav-link' . $active . '">';
-    echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span></a>';
+    echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span>';
+    if ($badge > 0) {
+        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $badge . '</span>';
+    }
+    echo '</a>';
 };
 
 $renderNavGroup = static function (
@@ -32,7 +37,8 @@ $renderNavGroup = static function (
     string $groupIcon,
     bool $hasActive,
     callable $renderBody,
-    int $sectionBadge = 0
+    int $sectionBadge = 0,
+    string $badgeClass = ''
 ): void {
     $openClass = $hasActive ? ' is-open' : '';
     echo '<div class="rateb-nav-group' . $openClass . '" data-nav-group>';
@@ -40,7 +46,11 @@ $renderNavGroup = static function (
     echo '<i class="fas ' . Rateb\App\Core\View::escape($groupIcon) . ' rateb-nav-group-icon"></i>';
     echo '<span class="rateb-nav-group-label">' . Rateb\App\Core\View::escape($title) . '</span>';
     if ($sectionBadge > 0) {
-        echo '<span class="rateb-nav-badge rateb-nav-group-badge" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $sectionBadge . '</span>';
+        $cls = 'rateb-nav-badge rateb-nav-group-badge';
+        if ($badgeClass !== '') {
+            $cls .= ' ' . Rateb\App\Core\View::escape($badgeClass);
+        }
+        echo '<span class="' . $cls . '" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $sectionBadge . '</span>';
     }
     echo '<i class="fas fa-chevron-down rateb-nav-group-chevron" aria-hidden="true"></i>';
     echo '</button>';
@@ -56,6 +66,7 @@ $opsSection = static function (
 ) use ($opsLink, $navActive, $renderNavGroup): void {
     $hasActive = false;
     $hasVisible = false;
+    $sectionBadge = 0;
     foreach ($links as $link) {
         [$path, , , $module, $perm] = array_pad($link, 5, '');
         $entity = rateb_entity_perms($path);
@@ -71,6 +82,9 @@ $opsSection = static function (
             continue;
         }
         $hasVisible = true;
+        if (function_exists('rateb_ops_nav_pending_badge')) {
+            $sectionBadge += rateb_ops_nav_pending_badge($path);
+        }
         if ($navActive(rateb_app_route($path))) {
             $hasActive = true;
         }
@@ -82,7 +96,7 @@ $opsSection = static function (
         foreach ($links as $link) {
             $opsLink($link[0], $link[1], $link[2], $link[3] ?? '', $link[4] ?? '');
         }
-    });
+    }, $sectionBadge, 'rateb-nav-badge--pending');
 };
 
 $adminSection = static function (
@@ -90,15 +104,20 @@ $adminSection = static function (
     array $items,
     string $groupIcon = 'fa-folder-open',
     int $sectionBadge = 0,
-    array $linkBadges = []
+    array $linkBadges = [],
+    string $badgeClass = ''
 ) use ($navActive, $renderNavGroup): void {
-    $renderAdminLink = static function (array $link) use ($navActive, $linkBadges): void {
+    $renderAdminLink = static function (array $link) use ($navActive, $linkBadges, $badgeClass): void {
         $active = $navActive($link[0]) ? ' active' : '';
         $badge = (int) ($linkBadges[$link[0]] ?? 0);
         echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
         echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
         if ($badge > 0) {
-            echo '<span class="rateb-nav-badge" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $badge . '</span>';
+            $cls = 'rateb-nav-badge';
+            if ($badgeClass !== '') {
+                $cls .= ' ' . $badgeClass;
+            }
+            echo '<span class="' . Rateb\App\Core\View::escape($cls) . '" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $badge . '</span>';
         }
         echo '</a>';
     };
@@ -173,5 +192,5 @@ $adminSection = static function (
             }
             $renderAdminLink($item['link']);
         }
-    }, $sectionBadge);
+    }, $sectionBadge, $badgeClass);
 };

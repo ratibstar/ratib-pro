@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-export-fatal-fix');
+define('RATEB_ASSET_BUILD', '20260628-oversight-module-approvals');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -1537,6 +1537,7 @@ if (!function_exists('rateb_oversight_menu_counts')) {
             'rfq' => 0,
             'inventory' => 0,
             'supplier_evaluations' => 0,
+            'company_pending' => 0,
             'total' => 0,
         ];
         if (!rateb_is_super_admin()) {
@@ -1557,6 +1558,7 @@ if (!function_exists('rateb_oversight_menu_badge')) {
     {
         $map = [
             'admin/oversight/approvals' => 'approvals',
+            'admin/oversight/companies-approvals' => 'company_pending',
             'admin/oversight/procurement' => 'procurement',
             'admin/oversight/rfq' => 'rfq',
             'admin/oversight/inventory' => 'inventory',
@@ -1569,6 +1571,60 @@ if (!function_exists('rateb_oversight_menu_badge')) {
         }
         $counts = rateb_oversight_menu_counts();
         return (int) ($counts[$key] ?? 0);
+    }
+}
+
+if (!function_exists('rateb_oversight_approve_only')) {
+    /** Company ops users cannot approve locally — oversight only. */
+    function rateb_oversight_approve_only(): bool
+    {
+        return true;
+    }
+}
+
+if (!function_exists('rateb_ops_nav_counts')) {
+    /** @return array<string, int> */
+    function rateb_ops_nav_counts(): array
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        $companyFilter = null;
+        if (!rateb_is_super_admin()) {
+            $cid = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+            if ($cid < 1) {
+                $cached = [];
+                return $cached;
+            }
+            $companyFilter = $cid;
+        } elseif (function_exists('rateb_resolve_ops_company_id')) {
+            $cid = rateb_resolve_ops_company_id();
+            if ($cid > 0) {
+                $companyFilter = $cid;
+            }
+        }
+        try {
+            $cached = (new \Rateb\App\Services\ApprovalOversightService())->opsNavCounts($companyFilter);
+        } catch (\Throwable $e) {
+            $cached = [];
+        }
+        return $cached;
+    }
+}
+
+if (!function_exists('rateb_ops_nav_pending_badge')) {
+    function rateb_ops_nav_pending_badge(string $resourcePath): int
+    {
+        $path = ltrim($resourcePath, '/');
+        $counts = rateb_ops_nav_counts();
+        $direct = (int) ($counts[$path] ?? 0);
+        if ($path === 'accounting') {
+            return $direct
+                + (int) ($counts['journal-entries'] ?? 0)
+                + (int) ($counts['cash-vouchers'] ?? 0);
+        }
+        return $direct;
     }
 }
 

@@ -124,6 +124,31 @@ final class NotificationService
         (new EmailAlertService())->sendApprovalRequest($userId, $companyId, $entityType, $entityId);
     }
 
+    /** Broadcast to platform super-admins when a record enters the oversight approval queue. */
+    public function notifyOversightPending(int $companyId, string $entityLabel, string $entityType, int $entityId): void
+    {
+        if ($entityId < 1) {
+            return;
+        }
+        try {
+            $db = \Rateb\App\Core\Database::connection();
+            $stmt = $db->query('SELECT id FROM rateb_users WHERE is_super_admin = 1 AND status = \'active\'');
+            if ($stmt === false) {
+                return;
+            }
+            $title = __('oversight_approval_pending');
+            $message = __('oversight_approval_pending_message', ['entity' => $entityLabel]);
+            while ($row = $stmt->fetch()) {
+                $uid = (int) ($row['id'] ?? 0);
+                if ($uid > 0) {
+                    $this->notifyUser($uid, $companyId, $title, $message, 'warning', 'oversight_approval', $entityType, $entityId);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Notifications are best-effort.
+        }
+    }
+
     public function triggerMaintenanceDue(int $companyId, string $deviceName, string $dueDate): void
     {
         $this->notifyCompany($companyId, __('maintenance_due_alert'), __('maintenance_due_message', ['device' => $deviceName, 'date' => $dueDate]), 'info', 'maintenance_due');

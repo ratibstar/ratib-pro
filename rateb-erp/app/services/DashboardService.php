@@ -155,7 +155,7 @@ final class DashboardService
                 'type' => 'pending_companies',
                 'severity' => 'warning',
                 'message' => __('dashboard_alert_pending_companies', ['count' => (int) $m['pending_companies']]),
-                'url' => rateb_url('admin/companies'),
+                'url' => rateb_url('admin/oversight/companies-approvals'),
                 'count' => (int) $m['pending_companies'],
                 'icon' => 'fa-hourglass-half',
             ];

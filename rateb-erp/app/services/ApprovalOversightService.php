@@ -22,7 +22,7 @@ final class ApprovalOversightService
 
     public static function canUndo(string $sourceKey): bool
     {
-        return !in_array($sourceKey, ['workflow_instance', 'hr_payroll'], true);
+        return !in_array($sourceKey, ['workflow_instance', 'hr_payroll', 'company_registration'], true);
     }
 
     /** @return array<string, string> */
@@ -30,6 +30,7 @@ final class ApprovalOversightService
     {
         return [
             '' => 'all_approval_types',
+            'companies' => 'approval_category_companies',
             'workflow' => 'approval_category_workflow',
             'manager' => 'approval_category_manager',
             'accounting' => 'approval_category_accounting',
@@ -64,6 +65,7 @@ final class ApprovalOversightService
             'rfq' => 0,
             'inventory' => 0,
             'supplier_evaluations' => 0,
+            'company_pending' => 0,
         ];
         foreach ($this->sources() as $key => $source) {
             if ($key === 'workflow_instance') {
@@ -71,6 +73,9 @@ final class ApprovalOversightService
             }
             $menu = self::menuKeyForSource($key);
             $counts[$menu] += $this->countSource($source, $companyFilter);
+            if ($key === 'company_registration') {
+                $counts['company_pending'] = $this->countSource($source, $companyFilter);
+            }
         }
         foreach ($this->countWorkflowInstancesByMenu($companyFilter) as $menu => $n) {
             $counts[$menu] += $n;
@@ -80,9 +85,74 @@ final class ApprovalOversightService
         return $counts;
     }
 
+    /**
+     * Pending approval counts per ops sidebar resource path (e.g. purchase-requests, hr/leaves).
+     *
+     * @return array<string, int>
+     */
+    public function opsNavCounts(?int $companyFilter = null): array
+    {
+        $this->ensureAccountingSubmitSchema();
+        $counts = [];
+        $add = static function (array &$counts, string $path, int $n): void {
+            if ($path === '' || $n <= 0) {
+                return;
+            }
+            $counts[$path] = ($counts[$path] ?? 0) + $n;
+        };
+
+        foreach ($this->sources() as $key => $source) {
+            if (in_array($key, ['workflow_instance', 'company_registration'], true)) {
+                continue;
+            }
+            $route = (string) ($source['route'] ?? '');
+            if ($route === '') {
+                continue;
+            }
+            $add($counts, $route, $this->countSource($source, $companyFilter));
+        }
+
+        foreach ($this->countWorkflowInstancesByRoute($companyFilter) as $route => $n) {
+            $add($counts, $route, $n);
+        }
+
+        $rfq = $this->countRfqQuotationsPending($companyFilter);
+        $add($counts, 'rfq', $rfq);
+        $add($counts, 'quotations', $rfq);
+        $add($counts, 'branch-transfers', $this->countBranchTransfersPending($companyFilter));
+
+        return $counts;
+    }
+
+    public static function routeKeyForWorkflowEntity(string $entityType): string
+    {
+        return match ($entityType) {
+            'purchase_request' => 'purchase-requests',
+            'purchase_order' => 'purchase-orders',
+            'supplier_evaluation' => 'supplier-evaluations',
+            'warehouse_transfer' => 'warehouse-transfers',
+            'inventory_audit' => 'inventory-audits',
+            default => '',
+        };
+    }
+
+    /** Notify platform super-admins that a record awaits oversight approval. */
+    public static function notifyPendingSubmission(
+        int $companyId,
+        string $entityType,
+        string $entityLabel,
+        int $entityId
+    ): void {
+        if ($entityId < 1) {
+            return;
+        }
+        (new NotificationService())->notifyOversightPending($companyId, $entityLabel, $entityType, $entityId);
+    }
+
     public static function menuKeyForSource(string $sourceKey): string
     {
         return match ($sourceKey) {
+            'company_registration' => 'approvals',
             'supplier_evaluation' => 'supplier_evaluations',
             'inventory_audit', 'warehouse_transfer' => 'inventory',
             default => 'approvals',
@@ -128,6 +198,55 @@ final class ApprovalOversightService
             // Table may not exist before migrations.
         }
         return $counts;
+    }
+
+    /** @return array<string, int> */
+    private function countWorkflowInstancesByRoute(?int $companyFilter): array
+    {
+        $counts = [];
+        try {
+            $sql = 'SELECT entity_type, COUNT(*) AS c FROM rateb_approval_instances i WHERE i.status = \'pending\'';
+            $params = [];
+            if ($companyFilter !== null && $companyFilter > 0) {
+                $sql .= ' AND i.company_id = :cid';
+                $params['cid'] = $companyFilter;
+            }
+            $sql .= ' GROUP BY entity_type';
+            $db = Database::connection();
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $route = self::routeKeyForWorkflowEntity((string) ($row['entity_type'] ?? ''));
+                if ($route === '') {
+                    continue;
+                }
+                $counts[$route] = ($counts[$route] ?? 0) + (int) ($row['c'] ?? 0);
+            }
+        } catch (\Throwable $e) {
+            // Table may not exist before migrations.
+        }
+        return $counts;
+    }
+
+    private function countBranchTransfersPending(?int $companyFilter): int
+    {
+        if (!$this->tableExists('rateb_branch_transfers')) {
+            return 0;
+        }
+        try {
+            $sql = 'SELECT COUNT(*) FROM rateb_branch_transfers t WHERE t.status = :st';
+            $params = ['st' => 'pending'];
+            if ($companyFilter !== null && $companyFilter > 0) {
+                $sql .= ' AND t.company_id = :cid';
+                $params['cid'] = $companyFilter;
+            }
+            $db = Database::connection();
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     private function countRfqQuotationsPending(?int $companyFilter): int
@@ -183,6 +302,17 @@ final class ApprovalOversightService
                 'category' => 'workflow',
                 'label' => 'approval_type_workflow',
                 'queue_route' => 'workflows',
+            ],
+            'company_registration' => [
+                'category' => 'companies',
+                'label' => 'companies_approvals_oversight',
+                'table' => 'rateb_companies',
+                'no_column' => 'name',
+                'date_column' => 'created_at',
+                'status_column' => 'status',
+                'status_value' => 'pending',
+                'platform_entity' => true,
+                'admin_route' => 'admin/companies',
             ],
             'supplier_evaluation' => [
                 'category' => 'manager',
@@ -386,14 +516,24 @@ final class ApprovalOversightService
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $out = [];
         foreach ($rows as $row) {
-            $companyId = (int) ($row['company_id'] ?? 0);
             $entityId = (int) ($row['id'] ?? 0);
+            $companyId = !empty($source['platform_entity'])
+                ? $entityId
+                : (int) ($row['company_id'] ?? 0);
             $ref = trim((string) ($row['reference'] ?? ''));
             if ($ref === '' && $entityId > 0) {
                 $ref = '#' . $entityId;
             }
             $route = (string) ($source['route'] ?? '');
+            $adminRoute = (string) ($source['admin_route'] ?? '');
             $queueRoute = (string) ($source['queue_route'] ?? $route);
+            if ($adminRoute !== '') {
+                $viewUrl = rateb_url($adminRoute . '/' . $entityId . '/edit');
+                $editUrl = $viewUrl;
+            } else {
+                $viewUrl = $this->opsUrl($route . '/' . $entityId, $companyId);
+                $editUrl = $this->opsUrl($route . '/' . $entityId . '/edit', $companyId);
+            }
             $out[] = [
                 'category' => (string) ($source['category'] ?? ''),
                 'type_label' => __((string) ($source['label'] ?? '')),
@@ -403,8 +543,9 @@ final class ApprovalOversightService
                 'record_id' => $entityId,
                 'entity_id' => $entityId,
                 'submitted_at' => (string) ($row['submitted_at'] ?? ''),
-                'view_url' => $this->opsUrl($route . '/' . $entityId, $companyId),
-                'edit_url' => $this->opsUrl($route . '/' . $entityId . '/edit', $companyId),
+                'view_url' => $viewUrl,
+                'edit_url' => $editUrl,
+                'queue_url' => $queueRoute !== '' ? $this->opsUrl($queueRoute, $companyId) : '',
             ];
         }
         return $out;
@@ -432,7 +573,11 @@ final class ApprovalOversightService
         }
 
         if ($companyFilter !== null && $companyFilter > 0) {
-            $where .= ' AND ' . $alias . '.company_id = :cid';
+            if (!empty($source['platform_entity'])) {
+                $where .= ' AND ' . $alias . '.id = :cid';
+            } else {
+                $where .= ' AND ' . $alias . '.company_id = :cid';
+            }
             $params['cid'] = $companyFilter;
         }
 
@@ -451,6 +596,29 @@ final class ApprovalOversightService
                 'sql' => 'SELECT COUNT(*) FROM ' . $table . ' ' . $alias . $where,
                 'params' => $params,
             ];
+        }
+
+        if (!empty($source['platform_entity'])) {
+            $sql = sprintf(
+                'SELECT %s.id, %s.id AS company_id, %s AS reference, %s.%s AS submitted_at, %s.name AS company_name
+                 FROM %s %s
+                 %s
+                 ORDER BY %s.%s DESC
+                 LIMIT %d',
+                $alias,
+                $alias,
+                $refExpr,
+                $alias,
+                $dateCol,
+                $alias,
+                $table,
+                $alias,
+                $where,
+                $alias,
+                $dateCol,
+                max(1, min(500, $limit))
+            );
+            return ['sql' => $sql, 'params' => $params];
         }
 
         $sql = sprintf(
@@ -779,6 +947,26 @@ final class ApprovalOversightService
             return;
         }
 
+        if ($sourceKey === 'company_registration') {
+            $model = new \Rateb\App\Models\Company();
+            $row = $model->find($recordId);
+            if (!$row || (string) ($row['status'] ?? '') !== 'pending') {
+                throw new \RuntimeException(__('manager_approval_already_processed'));
+            }
+            if ($action === 'approve') {
+                $model->activate($recordId);
+                $planId = (int) ($row['plan_id'] ?? 0);
+                if ($planId > 0) {
+                    (new \Rateb\App\Services\BillingService())->ensureInitialSubscription($recordId, $planId, 'active');
+                }
+                (new \Rateb\App\Services\AuditService())->log('oversight_activate', 'company', $recordId);
+            } else {
+                $model->suspend($recordId);
+                (new \Rateb\App\Services\AuditService())->log('oversight_reject', 'company', $recordId);
+            }
+            return;
+        }
+
         throw new \RuntimeException(__('invalid_request'));
     }
 
@@ -795,6 +983,9 @@ final class ApprovalOversightService
         $this->bootstrapCompany($companyId);
         if ($sourceKey === 'workflow_instance') {
             return $this->detailWorkflowInstance($recordId, $companyId);
+        }
+        if ($sourceKey === 'company_registration') {
+            return $this->detailCompanyRegistration($recordId);
         }
         $source = $this->sources()[$sourceKey];
         $table = (string) ($source['table'] ?? '');
@@ -972,6 +1163,40 @@ final class ApprovalOversightService
     }
 
     /** @return array<string, mixed> */
+    private function detailCompanyRegistration(int $recordId): array
+    {
+        $model = new \Rateb\App\Models\Company();
+        $row = $model->find($recordId);
+        if (!$row) {
+            throw new \RuntimeException(__('no_records'));
+        }
+        $status = (string) ($row['status'] ?? 'pending');
+        $editUrl = rateb_url('admin/companies/' . $recordId . '/edit');
+        return [
+            'source_key' => 'company_registration',
+            'record_id' => $recordId,
+            'company_id' => $recordId,
+            'company_name' => (string) ($row['name'] ?? ''),
+            'type_label' => __('companies_approvals_oversight'),
+            'reference' => (string) ($row['name'] ?? ('#' . $recordId)),
+            'submitted_at' => (string) ($row['created_at'] ?? ''),
+            'status' => $status,
+            'status_label' => $this->statusLabel($status),
+            'fields' => [
+                ['label' => __('name'), 'value' => (string) ($row['name'] ?? '')],
+                ['label' => __('email'), 'value' => (string) ($row['email'] ?? '')],
+                ['label' => __('phone'), 'value' => (string) ($row['phone'] ?? '')],
+                ['label' => __('status'), 'value' => $this->statusLabel($status)],
+            ],
+            'view_url' => $editUrl,
+            'edit_url' => $editUrl,
+            'can_approve' => $status === 'pending',
+            'can_reject' => $status === 'pending',
+            'can_undo' => false,
+        ];
+    }
+
+    /** @return array<string, mixed> */
     private function detailWorkflowInstance(int $instanceId, int $companyId): array
     {
         $db = Database::connection();
@@ -1132,6 +1357,9 @@ final class ApprovalOversightService
             $stmt->execute(['id' => $recordId]);
             $cid = (int) ($stmt->fetchColumn() ?: 0);
             return $cid > 0 ? $cid : null;
+        }
+        if ($sourceKey === 'company_registration') {
+            return $recordId;
         }
         $sources = $this->sources();
         $table = (string) ($sources[$sourceKey]['table'] ?? '');

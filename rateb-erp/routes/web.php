@@ -227,6 +227,7 @@ $router->post('/admin/workflows', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 307);
 }, [ErpAuthMiddleware::class]);
 $router->get('/admin/oversight/approvals', [AdminApprovalsController::class, 'index'], rateb_admin_mw('workflows.view'));
+$router->get('/admin/oversight/companies-approvals', [AdminApprovalsController::class, 'companiesApprovals'], rateb_admin_mw('companies.view'));
 $router->get('/admin/oversight/approvals/count', [AdminApprovalsController::class, 'count'], rateb_admin_mw('workflows.view'));
 $router->get('/admin/oversight/approvals/detail', [AdminApprovalsController::class, 'detail'], rateb_admin_mw('workflows.view'));
 $router->post('/admin/oversight/approvals/decide', [AdminApprovalsController::class, 'decideAction'], rateb_admin_mw('workflows.manage'));

@@ -329,15 +329,15 @@ $router->post($app('chart-of-accounts/{id}/delete'), [CompanyChartOfAccountsCont
 $router->get($app('journal-entries'), [CompanyJournalEntriesController::class, 'index'], rateb_erp_mw('accounting', '', 'journal-entries'));
 $router->get($app('journal-entries/create'), [CompanyJournalEntriesController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->post($app('journal-entries'), [CompanyJournalEntriesController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
-$router->post($app('journal-entries/bulk-approve'), [CompanyJournalEntriesController::class, 'bulkApprove'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
-$router->post($app('journal-entries/bulk-reject'), [CompanyJournalEntriesController::class, 'bulkReject'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
+$router->post($app('journal-entries/bulk-approve'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
+$router->post($app('journal-entries/bulk-reject'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
 $router->post($app('journal-entries/bulk-void'), [CompanyJournalEntriesController::class, 'bulkVoid'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
 $router->post($app('journal-entries/bulk-delete'), [CompanyJournalEntriesController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->get($app('journal-entries/{id}/edit'), [CompanyJournalEntriesController::class, 'edit'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->post($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'update'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->post($app('journal-entries/{id}/submit-approval'), [CompanyJournalEntriesController::class, 'submitForApproval'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
-$router->post($app('journal-entries/{id}/post'), [CompanyJournalEntriesController::class, 'postEntry'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
-$router->post($app('journal-entries/{id}/reject'), [CompanyJournalEntriesController::class, 'rejectEntry'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
+$router->post($app('journal-entries/{id}/post'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
+$router->post($app('journal-entries/{id}/reject'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
 $router->post($app('journal-entries/{id}/void'), [CompanyJournalEntriesController::class, 'voidEntry'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
 $router->post($app('journal-entries/{id}/delete'), [CompanyJournalEntriesController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->get($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'show'], rateb_erp_mw('accounting', '', 'journal-entries'));
@@ -346,16 +346,16 @@ $router->get($app('accounting/voucher-approval'), $redirectApprovalsOversight, r
 $router->get($app('cash-vouchers'), [CompanyCashVouchersController::class, 'index'], rateb_erp_mw('accounting', '', 'cash-vouchers'));
 $router->get($app('cash-vouchers/create'), [CompanyCashVouchersController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->post($app('cash-vouchers'), [CompanyCashVouchersController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
-$router->post($app('cash-vouchers/bulk-approve'), [CompanyCashVouchersController::class, 'bulkApprove'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
-$router->post($app('cash-vouchers/bulk-reject'), [CompanyCashVouchersController::class, 'bulkReject'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/bulk-approve'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/bulk-reject'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
 $router->post($app('cash-vouchers/bulk-void'), [CompanyCashVouchersController::class, 'bulkVoid'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
 $router->post($app('cash-vouchers/bulk-delete'), [CompanyCashVouchersController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->get($app('cash-vouchers/{id}/edit'), [CompanyCashVouchersController::class, 'edit'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}'), [CompanyCashVouchersController::class, 'update'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->get($app('cash-vouchers/{id}'), [CompanyCashVouchersController::class, 'show'], rateb_erp_mw('accounting', '', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}/submit-approval'), [CompanyCashVouchersController::class, 'submitForApproval'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
-$router->post($app('cash-vouchers/{id}/post'), [CompanyCashVouchersController::class, 'postVoucher'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
-$router->post($app('cash-vouchers/{id}/reject'), [CompanyCashVouchersController::class, 'rejectVoucher'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/{id}/post'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/{id}/reject'), $blockCompanyApprovalAction, rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}/void'), [CompanyCashVouchersController::class, 'voidVoucher'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}/delete'), [CompanyCashVouchersController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 
@@ -466,7 +466,7 @@ $wtMw = rateb_erp_mw('inventory', '', 'warehouse-transfers');
 $router->get($app('warehouse-transfers'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'index'], $wtMw);
 $router->get($app('warehouse-transfers/create'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'create'], $wtMw);
 $router->post($app('warehouse-transfers'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'store'], $wtMw);
-$router->post($app('warehouse-transfers/{id}/approve'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'approve'], $wtMw);
+$router->post($app('warehouse-transfers/{id}/approve'), $blockCompanyApprovalAction, $wtMw);
 $router->get($app('warehouse-transfers/export'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'warehouse-transfers'));
 $router->get($app('inventory-forecast'), [\Rateb\App\Controllers\Company\InventoryForecastController::class, 'index'], rateb_erp_mw('inventory', '', 'inventory-forecast'));
 
@@ -524,8 +524,8 @@ $router->get($app('contract-renewals/{id}/edit'), [ContractRenewalsController::c
 $router->get($app('contract-renewals/{id}'), [ContractRenewalsController::class, 'show'], $ctrMw);
 $router->post($app('contract-renewals'), [ContractRenewalsController::class, 'store'], $ctrWriteMw);
 $router->post($app('contract-renewals/{id}'), [ContractRenewalsController::class, 'update'], $ctrWriteMw);
-$router->post($app('contract-renewals/{id}/approve'), [ContractRenewalsController::class, 'approve'], $ctrWriteMw);
-$router->post($app('contract-renewals/{id}/reject'), [ContractRenewalsController::class, 'reject'], $ctrWriteMw);
+$router->post($app('contract-renewals/{id}/approve'), $blockCompanyApprovalAction, $ctrWriteMw);
+$router->post($app('contract-renewals/{id}/reject'), $blockCompanyApprovalAction, $ctrWriteMw);
 $router->post($app('contract-renewals/{id}/delete'), [ContractRenewalsController::class, 'destroy'], $ctrWriteMw);
 $router->post($app('contract-renewals/bulk-delete'), [ContractRenewalsController::class, 'bulkDestroy'], $ctrWriteMw);
 
@@ -538,8 +538,8 @@ $router->get($app('asset-maintenance/{id}/print'), [AssetMaintenanceController::
 $router->get($app('asset-maintenance/{id}/download'), [AssetMaintenanceController::class, 'download'], $astExpMw);
 $router->get($app('asset-maintenance/{id}'), [AssetMaintenanceController::class, 'show'], $astMw);
 $router->post($app('asset-maintenance'), [AssetMaintenanceController::class, 'store'], $astWriteMw);
-$router->post($app('asset-maintenance/{id}/approve'), [AssetMaintenanceController::class, 'approve'], $astWriteMw);
-$router->post($app('asset-maintenance/{id}/reject'), [AssetMaintenanceController::class, 'reject'], $astWriteMw);
+$router->post($app('asset-maintenance/{id}/approve'), $blockCompanyApprovalAction, $astWriteMw);
+$router->post($app('asset-maintenance/{id}/reject'), $blockCompanyApprovalAction, $astWriteMw);
 $router->post($app('asset-maintenance/{id}/delete'), [AssetMaintenanceController::class, 'destroy'], $astWriteMw);
 $router->post($app('asset-maintenance/bulk-delete'), [AssetMaintenanceController::class, 'bulkDestroy'], $astWriteMw);
 
@@ -552,8 +552,8 @@ $router->get($app('asset-assignments/{id}/print'), [AssetAssignmentsController::
 $router->get($app('asset-assignments/{id}/download'), [AssetAssignmentsController::class, 'download'], $aaExpMw);
 $router->get($app('asset-assignments/{id}'), [AssetAssignmentsController::class, 'show'], $aaMw);
 $router->post($app('asset-assignments'), [AssetAssignmentsController::class, 'store'], $aaWriteMw);
-$router->post($app('asset-assignments/{id}/approve'), [AssetAssignmentsController::class, 'approve'], $aaWriteMw);
-$router->post($app('asset-assignments/{id}/reject'), [AssetAssignmentsController::class, 'reject'], $aaWriteMw);
+$router->post($app('asset-assignments/{id}/approve'), $blockCompanyApprovalAction, $aaWriteMw);
+$router->post($app('asset-assignments/{id}/reject'), $blockCompanyApprovalAction, $aaWriteMw);
 $router->post($app('asset-assignments/{id}/delete'), [AssetAssignmentsController::class, 'destroy'], $aaWriteMw);
 $router->post($app('asset-assignments/bulk-delete'), [AssetAssignmentsController::class, 'bulkDestroy'], $aaWriteMw);
 
@@ -565,7 +565,7 @@ $router->get($app('asset-depreciation/{id}'), [AssetDepreciationController::clas
 $router->get($app('asset-depreciation/{id}/edit'), [AssetDepreciationController::class, 'edit'], $adWriteMw);
 $router->post($app('asset-depreciation'), [AssetDepreciationController::class, 'store'], $adWriteMw);
 $router->post($app('asset-depreciation/{id}'), [AssetDepreciationController::class, 'update'], $adWriteMw);
-$router->post($app('asset-depreciation/{id}/approve'), [AssetDepreciationController::class, 'approve'], $adWriteMw);
+$router->post($app('asset-depreciation/{id}/approve'), $blockCompanyApprovalAction, $adWriteMw);
 $router->post($app('asset-depreciation/{id}/delete'), [AssetDepreciationController::class, 'destroy'], $adWriteMw);
 $router->post($app('asset-depreciation/bulk-delete'), [AssetDepreciationController::class, 'bulkDestroy'], $adWriteMw);
 
@@ -578,8 +578,8 @@ $router->get($app('device-maintenance/{id}/print'), [DeviceMaintenanceController
 $router->get($app('device-maintenance/{id}/download'), [DeviceMaintenanceController::class, 'download'], $devExpMw);
 $router->get($app('device-maintenance/{id}'), [DeviceMaintenanceController::class, 'show'], $devMw);
 $router->post($app('device-maintenance'), [DeviceMaintenanceController::class, 'store'], $devWriteMw);
-$router->post($app('device-maintenance/{id}/approve'), [DeviceMaintenanceController::class, 'approve'], $devWriteMw);
-$router->post($app('device-maintenance/{id}/reject'), [DeviceMaintenanceController::class, 'reject'], $devWriteMw);
+$router->post($app('device-maintenance/{id}/approve'), $blockCompanyApprovalAction, $devWriteMw);
+$router->post($app('device-maintenance/{id}/reject'), $blockCompanyApprovalAction, $devWriteMw);
 $router->post($app('device-maintenance/{id}/delete'), [DeviceMaintenanceController::class, 'destroy'], $devWriteMw);
 $router->post($app('device-maintenance/bulk-delete'), [DeviceMaintenanceController::class, 'bulkDestroy'], $devWriteMw);
 
@@ -592,8 +592,8 @@ $router->get($app('device-spare-parts/{id}/print'), [DeviceSparePartsController:
 $router->get($app('device-spare-parts/{id}/download'), [DeviceSparePartsController::class, 'download'], $dspExpMw);
 $router->get($app('device-spare-parts/{id}'), [DeviceSparePartsController::class, 'show'], $dspMw);
 $router->post($app('device-spare-parts'), [DeviceSparePartsController::class, 'store'], $dspWriteMw);
-$router->post($app('device-spare-parts/{id}/approve'), [DeviceSparePartsController::class, 'approve'], $dspWriteMw);
-$router->post($app('device-spare-parts/{id}/reject'), [DeviceSparePartsController::class, 'reject'], $dspWriteMw);
+$router->post($app('device-spare-parts/{id}/approve'), $blockCompanyApprovalAction, $dspWriteMw);
+$router->post($app('device-spare-parts/{id}/reject'), $blockCompanyApprovalAction, $dspWriteMw);
 $router->post($app('device-spare-parts/{id}/delete'), [DeviceSparePartsController::class, 'destroy'], $dspWriteMw);
 $router->post($app('device-spare-parts/bulk-delete'), [DeviceSparePartsController::class, 'bulkDestroy'], $dspWriteMw);
 
@@ -631,7 +631,7 @@ $router->get($app('branch-dashboard/reports'), [BranchDashboardController::class
 $router->get($app('branch-transfers'), [InterBranchTransfersController::class, 'index'], $branchTransfersMw);
 $router->get($app('branch-transfers/create'), [InterBranchTransfersController::class, 'create'], $branchTransfersWriteMw);
 $router->post($app('branch-transfers'), [InterBranchTransfersController::class, 'store'], $branchTransfersWriteMw);
-$router->post($app('branch-transfers/{id}/approve'), [InterBranchTransfersController::class, 'approve'], $branchTransfersWriteMw);
+$router->post($app('branch-transfers/{id}/approve'), $blockCompanyApprovalAction, $branchTransfersWriteMw);
 
 $branchFinPlMw = rateb_erp_mw('accounting', 'branch.financial.pl');
 $branchFinBsMw = rateb_erp_mw('accounting', 'branch.financial.bs');
