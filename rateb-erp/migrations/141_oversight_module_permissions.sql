@@ -1,5 +1,6 @@
--- RATEB ERP — Oversight approval permissions per module (مراقبة الإدارة)
+-- RATEB ERP 141 oversight module permissions
 SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
 ('Oversight Approve', 'اعتماد مراقبة الإدارة', 'oversight.approve', 'workflows', 'Approve or reject pending records from administration oversight', 'اعتماد أو رفض السجلات المعلقة من مراقبة الإدارة'),

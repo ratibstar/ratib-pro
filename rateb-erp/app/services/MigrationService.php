@@ -180,12 +180,15 @@ final class MigrationService
     private function splitStatements(string $sql): array
     {
         $sql = preg_replace('/\/\*.*?\*\//s', '', $sql) ?? $sql;
+        // Strip whole-line -- comments before parsing (avoids RTL/BOM breaking str_starts_with('--')).
+        $sql = preg_replace('/^\s*--[^\r\n]*\r?\n/m', '', $sql) ?? $sql;
         $statements = [];
         $buffer = '';
         foreach (preg_split('/\R/', $sql) ?: [] as $line) {
             $line = preg_replace('/^\xEF\xBB\xBF/', '', $line) ?? $line;
+            $line = preg_replace('/^[\x{200E}\x{200F}\x{FEFF}]+/u', '', $line) ?? $line;
             $trimmed = trim($line);
-            if ($trimmed === '' || str_starts_with($trimmed, '--')) {
+            if ($trimmed === '' || preg_match('/^\s*--/', $trimmed) === 1) {
                 continue;
             }
             $buffer .= $line . "\n";
