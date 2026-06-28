@@ -1,0 +1,178 @@
+.rateb-acct-dash-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.rateb-acct-widget {
+    background: var(--rateb-surface, #1a2332);
+    border: 1px solid var(--rateb-border, #2a3a52);
+    border-radius: 0.75rem;
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+    transition: border-color 0.2s, transform 0.15s;
+}
+
+.rateb-acct-widget:hover {
+    border-color: var(--rateb-primary, #3b82f6);
+    transform: translateY(-1px);
+}
+
+.rateb-acct-widget-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.rateb-acct-widget-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--rateb-text, #e2e8f0);
+    line-height: 1.2;
+}
+
+.rateb-acct-widget-value small {
+    font-size: 0.65em;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.rateb-acct-widget-label {
+    font-size: 0.8rem;
+    color: var(--rateb-text-muted, #94a3b8);
+    margin-top: 0.25rem;
+}
+
+.rateb-acct-kpi-list {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.rateb-acct-kpi-item {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--rateb-border, #2a3a52);
+    font-size: 0.875rem;
+}
+
+.rateb-acct-kpi-item:last-child {
+    border-bottom: none;
+}
+
+.rateb-acct-kpi-icon {
+    color: var(--rateb-primary, #3b82f6);
+    opacity: 0.85;
+}
+
+.rateb-acct-kpi-label {
+    color: var(--rateb-text-muted, #94a3b8);
+}
+
+.rateb-acct-kpi-value {
+    font-weight: 600;
+    color: var(--rateb-text, #e2e8f0);
+    text-align: end;
+    white-space: nowrap;
+}
+
+.rateb-acct-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    text-decoration: none;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    transition: opacity 0.15s;
+}
+
+.rateb-acct-alert:last-child {
+    margin-bottom: 0;
+}
+
+.rateb-acct-alert:hover {
+    opacity: 0.85;
+}
+
+.rateb-acct-alert-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.rateb-acct-alert-warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fcd34d;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.rateb-acct-alert-info {
+    background: rgba(59, 130, 246, 0.12);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.rateb-acct-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.rateb-acct-shortcut {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--rateb-border, #2a3a52);
+    background: var(--rateb-surface-2, #151c28);
+    color: var(--rateb-text, #e2e8f0);
+    text-decoration: none;
+    font-size: 0.75rem;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.rateb-acct-shortcut i {
+    font-size: 1.1rem;
+    color: var(--rateb-primary, #3b82f6);
+}
+
+.rateb-acct-shortcut:hover {
+    border-color: var(--rateb-primary, #3b82f6);
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--rateb-text, #e2e8f0);
+}
+
+.rateb-chart-card .rateb-card-body {
+    min-height: 200px;
+    position: relative;
+}
+
+.rateb-chart-card canvas {
+    max-height: 200px;
+}
+
+html[dir="rtl"] .rateb-acct-kpi-value {
+    text-align: start;
+}
+
+@media (max-width: 767px) {
+    .rateb-acct-shortcuts {
+        grid-template-columns: 1fr;
+    }
+}

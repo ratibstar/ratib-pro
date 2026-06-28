@@ -100,5 +100,65 @@
                 options: baseOptions(colors)
             });
         }
+
+        var acctRevEl = document.getElementById('chart-acct-revenue');
+        if (acctRevEl && acctRevEl.dataset.labels) {
+            new Chart(acctRevEl, {
+                type: 'bar',
+                data: {
+                    labels: JSON.parse(acctRevEl.dataset.labels),
+                    datasets: [{
+                        label: chartLabel(acctRevEl, 'Revenue'),
+                        data: JSON.parse(acctRevEl.dataset.values),
+                        backgroundColor: colors.primary
+                    }]
+                },
+                options: baseOptions(colors)
+            });
+        }
+
+        var acctExpEl = document.getElementById('chart-acct-expenses');
+        if (acctExpEl && acctExpEl.dataset.labels) {
+            new Chart(acctExpEl, {
+                type: 'line',
+                data: {
+                    labels: JSON.parse(acctExpEl.dataset.labels),
+                    datasets: [{
+                        label: chartLabel(acctExpEl, 'Expenses'),
+                        data: JSON.parse(acctExpEl.dataset.values),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245,158,11,0.12)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: baseOptions(colors)
+            });
+        }
+
+        var acctArApEl = document.getElementById('chart-acct-arap');
+        if (acctArApEl && acctArApEl.dataset.labels) {
+            new Chart(acctArApEl, {
+                type: 'doughnut',
+                data: {
+                    labels: JSON.parse(acctArApEl.dataset.labels),
+                    datasets: [{
+                        data: JSON.parse(acctArApEl.dataset.values),
+                        backgroundColor: [colors.primary, colors.accent]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            rtl: isRtl(),
+                            position: 'bottom',
+                            labels: { color: colors.muted, font: { family: 'Tajawal, sans-serif' } }
+                        }
+                    }
+                }
+            });
+        }
     });
 })();

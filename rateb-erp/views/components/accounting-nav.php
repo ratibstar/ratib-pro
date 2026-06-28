@@ -3,8 +3,12 @@
 $accountingActive = $accountingActive ?? 'admin';
 
 $tabs = [
-    ['path' => rateb_app_route('accounting'), 'label' => __('accounting_overview'), 'match' => [rateb_app_route('accounting')]],
-    ['path' => rateb_app_route('accounting/reports'), 'label' => __('accounting_reports'), 'match' => [rateb_app_route('accounting/reports'), rateb_app_route('accounting/trial-balance'), rateb_app_route('accounting/journal-register'), rateb_app_route('accounting/account-statement'), rateb_app_route('accounting/partners-subsidiary-ledger'), rateb_app_route('accounting/profit-loss'), rateb_app_route('accounting/cost-of-sales'), rateb_app_route('accounting/balance-sheet'), rateb_app_route('accounting/vat-report'), rateb_app_route('accounting/cost-center-report'), rateb_app_route('accounting/budget-report'), rateb_app_route('accounting/cfo-dashboard'), rateb_app_route('accounting/accounts-payable'), rateb_app_route('accounting/accounts-receivable')]],
+    ['path' => rateb_app_route('accounting'), 'label' => __('accounting_dashboard'), 'match' => [rateb_app_route('accounting')]],
+    ['path' => rateb_app_route('accounting/cfo-dashboard'), 'label' => __('cfo_dashboard'), 'match' => [rateb_app_route('accounting/cfo-dashboard')]],
+    ['path' => rateb_app_route('accounting/accounts-receivable'), 'label' => __('accounts_receivable'), 'match' => [rateb_app_route('accounting/accounts-receivable')]],
+    ['path' => rateb_app_route('accounting/accounts-payable'), 'label' => __('accounts_payable'), 'match' => [rateb_app_route('accounting/accounts-payable')]],
+    ['path' => rateb_app_route('customers'), 'label' => __('customers'), 'match' => [rateb_app_route('customers')]],
+    ['path' => rateb_app_route('accounting/reports'), 'label' => __('accounting_reports'), 'match' => [rateb_app_route('accounting/reports'), rateb_app_route('accounting/trial-balance'), rateb_app_route('accounting/journal-register'), rateb_app_route('accounting/account-statement'), rateb_app_route('accounting/partners-subsidiary-ledger'), rateb_app_route('accounting/profit-loss'), rateb_app_route('accounting/cost-of-sales'), rateb_app_route('accounting/balance-sheet'), rateb_app_route('accounting/vat-report'), rateb_app_route('accounting/cost-center-report'), rateb_app_route('accounting/budget-report'), rateb_app_route('accounting/accounts-payable'), rateb_app_route('accounting/accounts-receivable')]],
     ['path' => rateb_app_route('chart-of-accounts'), 'label' => __('chart_of_accounts'), 'match' => [rateb_app_route('chart-of-accounts')]],
     ['path' => rateb_app_route('accounting/coa-tree'), 'label' => __('coa_full_tree'), 'match' => [rateb_app_route('accounting/coa-tree')]],
     ['path' => rateb_app_route('journal-entries'), 'label' => __('journal_entries'), 'match' => [rateb_app_route('journal-entries')]],
@@ -12,7 +16,6 @@ $tabs = [
     ['path' => rateb_app_route('cash-vouchers'), 'label' => __('cash_vouchers'), 'match' => [rateb_app_route('cash-vouchers')]],
     ['path' => rateb_app_route('fiscal-periods'), 'label' => __('fiscal_periods'), 'match' => [rateb_app_route('fiscal-periods')]],
     ['path' => rateb_app_route('cost-centers'), 'label' => __('cost_centers'), 'match' => [rateb_app_route('cost-centers')]],
-    ['path' => rateb_app_route('customers'), 'label' => __('customers'), 'match' => [rateb_app_route('customers')]],
     ['path' => rateb_app_route('accounting/zatca-settings'), 'label' => __('zatca_settings'), 'match' => [rateb_app_route('accounting/zatca-settings')]],
     ['path' => rateb_app_route('bank-accounts'), 'label' => __('bank_accounts'), 'match' => [rateb_app_route('bank-accounts')]],
     ['path' => rateb_app_route('accounting/bank-reconciliation'), 'label' => __('bank_reconciliation'), 'match' => [rateb_app_route('accounting/bank-reconciliation')]],

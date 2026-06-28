@@ -11,6 +11,7 @@ use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\ChartOfAccount;
 use Rateb\App\Models\JournalEntry;
 use Rateb\App\Models\Supplier;
+use Rateb\App\Services\AccountingDashboardService;
 use Rateb\App\Services\AccountingService;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\DocumentService;
@@ -26,11 +27,12 @@ final class AccountingDashboardController extends Controller
         }
         $service = new AccountingService();
         $service->ensureDefaultAccounts($companyId > 0 ? $companyId : null);
+        $dashSvc = new AccountingDashboardService($service);
 
         $this->view('company/accounting/dashboard', [
-            'title' => __('accounting_module'),
+            'title' => __('accounting_dashboard'),
+            'dash' => $companyId > 0 ? $dashSvc->build($companyId) : ['metrics' => [], 'kpis' => [], 'charts' => [], 'alerts' => [], 'recent' => []],
             'trial' => $companyId > 0 ? $service->trialBalance($companyId) : [],
-            'summary' => $companyId > 0 ? $service->financialSummary($companyId) : [],
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('accounting'),
             'canPost' => rateb_can_post_entity('accounting'),

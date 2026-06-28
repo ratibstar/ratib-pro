@@ -42,13 +42,17 @@ $opsSection(__('suppliers'), [
 ], 'fa-truck-field');
 require RATEB_ROOT . '/views/partials/sidebar-hr-nav.php';
 $opsSection(__('accounting_module'), [
-    ['accounting', 'accounting_overview', 'fa-gauge-high', 'accounting'],
+    ['accounting', 'accounting_dashboard', 'fa-gauge-high', 'accounting'],
+    ['accounting/cfo-dashboard', 'cfo_dashboard', 'fa-user-tie', 'accounting', 'accounting.view'],
+    ['accounting/accounts-receivable', 'accounts_receivable', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
+    ['accounting/accounts-payable', 'accounts_payable', 'fa-file-invoice-dollar', 'accounting', 'accounting.view'],
+    ['customers', 'customers', 'fa-users', 'accounting', 'accounting.view'],
     ['accounting/reports', 'accounting_reports', 'fa-chart-pie', 'accounting', 'accounting.view'],
     ['chart-of-accounts', 'chart_of_accounts', 'fa-list', 'accounting'],
     ['accounting/coa-tree', 'coa_full_tree', 'fa-sitemap', 'accounting', 'accounting.view'],
     ['journal-entries', 'journal_entries', 'fa-book', 'accounting'],
-    ['accounting/supplier-payments', 'supplier_payments', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
     ['cash-vouchers', 'cash_vouchers', 'fa-money-bill-wave', 'accounting'],
+    ['accounting/supplier-payments', 'supplier_payments', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
     ['fiscal-periods', 'fiscal_periods', 'fa-calendar-days', 'accounting'],
     ['cost-centers', 'cost_centers', 'fa-diagram-project', 'accounting'],
     ['bank-accounts', 'bank_accounts', 'fa-building-columns', 'accounting'],

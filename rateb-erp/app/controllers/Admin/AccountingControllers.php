@@ -9,6 +9,7 @@ use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\ChartOfAccount;
 use Rateb\App\Models\JournalEntry;
+use Rateb\App\Services\AccountingDashboardService;
 use Rateb\App\Services\AccountingService;
 use Rateb\App\Services\AuditService;
 
@@ -61,11 +62,12 @@ final class AccountingDashboardController extends Controller
         (new \Rateb\App\Services\BillingService())->ensureBillingReady();
         $service = new AccountingService();
         $service->ensureDefaultAccounts(null);
+        $dashSvc = new AccountingDashboardService($service);
 
         $this->view('admin/accounting/dashboard', [
-            'title' => __('accounting_module'),
+            'title' => __('accounting_dashboard'),
+            'dash' => $dashSvc->build(null),
             'trial' => $service->trialBalance(null),
-            'summary' => $service->financialSummary(null),
             'csrf' => Csrf::token(),
         ], 'main');
     }
