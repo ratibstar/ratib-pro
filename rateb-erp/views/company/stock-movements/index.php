@@ -8,10 +8,6 @@ $canManage = $canManage ?? rateb_can_manage_entity('stock-movements');
 <div class="rateb-card">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? __('stock_movements')); ?></span>
-        <?php Rateb\App\Core\View::partial('export-toolbar', [
-            'exportRoute' => rateb_app_url('stock-movements/export'),
-            'exportEnabled' => $exportEnabled ?? true,
-        ]); ?>
     </div>
     <div class="rateb-card-body">
         <?php if ($canManage) { ?>
@@ -38,7 +34,8 @@ $canManage = $canManage ?? rateb_can_manage_entity('stock-movements');
             'bulkEnabled' => true,
             'createEnabled' => false,
             'actionsEnabled' => false,
-            'exportEnabled' => false,
+            'exportEnabled' => $exportEnabled ?? true,
+            'exportRoute' => rateb_app_url('stock-movements/export'),
             'csrf' => $csrf,
         ]); ?>
     </div>

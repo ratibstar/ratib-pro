@@ -7,12 +7,5 @@ $branchStats = $branchStats ?? ['count' => 0, 'limit' => 0];
         'count' => (int) ($branchStats['count'] ?? 0),
         'limit' => (int) ($branchStats['limit'] ?? 0),
     ]); ?></span>
-    <?php if (!empty($exportRoute)) {
-        Rateb\App\Core\View::partial('export-toolbar', [
-            'exportRoute' => $exportRoute,
-            'exportEnabled' => $exportEnabled ?? true,
-            'inline' => true,
-        ]);
-    } ?>
 </div>
 <?php Rateb\App\Core\View::partial('crud-index', get_defined_vars()); ?>

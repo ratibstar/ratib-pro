@@ -29,6 +29,8 @@ foreach ($columns as $c) {
 $showActionsColumn = ($viewActionsEnabled || $actionsEnabled) && $routePrefix !== '' && !$hasActionLink;
 $showActionsColumn = $showActionsColumn || ($bulkEnabled && $routePrefix !== '');
 $colspan = count($columns) + ($showActionsColumn ? 1 : 0);
+$exportRoute = trim((string) ($exportRoute ?? rateb_url($routePrefix . '/export')));
+$tableToolsEnabled = $tableToolsEnabled ?? ($columns !== []);
 ?>
 <div class="rateb-card border-0 shadow-none">
 <?php if ($bulkEnabled && $routePrefix !== '') { ?>
@@ -41,7 +43,14 @@ $colspan = count($columns) + ($showActionsColumn ? 1 : 0);
 </div>
 <?php } ?>
 <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
-<div class="rateb-table-wrap" data-rateb-table-search-host="1">
+<?php if ($tableToolsEnabled) {
+    Rateb\App\Core\View::partial('table-toolbar', [
+        'exportRoute' => $exportRoute,
+        'exportEnabled' => $exportEnabled,
+        'tableTitle' => '',
+    ]);
+} ?>
+<div class="rateb-table-wrap" data-rateb-table-search-host="1" data-rateb-table-root="1"<?php echo $exportEnabled && $exportRoute !== '' ? ' data-export-route="' . Rateb\App\Core\View::escape($exportRoute) . '"' : ''; ?>>
     <table class="table table-hover rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
         <thead>
             <tr>

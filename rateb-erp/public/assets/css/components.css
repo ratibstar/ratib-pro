@@ -74,7 +74,13 @@
     overflow-y: visible;
 }
 
-/* Clip cell content — applies to all data tables system-wide */
+.rateb-table-toolbar {
+    background: var(--rateb-surface);
+}
+
+.rateb-table-toolbar .btn-sm {
+    white-space: nowrap;
+}
 .rateb-table td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-accounting-actions-col):not(.rateb-bulk-th):not(.rateb-bulk-td),
 .rateb-content table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table) td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-accounting-actions-col):not(.rateb-bulk-td) {
     overflow: hidden;

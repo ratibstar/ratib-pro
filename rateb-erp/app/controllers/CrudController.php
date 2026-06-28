@@ -45,6 +45,31 @@ abstract class CrudController extends Controller
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags($this->indexViewData($limit, $offset, $page, $search)), $this->layout());
     }
 
+    public function export(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $search = trim((string) ($_GET['q'] ?? ''));
+        $items = $this->localizeCatalogItems($this->model->all(5000, 0, [], $search));
+        $columns = [];
+        foreach ($this->resolveIndexFields() as $col) {
+            $columns[] = [
+                'name' => (string) ($col['name'] ?? ''),
+                'label' => rateb_label((string) ($col['label'] ?? $col['name'] ?? '')),
+                'type' => (string) ($col['type'] ?? ''),
+                'lookup' => (string) ($col['lookup'] ?? ''),
+            ];
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send(
+            preg_replace('/[^\w\-]+/', '_', $this->permissionResourceKey()),
+            $columns,
+            $items,
+            __($this->entityName),
+            $this->permissionResourceKey()
+        );
+    }
+
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
         $items = $this->model->all($limit, $offset, [], $search);
@@ -56,6 +81,7 @@ abstract class CrudController extends Controller
             'limit' => $limit,
             'search' => $search,
             'routePrefix' => $this->routePrefix,
+            'exportRoute' => rateb_url($this->routePrefix . '/export'),
             'fields' => $this->resolveIndexFields(),
             'csrf' => Csrf::token(),
             'bulkEnabled' => $this->bulkEnabled,

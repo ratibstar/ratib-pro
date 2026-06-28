@@ -47,6 +47,9 @@ if ($columns !== []) {
     }
 }
 $isCompanies = ($routePrefix ?? '') === 'admin/companies';
+$tableToolsEnabled = $tableToolsEnabled ?? true;
+$exportRoute = trim((string) ($exportRoute ?? rateb_url(($routePrefix ?? '') . '/export')));
+$tableTitle = trim((string) ($tableTitle ?? ($title ?? '')));
 $ratebRowRecordLabel = static function (array $row): string {
     foreach (['batch_no', 'title', 'name', 'item_name', 'request_no', 'order_no', 'contract_no', 'code', 'item_code', 'evaluation_no'] as $key) {
         if (!empty($row[$key])) {
@@ -98,7 +101,14 @@ $ratebRowRecordLabel = static function (array $row): string {
                 'preserve' => $searchPreserve ?? ['company_id', 'status', 'date_from', 'date_to', 'from', 'to'],
             ]);
         } ?>
-        <div class="rateb-table-wrap">
+        <?php if ($tableToolsEnabled && $columns !== []) {
+            Rateb\App\Core\View::partial('table-toolbar', [
+                'exportRoute' => $exportRoute,
+                'exportEnabled' => $exportEnabled ?? true,
+                'tableTitle' => $tableTitle,
+            ]);
+        } ?>
+        <div class="rateb-table-wrap" data-rateb-table-root="1"<?php echo ($exportEnabled ?? true) && $exportRoute !== '' ? ' data-export-route="' . Rateb\App\Core\View::escape($exportRoute) . '"' : ''; ?>>
             <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>
                 <tr>

@@ -9,12 +9,6 @@
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? __('warehouse_transfers')); ?></span>
         <div class="d-flex flex-wrap gap-2 align-items-center">
-            <?php if (!empty($exportRoute) && ($exportEnabled ?? true)) {
-                Rateb\App\Core\View::partial('export-toolbar', [
-                    'exportRoute' => $exportRoute,
-                    'exportEnabled' => true,
-                ]);
-            } ?>
             <?php if ($canManage) { ?>
             <a href="<?php echo rateb_app_url('warehouse-transfers/create'); ?>" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus"></i> <?php echo __('create'); ?>
@@ -24,7 +18,12 @@
     </div>
     <div class="rateb-card-body">
         <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
-        <div class="table-responsive" data-rateb-table-search-host="1">
+        <?php Rateb\App\Core\View::partial('table-toolbar', [
+            'exportRoute' => $exportRoute ?? rateb_app_url('warehouse-transfers/export'),
+            'exportEnabled' => $exportEnabled ?? true,
+            'tableTitle' => '',
+        ]); ?>
+        <div class="table-responsive" data-rateb-table-search-host="1" data-rateb-table-root="1"<?php echo ($exportEnabled ?? true) && !empty($exportRoute) ? ' data-export-route="' . Rateb\App\Core\View::escape($exportRoute) . '"' : ''; ?>>
             <table class="table table-hover rateb-table mb-0">
                 <thead>
                     <tr>

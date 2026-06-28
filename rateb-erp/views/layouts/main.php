@@ -249,6 +249,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <script src="<?php echo rateb_asset('js/rateb-modal.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/rateb-bulk-delete.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/table-tools.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/app.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/rateb-date-inputs.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>"></script>

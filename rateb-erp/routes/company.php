@@ -147,6 +147,7 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
     $router->get($app($path . '/create'), [$class, 'create'], $mw);
     $router->post($app($path), [$class, 'store'], $mw);
     $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
+    $router->get($app($path . '/export'), [$class, 'export'], rateb_erp_mw($module, 'reports.export', $path));
     $router->get($app($path . '/{id}/edit'), [$class, 'edit'], $mw);
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
@@ -162,6 +163,7 @@ $router->get($app('supplier-evaluations/approvals'), $redirectApprovalsOversight
 $router->get($app('supplier-evaluations/history'), [SupplierEvaluationsController::class, 'supplierHistory'], $seMw);
 $router->post($app('supplier-evaluations/{id}/approve'), $blockCompanyApprovalAction, $seMw);
 $router->post($app('supplier-evaluations/{id}/reject'), $blockCompanyApprovalAction, $seMw);
+$router->get($app('supplier-evaluations/export'), [SupplierEvaluationsController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-evaluations'));
 
 $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'warehouseItemsJson'], rateb_erp_mw('inventory', '', 'inventory'));
 
@@ -219,6 +221,8 @@ foreach ($hrCrudRoutes as $path => $cfg) {
     if ($path === 'hr/employees') {
         $router->get($app('hr/employees/export'), [HrEmployeesController::class, 'export'], $mw);
         $router->get($app('hr/employees/{id}'), [HrEmployeesController::class, 'show'], $mw);
+    } else {
+        $router->get($app($path . '/export'), [$class, 'export'], rateb_erp_mw('hr', 'reports.export', $cfg['entity']));
     }
     if ($path === 'hr/fleet') {
         $router->get($app('hr/fleet/{id}'), [HrFleetController::class, 'show'], $mw);
@@ -390,6 +394,19 @@ $router->post($app('customers/{id}'), [CompanyCustomersController::class, 'updat
 $router->post($app('customers/{id}/delete'), [CompanyCustomersController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
 $router->post($app('customers/bulk-delete'), [CompanyCustomersController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'customers'));
 
+$companyCrudExports = [
+    ['chart-of-accounts', CompanyChartOfAccountsController::class, 'chart-of-accounts'],
+    ['journal-entries', CompanyJournalEntriesController::class, 'journal-entries'],
+    ['cash-vouchers', CompanyCashVouchersController::class, 'cash-vouchers'],
+    ['fiscal-periods', CompanyFiscalPeriodsController::class, 'fiscal-periods'],
+    ['bank-accounts', CompanyBankAccountsController::class, 'bank-accounts'],
+    ['cost-centers', CompanyCostCentersController::class, 'cost-centers'],
+    ['customers', CompanyCustomersController::class, 'customers'],
+];
+foreach ($companyCrudExports as [$exportPath, $exportClass, $exportResource]) {
+    $router->get($app($exportPath . '/export'), [$exportClass, 'export'], rateb_erp_mw('accounting', 'reports.export', $exportResource));
+}
+
 $router->get($app('reports'), [ReportsController::class, 'index'], rateb_erp_mw('reports', '', 'reports'));
 $router->get($app('reports/export'), [ReportsController::class, 'export'], rateb_erp_mw('reports', 'reports.export', 'reports'));
 $router->get($app('stock-movements'), [StockMovementsController::class, 'index'], rateb_erp_mw('inventory', '', 'stock-movements'));
@@ -478,6 +495,7 @@ $router->get($app('supplier-classifications/{id}/documents'), [SupplierClassific
 $router->post($app('supplier-classifications/{id}/documents'), [SupplierClassificationsController::class, 'storeDocument'], $supMw);
 $router->post($app('supplier-classifications/{id}/documents/{docId}'), [SupplierClassificationsController::class, 'updateDocument'], $supMw);
 $router->post($app('supplier-classifications/{id}/documents/{docId}/delete'), [SupplierClassificationsController::class, 'destroyDocument'], $supMw);
+$router->get($app('supplier-classifications/export'), [SupplierClassificationsController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-classifications'));
 
 $router->get($app('supplier-kpi'), [SupplierKpiController::class, 'index'], rateb_erp_mw('suppliers', '', 'supplier-kpi'));
 $router->get($app('supplier-kpi/export'), [SupplierKpiController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-kpi'));
@@ -493,6 +511,7 @@ $router->post($app('supplier-comms/bulk-delete'), [\Rateb\App\Controllers\Compan
 $router->get($app('supplier-comms/history'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'supplierHistory'], $scMw);
 $router->get($app('supplier-comms/supplier-profile'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'supplierProfile'], $scMw);
 $router->get($app('supplier-comms/{id}/print'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'print'], $scMw);
+$router->get($app('supplier-comms/export'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-comms'));
 $router->post($app('supplier-comms/{id}/archive'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'archive'], $scMw);
 
 $ctrMw = rateb_erp_mw('contracts', '', 'contract-renewals');

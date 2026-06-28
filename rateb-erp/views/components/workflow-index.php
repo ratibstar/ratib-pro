@@ -33,13 +33,6 @@ if ($formFields !== null && $lookups === []) {
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></span>
         <div class="d-flex flex-wrap gap-2 align-items-center">
-            <?php if (!empty($exportRoute) && $exportEnabled) {
-                Rateb\App\Core\View::partial('export-toolbar', [
-                    'exportRoute' => $exportRoute,
-                    'exportEnabled' => true,
-                    'inline' => true,
-                ]);
-            } ?>
             <?php if ($canManage && !empty($createUrl)) { ?>
             <a href="<?php echo rateb_url((string) $createUrl); ?>" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus"></i> <?php echo __('create'); ?>
@@ -69,6 +62,7 @@ if ($formFields !== null && $lookups === []) {
             'approvalEnabled' => !empty($approvalEnabled),
             'canApprove' => !empty($canApprove),
             'exportEnabled' => !empty($exportEnabled),
+            'exportRoute' => $exportRoute ?? rateb_url($routePrefix . '/export'),
             'routePrefix' => $routePrefix,
             'csrf' => $csrf,
         ]); ?>

@@ -1,4 +1,3 @@
-<?php Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_url('admin/stock-movements/export')]); ?>
 <?php if (!empty($companies)) { ?>
 <form method="get" class="row g-2 mb-3">
     <div class="col-md-4">
@@ -24,6 +23,8 @@
     ],
     'csrf' => $csrf,
     'routePrefix' => 'admin/stock-movements',
+    'exportRoute' => rateb_url('admin/stock-movements/export'),
+    'exportEnabled' => true,
     'bulkEnabled' => false,
     'createEnabled' => false,
     'actionsEnabled' => false,

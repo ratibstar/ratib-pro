@@ -5,7 +5,7 @@ $columns = $columns ?? [];
 $rows = $rows ?? [];
 $colCount = count($columns);
 ?>
-<div class="table-responsive rateb-oversight-table-wrap">
+<div class="table-responsive rateb-oversight-table-wrap" data-rateb-table-root="1">
     <table class="table rateb-table rateb-oversight-table mb-0">
         <thead>
         <tr>

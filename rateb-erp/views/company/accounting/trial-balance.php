@@ -2,15 +2,18 @@
 $trial = $trial ?? [];
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
 Rateb\App\Core\View::partial('accounting-reports-back');
-if (rateb_can_export_entity('accounting')) {
-    Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_app_url('accounting/export/trial-balance')]);
-}
+$trialExportRoute = rateb_can_export_entity('accounting') ? rateb_app_url('accounting/export/trial-balance') : '';
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('trial_balance'); ?></div>
     <div class="rateb-card-body p-0" data-rateb-server-search="0">
         <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client', 'placeholder' => __('search_table')]); ?>
-        <div class="table-responsive">
+        <?php Rateb\App\Core\View::partial('table-toolbar', [
+            'exportRoute' => $trialExportRoute,
+            'exportEnabled' => $trialExportRoute !== '',
+            'tableTitle' => '',
+        ]); ?>
+        <div class="table-responsive" data-rateb-table-root="1"<?php echo $trialExportRoute !== '' ? ' data-export-route="' . Rateb\App\Core\View::escape($trialExportRoute) . '"' : ''; ?>>
             <table class="table rateb-table mb-0">
                 <thead>
                 <tr>
