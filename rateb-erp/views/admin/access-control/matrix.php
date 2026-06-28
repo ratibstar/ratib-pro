@@ -20,16 +20,20 @@
             </div>
         </div>
         <div class="rateb-card-body p-0">
-            <div class="table-responsive">
+            <div class="rateb-matrix-wrap table-responsive">
                 <table class="table rateb-table rateb-matrix-table mb-0">
                     <thead>
                     <tr>
-                        <th class="rateb-matrix-sticky"><?php echo __('permissions'); ?></th>
-                        <?php foreach ($roles as $role) { ?>
+                        <th class="rateb-matrix-sticky rateb-matrix-corner"><?php echo __('permissions'); ?></th>
+                        <?php foreach ($roles as $role) {
+                            $roleLabel = rateb_role_label($role);
+                            ?>
                         <th class="text-center rateb-matrix-role-col">
-                            <div class="fw-semibold"><?php echo Rateb\App\Core\View::escape($role['name']); ?></div>
-                            <small class="text-muted d-block"><?php echo Rateb\App\Core\View::escape($role['slug']); ?></small>
-                            <button type="button" class="btn btn-link btn-sm p-0 mt-1" data-matrix-col="<?php echo (int) $role['id']; ?>"><?php echo __('toggle_column'); ?></button>
+                            <div class="rateb-matrix-role-head fw-semibold" title="<?php echo Rateb\App\Core\View::escape($roleLabel); ?>">
+                                <?php echo Rateb\App\Core\View::escape($roleLabel); ?>
+                            </div>
+                            <code class="rateb-matrix-role-slug"><?php echo Rateb\App\Core\View::escape($role['slug']); ?></code>
+                            <button type="button" class="btn btn-link btn-sm p-0 mt-1 rateb-matrix-toggle-btn" data-matrix-col="<?php echo (int) $role['id']; ?>"><?php echo __('toggle_column'); ?></button>
                         </th>
                         <?php } ?>
                     </tr>
@@ -38,38 +42,44 @@
                     <?php foreach ($permissionGroups as $module => $perms) { ?>
                     <tr class="rateb-matrix-module-row">
                         <td colspan="<?php echo count($roles) + 1; ?>">
-                            <strong><?php echo Rateb\App\Core\View::escape(__($module)); ?></strong>
-                            <button type="button" class="btn btn-link btn-sm p-0 ms-2" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
+                            <div class="rateb-matrix-module-inner">
+                                <strong class="rateb-matrix-module-title"><?php echo Rateb\App\Core\View::escape(__($module)); ?></strong>
+                                <button type="button" class="btn btn-link btn-sm p-0 rateb-matrix-toggle-btn" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
+                            </div>
                             <?php if ($module === 'accounting') { ?>
-                            <div class="text-muted small fw-normal mt-1"><?php echo __('accounting_permissions_matrix_note'); ?></div>
-                            <ul class="text-muted small fw-normal mt-1 mb-0">
-                                <li><?php echo __('accounting_perm_approve_hint'); ?></li>
-                                <li><?php echo __('accounting_perm_post_supplier_hint'); ?></li>
-                                <li><?php echo __('accounting_perm_bank_import_hint'); ?></li>
-                            </ul>
+                            <div class="rateb-matrix-module-note text-muted small fw-normal mt-2">
+                                <?php echo __('accounting_permissions_matrix_note'); ?>
+                                <ul class="mb-0 mt-1">
+                                    <li><?php echo __('accounting_perm_approve_hint'); ?></li>
+                                    <li><?php echo __('accounting_perm_post_supplier_hint'); ?></li>
+                                    <li><?php echo __('accounting_perm_bank_import_hint'); ?></li>
+                                </ul>
+                            </div>
                             <?php } ?>
                         </td>
                     </tr>
                     <?php foreach ($perms as $perm) {
                         $permId = (int) $perm['id'];
+                        $permLabel = rateb_permission_label($perm);
                         ?>
                     <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"<?php echo ($perm['slug'] ?? '') === 'accounting.approve' ? ' class="table-warning"' : ''; ?>>
-                        <td class="rateb-matrix-sticky rateb-ar-text">
-                            <div class="fw-semibold"><?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?></div>
-                            <small class="text-muted"><?php echo Rateb\App\Core\View::escape($perm['slug']); ?></small>
+                        <td class="rateb-matrix-sticky">
+                            <div class="rateb-matrix-perm-label fw-semibold"><?php echo Rateb\App\Core\View::escape($permLabel); ?></div>
+                            <code class="rateb-matrix-perm-slug"><?php echo Rateb\App\Core\View::escape($perm['slug']); ?></code>
                         </td>
                         <?php foreach ($roles as $role) {
                             $roleId = (int) $role['id'];
                             $checked = in_array($permId, $matrix[$roleId] ?? [], true);
                             ?>
-                        <td class="text-center">
-                            <div class="form-check form-switch d-inline-flex justify-content-center">
+                        <td class="text-center rateb-matrix-toggle-cell">
+                            <div class="form-check form-switch d-inline-flex justify-content-center m-0">
                                 <input class="form-check-input rateb-matrix-check" type="checkbox"
                                     name="matrix[<?php echo $roleId; ?>][]"
                                     value="<?php echo $permId; ?>"
                                     data-role="<?php echo $roleId; ?>"
                                     data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"
                                     id="m_<?php echo $roleId; ?>_<?php echo $permId; ?>"
+                                    title="<?php echo Rateb\App\Core\View::escape($permLabel); ?>"
                                     <?php echo $checked ? ' checked' : ''; ?>>
                             </div>
                         </td>
