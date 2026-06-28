@@ -198,6 +198,64 @@
             });
         }
 
+        var revExpEl = document.getElementById('chart-revenue-expenses');
+        if (revExpEl && revExpEl.dataset.labels) {
+            new Chart(revExpEl, {
+                type: 'line',
+                data: {
+                    labels: JSON.parse(revExpEl.dataset.labels),
+                    datasets: [
+                        {
+                            label: revExpEl.dataset.labelRevenue || 'Revenue',
+                            data: JSON.parse(revExpEl.dataset.revenue),
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52,211,153,0.08)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            borderWidth: 2
+                        },
+                        {
+                            label: revExpEl.dataset.labelExpenses || 'Expenses',
+                            data: JSON.parse(revExpEl.dataset.expenses),
+                            borderColor: '#f87171',
+                            backgroundColor: 'rgba(248,113,113,0.08)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: baseOptions(colors)
+            });
+        }
+
+        var expBdEl = document.getElementById('chart-expense-breakdown');
+        if (expBdEl && expBdEl.dataset.labels) {
+            new Chart(expBdEl, {
+                type: 'doughnut',
+                data: {
+                    labels: JSON.parse(expBdEl.dataset.labels),
+                    datasets: [{
+                        data: JSON.parse(expBdEl.dataset.values),
+                        backgroundColor: ['#3b82f6', '#2dd4bf', '#a78bfa', '#fbbf24', '#94a3b8']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            rtl: isRtl(),
+                            position: 'bottom',
+                            labels: { color: colors.muted, font: { family: 'Tajawal, sans-serif' } }
+                        }
+                    }
+                }
+            });
+        }
+
         var statusEl = document.getElementById('chart-company-status');
         if (statusEl && statusEl.dataset.labels) {
             new Chart(statusEl, {

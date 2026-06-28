@@ -22,12 +22,17 @@ final class AccountingDashboardService
     /** @return array<string, mixed> */
     public function build(?int $companyId): array
     {
+        $metrics = $this->metrics($companyId);
         return [
-            'metrics' => $this->metrics($companyId),
+            'metrics' => $metrics,
+            'trends' => $this->trends($companyId, $metrics),
             'kpis' => $this->kpiList($companyId),
             'charts' => $this->charts($companyId),
             'alerts' => $this->alerts($companyId),
             'recent' => $this->recentActivity($companyId),
+            'top_customers' => $this->topCustomers($companyId),
+            'top_items' => $this->topSoldItems($companyId),
+            'expense_breakdown' => $this->expenseBreakdown($companyId),
         ];
     }
 
@@ -61,6 +66,8 @@ final class AccountingDashboardService
             'purchase_requests' => 0,
             'purchase_orders' => 0,
             'inventory_value' => 0.0,
+            'new_customers' => 0,
+            'total_expenses' => 0.0,
         ];
 
         if ($companyId === null || $companyId < 1) {
@@ -68,6 +75,20 @@ final class AccountingDashboardService
             $metrics['purchase_requests'] = (int) (($pdo->query('SELECT COUNT(*) AS c FROM rateb_purchase_requests')->fetch()['c'] ?? 0));
             $metrics['purchase_orders'] = (int) (($pdo->query('SELECT COUNT(*) AS c FROM rateb_purchase_orders')->fetch()['c'] ?? 0));
             $metrics['inventory_value'] = (new Inventory())->totalValue();
+            $poExp = $pdo->query(
+                "SELECT COALESCE(SUM(total_amount), 0) AS t FROM rateb_purchase_orders WHERE status IN ('received','confirmed','partial')"
+            )->fetch();
+            $metrics['expenses_ytd'] = (float) ($poExp['t'] ?? 0);
+            $metrics['total_expenses'] = $metrics['expenses_ytd'];
+            $metrics['revenue_ytd'] = $metrics['revenue'];
+            $metrics['net_profit_ytd'] = $metrics['revenue_ytd'] - $metrics['expenses_ytd'];
+            $newCo = $pdo->query(
+                "SELECT COUNT(*) AS c FROM rateb_companies WHERE created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+            )->fetch();
+            $metrics['new_customers'] = (int) ($newCo['c'] ?? 0);
+            $invStats = $this->platformInvoiceStats();
+            $metrics['unpaid_invoices'] = $invStats['unpaid'];
+            $metrics['overdue_invoices'] = $invStats['overdue'];
             return $metrics;
         }
 
@@ -102,8 +123,187 @@ final class AccountingDashboardService
         $metrics['draft_journals'] = (int) ($workflow['draft_journals'] ?? 0);
         $metrics['pending_vouchers'] = (int) ($workflow['pending_vouchers'] ?? 0);
         $metrics['unreconciled_bank'] = $unreconciled;
+        $metrics['total_expenses'] = (float) ($metrics['expenses_ytd'] ?? 0);
+        $metrics['new_customers'] = $this->newCustomersCount($companyId);
 
         return $metrics;
+    }
+
+    /** @return array<string, string> */
+    public function trends(?int $companyId, ?array $metrics = null): array
+    {
+        $m = $metrics ?? $this->metrics($companyId);
+        $cidSql = $companyId !== null && $companyId > 0 ? ' AND company_id = ' . (int) $companyId : '';
+        $pdo = Database::connection();
+        $thisMonth = date('Y-m');
+        $lastMonth = date('Y-m', strtotime('-1 month'));
+
+        $revCur = (float) ($pdo->query(
+            "SELECT COALESCE(SUM(amount),0) AS t FROM rateb_payments
+             WHERE status='completed' AND DATE_FORMAT(COALESCE(paid_at,created_at),'%Y-%m')='$thisMonth'" . $cidSql
+        )->fetch()['t'] ?? 0);
+        $revPrev = (float) ($pdo->query(
+            "SELECT COALESCE(SUM(amount),0) AS t FROM rateb_payments
+             WHERE status='completed' AND DATE_FORMAT(COALESCE(paid_at,created_at),'%Y-%m')='$lastMonth'" . $cidSql
+        )->fetch()['t'] ?? 0);
+
+        $expCur = (float) ($pdo->query(
+            "SELECT COALESCE(SUM(total_amount),0) AS t FROM rateb_purchase_orders
+             WHERE status IN ('received','confirmed','partial') AND DATE_FORMAT(order_date,'%Y-%m')='$thisMonth'" . $cidSql
+        )->fetch()['t'] ?? 0);
+        $expPrev = (float) ($pdo->query(
+            "SELECT COALESCE(SUM(total_amount),0) AS t FROM rateb_purchase_orders
+             WHERE status IN ('received','confirmed','partial') AND DATE_FORMAT(order_date,'%Y-%m')='$lastMonth'" . $cidSql
+        )->fetch()['t'] ?? 0);
+
+        return [
+            'revenue' => $this->pctChange($revCur, $revPrev),
+            'expenses' => $this->pctChange($expCur, $expPrev),
+            'net_profit' => $this->pctChange($revCur - $expCur, $revPrev - $expPrev),
+            'inventory' => '',
+            'customers' => '',
+            'unpaid' => '',
+            'revenue_ytd' => $this->pctChange($revCur, $revPrev),
+            'expenses_ytd' => $this->pctChange($expCur, $expPrev),
+            'net_profit_ytd' => $this->pctChange($revCur - $expCur, $revPrev - $expPrev),
+            'inventory_value' => '',
+            'new_customers' => '',
+            'unpaid_invoices' => (int) ($m['unpaid_invoices'] ?? 0) > 0 ? '+' . (int) $m['unpaid_invoices'] : '',
+        ];
+    }
+
+    /** @return array<int, array{name: string, total: float}> */
+    public function topCustomers(?int $companyId): array
+    {
+        $pdo = Database::connection();
+        if ($companyId !== null && $companyId > 0) {
+            $stmt = $pdo->prepare(
+                "SELECT c.name, COALESCE(SUM(v.amount), 0) AS total
+                 FROM rateb_customers c
+                 LEFT JOIN rateb_cash_vouchers v ON v.customer_id = c.id AND v.status = 'posted'
+                 WHERE c.company_id = :cid
+                 GROUP BY c.id ORDER BY total DESC LIMIT 5"
+            );
+            $stmt->execute(['cid' => $companyId]);
+            $rows = $stmt->fetchAll() ?: [];
+            if ($rows !== [] && (float) ($rows[0]['total'] ?? 0) > 0) {
+                return array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $rows);
+            }
+            $stmt = $pdo->prepare(
+                "SELECT invoice_no AS name, total_amount AS total
+                 FROM rateb_invoices WHERE company_id = :cid AND status != 'cancelled'
+                 ORDER BY total_amount DESC LIMIT 5"
+            );
+            $stmt->execute(['cid' => $companyId]);
+            $rows = $stmt->fetchAll() ?: [];
+            return array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $rows);
+        }
+        $rows = $pdo->query(
+            "SELECT c.name, COALESCE(SUM(i.total_amount), 0) AS total
+             FROM rateb_invoices i
+             JOIN rateb_companies c ON c.id = i.company_id
+             WHERE i.status != 'cancelled'
+             GROUP BY i.company_id ORDER BY total DESC LIMIT 5"
+        )->fetchAll() ?: [];
+        return array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $rows);
+    }
+
+    /** @return array<int, array{name: string, total: float}> */
+    public function topSoldItems(?int $companyId): array
+    {
+        $pdo = Database::connection();
+        $cidSql = $companyId !== null && $companyId > 0 ? ' AND i.company_id = ' . (int) $companyId : '';
+        $rows = $pdo->query(
+            "SELECT COALESCE(NULLIF(TRIM(il.description), ''), il.item_name) AS name,
+                    COALESCE(SUM(il.line_total), 0) AS total
+             FROM rateb_invoice_lines il
+             JOIN rateb_invoices i ON i.id = il.invoice_id
+             WHERE i.status != 'cancelled'" . $cidSql . "
+             GROUP BY name ORDER BY total DESC LIMIT 5"
+        )->fetchAll() ?: [];
+        if ($rows === []) {
+            $cidPo = $companyId !== null && $companyId > 0 ? ' AND po.company_id = ' . (int) $companyId : '';
+            $rows = $pdo->query(
+                "SELECT COALESCE(s.name, '—') AS name, COALESCE(SUM(po.total_amount), 0) AS total
+                 FROM rateb_purchase_orders po
+                 LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+                 WHERE po.status IN ('received','confirmed','partial')" . $cidPo . "
+                 GROUP BY po.supplier_id ORDER BY total DESC LIMIT 5"
+            )->fetchAll() ?: [];
+        }
+        return array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $rows);
+    }
+
+    /** @return array<int, array{label: string, value: float}> */
+    public function expenseBreakdown(?int $companyId): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            $pdo = Database::connection();
+            $proc = (float) (($pdo->query(
+                "SELECT COALESCE(SUM(total_amount), 0) AS t FROM rateb_purchase_orders WHERE status IN ('received','confirmed','partial')"
+            )->fetch()['t'] ?? 0));
+            $inv = (float) (($pdo->query(
+                'SELECT COALESCE(SUM(quantity * unit_cost), 0) AS t FROM rateb_inventory'
+            )->fetch()['t'] ?? 0));
+            $out = [];
+            if ($proc > 0) {
+                $out[] = ['label' => 'procurement', 'value' => $proc];
+            }
+            if ($inv > 0) {
+                $out[] = ['label' => 'inventory', 'value' => $inv];
+            }
+            return $out;
+        }
+        $year = date('Y') . '-01-01';
+        $pl = $this->acct->profitAndLoss($companyId, $year, date('Y-m-d'));
+        $byType = [];
+        foreach ($pl['lines'] ?? [] as $line) {
+            if (($line['account_type'] ?? '') !== 'expense') {
+                continue;
+            }
+            $name = rateb_locale() === 'ar' && !empty($line['name_ar']) ? $line['name_ar'] : ($line['name'] ?? '');
+            $amt = (float) (($line['total_debit'] ?? 0) - ($line['total_credit'] ?? 0));
+            if ($amt <= 0) {
+                continue;
+            }
+            $byType[] = ['label' => $name, 'value' => $amt];
+        }
+        usort($byType, static fn ($a, $b) => $b['value'] <=> $a['value']);
+        return array_slice($byType, 0, 5);
+    }
+
+    private function pctChange(float $cur, float $prev): string
+    {
+        if ($prev <= 0) {
+            return $cur > 0 ? '+100%' : '';
+        }
+        $pct = round((($cur - $prev) / $prev) * 100, 1);
+        return ($pct >= 0 ? '+' : '') . $pct . '%';
+    }
+
+    private function newCustomersCount(int $companyId): int
+    {
+        $row = Database::connection()->prepare(
+            "SELECT COUNT(*) AS c FROM rateb_customers
+             WHERE company_id = :cid AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+        );
+        $row->execute(['cid' => $companyId]);
+        return (int) (($row->fetch()['c'] ?? 0));
+    }
+
+    /** @return array{unpaid: int, overdue: int} */
+    private function platformInvoiceStats(): array
+    {
+        $pdo = Database::connection();
+        $today = date('Y-m-d');
+        $unpaid = (int) (($pdo->query(
+            "SELECT COUNT(*) AS c FROM rateb_invoices WHERE status IN ('sent','draft','overdue') AND payment_status IN ('unpaid','partial')"
+        )->fetch()['c'] ?? 0));
+        $overdue = (int) (($pdo->query(
+            "SELECT COUNT(*) AS c FROM rateb_invoices WHERE status IN ('sent','overdue') AND payment_status IN ('unpaid','partial')
+             AND due_date IS NOT NULL AND due_date < '$today'"
+        )->fetch()['c'] ?? 0));
+        return ['unpaid' => $unpaid, 'overdue' => $overdue];
     }
 
     /** @return array<int, array{key: string, label: string, value: string, trend: string, icon: string}> */
@@ -214,6 +414,8 @@ final class AccountingDashboardService
                 'type' => 'unpaid_invoices',
                 'severity' => 'warning',
                 'message' => __('accounting_alert_unpaid_invoices', ['count' => $unpaidCount]),
+                'count' => $unpaidCount,
+                'icon' => 'fa-file-invoice-dollar',
                 'url' => rateb_app_url('accounting/accounts-receivable'),
             ];
         }

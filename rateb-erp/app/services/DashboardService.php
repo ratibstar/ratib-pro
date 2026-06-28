@@ -115,6 +115,8 @@ final class DashboardService
                 'severity' => 'warning',
                 'message' => __('dashboard_alert_pending_companies', ['count' => (int) $m['pending_companies']]),
                 'url' => rateb_url('admin/companies'),
+                'count' => (int) $m['pending_companies'],
+                'icon' => 'fa-hourglass-half',
             ];
         }
         if ((int) ($m['suspended_companies'] ?? 0) > 0) {
@@ -123,6 +125,8 @@ final class DashboardService
                 'severity' => 'danger',
                 'message' => __('dashboard_alert_suspended_companies', ['count' => (int) $m['suspended_companies']]),
                 'url' => rateb_url('admin/companies'),
+                'count' => (int) $m['suspended_companies'],
+                'icon' => 'fa-ban',
             ];
         }
         if ((int) ($m['expiring_subscriptions'] ?? 0) > 0) {
@@ -131,6 +135,8 @@ final class DashboardService
                 'severity' => 'warning',
                 'message' => __('dashboard_alert_expiring_subscriptions', ['count' => (int) $m['expiring_subscriptions']]),
                 'url' => rateb_url('admin/subscriptions'),
+                'count' => (int) $m['expiring_subscriptions'],
+                'icon' => 'fa-calendar-xmark',
             ];
         }
         if ((int) ($m['pending_approvals'] ?? 0) > 0 && rateb_nav_can('workflows.view')) {
@@ -139,6 +145,8 @@ final class DashboardService
                 'severity' => 'info',
                 'message' => __('dashboard_alert_pending_approvals', ['count' => (int) $m['pending_approvals']]),
                 'url' => rateb_url('admin/oversight/approvals'),
+                'count' => (int) $m['pending_approvals'],
+                'icon' => 'fa-clipboard-check',
             ];
         }
 
@@ -167,13 +175,13 @@ final class DashboardService
     /** @return array<int, array<string, mixed>> */
     public function topCompaniesByActivity(): array
     {
-        return (new PurchaseOrder())->query(
-            'SELECT c.name AS company_name, COUNT(po.id) AS po_count,
-                    COALESCE(SUM(po.total_amount), 0) AS total
-             FROM rateb_purchase_orders po
-             JOIN rateb_companies c ON c.id = po.company_id
-             GROUP BY po.company_id
-             ORDER BY po_count DESC, total DESC
+        return (new User())->query(
+            'SELECT c.name AS company_name, COUNT(u.id) AS user_count
+             FROM rateb_users u
+             JOIN rateb_companies c ON c.id = u.company_id
+             WHERE u.is_super_admin = 0
+             GROUP BY u.company_id
+             ORDER BY user_count DESC
              LIMIT 5'
         );
     }
