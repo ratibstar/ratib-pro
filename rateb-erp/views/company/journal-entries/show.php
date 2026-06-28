@@ -41,7 +41,7 @@ $badgeClass = $status === 'posted' ? 'success' : ($status === 'rejected' ? 'dang
         </span>
     </div>
     <div class="rateb-card-body">
-        <p class="mb-1"><strong><?php echo __('evaluation_date'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($entry['entry_date'] ?? ''); ?></p>
+        <p class="mb-1"><strong><?php echo __('evaluation_date'); ?>:</strong> <?php echo Rateb\App\Core\View::formatDate($entry['entry_date'] ?? ''); ?></p>
         <p class="mb-1"><strong><?php echo __('source_type'); ?>:</strong> <?php echo __($sourceType); ?>
             <?php if ($sourceUrl) { ?>
             — <a href="<?php echo $sourceUrl; ?>"><?php echo Rateb\App\Core\View::escape($sourceLabel); ?> #<?php echo $sourceId; ?></a>

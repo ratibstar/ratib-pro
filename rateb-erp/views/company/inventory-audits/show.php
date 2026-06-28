@@ -12,7 +12,7 @@
     <div class="rateb-card-body">
         <div class="row g-3 mb-3">
             <div class="col-md-3"><span class="text-muted"><?php echo __('status'); ?>:</span> <?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($audit['status'] ?? ''))); ?></div>
-            <div class="col-md-3"><span class="text-muted"><?php echo __('audit_date'); ?>:</span> <?php echo Rateb\App\Core\View::escape($audit['audit_date'] ?? ''); ?></div>
+            <div class="col-md-3"><span class="text-muted"><?php echo __('audit_date'); ?>:</span> <?php echo Rateb\App\Core\View::formatDate($audit['audit_date'] ?? ''); ?></div>
             <div class="col-md-6"><span class="text-muted"><?php echo __('notes'); ?>:</span> <?php echo Rateb\App\Core\View::escape($audit['notes'] ?? '—'); ?></div>
         </div>
         <?php Rateb\App\Core\View::partial('workflow-list', [

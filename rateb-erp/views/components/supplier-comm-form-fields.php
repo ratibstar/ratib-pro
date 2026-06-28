@@ -42,7 +42,7 @@ $renderFields = static function (array $names) use ($fields, $item, $defaults, $
             <?php echo Rateb\App\Core\View::escape(__('comm_send_' . $sendStatus)); ?>
         </span>
         <?php if (!empty($item['sent_at'])) { ?>
-        <span class="text-muted small"><?php echo __('sent_at'); ?>: <?php echo Rateb\App\Core\View::escape((string) $item['sent_at']); ?></span>
+        <span class="text-muted small"><?php echo __('sent_at'); ?>: <?php echo Rateb\App\Core\View::formatDate((string) $item['sent_at']); ?></span>
         <?php } ?>
     </div>
     <?php } ?>

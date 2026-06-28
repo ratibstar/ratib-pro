@@ -42,7 +42,7 @@ $lookups = (new FormLookupService())->forFields($docFields);
                     <td><?php echo Rateb\App\Core\View::escape($row['title'] ?? ''); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape(__($row['entity_type'] ?? 'general')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['file_name'] ?? ''); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['created_at'] ?? ''); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['created_at'] ?? ''); ?></td>
                     <td>
                         <a href="<?php echo rateb_url('documents/download/' . (int) ($row['id'] ?? 0)); ?>" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-download"></i> <?php echo __('download_file'); ?>

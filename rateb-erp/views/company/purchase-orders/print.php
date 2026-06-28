@@ -8,7 +8,7 @@ $currency = (string) ($order['currency'] ?? 'SAR');
     <div class="row">
         <div class="col-md-6">
             <strong><?php echo __('order_no'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($order['order_no'] ?? ''); ?><br>
-            <strong><?php echo __('order_date'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($order['order_date'] ?? ''); ?><br>
+            <strong><?php echo __('order_date'); ?>:</strong> <?php echo Rateb\App\Core\View::formatDate($order['order_date'] ?? ''); ?><br>
             <strong><?php echo __('supplier'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($supplierName ?? ''); ?>
         </div>
         <div class="col-md-6 text-end">

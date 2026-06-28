@@ -50,6 +50,16 @@ html[dir="rtl"] .rateb-date-wrap input::-webkit-datetime-edit-fields-wrapper {
     unicode-bidi: plaintext !important;
 }
 
+html[dir="rtl"] td.rateb-ltr-date,
+html[dir="rtl"] dd.rateb-ltr-date,
+html[dir="rtl"] span.rateb-ltr-date,
+.rateb-ltr-date.rateb-ltr-num {
+    direction: ltr !important;
+    unicode-bidi: isolate;
+    text-align: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
 .rateb-bidi-mixed {
     unicode-bidi: plaintext;
     white-space: normal;

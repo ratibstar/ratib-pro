@@ -21,7 +21,7 @@
 <?php if (!empty($notes)) { ?>
 <hr><h5><?php echo __('cms_lead_notes'); ?></h5>
 <ul class="list-group"><?php foreach ($notes as $n) { ?>
-<li class="list-group-item"><?php echo Rateb\App\Core\View::escape($n['note']); ?> <small class="text-muted"><?php echo Rateb\App\Core\View::escape($n['created_at']); ?></small></li>
+<li class="list-group-item"><?php echo Rateb\App\Core\View::formatDate($n['note']); ?> <small class="text-muted"><?php echo Rateb\App\Core\View::formatDate($n['created_at']); ?></small></li>
 <?php } ?></ul>
 <?php } ?>
 </div></div>

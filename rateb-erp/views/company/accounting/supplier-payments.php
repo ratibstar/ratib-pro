@@ -79,8 +79,8 @@ $canPost = $canPost ?? false;
                 ?>
             <tr>
                 <td><?php echo Rateb\App\Core\View::escape($row['payment_no'] ?? ''); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape($row['payment_date'] ?? ''); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape($row['due_date'] ?? '—'); ?></td>
+                <td><?php echo Rateb\App\Core\View::formatDate($row['payment_date'] ?? ''); ?></td>
+                <td><?php echo Rateb\App\Core\View::formatDate($row['due_date'] ?? '—'); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($row['supplier_name'] ?? '—'); ?></td>
                 <td>
                     <?php if (!empty($row['purchase_order_id'])) { ?>

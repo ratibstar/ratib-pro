@@ -20,7 +20,7 @@
             <td><?php echo Rateb\App\Core\View::escape((string) ($row['email'] ?? '')); ?></td>
             <td><?php echo Rateb\App\Core\View::escape((string) ($row['ip_address'] ?? '')); ?></td>
             <td><?php echo !empty($row['success']) ? '✓' : '✗'; ?></td>
-            <td><?php echo Rateb\App\Core\View::escape((string) ($row['created_at'] ?? '')); ?></td>
+            <td><?php echo Rateb\App\Core\View::formatDate((string) ($row['created_at'] ?? '')); ?></td>
         </tr>
     <?php } ?>
     </tbody>

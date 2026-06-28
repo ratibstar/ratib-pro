@@ -18,7 +18,7 @@ $badgeClass = $st === 'posted' ? 'success' : ($st === 'rejected' ? 'danger' : ($
     </div>
     <div class="rateb-card-body">
         <p class="mb-1"><strong><?php echo __('voucher_type'); ?>:</strong> <?php echo __((string) ($voucher['voucher_type'] ?? '')); ?></p>
-        <p class="mb-1"><strong><?php echo __('evaluation_date'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($voucher['voucher_date'] ?? ''); ?></p>
+        <p class="mb-1"><strong><?php echo __('evaluation_date'); ?>:</strong> <?php echo Rateb\App\Core\View::formatDate($voucher['voucher_date'] ?? ''); ?></p>
         <p class="mb-1"><strong><?php echo __('amount'); ?>:</strong> <?php echo number_format((float) ($voucher['amount'] ?? 0), 2); ?> SAR</p>
         <p class="mb-1"><strong><?php echo __('party_name'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($voucher['party_name'] ?? '—'); ?></p>
         <?php

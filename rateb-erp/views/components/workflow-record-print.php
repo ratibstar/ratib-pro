@@ -25,7 +25,8 @@ $columns = $columns ?? [];
         } elseif ($type === 'money') {
             $display = number_format((float) $val, 2);
         } else {
-            $display = (string) $val;
+            $meta = rateb_table_cell_meta($val, $col);
+            $display = (string) ($meta['display'] ?? $val);
         }
         if ($display === '' || $display === '0000-00-00') {
             $display = '—';

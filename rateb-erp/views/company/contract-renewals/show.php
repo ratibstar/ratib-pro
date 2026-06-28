@@ -41,11 +41,11 @@ $exportEnabled = !empty($exportEnabled);
             <dt class="col-sm-4"><?php echo __('suppliers'); ?></dt>
             <dd class="col-sm-8"><?php echo Rateb\App\Core\View::escape((string) ($item['supplier_name'] ?? '—')); ?></dd>
             <dt class="col-sm-4"><?php echo __('end_date'); ?></dt>
-            <dd class="col-sm-8 rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($item['contract_end_date'] ?? '—')); ?></dd>
+            <dd class="col-sm-8 rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate((string) ($item['contract_end_date'] ?? '—')); ?></dd>
             <dt class="col-sm-4"><?php echo __('renewal_date'); ?></dt>
-            <dd class="col-sm-8 rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($item['renewal_date'] ?? '—')); ?></dd>
+            <dd class="col-sm-8 rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate((string) ($item['renewal_date'] ?? '—')); ?></dd>
             <dt class="col-sm-4"><?php echo __('new_end_date'); ?></dt>
-            <dd class="col-sm-8 rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($item['new_end_date'] ?? '—')); ?></dd>
+            <dd class="col-sm-8 rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate((string) ($item['new_end_date'] ?? '—')); ?></dd>
             <dt class="col-sm-4"><?php echo __('new_value'); ?></dt>
             <dd class="col-sm-8 rateb-ltr-num"><?php echo number_format((float) ($item['new_value'] ?? 0), 2); ?></dd>
             <dt class="col-sm-4"><?php echo __('status'); ?></dt>
@@ -60,7 +60,7 @@ $exportEnabled = !empty($exportEnabled);
             <dt class="col-sm-4"><?php echo __('approved_by'); ?></dt>
             <dd class="col-sm-8"><?php echo Rateb\App\Core\View::escape((string) ($item['approved_by_name'] ?? '—')); ?>
                 <?php if (!empty($item['approved_at'])) { ?>
-                <span class="text-muted small rateb-ltr-num"> — <?php echo Rateb\App\Core\View::escape((string) $item['approved_at']); ?></span>
+                <span class="text-muted small rateb-ltr-num"> — <?php echo Rateb\App\Core\View::formatDate((string) $item['approved_at']); ?></span>
                 <?php } ?>
             </dd>
             <?php } ?>

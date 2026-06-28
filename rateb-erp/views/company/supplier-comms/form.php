@@ -100,7 +100,7 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                                 <div class="rateb-sc-timeline-details text-muted small"><?php echo Rateb\App\Core\View::escape((string) $ev['details']); ?></div>
                                 <?php } ?>
                                 <div class="rateb-sc-timeline-meta text-muted small">
-                                    <?php echo Rateb\App\Core\View::escape((string) ($ev['created_at'] ?? '')); ?>
+                                    <?php echo Rateb\App\Core\View::formatDate((string) ($ev['created_at'] ?? '')); ?>
                                     <?php if (!empty($ev['user_name'])) { ?>
                                     · <?php echo Rateb\App\Core\View::escape((string) $ev['user_name']); ?>
                                     <?php } ?>
@@ -135,7 +135,7 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                             <?php foreach ($supplierHistory as $hist) {
                                 $st = (string) ($hist['comm_status'] ?? 'new'); ?>
                             <tr>
-                                <td><?php echo Rateb\App\Core\View::escape((string) ($hist['comm_date'] ?? '')); ?></td>
+                                <td><?php echo Rateb\App\Core\View::formatDate((string) ($hist['comm_date'] ?? '')); ?></td>
                                 <td class="rateb-cell-clip"><?php echo Rateb\App\Core\View::escape((string) ($hist['subject'] ?? '')); ?></td>
                                 <td><span class="badge bg-<?php echo $commSvc->statusBadgeClass($st); ?>"><?php echo Rateb\App\Core\View::escape(__('comm_status_' . $st)); ?></span></td>
                             </tr>

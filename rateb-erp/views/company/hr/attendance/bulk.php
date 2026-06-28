@@ -19,7 +19,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'attendance-bulk']);
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
     <input type="hidden" name="attendance_date" value="<?php echo Rateb\App\Core\View::escape($date); ?>">
     <div class="rateb-card">
-        <div class="rateb-card-header"><?php echo __('hr_attendance_bulk'); ?> — <?php echo Rateb\App\Core\View::escape($date); ?></div>
+        <div class="rateb-card-header"><?php echo __('hr_attendance_bulk'); ?> — <?php echo Rateb\App\Core\View::formatDate($date); ?></div>
         <div class="rateb-card-body p-0">
             <div class="table-responsive">
                 <table class="table rateb-table mb-0">

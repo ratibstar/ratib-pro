@@ -171,7 +171,7 @@ $approvalsConfig = [
                                 <?php } ?>
                             </td>
                             <td class="rateb-ltr-num rateb-approval-cell-ref"><?php echo Rateb\App\Core\View::escape((string) ($row['reference'] ?? '')); ?></td>
-                            <td class="rateb-ltr-num rateb-approval-cell-date"><?php echo Rateb\App\Core\View::escape((string) ($row['submitted_at'] ?? '')); ?></td>
+                            <td class="rateb-ltr-num rateb-approval-cell-date"><?php echo Rateb\App\Core\View::formatDate((string) ($row['submitted_at'] ?? '')); ?></td>
                             <td class="rateb-actions-cell">
                                 <div class="rateb-approval-ops">
                                     <button type="button" class="rateb-approval-btn rateb-approval-btn-view" data-action="view" title="<?php echo __('view'); ?>">

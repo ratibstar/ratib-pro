@@ -56,7 +56,7 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                         $amt = (float) ($line['debit'] ?? 0) - (float) ($line['credit'] ?? 0);
                         ?>
                     <tr>
-                        <td><?php echo Rateb\App\Core\View::escape($line['entry_date']); ?></td>
+                        <td><?php echo Rateb\App\Core\View::formatDate($line['entry_date']); ?></td>
                         <td>
                             <a href="<?php echo rateb_app_url('journal-entries/' . (int) $line['id']); ?>">
                                 <?php echo Rateb\App\Core\View::escape($line['entry_no']); ?>
@@ -106,7 +106,7 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                     <tbody>
                     <?php foreach (($d['statement_lines'] ?? []) as $line) { ?>
                     <tr class="<?php echo !empty($line['is_reconciled']) ? 'table-success' : ''; ?>">
-                        <td><?php echo Rateb\App\Core\View::escape($line['line_date']); ?></td>
+                        <td><?php echo Rateb\App\Core\View::formatDate($line['line_date']); ?></td>
                         <td><?php echo Rateb\App\Core\View::escape($line['description']); ?></td>
                         <td class="text-end"><?php echo number_format((float) ($line['amount'] ?? 0), 2); ?></td>
                         <td class="rateb-actions-cell text-nowrap">

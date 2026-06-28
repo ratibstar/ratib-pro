@@ -75,8 +75,8 @@ $warnings = $health['cron_warnings'] ?? [];
     <?php foreach (($health['cron'] ?? []) as $job) { ?>
         <tr class="<?php echo ($job['status'] ?? '') === 'late' ? 'table-warning' : ''; ?>">
             <td><?php echo Rateb\App\Core\View::escape((string) ($job['job_name'] ?? '')); ?></td>
-            <td><?php echo Rateb\App\Core\View::escape((string) ($job['last_run_at'] ?? '')); ?></td>
-            <td><?php echo Rateb\App\Core\View::escape((string) ($job['next_expected_at'] ?? '')); ?></td>
+            <td><?php echo Rateb\App\Core\View::formatDate((string) ($job['last_run_at'] ?? '')); ?></td>
+            <td><?php echo Rateb\App\Core\View::formatDate((string) ($job['next_expected_at'] ?? '')); ?></td>
             <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($job['status'] ?? ''))); ?></td>
         </tr>
     <?php } ?>

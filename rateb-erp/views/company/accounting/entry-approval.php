@@ -141,10 +141,10 @@ $listUrl = (string) ($listUrl ?? rateb_app_url('accounting/entry-approval'));
                         ?>
                     <tr>
                         <td class="fw-semibold"><?php echo Rateb\App\Core\View::escape($row['entry_no']); ?></td>
-                        <td><?php echo Rateb\App\Core\View::escape($row['entry_date']); ?></td>
+                        <td><?php echo Rateb\App\Core\View::formatDate($row['entry_date']); ?></td>
                         <td><span class="badge bg-<?php echo $badgeClass; ?>"><?php echo __($displayStatus); ?></span></td>
                         <td class="small text-muted"><?php echo $rejectReason !== '' ? Rateb\App\Core\View::escape($rejectReason) : '—'; ?></td>
-                        <td class="small"><?php echo Rateb\App\Core\View::escape((string) ($row['created_at'] ?? '')); ?></td>
+                        <td class="small"><?php echo Rateb\App\Core\View::formatDate((string) ($row['created_at'] ?? '')); ?></td>
                         <td class="text-end text-nowrap rateb-approval-actions rateb-accounting-actions-col rateb-actions-cell">
                             <div class="rateb-actions justify-content-end">
                             <?php if ($bulkAny && $canSelect) { ?>

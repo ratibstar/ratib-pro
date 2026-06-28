@@ -57,7 +57,7 @@ $panelId = 'rateb-doc-panel-' . (int) $entityId;
                 <td><?php echo Rateb\App\Core\View::escape($doc['title'] ?? ''); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($doc['file_name'] ?? ''); ?></td>
                 <td><?php echo number_format((int) ($doc['file_size'] ?? 0) / 1024, 1); ?> KB</td>
-                <td><?php echo Rateb\App\Core\View::escape($doc['created_at'] ?? ''); ?></td>
+                <td><?php echo Rateb\App\Core\View::formatDate($doc['created_at'] ?? ''); ?></td>
                 <td class="rateb-actions rateb-doc-actions">
                     <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" title="<?php echo __('view_file'); ?>">
                         <i class="fas fa-eye"></i>

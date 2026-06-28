@@ -91,11 +91,11 @@ if ($customsStatus === 'customs_cleared') {
                         </div>
                         <div class="rateb-kv-item">
                             <span class="rateb-kv-label"><?php echo __('order_date'); ?></span>
-                            <span class="rateb-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($order['order_date'] ?? '—'); ?></span>
+                            <span class="rateb-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate($order['order_date'] ?? '—'); ?></span>
                         </div>
                         <div class="rateb-kv-item">
                             <span class="rateb-kv-label"><?php echo __('expected_date'); ?></span>
-                            <span class="rateb-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($order['expected_date'] ?? '—'); ?></span>
+                            <span class="rateb-kv-value rateb-ltr-date rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate($order['expected_date'] ?? '—'); ?></span>
                         </div>
                         <div class="rateb-kv-item">
                             <span class="rateb-kv-label"><?php echo __('currency'); ?></span>
@@ -127,7 +127,7 @@ if ($customsStatus === 'customs_cleared') {
                         <?php if (!empty($inv['customs_clearance_date'])) { ?>
                         <div class="rateb-kv-item">
                             <span class="rateb-kv-label"><?php echo __('customs_clearance_date'); ?></span>
-                            <span class="rateb-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($inv['customs_clearance_date']); ?></span>
+                            <span class="rateb-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate($inv['customs_clearance_date']); ?></span>
                         </div>
                         <?php } ?>
                         <?php if (!empty($brokerName)) { ?>

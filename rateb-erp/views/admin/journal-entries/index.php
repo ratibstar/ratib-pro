@@ -23,7 +23,7 @@
                     ?>
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape($row['entry_no']); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['entry_date']); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['entry_date']); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['company_name'] ?? '—'); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($desc); ?></td>
                     <td><?php echo __( (string) ($row['source_type'] ?? '')); ?></td>

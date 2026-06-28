@@ -158,8 +158,18 @@ abstract class CrudController extends Controller
                 $colType = 'status';
             } elseif ($lookup === 'yes_no') {
                 $colType = 'fk';
+            } elseif (in_array($type, ['date', 'datetime-local', 'time', 'month', 'week'], true)) {
+                $colType = match ($type) {
+                    'datetime-local' => 'datetime',
+                    default => $type,
+                };
             } elseif ($type === 'fk' || $lookup !== '') {
                 $colType = 'fk';
+            } elseif (function_exists('rateb_date_column_kind')) {
+                $dateKind = rateb_date_column_kind($name, $type);
+                if ($dateKind !== '') {
+                    $colType = $dateKind;
+                }
             }
 
             $col = [

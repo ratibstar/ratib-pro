@@ -53,7 +53,7 @@ Rateb\App\Core\View::partial('admin-company-portal-banner');
                             <td><?php echo Rateb\App\Core\View::escape($row['company_name'] ?? ''); ?></td>
                             <td><?php echo Rateb\App\Core\View::escape($row['supplier_name'] ?? ''); ?></td>
                             <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($row['evaluation_no'] ?? ('#' . $entityId)); ?></td>
-                            <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($row['evaluation_date'] ?? ''); ?></td>
+                            <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate($row['evaluation_date'] ?? ''); ?></td>
                             <td><strong><?php echo Rateb\App\Core\View::escape($row['overall_score'] ?? ''); ?></strong></td>
                             <td><span class="badge bg-<?php echo $approval === 'pending' ? 'warning text-dark' : ($approval === 'approved' ? 'success' : 'danger'); ?>"><?php echo __('manager_approval_' . $approval); ?></span></td>
                             <td><?php echo __((string) ($row['status'] ?? '')); ?></td>

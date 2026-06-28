@@ -82,7 +82,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'fleet-manage']);
                     <dt class="col-sm-4"><?php echo __('job_title'); ?></dt>
                     <dd class="col-sm-8"><?php echo Rateb\App\Core\View::escape((string) ($employee['job_title'] ?? '—')); ?></dd>
                     <dt class="col-sm-4"><?php echo __('hire_date'); ?></dt>
-                    <dd class="col-sm-8"><?php echo Rateb\App\Core\View::escape((string) ($employee['hire_date'] ?? '—')); ?></dd>
+                    <dd class="col-sm-8"><?php echo Rateb\App\Core\View::formatDate((string) ($employee['hire_date'] ?? '—')); ?></dd>
                     <dt class="col-sm-4"><?php echo __('status'); ?></dt>
                     <dd class="col-sm-8"><?php echo __((string) ($employee['status'] ?? 'active')); ?></dd>
                 </dl>

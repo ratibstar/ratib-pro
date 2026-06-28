@@ -53,7 +53,7 @@ if (rateb_can_export_entity('accounting')) {
                     ?>
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape($row['entry_no'] ?? ''); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['entry_date'] ?? ''); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['entry_date'] ?? ''); ?></td>
                     <td class="rateb-ar-text"><?php echo Rateb\App\Core\View::escape($desc); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['code'] ?? ''); ?></td>
                     <td class="rateb-ar-text"><?php echo Rateb\App\Core\View::escape($name); ?></td>

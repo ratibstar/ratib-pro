@@ -45,7 +45,7 @@ $oversightOnly = !empty($oversightOnly);
                     ?>
                 <tr>
                     <td class="fw-semibold"><?php echo Rateb\App\Core\View::escape($row['entry_no']); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['entry_date']); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['entry_date']); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) $desc); ?></td>
                     <td><?php echo __((string) ($row['source_type'] ?? '')); ?></td>
                     <td><?php echo __($displayStatus); ?></td>

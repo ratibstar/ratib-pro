@@ -72,7 +72,7 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                                     <?php echo __('manager_approval_' . $approval); ?>
                                 </span>
                                 <?php if (!empty($item['approved_at'])) { ?>
-                                <small class="text-muted d-block mt-1"><?php echo Rateb\App\Core\View::escape((string) $item['approved_at']); ?></small>
+                                <small class="text-muted d-block mt-1"><?php echo Rateb\App\Core\View::formatDate((string) $item['approved_at']); ?></small>
                                 <?php } ?>
                             </div>
                         </div>
@@ -144,7 +144,7 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                             $tier = (string) ($hist['rating_tier'] ?? 'weak');
                             $approval = (string) ($hist['manager_approval'] ?? 'pending'); ?>
                         <tr>
-                            <td><?php echo Rateb\App\Core\View::escape((string) ($hist['evaluation_date'] ?? '')); ?></td>
+                            <td><?php echo Rateb\App\Core\View::formatDate((string) ($hist['evaluation_date'] ?? '')); ?></td>
                             <td><?php echo Rateb\App\Core\View::escape((string) ($hist['overall_score'] ?? '')); ?></td>
                             <td><span class="badge bg-<?php echo Rateb\App\Core\View::escape($svc->tierBadgeClass($tier)); ?>"><?php echo Rateb\App\Core\View::escape($svc->tierLabel($tier)); ?></span></td>
                             <td><span class="badge bg-secondary"><?php echo Rateb\App\Core\View::escape(__('manager_approval_' . $approval)); ?></span></td>

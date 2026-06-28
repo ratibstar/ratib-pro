@@ -44,8 +44,8 @@
                         <?php echo Rateb\App\Core\View::escape($row['invoice_no']); ?>
                         <?php } ?>
                     </td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['issued_at']); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['due_date'] ?? '—'); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['issued_at']); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['due_date'] ?? '—'); ?></td>
                     <td><?php echo __((string) ($row['status'] ?? '')); ?></td>
                     <td class="text-end"><?php echo number_format((float) ($row['total_amount'] ?? 0), 2); ?></td>
                     <td>

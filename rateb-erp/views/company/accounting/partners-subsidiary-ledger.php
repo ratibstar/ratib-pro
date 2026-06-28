@@ -67,7 +67,7 @@ $accounts = $report['accounts'] ?? [];
                     ?>
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape($row['entry_no'] ?? ''); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['entry_date'] ?? ''); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['entry_date'] ?? ''); ?></td>
                     <td class="rateb-ar-text"><?php echo Rateb\App\Core\View::escape($desc); ?></td>
                     <td class="text-end"><?php echo number_format((float) ($row['debit'] ?? 0), 2); ?></td>
                     <td class="text-end"><?php echo number_format((float) ($row['credit'] ?? 0), 2); ?></td>

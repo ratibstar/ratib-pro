@@ -9,8 +9,8 @@ $st = (string) ($item['status'] ?? '');
         <span class="badge bg-<?php echo $st === 'open' ? 'success' : 'secondary'; ?>"><?php echo __($st); ?></span>
     </div>
     <div class="rateb-card-body">
-        <p class="mb-1"><strong><?php echo __('date_from'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($item['start_date'] ?? ''); ?></p>
-        <p class="mb-0"><strong><?php echo __('date_to'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($item['end_date'] ?? ''); ?></p>
+        <p class="mb-1"><strong><?php echo __('date_from'); ?>:</strong> <?php echo Rateb\App\Core\View::formatDate($item['start_date'] ?? ''); ?></p>
+        <p class="mb-0"><strong><?php echo __('date_to'); ?>:</strong> <?php echo Rateb\App\Core\View::formatDate($item['end_date'] ?? ''); ?></p>
     </div>
 </div>
 <div class="d-flex flex-wrap gap-2">

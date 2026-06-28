@@ -49,7 +49,7 @@
                         </a>
                     </td>
                     <td><?php echo Rateb\App\Core\View::escape($row['supplier_name'] ?? '—'); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['order_date']); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['order_date']); ?></td>
                     <td><?php echo __((string) ($row['status'] ?? '')); ?></td>
                     <td class="text-end"><?php echo number_format($total, 2); ?></td>
                     <td class="text-end"><?php echo number_format($paid, 2); ?></td>

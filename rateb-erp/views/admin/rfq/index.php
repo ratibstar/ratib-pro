@@ -31,7 +31,7 @@
                                 <td><?php echo Rateb\App\Core\View::escape($row['rfq_no'] ?? ''); ?></td>
                                 <td><?php echo Rateb\App\Core\View::escape($row['title'] ?? ''); ?></td>
                                 <td><?php echo __( (string) ($row['status'] ?? '')); ?></td>
-                                <td><?php echo Rateb\App\Core\View::escape($row['deadline'] ?? ''); ?></td>
+                                <td><?php echo Rateb\App\Core\View::formatDate($row['deadline'] ?? ''); ?></td>
                                 <td><?php echo (int) ($row['quote_count'] ?? 0); ?></td>
                             </tr>
                             <?php } } ?>

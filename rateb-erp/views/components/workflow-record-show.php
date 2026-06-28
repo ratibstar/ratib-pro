@@ -50,7 +50,8 @@ if (str_starts_with($approval, 'manager_approval_')) {
                 } elseif ($type === 'money') {
                     $display = number_format((float) $val, 2);
                 } else {
-                    $display = (string) $val;
+                    $meta = rateb_table_cell_meta($val, $col);
+                    $display = (string) ($meta['display'] ?? $val);
                 }
                 if ($display === '' || $display === '0000-00-00') {
                     $display = '—';
@@ -63,7 +64,7 @@ if (str_starts_with($approval, 'manager_approval_')) {
             <dt class="col-sm-4"><?php echo __('approved_by'); ?></dt>
             <dd class="col-sm-8"><?php echo Rateb\App\Core\View::escape((string) ($item['approved_by_name'] ?? '—')); ?>
                 <?php if (!empty($item['approved_at'])) { ?>
-                <span class="text-muted small rateb-ltr-num"> — <?php echo Rateb\App\Core\View::escape((string) $item['approved_at']); ?></span>
+                <span class="text-muted small rateb-ltr-date rateb-ltr-num"> — <?php echo Rateb\App\Core\View::formatDate($item['approved_at']); ?></span>
                 <?php } ?>
             </dd>
             <?php } ?>

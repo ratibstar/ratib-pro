@@ -345,8 +345,8 @@ $subJson = json_encode(array_map(static function (array $sub): array {
             <div class="rateb-invoice-print-area d-none" data-invoice-print-area>
                 <h4><?php echo __('invoice_preview'); ?></h4>
                 <p><strong><?php echo __('invoice_no'); ?>:</strong> <span data-print-invoice-no><?php echo Rateb\App\Core\View::escape((string) ($item['invoice_no'] ?? '')); ?></span></p>
-                <p><strong><?php echo __('issued_at'); ?>:</strong> <span data-print-issued><?php echo Rateb\App\Core\View::escape((string) ($item['issued_at'] ?? '')); ?></span></p>
-                <p><strong><?php echo __('due_date'); ?>:</strong> <span data-print-due><?php echo Rateb\App\Core\View::escape((string) ($item['due_date'] ?? '')); ?></span></p>
+                <p><strong><?php echo __('issued_at'); ?>:</strong> <span data-print-issued><?php echo Rateb\App\Core\View::formatDate((string) ($item['issued_at'] ?? '')); ?></span></p>
+                <p><strong><?php echo __('due_date'); ?>:</strong> <span data-print-due><?php echo Rateb\App\Core\View::formatDate((string) ($item['due_date'] ?? '')); ?></span></p>
                 <p><strong><?php echo __('total_after_tax'); ?>:</strong> <span data-print-total><?php echo number_format($totalAmount, 2); ?></span> <?php echo Rateb\App\Core\View::escape($currency); ?></p>
             </div>
 

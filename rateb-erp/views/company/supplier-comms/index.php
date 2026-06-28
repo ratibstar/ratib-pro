@@ -92,7 +92,7 @@ $channelIcon = static function (string $ch): string {
                 <li class="py-1 border-bottom border-secondary-subtle">
                     <strong><?php echo Rateb\App\Core\View::escape((string) ($fu['supplier_name'] ?? '')); ?></strong>
                     — <?php echo Rateb\App\Core\View::escape((string) ($fu['subject'] ?? '')); ?>
-                    <span class="text-muted">(<?php echo Rateb\App\Core\View::escape((string) ($fu['follow_up_date'] ?? '')); ?>)</span>
+                    <span class="text-muted">(<?php echo Rateb\App\Core\View::formatDate((string) ($fu['follow_up_date'] ?? '')); ?>)</span>
                     <a href="<?php echo rateb_url($routePrefix . '/' . (int) ($fu['id'] ?? 0) . '/edit'); ?>" class="ms-1"><?php echo __('view'); ?></a>
                 </li>
                 <?php } ?>
@@ -254,7 +254,7 @@ $channelIcon = static function (string $ch): string {
                             <?php foreach ($supplierHistory as $hist) {
                                 $st = (string) ($hist['comm_status'] ?? 'new'); ?>
                             <tr>
-                                <td><?php echo Rateb\App\Core\View::escape((string) ($hist['comm_date'] ?? substr((string) ($hist['created_at'] ?? ''), 0, 10))); ?></td>
+                                <td><?php echo Rateb\App\Core\View::formatDate($hist['comm_date'] ?? substr((string) ($hist['created_at'] ?? ''), 0, 10)); ?></td>
                                 <td class="rateb-cell-clip"><?php echo Rateb\App\Core\View::escape((string) ($hist['subject'] ?? '')); ?></td>
                                 <td><span class="badge bg-<?php echo $commSvc->statusBadgeClass($st); ?>"><?php echo Rateb\App\Core\View::escape(__('comm_status_' . $st)); ?></span></td>
                             </tr>

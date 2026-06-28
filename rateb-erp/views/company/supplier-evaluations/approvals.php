@@ -44,7 +44,7 @@ $svc = new \Rateb\App\Services\SupplierEvaluationService();
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['evaluation_no'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['supplier_name'] ?? '')); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['evaluation_date'] ?? '')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate((string) ($row['evaluation_date'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['evaluator_name'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['overall_score'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['score_percent'] ?? '')); ?>%</td>

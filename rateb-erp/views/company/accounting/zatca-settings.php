@@ -52,7 +52,7 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
             <?php } else { foreach ($invoices as $inv) { ?>
             <tr>
                 <td><?php echo Rateb\App\Core\View::escape($inv['invoice_no']); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape($inv['issued_at']); ?></td>
+                <td><?php echo Rateb\App\Core\View::formatDate($inv['issued_at']); ?></td>
                 <td class="text-end"><?php echo number_format((float) ($inv['total_amount'] ?? 0), 2); ?></td>
                 <td><?php
                     $st = preg_replace('/[^a-z_]/', '', (string) ($inv['zatca_status'] ?? 'not_applicable'));

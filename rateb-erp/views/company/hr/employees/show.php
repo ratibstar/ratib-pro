@@ -33,7 +33,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'employees']);
                     <dt class="col-sm-4"><?php echo __('job_title'); ?></dt>
                     <dd class="col-sm-8"><?php echo Rateb\App\Core\View::escape((string) ($employee['job_title'] ?? '—')); ?></dd>
                     <dt class="col-sm-4"><?php echo __('hire_date'); ?></dt>
-                    <dd class="col-sm-8"><?php echo Rateb\App\Core\View::escape((string) ($employee['hire_date'] ?? '—')); ?></dd>
+                    <dd class="col-sm-8"><?php echo Rateb\App\Core\View::formatDate((string) ($employee['hire_date'] ?? '—')); ?></dd>
                     <dt class="col-sm-4"><?php echo __('salary_base'); ?></dt>
                     <dd class="col-sm-8 rateb-ltr-num"><?php echo number_format((float) ($employee['salary_base'] ?? 0), 2); ?></dd>
                     <dt class="col-sm-4"><?php echo __('status'); ?></dt>
@@ -83,8 +83,8 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'employees']);
                 <?php foreach ($recent_leaves as $lv) { ?>
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($lv['leave_type_name'] ?? '')); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($lv['start_date'] ?? '')); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($lv['end_date'] ?? '')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate((string) ($lv['start_date'] ?? '')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate((string) ($lv['end_date'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($lv['days'] ?? '')); ?></td>
                     <td><?php echo __((string) ($lv['status'] ?? '')); ?></td>
                 </tr>

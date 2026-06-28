@@ -57,8 +57,8 @@ $colSpan = 6;
         </div>
         <div class="text-end">
             <div><strong><?php echo __('invoice_no'); ?>:</strong> <?php echo Rateb\App\Core\View::escape((string) ($item['invoice_no'] ?? '')); ?></div>
-            <div><strong><?php echo __('issued_at'); ?>:</strong> <?php echo Rateb\App\Core\View::escape((string) ($item['issued_at'] ?? '')); ?></div>
-            <div><strong><?php echo __('due_date'); ?>:</strong> <?php echo Rateb\App\Core\View::escape((string) ($item['due_date'] ?? '')); ?></div>
+            <div><strong><?php echo __('issued_at'); ?>:</strong> <?php echo Rateb\App\Core\View::formatDate((string) ($item['issued_at'] ?? '')); ?></div>
+            <div><strong><?php echo __('due_date'); ?>:</strong> <?php echo Rateb\App\Core\View::formatDate((string) ($item['due_date'] ?? '')); ?></div>
             <div><strong><?php echo __('status'); ?>:</strong> <?php echo Rateb\App\Core\View::escape(__((string) ($item['status'] ?? 'draft'))); ?></div>
         </div>
     </div>

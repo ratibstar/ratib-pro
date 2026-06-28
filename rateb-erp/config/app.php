@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-date-inputs-v1');
+define('RATEB_ASSET_BUILD', '20260628-date-display-v1');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -501,6 +501,111 @@ if (!function_exists('rateb_email_template_slug_label')) {
     }
 }
 
+if (!function_exists('rateb_date_column_kind')) {
+    /**
+     * Infer display kind for a column/field name or form input type.
+     */
+    function rateb_date_column_kind(string $name, string $fieldType = ''): string
+    {
+        $fieldType = strtolower(trim($fieldType));
+        $map = [
+            'date' => 'date',
+            'datetime-local' => 'datetime',
+            'time' => 'time',
+            'month' => 'month',
+            'week' => 'week',
+        ];
+        if ($fieldType !== '' && isset($map[$fieldType])) {
+            return $map[$fieldType];
+        }
+
+        $n = strtolower(trim($name));
+        if ($n === '') {
+            return '';
+        }
+
+        if (preg_match('/_(at)$/', $n) || in_array($n, ['submitted_at', 'approved_at', 'last_run_at', 'next_expected_at'], true)) {
+            return 'datetime';
+        }
+        if (str_ends_with($n, '_time') && $n !== 'comm_time') {
+            return 'time';
+        }
+        if (in_array($n, ['deadline', 'period_start', 'period_end', 'start_date', 'end_date'], true)) {
+            return 'date';
+        }
+        if (str_contains($n, 'date') || str_ends_with($n, '_from') || str_ends_with($n, '_to')) {
+            return 'date';
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('rateb_looks_like_date_value')) {
+    function rateb_looks_like_date_value($value): bool
+    {
+        $raw = trim((string) $value);
+        if ($raw === '' || $raw === '—' || $raw === '0000-00-00' || $raw === '0000-00-00 00:00:00') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$|^\d{2}:\d{2}(?::\d{2})?$/',
+            $raw
+        );
+    }
+}
+
+if (!function_exists('rateb_format_date_value')) {
+    /**
+     * Format stored ISO date/time for UI display (DD / MM / YYYY).
+     *
+     * @param mixed $value
+     */
+    function rateb_format_date_value($value, string $kind = 'auto'): string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '' || $raw === '—') {
+            return $raw === '' ? '' : '—';
+        }
+        if ($raw === '0000-00-00' || $raw === '0000-00-00 00:00:00') {
+            return '—';
+        }
+
+        if ($kind === 'auto') {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/', $raw)) {
+                $kind = 'datetime';
+            } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
+                $kind = 'date';
+            } elseif (preg_match('/^\d{2}:\d{2}/', $raw)) {
+                $kind = 'time';
+            } else {
+                return $raw;
+            }
+        }
+
+        $dt = date_create($raw);
+        if ($dt === false) {
+            return $raw;
+        }
+
+        return match ($kind) {
+            'datetime' => $dt->format('d / m / Y H:i'),
+            'time' => $dt->format('H:i'),
+            'month' => $dt->format('m / Y'),
+            'week' => $raw,
+            default => $dt->format('d / m / Y'),
+        };
+    }
+}
+
+if (!function_exists('rateb_date_display')) {
+    function rateb_date_display($value, string $kind = 'auto'): string
+    {
+        return rateb_format_date_value($value, $kind);
+    }
+}
+
 if (!function_exists('rateb_table_cell_display')) {
     function rateb_table_cell_display($value, int $max = 80): string
     {
@@ -551,6 +656,12 @@ if (!function_exists('rateb_enrich_index_columns')) {
             }
             if ($type === '' && ($fieldType === 'fk' || $lookup !== '')) {
                 $type = 'fk';
+            }
+            if ($type === '' || in_array($type, ['clip', 'text'], true)) {
+                $dateKind = rateb_date_column_kind($name, $fieldType);
+                if ($dateKind !== '') {
+                    $type = $dateKind === 'datetime' ? 'datetime' : $dateKind;
+                }
             }
 
             $merged = $col;
@@ -715,6 +826,25 @@ if (!function_exists('rateb_table_cell_meta')) {
                 'title' => trim((string) $value),
                 'class' => 'rateb-cell-clip rateb-ar-text rateb-bidi-mixed',
                 'dir' => '',
+                'mode' => 'text',
+                'badge' => '',
+            ];
+        }
+
+        $dateKind = '';
+        if (in_array($type, ['date', 'datetime', 'time', 'month', 'week'], true)) {
+            $dateKind = $type === 'datetime-local' ? 'datetime' : $type;
+        } elseif ($name !== '') {
+            $dateKind = rateb_date_column_kind($name);
+        }
+        if ($dateKind !== '' && rateb_looks_like_date_value($value)) {
+            $display = rateb_format_date_value($value, $dateKind);
+            $title = trim((string) $value);
+            return [
+                'display' => $display,
+                'title' => $title,
+                'class' => 'rateb-cell-clip rateb-ltr-date rateb-ltr-num',
+                'dir' => 'ltr',
                 'mode' => 'text',
                 'badge' => '',
             ];

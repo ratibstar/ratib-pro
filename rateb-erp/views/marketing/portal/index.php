@@ -91,7 +91,7 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                             <?php if (!empty($subscription['ends_at'])) { ?>
                             <div class="rateb-portal-kv-row">
                                 <span class="rateb-portal-kv-label"><?php echo __('end_date'); ?></span>
-                                <span class="rateb-portal-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) $subscription['ends_at']); ?></span>
+                                <span class="rateb-portal-kv-value rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate((string) $subscription['ends_at']); ?></span>
                             </div>
                             <?php } ?>
                             <?php } ?>

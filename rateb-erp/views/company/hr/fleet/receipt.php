@@ -14,7 +14,7 @@ $receipt_date = (string) ($receipt_date ?? date('Y-m-d'));
     <?php if ($company_name !== '') { ?>
     <div class="fw-semibold"><?php echo Rateb\App\Core\View::escape($company_name); ?></div>
     <?php } ?>
-    <div class="text-muted small mt-1"><?php echo __('date'); ?>: <?php echo Rateb\App\Core\View::escape($receipt_date); ?></div>
+    <div class="text-muted small mt-1"><?php echo __('date'); ?>: <?php echo Rateb\App\Core\View::formatDate($receipt_date); ?></div>
 </div>
 <?php if ($employee === null) { ?>
 <p class="text-muted"><?php echo __('fleet_no_assigned_employee'); ?></p>
@@ -44,7 +44,7 @@ $receipt_date = (string) ($receipt_date ?? date('Y-m-d'));
             <tr><th><?php echo __('job_title'); ?></th><td><?php echo Rateb\App\Core\View::escape((string) ($employee['job_title'] ?? '—')); ?></td></tr>
             <tr><th><?php echo __('phone'); ?></th><td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($employee['phone'] ?? '—')); ?></td></tr>
             <tr><th><?php echo __('email'); ?></th><td><?php echo Rateb\App\Core\View::escape((string) ($employee['email'] ?? '—')); ?></td></tr>
-            <tr><th><?php echo __('hire_date'); ?></th><td><?php echo Rateb\App\Core\View::escape((string) ($employee['hire_date'] ?? '—')); ?></td></tr>
+            <tr><th><?php echo __('hire_date'); ?></th><td><?php echo Rateb\App\Core\View::formatDate((string) ($employee['hire_date'] ?? '—')); ?></td></tr>
             </tbody>
         </table>
     </div>

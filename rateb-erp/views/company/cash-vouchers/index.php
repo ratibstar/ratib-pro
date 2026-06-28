@@ -44,7 +44,7 @@ $oversightOnly = !empty($oversightOnly);
                 <tr>
                     <td class="fw-semibold"><?php echo Rateb\App\Core\View::escape($row['voucher_no']); ?></td>
                     <td><?php echo __((string) ($row['voucher_type'] ?? '')); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['voucher_date']); ?></td>
+                    <td><?php echo Rateb\App\Core\View::formatDate($row['voucher_date']); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['party_name'] ?? '—'); ?></td>
                     <td class="text-end"><?php echo number_format((float) ($row['amount'] ?? 0), 2); ?></td>
                     <td><?php echo __($displayStatus); ?></td>

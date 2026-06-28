@@ -184,7 +184,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
                         } elseif ($colType === 'bidi_text') {
                             Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
-                        } elseif (in_array($colType, ['money', 'number', 'id', 'status'], true)) {
+                        } elseif (in_array($colType, ['money', 'number', 'id', 'status', 'date', 'datetime', 'time', 'month', 'week'], true)) {
                             Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
                         } elseif ($colType === 'clip' || $colType === 'text' || $colType === '') {
                             Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);

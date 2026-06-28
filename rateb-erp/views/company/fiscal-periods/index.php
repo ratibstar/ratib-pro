@@ -28,8 +28,8 @@
                 ?>
             <tr>
                 <td><?php echo Rateb\App\Core\View::escape($row['name']); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape($row['start_date']); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape($row['end_date']); ?></td>
+                <td><?php echo Rateb\App\Core\View::formatDate($row['start_date']); ?></td>
+                <td><?php echo Rateb\App\Core\View::formatDate($row['end_date']); ?></td>
                 <td><span class="badge bg-<?php echo $st === 'open' ? 'success' : 'secondary'; ?>"><?php echo __($st); ?></span></td>
                 <td class="text-nowrap">
                     <a href="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>

@@ -25,7 +25,7 @@
                             <?php } ?>
                         </div>
                         <p class="mb-1 small opacity-90"><?php echo Rateb\App\Core\View::escape((string) ($item['message'] ?? '')); ?></p>
-                        <span class="small text-muted rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($item['created_at'] ?? '')); ?></span>
+                        <span class="small text-muted rateb-ltr-num"><?php echo Rateb\App\Core\View::formatDate((string) ($item['created_at'] ?? '')); ?></span>
                     </div>
                     <?php } ?>
                 </div>

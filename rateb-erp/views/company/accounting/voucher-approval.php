@@ -142,7 +142,7 @@ $listUrl = (string) ($listUrl ?? rateb_app_url('accounting/voucher-approval'));
                     <tr>
                         <td class="fw-semibold"><?php echo Rateb\App\Core\View::escape($row['voucher_no']); ?></td>
                         <td><?php echo __((string) ($row['voucher_type'] ?? '')); ?></td>
-                        <td><?php echo Rateb\App\Core\View::escape($row['voucher_date']); ?></td>
+                        <td><?php echo Rateb\App\Core\View::formatDate($row['voucher_date']); ?></td>
                         <td><span class="badge bg-<?php echo $badgeClass; ?>"><?php echo __($displayStatus); ?></span></td>
                         <td class="small text-muted"><?php echo $rejectReason !== '' ? Rateb\App\Core\View::escape($rejectReason) : '—'; ?></td>
                         <td class="text-end"><?php echo number_format((float) ($row['amount'] ?? 0), 2); ?></td>

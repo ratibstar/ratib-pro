@@ -62,4 +62,18 @@ final class View
     {
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }
+
+    /** @param mixed $value */
+    public static function formatDate($value, string $kind = 'auto'): string
+    {
+        $raw = (string) $value;
+        if ($raw === '—') {
+            return self::escape('—');
+        }
+        if (function_exists('rateb_format_date_value')) {
+            return self::escape(rateb_format_date_value($raw, $kind));
+        }
+
+        return self::escape($raw);
+    }
 }
