@@ -1,1 +1,1 @@
-rateb-dashboard-skin=v3
+rateb-dashboard-skin=v4

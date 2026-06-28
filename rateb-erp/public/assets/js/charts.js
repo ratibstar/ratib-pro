@@ -201,16 +201,14 @@
     }
 
     function isDeferred(el) {
-        var pane = el.closest('.rp-chart-pane');
-        if (pane && !pane.classList.contains('is-active')) {
-            return true;
+        var selectors = ['.nx-tab-pane', '.rp-chart-pane', '.rdx-chart-pane', '.rateb-dash-chart-pane'];
+        for (var i = 0; i < selectors.length; i++) {
+            var pane = el.closest(selectors[i]);
+            if (pane && !pane.classList.contains('is-active')) {
+                return true;
+            }
         }
-        pane = el.closest('.rdx-chart-pane');
-        if (pane && !pane.classList.contains('is-active')) {
-            return true;
-        }
-        pane = el.closest('.rateb-dash-chart-pane');
-        return pane && !pane.classList.contains('is-active');
+        return false;
     }
 
     function deferInit(el, fn) {

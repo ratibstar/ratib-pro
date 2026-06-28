@@ -58,19 +58,21 @@ if (!empty($expiringContracts)) {
 
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
-<div class="rp">
+<div class="nx" data-nx-dash="v4">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
+        'eyebrow' => __('approval_category_operations'),
         'title' => __('dashboard'),
         'subtitle' => __('company_dashboard_intro'),
         'actions' => $actions,
         'metrics' => $metrics,
+        'metricsCols' => '4',
         'metaChips' => $metaChips,
     ]);
     ?>
 
     <?php if ($alerts !== []) { ?>
-    <div class="rp-body rp-body--full">
+    <div class="nx-stage nx-stage--solo">
         <?php Rateb\App\Core\View::partial('dashboard/alerts', [
             'alerts' => $alerts,
             'empty' => __('dashboard_no_alerts'),

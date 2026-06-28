@@ -99,9 +99,10 @@ Rateb\App\Core\View::partial('dashboard/head');
 <div class="alert alert-warning mb-3 py-2 small"><?php echo __('accounting_select_company_hint'); ?></div>
 <?php } ?>
 
-<div class="rp">
+<div class="nx" data-nx-dash="v4">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
+        'eyebrow' => __('accounting'),
         'title' => __('accounting_dashboard'),
         'subtitle' => __('accounting_dashboard_intro'),
         'actions' => $actions,
@@ -109,12 +110,14 @@ Rateb\App\Core\View::partial('dashboard/head');
     ]);
     ?>
 
-    <div class="rp-body">
-        <div class="rp-main">
-            <div class="rp-bento">
-                <div class="rp-tile rp-tile--8">
-                    <div class="rp-tile__head"><?php echo __('revenue_vs_expenses'); ?></div>
-                    <div class="rp-chart-well">
+    <div class="nx-stage">
+        <div class="nx-col">
+            <div class="nx-mosaic">
+                <div class="nx-glass">
+                    <div class="nx-glass__top">
+                        <span class="nx-glass__title"><?php echo __('revenue_vs_expenses'); ?></span>
+                    </div>
+                    <div class="nx-viz">
                         <canvas id="chart-revenue-expenses"
                             data-labels='<?php echo Rateb\App\Core\View::escape($revExpLabels); ?>'
                             data-revenue='<?php echo Rateb\App\Core\View::escape($revExpRevenue); ?>'
@@ -123,17 +126,21 @@ Rateb\App\Core\View::partial('dashboard/head');
                             data-label-expenses="<?php echo Rateb\App\Core\View::escape(__('total_expenses')); ?>"></canvas>
                     </div>
                 </div>
-                <div class="rp-tile rp-tile--4">
-                    <div class="rp-tile__head"><?php echo __('expense_breakdown'); ?></div>
+                <div class="nx-glass">
+                    <div class="nx-glass__top">
+                        <span class="nx-glass__title"><?php echo __('expense_breakdown'); ?></span>
+                    </div>
                     <?php if ($breakdown === []) { ?>
-                    <p class="rp-empty"><?php echo __('no_records'); ?></p>
+                    <p class="nx-zero"><?php echo __('no_records'); ?></p>
                     <?php } else { ?>
-                    <div class="rp-chart-well">
+                    <div class="nx-viz">
                         <canvas id="chart-expense-breakdown" data-labels='<?php echo Rateb\App\Core\View::escape($bdLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($bdValues); ?>'></canvas>
                     </div>
                     <?php } ?>
                 </div>
+            </div>
 
+            <div class="nx-duo">
                 <?php
                 Rateb\App\Core\View::partial('dashboard/ranks', [
                     'title' => __('top_customers'),
@@ -149,15 +156,17 @@ Rateb\App\Core\View::partial('dashboard/head');
             </div>
 
             <?php if ($recent !== []) { ?>
-            <div class="rp-tile rp-tile--12">
-                <div class="rp-tile__head"><?php echo __('recent_accounting_activity'); ?></div>
-                <div class="rp-tile__body">
-                    <ul class="rp-stream">
+            <div class="nx-glass">
+                <div class="nx-glass__top">
+                    <span class="nx-glass__title"><?php echo __('recent_accounting_activity'); ?></span>
+                </div>
+                <div class="nx-glass__body">
+                    <ul class="nx-stream">
                         <?php foreach ($recent as $row) {
                             $desc = rateb_locale() === 'ar' && !empty($row['description_ar']) ? $row['description_ar'] : ($row['description'] ?? '');
                             ?>
                         <li>
-                            <span class="rp-stream__dot"></span>
+                            <span class="nx-stream__pip"></span>
                             <div>
                                 <strong><?php echo Rateb\App\Core\View::escape((string) ($row['entry_no'] ?? '')); ?></strong>
                                 — <?php echo Rateb\App\Core\View::escape((string) $desc); ?>
@@ -170,15 +179,15 @@ Rateb\App\Core\View::partial('dashboard/head');
             </div>
             <?php } ?>
 
-            <div class="rp-tile rp-tile--12">
-                <div class="rp-tile__head">
-                    <span><?php echo __('trial_balance'); ?></span>
+            <div class="nx-glass">
+                <div class="nx-glass__top">
+                    <span class="nx-glass__title"><?php echo __('trial_balance'); ?></span>
                     <?php if (!$isAdmin && rateb_can_export_entity('accounting')) { ?>
                     <a href="<?php echo rateb_app_url('accounting/export/trial-balance'); ?>"><?php echo __('export_trial_balance'); ?></a>
                     <?php } ?>
                 </div>
-                <div class="rp-tile__body rp-tile__body--flush">
-                    <table class="rp-table">
+                <div class="nx-glass__body nx-glass__body--0">
+                    <table class="nx-table">
                         <thead><tr><th><?php echo __('code'); ?></th><th><?php echo __('name'); ?></th><th class="text-end"><?php echo __('debit'); ?></th><th class="text-end"><?php echo __('credit'); ?></th></tr></thead>
                         <tbody>
                         <?php
@@ -204,11 +213,11 @@ Rateb\App\Core\View::partial('dashboard/head');
                         </tbody>
                     </table>
                 </div>
-                <p class="rp-note"><?php echo $isAdmin ? __('accounting_sync_help') : __('accounting_auto_post_help'); ?></p>
+                <p class="nx-foot"><?php echo $isAdmin ? __('accounting_sync_help') : __('accounting_auto_post_help'); ?></p>
             </div>
         </div>
 
-        <aside class="rp-rail">
+        <aside class="nx-rail">
             <?php Rateb\App\Core\View::partial('dashboard/alerts', [
                 'alerts' => $alerts,
                 'empty' => __('accounting_no_alerts'),
