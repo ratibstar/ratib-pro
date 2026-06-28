@@ -7,9 +7,9 @@ $bulkAny = $bulkManage || $bulkApprove;
 $statusFilter = (string) ($statusFilter ?? 'all');
 $dateFrom = (string) ($dateFrom ?? '');
 $dateTo = (string) ($dateTo ?? '');
-$perPage = (int) ($perPage ?? 10);
+$perPage = (int) ($limit ?? rateb_list_per_page());
 $stats = $stats ?? ['total' => 0, 'pending' => 0, 'approved' => 0];
-$listUrl = rateb_app_url('accounting/voucher-approval');
+$listUrl = (string) ($listUrl ?? rateb_app_url('accounting/voucher-approval'));
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 
@@ -68,14 +68,6 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                     <label class="form-label small mb-1"><?php echo __('date_to'); ?></label>
                     <input type="date" name="to" class="form-control form-control-sm" value="<?php echo Rateb\App\Core\View::escape($dateTo); ?>">
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label small mb-1"><?php echo __('show'); ?></label>
-                    <select name="show" class="form-select form-select-sm">
-                        <?php foreach ([10, 25, 50, 100] as $n) { ?>
-                        <option value="<?php echo $n; ?>"<?php echo $perPage === $n ? ' selected' : ''; ?>><?php echo $n; ?></option>
-                        <?php } ?>
-                    </select>
-                </div>
                 <div class="col-md-4 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> <?php echo __('filter'); ?></button>
                     <a href="<?php echo $listUrl . (!empty($_GET['company_id']) ? '?company_id=' . (int) $_GET['company_id'] : ''); ?>" class="btn btn-outline-secondary btn-sm"><?php echo __('clear'); ?></a>
@@ -118,15 +110,19 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                         <th><?php echo __('status'); ?></th>
                         <th><?php echo __('reject_reason'); ?></th>
                         <th class="text-end"><?php echo __('amount'); ?></th>
-                        <?php if ($bulkAny) { ?>
-                        <th class="rateb-bulk-th text-center"><input type="checkbox" class="form-check-input" data-rateb-select-all></th>
-                        <?php } ?>
-                        <th class="text-end rateb-accounting-actions-col"><?php echo __('actions'); ?></th>
+                        <th class="text-end rateb-th-actions rateb-accounting-actions-col">
+                            <span class="rateb-actions-head">
+                                <?php if ($bulkAny && !empty($items)) { ?>
+                                <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                                <?php } ?>
+                                <span><?php echo __('actions'); ?></span>
+                            </span>
+                        </th>
                     </tr>
                     </thead>
                     <tbody>
                     <?php if (empty($items)) { ?>
-                    <tr><td colspan="<?php echo $bulkAny ? 8 : 7; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
                     <?php } else { foreach ($items as $row) {
                         $st = (string) ($row['status'] ?? '');
                         $isPending = $st === 'draft';
@@ -150,14 +146,11 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                         <td><span class="badge bg-<?php echo $badgeClass; ?>"><?php echo __($displayStatus); ?></span></td>
                         <td class="small text-muted"><?php echo $rejectReason !== '' ? Rateb\App\Core\View::escape($rejectReason) : '—'; ?></td>
                         <td class="text-end"><?php echo number_format((float) ($row['amount'] ?? 0), 2); ?></td>
-                        <?php if ($bulkAny) { ?>
-                        <td class="rateb-bulk-td text-center">
-                            <?php if ($canSelect) { ?>
-                            <input type="checkbox" class="form-check-input" data-rateb-row-check value="<?php echo (int) $row['id']; ?>">
-                            <?php } ?>
-                        </td>
-                        <?php } ?>
                         <td class="text-end text-nowrap rateb-approval-actions rateb-accounting-actions-col rateb-actions-cell">
+                            <div class="rateb-actions justify-content-end">
+                            <?php if ($bulkAny && $canSelect) { ?>
+                            <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check>
+                            <?php } ?>
                             <?php Rateb\App\Core\View::partial('accounting-row-actions', [
                                 'csrf' => $csrf,
                                 'id' => $id,
@@ -189,6 +182,7 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                                 <button type="submit" class="btn btn-sm btn-warning"><i class="fas fa-undo"></i> <?php echo __('undo'); ?></button>
                             </form>
                             <?php } ?>
+                            </div>
                         </td>
                     </tr>
                     <?php } } ?>
@@ -196,5 +190,11 @@ $listUrl = rateb_app_url('accounting/voucher-approval');
                 </table>
             </div>
         </div>
+        <?php Rateb\App\Core\View::partial('pagination', [
+            'page' => $page ?? 1,
+            'total' => $total ?? 0,
+            'limit' => $limit ?? rateb_list_per_page(),
+            'baseUrl' => $listUrl,
+        ]); ?>
     </div>
 </div>

@@ -1526,7 +1526,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             rateb_bootstrap_ops_tenant();
         }
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $search = trim((string) $this->input('q', ''));
         $filters = [

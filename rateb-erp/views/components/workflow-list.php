@@ -27,8 +27,10 @@ foreach ($columns as $c) {
     }
 }
 $showActionsColumn = ($viewActionsEnabled || $actionsEnabled) && $routePrefix !== '' && !$hasActionLink;
-$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsColumn ? 1 : 0);
+$showActionsColumn = $showActionsColumn || ($bulkEnabled && $routePrefix !== '');
+$colspan = count($columns) + ($showActionsColumn ? 1 : 0);
 ?>
+<div class="rateb-card border-0 shadow-none">
 <?php if ($bulkEnabled && $routePrefix !== '') { ?>
 <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>
     <span class="rateb-bulk-count" data-rateb-bulk-count data-label="<?php echo Rateb\App\Core\View::escape(__('bulk_selected')); ?>">0</span>
@@ -43,16 +45,18 @@ $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsColumn ? 1 : 
     <table class="table table-hover rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
         <thead>
             <tr>
-                <?php if ($bulkEnabled) { ?>
-                <th class="rateb-bulk-th">
-                    <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo __('select_all'); ?>">
-                </th>
-                <?php } ?>
                 <?php foreach ($columns as $col) { ?>
                 <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                 <?php } ?>
                 <?php if ($showActionsColumn) { ?>
-                <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
+                <th class="rateb-th-actions">
+                    <span class="rateb-actions-head">
+                        <?php if ($bulkEnabled) { ?>
+                        <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                        <?php } ?>
+                        <span><?php echo __('actions'); ?></span>
+                    </span>
+                </th>
                 <?php } ?>
             </tr>
         </thead>
@@ -62,11 +66,6 @@ $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsColumn ? 1 : 
             <?php } else {
                 foreach ($items as $row) { ?>
             <tr>
-                <?php if ($bulkEnabled) { ?>
-                <td class="rateb-bulk-td">
-                    <input type="checkbox" class="form-check-input" name="ids[]" value="<?php echo (int) ($row['id'] ?? 0); ?>" data-rateb-row-check>
-                </td>
-                <?php } ?>
                 <?php foreach ($columns as $col) {
                     $type = (string) ($col['type'] ?? '');
                     if ($type === 'action_link') {
@@ -93,6 +92,9 @@ $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsColumn ? 1 : 
                 <?php if ($showActionsColumn) { ?>
                 <td class="rateb-actions-cell text-nowrap">
                     <div class="rateb-actions">
+                    <?php if ($bulkEnabled) { ?>
+                    <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" name="ids[]" value="<?php echo (int) ($row['id'] ?? 0); ?>" data-rateb-row-check>
+                    <?php } ?>
                     <?php
                     $rowId = (int) ($row['id'] ?? 0);
                     $rowApproval = (string) ($row['manager_approval'] ?? '');
@@ -134,4 +136,5 @@ $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsColumn ? 1 : 
             } ?>
         </tbody>
     </table>
+</div>
 </div>

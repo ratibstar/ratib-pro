@@ -248,7 +248,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
         rateb_bootstrap_ops_tenant();
         $companyId = (int) (TenantContext::companyId() ?? rateb_resolve_ops_company_id());
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $search = trim((string) $this->input('q', ''));
         $svc = new \Rateb\App\Services\ProductCategoryService();

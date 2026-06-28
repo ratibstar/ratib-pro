@@ -1,6 +1,7 @@
 <?php
 $bulkEnabled = $bulkEnabled ?? false;
 $actionsEnabled = $actionsEnabled ?? false;
+$showActionsCol = true;
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -16,9 +17,9 @@ $actionsEnabled = $actionsEnabled ?? false;
     <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>
         <span class="rateb-bulk-count" data-rateb-bulk-count data-label="<?php echo Rateb\App\Core\View::escape(__('bulk_selected')); ?>">0</span>
         <form method="post" action="<?php echo rateb_app_url('bank-accounts/bulk-delete'); ?>" class="d-inline" data-rateb-bulk-form="delete"
-              data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_deactivate')); ?>">
+              data-rateb-bulk-confirm="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_deactivate')); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-            <button type="submit" class="btn btn-warning btn-sm"><i class="fas fa-ban"></i> <?php echo __('bulk_deactivate'); ?></button>
+            <button type="button" class="btn btn-warning btn-sm" data-rateb-bulk-delete-btn><i class="fas fa-ban"></i> <?php echo __('bulk_deactivate'); ?></button>
         </form>
     </div>
     <?php } ?>
@@ -27,27 +28,28 @@ $actionsEnabled = $actionsEnabled ?? false;
         <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
             <thead>
             <tr>
-                <?php if ($bulkEnabled) { ?>
-                <th class="rateb-bulk-th"><input type="checkbox" class="form-check-input" data-rateb-select-all></th>
-                <?php } ?>
                 <th><?php echo __('name'); ?></th>
                 <th><?php echo __('bank_name'); ?></th>
                 <th><?php echo __('account_number'); ?></th>
                 <th><?php echo __('code'); ?></th>
                 <th class="text-end"><?php echo __('book_balance'); ?></th>
-                <th class="text-end"><?php echo __('actions'); ?></th>
+                <?php if ($showActionsCol) { ?>
+                <th class="rateb-th-actions text-end">
+                    <span class="rateb-actions-head">
+                        <?php if ($bulkEnabled && !empty($items)) { ?>
+                        <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                        <?php } ?>
+                        <span><?php echo __('actions'); ?></span>
+                    </span>
+                </th>
+                <?php } ?>
             </tr>
             </thead>
             <tbody>
             <?php if (empty($items)) { ?>
-            <tr><td colspan="<?php echo ($bulkEnabled ? 1 : 0) + 6; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
+            <tr><td colspan="<?php echo 5 + ($showActionsCol ? 1 : 0); ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
             <?php } else { foreach ($items as $row) { ?>
             <tr>
-                <?php if ($bulkEnabled) { ?>
-                <td class="rateb-bulk-td">
-                    <input type="checkbox" class="form-check-input" data-rateb-row-check value="<?php echo (int) $row['id']; ?>">
-                </td>
-                <?php } ?>
                 <td>
                     <?php echo Rateb\App\Core\View::escape($row['name']); ?>
                     <?php if (!empty($row['is_default'])) { ?>
@@ -58,7 +60,12 @@ $actionsEnabled = $actionsEnabled ?? false;
                 <td><?php echo Rateb\App\Core\View::escape((string) ($row['account_number'] ?? '')); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($row['account_code'] ?? ''); ?></td>
                 <td class="text-end"><?php echo number_format((float) ($row['book_balance'] ?? 0), 2); ?></td>
-                <td class="text-nowrap text-end">
+                <?php if ($showActionsCol) { ?>
+                <td class="rateb-actions-cell text-nowrap text-end">
+                    <div class="rateb-actions justify-content-end">
+                    <?php if ($bulkEnabled) { ?>
+                    <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check>
+                    <?php } ?>
                     <a href="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                     <?php if ($actionsEnabled) { ?>
                     <a href="<?php echo rateb_app_url('bank-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
@@ -68,7 +75,9 @@ $actionsEnabled = $actionsEnabled ?? false;
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-ban"></i></button>
                     </form>
                     <?php } ?>
+                    </div>
                 </td>
+                <?php } ?>
             </tr>
             <?php } } ?>
             </tbody>

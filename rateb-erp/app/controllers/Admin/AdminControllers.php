@@ -301,7 +301,7 @@ final class SubscriptionsController extends \Rateb\App\Controllers\CrudControlle
     {
         $this->billing->ensureBillingReady();
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $this->view($this->viewPrefix . '/index', [
             'title' => __('subscriptions'),
@@ -543,7 +543,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
     public function index(): void
     {
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $authz = new \Rateb\App\Services\AuthorizationService();
         $items = $this->model->all($limit, $offset);
@@ -749,7 +749,7 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
     public function index(): void
     {
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $authz = new \Rateb\App\Services\AuthorizationService();
         $items = $this->model->all($limit, $offset);
@@ -945,7 +945,7 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
     public function index(): void
     {
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $items = $this->model->all($limit, $offset);
 
@@ -1007,7 +1007,7 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
     {
         $this->billing->ensureBillingReady();
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $this->view($this->viewPrefix . '/index', [
             'title' => __('payments'),
@@ -1215,7 +1215,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
     {
         $this->billing->ensureBillingReady();
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $items = $this->model->withRelations($limit, $offset);
         $dueAlerts = $this->buildDueAlerts($items);

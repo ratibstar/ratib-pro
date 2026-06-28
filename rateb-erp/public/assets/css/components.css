@@ -387,6 +387,22 @@
     margin-bottom: 1rem;
 }
 
+.rateb-actions-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.rateb-actions .rateb-actions-select {
+    flex-shrink: 0;
+    margin-inline-end: 0.15rem;
+}
+
+.rateb-pagination-bar {
+    border-top: 1px solid var(--rateb-border);
+    background: var(--rateb-bg);
+}
+
 .rateb-bulk-bar {
     display: flex;
     flex-wrap: wrap;

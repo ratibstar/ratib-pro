@@ -42,9 +42,6 @@ $canPost = $canPost ?? false;
         <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
             <thead>
             <tr>
-                <?php if ($bulkEnabled) { ?>
-                <th class="rateb-bulk-th"><input type="checkbox" class="form-check-input" data-rateb-select-all></th>
-                <?php } ?>
                 <th><?php echo __('payment_no'); ?></th>
                 <th><?php echo __('actual_payment_date'); ?></th>
                 <th><?php echo __('due_date'); ?></th>
@@ -55,12 +52,19 @@ $canPost = $canPost ?? false;
                 <th><?php echo __('reference_bank_or_check'); ?></th>
                 <th class="text-end"><?php echo __('amount'); ?></th>
                 <th><?php echo __('status'); ?></th>
-                <th></th>
+                <th class="rateb-th-actions text-nowrap">
+                    <span class="rateb-actions-head">
+                        <?php if ($bulkEnabled && !empty($items)) { ?>
+                        <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                        <?php } ?>
+                        <span><?php echo __('actions'); ?></span>
+                    </span>
+                </th>
             </tr>
             </thead>
             <tbody>
             <?php if (empty($items)) { ?>
-            <tr><td colspan="<?php echo $bulkEnabled ? 12 : 11; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
+            <tr><td colspan="11" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
             <?php } else { foreach ($items as $row) {
                 $st = (string) ($row['status'] ?? '');
                 $method = (string) ($row['payment_method'] ?? '');
@@ -74,13 +78,6 @@ $canPost = $canPost ?? false;
                 $doc = $paymentId > 0 ? (new \Rateb\App\Services\DocumentService())->latestForEntity((int) ($row['company_id'] ?? 0), 'supplier_payment', $paymentId) : null;
                 ?>
             <tr>
-                <?php if ($bulkEnabled) { ?>
-                <td class="rateb-bulk-td">
-                    <?php if ($st === 'posted') { ?>
-                    <input type="checkbox" class="form-check-input" data-rateb-row-check value="<?php echo (int) $row['id']; ?>">
-                    <?php } ?>
-                </td>
-                <?php } ?>
                 <td><?php echo Rateb\App\Core\View::escape($row['payment_no'] ?? ''); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($row['payment_date'] ?? ''); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($row['due_date'] ?? '—'); ?></td>
@@ -99,7 +96,11 @@ $canPost = $canPost ?? false;
                 <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape($row['reference_no'] ?? '—'); ?></td>
                 <td class="text-end rateb-ltr-num"><?php echo number_format((float) ($row['amount'] ?? 0), 2); ?></td>
                 <td><span class="badge bg-<?php echo $st === 'posted' ? 'success' : 'secondary'; ?>"><?php echo __($st); ?></span></td>
-                <td class="text-nowrap">
+                <td class="rateb-actions-cell text-nowrap">
+                    <div class="rateb-actions">
+                    <?php if ($bulkEnabled && $st === 'posted') { ?>
+                    <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check>
+                    <?php } ?>
                     <?php if ($doc) {
                         $docId = (int) ($doc['id'] ?? 0);
                         $mime = (string) ($doc['mime_type'] ?? '');
@@ -119,6 +120,7 @@ $canPost = $canPost ?? false;
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('void'); ?>"><i class="fas fa-ban"></i></button>
                     </form>
                     <?php } ?>
+                    </div>
                 </td>
             </tr>
             <?php } } ?>

@@ -14,7 +14,6 @@ $employeeReceiptEnabled = $employeeReceiptEnabled ?? false;
 $statusToggleEnabled = $statusToggleEnabled ?? false;
 $customsInvoiceActions = !empty($customsInvoiceActions);
 $actionsRoutePrefix = $actionsRoutePrefix ?? ($routePrefix ?? '');
-$showActionsCol = $viewEnabled || ($actionsEnabled ?? true);
 if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $canManage = rateb_can_manage_entity((string) $permissionResource);
     $createEnabled = $createEnabled && $canManage;
@@ -23,6 +22,7 @@ if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $exportEnabled = $exportEnabled && rateb_can_export_entity((string) $permissionResource);
 }
 $columns = $fields ?? [];
+$showActionsCol = $viewEnabled || ($actionsEnabled ?? true) || $bulkEnabled;
 if (empty($columns) && !empty($items)) {
     $columns = [];
     foreach (array_keys($items[0]) as $key) {
@@ -32,7 +32,7 @@ if (empty($columns) && !empty($items)) {
         $columns[] = ['name' => $key, 'label' => $key];
     }
 }
-$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($showActionsCol ? 1 : 0);
+$colspan = count($columns) + ($showActionsCol ? 1 : 0);
 $documentEntityType = (string) ($documentEntityType ?? '');
 $fkLabelMaps = [];
 if ($columns !== []) {
@@ -95,16 +95,18 @@ $ratebRowRecordLabel = static function (array $row): string {
             <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>
                 <tr>
-                    <?php if ($bulkEnabled) { ?>
-                    <th class="rateb-bulk-th">
-                        <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo __('select_all'); ?>">
-                    </th>
-                    <?php } ?>
                     <?php foreach ($columns as $col) { ?>
                     <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                     <?php } ?>
-                    <?php if ($actionsEnabled) { ?>
-                    <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
+                    <?php if ($showActionsCol) { ?>
+                    <th class="rateb-th-actions">
+                        <span class="rateb-actions-head">
+                            <?php if ($bulkEnabled && !empty($items)) { ?>
+                            <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                            <?php } ?>
+                            <span><?php echo __('actions'); ?></span>
+                        </span>
+                    </th>
                     <?php } ?>
                 </tr>
                 </thead>
@@ -113,11 +115,6 @@ $ratebRowRecordLabel = static function (array $row): string {
                 <tr><td colspan="<?php echo $colspan; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
                 <?php } else { foreach ($items as $row) { ?>
                 <tr>
-                    <?php if ($bulkEnabled) { ?>
-                    <td class="rateb-bulk-td">
-                        <input type="checkbox" class="form-check-input rateb-row-check" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check>
-                    </td>
-                    <?php } ?>
                     <?php foreach ($columns as $col) {
                         $val = $row[$col['name']] ?? '';
                         $colType = (string) ($col['type'] ?? '');
@@ -195,6 +192,9 @@ $ratebRowRecordLabel = static function (array $row): string {
                     <?php if ($showActionsCol) { ?>
                     <td class="rateb-actions-cell text-nowrap">
                         <div class="rateb-actions">
+                        <?php if ($bulkEnabled) { ?>
+                        <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check title="<?php echo Rateb\App\Core\View::escape(__('select')); ?>">
+                        <?php } ?>
                         <?php if ($customsInvoiceActions) { ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
                         <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($row['purchase_order_id'] ?? 0)); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('purchase_orders'); ?>"><i class="fas fa-eye"></i></a>
@@ -265,7 +265,7 @@ $ratebRowRecordLabel = static function (array $row): string {
         </div>
     </div>
 </div>
-<?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? 20, 'routePrefix' => $routePrefix ?? '']); ?>
+<?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? rateb_list_per_page(), 'routePrefix' => $routePrefix ?? '']); ?>
 <?php
 $ratebHasImageCol = false;
 foreach ($columns as $col) {

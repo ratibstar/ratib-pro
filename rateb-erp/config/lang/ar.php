@@ -783,6 +783,8 @@ return [
     'bulk_suspend' => 'تعليق المحدد',
     'bulk_activate' => 'تفعيل المحدد',
     'bulk_selected' => 'محدد',
+    'per_page' => 'عدد الصفوف',
+    'pagination_showing' => 'عرض :from–:to من :total',
     'bulk_none_selected' => 'لم يتم تحديد أي سجل.',
     'bulk_confirm_delete' => 'حذف السجلات المحددة؟',
     'bulk_deleted' => 'تم حذف :count سجل.',

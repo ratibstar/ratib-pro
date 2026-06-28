@@ -374,7 +374,7 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
     {
         HrService::bootstrapTenant();
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $search = trim((string) $this->input('q', ''));
         $companyId = rateb_resolve_ops_company_id();
@@ -391,6 +391,8 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $this->resolveIndexFields(),
             'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
         ]), $this->layout());
     }
 
@@ -511,7 +513,7 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
     public function index(): void
     {
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $search = trim((string) $this->input('q', ''));
         $items = $this->model->all($limit, $offset, [], $search);

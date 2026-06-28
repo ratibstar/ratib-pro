@@ -502,7 +502,7 @@ final class HrEmployeeRequestsController extends \Rateb\App\Controllers\CrudCont
     {
         HrService::bootstrapTenant();
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $search = trim((string) $this->input('q', ''));
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
@@ -515,6 +515,8 @@ final class HrEmployeeRequestsController extends \Rateb\App\Controllers\CrudCont
             'routePrefix' => $this->routePrefix,
             'fields' => $this->resolveIndexFields(),
             'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
         ]), $this->layout());
     }
 

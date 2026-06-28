@@ -783,6 +783,8 @@ return [
     'bulk_suspend' => 'Suspend selected',
     'bulk_activate' => 'Activate selected',
     'bulk_selected' => 'selected',
+    'per_page' => 'Rows per page',
+    'pagination_showing' => 'Showing :from–:to of :total',
     'bulk_none_selected' => 'No records selected.',
     'bulk_confirm_delete' => 'Delete selected records?',
     'bulk_deleted' => ':count record(s) deleted.',

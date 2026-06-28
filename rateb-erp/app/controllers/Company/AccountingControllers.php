@@ -1043,35 +1043,44 @@ final class JournalEntriesController extends Controller
         $statusFilter = trim((string) ($_GET['status'] ?? 'all'));
         $dateFrom = trim((string) ($_GET['from'] ?? ''));
         $dateTo = trim((string) ($_GET['to'] ?? ''));
-        $perPage = max(10, min(100, (int) ($_GET['show'] ?? 10)));
+$perPage = rateb_list_per_page();
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $perPage;
 
-        $sql = 'SELECT * FROM rateb_journal_entries WHERE company_id = :cid AND source_type = :manual';
+        $where = 'company_id = :cid AND source_type = :manual';
         $params = ['cid' => $companyId, 'manual' => 'manual'];
         if ($statusFilter === 'pending') {
-            $sql .= ' AND status = :st';
+            $where .= ' AND status = :st';
             $params['st'] = 'draft';
         } elseif ($statusFilter === 'approved') {
-            $sql .= ' AND status = :st';
+            $where .= ' AND status = :st';
             $params['st'] = 'posted';
         } elseif ($statusFilter === 'rejected') {
-            $sql .= ' AND status = :st';
+            $where .= ' AND status = :st';
             $params['st'] = 'rejected';
         } elseif ($statusFilter === 'void') {
-            $sql .= ' AND status = :st';
+            $where .= ' AND status = :st';
             $params['st'] = 'void';
         }
         if ($dateFrom !== '') {
-            $sql .= ' AND entry_date >= :from';
+            $where .= ' AND entry_date >= :from';
             $params['from'] = $dateFrom;
         }
         if ($dateTo !== '') {
-            $sql .= ' AND entry_date <= :to';
+            $where .= ' AND entry_date <= :to';
             $params['to'] = $dateTo;
         }
-        $sql .= ' ORDER BY id DESC LIMIT ' . $perPage;
 
         $model = new JournalEntry();
-        $items = $companyId > 0 ? $model->query($sql . $branchFilter, array_merge($params, $branchParams)) : [];
+        $countRow = $companyId > 0 ? $model->queryOne(
+            'SELECT COUNT(*) AS cnt FROM rateb_journal_entries WHERE ' . $where . $branchFilter,
+            array_merge($params, $branchParams)
+        ) : null;
+        $total = (int) ($countRow['cnt'] ?? 0);
+        $items = $companyId > 0 ? $model->query(
+            'SELECT * FROM rateb_journal_entries WHERE ' . $where . $branchFilter . ' ORDER BY id DESC LIMIT ' . $perPage . ' OFFSET ' . $offset,
+            array_merge($params, $branchParams)
+        ) : [];
         $statsRow = $companyId > 0 ? $model->queryOne(
             'SELECT COUNT(*) AS total,
                     SUM(status = :draft) AS pending,
@@ -1092,7 +1101,10 @@ final class JournalEntriesController extends Controller
             'statusFilter' => $statusFilter,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
-            'perPage' => $perPage,
+            'page' => $page,
+            'total' => $total,
+            'limit' => $perPage,
+            'listUrl' => rateb_app_url('accounting/entry-approval'),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('journal-entries'),
             'canApprove' => rateb_can_approve_entity('journal-entries'),
@@ -1557,38 +1569,47 @@ final class CashVouchersController extends Controller
         $statusFilter = trim((string) ($_GET['status'] ?? 'all'));
         $dateFrom = trim((string) ($_GET['from'] ?? ''));
         $dateTo = trim((string) ($_GET['to'] ?? ''));
-        $perPage = max(10, min(100, (int) ($_GET['show'] ?? 10)));
+        $perPage = rateb_list_per_page();
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $perPage;
 
-        $sql = 'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar
-                FROM rateb_cash_vouchers v
-                JOIN rateb_chart_of_accounts a ON a.id = v.counter_account_id
-                WHERE v.company_id = :cid';
+        $where = 'v.company_id = :cid';
         $params = ['cid' => $companyId];
         if ($statusFilter === 'pending') {
-            $sql .= ' AND v.status = :st';
+            $where .= ' AND v.status = :st';
             $params['st'] = 'draft';
         } elseif ($statusFilter === 'approved') {
-            $sql .= ' AND v.status = :st';
+            $where .= ' AND v.status = :st';
             $params['st'] = 'posted';
         } elseif ($statusFilter === 'rejected') {
-            $sql .= ' AND v.status = :st';
+            $where .= ' AND v.status = :st';
             $params['st'] = 'rejected';
         } elseif ($statusFilter === 'void') {
-            $sql .= ' AND v.status = :st';
+            $where .= ' AND v.status = :st';
             $params['st'] = 'void';
         }
         if ($dateFrom !== '') {
-            $sql .= ' AND v.voucher_date >= :from';
+            $where .= ' AND v.voucher_date >= :from';
             $params['from'] = $dateFrom;
         }
         if ($dateTo !== '') {
-            $sql .= ' AND v.voucher_date <= :to';
+            $where .= ' AND v.voucher_date <= :to';
             $params['to'] = $dateTo;
         }
-        $sql .= ' ORDER BY v.id DESC LIMIT ' . $perPage;
 
         $model = new JournalEntry();
-        $items = $companyId > 0 ? $model->query($sql, $params) : [];
+        $countRow = $companyId > 0 ? $model->queryOne(
+            'SELECT COUNT(*) AS cnt FROM rateb_cash_vouchers v WHERE ' . $where,
+            $params
+        ) : null;
+        $total = (int) ($countRow['cnt'] ?? 0);
+        $items = $companyId > 0 ? $model->query(
+            'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar
+                FROM rateb_cash_vouchers v
+                JOIN rateb_chart_of_accounts a ON a.id = v.counter_account_id
+                WHERE ' . $where . ' ORDER BY v.id DESC LIMIT ' . $perPage . ' OFFSET ' . $offset,
+            $params
+        ) : [];
         $statsRow = $companyId > 0 ? $model->queryOne(
             'SELECT COUNT(*) AS total,
                     SUM(status = :draft) AS pending,
@@ -1608,7 +1629,10 @@ final class CashVouchersController extends Controller
             'statusFilter' => $statusFilter,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
-            'perPage' => $perPage,
+            'page' => $page,
+            'total' => $total,
+            'limit' => $perPage,
+            'listUrl' => rateb_app_url('accounting/voucher-approval'),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('cash-vouchers'),
             'canApprove' => rateb_can_approve_entity('cash-vouchers'),

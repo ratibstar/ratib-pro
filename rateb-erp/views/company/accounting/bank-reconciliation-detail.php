@@ -90,29 +90,30 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                 <table class="table rateb-table mb-0 table-sm" data-rateb-bulk-table="<?php echo ($bulkEnabled ?? false) ? '1' : '0'; ?>">
                     <thead>
                     <tr>
-                        <?php if ($bulkEnabled ?? false) { ?>
-                        <th class="rateb-bulk-th"><input type="checkbox" class="form-check-input" data-rateb-select-all></th>
-                        <?php } ?>
                         <th><?php echo __('evaluation_date'); ?></th>
                         <th><?php echo __('description'); ?></th>
                         <th class="text-end"><?php echo __('amount'); ?></th>
-                        <th></th>
+                        <th class="rateb-th-actions text-nowrap">
+                            <span class="rateb-actions-head">
+                                <?php if ($bulkEnabled ?? false) { ?>
+                                <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                                <?php } ?>
+                                <span><?php echo __('actions'); ?></span>
+                            </span>
+                        </th>
                     </tr>
                     </thead>
                     <tbody>
                     <?php foreach (($d['statement_lines'] ?? []) as $line) { ?>
                     <tr class="<?php echo !empty($line['is_reconciled']) ? 'table-success' : ''; ?>">
-                        <?php if ($bulkEnabled ?? false) { ?>
-                        <td class="rateb-bulk-td">
-                            <?php if (empty($line['is_reconciled'])) { ?>
-                            <input type="checkbox" class="form-check-input" data-rateb-row-check value="<?php echo (int) $line['id']; ?>">
-                            <?php } ?>
-                        </td>
-                        <?php } ?>
                         <td><?php echo Rateb\App\Core\View::escape($line['line_date']); ?></td>
                         <td><?php echo Rateb\App\Core\View::escape($line['description']); ?></td>
                         <td class="text-end"><?php echo number_format((float) ($line['amount'] ?? 0), 2); ?></td>
-                        <td class="text-nowrap">
+                        <td class="rateb-actions-cell text-nowrap">
+                            <div class="rateb-actions">
+                            <?php if (($bulkEnabled ?? false) && empty($line['is_reconciled'])) { ?>
+                            <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" data-rateb-row-check value="<?php echo (int) $line['id']; ?>">
+                            <?php } ?>
                             <?php if (($canManage ?? false) && empty($line['is_reconciled'])) { ?>
                             <form method="post" action="<?php echo rateb_app_url('accounting/bank-reconciliation/lines/' . (int) $line['id'] . '/reconcile'); ?>" class="d-inline-flex flex-wrap gap-1 align-items-center">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
@@ -139,6 +140,7 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                             </a>
                             <?php } ?>
                             <?php } ?>
+                            </div>
                         </td>
                     </tr>
                     <?php } ?>

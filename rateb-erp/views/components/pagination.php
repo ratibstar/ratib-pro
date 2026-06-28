@@ -1,18 +1,51 @@
 <?php
-$page = (int) ($page ?? 1);
-$total = (int) ($total ?? 0);
-$limit = (int) ($limit ?? 20);
-$pages = $limit > 0 ? (int) ceil($total / $limit) : 1;
-$routePrefix = $routePrefix ?? '';
+$page = max(1, (int) ($page ?? 1));
+$total = max(0, (int) ($total ?? 0));
+$limit = max(1, (int) ($limit ?? rateb_list_per_page()));
+$pages = $limit > 0 ? max(1, (int) ceil($total / $limit)) : 1;
+$routePrefix = (string) ($routePrefix ?? '');
+$baseUrl = (string) ($baseUrl ?? '');
+$pageUrl = static function (array $query) use ($routePrefix, $baseUrl): string {
+    if ($baseUrl !== '') {
+        return rateb_url_query($baseUrl, $query);
+    }
+    return rateb_list_url($routePrefix, $query);
+};
+$perPageOptions = function_exists('rateb_list_per_page_options') ? rateb_list_per_page_options() : [10, 20, 50, 100];
+$from = $total > 0 ? (($page - 1) * $limit) + 1 : 0;
+$to = $total > 0 ? min($total, $page * $limit) : 0;
+$queryBase = rateb_list_query_except(['page']);
 ?>
-<?php if ($pages > 1) { ?>
-<nav class="rateb-pagination" aria-label="Pagination">
-    <ul class="pagination pagination-sm mb-0">
-        <?php for ($i = 1; $i <= $pages; $i++) { ?>
-        <li class="page-item<?php echo $i === $page ? ' active' : ''; ?>">
-            <a class="page-link" href="<?php echo rateb_list_url($routePrefix, array_merge(rateb_list_query_except([]), ['page' => $i])); ?>"><?php echo $i; ?></a>
-        </li>
+<?php if ($total > 0 || $pages > 1) { ?>
+<div class="rateb-pagination-bar d-flex flex-wrap align-items-center justify-content-between gap-2 px-2 py-2">
+    <div class="rateb-pagination-meta text-muted small">
+        <?php if ($total > 0) { ?>
+        <?php echo __('pagination_showing', ['from' => $from, 'to' => $to, 'total' => $total]); ?>
         <?php } ?>
-    </ul>
-</nav>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="rateb-per-page d-flex align-items-center gap-1">
+            <span class="text-muted small"><?php echo __('per_page'); ?>:</span>
+            <?php foreach ($perPageOptions as $opt) {
+                $opt = (int) $opt;
+                $active = $opt === $limit;
+                $href = $pageUrl(array_merge($queryBase, ['per_page' => $opt, 'page' => 1]));
+                ?>
+            <a href="<?php echo Rateb\App\Core\View::escape($href); ?>"
+               class="btn btn-sm <?php echo $active ? 'btn-primary' : 'btn-outline-secondary'; ?>"><?php echo $opt; ?></a>
+            <?php } ?>
+        </div>
+        <?php if ($pages > 1) { ?>
+        <nav class="rateb-pagination" aria-label="Pagination">
+            <ul class="pagination pagination-sm mb-0">
+                <?php for ($i = 1; $i <= $pages; $i++) { ?>
+                <li class="page-item<?php echo $i === $page ? ' active' : ''; ?>">
+                    <a class="page-link" href="<?php echo $pageUrl(array_merge($queryBase, ['per_page' => $limit, 'page' => $i])); ?>"><?php echo $i; ?></a>
+                </li>
+                <?php } ?>
+            </ul>
+        </nav>
+        <?php } ?>
+    </div>
+</div>
 <?php } ?>

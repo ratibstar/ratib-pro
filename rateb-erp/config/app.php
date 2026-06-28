@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-bulk-delete-route-fix');
+define('RATEB_ASSET_BUILD', '20260628-table-bulk-perpage-v1');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -1018,12 +1018,30 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
 }
 
 /** Query params preserved across paginated list links (search, filters). */
+if (!function_exists('rateb_list_per_page_options')) {
+    /** @return list<int> */
+    function rateb_list_per_page_options(): array
+    {
+        return [10, 20, 50, 100];
+    }
+}
+
+if (!function_exists('rateb_list_per_page')) {
+    function rateb_list_per_page(): int
+    {
+        $default = 10;
+        $allowed = rateb_list_per_page_options();
+        $raw = isset($_GET['per_page']) ? (int) $_GET['per_page'] : $default;
+        return in_array($raw, $allowed, true) ? $raw : $default;
+    }
+}
+
 if (!function_exists('rateb_list_query_except')) {
     /** @return array<string, string> */
     function rateb_list_query_except(array $except = []): array
     {
         $except = array_merge($except, ['page']);
-        $keep = ['q', 'company_id', 'status', 'date_from', 'date_to', 'from', 'to'];
+        $keep = ['q', 'company_id', 'status', 'date_from', 'date_to', 'from', 'to', 'per_page'];
         $out = [];
         foreach ($keep as $key) {
             if (in_array($key, $except, true)) {

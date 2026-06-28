@@ -418,7 +418,7 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
     public function index(): void
     {
         $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
+        $limit = rateb_list_per_page();
         $this->view($this->viewPrefix . '/index', array_merge($this->applyPermissionFlags([
             'title' => __('cms_newsletter'),
             'items' => $this->model->all($limit, ($page - 1) * $limit),

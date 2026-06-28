@@ -41,13 +41,6 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
         ?>
         <tr class="<?php echo $isGroup ? 'rateb-coa-group' : ''; ?><?php echo $isHeader ? ' rateb-coa-header' : ''; ?><?php echo $parentNodeId !== null ? ' rateb-coa-child' : ''; ?>"
             data-depth="<?php echo $depth; ?>"<?php echo $childAttr; ?><?php echo $isGroup && $fullTreeMode ? ' data-coa-node="' . $nodeId . '"' : ''; ?>>
-            <?php if ($bulkEnabled) { ?>
-            <td class="rateb-bulk-td">
-                <?php if (!$isGroup) { ?>
-                <input type="checkbox" class="form-check-input" data-rateb-row-check value="<?php echo $nodeId; ?>">
-                <?php } ?>
-            </td>
-            <?php } ?>
             <td class="rateb-coa-name" style="padding-inline-start: <?php echo (12 + $depth * 24); ?>px">
                 <?php if ($fullTreeMode && $isGroup) { ?>
                 <button type="button" class="btn btn-link btn-sm p-0 me-1 text-warning rateb-coa-toggle" data-coa-toggle="<?php echo $nodeId; ?>" aria-expanded="true">
@@ -65,8 +58,13 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
             <td class="text-end"><?php echo number_format((float) ($node['total_debit'] ?? 0), 2); ?></td>
             <td class="text-end"><?php echo number_format((float) ($node['total_credit'] ?? 0), 2); ?></td>
             <td class="text-end fw-semibold"><?php echo number_format($balance, 2); ?></td>
-            <?php if ($actionsEnabled && !$fullTreeMode) { ?>
-            <td class="text-end text-nowrap">
+            <?php if ($actionsEnabled || $bulkEnabled) { ?>
+            <td class="rateb-actions-cell text-end text-nowrap">
+                <div class="rateb-actions justify-content-end">
+                <?php if ($bulkEnabled && !$isGroup) { ?>
+                <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" data-rateb-row-check value="<?php echo $nodeId; ?>">
+                <?php } ?>
+                <?php if ($actionsEnabled && !$fullTreeMode) { ?>
                 <a href="<?php echo $editUrl($nodeId); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
                 <?php if (!$isGroup) { ?>
                 <form method="post" action="<?php echo $deleteUrl($nodeId); ?>" class="d-inline"
@@ -75,10 +73,10 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
                     <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                 </form>
                 <?php } ?>
-            </td>
-            <?php } elseif ($actionsEnabled && $fullTreeMode) { ?>
-            <td class="text-end text-nowrap">
+                <?php } elseif ($actionsEnabled && $fullTreeMode) { ?>
                 <a href="<?php echo $editUrl($nodeId); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+                <?php } ?>
+                </div>
             </td>
             <?php } ?>
         </tr>
@@ -88,7 +86,8 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
         }
     }
 };
-$colspan = 5 + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
+$showActionsCol = $actionsEnabled || $bulkEnabled;
+$colspan = 5 + ($showActionsCol ? 1 : 0);
 ?>
 <div class="rateb-card"<?php echo $fullTreeMode ? ' data-rateb-coa-full-tree="1"' : ''; ?>>
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -120,17 +119,21 @@ $colspan = 5 + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
             <table class="table rateb-table rateb-coa-tree mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>
                 <tr>
-                    <?php if ($bulkEnabled) { ?>
-                    <th class="rateb-bulk-th">
-                        <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo __('select_all'); ?>">
-                    </th>
-                    <?php } ?>
                     <th><?php echo __('account'); ?></th>
                     <th><?php echo __('account_type'); ?></th>
                     <th class="text-end"><?php echo __('debit'); ?></th>
                     <th class="text-end"><?php echo __('credit'); ?></th>
                     <th class="text-end"><?php echo __('balance'); ?></th>
-                    <?php if ($actionsEnabled) { ?><th></th><?php } ?>
+                    <?php if ($showActionsCol) { ?>
+                    <th class="rateb-th-actions text-end">
+                        <span class="rateb-actions-head">
+                            <?php if ($bulkEnabled) { ?>
+                            <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo __('select_all'); ?>">
+                            <?php } ?>
+                            <?php if ($actionsEnabled) { ?><span><?php echo __('actions'); ?></span><?php } ?>
+                        </span>
+                    </th>
+                    <?php } ?>
                 </tr>
                 </thead>
                 <tbody>

@@ -74,3 +74,11 @@ if ($formFields !== null && $lookups === []) {
         ]); ?>
     </div>
 </div>
+<?php if (isset($page, $total, $limit)) {
+    Rateb\App\Core\View::partial('pagination', [
+        'page' => $page,
+        'total' => $total,
+        'limit' => $limit,
+        'routePrefix' => $routePrefix ?? '',
+    ]);
+} ?>

@@ -45,5 +45,5 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll-list']);
         </div>
     </div>
 </div>
-<?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? 20, 'routePrefix' => $routePrefix ?? '']); ?>
+<?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? rateb_list_per_page(), 'routePrefix' => $routePrefix ?? '']); ?>
 <?php Rateb\App\Core\View::partial('hr-nav-end'); ?>
