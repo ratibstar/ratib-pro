@@ -107,24 +107,24 @@ $maxCo = max(1, ...array_map(static fn ($r) => (int) ($r['user_count'] ?? 0), $t
                 <button type="button" class="rateb-dash-chart-tab" data-dash-chart-tab="users" role="tab"><?php echo __('user_growth'); ?></button>
             </div>
             <div class="rateb-dash-chart-pane is-active" data-dash-chart-pane="companies">
-                <div class="rateb-dash-chart-wrap" style="min-height:240px">
+                <div class="rateb-dash-chart-wrap">
                     <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
                 </div>
             </div>
             <div class="rateb-dash-chart-pane" data-dash-chart-pane="subscriptions">
-                <div class="rateb-dash-chart-wrap" style="min-height:240px">
+                <div class="rateb-dash-chart-wrap">
                     <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
                 </div>
             </div>
             <div class="rateb-dash-chart-pane" data-dash-chart-pane="users">
-                <div class="rateb-dash-chart-wrap" style="min-height:240px">
+                <div class="rateb-dash-chart-wrap">
                     <canvas id="chart-users" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('user_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($userLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($userValues); ?>'></canvas>
                 </div>
             </div>
         </section>
         <section class="rateb-dash-panel">
             <div class="rateb-dash-panel-head"><?php echo __('company_status_distribution'); ?></div>
-            <div class="rateb-dash-chart-wrap" style="min-height:240px">
+            <div class="rateb-dash-chart-wrap">
                 <canvas id="chart-company-status" data-labels='<?php echo Rateb\App\Core\View::escape($statusLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($statusValues); ?>'></canvas>
             </div>
         </section>

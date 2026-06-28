@@ -132,36 +132,47 @@
 
 .rateb-dash-chart-wrap {
     position: relative;
-    min-height: 220px;
-    padding: 0.5rem 0.75rem 1rem;
+    min-height: 260px;
+    height: 260px;
+    padding: 0.35rem 1rem 0.85rem;
 }
 
 .rateb-dash-chart-wrap canvas {
-    max-height: 220px;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none;
 }
 
 .rateb-dash-chart-tabs {
     display: flex;
-    gap: 0.25rem;
+    gap: 0.35rem;
     padding: 0.65rem 1rem 0;
     border-bottom: 1px solid var(--rateb-border);
+    flex-wrap: wrap;
 }
 
 .rateb-dash-chart-tab {
-    padding: 0.4rem 0.75rem;
+    padding: 0.45rem 0.85rem;
     font-size: 0.75rem;
     border: none;
     background: transparent;
     color: var(--dash-muted);
-    border-radius: 6px 6px 0 0;
+    border-radius: 8px;
     cursor: pointer;
     font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+}
+
+.rateb-dash-chart-tab:hover {
+    color: var(--rateb-text);
+    background: rgba(148, 163, 184, 0.08);
 }
 
 .rateb-dash-chart-tab.is-active {
     color: var(--rateb-primary);
-    background: rgba(59, 130, 246, 0.08);
+    background: rgba(59, 130, 246, 0.12);
     font-weight: 600;
+    box-shadow: inset 0 -2px 0 var(--rateb-primary);
 }
 
 .rateb-dash-chart-pane {

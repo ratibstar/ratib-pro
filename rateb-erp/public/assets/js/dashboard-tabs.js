@@ -14,9 +14,17 @@
                     tabs.forEach(function (t) {
                         t.classList.toggle('is-active', t === tab);
                     });
+                    var activePane = null;
                     panes.forEach(function (p) {
-                        p.classList.toggle('is-active', p.getAttribute('data-dash-chart-pane') === target);
+                        var isActive = p.getAttribute('data-dash-chart-pane') === target;
+                        p.classList.toggle('is-active', isActive);
+                        if (isActive) {
+                            activePane = p;
+                        }
                     });
+                    if (activePane && typeof window.ratebChartInitPane === 'function') {
+                        window.ratebChartInitPane(activePane);
+                    }
                 });
             });
         });

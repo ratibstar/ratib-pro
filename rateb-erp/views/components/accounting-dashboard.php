@@ -140,7 +140,7 @@ $trendClass = static function (string $t): string {
     <div class="rateb-dash-charts-row">
         <section class="rateb-dash-panel">
             <div class="rateb-dash-panel-head"><?php echo __('revenue_vs_expenses'); ?></div>
-            <div class="rateb-dash-chart-wrap" style="min-height:260px">
+            <div class="rateb-dash-chart-wrap">
                 <canvas id="chart-revenue-expenses"
                     data-labels='<?php echo Rateb\App\Core\View::escape($revExpLabels); ?>'
                     data-revenue='<?php echo Rateb\App\Core\View::escape($revExpRevenue); ?>'
@@ -151,7 +151,7 @@ $trendClass = static function (string $t): string {
         </section>
         <section class="rateb-dash-panel">
             <div class="rateb-dash-panel-head"><?php echo __('expense_breakdown'); ?></div>
-            <div class="rateb-dash-chart-wrap" style="min-height:260px">
+            <div class="rateb-dash-chart-wrap">
                 <?php if ($breakdown === []) { ?>
                 <p class="rateb-dash-feed-empty"><?php echo __('no_records'); ?></p>
                 <?php } else { ?>
