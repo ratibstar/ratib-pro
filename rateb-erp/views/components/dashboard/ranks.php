@@ -3,7 +3,11 @@
 /** @var array<int, array{name: string, total: float|int, suffix?: string}> $rows */
 /** @var float|int|null $max */
 $rows = $rows ?? [];
-$max = max(1.0, (float) ($max ?? max(1, ...array_map(static fn ($r) => (float) ($r['total'] ?? 0), $rows ?: [['total' => 1]])));
+$computedMax = 1.0;
+foreach ($rows as $r) {
+    $computedMax = max($computedMax, (float) ($r['total'] ?? 0));
+}
+$max = (float) ($max ?? $computedMax);
 ?>
 <section class="cm-board cm-board--fill">
     <div class="cm-board__head"><?php echo Rateb\App\Core\View::escape($title); ?></div>
