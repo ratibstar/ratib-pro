@@ -47,6 +47,7 @@ $maxRank = max(1, ...array_map(static fn ($r) => (int) $r['total'], $rankRows ?:
 
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
+<!-- rateb-dashboard-v3 -->
 <div class="rp">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [

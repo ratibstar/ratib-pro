@@ -8,7 +8,7 @@ $actions = $actions ?? [];
 $metrics = $metrics ?? [];
 $metaChips = $metaChips ?? null;
 ?>
-<section class="rp-hero">
+<section class="rp-hero" data-rp-dash="v3">
     <div class="rp-hero__row">
         <div class="rp-hero__text">
             <h1><?php echo Rateb\App\Core\View::escape($title); ?></h1>
