@@ -1,15 +1,7 @@
 <?php
-$stats = $stats ?? ['total' => 0, 'active' => 0, 'inactive' => 0, 'visible' => 0, 'hidden' => 0];
 $categoryTree = $categoryTree ?? [];
 $mostUsed = $mostUsed ?? [];
 ?>
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-2"><div class="rateb-stat-card"><div class="rateb-stat-label"><?php echo __('categories_total'); ?></div><div class="rateb-stat-value"><?php echo (int) $stats['total']; ?></div></div></div>
-    <div class="col-6 col-md-2"><div class="rateb-stat-card"><div class="rateb-stat-label"><?php echo __('active'); ?></div><div class="rateb-stat-value"><?php echo (int) $stats['active']; ?></div></div></div>
-    <div class="col-6 col-md-2"><div class="rateb-stat-card"><div class="rateb-stat-label"><?php echo __('inactive'); ?></div><div class="rateb-stat-value"><?php echo (int) $stats['inactive']; ?></div></div></div>
-    <div class="col-6 col-md-2"><div class="rateb-stat-card"><div class="rateb-stat-label"><?php echo __('category_visible'); ?></div><div class="rateb-stat-value"><?php echo (int) $stats['visible']; ?></div></div></div>
-    <div class="col-6 col-md-2"><div class="rateb-stat-card"><div class="rateb-stat-label"><?php echo __('category_hidden'); ?></div><div class="rateb-stat-value"><?php echo (int) $stats['hidden']; ?></div></div></div>
-</div>
 <div class="row g-3 mb-4">
     <div class="col-lg-4">
         <div class="rateb-card h-100">

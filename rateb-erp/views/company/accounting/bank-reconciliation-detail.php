@@ -8,26 +8,6 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
         <i class="fas fa-arrow-right"></i> <?php echo __('bank_reconciliation'); ?>
     </a>
 </div>
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('book_balance'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($d['book_balance'] ?? 0), 2); ?></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('statement_balance'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($d['statement_balance'] ?? 0), 2); ?></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('difference'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($d['difference'] ?? 0), 2); ?></div>
-        </div>
-    </div>
-</div>
 <?php if (!($canManage ?? false)) { ?>
 <p class="text-muted small mb-2"><i class="fas fa-lock me-1"></i><?php echo __('accounting_perm_bank_import_hint'); ?></p>
 <?php } ?>

@@ -8,14 +8,6 @@ $formFields = FormLookupService::zatcaSettingsFormFields();
 $lookups = (new FormLookupService())->forFields($formFields);
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
 ?>
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('zatca_readiness'); ?></div>
-            <div class="rateb-stat-value"><?php echo ($readiness['ready'] ?? false) ? __('ready') : __('not_ready'); ?></div>
-        </div>
-    </div>
-</div>
 <?php if ($canManage ?? false) { ?>
 <form method="post" action="<?php echo rateb_app_url('accounting/zatca-settings'); ?>" class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo __('zatca_settings'); ?></div>

@@ -40,7 +40,7 @@ final class ModulePageStatsService
             'oversight' => $this->oversightStats($route),
             'procurement' => $this->procurementStats(),
             'inventory' => $this->inventoryStats($route),
-            'suppliers' => $this->supplierStats(),
+            'suppliers' => $this->supplierStats($route),
             'hr' => $this->hrStats(),
             'accounting' => $this->accountingStats($route),
             'contracts' => $this->contractsStats($route),
@@ -74,6 +74,9 @@ final class ModulePageStatsService
         }
         if (preg_match('#/(create|edit)$#', $route)) {
             return true;
+        }
+        if (preg_match('#bank-reconciliation/\d+$#', $route)) {
+            return false;
         }
         if (preg_match('#/\d+$#', $route)) {
             return true;
@@ -293,10 +296,22 @@ final class ModulePageStatsService
     {
         $cid = $this->companyId();
         $this->bootstrapTenant($cid);
+        $path = $this->opsPath($route);
         $inv = new Inventory();
         $kpi = (new ErpAnalyticsService())->companyKpi($cid);
         $itemCount = $cid !== null ? $inv->count() : (int) ($inv->queryOne('SELECT COUNT(*) AS c FROM rateb_inventory')['c'] ?? 0);
         $whCount = $cid !== null ? (new WarehouseService())->countForCompany($cid) : $this->countRows('rateb_warehouses', null);
+
+        if (str_contains($path, 'product-categories')) {
+            $stats = (new ProductCategoryService())->stats((int) ($cid ?? 0));
+            return $this->cards([
+                ['label' => __('categories_total'), 'value' => $this->intStr((int) ($stats['total'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('active'), 'value' => $this->intStr((int) ($stats['active'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('inactive'), 'value' => $this->intStr((int) ($stats['inactive'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('category_visible'), 'value' => $this->intStr((int) ($stats['visible'] ?? 0)), 'tone' => 'teal'],
+                ['label' => __('category_hidden'), 'value' => $this->intStr((int) ($stats['hidden'] ?? 0)), 'tone' => 'purple'],
+            ]);
+        }
 
         if (str_contains($path, 'inventory-valuation')) {
             return $this->cards([
@@ -318,10 +333,22 @@ final class ModulePageStatsService
     }
 
     /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
-    private function supplierStats(): array
+    private function supplierStats(string $route): array
     {
         $cid = $this->companyId();
         $this->bootstrapTenant($cid);
+        $path = $this->opsPath($route);
+
+        if (str_contains($path, 'supplier-comms')) {
+            $stats = (new SupplierCommService())->companyStats((int) ($cid ?? 0));
+            return $this->cards([
+                ['label' => __('comm_stat_total'), 'value' => $this->intStr((int) ($stats['total'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('comm_stat_this_month'), 'value' => $this->intStr((int) ($stats['this_month'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('comm_stat_followups'), 'value' => $this->intStr((int) ($stats['pending_followups'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('comm_stat_active_suppliers'), 'value' => $this->intStr((int) ($stats['distinct_suppliers'] ?? 0)), 'tone' => 'purple'],
+            ]);
+        }
+
         $sup = new Supplier();
         $total = $cid !== null ? $sup->count() : (int) ($sup->queryOne('SELECT COUNT(*) AS c FROM rateb_suppliers')['c'] ?? 0);
         $active = (int) ($sup->queryOne(
@@ -464,6 +491,21 @@ final class ModulePageStatsService
                 ['label' => __('net_profit_ytd'), 'value' => $this->money((float) ($m['net_profit_ytd'] ?? 0)), 'tone' => 'teal'],
             ]);
         }
+        if (str_contains($path, 'bank-reconciliation/') && preg_match('#bank-reconciliation/(\d+)$#', $path, $bankMatch)) {
+            $bankId = (int) ($bankMatch[1] ?? 0);
+            if ($bankId > 0 && $cid !== null && $cid > 0) {
+                $detail = $acct->bankAccountReconciliation($cid, $bankId);
+                if ($detail) {
+                    $bankName = (string) ($detail['bank']['bank_name'] ?? $detail['bank']['name'] ?? '');
+                    return $this->cards([
+                        ['label' => __('book_balance'), 'value' => $this->money((float) ($detail['book_balance'] ?? 0)), 'tone' => 'blue'],
+                        ['label' => __('statement_balance'), 'value' => $this->money((float) ($detail['statement_balance'] ?? 0)), 'tone' => 'green'],
+                        ['label' => __('difference'), 'value' => $this->money((float) ($detail['difference'] ?? 0)), 'tone' => 'orange'],
+                        ['label' => __('bank_accounts'), 'value' => Rateb\App\Core\View::escape($bankName !== '' ? $bankName : '#' . $bankId), 'tone' => 'teal'],
+                    ]);
+                }
+            }
+        }
         if (str_contains($path, 'bank-accounts')) {
             $bank = $acct->bankReconciliation($cid);
             return $this->cards([
@@ -484,11 +526,16 @@ final class ModulePageStatsService
         }
         if (str_contains($path, 'zatca-settings')) {
             $vat = $acct->vatReport($cid, date('Y') . '-01-01', date('Y-m-d'));
+            $ready = ($cid !== null && $cid > 0)
+                ? (new ZatcaService())->readinessStatus($cid)
+                : ['ready' => false];
+            $qrCount = ($cid !== null && $cid > 0) ? count((new ZatcaService())->listInvoicesWithQr($cid)) : 0;
             return $this->cards([
+                ['label' => __('zatca_readiness'), 'value' => ($ready['ready'] ?? false) ? __('ready') : __('not_ready'), 'tone' => ($ready['ready'] ?? false) ? 'green' : 'orange'],
                 ['label' => __('vat_net_payable'), 'value' => $this->money((float) ($vat['net_vat'] ?? 0)), 'tone' => 'orange'],
                 ['label' => __('output_vat'), 'value' => $this->money((float) ($vat['output_vat'] ?? 0)), 'tone' => 'blue'],
-                ['label' => __('input_vat'), 'value' => $this->money((float) ($vat['input_vat'] ?? 0)), 'tone' => 'green'],
-                ['label' => __('revenue_ytd'), 'value' => $this->money((float) ($m['revenue_ytd'] ?? 0)), 'tone' => 'purple'],
+                ['label' => __('input_vat'), 'value' => $this->money((float) ($vat['input_vat'] ?? 0)), 'tone' => 'purple'],
+                ['label' => __('invoices'), 'value' => $this->intStr($qrCount), 'tone' => 'teal'],
             ]);
         }
         if (str_contains($path, 'cost-analysis') || str_contains($path, 'cost-of-sales')) {

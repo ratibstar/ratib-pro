@@ -1,14 +1,12 @@
 <?php
 /** @var array<int, array<string, mixed>> $items */
 /** @var array<string, mixed> $filters */
-/** @var array<string, mixed> $stats */
 /** @var \Rateb\App\Services\SupplierCommService $commSvc */
 $listUrl = rateb_app_url('supplier-comms');
 $routePrefix = $routePrefix ?? rateb_app_route('supplier-comms');
 $canManage = $canManage ?? rateb_can_manage_entity('supplier-comms');
 $columns = $columns ?? [];
 $colspan = count($columns) + ($actionsEnabled ?? true ? 1 : 0);
-$stats = $stats ?? ['total' => 0, 'this_month' => 0, 'pending_followups' => 0, 'by_supplier' => 0, 'distinct_suppliers' => 0];
 $upcomingFollowUps = $upcomingFollowUps ?? [];
 $topSuppliers = $topSuppliers ?? [];
 $supplierHistory = $supplierHistory ?? [];
@@ -54,33 +52,6 @@ $channelIcon = static function (string $ch): string {
             <i class="fas fa-plus"></i> <?php echo __('supplier_comms_create'); ?>
         </a>
         <?php } ?>
-    </div>
-
-    <div class="row g-3 rateb-sc-stats-row">
-        <div class="col-6 col-md-3">
-            <div class="rateb-sc-stat-card">
-                <div class="rateb-sc-stat-value"><?php echo (int) $stats['total']; ?></div>
-                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_total'); ?></div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="rateb-sc-stat-card">
-                <div class="rateb-sc-stat-value"><?php echo (int) $stats['this_month']; ?></div>
-                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_this_month'); ?></div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="rateb-sc-stat-card rateb-sc-stat-warn">
-                <div class="rateb-sc-stat-value"><?php echo (int) $stats['pending_followups']; ?></div>
-                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_followups'); ?></div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="rateb-sc-stat-card">
-                <div class="rateb-sc-stat-value"><?php echo (int) ($stats['distinct_suppliers'] ?? 0); ?></div>
-                <div class="rateb-sc-stat-label"><?php echo __('comm_stat_active_suppliers'); ?></div>
-            </div>
-        </div>
     </div>
 
     <?php if ($upcomingFollowUps !== []) { ?>
