@@ -367,18 +367,17 @@ if (!function_exists('rateb_locale_switch_url')) {
 }
 
 if (!function_exists('rateb_marketing_register_url')) {
-    function rateb_marketing_register_url(string $plan = 'gold', int $years = 1, array $extra = []): string
+    function rateb_marketing_register_url(string $plan = '', int $years = 1, array $extra = []): string
     {
-        $query = array_merge(
-            [
-                'open' => 'register',
-                'plan' => $plan,
-                'years' => $years,
-            ],
-            $extra
-        );
+        unset($years);
+        $query = $extra;
+        if ($plan !== '') {
+            $query['plan'] = $plan;
+        }
 
-        return rateb_url_query(rateb_url('site'), $query) . '#register';
+        return $query !== []
+            ? rateb_url_query(rateb_url('site/register'), $query)
+            : rateb_url('site/register');
     }
 }
 

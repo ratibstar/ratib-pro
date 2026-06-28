@@ -182,16 +182,6 @@ final class MarketingController extends Controller
                 return ['helpArticles' => (new CmsHelpArticle())->all(100, 0)];
             case 'knowledge-base':
                 return ['kbArticles' => (new CmsKbArticle())->all(100, 0)];
-            case 'home':
-                return [
-                    'legacyHomePort' => true,
-                    'legacyHomeMode' => 'full',
-                ];
-            case 'pricing':
-                return [
-                    'legacyHomePort' => true,
-                    'legacyHomeMode' => 'commerce',
-                ];
             default:
                 return [];
         }

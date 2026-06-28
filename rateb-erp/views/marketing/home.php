@@ -127,8 +127,12 @@ $slides = $slides ?? [];
 </section>
 <?php } ?>
 
-<?php if (!empty($legacyHomePort)) {
-    \Rateb\App\Services\LegacyHomeContentService::render((string) ($legacyHomeMode ?? 'full'));
+<?php if (!empty($plans)) {
+    $pricingSection = $content['pricing_preview']['section'] ?? [];
+    $sectionTitle = CmsService::pickLocale($pricingSection, 'title') ?: __('cms_pricing_preview');
+    $sectionLead = CmsService::pickLocale($pricingSection, 'body');
+    $compact = true;
+    require RATEB_ROOT . '/views/marketing/partials/plans-grid.php';
 } ?>
 
 <?php if (!empty($testimonials)) { ?>
@@ -211,6 +215,22 @@ $slides = $slides ?? [];
             <a href="<?php echo rateb_url('site/faq'); ?>" class="btn btn-outline-primary rateb-mkt-more-btn">
                 <i class="fas fa-circle-plus ms-1"></i><?php echo __('cms_view_all_faq'); ?>
             </a>
+        </div>
+    </div>
+</section>
+<?php } ?>
+
+<?php if (!empty($content['contact_cta']['section'])) {
+    $cta = $content['contact_cta']['section']; ?>
+<section class="rateb-mkt-cta">
+    <div class="container text-center">
+        <h2 class="rateb-mkt-section-title text-white mb-3"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($cta, 'title')); ?></h2>
+        <?php if (trim(CmsService::pickLocale($cta, 'body')) !== '') { ?>
+        <p class="mb-4 opacity-90"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($cta, 'body')); ?></p>
+        <?php } ?>
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            <a href="<?php echo rateb_url('site/request-demo'); ?>" class="btn btn-light btn-lg"><?php echo __('cms_request_demo'); ?></a>
+            <a href="<?php echo rateb_url('site/contact'); ?>" class="btn btn-outline-light btn-lg"><?php echo __('cms_contact_us'); ?></a>
         </div>
     </div>
 </section>
