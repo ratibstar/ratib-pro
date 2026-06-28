@@ -916,6 +916,7 @@ return [
     'add_customer' => 'إضافة عميل',
     'dashboard_accounting_moved_hint' => 'الإيرادات والمشتريات وقيمة المخزون متوفرة في لوحة تحكم المحاسبة.',
     'platform_dashboard_intro' => 'نظرة شاملة على المنصة: الشركات، الاشتراكات، المستخدمون، والتنبيهات.',
+    'company_dashboard_intro' => 'ملخص عمليات شركتك — التفاصيل المالية في قسم المحاسبة.',
     'pending_companies' => 'شركات بانتظار التفعيل',
     'suspended_companies' => 'شركات موقوفة',
     'expiring_subscriptions' => 'اشتراكات تنتهي قريباً',

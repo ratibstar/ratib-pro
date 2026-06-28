@@ -916,6 +916,7 @@ return [
     'add_customer' => 'Add customer',
     'dashboard_accounting_moved_hint' => 'Revenue, procurement, and inventory value are on the accounting dashboard.',
     'platform_dashboard_intro' => 'Platform overview: companies, subscriptions, users, and alerts.',
+    'company_dashboard_intro' => 'Your company operations summary — financial details live in Accounting.',
     'pending_companies' => 'Pending companies',
     'suspended_companies' => 'Suspended companies',
     'expiring_subscriptions' => 'Expiring subscriptions',

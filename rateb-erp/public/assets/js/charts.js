@@ -59,12 +59,16 @@
                         label: chartLabel(revenueEl, 'Revenue'),
                         data: JSON.parse(revenueEl.dataset.values),
                         borderColor: colors.primary,
-                        backgroundColor: 'rgba(59,130,246,0.12)',
+                        backgroundColor: 'rgba(59,130,246,0.08)',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.35,
+                        pointRadius: 3,
+                        borderWidth: 2
                     }]
                 },
-                options: baseOptions(colors)
+                options: Object.assign({}, baseOptions(colors), {
+                    plugins: { legend: { display: false } }
+                })
             });
         }
 
@@ -77,10 +81,14 @@
                     datasets: [{
                         label: chartLabel(companyEl, 'Companies'),
                         data: JSON.parse(companyEl.dataset.values),
-                        backgroundColor: colors.accent
+                        backgroundColor: 'rgba(59,130,246,0.55)',
+                        borderRadius: 4,
+                        maxBarThickness: 36
                     }]
                 },
-                options: baseOptions(colors)
+                options: Object.assign({}, baseOptions(colors), {
+                    plugins: { legend: { display: false } }
+                })
             });
         }
 
@@ -94,10 +102,16 @@
                         label: chartLabel(subEl, 'Subscriptions'),
                         data: JSON.parse(subEl.dataset.values),
                         borderColor: colors.accent,
-                        tension: 0.3
+                        backgroundColor: 'rgba(45,212,191,0.08)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        borderWidth: 2
                     }]
                 },
-                options: baseOptions(colors)
+                options: Object.assign({}, baseOptions(colors), {
+                    plugins: { legend: { display: false } }
+                })
             });
         }
 
@@ -170,13 +184,17 @@
                     datasets: [{
                         label: chartLabel(usersEl, 'Users'),
                         data: JSON.parse(usersEl.dataset.values),
-                        borderColor: colors.accent,
-                        backgroundColor: 'rgba(45,212,191,0.12)',
+                        borderColor: colors.primary,
+                        backgroundColor: 'rgba(59,130,246,0.06)',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.35,
+                        pointRadius: 3,
+                        borderWidth: 2
                     }]
                 },
-                options: baseOptions(colors)
+                options: Object.assign({}, baseOptions(colors), {
+                    plugins: { legend: { display: false } }
+                })
             });
         }
 
