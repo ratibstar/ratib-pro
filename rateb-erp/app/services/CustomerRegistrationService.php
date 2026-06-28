@@ -20,16 +20,18 @@ final class CustomerRegistrationService
         string $contactName,
         string $email,
         string $password,
-        string $phone = ''
+        string $phone = '',
+        string $planSlug = ''
     ): array {
         $userModel = new User();
         if ($userModel->findByEmail($email) !== null) {
             throw new \RuntimeException(__('cms_email_taken'));
         }
 
+        $slug = trim($planSlug) !== '' ? trim($planSlug) : self::DEFAULT_PLAN_SLUG;
         $plan = (new Plan())->queryOne(
             'SELECT * FROM rateb_plans WHERE slug = :slug AND is_active = 1 LIMIT 1',
-            ['slug' => self::DEFAULT_PLAN_SLUG]
+            ['slug' => $slug]
         );
         if ($plan === null) {
             $plan = (new Plan())->queryOne(

@@ -52,7 +52,7 @@ $featuredSlug = 'professional';
                     </ul>
                     <?php } ?>
                     <div class="rateb-mkt-plan-actions">
-                        <a href="<?php echo Rateb\App\Core\View::escape(rateb_url('site/register')); ?>" class="btn btn-sm btn-primary"><?php echo __('cms_register'); ?></a>
+                        <a href="<?php echo Rateb\App\Core\View::escape(rateb_marketing_register_url($slug)); ?>" class="btn btn-sm btn-primary"><?php echo __('cms_register'); ?></a>
                         <a href="<?php echo Rateb\App\Core\View::escape(rateb_url('site/request-demo')); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('cms_request_demo'); ?></a>
                     </div>
                 </article>

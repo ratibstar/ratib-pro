@@ -1,10 +1,25 @@
-<?php /** @var string $csrf */ ?>
+<?php
+/** @var string $csrf */
+/** @var array<string, mixed>|null $selectedPlan */
+/** @var string $planSlug */
+use Rateb\App\Models\Plan;
+
+$planSlug = trim((string) ($planSlug ?? ''));
+?>
 <div class="rateb-auth-page-wrap">
     <div class="rateb-mkt-auth-card">
         <h1 class="h4 text-center mb-1"><?php echo __('cms_register'); ?></h1>
         <p class="text-muted text-center small mb-4"><?php echo __('cms_register_hint'); ?></p>
+        <?php if (!empty($selectedPlan)) { ?>
+        <p class="text-center small mb-3">
+            <span class="badge text-bg-primary"><?php echo __('cms_register_selected_plan'); ?>: <?php echo Rateb\App\Core\View::escape(Plan::marketingName($selectedPlan)); ?></span>
+        </p>
+        <?php } ?>
         <form method="post" action="<?php echo rateb_url('site/register'); ?>" class="rateb-mkt-form">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <?php if ($planSlug !== '') { ?>
+            <input type="hidden" name="plan_slug" value="<?php echo Rateb\App\Core\View::escape($planSlug); ?>">
+            <?php } ?>
             <div class="mb-3">
                 <label class="form-label" for="company_name"><?php echo __('cms_company_name'); ?></label>
                 <input type="text" class="form-control" id="company_name" name="company_name" required>

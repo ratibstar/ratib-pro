@@ -92,9 +92,15 @@ $slides = $slides ?? [];
 </section>
 <?php } ?>
 
-<?php if (!empty($content['stats']['blocks'])) { ?>
+<?php if (!empty($content['stats']['blocks'])) {
+    $statsSection = $content['stats']['section'] ?? [];
+    $statsTitle = CmsService::pickLocale($statsSection, 'title');
+    ?>
 <section class="rateb-mkt-stats">
     <div class="container">
+        <?php if ($statsTitle !== '') { ?>
+        <h2 class="rateb-mkt-section-title text-center text-white mb-4"><?php echo Rateb\App\Core\View::escape($statsTitle); ?></h2>
+        <?php } ?>
         <div class="row g-3">
             <?php foreach ($content['stats']['blocks'] as $block) { ?>
             <div class="col-6 col-md-3">
@@ -184,6 +190,11 @@ $slides = $slides ?? [];
                 </article>
             </div>
             <?php } ?>
+        </div>
+        <div class="text-center mt-4">
+            <a href="<?php echo rateb_url('site/blog'); ?>" class="btn btn-outline-primary rateb-mkt-more-btn">
+                <i class="fas fa-circle-plus ms-1"></i><?php echo __('cms_view_all_blog'); ?>
+            </a>
         </div>
     </div>
 </section>

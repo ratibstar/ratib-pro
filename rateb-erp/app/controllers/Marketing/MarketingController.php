@@ -5,6 +5,7 @@ namespace Rateb\App\Controllers\Marketing;
 
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
+use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\CmsBlogArticle;
 use Rateb\App\Models\CmsCareer;
@@ -29,6 +30,17 @@ final class MarketingController extends Controller
 
     public function home(): void
     {
+        if (isset($_GET['open']) && trim((string) $_GET['open']) === 'register') {
+            $plan = trim((string) ($_GET['plan'] ?? ''));
+            $allowed = ['starter', 'professional', 'enterprise'];
+            $query = in_array($plan, $allowed, true) ? ['plan' => $plan] : [];
+            Response::redirect(
+                $query !== []
+                    ? rateb_url_query(rateb_url('site/register'), $query)
+                    : rateb_url('site/register')
+            );
+            return;
+        }
         $this->renderPage('home', 'home');
     }
 

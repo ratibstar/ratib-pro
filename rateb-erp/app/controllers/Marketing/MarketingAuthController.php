@@ -11,6 +11,7 @@ use Rateb\App\Core\RateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\CmsLead;
+use Rateb\App\Models\Plan;
 use Rateb\App\Models\User;
 use Rateb\App\Services\AccountLockoutService;
 use Rateb\App\Services\AuditService;
@@ -119,8 +120,12 @@ final class MarketingAuthController extends Controller
 
     public function showRegister(): void
     {
+        $planSlug = $this->resolveRegisterPlanSlug((string) ($_GET['plan'] ?? ''));
+        $selectedPlan = $this->loadRegisterPlan($planSlug);
         $this->renderAuth('marketing/auth/register', __('cms_register'), [
             'csrf' => Csrf::token(),
+            'selectedPlan' => $selectedPlan,
+            'planSlug' => $selectedPlan ? (string) ($selectedPlan['slug'] ?? '') : '',
         ]);
     }
 
@@ -157,13 +162,16 @@ final class MarketingAuthController extends Controller
             Response::redirect(rateb_url('site/register'));
         }
 
+        $planSlug = $this->resolveRegisterPlanSlug((string) $this->input('plan_slug', ''));
+
         try {
             $result = (new CustomerRegistrationService())->register(
                 $companyName,
                 $contactName,
                 $email,
                 $password,
-                $phone
+                $phone,
+                $planSlug
             );
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
@@ -236,5 +244,25 @@ final class MarketingAuthController extends Controller
             'theme' => $cms->theme(),
             'analytics' => $cms->analytics(),
         ], $extra), 'marketing-auth');
+    }
+
+    private function resolveRegisterPlanSlug(string $raw): string
+    {
+        $slug = strtolower(trim($raw));
+        return in_array($slug, ['starter', 'professional', 'enterprise'], true) ? $slug : '';
+    }
+
+    /** @return array<string, mixed>|null */
+    private function loadRegisterPlan(string $planSlug): ?array
+    {
+        if ($planSlug === '') {
+            return null;
+        }
+        $plan = (new Plan())->queryOne(
+            'SELECT * FROM rateb_plans WHERE slug = :slug AND is_active = 1 LIMIT 1',
+            ['slug' => $planSlug]
+        );
+
+        return $plan ?: null;
     }
 }

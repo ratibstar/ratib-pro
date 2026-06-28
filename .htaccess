@@ -72,8 +72,11 @@ RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
 # Legacy /home deep links → unified marketing home at /
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
 RewriteCond %{QUERY_STRING} (^|&)open=register(&|$) [NC]
-RewriteRule ^home/?$ /?open=register [R=301,L,QSA]
+RewriteRule ^/?$ /site/register [R=302,L,QSA]
+RewriteCond %{QUERY_STRING} (^|&)open=register(&|$) [NC]
+RewriteRule ^home/?$ /site/register [R=301,L,QSA]
 RewriteRule ^home/?$ / [R=301,L,QSA]
 
 # App login — MUST be before /{country}/login (otherwise /pages/login → country_slug=pages).
