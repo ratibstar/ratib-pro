@@ -19,6 +19,9 @@
     --rateb-radius: 12px;
     --rateb-font: 'Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --rateb-table-hover: rgba(45, 212, 191, 0.06);
+    --rateb-table-visible-rows: 5;
+    --rateb-table-row-h: 3rem;
+    --rateb-table-head-h: 3.25rem;
     --rateb-input-bg: #0f172a;
 }
 

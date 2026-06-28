@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-inv-oversight-stack');
+define('RATEB_ASSET_BUILD', '20260628-table-default-5');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -1366,18 +1366,33 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
 }
 
 /** Query params preserved across paginated list links (search, filters). */
+if (!function_exists('rateb_list_default_per_page')) {
+    function rateb_list_default_per_page(): int
+    {
+        return 5;
+    }
+}
+
+if (!function_exists('rateb_list_visible_rows')) {
+    /** Visible tbody rows before vertical scroll inside the table wrapper. */
+    function rateb_list_visible_rows(): int
+    {
+        return 5;
+    }
+}
+
 if (!function_exists('rateb_list_per_page_options')) {
     /** @return list<int> */
     function rateb_list_per_page_options(): array
     {
-        return [10, 20, 50, 100];
+        return [5, 10, 25, 50, 100];
     }
 }
 
 if (!function_exists('rateb_list_per_page')) {
     function rateb_list_per_page(): int
     {
-        $default = 10;
+        $default = rateb_list_default_per_page();
         $allowed = rateb_list_per_page_options();
         $raw = isset($_GET['per_page']) ? (int) $_GET['per_page'] : $default;
         return in_array($raw, $allowed, true) ? $raw : $default;
@@ -1397,6 +1412,15 @@ if (!function_exists('rateb_list_query_except')) {
             }
             if (isset($_GET[$key]) && (string) $_GET[$key] !== '') {
                 $out[$key] = (string) $_GET[$key];
+            }
+        }
+        foreach ($_GET as $key => $val) {
+            $key = (string) $key;
+            if (in_array($key, $except, true) || isset($out[$key])) {
+                continue;
+            }
+            if (preg_match('/_(page|per_page|q)$/', $key) && (string) $val !== '') {
+                $out[$key] = (string) $val;
             }
         }
         return $out;

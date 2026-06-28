@@ -39,6 +39,41 @@
     -webkit-overflow-scrolling: touch;
 }
 
+/* List tables: visible viewport = 5 rows; scroll vertically when page loads more */
+.rateb-table-wrap:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap),
+.rateb-main .table-responsive:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap),
+.rateb-content .table-responsive:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap),
+.rateb-card .table-responsive:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap),
+.rateb-oversight-table-wrap:not(.rateb-table-no-scroll),
+.rateb-depreciation-table-wrap:not(.rateb-table-no-scroll) {
+    max-height: calc(var(--rateb-table-head-h) + (var(--rateb-table-row-h) * var(--rateb-table-visible-rows)));
+    overflow: auto;
+}
+
+.rateb-table-wrap:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap) .rateb-table thead th,
+.rateb-main .table-responsive:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap) .rateb-table thead th,
+.rateb-content .table-responsive:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap) .rateb-table thead th,
+.rateb-card .table-responsive:not(.rateb-table-no-scroll):not(.rateb-line-items-wrap) .rateb-table thead th,
+.rateb-oversight-table-wrap:not(.rateb-table-no-scroll) .rateb-table thead th,
+.rateb-depreciation-table-wrap:not(.rateb-table-no-scroll) .rateb-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--rateb-bg);
+    box-shadow: 0 1px 0 var(--rateb-border);
+}
+
+/* Editable line grids & print layouts — no row-cap scroll */
+.rateb-table-wrap:has(.rateb-line-items-table),
+.rateb-table-wrap:has(.rateb-po-print-table),
+.rateb-table-wrap:has(.rateb-matrix-table),
+.table-responsive:has(.rateb-line-items-table),
+.table-responsive:has(.rateb-po-print-table),
+.table-responsive:has(.rateb-matrix-table) {
+    max-height: none;
+    overflow-y: visible;
+}
+
 /* Clip cell content — applies to all data tables system-wide */
 .rateb-table td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-accounting-actions-col):not(.rateb-bulk-th):not(.rateb-bulk-td),
 .rateb-content table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table) td:not(.rateb-actions):not(.rateb-actions-cell):not(.rateb-accounting-actions-col):not(.rateb-bulk-td) {

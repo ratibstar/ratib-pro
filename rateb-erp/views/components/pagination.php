@@ -13,7 +13,7 @@ $pageUrl = static function (array $query) use ($routePrefix, $baseUrl): string {
     }
     return rateb_list_url($routePrefix, $query);
 };
-$perPageOptions = $perPageOptions ?? (function_exists('rateb_list_per_page_options') ? rateb_list_per_page_options() : [10, 20, 50, 100]);
+$perPageOptions = $perPageOptions ?? (function_exists('rateb_list_per_page_options') ? rateb_list_per_page_options() : [5, 10, 25, 50, 100]);
 $from = $total > 0 ? (($page - 1) * $limit) + 1 : 0;
 $to = $total > 0 ? min($total, $page * $limit) : 0;
 $preserveQuery = is_array($preserveQuery ?? null) ? $preserveQuery : [];

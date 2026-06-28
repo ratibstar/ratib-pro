@@ -1030,7 +1030,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                 'items' => [],
                 'total' => 0,
                 'page' => 1,
-                'limit' => 20,
+                'limit' => rateb_list_per_page(),
                 'search' => '',
                 'routePrefix' => $this->routePrefix,
                 'fields' => $this->resolveIndexFields(),

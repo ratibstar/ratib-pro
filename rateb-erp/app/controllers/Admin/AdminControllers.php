@@ -2041,8 +2041,10 @@ final class RfqOversightController extends Controller
 final class InventoryController extends Controller
 {
     /** @param list<int> $allowed */
-    private function oversightPaging(string $prefix, int $default = 5, array $allowed = [5, 10, 20, 50]): array
+    private function oversightPaging(string $prefix, ?array $allowed = null): array
     {
+        $allowed = $allowed ?? rateb_list_per_page_options();
+        $default = rateb_list_default_per_page();
         $page = max(1, (int) ($_GET[$prefix . '_page'] ?? 1));
         $rawLimit = (int) ($_GET[$prefix . '_per_page'] ?? $default);
         $limit = in_array($rawLimit, $allowed, true) ? $rawLimit : $default;
