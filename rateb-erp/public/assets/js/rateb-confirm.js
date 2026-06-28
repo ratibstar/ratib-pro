@@ -10,7 +10,6 @@
     var bsModal = null;
     var resolvePending = null;
     var alertMode = false;
-    var confirmAccepted = false;
 
     function labels() {
         if (!modalEl) {
@@ -48,41 +47,29 @@
         }
 
         modalEl.addEventListener('hidden.bs.modal', function () {
-            if (!resolvePending) {
-                confirmAccepted = false;
-                return;
+            if (resolvePending) {
+                settle(alertMode ? undefined : false);
             }
-            if (confirmAccepted) {
-                confirmAccepted = false;
-                var resolveOk = resolvePending;
-                resolvePending = null;
-                resolveOk(alertMode ? undefined : true);
-                return;
-            }
-            settle(alertMode ? undefined : false);
         });
 
         okBtn.addEventListener('click', function () {
             if (!resolvePending) {
                 return;
             }
-            confirmAccepted = true;
+            var resolve = resolvePending;
+            resolvePending = null;
+            var result = alertMode ? undefined : true;
             var inst = getBsModal();
             if (inst) {
                 inst.hide();
-                return;
             }
-            confirmAccepted = false;
-            var resolve = resolvePending;
-            resolvePending = null;
-            resolve(alertMode ? undefined : true);
+            resolve(result);
         });
 
         cancelBtn.addEventListener('click', function () {
             if (!resolvePending) {
                 return;
             }
-            confirmAccepted = false;
             var resolve = resolvePending;
             resolvePending = null;
             var inst = getBsModal();
@@ -148,7 +135,6 @@
         }
         applyOptions(options);
         return new Promise(function (resolve) {
-            confirmAccepted = false;
             resolvePending = resolve;
             var inst = getBsModal();
             if (!inst) {
