@@ -77,7 +77,12 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
     data-rateb-cms-media="<?php echo Rateb\App\Core\View::escape(__('cms_media')); ?>"
     data-rateb-cms-no-images="<?php echo Rateb\App\Core\View::escape(__('cms_no_images')); ?>"
     data-rateb-cms-pick-image="<?php echo Rateb\App\Core\View::escape(__('cms_pick_image')); ?>"
-    data-rateb-cms-media-failed="<?php echo Rateb\App\Core\View::escape(__('cms_media_load_failed')); ?>">
+    data-rateb-cms-media-failed="<?php echo Rateb\App\Core\View::escape(__('cms_media_load_failed')); ?>"
+    data-rateb-date-hint-date="<?php echo Rateb\App\Core\View::escape(__('date_format_hint')); ?>"
+    data-rateb-date-hint-datetime="<?php echo Rateb\App\Core\View::escape(__('datetime_format_hint')); ?>"
+    data-rateb-date-hint-time="<?php echo Rateb\App\Core\View::escape(__('time_format_hint')); ?>"
+    data-rateb-date-hint-month="<?php echo Rateb\App\Core\View::escape(__('month_format_hint')); ?>"
+    data-rateb-date-hint-week="<?php echo Rateb\App\Core\View::escape(__('week_format_hint')); ?>">
 <div class="rateb-wrapper">
     <aside class="rateb-sidebar" id="rateb-sidebar">
         <div class="rateb-sidebar-brand">
@@ -234,6 +239,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/rateb-bulk-delete.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/app.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/rateb-date-inputs.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/form-fiscal-year.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/line-items.js'); ?>"></script>

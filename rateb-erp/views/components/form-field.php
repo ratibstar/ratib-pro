@@ -155,18 +155,43 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
     <?php } else {
         $dateTypes = ['date', 'datetime-local', 'time', 'month', 'week'];
         $isDateInput = in_array($type, $dateTypes, true);
-        $dateClass = $isDateInput ? ' rateb-ltr-date' : '';
-        ?>
+        $dateClass = $isDateInput ? ' rateb-ltr-date rateb-date-input' : '';
+        $dateHintKey = match ($type) {
+            'datetime-local' => 'datetime_format_hint',
+            'time' => 'time_format_hint',
+            'month' => 'month_format_hint',
+            'week' => 'week_format_hint',
+            default => 'date_format_hint',
+        };
+        if ($isDateInput) { ?>
+    <div class="rateb-date-wrap" data-date-type="<?php echo Rateb\App\Core\View::escape($type); ?>"
+         data-format-hint="<?php echo Rateb\App\Core\View::escape(__($dateHintKey)); ?>"
+         data-empty="<?php echo trim((string) $value) === '' ? '1' : '0'; ?>">
+        <button type="button" class="rateb-date-wrap-icon" tabindex="-1" aria-hidden="true">
+            <i class="fas fa-calendar-alt"></i>
+        </button>
+        <input class="<?php echo Rateb\App\Core\View::escape($inputClass . $dateClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
+               id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
+               <?php if (!$displayOnly) { ?>name="<?php echo Rateb\App\Core\View::escape($name); ?>" <?php } ?>
+               value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
+               <?php echo $required && !$displayOnly ? ' required' : ''; ?><?php echo $readonly || $displayOnly ? ' readonly' : ''; ?>
+               <?php echo $fieldAttrs; ?>
+               dir="ltr" lang="en" autocomplete="off"
+               <?php if (!empty($field['step'])) { ?>step="<?php echo Rateb\App\Core\View::escape((string) $field['step']); ?>"<?php } ?>
+               <?php if (isset($field['min'])) { ?>min="<?php echo Rateb\App\Core\View::escape((string) $field['min']); ?>"<?php } ?>
+               <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>>
+    </div>
+        <?php } else { ?>
     <input class="<?php echo Rateb\App\Core\View::escape($inputClass . $dateClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
            id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
            <?php if (!$displayOnly) { ?>name="<?php echo Rateb\App\Core\View::escape($name); ?>" <?php } ?>
            value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
            <?php echo $required && !$displayOnly ? ' required' : ''; ?><?php echo $readonly || $displayOnly ? ' readonly' : ''; ?>
            <?php echo $fieldAttrs; ?>
-           <?php if ($isDateInput) { ?>dir="ltr" lang="en"<?php } ?>
            <?php if (!empty($field['step'])) { ?>step="<?php echo Rateb\App\Core\View::escape((string) $field['step']); ?>"<?php } ?>
            <?php if (isset($field['min'])) { ?>min="<?php echo Rateb\App\Core\View::escape((string) $field['min']); ?>"<?php } ?>
            <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>>
+        <?php } ?>
     <?php if (!empty($field['hint'])) { ?>
     <small class="text-muted d-block mt-1"><?php echo __((string) $field['hint']); ?></small>
     <?php } ?>

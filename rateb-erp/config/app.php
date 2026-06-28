@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-i18n-full-v1');
+define('RATEB_ASSET_BUILD', '20260628-date-inputs-v1');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
