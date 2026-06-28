@@ -5,7 +5,7 @@
 <button type="submit" class="btn btn-primary btn-sm"><?php echo __('cms_upload'); ?></button>
 </form></div>
 <div class="rateb-card-body p-0">
-<table class="table table-sm mb-0"><thead><tr><th>ID</th><th><?php echo __('name'); ?></th><th>MIME</th><th><?php echo __('size'); ?></th><th>URL</th></tr></thead><tbody>
+<table class="table table-sm mb-0"><thead><tr><th><?php echo __('id'); ?></th><th><?php echo __('name'); ?></th><th><?php echo __('mime'); ?></th><th><?php echo __('size'); ?></th><th><?php echo __('url'); ?></th></tr></thead><tbody>
 <?php foreach ($items as $row) { ?>
 <tr>
 <td><?php echo (int) $row['id']; ?></td>

@@ -15,7 +15,7 @@
 </form>
 <div class="rateb-table-wrap">
 <table class="table table-sm rateb-table mb-0">
-    <thead><tr><th>ID</th><th>Channel</th><th>To</th><th>Status</th><th>Attempts</th></tr></thead>
+    <thead><tr><th><?php echo __('id'); ?></th><th><?php echo __('channel'); ?></th><th><?php echo __('to'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('attempts'); ?></th></tr></thead>
     <tbody>
     <?php foreach ($items as $row) { ?>
         <tr>

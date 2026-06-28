@@ -23,7 +23,8 @@ foreach (['app', 'views'] as $dir) {
 }
 
 $arParts = [
-    'holiday' => 'العطلة', 'date' => 'التاريخ', 'title' => 'العنوان', 'name' => 'الاسم', 'template' => 'القالب',
+    'holiday' => 'العطلة', 'holiday_date' => 'تاريخ العطلة', 'date' => 'التاريخ', 'title' => 'العنوان',
+    'name' => 'الاسم', 'template' => 'القالب',
     'meta' => 'SEO', 'description' => 'الوصف', 'section' => 'القسم', 'page' => 'الصفحة', 'slug' => 'المعرّف',
     'block' => 'الكتلة', 'type' => 'النوع', 'sort' => 'ترتيب', 'order' => 'الترتيب', 'active' => 'نشط',
     'recurring' => 'متكرر', 'visible' => 'ظاهر', 'published' => 'النشر', 'employee' => 'الموظف',

@@ -146,3 +146,23 @@ html[data-bs-theme="light"] {
 [data-theme="light"] .rateb-nav-link.active {
     background: var(--rateb-sidebar-active);
 }
+
+/* TinyMCE / WYSIWYG — match ERP dark theme */
+[data-theme="dark"] .tox-tinymce,
+[data-theme="dark"] .tox .tox-toolbar,
+[data-theme="dark"] .tox .tox-toolbar__primary,
+[data-theme="dark"] .tox .tox-toolbar__overflow,
+[data-theme="dark"] .tox .tox-statusbar {
+    background-color: var(--rateb-card-bg, #1e293b) !important;
+    border-color: var(--rateb-border, #334155) !important;
+}
+
+[data-theme="dark"] .tox .tox-tbtn,
+[data-theme="dark"] .tox .tox-tbtn svg {
+    color: var(--rateb-text, #e2e8f0) !important;
+    fill: var(--rateb-text, #e2e8f0) !important;
+}
+
+[data-theme="dark"] .tox .tox-edit-area__iframe {
+    background: #0f172a !important;
+}

@@ -33,7 +33,7 @@ $mailRelay = !empty($mailRelay);
                 <input class="form-control form-control-sm" name="smtp_port" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['port'] ?? '587')); ?>">
             </div>
             <div class="col-md-2">
-                <label class="form-label small">TLS/SSL</label>
+                <label class="form-label small"><?php echo __('tls_ssl'); ?></label>
                 <select class="form-select form-select-sm" name="smtp_encryption">
                     <?php foreach (['tls', 'ssl', 'none'] as $enc) { ?>
                     <option value="<?php echo $enc; ?>" <?php echo (($mailCfg['encryption'] ?? 'tls') === $enc) ? 'selected' : ''; ?>><?php echo $enc; ?></option>

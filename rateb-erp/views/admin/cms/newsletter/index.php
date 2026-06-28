@@ -30,7 +30,7 @@
     <div class="rateb-card-header"><?php echo __('cms_campaigns'); ?></div>
     <div class="rateb-card-body table-responsive">
         <table class="table table-sm">
-            <thead><tr><th>ID</th><th><?php echo __('subject'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('cms_sent_count'); ?></th><th></th></tr></thead>
+            <thead><tr><th><?php echo __('id'); ?></th><th><?php echo __('subject'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('cms_sent_count'); ?></th><th></th></tr></thead>
             <tbody>
             <?php foreach ($campaigns as $c) { ?>
             <tr>

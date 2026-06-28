@@ -170,7 +170,7 @@ final class CmsBlogArticlesController extends \Rateb\App\Controllers\CrudControl
             ['name' => 'slug', 'label' => 'slug', 'type' => 'slug'],
             ['name' => 'title_ar', 'label' => 'title_ar', 'type' => 'clip'],
             ['name' => 'title_en', 'label' => 'title_en', 'type' => 'clip'],
-            ['name' => 'status', 'label' => 'status', 'type' => 'clip'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
             ['name' => 'published_at', 'label' => 'published_at', 'type' => 'clip'],
         ];
     }

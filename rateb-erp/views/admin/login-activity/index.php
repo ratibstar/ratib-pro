@@ -11,7 +11,7 @@
 </p>
 <div class="rateb-table-wrap">
 <table class="table table-sm table-striped rateb-table mb-0">
-    <thead><tr><th>ID</th><th><?php echo __('users'); ?></th><th>Email</th><th>IP</th><th>OK</th><th>Time</th></tr></thead>
+    <thead><tr><th><?php echo __('id'); ?></th><th><?php echo __('users'); ?></th><th><?php echo __('email'); ?></th><th><?php echo __('ip'); ?></th><th><?php echo __('login_ok'); ?></th><th><?php echo __('time'); ?></th></tr></thead>
     <tbody>
     <?php foreach ($items as $row) { ?>
         <tr>

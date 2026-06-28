@@ -70,7 +70,7 @@ $warnings = $health['cron_warnings'] ?? [];
 <?php } ?>
 <div class="rateb-table-wrap">
 <table class="table table-sm rateb-table mb-0">
-    <thead><tr><th>Job</th><th>Last run</th><th>Next expected</th><th>Status</th></tr></thead>
+    <thead><tr><th><?php echo __('job'); ?></th><th><?php echo __('last_run'); ?></th><th><?php echo __('next_expected'); ?></th><th><?php echo __('status'); ?></th></tr></thead>
     <tbody>
     <?php foreach (($health['cron'] ?? []) as $job) { ?>
         <tr class="<?php echo ($job['status'] ?? '') === 'late' ? 'table-warning' : ''; ?>">

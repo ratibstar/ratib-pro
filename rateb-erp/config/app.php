@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-i18n-labels-v1');
+define('RATEB_ASSET_BUILD', '20260628-i18n-full-v1');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -864,6 +864,14 @@ if (!function_exists('rateb_label')) {
             return (string) $fieldLabels[$key];
         }
 
+        // Title-case labels like "Name" → name
+        if ($raw !== $key) {
+            $t = __($key);
+            if ($t !== $key) {
+                return $t;
+            }
+        }
+
         if (preg_match('/^(.+)_(en|ar)$/', $key, $m)) {
             $baseKey = $m[1];
             $base = __($baseKey);
@@ -1611,8 +1619,11 @@ if (!function_exists('__')) {
         static $cache = [];
         $locale = rateb_locale();
         if (!isset($cache[$locale])) {
-            $file = RATEB_ROOT . '/config/lang/' . $locale . '.php';
-            $cache[$locale] = is_file($file) ? require $file : [];
+            $mainFile = RATEB_ROOT . '/config/lang/' . $locale . '.php';
+            $fieldFile = RATEB_ROOT . '/config/field-labels-' . $locale . '.php';
+            $main = is_file($mainFile) ? require $mainFile : [];
+            $fields = is_file($fieldFile) ? require $fieldFile : [];
+            $cache[$locale] = array_merge($fields, $main);
         }
         $text = $cache[$locale][$key] ?? $key;
         foreach ($replace as $k => $v) {
