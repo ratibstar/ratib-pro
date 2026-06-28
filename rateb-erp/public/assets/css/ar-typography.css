@@ -25,9 +25,19 @@ html[dir="rtl"] .rateb-topbar h1 {
 }
 
 html[dir="rtl"] input[type="date"],
-html[dir="rtl"] input[type="datetime-local"] {
+html[dir="rtl"] input[type="datetime-local"],
+html[dir="rtl"] input[type="time"],
+html[dir="rtl"] input[type="month"],
+html[dir="rtl"] input[type="week"],
+html[dir="rtl"] input.rateb-ltr-date {
     direction: ltr;
     text-align: left;
+    unicode-bidi: isolate;
+}
+
+html[dir="rtl"] input.rateb-ltr-date::-webkit-datetime-edit,
+html[dir="rtl"] input.rateb-ltr-date::-webkit-datetime-edit-fields-wrapper {
+    direction: ltr;
     unicode-bidi: isolate;
 }
 

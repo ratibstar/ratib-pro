@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-i18n-system-v1');
+define('RATEB_ASSET_BUILD', '20260628-i18n-labels-v1');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -843,9 +843,72 @@ if (!function_exists('rateb_permission_description')) {
 if (!function_exists('rateb_label')) {
     function rateb_label(string $labelOrKey): string
     {
-        $key = strtolower(str_replace([' ', '-'], '_', trim($labelOrKey)));
-        $translated = __($key);
-        return $translated !== $key ? $translated : $labelOrKey;
+        static $fieldLabels = null;
+        $raw = trim($labelOrKey);
+        if ($raw === '' || $raw === '—') {
+            return $raw;
+        }
+        $key = strtolower(str_replace([' ', '-'], '_', $raw));
+
+        $t = __($key);
+        if ($t !== $key) {
+            return $t;
+        }
+
+        if ($fieldLabels === null) {
+            $locale = rateb_locale();
+            $file = RATEB_ROOT . '/config/field-labels-' . $locale . '.php';
+            $fieldLabels = is_file($file) ? require $file : [];
+        }
+        if (isset($fieldLabels[$key]) && (string) $fieldLabels[$key] !== '') {
+            return (string) $fieldLabels[$key];
+        }
+
+        if (preg_match('/^(.+)_(en|ar)$/', $key, $m)) {
+            $baseKey = $m[1];
+            $base = __($baseKey);
+            if ($base === $baseKey && isset($fieldLabels[$baseKey])) {
+                $base = (string) $fieldLabels[$baseKey];
+            }
+            if ($base !== $baseKey) {
+                $langKey = 'lang_' . $m[2];
+                $lang = __($langKey);
+                if ($lang === $langKey) {
+                    $lang = $m[2] === 'en'
+                        ? (rateb_locale() === 'ar' ? 'إنجليزي' : 'English')
+                        : (rateb_locale() === 'ar' ? 'عربي' : 'Arabic');
+                }
+                return $base . ' (' . $lang . ')';
+            }
+        }
+
+        $parts = explode('_', $key);
+        if (count($parts) >= 2) {
+            $translated = [];
+            $ok = true;
+            foreach ($parts as $part) {
+                if ($part === 'id') {
+                    continue;
+                }
+                $pt = __($part);
+                if ($pt === $part && isset($fieldLabels[$part])) {
+                    $pt = (string) $fieldLabels[$part];
+                }
+                if ($pt === $part) {
+                    $ok = false;
+                    break;
+                }
+                $translated[] = $pt;
+            }
+            if ($ok && $translated !== []) {
+                return implode(' ', $translated);
+            }
+        }
+
+        if (rateb_locale() === 'en') {
+            return ucwords(str_replace('_', ' ', $key));
+        }
+        return $raw;
     }
 }
 

@@ -152,13 +152,18 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
     <?php if ($readonly) { ?>
     <input type="hidden" name="<?php echo Rateb\App\Core\View::escape($name); ?>" value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>">
     <?php } ?>
-    <?php } else { ?>
-    <input class="<?php echo Rateb\App\Core\View::escape($inputClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
+    <?php } else {
+        $dateTypes = ['date', 'datetime-local', 'time', 'month', 'week'];
+        $isDateInput = in_array($type, $dateTypes, true);
+        $dateClass = $isDateInput ? ' rateb-ltr-date' : '';
+        ?>
+    <input class="<?php echo Rateb\App\Core\View::escape($inputClass . $dateClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
            id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
            <?php if (!$displayOnly) { ?>name="<?php echo Rateb\App\Core\View::escape($name); ?>" <?php } ?>
            value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
            <?php echo $required && !$displayOnly ? ' required' : ''; ?><?php echo $readonly || $displayOnly ? ' readonly' : ''; ?>
            <?php echo $fieldAttrs; ?>
+           <?php if ($isDateInput) { ?>dir="ltr" lang="en"<?php } ?>
            <?php if (!empty($field['step'])) { ?>step="<?php echo Rateb\App\Core\View::escape((string) $field['step']); ?>"<?php } ?>
            <?php if (isset($field['min'])) { ?>min="<?php echo Rateb\App\Core\View::escape((string) $field['min']); ?>"<?php } ?>
            <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>>

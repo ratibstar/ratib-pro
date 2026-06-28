@@ -19,19 +19,34 @@
         return document.body.getAttribute('data-rateb-tinymce-upload') || '/admin/cms/media/tinymce-upload';
     }
 
+    function cmsI18n(key, fallback) {
+        var body = document.body;
+        if (!body) {
+            return fallback;
+        }
+        var map = {
+            media: body.getAttribute('data-rateb-cms-media'),
+            no_images: body.getAttribute('data-rateb-cms-no-images'),
+            pick_image: body.getAttribute('data-rateb-cms-pick-image'),
+            media_failed: body.getAttribute('data-rateb-cms-media-failed')
+        };
+        var val = map[key];
+        return val && val !== '' ? val : fallback;
+    }
+
     function openMediaPicker(callback) {
         fetch(mediaJsonUrl(), { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (!data || !data.items || !data.items.length) {
                     var alertFn = window.ratebAlert || window.alert;
-                    alertFn('No images in media library.');
+                    alertFn(cmsI18n('no_images', 'No images in media library.'));
                     return;
                 }
                 var list = data.items.map(function (it, i) {
                     return (i + 1) + '. ' + it.name;
                 }).join('\n');
-                var pick = window.prompt('Enter image number:\n' + list, '1');
+                var pick = window.prompt(cmsI18n('pick_image', 'Enter image number:') + '\n' + list, '1');
                 var idx = parseInt(pick, 10) - 1;
                 if (idx >= 0 && data.items[idx]) {
                     callback(data.items[idx].url, { alt: data.items[idx].name });
@@ -39,7 +54,7 @@
             })
             .catch(function () {
                 var alertFn = window.ratebAlert || window.alert;
-                alertFn('Could not load media library.');
+                alertFn(cmsI18n('media_failed', 'Could not load media library.'));
             });
     }
 
@@ -84,7 +99,7 @@
             },
             setup: function (editor) {
                 editor.ui.registry.addButton('media_lib', {
-                    text: 'Media',
+                    text: cmsI18n('media', 'Media'),
                     onAction: function () {
                         openMediaPicker(function (url, meta) {
                             editor.insertContent('<img src="' + url + '" alt="' + (meta.alt || '') + '">');

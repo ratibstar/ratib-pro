@@ -73,7 +73,11 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 </head>
 <body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?>"
     data-rateb-media-json="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/json')); ?>"
-    data-rateb-tinymce-upload="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/tinymce-upload')); ?>">
+    data-rateb-tinymce-upload="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/tinymce-upload')); ?>"
+    data-rateb-cms-media="<?php echo Rateb\App\Core\View::escape(__('cms_media')); ?>"
+    data-rateb-cms-no-images="<?php echo Rateb\App\Core\View::escape(__('cms_no_images')); ?>"
+    data-rateb-cms-pick-image="<?php echo Rateb\App\Core\View::escape(__('cms_pick_image')); ?>"
+    data-rateb-cms-media-failed="<?php echo Rateb\App\Core\View::escape(__('cms_media_load_failed')); ?>">
 <div class="rateb-wrapper">
     <aside class="rateb-sidebar" id="rateb-sidebar">
         <div class="rateb-sidebar-brand">
