@@ -1,6 +1,5 @@
 <?php
 /** @var array<string, mixed> $employee */
-/** @var array<string, mixed> $attendance_ytd */
 /** @var array<int, array<string, mixed>> $recent_leaves */
 /** @var array<int, array<string, mixed>> $leave_balances */
 $employee = $employee ?? [];
@@ -41,12 +40,6 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'employees']);
                 </dl>
             </div>
             <div class="col-md-6">
-                <h6 class="mb-3"><?php echo __('attendance_ytd'); ?></h6>
-                <div class="row g-2 mb-4">
-                    <div class="col-4"><div class="rateb-stat-card p-2"><div class="small text-muted"><?php echo __('present'); ?></div><div class="fw-bold"><?php echo (int) ($attendance_ytd['present'] ?? 0); ?></div></div></div>
-                    <div class="col-4"><div class="rateb-stat-card p-2"><div class="small text-muted"><?php echo __('absent'); ?></div><div class="fw-bold"><?php echo (int) ($attendance_ytd['absent'] ?? 0); ?></div></div></div>
-                    <div class="col-4"><div class="rateb-stat-card p-2"><div class="small text-muted"><?php echo __('leave'); ?></div><div class="fw-bold"><?php echo (int) ($attendance_ytd['on_leave'] ?? 0); ?></div></div></div>
-                </div>
                 <h6 class="mb-2"><?php echo __('leave_balances'); ?></h6>
                 <?php if (empty($leave_balances)) { ?>
                 <p class="text-muted small"><?php echo __('no_records'); ?></p>

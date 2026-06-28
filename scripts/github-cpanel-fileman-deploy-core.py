@@ -226,6 +226,8 @@ FAST_FILES = [
     "rateb-erp/views/company/accounting/zatca-settings.php",
     "rateb-erp/views/company/product-categories/index.php",
     "rateb-erp/views/company/supplier-comms/index.php",
+    "rateb-erp/views/company/hr/employees/show.php",
+    "rateb-erp/app/services/HrService.php",
     "rateb-erp/views/components/dashboard/alerts.php",
     "rateb-erp/views/components/dashboard/ranks.php",
     "rateb-erp/public/assets/css/dashboard.css",

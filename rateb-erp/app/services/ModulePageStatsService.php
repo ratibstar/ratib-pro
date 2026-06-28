@@ -41,7 +41,7 @@ final class ModulePageStatsService
             'procurement' => $this->procurementStats(),
             'inventory' => $this->inventoryStats($route),
             'suppliers' => $this->supplierStats($route),
-            'hr' => $this->hrStats(),
+            'hr' => $this->hrStats($route),
             'accounting' => $this->accountingStats($route),
             'contracts' => $this->contractsStats($route),
             'notifications' => $this->notificationStats(),
@@ -68,6 +68,7 @@ final class ModulePageStatsService
             'admin/ops/accounting',
             'admin/ops/hr',
             'admin/executive-dashboard',
+            'hr',
         ];
         if (in_array($route, $exact, true)) {
             return true;
@@ -76,6 +77,9 @@ final class ModulePageStatsService
             return true;
         }
         if (preg_match('#bank-reconciliation/\d+$#', $route)) {
+            return false;
+        }
+        if (preg_match('#hr/employees/\d+$#', $route)) {
             return false;
         }
         if (preg_match('#/\d+$#', $route)) {
@@ -372,8 +376,27 @@ final class ModulePageStatsService
     }
 
     /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
-    private function hrStats(): array
+    private function hrStats(string $route): array
     {
+        $path = $this->opsPath($route);
+        if (preg_match('#^hr/employees/(\d+)$#', $path, $match)) {
+            $employeeId = (int) ($match[1] ?? 0);
+            if ($employeeId > 0) {
+                $hr = new HrService();
+                $att = $hr->employeeAttendanceYtd($employeeId);
+                if ($att !== null) {
+                    $emp = (new \Rateb\App\Models\Employee())->find($employeeId);
+                    return $this->cards([
+                        ['label' => __('present'), 'value' => $this->intStr((int) ($att['present'] ?? 0)), 'tone' => 'green'],
+                        ['label' => __('absent'), 'value' => $this->intStr((int) ($att['absent'] ?? 0)), 'tone' => 'orange'],
+                        ['label' => __('leave'), 'value' => $this->intStr((int) ($att['on_leave'] ?? 0)), 'tone' => 'purple'],
+                        ['label' => __('status'), 'value' => __((string) ($emp['status'] ?? 'active')), 'tone' => 'blue'],
+                    ]);
+                }
+            }
+            return [];
+        }
+
         $cid = $this->companyId() ?? 0;
         $stats = (new HrService())->dashboardStats($cid);
         return $this->cards([

@@ -320,8 +320,8 @@ final class HrService
         }
     }
 
-    /** @return array<string, mixed>|null */
-    public function employeeProfile(int $employeeId): ?array
+    /** @return array{present: int, absent: int, on_leave: int}|null */
+    public function employeeAttendanceYtd(int $employeeId): ?array
     {
         $emp = (new Employee())->find($employeeId);
         if (!$emp) {
@@ -337,6 +337,23 @@ final class HrService
              WHERE company_id = :cid AND employee_id = :eid AND YEAR(attendance_date) = :y",
             ['cid' => $companyId, 'eid' => $employeeId, 'y' => $year]
         );
+        return [
+            'present' => (int) ($attendance['present'] ?? 0),
+            'absent' => (int) ($attendance['absent'] ?? 0),
+            'on_leave' => (int) ($attendance['on_leave'] ?? 0),
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function employeeProfile(int $employeeId): ?array
+    {
+        $emp = (new Employee())->find($employeeId);
+        if (!$emp) {
+            return null;
+        }
+        $companyId = (int) ($emp['company_id'] ?? 0);
+        $year = (int) date('Y');
+        $attendance = $this->employeeAttendanceYtd($employeeId);
         $leaves = (new LeaveRequest())->query(
             "SELECT lr.*, lt.name AS leave_type_name, lt.code AS leave_type_code, lr.leave_type_id
              FROM rateb_leave_requests lr
@@ -349,7 +366,7 @@ final class HrService
         $balances = $this->leaveBalancesForEmployee($employeeId, $year);
         return [
             'employee' => $emp,
-            'attendance_ytd' => $attendance ?: ['present' => 0, 'absent' => 0, 'on_leave' => 0],
+            'attendance_ytd' => $attendance ?? ['present' => 0, 'absent' => 0, 'on_leave' => 0],
             'recent_leaves' => $leaves,
             'leave_balances' => $balances,
         ];
