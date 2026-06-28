@@ -60,10 +60,6 @@
                             e.preventDefault();
                             return;
                         }
-                        if (form.dataset.ratebConfirmed === '1') {
-                            delete form.dataset.ratebConfirmed;
-                            return;
-                        }
                         var msg = form.getAttribute('data-confirm-delete');
                         if (msg) {
                             e.preventDefault();
@@ -85,12 +81,8 @@
                                     input.value = id;
                                     form.appendChild(input);
                                 });
-                                form.dataset.ratebConfirmed = '1';
-                                if (typeof form.requestSubmit === 'function') {
-                                    form.requestSubmit(e.submitter || null);
-                                } else {
-                                    form.submit();
-                                }
+                                // Native submit bypasses all submit listeners (avoids re-confirm loop).
+                                HTMLFormElement.prototype.submit.call(form);
                             });
                             return;
                         }

@@ -209,11 +209,11 @@
             if (!(form instanceof HTMLFormElement)) {
                 return;
             }
-            if (form.dataset.ratebConfirmed === '1') {
-                delete form.dataset.ratebConfirmed;
+            if (shouldSkipForm(form)) {
                 return;
             }
-            if (shouldSkipForm(form)) {
+            if (form.dataset.ratebConfirmed === '1') {
+                delete form.dataset.ratebConfirmed;
                 return;
             }
             var msg = confirmMessageFromForm(form);
