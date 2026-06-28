@@ -216,6 +216,7 @@ FAST_FILES = [
     "rateb-erp/views/components/dashboard/ranks.php",
     "rateb-erp/public/assets/css/dashboard.css",
     "rateb-erp/config/app.php",
+    "rateb-erp/public/dashboard-skin.txt",
     "rateb-erp/public/ratib-erp-build.txt",
     # Marketing build marker — MUST stay last.
     "public/rateb-build.txt",
