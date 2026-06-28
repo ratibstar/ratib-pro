@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-dash-v5c-stats-complete');
+define('RATEB_ASSET_BUILD', '20260628-inv-oversight-stack');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool

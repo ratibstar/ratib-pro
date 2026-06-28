@@ -1,4 +1,6 @@
 <?php
+$pageKey = (string) ($pageKey ?? 'page');
+$perPageKey = (string) ($perPageKey ?? 'per_page');
 $page = max(1, (int) ($page ?? 1));
 $total = max(0, (int) ($total ?? 0));
 $limit = max(1, (int) ($limit ?? rateb_list_per_page()));
@@ -11,10 +13,11 @@ $pageUrl = static function (array $query) use ($routePrefix, $baseUrl): string {
     }
     return rateb_list_url($routePrefix, $query);
 };
-$perPageOptions = function_exists('rateb_list_per_page_options') ? rateb_list_per_page_options() : [10, 20, 50, 100];
+$perPageOptions = $perPageOptions ?? (function_exists('rateb_list_per_page_options') ? rateb_list_per_page_options() : [10, 20, 50, 100]);
 $from = $total > 0 ? (($page - 1) * $limit) + 1 : 0;
 $to = $total > 0 ? min($total, $page * $limit) : 0;
-$queryBase = rateb_list_query_except(['page']);
+$preserveQuery = is_array($preserveQuery ?? null) ? $preserveQuery : [];
+$queryBase = $preserveQuery !== [] ? $preserveQuery : rateb_list_query_except([$pageKey, $perPageKey]);
 ?>
 <?php if ($total > 0 || $pages > 1) { ?>
 <div class="rateb-pagination-bar d-flex flex-wrap align-items-center justify-content-between gap-2 px-2 py-2">
@@ -29,7 +32,7 @@ $queryBase = rateb_list_query_except(['page']);
             <?php foreach ($perPageOptions as $opt) {
                 $opt = (int) $opt;
                 $active = $opt === $limit;
-                $href = $pageUrl(array_merge($queryBase, ['per_page' => $opt, 'page' => 1]));
+                $href = $pageUrl(array_merge($queryBase, [$perPageKey => $opt, $pageKey => 1]));
                 ?>
             <a href="<?php echo Rateb\App\Core\View::escape($href); ?>"
                class="btn btn-sm <?php echo $active ? 'btn-primary' : 'btn-outline-secondary'; ?>"><?php echo $opt; ?></a>
@@ -40,7 +43,7 @@ $queryBase = rateb_list_query_except(['page']);
             <ul class="pagination pagination-sm mb-0">
                 <?php for ($i = 1; $i <= $pages; $i++) { ?>
                 <li class="page-item<?php echo $i === $page ? ' active' : ''; ?>">
-                    <a class="page-link" href="<?php echo $pageUrl(array_merge($queryBase, ['per_page' => $limit, 'page' => $i])); ?>"><?php echo $i; ?></a>
+                    <a class="page-link" href="<?php echo $pageUrl(array_merge($queryBase, [$perPageKey => $limit, $pageKey => $i])); ?>"><?php echo $i; ?></a>
                 </li>
                 <?php } ?>
             </ul>

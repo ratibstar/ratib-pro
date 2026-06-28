@@ -92,6 +92,10 @@ $ratebRowRecordLabel = static function (array $row): string {
                 'mode' => 'server',
                 'search' => $search ?? '',
                 'routePrefix' => $routePrefix ?? '',
+                'formAction' => $listBaseUrl ?? '',
+                'searchKey' => $searchKey ?? 'q',
+                'searchClearUrl' => $searchClearUrl ?? '',
+                'preserve' => $searchPreserve ?? ['company_id', 'status', 'date_from', 'date_to', 'from', 'to'],
             ]);
         } ?>
         <div class="rateb-table-wrap">
@@ -268,7 +272,17 @@ $ratebRowRecordLabel = static function (array $row): string {
         </div>
     </div>
 </div>
-<?php Rateb\App\Core\View::partial('pagination', ['page' => $page ?? 1, 'total' => $total ?? 0, 'limit' => $limit ?? rateb_list_per_page(), 'routePrefix' => $routePrefix ?? '']); ?>
+<?php Rateb\App\Core\View::partial('pagination', [
+    'page' => $page ?? 1,
+    'total' => $total ?? 0,
+    'limit' => $limit ?? rateb_list_per_page(),
+    'routePrefix' => $routePrefix ?? '',
+    'baseUrl' => $listBaseUrl ?? '',
+    'pageKey' => $pageKey ?? 'page',
+    'perPageKey' => $perPageKey ?? 'per_page',
+    'perPageOptions' => $perPageOptions ?? null,
+    'preserveQuery' => $preserveQuery ?? [],
+]); ?>
 <?php
 $ratebHasImageCol = false;
 foreach ($columns as $col) {

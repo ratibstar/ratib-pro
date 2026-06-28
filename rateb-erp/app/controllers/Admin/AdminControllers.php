@@ -2040,54 +2040,196 @@ final class RfqOversightController extends Controller
 
 final class InventoryController extends Controller
 {
+    /** @param list<int> $allowed */
+    private function oversightPaging(string $prefix, int $default = 5, array $allowed = [5, 10, 20, 50]): array
+    {
+        $page = max(1, (int) ($_GET[$prefix . '_page'] ?? 1));
+        $rawLimit = (int) ($_GET[$prefix . '_per_page'] ?? $default);
+        $limit = in_array($rawLimit, $allowed, true) ? $rawLimit : $default;
+        $search = trim((string) ($_GET[$prefix . '_q'] ?? ''));
+        return [
+            'page' => $page,
+            'limit' => $limit,
+            'search' => $search,
+            'offset' => ($page - 1) * $limit,
+            'pageKey' => $prefix . '_page',
+            'perPageKey' => $prefix . '_per_page',
+            'searchKey' => $prefix . '_q',
+            'perPageOptions' => $allowed,
+        ];
+    }
+
+    /** @param array{company_id: int, status: string, date_from: string, date_to: string} $filters */
+    private function oversightFilterQuery(array $filters): array
+    {
+        $query = [];
+        if ($filters['company_id'] > 0) {
+            $query['company_id'] = (string) $filters['company_id'];
+        }
+        if ($filters['status'] !== '') {
+            $query['status'] = $filters['status'];
+        }
+        if ($filters['date_from'] !== '') {
+            $query['date_from'] = $filters['date_from'];
+        }
+        if ($filters['date_to'] !== '') {
+            $query['date_to'] = $filters['date_to'];
+        }
+        return $query;
+    }
+
+    /** @param list<string> $columns */
+    private function applySearchClause(string &$sql, array &$params, string $search, array $columns, string $prefix): void
+    {
+        if ($search === '') {
+            return;
+        }
+        $parts = [];
+        foreach ($columns as $i => $col) {
+            $key = $prefix . '_s' . $i;
+            $parts[] = $col . ' LIKE :' . $key;
+            $params[$key] = '%' . $search . '%';
+        }
+        if ($parts !== []) {
+            $sql .= ' AND (' . implode(' OR ', $parts) . ')';
+        }
+    }
+
+    /** @param array{company_id: int, status: string, date_from: string, date_to: string} $filters */
+    private function inventoryOversightRows(
+        \Rateb\App\Services\OversightFilterService $ofs,
+        array $filters,
+        int $limit,
+        int $offset,
+        string $search
+    ): array {
+        $inv = new \Rateb\App\Models\Inventory();
+        $sql = 'SELECT * FROM rateb_inventory WHERE 1=1';
+        $params = [];
+        $ofs->applyCompany($sql, $params, 'company_id', $filters);
+        $ofs->applyStatus($sql, $params, 'status', $filters);
+        $ofs->applyDateRange($sql, $params, 'expiry_date', $filters);
+        $this->applySearchClause($sql, $params, $search, ['item_code', 'item_name', 'sku', 'barcode'], 'inv');
+        $countSql = preg_replace('/^SELECT \* FROM/', 'SELECT COUNT(*) AS c FROM', $sql) ?? $sql;
+        $total = (int) ($inv->queryOne($countSql, $params)['c'] ?? 0);
+        $sql .= ' ORDER BY id DESC LIMIT ' . max(1, $limit) . ' OFFSET ' . max(0, $offset);
+        return ['rows' => $inv->query($sql, $params), 'total' => $total];
+    }
+
+    /** @param array{company_id: int, status: string, date_from: string, date_to: string} $filters */
+    private function warehouseOversightRows(
+        \Rateb\App\Services\OversightFilterService $ofs,
+        array $filters,
+        int $limit,
+        int $offset,
+        string $search
+    ): array {
+        $wh = new \Rateb\App\Models\Warehouse();
+        $sql = 'SELECT * FROM rateb_warehouses WHERE 1=1';
+        $params = [];
+        $ofs->applyCompany($sql, $params, 'company_id', $filters);
+        $ofs->applyStatus($sql, $params, 'status', $filters);
+        $this->applySearchClause($sql, $params, $search, ['name', 'code', 'location'], 'wh');
+        $countSql = preg_replace('/^SELECT \* FROM/', 'SELECT COUNT(*) AS c FROM', $sql) ?? $sql;
+        $total = (int) ($wh->queryOne($countSql, $params)['c'] ?? 0);
+        $sql .= ' ORDER BY id DESC LIMIT ' . max(1, $limit) . ' OFFSET ' . max(0, $offset);
+        return ['rows' => $wh->query($sql, $params), 'total' => $total];
+    }
+
     public function index(): void
     {
-        $inv = new \Rateb\App\Models\Inventory();
-        $wh = new \Rateb\App\Models\Warehouse();
         $ofs = new \Rateb\App\Services\OversightFilterService();
         $filters = $ofs->parse();
         $lookup = new \Rateb\App\Services\FormLookupService();
+        $listBaseUrl = rateb_url('admin/oversight/inventory');
+        $filterQuery = $this->oversightFilterQuery($filters);
 
-        $invSql = 'SELECT * FROM rateb_inventory WHERE 1=1';
-        $invParams = [];
-        $ofs->applyCompany($invSql, $invParams, 'company_id', $filters);
-        $ofs->applyStatus($invSql, $invParams, 'status', $filters);
-        $ofs->applyDateRange($invSql, $invParams, 'expiry_date', $filters);
-        $invSql .= ' ORDER BY id DESC LIMIT 50';
+        $invPaging = $this->oversightPaging('inv');
+        $whPaging = $this->oversightPaging('wh');
 
-        $whSql = 'SELECT * FROM rateb_warehouses WHERE 1=1';
-        $whParams = [];
-        $ofs->applyCompany($whSql, $whParams, 'company_id', $filters);
-        $ofs->applyStatus($whSql, $whParams, 'status', $filters);
-        $whSql .= ' ORDER BY id DESC LIMIT 50';
+        $invData = $this->inventoryOversightRows(
+            $ofs,
+            $filters,
+            $invPaging['limit'],
+            $invPaging['offset'],
+            $invPaging['search']
+        );
+        $whData = $this->warehouseOversightRows(
+            $ofs,
+            $filters,
+            $whPaging['limit'],
+            $whPaging['offset'],
+            $whPaging['search']
+        );
+
+        $invPreserve = array_merge($filterQuery, [
+            'wh_page' => (string) $whPaging['page'],
+            'wh_per_page' => (string) $whPaging['limit'],
+        ]);
+        if ($whPaging['search'] !== '') {
+            $invPreserve['wh_q'] = $whPaging['search'];
+        }
+
+        $whPreserve = array_merge($filterQuery, [
+            'inv_page' => (string) $invPaging['page'],
+            'inv_per_page' => (string) $invPaging['limit'],
+        ]);
+        if ($invPaging['search'] !== '') {
+            $whPreserve['inv_q'] = $invPaging['search'];
+        }
 
         $itemFields = [
             ['name' => 'item_code', 'label' => 'item_code'],
             ['name' => 'item_name', 'label' => 'item_name'],
             ['name' => 'sku', 'label' => 'sku'],
             ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
-            ['name' => 'quantity', 'label' => 'quantity'],
-            ['name' => 'unit_cost', 'label' => 'unit_cost'],
-            ['name' => 'expiry_date', 'label' => 'expiry_date'],
-            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number'],
+            ['name' => 'unit_cost', 'label' => 'unit_cost', 'type' => 'money'],
+            ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
         $warehouseFields = [
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'code', 'label' => 'code'],
             ['name' => 'location', 'label' => 'location'],
-            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
+
+        $inv = new \Rateb\App\Models\Inventory();
         $this->view('admin/inventory/index', [
             'title' => __('inventory'),
-            'items' => $inv->query($invSql, $invParams),
-            'warehouses' => $wh->query($whSql, $whParams),
+            'items' => $invData['rows'],
+            'warehouses' => $whData['rows'],
             'itemFields' => $itemFields,
             'warehouseFields' => $warehouseFields,
             'total_value' => $inv->totalValue($filters['company_id'] > 0 ? $filters['company_id'] : null),
             'companies' => $ofs->companies(),
             'filters' => $filters,
             'statusOptions' => $lookup->get('inventory_statuses'),
-            'formAction' => rateb_url('admin/oversight/inventory'),
+            'formAction' => $listBaseUrl,
+            'listBaseUrl' => $listBaseUrl,
+            'invRoutePrefix' => rateb_app_route('inventory'),
+            'whRoutePrefix' => rateb_app_route('warehouses'),
+            'invPage' => $invPaging['page'],
+            'invLimit' => $invPaging['limit'],
+            'invTotal' => $invData['total'],
+            'invSearch' => $invPaging['search'],
+            'invPageKey' => $invPaging['pageKey'],
+            'invPerPageKey' => $invPaging['perPageKey'],
+            'invSearchKey' => $invPaging['searchKey'],
+            'invPerPageOptions' => $invPaging['perPageOptions'],
+            'invPreserveQuery' => $invPreserve,
+            'invSearchClearUrl' => rateb_url_query($listBaseUrl, $invPreserve),
+            'whPage' => $whPaging['page'],
+            'whLimit' => $whPaging['limit'],
+            'whTotal' => $whData['total'],
+            'whSearch' => $whPaging['search'],
+            'whPageKey' => $whPaging['pageKey'],
+            'whPerPageKey' => $whPaging['perPageKey'],
+            'whSearchKey' => $whPaging['searchKey'],
+            'whPerPageOptions' => $whPaging['perPageOptions'],
+            'whPreserveQuery' => $whPreserve,
+            'whSearchClearUrl' => rateb_url_query($listBaseUrl, $whPreserve),
             'csrf' => Csrf::token(),
         ], 'main');
     }
