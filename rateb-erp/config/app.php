@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-dash-v5c-type');
+define('RATEB_ASSET_BUILD', '20260628-dash-v5c-stats');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -1760,5 +1760,26 @@ if (!function_exists('__')) {
             $text = str_replace(':' . $k, (string) $v, $text);
         }
         return $text;
+    }
+}
+
+/** Module list-page KPI strip (real DB calculations). */
+if (!function_exists('rateb_module_page_metrics')) {
+    /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
+    function rateb_module_page_metrics(?string $route = null): array
+    {
+        if (!class_exists(\Rateb\App\Services\ModulePageStatsService::class)) {
+            return [];
+        }
+        $route = $route ?? rateb_current_erp_route();
+        if ($route === '') {
+            return [];
+        }
+        try {
+            return (new \Rateb\App\Services\ModulePageStatsService())->forRoute($route);
+        } catch (\Throwable $e) {
+            error_log('rateb_module_page_metrics: ' . $e->getMessage());
+            return [];
+        }
     }
 }

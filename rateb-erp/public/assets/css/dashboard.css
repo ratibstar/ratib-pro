@@ -807,6 +807,28 @@
     background: var(--cm-surface);
 }
 
+.cm--page-stats {
+    max-width: none;
+    margin: 0 0 1rem;
+    padding-bottom: 0;
+}
+
+.cm--page-stats .cm-strip {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+    .cm--page-stats .cm-strip {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .cm--page-stats .cm-strip {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* —— Horizontal metrics strip —— */
 .cm-strip {
     display: grid;

@@ -1,1 +1,1 @@
-rateb-dashboard-skin=v5c-type
+rateb-dashboard-skin=v5c-stats

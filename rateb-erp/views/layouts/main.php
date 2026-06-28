@@ -4,6 +4,11 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $erpRoute = rateb_current_erp_route();
 $accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|cost-of-sales|trial-balance|journal-register|account-statement|partners-subsidiary-ledger|invoices|payments|subscriptions|reports/cost-analysis|reports/inventory-valuation|asset-depreciation)#', $erpRoute);
+$modulePageMetrics = [];
+if (empty($hideModulePageStats) && $erpRoute !== '' && function_exists('rateb_module_page_metrics')) {
+    $modulePageMetrics = rateb_module_page_metrics($erpRoute);
+}
+$loadModulePageStatsCss = $modulePageMetrics !== [];
 $navActive = static function (string $route) use ($erpRoute, $currentPath): bool {
     if ($erpRoute !== '') {
         if ($route === 'admin') {
@@ -66,6 +71,9 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
     <link href="<?php echo rateb_asset('css/dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/light.css'); ?>" rel="stylesheet">
+    <?php if (!empty($loadModulePageStatsCss)) { ?>
+    <link href="<?php echo rateb_asset('css/dashboard.css'); ?>" rel="stylesheet">
+    <?php } ?>
     <?php if ($dir === 'rtl') { ?>
     <link href="<?php echo rateb_asset('css/ar-typography.css'); ?>" rel="stylesheet">
     <style id="rateb-rtl-ar-fix">html[dir="rtl"] .rateb-app,html[dir="rtl"] .rateb-app *,html[dir="rtl"] body.rateb-app *{text-transform:none!important;letter-spacing:normal!important;font-feature-settings:normal!important}</style>
@@ -223,6 +231,9 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             );
             if ($showOpsCompanyPicker) {
                 Rateb\App\Core\View::partial('ops-company-select');
+            }
+            if ($modulePageMetrics !== []) {
+                Rateb\App\Core\View::partial('module-page-stats', ['metrics' => $modulePageMetrics]);
             }
             ?>
             <?php echo $pageContent; ?>

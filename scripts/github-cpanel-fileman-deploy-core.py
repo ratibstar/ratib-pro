@@ -215,6 +215,8 @@ FAST_FILES = [
     "rateb-erp/views/components/dashboard/metrics-strip.php",
     "rateb-erp/app/services/DashboardService.php",
     "rateb-erp/app/services/AccountingDashboardService.php",
+    "rateb-erp/app/services/ModulePageStatsService.php",
+    "rateb-erp/views/components/module-page-stats.php",
     "rateb-erp/views/components/dashboard/alerts.php",
     "rateb-erp/views/components/dashboard/ranks.php",
     "rateb-erp/public/assets/css/dashboard.css",
