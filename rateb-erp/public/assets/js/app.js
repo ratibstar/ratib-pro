@@ -1,6 +1,88 @@
 (function () {
     'use strict';
 
+    function bulkTableForDeleteForm(form) {
+        var host = form.closest('.rateb-card') || form.closest('.rateb-card-body') || form.parentElement;
+        if (!host) {
+            return null;
+        }
+        return host.querySelector('[data-rateb-bulk-table="1"]')
+            || document.querySelector('[data-rateb-bulk-table="1"]');
+    }
+
+    function selectedRowIds(table) {
+        var ids = [];
+        if (!table) {
+            return ids;
+        }
+        table.querySelectorAll('[data-rateb-row-check]:checked').forEach(function (cb) {
+            ids.push(cb.value);
+        });
+        return ids;
+    }
+
+    function forceBulkPost(action, csrf, ids) {
+        var f = document.createElement('form');
+        f.method = 'post';
+        f.action = action;
+        f.style.display = 'none';
+        var csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf';
+        csrfInput.value = csrf;
+        f.appendChild(csrfInput);
+        ids.forEach(function (id) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = id;
+            f.appendChild(input);
+        });
+        document.body.appendChild(f);
+        f.submit();
+    }
+
+    function initBulkDeleteDelegated() {
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-rateb-bulk-delete-btn]');
+            if (!btn) {
+                return;
+            }
+            var form = btn.closest('form[data-rateb-bulk-form]');
+            if (!form) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            var ids = selectedRowIds(bulkTableForDeleteForm(form));
+            if (ids.length === 0) {
+                return;
+            }
+            var csrfEl = form.querySelector('input[name="_csrf"]');
+            var csrf = csrfEl ? csrfEl.value : '';
+            var action = form.getAttribute('action') || '';
+            if (!action || !csrf) {
+                return;
+            }
+            var msg = form.getAttribute('data-rateb-bulk-confirm') || '';
+            var doPost = function () {
+                forceBulkPost(action, csrf, ids);
+            };
+            if (!msg) {
+                doPost();
+                return;
+            }
+            var promise = window.ratebConfirm
+                ? window.ratebConfirm(msg, { variant: 'danger' })
+                : Promise.resolve(window.confirm(msg));
+            promise.then(function (ok) {
+                if (ok) {
+                    doPost();
+                }
+            });
+        }, true);
+    }
+
     function initBulkTables() {
         document.querySelectorAll('[data-rateb-bulk-table="1"]').forEach(function (table) {
             var card = table.closest('.rateb-card');
@@ -53,56 +135,26 @@
             }
 
             if (bar) {
-                function appendBulkIds(form, ids) {
-                    form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
-                        el.remove();
-                    });
-                    ids.forEach(function (id) {
-                        var input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'ids[]';
-                        input.value = id;
-                        form.appendChild(input);
-                    });
-                }
-
-                function postBulkForm(form, ids) {
-                    appendBulkIds(form, ids);
-                    HTMLFormElement.prototype.submit.call(form);
-                }
-
                 bar.querySelectorAll('[data-rateb-bulk-form]').forEach(function (form) {
-                    var deleteBtn = form.querySelector('[data-rateb-bulk-delete-btn]');
-                    if (deleteBtn) {
-                        deleteBtn.addEventListener('click', function () {
-                            var ids = selectedIds();
-                            if (ids.length === 0) {
-                                return;
-                            }
-                            var msg = form.getAttribute('data-rateb-bulk-confirm') || '';
-                            if (!msg) {
-                                postBulkForm(form, ids);
-                                return;
-                            }
-                            var promise = window.ratebConfirm
-                                ? window.ratebConfirm(msg, { variant: 'danger' })
-                                : Promise.resolve(window.confirm(msg));
-                            promise.then(function (ok) {
-                                if (ok) {
-                                    postBulkForm(form, ids);
-                                }
-                            });
-                        });
+                    if (form.querySelector('[data-rateb-bulk-delete-btn]')) {
                         return;
                     }
-
                     form.addEventListener('submit', function (e) {
                         var ids = selectedIds();
                         if (ids.length === 0) {
                             e.preventDefault();
                             return;
                         }
-                        appendBulkIds(form, ids);
+                        form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
+                            el.remove();
+                        });
+                        ids.forEach(function (id) {
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'ids[]';
+                            input.value = id;
+                            form.appendChild(input);
+                        });
                     });
                 });
             }
@@ -328,6 +380,7 @@
             }
         });
 
+        initBulkDeleteDelegated();
         initBulkTables();
         initTableSearch();
         initPermissionMatrix();
