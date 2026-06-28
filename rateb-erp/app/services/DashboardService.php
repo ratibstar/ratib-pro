@@ -123,11 +123,20 @@ final class DashboardService
              GROUP BY DATE_FORMAT(created_at, '%Y-%m')
              ORDER BY month ASC LIMIT 12"
         )->fetchAll() ?: [];
+        if ($loginActivity === []) {
+            for ($i = 5; $i >= 0; $i--) {
+                $loginActivity[] = [
+                    'month' => date('Y-m', strtotime('-' . $i . ' months')),
+                    'success_total' => 0,
+                    'failed_total' => 0,
+                ];
+            }
+        }
 
         return [
-            'company_growth' => $companyGrowth,
-            'subscription_growth' => $subscriptionGrowth,
-            'user_growth' => $userGrowth,
+            'company_growth' => $this->padMonthlySeries($companyGrowth),
+            'subscription_growth' => $this->padMonthlySeries($subscriptionGrowth),
+            'user_growth' => $this->padMonthlySeries($userGrowth),
             'company_status' => $companyStatus,
             'plan_distribution' => $planDistribution,
             'subscription_status' => $subscriptionStatus,
@@ -238,5 +247,18 @@ final class DashboardService
         return [
             'metrics' => $this->companyMetrics($companyId),
         ];
+    }
+
+    /** @param array<int, array<string, mixed>> $rows */
+    private function padMonthlySeries(array $rows): array
+    {
+        if ($rows !== []) {
+            return $rows;
+        }
+        $out = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $out[] = ['month' => date('Y-m', strtotime('-' . $i . ' months')), 'total' => 0];
+        }
+        return $out;
     }
 }

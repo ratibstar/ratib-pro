@@ -220,6 +220,8 @@ FAST_FILES = [
     "rateb-erp/public/assets/css/dashboard.css",
     "rateb-erp/public/assets/js/charts.js",
     "rateb-erp/public/assets/js/dashboard-tabs.js",
+    "rateb-erp/config/lang/en.php",
+    "rateb-erp/config/lang/ar.php",
     "rateb-erp/config/app.php",
     "rateb-erp/public/dashboard-skin.txt",
     "rateb-erp/public/ratib-erp-build.txt",

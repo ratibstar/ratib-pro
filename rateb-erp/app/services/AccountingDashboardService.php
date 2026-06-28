@@ -281,6 +281,19 @@ final class AccountingDashboardService
         return ($pct >= 0 ? '+' : '') . $pct . '%';
     }
 
+    /** @param array<int, array<string, mixed>> $rows */
+    private function padMonthlySeries(array $rows): array
+    {
+        if ($rows !== []) {
+            return $rows;
+        }
+        $out = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $out[] = ['month' => date('Y-m', strtotime('-' . $i . ' months')), 'total' => 0];
+        }
+        return $out;
+    }
+
     private function newCustomersCount(int $companyId): int
     {
         $row = Database::connection()->prepare(
@@ -354,6 +367,9 @@ final class AccountingDashboardService
              ORDER BY month ASC LIMIT 12"
         )->fetchAll() ?: [];
 
+        $revenue = $this->padMonthlySeries($revenue);
+        $expenses = $this->padMonthlySeries($expenses);
+
         $arAp = [];
         if ($companyId !== null && $companyId > 0) {
             $arData = $this->acct->accountsReceivable($companyId);
@@ -375,13 +391,19 @@ final class AccountingDashboardService
             }
         }
 
-        $journalActivity = $pdo->query(
-            "SELECT DATE_FORMAT(entry_date, '%Y-%m') AS month, COUNT(*) AS total
-             FROM rateb_journal_entries
-             WHERE status = 'posted'" . $cidSql . "
-             GROUP BY DATE_FORMAT(entry_date, '%Y-%m')
-             ORDER BY month ASC LIMIT 12"
-        )->fetchAll() ?: [];
+        $journalActivity = [];
+        try {
+            $journalActivity = $pdo->query(
+                "SELECT DATE_FORMAT(entry_date, '%Y-%m') AS month, COUNT(*) AS total
+                 FROM rateb_journal_entries
+                 WHERE status = 'posted'" . $cidSql . "
+                 GROUP BY DATE_FORMAT(entry_date, '%Y-%m')
+                 ORDER BY month ASC LIMIT 12"
+            )->fetchAll() ?: [];
+        } catch (\Throwable $e) {
+            $journalActivity = [];
+        }
+        $journalActivity = $this->padMonthlySeries($journalActivity);
 
         return [
             'monthly_revenue' => $revenue,

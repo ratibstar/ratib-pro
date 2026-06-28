@@ -89,6 +89,19 @@
         }
     }
 
+    function hasLabels(el) {
+        try {
+            var labels = JSON.parse(el.dataset.labels || '[]');
+            return Array.isArray(labels) && labels.length > 0;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function hasMultiDataset(el) {
+        return hasLabels(el) || el.dataset.revenue || el.dataset.success;
+    }
+
     function dataMax(values) {
         var max = 0;
         values.forEach(function (v) {
@@ -528,7 +541,7 @@
         }
 
         var companyEl = document.getElementById('chart-companies');
-        if (companyEl && companyEl.dataset.labels) {
+        if (companyEl && hasLabels(companyEl)) {
             deferInit(companyEl, function () {
                 initBarChart(companyEl, colors, pal, chartLabel(companyEl, 'Companies'));
             });

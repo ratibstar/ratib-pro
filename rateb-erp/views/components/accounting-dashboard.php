@@ -38,7 +38,16 @@ $expOnlyLabels = json_encode(array_column($charts['monthly_expenses'] ?? [], 'mo
 $expOnlyValues = json_encode(array_map('floatval', array_column($charts['monthly_expenses'] ?? [], 'total')));
 $bdLabels = json_encode(array_map(static fn ($r) => __((string) ($r['label'] ?? '')), $breakdown));
 $bdValues = json_encode(array_map('floatval', array_column($breakdown, 'value')));
-$arApLabels = json_encode(array_map(static fn ($r) => __((string) ($r['label'] ?? '')), $charts['ar_ap'] ?? []));
+$chartLbl = static function (string $key): string {
+    $payKey = 'payment_status_' . $key;
+    $pay = __($payKey);
+    if ($pay !== $payKey) {
+        return $pay;
+    }
+    $plain = __($key);
+    return $plain !== $key ? $plain : $key;
+};
+$arApLabels = json_encode(array_map($chartLbl, array_column($charts['ar_ap'] ?? [], 'label')));
 $arApValues = json_encode(array_map('floatval', array_column($charts['ar_ap'] ?? [], 'value')));
 $journalLabels = json_encode(array_column($charts['journal_activity'] ?? [], 'month'));
 $journalValues = json_encode(array_map('intval', array_column($charts['journal_activity'] ?? [], 'total')));
