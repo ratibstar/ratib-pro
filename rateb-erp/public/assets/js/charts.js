@@ -160,5 +160,49 @@
                 }
             });
         }
+
+        var usersEl = document.getElementById('chart-users');
+        if (usersEl && usersEl.dataset.labels) {
+            new Chart(usersEl, {
+                type: 'line',
+                data: {
+                    labels: JSON.parse(usersEl.dataset.labels),
+                    datasets: [{
+                        label: chartLabel(usersEl, 'Users'),
+                        data: JSON.parse(usersEl.dataset.values),
+                        borderColor: colors.accent,
+                        backgroundColor: 'rgba(45,212,191,0.12)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: baseOptions(colors)
+            });
+        }
+
+        var statusEl = document.getElementById('chart-company-status');
+        if (statusEl && statusEl.dataset.labels) {
+            new Chart(statusEl, {
+                type: 'doughnut',
+                data: {
+                    labels: JSON.parse(statusEl.dataset.labels),
+                    datasets: [{
+                        data: JSON.parse(statusEl.dataset.values),
+                        backgroundColor: [colors.primary, colors.accent, '#f59e0b', '#ef4444', '#94a3b8']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            rtl: isRtl(),
+                            position: 'bottom',
+                            labels: { color: colors.muted, font: { family: 'Tajawal, sans-serif' } }
+                        }
+                    }
+                }
+            });
+        }
     });
 })();

@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\Database;
 use Rateb\App\Models\Company;
 use Rateb\App\Models\Inventory;
+use Rateb\App\Models\LoginActivity;
+use Rateb\App\Models\Plan;
 use Rateb\App\Models\PurchaseOrder;
 use Rateb\App\Models\PurchaseRequest;
 use Rateb\App\Models\Subscription;
@@ -12,17 +15,57 @@ use Rateb\App\Models\User;
 
 final class DashboardService
 {
+    /** @return array<string, mixed> */
+    public function adminBuild(): array
+    {
+        return [
+            'metrics' => $this->adminMetrics(),
+            'charts' => $this->adminCharts(),
+            'alerts' => $this->adminAlerts(),
+            'recent_companies' => $this->recentCompanies(),
+            'recent_logins' => $this->recentLogins(),
+            'top_companies' => $this->topCompaniesByActivity(),
+        ];
+    }
+
     public function adminMetrics(): array
     {
         $companies = (new Company())->getStats();
-        $subscriptions = (new Subscription())->queryOne('SELECT COUNT(*) AS c FROM rateb_subscriptions WHERE status = \'active\'');
+        $pdo = Database::connection();
+        $subscriptions = (new Subscription())->queryOne(
+            "SELECT COUNT(*) AS c FROM rateb_subscriptions WHERE status = 'active'"
+        );
         $users = (new User())->queryOne('SELECT COUNT(*) AS c FROM rateb_users WHERE is_super_admin = 0');
+        $pending = $pdo->query(
+            "SELECT COUNT(*) AS c FROM rateb_companies WHERE status = 'pending'"
+        )->fetch() ?: ['c' => 0];
+        $expiringSubs = $pdo->query(
+            "SELECT COUNT(*) AS c FROM rateb_subscriptions
+             WHERE status = 'active' AND ends_at IS NOT NULL
+               AND ends_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)"
+        )->fetch() ?: ['c' => 0];
+        $newUsersMonth = $pdo->query(
+            "SELECT COUNT(*) AS c FROM rateb_users
+             WHERE is_super_admin = 0 AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+        )->fetch() ?: ['c' => 0];
+        $plans = (new Plan())->queryOne('SELECT COUNT(*) AS c FROM rateb_plans WHERE is_active = 1');
+
+        $pendingApprovals = 0;
+        if (function_exists('rateb_oversight_pending_approvals_count')) {
+            $pendingApprovals = rateb_oversight_pending_approvals_count();
+        }
 
         return [
             'total_companies' => (int) ($companies['total'] ?? 0),
             'active_companies' => (int) ($companies['active'] ?? 0),
+            'suspended_companies' => (int) ($companies['suspended'] ?? 0),
+            'pending_companies' => (int) ($pending['c'] ?? 0),
             'subscriptions' => (int) ($subscriptions['c'] ?? 0),
+            'expiring_subscriptions' => (int) ($expiringSubs['c'] ?? 0),
             'users' => (int) ($users['c'] ?? 0),
+            'new_users_month' => (int) ($newUsersMonth['c'] ?? 0),
+            'active_plans' => (int) ($plans['c'] ?? 0),
+            'pending_approvals' => $pendingApprovals,
         ];
     }
 
@@ -36,11 +79,103 @@ final class DashboardService
             "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
              FROM rateb_subscriptions GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12"
         );
+        $userGrowth = (new User())->query(
+            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
+             FROM rateb_users WHERE is_super_admin = 0
+             GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12"
+        );
+        $statusRows = (new Company())->query(
+            "SELECT status, COUNT(*) AS total FROM rateb_companies GROUP BY status"
+        );
+        $companyStatus = [];
+        foreach ($statusRows as $row) {
+            $companyStatus[] = [
+                'label' => (string) ($row['status'] ?? ''),
+                'value' => (int) ($row['total'] ?? 0),
+            ];
+        }
 
         return [
             'company_growth' => $companyGrowth,
             'subscription_growth' => $subscriptionGrowth,
+            'user_growth' => $userGrowth,
+            'company_status' => $companyStatus,
         ];
+    }
+
+    /** @return array<int, array{type: string, severity: string, message: string, url: string}> */
+    public function adminAlerts(): array
+    {
+        $m = $this->adminMetrics();
+        $alerts = [];
+
+        if ((int) ($m['pending_companies'] ?? 0) > 0) {
+            $alerts[] = [
+                'type' => 'pending_companies',
+                'severity' => 'warning',
+                'message' => __('dashboard_alert_pending_companies', ['count' => (int) $m['pending_companies']]),
+                'url' => rateb_url('admin/companies'),
+            ];
+        }
+        if ((int) ($m['suspended_companies'] ?? 0) > 0) {
+            $alerts[] = [
+                'type' => 'suspended_companies',
+                'severity' => 'danger',
+                'message' => __('dashboard_alert_suspended_companies', ['count' => (int) $m['suspended_companies']]),
+                'url' => rateb_url('admin/companies'),
+            ];
+        }
+        if ((int) ($m['expiring_subscriptions'] ?? 0) > 0) {
+            $alerts[] = [
+                'type' => 'expiring_subscriptions',
+                'severity' => 'warning',
+                'message' => __('dashboard_alert_expiring_subscriptions', ['count' => (int) $m['expiring_subscriptions']]),
+                'url' => rateb_url('admin/subscriptions'),
+            ];
+        }
+        if ((int) ($m['pending_approvals'] ?? 0) > 0 && rateb_nav_can('workflows.view')) {
+            $alerts[] = [
+                'type' => 'pending_approvals',
+                'severity' => 'info',
+                'message' => __('dashboard_alert_pending_approvals', ['count' => (int) $m['pending_approvals']]),
+                'url' => rateb_url('admin/oversight/approvals'),
+            ];
+        }
+
+        return $alerts;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function recentCompanies(): array
+    {
+        return (new Company())->query(
+            'SELECT id, name, email, status, created_at FROM rateb_companies ORDER BY created_at DESC LIMIT 8'
+        );
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function recentLogins(): array
+    {
+        return (new LoginActivity())->query(
+            'SELECT la.email, la.success, la.created_at, u.name AS user_name
+             FROM rateb_login_activity la
+             LEFT JOIN rateb_users u ON u.id = la.user_id
+             ORDER BY la.created_at DESC LIMIT 8'
+        );
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function topCompaniesByActivity(): array
+    {
+        return (new PurchaseOrder())->query(
+            'SELECT c.name AS company_name, COUNT(po.id) AS po_count,
+                    COALESCE(SUM(po.total_amount), 0) AS total
+             FROM rateb_purchase_orders po
+             JOIN rateb_companies c ON c.id = po.company_id
+             GROUP BY po.company_id
+             ORDER BY po_count DESC, total DESC
+             LIMIT 5'
+        );
     }
 
     public function companyMetrics(int $companyId): array
@@ -54,6 +189,14 @@ final class DashboardService
             'purchase_orders' => (new PurchaseOrder())->count(),
             'inventory_value' => (new Inventory())->totalValue(),
             'suppliers' => (new \Rateb\App\Models\Supplier())->count(),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function companyBuild(int $companyId): array
+    {
+        return [
+            'metrics' => $this->companyMetrics($companyId),
         ];
     }
 }

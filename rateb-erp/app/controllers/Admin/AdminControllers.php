@@ -67,10 +67,12 @@ final class DashboardController extends Controller
 
         if (SessionManager::get('rateb_is_super_admin')) {
             $service = new DashboardService();
+            $dash = $service->adminBuild();
             $this->view('admin/dashboard', [
                 'title' => __('dashboard'),
-                'metrics' => $service->adminMetrics(),
-                'charts' => $service->adminCharts(),
+                'dash' => $dash,
+                'metrics' => $dash['metrics'],
+                'charts' => $dash['charts'],
                 'csrf' => Csrf::token(),
             ], 'main');
             return;
