@@ -89,6 +89,9 @@ if ($isAdmin) {
     $actions[] = ['href' => rateb_app_url('journal-entries/create'), 'label' => __('new_journal_entry'), 'icon' => 'fa-plus', 'primary' => true];
 }
 
+$maxCustomer = max(1.0, ...array_map(static fn ($r) => (float) ($r['total'] ?? 0), $topCustomers ?: [['total' => 1]]));
+$maxItem = max(1.0, ...array_map(static fn ($r) => (float) ($r['total'] ?? 0), $topItems ?: [['total' => 1]]));
+
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
 <?php if (!$isAdmin && $companyId < 1 && rateb_is_super_admin()) { ?>
@@ -161,16 +164,20 @@ Rateb\App\Core\View::partial('dashboard/head');
                 </section>
             </div>
 
-            <?php
-            Rateb\App\Core\View::partial('dashboard/ranks', [
-                'title' => __('top_customers'),
-                'rows' => array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $topCustomers),
-            ]);
-            Rateb\App\Core\View::partial('dashboard/ranks', [
-                'title' => __('top_sold_items'),
-                'rows' => array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $topItems),
-            ]);
-            ?>
+            <div class="cm-row2 cm-row2--tight">
+                <?php
+                Rateb\App\Core\View::partial('dashboard/ranks', [
+                    'title' => __('top_customers'),
+                    'rows' => array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $topCustomers),
+                    'max' => $maxCustomer,
+                ]);
+                Rateb\App\Core\View::partial('dashboard/ranks', [
+                    'title' => __('top_sold_items'),
+                    'rows' => array_map(static fn ($r) => ['name' => (string) ($r['name'] ?? ''), 'total' => (float) ($r['total'] ?? 0)], $topItems),
+                    'max' => $maxItem,
+                ]);
+                ?>
+            </div>
 
             <section class="cm-board">
                 <div class="cm-board__head">

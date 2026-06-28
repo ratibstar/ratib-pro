@@ -7,26 +7,41 @@
     function chartColors() {
         var style = getComputedStyle(document.documentElement);
         return {
-            primary: style.getPropertyValue('--rateb-primary').trim() || '#3b82f6',
-            accent: style.getPropertyValue('--rateb-accent').trim() || '#2dd4bf',
-            muted: style.getPropertyValue('--rateb-text-muted').trim() || '#94a3b8',
-            grid: style.getPropertyValue('--rateb-border').trim() || '#2a3a52',
-            surface: style.getPropertyValue('--rateb-surface-elevated').trim() || '#1e293b',
-            text: style.getPropertyValue('--rateb-text').trim() || '#f1f5f9'
+            primary: style.getPropertyValue('--rateb-primary').trim() || '#10b981',
+            accent: style.getPropertyValue('--rateb-accent').trim() || '#38bdf8',
+            muted: style.getPropertyValue('--rateb-text-muted').trim() || '#6b7a8f',
+            grid: style.getPropertyValue('--rateb-border').trim() || '#252f3d',
+            surface: style.getPropertyValue('--rateb-surface-elevated').trim() || '#0f1419',
+            text: style.getPropertyValue('--rateb-text').trim() || '#e8edf4'
         };
     }
 
     function palette(colors) {
         return {
             revenue: '#34d399',
-            revenueSoft: 'rgba(52,211,153,0.14)',
-            expense: '#f87171',
-            expenseSoft: 'rgba(248,113,113,0.14)',
+            revenueSoft: 'rgba(52,211,153,0.08)',
+            expense: '#fb7185',
+            expenseSoft: 'rgba(251,113,133,0.08)',
             primary: colors.primary,
-            primarySoft: 'rgba(59,130,246,0.14)',
+            primarySoft: 'rgba(16,185,129,0.1)',
             accent: colors.accent,
-            accentSoft: 'rgba(45,212,191,0.14)',
-            series: [colors.primary, colors.accent, '#a78bfa', '#fbbf24', '#f87171', '#94a3b8']
+            accentSoft: 'rgba(56,189,248,0.1)',
+            series: [
+                'rgba(16,185,129,0.85)',
+                'rgba(56,189,248,0.85)',
+                'rgba(167,139,250,0.85)',
+                'rgba(251,191,36,0.85)',
+                'rgba(251,113,133,0.85)',
+                'rgba(107,122,143,0.75)'
+            ],
+            seriesHover: [
+                '#10b981',
+                '#38bdf8',
+                '#a78bfa',
+                '#fbbf24',
+                '#fb7185',
+                '#94a3b8'
+            ]
         };
     }
 
@@ -64,8 +79,49 @@
         }).format(value);
     }
 
+    function parseNums(raw) {
+        try {
+            return JSON.parse(raw || '[]').map(function (v) {
+                return Number(v) || 0;
+            });
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function dataMax(values) {
+        var max = 0;
+        values.forEach(function (v) {
+            if (v > max) {
+                max = v;
+            }
+        });
+        return max;
+    }
+
+    function suggestedCeil(values) {
+        var max = dataMax(values);
+        if (max <= 0) {
+            return 5;
+        }
+        return Math.ceil(max * 1.15);
+    }
+
+    function lightAnim(stagger) {
+        return {
+            duration: 1100,
+            easing: 'easeOutQuart',
+            delay: function (ctx) {
+                if (!stagger || ctx.type !== 'data' || ctx.mode !== 'default') {
+                    return 0;
+                }
+                return ctx.dataIndex * 55 + ctx.datasetIndex * 90;
+            }
+        };
+    }
+
     function areaGradient(ctx, height, color) {
-        var g = ctx.createLinearGradient(0, 0, 0, height || 240);
+        var g = ctx.createLinearGradient(0, 0, 0, height || 200);
         g.addColorStop(0, color);
         g.addColorStop(1, 'rgba(0,0,0,0)');
         return g;
@@ -73,17 +129,17 @@
 
     function tooltipOptions(colors) {
         return {
-            backgroundColor: 'rgba(15,23,42,0.94)',
+            backgroundColor: 'rgba(8,11,18,0.92)',
             titleColor: colors.text,
             bodyColor: colors.muted,
-            borderColor: colors.grid,
+            borderColor: 'rgba(148,163,184,0.2)',
             borderWidth: 1,
-            padding: 12,
-            cornerRadius: 10,
+            padding: 10,
+            cornerRadius: 8,
             displayColors: true,
-            boxWidth: 8,
-            boxHeight: 8,
-            boxPadding: 4,
+            boxWidth: 6,
+            boxHeight: 6,
+            boxPadding: 3,
             usePointStyle: true,
             callbacks: {
                 label: function (ctx) {
@@ -110,12 +166,12 @@
             rtl: isRtl(),
             labels: {
                 color: chartColors().muted,
-                font: { family: fontFamily(), size: 11 },
+                font: { family: fontFamily(), size: 10, weight: '500' },
                 usePointStyle: true,
                 pointStyle: 'circle',
-                padding: 14,
-                boxWidth: 6,
-                boxHeight: 6
+                padding: 10,
+                boxWidth: 5,
+                boxHeight: 5
             }
         };
     }
@@ -125,27 +181,30 @@
             grid: { display: false, drawBorder: false },
             ticks: {
                 color: colors.muted,
-                font: { family: fontFamily(), size: 11 },
+                font: { family: fontFamily(), size: 10 },
                 maxRotation: 0,
                 autoSkip: true,
-                maxTicksLimit: 8
+                maxTicksLimit: 7
             },
             border: { display: false }
         };
     }
 
-    function scaleY(colors, money) {
+    function scaleY(colors, money, values) {
+        var ceil = suggestedCeil(values || []);
         return {
             beginAtZero: true,
+            suggestedMax: ceil,
             grid: {
-                color: 'rgba(148,163,184,0.12)',
+                color: 'rgba(148,163,184,0.06)',
                 drawBorder: false,
                 lineWidth: 1
             },
             ticks: {
                 color: colors.muted,
-                font: { family: fontFamily(), size: 11 },
-                padding: 8,
+                font: { family: fontFamily(), size: 10 },
+                padding: 6,
+                maxTicksLimit: 5,
                 callback: money ? formatTick : undefined
             },
             border: { display: false }
@@ -158,14 +217,14 @@
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            animation: { duration: 600, easing: 'easeOutQuart' },
+            animation: lightAnim(true),
             plugins: {
                 legend: opts.legend || { display: false },
                 tooltip: tooltipOptions(colors)
             },
             scales: {
                 x: scaleX(colors),
-                y: scaleY(colors, opts.money)
+                y: scaleY(colors, opts.money, opts.values)
             }
         };
     }
@@ -174,9 +233,17 @@
         return {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '68%',
-            spacing: 3,
-            animation: { animateRotate: true, duration: 700, easing: 'easeOutQuart' },
+            cutout: '74%',
+            spacing: 2,
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 900,
+                easing: 'easeOutQuart',
+                delay: function (ctx) {
+                    return ctx.dataIndex * 70;
+                }
+            },
             plugins: {
                 legend: legend || legendOptions('bottom'),
                 tooltip: Object.assign({}, tooltipOptions(colors), {
@@ -220,46 +287,48 @@
         fn();
     }
 
-    function lineDataset(label, data, borderColor, bgColor) {
+    function lineDataset(label, data, borderColor, bgColor, sparse) {
         return {
             label: label,
             data: data,
             borderColor: borderColor,
             backgroundColor: bgColor,
             fill: true,
-            tension: 0.42,
-            pointRadius: 0,
-            pointHoverRadius: 5,
+            tension: 0.38,
+            pointRadius: sparse ? 4 : 0,
+            pointHoverRadius: 6,
             pointHoverBorderWidth: 2,
             pointBackgroundColor: borderColor,
-            pointBorderColor: '#0f172a',
-            borderWidth: 2.5
+            pointBorderColor: '#080b12',
+            pointBorderWidth: 1.5,
+            borderWidth: 1.75
         };
     }
 
     function initLineChart(el, colors, pal, label, values, colorKey) {
         var border = pal[colorKey] || pal.primary;
         var soft = pal[colorKey + 'Soft'] || pal.primarySoft;
+        var data = parseNums(values);
+        var sparse = data.length <= 14;
         var ctx = el.getContext('2d');
-        var h = el.parentElement ? el.parentElement.offsetHeight : 240;
+        var h = el.parentElement ? el.parentElement.offsetHeight : 200;
         mount(el.id, new Chart(el, {
             type: 'line',
             data: {
                 labels: JSON.parse(el.dataset.labels),
-                datasets: [lineDataset(
-                    label,
-                    JSON.parse(values),
-                    border,
-                    areaGradient(ctx, h, soft)
-                )]
+                datasets: [lineDataset(label, data, border, areaGradient(ctx, h, soft), sparse)]
             },
-            options: baseCartesian(colors)
+            options: baseCartesian(colors, { values: data })
         }));
     }
 
     function initDualLineChart(el, colors, pal) {
         var ctx = el.getContext('2d');
-        var h = el.parentElement ? el.parentElement.offsetHeight : 260;
+        var h = el.parentElement ? el.parentElement.offsetHeight : 220;
+        var rev = parseNums(el.dataset.revenue);
+        var exp = parseNums(el.dataset.expenses);
+        var all = rev.concat(exp);
+        var sparse = (JSON.parse(el.dataset.labels || '[]')).length <= 14;
         mount(el.id, new Chart(el, {
             type: 'line',
             data: {
@@ -267,19 +336,21 @@
                 datasets: [
                     lineDataset(
                         el.dataset.labelRevenue || 'Revenue',
-                        JSON.parse(el.dataset.revenue),
+                        rev,
                         pal.revenue,
-                        areaGradient(ctx, h, pal.revenueSoft)
+                        areaGradient(ctx, h, pal.revenueSoft),
+                        sparse
                     ),
                     lineDataset(
                         el.dataset.labelExpenses || 'Expenses',
-                        JSON.parse(el.dataset.expenses),
+                        exp,
                         pal.expense,
-                        areaGradient(ctx, h, pal.expenseSoft)
+                        areaGradient(ctx, h, pal.expenseSoft),
+                        sparse
                     )
                 ]
             },
-            options: Object.assign({}, baseCartesian(colors, { money: true }), {
+            options: Object.assign({}, baseCartesian(colors, { money: true, values: all }), {
                 plugins: {
                     legend: legendOptions('top'),
                     tooltip: tooltipOptions(colors)
@@ -289,31 +360,36 @@
     }
 
     function initBarChart(el, colors, pal, label) {
+        var data = parseNums(el.dataset.values);
         var ctx = el.getContext('2d');
-        var h = el.parentElement ? el.parentElement.offsetHeight : 240;
-        var grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, 'rgba(59,130,246,0.9)');
-        grad.addColorStop(1, 'rgba(59,130,246,0.45)');
+        var h = el.parentElement ? el.parentElement.offsetHeight : 200;
         mount(el.id, new Chart(el, {
             type: 'bar',
             data: {
                 labels: JSON.parse(el.dataset.labels),
                 datasets: [{
                     label: label,
-                    data: JSON.parse(el.dataset.values),
-                    backgroundColor: grad,
-                    hoverBackgroundColor: pal.primary,
-                    borderRadius: 6,
+                    data: data,
+                    backgroundColor: data.map(function (_, i) {
+                        return pal.series[i % pal.series.length];
+                    }),
+                    hoverBackgroundColor: data.map(function (_, i) {
+                        return pal.seriesHover[i % pal.seriesHover.length];
+                    }),
+                    borderRadius: 5,
                     borderSkipped: false,
-                    maxBarThickness: 32
+                    maxBarThickness: 28,
+                    borderWidth: 0
                 }]
             },
-            options: baseCartesian(colors)
+            options: Object.assign({}, baseCartesian(colors, { values: data }), {
+                animation: lightAnim(true)
+            })
         }));
     }
 
     function initDoughnut(el, colors, pal, valuesKey) {
-        var values = JSON.parse(el.dataset[valuesKey || 'values']);
+        var values = parseNums(el.dataset[valuesKey || 'values']);
         mount(el.id, new Chart(el, {
             type: 'doughnut',
             data: {
@@ -321,10 +397,10 @@
                 datasets: [{
                     data: values,
                     backgroundColor: pal.series.slice(0, values.length),
-                    borderColor: colors.surface || '#1e293b',
-                    borderWidth: 2,
-                    hoverBorderColor: colors.surface || '#1e293b',
-                    hoverOffset: 6
+                    hoverBackgroundColor: pal.seriesHover.slice(0, values.length),
+                    borderWidth: 0,
+                    hoverBorderWidth: 0,
+                    hoverOffset: 10
                 }]
             },
             options: doughnutOptions(colors)
@@ -349,21 +425,21 @@
         var companyEl = document.getElementById('chart-companies');
         if (companyEl && companyEl.dataset.labels) {
             deferInit(companyEl, function () {
-                initLineChart(companyEl, colors, pal, chartLabel(companyEl, 'Companies'), companyEl.dataset.values, 'primary');
+                initBarChart(companyEl, colors, pal, chartLabel(companyEl, 'Companies'));
             });
         }
 
         var subEl = document.getElementById('chart-subscriptions');
         if (subEl && subEl.dataset.labels) {
             deferInit(subEl, function () {
-                initLineChart(subEl, colors, pal, chartLabel(subEl, 'Subscriptions'), subEl.dataset.values, 'accent');
+                initBarChart(subEl, colors, pal, chartLabel(subEl, 'Subscriptions'));
             });
         }
 
         var usersEl = document.getElementById('chart-users');
         if (usersEl && usersEl.dataset.labels) {
             deferInit(usersEl, function () {
-                initLineChart(usersEl, colors, pal, chartLabel(usersEl, 'Users'), usersEl.dataset.values, 'primary');
+                initBarChart(usersEl, colors, pal, chartLabel(usersEl, 'Users'));
             });
         }
 

@@ -120,17 +120,28 @@ Rateb\App\Core\View::partial('dashboard/head');
                 <?php } ?>
             </div>
 
-            <?php
-            Rateb\App\Core\View::partial('dashboard/ranks', [
-                'title' => __('top_companies_users'),
-                'rows' => $rankRows,
-            ]);
-            ?>
+            <div class="cm-row2 cm-row2--tight">
+                <?php
+                Rateb\App\Core\View::partial('dashboard/ranks', [
+                    'title' => __('top_companies_users'),
+                    'rows' => $rankRows,
+                    'max' => max(1, ...array_map(static fn ($r) => (int) $r['total'], $rankRows ?: [['total' => 1]])),
+                ]);
+                ?>
+                <section class="cm-board cm-board--fill cm-board--hint">
+                    <div class="cm-board__head"><?php echo __('quick_shortcuts'); ?></div>
+                    <div class="cm-hints">
+                        <a class="cm-hint" href="<?php echo rateb_url('admin/companies'); ?>"><i class="fas fa-building"></i><span><?php echo __('total_companies'); ?></span><em><?php echo (int) ($m['total_companies'] ?? 0); ?></em></a>
+                        <a class="cm-hint" href="<?php echo rateb_url('admin/users'); ?>"><i class="fas fa-users"></i><span><?php echo __('users'); ?></span><em><?php echo (int) ($m['users'] ?? 0); ?></em></a>
+                        <a class="cm-hint" href="<?php echo rateb_url('admin/companies'); ?>?status=pending"><i class="fas fa-clock"></i><span><?php echo __('pending_companies'); ?></span><em><?php echo (int) ($m['pending_companies'] ?? 0); ?></em></a>
+                    </div>
+                </section>
+            </div>
 
             <?php if ($recentLogins !== []) { ?>
             <section class="cm-board">
                 <div class="cm-board__head"><?php echo __('recent_logins'); ?></div>
-                <table class="cm-tbl">
+                <table class="cm-tbl cm-tbl--dense">
                     <thead><tr><th><?php echo __('email'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
                     <tbody>
                     <?php foreach (array_slice($recentLogins, 0, 8) as $row) { ?>
