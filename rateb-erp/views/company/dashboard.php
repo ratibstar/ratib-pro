@@ -4,7 +4,7 @@ $limits = $limits ?? [];
 $userCount = (int) ($userCount ?? 0);
 $mods = $limits['modules'] ?? [];
 
-$kpis = [];
+$metrics = [];
 foreach (
     [
         ['purchase_requests', 'blue'],
@@ -12,9 +12,9 @@ foreach (
         ['suppliers', 'teal'],
     ] as [$key, $tone]
 ) {
-    $kpis[] = ['label' => __($key), 'value' => (int) ($m[$key] ?? 0), 'tone' => $tone];
+    $metrics[] = ['label' => __($key), 'value' => (int) ($m[$key] ?? 0), 'tone' => $tone];
 }
-$kpis[] = ['label' => __('users'), 'value' => $userCount, 'tone' => 'green'];
+$metrics[] = ['label' => __('users'), 'value' => $userCount, 'tone' => 'green'];
 
 $actions = [
     ['href' => rateb_app_url('purchase-requests/create'), 'label' => __('purchase_requests'), 'icon' => 'fa-plus'],
@@ -29,12 +29,20 @@ if (rateb_nav_can('accounting.view', 'accounting')) {
     ]);
 }
 
+$metaChips = [
+    ['label' => __('current_plan'), 'value' => Rateb\App\Core\View::escape($limits['plan_name'] ?? '—')],
+    ['label' => __('user_limit'), 'value' => $userCount . ' / ' . (int) ($limits['user_limit'] ?? 0)],
+    ['label' => __('storage_limit_mb'), 'value' => (int) ($limits['storage_limit_mb'] ?? 0) . ' MB'],
+];
+if ($mods !== []) {
+    $metaChips[] = ['label' => __('plan_modules'), 'value' => implode(' · ', array_map(static fn ($mod) => __($mod), $mods))];
+}
+
 $alerts = [];
 if (!empty($expiringInventory)) {
     foreach (array_slice($expiringInventory, 0, 4) as $item) {
         $alerts[] = [
             'url' => rateb_app_url('inventory'),
-            'icon' => 'fa-box-open',
             'message' => (string) ($item['item_name'] ?? '') . ' · ' . (string) ($item['expiry_date'] ?? ''),
         ];
     }
@@ -43,7 +51,6 @@ if (!empty($expiringContracts)) {
     foreach (array_slice($expiringContracts, 0, 3) as $item) {
         $alerts[] = [
             'url' => rateb_app_url('contracts'),
-            'icon' => 'fa-file-contract',
             'message' => (string) ($item['contract_no'] ?? $item['title'] ?? '') . ' · ' . (string) ($item['end_date'] ?? ''),
         ];
     }
@@ -51,44 +58,19 @@ if (!empty($expiringContracts)) {
 
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
-<div class="rdx">
+<div class="rp">
     <?php
-    Rateb\App\Core\View::partial('dashboard/top', [
+    Rateb\App\Core\View::partial('dashboard/hero', [
         'title' => __('dashboard'),
         'subtitle' => __('company_dashboard_intro'),
         'actions' => $actions,
+        'metrics' => $metrics,
+        'metaChips' => $metaChips,
     ]);
     ?>
 
-    <dl class="rdx-meta">
-        <div>
-            <dt><?php echo __('current_plan'); ?></dt>
-            <dd><?php echo Rateb\App\Core\View::escape($limits['plan_name'] ?? '—'); ?></dd>
-        </div>
-        <div>
-            <dt><?php echo __('user_limit'); ?></dt>
-            <dd><?php echo $userCount; ?> / <?php echo (int) ($limits['user_limit'] ?? 0); ?></dd>
-        </div>
-        <div>
-            <dt><?php echo __('storage_limit_mb'); ?></dt>
-            <dd><?php echo (int) ($limits['storage_limit_mb'] ?? 0); ?> MB</dd>
-        </div>
-        <?php if ($mods !== []) { ?>
-        <div>
-            <dt><?php echo __('plan_modules'); ?></dt>
-            <dd class="rdx-chips">
-                <?php foreach ($mods as $mod) { ?>
-                <span class="rdx-chip"><?php echo Rateb\App\Core\View::escape(__($mod)); ?></span>
-                <?php } ?>
-            </dd>
-        </div>
-        <?php } ?>
-    </dl>
-
-    <?php Rateb\App\Core\View::partial('dashboard/kpis', ['items' => $kpis, 'cols' => '4']); ?>
-
     <?php if ($alerts !== []) { ?>
-    <div class="rdx-layout rdx-layout--single">
+    <div class="rp-body rp-body--full">
         <?php Rateb\App\Core\View::partial('dashboard/alerts', [
             'alerts' => $alerts,
             'empty' => __('dashboard_no_alerts'),

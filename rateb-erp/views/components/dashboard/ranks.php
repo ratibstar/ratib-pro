@@ -6,22 +6,24 @@ $rows = $rows ?? [];
 $max = max(1, (float) ($max ?? 1));
 ?>
 <?php if ($rows !== []) { ?>
-<div class="rdx-card">
-    <div class="rdx-card-head"><?php echo Rateb\App\Core\View::escape($title); ?></div>
-    <ol class="rdx-ranks">
-        <?php foreach ($rows as $row) {
-            $val = (float) ($row['total'] ?? 0);
-            $pct = min(100, ($val / $max) * 100);
-            $suffix = (string) ($row['suffix'] ?? '');
-            ?>
-        <li class="rdx-rank">
-            <div class="rdx-rank-top">
-                <span class="rdx-rank-name"><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></span>
-                <span class="rdx-rank-val"><?php echo is_float($val) && $val !== (int) $val ? number_format($val, 0) : (int) $val; ?><?php echo $suffix !== '' ? ' ' . Rateb\App\Core\View::escape($suffix) : ''; ?></span>
-            </div>
-            <div class="rdx-rank-track"><div class="rdx-rank-bar" style="width:<?php echo $pct; ?>%"></div></div>
-        </li>
-        <?php } ?>
-    </ol>
+<div class="rp-tile rp-tile--6">
+    <div class="rp-tile__head"><?php echo Rateb\App\Core\View::escape($title); ?></div>
+    <div class="rp-tile__body">
+        <ol class="rp-ranks">
+            <?php foreach ($rows as $row) {
+                $val = (float) ($row['total'] ?? 0);
+                $pct = min(100, ($val / $max) * 100);
+                $suffix = (string) ($row['suffix'] ?? '');
+                ?>
+            <li class="rp-rank">
+                <div class="rp-rank__top">
+                    <span class="rp-rank__name"><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></span>
+                    <span class="rp-rank__val"><?php echo number_format($val, 0); ?><?php echo $suffix !== '' ? ' ' . Rateb\App\Core\View::escape($suffix) : ''; ?></span>
+                </div>
+                <div class="rp-rank__track"><div class="rp-rank__bar" style="width:<?php echo $pct; ?>%"></div></div>
+            </li>
+            <?php } ?>
+        </ol>
+    </div>
 </div>
 <?php } ?>
