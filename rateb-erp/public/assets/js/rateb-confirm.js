@@ -43,7 +43,7 @@
         titleEl = modalEl.querySelector('[data-rateb-confirm-title]');
         iconEl = modalEl.querySelector('[data-rateb-confirm-icon]');
         if (!modalEl.classList.contains('show')) {
-            modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.removeAttribute('aria-hidden');
         }
 
         modalEl.addEventListener('hidden.bs.modal', function () {
@@ -147,7 +147,11 @@
                 resolvePending = null;
                 return;
             }
-            inst.show();
+            if (window.ratebModalShow) {
+                window.ratebModalShow(modalEl);
+            } else {
+                inst.show();
+            }
         });
     }
 

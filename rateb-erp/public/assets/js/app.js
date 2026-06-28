@@ -60,6 +60,10 @@
                             e.preventDefault();
                             return;
                         }
+                        if (form.dataset.ratebConfirmed === '1') {
+                            delete form.dataset.ratebConfirmed;
+                            return;
+                        }
                         var msg = form.getAttribute('data-confirm-delete');
                         if (msg) {
                             e.preventDefault();

@@ -636,6 +636,36 @@ if (!function_exists('rateb_table_cell_meta')) {
     }
 }
 
+if (!function_exists('rateb_role_label')) {
+    function rateb_role_label(array $row): string
+    {
+        $slug = str_replace('-', '_', trim((string) ($row['slug'] ?? '')));
+        if ($slug !== '') {
+            $key = 'role_' . $slug;
+            $label = __($key);
+            if ($label !== $key) {
+                return $label;
+            }
+        }
+        return (string) ($row['name'] ?? '');
+    }
+}
+
+if (!function_exists('rateb_role_description')) {
+    function rateb_role_description(array $row): string
+    {
+        $slug = str_replace('-', '_', trim((string) ($row['slug'] ?? '')));
+        if ($slug !== '') {
+            $key = 'role_desc_' . $slug;
+            $label = __($key);
+            if ($label !== $key) {
+                return $label;
+            }
+        }
+        return (string) ($row['description'] ?? '');
+    }
+}
+
 if (!function_exists('rateb_permission_label')) {
     function rateb_permission_label(array $row): string
     {

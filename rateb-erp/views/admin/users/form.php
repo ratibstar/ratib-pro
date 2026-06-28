@@ -88,7 +88,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                             <input class="form-check-input" type="checkbox" name="role_ids[]" value="<?php echo (int) $role['id']; ?>" id="role_<?php echo (int) $role['id']; ?>"
                                 <?php echo in_array((int) $role['id'], $selectedRoles, true) ? ' checked' : ''; ?>>
                             <label class="form-check-label" for="role_<?php echo (int) $role['id']; ?>">
-                                <?php echo Rateb\App\Core\View::escape($role['name']); ?>
+                                <?php echo Rateb\App\Core\View::escape(function_exists('rateb_role_label') ? rateb_role_label($role) : (string) ($role['name'] ?? '')); ?>
                                 <small class="text-muted">(<?php echo Rateb\App\Core\View::escape($role['slug']); ?>)</small>
                             </label>
                         </div>

@@ -247,4 +247,131 @@ final class AuthorizationService
         );
         return (int) ($row['c'] ?? 0);
     }
+
+    /** @return list<array{slug:string,name:string,description:string,is_system:bool,permissions:list<string>|null}> */
+    public static function suggestedRoleDefinitions(): array
+    {
+        return [
+            ['slug' => 'super-admin', 'name' => 'Super Admin', 'description' => 'Platform super administrator', 'is_system' => true, 'permissions' => null],
+            ['slug' => 'access-manager', 'name' => 'Access Manager', 'description' => 'Users and roles management', 'is_system' => true, 'permissions' => ['access.manage', 'users.manage', 'roles.manage', 'permissions.manage', 'dashboard.view']],
+            ['slug' => 'accountant', 'name' => 'Accountant', 'description' => 'Accounting and reports access', 'is_system' => true, 'permissions' => ['accounting.view', 'accounting.manage', 'accounting.post', 'reports.view', 'dashboard.view']],
+            ['slug' => 'accounting-approver', 'name' => 'Accounting Approver', 'description' => 'Approve journal entries and cash vouchers', 'is_system' => true, 'permissions' => ['dashboard.view', 'accounting.approve']],
+            ['slug' => 'company-full-access', 'name' => 'Company Full Access', 'description' => 'Default ERP access for company portal users', 'is_system' => true, 'permissions' => ['__company_full_access__']],
+            ['slug' => 'hq_admin', 'name' => 'HQ Admin', 'description' => 'Head office — all branches', 'is_system' => true, 'permissions' => ['branches.access_all', 'branch.dashboard.view', 'branch.dashboard.compare', 'branch.reports.view', 'branch.transfers.view', 'branch.transfers.manage', 'branches.view', 'branches.manage', 'dashboard.view']],
+            ['slug' => 'hq_manager', 'name' => 'HQ Manager', 'description' => 'Head office manager — all branches read/compare', 'is_system' => true, 'permissions' => ['branches.access_all', 'branch.dashboard.view', 'branch.dashboard.compare', 'branch.reports.view', 'branch.transfers.view', 'dashboard.view']],
+            ['slug' => 'branch_manager', 'name' => 'Branch Manager', 'description' => 'Single-branch manager', 'is_system' => true, 'permissions' => ['branch.dashboard.view', 'branch.reports.view', 'branch.transfers.view', 'branch.transfers.manage', 'branches.view', 'dashboard.view']],
+            ['slug' => 'branch_user', 'name' => 'Branch User', 'description' => 'Single-branch operational user', 'is_system' => true, 'permissions' => ['branch.dashboard.view', 'branch.reports.view', 'dashboard.view']],
+            ['slug' => 'procurement-manager', 'name' => 'Procurement Manager', 'description' => 'Manage purchase requests, orders, and RFQ', 'is_system' => true, 'permissions' => ['procurement.manage', 'dashboard.view', 'reports.view']],
+            ['slug' => 'inventory-manager', 'name' => 'Inventory Manager', 'description' => 'Manage inventory, warehouses, and stock', 'is_system' => true, 'permissions' => ['inventory.manage', 'dashboard.view', 'reports.view']],
+            ['slug' => 'hr-manager', 'name' => 'HR Manager', 'description' => 'Manage employees, attendance, and payroll', 'is_system' => true, 'permissions' => ['hr.view', 'hr.manage', 'dashboard.view', 'reports.view']],
+        ];
+    }
+
+    public function ensureSuggestedRoles(): void
+    {
+        $roleModel = new Role();
+        foreach (self::suggestedRoleDefinitions() as $def) {
+            $slug = (string) $def['slug'];
+            $existing = $roleModel->queryOne(
+                'SELECT id FROM rateb_roles WHERE slug = :slug LIMIT 1',
+                ['slug' => $slug]
+            );
+            $roleId = (int) ($existing['id'] ?? 0);
+            if ($roleId < 1) {
+                $roleId = $roleModel->create([
+                    'company_id' => null,
+                    'name' => (string) $def['name'],
+                    'slug' => $slug,
+                    'description' => (string) $def['description'],
+                    'is_system' => !empty($def['is_system']) ? 1 : 0,
+                ]);
+            }
+            if ($roleId < 1 || $def['permissions'] === null) {
+                continue;
+            }
+            $permSlugs = $def['permissions'];
+            if ($permSlugs === ['__company_full_access__']) {
+                $this->syncCompanyFullAccessPermissions($roleId);
+                continue;
+            }
+            $this->grantRolePermissionsBySlugs($roleId, $permSlugs);
+        }
+    }
+
+    /** @param list<string> $slugs */
+    private function grantRolePermissionsBySlugs(int $roleId, array $slugs): void
+    {
+        if ($roleId < 1 || $slugs === []) {
+            return;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        foreach ($slugs as $slug) {
+            $pid = (new Permission())->queryOne(
+                'SELECT id FROM rateb_permissions WHERE slug = :slug LIMIT 1',
+                ['slug' => $slug]
+            );
+            if (!$pid) {
+                continue;
+            }
+            $db->prepare(
+                'INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id) VALUES (:rid, :pid)'
+            )->execute(['rid' => $roleId, 'pid' => (int) $pid['id']]);
+        }
+    }
+
+    private function syncCompanyFullAccessPermissions(int $roleId): void
+    {
+        if ($roleId < 1) {
+            return;
+        }
+        $configFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+        $config = is_file($configFile) ? require $configFile : [];
+        $excluded = (array) ($config['company_role_excluded_slugs'] ?? []);
+        $rows = (new Permission())->query('SELECT id, slug FROM rateb_permissions');
+        $ids = [];
+        foreach ($rows as $row) {
+            $slug = (string) ($row['slug'] ?? '');
+            if ($slug === '' || in_array($slug, $excluded, true)) {
+                continue;
+            }
+            $ids[] = (int) ($row['id'] ?? 0);
+        }
+        $this->syncRolePermissions($roleId, array_values(array_filter($ids)));
+    }
+
+    public function isProtectedRole(array $role): bool
+    {
+        if ((int) ($role['is_system'] ?? 0) === 1) {
+            return true;
+        }
+        $slug = (string) ($role['slug'] ?? '');
+        foreach (self::suggestedRoleDefinitions() as $def) {
+            if ($slug === (string) ($def['slug'] ?? '')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** @param array<int, int> $ids @return array<int, int> */
+    public function filterDeletableRoleIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        $roleModel = new Role();
+        $out = [];
+        foreach ($ids as $id) {
+            $id = (int) $id;
+            if ($id < 1) {
+                continue;
+            }
+            $row = $roleModel->find($id);
+            if (!$row || $this->isProtectedRole($row)) {
+                continue;
+            }
+            $out[] = $id;
+        }
+        return $out;
+    }
 }

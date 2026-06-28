@@ -753,6 +753,7 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         $offset = ($page - 1) * $limit;
         $authz = new \Rateb\App\Services\AuthorizationService();
         $authz->dedupeDuplicateRoles();
+        $authz->ensureSuggestedRoles();
         $items = $this->model->all($limit, $offset);
         $seenSlugs = [];
         $items = array_values(array_filter($items, static function (array $row) use (&$seenSlugs): bool {
@@ -765,6 +766,12 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         }));
         foreach ($items as &$row) {
             $row['permission_count'] = $authz->getRolePermissionCount((int) $row['id']);
+            if (function_exists('rateb_role_label')) {
+                $row['name'] = rateb_role_label($row);
+            }
+            if (function_exists('rateb_role_description')) {
+                $row['description'] = rateb_role_description($row);
+            }
         }
         unset($row);
 
@@ -851,6 +858,47 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if ($item && (new \Rateb\App\Services\AuthorizationService())->isProtectedRole($item)) {
+            SessionManager::flash('error', __('role_system_delete_blocked'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        parent::destroy($params);
+    }
+
+    public function bulkDestroy(): void
+    {
+        $this->guardManage();
+        if (!$this->bulkEnabled) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $ids = $authz->filterDeletableRoleIds($this->parseBulkIds());
+        if ($ids === []) {
+            SessionManager::flash('error', __('role_delete_none_allowed'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $deleted = $this->model->deleteMany($ids);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_delete', $this->entityName, $id);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
         $this->redirect(rateb_url($this->routePrefix));
     }
 }
