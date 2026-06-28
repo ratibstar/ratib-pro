@@ -147,8 +147,10 @@
             bodyColor: colors.muted,
             borderColor: 'rgba(148,163,184,0.2)',
             borderWidth: 1,
-            padding: 10,
+            padding: 12,
             cornerRadius: 8,
+            titleFont: { family: fontFamily(), size: 14, weight: '600' },
+            bodyFont: { family: fontFamily(), size: 13 },
             displayColors: true,
             boxWidth: 6,
             boxHeight: 6,
@@ -179,10 +181,10 @@
             rtl: isRtl(),
             labels: {
                 color: chartColors().muted,
-                font: { family: fontFamily(), size: 10, weight: '500' },
+                font: { family: fontFamily(), size: 14, weight: '500' },
                 usePointStyle: true,
                 pointStyle: 'circle',
-                padding: 10,
+                padding: 12,
                 boxWidth: 5,
                 boxHeight: 5
             }
@@ -194,7 +196,7 @@
             grid: { display: false, drawBorder: false },
             ticks: {
                 color: colors.muted,
-                font: { family: fontFamily(), size: 10 },
+                font: { family: fontFamily(), size: 13 },
                 maxRotation: 0,
                 autoSkip: true,
                 maxTicksLimit: 7
@@ -215,7 +217,7 @@
             },
             ticks: {
                 color: colors.muted,
-                font: { family: fontFamily(), size: 10 },
+                font: { family: fontFamily(), size: 13 },
                 padding: 6,
                 maxTicksLimit: 5,
                 callback: money ? formatTick : undefined
