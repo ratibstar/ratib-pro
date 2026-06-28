@@ -338,40 +338,4 @@ final class AuthorizationService
         }
         $this->syncRolePermissions($roleId, array_values(array_filter($ids)));
     }
-
-    public function isProtectedRole(array $role): bool
-    {
-        if ((int) ($role['is_system'] ?? 0) === 1) {
-            return true;
-        }
-        $slug = (string) ($role['slug'] ?? '');
-        foreach (self::suggestedRoleDefinitions() as $def) {
-            if ($slug === (string) ($def['slug'] ?? '')) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** @param array<int, int> $ids @return array<int, int> */
-    public function filterDeletableRoleIds(array $ids): array
-    {
-        if ($ids === []) {
-            return [];
-        }
-        $roleModel = new Role();
-        $out = [];
-        foreach ($ids as $id) {
-            $id = (int) $id;
-            if ($id < 1) {
-                continue;
-            }
-            $row = $roleModel->find($id);
-            if (!$row || $this->isProtectedRole($row)) {
-                continue;
-            }
-            $out[] = $id;
-        }
-        return $out;
-    }
 }

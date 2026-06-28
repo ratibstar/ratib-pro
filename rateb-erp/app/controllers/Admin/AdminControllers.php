@@ -860,51 +860,6 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
     }
-
-    public function destroy(array $params): void
-    {
-        $this->guardManage();
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
-        }
-        $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
-        if ($item && (new \Rateb\App\Services\AuthorizationService())->isProtectedRole($item)) {
-            SessionManager::flash('error', __('role_system_delete_blocked'));
-            $this->redirect(rateb_url($this->routePrefix));
-        }
-        parent::destroy($params);
-    }
-
-    public function bulkDestroy(): void
-    {
-        $this->guardManage();
-        if (!$this->bulkEnabled) {
-            SessionManager::flash('error', __('access_denied'));
-            $this->redirect(rateb_url($this->routePrefix));
-        }
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
-        }
-        $authz = new \Rateb\App\Services\AuthorizationService();
-        $ids = $authz->filterDeletableRoleIds($this->parseBulkIds());
-        if ($ids === []) {
-            SessionManager::flash('error', __('role_delete_none_allowed'));
-            $this->redirect(rateb_url($this->routePrefix));
-        }
-        try {
-            $deleted = $this->model->deleteMany($ids);
-            foreach ($ids as $id) {
-                (new AuditService())->log('bulk_delete', $this->entityName, $id);
-            }
-            SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
-        } catch (\Throwable $e) {
-            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-        }
-        $this->redirect(rateb_url($this->routePrefix));
-    }
 }
 
 final class PermissionsController extends \Rateb\App\Controllers\CrudController
