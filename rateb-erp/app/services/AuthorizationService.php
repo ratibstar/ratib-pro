@@ -119,8 +119,18 @@ final class AuthorizationService
     public function allPermissionsGrouped(): array
     {
         $rows = (new Permission())->query('SELECT * FROM rateb_permissions ORDER BY module, slug');
+        $hidden = [];
+        $cfgFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+        if (is_file($cfgFile)) {
+            $cfg = require $cfgFile;
+            $hidden = is_array($cfg['matrix_hidden_slugs'] ?? null) ? $cfg['matrix_hidden_slugs'] : [];
+        }
         $grouped = [];
         foreach ($rows as $row) {
+            $slug = (string) ($row['slug'] ?? '');
+            if ($slug !== '' && in_array($slug, $hidden, true)) {
+                continue;
+            }
             $mod = (string) ($row['module'] ?? 'general');
             $grouped[$mod][] = $row;
         }
@@ -153,10 +163,12 @@ final class AuthorizationService
             'tenders' => 7,
             'reports' => 8,
             'medical_devices' => 9,
-            'documents' => 10,
-            'workflows' => 11,
-            'notifications' => 12,
-            'cms' => 13,
+            'hr' => 10,
+            'branches' => 11,
+            'documents' => 12,
+            'workflows' => 13,
+            'notifications' => 14,
+            'cms' => 15,
         ];
         uksort($grouped, static function (string $a, string $b) use ($moduleOrder): int {
             return ($moduleOrder[$a] ?? 99) <=> ($moduleOrder[$b] ?? 99);

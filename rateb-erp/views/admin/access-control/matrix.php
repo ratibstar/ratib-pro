@@ -19,6 +19,10 @@
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
             </div>
         </div>
+        <div class="rateb-card-body py-2 px-3 border-bottom">
+            <p class="text-muted small mb-1"><?php echo __('permission_matrix_help'); ?></p>
+            <p class="text-muted small mb-0"><i class="fas fa-circle-info me-1"></i><?php echo __('permission_matrix_implies_note'); ?></p>
+        </div>
         <div class="rateb-card-body p-0">
             <div class="rateb-matrix-wrap table-responsive">
                 <table class="table rateb-table rateb-matrix-table mb-0">
@@ -43,7 +47,7 @@
                     <tr class="rateb-matrix-module-row">
                         <td colspan="<?php echo count($roles) + 1; ?>">
                             <div class="rateb-matrix-module-inner">
-                                <strong class="rateb-matrix-module-title"><?php echo Rateb\App\Core\View::escape(__($module)); ?></strong>
+                                <strong class="rateb-matrix-module-title"><?php echo Rateb\App\Core\View::escape(rateb_module_label($module)); ?></strong>
                                 <button type="button" class="btn btn-link btn-sm p-0 rateb-matrix-toggle-btn" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
                             </div>
                             <?php if ($module === 'accounting') { ?>
@@ -65,6 +69,11 @@
                     <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"<?php echo ($perm['slug'] ?? '') === 'accounting.approve' ? ' class="table-warning"' : ''; ?>>
                         <td class="rateb-matrix-sticky">
                             <div class="rateb-matrix-perm-label fw-semibold"><?php echo Rateb\App\Core\View::escape($permLabel); ?></div>
+                            <?php
+                            $permDesc = rateb_permission_description($perm);
+                            if ($permDesc !== '') { ?>
+                            <div class="rateb-matrix-perm-desc text-muted small"><?php echo Rateb\App\Core\View::escape($permDesc); ?></div>
+                            <?php } ?>
                             <code class="rateb-matrix-perm-slug"><?php echo Rateb\App\Core\View::escape($perm['slug']); ?></code>
                         </td>
                         <?php foreach ($roles as $role) {

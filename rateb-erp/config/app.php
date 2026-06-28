@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-perm-matrix-style-v1');
+define('RATEB_ASSET_BUILD', '20260628-permissions-audit-v1');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -419,7 +419,26 @@ if (!function_exists('rateb_can')) {
         if (!isset($cache[$userId])) {
             $cache[$userId] = (new \Rateb\App\Services\AuthorizationService())->userPermissionSlugs($userId);
         }
-        return in_array($slug, $cache[$userId], true);
+        if (in_array($slug, $cache[$userId], true)) {
+            return true;
+        }
+        static $implies = null;
+        if ($implies === null) {
+            $cfgFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+            $cfg = is_file($cfgFile) ? require $cfgFile : [];
+            $implies = is_array($cfg['permission_implies'] ?? null) ? $cfg['permission_implies'] : [];
+        }
+        foreach ($implies as $parent => $children) {
+            if (!in_array($parent, $cache[$userId], true)) {
+                continue;
+            }
+            foreach ((array) $children as $child) {
+                if ((string) $child === $slug) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
 
@@ -666,30 +685,78 @@ if (!function_exists('rateb_role_description')) {
     }
 }
 
+if (!function_exists('rateb_permission_labels_file')) {
+    /** @return array<string, array{0: string, 1?: string}> */
+    function rateb_permission_labels_file(string $locale): array
+    {
+        static $cache = [];
+        $locale = $locale === 'ar' ? 'ar' : 'en';
+        if (isset($cache[$locale])) {
+            return $cache[$locale];
+        }
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : '';
+        $file = $root . '/config/permission-labels-' . $locale . '.php';
+        $labels = is_file($file) ? require $file : [];
+        $cache[$locale] = is_array($labels) ? $labels : [];
+        return $cache[$locale];
+    }
+}
+
+if (!function_exists('rateb_module_label')) {
+    function rateb_module_label(string $module): string
+    {
+        $module = trim($module);
+        if ($module === '') {
+            return '';
+        }
+        if ($module === 'hr') {
+            $hr = __('human_resources');
+            if ($hr !== 'human_resources') {
+                return $hr;
+            }
+        }
+        $translated = __($module);
+        return $translated !== $module ? $translated : ucfirst(str_replace('_', ' ', $module));
+    }
+}
+
 if (!function_exists('rateb_permission_label')) {
     function rateb_permission_label(array $row): string
     {
         $slug = (string) ($row['slug'] ?? '');
-        $nameAr = (string) ($row['name_ar'] ?? '');
-        $corrupted = $nameAr === '' || strpos($nameAr, '?') !== false || preg_match('/^\?+$/', $nameAr) === 1;
-
-        if (rateb_locale() === 'ar') {
-            if (!$corrupted && $nameAr !== '') {
+        $locale = rateb_locale();
+        $labels = rateb_permission_labels_file($locale);
+        if ($slug !== '' && isset($labels[$slug][0])) {
+            return (string) $labels[$slug][0];
+        }
+        if ($locale === 'ar') {
+            $nameAr = (string) ($row['name_ar'] ?? '');
+            $corrupted = $nameAr === '' || strpos($nameAr, '?') !== false || preg_match('/^\?+$/', $nameAr) === 1;
+            if (!$corrupted && $nameAr !== '' && $nameAr !== (string) ($row['name'] ?? '')) {
                 return $nameAr;
             }
-            static $labels = null;
-            if ($labels === null) {
-                $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permission-labels-ar.php';
-                $labels = is_file($file) ? require $file : [];
-                if (!is_array($labels)) {
-                    $labels = [];
-                }
-            }
-            if ($slug !== '' && isset($labels[$slug][0])) {
-                return (string) $labels[$slug][0];
+        }
+        return (string) ($row['name'] ?? $slug);
+    }
+}
+
+if (!function_exists('rateb_permission_description')) {
+    function rateb_permission_description(array $row): string
+    {
+        $slug = (string) ($row['slug'] ?? '');
+        $locale = rateb_locale();
+        $labels = rateb_permission_labels_file($locale);
+        if ($slug !== '' && isset($labels[$slug][1]) && (string) $labels[$slug][1] !== '') {
+            return (string) $labels[$slug][1];
+        }
+        if ($locale === 'ar') {
+            $descAr = (string) ($row['description_ar'] ?? '');
+            $corrupted = $descAr === '' || strpos($descAr, '?') !== false;
+            if (!$corrupted && $descAr !== '' && $descAr !== (string) ($row['description'] ?? '')) {
+                return $descAr;
             }
         }
-        return (string) ($row['name'] ?? '');
+        return (string) ($row['description'] ?? '');
     }
 }
 

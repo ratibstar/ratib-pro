@@ -35,6 +35,36 @@ return [
         'workflows',
         'notifications',
         'hr',
+        'branches',
+    ],
+
+    /**
+     * Parent slug grants child slugs at runtime (rateb_can). Children may be hidden from matrix UI.
+     * @var array<string, list<string>>
+     */
+    'permission_implies' => [
+        'access.manage' => ['users.manage', 'roles.manage', 'permissions.manage'],
+        'branch.financial.consolidated' => ['branch.financial.interbranch'],
+    ],
+
+    /** Slugs omitted from matrix UI (still in DB; granted via permission_implies or legacy roles). */
+    'matrix_hidden_slugs' => [
+        'users.manage',
+        'roles.manage',
+        'permissions.manage',
+        'branch.financial.interbranch',
+    ],
+
+    /** Branch / HQ permission slugs (company matrix module: branches + accounting reports). */
+    'branch_permission_slugs' => [
+        'branches.view',
+        'branches.manage',
+        'branches.access_all',
+        'branch.dashboard.view',
+        'branch.dashboard.compare',
+        'branch.reports.view',
+        'branch.transfers.view',
+        'branch.transfers.manage',
     ],
 
     /** Default role slug for demo / full company ERP access. */

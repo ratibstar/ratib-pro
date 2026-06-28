@@ -136,7 +136,7 @@ final class BranchAccessService
 
     private function userHasAccessAllPermissionForUser(int $userId, int $companyId): bool
     {
-        return (new AuthorizationService())->userHasPermission($userId, 'branch.access_all');
+        return (new AuthorizationService())->userHasPermission($userId, 'branches.access_all');
     }
 
     private function userHasHeadOfficeRoleForUser(int $userId, int $companyId): bool

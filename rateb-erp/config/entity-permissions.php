@@ -24,7 +24,7 @@ return [
         'export' => 'reports.export',
     ],
     'customs-clearance-costs' => [
-        'module' => 'accounting',
+        'module' => 'procurement',
         'view' => 'customs_clearance.view',
         'manage' => 'customs_clearance.manage',
         'export' => 'reports.export',
@@ -55,10 +55,26 @@ return [
         'manage' => 'inventory.manage',
     ],
     'branches' => [
-        'module' => '',
+        'module' => 'branches',
         'view' => 'branches.view',
         'manage' => 'branches.manage',
         'export' => 'reports.export',
+    ],
+    'branch-dashboard' => [
+        'module' => 'branches',
+        'view' => 'branch.dashboard.view',
+        'manage' => 'branch.dashboard.view',
+    ],
+    'branch-transfers' => [
+        'module' => 'branches',
+        'view' => 'branch.transfers.view',
+        'manage' => 'branch.transfers.manage',
+        'approve' => 'branch.transfers.manage',
+    ],
+    'branch-financial' => [
+        'module' => 'accounting',
+        'view' => 'branch.financial.pl',
+        'manage' => 'branch.financial.pl',
     ],
     'stock-movements' => [
         'module' => 'inventory',

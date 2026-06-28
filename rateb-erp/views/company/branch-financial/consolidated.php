@@ -17,7 +17,7 @@
 <div class="mb-3"><?php echo __('net_cash_flow'); ?>: <strong><?php echo number_format((float)($r['net_cash_flow']??0),2); ?></strong></div>
 <?php } ?>
 <?php if (!empty($r['elimination'])) { ?><div class="alert alert-secondary small"><?php echo __('elimination_applied'); ?>: <?php echo json_encode($r['elimination'], JSON_UNESCAPED_UNICODE); ?></div><?php } ?>
-<?php if (!empty($interBranch)) { ?>
+<?php if (!empty($interBranch) && function_exists('rateb_can') && (rateb_can('branch.financial.interbranch') || rateb_can('branch.financial.consolidated'))) { ?>
 <h2 class="h6"><?php echo __('interbranch_balances'); ?></h2>
 <table class="table table-sm"><thead><tr><th><?php echo __('branch'); ?></th><th>1350</th><th>2150</th></tr></thead><tbody>
 <?php foreach ($interBranch as $row) { ?><tr><td><?php echo Rateb\App\Core\View::escape((string)($row['branch_name']??'')); ?></td><td><?php echo number_format((float)($row['due_from']??0),2); ?></td><td><?php echo number_format((float)($row['due_to']??0),2); ?></td></tr><?php } ?>
