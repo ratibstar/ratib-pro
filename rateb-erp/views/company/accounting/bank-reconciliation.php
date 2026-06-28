@@ -3,20 +3,6 @@ $data = $data ?? ['accounts' => [], 'total_cash' => 0, 'petty_cash' => 0];
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
 Rateb\App\Core\View::partial('accounting-reports-back');
 ?>
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('total_cash'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($data['total_cash'] ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('petty_cash'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($data['petty_cash'] ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-</div>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('bank_reconciliation'); ?></div>
     <div class="rateb-card-body p-0">

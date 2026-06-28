@@ -50,6 +50,9 @@ final class ModulePageStatsService
             'cms' => $this->cmsStats(),
             'access' => $this->accessStats(),
             'workflows' => $this->workflowStats(),
+            'platform' => $this->platformStats($route),
+            'branches' => $this->branchStats($route),
+            'analytics' => $this->analyticsStats($route),
             default => [],
         };
 
@@ -64,6 +67,7 @@ final class ModulePageStatsService
             'admin/accounting',
             'admin/ops/accounting',
             'admin/ops/hr',
+            'admin/executive-dashboard',
         ];
         if (in_array($route, $exact, true)) {
             return true;
@@ -88,45 +92,69 @@ final class ModulePageStatsService
         if (str_starts_with($route, 'admin/cms')) {
             return 'cms';
         }
-        if (preg_match('#^admin/(access-control|users|roles|permissions|plans|audit-logs)(/|$)#', $route)) {
+        if (preg_match('#^admin/(access-control|users|roles|permissions|plans|audit-logs|support-tickets|email-templates|sms-templates)(/|$)#', $route)) {
             return 'access';
         }
-        if (str_starts_with($route, 'admin/ops/hr') || str_starts_with($route, 'hr')) {
+        if (preg_match('#^admin/(companies|subscriptions|invoices|payments|settings)(/|$)#', $route)) {
+            return 'platform';
+        }
+        if ($route === 'admin/reports' || str_starts_with($route, 'admin/reports/')) {
+            return 'platform';
+        }
+
+        $path = $this->opsPath($route);
+
+        if (preg_match('#^(branch-dashboard|branch-financial|branch-transfers)(/|$)#', $path)) {
+            return 'branches';
+        }
+        if (str_starts_with($path, 'hr')) {
             return 'hr';
         }
-        if (preg_match('#^(admin/ops/)?(purchase-requests|purchase-orders|rfq|quotations)(/|$)#', $route)) {
+        if (preg_match('#^(purchase-requests|purchase-orders|rfq|quotations)(/|$)#', $path)) {
             return 'procurement';
         }
-        if (preg_match('#^(admin/ops/)?(inventory|inventory-batches|inventory-audits|inventory-forecast|inventory-codes|warehouses|warehouse-transfers|stock-movements|product-categories)(/|$)#', $route)) {
+        if (preg_match('#^reports/inventory-valuation(/|$)#', $path)) {
             return 'inventory';
         }
-        if (preg_match('#^(admin/ops/)?(suppliers|supplier-comms|supplier-evaluations|supplier-classifications|supplier-kpi)(/|$)#', $route)) {
+        if (preg_match('#^reports/(cost-analysis|procurement|kpi|supplier-performance)(/|$)#', $path)) {
+            return str_contains($path, 'cost-analysis') ? 'accounting' : 'analytics';
+        }
+        if ($path === 'reports' || str_starts_with($path, 'reports/')) {
+            return 'analytics';
+        }
+        if (preg_match('#^(inventory|inventory-batches|inventory-audits|inventory-forecast|inventory-codes|warehouses|warehouse-transfers|stock-movements|product-categories)(/|$)#', $path)) {
+            return 'inventory';
+        }
+        if (preg_match('#^(suppliers|supplier-comms|supplier-evaluations|supplier-classifications|supplier-kpi)(/|$)#', $path)) {
             return 'suppliers';
         }
-        if (preg_match('#^(admin/ops/)?(accounting|chart-of-accounts|journal-entries|cash-vouchers|fiscal-periods|cost-centers|bank-accounts|customers|asset-depreciation)(/|$)#', $route)) {
+        if (preg_match('#^(accounting|chart-of-accounts|journal-entries|cash-vouchers|fiscal-periods|cost-centers|bank-accounts|customers|asset-depreciation)(/|$)#', $path)) {
             return 'accounting';
         }
-        if (preg_match('#reports/(cost-analysis|inventory-valuation)(/|$)#', $route)) {
-            return $route === 'reports/inventory-valuation' || str_contains($route, 'inventory-valuation')
-                ? 'inventory'
-                : 'accounting';
-        }
-        if (preg_match('#^(admin/ops/)?(contracts|contract-renewals|tenders|assets|asset-maintenance|asset-assignments|medical-devices|device-maintenance|device-spare-parts|device-warranty|documents)(/|$)#', $route)) {
+        if (preg_match('#^(contracts|contract-renewals|tenders|assets|asset-maintenance|asset-assignments|medical-devices|device-maintenance|device-spare-parts|device-warranty|documents)(/|$)#', $path)) {
             return 'contracts';
         }
-        if (preg_match('#^(admin/ops/)?notifications(/|$)#', $route)) {
+        if (preg_match('#^notifications(/|$)#', $path)) {
             return 'notifications';
         }
-        if (preg_match('#^(admin/ops/)?profile(/|$)#', $route)) {
+        if (preg_match('#^profile(/|$)#', $path)) {
             return 'profile';
         }
-        if (preg_match('#^(admin/ops/)?workflows(/|$)#', $route)) {
+        if (preg_match('#^workflows(/|$)#', $path)) {
             return 'workflows';
         }
-        if (preg_match('#^(admin/ops/)?reports(/|$)#', $route)) {
-            return 'procurement';
-        }
         return null;
+    }
+
+    private function opsPath(string $route): string
+    {
+        if (str_starts_with($route, 'admin/ops/')) {
+            return substr($route, strlen('admin/ops/'));
+        }
+        if (str_starts_with($route, 'admin/')) {
+            return substr($route, strlen('admin/'));
+        }
+        return $route;
     }
 
     private function companyId(): ?int
@@ -270,7 +298,7 @@ final class ModulePageStatsService
         $itemCount = $cid !== null ? $inv->count() : (int) ($inv->queryOne('SELECT COUNT(*) AS c FROM rateb_inventory')['c'] ?? 0);
         $whCount = $cid !== null ? (new WarehouseService())->countForCompany($cid) : $this->countRows('rateb_warehouses', null);
 
-        if (str_contains($route, 'inventory-valuation')) {
+        if (str_contains($path, 'inventory-valuation')) {
             return $this->cards([
                 ['label' => __('inventory_value'), 'value' => $this->money((float) ($kpi['inventory_value'] ?? $inv->totalValue($cid))), 'tone' => 'green'],
                 ['label' => __('inventory'), 'value' => $this->intStr($itemCount), 'tone' => 'blue'],
@@ -338,8 +366,10 @@ final class ModulePageStatsService
         $acct = new AccountingService();
         $acctDash = new AccountingDashboardService($acct);
         $m = $acctDash->metrics($cid);
+        $path = $this->opsPath($route);
 
-        if (str_contains($route, 'cfo-dashboard')) {
+        if (str_contains($path, 'cfo-dashboard')) {
+            $cfo = ($cid !== null && $cid > 0) ? $acct->cfoMetrics($cid) : [];
             return $this->cards([
                 ['label' => __('cash_position'), 'value' => $this->money((float) ($m['cash_position'] ?? 0)), 'tone' => 'green'],
                 ['label' => __('revenue_ytd'), 'value' => $this->money((float) ($m['revenue_ytd'] ?? 0)), 'tone' => 'blue'],
@@ -347,9 +377,11 @@ final class ModulePageStatsService
                 ['label' => __('net_profit_ytd'), 'value' => $this->money((float) ($m['net_profit_ytd'] ?? 0)), 'tone' => 'teal'],
                 ['label' => __('ar_open'), 'value' => $this->money((float) ($m['ar_open'] ?? 0)), 'tone' => 'purple'],
                 ['label' => __('ap_open'), 'value' => $this->money((float) ($m['ap_open'] ?? 0)), 'tone' => 'red'],
+                ['label' => __('dso_days'), 'value' => number_format((float) ($cfo['dso_days'] ?? 0), 1), 'tone' => 'blue'],
+                ['label' => __('dpo_days'), 'value' => number_format((float) ($cfo['dpo_days'] ?? 0), 1), 'tone' => 'green'],
             ]);
         }
-        if (str_contains($route, 'accounts-receivable')) {
+        if (str_contains($path, 'accounts-receivable')) {
             $ar = $acct->accountsReceivable($cid);
             return $this->cards([
                 ['label' => __('ar_open_total'), 'value' => $this->money((float) ($ar['total_open'] ?? 0)), 'tone' => 'orange'],
@@ -358,7 +390,7 @@ final class ModulePageStatsService
                 ['label' => __('overdue_invoices'), 'value' => $this->intStr((int) ($m['overdue_invoices'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'accounts-payable')) {
+        if (str_contains($path, 'accounts-payable')) {
             $ap = $acct->accountsPayable($cid);
             return $this->cards([
                 ['label' => __('ap_open_total'), 'value' => $this->money((float) ($ap['total_open'] ?? 0)), 'tone' => 'orange'],
@@ -367,7 +399,7 @@ final class ModulePageStatsService
                 ['label' => __('procurement'), 'value' => $this->money((float) ($m['procurement_received'] ?? 0)), 'tone' => 'teal'],
             ]);
         }
-        if (str_contains($route, 'customers')) {
+        if (str_contains($path, 'customers')) {
             $this->bootstrapTenant($cid);
             $custTotal = $cid !== null ? (new Customer())->count() : $this->countRows('rateb_customers', null);
             return $this->cards([
@@ -377,7 +409,7 @@ final class ModulePageStatsService
                 ['label' => __('revenue'), 'value' => $this->money((float) ($m['revenue'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'chart-of-accounts') || str_contains($route, 'coa-tree')) {
+        if (str_contains($path, 'chart-of-accounts') || str_contains($path, 'coa-tree')) {
             $active = (int) ($m['accounts_active'] ?? 0);
             return $this->cards([
                 ['label' => __('chart_of_accounts'), 'value' => $this->intStr($active), 'tone' => 'blue'],
@@ -386,7 +418,7 @@ final class ModulePageStatsService
                 ['label' => __('draft_journals'), 'value' => $this->intStr((int) ($m['draft_journals'] ?? 0)), 'tone' => 'orange'],
             ]);
         }
-        if (str_contains($route, 'journal-entries')) {
+        if (str_contains($path, 'journal-entries')) {
             return $this->cards([
                 ['label' => __('journal_entries'), 'value' => $this->intStr((int) ($m['journal_posted'] ?? 0)), 'tone' => 'green'],
                 ['label' => __('draft_journals'), 'value' => $this->intStr((int) ($m['draft_journals'] ?? 0)), 'tone' => 'orange'],
@@ -394,7 +426,7 @@ final class ModulePageStatsService
                 ['label' => __('accounts_active'), 'value' => $this->intStr((int) ($m['accounts_active'] ?? 0)), 'tone' => 'blue'],
             ]);
         }
-        if (str_contains($route, 'cash-vouchers')) {
+        if (str_contains($path, 'cash-vouchers')) {
             $posted = $this->countRowsWhere('rateb_cash_vouchers', "status = 'posted'", $cid);
             $draft = $this->countRowsWhere('rateb_cash_vouchers', "status IN ('draft','pending')", $cid);
             return $this->cards([
@@ -404,7 +436,7 @@ final class ModulePageStatsService
                 ['label' => __('cash_position'), 'value' => $this->money((float) ($m['cash_position'] ?? 0)), 'tone' => 'teal'],
             ]);
         }
-        if (str_contains($route, 'supplier-payments')) {
+        if (str_contains($path, 'supplier-payments')) {
             return $this->cards([
                 ['label' => __('supplier_payments'), 'value' => $this->intStr((int) ($m['pending_vouchers'] ?? 0)), 'tone' => 'blue'],
                 ['label' => __('ap_open'), 'value' => $this->money((float) ($m['ap_open'] ?? 0)), 'tone' => 'orange'],
@@ -412,7 +444,7 @@ final class ModulePageStatsService
                 ['label' => __('procurement'), 'value' => $this->money((float) ($m['procurement_received'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'fiscal-periods')) {
+        if (str_contains($path, 'fiscal-periods')) {
             $open = $this->countRowsWhere('rateb_fiscal_periods', "status = 'open'", $cid);
             $closed = $this->countRowsWhere('rateb_fiscal_periods', "status = 'closed'", $cid);
             return $this->cards([
@@ -422,7 +454,7 @@ final class ModulePageStatsService
                 ['label' => __('journal_entries'), 'value' => $this->intStr((int) ($m['journal_posted'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'cost-centers')) {
+        if (str_contains($path, 'cost-centers')) {
             $total = $this->countRows('rateb_cost_centers', $cid);
             $active = $this->countRowsWhere('rateb_cost_centers', 'is_active = 1', $cid);
             return $this->cards([
@@ -432,25 +464,25 @@ final class ModulePageStatsService
                 ['label' => __('net_profit_ytd'), 'value' => $this->money((float) ($m['net_profit_ytd'] ?? 0)), 'tone' => 'teal'],
             ]);
         }
-        if (str_contains($route, 'bank-accounts')) {
+        if (str_contains($path, 'bank-accounts')) {
             $bank = $acct->bankReconciliation($cid);
             return $this->cards([
                 ['label' => __('bank_accounts'), 'value' => $this->intStr(count($bank['accounts'] ?? [])), 'tone' => 'blue'],
-                ['label' => __('cash_position'), 'value' => $this->money((float) ($bank['total_cash'] ?? 0)), 'tone' => 'green'],
-                ['label' => __('bank_reconciliation'), 'value' => $this->intStr((int) ($m['unreconciled_bank'] ?? 0)), 'tone' => 'orange'],
-                ['label' => __('unreconciled_bank'), 'value' => $this->intStr((int) ($m['unreconciled_bank'] ?? 0)), 'tone' => 'red'],
-            ]);
-        }
-        if (str_contains($route, 'bank-reconciliation')) {
-            $bank = $acct->bankReconciliation($cid);
-            return $this->cards([
-                ['label' => __('bank_accounts'), 'value' => $this->intStr(count($bank['accounts'] ?? [])), 'tone' => 'blue'],
-                ['label' => __('cash_position'), 'value' => $this->money((float) ($bank['total_cash'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('total_cash'), 'value' => $this->money((float) ($bank['total_cash'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('petty_cash'), 'value' => $this->money((float) ($bank['petty_cash'] ?? 0)), 'tone' => 'teal'],
                 ['label' => __('unreconciled_bank'), 'value' => $this->intStr((int) ($m['unreconciled_bank'] ?? 0)), 'tone' => 'orange'],
-                ['label' => __('journal_entries'), 'value' => $this->intStr((int) ($m['journal_posted'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'zatca-settings')) {
+        if (str_contains($path, 'bank-reconciliation')) {
+            $bank = $acct->bankReconciliation($cid);
+            return $this->cards([
+                ['label' => __('total_cash'), 'value' => $this->money((float) ($bank['total_cash'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('petty_cash'), 'value' => $this->money((float) ($bank['petty_cash'] ?? 0)), 'tone' => 'teal'],
+                ['label' => __('bank_accounts'), 'value' => $this->intStr(count($bank['accounts'] ?? [])), 'tone' => 'blue'],
+                ['label' => __('unreconciled_bank'), 'value' => $this->intStr((int) ($m['unreconciled_bank'] ?? 0)), 'tone' => 'orange'],
+            ]);
+        }
+        if (str_contains($path, 'zatca-settings')) {
             $vat = $acct->vatReport($cid, date('Y') . '-01-01', date('Y-m-d'));
             return $this->cards([
                 ['label' => __('vat_net_payable'), 'value' => $this->money((float) ($vat['net_vat'] ?? 0)), 'tone' => 'orange'],
@@ -459,7 +491,7 @@ final class ModulePageStatsService
                 ['label' => __('revenue_ytd'), 'value' => $this->money((float) ($m['revenue_ytd'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'cost-analysis') || str_contains($route, 'cost-of-sales')) {
+        if (str_contains($path, 'cost-analysis') || str_contains($path, 'cost-of-sales')) {
             $cost = (new ErpAnalyticsService())->costAnalysis($cid);
             return $this->cards([
                 ['label' => __('procurement_spend'), 'value' => $this->money((float) ($cost['procurement_spend'] ?? 0)), 'tone' => 'orange'],
@@ -468,7 +500,7 @@ final class ModulePageStatsService
                 ['label' => __('expenses_ytd'), 'value' => $this->money((float) ($m['expenses_ytd'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'asset-depreciation')) {
+        if (str_contains($path, 'asset-depreciation')) {
             $pending = $this->countRowsWhere('rateb_asset_depreciation_runs', "status IN ('draft','pending')", $cid);
             $posted = $this->countRowsWhere('rateb_asset_depreciation_runs', "status = 'posted'", $cid);
             return $this->cards([
@@ -478,7 +510,7 @@ final class ModulePageStatsService
                 ['label' => __('total_asset_value'), 'value' => $this->money((float) ((new ErpAnalyticsService())->costAnalysis($cid)['asset_value'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($route, 'reports') || str_contains($route, 'trial-balance') || str_contains($route, 'profit-loss') || str_contains($route, 'balance-sheet') || str_contains($route, 'vat-report')) {
+        if (str_contains($path, 'reports') || str_contains($path, 'trial-balance') || str_contains($path, 'profit-loss') || str_contains($path, 'balance-sheet') || str_contains($path, 'vat-report')) {
             return $this->cards([
                 ['label' => __('revenue_ytd'), 'value' => $this->money((float) ($m['revenue_ytd'] ?? 0)), 'tone' => 'green'],
                 ['label' => __('expenses_ytd'), 'value' => $this->money((float) ($m['expenses_ytd'] ?? 0)), 'tone' => 'orange'],
@@ -511,7 +543,8 @@ final class ModulePageStatsService
             $cid
         );
         $maint = $this->countRowsWhere('rateb_asset_maintenance', "status IN ('scheduled','overdue')", $cid);
-        if (str_contains($route, 'medical-devices') || str_contains($route, 'device-')) {
+        $path = $this->opsPath($route);
+        if (str_contains($path, 'medical-devices') || str_contains($path, 'device-')) {
             $devices = $this->countRows('rateb_medical_devices', $cid);
             return $this->cards([
                 ['label' => __('medical_devices'), 'value' => $this->intStr($devices), 'tone' => 'blue'],
@@ -635,6 +668,116 @@ final class ModulePageStatsService
         return $this->cards([
             ['label' => __('pending_approvals'), 'value' => $this->intStr($pending), 'tone' => 'orange'],
             ['label' => __('workflow_definitions'), 'value' => $this->intStr($this->countRows('rateb_workflow_definitions', $cid)), 'tone' => 'blue'],
+        ]);
+    }
+
+    /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
+    private function platformStats(string $route): array
+    {
+        $dash = (new DashboardService())->adminMetrics();
+        $acct = new AccountingDashboardService();
+        $m = $acct->metrics(null);
+
+        if (str_contains($route, 'companies')) {
+            return $this->cards([
+                ['label' => __('total_companies'), 'value' => $this->intStr((int) ($dash['total_companies'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('active_companies'), 'value' => $this->intStr((int) ($dash['active_companies'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('pending_companies'), 'value' => $this->intStr((int) ($dash['pending_companies'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('suspended_companies'), 'value' => $this->intStr((int) ($dash['suspended_companies'] ?? 0)), 'tone' => 'red'],
+            ]);
+        }
+        if (str_contains($route, 'subscriptions')) {
+            return $this->cards([
+                ['label' => __('subscriptions'), 'value' => $this->intStr((int) ($dash['subscriptions'] ?? 0)), 'tone' => 'purple'],
+                ['label' => __('expiring_subscriptions'), 'value' => $this->intStr((int) ($dash['expiring_subscriptions'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('active_plans'), 'value' => $this->intStr((int) ($dash['active_plans'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('users'), 'value' => $this->intStr((int) ($dash['users'] ?? 0)), 'tone' => 'blue'],
+            ]);
+        }
+        if (str_contains($route, 'invoices')) {
+            return $this->cards([
+                ['label' => __('invoices'), 'value' => $this->intStr((int) ($m['invoices_open_count'] ?? 0) + (int) ($m['invoices_paid_count'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('unpaid_invoices'), 'value' => $this->intStr((int) ($m['unpaid_invoices'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('overdue_invoices'), 'value' => $this->intStr((int) ($m['overdue_invoices'] ?? 0)), 'tone' => 'red'],
+                ['label' => __('payments_total'), 'value' => $this->money((float) ($m['payments_total'] ?? 0)), 'tone' => 'green'],
+            ]);
+        }
+        if (str_contains($route, 'payments')) {
+            return $this->cards([
+                ['label' => __('payments'), 'value' => $this->intStr((int) ($m['payments_count'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('payments_total'), 'value' => $this->money((float) ($m['payments_total'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('revenue'), 'value' => $this->money((float) ($m['revenue'] ?? 0)), 'tone' => 'teal'],
+                ['label' => __('subscriptions'), 'value' => $this->intStr((int) ($dash['subscriptions'] ?? 0)), 'tone' => 'purple'],
+            ]);
+        }
+        return $this->cards([
+            ['label' => __('total_companies'), 'value' => $this->intStr((int) ($dash['total_companies'] ?? 0)), 'tone' => 'blue'],
+            ['label' => __('subscriptions'), 'value' => $this->intStr((int) ($dash['subscriptions'] ?? 0)), 'tone' => 'purple'],
+            ['label' => __('users'), 'value' => $this->intStr((int) ($dash['users'] ?? 0)), 'tone' => 'teal'],
+            ['label' => __('pending_approvals'), 'value' => $this->intStr((int) ($dash['pending_approvals'] ?? 0)), 'tone' => 'orange'],
+        ]);
+    }
+
+    /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
+    private function branchStats(string $route): array
+    {
+        $cid = $this->companyId() ?? 0;
+        $branchCount = $cid > 0 ? (new BranchService())->countForCompany($cid) : 0;
+        $employees = 0;
+        $inventoryValue = 0.0;
+        $purchases = 0.0;
+        if ($cid > 0) {
+            foreach ((new BranchReportingService())->branchesOverview($cid) as $row) {
+                $employees += (int) ($row['employees_count'] ?? 0);
+                $inventoryValue += (float) ($row['inventory_value'] ?? 0);
+                $purchases += (float) ($row['purchases_total'] ?? 0);
+            }
+        }
+        return $this->cards([
+            ['label' => __('branches'), 'value' => $this->intStr($branchCount), 'tone' => 'blue'],
+            ['label' => __('hr_employees'), 'value' => $this->intStr($employees), 'tone' => 'green'],
+            ['label' => __('inventory_value'), 'value' => $this->money($inventoryValue), 'tone' => 'teal'],
+            ['label' => __('procurement'), 'value' => $this->money($purchases), 'tone' => 'purple'],
+        ]);
+    }
+
+    /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
+    private function analyticsStats(string $route): array
+    {
+        $cid = $this->companyId();
+        $this->bootstrapTenant($cid);
+        $path = $this->opsPath($route);
+
+        if (str_contains($path, 'procurement')) {
+            $proc = (new ErpAnalyticsService())->procurementDashboard($cid);
+            return $this->cards([
+                ['label' => __('purchase_requests'), 'value' => $this->intStr((int) ($proc['purchase_requests'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('purchase_orders'), 'value' => $this->intStr((int) ($proc['purchase_orders'] ?? 0)), 'tone' => 'purple'],
+                ['label' => __('procurement'), 'value' => $this->money((float) ($proc['total_po_value'] ?? 0)), 'tone' => 'green'],
+            ]);
+        }
+        if (str_contains($path, 'supplier-performance')) {
+            $rows = (new ErpAnalyticsService())->supplierPerformance($cid);
+            return $this->cards([
+                ['label' => __('suppliers'), 'value' => $this->intStr(count($rows)), 'tone' => 'blue'],
+                ['label' => __('supplier_evaluations'), 'value' => $this->intStr($this->countRowsWhere('rateb_supplier_evaluations', "status = 'published'", $cid)), 'tone' => 'green'],
+                ['label' => __('purchase_orders'), 'value' => $this->intStr((int) ((new PurchaseOrder())->count())), 'tone' => 'purple'],
+            ]);
+        }
+        if (str_contains($path, 'kpi')) {
+            $kpi = (new ErpAnalyticsService())->companyKpi($cid);
+            return $this->cards([
+                ['label' => __('purchase_requests'), 'value' => $this->intStr((int) ($kpi['purchase_requests'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('inventory_value'), 'value' => $this->money((float) ($kpi['inventory_value'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('low_stock'), 'value' => $this->intStr((int) ($kpi['low_stock'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('suppliers'), 'value' => $this->intStr((int) ($kpi['suppliers'] ?? 0)), 'tone' => 'purple'],
+            ]);
+        }
+        $kpi = (new ErpAnalyticsService())->companyKpi($cid);
+        return $this->cards([
+            ['label' => __('company_kpi'), 'value' => $this->intStr((int) ($kpi['purchase_orders'] ?? 0)), 'tone' => 'blue'],
+            ['label' => __('inventory_value'), 'value' => $this->money((float) ($kpi['inventory_value'] ?? 0)), 'tone' => 'green'],
+            ['label' => __('pending_approvals'), 'value' => $this->intStr((int) ($kpi['pending_workflows'] ?? 0)), 'tone' => 'orange'],
         ]);
     }
 

@@ -3,20 +3,6 @@
 <?php if (!($canPay ?? false)) { ?>
 <p class="text-muted small mb-2"><i class="fas fa-lock me-1"></i><?php echo __('accounting_perm_post_supplier_hint'); ?></p>
 <?php } ?>
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('ap_open_total'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($totalOpen ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('ap_posted_total'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($totalPosted ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-</div>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('accounts_payable'); ?></div>
     <div class="rateb-card-body p-0">
