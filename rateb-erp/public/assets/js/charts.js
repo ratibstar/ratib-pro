@@ -388,6 +388,111 @@
         }));
     }
 
+    function initHorizontalBarChart(el, colors, pal, label) {
+        var data = parseNums(el.dataset.values);
+        mount(el.id, new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: JSON.parse(el.dataset.labels),
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: pal.series[0],
+                    hoverBackgroundColor: pal.seriesHover[0],
+                    borderRadius: 4,
+                    borderSkipped: false,
+                    maxBarThickness: 18,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: lightAnim(true),
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltipOptions(colors)
+                },
+                scales: {
+                    x: scaleY(colors, false, data),
+                    y: scaleX(colors)
+                }
+            }
+        }));
+    }
+
+    function initMultiLineChart(el, colors, pal) {
+        var ctx = el.getContext('2d');
+        var h = el.parentElement ? el.parentElement.offsetHeight : 280;
+        var d1 = parseNums(el.dataset.dataset1);
+        var d2 = parseNums(el.dataset.dataset2);
+        var d3 = parseNums(el.dataset.dataset3);
+        var all = d1.concat(d2).concat(d3);
+        var series = [
+            { data: d1, label: el.dataset.label1 || 'A', color: pal.primary, soft: pal.primarySoft },
+            { data: d2, label: el.dataset.label2 || 'B', color: pal.accent, soft: pal.accentSoft },
+            { data: d3, label: el.dataset.label3 || 'C', color: '#a78bfa', soft: 'rgba(167,139,250,0.1)' }
+        ];
+        mount(el.id, new Chart(el, {
+            type: 'line',
+            data: {
+                labels: JSON.parse(el.dataset.labels || '[]'),
+                datasets: series.map(function (s) {
+                    return lineDataset(s.label, s.data, s.color, areaGradient(ctx, h, s.soft), true);
+                })
+            },
+            options: Object.assign({}, baseCartesian(colors, { values: all }), {
+                plugins: {
+                    legend: legendOptions('top'),
+                    tooltip: tooltipOptions(colors)
+                }
+            })
+        }));
+    }
+
+    function initStackedBarChart(el, colors, pal) {
+        var success = parseNums(el.dataset.success);
+        var failed = parseNums(el.dataset.failed);
+        var all = success.concat(failed);
+        mount(el.id, new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: JSON.parse(el.dataset.labels || '[]'),
+                datasets: [
+                    {
+                        label: el.dataset.labelSuccess || 'Success',
+                        data: success,
+                        backgroundColor: 'rgba(16,185,129,0.75)',
+                        hoverBackgroundColor: '#10b981',
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        maxBarThickness: 22
+                    },
+                    {
+                        label: el.dataset.labelFailed || 'Failed',
+                        data: failed,
+                        backgroundColor: 'rgba(251,113,133,0.75)',
+                        hoverBackgroundColor: '#fb7185',
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        maxBarThickness: 22
+                    }
+                ]
+            },
+            options: Object.assign({}, baseCartesian(colors, { values: all }), {
+                plugins: {
+                    legend: legendOptions('top'),
+                    tooltip: tooltipOptions(colors)
+                },
+                scales: {
+                    x: Object.assign({}, scaleX(colors), { stacked: true }),
+                    y: Object.assign({}, scaleY(colors, false, all), { stacked: true })
+                }
+            })
+        }));
+    }
+
     function initDoughnut(el, colors, pal, valuesKey) {
         var values = parseNums(el.dataset[valuesKey || 'values']);
         mount(el.id, new Chart(el, {
@@ -450,9 +555,7 @@
 
         var acctExpEl = document.getElementById('chart-acct-expenses');
         if (acctExpEl && acctExpEl.dataset.labels) {
-            deferInit(acctExpEl, function () {
-                initLineChart(acctExpEl, colors, pal, chartLabel(acctExpEl, 'Expenses'), acctExpEl.dataset.values, 'expense');
-            });
+            initBarChart(acctExpEl, colors, pal, chartLabel(acctExpEl, 'Expenses'));
         }
 
         var acctArApEl = document.getElementById('chart-acct-arap');
@@ -473,6 +576,46 @@
         var statusEl = document.getElementById('chart-company-status');
         if (statusEl && statusEl.dataset.labels) {
             initDoughnut(statusEl, colors, pal);
+        }
+
+        var overviewEl = document.getElementById('chart-platform-overview');
+        if (overviewEl && overviewEl.dataset.labels) {
+            initMultiLineChart(overviewEl, colors, pal);
+        }
+
+        var planEl = document.getElementById('chart-plan-distribution');
+        if (planEl && planEl.dataset.labels) {
+            initBarChart(planEl, colors, pal, chartLabel(planEl, 'Plans'));
+        }
+
+        var subStatEl = document.getElementById('chart-subscription-status');
+        if (subStatEl && subStatEl.dataset.labels) {
+            initDoughnut(subStatEl, colors, pal);
+        }
+
+        var loginEl = document.getElementById('chart-login-activity');
+        if (loginEl && loginEl.dataset.labels) {
+            initStackedBarChart(loginEl, colors, pal);
+        }
+
+        var topCoEl = document.getElementById('chart-top-companies');
+        if (topCoEl && topCoEl.dataset.labels) {
+            initHorizontalBarChart(topCoEl, colors, pal, chartLabel(topCoEl, 'Users'));
+        }
+
+        var topCustEl = document.getElementById('chart-top-customers');
+        if (topCustEl && topCustEl.dataset.labels) {
+            initHorizontalBarChart(topCustEl, colors, pal, chartLabel(topCustEl, 'Total'));
+        }
+
+        var topItemsEl = document.getElementById('chart-top-items');
+        if (topItemsEl && topItemsEl.dataset.labels) {
+            initHorizontalBarChart(topItemsEl, colors, pal, chartLabel(topItemsEl, 'Total'));
+        }
+
+        var journalEl = document.getElementById('chart-journal-activity');
+        if (journalEl && journalEl.dataset.labels) {
+            initBarChart(journalEl, colors, pal, chartLabel(journalEl, 'Entries'));
         }
     }
 

@@ -1,1 +1,1 @@
-rateb-dashboard-skin=v5b-dense-fix
+rateb-dashboard-skin=v5c-charts

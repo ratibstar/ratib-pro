@@ -58,7 +58,7 @@ if (!empty($expiringContracts)) {
 
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
-<div class="cm cm--solo" data-cm-dash="v5">
+<div class="cm cm--wide" data-cm-dash="v5c">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
         'tag' => __('approval_category_operations'),
@@ -67,13 +67,33 @@ Rateb\App\Core\View::partial('dashboard/head');
         'actions' => $actions,
     ]);
     Rateb\App\Core\View::partial('dashboard/alerts', ['alerts' => $alerts]);
+    Rateb\App\Core\View::partial('dashboard/metrics-strip', ['metrics' => $metrics]);
     ?>
 
-    <div class="cm-split">
-        <?php Rateb\App\Core\View::partial('dashboard/metrics-rail', [
-            'metrics' => $metrics,
-            'footer' => $footer,
-        ]); ?>
-        <main class="cm-work" aria-hidden="true"></main>
+    <div class="cm-body">
+        <div class="cm-viz-grid cm-viz-grid--2">
+            <section class="cm-board cm-board--fill">
+                <div class="cm-board__head"><?php echo __('current_plan'); ?></div>
+                <dl class="cm-meta">
+                    <?php foreach ($footer as $row) { ?>
+                    <div class="cm-meta__row">
+                        <dt><?php echo Rateb\App\Core\View::escape((string) ($row['label'] ?? '')); ?></dt>
+                        <dd><?php echo $row['value'] ?? ''; ?></dd>
+                    </div>
+                    <?php } ?>
+                </dl>
+            </section>
+            <section class="cm-board cm-board--fill cm-board--hint">
+                <div class="cm-board__head"><?php echo __('quick_shortcuts'); ?></div>
+                <div class="cm-hints">
+                    <?php foreach ($actions as $act) { if (!empty($act['form'])) { continue; } ?>
+                    <a class="cm-hint" href="<?php echo Rateb\App\Core\View::escape((string) $act['href']); ?>">
+                        <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($act['icon'] ?? 'fa-link')); ?>"></i>
+                        <span><?php echo Rateb\App\Core\View::escape((string) ($act['label'] ?? '')); ?></span>
+                    </a>
+                    <?php } ?>
+                </div>
+            </section>
+        </div>
     </div>
 </div>

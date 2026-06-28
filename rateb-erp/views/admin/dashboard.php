@@ -15,6 +15,13 @@ $userLabels = json_encode(array_column($c['user_growth'] ?? [], 'month'));
 $userValues = json_encode(array_map('intval', array_column($c['user_growth'] ?? [], 'total')));
 $statusLabels = json_encode(array_map(static fn ($r) => __((string) ($r['label'] ?? '')), $c['company_status'] ?? []));
 $statusValues = json_encode(array_map('intval', array_column($c['company_status'] ?? [], 'value')));
+$planLabels = json_encode(array_column($c['plan_distribution'] ?? [], 'label'));
+$planValues = json_encode(array_map('intval', array_column($c['plan_distribution'] ?? [], 'value')));
+$subStatLabels = json_encode(array_map(static fn ($r) => __((string) ($r['label'] ?? '')), $c['subscription_status'] ?? []));
+$subStatValues = json_encode(array_map('intval', array_column($c['subscription_status'] ?? [], 'value')));
+$loginLabels = json_encode(array_column($c['login_activity'] ?? [], 'month'));
+$loginSuccess = json_encode(array_map('intval', array_column($c['login_activity'] ?? [], 'success_total')));
+$loginFailed = json_encode(array_map('intval', array_column($c['login_activity'] ?? [], 'failed_total')));
 
 $metrics = [];
 foreach (
@@ -46,8 +53,8 @@ $rankRows = array_map(static fn ($r) => [
 
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
-<!-- rateb-dashboard-v5-command -->
-<div class="cm" data-cm-dash="v5">
+<!-- rateb-dashboard-v5-charts -->
+<div class="cm cm--wide" data-cm-dash="v5c">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
         'tag' => __('platform_billing'),
@@ -56,106 +63,130 @@ Rateb\App\Core\View::partial('dashboard/head');
         'actions' => $actions,
     ]);
     Rateb\App\Core\View::partial('dashboard/alerts', ['alerts' => $alerts]);
+    Rateb\App\Core\View::partial('dashboard/metrics-strip', ['metrics' => $metrics]);
     ?>
 
-    <div class="cm-split">
-        <?php Rateb\App\Core\View::partial('dashboard/metrics-rail', ['metrics' => $metrics]); ?>
-
-        <main class="cm-work">
-            <section class="cm-zone" data-cm-chart-tabs>
-                <header class="cm-zone__bar">
-                    <h2><?php echo __('analytics'); ?></h2>
-                    <div class="cm-seg" role="tablist">
-                        <button type="button" class="cm-seg__btn is-active" data-cm-chart-tab="companies" role="tab"><?php echo __('company_growth'); ?></button>
-                        <button type="button" class="cm-seg__btn" data-cm-chart-tab="subscriptions" role="tab"><?php echo __('subscription_growth'); ?></button>
-                        <button type="button" class="cm-seg__btn" data-cm-chart-tab="users" role="tab"><?php echo __('user_growth'); ?></button>
-                    </div>
-                </header>
-                <div class="cm-pane is-active" data-cm-chart-pane="companies">
-                    <div class="cm-chart">
-                        <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
-                    </div>
-                </div>
-                <div class="cm-pane" data-cm-chart-pane="subscriptions">
-                    <div class="cm-chart">
-                        <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
-                    </div>
-                </div>
-                <div class="cm-pane" data-cm-chart-pane="users">
-                    <div class="cm-chart">
-                        <canvas id="chart-users" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('user_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($userLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($userValues); ?>'></canvas>
-                    </div>
+    <div class="cm-body">
+        <div class="cm-viz-grid cm-viz-grid--3">
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('company_growth'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg">
+                    <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
                 </div>
             </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('subscription_growth'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg">
+                    <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('user_growth'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg">
+                    <canvas id="chart-users" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('user_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($userLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($userValues); ?>'></canvas>
+                </div>
+            </section>
+        </div>
 
-            <div class="cm-row2">
-                <section class="cm-zone">
-                    <header class="cm-zone__bar">
-                        <h2><?php echo __('company_status_distribution'); ?></h2>
-                    </header>
-                    <div class="cm-chart cm-chart--sm">
-                        <canvas id="chart-company-status" data-labels='<?php echo Rateb\App\Core\View::escape($statusLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($statusValues); ?>'></canvas>
-                    </div>
-                </section>
+        <div class="cm-viz-grid cm-viz-grid--2">
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('platform_overview'); ?></h2></header>
+                <div class="cm-chart cm-chart--xl">
+                    <canvas id="chart-platform-overview"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>'
+                        data-dataset-1='<?php echo Rateb\App\Core\View::escape($coValues); ?>'
+                        data-dataset-2='<?php echo Rateb\App\Core\View::escape($subValues); ?>'
+                        data-dataset-3='<?php echo Rateb\App\Core\View::escape($userValues); ?>'
+                        data-label-1="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>"
+                        data-label-2="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>"
+                        data-label-3="<?php echo Rateb\App\Core\View::escape(__('user_growth')); ?>"></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('company_status_distribution'); ?></h2></header>
+                <div class="cm-chart cm-chart--xl">
+                    <canvas id="chart-company-status" data-labels='<?php echo Rateb\App\Core\View::escape($statusLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($statusValues); ?>'></canvas>
+                </div>
+            </section>
+        </div>
 
-                <?php if ($recentCompanies !== []) { ?>
-                <section class="cm-board">
-                    <div class="cm-board__head">
-                        <span><?php echo __('recent_companies'); ?></span>
-                        <a href="<?php echo rateb_url('admin/companies'); ?>"><?php echo __('view_all'); ?></a>
-                    </div>
-                    <table class="cm-tbl">
-                        <thead><tr><th><?php echo __('name'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
-                        <tbody>
-                        <?php foreach (array_slice($recentCompanies, 0, 5) as $row) { ?>
-                        <tr>
-                            <td><a href="<?php echo rateb_url('admin/companies/' . (int) $row['id']); ?>"><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></a></td>
-                            <td><span class="cm-badge cm-badge--muted"><?php echo __((string) ($row['status'] ?? '')); ?></span></td>
-                            <td class="text-muted"><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 10)); ?></td>
-                        </tr>
-                        <?php } ?>
-                        </tbody>
-                    </table>
-                </section>
-                <?php } ?>
-            </div>
+        <div class="cm-viz-grid cm-viz-grid--3">
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('plan_distribution'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg">
+                    <canvas id="chart-plan-distribution" data-labels='<?php echo Rateb\App\Core\View::escape($planLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($planValues); ?>'></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('subscription_status'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg">
+                    <canvas id="chart-subscription-status" data-labels='<?php echo Rateb\App\Core\View::escape($subStatLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subStatValues); ?>'></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('login_activity'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg">
+                    <canvas id="chart-login-activity"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($loginLabels); ?>'
+                        data-success='<?php echo Rateb\App\Core\View::escape($loginSuccess); ?>'
+                        data-failed='<?php echo Rateb\App\Core\View::escape($loginFailed); ?>'
+                        data-label-success="<?php echo Rateb\App\Core\View::escape(__('login_success')); ?>"
+                        data-label-failed="<?php echo Rateb\App\Core\View::escape(__('failed')); ?>"></canvas>
+                </div>
+            </section>
+        </div>
 
-            <div class="cm-row2 cm-row2--tight">
-                <?php
-                Rateb\App\Core\View::partial('dashboard/ranks', [
-                    'title' => __('top_companies_users'),
-                    'rows' => $rankRows,
-                    'max' => max(1, ...array_map(static fn ($r) => (int) $r['total'], $rankRows ?: [['total' => 1]])),
-                ]);
-                ?>
-                <section class="cm-board cm-board--fill cm-board--hint">
-                    <div class="cm-board__head"><?php echo __('quick_shortcuts'); ?></div>
-                    <div class="cm-hints">
-                        <a class="cm-hint" href="<?php echo rateb_url('admin/companies'); ?>"><i class="fas fa-building"></i><span><?php echo __('total_companies'); ?></span><em><?php echo (int) ($m['total_companies'] ?? 0); ?></em></a>
-                        <a class="cm-hint" href="<?php echo rateb_url('admin/users'); ?>"><i class="fas fa-users"></i><span><?php echo __('users'); ?></span><em><?php echo (int) ($m['users'] ?? 0); ?></em></a>
-                        <a class="cm-hint" href="<?php echo rateb_url('admin/companies'); ?>?status=pending"><i class="fas fa-clock"></i><span><?php echo __('pending_companies'); ?></span><em><?php echo (int) ($m['pending_companies'] ?? 0); ?></em></a>
-                    </div>
-                </section>
-            </div>
+        <div class="cm-viz-grid cm-viz-grid--2">
+            <?php if ($topCompanies !== []) { ?>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('top_companies_users'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg">
+                    <canvas id="chart-top-companies" data-chart-type="horizontalBar"
+                        data-labels='<?php echo Rateb\App\Core\View::escape(json_encode(array_column($topCompanies, 'company_name'))); ?>'
+                        data-values='<?php echo Rateb\App\Core\View::escape(json_encode(array_map('intval', array_column($topCompanies, 'user_count')))); ?>'
+                        data-chart-label="<?php echo Rateb\App\Core\View::escape(__('users')); ?>"></canvas>
+                </div>
+            </section>
+            <?php } ?>
 
-            <?php if ($recentLogins !== []) { ?>
-            <section class="cm-board">
-                <div class="cm-board__head"><?php echo __('recent_logins'); ?></div>
+            <?php if ($recentCompanies !== []) { ?>
+            <section class="cm-board cm-board--fill">
+                <div class="cm-board__head">
+                    <span><?php echo __('recent_companies'); ?></span>
+                    <a href="<?php echo rateb_url('admin/companies'); ?>"><?php echo __('view_all'); ?></a>
+                </div>
                 <table class="cm-tbl cm-tbl--dense">
-                    <thead><tr><th><?php echo __('email'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
+                    <thead><tr><th><?php echo __('name'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
                     <tbody>
-                    <?php foreach (array_slice($recentLogins, 0, 8) as $row) { ?>
+                    <?php foreach (array_slice($recentCompanies, 0, 6) as $row) { ?>
                     <tr>
-                        <td><?php echo Rateb\App\Core\View::escape((string) ($row['email'] ?? '')); ?></td>
-                        <td><?php if ((int) ($row['success'] ?? 0) === 1) { ?><span class="cm-badge cm-badge--ok"><?php echo __('login_success'); ?></span><?php } else { ?><span class="cm-badge cm-badge--bad"><?php echo __('failed'); ?></span><?php } ?></td>
-                        <td class="text-muted"><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 16)); ?></td>
+                        <td><a href="<?php echo rateb_url('admin/companies/' . (int) $row['id']); ?>"><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></a></td>
+                        <td><span class="cm-badge cm-badge--muted"><?php echo __((string) ($row['status'] ?? '')); ?></span></td>
+                        <td class="text-muted"><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 10)); ?></td>
                     </tr>
                     <?php } ?>
                     </tbody>
                 </table>
             </section>
             <?php } ?>
-        </main>
+        </div>
+
+        <?php if ($recentLogins !== []) { ?>
+        <section class="cm-board">
+            <div class="cm-board__head"><?php echo __('recent_logins'); ?></div>
+            <table class="cm-tbl cm-tbl--dense">
+                <thead><tr><th><?php echo __('email'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
+                <tbody>
+                <?php foreach (array_slice($recentLogins, 0, 8) as $row) { ?>
+                <tr>
+                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['email'] ?? '')); ?></td>
+                    <td><?php if ((int) ($row['success'] ?? 0) === 1) { ?><span class="cm-badge cm-badge--ok"><?php echo __('login_success'); ?></span><?php } else { ?><span class="cm-badge cm-badge--bad"><?php echo __('failed'); ?></span><?php } ?></td>
+                    <td class="text-muted"><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 16)); ?></td>
+                </tr>
+                <?php } ?>
+                </tbody>
+            </table>
+        </section>
+        <?php } ?>
     </div>
 </div>
-<script src="<?php echo rateb_asset('js/dashboard-tabs.js'); ?>"></script>

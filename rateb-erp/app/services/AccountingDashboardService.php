@@ -362,12 +362,32 @@ final class AccountingDashboardService
                 ['label' => 'ar_open', 'value' => (float) ($arData['total_open'] ?? 0)],
                 ['label' => 'ap_open', 'value' => (float) ($apData['total_open'] ?? 0)],
             ];
+        } else {
+            $invStats = $pdo->query(
+                "SELECT payment_status, COUNT(*) AS total FROM rateb_invoices
+                 WHERE status != 'cancelled' GROUP BY payment_status"
+            )->fetchAll() ?: [];
+            foreach ($invStats as $row) {
+                $arAp[] = [
+                    'label' => (string) ($row['payment_status'] ?? ''),
+                    'value' => (int) ($row['total'] ?? 0),
+                ];
+            }
         }
+
+        $journalActivity = $pdo->query(
+            "SELECT DATE_FORMAT(entry_date, '%Y-%m') AS month, COUNT(*) AS total
+             FROM rateb_journal_entries
+             WHERE status = 'posted'" . $cidSql . "
+             GROUP BY DATE_FORMAT(entry_date, '%Y-%m')
+             ORDER BY month ASC LIMIT 12"
+        )->fetchAll() ?: [];
 
         return [
             'monthly_revenue' => $revenue,
             'monthly_expenses' => $expenses,
             'ar_ap' => $arAp,
+            'journal_activity' => $journalActivity,
         ];
     }
 

@@ -95,11 +95,43 @@ final class DashboardService
             ];
         }
 
+        $pdo = Database::connection();
+        $planRows = $pdo->query(
+            "SELECT COALESCE(p.name, '—') AS name, COUNT(c.id) AS total
+             FROM rateb_companies c
+             LEFT JOIN rateb_plans p ON p.id = c.plan_id
+             GROUP BY c.plan_id ORDER BY total DESC LIMIT 6"
+        )->fetchAll() ?: [];
+        $planDistribution = array_map(static fn ($r) => [
+            'label' => (string) ($r['name'] ?? ''),
+            'value' => (int) ($r['total'] ?? 0),
+        ], $planRows);
+
+        $subStatusRows = $pdo->query(
+            'SELECT status, COUNT(*) AS total FROM rateb_subscriptions GROUP BY status'
+        )->fetchAll() ?: [];
+        $subscriptionStatus = array_map(static fn ($r) => [
+            'label' => (string) ($r['status'] ?? ''),
+            'value' => (int) ($r['total'] ?? 0),
+        ], $subStatusRows);
+
+        $loginActivity = $pdo->query(
+            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month,
+                    SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) AS success_total,
+                    SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) AS failed_total
+             FROM rateb_login_activity
+             GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+             ORDER BY month ASC LIMIT 12"
+        )->fetchAll() ?: [];
+
         return [
             'company_growth' => $companyGrowth,
             'subscription_growth' => $subscriptionGrowth,
             'user_growth' => $userGrowth,
             'company_status' => $companyStatus,
+            'plan_distribution' => $planDistribution,
+            'subscription_status' => $subscriptionStatus,
+            'login_activity' => $loginActivity,
         ];
     }
 
