@@ -53,49 +53,56 @@
             }
 
             if (bar) {
+                function appendBulkIds(form, ids) {
+                    form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
+                        el.remove();
+                    });
+                    ids.forEach(function (id) {
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'ids[]';
+                        input.value = id;
+                        form.appendChild(input);
+                    });
+                }
+
+                function postBulkForm(form, ids) {
+                    appendBulkIds(form, ids);
+                    HTMLFormElement.prototype.submit.call(form);
+                }
+
                 bar.querySelectorAll('[data-rateb-bulk-form]').forEach(function (form) {
+                    var deleteBtn = form.querySelector('[data-rateb-bulk-delete-btn]');
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', function () {
+                            var ids = selectedIds();
+                            if (ids.length === 0) {
+                                return;
+                            }
+                            var msg = form.getAttribute('data-rateb-bulk-confirm') || '';
+                            if (!msg) {
+                                postBulkForm(form, ids);
+                                return;
+                            }
+                            var promise = window.ratebConfirm
+                                ? window.ratebConfirm(msg, { variant: 'danger' })
+                                : Promise.resolve(window.confirm(msg));
+                            promise.then(function (ok) {
+                                if (ok) {
+                                    postBulkForm(form, ids);
+                                }
+                            });
+                        });
+                        return;
+                    }
+
                     form.addEventListener('submit', function (e) {
                         var ids = selectedIds();
                         if (ids.length === 0) {
                             e.preventDefault();
                             return;
                         }
-                        var msg = form.getAttribute('data-confirm-delete');
-                        if (msg) {
-                            e.preventDefault();
-                            e.stopImmediatePropagation();
-                            var promise = window.ratebConfirm
-                                ? window.ratebConfirm(msg, { variant: 'danger' })
-                                : Promise.resolve(window.confirm(msg));
-                            promise.then(function (ok) {
-                                if (!ok) {
-                                    return;
-                                }
-                                form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
-                                    el.remove();
-                                });
-                                ids.forEach(function (id) {
-                                    var input = document.createElement('input');
-                                    input.type = 'hidden';
-                                    input.name = 'ids[]';
-                                    input.value = id;
-                                    form.appendChild(input);
-                                });
-                                // Native submit bypasses all submit listeners (avoids re-confirm loop).
-                                HTMLFormElement.prototype.submit.call(form);
-                            });
-                            return;
-                        }
-                        form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
-                            el.remove();
-                        });
-                        ids.forEach(function (id) {
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'ids[]';
-                            input.value = id;
-                            form.appendChild(input);
-                        });
+                        appendBulkIds(form, ids);
                     });
                 });
             }

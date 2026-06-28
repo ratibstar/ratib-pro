@@ -1,1 +1,1 @@
-rateb-erp-bulk-delete-fix-20260628
+20260628-bulk-delete-fix

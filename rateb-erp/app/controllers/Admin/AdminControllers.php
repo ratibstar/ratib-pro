@@ -894,11 +894,15 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', __('role_delete_none_allowed'));
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $deleted = $this->model->deleteMany($ids);
-        foreach ($ids as $id) {
-            (new AuditService())->log('bulk_delete', $this->entityName, $id);
+        try {
+            $deleted = $this->model->deleteMany($ids);
+            foreach ($ids as $id) {
+                (new AuditService())->log('bulk_delete', $this->entityName, $id);
+            }
+            SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
         }
-        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
         $this->redirect(rateb_url($this->routePrefix));
     }
 }
