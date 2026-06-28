@@ -48,7 +48,7 @@
                         <td><?php echo Rateb\App\Core\View::escape((string) ($row['source_name'] ?? '')); ?></td>
                         <td><?php echo Rateb\App\Core\View::escape((string) ($row['dest_name'] ?? '')); ?></td>
                         <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['quantity'] ?? '')); ?></td>
-                        <td><?php echo Rateb\App\Core\View::escape((string) ($row['status'] ?? '')); ?></td>
+                        <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($row['status'] ?? ''))); ?></td>
                         <td class="rateb-actions text-nowrap">
                         <?php if ($canManage && ($row['status'] ?? '') === 'pending') { ?>
                             <form method="post" action="<?php echo rateb_app_url('warehouse-transfers/' . (int) $row['id'] . '/approve'); ?>" class="d-inline">

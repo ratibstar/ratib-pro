@@ -18,7 +18,7 @@
                 <td><?php echo Rateb\App\Core\View::escape((string) ($item['transfer_type'] ?? '')); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($item['source_name'] ?? '')); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($item['dest_name'] ?? '')); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape((string) ($item['status'] ?? '')); ?></td>
+                <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($item['status'] ?? ''))); ?></td>
                 <td>
                     <?php if (($item['status'] ?? '') === 'pending' && function_exists('rateb_can') && rateb_can('branch.transfers.manage')) { ?>
                     <form method="post" action="<?php echo rateb_url(rateb_app_route('branch-transfers/' . (int) $item['id'] . '/approve')); ?>" class="d-inline">

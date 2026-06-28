@@ -6,7 +6,7 @@
 <td><?php echo Rateb\App\Core\View::escape($row['name']); ?></td>
 <td><?php echo Rateb\App\Core\View::escape($row['email']); ?></td>
 <td><?php echo Rateb\App\Core\View::escape($row['lead_type']); ?></td>
-<td><?php echo Rateb\App\Core\View::escape($row['status']); ?></td>
+<td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($row['status'] ?? ''))); ?></td>
 <td><a href="<?php echo rateb_url('admin/cms/leads/' . (int)$row['id']); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('view'); ?></a></td>
 </tr>
 <?php } ?>

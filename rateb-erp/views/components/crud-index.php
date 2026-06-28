@@ -22,6 +22,9 @@ if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $exportEnabled = $exportEnabled && rateb_can_export_entity((string) $permissionResource);
 }
 $columns = $fields ?? [];
+if (function_exists('rateb_enrich_index_columns')) {
+    $columns = rateb_enrich_index_columns($columns);
+}
 $showActionsCol = $viewEnabled || ($actionsEnabled ?? true) || $bulkEnabled;
 if (empty($columns) && !empty($items)) {
     $columns = [];

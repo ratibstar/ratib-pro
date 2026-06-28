@@ -116,7 +116,7 @@ $pct = (int) ($report['total_checks'] ?? 0) > 0
                 <td><?php echo (int) ($row['id'] ?? 0); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($row['code'] ?? '')); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape((string) ($row['status'] ?? '')); ?></td>
+                <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($row['status'] ?? ''))); ?></td>
             </tr>
             <?php } ?>
             </tbody>

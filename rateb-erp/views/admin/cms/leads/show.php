@@ -11,7 +11,7 @@
 <div class="mb-3"><label class="form-label"><?php echo __('status'); ?></label>
 <select name="status" class="form-select">
 <?php foreach (['new','contacted','qualified','won','lost'] as $st) { ?>
-<option value="<?php echo $st; ?>"<?php echo ($lead['status'] ?? '') === $st ? ' selected' : ''; ?>><?php echo $st; ?></option>
+<option value="<?php echo $st; ?>"<?php echo ($lead['status'] ?? '') === $st ? ' selected' : ''; ?>><?php echo __($st); ?></option>
 <?php } ?>
 </select></div>
 <div class="mb-3"><label class="form-label"><?php echo __('cms_lead_note'); ?></label><textarea name="note" class="form-control" rows="3"></textarea></div>

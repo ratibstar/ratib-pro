@@ -36,7 +36,7 @@
             <tr>
                 <td><?php echo (int) ($c['id'] ?? 0); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($c['subject_en'] ?? '')); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape((string) ($c['status'] ?? '')); ?></td>
+                <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($c['status'] ?? ''))); ?></td>
                 <td><?php echo (int) ($c['sent_count'] ?? 0); ?></td>
                 <td class="text-nowrap">
                     <a href="<?php echo rateb_url('admin/cms/newsletter/campaign?id=' . (int) $c['id']); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('edit'); ?></a>

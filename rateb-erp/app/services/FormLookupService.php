@@ -1400,6 +1400,19 @@ final class FormLookupService
     }
 
     /** @param array<string, mixed> $row */
+    public function localizeLookupRow(string $lookup, array $row): string
+    {
+        return match ($lookup) {
+            'hr_job_titles' => $this->localizeJobTitle($row),
+            'leave_types' => $this->localizeLeaveType($row),
+            default => (function () use ($row): string {
+                $name = trim((string) ($row['name'] ?? ''));
+                return $name !== '' ? $name : ('#' . (int) ($row['id'] ?? 0));
+            })(),
+        };
+    }
+
+    /** @param array<string, mixed> $row */
     public function localizeJobTitle(array $row): string
     {
         $code = strtoupper(trim((string) ($row['code'] ?? '')));

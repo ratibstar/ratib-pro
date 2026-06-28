@@ -77,7 +77,7 @@ $warnings = $health['cron_warnings'] ?? [];
             <td><?php echo Rateb\App\Core\View::escape((string) ($job['job_name'] ?? '')); ?></td>
             <td><?php echo Rateb\App\Core\View::escape((string) ($job['last_run_at'] ?? '')); ?></td>
             <td><?php echo Rateb\App\Core\View::escape((string) ($job['next_expected_at'] ?? '')); ?></td>
-            <td><?php echo Rateb\App\Core\View::escape((string) ($job['status'] ?? '')); ?></td>
+            <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($job['status'] ?? ''))); ?></td>
         </tr>
     <?php } ?>
     </tbody>

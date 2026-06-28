@@ -50,7 +50,7 @@ abstract class CrudController extends Controller
         $items = $this->model->all($limit, $offset, [], $search);
         return [
             'title' => __($this->entityName),
-            'items' => $this->enrichItemsWithDocumentCounts($items),
+            'items' => $this->localizeCatalogItems($this->enrichItemsWithDocumentCounts($items)),
             'total' => $this->model->count([], $search),
             'page' => $page,
             'limit' => $limit,
@@ -84,13 +84,42 @@ abstract class CrudController extends Controller
         return $items;
     }
 
+    /** @param array<int, array<string, mixed>> $items */
+    protected function localizeCatalogItems(array $items): array
+    {
+        if ($items === []) {
+            return $items;
+        }
+        $catalog = match ($this->entityName) {
+            'hr_job_titles' => 'hr_job_titles',
+            'leave_types' => 'leave_types',
+            default => '',
+        };
+        if ($catalog === '') {
+            return $items;
+        }
+        $lookup = new \Rateb\App\Services\FormLookupService();
+        foreach ($items as &$row) {
+            if (is_array($row) && array_key_exists('name', $row)) {
+                $row['name'] = $lookup->localizeLookupRow($catalog, $row);
+            }
+        }
+        unset($row);
+        return $items;
+    }
+
     /** @return array<int, array<string, mixed>> */
     protected function resolveIndexFields(): array
     {
-        if ($this->indexFields !== []) {
-            return $this->indexFields;
-        }
+        $cols = $this->indexFields !== []
+            ? $this->indexFields
+            : $this->inferIndexFieldsFromForm();
+        return $this->enrichIndexFields($cols);
+    }
 
+    /** @return array<int, array<string, mixed>> */
+    protected function inferIndexFieldsFromForm(): array
+    {
         $skipTypes = ['textarea', 'wysiwyg'];
         $skipPrefixes = [
             'content_', 'body_', 'excerpt_', 'meta_description', 'description_',
@@ -120,20 +149,47 @@ abstract class CrudController extends Controller
             }
 
             $colType = 'clip';
+            $lookup = (string) ($field['lookup'] ?? '');
             if ($type === 'slug' || $name === 'slug') {
                 $colType = 'slug';
             } elseif (in_array($type, ['bidi_text', 'html_preview', 'barcode'], true)) {
                 $colType = $type;
+            } elseif ($name === 'status' || ($lookup !== '' && str_ends_with($lookup, '_statuses'))) {
+                $colType = 'status';
+            } elseif ($lookup === 'yes_no') {
+                $colType = 'fk';
+            } elseif ($type === 'fk' || $lookup !== '') {
+                $colType = 'fk';
             }
 
-            $out[] = [
+            $col = [
                 'name' => $name,
                 'label' => $field['label'] ?? $name,
                 'type' => $colType,
             ];
+            if ($lookup !== '') {
+                $col['lookup'] = $lookup;
+            }
+            $out[] = $col;
         }
 
         return $out;
+    }
+
+    /** @param array<int, array<string, mixed>> $cols */
+    protected function enrichIndexFields(array $cols): array
+    {
+        if (!function_exists('rateb_enrich_index_columns')) {
+            return $cols;
+        }
+        $fieldByName = [];
+        foreach ($this->fields as $field) {
+            $n = (string) ($field['name'] ?? '');
+            if ($n !== '') {
+                $fieldByName[$n] = $field;
+            }
+        }
+        return rateb_enrich_index_columns($cols, $fieldByName);
     }
 
     /** @param array<string, mixed> $data */

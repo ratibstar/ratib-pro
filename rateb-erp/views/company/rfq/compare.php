@@ -37,7 +37,7 @@
                         <td><?php echo Rateb\App\Core\View::escape($q['quotation_no'] ?? ''); ?></td>
                         <td><?php echo Rateb\App\Core\View::escape($q['supplier_name'] ?? ''); ?></td>
                         <td><strong><?php echo number_format($amt, 2); ?></strong> <?php if ($isBest) { ?><span class="badge bg-success"><?php echo __('best_price'); ?></span><?php } ?></td>
-                        <td><?php echo Rateb\App\Core\View::escape($q['status'] ?? ''); ?></td>
+                        <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($q['status'] ?? ''))); ?></td>
                         <td><?php echo Rateb\App\Core\View::escape($q['valid_until'] ?? ''); ?></td>
                         <td>
                             <form method="post" action="<?php echo rateb_app_url('quotations/' . (int) ($q['id'] ?? 0) . '/create-po'); ?>" class="d-inline">

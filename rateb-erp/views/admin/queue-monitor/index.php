@@ -22,7 +22,7 @@
             <td><?php echo (int) ($row['id'] ?? 0); ?></td>
             <td><?php echo Rateb\App\Core\View::escape((string) ($row['channel'] ?? '')); ?></td>
             <td><?php echo Rateb\App\Core\View::escape((string) ($row['recipient'] ?? '')); ?></td>
-            <td><?php echo Rateb\App\Core\View::escape((string) ($row['status'] ?? '')); ?></td>
+            <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($row['status'] ?? ''))); ?></td>
             <td><?php echo (int) ($row['attempt_count'] ?? 0); ?></td>
         </tr>
     <?php } ?>

@@ -951,9 +951,7 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
 
         foreach ($items as &$row) {
             $row['name'] = rateb_permission_label($row);
-            if (rateb_locale() === 'ar' && !empty($row['description_ar'])) {
-                $row['description'] = $row['description_ar'];
-            }
+            $row['description'] = rateb_permission_description($row);
         }
         unset($row);
 

@@ -11,7 +11,7 @@
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape($row['workflow_name'] ?? ''); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['entity_type'] ?? ''); ?> #<?php echo (int) ($row['entity_id'] ?? 0); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['status'] ?? ''); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($row['status'] ?? ''))); ?></td>
                     <td class="d-flex gap-1">
                         <?php if ($canApprove ?? rateb_can('workflows.approve')) { ?>
                         <form method="post" action="<?php echo rateb_app_url('workflows/' . (int) $row['id'] . '/approve'); ?>">

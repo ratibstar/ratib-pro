@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260628-i18n-hr-v1');
+define('RATEB_ASSET_BUILD', '20260628-i18n-system-v1');
 
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
@@ -519,6 +519,67 @@ if (!function_exists('rateb_table_cell_display')) {
     }
 }
 
+if (!function_exists('rateb_enrich_index_columns')) {
+    /**
+     * @param array<int, array<string, mixed>> $columns
+     * @param array<string, array<string, mixed>> $formFieldsByName
+     * @return array<int, array<string, mixed>>
+     */
+    function rateb_enrich_index_columns(array $columns, array $formFieldsByName = []): array
+    {
+        $yesNoNames = ['paid', 'is_active', 'is_visible', 'is_recurring', 'is_paid', 'requires_approval'];
+        $out = [];
+        foreach ($columns as $col) {
+            $name = (string) ($col['name'] ?? '');
+            $type = (string) ($col['type'] ?? '');
+            $lookup = (string) ($col['lookup'] ?? '');
+            $field = $formFieldsByName[$name] ?? [];
+            if ($lookup === '' && !empty($field['lookup'])) {
+                $lookup = (string) $field['lookup'];
+            }
+            $fieldType = (string) ($field['type'] ?? '');
+
+            if ($type === '' && ($name === 'status' || ($lookup !== '' && str_ends_with($lookup, '_statuses')))) {
+                $type = 'status';
+            }
+            if (in_array($name, $yesNoNames, true) && ($type === '' || $type === 'status' || $type === 'clip')) {
+                $type = 'fk';
+                $lookup = 'yes_no';
+            }
+            if ($lookup === 'yes_no' && $type === '') {
+                $type = 'fk';
+            }
+            if ($type === '' && ($fieldType === 'fk' || $lookup !== '')) {
+                $type = 'fk';
+            }
+
+            $merged = $col;
+            if ($type !== '') {
+                $merged['type'] = $type;
+            }
+            if ($lookup !== '') {
+                $merged['lookup'] = $lookup;
+            }
+            $out[] = $merged;
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('rateb_enum_label')) {
+    function rateb_enum_label(string $value): string
+    {
+        if ($value === '') {
+            return '—';
+        }
+        if (function_exists('rateb_table_cell_meta')) {
+            return rateb_table_cell_meta($value, ['name' => 'status', 'type' => 'status'])['display'];
+        }
+        $t = __($value);
+        return $t !== $value ? $t : $value;
+    }
+}
+
 if (!function_exists('rateb_table_cell_meta')) {
     /**
      * @param mixed $value
@@ -532,6 +593,22 @@ if (!function_exists('rateb_table_cell_meta')) {
         if ($type === '' && $name === 'status') {
             $type = 'status';
         }
+        $yesNoNames = ['paid', 'is_active', 'is_visible', 'is_recurring', 'is_paid', 'requires_approval'];
+        $lookupKey = (string) ($col['lookup'] ?? '');
+        if ($lookupKey === 'yes_no' || in_array($name, $yesNoNames, true)) {
+            $boolVal = (string) $value;
+            if ($boolVal === '1' || $boolVal === '0') {
+                $label = $boolVal === '1' ? __('yes') : __('no');
+                return [
+                    'display' => $label,
+                    'title' => $label,
+                    'class' => 'rateb-cell-clip',
+                    'dir' => '',
+                    'mode' => 'text',
+                    'badge' => '',
+                ];
+            }
+        }
         $classes = ['rateb-cell-clip'];
         $dir = '';
         $mode = 'text';
@@ -541,7 +618,7 @@ if (!function_exists('rateb_table_cell_meta')) {
             $statusKey = (string) $value;
             $label = $statusKey;
             if (function_exists('__')) {
-                foreach (['depreciation_status_', 'status_', ''] as $prefix) {
+                foreach (['depreciation_status_', 'payment_status_', 'workflow_status_', 'status_', ''] as $prefix) {
                     $key = $prefix . $statusKey;
                     $t = __($key);
                     if ($t !== $key) {

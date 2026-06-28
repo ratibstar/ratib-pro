@@ -35,7 +35,7 @@ $id = (int) ($item['id'] ?? 0);
                     <label class="form-label"><?php echo __('status'); ?></label>
                     <select class="form-select" name="status">
                         <?php foreach (['draft', 'scheduled', 'sent'] as $st) { ?>
-                        <option value="<?php echo $st; ?>"<?php echo ($item['status'] ?? 'draft') === $st ? ' selected' : ''; ?>><?php echo $st; ?></option>
+                        <option value="<?php echo $st; ?>"<?php echo ($item['status'] ?? 'draft') === $st ? ' selected' : ''; ?>><?php echo __($st); ?></option>
                         <?php } ?>
                     </select>
                 </div>

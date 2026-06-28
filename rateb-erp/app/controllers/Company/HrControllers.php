@@ -223,19 +223,6 @@ final class HrJobTitlesController extends \Rateb\App\Controllers\CrudController
         return 'main';
     }
 
-    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
-    {
-        $data = parent::indexViewData($limit, $offset, $page, $search);
-        $lookup = new \Rateb\App\Services\FormLookupService();
-        foreach ($data['items'] as &$row) {
-            if (is_array($row)) {
-                $row['name'] = $lookup->localizeJobTitle($row);
-            }
-        }
-        unset($row);
-        return $data;
-    }
-
     public function index(): void
     {
         HrService::bootstrapTenant();
@@ -723,19 +710,6 @@ final class HrLeaveTypesController extends \Rateb\App\Controllers\CrudController
     {
         HrService::bootstrapTenant();
         parent::index();
-    }
-
-    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
-    {
-        $data = parent::indexViewData($limit, $offset, $page, $search);
-        $lookup = new \Rateb\App\Services\FormLookupService();
-        foreach ($data['items'] as &$row) {
-            if (is_array($row)) {
-                $row['name'] = $lookup->localizeLeaveType($row);
-            }
-        }
-        unset($row);
-        return $data;
     }
 
     protected function layout(): string

@@ -338,13 +338,14 @@ final class HrService
             ['cid' => $companyId, 'eid' => $employeeId, 'y' => $year]
         );
         $leaves = (new LeaveRequest())->query(
-            "SELECT lr.*, lt.name AS leave_type_name
+            "SELECT lr.*, lt.name AS leave_type_name, lt.code AS leave_type_code, lr.leave_type_id
              FROM rateb_leave_requests lr
              JOIN rateb_leave_types lt ON lt.id = lr.leave_type_id
              WHERE lr.company_id = :cid AND lr.employee_id = :eid
              ORDER BY lr.start_date DESC LIMIT 10",
             ['cid' => $companyId, 'eid' => $employeeId]
         );
+        $leaves = $this->localizeLeaveTypeNames($leaves);
         $balances = $this->leaveBalancesForEmployee($employeeId, $year);
         return [
             'employee' => $emp,
@@ -393,14 +394,14 @@ final class HrService
         }
         $companyId = (int) ($emp['company_id'] ?? 0);
         $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
-        return (new LeaveBalance())->query(
-            "SELECT lb.*, lt.name AS leave_type_name, lt.days_per_year
+        return $this->localizeLeaveTypeNames((new LeaveBalance())->query(
+            "SELECT lb.*, lt.name AS leave_type_name, lt.code AS leave_type_code, lb.leave_type_id, lt.days_per_year
              FROM rateb_leave_balances lb
              JOIN rateb_leave_types lt ON lt.id = lb.leave_type_id
              WHERE lb.company_id = :cid AND lb.employee_id = :eid AND lb.balance_year = :y
              ORDER BY lt.name ASC",
             ['cid' => $companyId, 'eid' => $employeeId, 'y' => $year]
-        );
+        ));
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -416,15 +417,16 @@ final class HrService
         foreach ($employees as $row) {
             $this->syncLeaveBalancesForEmployee($companyId, (int) $row['id'], $year);
         }
-        return (new LeaveBalance())->query(
-            "SELECT lb.*, e.name AS employee_name, e.employee_code, lt.name AS leave_type_name
+        return $this->localizeLeaveTypeNames((new LeaveBalance())->query(
+            "SELECT lb.*, e.name AS employee_name, e.employee_code, lt.name AS leave_type_name,
+                    lt.code AS leave_type_code, lb.leave_type_id
              FROM rateb_leave_balances lb
              JOIN rateb_employees e ON e.id = lb.employee_id
              JOIN rateb_leave_types lt ON lt.id = lb.leave_type_id
              WHERE lb.company_id = :cid AND lb.balance_year = :y
              ORDER BY e.name ASC, lt.name ASC",
             ['cid' => $companyId, 'y' => $year]
-        );
+        ));
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -433,8 +435,9 @@ final class HrService
         if ($companyId < 1) {
             return [];
         }
-        return (new LeaveRequest())->query(
+        return $this->localizeLeaveTypeNames((new LeaveRequest())->query(
             "SELECT e.employee_code, e.name AS employee_name, lt.name AS leave_type,
+                    lt.code AS leave_type_code, lt.id AS leave_type_id,
                     SUM(lr.days) AS total_days,
                     SUM(CASE WHEN lr.status = 'approved' THEN 1 ELSE 0 END) AS approved_count
              FROM rateb_leave_requests lr
@@ -442,10 +445,10 @@ final class HrService
              JOIN rateb_leave_types lt ON lt.id = lr.leave_type_id
              WHERE lr.company_id = :cid
                AND YEAR(lr.start_date) = :y
-             GROUP BY e.id, e.employee_code, e.name, lt.id, lt.name
+             GROUP BY e.id, e.employee_code, e.name, lt.id, lt.name, lt.code
              ORDER BY e.name ASC, lt.name ASC",
             ['cid' => $companyId, 'y' => $year]
-        );
+        ), 'leave_type');
     }
 
     /** @return array{attendance: array<int, array<string, mixed>>, payroll: array<int, array<string, mixed>>} */
@@ -654,5 +657,20 @@ final class HrService
             $synced++;
         }
         return $synced;
+    }
+
+    /** @param array<int, array<string, mixed>> $rows */
+    private function localizeLeaveTypeNames(array $rows, string $field = 'leave_type_name'): array
+    {
+        $lookup = new FormLookupService();
+        foreach ($rows as &$row) {
+            $row[$field] = $lookup->localizeLeaveType([
+                'code' => $row['leave_type_code'] ?? '',
+                'name' => $row[$field] ?? '',
+                'id' => $row['leave_type_id'] ?? 0,
+            ]);
+        }
+        unset($row);
+        return $rows;
     }
 }
