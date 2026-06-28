@@ -201,7 +201,11 @@
     }
 
     function isDeferred(el) {
-        var pane = el.closest('.rateb-dash-chart-pane');
+        var pane = el.closest('.rdx-chart-pane');
+        if (pane && !pane.classList.contains('is-active')) {
+            return true;
+        }
+        pane = el.closest('.rateb-dash-chart-pane');
         return pane && !pane.classList.contains('is-active');
     }
 
