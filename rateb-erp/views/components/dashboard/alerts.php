@@ -4,22 +4,22 @@
 $alerts = $alerts ?? [];
 $empty = $empty ?? __('dashboard_no_alerts');
 ?>
-<div class="nx-glass">
-    <div class="nx-glass__top">
-        <span class="nx-glass__title"><?php echo __('smart_alerts'); ?></span>
-    </div>
-    <?php if ($alerts === []) { ?>
-    <p class="nx-zero"><?php echo Rateb\App\Core\View::escape($empty); ?></p>
-    <?php } else { ?>
-    <div class="nx-alerts">
+<?php if ($alerts === []) { ?>
+<?php if (!empty($showEmpty)) { ?>
+<p class="cm-empty"><?php echo Rateb\App\Core\View::escape($empty); ?></p>
+<?php } ?>
+<?php } else { ?>
+<div class="cm-ticker" role="region" aria-label="<?php echo __('smart_alerts'); ?>">
+    <span class="cm-ticker__label"><?php echo __('smart_alerts'); ?></span>
+    <div class="cm-ticker__track">
         <?php foreach ($alerts as $alert) { ?>
-        <a href="<?php echo Rateb\App\Core\View::escape((string) ($alert['url'] ?? '#')); ?>" class="nx-alert">
+        <a href="<?php echo Rateb\App\Core\View::escape((string) ($alert['url'] ?? '#')); ?>" class="cm-ticker__item">
             <span><?php echo Rateb\App\Core\View::escape((string) ($alert['message'] ?? '')); ?></span>
             <?php if (!empty($alert['count'])) { ?>
-            <span class="nx-alert__n"><?php echo (int) $alert['count']; ?></span>
+            <span class="cm-ticker__n"><?php echo (int) $alert['count']; ?></span>
             <?php } ?>
         </a>
         <?php } ?>
     </div>
-    <?php } ?>
 </div>
+<?php } ?>

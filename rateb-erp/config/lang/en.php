@@ -925,6 +925,8 @@ return [
     'top_companies_activity' => 'Most active companies',
     'top_companies_users' => 'Largest companies (users)',
     'platform_dashboard_intro' => 'Platform overview: companies, subscriptions, users, and alerts.',
+    'key_metrics' => 'Key metrics',
+    'analytics' => 'Analytics',
     'company_dashboard_intro' => 'Your company operations summary — financial details live in Accounting.',
     'pending_companies' => 'Pending companies',
     'suspended_companies' => 'Suspended companies',

@@ -212,6 +212,7 @@ FAST_FILES = [
     "rateb-erp/views/components/accounting-dashboard.php",
     "rateb-erp/views/components/dashboard/head.php",
     "rateb-erp/views/components/dashboard/hero.php",
+    "rateb-erp/views/components/dashboard/metrics-rail.php",
     "rateb-erp/views/components/dashboard/alerts.php",
     "rateb-erp/views/components/dashboard/ranks.php",
     "rateb-erp/public/assets/css/dashboard.css",

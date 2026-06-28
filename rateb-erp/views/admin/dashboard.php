@@ -43,118 +43,108 @@ $rankRows = array_map(static fn ($r) => [
     'total' => (int) ($r['user_count'] ?? 0),
     'suffix' => __('users'),
 ], $topCompanies);
-$maxRank = max(1, ...array_map(static fn ($r) => (int) $r['total'], $rankRows ?: [['total' => 1]]));
 
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
-<!-- rateb-dashboard-v4 -->
-<div class="nx" data-nx-dash="v4">
+<!-- rateb-dashboard-v5-command -->
+<div class="cm" data-cm-dash="v5">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
-        'eyebrow' => __('platform_billing'),
+        'tag' => __('platform_billing'),
         'title' => __('dashboard'),
         'subtitle' => __('platform_dashboard_intro') . ' · ' . date('Y-m-d'),
         'actions' => $actions,
-        'metrics' => $metrics,
     ]);
+    Rateb\App\Core\View::partial('dashboard/alerts', ['alerts' => $alerts]);
     ?>
 
-    <div class="nx-stage">
-        <div class="nx-col">
-            <div class="nx-mosaic">
-                <div class="nx-glass" data-nx-chart-tabs>
-                    <div class="nx-glass__top">
-                        <span class="nx-glass__title"><?php echo __('company_growth'); ?></span>
+    <div class="cm-split">
+        <?php Rateb\App\Core\View::partial('dashboard/metrics-rail', ['metrics' => $metrics]); ?>
+
+        <main class="cm-work">
+            <section class="cm-zone" data-cm-chart-tabs>
+                <header class="cm-zone__bar">
+                    <h2><?php echo __('analytics'); ?></h2>
+                    <div class="cm-seg" role="tablist">
+                        <button type="button" class="cm-seg__btn is-active" data-cm-chart-tab="companies" role="tab"><?php echo __('company_growth'); ?></button>
+                        <button type="button" class="cm-seg__btn" data-cm-chart-tab="subscriptions" role="tab"><?php echo __('subscription_growth'); ?></button>
+                        <button type="button" class="cm-seg__btn" data-cm-chart-tab="users" role="tab"><?php echo __('user_growth'); ?></button>
                     </div>
-                    <div class="nx-tabs" role="tablist">
-                        <button type="button" class="nx-tab is-active" data-nx-chart-tab="companies" role="tab"><?php echo __('company_growth'); ?></button>
-                        <button type="button" class="nx-tab" data-nx-chart-tab="subscriptions" role="tab"><?php echo __('subscription_growth'); ?></button>
-                        <button type="button" class="nx-tab" data-nx-chart-tab="users" role="tab"><?php echo __('user_growth'); ?></button>
-                    </div>
-                    <div class="nx-tab-pane is-active" data-nx-chart-pane="companies">
-                        <div class="nx-viz">
-                            <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
-                        </div>
-                    </div>
-                    <div class="nx-tab-pane" data-nx-chart-pane="subscriptions">
-                        <div class="nx-viz">
-                            <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
-                        </div>
-                    </div>
-                    <div class="nx-tab-pane" data-nx-chart-pane="users">
-                        <div class="nx-viz">
-                            <canvas id="chart-users" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('user_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($userLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($userValues); ?>'></canvas>
-                        </div>
+                </header>
+                <div class="cm-pane is-active" data-cm-chart-pane="companies">
+                    <div class="cm-chart">
+                        <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
                     </div>
                 </div>
-                <div class="nx-glass">
-                    <div class="nx-glass__top">
-                        <span class="nx-glass__title"><?php echo __('company_status_distribution'); ?></span>
+                <div class="cm-pane" data-cm-chart-pane="subscriptions">
+                    <div class="cm-chart">
+                        <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
                     </div>
-                    <div class="nx-viz">
+                </div>
+                <div class="cm-pane" data-cm-chart-pane="users">
+                    <div class="cm-chart">
+                        <canvas id="chart-users" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('user_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($userLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($userValues); ?>'></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <div class="cm-row2">
+                <section class="cm-zone">
+                    <header class="cm-zone__bar">
+                        <h2><?php echo __('company_status_distribution'); ?></h2>
+                    </header>
+                    <div class="cm-chart cm-chart--sm">
                         <canvas id="chart-company-status" data-labels='<?php echo Rateb\App\Core\View::escape($statusLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($statusValues); ?>'></canvas>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="nx-duo">
                 <?php if ($recentCompanies !== []) { ?>
-                <div class="nx-glass">
-                    <div class="nx-glass__top">
-                        <span class="nx-glass__title"><?php echo __('recent_companies'); ?></span>
+                <section class="cm-board">
+                    <div class="cm-board__head">
+                        <span><?php echo __('recent_companies'); ?></span>
                         <a href="<?php echo rateb_url('admin/companies'); ?>"><?php echo __('view_all'); ?></a>
                     </div>
-                    <div class="nx-glass__body">
-                        <ul class="nx-stream">
-                            <?php foreach (array_slice($recentCompanies, 0, 6) as $row) { ?>
-                            <li>
-                                <span class="nx-stream__pip"></span>
-                                <div>
-                                    <a href="<?php echo rateb_url('admin/companies/' . (int) $row['id']); ?>"><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></a>
-                                    <span class="nx-tag ms-1"><?php echo __((string) ($row['status'] ?? '')); ?></span>
-                                    <time><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 10)); ?></time>
-                                </div>
-                            </li>
-                            <?php } ?>
-                        </ul>
-                    </div>
-                </div>
-                <?php } ?>
-                <?php
-                Rateb\App\Core\View::partial('dashboard/ranks', [
-                    'title' => __('top_companies_users'),
-                    'rows' => $rankRows,
-                    'max' => $maxRank,
-                ]);
-                ?>
-            </div>
-
-            <?php if ($recentLogins !== []) { ?>
-            <div class="nx-glass">
-                <div class="nx-glass__top">
-                    <span class="nx-glass__title"><?php echo __('recent_logins'); ?></span>
-                </div>
-                <div class="nx-glass__body nx-glass__body--0">
-                    <table class="nx-table">
-                        <thead><tr><th><?php echo __('email'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
+                    <table class="cm-tbl">
+                        <thead><tr><th><?php echo __('name'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
                         <tbody>
-                        <?php foreach (array_slice($recentLogins, 0, 6) as $row) { ?>
+                        <?php foreach (array_slice($recentCompanies, 0, 5) as $row) { ?>
                         <tr>
-                            <td><?php echo Rateb\App\Core\View::escape((string) ($row['email'] ?? '')); ?></td>
-                            <td><?php if ((int) ($row['success'] ?? 0) === 1) { ?><span class="nx-tag nx-tag--ok"><?php echo __('login_success'); ?></span><?php } else { ?><span class="nx-tag nx-tag--bad"><?php echo __('failed'); ?></span><?php } ?></td>
-                            <td class="text-muted"><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 16)); ?></td>
+                            <td><a href="<?php echo rateb_url('admin/companies/' . (int) $row['id']); ?>"><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></a></td>
+                            <td><span class="cm-badge cm-badge--muted"><?php echo __((string) ($row['status'] ?? '')); ?></span></td>
+                            <td class="text-muted"><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 10)); ?></td>
                         </tr>
                         <?php } ?>
                         </tbody>
                     </table>
-                </div>
+                </section>
+                <?php } ?>
             </div>
-            <?php } ?>
-        </div>
 
-        <aside class="nx-rail">
-            <?php Rateb\App\Core\View::partial('dashboard/alerts', ['alerts' => $alerts]); ?>
-        </aside>
+            <?php
+            Rateb\App\Core\View::partial('dashboard/ranks', [
+                'title' => __('top_companies_users'),
+                'rows' => $rankRows,
+            ]);
+            ?>
+
+            <?php if ($recentLogins !== []) { ?>
+            <section class="cm-board">
+                <div class="cm-board__head"><?php echo __('recent_logins'); ?></div>
+                <table class="cm-tbl">
+                    <thead><tr><th><?php echo __('email'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('date'); ?></th></tr></thead>
+                    <tbody>
+                    <?php foreach (array_slice($recentLogins, 0, 8) as $row) { ?>
+                    <tr>
+                        <td><?php echo Rateb\App\Core\View::escape((string) ($row['email'] ?? '')); ?></td>
+                        <td><?php if ((int) ($row['success'] ?? 0) === 1) { ?><span class="cm-badge cm-badge--ok"><?php echo __('login_success'); ?></span><?php } else { ?><span class="cm-badge cm-badge--bad"><?php echo __('failed'); ?></span><?php } ?></td>
+                        <td class="text-muted"><?php echo Rateb\App\Core\View::escape(substr((string) ($row['created_at'] ?? ''), 0, 16)); ?></td>
+                    </tr>
+                    <?php } ?>
+                    </tbody>
+                </table>
+            </section>
+            <?php } ?>
+        </main>
     </div>
 </div>
 <script src="<?php echo rateb_asset('js/dashboard-tabs.js'); ?>"></script>

@@ -2,21 +2,21 @@
     'use strict';
 
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('[data-nx-chart-tabs]').forEach(function (root) {
-            var tabs = root.querySelectorAll('[data-nx-chart-tab]');
-            var panes = root.querySelectorAll('[data-nx-chart-pane]');
+        document.querySelectorAll('[data-cm-chart-tabs]').forEach(function (root) {
+            var tabs = root.querySelectorAll('[data-cm-chart-tab]');
+            var panes = root.querySelectorAll('[data-cm-chart-pane]');
             if (!tabs.length || !panes.length) {
                 return;
             }
             tabs.forEach(function (tab) {
                 tab.addEventListener('click', function () {
-                    var target = tab.getAttribute('data-nx-chart-tab');
+                    var target = tab.getAttribute('data-cm-chart-tab');
                     tabs.forEach(function (t) {
                         t.classList.toggle('is-active', t === tab);
                     });
                     var activePane = null;
                     panes.forEach(function (p) {
-                        var isActive = p.getAttribute('data-nx-chart-pane') === target;
+                        var isActive = p.getAttribute('data-cm-chart-pane') === target;
                         p.classList.toggle('is-active', isActive);
                         if (isActive) {
                             activePane = p;

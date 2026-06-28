@@ -925,6 +925,8 @@ return [
     'top_companies_activity' => 'أكثر الشركات نشاطاً',
     'top_companies_users' => 'أكبر الشركات (مستخدمون)',
     'platform_dashboard_intro' => 'نظرة شاملة على المنصة: الشركات، الاشتراكات، المستخدمون، والتنبيهات.',
+    'key_metrics' => 'المؤشرات الرئيسية',
+    'analytics' => 'التحليلات',
     'company_dashboard_intro' => 'ملخص عمليات شركتك — التفاصيل المالية في قسم المحاسبة.',
     'pending_companies' => 'شركات بانتظار التفعيل',
     'suspended_companies' => 'شركات موقوفة',

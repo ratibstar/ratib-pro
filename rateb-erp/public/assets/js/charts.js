@@ -201,7 +201,7 @@
     }
 
     function isDeferred(el) {
-        var selectors = ['.nx-tab-pane', '.rp-chart-pane', '.rdx-chart-pane', '.rateb-dash-chart-pane'];
+        var selectors = ['.cm-pane', '.nx-tab-pane', '.rp-chart-pane', '.rdx-chart-pane', '.rateb-dash-chart-pane'];
         for (var i = 0; i < selectors.length; i++) {
             var pane = el.closest(selectors[i]);
             if (pane && !pane.classList.contains('is-active')) {

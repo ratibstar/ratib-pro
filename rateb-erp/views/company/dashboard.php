@@ -29,13 +29,13 @@ if (rateb_nav_can('accounting.view', 'accounting')) {
     ]);
 }
 
-$metaChips = [
+$footer = [
     ['label' => __('current_plan'), 'value' => Rateb\App\Core\View::escape($limits['plan_name'] ?? '—')],
     ['label' => __('user_limit'), 'value' => $userCount . ' / ' . (int) ($limits['user_limit'] ?? 0)],
     ['label' => __('storage_limit_mb'), 'value' => (int) ($limits['storage_limit_mb'] ?? 0) . ' MB'],
 ];
 if ($mods !== []) {
-    $metaChips[] = ['label' => __('plan_modules'), 'value' => implode(' · ', array_map(static fn ($mod) => __($mod), $mods))];
+    $footer[] = ['label' => __('plan_modules'), 'value' => implode(' · ', array_map(static fn ($mod) => __($mod), $mods))];
 }
 
 $alerts = [];
@@ -58,25 +58,22 @@ if (!empty($expiringContracts)) {
 
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
-<div class="nx" data-nx-dash="v4">
+<div class="cm cm--solo" data-cm-dash="v5">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
-        'eyebrow' => __('approval_category_operations'),
+        'tag' => __('approval_category_operations'),
         'title' => __('dashboard'),
         'subtitle' => __('company_dashboard_intro'),
         'actions' => $actions,
-        'metrics' => $metrics,
-        'metricsCols' => '4',
-        'metaChips' => $metaChips,
     ]);
+    Rateb\App\Core\View::partial('dashboard/alerts', ['alerts' => $alerts]);
     ?>
 
-    <?php if ($alerts !== []) { ?>
-    <div class="nx-stage nx-stage--solo">
-        <?php Rateb\App\Core\View::partial('dashboard/alerts', [
-            'alerts' => $alerts,
-            'empty' => __('dashboard_no_alerts'),
+    <div class="cm-split">
+        <?php Rateb\App\Core\View::partial('dashboard/metrics-rail', [
+            'metrics' => $metrics,
+            'footer' => $footer,
         ]); ?>
+        <main class="cm-work" aria-hidden="true"></main>
     </div>
-    <?php } ?>
 </div>
