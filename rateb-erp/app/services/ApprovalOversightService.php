@@ -51,6 +51,107 @@ final class ApprovalOversightService
     }
 
     /**
+     * Pending approval counts per admin oversight sidebar menu.
+     *
+     * @return array{approvals:int,procurement:int,rfq:int,inventory:int,supplier_evaluations:int,total:int}
+     */
+    public function menuCounts(?int $companyFilter = null): array
+    {
+        $this->ensureAccountingSubmitSchema();
+        $counts = [
+            'approvals' => 0,
+            'procurement' => 0,
+            'rfq' => 0,
+            'inventory' => 0,
+            'supplier_evaluations' => 0,
+        ];
+        foreach ($this->sources() as $key => $source) {
+            if ($key === 'workflow_instance') {
+                continue;
+            }
+            $menu = self::menuKeyForSource($key);
+            $counts[$menu] += $this->countSource($source, $companyFilter);
+        }
+        foreach ($this->countWorkflowInstancesByMenu($companyFilter) as $menu => $n) {
+            $counts[$menu] += $n;
+        }
+        $counts['rfq'] += $this->countRfqQuotationsPending($companyFilter);
+        $counts['total'] = array_sum($counts);
+        return $counts;
+    }
+
+    public static function menuKeyForSource(string $sourceKey): string
+    {
+        return match ($sourceKey) {
+            'supplier_evaluation' => 'supplier_evaluations',
+            'inventory_audit', 'warehouse_transfer' => 'inventory',
+            default => 'approvals',
+        };
+    }
+
+    public static function menuKeyForWorkflowEntity(string $entityType): string
+    {
+        return match ($entityType) {
+            'purchase_request', 'purchase_order' => 'procurement',
+            'supplier_evaluation' => 'supplier_evaluations',
+            'warehouse_transfer', 'inventory_audit' => 'inventory',
+            default => 'approvals',
+        };
+    }
+
+    /** @return array<string, int> */
+    private function countWorkflowInstancesByMenu(?int $companyFilter): array
+    {
+        $counts = [
+            'approvals' => 0,
+            'procurement' => 0,
+            'rfq' => 0,
+            'inventory' => 0,
+            'supplier_evaluations' => 0,
+        ];
+        try {
+            $sql = 'SELECT entity_type, COUNT(*) AS c FROM rateb_approval_instances i WHERE i.status = \'pending\'';
+            $params = [];
+            if ($companyFilter !== null && $companyFilter > 0) {
+                $sql .= ' AND i.company_id = :cid';
+                $params['cid'] = $companyFilter;
+            }
+            $sql .= ' GROUP BY entity_type';
+            $db = Database::connection();
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $menu = self::menuKeyForWorkflowEntity((string) ($row['entity_type'] ?? ''));
+                $counts[$menu] += (int) ($row['c'] ?? 0);
+            }
+        } catch (\Throwable $e) {
+            // Table may not exist before migrations.
+        }
+        return $counts;
+    }
+
+    private function countRfqQuotationsPending(?int $companyFilter): int
+    {
+        if (!$this->tableExists('rateb_supplier_quotations')) {
+            return 0;
+        }
+        try {
+            $sql = 'SELECT COUNT(*) FROM rateb_supplier_quotations q WHERE q.status = :st';
+            $params = ['st' => 'under_review'];
+            if ($companyFilter !== null && $companyFilter > 0) {
+                $sql .= ' AND q.company_id = :cid';
+                $params['cid'] = $companyFilter;
+            }
+            $db = Database::connection();
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function listPending(?int $companyFilter = null, ?string $typeFilter = null, int $limit = 200): array

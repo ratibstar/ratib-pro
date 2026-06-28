@@ -89,12 +89,17 @@ $adminSection = static function (
     string $title,
     array $items,
     string $groupIcon = 'fa-folder-open',
-    int $sectionBadge = 0
+    int $sectionBadge = 0,
+    array $linkBadges = []
 ) use ($navActive, $renderNavGroup): void {
-    $renderAdminLink = static function (array $link) use ($navActive): void {
+    $renderAdminLink = static function (array $link) use ($navActive, $linkBadges): void {
         $active = $navActive($link[0]) ? ' active' : '';
+        $badge = (int) ($linkBadges[$link[0]] ?? 0);
         echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
         echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
+        if ($badge > 0) {
+            echo '<span class="rateb-nav-badge" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $badge . '</span>';
+        }
         echo '</a>';
     };
 

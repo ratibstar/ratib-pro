@@ -1099,19 +1099,56 @@ if (!function_exists('rateb_app_url')) {
 if (!function_exists('rateb_oversight_pending_approvals_count')) {
     function rateb_oversight_pending_approvals_count(): int
     {
-        if (!rateb_is_super_admin() || !rateb_nav_can('workflows.view')) {
-            return 0;
-        }
+        return rateb_oversight_menu_counts()['total'] ?? 0;
+    }
+}
+
+if (!function_exists('rateb_oversight_menu_counts')) {
+    /** @return array{approvals:int,procurement:int,rfq:int,inventory:int,supplier_evaluations:int,total:int} */
+    function rateb_oversight_menu_counts(): array
+    {
         static $cached = null;
         if ($cached !== null) {
             return $cached;
         }
+        $empty = [
+            'approvals' => 0,
+            'procurement' => 0,
+            'rfq' => 0,
+            'inventory' => 0,
+            'supplier_evaluations' => 0,
+            'total' => 0,
+        ];
+        if (!rateb_is_super_admin()) {
+            $cached = $empty;
+            return $cached;
+        }
         try {
-            $cached = (int) ((new \Rateb\App\Services\ApprovalOversightService())->summary(null)['total'] ?? 0);
+            $cached = (new \Rateb\App\Services\ApprovalOversightService())->menuCounts(null);
         } catch (\Throwable $e) {
-            $cached = 0;
+            $cached = $empty;
         }
         return $cached;
+    }
+}
+
+if (!function_exists('rateb_oversight_menu_badge')) {
+    function rateb_oversight_menu_badge(string $route): int
+    {
+        $map = [
+            'admin/oversight/approvals' => 'approvals',
+            'admin/oversight/procurement' => 'procurement',
+            'admin/oversight/rfq' => 'rfq',
+            'admin/oversight/inventory' => 'inventory',
+            'admin/oversight/supplier-evaluations' => 'supplier_evaluations',
+        ];
+        $route = ltrim($route, '/');
+        $key = $map[$route] ?? '';
+        if ($key === '') {
+            return 0;
+        }
+        $counts = rateb_oversight_menu_counts();
+        return (int) ($counts[$key] ?? 0);
     }
 }
 

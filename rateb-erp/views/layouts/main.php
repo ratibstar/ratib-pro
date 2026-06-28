@@ -89,6 +89,14 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             <?php } ?>
             <?php if (rateb_is_super_admin()) { ?>
             <?php
+            $oversightCounts = rateb_oversight_menu_counts();
+            $oversightLinkBadges = [
+                'admin/oversight/approvals' => rateb_nav_can('workflows.view') ? (int) ($oversightCounts['approvals'] ?? 0) : 0,
+                'admin/oversight/procurement' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['procurement'] ?? 0) : 0,
+                'admin/oversight/rfq' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['rfq'] ?? 0) : 0,
+                'admin/oversight/inventory' => rateb_nav_can('inventory.manage') ? (int) ($oversightCounts['inventory'] ?? 0) : 0,
+                'admin/oversight/supplier-evaluations' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['supplier_evaluations'] ?? 0) : 0,
+            ];
             $adminSection(__('admin_oversight_section'), [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
                 [
@@ -112,7 +120,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 ['type' => 'link', 'link' => ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view']],
                 ['type' => 'link', 'link' => ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view']],
                 ['type' => 'link', 'link' => ['admin/settings', 'settings', 'fa-gear', 'settings.manage']],
-            ], 'fa-shield-halved', $oversightPendingApprovals > 0 ? (int) $oversightPendingApprovals : 0);
+            ], 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges);
             ?>
             <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
