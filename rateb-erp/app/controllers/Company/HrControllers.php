@@ -581,7 +581,7 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
         $this->redirect(rateb_url($this->routePrefix . '/' . $id));
     }
 
-    public function export(array $params): void
+    public function exportPeriod(array $params): void
     {
         $id = (int) ($params['id'] ?? 0);
         $period = $this->model->find($id);

@@ -271,7 +271,7 @@ $router->post($app('hr/payroll/{id}/delete'), [HrPayrollController::class, 'dest
 $router->post($app('hr/payroll/{id}/generate'), [HrPayrollController::class, 'generate'], $hrPayMw);
 $router->post($app('hr/payroll/{id}/approve'), $blockCompanyApprovalAction, $hrPayMw);
 $router->post($app('hr/payroll/{id}/post'), [HrPayrollController::class, 'post'], $hrPayMw);
-$router->get($app('hr/payroll/{id}/export'), [HrPayrollController::class, 'export'], $hrPayMw);
+$router->get($app('hr/payroll/{id}/export'), [HrPayrollController::class, 'exportPeriod'], $hrPayMw);
 $router->get($app('hr/payroll/{id}/payslip/{lineId}'), [HrPayrollController::class, 'payslip'], $hrPayMw);
 
 $hrReportsMw = rateb_erp_mw('hr', '', 'hr');

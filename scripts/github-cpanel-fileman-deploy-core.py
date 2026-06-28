@@ -244,6 +244,7 @@ FAST_FILES = [
     "rateb-erp/views/components/table-toolbar.php",
     "rateb-erp/views/components/crud-index.php",
     "rateb-erp/app/controllers/CrudController.php",
+    "rateb-erp/app/controllers/Company/HrControllers.php",
     "rateb-erp/views/layouts/main.php",
     "rateb-erp/routes/company.php",
     "rateb-erp/routes/web.php",
