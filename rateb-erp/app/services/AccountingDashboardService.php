@@ -4,7 +4,11 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Core\TenantContext;
+use Rateb\App\Models\Inventory;
 use Rateb\App\Models\JournalEntry;
+use Rateb\App\Models\PurchaseOrder;
+use Rateb\App\Models\PurchaseRequest;
 
 final class AccountingDashboardService
 {
@@ -53,11 +57,28 @@ final class AccountingDashboardService
             'draft_journals' => 0,
             'pending_vouchers' => 0,
             'unreconciled_bank' => 0,
+            'revenue' => (float) ($summary['payments_total'] ?? 0),
+            'purchase_requests' => 0,
+            'purchase_orders' => 0,
+            'inventory_value' => 0.0,
         ];
 
         if ($companyId === null || $companyId < 1) {
+            $pdo = Database::connection();
+            $metrics['purchase_requests'] = (int) (($pdo->query('SELECT COUNT(*) AS c FROM rateb_purchase_requests')->fetch()['c'] ?? 0));
+            $metrics['purchase_orders'] = (int) (($pdo->query('SELECT COUNT(*) AS c FROM rateb_purchase_orders')->fetch()['c'] ?? 0));
+            $metrics['inventory_value'] = (new Inventory())->totalValue();
             return $metrics;
         }
+
+        TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
+        $metrics['purchase_requests'] = (new PurchaseRequest())->count();
+        $metrics['purchase_orders'] = (new PurchaseOrder())->count();
+        $metrics['inventory_value'] = (new Inventory())->totalValue();
+        $metrics['revenue'] = (float) ($summary['payments_total'] ?? 0);
 
         $cfo = $this->acct->cfoMetrics($companyId);
         $vat = $this->acct->vatReport($companyId, date('Y') . '-01-01', date('Y-m-d'));
@@ -92,7 +113,11 @@ final class AccountingDashboardService
         $growth = $this->revenueGrowth($companyId);
 
         return [
-            ['key' => 'revenue_ytd', 'label' => 'revenue_ytd', 'value' => number_format((float) $m['revenue_ytd'], 2) . ' SAR', 'trend' => $growth, 'icon' => 'fa-coins'],
+            ['key' => 'revenue', 'label' => 'revenue', 'value' => number_format((float) $m['revenue'], 2) . ' SAR', 'trend' => $growth, 'icon' => 'fa-coins'],
+            ['key' => 'inventory_value', 'label' => 'inventory_value', 'value' => number_format((float) $m['inventory_value'], 2) . ' SAR', 'trend' => '', 'icon' => 'fa-boxes-stacked'],
+            ['key' => 'purchase_requests', 'label' => 'purchase_requests', 'value' => (string) (int) $m['purchase_requests'], 'trend' => '', 'icon' => 'fa-file-circle-plus'],
+            ['key' => 'purchase_orders', 'label' => 'purchase_orders', 'value' => (string) (int) $m['purchase_orders'], 'trend' => '', 'icon' => 'fa-file-invoice'],
+            ['key' => 'revenue_ytd', 'label' => 'revenue_ytd', 'value' => number_format((float) $m['revenue_ytd'], 2) . ' SAR', 'trend' => '', 'icon' => 'fa-chart-line'],
             ['key' => 'net_profit_ytd', 'label' => 'net_profit_ytd', 'value' => number_format((float) $m['net_profit_ytd'], 2) . ' SAR', 'trend' => '', 'icon' => 'fa-chart-line'],
             ['key' => 'cash_position', 'label' => 'cash_position', 'value' => number_format((float) $m['cash_position'], 2) . ' SAR', 'trend' => '', 'icon' => 'fa-building-columns'],
             ['key' => 'ar_open', 'label' => 'ar_open', 'value' => number_format((float) $m['ar_open'], 2) . ' SAR', 'trend' => '', 'icon' => 'fa-hand-holding-dollar'],

@@ -914,6 +914,7 @@ return [
     'new_cash_voucher' => 'New cash voucher',
     'supplier_payment' => 'Supplier payment',
     'add_customer' => 'Add customer',
+    'dashboard_accounting_moved_hint' => 'Revenue, procurement, and inventory value are on the accounting dashboard.',
     'invoices_paid' => 'Paid invoices',
     'invoices_open' => 'Open invoices',
     'new_invoice' => 'New invoice',

@@ -914,6 +914,7 @@ return [
     'new_cash_voucher' => 'سند نقدي جديد',
     'supplier_payment' => 'دفعة مورد',
     'add_customer' => 'إضافة عميل',
+    'dashboard_accounting_moved_hint' => 'الإيرادات والمشتريات وقيمة المخزون متوفرة في لوحة تحكم المحاسبة.',
     'invoices_paid' => 'فواتير مدفوعة',
     'invoices_open' => 'فواتير مفتوحة',
     'new_invoice' => 'فاتورة جديدة',

@@ -29,10 +29,14 @@ final class AccountingDashboardController extends Controller
         $service->ensureDefaultAccounts($companyId > 0 ? $companyId : null);
         $dashSvc = new AccountingDashboardService($service);
 
+        $dash = $companyId > 0
+            ? $dashSvc->build($companyId)
+            : (rateb_is_super_admin() ? $dashSvc->build(null) : ['metrics' => [], 'kpis' => [], 'charts' => [], 'alerts' => [], 'recent' => []]);
+
         $this->view('company/accounting/dashboard', [
             'title' => __('accounting_dashboard'),
-            'dash' => $companyId > 0 ? $dashSvc->build($companyId) : ['metrics' => [], 'kpis' => [], 'charts' => [], 'alerts' => [], 'recent' => []],
-            'trial' => $companyId > 0 ? $service->trialBalance($companyId) : [],
+            'dash' => $dash,
+            'trial' => $companyId > 0 || rateb_is_super_admin() ? $service->trialBalance($companyId > 0 ? $companyId : null) : [],
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('accounting'),
             'canPost' => rateb_can_post_entity('accounting'),

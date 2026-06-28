@@ -22,6 +22,13 @@ $expValues = json_encode(array_map('floatval', array_column($charts['monthly_exp
 $arApLabels = json_encode(array_map(static fn ($r) => __((string) ($r['label'] ?? '')), $charts['ar_ap'] ?? []));
 $arApValues = json_encode(array_map('floatval', array_column($charts['ar_ap'] ?? [], 'value')));
 
+$primaryWidgets = [
+    ['revenue', 'fa-coins', 'warning', true],
+    ['purchase_requests', 'fa-file-circle-plus', 'primary', false],
+    ['purchase_orders', 'fa-file-invoice', 'success', false],
+    ['inventory_value', 'fa-boxes-stacked', 'info', true],
+];
+
 $widgets = [
     ['cash_position', 'fa-building-columns', 'primary', true],
     ['revenue_ytd', 'fa-coins', 'warning', true],
@@ -65,6 +72,25 @@ $widgets = [
 </div>
 
 <div class="row g-3 mb-4">
+    <?php foreach ($primaryWidgets as $w) {
+        $val = $m[$w[0]] ?? 0;
+        if ($w[3]) {
+            $val = number_format((float) $val, 2);
+        }
+        ?>
+    <div class="col-sm-6 col-xl-3">
+        <div class="rateb-widget">
+            <div class="rateb-widget-icon bg-<?php echo $w[2]; ?> bg-opacity-10 text-<?php echo $w[2]; ?>">
+                <i class="fas <?php echo $w[1]; ?>"></i>
+            </div>
+            <div class="rateb-widget-value"><?php echo Rateb\App\Core\View::escape((string) $val); ?></div>
+            <div class="rateb-widget-label"><?php echo __($w[0]); ?></div>
+        </div>
+    </div>
+    <?php } ?>
+</div>
+
+<div class="row g-3 mb-4">
     <?php foreach ($widgets as $w) {
         if (!$isAdmin && $companyId < 1 && in_array($w[0], ['cash_position', 'revenue_ytd', 'net_profit_ytd', 'ar_open', 'ap_open'], true)) {
             continue;
@@ -95,9 +121,9 @@ $widgets = [
         <div class="row g-3">
             <div class="col-md-6">
                 <div class="rateb-card rateb-chart-card h-100">
-                    <div class="rateb-card-header"><?php echo __('monthly_revenue'); ?></div>
+                    <div class="rateb-card-header"><?php echo __('revenue'); ?></div>
                     <div class="rateb-card-body">
-                        <canvas id="chart-acct-revenue" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('monthly_revenue')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($revLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($revValues); ?>'></canvas>
+                        <canvas id="chart-revenue" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('revenue')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($revLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($revValues); ?>'></canvas>
                     </div>
                 </div>
             </div>
