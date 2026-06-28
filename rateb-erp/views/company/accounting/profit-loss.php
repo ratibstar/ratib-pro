@@ -22,26 +22,6 @@ Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_app_url('
         </div>
     </div>
 </form>
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('revenue'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) $report['revenue'], 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('expenses'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) $report['expenses'], 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('net_income'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) $report['net'], 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-</div>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('profit_loss'); ?></div>
     <div class="rateb-card-body p-0">

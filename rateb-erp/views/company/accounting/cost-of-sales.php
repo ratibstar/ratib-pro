@@ -20,10 +20,6 @@ Rateb\App\Core\View::partial('accounting-reports-back');
         </div>
     </div>
 </form>
-<div class="rateb-stat-card mb-4">
-    <div class="rateb-stat-label"><?php echo __('cost_of_sales_total'); ?></div>
-    <div class="rateb-stat-value"><?php echo number_format((float) ($report['total'] ?? 0), 2); ?> <small>SAR</small></div>
-</div>
 <div class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo __('cost_of_sales_accounts'); ?></div>
     <div class="rateb-card-body p-0">

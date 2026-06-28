@@ -22,30 +22,4 @@ Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_app_url('
         </div>
     </div>
 </form>
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('output_vat'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($report['output_vat'] ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('input_vat'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($report['input_vat'] ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('net_vat'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($report['net_vat'] ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('invoice_tax_total'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) ($report['invoice_tax'] ?? 0), 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-</div>
 <p class="text-muted small"><?php echo __('vat_report_help'); ?></p>

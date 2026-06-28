@@ -510,7 +510,42 @@ final class ModulePageStatsService
                 ['label' => __('total_asset_value'), 'value' => $this->money((float) ((new ErpAnalyticsService())->costAnalysis($cid)['asset_value'] ?? 0)), 'tone' => 'purple'],
             ]);
         }
-        if (str_contains($path, 'reports') || str_contains($path, 'trial-balance') || str_contains($path, 'profit-loss') || str_contains($path, 'balance-sheet') || str_contains($path, 'vat-report')) {
+        if (str_contains($path, 'profit-loss')) {
+            $from = $this->queryDate('from');
+            $to = $this->queryDate('to');
+            $pl = $acct->profitAndLoss($cid, $from, $to);
+            return $this->cards([
+                ['label' => __('revenue'), 'value' => $this->money((float) ($pl['revenue'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('expenses'), 'value' => $this->money((float) ($pl['expenses'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('net_income'), 'value' => $this->money((float) ($pl['net'] ?? 0)), 'tone' => 'teal'],
+            ]);
+        }
+        if (str_contains($path, 'balance-sheet')) {
+            $bs = $acct->balanceSheet($cid, $this->queryDate('as_of'));
+            return $this->cards([
+                ['label' => __('total_assets'), 'value' => $this->money((float) ($bs['assets'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('total_liabilities'), 'value' => $this->money((float) ($bs['liabilities'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('total_equity'), 'value' => $this->money((float) ($bs['equity'] ?? 0)), 'tone' => 'green'],
+            ]);
+        }
+        if (str_contains($path, 'vat-report')) {
+            $vat = $acct->vatReport($cid, $this->queryDate('from'), $this->queryDate('to'));
+            return $this->cards([
+                ['label' => __('output_vat'), 'value' => $this->money((float) ($vat['output_vat'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('input_vat'), 'value' => $this->money((float) ($vat['input_vat'] ?? 0)), 'tone' => 'green'],
+                ['label' => __('net_vat'), 'value' => $this->money((float) ($vat['net_vat'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('invoice_tax_total'), 'value' => $this->money((float) ($vat['invoice_tax'] ?? 0)), 'tone' => 'purple'],
+            ]);
+        }
+        if (str_contains($path, 'cost-of-sales')) {
+            $cos = $acct->costOfSalesReport($cid, $this->queryDate('from'), $this->queryDate('to'));
+            return $this->cards([
+                ['label' => __('cost_of_sales_total'), 'value' => $this->money((float) ($cos['total'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('cost_of_sales_accounts'), 'value' => $this->intStr(count($cos['accounts'] ?? [])), 'tone' => 'blue'],
+                ['label' => __('cost_of_sales_entries'), 'value' => $this->intStr(count($cos['entries'] ?? [])), 'tone' => 'green'],
+            ]);
+        }
+        if (str_contains($path, 'reports') || str_contains($path, 'trial-balance') || str_contains($path, 'journal-register') || str_contains($path, 'account-statement')) {
             return $this->cards([
                 ['label' => __('revenue_ytd'), 'value' => $this->money((float) ($m['revenue_ytd'] ?? 0)), 'tone' => 'green'],
                 ['label' => __('expenses_ytd'), 'value' => $this->money((float) ($m['expenses_ytd'] ?? 0)), 'tone' => 'orange'],
@@ -813,5 +848,11 @@ final class ModulePageStatsService
         } catch (\Throwable) {
             return 0;
         }
+    }
+
+    private function queryDate(string $key): ?string
+    {
+        $val = trim((string) ($_GET[$key] ?? ''));
+        return $val !== '' ? $val : null;
     }
 }

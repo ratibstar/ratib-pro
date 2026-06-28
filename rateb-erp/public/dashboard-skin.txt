@@ -1,1 +1,1 @@
-rateb-dashboard-skin=v5c-stats-full
+rateb-dashboard-skin=v5c-reports

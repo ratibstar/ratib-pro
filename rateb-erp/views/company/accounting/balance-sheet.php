@@ -18,26 +18,6 @@ Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_app_url('
         </div>
     </div>
 </form>
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('total_assets'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) $report['assets'], 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('total_liabilities'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) $report['liabilities'], 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="rateb-stat-card">
-            <div class="rateb-stat-label"><?php echo __('total_equity'); ?></div>
-            <div class="rateb-stat-value"><?php echo number_format((float) $report['equity'], 2); ?> <small>SAR</small></div>
-        </div>
-    </div>
-</div>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('balance_sheet'); ?></div>
     <div class="rateb-card-body p-0">
