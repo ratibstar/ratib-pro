@@ -195,7 +195,7 @@ final class HrJobTitlesController extends \Rateb\App\Controllers\CrudController
         $this->indexFields = [
             ['name' => 'code', 'label' => 'code'],
             ['name' => 'name', 'label' => 'name'],
-            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
         $this->fields = [
             ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true],
@@ -221,6 +221,19 @@ final class HrJobTitlesController extends \Rateb\App\Controllers\CrudController
     protected function layout(): string
     {
         return 'main';
+    }
+
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $lookup = new \Rateb\App\Services\FormLookupService();
+        foreach ($data['items'] as &$row) {
+            if (is_array($row)) {
+                $row['name'] = $lookup->localizeJobTitle($row);
+            }
+        }
+        unset($row);
+        return $data;
     }
 
     public function index(): void
@@ -696,7 +709,7 @@ final class HrLeaveTypesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'paid', 'label' => 'paid_leave'],
             ['name' => 'days_per_year', 'label' => 'days_per_year'],
-            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
         $this->fields = [
             ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true],

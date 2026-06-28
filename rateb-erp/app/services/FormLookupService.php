@@ -115,7 +115,7 @@ final class FormLookupService
                 $options = $this->mapRows((new HrDepartment())->all(200, 0), 'id', 'name');
                 break;
             case 'hr_job_titles':
-                $options = $this->mapRows((new \Rateb\App\Models\HrJobTitle())->all(200, 0), 'id', 'name');
+                $options = $this->jobTitleOptions();
                 break;
             case 'hr_time_slots':
                 $options = $this->timeSlotOptions();
@@ -1345,7 +1345,7 @@ final class FormLookupService
     {
         return match ($lookup) {
             'hr_departments' => (string) ((new HrDepartment())->find($id)['name'] ?? ''),
-            'hr_job_titles' => (string) ((new \Rateb\App\Models\HrJobTitle())->find($id)['name'] ?? ''),
+            'hr_job_titles' => $this->localizeJobTitle((new \Rateb\App\Models\HrJobTitle())->find($id) ?? []),
             'employees' => (string) ((new Employee())->find($id)['name'] ?? ''),
             'leave_types' => $this->localizeLeaveType((new LeaveType())->find($id) ?? []),
             'loan_types' => (string) ((new \Rateb\App\Models\HrLoanType())->find($id)['name'] ?? ''),
@@ -1374,6 +1374,19 @@ final class FormLookupService
     }
 
     /** @return list<FormOption> */
+    private function jobTitleOptions(): array
+    {
+        $out = [];
+        foreach ((new \Rateb\App\Models\HrJobTitle())->all(200, 0) as $row) {
+            $out[] = [
+                'value' => (string) ($row['id'] ?? ''),
+                'label' => $this->localizeJobTitle($row),
+            ];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
     private function leaveTypeOptions(): array
     {
         $out = [];
@@ -1384,6 +1397,28 @@ final class FormLookupService
             ];
         }
         return $out;
+    }
+
+    /** @param array<string, mixed> $row */
+    public function localizeJobTitle(array $row): string
+    {
+        $code = strtoupper(trim((string) ($row['code'] ?? '')));
+        if ($code !== '' && class_exists(\Rateb\App\Services\HrService::class)) {
+            foreach (\Rateb\App\Services\HrService::defaultJobTitleDefinitions() as $def) {
+                if (strtoupper((string) ($def['code'] ?? '')) !== $code) {
+                    continue;
+                }
+                $key = (string) ($def['key'] ?? '');
+                if ($key !== '' && function_exists('__')) {
+                    $label = __($key);
+                    if ($label !== $key) {
+                        return $label;
+                    }
+                }
+            }
+        }
+        $name = trim((string) ($row['name'] ?? ''));
+        return $name !== '' ? $name : ('#' . (int) ($row['id'] ?? 0));
     }
 
     /** @param array<string, mixed> $row */
