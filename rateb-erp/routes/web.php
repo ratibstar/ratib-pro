@@ -135,10 +135,10 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
     $router->get('/admin/' . $path, [$class, 'index'], rateb_admin_mw($perm));
     $router->get('/admin/' . $path . '/create', [$class, 'create'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path, [$class, 'store'], rateb_admin_mw($perm));
+    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
     $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw($perm));
-    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
     $router->get('/admin/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_admin_mw($perm));
     $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw($perm));
@@ -163,10 +163,10 @@ foreach ($billingCrud as $path => $class) {
         $router->get('/admin/invoices/{id}/preview', [$class, 'preview'], rateb_admin_mw('accounting.view'));
         $router->post('/admin/invoices/preview-draft', [$class, 'previewDraft'], rateb_admin_mw('billing.manage'));
     }
+    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw('billing.manage'));
     $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw('billing.manage'));
     $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw('billing.manage'));
     $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw('billing.manage'));
-    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw('billing.manage'));
     $router->get('/admin/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_admin_mw('billing.manage'));
     $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw('billing.manage'));
     $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw('billing.manage'));

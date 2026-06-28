@@ -76,10 +76,10 @@ foreach ($cmsCrud as $path => [$class, $perm]) {
     $router->get('/admin/cms/' . $path, [$class, 'index'], rateb_admin_mw($perm));
     $router->get('/admin/cms/' . $path . '/create', [$class, 'create'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path, [$class, 'store'], rateb_admin_mw($perm));
+    $router->post('/admin/cms/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
     $router->get('/admin/cms/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
     $router->get('/admin/cms/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_admin_mw($perm));
     $router->get('/admin/cms/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw($perm));

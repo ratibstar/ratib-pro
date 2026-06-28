@@ -146,10 +146,10 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
     $router->get($app($path), [$class, 'index'], $mw);
     $router->get($app($path . '/create'), [$class, 'create'], $mw);
     $router->post($app($path), [$class, 'store'], $mw);
+    $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
     $router->get($app($path . '/{id}/edit'), [$class, 'edit'], $mw);
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
-    $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
     $router->get($app($path . '/{id}/documents/panel'), [$class, 'documentsPanel'], $mw);
     $router->get($app($path . '/{id}/documents'), [$class, 'documents'], $mw);
     $router->post($app($path . '/{id}/documents'), [$class, 'storeDocument'], $mw);
@@ -225,10 +225,10 @@ foreach ($hrCrudRoutes as $path => $cfg) {
         $router->get($app('hr/fleet/{id}/print'), [HrFleetController::class, 'print'], $mw);
         $router->get($app('hr/fleet/{id}/receipt'), [HrFleetController::class, 'employeeReceipt'], $mw);
     }
+    $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
     $router->get($app($path . '/{id}/edit'), [$class, 'edit'], $mw);
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
-    $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
     $router->get($app($path . '/{id}/documents/panel'), [$class, 'documentsPanel'], $mw);
     $router->get($app($path . '/{id}/documents'), [$class, 'documents'], $mw);
     $router->post($app($path . '/{id}/documents'), [$class, 'storeDocument'], $mw);

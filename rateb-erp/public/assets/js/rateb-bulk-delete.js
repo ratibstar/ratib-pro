@@ -21,43 +21,18 @@
         return ids;
     }
 
-    function submitBulkDelete(action, csrf, ids) {
-        var fd = new FormData();
-        fd.append('_csrf', csrf);
+    function submitBulkDelete(form, ids) {
+        form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
+            el.remove();
+        });
         ids.forEach(function (id) {
-            fd.append('ids[]', id);
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = id;
+            form.appendChild(input);
         });
-        fetch(action, {
-            method: 'POST',
-            body: fd,
-            credentials: 'same-origin',
-            redirect: 'follow'
-        }).then(function (resp) {
-            if (resp.redirected && resp.url) {
-                window.location.href = resp.url;
-                return;
-            }
-            window.location.reload();
-        }).catch(function () {
-            var f = document.createElement('form');
-            f.method = 'post';
-            f.action = action;
-            f.style.display = 'none';
-            var csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = '_csrf';
-            csrfInput.value = csrf;
-            f.appendChild(csrfInput);
-            ids.forEach(function (id) {
-                var input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'ids[]';
-                input.value = id;
-                f.appendChild(input);
-            });
-            document.body.appendChild(f);
-            f.submit();
-        });
+        HTMLFormElement.prototype.submit.call(form);
     }
 
     function runBulkDeleteFromForm(form) {
@@ -65,15 +40,9 @@
         if (ids.length === 0) {
             return;
         }
-        var csrfEl = form.querySelector('input[name="_csrf"]');
-        var csrf = csrfEl ? csrfEl.value : '';
-        var action = form.getAttribute('action') || '';
-        if (!action || !csrf) {
-            return;
-        }
         var msg = form.getAttribute('data-rateb-bulk-confirm') || '';
         var doPost = function () {
-            submitBulkDelete(action, csrf, ids);
+            submitBulkDelete(form, ids);
         };
         if (!msg) {
             doPost();
