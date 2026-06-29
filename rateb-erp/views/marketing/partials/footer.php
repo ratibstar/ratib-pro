@@ -19,7 +19,10 @@ if ($columns === []) {
                 <h3 class="rateb-mkt-footer-title"><?php echo __('rateb_erp'); ?></h3>
                 <p class="rateb-mkt-footer-text"><?php echo __('cms_footer_tagline'); ?></p>
             </div>
-            <?php foreach (array_slice($columns, 0, 2) as $col) {
+            <?php
+            $footerLinkItems = $footerMenu ?? ($menuItems ?? []);
+            $footerColsRendered = 0;
+            foreach (array_slice($columns, 0, 2) as $col) {
                 $links = [];
                 if (!empty($col['links_json'])) {
                     $decoded = json_decode((string) $col['links_json'], true);
@@ -27,12 +30,17 @@ if ($columns === []) {
                         $links = $decoded;
                     }
                 }
+                $useMenuFallback = !empty($col['_fallback_menu']) || $links === [];
+                if (!$useMenuFallback && $links === []) {
+                    continue;
+                }
+                $footerColsRendered++;
                 ?>
             <div class="col-lg-4">
                 <h4 class="rateb-mkt-footer-heading"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($col, 'title')); ?></h4>
                 <ul class="rateb-mkt-footer-links">
-                    <?php if (!empty($col['_fallback_menu'])) {
-                        foreach ($footerMenu ?? ($menuItems ?? []) as $item) {
+                    <?php if ($useMenuFallback) {
+                        foreach ($footerLinkItems as $item) {
                             $label = CmsService::pickLocale($item, 'label');
                             ?>
                     <li><a href="<?php echo Rateb\App\Core\View::escape(rateb_url((string) ($item['url'] ?? 'site'))); ?>"><?php echo Rateb\App\Core\View::escape($label); ?></a></li>
@@ -50,6 +58,18 @@ if ($columns === []) {
                     <li><a href="<?php echo Rateb\App\Core\View::escape(rateb_url((string) ($link['url'] ?? 'site'))); ?>"><?php echo Rateb\App\Core\View::escape($label); ?></a></li>
                     <?php }
                     } ?>
+                </ul>
+            </div>
+            <?php }
+            if ($footerColsRendered === 0 && $footerLinkItems !== []) { ?>
+            <div class="col-lg-4">
+                <h4 class="rateb-mkt-footer-heading"><?php echo __('cms_footer_quick_links'); ?></h4>
+                <ul class="rateb-mkt-footer-links">
+                    <?php foreach ($footerLinkItems as $item) {
+                        $label = CmsService::pickLocale($item, 'label');
+                        ?>
+                    <li><a href="<?php echo Rateb\App\Core\View::escape(rateb_url((string) ($item['url'] ?? 'site'))); ?>"><?php echo Rateb\App\Core\View::escape($label); ?></a></li>
+                    <?php } ?>
                 </ul>
             </div>
             <?php } ?>

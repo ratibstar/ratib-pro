@@ -2082,7 +2082,8 @@ return [
     'cms_partner_login' => 'Partner Login',
     'cms_billing_cycle' => 'Billing cycle',
     'cms_plan_popular' => 'Popular',
-    'plan_starter_features' => "Pro plan consultation\nWorkspace readiness review\nIntegration guidance",
+    'plan_starter_features' => "Procurement, inventory & suppliers\nUp to 5 users\nBasic reports\nStandard support",
+    'cms_footer_quick_links' => 'Quick links',
     'plan_professional_features' => "Procurement & inventory suite\nMulti-user RBAC\nE-invoice ready\nStandard support",
-    'plan_enterprise_features' => "All Professional features\nUnlimited users\nPriority support\nAdvanced analytics\nCustom integrations",
+    'plan_enterprise_features' => "All Professional features\nUp to 100 users\nPriority support\nAdvanced analytics\nCustom integrations",
 ];

@@ -19,7 +19,6 @@ $phoneDigits = preg_replace('/\D+/', '', $phoneRaw) ?: '966599863868';
             </div>
             <div class="rateb-mkt-topbar__right">
                 <span class="rateb-mkt-topbar__ops" dir="ltr"><?php echo __('cms_topbar_ops'); ?></span>
-                <a href="<?php echo rateb_url('site/login'); ?>" class="rateb-mkt-topbar__link"><?php echo __('cms_customer_login'); ?></a>
             </div>
         </div>
     </div>
