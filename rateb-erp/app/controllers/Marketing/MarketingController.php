@@ -38,9 +38,9 @@ final class MarketingController extends Controller
             }
             $plan = (string) ($_GET['plan'] ?? 'professional');
             $years = isset($_GET['years']) ? (int) $_GET['years'] : 1;
-            $url = function_exists('rateb_public_agency_register_url')
-                ? rateb_public_agency_register_url(rateb_site_origin(), $plan, $years)
-                : (rateb_site_origin() . '/pages/home?plan=gold&years=1#programs');
+            $url = function_exists('rateb_marketing_register_url')
+                ? rateb_marketing_register_url($plan, $years)
+                : (rateb_site_origin() . '/site/pricing?register=1&plan=professional#pricing');
             Response::redirect($url);
             return;
         }

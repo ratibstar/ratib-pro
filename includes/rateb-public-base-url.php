@@ -196,6 +196,8 @@ if (!function_exists('rateb_public_agency_register_url')) {
 
 if (!function_exists('rateb_public_marketing_home_register_url')) {
     /**
+     * Client registration on marketing pricing (inline form).
+     *
      * @param array<string, string|int|float> $extra
      */
     function rateb_public_marketing_home_register_url(
@@ -207,21 +209,23 @@ if (!function_exists('rateb_public_marketing_home_register_url')) {
         if ($baseUrl === '') {
             $baseUrl = rateb_public_site_base_url();
         }
-        $legacyPlan = rateb_legacy_pro_plan_slug($plan);
+        $erpPlan = function_exists('rateb_normalize_marketing_plan_slug')
+            ? rateb_normalize_marketing_plan_slug($plan)
+            : strtolower(trim($plan));
+        if ($erpPlan === '') {
+            $erpPlan = 'professional';
+        }
         $query = array_merge(
             [
-                'plan' => $legacyPlan,
+                'register' => '1',
+                'plan' => $erpPlan,
                 'years' => max(0, min(1, $years)),
             ],
             $extra
         );
         unset($query['open'], $query['cms_rev']);
-        $build = rateb_public_build_marker();
-        if ($build !== '' && !isset($query['v'])) {
-            $query['v'] = $build;
-        }
 
-        return rtrim($baseUrl, '/') . '/pages/home?' . http_build_query($query) . '#programs';
+        return rtrim($baseUrl, '/') . '/site/pricing?' . http_build_query($query) . '#pricing';
     }
 }
 

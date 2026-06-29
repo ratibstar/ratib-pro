@@ -35,7 +35,8 @@ $ratebHomeSkipBuildBust = isset($_GET['rateb_deploy_probe'])
         && hash_equals('rateb-deploy-sync-2026', (string) $_GET['key'])
     );
 if (!$ratebHomeSkipBuildBust) {
-    $ratebIsRegisterCheckout = isset($_GET['open']) && trim((string) $_GET['open']) === 'register';
+    $ratebIsRegisterCheckout = (isset($_GET['open']) && trim((string) $_GET['open']) === 'register')
+        || (isset($_GET['plan']) && trim((string) $_GET['plan']) !== '');
     $ratebBuildMarker = rateb_public_build_marker();
     $ratebReqBuildV = isset($_GET['v']) ? trim((string) $_GET['v']) : '';
     if ($ratebBuildMarker !== '' && !headers_sent() && !$ratebIsRegisterCheckout) {
@@ -47,7 +48,7 @@ if (!$ratebHomeSkipBuildBust) {
             $qs['v'] = $ratebBuildMarker;
             $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/home'), PHP_URL_PATH);
             $path = is_string($path) && $path !== '' ? $path : '/home';
-            if (preg_match('#/pages/home$#i', $path)) {
+            if (preg_match('#/pages/home$#i', $path) && !isset($_GET['plan'])) {
                 $path = '/home';
             }
             $dest = $path . '?' . http_build_query($qs);
@@ -371,7 +372,7 @@ if ($ratebCmsRev !== '') {
         $qs['cms_rev'] = $ratebCmsRev;
         $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/home'), PHP_URL_PATH);
         $path = is_string($path) && $path !== '' ? $path : '/home';
-        if (preg_match('#/pages/home$#i', $path)) {
+        if (preg_match('#/pages/home$#i', $path) && !isset($_GET['plan'])) {
             $path = '/home';
         }
         $newUrl = $path . '?' . http_build_query($qs);

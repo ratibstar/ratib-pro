@@ -1,0 +1,29 @@
+.rateb-mkt-agency-register {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.rateb-mkt-agency-register__card {
+  background: var(--rateb-mkt-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--rateb-mkt-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.rateb-mkt-agency-register__back {
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+}
+
+.rateb-mkt-agency-register__back:hover {
+  color: var(--bs-body-color);
+}
+
+.rateb-mkt-agency-register .hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

@@ -18,7 +18,7 @@ $featuredSlug = 'professional';
         <?php if (!empty($sectionLead)) { ?>
         <p class="rateb-mkt-section-lead text-center mb-4"><?php echo Rateb\App\Core\View::escape((string) $sectionLead); ?></p>
         <?php } ?>
-        <div class="row g-3 justify-content-center">
+        <div id="ratebMktPricingPackages" class="row g-3 justify-content-center">
             <?php foreach ($plans as $plan) {
                 $slug = trim((string) ($plan['slug'] ?? ''));
                 $isFeatured = $slug === $featuredSlug;
@@ -61,6 +61,11 @@ $featuredSlug = 'professional';
             </div>
             <?php } ?>
         </div>
+        <?php
+        $mktCheckoutPlan = trim((string) ($_GET['plan'] ?? 'professional')) ?: 'professional';
+        $mktCheckoutYears = isset($_GET['years']) ? (int) $_GET['years'] : 1;
+        require RATEB_ROOT . '/views/marketing/partials/agency-checkout-panel.php';
+        ?>
         <?php if ($compact) { ?>
         <div class="text-center mt-4">
             <a href="<?php echo rateb_url('site/pricing'); ?>" class="btn btn-outline-primary rateb-mkt-more-btn">

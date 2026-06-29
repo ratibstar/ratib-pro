@@ -59,6 +59,7 @@ $headerContext = 'marketing';
     <link rel="alternate" hreflang="en" href="<?php echo Rateb\App\Core\View::escape($hrefCanonical); ?>">
     <link rel="alternate" hreflang="ar" href="<?php echo Rateb\App\Core\View::escape($hrefCanonical); ?>">
     <link rel="alternate" hreflang="x-default" href="<?php echo Rateb\App\Core\View::escape($hrefOrigin . rateb_url('site')); ?>">
+    <link href="<?php echo rateb_asset('css/marketing-agency-register.css'); ?>" rel="stylesheet">
     <?php require RATEB_ROOT . '/views/marketing/partials/analytics-head.php'; ?>
 </head>
 <body class="rateb-marketing<?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?>">
@@ -81,6 +82,12 @@ require RATEB_ROOT . '/views/marketing/partials/header.php'; ?>
 <?php require RATEB_ROOT . '/views/marketing/partials/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?php echo rateb_asset('js/marketing.js'); ?>"></script>
+<script>window.RATEB_BASE_URL = <?php echo json_encode(rateb_site_origin()); ?>;</script>
+<script src="<?php echo htmlspecialchars(rateb_site_origin()); ?>/js/payment.js?v=<?php
+$ratebPayJs = dirname(RATEB_ROOT) . '/js/payment.js';
+echo (int) (is_file($ratebPayJs) ? @filemtime($ratebPayJs) : time());
+?>"></script>
+<script src="<?php echo rateb_asset('js/marketing-agency-register.js'); ?>"></script>
 <?php
 $analytics = $analytics ?? null;
 if ($analytics && !empty($analytics['custom_body_code'])) {

@@ -145,9 +145,10 @@ RewriteRule ^admin/government-tracking/?$ /admin/government-tracking.php [L,QSA]
 
 # ── Extensionless page URLs (hide .php from browsers) ──
 
-# Redirect legacy /pages/home.php → unified marketing home (keep ?open=register checkout form)
+# Redirect legacy /pages/home.php → unified marketing home (keep registration checkout on /pages/home)
 RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
 RewriteCond %{QUERY_STRING} !(^|&)open=register(&|$) [NC]
+RewriteCond %{QUERY_STRING} !(^|&)plan= [NC]
 RewriteRule ^pages/home\.php$ / [R=301,L,QSA]
 
 # Browser requested .php under /pages/ → 301 to extensionless (home handled above)

@@ -459,29 +459,37 @@ if (!function_exists('rateb_normalize_marketing_plan_slug')) {
     }
 }
 
+if (!function_exists('rateb_erp_plan_to_checkout_slug')) {
+    /** ERP marketing plan slug → Rateb Pro checkout slug (pro/gold/platinum). */
+    function rateb_erp_plan_to_checkout_slug(string $erpPlan): string
+    {
+        $slug = strtolower(trim($erpPlan));
+        $map = [
+            'starter' => 'pro',
+            'professional' => 'gold',
+            'enterprise' => 'platinum',
+            'pro' => 'pro',
+            'gold' => 'gold',
+            'platinum' => 'platinum',
+        ];
+
+        return $map[$slug] ?? 'gold';
+    }
+}
+
 if (!function_exists('rateb_marketing_register_url')) {
-    /** EN: home pricing → inline register form (#programs). Not a separate page. */
+    /** Pricing page — inline agency registration form replaces plan cards. */
     function rateb_marketing_register_url(string $plan = '', int $years = 1, array $extra = []): string
     {
-        $helper = dirname(__DIR__, 2) . '/includes/rateb-public-base-url.php';
-        if (is_file($helper)) {
-            require_once $helper;
+        $query = array_merge(['register' => '1', 'years' => max(0, min(1, $years))], $extra);
+        if ($plan !== '') {
+            $query['plan'] = strtolower(trim($plan));
+        } else {
+            $query['plan'] = 'professional';
         }
-        $legacyPlan = 'gold';
-        if ($plan !== '' && function_exists('rateb_legacy_pro_plan_slug')) {
-            $erpPlan = function_exists('rateb_normalize_marketing_plan_slug')
-                ? rateb_normalize_marketing_plan_slug($plan)
-                : $plan;
-            if ($erpPlan === '') {
-                $erpPlan = 'professional';
-            }
-            $legacyPlan = rateb_legacy_pro_plan_slug($erpPlan);
-        }
-        $query = array_merge(['plan' => $legacyPlan, 'years' => max(0, min(1, $years))], $extra);
         unset($query['open']);
-        $base = rateb_site_origin();
 
-        return rtrim($base, '/') . '/pages/home?' . http_build_query($query) . '#programs';
+        return rateb_url('site/pricing') . '?' . http_build_query($query) . '#pricing';
     }
 }
 
