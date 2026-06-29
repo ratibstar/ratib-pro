@@ -5,6 +5,13 @@
  */
 declare(strict_types=1);
 
+if (!defined('RATEB_NGENIUS_ORDERS_TABLE')) {
+    define('RATEB_NGENIUS_ORDERS_TABLE', 'ngenius_reg_orders');
+}
+if (!defined('RATEB_NGENIUS_PAYMENTS_TABLE')) {
+    define('RATEB_NGENIUS_PAYMENTS_TABLE', 'ngenius_reg_payments');
+}
+
 ini_set('display_errors', '0');
 error_reporting(0);
 

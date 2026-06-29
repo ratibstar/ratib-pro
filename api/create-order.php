@@ -5,8 +5,16 @@
  */
 declare(strict_types=1);
 
+/** Table names — defined here so checkout works even if an older payment_orders_schema.php is on the server. */
+if (!defined('RATEB_NGENIUS_ORDERS_TABLE')) {
+    define('RATEB_NGENIUS_ORDERS_TABLE', 'ngenius_reg_orders');
+}
+if (!defined('RATEB_NGENIUS_PAYMENTS_TABLE')) {
+    define('RATEB_NGENIUS_PAYMENTS_TABLE', 'ngenius_reg_payments');
+}
+
 /** Bumps when create-order.php changes — check Network response headers or GET ?ping=1 */
-const RATEB_CREATE_ORDER_RELEASE = '2026-04-16a';
+const RATEB_CREATE_ORDER_RELEASE = '2026-06-29a';
 const RATEB_CREATE_ORDER_DEDUPE_WINDOW_SECONDS = 86400;
 
 ini_set('display_errors', '0');
