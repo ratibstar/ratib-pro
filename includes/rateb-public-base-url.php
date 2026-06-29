@@ -157,7 +157,7 @@ if (!function_exists('rateb_registration_requests_queue_url')) {
             $baseUrl = rateb_public_site_base_url();
         }
 
-        return rtrim($baseUrl, '/') . '/control-panel/pages/control/registration-requests?control=1&all_dates=1';
+        return rtrim($baseUrl, '/') . '/control-panel/pages/control/registration-requests?control=1&all_dates=1&queue=1&limit=25&status=pending';
     }
 }
 

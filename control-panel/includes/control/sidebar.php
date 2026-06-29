@@ -116,7 +116,7 @@ $cpT = static function (string $key): string {
             control_sidebar_group_open('registration-support', $cpT('section.registration_support'), 'fa-user-plus');
             ?>
             <li>
-                <a href="<?php echo htmlspecialchars(function_exists('control_panel_page_with_control') ? (control_panel_page_with_control('control/registration-requests.php') . '&all_dates=1') : (pageUrl('control/registration-requests.php') . '?control=1&all_dates=1')); ?>" class="sidebar-subitem <?php echo (basename($_SERVER['PHP_SELF']) === 'registration-requests.php') ? 'active' : ''; ?>" data-permission="control_registration_requests,view_control_registration,view_all_control_registration">
+                <a href="<?php echo htmlspecialchars(function_exists('control_panel_page_with_control') ? (control_panel_page_with_control('control/registration-requests.php') . '&all_dates=1&queue=1&limit=25&status=pending') : (pageUrl('control/registration-requests.php') . '?control=1&all_dates=1&queue=1&limit=25&status=pending')); ?>" class="sidebar-subitem <?php echo (basename($_SERVER['PHP_SELF']) === 'registration-requests.php') ? 'active' : ''; ?>" data-permission="control_registration_requests,view_control_registration,view_all_control_registration">
                     <i class="fas fa-user-plus"></i><span><?php echo htmlspecialchars($cpT('nav.registration_requests'), ENT_QUOTES, 'UTF-8'); ?></span>
                     <?php
                     $pendingCount = 0;

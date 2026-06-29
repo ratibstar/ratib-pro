@@ -13,7 +13,7 @@ ob_start();
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../includes/control-api-same-origin-cors.php';
 applyControlApiSameOriginCors();
-header('Access-Control-Allow-Methods: GET, PATCH, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
@@ -110,7 +110,7 @@ if ($method === 'GET') {
     $totalPages = max(1, (int)ceil($total / max(1, $limit)));
     $page = max(1, min($page, $totalPages));
     $offset = ($page - 1) * $limit;
-    $res = $ctrl->query("SELECT * FROM control_registration_requests" . $whereClause . " ORDER BY created_at DESC LIMIT " . (int)$limit . " OFFSET " . (int)$offset);
+    $res = $ctrl->query("SELECT * FROM control_registration_requests" . $whereClause . " ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit . " OFFSET " . (int)$offset);
     $list = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 
     if ($ngMergeLoaded && function_exists('registration_requests_merge_ngenius_orders_for_display')) {
@@ -356,6 +356,47 @@ if ($method === 'DELETE') {
     $idList = implode(',', $ids);
     if ($ctrl->query("DELETE FROM control_registration_requests WHERE id IN ($idList)")) jsonOut(['success' => true, 'message' => 'Deleted']);
     jsonOut(['success' => false, 'message' => 'Delete failed']);
+}
+
+// POST - delete_all fallback (some hosts block DELETE bodies)
+if ($method === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+    if (trim((string)($input['action'] ?? '')) !== 'delete_all') {
+        jsonOut(['success' => false, 'message' => 'Unknown action']);
+    }
+    if (!hasControlPermission(CONTROL_PERM_REGISTRATION) && !hasControlPermission('delete_control_registration')) {
+        jsonOut(['success' => false, 'message' => 'Access denied']);
+    }
+    $confirm = strtoupper(trim((string)($input['confirm'] ?? '')));
+    if ($confirm !== 'DELETE') {
+        jsonOut(['success' => false, 'message' => 'Delete all requires confirm=DELETE']);
+    }
+    $where = [];
+    if ($scopeCountryIds === []) {
+        if (!$canViewAllRegistration) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+    } elseif (!$canViewAllRegistration && $scopeCountryIds !== null && !empty($scopeCountryIds) && $hasCountryId) {
+        $idsStr = implode(',', array_map('intval', $scopeCountryIds));
+        $namesRes = $ctrl->query("SELECT name FROM control_countries WHERE id IN ($idsStr) AND is_active = 1");
+        $countryNames = [];
+        if ($namesRes) {
+            while ($r = $namesRes->fetch_assoc()) {
+                $countryNames[] = "'" . $ctrl->real_escape_string($r['name']) . "'";
+            }
+        }
+        $nameMatch = !empty($countryNames) ? " OR (COALESCE(country_id, 0) = 0 AND country_name IN (" . implode(',', $countryNames) . "))" : '';
+        $where[] = "(country_id IN ($idsStr) $nameMatch)";
+    }
+    $whereClause = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+    if (!$ctrl->query('DELETE FROM control_registration_requests' . $whereClause)) {
+        jsonOut(['success' => false, 'message' => 'Delete failed']);
+    }
+    jsonOut([
+        'success' => true,
+        'message' => 'All registration requests deleted',
+        'deleted' => (int)($ctrl->affected_rows ?? 0),
+    ]);
 }
 
 jsonOut(['success' => false, 'message' => 'Method not allowed']);

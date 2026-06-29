@@ -39,8 +39,12 @@ foreach ($countries as $__c) {
 }
 
 $page = max(1, (int)($_GET['page'] ?? 1));
-$limit = max(5, min(100, (int)($_GET['limit'] ?? 10)));
+$queueView = isset($_GET['queue']) && (string) $_GET['queue'] === '1';
+$limit = max(5, min(100, (int)($_GET['limit'] ?? ($queueView ? 25 : 25))));
 $status = trim($_GET['status'] ?? '');
+if ($queueView && $status === '') {
+    $status = 'pending';
+}
 $planFilter = trim($_GET['plan'] ?? '');
 $search = trim($_GET['search'] ?? '');
 $paymentStatusFilter = trim($_GET['payment_status'] ?? '');
@@ -89,6 +93,9 @@ $scopeTotalCount = 0;
 
 // Build query string for links (all current filters)
 $queryParams = ['control' => '1', 'status' => $status, 'plan' => $planFilter, 'search' => $search, 'payment_status' => $paymentStatusFilter, 'limit' => $limit];
+if ($queueView) {
+    $queryParams['queue'] = '1';
+}
 if ($allDates) {
     $queryParams['all_dates'] = '1';
 } else {
@@ -188,7 +195,7 @@ if ($chk2 && $chk2->num_rows > 0) {
     $totalPages = max(1, (int)ceil($totalRequests / max(1, $limit)));
     $page = max(1, min($page, $totalPages));
     $offset = ($page - 1) * $limit;
-    $res2 = $ctrl->query("SELECT * FROM control_registration_requests" . $whereForList . " ORDER BY id DESC LIMIT " . (int)$limit . " OFFSET " . (int)$offset);
+    $res2 = $ctrl->query("SELECT * FROM control_registration_requests" . $whereForList . " ORDER BY created_at DESC, id DESC LIMIT " . (int)$limit . " OFFSET " . (int)$offset);
     if ($res2) while ($row = $res2->fetch_assoc()) $requestsList[] = $row;
 
     $ngMergePath = __DIR__ . '/../registration_requests_ngenius_display_merge.php';
@@ -280,6 +287,17 @@ $fmtDateEn = function($raw) {
     }
     return htmlspecialchars(date('M j, Y', $ts));
 };
+$reqRowIsNew = static function ($raw): bool {
+    if ($raw === null || $raw === '') {
+        return false;
+    }
+    $ts = strtotime((string) $raw);
+    if ($ts === false) {
+        return false;
+    }
+
+    return (time() - $ts) <= (72 * 3600);
+};
 $reqRowVisualClass = function (array $r) use ($reqAgencyState, $hasRegAgencySuspendedCol) {
     $aid = (int)($r['created_agency_id'] ?? 0);
     $st = $r['status'] ?? 'pending';
@@ -311,6 +329,13 @@ $reqRowVisualClass = function (array $r) use ($reqAgencyState, $hasRegAgencySusp
 $formAction = pageUrl('control/registration-requests.php');
 $agenciesManageUrl = pageUrl('control/agencies.php');
 $regBase = control_panel_public_marketing_home_url($ctrl);
+$latestQueueUrl = $formAction . '?' . http_build_query([
+    'control' => '1',
+    'all_dates' => '1',
+    'queue' => '1',
+    'limit' => 25,
+    'status' => 'pending',
+]);
 
 $statusCards = [
     'total' => 0,
@@ -380,13 +405,19 @@ if ($tableExists) {
     }
 }
 ?>
-<div id="registrationRequestsContent" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url="<?php echo htmlspecialchars(pageUrl('control/agencies.php')); ?>" data-pending-filtered-total="<?php echo (int)$pendingFilteredCount; ?>" data-scope-total="<?php echo (int)$scopeTotalCount; ?>">
+<div id="registrationRequestsContent" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url="<?php echo htmlspecialchars(pageUrl('control/agencies.php')); ?>" data-pending-filtered-total="<?php echo (int)$pendingFilteredCount; ?>" data-scope-total="<?php echo (int)$scopeTotalCount; ?>" data-latest-queue-url="<?php echo htmlspecialchars($latestQueueUrl); ?>">
 <div id="pendingAlertBanner" class="pending-alert-banner d-none">
     <span><i class="fas fa-bell me-2"></i><span id="pendingAlertCount">0</span> pending registration request(s) need your attention.</span>
     <button type="button" class="btn btn-sm btn-outline-dark" id="btnDismissPendingAlert">Dismiss</button>
 </div>
 <div class="req-table-card">
     <h2 class="mb-3"><i class="fas fa-user-plus me-2"></i>Registration Requests</h2>
+    <?php if ($page > 1): ?>
+    <div class="alert alert-info py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.on_older_page'), ENT_QUOTES, 'UTF-8') : 'You are viewing an older page. New requests appear on page 1.'; ?></span>
+        <a href="<?php echo htmlspecialchars($latestQueueUrl); ?>" class="btn btn-sm btn-primary"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.latest_queue'), ENT_QUOTES, 'UTF-8') : 'Latest requests'; ?></a>
+    </div>
+    <?php endif; ?>
     <div class="req-status-cards">
         <div class="req-status-card"><div class="k">Total filtered</div><div class="v"><?php echo (int)$statusCards['total']; ?></div></div>
         <div class="req-status-card pending"><div class="k">Pending</div><div class="v"><?php echo (int)$statusCards['pending']; ?></div></div>
@@ -419,7 +450,9 @@ if ($tableExists) {
         $qfThisMo = (!$allDates && $dateFrom === $moStart && $dateTo === $moEnd);
         $qfAllDates = ($allDates && $paymentStatusFilter === '' && $amountMin === null && $amountMax === null);
         $qfHigh = ($amountMin !== null && is_finite($amountMin) && $amountMin >= 100);
+        $qfLatest = $queueView && $page === 1 && $status === 'pending' && $allDates;
         ?>
+        <a href="<?php echo htmlspecialchars($latestQueueUrl); ?>" class="btn btn-sm <?php echo $qfLatest ? 'btn-primary' : 'btn-outline-primary'; ?> me-1"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.latest_queue'), ENT_QUOTES, 'UTF-8') : 'Latest requests'; ?></a>
         <a href="<?php echo htmlspecialchars($formAction); ?>?control=1&amp;all_dates=1&amp;payment_status=unpaid" class="btn btn-sm <?php echo $qfUnpaid ? 'btn-warning' : 'btn-outline-warning'; ?> me-1">Unpaid only</a>
         <a href="<?php echo htmlspecialchars($formAction); ?>?control=1&amp;date_from=<?php echo rawurlencode($moStart); ?>&amp;date_to=<?php echo rawurlencode($moEnd); ?>" class="btn btn-sm <?php echo $qfThisMo ? 'btn-info' : 'btn-outline-info'; ?> me-1">This month</a>
         <a href="<?php echo htmlspecialchars($formAction); ?>?control=1&amp;all_dates=1" class="btn btn-sm <?php echo $qfAllDates ? 'btn-secondary' : 'btn-outline-secondary'; ?> me-1">All dates</a>
@@ -526,6 +559,9 @@ if ($tableExists) {
                     $agSuspAttr = ($hasRegAgencySuspendedCol && (int)($ag0['is_suspended'] ?? 0) === 1) ? '1' : '0';
                 }
                 $rowVisClass = $reqRowVisualClass($r);
+                if ($reqRowIsNew($r['created_at'] ?? null)) {
+                    $rowVisClass .= ' req-row-is-new';
+                }
                 $manageCidJson = $aid ? $resolveManageAgenciesCountryId($r, $aid, $hasCountryIdCol, $createdAgencyCountryIdMap, $nameToCountryId) : 0;
                 $jsonRowForReq = $r;
                 if ($manageCidJson > 0) {
@@ -533,7 +569,7 @@ if ($tableExists) {
                 }
                 ?>
                 <tr class="<?php echo htmlspecialchars($rowVisClass); ?>" data-id="<?php echo (int)$r['id']; ?>" data-status="<?php echo htmlspecialchars($s); ?>" data-payment-status="<?php echo htmlspecialchars((string)($r['payment_status'] ?? '')); ?>" data-plan-amount="<?php echo htmlspecialchars((string)($r['plan_amount'] ?? '')); ?>" data-created-agency-id="<?php echo (int)$aid; ?>"<?php if ($agActiveAttr !== null): ?> data-agency-is-active="<?php echo htmlspecialchars($agActiveAttr); ?>" data-agency-suspended="<?php echo htmlspecialchars($agSuspAttr); ?>"<?php endif; ?> data-json="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>">
-                    <td class="req-col-reg req-col-clip"><strong><?php echo $fmtId($r['id']); ?></strong></td>
+                    <td class="req-col-reg req-col-clip"><strong><?php echo $fmtId($r['id']); ?></strong><?php if ($reqRowIsNew($r['created_at'] ?? null)) { ?> <span class="badge bg-info text-dark"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.new_badge'), ENT_QUOTES, 'UTF-8') : 'NEW'; ?></span><?php } ?></td>
                     <td class="req-col-created req-col-clip" lang="en" dir="ltr"><span class="req-en-date-block"><?php echo $fmtDateEn($r['created_at'] ?? null); ?></span></td>
                     <td class="req-col-agency req-col-clip" title="<?php echo htmlspecialchars($r['agency_name'] ?? ''); ?>"><?php echo htmlspecialchars($r['agency_name'] ?? '-'); ?></td>
                     <td class="req-col-agency-user req-col-clip" title="<?php echo htmlspecialchars((string)($r['agency_id'] ?? '')); ?>"><?php echo htmlspecialchars($r['agency_id'] ?? '-'); ?></td>

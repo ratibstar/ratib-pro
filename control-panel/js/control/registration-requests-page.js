@@ -802,13 +802,24 @@
         }
         showConfirm('Delete ALL registration requests? This cannot be undone.').then(function(ok) {
             if (!ok) return;
-            api('/registration-requests.php', 'DELETE', { delete_all: true, confirm: 'DELETE' }).then(function(r) {
+            var latestUrl = (contentEl && contentEl.getAttribute('data-latest-queue-url')) || '';
+            api('/registration-requests.php', 'POST', { action: 'delete_all', confirm: 'DELETE' }).then(function(r) {
                 if (r.success) {
-                    location.reload();
+                    window.location.assign(latestUrl || window.location.pathname + '?control=1&all_dates=1&queue=1&limit=25&status=pending');
                     return;
                 }
                 showAlert(r.message || 'Delete all failed');
-            }).catch(function(e) { showAlert('Request failed: ' + (e.message || e)); });
+            }).catch(function(e) {
+                api('/registration-requests.php', 'DELETE', { delete_all: true, confirm: 'DELETE' }).then(function(r2) {
+                    if (r2.success) {
+                        window.location.assign(latestUrl || window.location.pathname + '?control=1&all_dates=1&queue=1&limit=25&status=pending');
+                        return;
+                    }
+                    showAlert('Request failed: ' + (e.message || e));
+                }).catch(function(e2) {
+                    showAlert('Request failed: ' + (e2.message || e2));
+                });
+            });
         });
     };
     var btnBulkReject = document.getElementById('btnBulkReject');
