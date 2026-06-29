@@ -22,6 +22,37 @@ if (!$ctrl) {
     die('Control panel database unavailable.');
 }
 
+$regPurgeFlash = null;
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && (string) ($_POST['reg_purge_action'] ?? '') === 'delete_all'
+) {
+    if (
+        !hasControlPermission(CONTROL_PERM_REGISTRATION)
+        && !hasControlPermission('delete_control_registration')
+    ) {
+        $regPurgeFlash = ['type' => 'danger', 'text' => 'Access denied'];
+    } elseif (strtoupper(trim((string) ($_POST['confirm'] ?? ''))) !== 'DELETE') {
+        $regPurgeFlash = ['type' => 'warning', 'text' => 'Cancelled — type DELETE exactly to confirm.'];
+    } else {
+        require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
+        $purge = registration_requests_purge_all($ctrl);
+        if (!empty($purge['success'])) {
+            $qs = http_build_query([
+                'control' => '1',
+                'all_dates' => '1',
+                'queue' => '1',
+                'limit' => 25,
+                'status' => 'pending',
+                'purged' => (int) ($purge['deleted'] ?? 0),
+            ]);
+            header('Location: ' . pageUrl('control/registration-requests.php') . '?' . $qs);
+            exit;
+        }
+        $regPurgeFlash = ['type' => 'danger', 'text' => (string) ($purge['message'] ?? 'Delete failed')];
+    }
+}
+
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 $registrationRequestsCss = [
     'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',

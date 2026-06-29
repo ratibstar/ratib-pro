@@ -784,8 +784,12 @@
             }).catch(function(e) { showAlert('Request failed: ' + (e.message || e)); });
         });
     };
-    var btnDeleteAllRegistrationRequests = document.getElementById('btnDeleteAllRegistrationRequests');
-    if (btnDeleteAllRegistrationRequests) btnDeleteAllRegistrationRequests.onclick = function() {
+    var btnDeleteAllRegistrationRequests = document.getElementById('formDeleteAllRegistrationRequests');
+    if (btnDeleteAllRegistrationRequests) {
+        /* Server-side form submit handles delete all; JS API path kept for older builds. */
+    } else {
+    var btnDeleteAllRegistrationRequestsLegacy = document.getElementById('btnDeleteAllRegistrationRequests');
+    if (btnDeleteAllRegistrationRequestsLegacy) btnDeleteAllRegistrationRequestsLegacy.onclick = function() {
         var scopeTotal = 0;
         if (contentEl) {
             scopeTotal = parseInt(contentEl.getAttribute('data-scope-total') || '0', 10) || 0;
@@ -822,6 +826,8 @@
             });
         });
     };
+    }
+
     var btnBulkReject = document.getElementById('btnBulkReject');
     if (btnBulkReject) btnBulkReject.onclick = function() {
         var rows = getSelectedRows().filter(function(row) { return (row.getAttribute('data-status') || '') === 'pending'; });

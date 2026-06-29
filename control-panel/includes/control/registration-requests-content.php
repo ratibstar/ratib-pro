@@ -412,6 +412,23 @@ if ($tableExists) {
 </div>
 <div class="req-table-card">
     <h2 class="mb-3"><i class="fas fa-user-plus me-2"></i>Registration Requests</h2>
+    <?php
+    if (!empty($regPurgeFlash) && is_array($regPurgeFlash)) {
+        $ft = htmlspecialchars((string) ($regPurgeFlash['type'] ?? 'info'), ENT_QUOTES, 'UTF-8');
+        $fx = htmlspecialchars((string) ($regPurgeFlash['text'] ?? ''), ENT_QUOTES, 'UTF-8');
+        echo '<div class="alert alert-' . $ft . ' py-2 px-3 mb-3">' . $fx . '</div>';
+    }
+    if (isset($_GET['purged']) && ctype_digit((string) $_GET['purged'])) {
+        $n = (int) $_GET['purged'];
+        echo '<div class="alert alert-success py-2 px-3 mb-3">' . htmlspecialchars(
+            function_exists('cp_t')
+                ? str_replace('{n}', (string) $n, cp_t('reg.purged_ok'))
+                : ('Deleted ' . $n . ' registration request(s).'),
+            ENT_QUOTES,
+            'UTF-8'
+        ) . '</div>';
+    }
+    ?>
     <?php if ($page > 1): ?>
     <div class="alert alert-info py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <span><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.on_older_page'), ENT_QUOTES, 'UTF-8') : 'You are viewing an older page. New requests appear on page 1.'; ?></span>
@@ -509,7 +526,11 @@ if ($tableExists) {
         <button type="button" class="btn btn-sm btn-outline-info" id="btnSelectAllRows">Select page</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearSelectedRows">Clear</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefreshRegistrationRequests"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.refresh'), ENT_QUOTES, 'UTF-8') : 'Refresh'; ?></button>
-        <button type="button" class="btn btn-sm btn-danger" id="btnDeleteAllRegistrationRequests" data-permission="control_registration_requests,delete_control_registration"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.delete_all'), ENT_QUOTES, 'UTF-8') : 'Delete all'; ?></button>
+        <form method="post" action="<?php echo htmlspecialchars($formAction); ?>?control=1" class="d-inline" id="formDeleteAllRegistrationRequests" data-permission="control_registration_requests,delete_control_registration" onsubmit="var v=window.prompt('<?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.delete_all_prompt'), ENT_QUOTES, 'UTF-8') : 'Type DELETE to remove ALL registration requests'; ?>','');if((v||'').trim().toUpperCase()!=='DELETE'){window.alert('<?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.delete_all_cancelled'), ENT_QUOTES, 'UTF-8') : 'Cancelled. Type DELETE exactly.'; ?>');return false;}this.querySelector('input[name=confirm]').value='DELETE';return window.confirm('<?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.delete_all_confirm'), ENT_QUOTES, 'UTF-8') : 'Delete ALL? This cannot be undone.'; ?>');">
+            <input type="hidden" name="reg_purge_action" value="delete_all">
+            <input type="hidden" name="confirm" value="">
+            <button type="submit" class="btn btn-sm btn-danger"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.delete_all'), ENT_QUOTES, 'UTF-8') : 'Delete all'; ?></button>
+        </form>
         <button type="button" class="btn btn-sm btn-outline-danger" id="btnBulkDelete" data-permission="control_registration_requests,delete_control_registration"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.bulk_delete'), ENT_QUOTES, 'UTF-8') : 'Bulk Delete'; ?></button>
         <button type="button" class="btn btn-sm btn-outline-warning" id="btnBulkReject" data-permission="control_registration_requests,reject_control_registration">Bulk Reject</button>
         <button type="button" class="btn btn-sm btn-outline-success" id="btnBulkMarkPaid" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">Bulk Mark Paid</button>

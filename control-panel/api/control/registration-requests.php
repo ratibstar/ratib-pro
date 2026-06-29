@@ -306,31 +306,15 @@ if ($method === 'DELETE') {
         if ($confirm !== 'DELETE') {
             jsonOut(['success' => false, 'message' => 'Delete all requires confirm=DELETE']);
         }
-        $where = [];
-        if ($scopeCountryIds === []) {
-            if (!$canViewAllRegistration) {
-                jsonOut(['success' => false, 'message' => 'Access denied']);
-            }
-        } elseif (!$canViewAllRegistration && $scopeCountryIds !== null && !empty($scopeCountryIds) && $hasCountryId) {
-            $idsStr = implode(',', array_map('intval', $scopeCountryIds));
-            $namesRes = $ctrl->query("SELECT name FROM control_countries WHERE id IN ($idsStr) AND is_active = 1");
-            $countryNames = [];
-            if ($namesRes) {
-                while ($r = $namesRes->fetch_assoc()) {
-                    $countryNames[] = "'" . $ctrl->real_escape_string($r['name']) . "'";
-                }
-            }
-            $nameMatch = !empty($countryNames) ? " OR (COALESCE(country_id, 0) = 0 AND country_name IN (" . implode(',', $countryNames) . "))" : '';
-            $where[] = "(country_id IN ($idsStr) $nameMatch)";
-        }
-        $whereClause = $where ? ' WHERE ' . implode(' AND ', $where) : '';
-        if (!$ctrl->query('DELETE FROM control_registration_requests' . $whereClause)) {
-            jsonOut(['success' => false, 'message' => 'Delete failed']);
+        require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
+        $purge = registration_requests_purge_all($ctrl);
+        if (empty($purge['success'])) {
+            jsonOut(['success' => false, 'message' => (string) ($purge['message'] ?? 'Delete failed')]);
         }
         jsonOut([
             'success' => true,
-            'message' => 'All registration requests deleted',
-            'deleted' => (int)($ctrl->affected_rows ?? 0),
+            'message' => (string) ($purge['message'] ?? 'All registration requests deleted'),
+            'deleted' => (int) ($purge['deleted'] ?? 0),
         ]);
     }
 
@@ -371,31 +355,15 @@ if ($method === 'POST') {
     if ($confirm !== 'DELETE') {
         jsonOut(['success' => false, 'message' => 'Delete all requires confirm=DELETE']);
     }
-    $where = [];
-    if ($scopeCountryIds === []) {
-        if (!$canViewAllRegistration) {
-            jsonOut(['success' => false, 'message' => 'Access denied']);
-        }
-    } elseif (!$canViewAllRegistration && $scopeCountryIds !== null && !empty($scopeCountryIds) && $hasCountryId) {
-        $idsStr = implode(',', array_map('intval', $scopeCountryIds));
-        $namesRes = $ctrl->query("SELECT name FROM control_countries WHERE id IN ($idsStr) AND is_active = 1");
-        $countryNames = [];
-        if ($namesRes) {
-            while ($r = $namesRes->fetch_assoc()) {
-                $countryNames[] = "'" . $ctrl->real_escape_string($r['name']) . "'";
-            }
-        }
-        $nameMatch = !empty($countryNames) ? " OR (COALESCE(country_id, 0) = 0 AND country_name IN (" . implode(',', $countryNames) . "))" : '';
-        $where[] = "(country_id IN ($idsStr) $nameMatch)";
-    }
-    $whereClause = $where ? ' WHERE ' . implode(' AND ', $where) : '';
-    if (!$ctrl->query('DELETE FROM control_registration_requests' . $whereClause)) {
-        jsonOut(['success' => false, 'message' => 'Delete failed']);
+    require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
+    $purge = registration_requests_purge_all($ctrl);
+    if (empty($purge['success'])) {
+        jsonOut(['success' => false, 'message' => (string) ($purge['message'] ?? 'Delete failed')]);
     }
     jsonOut([
         'success' => true,
-        'message' => 'All registration requests deleted',
-        'deleted' => (int)($ctrl->affected_rows ?? 0),
+        'message' => (string) ($purge['message'] ?? 'All registration requests deleted'),
+        'deleted' => (int) ($purge['deleted'] ?? 0),
     ]);
 }
 
