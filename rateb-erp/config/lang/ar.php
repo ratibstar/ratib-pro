@@ -2030,6 +2030,7 @@ return [
     'cms_agency_register_intro' => 'أرسل طلبك وسنراجع بياناتك ونتواصل معك.',
     'cms_agency_register_back' => 'العودة للباقات',
     'cms_agency_register_submit' => 'إرسال الطلب',
+    'cms_agency_register_success' => 'شكراً لك. تم استلام طلبك وسنتواصل معك لإرسال رابط الدفع.',
     'cms_agency_name' => 'اسم الوكالة',
     'cms_agency_id' => 'معرّف الوكالة',
     'cms_agency_country' => 'الدولة',

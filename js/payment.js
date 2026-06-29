@@ -31,6 +31,9 @@
       }
     });
     data.payment_method = 'register';
+    if (!data.payment_status) {
+      data.payment_status = 'unpaid';
+    }
 
     var countrySelect = document.getElementById('countrySelect');
     var countryVal = countrySelect ? countrySelect.value : '';
@@ -255,6 +258,64 @@
     return '';
   }
 
+  function showRegistrationSuccess(form, message) {
+    var msg =
+      (typeof message === 'string' && message) ||
+      'Thank you. Your request has been submitted.';
+    var successEl = document.getElementById('successMsg');
+    var successText = document.getElementById('successText');
+    if (successEl && successText) {
+      successText.textContent = msg;
+      successEl.classList.remove('is-hidden');
+      form.classList.add('is-hidden');
+      successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    var mktSuccess = document.getElementById('ratebMktRegisterSuccess');
+    if (mktSuccess) {
+      var mktText = mktSuccess.querySelector('[data-success-text]');
+      if (mktText) {
+        mktText.textContent = msg;
+      }
+      mktSuccess.classList.remove('d-none');
+      mktSuccess.removeAttribute('hidden');
+      form.classList.add('d-none');
+      form.setAttribute('hidden', 'hidden');
+      mktSuccess.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    window.alert(msg);
+  }
+
+  function submitRegistrationRequest(payload, afterSaveUrl) {
+    postRegistrationRequest(payload).then(function (res) {
+      if (res.ok && res.parsed && res.parsed.success) {
+        clearCheckoutLock();
+        if (afterSaveUrl) {
+          window.location.assign(afterSaveUrl);
+          return;
+        }
+        showRegistrationSuccess(form, res.parsed.message);
+        return;
+      }
+      clearCheckoutLock();
+      var msg = res.parsed && res.parsed.message;
+      window.alert((typeof msg === 'string' && msg) || 'Could not submit. Please try again.');
+    }).catch(function () {
+      clearCheckoutLock();
+      window.alert('Could not reach the server. Please try again.');
+    }).finally(function () {
+      window.setTimeout(function () {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = defaultBtnHtml;
+      }, 0);
+    });
+  }
+
+  function usesRegisterOnlyCheckout(payload) {
+    return String(payload.payment_method || '').trim().toLowerCase() === 'register';
+  }
+
   function postRegistrationRequest(payload) {
     var requestUrl = apiBaseUrl() + '/api/registration-request.php';
     return fetchWithTimeout(requestUrl, {
@@ -409,29 +470,8 @@
     var planAmount = parseFloat(payload.plan_amount) || 0;
     var afterSaveUrl = resolveAfterSaveUrl(form);
 
-    if (planVal === 'pro' || planAmount <= 0) {
-      postRegistrationRequest(payload).then(function (res) {
-        if (res.ok && res.parsed && res.parsed.success) {
-          clearCheckoutLock();
-          if (afterSaveUrl) {
-            window.location.assign(afterSaveUrl);
-            return;
-          }
-          window.alert(res.parsed.message || 'Thank you. Your request has been submitted.');
-          return;
-        }
-        clearCheckoutLock();
-        var msg = res.parsed && res.parsed.message;
-        window.alert((typeof msg === 'string' && msg) || 'Could not submit. Please try again.');
-      }).catch(function () {
-        clearCheckoutLock();
-        window.alert('Could not reach the server. Please try again.');
-      }).finally(function () {
-        window.setTimeout(function () {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = defaultBtnHtml;
-        }, 0);
-      });
+    if (usesRegisterOnlyCheckout(payload) || planVal === 'pro' || planAmount <= 0) {
+      submitRegistrationRequest(payload, afterSaveUrl);
       return;
     }
 

@@ -2029,6 +2029,7 @@ return [
     'cms_agency_register_intro' => 'Submit your request. We will review your details and contact you.',
     'cms_agency_register_back' => 'Back to plans',
     'cms_agency_register_submit' => 'Submit Request',
+    'cms_agency_register_success' => 'Thank you. Your request has been received. We will contact you with payment details.',
     'cms_agency_name' => 'Agency name',
     'cms_agency_id' => 'Agency ID',
     'cms_agency_country' => 'Country',

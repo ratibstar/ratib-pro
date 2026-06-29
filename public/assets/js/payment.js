@@ -1,6 +1,6 @@
 /**
- * EN: Implements public web entry/assets behavior in `public/assets/js/payment.js`.
- * AR: ينفذ سلوك المدخل العام للويب وملفات الواجهة في `public/assets/js/payment.js`.
+ * EN: Implements frontend interaction behavior in `js/payment.js`.
+ * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/payment.js`.
  */
 (function () {
   'use strict';
@@ -31,6 +31,9 @@
       }
     });
     data.payment_method = 'register';
+    if (!data.payment_status) {
+      data.payment_status = 'unpaid';
+    }
 
     var countrySelect = document.getElementById('countrySelect');
     var countryVal = countrySelect ? countrySelect.value : '';
@@ -87,11 +90,17 @@
   function readCheckoutLock() {
     try {
       var raw = window.localStorage ? window.localStorage.getItem(CHECKOUT_LOCK_KEY) : '';
-      if (!raw) return null;
+      if (!raw) {
+        return null;
+      }
       var data = JSON.parse(raw);
-      if (!data || typeof data !== 'object') return null;
+      if (!data || typeof data !== 'object') {
+        return null;
+      }
       var createdAt = Number(data.created_at || 0);
-      if (!createdAt || !isFinite(createdAt)) return null;
+      if (!createdAt || !isFinite(createdAt)) {
+        return null;
+      }
       if (Date.now() - createdAt > CHECKOUT_LOCK_TTL_MS) {
         clearCheckoutLock();
         return null;
@@ -104,20 +113,24 @@
 
   function setCheckoutLock(payload) {
     try {
-      if (!window.localStorage) return;
+      if (!window.localStorage) {
+        return;
+      }
       var p = payload && typeof payload === 'object' ? payload : {};
       p.created_at = Date.now();
       window.localStorage.setItem(CHECKOUT_LOCK_KEY, JSON.stringify(p));
     } catch (e) {
-      /* ignore */
+      /* ignore storage failures */
     }
   }
 
   function clearCheckoutLock() {
     try {
-      if (window.localStorage) window.localStorage.removeItem(CHECKOUT_LOCK_KEY);
+      if (window.localStorage) {
+        window.localStorage.removeItem(CHECKOUT_LOCK_KEY);
+      }
     } catch (e) {
-      /* ignore */
+      /* ignore storage failures */
     }
   }
 
@@ -245,6 +258,64 @@
     return '';
   }
 
+  function showRegistrationSuccess(form, message) {
+    var msg =
+      (typeof message === 'string' && message) ||
+      'Thank you. Your request has been submitted.';
+    var successEl = document.getElementById('successMsg');
+    var successText = document.getElementById('successText');
+    if (successEl && successText) {
+      successText.textContent = msg;
+      successEl.classList.remove('is-hidden');
+      form.classList.add('is-hidden');
+      successEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    var mktSuccess = document.getElementById('ratebMktRegisterSuccess');
+    if (mktSuccess) {
+      var mktText = mktSuccess.querySelector('[data-success-text]');
+      if (mktText) {
+        mktText.textContent = msg;
+      }
+      mktSuccess.classList.remove('d-none');
+      mktSuccess.removeAttribute('hidden');
+      form.classList.add('d-none');
+      form.setAttribute('hidden', 'hidden');
+      mktSuccess.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    window.alert(msg);
+  }
+
+  function submitRegistrationRequest(payload, afterSaveUrl) {
+    postRegistrationRequest(payload).then(function (res) {
+      if (res.ok && res.parsed && res.parsed.success) {
+        clearCheckoutLock();
+        if (afterSaveUrl) {
+          window.location.assign(afterSaveUrl);
+          return;
+        }
+        showRegistrationSuccess(form, res.parsed.message);
+        return;
+      }
+      clearCheckoutLock();
+      var msg = res.parsed && res.parsed.message;
+      window.alert((typeof msg === 'string' && msg) || 'Could not submit. Please try again.');
+    }).catch(function () {
+      clearCheckoutLock();
+      window.alert('Could not reach the server. Please try again.');
+    }).finally(function () {
+      window.setTimeout(function () {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = defaultBtnHtml;
+      }, 0);
+    });
+  }
+
+  function usesRegisterOnlyCheckout(payload) {
+    return String(payload.payment_method || '').trim().toLowerCase() === 'register';
+  }
+
   function postRegistrationRequest(payload) {
     var requestUrl = apiBaseUrl() + '/api/registration-request.php';
     return fetchWithTimeout(requestUrl, {
@@ -323,6 +394,18 @@
       if (typeof p.hint === 'string' && p.hint) {
         bits.push(p.hint);
       }
+      if (typeof p.order_http_status === 'number' && p.order_http_status > 0) {
+        bits.push('order_http_status=' + String(p.order_http_status));
+      }
+      if (typeof p.order_curl_error === 'string' && p.order_curl_error) {
+        bits.push('order_curl_error=' + p.order_curl_error);
+      }
+      if (typeof p.order_error_hint === 'string' && p.order_error_hint) {
+        bits.push('order_error_hint=' + p.order_error_hint);
+      }
+      if (typeof p.order_error_body === 'string' && p.order_error_body) {
+        bits.push('order_error_body=' + p.order_error_body.slice(0, 260));
+      }
       if (bits.length) {
         return bits.join(' — ');
       }
@@ -351,6 +434,7 @@
       form.reportValidity();
       return;
     }
+
     var payload = buildOrderPayload(form);
     var identity = normalizeLockIdentity(payload);
     var existingLock = readCheckoutLock();
@@ -386,29 +470,8 @@
     var planAmount = parseFloat(payload.plan_amount) || 0;
     var afterSaveUrl = resolveAfterSaveUrl(form);
 
-    if (planVal === 'pro' || planAmount <= 0) {
-      postRegistrationRequest(payload).then(function (res) {
-        if (res.ok && res.parsed && res.parsed.success) {
-          clearCheckoutLock();
-          if (afterSaveUrl) {
-            window.location.assign(afterSaveUrl);
-            return;
-          }
-          window.alert(res.parsed.message || 'Thank you. Your request has been submitted.');
-          return;
-        }
-        clearCheckoutLock();
-        var msg = res.parsed && res.parsed.message;
-        window.alert((typeof msg === 'string' && msg) || 'Could not submit. Please try again.');
-      }).catch(function () {
-        clearCheckoutLock();
-        window.alert('Could not reach the server. Please try again.');
-      }).finally(function () {
-        window.setTimeout(function () {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = defaultBtnHtml;
-        }, 0);
-      });
+    if (usesRegisterOnlyCheckout(payload) || planVal === 'pro' || planAmount <= 0) {
+      submitRegistrationRequest(payload, afterSaveUrl);
       return;
     }
 

@@ -41,6 +41,9 @@ $isRtl = function_exists('rateb_is_rtl') && rateb_is_rtl();
         </button>
         <h2 class="h4 mb-1"><i class="fas fa-building me-2"></i><?php echo __('cms_agency_register_title'); ?></h2>
         <p class="text-muted small mb-4"><?php echo __('cms_agency_register_intro'); ?></p>
+        <div id="ratebMktRegisterSuccess" class="alert alert-success d-none" hidden role="alert">
+            <i class="fas fa-check-circle me-2"></i><span data-success-text><?php echo __('cms_agency_register_success'); ?></span>
+        </div>
         <form id="regForm" dir="<?php echo $isRtl ? 'rtl' : 'ltr'; ?>">
             <input type="hidden" name="plan" id="inputPlan" value="<?php echo htmlspecialchars($checkoutPlan, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="plan_amount" id="inputPlanAmount" value="<?php echo $planAmount !== null ? (float) $planAmount : ''; ?>">

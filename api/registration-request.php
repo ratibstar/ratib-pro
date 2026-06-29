@@ -148,8 +148,11 @@ if ($paymentStatus !== null && !in_array($paymentStatus, ['unpaid', 'paid', 'pen
     $paymentStatus = null;
 }
 // Validate payment_method if provided
-if ($paymentMethod !== null && !in_array($paymentMethod, ['paypal', 'tap', 'register'])) {
+if ($paymentMethod !== null && !in_array($paymentMethod, ['paypal', 'tap', 'register'], true)) {
     $paymentMethod = null;
+}
+if ($paymentStatus === null) {
+    $paymentStatus = 'unpaid';
 }
 
 // EN: Build INSERT dynamically to support mixed database schema versions safely.
