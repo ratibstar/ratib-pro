@@ -79,6 +79,9 @@ BINARY_EXTENSIONS = frozenset({
 
 
 def is_binary_upload(rel: str) -> bool:
+    norm = rel.replace("\\", "/")
+    if norm.startswith("rateb-erp/migrations/") and norm.endswith(".sql"):
+        return True
     return os.path.splitext(rel)[1].lower() in BINARY_EXTENSIONS
 
 
@@ -682,6 +685,28 @@ def git_changed_paths() -> set[str]:
         return set()
 
 
+def rateb_erp_migration_files() -> list[str]:
+    """ERP migration SQL must upload as raw bytes (UTF-8 Arabic breaks via save_file_content)."""
+    out: list[str] = []
+    for path in glob.glob("rateb-erp/migrations/*.sql"):
+        if os.path.isfile(path):
+            out.append(path.replace("\\", "/"))
+    return sorted(set(out))
+
+
+def should_rebaseline_erp_migrations(changed: set[str]) -> bool:
+    needles = (
+        "scripts/github-cpanel-fileman-deploy-core.py",
+        "rateb-erp/app/services/MigrationService.php",
+        "rateb-erp/migrations/",
+    )
+    return any(
+        path == needle or path.startswith(needle)
+        for path in changed
+        for needle in needles
+    )
+
+
 def rateb_branded_asset_files() -> list[str]:
     """Always sync renamed rateb-* assets so fast deploy cannot leave stale ratib-* on server."""
     patterns = (
@@ -819,6 +844,18 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
             continue
         core.append(rel)
         seen.add(rel)
+    changed_paths = git_changed_paths()
+    if should_rebaseline_erp_migrations(changed_paths):
+        migration_files = rateb_erp_migration_files()
+        print(
+            f"fast deploy: rebaseline {len(migration_files)} ERP migration SQL files (binary UTF-8)",
+            flush=True,
+        )
+        for rel in migration_files:
+            if rel in seen or rel == marker:
+                continue
+            core.append(rel)
+            seen.add(rel)
     extras: list[str] = []
     deployable = deployable_changed_paths()
     large_commit = len(deployable) > FAST_DEPLOY_LARGE_COMMIT_THRESHOLD

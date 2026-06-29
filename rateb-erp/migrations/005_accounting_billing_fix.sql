@@ -18,15 +18,15 @@ LEFT JOIN rateb_plans p ON p.id = s.plan_id
 WHERE p.id IS NULL;
 
 INSERT INTO rateb_companies (name, slug, email, status, plan_id, user_limit, storage_limit_mb)
-SELECT 'شركة تجريبية', 'demo-company', 'demo@rateb.sa', 'active', p.id, 10, 1024
+SELECT 'Demo Company', 'demo-company', 'demo@rateb.sa', 'active', p.id, 10, 1024
 FROM rateb_plans p
 WHERE p.slug = 'starter'
   AND NOT EXISTS (SELECT 1 FROM rateb_companies LIMIT 1)
 LIMIT 1;
 
-INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
-('Manage Billing', 'إدارة الفوترة', 'billing.manage', 'accounting', 'Manage invoices and payments', 'إدارة الفواتير والمدفوعات')
-ON DUPLICATE KEY UPDATE name_ar = VALUES(name_ar);
+INSERT INTO rateb_permissions (name, slug, module, description) VALUES
+('Manage Billing', 'billing.manage', 'accounting', 'Manage invoices and payments')
+ON DUPLICATE KEY UPDATE name = VALUES(name), module = VALUES(module), description = VALUES(description);
 
 INSERT INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r

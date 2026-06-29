@@ -1,12 +1,12 @@
 -- RATEB ERP — Accounting module + Access control permissions
 SET NAMES utf8mb4;
 
-INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
-('Manage Access Control', 'إدارة التحكم بالوصول', 'access.manage', 'access', 'Full users, roles, permissions control', 'التحكم الكامل بالمستخدمين والأدوار والصلاحيات'),
-('View Accounting', 'عرض الحسابات', 'accounting.view', 'accounting', 'View chart of accounts and journals', 'عرض دليل الحسابات والقيود'),
-('Manage Accounting', 'إدارة الحسابات', 'accounting.manage', 'accounting', 'Manage chart of accounts and journal entries', 'إدارة دليل الحسابات والقيود اليومية'),
-('Post Journal Entries', 'ترحيل القيود', 'accounting.post', 'accounting', 'Post and void journal entries', 'ترحيل وإلغاء القيود المحاسبية')
-ON DUPLICATE KEY UPDATE name_ar = VALUES(name_ar), description_ar = VALUES(description_ar);
+INSERT INTO rateb_permissions (name, slug, module, description) VALUES
+('Manage Access Control', 'access.manage', 'access', 'Full users, roles, permissions control'),
+('View Accounting', 'accounting.view', 'accounting', 'View chart of accounts and journals'),
+('Manage Accounting', 'accounting.manage', 'accounting', 'Manage chart of accounts and journal entries'),
+('Post Journal Entries', 'accounting.post', 'accounting', 'Post and void journal entries')
+ON DUPLICATE KEY UPDATE name = VALUES(name), module = VALUES(module), description = VALUES(description);
 
 INSERT INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r
