@@ -34,6 +34,12 @@ $leadReturnPath = 'admin/cms/leads/' . (int) ($lead['id'] ?? 0);
     · <?php echo !empty($mailDiag['ready']) ? __('mail_settings_ready') : __('mail_settings_incomplete'); ?>
 </div>
 <?php } ?>
+<?php
+$mailDns = $mailDns ?? null;
+if (is_array($mailDns) && empty($mailDns['ready_for_external'])) {
+    Rateb\App\Core\View::partial('admin/mail-dns-panel', ['mailDns' => $mailDns]);
+}
+?>
 <div class="row g-3">
     <div class="col-lg-7">
         <div class="rateb-card">

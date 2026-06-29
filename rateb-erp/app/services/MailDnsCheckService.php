@@ -27,6 +27,31 @@ final class MailDnsCheckService
             'dmarc' => $dmarc,
             'mx' => $mx,
             'ready_for_external' => $spf['ok'] && $dkim['ok'] && $mx['ok'],
+            'recommendations' => $this->recommendedRecords($domain, $spf['ok'], $dkim['ok']),
+        ];
+    }
+
+    /**
+     * @return array{spf:array{host:string,type:string,value:string},dmarc:array{host:string,type:string,value:string},dkim_note:string}
+     */
+    public function recommendedRecords(string $domain = 'rateb.sa', ?bool $spfOk = null, ?bool $dkimOk = null): array
+    {
+        $domain = strtolower(trim($domain)) ?: 'rateb.sa';
+        return [
+            'spf' => [
+                'host' => '@',
+                'type' => 'TXT',
+                'value' => 'v=spf1 a mx include:mail.' . $domain . ' ~all',
+                'needed' => $spfOk !== true,
+            ],
+            'dmarc' => [
+                'host' => '_dmarc',
+                'type' => 'TXT',
+                'value' => 'v=DMARC1; p=none; rua=mailto:info@' . $domain,
+                'needed' => true,
+            ],
+            'dkim_note' => __('mail_dns_dkim_da_copy'),
+            'dkim_needed' => $dkimOk !== true,
         ];
     }
 

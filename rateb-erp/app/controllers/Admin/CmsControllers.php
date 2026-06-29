@@ -369,6 +369,8 @@ final class CmsLeadsController extends Controller
         $notes = (new CmsLeadNote())->all(50, 0, ['lead_id' => $id]);
         $mailSvc = new \Rateb\App\Services\MailConfigService();
         $mailCfg = $mailSvc->resolve();
+        $fromDomain = \Rateb\App\Helpers\Str::emailDomain((string) ($mailCfg['from_email'] ?? 'info@rateb.sa'));
+        $mailDns = (new \Rateb\App\Services\MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
         $this->view('admin/cms/leads/show', [
             'title' => __('cms_leads'),
             'lead' => $lead,
@@ -378,6 +380,7 @@ final class CmsLeadsController extends Controller
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
             'mailHost' => (string) ($mailCfg['host'] ?? ''),
             'mailDiag' => (new \Rateb\App\Services\MailTestService())->diagnostics(),
+            'mailDns' => $mailDns,
         ], 'main');
     }
 

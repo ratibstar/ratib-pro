@@ -67,35 +67,7 @@ $mailRelay = !empty($mailRelay);
         <p class="text-muted small mb-2"><?php echo __('mail_localhost_warning'); ?></p>
         <div class="alert alert-warning small py-2 mb-2"><?php echo __('mail_relay_steps'); ?></div>
         <?php } ?>
-        <?php
-        $mailDns = $mailDns ?? null;
-        if (is_array($mailDns)) {
-            $dnsBadge = static function (bool $ok): string {
-                return $ok ? 'bg-success' : 'bg-danger';
-            };
-            ?>
-        <div class="border rounded p-2 mb-3 small">
-            <div class="fw-semibold mb-2"><i class="fas fa-globe"></i> <?php echo __('mail_dns_check_title'); ?> — <?php echo Rateb\App\Core\View::escape((string) ($mailDns['domain'] ?? 'rateb.sa')); ?></div>
-            <ul class="list-unstyled mb-2">
-                <li><span class="badge <?php echo $dnsBadge(!empty($mailDns['spf']['ok'])); ?>"><?php echo !empty($mailDns['spf']['ok']) ? 'SPF ✓' : 'SPF ✗'; ?></span>
-                    <?php echo Rateb\App\Core\View::escape((string) ($mailDns['spf']['detail'] ?? '')); ?></li>
-                <li class="mt-1"><span class="badge <?php echo $dnsBadge(!empty($mailDns['dkim']['ok'])); ?>"><?php echo !empty($mailDns['dkim']['ok']) ? 'DKIM ✓' : 'DKIM ✗'; ?></span>
-                    <?php echo Rateb\App\Core\View::escape((string) ($mailDns['dkim']['detail'] ?? '')); ?></li>
-                <li class="mt-1"><span class="badge <?php echo $dnsBadge(!empty($mailDns['dmarc']['ok'])); ?>"><?php echo !empty($mailDns['dmarc']['ok']) ? 'DMARC ✓' : 'DMARC ○'; ?></span>
-                    <?php echo Rateb\App\Core\View::escape((string) ($mailDns['dmarc']['detail'] ?? '')); ?></li>
-                <li class="mt-1"><span class="badge <?php echo $dnsBadge(!empty($mailDns['mx']['ok'])); ?>">MX</span>
-                    <?php echo Rateb\App\Core\View::escape((string) ($mailDns['mx']['detail'] ?? '')); ?></li>
-            </ul>
-            <?php if (empty($mailDns['ready_for_external'])) { ?>
-            <p class="text-danger mb-1"><?php echo __('mail_dns_not_ready'); ?></p>
-            <p class="text-muted mb-1"><?php echo __('mail_dns_directadmin_steps'); ?></p>
-            <p class="text-muted mb-1"><?php echo __('mail_dns_hawsabah_hint'); ?></p>
-            <?php } else { ?>
-            <p class="text-success mb-1"><?php echo __('mail_dns_ready'); ?></p>
-            <?php } ?>
-            <p class="text-warning mb-0"><?php echo __('mail_port25_blocked_hint'); ?></p>
-        </div>
-        <?php } ?>
+        <?php Rateb\App\Core\View::partial('admin/mail-dns-panel', ['mailDns' => $mailDns ?? null]); ?>
         <form method="post" action="<?php echo rateb_url('admin/settings/test-mail'); ?>" class="row g-2 align-items-end border-top pt-3">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-6">
