@@ -146,11 +146,6 @@ $cpT = static function (string $key): string {
                                     $reqWhere = " AND (country_id IN ($idsStr)$nameMatch)";
                                 }
                                 $pendingSafety = '';
-                                $psCol = @$ctrl->query("SHOW COLUMNS FROM control_registration_requests LIKE 'payment_status'");
-                                $hasPaymentStatusCol = ($psCol && $psCol->num_rows > 0);
-                                if ($hasPaymentStatusCol) {
-                                    $pendingSafety = " AND (LOWER(TRIM(COALESCE(payment_status,''))) = 'paid' OR LOWER(TRIM(COALESCE(plan,''))) = 'pro')";
-                                }
                                 $res = $ctrl->query("SELECT COUNT(*) as c FROM control_registration_requests WHERE status = 'pending'" . $reqWhere . $pendingSafety);
                                 if ($res) $pendingCount = (int)($res->fetch_assoc()['c'] ?? 0);
                             }

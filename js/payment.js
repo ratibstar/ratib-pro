@@ -34,6 +34,10 @@
     if (!data.payment_status) {
       data.payment_status = 'unpaid';
     }
+    var pageLang = (document.documentElement.lang || '').toLowerCase();
+    if (pageLang.indexOf('ar') === 0) {
+      data.lang = 'ar';
+    }
 
     var countrySelect = document.getElementById('countrySelect');
     var countryVal = countrySelect ? countrySelect.value : '';
@@ -259,9 +263,19 @@
   }
 
   function showRegistrationSuccess(form, message) {
-    var msg =
-      (typeof message === 'string' && message) ||
-      'Thank you. Your request has been submitted.';
+    var msg = '';
+    var mktSuccess = document.getElementById('ratebMktRegisterSuccess');
+    if (mktSuccess) {
+      var mktText = mktSuccess.querySelector('[data-success-text]');
+      if (mktText) {
+        msg = String(mktText.textContent || '').trim();
+      }
+    }
+    if (!msg) {
+      msg =
+        (typeof message === 'string' && message) ||
+        'Thank you. Your request has been submitted.';
+    }
     var successEl = document.getElementById('successMsg');
     var successText = document.getElementById('successText');
     if (successEl && successText) {

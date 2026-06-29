@@ -104,11 +104,6 @@ if ($method === 'GET') {
     if ($status === '') {
         $whereForApi[] = "LOWER(TRIM(COALESCE(status,''))) <> 'approved'";
     }
-    // Default safety: when no explicit payment filter is set, list only paid registrations
-    // (plus optional non-paid Pro inquiries) to avoid treating unpaid paid-plans as valid.
-    if ($hasPaymentStatus && $paymentStatusFilter === '') {
-        $whereForApi[] = "(LOWER(TRIM(COALESCE(payment_status,''))) = 'paid' OR LOWER(TRIM(COALESCE(plan,''))) = 'pro')";
-    }
     $whereClause = $whereForApi ? ' WHERE ' . implode(' AND ', $whereForApi) : '';
 
     $total = (int)($ctrl->query("SELECT COUNT(*) as c FROM control_registration_requests" . $whereClause)->fetch_assoc()['c'] ?? 0);

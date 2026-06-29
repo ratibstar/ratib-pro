@@ -165,15 +165,10 @@ if ($chk2 && $chk2->num_rows > 0) {
         $agencyIdPart = $hasAgencyIdCol ? " OR agency_id LIKE '%" . $q . "%'" : "";
         $conds[] = "(" . $idPart . "agency_name LIKE '%" . $q . "%'" . $agencyIdPart . " OR contact_email LIKE '%" . $q . "%' OR country_name LIKE '%" . $q . "%' OR notes LIKE '%" . $q . "%')";
     }
-    /* List default: hide approved (they live under Manage Agencies). Stats/export still use $where unless noted. */
+    /* List default: hide approved (they live under Manage Agencies). */
     $condsForList = $conds;
     if ($status === '') {
         $condsForList[] = "LOWER(TRIM(COALESCE(status,''))) <> 'approved'";
-    }
-    // Default safety: without explicit payment filter, show only paid registrations
-    // (plus Pro inquiry rows) so unpaid paid-plans don't appear in active queue.
-    if ($hasPaymentStatusCol && $paymentStatusFilter === '') {
-        $condsForList[] = "(LOWER(TRIM(COALESCE(payment_status,''))) = 'paid' OR LOWER(TRIM(COALESCE(plan,''))) = 'pro')";
     }
     $whereForList = count($condsForList) ? ' WHERE ' . implode(' AND ', $condsForList) : '';
     $where = count($conds) ? ' WHERE ' . implode(' AND ', $conds) : '';
@@ -324,7 +319,7 @@ $statusCards = [
     'inactive' => 0
 ];
 if ($tableExists) {
-    // Card totals must match table filters (including default hide-approved and default paid/pro safety).
+    // Card totals must match table filters (including default hide-approved).
     if ($hasPaymentStatusCol) {
         $statusSql = "SELECT 
                     COUNT(*) AS total,

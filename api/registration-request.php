@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/payment_control_registration_sync.php';
 
 function jsonOut($data) {
     while (ob_get_level() > 0) ob_end_clean();
@@ -39,23 +40,9 @@ function jsonOut($data) {
 // EN: Prefer control DB so requests are visible in control-center workflows.
 // AR: تفضيل قاعدة التحكم لضمان ظهور الطلبات داخل تدفقات مركز التحكم.
 // Use control panel DB so registration requests appear in control panel; fallback to main conn
-$conn = null;
-if (defined('CONTROL_PANEL_DB_NAME') && CONTROL_PANEL_DB_NAME !== '' && defined('DB_HOST') && defined('DB_USER')) {
-    $ctrlDb = CONTROL_PANEL_DB_NAME;
-    $mainDb = defined('DB_NAME') ? DB_NAME : '';
-    if ($ctrlDb !== $mainDb) {
-        try {
-            $conn = @new mysqli(DB_HOST, DB_USER, defined('DB_PASS') ? DB_PASS : '', $ctrlDb, defined('DB_PORT') ? (int)DB_PORT : 3306);
-            if ($conn && !$conn->connect_error) {
-                $conn->set_charset('utf8mb4');
-            } else {
-                if ($conn) { $conn->close(); }
-                $conn = $GLOBALS['conn'] ?? null;
-            }
-        } catch (Throwable $e) {
-            $conn = $GLOBALS['conn'] ?? null;
-        }
-    }
+$conn = function_exists('payment_control_panel_mysqli') ? payment_control_panel_mysqli() : null;
+if (!$conn) {
+    $conn = $GLOBALS['control_conn'] ?? null;
 }
 if (!$conn) {
     $conn = $GLOBALS['conn'] ?? null;
@@ -210,7 +197,17 @@ call_user_func_array([$stmt, 'bind_param'], $bindArgs);
 
 if ($stmt->execute()) {
     $insertId = (int)($conn->insert_id ?? 0);
-    $out = ['success' => true, 'message' => 'Thank you. Your request has been submitted. We will contact you soon.'];
+    $lang = strtolower(trim((string)($input['lang'] ?? '')));
+    if ($lang === '' && !empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        $lang = strtolower(substr((string) $_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2));
+    }
+    $isAr = ($lang === 'ar');
+    $out = [
+        'success' => true,
+        'message' => $isAr
+            ? 'شكراً لك. تم استلام طلبك وسنتواصل معك لإرسال رابط الدفع.'
+            : 'Thank you. Your request has been submitted. We will contact you soon.',
+    ];
     // Always include registration_id when Tap flow requested (so frontend can redirect to payment)
     if ($insertId > 0 && $paymentMethod === 'tap') {
         $out['registration_id'] = (string)$insertId;
