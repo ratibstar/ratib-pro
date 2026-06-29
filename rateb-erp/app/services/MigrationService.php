@@ -165,6 +165,22 @@ final class MigrationService
         $sql = $this->normalizeMigrationFileContents($sql);
         $sql = preg_replace('/^\s*USE\s+`[^`]+`\s*;\s*/mi', '', $sql) ?? $sql;
         $this->bootstrapMigrationCharset($pdo);
+
+        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
+            try {
+                $pdo->exec($sql);
+                $this->drainPdoMultiResults($pdo);
+
+                return;
+            } catch (\PDOException $e) {
+                $this->drainPdoMultiResults($pdo);
+                if ($this->isBenignMigrationError($e->getMessage())) {
+                    return;
+                }
+                throw $e;
+            }
+        }
+
         foreach ($this->splitStatements($sql) as $statement) {
             if ($statement === '') {
                 continue;
@@ -197,17 +213,22 @@ final class MigrationService
         $stmt->closeCursor();
     }
 
+    private function drainPdoMultiResults(PDO $pdo): void
+    {
+        try {
+            while ($pdo->nextRowset()) {
+                // drain remaining result sets from multi-statement migration files
+            }
+        } catch (\PDOException $e) {
+            // no more rowsets
+        }
+    }
+
     private function normalizeMigrationFileContents(string $sql): string
     {
         $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql) ?? $sql;
         if ($sql === '') {
             return '';
-        }
-        if (!mb_check_encoding($sql, 'UTF-8')) {
-            $converted = @mb_convert_encoding($sql, 'UTF-8', 'UTF-8');
-            if (is_string($converted) && $converted !== '') {
-                $sql = $converted;
-            }
         }
 
         return str_replace("\r\n", "\n", str_replace("\r", "\n", $sql));

@@ -195,6 +195,8 @@ FAST_FILES = [
     "includes/rateb-home-public-nav-bootstrap.php",
     "control-panel/includes/control/sidebar.php",
     "control-panel/includes/control/ErpProvisioningService.php",
+    "rateb-erp/app/services/MigrationService.php",
+    "rateb-erp/migrations/003_permissions_ar_evaluations.sql",
     "control-panel/includes/control/contact-center-bridge.php",
     "control-panel/includes/control/contact-center-nav.php",
     "control-panel/pages/control/contact-center.php",

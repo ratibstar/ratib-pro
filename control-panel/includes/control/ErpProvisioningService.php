@@ -103,6 +103,10 @@ final class ErpProvisioningService
 
         try {
             self::ensureErpDatabase($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
+            if (self::shouldWipeErpDatabase($agency, $dbHost, $dbPort, $dbUser, $dbPass, $erpDb)) {
+                self::wipeErpDatabaseTables($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
+            }
+            self::ensureDatabaseUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
             $migrationLog = self::runErpMigrations($erpDb, $dbHost, $dbPort, $dbUser, $dbPass);
             $seed = self::seedDedicatedCompany($agency, $erpDb, $dbHost, $dbPort, $dbUser, $dbPass, $planSlug);
             self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
@@ -256,13 +260,88 @@ final class ErpProvisioningService
 
     private static function databaseAccessHelpMessage(string $dbName, string $dbUser, ?string $createError): string
     {
-        $hint = 'On DirectAdmin: MySQL Management → create database "' . $dbName
-            . '" → Add user "' . $dbUser . '" with ALL privileges → Provision ERP again.';
+        $hint = 'Control Panel could not create the ERP database automatically on this host. '
+            . 'Create "' . $dbName . '" once in DirectAdmin → MySQL Management, grant "' . $dbUser . '" ALL, then click Provision ERP again.';
         if ($createError !== null && $createError !== '') {
             return $createError . '. ' . $hint;
         }
 
         return 'ERP database is not accessible. ' . $hint;
+    }
+
+    /** @param array<string, mixed> $agency */
+    private static function shouldWipeErpDatabase(
+        array $agency,
+        string $host,
+        int $port,
+        string $user,
+        string $pass,
+        string $dbName
+    ): bool {
+        $status = strtolower(trim((string) ($agency['erp_status'] ?? 'none')));
+        if (in_array($status, ['failed', 'provisioning'], true)) {
+            return true;
+        }
+
+        return self::erpDatabaseHasPartialSchema($host, $port, $user, $pass, $dbName);
+    }
+
+    private static function erpDatabaseHasPartialSchema(
+        string $host,
+        int $port,
+        string $user,
+        string $pass,
+        string $dbName
+    ): bool {
+        if (!self::canConnectToDatabase($host, $port, $user, $pass, $dbName)) {
+            return false;
+        }
+        try {
+            $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
+            $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+            if ($tables === [] || $tables === false) {
+                return false;
+            }
+            $migrationCount = 0;
+            if (in_array('rateb_migrations', $tables, true)) {
+                $migrationCount = (int) $pdo->query('SELECT COUNT(*) FROM rateb_migrations')->fetchColumn();
+            }
+
+            return $migrationCount > 0 && $migrationCount < 40;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private static function wipeErpDatabaseTables(
+        string $host,
+        int $port,
+        string $user,
+        string $pass,
+        string $dbName
+    ): void {
+        if (!self::canConnectToDatabase($host, $port, $user, $pass, $dbName)) {
+            return;
+        }
+        $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
+        $options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
+            $options[PDO::MYSQL_ATTR_MULTI_STATEMENTS] = true;
+        }
+        $pdo = new PDO($dsn, $user, $pass, $options);
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+        $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+        if (is_array($tables)) {
+            foreach ($tables as $table) {
+                $table = (string) $table;
+                if ($table === '') {
+                    continue;
+                }
+                $pdo->exec('DROP TABLE IF EXISTS `' . str_replace('`', '``', $table) . '`');
+            }
+        }
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
     }
 
     private static function ensureDatabaseUtf8mb4(string $host, int $port, string $user, string $pass, string $dbName): void
@@ -294,7 +373,6 @@ final class ErpProvisioningService
         if (!defined('RATEB_ENV_NO_SESSION')) {
             define('RATEB_ENV_NO_SESSION', true);
         }
-        self::ensureDatabaseUtf8mb4($host, $port, $user, $pass, $dbName);
         require_once $erpRoot . '/app/Core/Database.php';
         require_once $erpRoot . '/app/services/MigrationService.php';
 
