@@ -52,7 +52,7 @@ if (!is_array($data)) {
 }
 
 $agencyId = (int) ($data['agency_id'] ?? $data['id'] ?? 0);
-$planSlug = trim((string) ($data['plan_slug'] ?? 'professional'));
+$planSlug = trim((string) ($data['plan_slug'] ?? $data['erp_plan_slug'] ?? ''));
 if ($agencyId < 1) {
     provisionJson(['success' => false, 'message' => 'Invalid agency id']);
 }
@@ -62,6 +62,8 @@ if ($agency === null) {
     provisionJson(['success' => false, 'message' => 'Agency not found']);
 }
 
+$planSlug = ErpProvisioningService::resolvePlanSlug($agency, $planSlug);
+
 $currentStatus = strtolower(trim((string) ($agency['erp_status'] ?? 'none')));
 if ($currentStatus === 'ready' && trim((string) ($agency['erp_db_name'] ?? '')) !== '') {
     provisionJson([
@@ -69,6 +71,7 @@ if ($currentStatus === 'ready' && trim((string) ($agency['erp_db_name'] ?? '')) 
         'message' => 'ERP already provisioned',
         'erp_db_name' => (string) $agency['erp_db_name'],
         'erp_status' => 'ready',
+        'erp_plan_slug' => (string) ($agency['erp_plan_slug'] ?? $planSlug),
     ]);
 }
 

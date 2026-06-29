@@ -15,7 +15,7 @@
     if (!API_BASE) API_BASE = (window.location.origin + (document.location.pathname.replace(/\/pages\/.*$/, '') || '')) + '/api/control';
 
     // Move modals to body to avoid overlay/stacking blocking clicks (run even on country-cards view)
-    ['viewModal', 'editModal', 'alertModal', 'confirmModal'].forEach(function(id) {
+    ['viewModal', 'editModal', 'alertModal', 'confirmModal', 'erpProvisionModal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el && el.parentNode !== document.body) document.body.appendChild(el);
     });
@@ -511,32 +511,63 @@
         if (!btn) return;
         var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
         if (!agencyId) return;
-        showConfirm('Provision dedicated ERP database for this agency?').then(function(ok) {
-            if (!ok) return;
-            btn.disabled = true;
-            fetch(API_BASE + '/agencies-provision-erp.php', {
+        var planSelect = document.getElementById('erpProvisionPlanSelect');
+        var agencyInput = document.getElementById('erpProvisionAgencyId');
+        var modalEl = document.getElementById('erpProvisionModal');
+        if (!planSelect || !agencyInput || !modalEl || typeof bootstrap === 'undefined') {
+            showAlert('ERP plan dialog is unavailable on this page.');
+            return;
+        }
+        agencyInput.value = String(agencyId);
+        var currentPlan = (btn.getAttribute('data-erp-plan') || 'professional').toLowerCase();
+        planSelect.value = ['starter', 'professional', 'enterprise'].indexOf(currentPlan) >= 0 ? currentPlan : 'professional';
+        new bootstrap.Modal(modalEl).show();
+    });
+
+    var erpProvisionConfirmBtn = document.getElementById('erpProvisionConfirmBtn');
+    if (erpProvisionConfirmBtn) {
+        erpProvisionConfirmBtn.addEventListener('click', function() {
+            var agencyId = parseInt((document.getElementById('erpProvisionAgencyId') || {}).value || '0', 10);
+            var planSelect = document.getElementById('erpProvisionPlanSelect');
+            var planSlug = planSelect ? String(planSelect.value || 'professional') : 'professional';
+            var modalEl = document.getElementById('erpProvisionModal');
+            if (!agencyId) return;
+            erpProvisionConfirmBtn.disabled = true;
+            fetch(API_BASE + '/agencies-erp-plan.php', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agency_id: agencyId, plan_slug: 'professional' })
+                body: JSON.stringify({ agency_id: agencyId, plan_slug: planSlug })
+            }).then(function() {
+                return fetch(API_BASE + '/agencies-provision-erp.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agency_id: agencyId, plan_slug: planSlug })
+                });
             }).then(function(res) { return res.json(); }).then(function(data) {
+                erpProvisionConfirmBtn.disabled = false;
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    var inst = bootstrap.Modal.getInstance(modalEl);
+                    if (inst) inst.hide();
+                }
                 if (!data || !data.success) {
                     showAlert((data && data.message) ? data.message : 'ERP provisioning failed');
-                    btn.disabled = false;
                     return;
                 }
                 var seed = data.data && data.data.seed ? data.data.seed : null;
-                var msg = 'ERP ready on ' + ((data.data && data.data.erp_db_name) ? data.data.erp_db_name : 'database');
+                var plan = (data.data && data.data.erp_plan_slug) ? data.data.erp_plan_slug : planSlug;
+                var msg = 'ERP ready (' + plan + ') on ' + ((data.data && data.data.erp_db_name) ? data.data.erp_db_name : 'database');
                 if (seed && seed.admin_email && seed.admin_password) {
                     msg += '\nAdmin: ' + seed.admin_email + '\nPassword: ' + seed.admin_password;
                 }
                 showAlert(msg);
                 window.location.reload();
             }).catch(function() {
+                erpProvisionConfirmBtn.disabled = false;
                 showAlert('ERP provisioning request failed');
-                btn.disabled = false;
             });
         });
-    });
+    }
 
 })();

@@ -7,11 +7,57 @@ declare(strict_types=1);
 
 final class ErpProvisioningService
 {
+    /** @return list<string> */
+    public static function allowedPlanSlugs(): array
+    {
+        return ['starter', 'professional', 'enterprise'];
+    }
+
+    public static function normalizePlanSlug(string $raw): string
+    {
+        $slug = strtolower(trim($raw));
+        if ($slug === '') {
+            return 'professional';
+        }
+
+        return in_array($slug, self::allowedPlanSlugs(), true) ? $slug : 'professional';
+    }
+
+    /** @param array<string, mixed> $agency */
+    public static function resolvePlanSlug(array $agency, string $override = ''): string
+    {
+        $fromOverride = trim($override);
+        if ($fromOverride !== '') {
+            return self::normalizePlanSlug($fromOverride);
+        }
+        $stored = trim((string) ($agency['erp_plan_slug'] ?? ''));
+
+        return self::normalizePlanSlug($stored);
+    }
+
+    public static function saveAgencyPlan(mysqli $controlConn, int $agencyId, string $planSlug): string
+    {
+        if ($agencyId < 1) {
+            throw new InvalidArgumentException('agency id is required');
+        }
+        self::ensureErpColumns($controlConn);
+        $planSlug = self::normalizePlanSlug($planSlug);
+        $stmt = $controlConn->prepare('UPDATE control_agencies SET erp_plan_slug = ? WHERE id = ?');
+        if (!$stmt) {
+            throw new RuntimeException('Failed to save ERP plan');
+        }
+        $stmt->bind_param('si', $planSlug, $agencyId);
+        $stmt->execute();
+        $stmt->close();
+
+        return $planSlug;
+    }
+
     /**
      * @param array<string, mixed> $agency
      * @return array<string, mixed>
      */
-    public static function provision(mysqli $controlConn, array $agency, string $planSlug = 'professional'): array
+    public static function provision(mysqli $controlConn, array $agency, string $planSlug = ''): array
     {
         $agencyId = (int) ($agency['id'] ?? 0);
         if ($agencyId < 1) {
@@ -19,6 +65,7 @@ final class ErpProvisioningService
         }
 
         self::ensureErpColumns($controlConn);
+        $planSlug = self::saveAgencyPlan($controlConn, $agencyId, self::resolvePlanSlug($agency, $planSlug));
 
         $slug = trim((string) ($agency['slug'] ?? ''));
         if ($slug === '') {
@@ -64,6 +111,7 @@ final class ErpProvisioningService
                 'agency_id' => $agencyId,
                 'erp_db_name' => $erpDb,
                 'erp_status' => 'ready',
+                'erp_plan_slug' => $planSlug,
                 'migration_log' => $migrationLog,
                 'seed' => $seed,
             ];
@@ -82,13 +130,23 @@ final class ErpProvisioningService
             'erp_db_pass' => 'VARCHAR(255) NULL',
             "erp_status" => "ENUM('none','provisioning','ready','failed') NOT NULL DEFAULT 'none'",
             'erp_provisioned_at' => 'DATETIME NULL',
+            "erp_plan_slug" => "VARCHAR(32) NOT NULL DEFAULT 'professional'",
+        ];
+        $afterMap = [
+            'erp_db_name' => 'db_name',
+            'erp_db_host' => 'erp_db_name',
+            'erp_db_user' => 'erp_db_host',
+            'erp_db_pass' => 'erp_db_user',
+            'erp_status' => 'erp_db_pass',
+            'erp_provisioned_at' => 'erp_status',
+            'erp_plan_slug' => 'erp_provisioned_at',
         ];
         foreach ($columns as $name => $definition) {
             $res = @$controlConn->query("SHOW COLUMNS FROM control_agencies LIKE '" . $controlConn->real_escape_string($name) . "'");
             if ($res && $res->num_rows > 0) {
                 continue;
             }
-            $after = $name === 'erp_db_name' ? 'db_name' : null;
+            $after = $afterMap[$name] ?? null;
             $sql = 'ALTER TABLE control_agencies ADD COLUMN `' . $name . '` ' . $definition;
             if ($after !== null) {
                 $sql .= ' AFTER `' . $after . '`';

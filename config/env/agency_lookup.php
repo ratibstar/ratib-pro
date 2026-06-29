@@ -55,7 +55,7 @@ if (!function_exists('rateb_agency_lookup_select_columns')) {
             return $base;
         }
 
-        return $base . ', erp_db_name, erp_db_host, erp_db_user, erp_db_pass, erp_status, erp_provisioned_at';
+        return $base . ', erp_db_name, erp_db_host, erp_db_user, erp_db_pass, erp_status, erp_provisioned_at, erp_plan_slug';
     }
 }
 

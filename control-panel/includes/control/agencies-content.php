@@ -456,6 +456,7 @@ if ($agencyIdFilter > 0) {
                     <th>DB Name</th>
                     <th>ERP DB</th>
                     <th>ERP</th>
+                    <th>ERP Plan</th>
                     <th>Created</th>
                     <th>Renewal</th>
                     <th>Status</th>
@@ -485,6 +486,7 @@ echo htmlspecialchars($cname ?: '-');
                     <td><?php echo htmlspecialchars($r['db_name'] ?? '-'); ?></td>
                     <td class="agencies-url-cell" title="<?php echo htmlspecialchars((string) ($r['erp_db_name'] ?? '')); ?>"><?php echo htmlspecialchars((string) (($r['erp_db_name'] ?? '') ?: '—')); ?></td>
                     <td><span class="badge badge-erp-<?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none')); ?></span></td>
+                    <td><?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional')); ?></td>
                     <td><?php echo isset($r['created_at']) ? substr($r['created_at'], 0, 10) : '-'; ?></td>
                     <td><?php echo $renewalDate($r); ?></td>
                     <td><span class="badge <?php
@@ -539,7 +541,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                         <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#db-control'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_db_status" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">DB Status</a>
                         <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#query-console'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_query_activity" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Query Activity</a>
                         <?php if (($r['erp_status'] ?? 'none') !== 'ready') { ?>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-provision-erp" data-agency-id="<?php echo (int) $r['id']; ?>" data-permission="control_agencies,edit_control_agency">Provision ERP</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-provision-erp" data-agency-id="<?php echo (int) $r['id']; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency">Provision ERP</button>
                         <?php } elseif (!empty($r['site_url'])) { ?>
                         <a href="<?php echo htmlspecialchars(rtrim((string) $r['site_url'], '/') . '/rateb-erp/public/company/login'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info">ERP Login</a>
                         <?php } ?>
@@ -754,6 +756,30 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
             </div>
             <div class="modal-footer justify-content-center border-top border-secondary py-2">
                 <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="erpProvisionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content agencies-modal-content" dir="ltr">
+            <div class="modal-header border-bottom border-secondary py-2">
+                <h5 class="modal-title h6 mb-0">Provision RATEB ERP</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="small text-muted mb-3">Choose the ERP package before creating the dedicated database and company.</p>
+                <label class="form-label" for="erpProvisionPlanSelect">Package</label>
+                <select class="form-select form-select-sm" id="erpProvisionPlanSelect">
+                    <option value="starter">Starter — essential procurement</option>
+                    <option value="professional" selected>Professional — full suite</option>
+                    <option value="enterprise">Enterprise — all modules</option>
+                </select>
+                <input type="hidden" id="erpProvisionAgencyId" value="">
+            </div>
+            <div class="modal-footer border-top border-secondary py-2 gap-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="erpProvisionConfirmBtn">Provision ERP</button>
             </div>
         </div>
     </div>
