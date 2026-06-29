@@ -393,51 +393,6 @@
 .nav-item:nth-child(13):hover { background: rgba(100, 116, 139, 0.3); }
 .nav-item:nth-child(13).active { background: linear-gradient(90deg, rgba(100, 116, 139, 0.4) 0%, rgba(100, 116, 139, 0.25) 100%); }
 
-/* Register Pro - Full Green with pulse attention animation - override nth-child */
-@keyframes registerProPulse {
-    0%, 100% { transform: translateX(0) scale(1); }
-    50% { transform: translateX(0) scale(1.35); }
-}
-.main-nav .nav-item.nav-register-pro,
-#mainNav .nav-item.nav-register-pro {
-    color: #22c55e !important;
-    animation: registerProPulse 2s ease-in-out infinite;
-}
-.main-nav .nav-item.nav-register-pro .nav-icon,
-.main-nav .nav-item.nav-register-pro span,
-#mainNav .nav-item.nav-register-pro .nav-icon,
-#mainNav .nav-item.nav-register-pro span {
-    color: #22c55e !important;
-}
-.main-nav .nav-item.nav-register-pro::before,
-#mainNav .nav-item.nav-register-pro::before {
-    background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%) !important;
-    box-shadow: 0 0 10px rgba(34, 197, 94, 0.6) !important;
-}
-.main-nav .nav-item.nav-register-pro:hover,
-#mainNav .nav-item.nav-register-pro:hover {
-    background: rgba(34, 197, 94, 0.25) !important;
-    color: #4ade80 !important;
-    animation: none;
-}
-.main-nav .nav-item.nav-register-pro:hover .nav-icon,
-.main-nav .nav-item.nav-register-pro:hover span,
-#mainNav .nav-item.nav-register-pro:hover .nav-icon,
-#mainNav .nav-item.nav-register-pro:hover span {
-    color: #4ade80 !important;
-}
-.main-nav .nav-item.nav-register-pro.active,
-#mainNav .nav-item.nav-register-pro.active {
-    background: rgba(34, 197, 94, 0.2) !important;
-    color: #22c55e !important;
-}
-.main-nav .nav-item.nav-register-pro.active .nav-icon,
-.main-nav .nav-item.nav-register-pro.active span,
-#mainNav .nav-item.nav-register-pro.active .nav-icon,
-#mainNav .nav-item.nav-register-pro.active span {
-    color: #22c55e !important;
-}
-
 /* Help & Learning Center — gentle size pulse + multi-color flash */
 @keyframes navHelpBob {
     0%, 100% { transform: scale(1); }
