@@ -174,7 +174,11 @@ if (!function_exists('rateb_public_agency_register_url')) {
             $extra
         );
         unset($query['cms_rev']);
-        $url = rtrim($baseUrl, '/') . '/pages/agency-request?' . http_build_query($query);
+        $build = rateb_public_build_marker();
+        if ($build !== '' && !isset($query['v'])) {
+            $query['v'] = $build;
+        }
+        $url = rtrim($baseUrl, '/') . '/pages/home?' . http_build_query($query);
 
         return $url . '#register';
     }

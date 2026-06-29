@@ -56,6 +56,12 @@ RewriteRule ^rateb-erp/public/site/(.+)$ /site/$1 [R=301,L,QSA]
 RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/site/?[\s?] [NC]
 RewriteRule ^rateb-erp/public/site/?$ / [R=301,L,QSA]
 
+# rateb.sa — agency registration checkout (must run before ERP marketing at /)
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{QUERY_STRING} (^|&)open=register(&|$) [NC]
+RewriteCond %{REQUEST_URI} ^/?$ [NC]
+RewriteRule ^$ pages/home.php [L,QSA]
+
 # rateb.sa — ERP marketing site at domain root (not /rateb-erp/public/site)
 RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
 RewriteCond %{REQUEST_URI} ^/?$ [NC]

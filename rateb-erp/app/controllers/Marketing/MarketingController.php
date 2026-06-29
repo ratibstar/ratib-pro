@@ -40,7 +40,7 @@ final class MarketingController extends Controller
             $years = isset($_GET['years']) ? (int) $_GET['years'] : 1;
             $url = function_exists('rateb_public_agency_register_url')
                 ? rateb_public_agency_register_url(rateb_site_origin(), $plan, $years)
-                : (rateb_site_origin() . '/pages/agency-request?open=register&plan=gold#register');
+                : (rateb_site_origin() . '/pages/home?open=register&plan=gold#register');
             Response::redirect($url);
             return;
         }

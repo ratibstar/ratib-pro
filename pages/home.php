@@ -35,9 +35,10 @@ $ratebHomeSkipBuildBust = isset($_GET['rateb_deploy_probe'])
         && hash_equals('rateb-deploy-sync-2026', (string) $_GET['key'])
     );
 if (!$ratebHomeSkipBuildBust) {
+    $ratebIsRegisterCheckout = isset($_GET['open']) && trim((string) $_GET['open']) === 'register';
     $ratebBuildMarker = rateb_public_build_marker();
     $ratebReqBuildV = isset($_GET['v']) ? trim((string) $_GET['v']) : '';
-    if ($ratebBuildMarker !== '' && !headers_sent()) {
+    if ($ratebBuildMarker !== '' && !headers_sent() && !$ratebIsRegisterCheckout) {
         $needsCanonicalV = $ratebReqBuildV === ''
             || !rateb_public_build_marker_is_valid($ratebReqBuildV)
             || $ratebReqBuildV !== $ratebBuildMarker;

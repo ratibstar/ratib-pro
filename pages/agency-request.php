@@ -24,6 +24,12 @@ if ($amount !== null) {
 if ($years !== null) {
     $params['years'] = $years;
 }
+if (function_exists('rateb_public_build_marker')) {
+    $build = rateb_public_build_marker();
+    if ($build !== '') {
+        $params['v'] = $build;
+    }
+}
 $query = http_build_query($params);
 $redirect = $baseUrl . '/pages/home?' . $query . '#register';
 header('Location: ' . $redirect, true, 302);

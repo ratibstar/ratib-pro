@@ -177,6 +177,9 @@ final class MigrationService
                     continue;
                 }
                 $fallback = $this->permissionInsertWithoutArabic($statement);
+                if ($fallback === null || $fallback === $statement) {
+                    $fallback = $this->stripNonAsciiStringLiterals($statement);
+                }
                 if ($fallback !== null && $fallback !== $statement) {
                     try {
                         $this->execStatement($pdo, $fallback);
@@ -339,6 +342,32 @@ final class MigrationService
         );
 
         return is_string($converted) ? $converted : null;
+    }
+
+    /** Last-resort: replace non-ASCII SQL string literals on charset 1366 errors. */
+    private function stripNonAsciiStringLiterals(string $statement): ?string
+    {
+        if (stripos($statement, 'INSERT') === false) {
+            return null;
+        }
+        $converted = preg_replace_callback(
+            "/'((?:[^'\\\\]|\\\\.)*)'/",
+            static function (array $m): string {
+                if (!preg_match('/[^\x00-\x7F]/', $m[1])) {
+                    return "'" . $m[1] . "'";
+                }
+                $ascii = trim((string) preg_replace('/[^\x00-\x7F]/', ' ', $m[1]));
+                $ascii = preg_replace('/\s+/', ' ', $ascii) ?? '';
+                if ($ascii === '') {
+                    $ascii = 'label';
+                }
+
+                return "'" . str_replace("'", "''", $ascii) . "'";
+            },
+            $statement
+        );
+
+        return is_string($converted) && $converted !== $statement ? $converted : null;
     }
 
     private function assertErpTargetDatabase(string $dbName): void
