@@ -12,6 +12,7 @@ $defaultReplySubject = __('cms_lead_reply_subject_default', ['type' => $typeLabe
 $isNew = ($lead['status'] ?? '') === 'new';
 $mailReady = !empty($mailReady);
 $mailLocalhost = !empty($mailLocalhost);
+$mailDiag = is_array($mailDiag ?? null) ? $mailDiag : [];
 $leadReturnPath = 'admin/cms/leads/' . (int) ($lead['id'] ?? 0);
 ?>
 <?php if (!$mailReady) { ?>
@@ -23,6 +24,14 @@ $leadReturnPath = 'admin/cms/leads/' . (int) ($lead['id'] ?? 0);
 <div class="alert alert-danger py-2 mb-3">
     <i class="fas fa-server me-1"></i><?php echo __('cms_lead_smtp_localhost_warn'); ?>
     <a href="<?php echo rateb_url('admin/settings'); ?>" class="alert-link ms-1"><?php echo __('cms_lead_smtp_settings_link'); ?></a>
+</div>
+<?php } ?>
+<?php if ($mailDiag !== []) { ?>
+<div class="alert alert-secondary py-2 mb-3 small">
+    <strong><?php echo __('cms_lead_smtp_status'); ?>:</strong>
+    <?php echo __('mail_smtp_host'); ?> <code dir="ltr"><?php echo Rateb\App\Core\View::escape((string) ($mailDiag['host'] ?? '')); ?></code>
+    · <?php echo __('mail_smtp_port'); ?> <code dir="ltr"><?php echo (int) ($mailDiag['port'] ?? 0); ?></code>
+    · <?php echo !empty($mailDiag['ready']) ? __('mail_settings_ready') : __('mail_settings_incomplete'); ?>
 </div>
 <?php } ?>
 <div class="row g-3">
@@ -82,11 +91,9 @@ $leadReturnPath = 'admin/cms/leads/' . (int) ($lead['id'] ?? 0);
                     <button type="submit" class="btn btn-primary w-100"><i class="fas fa-paper-plane me-1"></i><?php echo __('cms_lead_reply_send'); ?></button>
                     <p class="small text-muted mt-2 mb-0"><?php echo __('cms_lead_reply_hint'); ?></p>
                 </form>
-                <?php if ($mailReady) { ?>
-                <form method="post" action="<?php echo rateb_url('admin/settings/test-mail'); ?>" class="border-top pt-2 mt-2">
+                <?php if ($mailReady && trim((string) ($lead['email'] ?? '')) !== '') { ?>
+                <form method="post" action="<?php echo rateb_url('admin/cms/leads/' . (int) $lead['id'] . '/test-mail'); ?>" class="border-top pt-2 mt-2">
                     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                    <input type="hidden" name="return_to" value="<?php echo Rateb\App\Core\View::escape($leadReturnPath); ?>">
-                    <input type="hidden" name="test_to" value="<?php echo Rateb\App\Core\View::escape((string) ($lead['email'] ?? '')); ?>">
                     <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
                         <i class="fas fa-vial me-1"></i><?php echo __('cms_lead_smtp_test', ['email' => (string) ($lead['email'] ?? '')]); ?>
                     </button>

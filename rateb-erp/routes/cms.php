@@ -91,6 +91,7 @@ foreach ($cmsCrud as $path => [$class, $perm]) {
 $router->get('/admin/cms/leads', [CmsLeadsController::class, 'index'], rateb_admin_mw('cms.leads'));
 $router->get('/admin/cms/leads/{id}', [CmsLeadsController::class, 'show'], rateb_admin_mw('cms.leads'));
 $router->post('/admin/cms/leads/{id}', [CmsLeadsController::class, 'update'], rateb_admin_mw('cms.leads'));
+$router->post('/admin/cms/leads/{id}/test-mail', [CmsLeadsController::class, 'testMail'], rateb_admin_mw('cms.leads'));
 
 $router->get('/admin/cms/media', [CmsMediaController::class, 'index'], rateb_admin_mw('cms.media'));
 $router->get('/admin/cms/media/json', [CmsMediaController::class, 'listJson'], rateb_admin_mw('cms.media'));

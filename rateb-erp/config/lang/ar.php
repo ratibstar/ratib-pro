@@ -1963,6 +1963,7 @@ return [
     'cms_lead_smtp_localhost_warn' => 'SMTP على localhost — قد لا يصل لـ Gmail. غيّر إلى mail.rateb.sa أو SendGrid.',
     'cms_lead_smtp_settings_link' => 'فتح إعدادات البريد',
     'cms_lead_smtp_test' => 'اختبار SMTP إلى :email',
+    'cms_lead_smtp_status' => 'حالة SMTP',
     'cms_upload' => 'رفع',
     'cms_upload_ok' => 'تم رفع الملف.',
     'cms_offices' => 'المكاتب والفروع',

@@ -151,7 +151,8 @@ final class MailService
                 // Prefer domain SMTP before localhost — loopback often accepts but won't deliver externally.
                 $candidates = [$mailTls, $mailSsl, $primary, $localhost, $loopback];
             } else {
-                $candidates = [$primary, $mailTls, $mailSsl, $localhost, $loopback];
+                // mail.rateb.sa / domain SMTP — never fall back to localhost (false external delivery).
+                $candidates = [$primary, $mailTls, $mailSsl];
             }
         } else {
             $candidates = [$primary, $localhost, $loopback, $mailTls];

@@ -377,7 +377,28 @@ final class CmsLeadsController extends Controller
             'mailReady' => $mailSvc->isReady(),
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
             'mailHost' => (string) ($mailCfg['host'] ?? ''),
+            'mailDiag' => (new \Rateb\App\Services\MailTestService())->diagnostics(),
         ], 'main');
+    }
+
+    public function testMail(int $id): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url('admin/cms/leads/' . $id));
+            return;
+        }
+        $model = new CmsLead();
+        $lead = $model->find($id);
+        if ($lead === null) {
+            SessionManager::flash('error', __('not_found'));
+            $this->redirect(rateb_url('admin/cms/leads'));
+            return;
+        }
+        $to = trim((string) ($lead['email'] ?? ''));
+        $outcome = (new \Rateb\App\Services\MailTestService())->sendTest($to);
+        SessionManager::flash((string) $outcome['level'], (string) $outcome['message']);
+        $this->redirect(rateb_url('admin/cms/leads/' . $id));
     }
 
     public function update(int $id): void
