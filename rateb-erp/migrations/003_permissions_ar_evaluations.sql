@@ -5,7 +5,7 @@ SET NAMES utf8mb4;
 SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rateb_permissions' AND COLUMN_NAME = 'name_ar');
 SET @sql = IF(@col_exists = 0,
-    'ALTER TABLE rateb_permissions ADD COLUMN name_ar VARCHAR(120) NULL AFTER name, ADD COLUMN description_ar VARCHAR(255) NULL AFTER description',
+    'ALTER TABLE rateb_permissions ADD COLUMN name_ar VARCHAR(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL AFTER name, ADD COLUMN description_ar VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL AFTER description',
     'SELECT 1');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;

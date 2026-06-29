@@ -66,6 +66,7 @@ final class MigrationService
             if ($sql === false || trim($sql) === '') {
                 continue;
             }
+            $sql = self::normalizeMigrationFileContents($sql);
             $log[] = 'Running ' . $name . '…';
             $this->execSqlFile($pdo, $sql);
             $this->markApplied($pdo, $name);
@@ -161,13 +162,9 @@ final class MigrationService
 
     private function execSqlFile(PDO $pdo, string $sql): void
     {
-        $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql) ?? $sql;
+        $sql = $this->normalizeMigrationFileContents($sql);
         $sql = preg_replace('/^\s*USE\s+`[^`]+`\s*;\s*/mi', '', $sql) ?? $sql;
-        try {
-            $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
-        } catch (\PDOException $e) {
-            // non-fatal
-        }
+        $this->bootstrapMigrationCharset($pdo);
         foreach ($this->splitStatements($sql) as $statement) {
             if ($statement === '') {
                 continue;
@@ -200,6 +197,38 @@ final class MigrationService
         $stmt->closeCursor();
     }
 
+    private function normalizeMigrationFileContents(string $sql): string
+    {
+        $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql) ?? $sql;
+        if ($sql === '') {
+            return '';
+        }
+        if (!mb_check_encoding($sql, 'UTF-8')) {
+            $converted = @mb_convert_encoding($sql, 'UTF-8', 'UTF-8');
+            if (is_string($converted) && $converted !== '') {
+                $sql = $converted;
+            }
+        }
+
+        return str_replace("\r\n", "\n", str_replace("\r", "\n", $sql));
+    }
+
+    private function bootstrapMigrationCharset(PDO $pdo): void
+    {
+        foreach ([
+            'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
+            'SET CHARACTER SET utf8mb4',
+            'SET collation_connection = utf8mb4_unicode_ci',
+            'SET collation_database = utf8mb4_unicode_ci',
+        ] as $statement) {
+            try {
+                $pdo->exec($statement);
+            } catch (\PDOException $e) {
+                // non-fatal on older MySQL builds
+            }
+        }
+    }
+
     /** @return array<int, string> */
     private function splitStatements(string $sql): array
     {
@@ -209,6 +238,7 @@ final class MigrationService
         $statements = [];
         $buffer = '';
         foreach (preg_split('/\R/', $sql) ?: [] as $line) {
+            $line = str_replace("\r", '', $line);
             $line = preg_replace('/^\xEF\xBB\xBF/', '', $line) ?? $line;
             $line = preg_replace('/^[\x{200E}\x{200F}\x{FEFF}]+/u', '', $line) ?? $line;
             $trimmed = trim($line);

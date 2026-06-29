@@ -163,6 +163,9 @@ final class Database
         if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
             $options[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
         }
+        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
+            $options[PDO::MYSQL_ATTR_MULTI_STATEMENTS] = true;
+        }
         if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
             $options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci';
         }

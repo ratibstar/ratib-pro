@@ -265,6 +265,22 @@ final class ErpProvisioningService
         return 'ERP database is not accessible. ' . $hint;
     }
 
+    private static function ensureDatabaseUtf8mb4(string $host, int $port, string $user, string $pass, string $dbName): void
+    {
+        if ($dbName === '') {
+            return;
+        }
+        try {
+            $dsn = sprintf('mysql:host=%s;port=%d;charset=utf8mb4', $host, $port);
+            $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            $pdo->exec(
+                'ALTER DATABASE `' . str_replace('`', '``', $dbName) . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+            );
+        } catch (Throwable $e) {
+            error_log('ErpProvisioningService ensureDatabaseUtf8mb4: ' . $e->getMessage());
+        }
+    }
+
     /** @return array<int, string> */
     private static function runErpMigrations(string $dbName, string $host, int $port, string $user, string $pass): array
     {
@@ -278,6 +294,7 @@ final class ErpProvisioningService
         if (!defined('RATEB_ENV_NO_SESSION')) {
             define('RATEB_ENV_NO_SESSION', true);
         }
+        self::ensureDatabaseUtf8mb4($host, $port, $user, $pass, $dbName);
         require_once $erpRoot . '/app/Core/Database.php';
         require_once $erpRoot . '/app/services/MigrationService.php';
 
