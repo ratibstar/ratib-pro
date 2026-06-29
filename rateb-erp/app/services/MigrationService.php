@@ -168,12 +168,13 @@ final class MigrationService
 
         if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
             try {
-                $pdo->exec($sql);
-                $this->drainPdoMultiResults($pdo);
+                $stmt = $pdo->query($sql);
+                if ($stmt !== false) {
+                    $this->drainStatement($stmt);
+                }
 
                 return;
             } catch (\PDOException $e) {
-                $this->drainPdoMultiResults($pdo);
                 if ($this->isBenignMigrationError($e->getMessage())) {
                     return;
                 }
@@ -211,17 +212,6 @@ final class MigrationService
             $stmt->fetchAll();
         } while ($stmt->nextRowset());
         $stmt->closeCursor();
-    }
-
-    private function drainPdoMultiResults(PDO $pdo): void
-    {
-        try {
-            while ($pdo->nextRowset()) {
-                // drain remaining result sets from multi-statement migration files
-            }
-        } catch (\PDOException $e) {
-            // no more rowsets
-        }
     }
 
     private function normalizeMigrationFileContents(string $sql): string
