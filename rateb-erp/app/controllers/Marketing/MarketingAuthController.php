@@ -120,6 +120,10 @@ final class MarketingAuthController extends Controller
 
     public function showRegister(): void
     {
+        if (!\Rateb\App\Services\DedicatedTenantPolicy::allowsPublicRegistration()) {
+            SessionManager::flash('error', __('erp_dedicated_no_public_register'));
+            Response::redirect(rateb_url('site/login'));
+        }
         $planSlug = $this->resolveRegisterPlanSlug((string) ($_GET['plan'] ?? ''));
         $selectedPlan = $this->loadRegisterPlan($planSlug);
         $this->renderAuth('marketing/auth/register', __('cms_register'), [
@@ -131,6 +135,10 @@ final class MarketingAuthController extends Controller
 
     public function register(): void
     {
+        if (!\Rateb\App\Services\DedicatedTenantPolicy::allowsPublicRegistration()) {
+            SessionManager::flash('error', __('erp_dedicated_no_public_register'));
+            Response::redirect(rateb_url('site/login'));
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             Response::redirect(rateb_url('site/register'));

@@ -1712,6 +1712,8 @@ return [
     'company_access_denied' => 'الوصول للشركة موقوف أو انتهى الاشتراك.',
     'storage_limit_exceeded' => 'تم تجاوز حد التخزين للباقة.',
     'user_limit_reached' => 'تم الوصول إلى حد المستخدمين للباقة.',
+    'erp_dedicated_single_company' => 'هذا النظام مخصص لشركة واحدة فقط. تواصل مع مسؤول المنصة لتفعيل الوصول.',
+    'erp_dedicated_no_public_register' => 'التسجيل الذاتي غير متاح على هذا النظام المخصص. استخدم بيانات الدخول التي زوّدك بها المسؤول.',
     'quotation_compare' => 'مقارنة عروض الأسعار',
     'best_price' => 'أفضل سعر',
     'contract_attachment' => 'مرفق العقد',

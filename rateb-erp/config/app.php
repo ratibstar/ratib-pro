@@ -13,6 +13,30 @@ define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
 define('RATEB_ASSET_BUILD', '20260628-migration-141-fix');
 
+if (!function_exists('rateb_erp_deployment_mode')) {
+    /** @return 'dedicated'|'saas' */
+    function rateb_erp_deployment_mode(): string
+    {
+        if (defined('RATEB_ERP_DEPLOYMENT_MODE')) {
+            $mode = strtolower(trim((string) RATEB_ERP_DEPLOYMENT_MODE));
+
+            return $mode === 'dedicated' ? 'dedicated' : 'saas';
+        }
+        if (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED) {
+            return 'dedicated';
+        }
+
+        return 'saas';
+    }
+}
+
+if (!function_exists('rateb_erp_is_dedicated_deployment')) {
+    function rateb_erp_is_dedicated_deployment(): bool
+    {
+        return rateb_erp_deployment_mode() === 'dedicated';
+    }
+}
+
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
     {

@@ -23,6 +23,11 @@ final class CustomerRegistrationService
         string $phone = '',
         string $planSlug = ''
     ): array {
+        if (!\Rateb\App\Services\DedicatedTenantPolicy::allowsPublicRegistration()) {
+            throw new \RuntimeException(__('erp_dedicated_no_public_register'));
+        }
+        \Rateb\App\Services\DedicatedTenantPolicy::assertCanCreateCompany();
+
         $userModel = new User();
         if ($userModel->findByEmail($email) !== null) {
             throw new \RuntimeException(__('cms_email_taken'));

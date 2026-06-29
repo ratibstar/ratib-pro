@@ -506,4 +506,37 @@
         bindStream(streamCandidates[activeIndex]);
     })();
 
+    tableBody.addEventListener('click', function(evt) {
+        var btn = evt.target && evt.target.closest ? evt.target.closest('.btn-provision-erp') : null;
+        if (!btn) return;
+        var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
+        if (!agencyId) return;
+        showConfirm('Provision dedicated ERP database for this agency?').then(function(ok) {
+            if (!ok) return;
+            btn.disabled = true;
+            fetch(API_BASE + '/agencies-provision-erp.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agency_id: agencyId, plan_slug: 'professional' })
+            }).then(function(res) { return res.json(); }).then(function(data) {
+                if (!data || !data.success) {
+                    showAlert((data && data.message) ? data.message : 'ERP provisioning failed');
+                    btn.disabled = false;
+                    return;
+                }
+                var seed = data.data && data.data.seed ? data.data.seed : null;
+                var msg = 'ERP ready on ' + ((data.data && data.data.erp_db_name) ? data.data.erp_db_name : 'database');
+                if (seed && seed.admin_email && seed.admin_password) {
+                    msg += '\nAdmin: ' + seed.admin_email + '\nPassword: ' + seed.admin_password;
+                }
+                showAlert(msg);
+                window.location.reload();
+            }).catch(function() {
+                showAlert('ERP provisioning request failed');
+                btn.disabled = false;
+            });
+        });
+    });
+
 })();

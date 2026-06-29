@@ -132,14 +132,26 @@ function control_rateb_erp_db_test(): array
     }
     try {
         control_rateb_erp_ensure_root();
-        require_once RATEB_ROOT . '/config/database.php';
         require_once RATEB_ROOT . '/app/Core/Database.php';
+        $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+        $cfg = $agencyId > 0 ? control_rateb_erp_agency_db_config($agencyId) : null;
+        if ($cfg !== null) {
+            \Rateb\App\Core\Database::useConnectionOverride($cfg);
+        } else {
+            require_once RATEB_ROOT . '/config/database.php';
+        }
         $pdo = \Rateb\App\Core\Database::connection();
         $result['ok'] = true;
         $result['db'] = \Rateb\App\Core\Database::resolvedDatabaseName();
         $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
         $result['schema'] = $stmt !== false && $stmt->rowCount() > 0;
+        if ($cfg !== null) {
+            \Rateb\App\Core\Database::clearConnectionOverride();
+        }
     } catch (Throwable $e) {
+        if (class_exists(\Rateb\App\Core\Database::class)) {
+            \Rateb\App\Core\Database::clearConnectionOverride();
+        }
         $result['error'] = $e->getMessage();
         error_log('RATEB ERP DB test: ' . $e->getMessage());
     }
@@ -191,6 +203,13 @@ function control_rateb_erp_branch_manage_url(int $companyId = 0): string
 
 function control_rateb_erp_pdo(): ?\PDO
 {
+    $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+    if ($agencyId > 0) {
+        $pdo = control_rateb_erp_pdo_for_agency($agencyId);
+        if ($pdo instanceof \PDO) {
+            return $pdo;
+        }
+    }
     if (!control_rateb_erp_schema_ready()) {
         return null;
     }
@@ -412,17 +431,114 @@ function control_rateb_erp_nav_links(): array
     return $links;
 }
 
+function control_rateb_erp_agency_db_name(int $agencyId): string
+{
+    if ($agencyId < 1) {
+        return '';
+    }
+    $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+    if (!is_file($lookup)) {
+        return '';
+    }
+    require_once $lookup;
+    $row = rateb_lookup_agency_by_id($agencyId);
+    if ($row === null) {
+        return '';
+    }
+
+    return trim((string) ($row['erp_db_name'] ?? ''));
+}
+
+/** @return array{host:string,port:int,user:string,pass:string,db:string}|null */
+function control_rateb_erp_agency_db_config(int $agencyId): ?array
+{
+    if ($agencyId < 1) {
+        return null;
+    }
+    $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+    if (!is_file($lookup)) {
+        return null;
+    }
+    require_once $lookup;
+    $row = rateb_lookup_agency_by_id($agencyId);
+    if ($row === null) {
+        return null;
+    }
+    $db = trim((string) ($row['erp_db_name'] ?? ''));
+    if ($db === '') {
+        return null;
+    }
+    $host = trim((string) ($row['erp_db_host'] ?? ''));
+    if ($host === '') {
+        $host = trim((string) ($row['db_host'] ?? 'localhost'));
+    }
+    $user = trim((string) ($row['erp_db_user'] ?? ''));
+    if ($user === '') {
+        $user = trim((string) ($row['db_user'] ?? ''));
+    }
+    $pass = (string) ($row['erp_db_pass'] ?? '');
+    if ($pass === '') {
+        $pass = (string) ($row['db_pass'] ?? '');
+    }
+
+    return [
+        'host' => $host !== '' ? $host : 'localhost',
+        'port' => (int) ($row['db_port'] ?? 3306),
+        'user' => $user,
+        'pass' => $pass,
+        'db' => $db,
+    ];
+}
+
+function control_rateb_erp_pdo_for_agency(int $agencyId): ?\PDO
+{
+    $cfg = control_rateb_erp_agency_db_config($agencyId);
+    if ($cfg === null) {
+        return null;
+    }
+    try {
+        control_rateb_erp_ensure_root();
+        require_once RATEB_ROOT . '/app/Core/Database.php';
+        \Rateb\App\Core\Database::useConnectionOverride($cfg);
+        $pdo = \Rateb\App\Core\Database::connection();
+        $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
+        if ($stmt === false || $stmt->rowCount() < 1) {
+            \Rateb\App\Core\Database::clearConnectionOverride();
+
+            return null;
+        }
+
+        return $pdo;
+    } catch (Throwable $e) {
+        error_log('control_rateb_erp_pdo_for_agency: ' . $e->getMessage());
+        if (class_exists(\Rateb\App\Core\Database::class)) {
+            \Rateb\App\Core\Database::clearConnectionOverride();
+        }
+
+        return null;
+    }
+}
+
 function control_rateb_erp_db_name(): string
 {
+    $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+    if ($agencyId > 0) {
+        $agencyDb = control_rateb_erp_agency_db_name($agencyId);
+        if ($agencyDb !== '') {
+            return $agencyDb;
+        }
+    }
     if (function_exists('rateb_erp_database_name')) {
         return rateb_erp_database_name();
     }
     if (defined('RATEB_ERP_DB_NAME') && (string) RATEB_ERP_DB_NAME !== '') {
         $name = (string) RATEB_ERP_DB_NAME;
+
         return $name === 'admin-rateb-erp' ? 'admin_rateb-erp' : ($name === 'admin-rateb-erp' ? 'admin_rateb-erp' : $name);
     }
     $env = getenv('RATEB_ERP_DB_NAME');
     $name = ($env !== false && $env !== '') ? (string) $env : (function_exists('rateb_erp_database_name') ? rateb_erp_database_name() : 'admin_rateb-erp');
+
     return $name === 'admin-rateb-erp' ? 'admin_rateb-erp' : ($name === 'admin-rateb-erp' ? 'admin_rateb-erp' : $name);
 }
 
@@ -438,6 +554,13 @@ function control_rateb_erp_run_migrations(): array
     if (function_exists('set_time_limit')) {
         @set_time_limit(300);
     }
+
+    $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+    $cfg = $agencyId > 0 ? control_rateb_erp_agency_db_config($agencyId) : null;
+    if ($cfg !== null) {
+        return (new \Rateb\App\Services\MigrationService())->runAllForDatabase($cfg);
+    }
+
     return (new \Rateb\App\Services\ErpDatabaseService())->fixErpDatabase();
 }
 
@@ -449,6 +572,7 @@ function control_rateb_erp_db_diagnose(): array
     require_once RATEB_ROOT . '/app/Core/Database.php';
     require_once RATEB_ROOT . '/app/services/ErpDatabaseService.php';
     $svc = new \Rateb\App\Services\ErpDatabaseService();
+
     return [
         'erp' => $svc->diagnoseErp(),
         'control_panel' => $svc->diagnoseControlPanel(),

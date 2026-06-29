@@ -11,6 +11,32 @@ final class Database
     private static ?PDO $pdo = null;
     private static string $resolvedDbName = '';
 
+    /** @var array{host:string,port:int,user:string,pass:string,db:string}|null */
+    private static ?array $connectionOverride = null;
+
+    /**
+     * Force the next connection() to a specific database (provisioning / control-panel per-agency).
+     *
+     * @param array{host?:string,port?:int,user?:string,pass?:string,db:string} $config
+     */
+    public static function useConnectionOverride(array $config): void
+    {
+        self::disconnect();
+        self::$connectionOverride = [
+            'host' => (string) ($config['host'] ?? (defined('RATEB_DB_HOST') ? RATEB_DB_HOST : '127.0.0.1')),
+            'port' => (int) ($config['port'] ?? (defined('RATEB_DB_PORT') ? RATEB_DB_PORT : 3306)),
+            'user' => (string) ($config['user'] ?? (defined('RATEB_DB_USER') ? RATEB_DB_USER : 'root')),
+            'pass' => (string) ($config['pass'] ?? (defined('RATEB_DB_PASS') ? RATEB_DB_PASS : '')),
+            'db' => (string) $config['db'],
+        ];
+    }
+
+    public static function clearConnectionOverride(): void
+    {
+        self::$connectionOverride = null;
+        self::disconnect();
+    }
+
     public static function resolvedDatabaseName(): string
     {
         if (self::$resolvedDbName !== '') {
@@ -22,6 +48,20 @@ final class Database
     public static function connection(): PDO
     {
         if (self::$pdo instanceof PDO) {
+            return self::$pdo;
+        }
+
+        if (self::$connectionOverride !== null) {
+            $cfg = self::$connectionOverride;
+            self::$pdo = self::openWith(
+                (string) $cfg['db'],
+                (string) $cfg['host'],
+                (int) $cfg['port'],
+                (string) $cfg['user'],
+                (string) $cfg['pass']
+            );
+            self::$resolvedDbName = (string) $cfg['db'];
+
             return self::$pdo;
         }
 
@@ -92,10 +132,21 @@ final class Database
 
     private static function open(string $dbName): PDO
     {
-        $dsn = sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+        return self::openWith(
+            $dbName,
             RATEB_DB_HOST,
             RATEB_DB_PORT,
+            RATEB_DB_USER,
+            RATEB_DB_PASS
+        );
+    }
+
+    private static function openWith(string $dbName, string $host, int $port, string $user, string $pass): PDO
+    {
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+            $host,
+            $port,
             $dbName
         );
 
@@ -111,7 +162,7 @@ final class Database
             $options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci';
         }
 
-        return new PDO($dsn, RATEB_DB_USER, RATEB_DB_PASS, $options);
+        return new PDO($dsn, $user, $pass, $options);
     }
 
     public static function disconnect(): void
@@ -120,3 +171,4 @@ final class Database
         self::$resolvedDbName = '';
     }
 }
+

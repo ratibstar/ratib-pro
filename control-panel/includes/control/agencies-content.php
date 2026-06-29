@@ -454,6 +454,8 @@ if ($agencyIdFilter > 0) {
                     <th>DB Port</th>
                     <th>DB User</th>
                     <th>DB Name</th>
+                    <th>ERP DB</th>
+                    <th>ERP</th>
                     <th>Created</th>
                     <th>Renewal</th>
                     <th>Status</th>
@@ -481,6 +483,8 @@ echo htmlspecialchars($cname ?: '-');
                     <td><?php echo $r['db_port'] ?? '-'; ?></td>
                     <td><?php echo htmlspecialchars($r['db_user'] ?? '-'); ?></td>
                     <td><?php echo htmlspecialchars($r['db_name'] ?? '-'); ?></td>
+                    <td class="agencies-url-cell" title="<?php echo htmlspecialchars((string) ($r['erp_db_name'] ?? '')); ?>"><?php echo htmlspecialchars((string) (($r['erp_db_name'] ?? '') ?: '—')); ?></td>
+                    <td><span class="badge badge-erp-<?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none')); ?></span></td>
                     <td><?php echo isset($r['created_at']) ? substr($r['created_at'], 0, 10) : '-'; ?></td>
                     <td><?php echo $renewalDate($r); ?></td>
                     <td><span class="badge <?php
@@ -534,6 +538,11 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                         <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/event-timeline.php?tenant_id=' . (int)($r['tenant_id'] ?? 0)); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_events" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Events</a>
                         <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#db-control'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_db_status" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">DB Status</a>
                         <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#query-console'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_query_activity" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Query Activity</a>
+                        <?php if (($r['erp_status'] ?? 'none') !== 'ready') { ?>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-provision-erp" data-agency-id="<?php echo (int) $r['id']; ?>" data-permission="control_agencies,edit_control_agency">Provision ERP</button>
+                        <?php } elseif (!empty($r['site_url'])) { ?>
+                        <a href="<?php echo htmlspecialchars(rtrim((string) $r['site_url'], '/') . '/rateb-erp/public/company/login'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info">ERP Login</a>
+                        <?php } ?>
                         <button type="button" class="btn btn-sm btn-outline-info btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,view_control_agencies">View</button>
                         <button type="button" class="btn btn-sm btn-outline-warning btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,edit_control_agency">Edit</button>
                         <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,delete_control_agency">Delete</button>

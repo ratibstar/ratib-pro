@@ -198,6 +198,12 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        try {
+            \Rateb\App\Services\DedicatedTenantPolicy::assertCanCreateCompany();
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $data = $this->collectData();
         $data['status'] = 'pending';
         try {

@@ -1711,6 +1711,8 @@ return [
     'company_access_denied' => 'Company access is suspended or subscription expired.',
     'storage_limit_exceeded' => 'Storage limit exceeded for your plan.',
     'user_limit_reached' => 'User limit reached for this company plan.',
+    'erp_dedicated_single_company' => 'This ERP instance is dedicated to one company only. Contact your platform administrator to provision access.',
+    'erp_dedicated_no_public_register' => 'Self-registration is disabled on this dedicated ERP instance. Use the login credentials provided by your administrator.',
     'quotation_compare' => 'Quotation comparison',
     'best_price' => 'Best price',
     'contract_attachment' => 'Contract attachment',

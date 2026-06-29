@@ -13,6 +13,32 @@ final class MigrationService
     {
         $log = [];
         [$pdo, $dbName] = $this->migrationConnection();
+        return $this->runAllOnPdo($pdo, $dbName, $log);
+    }
+
+    /**
+     * Run ERP migrations on an explicit database (agency provisioning from Control Panel).
+     *
+     * @param array{host?:string,port?:int,user?:string,pass?:string,db:string} $config
+     * @return array<int, string>
+     */
+    public function runAllForDatabase(array $config): array
+    {
+        Database::clearConnectionOverride();
+        Database::useConnectionOverride($config);
+        $log = [];
+        try {
+            [$pdo, $dbName] = $this->migrationConnection();
+
+            return $this->runAllOnPdo($pdo, $dbName, $log);
+        } finally {
+            Database::clearConnectionOverride();
+        }
+    }
+
+    /** @return array<int, string> */
+    private function runAllOnPdo(PDO $pdo, string $dbName, array $log): array
+    {
         $log[] = 'Connected to database: ' . $dbName;
         $this->assertErpTargetDatabase($dbName);
         $this->ensureMigrationsTable($pdo);
@@ -48,9 +74,7 @@ final class MigrationService
         }
 
         if ($ran === 0) {
-            $log[] = 'No new migrations to apply.';
-        } else {
-            $log[] = 'Applied ' . $ran . ' migration file(s).';
+            $log[] = 'No new migrations to run.';
         }
 
         return $log;

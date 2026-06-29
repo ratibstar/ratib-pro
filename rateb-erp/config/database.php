@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+$ratebParentEnv = dirname(__DIR__, 2) . '/config/env';
+$erpAgencyResolver = $ratebParentEnv . '/erp_agency_resolver.php';
+if (is_file($erpAgencyResolver) && !defined('RATEB_ERP_AGENCY_RESOLVED')) {
+    require_once $erpAgencyResolver;
+    rateb_resolve_agency_erp_from_request();
+}
+
 if (!function_exists('rateb_erp_database_name')) {
     function rateb_erp_database_name(): string
     {
@@ -124,7 +131,12 @@ if (!function_exists('rateb_erp_db_credentials')) {
 
 if (!defined('RATEB_DB_HOST')) {
     [$erpUser, $erpPass] = rateb_erp_db_credentials();
-    if (defined('DB_HOST')) {
+    if (defined('RATEB_ERP_DB_HOST') && (string) RATEB_ERP_DB_HOST !== '') {
+        define('RATEB_DB_HOST', (string) RATEB_ERP_DB_HOST);
+        define('RATEB_DB_PORT', defined('DB_PORT') ? (int) DB_PORT : 3306);
+        define('RATEB_DB_USER', $erpUser);
+        define('RATEB_DB_PASS', $erpPass);
+    } elseif (defined('DB_HOST')) {
         define('RATEB_DB_HOST', (string) DB_HOST);
         define('RATEB_DB_PORT', defined('DB_PORT') ? (int) DB_PORT : 3306);
         define('RATEB_DB_USER', $erpUser);
