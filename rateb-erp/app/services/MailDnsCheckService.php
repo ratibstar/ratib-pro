@@ -9,18 +9,26 @@ final class MailDnsCheckService
     /** @var list<string> */
     private const DKIM_SELECTORS = ['x', 'default', 'mail', 'da', 'selector1', 'k1', 'dkim'];
 
-    /** @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},warnings:list<string>,ready_for_external:bool} */
+    /** @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},port25:array{ok:bool,detail:string,skipped:bool},warnings:list<string>,ready_for_external:bool,recommendations:array<string,mixed>} */
     public function check(string $domain = 'rateb.sa'): array
     {
         $domain = strtolower(trim($domain));
         if ($domain === '') {
             $domain = 'rateb.sa';
         }
+        $mailCfg = new MailConfigService();
+        $smtpHost = trim((string) ($mailCfg->resolve()['host'] ?? ''));
+        $usesRelay = $mailCfg->isSmtpRelayHost($smtpHost);
+
         $spf = $this->checkSpf($domain);
         $dkim = $this->checkDkim($domain);
         $dmarc = $this->checkDmarc($domain);
         $mx = $this->checkMx($domain);
         $ptr = $this->checkPtr($domain, $mx['detail'] ?? '');
+        $port25 = $usesRelay
+            ? ['ok' => true, 'detail' => __('mail_port25_relay_skip', ['host' => $smtpHost]), 'skipped' => true]
+            : array_merge($this->checkPort25Outbound(), ['skipped' => false]);
+
         $warnings = [];
         if (($spf['count'] ?? 0) > 1) {
             $warnings[] = __('mail_dns_warn_spf_duplicate');
@@ -31,6 +39,11 @@ final class MailDnsCheckService
         if (!$dmarc['ok']) {
             $warnings[] = __('mail_dns_warn_dmarc');
         }
+        if (!$port25['ok'] && empty($port25['skipped'])) {
+            $warnings[] = __('mail_port25_blocked_hint');
+        }
+
+        $dnsOk = $spf['ok'] && $dkim['ok'] && $mx['ok'] && $ptr['ok'];
         return [
             'domain' => $domain,
             'spf' => $spf,
@@ -38,23 +51,29 @@ final class MailDnsCheckService
             'dmarc' => $dmarc,
             'mx' => $mx,
             'ptr' => $ptr,
+            'port25' => $port25,
+            'smtp_host' => $smtpHost,
+            'smtp_relay' => $usesRelay,
             'warnings' => $warnings,
-            'ready_for_external' => $spf['ok'] && $dkim['ok'] && $mx['ok'] && $ptr['ok'],
-            'recommendations' => $this->recommendedRecords($domain, $spf['ok'], $dkim['ok']),
+            'ready_for_external' => $dnsOk && $port25['ok'],
+            'recommendations' => $this->recommendedRecords($domain, $spf['ok'], $dkim['ok'], $usesRelay),
         ];
     }
 
     /**
      * @return array{spf:array{host:string,type:string,value:string},dmarc:array{host:string,type:string,value:string},dkim_note:string}
      */
-    public function recommendedRecords(string $domain = 'rateb.sa', ?bool $spfOk = null, ?bool $dkimOk = null): array
+    public function recommendedRecords(string $domain = 'rateb.sa', ?bool $spfOk = null, ?bool $dkimOk = null, bool $usesRelay = false): array
     {
         $domain = strtolower(trim($domain)) ?: 'rateb.sa';
+        $spfValue = $usesRelay
+            ? 'v=spf1 a mx include:mail.' . $domain . ' include:sendgrid.net ~all'
+            : 'v=spf1 a mx include:mail.' . $domain . ' ~all';
         return [
             'spf' => [
                 'host' => '@',
                 'type' => 'TXT',
-                'value' => 'v=spf1 a mx include:mail.' . $domain . ' ~all',
+                'value' => $spfValue,
                 'needed' => $spfOk !== true,
             ],
             'dmarc' => [
@@ -135,6 +154,19 @@ final class MailDnsCheckService
             return ['ok' => true, 'detail' => $ptrHost];
         }
         return ['ok' => false, 'detail' => $ptrHost . ' → ' . __('mail_dns_ptr_expected', ['host' => $mailHost])];
+    }
+
+    /** @return array{ok:bool,detail:string} */
+    private function checkPort25Outbound(): array
+    {
+        foreach (['gmail-smtp-in.l.google.com', 'alt1.gmail-smtp-in.l.google.com'] as $host) {
+            $fp = @stream_socket_client('tcp://' . $host . ':25', $errno, $errstr, 8);
+            if (is_resource($fp)) {
+                fclose($fp);
+                return ['ok' => true, 'detail' => $host . ':25'];
+            }
+        }
+        return ['ok' => false, 'detail' => __('mail_port25_blocked_detail')];
     }
 
     /** @return array{ok:bool,detail:string,selector:?string} */

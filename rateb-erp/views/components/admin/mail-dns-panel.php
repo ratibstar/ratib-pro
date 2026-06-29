@@ -22,6 +22,10 @@ $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendation
             <?php echo Rateb\App\Core\View::escape((string) ($mailDns['mx']['detail'] ?? '')); ?></li>
         <li class="mt-1"><span class="badge <?php echo $dnsBadge(!empty($mailDns['ptr']['ok'])); ?>">PTR</span>
             <?php echo Rateb\App\Core\View::escape((string) ($mailDns['ptr']['detail'] ?? '')); ?></li>
+        <?php if (!empty($mailDns['port25'])) { ?>
+        <li class="mt-1"><span class="badge <?php echo $dnsBadge(!empty($mailDns['port25']['ok'])); ?>">Port 25</span>
+            <?php echo Rateb\App\Core\View::escape((string) ($mailDns['port25']['detail'] ?? '')); ?></li>
+        <?php } ?>
     </ul>
     <?php
     $dnsWarnings = is_array($mailDns['warnings'] ?? null) ? $mailDns['warnings'] : [];
@@ -34,7 +38,13 @@ $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendation
     <?php } ?>
     <?php if (empty($mailDns['ready_for_external'])) { ?>
     <p class="text-danger mb-2"><?php echo __('mail_dns_not_ready'); ?></p>
+    <?php if (!empty($mailDns['port25']) && empty($mailDns['port25']['ok']) && empty($mailDns['port25']['skipped'])) { ?>
+    <p class="text-danger mb-2"><strong><?php echo __('mail_port25_blocked_hint'); ?></strong></p>
+    <p class="text-muted mb-2"><?php echo __('mail_hetzner_unblock_steps'); ?></p>
+    <p class="text-muted mb-2"><?php echo __('mail_relay_steps'); ?></p>
+    <?php } else { ?>
     <p class="text-muted mb-2"><?php echo __('mail_dns_directadmin_steps'); ?></p>
+    <?php } ?>
     <?php if (!empty($recs['spf']['needed']) && !empty($recs['spf']['value'])) { ?>
     <div class="mb-2">
         <label class="form-label mb-1"><?php echo __('mail_dns_spf_record'); ?></label>

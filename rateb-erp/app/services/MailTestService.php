@@ -34,6 +34,17 @@ final class MailTestService
         $toDomain = Str::emailDomain($to);
         $isExternal = $toDomain !== '' && $fromDomain !== '' && strcasecmp($toDomain, $fromDomain) !== 0;
 
+        if ($isExternal) {
+            $dns = (new MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
+            if (empty($dns['port25']['ok']) && empty($dns['smtp_relay'])) {
+                return [
+                    'level' => 'error',
+                    'message' => __('mail_port25_blocked_hint') . ' ' . __('mail_relay_steps'),
+                    'detail' => ['dns' => $dns, 'port25_blocked' => true],
+                ];
+            }
+        }
+
         $mail = new MailService();
         $bcc = null;
         if ($isExternal && $from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {

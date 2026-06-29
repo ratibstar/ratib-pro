@@ -114,6 +114,14 @@ final class CmsLeadNotificationService
         $body .= '<p style="color:#666;font-size:14px;margin-top:16px">' . View::escape(__('cms_lead_reply_footer')) . '</p>';
         $body .= '</div>';
 
+        if ($this->isExternalRecipient($email)) {
+            $dns = (new MailDnsCheckService())->check();
+            if (empty($dns['port25']['ok']) && empty($dns['smtp_relay'])) {
+                $this->lastError = __('mail_port25_blocked_hint') . ' ' . __('mail_relay_steps');
+                return false;
+            }
+        }
+
         $mail = new MailService();
         $fromInbox = $this->staffInboxEmail();
         $replyTo = $fromInbox !== '' ? $fromInbox : null;
