@@ -20,7 +20,18 @@ $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendation
             <?php echo Rateb\App\Core\View::escape((string) ($mailDns['dmarc']['detail'] ?? '')); ?></li>
         <li class="mt-1"><span class="badge <?php echo $dnsBadge(!empty($mailDns['mx']['ok'])); ?>">MX</span>
             <?php echo Rateb\App\Core\View::escape((string) ($mailDns['mx']['detail'] ?? '')); ?></li>
+        <li class="mt-1"><span class="badge <?php echo $dnsBadge(!empty($mailDns['ptr']['ok'])); ?>">PTR</span>
+            <?php echo Rateb\App\Core\View::escape((string) ($mailDns['ptr']['detail'] ?? '')); ?></li>
     </ul>
+    <?php
+    $dnsWarnings = is_array($mailDns['warnings'] ?? null) ? $mailDns['warnings'] : [];
+    if ($dnsWarnings !== []) { ?>
+    <ul class="text-warning mb-2 ps-3">
+        <?php foreach ($dnsWarnings as $warn) { ?>
+        <li><?php echo Rateb\App\Core\View::escape((string) $warn); ?></li>
+        <?php } ?>
+    </ul>
+    <?php } ?>
     <?php if (empty($mailDns['ready_for_external'])) { ?>
     <p class="text-danger mb-2"><?php echo __('mail_dns_not_ready'); ?></p>
     <p class="text-muted mb-2"><?php echo __('mail_dns_directadmin_steps'); ?></p>

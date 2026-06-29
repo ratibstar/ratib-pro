@@ -9,7 +9,7 @@ final class MailDnsCheckService
     /** @var list<string> */
     private const DKIM_SELECTORS = ['x', 'default', 'mail', 'da', 'selector1', 'k1', 'dkim'];
 
-    /** @return array{domain:string,spf:array{ok:bool,detail:string},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ready_for_external:bool} */
+    /** @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},warnings:list<string>,ready_for_external:bool} */
     public function check(string $domain = 'rateb.sa'): array
     {
         $domain = strtolower(trim($domain));
@@ -20,13 +20,26 @@ final class MailDnsCheckService
         $dkim = $this->checkDkim($domain);
         $dmarc = $this->checkDmarc($domain);
         $mx = $this->checkMx($domain);
+        $ptr = $this->checkPtr($domain, $mx['detail'] ?? '');
+        $warnings = [];
+        if (($spf['count'] ?? 0) > 1) {
+            $warnings[] = __('mail_dns_warn_spf_duplicate');
+        }
+        if (!$ptr['ok']) {
+            $warnings[] = __('mail_dns_warn_ptr', ['detail' => $ptr['detail']]);
+        }
+        if (!$dmarc['ok']) {
+            $warnings[] = __('mail_dns_warn_dmarc');
+        }
         return [
             'domain' => $domain,
             'spf' => $spf,
             'dkim' => $dkim,
             'dmarc' => $dmarc,
             'mx' => $mx,
-            'ready_for_external' => $spf['ok'] && $dkim['ok'] && $mx['ok'],
+            'ptr' => $ptr,
+            'warnings' => $warnings,
+            'ready_for_external' => $spf['ok'] && $dkim['ok'] && $mx['ok'] && $ptr['ok'],
             'recommendations' => $this->recommendedRecords($domain, $spf['ok'], $dkim['ok']),
         ];
     }
@@ -55,15 +68,65 @@ final class MailDnsCheckService
         ];
     }
 
-    /** @return array{ok:bool,detail:string} */
+    /** @return array{ok:bool,detail:string,count:int} */
     private function checkSpf(string $domain): array
     {
+        $spfRecords = [];
         foreach ($this->txtRecords($domain) as $txt) {
             if (stripos($txt, 'v=spf1') !== false) {
-                return ['ok' => true, 'detail' => $this->clip($txt)];
+                $spfRecords[] = $txt;
             }
         }
-        return ['ok' => false, 'detail' => __('mail_dns_spf_missing')];
+        if ($spfRecords === []) {
+            return ['ok' => false, 'detail' => __('mail_dns_spf_missing'), 'count' => 0];
+        }
+        if (count($spfRecords) > 1) {
+            return [
+                'ok' => false,
+                'detail' => __('mail_dns_spf_duplicate', ['count' => (string) count($spfRecords)]),
+                'count' => count($spfRecords),
+            ];
+        }
+        return ['ok' => true, 'detail' => $this->clip($spfRecords[0]), 'count' => 1];
+    }
+
+    /** @return array{ok:bool,detail:string} */
+    private function checkPtr(string $domain, string $mxDetail): array
+    {
+        $mailHost = 'mail.' . $domain;
+        $mxParts = array_map('trim', explode(',', $mxDetail));
+        foreach ($mxParts as $part) {
+            if ($part !== '' && str_contains($part, '.')) {
+                $mailHost = rtrim($part, '.');
+                break;
+            }
+        }
+        $ips = @gethostbynamel($mailHost);
+        if (!is_array($ips) || $ips === []) {
+            return ['ok' => false, 'detail' => __('mail_dns_ptr_missing')];
+        }
+        $ip = $ips[0];
+        $rev = implode('.', array_reverse(explode('.', $ip))) . '.in-addr.arpa';
+        $ptrHost = '';
+        $records = @dns_get_record($rev, DNS_PTR);
+        if (is_array($records)) {
+            foreach ($records as $row) {
+                $target = rtrim((string) ($row['target'] ?? ''), '.');
+                if ($target !== '') {
+                    $ptrHost = $target;
+                    break;
+                }
+            }
+        }
+        if ($ptrHost === '') {
+            return ['ok' => false, 'detail' => __('mail_dns_ptr_missing')];
+        }
+        $expected = strtolower($mailHost);
+        $ptrLower = strtolower($ptrHost);
+        if ($ptrLower === $expected || str_ends_with($ptrLower, '.' . $domain)) {
+            return ['ok' => true, 'detail' => $ptrHost];
+        }
+        return ['ok' => false, 'detail' => $ptrHost . ' → ' . __('mail_dns_ptr_expected', ['host' => $mailHost])];
     }
 
     /** @return array{ok:bool,detail:string,selector:?string} */
