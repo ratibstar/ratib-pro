@@ -176,6 +176,18 @@ final class MigrationService
                 if ($this->isBenignMigrationError($e->getMessage())) {
                     continue;
                 }
+                $fallback = $this->permissionInsertWithoutArabic($statement);
+                if ($fallback !== null && $fallback !== $statement) {
+                    try {
+                        $this->execStatement($pdo, $fallback);
+                        continue;
+                    } catch (\PDOException $retry) {
+                        if ($this->isBenignMigrationError($retry->getMessage())) {
+                            continue;
+                        }
+                        throw $retry;
+                    }
+                }
                 throw $e;
             }
         }
@@ -286,6 +298,47 @@ final class MigrationService
             }
         }
         return false;
+    }
+
+    /** Strip Arabic literals from rateb_permissions bulk INSERT (cPanel/latin1 upload safe). */
+    private function permissionInsertWithoutArabic(string $statement): ?string
+    {
+        if (!preg_match('/INSERT\s+INTO\s+`?rateb_permissions`?\s/i', $statement)) {
+            return null;
+        }
+        if (!preg_match('/name_ar/i', $statement)) {
+            return null;
+        }
+
+        $converted = preg_replace(
+            '/INSERT\s+INTO\s+`?rateb_permissions`?\s*\(\s*name\s*,\s*name_ar\s*,\s*slug\s*,\s*module\s*,\s*description\s*,\s*description_ar\s*\)/i',
+            'INSERT INTO rateb_permissions (name, slug, module, description)',
+            $statement,
+            1,
+            $count
+        );
+        if ($count < 1 || !is_string($converted)) {
+            return null;
+        }
+
+        $converted = preg_replace_callback(
+            "/\(\s*'((?:[^'\\\\]|\\\\.)*)'\s*,\s*'(?:[^'\\\\]|\\\\.)*'\s*,\s*'((?:[^'\\\\]|\\\\.)*)'\s*,\s*'((?:[^'\\\\]|\\\\.)*)'\s*,\s*'((?:[^'\\\\]|\\\\.)*)'\s*,\s*'(?:[^'\\\\]|\\\\.)*'\s*\)/",
+            static function (array $m): string {
+                return "('" . $m[1] . "', '" . $m[2] . "', '" . $m[3] . "', '" . $m[4] . "')";
+            },
+            $converted
+        );
+        if (!is_string($converted)) {
+            return null;
+        }
+
+        $converted = preg_replace(
+            '/ON\s+DUPLICATE\s+KEY\s+UPDATE\s+.*$/is',
+            'ON DUPLICATE KEY UPDATE name = VALUES(name), module = VALUES(module), description = VALUES(description)',
+            $converted
+        );
+
+        return is_string($converted) ? $converted : null;
     }
 
     private function assertErpTargetDatabase(string $dbName): void

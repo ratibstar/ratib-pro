@@ -17,11 +17,14 @@ $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 
-$params = ['open' => 'register'];
-if ($plan !== 'pro') $params['plan'] = $plan;
-if ($amount !== null) $params['amount'] = $amount;
-if ($years !== null) $params['years'] = $years;
+$params = ['open' => 'register', 'plan' => $plan !== '' ? $plan : 'gold'];
+if ($amount !== null) {
+    $params['amount'] = $amount;
+}
+if ($years !== null) {
+    $params['years'] = $years;
+}
 $query = http_build_query($params);
-$redirect = $baseUrl . '/pages/home.php?' . $query;
+$redirect = $baseUrl . '/pages/home?' . $query . '#register';
 header('Location: ' . $redirect, true, 302);
 exit;

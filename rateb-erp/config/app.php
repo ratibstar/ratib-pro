@@ -460,22 +460,23 @@ if (!function_exists('rateb_normalize_marketing_plan_slug')) {
 }
 
 if (!function_exists('rateb_marketing_register_url')) {
+    /** Public agency signup (control_registration_requests), not ERP admin or SaaS trial. */
     function rateb_marketing_register_url(string $plan = '', int $years = 1, array $extra = []): string
     {
-        unset($years);
-        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
-            return rateb_url('site/contact');
+        $helper = dirname(__DIR__, 2) . '/includes/rateb-public-base-url.php';
+        if (is_file($helper)) {
+            require_once $helper;
         }
-        unset($extra['open'], $extra['years'], $extra['cms_rev']);
-        $query = $extra;
-        $plan = rateb_normalize_marketing_plan_slug($plan);
-        if ($plan !== '') {
-            $query['plan'] = $plan;
+        if (function_exists('rateb_public_agency_register_url')) {
+            $erpPlan = rateb_normalize_marketing_plan_slug($plan);
+            if ($erpPlan === '') {
+                $erpPlan = 'professional';
+            }
+
+            return rateb_public_agency_register_url(rateb_site_origin(), $erpPlan, $years, $extra);
         }
 
-        return $query !== []
-            ? rateb_url_query(rateb_url('site/register'), $query)
-            : rateb_url('site/register');
+        return rateb_site_origin() . '/pages/agency-request?open=register&plan=gold#register';
     }
 }
 

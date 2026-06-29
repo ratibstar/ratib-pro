@@ -32,13 +32,16 @@ final class MarketingController extends Controller
     public function home(): void
     {
         if (isset($_GET['open']) && trim((string) $_GET['open']) === 'register') {
-            $plan = rateb_normalize_marketing_plan_slug((string) ($_GET['plan'] ?? ''));
-            $query = $plan !== '' ? ['plan' => $plan] : [];
-            Response::redirect(
-                $query !== []
-                    ? rateb_url_query(rateb_url('site/register'), $query)
-                    : rateb_url('site/register')
-            );
+            $helper = dirname(__DIR__, 4) . '/includes/rateb-public-base-url.php';
+            if (is_file($helper)) {
+                require_once $helper;
+            }
+            $plan = (string) ($_GET['plan'] ?? 'professional');
+            $years = isset($_GET['years']) ? (int) $_GET['years'] : 1;
+            $url = function_exists('rateb_public_agency_register_url')
+                ? rateb_public_agency_register_url(rateb_site_origin(), $plan, $years)
+                : (rateb_site_origin() . '/pages/agency-request?open=register&plan=gold#register');
+            Response::redirect($url);
             return;
         }
         $this->renderPage('home', 'home');

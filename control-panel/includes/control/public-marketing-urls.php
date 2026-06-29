@@ -103,7 +103,7 @@ if (!function_exists('control_panel_registration_page_url')) {
         if (function_exists('rateb_public_marketing_home_register_url')) {
             return rateb_public_marketing_home_register_url($root, $plan, $years, $query);
         }
-        $url = rtrim($root, '/') . '/pages/home.php?open=register&plan=' . rawurlencode($plan) . '&years=' . (int) $years;
+        $url = rtrim($root, '/') . '/pages/agency-request?open=register&plan=' . rawurlencode($plan) . '&years=' . (int) $years;
         if ($query !== []) {
             $url .= '&' . http_build_query($query);
         }

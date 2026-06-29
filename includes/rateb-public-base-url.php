@@ -127,10 +127,61 @@ if (!function_exists('rateb_normalize_marketing_plan_slug')) {
     }
 }
 
+if (!function_exists('rateb_legacy_pro_plan_slug')) {
+    /** ERP marketing plan → Rateb Pro checkout slug (pro/gold/platinum). */
+    function rateb_legacy_pro_plan_slug(string $plan): string
+    {
+        if (function_exists('rateb_normalize_marketing_plan_slug')) {
+            $plan = rateb_normalize_marketing_plan_slug($plan);
+        } else {
+            $plan = strtolower(trim($plan));
+        }
+        $map = [
+            'starter' => 'pro',
+            'professional' => 'gold',
+            'enterprise' => 'platinum',
+            'pro' => 'pro',
+            'gold' => 'gold',
+            'platinum' => 'platinum',
+        ];
+
+        return $map[$plan] ?? 'gold';
+    }
+}
+
+if (!function_exists('rateb_public_agency_register_url')) {
+    /**
+     * Public agency registration + payment form (creates control_registration_requests).
+     *
+     * @param array<string, string|int|float> $extra
+     */
+    function rateb_public_agency_register_url(
+        string $baseUrl = '',
+        string $plan = 'professional',
+        int $years = 1,
+        array $extra = []
+    ): string {
+        if ($baseUrl === '') {
+            $baseUrl = rateb_public_site_base_url();
+        }
+        $legacyPlan = rateb_legacy_pro_plan_slug($plan);
+        $query = array_merge(
+            [
+                'open' => 'register',
+                'plan' => $legacyPlan,
+                'years' => max(0, min(1, $years)),
+            ],
+            $extra
+        );
+        unset($query['cms_rev']);
+        $url = rtrim($baseUrl, '/') . '/pages/agency-request?' . http_build_query($query);
+
+        return $url . '#register';
+    }
+}
+
 if (!function_exists('rateb_public_marketing_home_register_url')) {
     /**
-     * Canonical marketing home + registration deep link (single public URL for Gold signup).
-     *
      * @param array<string, string|int|float> $extra
      */
     function rateb_public_marketing_home_register_url(
@@ -139,27 +190,7 @@ if (!function_exists('rateb_public_marketing_home_register_url')) {
         int $years = 1,
         array $extra = []
     ): string {
-        unset($years);
-        if ($baseUrl === '') {
-            $baseUrl = rateb_public_site_base_url();
-        }
-        $query = $extra;
-        unset($query['open'], $query['years'], $query['cms_rev']);
-        if (function_exists('rateb_normalize_marketing_plan_slug')) {
-            $plan = rateb_normalize_marketing_plan_slug($plan);
-        } else {
-            $plan = strtolower(trim($plan));
-        }
-        if ($plan !== '') {
-            $query['plan'] = $plan;
-        }
-
-        $url = rtrim($baseUrl, '/') . '/site/register';
-        if ($query !== []) {
-            $url .= '?' . http_build_query($query);
-        }
-
-        return $url;
+        return rateb_public_agency_register_url($baseUrl, $plan, $years, $extra);
     }
 }
 
