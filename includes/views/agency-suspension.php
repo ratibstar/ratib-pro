@@ -41,7 +41,7 @@ extract($viewData, EXTR_SKIP);
         <div class="header-right">
             <a href="<?php echo htmlspecialchars($siteBaseUrl . '/pages/home.php', ENT_QUOTES, 'UTF-8'); ?>" class="nav-link">Home</a>
             <a href="<?php echo htmlspecialchars($siteBaseUrl . '/pages/home.php#programs', ENT_QUOTES, 'UTF-8'); ?>" class="nav-link active">Our Programs <span class="badge-nav">Important</span></a>
-            <a href="<?php echo htmlspecialchars($siteBaseUrl . '/pages/home.php?open=register', ENT_QUOTES, 'UTF-8'); ?>" class="nav-link">Register</a>
+            <a href="<?php echo htmlspecialchars(function_exists('rateb_public_agency_register_url') ? rateb_public_agency_register_url($siteBaseUrl) : ($siteBaseUrl . '/pages/register-agency?plan=gold&years=1'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-link">Register</a>
             <a href="<?php echo htmlspecialchars($siteBaseUrl . '/pages/customer-portal.php', ENT_QUOTES, 'UTF-8'); ?>" class="btn-client"><i class="fas fa-user"></i> Customer Portal</a>
         </div>
     </header>

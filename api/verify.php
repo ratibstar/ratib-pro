@@ -349,7 +349,15 @@ function verifyRespond(bool $success, string $message, int $orderId, array $meta
         $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
         $baseUrl = $scheme . '://' . $host;
     }
-    $nextUrl = $baseUrl . '/pages/home.php?open=register&payment=' . ($success ? 'success' : 'failed') . '&order_id=' . $orderId;
+    $nextUrl = $baseUrl . '/control-panel/pages/control/registration-requests?control=1&all_dates=1';
+    if (!$success) {
+        if (function_exists('rateb_public_agency_register_url')) {
+            require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+            $nextUrl = rateb_public_agency_register_url($baseUrl, 'gold', 1, ['payment' => 'failed', 'order_id' => (string) $orderId]);
+        } else {
+            $nextUrl = $baseUrl . '/pages/register-agency?payment=failed&order_id=' . rawurlencode((string) $orderId);
+        }
+    }
     $safeMsg = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
     $safeNext = htmlspecialchars($nextUrl, ENT_QUOTES, 'UTF-8');
     payment_api_mark_completed();

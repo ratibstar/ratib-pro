@@ -214,9 +214,9 @@ $cpT = static function (string $key): string {
             </li>
             <?php
             $ctrlDb = (isset($ctrl) && $ctrl instanceof mysqli) ? $ctrl : null;
-            $clientPricingPageUrl = control_panel_pricing_page_url($ctrlDb);
+            $clientRegistrationPageUrl = control_panel_registration_page_url($ctrlDb);
             ?>
-            <li><a href="<?php echo htmlspecialchars($clientPricingPageUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-subitem" title="Gold &amp; Platinum pricing on the live marketing site"><i class="fas fa-tags"></i><span><?php echo htmlspecialchars($cpT('nav.client_registration_page'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientRegistrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-subitem" title="Bilingual agency registration form"><i class="fas fa-user-plus"></i><span><?php echo htmlspecialchars($cpT('nav.client_registration_page'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <?php
             control_sidebar_group_close();
             control_sidebar_group_open('business-modules', $cpT('section.business_modules'), 'fa-briefcase');

@@ -179,7 +179,7 @@ $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
                 </button>
             </form>
             <div class="mt-4 text-center">
-                <p class="text-muted">Don't have a registration? <a href="<?php echo htmlspecialchars($baseUrl); ?>/pages/home.php?open=register" class="portal-link-accent">Register here</a></p>
+                <p class="text-muted">Don't have a registration? <a href="<?php echo htmlspecialchars(function_exists('rateb_public_agency_register_url') ? rateb_public_agency_register_url($baseUrl) : ($baseUrl . '/pages/register-agency?plan=gold&years=1')); ?>" class="portal-link-accent">Register here</a></p>
             </div>
         </div>
         <?php else: ?>

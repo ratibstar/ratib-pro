@@ -476,7 +476,7 @@ if (!function_exists('rateb_marketing_register_url')) {
             return rateb_public_agency_register_url(rateb_site_origin(), $erpPlan, $years, $extra);
         }
 
-        return rateb_site_origin() . '/pages/home?open=register&plan=gold#register';
+        return rateb_site_origin() . '/pages/register-agency?plan=gold&years=1';
     }
 }
 

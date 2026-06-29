@@ -149,9 +149,21 @@ if (!function_exists('rateb_legacy_pro_plan_slug')) {
     }
 }
 
+if (!function_exists('rateb_registration_requests_queue_url')) {
+    /** Control panel registration requests queue (post-submit redirect for staff). */
+    function rateb_registration_requests_queue_url(string $baseUrl = ''): string
+    {
+        if ($baseUrl === '') {
+            $baseUrl = rateb_public_site_base_url();
+        }
+
+        return rtrim($baseUrl, '/') . '/control-panel/pages/control/registration-requests?control=1&all_dates=1';
+    }
+}
+
 if (!function_exists('rateb_public_agency_register_url')) {
     /**
-     * Public agency registration + payment form (creates control_registration_requests).
+     * Public agency registration page (creates control_registration_requests after payment).
      *
      * @param array<string, string|int|float> $extra
      */
@@ -167,20 +179,18 @@ if (!function_exists('rateb_public_agency_register_url')) {
         $legacyPlan = rateb_legacy_pro_plan_slug($plan);
         $query = array_merge(
             [
-                'open' => 'register',
                 'plan' => $legacyPlan,
                 'years' => max(0, min(1, $years)),
             ],
             $extra
         );
-        unset($query['cms_rev']);
+        unset($query['open'], $query['cms_rev']);
         $build = rateb_public_build_marker();
         if ($build !== '' && !isset($query['v'])) {
             $query['v'] = $build;
         }
-        $url = rtrim($baseUrl, '/') . '/pages/home?' . http_build_query($query);
 
-        return $url . '#register';
+        return rtrim($baseUrl, '/') . '/pages/register-agency?' . http_build_query($query);
     }
 }
 

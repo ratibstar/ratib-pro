@@ -231,6 +231,48 @@
     }
   }
 
+  function resolveAfterSaveUrl(form) {
+    var fromForm = form && form.getAttribute ? form.getAttribute('data-after-save-url') : '';
+    if (fromForm && String(fromForm).trim() !== '') {
+      return String(fromForm).trim();
+    }
+    if (
+      typeof window.RATEB_AFTER_REGISTER_URL === 'string' &&
+      window.RATEB_AFTER_REGISTER_URL.trim() !== ''
+    ) {
+      return window.RATEB_AFTER_REGISTER_URL.trim();
+    }
+    return '';
+  }
+
+  function postRegistrationRequest(payload) {
+    var requestUrl = apiBaseUrl() + '/api/registration-request.php';
+    return fetchWithTimeout(requestUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {}),
+      credentials: 'same-origin',
+    }, REQUEST_TIMEOUT_MS).then(function (response) {
+      return response.text().then(function (text) {
+        var parsed = null;
+        if (text) {
+          try {
+            parsed = JSON.parse(text);
+          } catch (e) {
+            parsed = null;
+          }
+        }
+        return {
+          ok: response.ok,
+          status: response.status,
+          parsed: parsed,
+          text: text,
+          response: response,
+        };
+      });
+    });
+  }
+
   function postCreateOrder(payload) {
     var requestUrl = apiBaseUrl() + '/api/create-order.php';
     return fetchWithTimeout(requestUrl, {
@@ -339,6 +381,37 @@
       plan: identity.plan,
       years: identity.years
     });
+
+    var planVal = String(payload.plan || '').trim().toLowerCase();
+    var planAmount = parseFloat(payload.plan_amount) || 0;
+    var afterSaveUrl = resolveAfterSaveUrl(form);
+
+    if (planVal === 'pro' || planAmount <= 0) {
+      postRegistrationRequest(payload).then(function (res) {
+        if (res.ok && res.parsed && res.parsed.success) {
+          clearCheckoutLock();
+          if (afterSaveUrl) {
+            window.location.assign(afterSaveUrl);
+            return;
+          }
+          window.alert(res.parsed.message || 'Thank you. Your request has been submitted.');
+          return;
+        }
+        clearCheckoutLock();
+        var msg = res.parsed && res.parsed.message;
+        window.alert((typeof msg === 'string' && msg) || 'Could not submit. Please try again.');
+      }).catch(function () {
+        clearCheckoutLock();
+        window.alert('Could not reach the server. Please try again.');
+      }).finally(function () {
+        window.setTimeout(function () {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = defaultBtnHtml;
+        }, 0);
+      });
+      return;
+    }
+
     var checkoutUrl = apiBaseUrl() + '/api/create-order.php';
 
     postCreateOrder(payload).then(

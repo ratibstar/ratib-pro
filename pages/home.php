@@ -6,6 +6,18 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+
+// Legacy ?open=register on home → dedicated registration page
+if (isset($_GET['open']) && trim((string) ($_GET['open'] ?? '')) === 'register') {
+    $legacyPlan = trim((string) ($_GET['plan'] ?? 'gold')) ?: 'gold';
+    $legacyYears = isset($_GET['years']) ? (int) $_GET['years'] : 1;
+    $extra = $_GET;
+    unset($extra['open']);
+    if (!headers_sent()) {
+        header('Location: ' . rateb_public_agency_register_url('', $legacyPlan, $legacyYears, $extra), true, 302);
+        exit;
+    }
+}
 /** Platform pills on this page use in-page #anchors (no full reload). */
 $GLOBALS['rateb_public_nav_on_marketing_home'] = true;
 
@@ -428,7 +440,10 @@ $ratebHomeAnchor = static function (string $hash): string {
         ? rateb_public_marketing_home_anchor($hash)
         : ($hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#'));
 };
-$ratebRegisterHref = $ratebHomeAnchor('#register');
+$ratebRegisterHrefPro = rateb_public_agency_register_url($baseUrl, 'starter', 1);
+$ratebRegisterHrefGold = rateb_public_agency_register_url($baseUrl, 'professional', 1);
+$ratebRegisterHrefPlatinum = rateb_public_agency_register_url($baseUrl, 'enterprise', 1);
+$ratebRegisterHref = $ratebRegisterHrefGold;
 $ratebHeroTourHref = $ratebHomeAnchor('#video');
 $ratebArchSectionsOk = is_file(__DIR__ . '/../includes/rateb-architecture-sections.php');
 $ratebWalkthroughHref = $ratebArchSectionsOk
@@ -1027,7 +1042,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratebLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="<?php echo htmlspecialchars($ratebRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.starter.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratebRegisterHrefPro, ENT_QUOTES, 'UTF-8'); ?>" class="btn-register btn-register-starter"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.starter.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card gold price-card--featured">
                 <span class="card-badge"><?php echo htmlspecialchars($ratebHome['home.pricing.gold.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
@@ -1048,7 +1063,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratebLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="<?php echo htmlspecialchars($ratebRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.gold.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratebRegisterHrefGold, ENT_QUOTES, 'UTF-8'); ?>" id="goldRegisterBtn" class="btn-register"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.gold.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card platinum">
                 <span class="card-badge"><?php echo htmlspecialchars($ratebHome['home.pricing.platinum.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
@@ -1069,7 +1084,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratebLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="<?php echo htmlspecialchars($ratebRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.platinum.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratebRegisterHrefPlatinum, ENT_QUOTES, 'UTF-8'); ?>" id="platinumRegisterBtn" class="btn-register"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.platinum.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </div>
             </div>

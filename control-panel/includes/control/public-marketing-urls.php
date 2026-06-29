@@ -83,7 +83,7 @@ if (!function_exists('control_panel_registration_country_query')) {
 
 if (!function_exists('control_panel_registration_page_url')) {
     /**
-     * Marketing home + ?open=register&plan=…&v=… (Gold/Platinum pricing + checkout form).
+     * Standalone register-agency page URL (Gold/Platinum pricing + checkout form).
      *
      * @param array<string, string|int|float> $extra
      */
@@ -103,12 +103,10 @@ if (!function_exists('control_panel_registration_page_url')) {
         if (function_exists('rateb_public_marketing_home_register_url')) {
             return rateb_public_marketing_home_register_url($root, $plan, $years, $query);
         }
-        $url = rtrim($root, '/') . '/pages/agency-request?open=register&plan=' . rawurlencode($plan) . '&years=' . (int) $years;
-        if ($query !== []) {
-            $url .= '&' . http_build_query($query);
-        }
+        $legacyPlan = function_exists('rateb_legacy_pro_plan_slug') ? rateb_legacy_pro_plan_slug($plan) : $plan;
 
-        return $url . '#register';
+        return rtrim($root, '/') . '/pages/register-agency?plan=' . rawurlencode($legacyPlan) . '&years=' . (int) $years
+            . ($query !== [] ? '&' . http_build_query($query) : '');
     }
 }
 

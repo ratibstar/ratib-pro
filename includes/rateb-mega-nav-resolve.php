@@ -66,25 +66,14 @@ if (!function_exists('rateb_mega_nav_marketing_home')) {
 }
 
 if (!function_exists('rateb_mega_nav_register_href')) {
-    /** Registration checkout form — marketing home with ?open=register (not #programs). */
+    /** Standalone bilingual registration page. */
     function rateb_mega_nav_register_href(string $baseUrl, string $navPrefix = ''): string
     {
-        if (rateb_mega_nav_use_relative_home_anchors($navPrefix)) {
-            return '?open=register&plan=professional#register';
-        }
         if (function_exists('rateb_public_marketing_home_register_url')) {
             return rateb_public_marketing_home_register_url($baseUrl, 'professional', 1);
         }
-        if ($navPrefix !== '' && !rateb_mega_nav_is_profile_context($navPrefix)) {
-            $sep = (strpos($navPrefix, '?') !== false) ? '&' : '?';
 
-            return rtrim($navPrefix, '/') . $sep . 'open=register&plan=professional#register';
-        }
-
-        $home = rateb_mega_nav_marketing_home($baseUrl);
-        $sep = (strpos($home, '?') !== false) ? '&' : '?';
-
-        return $home . $sep . 'open=register&plan=professional#register';
+        return rtrim($baseUrl, '/') . '/pages/register-agency?plan=gold&years=1';
     }
 }
 

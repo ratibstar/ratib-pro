@@ -399,11 +399,11 @@ if ($tableExists) {
     <div class="req-reg-link-box">
         <span class="text-muted">Registration links:</span>
         <select id="regLinkSelect" class="form-control req-ctrl-input req-width-auto">
-            <option value="<?php echo htmlspecialchars($registerProUrl); ?>">Recommended — Gold, 1 year (N-Genius)</option>
-            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register']), ENT_QUOTES, 'UTF-8'); ?>">Open register only (defaults to Gold)</option>
-            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register', 'plan' => 'pro']), ENT_QUOTES, 'UTF-8'); ?>">Pro (non-paid inquiry)</option>
-            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register', 'plan' => 'gold', 'amount' => 650]), ENT_QUOTES, 'UTF-8'); ?>">Gold $650</option>
-            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register', 'plan' => 'platinum', 'amount' => 800]), ENT_QUOTES, 'UTF-8'); ?>">Platinum $800</option>
+            <option value="<?php echo htmlspecialchars($registerProUrl); ?>">Recommended — Gold, 1 year (register-agency)</option>
+            <option value="<?php echo htmlspecialchars(control_panel_registration_page_url($ctrl, 'gold', 1)); ?>">Gold — open registration form</option>
+            <option value="<?php echo htmlspecialchars(control_panel_registration_page_url($ctrl, 'starter', 1)); ?>">Pro (non-paid inquiry)</option>
+            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query(control_panel_registration_page_url($ctrl, 'gold', 1), ['amount' => 650])); ?>">Gold $650</option>
+            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query(control_panel_registration_page_url($ctrl, 'enterprise', 1), ['amount' => 800])); ?>">Platinum $800</option>
         </select>
         <input type="text" id="regLink" readonly value="<?php echo htmlspecialchars($registerProUrl); ?>" class="req-reg-link-input">
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCopyLink"><i class="fas fa-copy me-1"></i> Copy</button>

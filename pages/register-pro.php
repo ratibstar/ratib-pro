@@ -4,11 +4,9 @@
  * AR: يدير عرض صفحات المستخدم وتدفق الخادم الخاص بالصفحة في `pages/register-pro.php`.
  */
 /**
- * Short link for Pro agency registration - redirects to home.php (single registration form)
+ * Short link for Pro agency registration — redirects to standalone register-agency page.
  */
-$scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
-$base = dirname($scriptDir); // app root (one level up from /pages)
-$base = ($base === '.' || $base === '\\') ? '' : $base;
-$url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim($base, '/') . '/pages/home.php?open=register';
-header('Location: ' . $url, true, 302);
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/rateb-public-base-url.php';
+header('Location: ' . rateb_public_agency_register_url('', 'pro', 1), true, 302);
 exit;

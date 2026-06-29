@@ -1,36 +1,14 @@
 <?php
 /**
- * EN: Handles user-facing page rendering and page-level server flow in `pages/agency-request.php`.
- * AR: يدير عرض صفحات المستخدم وتدفق الخادم الخاص بالصفحة في `pages/agency-request.php`.
- */
-/**
- * Public: Agency registration — redirects to home.php (single registration + payment form).
- * Keeps one page for both: home Register button and control panel "Register Pro".
+ * Legacy alias — redirects to standalone register-agency page.
  */
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/rateb-public-base-url.php';
 
-$plan = trim($_GET['plan'] ?? 'pro') ?: 'pro';
-$amount = isset($_GET['amount']) ? (float)$_GET['amount'] : null;
-$years = isset($_GET['years']) ? (int)$_GET['years'] : null;
+$plan = trim((string) ($_GET['plan'] ?? 'gold')) ?: 'gold';
+$years = isset($_GET['years']) ? (int) $_GET['years'] : 1;
+$extra = $_GET;
+unset($extra['open']);
 
-$path = $_SERVER['REQUEST_URI'] ?? '';
-$basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
-$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
-
-$params = ['open' => 'register', 'plan' => $plan !== '' ? $plan : 'gold'];
-if ($amount !== null) {
-    $params['amount'] = $amount;
-}
-if ($years !== null) {
-    $params['years'] = $years;
-}
-if (function_exists('rateb_public_build_marker')) {
-    $build = rateb_public_build_marker();
-    if ($build !== '') {
-        $params['v'] = $build;
-    }
-}
-$query = http_build_query($params);
-$redirect = $baseUrl . '/pages/home?' . $query . '#register';
-header('Location: ' . $redirect, true, 302);
+header('Location: ' . rateb_public_agency_register_url('', $plan, $years, $extra), true, 302);
 exit;
