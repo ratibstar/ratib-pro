@@ -49,7 +49,10 @@ RewriteRule ^pages/enterprise-pack/?$ /enterprise-pack/ [R=302,L]
 RewriteRule ^sitemap\.xml$ public/sitemap.xml [L]
 RewriteRule ^robots\.txt$ public/robots.txt [L]
 
-# Legacy ERP marketing URL only (do NOT 301 /rateb-erp/public/admin|login|*.php — conflicts with site /admin, /login)
+# Legacy ERP marketing URLs → canonical /site/* on rateb.sa (not admin/login paths)
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/site/([^\s?]+) [NC]
+RewriteRule ^rateb-erp/public/site/(.+)$ /site/$1 [R=301,L,QSA]
 RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/site/?[\s?] [NC]
 RewriteRule ^rateb-erp/public/site/?$ / [R=301,L,QSA]
 

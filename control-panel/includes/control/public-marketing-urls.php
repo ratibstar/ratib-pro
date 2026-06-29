@@ -89,7 +89,7 @@ if (!function_exists('control_panel_registration_page_url')) {
      */
     function control_panel_registration_page_url(
         ?mysqli $ctrl = null,
-        string $plan = 'gold',
+        string $plan = 'professional',
         int $years = 1,
         array $extra = []
     ): string {

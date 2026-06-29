@@ -106,7 +106,7 @@ if (!function_exists('rateb_about_render_sections')) {
         $shots = $about['screenshots'] ?? [];
         $homeRegister = function_exists('rateb_public_marketing_home_register_url')
             ? rateb_public_marketing_home_register_url($baseUrl)
-            : $baseUrl . '/pages/home.php?open=register&plan=gold&years=1';
+            : $baseUrl . '/site/register?plan=professional';
         $contactWa = 'https://wa.me/966599863868';
         $company = $about['company'] ?? [];
         if ($company !== []) {

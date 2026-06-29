@@ -438,11 +438,37 @@ if (!function_exists('rateb_locale_switch_url')) {
     }
 }
 
+if (!function_exists('rateb_normalize_marketing_plan_slug')) {
+    /** Map legacy Rateb Pro slugs (pro/gold/platinum) to ERP plan slugs. */
+    function rateb_normalize_marketing_plan_slug(string $plan): string
+    {
+        $slug = strtolower(trim($plan));
+        if ($slug === '') {
+            return '';
+        }
+        $legacy = [
+            'pro' => 'starter',
+            'gold' => 'professional',
+            'platinum' => 'enterprise',
+        ];
+        if (isset($legacy[$slug])) {
+            $slug = $legacy[$slug];
+        }
+
+        return in_array($slug, ['starter', 'professional', 'enterprise'], true) ? $slug : '';
+    }
+}
+
 if (!function_exists('rateb_marketing_register_url')) {
     function rateb_marketing_register_url(string $plan = '', int $years = 1, array $extra = []): string
     {
         unset($years);
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return rateb_url('site/contact');
+        }
+        unset($extra['open'], $extra['years'], $extra['cms_rev']);
         $query = $extra;
+        $plan = rateb_normalize_marketing_plan_slug($plan);
         if ($plan !== '') {
             $query['plan'] = $plan;
         }

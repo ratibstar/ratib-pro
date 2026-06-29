@@ -15,8 +15,8 @@ if (!function_exists('rateb_public_chat_kb_entries')) {
             ? rateb_public_marketing_home_url($baseUrl)
             : $root . '/home';
         $registerUrl = function_exists('rateb_public_marketing_home_register_url')
-            ? rateb_public_marketing_home_register_url($baseUrl, 'gold', 1)
-            : $homeUrl . '?open=register#register';
+            ? rateb_public_marketing_home_register_url($baseUrl, 'professional', 1)
+            : $root . '/site/register?plan=professional';
         $profileUrl = $root . '/profile/';
         $loginUrl = $root . '/pages/login.php';
         $partnerUrl = $root . '/pages/partner-portal-login.php';

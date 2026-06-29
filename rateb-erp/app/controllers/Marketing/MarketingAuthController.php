@@ -256,8 +256,7 @@ final class MarketingAuthController extends Controller
 
     private function resolveRegisterPlanSlug(string $raw): string
     {
-        $slug = strtolower(trim($raw));
-        return in_array($slug, ['starter', 'professional', 'enterprise'], true) ? $slug : '';
+        return rateb_normalize_marketing_plan_slug($raw);
     }
 
     /** @return array<string, mixed>|null */

@@ -32,9 +32,8 @@ final class MarketingController extends Controller
     public function home(): void
     {
         if (isset($_GET['open']) && trim((string) $_GET['open']) === 'register') {
-            $plan = trim((string) ($_GET['plan'] ?? ''));
-            $allowed = ['starter', 'professional', 'enterprise'];
-            $query = in_array($plan, $allowed, true) ? ['plan' => $plan] : [];
+            $plan = rateb_normalize_marketing_plan_slug((string) ($_GET['plan'] ?? ''));
+            $query = $plan !== '' ? ['plan' => $plan] : [];
             Response::redirect(
                 $query !== []
                     ? rateb_url_query(rateb_url('site/register'), $query)
@@ -95,7 +94,7 @@ final class MarketingController extends Controller
         echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
         $origin = rateb_site_origin();
         foreach ($pages as $p) {
-            $loc = $origin . '/' . ltrim(rateb_url($p), '/');
+            $loc = rateb_url($p);
             echo '  <url><loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc></url>' . "\n";
         }
         foreach ($this->cms->queryPublishedArticles(500) as $article) {
@@ -103,7 +102,7 @@ final class MarketingController extends Controller
             if ($slug === '') {
                 continue;
             }
-            $loc = $origin . '/' . ltrim(rateb_url('site/blog/' . $slug), '/');
+            $loc = rateb_url('site/blog/' . $slug);
             echo '  <url><loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc></url>' . "\n";
         }
         echo '</urlset>';

@@ -106,6 +106,27 @@ if (!function_exists('rateb_public_nav_marketing_home_prefix')) {
     }
 }
 
+if (!function_exists('rateb_normalize_marketing_plan_slug')) {
+    /** Map legacy Rateb Pro slugs (pro/gold/platinum) to ERP plan slugs. */
+    function rateb_normalize_marketing_plan_slug(string $plan): string
+    {
+        $slug = strtolower(trim($plan));
+        if ($slug === '') {
+            return '';
+        }
+        $legacy = [
+            'pro' => 'starter',
+            'gold' => 'professional',
+            'platinum' => 'enterprise',
+        ];
+        if (isset($legacy[$slug])) {
+            $slug = $legacy[$slug];
+        }
+
+        return in_array($slug, ['starter', 'professional', 'enterprise'], true) ? $slug : '';
+    }
+}
+
 if (!function_exists('rateb_public_marketing_home_register_url')) {
     /**
      * Canonical marketing home + registration deep link (single public URL for Gold signup).
@@ -114,21 +135,24 @@ if (!function_exists('rateb_public_marketing_home_register_url')) {
      */
     function rateb_public_marketing_home_register_url(
         string $baseUrl = '',
-        string $plan = 'gold',
+        string $plan = 'professional',
         int $years = 1,
         array $extra = []
     ): string {
+        unset($years);
         if ($baseUrl === '') {
             $baseUrl = rateb_public_site_base_url();
         }
-        $query = array_merge(
-            [
-                'plan' => $plan,
-                'years' => $years,
-            ],
-            $extra
-        );
-        unset($query['open'], $query['cms_rev']);
+        $query = $extra;
+        unset($query['open'], $query['years'], $query['cms_rev']);
+        if (function_exists('rateb_normalize_marketing_plan_slug')) {
+            $plan = rateb_normalize_marketing_plan_slug($plan);
+        } else {
+            $plan = strtolower(trim($plan));
+        }
+        if ($plan !== '') {
+            $query['plan'] = $plan;
+        }
 
         $url = rtrim($baseUrl, '/') . '/site/register';
         if ($query !== []) {
