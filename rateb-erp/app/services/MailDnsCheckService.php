@@ -101,20 +101,28 @@ final class MailDnsCheckService
                 break;
             }
         }
-        $ips = @gethostbynamel($mailHost);
-        if (!is_array($ips) || $ips === []) {
+        $ip = $this->resolveIpv4($mailHost);
+        if ($ip === '') {
             return ['ok' => false, 'detail' => __('mail_dns_ptr_missing')];
         }
-        $ip = $ips[0];
         $rev = implode('.', array_reverse(explode('.', $ip))) . '.in-addr.arpa';
         $ptrHost = '';
-        $records = @dns_get_record($rev, DNS_PTR);
-        if (is_array($records)) {
-            foreach ($records as $row) {
-                $target = rtrim((string) ($row['target'] ?? ''), '.');
-                if ($target !== '') {
-                    $ptrHost = $target;
-                    break;
+        foreach ($this->dnsAnswers($rev, 12) as $row) {
+            $target = rtrim(trim((string) ($row['data'] ?? '')), '.');
+            if ($target !== '') {
+                $ptrHost = $target;
+                break;
+            }
+        }
+        if ($ptrHost === '') {
+            $records = @dns_get_record($rev, DNS_PTR);
+            if (is_array($records)) {
+                foreach ($records as $row) {
+                    $target = rtrim((string) ($row['target'] ?? ''), '.');
+                    if ($target !== '') {
+                        $ptrHost = $target;
+                        break;
+                    }
                 }
             }
         }
@@ -219,6 +227,25 @@ final class MailDnsCheckService
             }
         }
         return $out;
+    }
+
+    private function resolveIpv4(string $host): string
+    {
+        foreach ($this->dnsAnswers($host, 1) as $row) {
+            $ip = trim((string) ($row['data'] ?? ''));
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                return $ip;
+            }
+        }
+        $ips = @gethostbynamel($host);
+        if (is_array($ips)) {
+            foreach ($ips as $ip) {
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                    return $ip;
+                }
+            }
+        }
+        return '';
     }
 
     /** @return list<array<string, mixed>> */
