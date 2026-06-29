@@ -169,6 +169,66 @@
         }
     });
 
+    function ratebPageLangIsEn() {
+        var lang = (document.documentElement.lang || 'en').toLowerCase();
+        return lang === 'en' || lang.indexOf('en-') === 0;
+    }
+
+    function restorePricingPackages() {
+        var pricingPackages = document.getElementById('ratebPricingPackages');
+        var registerSection = document.getElementById('register');
+        var backBtn = document.getElementById('ratebBackToPricing');
+        var infoCol = registerSection ? registerSection.querySelector('.rateb-info') : null;
+        var registerHomeSlot = document.getElementById('ratebRegisterHomeSlot');
+        if (pricingPackages) {
+            pricingPackages.style.display = '';
+        }
+        if (registerSection) {
+            registerSection.classList.remove('rateb-register--inline-programs');
+            if (registerHomeSlot && registerSection.parentNode !== registerHomeSlot) {
+                registerHomeSlot.appendChild(registerSection);
+            }
+            if (!openRegister) {
+                registerSection.style.display = 'none';
+            }
+        }
+        if (infoCol) {
+            infoCol.style.display = '';
+        }
+        if (backBtn) {
+            backBtn.classList.add('is-hidden');
+            backBtn.style.display = 'none';
+        }
+    }
+
+    function showRegistrationFormInlineInPrograms(registerSection) {
+        var pricingPackages = document.getElementById('ratebPricingPackages');
+        var programsAnchor = document.getElementById('ratebProgramsRegisterAnchor');
+        var backBtn = document.getElementById('ratebBackToPricing');
+        var infoCol = registerSection.querySelector('.rateb-info');
+        if (!pricingPackages || !programsAnchor) {
+            return false;
+        }
+        pricingPackages.style.display = 'none';
+        programsAnchor.hidden = false;
+        if (registerSection.parentNode !== programsAnchor) {
+            programsAnchor.appendChild(registerSection);
+        }
+        registerSection.classList.add('rateb-register--inline-programs');
+        if (infoCol) {
+            infoCol.style.display = 'none';
+        }
+        if (backBtn) {
+            backBtn.classList.remove('is-hidden');
+            backBtn.style.display = '';
+        }
+        var programs = document.getElementById('programs');
+        if (programs) {
+            programs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return true;
+    }
+
     // EN: Opens registration section and synchronizes hidden pricing fields.
     // AR: فتح قسم التسجيل وتحديث حقول الخطة/السعر المخفية.
     function showRegistrationForm(plan, amount, years) {
@@ -235,10 +295,20 @@
             if (amount > 0 && typeof updatePaymentSummary === 'function') {
                 updatePaymentSummary(amount, years, plan);
             }
+            if (ratebPageLangIsEn() && showRegistrationFormInlineInPrograms(registerSection)) {
+                return;
+            }
             registerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
     window.showRegistrationForm = showRegistrationForm;
+
+    var backToPricingBtn = document.getElementById('ratebBackToPricing');
+    if (backToPricingBtn) {
+        backToPricingBtn.addEventListener('click', function () {
+            restorePricingPackages();
+        });
+    }
 
     // EN: Debounce-like guard to avoid duplicate summary DOM writes.
     // AR: آلية حماية لتقليل التحديثات المتكررة في ملخص الدفع.
@@ -520,11 +590,11 @@
         }
         setFormPlan(initialPlan, initialAmount !== null ? initialAmount : defaultAmount, initialYears);
         if (openRegister) {
-            var rs = document.getElementById('register');
-            if (rs) {
-                rs.style.display = 'flex';
-                rs.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            showRegistrationForm(
+                initialPlan,
+                initialAmount !== null ? initialAmount : defaultAmount,
+                initialYears
+            );
         } else {
             ratebScrollToPageHash(window.location.hash, false);
         }

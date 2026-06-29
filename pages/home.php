@@ -6,18 +6,6 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/rateb-public-base-url.php';
-
-// Legacy ?open=register on home → dedicated registration page
-if (isset($_GET['open']) && trim((string) ($_GET['open'] ?? '')) === 'register') {
-    $legacyPlan = trim((string) ($_GET['plan'] ?? 'gold')) ?: 'gold';
-    $legacyYears = isset($_GET['years']) ? (int) $_GET['years'] : 1;
-    $extra = $_GET;
-    unset($extra['open']);
-    if (!headers_sent()) {
-        header('Location: ' . rateb_public_agency_register_url('', $legacyPlan, $legacyYears, $extra), true, 302);
-        exit;
-    }
-}
 /** Platform pills on this page use in-page #anchors (no full reload). */
 $GLOBALS['rateb_public_nav_on_marketing_home'] = true;
 
@@ -326,7 +314,8 @@ if (is_dir($imagesDir)) {
     }
 }
 // Registration form (same as agency-request)
-$openRegister = isset($_GET['open']) && trim((string) ($_GET['open'] ?? '')) === 'register';
+$openRegister = (isset($_GET['open']) && trim((string) ($_GET['open'] ?? '')) === 'register')
+    || ($planRaw !== '');
 // Public link is often ?open=register with no plan — default to gold so N-Genius create-order accepts it (gold/platinum only).
 $planRaw = isset($_GET['plan']) ? trim((string) $_GET['plan']) : '';
 $plan = $planRaw !== '' ? $planRaw : ($openRegister ? 'gold' : 'pro');
@@ -440,10 +429,7 @@ $ratebHomeAnchor = static function (string $hash): string {
         ? rateb_public_marketing_home_anchor($hash)
         : ($hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#'));
 };
-$ratebRegisterHrefPro = rateb_public_agency_register_url($baseUrl, 'starter', 1);
-$ratebRegisterHrefGold = rateb_public_agency_register_url($baseUrl, 'professional', 1);
-$ratebRegisterHrefPlatinum = rateb_public_agency_register_url($baseUrl, 'enterprise', 1);
-$ratebRegisterHref = $ratebRegisterHrefGold;
+$ratebRegisterHref = $ratebHomeAnchor('#register');
 $ratebHeroTourHref = $ratebHomeAnchor('#video');
 $ratebArchSectionsOk = is_file(__DIR__ . '/../includes/rateb-architecture-sections.php');
 $ratebWalkthroughHref = $ratebArchSectionsOk
@@ -1030,6 +1016,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                     <h2 class="rateb-section__title"><?php echo htmlspecialchars($ratebHome['home.pricing.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
                     <p class="rateb-section__sub"><?php echo htmlspecialchars($ratebHome['home.pricing.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
+                <div id="ratebPricingPackages">
                 <div class="pricing-row pricing-row--three">
             <div class="price-card price-card-starter">
                 <span class="card-badge card-badge--muted"><?php echo htmlspecialchars($ratebHome['home.pricing.starter.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
@@ -1042,7 +1029,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratebLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="<?php echo htmlspecialchars($ratebRegisterHrefPro, ENT_QUOTES, 'UTF-8'); ?>" class="btn-register btn-register-starter"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.starter.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratebRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.starter.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card gold price-card--featured">
                 <span class="card-badge"><?php echo htmlspecialchars($ratebHome['home.pricing.gold.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
@@ -1063,7 +1050,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratebLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="<?php echo htmlspecialchars($ratebRegisterHrefGold, ENT_QUOTES, 'UTF-8'); ?>" id="goldRegisterBtn" class="btn-register"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.gold.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratebRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.gold.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card platinum">
                 <span class="card-badge"><?php echo htmlspecialchars($ratebHome['home.pricing.platinum.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
@@ -1084,12 +1071,15 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratebLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="<?php echo htmlspecialchars($ratebRegisterHrefPlatinum, ENT_QUOTES, 'UTF-8'); ?>" id="platinumRegisterBtn" class="btn-register"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.platinum.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratebRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratebHome['home.pricing.platinum.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </div>
+                </div>
+                <div id="ratebProgramsRegisterAnchor" class="rateb-programs-register-anchor" hidden></div>
             </div>
         </section>
 
+        <div id="ratebRegisterHomeSlot">
         <section class="register-section<?php echo $openRegister ? '' : ' register-section-hidden'; ?> rateb-register-wrap" id="register">
         <div class="rateb-info">
             <h2><i class="fas fa-info-circle me-2 register-info-icon"></i><?php echo htmlspecialchars($ratebHome['home.register.info.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
@@ -1101,6 +1091,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
             </ul>
         </div>
         <div class="form-card">
+            <button type="button" class="btn btn-link rateb-back-to-pricing is-hidden" id="ratebBackToPricing"><i class="fas fa-arrow-left me-1"></i> Back to plans</button>
             <h1><i class="fas fa-building me-2"></i><?php echo htmlspecialchars($ratebHome['home.register.form.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h1>
             <p class="subtitle">Request <?php echo htmlspecialchars($planLabel); ?> plan access<?php if ($planAmount): ?> — $<?php echo number_format($planAmount); ?><?php if ($years !== null): ?><?php if ((int)$years === 0): ?> per month<?php elseif ((int)$years > 0): ?> for <?php echo (int)$years; ?> year<?php echo (int)$years > 1 ? 's' : ''; ?><?php else: ?> setup<?php endif; ?><?php else: ?> setup<?php endif; ?><?php endif; ?>. We will review and contact you.</p>
             <div class="mb-3">
@@ -1211,6 +1202,7 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
             </form>
         </div>
     </section>
+        </div>
 
         <section class="rateb-final-cta rateb-final-cta--enterprise" id="contact" aria-labelledby="rateb-final-cta-title">
             <div class="rateb-final-cta__bg" aria-hidden="true"></div>

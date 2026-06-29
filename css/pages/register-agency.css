@@ -63,6 +63,29 @@
   padding-bottom: 0.65rem;
 }
 
+.rateb-register--inline-programs {
+  display: flex !important;
+  flex-direction: column;
+  margin: 0;
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.rateb-register--inline-programs .rateb-info {
+  display: none !important;
+}
+
+.rateb-programs-register-anchor:not([hidden]) {
+  display: block;
+  width: 100%;
+}
+
+.rateb-back-to-pricing {
+  color: var(--r-muted, #8d98aa);
+  padding-left: 0;
+  margin-bottom: 0.5rem;
+}
+
 .rateb-register-agency-page .btn-submit .label-ar {
   font-size: 0.85em;
   opacity: 0.9;

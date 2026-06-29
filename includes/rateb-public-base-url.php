@@ -204,7 +204,24 @@ if (!function_exists('rateb_public_marketing_home_register_url')) {
         int $years = 1,
         array $extra = []
     ): string {
-        return rateb_public_agency_register_url($baseUrl, $plan, $years, $extra);
+        if ($baseUrl === '') {
+            $baseUrl = rateb_public_site_base_url();
+        }
+        $legacyPlan = rateb_legacy_pro_plan_slug($plan);
+        $query = array_merge(
+            [
+                'plan' => $legacyPlan,
+                'years' => max(0, min(1, $years)),
+            ],
+            $extra
+        );
+        unset($query['open'], $query['cms_rev']);
+        $build = rateb_public_build_marker();
+        if ($build !== '' && !isset($query['v'])) {
+            $query['v'] = $build;
+        }
+
+        return rtrim($baseUrl, '/') . '/pages/home?' . http_build_query($query) . '#programs';
     }
 }
 

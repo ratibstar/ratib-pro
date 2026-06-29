@@ -100,8 +100,8 @@ if (!function_exists('control_panel_registration_page_url')) {
         if ($rev !== '') {
             $query['cms_rev'] = $rev;
         }
-        if (function_exists('rateb_public_marketing_home_register_url')) {
-            return rateb_public_marketing_home_register_url($root, $plan, $years, $query);
+        if (function_exists('rateb_public_agency_register_url')) {
+            return rateb_public_agency_register_url($root, $plan, $years, $query);
         }
         $legacyPlan = function_exists('rateb_legacy_pro_plan_slug') ? rateb_legacy_pro_plan_slug($plan) : $plan;
 

@@ -13,7 +13,9 @@ $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
 $apiBase = rtrim($baseUrl, '/') . '/api/control';
 require_once __DIR__ . '/public-marketing-urls.php';
 $publicSiteRoot = control_panel_public_site_root();
-$registerProUrl = control_panel_registration_page_url($ctrl);
+$registerProUrl = function_exists('rateb_public_marketing_home_register_url')
+    ? rateb_public_marketing_home_register_url($publicSiteRoot, 'professional', 1)
+    : control_panel_registration_page_url($ctrl);
 
 $allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countries = [];
@@ -399,8 +401,8 @@ if ($tableExists) {
     <div class="req-reg-link-box">
         <span class="text-muted">Registration links:</span>
         <select id="regLinkSelect" class="form-control req-ctrl-input req-width-auto">
-            <option value="<?php echo htmlspecialchars($registerProUrl); ?>">Recommended — Gold, 1 year (register-agency)</option>
-            <option value="<?php echo htmlspecialchars(control_panel_registration_page_url($ctrl, 'gold', 1)); ?>">Gold — open registration form</option>
+            <option value="<?php echo htmlspecialchars($registerProUrl); ?>">Recommended — Gold, 1 year (inline on home)</option>
+            <option value="<?php echo htmlspecialchars(function_exists('rateb_public_marketing_home_register_url') ? rateb_public_marketing_home_register_url($publicSiteRoot, 'gold', 1) : control_panel_registration_page_url($ctrl, 'gold', 1)); ?>">Gold — client registration link</option>
             <option value="<?php echo htmlspecialchars(control_panel_registration_page_url($ctrl, 'starter', 1)); ?>">Pro (non-paid inquiry)</option>
             <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query(control_panel_registration_page_url($ctrl, 'gold', 1), ['amount' => 650])); ?>">Gold $650</option>
             <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query(control_panel_registration_page_url($ctrl, 'enterprise', 1), ['amount' => 800])); ?>">Platinum $800</option>

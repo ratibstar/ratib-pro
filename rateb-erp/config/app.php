@@ -460,23 +460,28 @@ if (!function_exists('rateb_normalize_marketing_plan_slug')) {
 }
 
 if (!function_exists('rateb_marketing_register_url')) {
-    /** Public agency signup (control_registration_requests), not ERP admin or SaaS trial. */
+    /** EN: home pricing → inline register form (#programs). Not a separate page. */
     function rateb_marketing_register_url(string $plan = '', int $years = 1, array $extra = []): string
     {
         $helper = dirname(__DIR__, 2) . '/includes/rateb-public-base-url.php';
         if (is_file($helper)) {
             require_once $helper;
         }
-        if (function_exists('rateb_public_agency_register_url')) {
-            $erpPlan = rateb_normalize_marketing_plan_slug($plan);
+        $legacyPlan = 'gold';
+        if ($plan !== '' && function_exists('rateb_legacy_pro_plan_slug')) {
+            $erpPlan = function_exists('rateb_normalize_marketing_plan_slug')
+                ? rateb_normalize_marketing_plan_slug($plan)
+                : $plan;
             if ($erpPlan === '') {
                 $erpPlan = 'professional';
             }
-
-            return rateb_public_agency_register_url(rateb_site_origin(), $erpPlan, $years, $extra);
+            $legacyPlan = rateb_legacy_pro_plan_slug($erpPlan);
         }
+        $query = array_merge(['plan' => $legacyPlan, 'years' => max(0, min(1, $years))], $extra);
+        unset($query['open']);
+        $base = rateb_site_origin();
 
-        return rateb_site_origin() . '/pages/register-agency?plan=gold&years=1';
+        return rtrim($base, '/') . '/pages/home?' . http_build_query($query) . '#programs';
     }
 }
 

@@ -3628,6 +3628,33 @@ body.rateb-program-lightbox-open {
   max-width: var(--r-max);
 }
 
+.rateb-register--inline-programs {
+  display: flex !important;
+  flex-direction: column;
+  margin: 0 auto;
+  max-width: 720px;
+  padding-top: 0.5rem;
+}
+
+.rateb-register--inline-programs .rateb-info {
+  display: none !important;
+}
+
+.rateb-programs-register-anchor:not([hidden]) {
+  display: block;
+  width: 100%;
+}
+
+.rateb-back-to-pricing {
+  color: var(--r-muted, #8d98aa);
+  padding-left: 0;
+  margin-bottom: 0.5rem;
+}
+
+.rateb-back-to-pricing:hover {
+  color: var(--r-text, #dce3ef);
+}
+
 .register-section {
   position: relative;
   z-index: 10;
