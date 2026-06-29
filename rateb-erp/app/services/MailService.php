@@ -148,7 +148,8 @@ final class MailService
                 // Brevo/SendGrid/etc. — port 587 only; never fall back to localhost (false success).
                 $candidates = [$primary];
             } elseif ($this->isLoopbackHost($primary['host'])) {
-                $candidates = [$primary, $mailTls, $mailSsl, $localhost, $loopback];
+                // Prefer domain SMTP before localhost — loopback often accepts but won't deliver externally.
+                $candidates = [$mailTls, $mailSsl, $primary, $localhost, $loopback];
             } else {
                 $candidates = [$primary, $mailTls, $mailSsl, $localhost, $loopback];
             }

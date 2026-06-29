@@ -1952,6 +1952,8 @@ return [
     'cms_lead_reply_hint' => 'Reply is logged in notes; status moves to Contacted when the lead was New.',
     'cms_lead_reply_sent' => 'Reply sent to the customer successfully.',
     'cms_lead_reply_failed' => 'Could not send reply — check SMTP settings.',
+    'cms_lead_reply_invalid_email' => 'Customer email is invalid.',
+    'cms_lead_reply_localhost_failed' => 'Email was not delivered — SMTP used localhost only. Configure mail.rateb.sa in system SMTP settings.',
     'cms_lead_reply_subject_default' => 'Re: :type — Rateb ERP',
     'cms_lead_reply_footer' => 'Rateb ERP Team',
     'cms_lead_note_email_sent' => '[Sent by email]',

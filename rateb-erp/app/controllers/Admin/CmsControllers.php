@@ -402,7 +402,8 @@ final class CmsLeadsController extends Controller
                 $replySubject = __('cms_lead_reply_subject_default', ['type' => $typeLabel]);
             }
             $userId = (int) ($_SESSION['rateb_user_id'] ?? 0);
-            $sent = (new \Rateb\App\Services\CmsLeadNotificationService())->replyToCustomer($lead, $replySubject, $reply, $userId);
+            $notifier = new \Rateb\App\Services\CmsLeadNotificationService();
+            $sent = $notifier->replyToCustomer($lead, $replySubject, $reply, $userId);
             if ($sent) {
                 (new CmsLeadNote())->create([
                     'lead_id' => $id,
@@ -415,7 +416,8 @@ final class CmsLeadsController extends Controller
                 (new AuditService())->log('cms_lead_reply', 'cms_lead', $id, ['email' => $lead['email'] ?? '']);
                 SessionManager::flash('success', __('cms_lead_reply_sent'));
             } else {
-                SessionManager::flash('error', __('cms_lead_reply_failed'));
+                $err = $notifier->lastError() ?? __('cms_lead_reply_failed');
+                SessionManager::flash('error', $err);
             }
             $this->redirect(rateb_url('admin/cms/leads/' . $id));
             return;

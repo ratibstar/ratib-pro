@@ -1,8 +1,8 @@
 <?php
 /** Compact ops strip — inspired by /home topbar, kept minimal for unified marketing site. */
 $contact = $contact ?? null;
-$phoneRaw = trim((string) ($contact['phone'] ?? '+966 599863868'));
-$phoneDigits = preg_replace('/\D+/', '', $phoneRaw) ?: '966599863868';
+$phoneRaw = rateb_phone_display(trim((string) ($contact['phone'] ?? '+966 599863868')));
+$phoneDigits = rateb_phone_digits($phoneRaw) ?: '966599863868';
 ?>
 <div class="rateb-mkt-topbar">
     <div class="container">

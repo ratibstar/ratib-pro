@@ -24,7 +24,7 @@ $isNew = ($lead['status'] ?? '') === 'new';
                 <div class="row g-3 mb-3">
                     <div class="col-md-6"><strong><?php echo __('name'); ?>:</strong><br><?php echo Rateb\App\Core\View::escape($lead['name']); ?></div>
                     <div class="col-md-6"><strong><?php echo __('email'); ?>:</strong><br><a href="mailto:<?php echo Rateb\App\Core\View::escape($lead['email']); ?>"><?php echo Rateb\App\Core\View::escape($lead['email']); ?></a></div>
-                    <div class="col-md-6"><strong><?php echo __('phone'); ?>:</strong><br><?php echo Rateb\App\Core\View::escape((string) ($lead['phone'] ?? '—')); ?></div>
+                    <div class="col-md-6"><strong><?php echo __('phone'); ?>:</strong><br><?php echo ($lead['phone'] ?? '') !== '' ? rateb_phone_markup((string) $lead['phone']) : '—'; ?></div>
                     <div class="col-md-6"><strong><?php echo __('company'); ?>:</strong><br><?php echo Rateb\App\Core\View::escape((string) ($lead['company'] ?? '—')); ?></div>
                     <div class="col-md-6"><strong><?php echo __('lead_type'); ?>:</strong><br><span class="badge bg-secondary"><?php echo Rateb\App\Core\View::escape($typeLabel); ?></span></div>
                     <div class="col-md-6"><strong><?php echo __('created_at'); ?>:</strong><br><?php echo Rateb\App\Core\View::formatDate($lead['created_at'] ?? ''); ?></div>

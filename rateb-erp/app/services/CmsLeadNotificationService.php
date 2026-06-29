@@ -9,6 +9,13 @@ use Rateb\App\Models\SystemSetting;
 
 final class CmsLeadNotificationService
 {
+    private ?string $lastError = null;
+
+    public function lastError(): ?string
+    {
+        return $this->lastError;
+    }
+
     /** @param array<string, mixed> $lead */
     public function notifyStaff(int $leadId, string $type, array $lead): void
     {
@@ -91,8 +98,10 @@ final class CmsLeadNotificationService
     /** @param array<string, mixed> $lead */
     public function replyToCustomer(array $lead, string $subject, string $message, int $userId): bool
     {
+        $this->lastError = null;
         $email = trim((string) ($lead['email'] ?? ''));
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->lastError = __('cms_lead_reply_invalid_email');
             return false;
         }
 
@@ -108,17 +117,39 @@ final class CmsLeadNotificationService
         $mail = new MailService();
         $fromInbox = $this->staffInboxEmail();
         $replyTo = $fromInbox !== '' ? $fromInbox : null;
-        if (!$mail->send($email, $subject, $body, null, true, $replyTo)) {
+        $result = $mail->sendDetailed($email, $subject, $body, $replyTo);
+        if (!($result['success'] ?? false)) {
+            $this->lastError = (string) ($result['error'] ?? $mail->lastError() ?? __('cms_lead_reply_failed'));
             Logger::warning('CMS lead reply email failed', [
                 'lead_id' => (int) ($lead['id'] ?? 0),
                 'email' => $email,
                 'user_id' => $userId,
-                'error' => $mail->lastError(),
+                'error' => $this->lastError,
+                'code' => $result['error_code'] ?? null,
+            ]);
+            return false;
+        }
+
+        if ($this->isExternalRecipient($email) && !empty($result['via_localhost'])) {
+            $this->lastError = __('cms_lead_reply_localhost_failed');
+            Logger::warning('CMS lead reply accepted by localhost only — external delivery unlikely', [
+                'lead_id' => (int) ($lead['id'] ?? 0),
+                'email' => $email,
+                'smtp_host' => $result['smtp_host'] ?? null,
             ]);
             return false;
         }
 
         return true;
+    }
+
+    private function isExternalRecipient(string $email): bool
+    {
+        $domain = strtolower(\Rateb\App\Helpers\Str::emailDomain($email));
+        if ($domain === '') {
+            return true;
+        }
+        return !in_array($domain, ['rateb.sa', 'ratib.sa'], true);
     }
 
     private function staffInboxEmail(): string

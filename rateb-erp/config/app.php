@@ -108,6 +108,54 @@ if (!function_exists('rateb_site_origin')) {
     }
 }
 
+if (!function_exists('rateb_phone_digits')) {
+    function rateb_phone_digits(string $phone): string
+    {
+        return preg_replace('/\D+/', '', trim($phone)) ?: '';
+    }
+}
+
+if (!function_exists('rateb_phone_display')) {
+    function rateb_phone_display(string $phone): string
+    {
+        $raw = trim($phone);
+        if ($raw === '') {
+            return '';
+        }
+        if (str_starts_with($raw, '+')) {
+            return $raw;
+        }
+        $digits = rateb_phone_digits($raw);
+        if ($digits === '') {
+            return $raw;
+        }
+        if (str_starts_with($digits, '966') && strlen($digits) >= 12) {
+            return '+966 ' . substr($digits, 3);
+        }
+        if (str_starts_with($digits, '05') && strlen($digits) === 10) {
+            return '+966 ' . substr($digits, 1);
+        }
+        return $raw;
+    }
+}
+
+if (!function_exists('rateb_phone_markup')) {
+  /** Phone link/text with LTR direction for Arabic pages. */
+    function rateb_phone_markup(string $phone, bool $asLink = true): string
+    {
+        $display = rateb_phone_display($phone);
+        if ($display === '') {
+            return '';
+        }
+        $digits = rateb_phone_digits($phone);
+        $escaped = \Rateb\App\Core\View::escape($display);
+        if (!$asLink || $digits === '') {
+            return '<span class="rateb-ltr-num" dir="ltr">' . $escaped . '</span>';
+        }
+        return '<a href="tel:+' . \Rateb\App\Core\View::escape($digits) . '" class="rateb-ltr-num" dir="ltr">' . $escaped . '</a>';
+    }
+}
+
 if (!function_exists('rateb_public_url')) {
     /** Direct ERP URL — works without Control Panel login. */
     function rateb_public_url(string $path = ''): string
