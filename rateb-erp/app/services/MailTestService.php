@@ -35,7 +35,12 @@ final class MailTestService
         $isExternal = $toDomain !== '' && $fromDomain !== '' && strcasecmp($toDomain, $fromDomain) !== 0;
 
         $mail = new MailService();
-        $bcc = (!$isExternal && $from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) ? $from : null;
+        $bcc = null;
+        if ($isExternal && $from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {
+            $bcc = $from;
+        } elseif (!$isExternal && $from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {
+            $bcc = $from;
+        }
         $result = $mail->sendDetailed(
             $to,
             __('mail_test_subject'),
@@ -75,13 +80,22 @@ final class MailTestService
 
         if ($isExternal) {
             $dns = (new MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
+            $base = __('mail_test_ok', ['email' => $to, 'host' => $host]);
+            if ($bcc !== null) {
+                $base .= ' — ' . __('mail_test_inbox_copy', ['email' => $bcc]);
+            }
             if (!$dns['ready_for_external']) {
                 return [
                     'level' => 'warning',
-                    'message' => __('mail_test_ok', ['email' => $to, 'host' => $host]) . ' — ' . __('mail_test_external_dns_warn', ['email' => $to]),
+                    'message' => $base . ' — ' . __('mail_test_external_dns_warn', ['email' => $to]),
                     'detail' => array_merge($detail, ['dns' => $dns]),
                 ];
             }
+            return [
+                'level' => 'warning',
+                'message' => $base . ' — ' . __('mail_test_external_bounce_hint'),
+                'detail' => array_merge($detail, ['dns' => $dns]),
+            ];
         }
 
         return [

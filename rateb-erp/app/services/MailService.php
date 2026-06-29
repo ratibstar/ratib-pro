@@ -262,7 +262,8 @@ final class MailService
         };
 
         $read();
-        $write('EHLO rateb.sa');
+        $ehloHost = $this->ehloHostname($host, $fromEmail);
+        $write('EHLO ' . $ehloHost);
         $ehlo = $read();
 
         if ($encryption === 'tls' && stripos($ehlo, 'STARTTLS') !== false) {
@@ -279,7 +280,7 @@ final class MailService
                 $this->setError('smtp_tls', __('mail_error_tls', ['host' => $host, 'port' => (string) $port]));
                 return false;
             }
-            $write('EHLO rateb.sa');
+            $write('EHLO ' . $ehloHost);
             $read();
         }
 
@@ -320,6 +321,7 @@ final class MailService
         }
         $write('DATA');
         $read();
+        $msgDomain = $this->messageIdDomain($fromEmail, $ehloHost);
         $headers = 'From: ' . $this->encodeAddress($fromName, $fromEmail) . "\r\n";
         $headers .= 'To: <' . $to . ">\r\n";
         if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
@@ -327,9 +329,10 @@ final class MailService
         }
         $headers .= 'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail) . "\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";
-        $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@rateb.sa>' . "\r\n";
+        $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@' . $msgDomain . '>' . "\r\n";
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
-        $headers .= "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= $this->mimeBodyHeaders($body);
         $write($headers . $body . "\r\n.");
         $result = $read();
         $write('QUIT');
@@ -353,5 +356,62 @@ final class MailService
     private function encodeAddress(string $name, string $email): string
     {
         return '=?UTF-8?B?' . base64_encode($name) . '?= <' . $email . '>';
+    }
+
+    /** EHLO must match PTR (e.g. mail.rateb.sa) for Gmail delivery. */
+    private function ehloHostname(string $smtpHost, string $fromEmail): string
+    {
+        $smtpHost = strtolower(trim($smtpHost));
+        if ($smtpHost !== '' && !$this->isLoopbackHost($smtpHost) && str_contains($smtpHost, '.')) {
+            return $smtpHost;
+        }
+        $domain = strtolower(\Rateb\App\Helpers\Str::emailDomain($fromEmail));
+        if ($domain !== '') {
+            return 'mail.' . $domain;
+        }
+        return 'mail.rateb.sa';
+    }
+
+    private function messageIdDomain(string $fromEmail, string $ehloHost): string
+    {
+        $domain = strtolower(\Rateb\App\Helpers\Str::emailDomain($fromEmail));
+        if ($domain !== '') {
+            return $domain;
+        }
+        $parts = explode('.', strtolower($ehloHost));
+        if (count($parts) >= 2) {
+            return implode('.', array_slice($parts, -2));
+        }
+        return 'rateb.sa';
+    }
+
+  /** Returns Content-Type headers + multipart body (plain + html). */
+    private function mimeBodyHeaders(string &$body): string
+    {
+        $plain = $this->htmlToPlain($body);
+        $boundary = 'rateb_' . bin2hex(random_bytes(8));
+        $mime = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"' . "\r\n\r\n";
+        $mime .= '--' . $boundary . "\r\n";
+        $mime .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $mime .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $mime .= chunk_split(base64_encode($plain)) . "\r\n";
+        $mime .= '--' . $boundary . "\r\n";
+        $mime .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $mime .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $mime .= chunk_split(base64_encode($body)) . "\r\n";
+        $mime .= '--' . $boundary . '--';
+        $body = $mime;
+        return '';
+    }
+
+    private function htmlToPlain(string $html): string
+    {
+        $text = preg_replace('/<br\s*\/?>/i', "\n", $html) ?? $html;
+        $text = preg_replace('/<\/(p|div|tr|li|h[1-6])>/i', "\n", $text) ?? $text;
+        $text = strip_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace("/[ \t]+/", ' ', $text) ?? $text;
+        $text = preg_replace("/\n{3,}/", "\n\n", $text) ?? $text;
+        return trim($text);
     }
 }

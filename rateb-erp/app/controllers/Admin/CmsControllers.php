@@ -443,7 +443,9 @@ final class CmsLeadsController extends Controller
                     $model->update($id, ['status' => 'contacted']);
                 }
                 (new AuditService())->log('cms_lead_reply', 'cms_lead', $id, ['email' => $lead['email'] ?? '']);
-                SessionManager::flash('success', __('cms_lead_reply_sent'));
+                $customerEmail = trim((string) ($lead['email'] ?? ''));
+                $isExternal = $customerEmail !== '' && !in_array(strtolower(\Rateb\App\Helpers\Str::emailDomain($customerEmail)), ['rateb.sa', 'ratib.sa'], true);
+                SessionManager::flash($isExternal ? 'warning' : 'success', $isExternal ? __('cms_lead_reply_sent_external') : __('cms_lead_reply_sent'));
             } else {
                 $err = $notifier->lastError() ?? __('cms_lead_reply_failed');
                 SessionManager::flash('error', $err);
