@@ -762,14 +762,52 @@
         var ids = requireSelection();
         if (!ids) return;
         var rows = getSelectedRows();
+        var typed = ids.length > 1 ? window.prompt('Type DELETE to confirm bulk delete of ' + ids.length + ' request(s):', '') : 'DELETE';
+        if (ids.length > 1 && (typed || '').trim().toUpperCase() !== 'DELETE') {
+            showAlert('Bulk delete cancelled. Type DELETE exactly.');
+            return;
+        }
         showConfirm('Delete ' + ids.length + ' selected request(s)? This cannot be undone.').then(function(ok) {
             if (!ok) return;
-            api('/registration-requests.php', 'DELETE', { ids: ids }).then(function(r) {
+            var body = { ids: ids };
+            if (ids.length > 1) body.confirm = 'DELETE';
+            api('/registration-requests.php', 'DELETE', body).then(function(r) {
                 if (r.success) {
+                    if (ids.length > 1) {
+                        location.reload();
+                        return;
+                    }
                     rows.forEach(function(row) { row.remove(); });
                     clearSelection();
                     showAlert('Deleted ' + ids.length + ' request(s).');
                 } else showAlert(r.message || 'Delete failed');
+            }).catch(function(e) { showAlert('Request failed: ' + (e.message || e)); });
+        });
+    };
+    var btnDeleteAllRegistrationRequests = document.getElementById('btnDeleteAllRegistrationRequests');
+    if (btnDeleteAllRegistrationRequests) btnDeleteAllRegistrationRequests.onclick = function() {
+        var scopeTotal = 0;
+        if (contentEl) {
+            scopeTotal = parseInt(contentEl.getAttribute('data-scope-total') || '0', 10) || 0;
+        }
+        var typed = window.prompt(
+            'Type DELETE to permanently remove ALL registration requests'
+                + (scopeTotal > 0 ? ' (' + scopeTotal + ' total in your scope)' : '')
+                + ':',
+            ''
+        );
+        if ((typed || '').trim().toUpperCase() !== 'DELETE') {
+            showAlert('Delete all cancelled. Type DELETE exactly.');
+            return;
+        }
+        showConfirm('Delete ALL registration requests? This cannot be undone.').then(function(ok) {
+            if (!ok) return;
+            api('/registration-requests.php', 'DELETE', { delete_all: true, confirm: 'DELETE' }).then(function(r) {
+                if (r.success) {
+                    location.reload();
+                    return;
+                }
+                showAlert(r.message || 'Delete all failed');
             }).catch(function(e) { showAlert('Request failed: ' + (e.message || e)); });
         });
     };

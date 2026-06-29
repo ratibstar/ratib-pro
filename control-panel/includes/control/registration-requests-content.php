@@ -85,6 +85,7 @@ $offset = 0;
 $tableExists = false;
 /** Pending rows matching the same filters as the table (for banner; sidebar badge stays unfiltered). */
 $pendingFilteredCount = 0;
+$scopeTotalCount = 0;
 
 // Build query string for links (all current filters)
 $queryParams = ['control' => '1', 'status' => $status, 'plan' => $planFilter, 'search' => $search, 'payment_status' => $paymentStatusFilter, 'limit' => $limit];
@@ -134,6 +135,9 @@ if ($chk2 && $chk2->num_rows > 0) {
         $nameMatch = !empty($countryNames) ? " OR (COALESCE(country_id, 0) = 0 AND country_name IN (" . implode(',', $countryNames) . "))" : '';
         $conds[] = "(country_id IN ($idsStr)$nameMatch)";
     }
+    $scopeWhere = count($conds) ? ' WHERE ' . implode(' AND ', $conds) : '';
+    $scopeTotalRes = @$ctrl->query('SELECT COUNT(*) AS c FROM control_registration_requests' . $scopeWhere);
+    $scopeTotalCount = ($scopeTotalRes && ($scopeRow = $scopeTotalRes->fetch_assoc())) ? (int)($scopeRow['c'] ?? 0) : 0;
     if ($status !== '' && in_array($status, ['pending','approved','rejected'])) { $conds[] = "status = '" . $ctrl->real_escape_string($status) . "'"; }
     if ($planFilter !== '' && in_array($planFilter, ['pro','gold','platinum'])) { $conds[] = "plan = '" . $ctrl->real_escape_string($planFilter) . "'"; }
     if ($hasPaymentStatusCol && $paymentStatusFilter === 'unpaid') {
@@ -376,7 +380,7 @@ if ($tableExists) {
     }
 }
 ?>
-<div id="registrationRequestsContent" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url="<?php echo htmlspecialchars(pageUrl('control/agencies.php')); ?>" data-pending-filtered-total="<?php echo (int)$pendingFilteredCount; ?>">
+<div id="registrationRequestsContent" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url="<?php echo htmlspecialchars(pageUrl('control/agencies.php')); ?>" data-pending-filtered-total="<?php echo (int)$pendingFilteredCount; ?>" data-scope-total="<?php echo (int)$scopeTotalCount; ?>">
 <div id="pendingAlertBanner" class="pending-alert-banner d-none">
     <span><i class="fas fa-bell me-2"></i><span id="pendingAlertCount">0</span> pending registration request(s) need your attention.</span>
     <button type="button" class="btn btn-sm btn-outline-dark" id="btnDismissPendingAlert">Dismiss</button>
@@ -472,7 +476,8 @@ if ($tableExists) {
         <button type="button" class="btn btn-sm btn-outline-info" id="btnSelectAllRows">Select page</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearSelectedRows">Clear</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefreshRegistrationRequests"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.refresh'), ENT_QUOTES, 'UTF-8') : 'Refresh'; ?></button>
-        <button type="button" class="btn btn-sm btn-outline-danger" id="btnBulkDelete" data-permission="control_registration_requests,delete_control_registration">Bulk Delete</button>
+        <button type="button" class="btn btn-sm btn-danger" id="btnDeleteAllRegistrationRequests" data-permission="control_registration_requests,delete_control_registration"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.delete_all'), ENT_QUOTES, 'UTF-8') : 'Delete all'; ?></button>
+        <button type="button" class="btn btn-sm btn-outline-danger" id="btnBulkDelete" data-permission="control_registration_requests,delete_control_registration"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.bulk_delete'), ENT_QUOTES, 'UTF-8') : 'Bulk Delete'; ?></button>
         <button type="button" class="btn btn-sm btn-outline-warning" id="btnBulkReject" data-permission="control_registration_requests,reject_control_registration">Bulk Reject</button>
         <button type="button" class="btn btn-sm btn-outline-success" id="btnBulkMarkPaid" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">Bulk Mark Paid</button>
         <button type="button" class="btn btn-sm btn-outline-warning" id="btnBulkSuspendAgency" data-permission="control_agencies,edit_control_agency">Suspend Agency</button>

@@ -299,10 +299,48 @@ if ($method === 'DELETE') {
         jsonOut(['success' => false, 'message' => 'Access denied']);
     }
     $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+    $confirm = strtoupper(trim((string)($input['confirm'] ?? '')));
+    $deleteAll = !empty($input['delete_all']);
+
+    if ($deleteAll) {
+        if ($confirm !== 'DELETE') {
+            jsonOut(['success' => false, 'message' => 'Delete all requires confirm=DELETE']);
+        }
+        $where = [];
+        if ($scopeCountryIds === []) {
+            if (!$canViewAllRegistration) {
+                jsonOut(['success' => false, 'message' => 'Access denied']);
+            }
+        } elseif (!$canViewAllRegistration && $scopeCountryIds !== null && !empty($scopeCountryIds) && $hasCountryId) {
+            $idsStr = implode(',', array_map('intval', $scopeCountryIds));
+            $namesRes = $ctrl->query("SELECT name FROM control_countries WHERE id IN ($idsStr) AND is_active = 1");
+            $countryNames = [];
+            if ($namesRes) {
+                while ($r = $namesRes->fetch_assoc()) {
+                    $countryNames[] = "'" . $ctrl->real_escape_string($r['name']) . "'";
+                }
+            }
+            $nameMatch = !empty($countryNames) ? " OR (COALESCE(country_id, 0) = 0 AND country_name IN (" . implode(',', $countryNames) . "))" : '';
+            $where[] = "(country_id IN ($idsStr) $nameMatch)";
+        }
+        $whereClause = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+        if (!$ctrl->query('DELETE FROM control_registration_requests' . $whereClause)) {
+            jsonOut(['success' => false, 'message' => 'Delete failed']);
+        }
+        jsonOut([
+            'success' => true,
+            'message' => 'All registration requests deleted',
+            'deleted' => (int)($ctrl->affected_rows ?? 0),
+        ]);
+    }
+
     $ids = isset($input['ids']) && is_array($input['ids']) ? array_map('intval', $input['ids']) : [];
     if (empty($ids)) jsonOut(['success' => false, 'message' => 'No IDs provided']);
     $ids = array_filter($ids, function($x) { return $x > 0; });
     if (empty($ids)) jsonOut(['success' => false, 'message' => 'Invalid IDs']);
+    if (count($ids) > 1 && $confirm !== 'DELETE') {
+        jsonOut(['success' => false, 'message' => 'Bulk delete requires confirm=DELETE']);
+    }
     if ($scopeCountryIds !== null && $hasCountryId) {
         $idList = implode(',', $ids);
         $res = $ctrl->query("SELECT id, country_id FROM control_registration_requests WHERE id IN ($idList)");

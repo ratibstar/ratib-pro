@@ -55,6 +55,8 @@ return [
     'reg.search_placeholder' => 'بحث بالاسم، البريد، الهاتف...',
     'reg.export' => 'تصدير',
     'reg.refresh' => 'تحديث',
+    'reg.bulk_delete' => 'حذف جماعي',
+    'reg.delete_all' => 'حذف الكل',
     'reg.pending' => 'معلق',
     'reg.approved' => 'موافق عليه',
     'reg.rejected' => 'مرفوض',

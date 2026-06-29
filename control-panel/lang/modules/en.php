@@ -59,6 +59,8 @@ return [
     'reg.search_placeholder' => 'Search name, email, phone...',
     'reg.export' => 'Export',
     'reg.refresh' => 'Refresh',
+    'reg.bulk_delete' => 'Bulk Delete',
+    'reg.delete_all' => 'Delete all',
     'reg.pending' => 'Pending',
     'reg.approved' => 'Approved',
     'reg.rejected' => 'Rejected',
