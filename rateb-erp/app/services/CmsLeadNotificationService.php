@@ -117,7 +117,7 @@ final class CmsLeadNotificationService
         if ($this->isExternalRecipient($email)) {
             $dns = (new MailDnsCheckService())->check();
             if (empty($dns['port25']['ok']) && empty($dns['smtp_relay'])) {
-                $this->lastError = __('mail_port25_blocked_hint') . ' ' . __('mail_relay_steps');
+                $this->lastError = __('mail_port25_blocked_hint') . ' ' . __('mail_hetzner_unblock_steps');
                 return false;
             }
         }

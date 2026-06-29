@@ -41,7 +41,14 @@ $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendation
     <?php if (!empty($mailDns['port25']) && empty($mailDns['port25']['ok']) && empty($mailDns['port25']['skipped'])) { ?>
     <p class="text-danger mb-2"><strong><?php echo __('mail_port25_blocked_hint'); ?></strong></p>
     <p class="text-muted mb-2"><?php echo __('mail_hetzner_unblock_steps'); ?></p>
-    <p class="text-muted mb-2"><?php echo __('mail_relay_steps'); ?></p>
+    <div class="mb-2">
+        <label class="form-label mb-1"><?php echo __('mail_hetzner_ticket'); ?></label>
+        <div class="input-group input-group-sm">
+            <textarea class="form-control font-monospace small" dir="ltr" rows="6" readonly id="rateb-hetzner-ticket"><?php echo Rateb\App\Core\View::escape(__('mail_hetzner_ticket_body')); ?></textarea>
+            <button type="button" class="btn btn-outline-secondary align-self-start" data-copy-target="rateb-hetzner-ticket"><?php echo __('copy'); ?></button>
+        </div>
+    </div>
+    <p class="text-success mb-2"><?php echo __('mail_hetzner_ready_checklist'); ?></p>
     <?php } else { ?>
     <p class="text-muted mb-2"><?php echo __('mail_dns_directadmin_steps'); ?></p>
     <?php } ?>
@@ -79,9 +86,12 @@ $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendation
             var id = btn.getAttribute('data-copy-target');
             var el = id ? document.getElementById(id) : null;
             if (!el) return;
-            el.select();
-            el.setSelectionRange(0, 99999);
-            try { navigator.clipboard.writeText(el.value); } catch (e) { document.execCommand('copy'); }
+            var text = typeof el.value === 'string' ? el.value : (el.textContent || '');
+            if (el.select) {
+                el.select();
+                if (el.setSelectionRange) el.setSelectionRange(0, 99999);
+            }
+            try { navigator.clipboard.writeText(text); } catch (e) { document.execCommand('copy'); }
         });
     });
 })();

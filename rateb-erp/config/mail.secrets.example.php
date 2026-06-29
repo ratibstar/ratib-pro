@@ -10,15 +10,10 @@ declare(strict_types=1);
  *   RATEB_ERP_SMTP_USER=info@rateb.sa
  *   RATEB_ERP_SMTP_PASS=mailbox_password_from_DirectAdmin
  *
- * Alternative (Gmail on Hetzner — REQUIRED until port 25 is unblocked):
- *   1. Create free API key at sendgrid.com (Authenticated: info@rateb.sa)
- *   2. In server .env:
- *      RATEB_ERP_SMTP_HOST=smtp.sendgrid.net
- *      RATEB_ERP_SMTP_USER=apikey
- *      RATEB_ERP_SMTP_PASS=SG.your_api_key
- *   3. In Sahabah DNS SPF add: include:sendgrid.net
+ * Hetzner Cloud blocks outbound port 25 by default. Request unblock via Hetzner Support
+ * (after 1 month + paid invoice) — see mail DNS panel in ERP settings.
  *
- * Hetzner blocks outbound port 25 — mail.rateb.sa accepts mail but cannot deliver to Gmail.
+ * Avoid localhost for external customers — use mail.rateb.sa on port 587 with TLS.
  *
  * @return array<string, string>
  */

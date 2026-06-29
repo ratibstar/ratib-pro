@@ -39,7 +39,7 @@ final class MailTestService
             if (empty($dns['port25']['ok']) && empty($dns['smtp_relay'])) {
                 return [
                     'level' => 'error',
-                    'message' => __('mail_port25_blocked_hint') . ' ' . __('mail_relay_steps'),
+                    'message' => __('mail_port25_blocked_hint') . ' ' . __('mail_hetzner_unblock_steps'),
                     'detail' => ['dns' => $dns, 'port25_blocked' => true],
                 ];
             }
