@@ -13,6 +13,7 @@ use Rateb\App\Models\CmsHelpArticle;
 use Rateb\App\Models\CmsKbArticle;
 use Rateb\App\Models\CmsLead;
 use Rateb\App\Models\CmsNewsletterSubscriber;
+use Rateb\App\Services\CmsLeadNotificationService;
 use Rateb\App\Models\CmsPartner;
 use Rateb\App\Models\CmsService as CmsServiceItem;
 use Rateb\App\Models\CmsSystemStatus;
@@ -274,7 +275,7 @@ final class MarketingFormsController extends Controller
             return;
         }
         $model = new CmsLead();
-        $model->create([
+        $leadId = $model->create([
             'lead_type' => $type,
             'name' => $name,
             'email' => $email,
@@ -285,6 +286,20 @@ final class MarketingFormsController extends Controller
             'source_page' => $type,
             'ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
         ]);
+        $leadRow = [
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone,
+            'company' => $company,
+            'message' => $message,
+        ];
+        try {
+            $notifier = new CmsLeadNotificationService();
+            $notifier->notifyStaff($leadId, $type, $leadRow);
+            $notifier->notifyCustomer($type, $leadRow);
+        } catch (\Throwable $e) {
+            error_log('CMS lead email: ' . $e->getMessage());
+        }
         SessionManager::flash('success', __('cms_lead_ok'));
         $this->redirect(rateb_url('site/' . ($type === 'demo' ? 'request-demo' : 'contact')));
     }
