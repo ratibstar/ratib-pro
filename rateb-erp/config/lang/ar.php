@@ -1920,6 +1920,7 @@ return [
     'cms_not_found' => 'الصفحة غير موجودة.',
     'cms_back_home' => 'العودة للرئيسية',
     'cms_lead_ok' => 'شكراً — سنتواصل معك قريباً.',
+    'cms_lead_save_failed' => 'تعذر حفظ طلبك. حاول مرة أخرى أو تواصل معنا على واتساب.',
     'cms_lead_type_demo' => 'طلب عرض',
     'cms_lead_type_contact' => 'اتصل بنا',
     'cms_lead_type_quote' => 'طلب عرض سعر',

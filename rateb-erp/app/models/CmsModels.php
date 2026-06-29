@@ -181,8 +181,9 @@ final class CmsOffice extends Model
 final class CmsLead extends Model
 {
     protected string $table = 'rateb_cms_leads';
-    protected bool $tenantScoped = true;
-    protected bool $branchScoped = true;
+    /** Platform marketing inbox — public forms have no company/branch context. */
+    protected bool $tenantScoped = false;
+    protected bool $branchScoped = false;
     protected array $fillable = [
         'company_id', 'lead_type', 'name', 'email', 'phone', 'company', 'message', 'status',
         'assigned_user_id', 'source_page', 'ip_address', 'branch_id',

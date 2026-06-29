@@ -1919,6 +1919,7 @@ return [
     'cms_not_found' => 'Page not found.',
     'cms_back_home' => 'Back to Home',
     'cms_lead_ok' => 'Thank you — we will contact you soon.',
+    'cms_lead_save_failed' => 'We could not save your request. Please try again or contact us on WhatsApp.',
     'cms_lead_type_demo' => 'Demo request',
     'cms_lead_type_contact' => 'Contact',
     'cms_lead_type_quote' => 'Quote request',

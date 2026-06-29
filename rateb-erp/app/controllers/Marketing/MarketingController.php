@@ -275,17 +275,24 @@ final class MarketingFormsController extends Controller
             return;
         }
         $model = new CmsLead();
-        $leadId = $model->create([
-            'lead_type' => $type,
-            'name' => $name,
-            'email' => $email,
-            'phone' => $phone,
-            'company' => $company,
-            'message' => $message,
-            'status' => 'new',
-            'source_page' => $type,
-            'ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
-        ]);
+        try {
+            $leadId = $model->create([
+                'lead_type' => $type,
+                'name' => $name,
+                'email' => $email,
+                'phone' => $phone,
+                'company' => $company,
+                'message' => $message,
+                'status' => 'new',
+                'source_page' => $type,
+                'ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+            ]);
+        } catch (\Throwable $e) {
+            error_log('CMS lead save: ' . $e->getMessage());
+            SessionManager::flash('error', __('cms_lead_save_failed'));
+            $this->redirect(rateb_url('site/' . ($type === 'demo' ? 'request-demo' : 'contact')));
+            return;
+        }
         $leadRow = [
             'name' => $name,
             'email' => $email,
