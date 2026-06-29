@@ -19,7 +19,7 @@ if (!in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
 }
 
 require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../../admin/core/ErpProvisioningService.php';
+require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
 
 function planJson(array $payload): void
 {

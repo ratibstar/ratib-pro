@@ -66,7 +66,7 @@ $ctrl = $GLOBALS['control_conn'] ?? null;
 if (!$ctrl) {
     die('Control panel database unavailable.');
 }
-require_once dirname(__DIR__, 3) . '/admin/core/ErpProvisioningService.php';
+require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
 ErpProvisioningService::ensureErpColumns($ctrl);
 
 $agencyId = (int) ($_GET['agency_id'] ?? 0);

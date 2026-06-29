@@ -18,7 +18,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 }
 
 require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../../admin/core/ErpProvisioningService.php';
+require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
 require_once __DIR__ . '/../../../config/env/agency_lookup.php';
 
 function provisionJson(array $payload): void

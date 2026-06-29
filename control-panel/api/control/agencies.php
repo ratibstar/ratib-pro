@@ -176,7 +176,7 @@ function qOne(string $sql, array $params = []): ?array {
 // EN: Bootstrap tenant-aware request state before handling CRUD actions.
 // AR: تهيئة حالة الطلب المرتبطة بالمستأجر قبل تنفيذ عمليات CRUD.
 ensureAgencyTenantLinkColumn();
-require_once dirname(__DIR__, 3) . '/admin/core/ErpProvisioningService.php';
+require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
 ErpProvisioningService::ensureErpColumns($ctrl);
 $requestedAgency = (int) ($_GET['agency_id'] ?? 0);
 if ($requestedAgency > 0) {

@@ -194,6 +194,7 @@ FAST_FILES = [
     "includes/rateb-mega-nav-render.php",
     "includes/rateb-home-public-nav-bootstrap.php",
     "control-panel/includes/control/sidebar.php",
+    "control-panel/includes/control/ErpProvisioningService.php",
     "control-panel/includes/control/contact-center-bridge.php",
     "control-panel/includes/control/contact-center-nav.php",
     "control-panel/pages/control/contact-center.php",
