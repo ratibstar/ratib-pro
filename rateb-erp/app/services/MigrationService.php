@@ -166,22 +166,6 @@ final class MigrationService
         $sql = preg_replace('/^\s*USE\s+`[^`]+`\s*;\s*/mi', '', $sql) ?? $sql;
         $this->bootstrapMigrationCharset($pdo);
 
-        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
-            try {
-                $stmt = $pdo->query($sql);
-                if ($stmt !== false) {
-                    $this->drainStatement($stmt);
-                }
-
-                return;
-            } catch (\PDOException $e) {
-                if ($this->isBenignMigrationError($e->getMessage())) {
-                    return;
-                }
-                throw $e;
-            }
-        }
-
         foreach ($this->splitStatements($sql) as $statement) {
             if ($statement === '') {
                 continue;
