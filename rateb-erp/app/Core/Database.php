@@ -37,6 +37,11 @@ final class Database
         self::disconnect();
     }
 
+    public static function hasConnectionOverride(): bool
+    {
+        return self::$connectionOverride !== null;
+    }
+
     public static function resolvedDatabaseName(): string
     {
         if (self::$resolvedDbName !== '') {

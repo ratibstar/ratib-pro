@@ -284,9 +284,19 @@ final class MigrationService
     private function migrationConnection(): array
     {
         Database::disconnect();
+        if (Database::hasConnectionOverride()) {
+            $pdo = Database::connection();
+            $dbName = Database::resolvedDatabaseName();
+            if ($dbName === '') {
+                throw new \PDOException('Provisioning migration database name is missing.');
+            }
+
+            return [$pdo, $dbName];
+        }
+
         $candidates = function_exists('rateb_erp_database_candidates')
             ? rateb_erp_database_candidates()
-            : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'admin_rateb-erp'];
+            : [defined('RATEB_DB_NAME') ? (string) \RATEB_DB_NAME : 'admin_rateb-erp'];
         $last = null;
         foreach ($candidates as $dbName) {
             try {
@@ -303,10 +313,14 @@ final class MigrationService
 
     private function openMigrationPdo(string $dbName): PDO
     {
+        $host = defined('RATEB_DB_HOST') ? (string) \RATEB_DB_HOST : '127.0.0.1';
+        $port = defined('RATEB_DB_PORT') ? (int) \RATEB_DB_PORT : 3306;
+        $user = defined('RATEB_DB_USER') ? (string) \RATEB_DB_USER : 'root';
+        $pass = defined('RATEB_DB_PASS') ? (string) \RATEB_DB_PASS : '';
         $dsn = sprintf(
             'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
-            RATEB_DB_HOST,
-            RATEB_DB_PORT,
+            $host,
+            $port,
             $dbName
         );
         $options = [
@@ -323,7 +337,7 @@ final class MigrationService
         if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
             $options[\PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci';
         }
-        return new \PDO($dsn, RATEB_DB_USER, RATEB_DB_PASS, $options);
+        return new \PDO($dsn, $user, $pass, $options);
     }
 
     public function isSchemaReady(): bool
