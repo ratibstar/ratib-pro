@@ -1573,6 +1573,26 @@ if (!function_exists('rateb_oversight_menu_badge')) {
     }
 }
 
+if (!function_exists('rateb_cms_new_leads_count')) {
+    function rateb_cms_new_leads_count(): int
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        if (!rateb_is_super_admin() && !rateb_nav_can('cms.leads', 'cms')) {
+            $cached = 0;
+            return $cached;
+        }
+        try {
+            $cached = (new \Rateb\App\Models\CmsLead())->countNew();
+        } catch (\Throwable $e) {
+            $cached = 0;
+        }
+        return $cached;
+    }
+}
+
 if (!function_exists('rateb_oversight_approve_only')) {
     /** Company ops users cannot approve locally — oversight only. */
     function rateb_oversight_approve_only(): bool

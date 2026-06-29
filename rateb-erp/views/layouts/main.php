@@ -151,6 +151,8 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             <?php } ?>
             <?php
             if (rateb_nav_can('cms.view')) {
+                $cmsNewLeads = rateb_nav_can('cms.leads', 'cms') ? rateb_cms_new_leads_count() : 0;
+                $cmsLeadBadges = $cmsNewLeads > 0 ? ['admin/cms/leads' => $cmsNewLeads] : [];
                 $adminSection(__('cms_section'), [
                     ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],
                     ['admin/cms/pages', 'cms_pages', 'fa-file-lines', 'cms.manage'],
@@ -159,7 +161,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                     ['admin/cms/media', 'cms_media', 'fa-images', 'cms.media'],
                     ['admin/cms/seo', 'cms_seo', 'fa-magnifying-glass', 'cms.seo'],
                     ['admin/cms/theme', 'cms_theme', 'fa-palette', 'cms.manage'],
-                ], 'fa-globe');
+                ], 'fa-globe', $cmsNewLeads, $cmsLeadBadges, '', 'rateb-nav-badge--pending', 'cms_leads_new');
             }
             $adminSection(__('access_control'), [
                 ['admin/access-control', 'access_control', 'fa-shield-halved', 'access.manage'],

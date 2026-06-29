@@ -382,6 +382,45 @@ final class CmsLeadsController extends Controller
             return;
         }
         $model = new CmsLead();
+        $lead = $model->find($id);
+        if ($lead === null) {
+            SessionManager::flash('error', __('not_found'));
+            $this->redirect(rateb_url('admin/cms/leads'));
+            return;
+        }
+
+        $reply = trim((string) $this->input('reply_message', ''));
+        $replySubject = trim((string) $this->input('reply_subject', ''));
+        if ($reply !== '') {
+            if ($replySubject === '') {
+                $typeLabel = match ((string) ($lead['lead_type'] ?? '')) {
+                    'demo' => __('cms_lead_type_demo'),
+                    'quote' => __('cms_lead_type_quote'),
+                    'contact' => __('cms_lead_type_contact'),
+                    default => __('cms_leads'),
+                };
+                $replySubject = __('cms_lead_reply_subject_default', ['type' => $typeLabel]);
+            }
+            $userId = (int) ($_SESSION['rateb_user_id'] ?? 0);
+            $sent = (new \Rateb\App\Services\CmsLeadNotificationService())->replyToCustomer($lead, $replySubject, $reply, $userId);
+            if ($sent) {
+                (new CmsLeadNote())->create([
+                    'lead_id' => $id,
+                    'user_id' => $userId ?: null,
+                    'note' => __('cms_lead_note_email_sent') . "\n" . $reply,
+                ]);
+                if (($lead['status'] ?? '') === 'new') {
+                    $model->update($id, ['status' => 'contacted']);
+                }
+                (new AuditService())->log('cms_lead_reply', 'cms_lead', $id, ['email' => $lead['email'] ?? '']);
+                SessionManager::flash('success', __('cms_lead_reply_sent'));
+            } else {
+                SessionManager::flash('error', __('cms_lead_reply_failed'));
+            }
+            $this->redirect(rateb_url('admin/cms/leads/' . $id));
+            return;
+        }
+
         $model->update($id, [
             'status' => (string) $this->input('status', 'new'),
             'assigned_user_id' => (int) $this->input('assigned_user_id', 0) ?: null,
@@ -391,7 +430,7 @@ final class CmsLeadsController extends Controller
             (new CmsLeadNote())->create([
                 'lead_id' => $id,
                 'user_id' => (int) ($_SESSION['rateb_user_id'] ?? 0) ?: null,
-                'note' => View::escape($note),
+                'note' => $note,
             ]);
         }
         (new AuditService())->log('cms_lead_update', 'cms_lead', $id, []);

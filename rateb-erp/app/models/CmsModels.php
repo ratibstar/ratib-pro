@@ -188,6 +188,18 @@ final class CmsLead extends Model
         'company_id', 'lead_type', 'name', 'email', 'phone', 'company', 'message', 'status',
         'assigned_user_id', 'source_page', 'ip_address', 'branch_id',
     ];
+
+    protected function listOrderSql(string $alias = ''): string
+    {
+        $col = $alias !== '' ? $alias . '.status' : 'status';
+        $idCol = $alias !== '' ? $alias . '.id' : 'id';
+        return "CASE WHEN {$col} = 'new' THEN 0 ELSE 1 END, {$idCol} DESC";
+    }
+
+    public function countNew(): int
+    {
+        return $this->count(['status' => 'new']);
+    }
 }
 
 final class CmsLeadNote extends Model

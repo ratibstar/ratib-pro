@@ -88,6 +88,39 @@ final class CmsLeadNotificationService
         }
     }
 
+    /** @param array<string, mixed> $lead */
+    public function replyToCustomer(array $lead, string $subject, string $message, int $userId): bool
+    {
+        $email = trim((string) ($lead['email'] ?? ''));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $name = trim((string) ($lead['name'] ?? ''));
+        $body = '<div dir="rtl" style="font-family:Tajawal,Arial,sans-serif;line-height:1.7">';
+        $body .= '<p>' . View::escape(__('cms_lead_mail_customer_greeting', ['name' => $name])) . '</p>';
+        $body .= '<div style="padding:12px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">';
+        $body .= nl2br(View::escape($message));
+        $body .= '</div>';
+        $body .= '<p style="color:#666;font-size:14px;margin-top:16px">' . View::escape(__('cms_lead_reply_footer')) . '</p>';
+        $body .= '</div>';
+
+        $mail = new MailService();
+        $fromInbox = $this->staffInboxEmail();
+        $replyTo = $fromInbox !== '' ? $fromInbox : null;
+        if (!$mail->send($email, $subject, $body, null, true, $replyTo)) {
+            Logger::warning('CMS lead reply email failed', [
+                'lead_id' => (int) ($lead['id'] ?? 0),
+                'email' => $email,
+                'user_id' => $userId,
+                'error' => $mail->lastError(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
     private function staffInboxEmail(): string
     {
         try {
