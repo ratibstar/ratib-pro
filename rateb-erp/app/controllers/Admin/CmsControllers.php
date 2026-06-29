@@ -367,11 +367,16 @@ final class CmsLeadsController extends Controller
             return;
         }
         $notes = (new CmsLeadNote())->all(50, 0, ['lead_id' => $id]);
+        $mailSvc = new \Rateb\App\Services\MailConfigService();
+        $mailCfg = $mailSvc->resolve();
         $this->view('admin/cms/leads/show', [
             'title' => __('cms_leads'),
             'lead' => $lead,
             'notes' => $notes,
             'csrf' => Csrf::token(),
+            'mailReady' => $mailSvc->isReady(),
+            'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
+            'mailHost' => (string) ($mailCfg['host'] ?? ''),
         ], 'main');
     }
 

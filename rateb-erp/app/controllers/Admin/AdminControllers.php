@@ -1797,16 +1797,16 @@ final class SettingsController extends Controller
     {
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_url('admin/settings'));
+            Response::redirect($this->mailTestRedirectUrl());
         }
         $to = trim((string) $this->input('test_to', ''));
         if ($to === '' || !\Rateb\App\Helpers\Str::isValidEmail($to)) {
             SessionManager::flash('error', __('mail_test_invalid'));
-            Response::redirect(rateb_url('admin/settings'));
+            Response::redirect($this->mailTestRedirectUrl());
         }
         if (!(new \Rateb\App\Services\MailConfigService())->isReady()) {
             SessionManager::flash('error', __('mail_password_env_hint'));
-            Response::redirect(rateb_url('admin/settings'));
+            Response::redirect($this->mailTestRedirectUrl());
         }
         $mail = new \Rateb\App\Services\MailService();
         $cfg = (new \Rateb\App\Services\MailConfigService())->resolve();
@@ -1825,17 +1825,31 @@ final class SettingsController extends Controller
         );
         $sent = (bool) ($result['success'] ?? false);
         $failMsg = (string) ($result['error'] ?? __('mail_test_failed'));
+        if ($sent && $isExternalTest && !empty($result['via_localhost'])) {
+            SessionManager::flash('error', __('mail_test_localhost_failed'));
+            Response::redirect($this->mailTestRedirectUrl());
+            return;
+        }
         if ($sent && $isExternalTest) {
             $dns = (new \Rateb\App\Services\MailDnsCheckService())->check($fromDomain);
             if (!$dns['ready_for_external']) {
                 SessionManager::flash('warning', __('mail_test_external_dns_warn', ['email' => $to]));
-                Response::redirect(rateb_url('admin/settings'));
+                Response::redirect($this->mailTestRedirectUrl());
             }
         }
         SessionManager::flash($sent ? 'success' : 'error', $sent
             ? __('mail_test_ok', ['email' => $to, 'host' => (string) ($result['smtp_host'] ?? $mail->lastSmtpHost() ?? 'mail.rateb.sa')])
             : $failMsg);
-        Response::redirect(rateb_url('admin/settings'));
+        Response::redirect($this->mailTestRedirectUrl());
+    }
+
+    private function mailTestRedirectUrl(): string
+    {
+        $returnTo = trim((string) $this->input('return_to', ''));
+        if (preg_match('#^admin/cms/leads/\d+$#', $returnTo)) {
+            return rateb_url($returnTo);
+        }
+        return rateb_url('admin/settings');
     }
 
     public function fixArabic(): void
