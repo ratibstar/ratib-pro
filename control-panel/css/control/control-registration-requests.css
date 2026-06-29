@@ -52,6 +52,9 @@
 #registrationRequestsContent .action-btns { display: flex; gap: 0.3rem; white-space: normal; overflow: visible; }
 #registrationRequestsContent .action-btns .btn { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
 .req-modal-dark .req-modal-content { background: #16213e; color: #eee; border: 1px solid #0f3460; }
+.req-modal-dark { z-index: 1060; }
+.modal-backdrop { z-index: 1055; }
+#registrationRequestsContent .action-btns .btn { pointer-events: auto; position: relative; z-index: 1; }
 .req-modal-dark .modal-body .form-label { color: #aaa; }
 .req-modal-dark .modal-body .form-control { background: #0f3460; border-color: #1a1a2e; color: #fff; }
 .badge-pending { background: #f39c12; }

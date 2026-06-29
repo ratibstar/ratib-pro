@@ -471,6 +471,7 @@ if ($tableExists) {
         <span class="req-bulk-count"><span id="reqBulkSelectedCount">0</span> selected</span>
         <button type="button" class="btn btn-sm btn-outline-info" id="btnSelectAllRows">Select page</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearSelectedRows">Clear</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefreshRegistrationRequests"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.refresh'), ENT_QUOTES, 'UTF-8') : 'Refresh'; ?></button>
         <button type="button" class="btn btn-sm btn-outline-danger" id="btnBulkDelete" data-permission="control_registration_requests,delete_control_registration">Bulk Delete</button>
         <button type="button" class="btn btn-sm btn-outline-warning" id="btnBulkReject" data-permission="control_registration_requests,reject_control_registration">Bulk Reject</button>
         <button type="button" class="btn btn-sm btn-outline-success" id="btnBulkMarkPaid" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">Bulk Mark Paid</button>

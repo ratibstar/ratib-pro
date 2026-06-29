@@ -48,12 +48,46 @@
         d.textContent = s;
         return d.innerHTML;
     }
+    function decodeReqRowB64(raw) {
+        if (!raw) {
+            return {};
+        }
+        try {
+            var bin = atob(String(raw));
+            if (typeof TextDecoder !== 'undefined') {
+                var bytes = new Uint8Array(bin.length);
+                for (var i = 0; i < bin.length; i++) {
+                    bytes[i] = bin.charCodeAt(i);
+                }
+                return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+            }
+            return JSON.parse(bin);
+        } catch (e) {
+            try {
+                return JSON.parse(decodeURIComponent(escape(atob(String(raw)))));
+            } catch (e2) {
+                return {};
+            }
+        }
+    }
+
+    function getBootstrapModal(el) {
+        if (!el || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            return null;
+        }
+        if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+            return bootstrap.Modal.getOrCreateInstance(el);
+        }
+        return new bootstrap.Modal(el);
+    }
+
     function showAlert(msg) {
         var el = document.getElementById('alertMessage');
         var modalEl = document.getElementById('alertModal');
         if (el) el.textContent = msg;
-        if (modalEl && typeof bootstrap !== 'undefined') {
-            new bootstrap.Modal(modalEl).show();
+        var modal = getBootstrapModal(modalEl);
+        if (modal) {
+            modal.show();
             return;
         }
         window.alert(msg);
@@ -63,19 +97,44 @@
             var confirmMessage = document.getElementById('confirmMessage');
             var modalEl = document.getElementById('confirmModal');
             if (confirmMessage) confirmMessage.textContent = msg;
-            if (!modalEl || typeof bootstrap === 'undefined') {
+            var modal = getBootstrapModal(modalEl);
+            if (!modal) {
                 resolve(window.confirm(msg));
                 return;
             }
-            var modal = new bootstrap.Modal(modalEl);
             var done = false;
-            var finish = function(ok) { if (done) return; done = true; modal.hide(); resolve(ok); };
-            modalEl.querySelector('#confirmOk').onclick = function() { finish(true); };
-            modalEl.querySelector('#confirmCancel').onclick = function() { finish(false); };
-            modalEl.addEventListener('hidden.bs.modal', function() { finish(false); }, { once: true });
+            var finish = function(ok) {
+                if (done) return;
+                done = true;
+                modal.hide();
+                resolve(ok);
+            };
+            var okBtn = modalEl.querySelector('#confirmOk');
+            var cancelBtn = modalEl.querySelector('#confirmCancel');
+            if (okBtn) {
+                okBtn.onclick = function() { finish(true); };
+            }
+            if (cancelBtn) {
+                cancelBtn.onclick = function() { finish(false); };
+            }
+            modalEl.addEventListener('hidden.bs.modal', function onHide() {
+                modalEl.removeEventListener('hidden.bs.modal', onHide);
+                finish(false);
+            });
             modal.show();
         });
     }
+
+    // Stale Bootstrap backdrops block all clicks after repeated confirm/alert dialogs.
+    function cleanupStaleModalBackdrops() {
+        document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
+        if (!document.querySelector('.modal.show')) {
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }
+    }
+    cleanupStaleModalBackdrops();
 
     var regLinkSelect = document.getElementById('regLinkSelect');
     var btnCopyLink = document.getElementById('btnCopyLink');
@@ -270,9 +329,9 @@
     var approveModalEl = document.getElementById('approveModal');
     var viewModalEl = document.getElementById('viewModal');
     var editModalEl = document.getElementById('editModal');
-    var approveModal = (approveModalEl && typeof bootstrap !== 'undefined') ? new bootstrap.Modal(approveModalEl) : null;
-    var viewModal = (viewModalEl && typeof bootstrap !== 'undefined') ? new bootstrap.Modal(viewModalEl) : null;
-    var editModal = (editModalEl && typeof bootstrap !== 'undefined') ? new bootstrap.Modal(editModalEl) : null;
+    var approveModal = getBootstrapModal(approveModalEl);
+    var viewModal = getBootstrapModal(viewModalEl);
+    var editModal = getBootstrapModal(editModalEl);
 
     var PENDING_ALERT_KEY = 'regRequestsPendingAlertStopped';
     var pendingAlertInterval = null;
@@ -473,30 +532,31 @@
 
     document.addEventListener('click', function(e) {
         if (!e.target || typeof e.target.closest !== 'function') return;
+        try {
         var btnView = e.target.closest('.btn-view');
         if (btnView) {
             e.preventDefault();
             e.stopPropagation();
-            var raw = btnView.dataset.row || '';
-            var r = raw ? JSON.parse(atob(raw)) : {};
-            openViewModal(r);
+            var row = btnView.closest('tr');
+            var raw = (row && row.getAttribute('data-json')) || btnView.getAttribute('data-row') || '';
+            openViewModal(decodeReqRowB64(raw));
             return;
         }
         var btnEdit = e.target.closest('.btn-edit');
         if (btnEdit) {
             e.preventDefault();
             e.stopPropagation();
-            var raw = btnEdit.dataset.row || '';
-            var r = raw ? JSON.parse(atob(raw)) : {};
-            openEditModal(r);
+            var rowEdit = btnEdit.closest('tr');
+            var rawEdit = (rowEdit && rowEdit.getAttribute('data-json')) || btnEdit.getAttribute('data-row') || '';
+            openEditModal(decodeReqRowB64(rawEdit));
             return;
         }
         var btnApprove = e.target.closest('.btn-approve');
         if (btnApprove) {
             e.preventDefault();
             e.stopPropagation();
-            var row = btnApprove.closest('tr');
-            var json = row && row.dataset.json ? JSON.parse(atob(row.dataset.json)) : {};
+            var rowAp = btnApprove.closest('tr');
+            var json = rowAp ? decodeReqRowB64(rowAp.getAttribute('data-json') || '') : {};
             var ps = String(json.payment_status || '').toLowerCase().trim();
             var approvePreMsg = ps === 'paid'
                 ? 'Before you approve: confirm payment is complete (this row shows Paid) and that country, site URL, and database credentials are correct. Open the approval form?'
@@ -567,6 +627,11 @@
                     showAlert('Request failed: ' + (err.message || err));
                 });
             });
+            return;
+        }
+        } catch (clickErr) {
+            showAlert('Action failed: ' + (clickErr && clickErr.message ? clickErr.message : String(clickErr)));
+            return;
         }
     }, true);
 
@@ -660,6 +725,13 @@
         }).catch(function(e) { showAlert('Error: ' + (e.message || e)); })
         .finally(function() { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check me-1"></i> Create Agency & Approve'; });
     };
+
+    var btnRefreshRegistrationRequests = document.getElementById('btnRefreshRegistrationRequests');
+    if (btnRefreshRegistrationRequests) {
+        btnRefreshRegistrationRequests.addEventListener('click', function() {
+            window.location.reload();
+        });
+    }
 
     // Bulk selection controls
     var reqCheckAll = document.getElementById('reqCheckAll');
