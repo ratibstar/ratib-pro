@@ -44,6 +44,9 @@ $cpT = static function (string $key): string {
             ?>
             <li><a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('portals.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard" target="_blank" rel="noopener"><i class="fas fa-link"></i><span><?php echo htmlspecialchars($cpT('nav.erp_links'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp-migrate.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-database"></i><span><?php echo htmlspecialchars($cpT('nav.erp_db_setup'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <?php if (strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin'): ?>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/erp-agency-updates.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem <?php echo basename($_SERVER['PHP_SELF'] ?? '') === 'erp-agency-updates.php' ? 'active' : ''; ?>"><i class="fas fa-cloud-upload-alt"></i><span><?php echo htmlspecialchars($cpT('nav.erp_agency_updates'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <?php endif; ?>
             <?php
             $ratebErpNavLinks = function_exists('control_rateb_erp_nav_links') ? control_rateb_erp_nav_links() : [];
             foreach ($ratebErpNavLinks as $erpLink) {
@@ -248,9 +251,6 @@ $cpT = static function (string $key): string {
             <li><a href="<?php echo htmlspecialchars($fullBaseUrl . '/pages/control/panel-settings.php?control=1'); ?>" id="nav-control-panel-settings" class="sidebar-subitem <?php echo in_array(basename($_SERVER['PHP_SELF']), ['panel-settings.php', 'admins.php', 'control-panel-settings.php', 'panel-users.php', 'control-panel-users.php']) ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-sliders-h"></i><span><?php echo htmlspecialchars($cpT('nav.panel_settings'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <li><a href="<?php echo htmlspecialchars($controlCenterUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-tools"></i><span><?php echo htmlspecialchars($cpT('nav.admin_control_center'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=control', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem <?php echo basename($_SERVER['PHP_SELF']) === 'infrastructure.php' ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-network-wired"></i><span><?php echo htmlspecialchars($cpT('nav.infrastructure'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
-            <?php if (strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin'): ?>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/sync-test-domain.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem <?php echo basename($_SERVER['PHP_SELF']) === 'sync-test-domain.php' ? 'active' : ''; ?>"><i class="fas fa-clone"></i><span><?php echo htmlspecialchars($cpT('nav.sync_test_domain'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
-            <?php endif; ?>
             <?php control_sidebar_group_close(); ?>
             <li><a href="<?php echo pageUrl('logout.php'); ?>?control=1" class="sidebar-item sidebar-item-logout"><i class="fas fa-sign-out-alt"></i><span><?php echo htmlspecialchars($cpT('nav.logout'), ENT_QUOTES, 'UTF-8'); ?></span></a></li>
         </ul>

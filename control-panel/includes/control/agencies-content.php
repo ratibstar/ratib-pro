@@ -418,7 +418,7 @@ if ($agencyIdFilter > 0) {
         <span class="ms-3 text-muted"><?php echo $lastAgencyControlEvent !== '' ? ('Last event: ' . htmlspecialchars($lastAgencyControlEvent)) : 'Last event: none'; ?></span>
         <?php if ($isControlSuperAdminUi): ?>
         <button type="button" class="btn btn-sm btn-outline-danger ms-3" id="btnRepairTenantLinks" data-permission="control_agencies,delete_control_agency">Repair Missing Tenant Link</button>
-        <a href="<?php echo htmlspecialchars(function_exists('control_panel_page_with_control') ? control_panel_page_with_control('control/sync-test-domain.php') : '/control-panel/pages/control/sync-test-domain.php?control=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-primary ms-2" title="نسخ ملفات rateb.sa إلى test.rateb.sa"><i class="fas fa-clone me-1"></i> Sync test.rateb.sa</a>
+        <a href="<?php echo htmlspecialchars(function_exists('control_panel_page_with_control') ? control_panel_page_with_control('control/erp-agency-updates.php') : '/control-panel/pages/control/erp-agency-updates.php?control=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-primary ms-2" title="تطبيق ترحيلات ERP على الوكالات"><i class="fas fa-cloud-upload-alt me-1"></i> Push ERP updates</a>
         <?php endif; ?>
     </div>
     <a href="<?php echo htmlspecialchars($formAction . '?control=1'); ?>" class="btn btn-outline-secondary btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i> Back to countries</a>
@@ -472,7 +472,7 @@ if ($agencyIdFilter > 0) {
         <button type="button" class="btn btn-control agencies-btn-control btn-danger" id="btnBulkDelete" disabled data-permission="control_agencies,delete_control_agency"><i class="fas fa-trash me-1"></i> Bulk Delete</button>
         <button type="button" class="btn btn-control agencies-btn-control btn-info" id="btnBulkSync" disabled data-permission="control_agencies,edit_control_agency"><i class="fas fa-sync me-1"></i> Bulk Sync</button>
         <button type="button" class="btn btn-control agencies-btn-control btn-secondary" id="btnBulkRebuildDb" disabled data-permission="control_agencies,delete_control_agency"><i class="fas fa-database me-1"></i> Bulk Rebuild DB</button>
-        <button type="button" class="btn btn-control agencies-btn-control btn-secondary" id="btnBulkRunMigration" disabled data-permission="control_agencies,edit_control_agency"><i class="fas fa-tools me-1"></i> Bulk Run Migration</button>
+        <button type="button" class="btn btn-control agencies-btn-control btn-secondary" id="btnBulkRunMigration" disabled data-permission="control_agencies,edit_control_agency" title="Runs pending rateb-erp SQL migrations on each selected agency ERP database"><i class="fas fa-tools me-1"></i> Bulk ERP DB Update</button>
         <button type="button" class="btn btn-control agencies-btn-control btn-secondary" id="btnBulkTestDbConnection" disabled data-permission="control_agencies,edit_control_agency"><i class="fas fa-plug me-1"></i> Bulk Test DB Connection</button>
     </div>
     <div class="form-check mb-3" title="<?php echo $isControlSuperAdminUi ? 'Allows controlled override for suspended-tenant bulk operations.' : 'Only SUPER_ADMIN can enable override_suspended.'; ?>">

@@ -49,6 +49,7 @@ return [
     'nav.admin_control_center' => 'Admin Control Center',
     'nav.infrastructure' => 'Infrastructure',
     'nav.sync_test_domain' => 'Sync test domain',
+    'nav.erp_agency_updates' => 'Push ERP updates',
     'nav.logout' => 'Logout',
 
     'section.rateb_erp' => 'RATEB ERP System',

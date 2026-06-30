@@ -22,6 +22,7 @@ use Rateb\App\Controllers\Admin\SubscriptionsController;
 use Rateb\App\Controllers\Admin\SupportTicketsController;
 use Rateb\App\Controllers\Admin\UsersController;
 use Rateb\App\Controllers\Admin\AccessControlController;
+use Rateb\App\Controllers\Admin\AgencyUpdatesController;
 use Rateb\App\Controllers\Admin\AccountingDashboardController;
 use Rateb\App\Controllers\Admin\ChartOfAccountsController;
 use Rateb\App\Controllers\Admin\AdminApprovalsController;
@@ -100,6 +101,9 @@ $router->get('/admin/companies/{id}/documents', [CompaniesController::class, 'do
 $router->post('/admin/companies/{id}/documents', [CompaniesController::class, 'storeDocument'], rateb_admin_mw('companies.manage'));
 $router->post('/admin/companies/{id}/documents/{docId}', [CompaniesController::class, 'updateDocument'], rateb_admin_mw('companies.manage'));
 $router->post('/admin/companies/{id}/documents/{docId}/delete', [CompaniesController::class, 'destroyDocument'], rateb_admin_mw('companies.manage'));
+
+$router->get('/admin/agency-updates', [AgencyUpdatesController::class, 'index'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/agency-updates/push', [AgencyUpdatesController::class, 'push'], rateb_admin_mw('companies.manage'));
 
 $router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));
 $router->get('/admin/access-control/matrix', [AccessControlController::class, 'matrix'], rateb_admin_mw('access.manage'));

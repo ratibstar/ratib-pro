@@ -74,6 +74,16 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
     <code><?php echo htmlspecialchars(control_rateb_erp_public_url('admin'), ENT_QUOTES, 'UTF-8'); ?></code>
 </div>
 
+<?php if (strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin' && function_exists('control_panel_page_with_control')) { ?>
+<div class="control-settings-card mb-4">
+    <h3><i class="fas fa-cloud-upload-alt"></i> رفع تحديثات ERP للوكالات</h3>
+    <p class="small text-muted mb-2">بعد نشر كود جديد على rateb.sa، طبّق ترحيلات قاعدة البيانات على ERP الرئيسي و/أو قواعد الوكالات المشتركة.</p>
+    <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/erp-agency-updates.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
+        <i class="fas fa-play"></i> Push ERP updates
+    </a>
+</div>
+<?php } ?>
+
 <div class="alert alert-primary mb-4" role="region" aria-label="روابط مباشرة">
     <h2 class="h5 mb-2"><i class="fas fa-link me-2"></i>روابط مباشرة — بدون تسجيل لوحة التحكم</h2>
     <p class="small mb-2">

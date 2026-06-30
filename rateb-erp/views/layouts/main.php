@@ -117,6 +117,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             ];
             $adminSection(__('admin_oversight_section'), [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
+                ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'companies.manage']],
                 ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.view']],
                 [
                     'type' => 'subgroup',
@@ -232,6 +233,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             $showOpsCompanyPicker = rateb_is_super_admin() && (
                 rateb_is_ops_route($erpRoute)
                 || strpos($currentPath, '/admin/ops/') !== false
+                || $navActive('admin/agency-updates')
             );
             if ($showOpsCompanyPicker) {
                 Rateb\App\Core\View::partial('ops-company-select');
@@ -266,6 +268,9 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <script src="<?php echo rateb_asset('js/entity-documents-modal.js'); ?>"></script>
 <?php if ($navActive('admin/oversight/approvals')) { ?>
 <script src="<?php echo rateb_asset('js/approvals-oversight.js'); ?>"></script>
+<?php } ?>
+<?php if ($navActive('admin/agency-updates')) { ?>
+<script src="<?php echo rateb_asset('js/agency-updates.js'); ?>"></script>
 <?php } ?>
 </body>
 </html>

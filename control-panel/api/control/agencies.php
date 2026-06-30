@@ -742,10 +742,13 @@ if ($method === 'PATCH') {
                     ]));
                 }
             } elseif ($action === 'run_migration') {
-                emitEvent('AGENCY_MIGRATION_REQUESTED', 'warn', 'Migration run requested', eventMeta([
+                require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
+                $migrationResult = ErpProvisioningService::runMigrationsForAgency($agency);
+                emitEvent('AGENCY_MIGRATION_COMPLETED', 'info', 'ERP migrations applied', eventMeta([
                     'tenant_id' => $tenantId > 0 ? $tenantId : null,
                     'agency_id' => $agencyId,
                     'action' => $action,
+                    'erp_db_name' => (string) ($migrationResult['erp_db_name'] ?? ''),
                 ]));
             } elseif ($action === 'rebuild_db') {
                 emitEvent('AGENCY_REBUILD_REQUESTED', 'critical', 'DB rebuild requested', eventMeta([

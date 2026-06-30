@@ -178,6 +178,8 @@ return [
     'platform_routes' => [
         'admin' => 'dashboard.view',
         'admin/executive-dashboard' => 'executive.dashboard.view',
+        'admin/agency-updates' => 'companies.manage',
+        'admin/agency-updates/push' => 'companies.manage',
         'admin/companies' => 'companies.view',
         'admin/companies/create' => 'companies.manage',
         'admin/access-control' => 'access.manage',

@@ -119,6 +119,62 @@ if (!function_exists('rateb_lookup_agency_by_host')) {
     }
 }
 
+if (!function_exists('rateb_list_agencies_with_erp')) {
+    /**
+     * Agencies that have a dedicated ERP database (for migration push from platform admin).
+     *
+     * @return list<array<string, mixed>>
+     */
+    function rateb_list_agencies_with_erp(bool $subscribedOnly = false): array
+    {
+        $conn = rateb_agency_lookup_connection();
+        if (!$conn) {
+            return [];
+        }
+        $chk = @$conn->query("SHOW TABLES LIKE 'control_agencies'");
+        if (!$chk || $chk->num_rows === 0) {
+            $conn->close();
+
+            return [];
+        }
+        if (!rateb_agency_lookup_has_erp_columns($conn)) {
+            $conn->close();
+
+            return [];
+        }
+        $hasSusp = false;
+        $suspChk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+        if ($suspChk && $suspChk->num_rows > 0) {
+            $hasSusp = true;
+        }
+        $cols = rateb_agency_lookup_select_columns($conn);
+        $sql = "SELECT {$cols} FROM control_agencies WHERE TRIM(COALESCE(erp_db_name, '')) <> ''";
+        if ($subscribedOnly) {
+            $sql .= ' AND is_active = 1';
+            if ($hasSusp) {
+                $sql .= ' AND COALESCE(is_suspended, 0) = 0';
+            }
+            $sql .= " AND LOWER(COALESCE(erp_status, 'none')) = 'ready'";
+        }
+        $sql .= ' ORDER BY name ASC';
+        $res = $conn->query($sql);
+        if (!$res) {
+            $conn->close();
+
+            return [];
+        }
+        $rows = [];
+        while ($row = $res->fetch_assoc()) {
+            if (is_array($row)) {
+                $rows[] = $row;
+            }
+        }
+        $conn->close();
+
+        return $rows;
+    }
+}
+
 if (!function_exists('rateb_lookup_agency_by_id')) {
     /**
      * @return array<string, mixed>|null

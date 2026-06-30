@@ -49,6 +49,7 @@ return [
     'nav.admin_control_center' => 'مركز التحكم الإداري',
     'nav.infrastructure' => 'البنية التحتية',
     'nav.sync_test_domain' => 'مزامنة دومين الاختبار',
+    'nav.erp_agency_updates' => 'رفع تحديثات ERP',
     'nav.logout' => 'تسجيل الخروج',
 
     'section.rateb_erp' => 'نظام رتب ERP',

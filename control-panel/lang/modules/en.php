@@ -314,6 +314,25 @@ return [
     'sync_test.open_test_erp' => 'Open test ERP admin',
     'sync_test.open_probe' => 'Domain probe (diagnostics)',
 
+    // ERP updates push (platform → agency DBs)
+    'erp_updates.title' => 'Push ERP updates to agencies',
+    'erp_updates.intro' => 'Applies the same SQL migrations used on the main ERP (rateb.sa) to each agency ERP database. Use after deploying new rateb-erp code.',
+    'erp_updates.note_code' => 'PHP files: one deploy on the server updates code for all agencies (GitHub Actions).',
+    'erp_updates.note_db' => 'Database: each agency has its own ERP DB — run migrations here per agency or in bulk.',
+    'erp_updates.include_platform' => 'Also update platform ERP database',
+    'erp_updates.run_selected' => 'Update selected agencies',
+    'erp_updates.run_all_ready' => 'Update all agencies (ERP ready)',
+    'erp_updates.run_subscribed' => 'Update all active subscribed agencies',
+    'erp_updates.open_platform_admin' => 'Open platform ERP admin',
+    'erp_updates.col_agency' => 'Agency',
+    'erp_updates.col_erp_db' => 'ERP database',
+    'erp_updates.col_status' => 'ERP status',
+    'erp_updates.col_plan' => 'Plan',
+    'erp_updates.empty' => 'No agencies with an ERP database yet. Use Provision ERP on Manage Agencies first.',
+    'erp_updates.confirm_selected' => 'Run pending ERP migrations on the selected agencies (and platform if checked)?',
+    'erp_updates.confirm_all' => 'Run pending ERP migrations on ALL agencies with ERP ready?',
+    'erp_updates.confirm_subscribed' => 'Run pending ERP migrations on all ACTIVE subscribed agencies (ready + not suspended)?',
+
     // Site content
     'site.edit_home' => 'Edit homepage copy',
     'site.public_content' => 'Public site content',

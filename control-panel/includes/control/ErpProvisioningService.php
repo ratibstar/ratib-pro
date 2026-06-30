@@ -594,4 +594,110 @@ final class ErpProvisioningService
         $stmt->execute();
         $stmt->close();
     }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @return array{host:string,port:int,user:string,pass:string,db:string}
+     */
+    public static function agencyDatabaseConfig(array $agency): array
+    {
+        $dbName = trim((string) ($agency['erp_db_name'] ?? ''));
+        $dbHost = trim((string) ($agency['erp_db_host'] ?? ''));
+        if ($dbHost === '') {
+            $dbHost = trim((string) ($agency['db_host'] ?? 'localhost'));
+        }
+        $dbPort = (int) ($agency['db_port'] ?? 3306);
+        $dbUser = trim((string) ($agency['erp_db_user'] ?? ''));
+        if ($dbUser === '') {
+            $dbUser = trim((string) ($agency['db_user'] ?? ''));
+        }
+        $dbPass = (string) ($agency['erp_db_pass'] ?? '');
+        if ($dbPass === '') {
+            $dbPass = (string) ($agency['db_pass'] ?? '');
+        }
+        if ($dbUser === '') {
+            $dbUser = defined('DB_USER') ? (string) DB_USER : '';
+        }
+        if ($dbPass === '' && defined('DB_PASS')) {
+            $dbPass = (string) DB_PASS;
+        }
+        if ($dbName === '') {
+            $dbName = trim((string) ($agency['db_name'] ?? ''));
+        }
+
+        return [
+            'host' => $dbHost !== '' ? $dbHost : 'localhost',
+            'port' => $dbPort > 0 ? $dbPort : 3306,
+            'user' => $dbUser,
+            'pass' => $dbPass,
+            'db' => $dbName,
+        ];
+    }
+
+    /**
+     * Apply pending rateb-erp SQL migrations to one agency ERP database.
+     *
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    public static function runMigrationsForAgency(array $agency): array
+    {
+        $agencyId = (int) ($agency['id'] ?? 0);
+        $cfg = self::agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException('No ERP database configured for agency #' . $agencyId);
+        }
+        if (!self::canConnectToDatabase($cfg['host'], $cfg['port'], $cfg['user'], $cfg['pass'], $cfg['db'])) {
+            throw new RuntimeException('Cannot connect to ERP database ' . $cfg['db']);
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        $log = self::runErpMigrations($cfg['db'], $cfg['host'], $cfg['port'], $cfg['user'], $cfg['pass']);
+
+        return [
+            'agency_id' => $agencyId,
+            'agency_name' => trim((string) ($agency['name'] ?? '')),
+            'erp_db_name' => $cfg['db'],
+            'log' => $log,
+        ];
+    }
+
+    /**
+     * Agencies with a dedicated ERP database (ready / failed retry).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function listErpAgencies(mysqli $controlConn, bool $subscribedOnly = false): array
+    {
+        self::ensureErpColumns($controlConn);
+        $hasSusp = false;
+        $chk = @$controlConn->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+        if ($chk && $chk->num_rows > 0) {
+            $hasSusp = true;
+        }
+        $sql = 'SELECT id, name, slug, site_url, erp_db_name, erp_status, erp_plan_slug, is_active';
+        if ($hasSusp) {
+            $sql .= ', is_suspended';
+        }
+        $sql .= " FROM control_agencies WHERE TRIM(COALESCE(erp_db_name, '')) <> ''";
+        if ($subscribedOnly) {
+            $sql .= ' AND is_active = 1';
+            if ($hasSusp) {
+                $sql .= ' AND COALESCE(is_suspended, 0) = 0';
+            }
+            $sql .= " AND LOWER(COALESCE(erp_status, 'none')) = 'ready'";
+        }
+        $sql .= ' ORDER BY name ASC';
+        $res = $controlConn->query($sql);
+        if (!$res) {
+            return [];
+        }
+        $rows = [];
+        while ($row = $res->fetch_assoc()) {
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
 }
