@@ -498,23 +498,7 @@ final class ErpProvisioningService
         string $planSlug
     ): array {
         $erpRoot = self::erpRootPath();
-        require_once $erpRoot . '/config/app.php';
-        require_once $erpRoot . '/app/Core/Database.php';
-        require_once $erpRoot . '/app/Core/Model.php';
-        require_once $erpRoot . '/app/Core/TenantContext.php';
-        require_once $erpRoot . '/app/models/Company.php';
-        require_once $erpRoot . '/app/models/Entities.php';
-        require_once $erpRoot . '/app/models/Plan.php';
-        require_once $erpRoot . '/app/services/PlanLimitService.php';
-        require_once $erpRoot . '/app/services/AuthorizationService.php';
-        require_once $erpRoot . '/app/services/BarcodeLoginService.php';
-        require_once $erpRoot . '/app/services/BranchService.php';
-        require_once $erpRoot . '/app/services/DedicatedTenantPolicy.php';
-        require_once $erpRoot . '/app/services/DedicatedCompanySeedService.php';
-
-        if (!defined('RATEB_ERP_DEPLOYMENT_MODE')) {
-            define('RATEB_ERP_DEPLOYMENT_MODE', 'dedicated');
-        }
+        self::bootstrapErpForSeed($erpRoot);
 
         \Rateb\App\Core\Database::useConnectionOverride([
             'db' => $dbName,
@@ -537,6 +521,20 @@ final class ErpProvisioningService
         } finally {
             \Rateb\App\Core\Database::clearConnectionOverride();
         }
+    }
+
+    private static function bootstrapErpForSeed(string $erpRoot): void
+    {
+        if (!defined('RATEB_ENV_NO_SESSION')) {
+            define('RATEB_ENV_NO_SESSION', true);
+        }
+        if (!defined('RATEB_ERP_DEPLOYMENT_MODE')) {
+            define('RATEB_ERP_DEPLOYMENT_MODE', 'dedicated');
+        }
+        if (!class_exists(\Rateb\App\Core\Bootstrap::class, false)) {
+            require_once $erpRoot . '/app/Core/Bootstrap.php';
+        }
+        \Rateb\App\Core\Bootstrap::init($erpRoot);
     }
 
     /** @param array<string, mixed> $agency */
