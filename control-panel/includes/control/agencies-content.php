@@ -91,6 +91,45 @@ if (!function_exists('agency_open_site_url_is_different_host')) {
     }
 }
 
+if (!function_exists('agency_build_erp_open_url')) {
+    /** Company portal on the agency Site URL (dedicated host resolves ERP DB via agency_resolver). */
+    function agency_build_erp_open_url(string $siteUrl): string
+    {
+        $siteUrl = rtrim(trim($siteUrl), '/');
+        if ($siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
+            return '';
+        }
+
+        return $siteUrl . '/rateb-erp/public/company/login';
+    }
+}
+
+if (!function_exists('agency_should_open_rateb_erp')) {
+    /**
+     * Dedicated-domain agencies with ERP DB linkage open RATEB ERP (not legacy RATEB Pro).
+     *
+     * @param array<string, mixed> $agencyRow
+     */
+    function agency_should_open_rateb_erp(array $agencyRow): bool
+    {
+        $siteUrl = trim((string) ($agencyRow['site_url'] ?? ''));
+        if ($siteUrl === '' || !preg_match('/^https?:\/\/.+/i', $siteUrl)) {
+            return false;
+        }
+        if (function_exists('agency_site_url_invalid_for_rateb_pro_open')
+            && agency_site_url_invalid_for_rateb_pro_open($siteUrl)) {
+            return false;
+        }
+        $erpStatus = strtolower(trim((string) ($agencyRow['erp_status'] ?? 'none')));
+        $erpDb = trim((string) ($agencyRow['erp_db_name'] ?? ''));
+        if ($erpStatus === 'ready') {
+            return true;
+        }
+
+        return $erpDb !== '';
+    }
+}
+
 // EN: Load country scope and list data according to permission constraints and active filters.
 // AR: تحميل نطاق الدول وقائمة الوكالات حسب صلاحيات المستخدم والفلاتر الحالية.
 $allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
@@ -510,7 +549,14 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $useStoredSiteForOpen = $hasSiteUrlFormat && !agency_site_url_invalid_for_rateb_pro_open($siteBaseRaw);
                             $openUrl = '';
                             $openViaRemoteSiteUrl = false;
-                            if ($useStoredSiteForOpen && agency_open_site_url_is_different_host($ratebBase, $siteBaseRaw)) {
+                            $openErp = agency_should_open_rateb_erp($r);
+                            if ($openErp && $useStoredSiteForOpen) {
+                                $openUrl = agency_build_erp_open_url($siteBaseRaw);
+                                $erpSt = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
+                                $openTitle = $erpSt === 'ready'
+                                    ? 'Open RATEB ERP (company portal)'
+                                    : ('Open RATEB ERP — status: ' . ($r['erp_status'] ?? 'none') . ' (run Provision ERP if login fails)');
+                            } elseif ($useStoredSiteForOpen && agency_open_site_url_is_different_host($ratebBase, $siteBaseRaw)) {
                                 $openUrl = agency_build_open_sso_url($siteBaseRaw, (int)$r['id']);
                                 if ($openUrl !== '') {
                                     $openViaRemoteSiteUrl = true;
@@ -525,9 +571,11 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                     $openUrl = pageUrl('control/dashboard.php') . '?' . $openQs;
                                 }
                             }
-                            $openTitle = $openViaRemoteSiteUrl
-                                ? 'Open agency program (custom site URL)'
-                                : (($cslug !== '' && $ratebBase !== '') ? ('Open platform (' . $cslug . ')') : 'Open platform');
+                            if ($openUrl !== '' && !$openErp) {
+                                $openTitle = $openViaRemoteSiteUrl
+                                    ? 'Open RATEB Pro (custom site URL)'
+                                    : (($cslug !== '' && $ratebBase !== '') ? ('Open RATEB Pro (' . $cslug . ')') : 'Open RATEB Pro');
+                            }
                         ?><?php if ($openUrl !== ''): ?>
                         <a href="<?php echo htmlspecialchars($openUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="<?php echo htmlspecialchars($openTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">Open</a>
                         <?php else: ?>
@@ -542,8 +590,8 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                         <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#query-console'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_query_activity" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Query Activity</a>
                         <?php if (($r['erp_status'] ?? 'none') !== 'ready') { ?>
                         <button type="button" class="btn btn-sm btn-outline-primary btn-provision-erp" data-agency-id="<?php echo (int) $r['id']; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency">Provision ERP</button>
-                        <?php } elseif (!empty($r['site_url'])) { ?>
-                        <a href="<?php echo htmlspecialchars(rtrim((string) $r['site_url'], '/') . '/rateb-erp/public/company/login'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info">ERP Login</a>
+                        <?php } elseif (!empty($r['site_url']) && !agency_should_open_rateb_erp($r)) { ?>
+                        <a href="<?php echo htmlspecialchars(agency_build_erp_open_url((string) $r['site_url'])); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info">ERP Login</a>
                         <?php } ?>
                         <button type="button" class="btn btn-sm btn-outline-info btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,view_control_agencies">View</button>
                         <button type="button" class="btn btn-sm btn-outline-warning btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,edit_control_agency">Edit</button>
