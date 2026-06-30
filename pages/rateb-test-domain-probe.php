@@ -13,6 +13,18 @@ $lines[] = 'PHP ' . PHP_VERSION;
 $lines[] = 'HTTP_HOST=' . ($_SERVER['HTTP_HOST'] ?? '');
 $lines[] = 'REQUEST_URI=' . ($_SERVER['REQUEST_URI'] ?? '');
 
+$root = dirname(__DIR__);
+$mustExist = [
+    'core/TenantExecutionContext.php',
+    'core/bootstrap.php',
+    'app/Core/ErrorTracker.php',
+    'config/env/test_rateb_sa.php',
+];
+foreach ($mustExist as $rel) {
+    $p = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+    $lines[] = (is_file($p) ? 'file OK: ' : 'file MISSING: ') . $rel;
+}
+
 try {
     require_once __DIR__ . '/../config/env/load.php';
     $lines[] = 'env: loaded';

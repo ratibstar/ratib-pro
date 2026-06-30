@@ -32,8 +32,14 @@ if ($target === '' && $source !== '') {
 }
 $target = rtrim((string) $target, '/\\');
 
-$paths = ['rateb-erp', 'config', 'includes', 'css', 'js', 'pages', 'api', 'control-panel', 'admin', 'public'];
+$paths = ['rateb-erp', 'config', 'core', 'app', 'includes', 'css', 'js', 'pages', 'api', 'control-panel', 'admin', 'public'];
 $rootFiles = ['index.php', '.htaccess', 'composer.json', 'control.php'];
+$criticalAfterCopy = [
+    'core/TenantExecutionContext.php',
+    'core/bootstrap.php',
+    'app/Core/ErrorTracker.php',
+    'config/env/test_rateb_sa.php',
+];
 
 function rateb_bootstrap_copy_tree(string $src, string $dst, array &$log): bool
 {
@@ -120,6 +126,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm']) && (string
             if ($ok && is_file($source . DIRECTORY_SEPARATOR . '.env') && !is_file($target . DIRECTORY_SEPARATOR . '.env')) {
                 if (@copy($source . DIRECTORY_SEPARATOR . '.env', $target . DIRECTORY_SEPARATOR . '.env')) {
                     $log[] = 'OK .env (copied once; edit test DB settings if needed)';
+                }
+            }
+            if ($ok) {
+                foreach ($criticalAfterCopy as $rel) {
+                    $p = $target . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+                    if (is_file($p)) {
+                        $log[] = 'VERIFY OK ' . $rel;
+                    } else {
+                        $log[] = 'VERIFY MISSING ' . $rel;
+                        $ok = false;
+                    }
                 }
             }
         }

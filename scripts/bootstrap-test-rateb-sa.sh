@@ -10,7 +10,7 @@ mkdir -p "$TEST"
 
 RSYNC=(rsync -rlptgoD --exclude='storage/backups/*.sql.gz' --exclude='storage/backups/*.tar.gz')
 
-for path in rateb-erp config includes css js pages api control-panel admin public; do
+for path in rateb-erp config core app includes css js pages api control-panel admin public; do
   if [ -d "$PROD/$path" ]; then
     echo "Sync $path ..."
     "${RSYNC[@]}" "$PROD/$path/" "$TEST/$path/"
