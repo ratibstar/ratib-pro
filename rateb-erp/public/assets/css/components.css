@@ -569,6 +569,33 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
     width: 2.5rem;
 }
 
+.erp-agency-bulk-bar--active {
+    background: color-mix(in srgb, var(--rateb-primary, #0d6efd) 14%, var(--rateb-bg));
+    border-bottom: 2px solid var(--rateb-primary, #0d6efd);
+    animation: erp-bulk-bar-in 0.2s ease-out;
+}
+
+@keyframes erp-bulk-bar-in {
+    from { opacity: 0.6; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.erp-push-bulk-btn--lit {
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--rateb-primary, #0d6efd) 35%, transparent);
+}
+
+#erpAgencyUpdatesTable tbody tr.erp-agency-row.table-active {
+    --bs-table-bg-state: color-mix(in srgb, var(--rateb-primary, #0d6efd) 12%, transparent);
+}
+
+#erpAgencyUpdatesTable tbody tr.erp-agency-row {
+    cursor: pointer;
+}
+
+#erpAgencyUpdatesTable tbody tr.erp-agency-row td.rateb-bulk-td {
+    cursor: default;
+}
+
 .rateb-matrix-wrap {
     max-height: min(72vh, 900px);
     overflow: auto;

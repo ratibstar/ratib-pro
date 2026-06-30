@@ -7,41 +7,66 @@
     var apiUrl = cfg.getAttribute('data-api-url') || '';
     var linkUrl = cfg.getAttribute('data-link-url') || '';
     var csrfToken = cfg.getAttribute('data-csrf') || '';
+    var table = document.getElementById('erpAgencyUpdatesTable');
+    var bulkBar = document.getElementById('erpAgencyBulkBar');
     var btnSelected = document.getElementById('erpUpdateRunSelected');
     var btnAll = document.getElementById('erpUpdateRunAllReady');
     var btnSub = document.getElementById('erpUpdateRunSubscribed');
-    var selectAll = document.getElementById('erpUpdateSelectAll');
     var progress = document.getElementById('erpUpdateProgress');
     var resultsBox = document.getElementById('erpUpdateResults');
     var logEl = document.getElementById('erpUpdateLog');
     var includePlatform = document.getElementById('erpUpdateIncludePlatform');
 
     function boxes() {
-        return Array.prototype.slice.call(document.querySelectorAll('.erp-update-agency-cb'));
+        if (!table) {
+            return [];
+        }
+        return Array.prototype.slice.call(table.querySelectorAll('[data-rateb-row-check]'));
     }
 
     function selectedIds() {
-        return boxes().filter(function (cb) { return cb.checked; }).map(function (cb) { return parseInt(cb.value, 10); }).filter(function (n) { return n > 0; });
+        return boxes().filter(function (cb) { return cb.checked; }).map(function (cb) {
+            return parseInt(cb.value, 10);
+        }).filter(function (n) { return n > 0; });
+    }
+
+    function syncBulkBar() {
+        var ids = selectedIds();
+        var count = ids.length;
+        if (bulkBar) {
+            if (count > 0) {
+                bulkBar.classList.remove('d-none');
+                bulkBar.classList.add('erp-agency-bulk-bar--active');
+            } else {
+                bulkBar.classList.add('d-none');
+                bulkBar.classList.remove('erp-agency-bulk-bar--active');
+            }
+            var countEl = bulkBar.querySelector('[data-rateb-bulk-count]');
+            if (countEl) {
+                var label = countEl.getAttribute('data-label') || 'selected';
+                countEl.textContent = count + ' ' + label;
+            }
+        }
+        if (btnSelected) {
+            btnSelected.disabled = count === 0;
+            btnSelected.classList.toggle('erp-push-bulk-btn--lit', count > 0);
+        }
+        if (table) {
+            table.querySelectorAll('tbody tr.erp-agency-row').forEach(function (tr) {
+                var cb = tr.querySelector('[data-rateb-row-check]');
+                tr.classList.toggle('table-active', !!(cb && cb.checked));
+            });
+        }
+        var selectAll = table ? table.querySelector('[data-rateb-select-all]') : null;
+        if (selectAll) {
+            selectAll.indeterminate = count > 0 && count < boxes().length;
+            selectAll.checked = boxes().length > 0 && count === boxes().length;
+        }
     }
 
     function setBusy(busy) {
         [btnSelected, btnAll, btnSub].forEach(function (b) {
             if (b) b.disabled = busy || (b === btnSelected && selectedIds().length === 0);
-        });
-    }
-
-    function refreshSelectedBtn() {
-        if (btnSelected) btnSelected.disabled = selectedIds().length === 0;
-    }
-
-    boxes().forEach(function (cb) {
-        cb.addEventListener('change', refreshSelectedBtn);
-    });
-    if (selectAll) {
-        selectAll.addEventListener('change', function () {
-            var on = !!selectAll.checked;
-            boxes().forEach(function (cb) { cb.checked = on; });
-            refreshSelectedBtn();
         });
     }
 
@@ -105,8 +130,37 @@
             })
             .finally(function () {
                 setBusy(false);
-                refreshSelectedBtn();
+                syncBulkBar();
             });
+    }
+
+    if (table) {
+        table.addEventListener('change', function (e) {
+            var t = e.target;
+            if (!t || t.getAttribute('data-rateb-row-check') === null && t.getAttribute('data-rateb-select-all') === null) {
+                return;
+            }
+            if (t.getAttribute('data-rateb-select-all') !== null) {
+                var on = !!t.checked;
+                boxes().forEach(function (cb) { cb.checked = on; });
+            }
+            syncBulkBar();
+        });
+
+        table.addEventListener('click', function (e) {
+            if (e.target.closest('a, button, .erp-link-row-btn')) {
+                return;
+            }
+            var tr = e.target.closest('tr.erp-agency-row');
+            if (!tr || e.target.closest('[data-rateb-row-check]')) {
+                return;
+            }
+            var cb = tr.querySelector('[data-rateb-row-check]');
+            if (cb) {
+                cb.checked = !cb.checked;
+                syncBulkBar();
+            }
+        });
     }
 
     if (btnSelected) {
@@ -136,7 +190,15 @@
         });
     }
 
-    refreshSelectedBtn();
+    function boot() {
+        syncBulkBar();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
 
     function linkAgency(agencyId, companyId, btn) {
         if (!linkUrl || agencyId < 1 || companyId < 1) return;

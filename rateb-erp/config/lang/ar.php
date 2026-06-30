@@ -1206,7 +1206,7 @@ return [
     'agency_erp_push_link_invalid_agency' => 'معرّف وكالة غير صالح.',
     'agency_erp_push_link_company_missing' => 'شركة المنصة غير موجودة.',
     'agency_erp_push_link_company_taken' => 'هذه الشركة مربوطة بوكالة أخرى مسبقاً.',
-    'agency_erp_push_link_failed' => 'تعذّر حفظ ربط الوكالة.',
+    'agency_erp_push_bulk_label' => 'وكالة محددة',
     'active_company' => 'الشركة النشطة',
     'no_companies_for_ops' => 'لا توجد شركات مسجّلة. أنشئ شركة أولاً من',
     'company_not_found_ops' => 'الشركة المحددة غير موجودة. أنشئ شركة من قسم الشركات ثم اخترها من القائمة أعلاه.',

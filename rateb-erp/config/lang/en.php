@@ -1206,7 +1206,7 @@ return [
     'agency_erp_push_link_invalid_agency' => 'Invalid agency.',
     'agency_erp_push_link_company_missing' => 'Platform company not found.',
     'agency_erp_push_link_company_taken' => 'This company is already linked to another agency.',
-    'agency_erp_push_link_failed' => 'Could not save agency link.',
+    'agency_erp_push_bulk_label' => 'agencies selected',
     'active_company' => 'Active company',
     'no_companies_for_ops' => 'No companies registered yet. Create one first from',
     'company_not_found_ops' => 'The selected company does not exist. Create one under Companies, then pick it from the selector above.',

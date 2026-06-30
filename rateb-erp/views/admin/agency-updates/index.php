@@ -61,9 +61,6 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
             </label>
         </div>
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <button type="button" class="btn btn-primary btn-sm" id="erpUpdateRunSelected" disabled>
-                <i class="fas fa-play me-1"></i><?php echo __('agency_erp_push_run_selected'); ?>
-            </button>
             <button type="button" class="btn btn-outline-primary btn-sm" id="erpUpdateRunAllReady">
                 <i class="fas fa-layer-group me-1"></i><?php echo __('agency_erp_push_run_all_ready'); ?>
             </button>
@@ -79,13 +76,19 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
 </div>
 
 <div class="rateb-card">
+    <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar id="erpAgencyBulkBar">
+        <span class="rateb-bulk-count" data-rateb-bulk-count data-label="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_bulk_label')); ?>">0</span>
+        <button type="button" class="btn btn-primary btn-sm erp-push-bulk-btn" id="erpUpdateRunSelected">
+            <i class="fas fa-play me-1"></i><?php echo __('agency_erp_push_run_selected'); ?>
+        </button>
+    </div>
     <div class="rateb-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0" id="erpAgencyUpdatesTable">
+            <table class="table table-sm table-hover mb-0 rateb-table" id="erpAgencyUpdatesTable" data-rateb-bulk-table="1">
                 <thead>
                     <tr>
-                        <th style="width:2.5rem;">
-                            <input type="checkbox" class="form-check-input" id="erpUpdateSelectAll" title="<?php echo __('select_all'); ?>">
+                        <th class="rateb-bulk-th">
+                            <input type="checkbox" class="form-check-input" id="erpUpdateSelectAll" data-rateb-select-all title="<?php echo __('select_all'); ?>" aria-label="<?php echo __('select_all'); ?>">
                         </th>
                         <th><?php echo __('agency_erp_push_col_agency'); ?></th>
                         <th><?php echo __('agency_erp_push_col_platform_company'); ?></th>
@@ -110,9 +113,9 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
                             $checked = true;
                         }
                         ?>
-                    <tr data-agency-id="<?php echo $id; ?>" data-erp-company-id="<?php echo $linkedCoId; ?>">
-                        <td>
-                            <input type="checkbox" class="form-check-input erp-update-agency-cb" value="<?php echo $id; ?>"<?php echo $checked ? ' checked' : ''; ?>>
+                    <tr class="erp-agency-row" data-agency-id="<?php echo $id; ?>" data-erp-company-id="<?php echo $linkedCoId; ?>">
+                        <td class="rateb-bulk-td">
+                            <input type="checkbox" class="form-check-input rateb-row-check erp-update-agency-cb" value="<?php echo $id; ?>" data-rateb-row-check<?php echo $checked ? ' checked' : ''; ?>>
                         </td>
                         <td>
                             <?php echo Rateb\App\Core\View::escape($name); ?>
