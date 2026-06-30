@@ -1141,6 +1141,9 @@ if (!function_exists('rateb_halt_for_agency_db_error')) {
         if (strpos($reqUri, '/admin/control-center.php') !== false || strpos($scriptName, '/admin/control-center.php') !== false) {
             return;
         }
+        if (strpos($reqUri, 'rateb-bootstrap-test-domain') !== false || strpos($scriptName, 'rateb-bootstrap-test-domain') !== false) {
+            return;
+        }
         http_response_code(503);
         $publicMsg = 'Agency database is not configured correctly. Please verify DB host, port, user, password, and database name.';
         $reasonCode = 'DB_CONFIG_INVALID';
@@ -1368,9 +1371,13 @@ $reqUriForAgencyGuards = strtolower((string) ($_SERVER['REQUEST_URI'] ?? ''));
 $scriptForAgencyGuards = strtolower((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
 $isAdminControlCenterRequest = (strpos($reqUriForAgencyGuards, '/admin/control-center.php') !== false)
     || (strpos($scriptForAgencyGuards, '/admin/control-center.php') !== false);
+$isPlatformBootstrapRequest = (strpos($reqUriForAgencyGuards, 'rateb-bootstrap-test-domain') !== false)
+    || (strpos($scriptForAgencyGuards, 'rateb-bootstrap-test-domain') !== false)
+    || (defined('RATEB_PLATFORM_OPS_PAGE') && RATEB_PLATFORM_OPS_PAGE);
+$isPlatformOpsExemptRequest = $isAdminControlCenterRequest || $isPlatformBootstrapRequest;
 if (
     (defined('SINGLE_URL_MODE') && SINGLE_URL_MODE)
-    && !$isAdminControlCenterRequest
+    && !$isPlatformOpsExemptRequest
     && !empty($_GET['control']) && (string)$_GET['control'] === '1'
     && isset($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id'])
 ) {
@@ -1442,7 +1449,7 @@ if (
 // This prevents already-open sessions from continuing after suspension/inactivation.
 if (
     (defined('SINGLE_URL_MODE') && SINGLE_URL_MODE)
-    && !$isAdminControlCenterRequest
+    && !$isPlatformOpsExemptRequest
     && function_exists('rateb_control_pro_bridge')
     && rateb_control_pro_bridge()
     && !empty($_SESSION['agency_id'])
@@ -1644,7 +1651,8 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     // Internal API calls (/api/...) should keep working under the active session agency.
                     $reqUri = (string)($_SERVER['REQUEST_URI'] ?? '');
                     $isApiReq = strpos($reqUri, '/api/') !== false;
-                    $skipSiteUrlGate = defined('RATEB_PUBLIC_QR_PAGE') && RATEB_PUBLIC_QR_PAGE;
+                    $skipSiteUrlGate = (defined('RATEB_PUBLIC_QR_PAGE') && RATEB_PUBLIC_QR_PAGE)
+                        || $isPlatformBootstrapRequest;
                     if (!$isApiReq && !$skipSiteUrlGate && $effectiveAgencyId > 0 && trim((string)($row['site_url'] ?? '')) === '') {
                         rateb_halt_for_agency_db_error('Agency site URL is missing.');
                     }

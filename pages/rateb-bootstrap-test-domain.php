@@ -13,12 +13,22 @@ if (!isset($_GET['control']) || (string) $_GET['control'] !== '1') {
     exit('Add ?control=1 to URL (open from Control Panel session).');
 }
 
-require_once __DIR__ . '/../includes/config.php';
+// Platform ops only — do not load includes/config.php (avoids agency Site URL gate on rateb.sa).
+define('RATEB_PLATFORM_OPS_PAGE', true);
+require_once __DIR__ . '/../control-panel/includes/config.php';
 
 $isSuper = strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin';
 if (empty($_SESSION['control_logged_in']) || !$isSuper) {
     http_response_code(403);
-    exit('SUPER_ADMIN control session required.');
+    $login = (defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '') . '/control-panel/pages/login.php';
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ربط test.rateb.sa</title></head><body style="font-family:system-ui;padding:2rem;max-width:40rem;margin:auto">';
+    echo '<h1>يلزم تسجيل الدخول</h1>';
+    echo '<p>سجّل دخول <strong>Super Admin</strong> في لوحة التحكم أولاً، ثم أعد فتح هذه الصفحة.</p>';
+    echo '<p><a href="' . htmlspecialchars($login, ENT_QUOTES, 'UTF-8') . '">تسجيل الدخول — لوحة التحكم</a></p>';
+    echo '<p><code>https://rateb.sa/pages/rateb-bootstrap-test-domain.php?control=1</code></p>';
+    echo '</body></html>';
+    exit;
 }
 
 $source = rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/\\');
@@ -184,6 +194,7 @@ $testProbe = 'https://test.rateb.sa/pages/rateb-test-domain-probe';
     </div>
 <?php else: ?>
     <form method="post" class="card">
+        <p>سجّل دخول <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '') . '/control-panel/pages/login.php', ENT_QUOTES, 'UTF-8'); ?>">لوحة التحكم (admin)</a> أولاً، ثم افتح هذه الصفحة.</p>
         <p>اضغط مرة واحدة فقط. لا تشغّلها إلا إذا <code>test.rateb.sa</code> ما زال فارغاً (Under Construction).</p>
         <input type="hidden" name="confirm" value="SYNC">
         <button type="submit" class="btn">نسخ الملفات الآن</button>
