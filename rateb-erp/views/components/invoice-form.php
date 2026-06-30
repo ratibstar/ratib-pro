@@ -31,6 +31,10 @@ $bankAccounts = $bankAccounts ?? [];
 $chartAccounts = $chartAccounts ?? [];
 $selectedBankId = (int) ($item['supplier_bank_account_id'] ?? 0);
 $supplierAccountNo = (string) ($item['supplier_account_no'] ?? '');
+$buyerLegalName = (string) ($item['buyer_legal_name'] ?? '');
+$buyerVat = (string) ($item['buyer_vat_number'] ?? '');
+$buyerCr = (string) ($item['buyer_cr_number'] ?? '');
+$buyerAddress = (string) ($item['buyer_address'] ?? '');
 $maxAttachments = 5;
 if ($isEdit && $invoiceId > 0) {
     $companyId = (int) ($item['company_id'] ?? 0);
@@ -213,20 +217,28 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                 <h6 class="rateb-invoice-subsection-title"><?php echo __('tax_invoice_buyer_section'); ?></h6>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label rateb-form-label"><?php echo __('buyer_legal_name'); ?></label>
-                        <input class="form-control rateb-form-control" type="text" readonly data-tax-buyer-name>
+                        <label class="form-label rateb-form-label" for="f_buyer_legal_name"><?php echo __('buyer_legal_name'); ?></label>
+                        <input class="form-control rateb-form-control" type="text" id="f_buyer_legal_name"
+                               name="buyer_legal_name" value="<?php echo Rateb\App\Core\View::escape($buyerLegalName); ?>"
+                               data-tax-buyer-name>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label rateb-form-label"><?php echo __('vat_number'); ?></label>
-                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" readonly data-tax-buyer-vat>
+                        <label class="form-label rateb-form-label" for="f_buyer_vat"><?php echo __('vat_number'); ?></label>
+                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" id="f_buyer_vat"
+                               name="buyer_vat_number" value="<?php echo Rateb\App\Core\View::escape($buyerVat); ?>"
+                               maxlength="15" data-tax-buyer-vat>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label rateb-form-label"><?php echo __('cr_number'); ?></label>
-                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" readonly data-tax-buyer-cr>
+                        <label class="form-label rateb-form-label" for="f_buyer_cr"><?php echo __('cr_number'); ?></label>
+                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" id="f_buyer_cr"
+                               name="buyer_cr_number" value="<?php echo Rateb\App\Core\View::escape($buyerCr); ?>"
+                               data-tax-buyer-cr>
                     </div>
                     <div class="col-12">
-                        <label class="form-label rateb-form-label"><?php echo __('buyer_address'); ?></label>
-                        <input class="form-control rateb-form-control" type="text" readonly data-tax-buyer-address>
+                        <label class="form-label rateb-form-label" for="f_buyer_address"><?php echo __('buyer_address'); ?></label>
+                        <input class="form-control rateb-form-control" type="text" id="f_buyer_address"
+                               name="buyer_address" value="<?php echo Rateb\App\Core\View::escape($buyerAddress); ?>"
+                               data-tax-buyer-address>
                     </div>
                 </div>
                 <div class="alert alert-warning mt-3 mb-0 small d-none" data-tax-buyer-warning>

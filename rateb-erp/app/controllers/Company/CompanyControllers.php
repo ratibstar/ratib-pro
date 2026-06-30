@@ -369,8 +369,6 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
                 $data[$fk] = null;
             }
         }
-        $data['shipping_amount'] = 0;
-        $data['customs_clearance_amount'] = 0;
         return $data;
     }
 
@@ -1146,8 +1144,11 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     public function edit(array $params): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404'], $this->layout());
@@ -1242,14 +1243,11 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
 
         $id = (int) ($params['id'] ?? 0);
-        $existing = $this->model->find($id);
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
+        $existing = $this->loadRecordForWrite($id);
         if (!$existing) {
-            SessionManager::flash('error', __('no_records'));
+            SessionManager::flash('error', __('record_not_found'));
             $this->redirect(rateb_url($this->routePrefix));
-        }
-        $itemCompanyId = (int) ($existing['company_id'] ?? 0);
-        if ($itemCompanyId > 0) {
-            \Rateb\App\Core\TenantContext::setCompanyId($itemCompanyId);
         }
 
         $movementType = trim((string) $this->input('movement_type', ''));
@@ -1258,9 +1256,10 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
 
         $data = $this->collectData();
         $data['notes'] = $notes;
+        $this->inheritTenantFromRecord($data, $existing);
 
         try {
-            $this->ensureTenantCompanyForWrite($data);
+            $this->ensureTenantCompanyForWrite($data, $failUrl);
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
 
             if ($movementType !== '') {
@@ -1291,9 +1290,9 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+            $this->redirect($failUrl);
         }
-        $this->redirect(rateb_url($this->routePrefix));
+        $this->redirect($failUrl);
     }
 
     private function applyExistingItemMovement(int $existingId, string $movementType, float $movementQty, string $notes): void
@@ -1737,8 +1736,11 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
 
     public function edit(array $params): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404'], $this->layout());
@@ -1822,8 +1824,19 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
+        $old = $this->loadRecordForWrite($id);
+        if (!$old) {
+            SessionManager::flash('error', __('record_not_found'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $data = $this->collectData();
+        $this->inheritTenantFromRecord($data, $old);
+        $this->ensureTenantCompanyForWrite($data, $failUrl);
         if (\Rateb\App\Services\ManagerApprovalSchema::hasColumn('rateb_contracts', 'approval_status')) {
             $data['approval_status'] = 'pending';
         }
@@ -2101,7 +2114,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         $this->guardManage();
         rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
@@ -2155,17 +2168,20 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
-        $existing = $this->model->find($id);
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
+        $existing = $this->loadRecordForWrite($id);
         if (!$existing) {
-            SessionManager::flash('error', __('no_records'));
+            SessionManager::flash('error', __('record_not_found'));
             $this->redirect(rateb_url($this->routePrefix));
         }
         try {
             $data = $this->collectData();
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+            $this->redirect($failUrl);
         }
+        $this->inheritTenantFromRecord($data, $existing);
+        $this->ensureTenantCompanyForWrite($data, $failUrl);
         unset($data['evaluated_by'], $data['evaluator_name']);
         if (!empty($existing['evaluation_no'])) {
             $data['evaluation_no'] = (string) $existing['evaluation_no'];

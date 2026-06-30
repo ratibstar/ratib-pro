@@ -1791,12 +1791,20 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
+        $old = $this->loadRecordForWrite($id);
+        if (!$old) {
+            SessionManager::flash('error', __('record_not_found'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         try {
             $data = $this->collectData();
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+            $this->redirect($failUrl);
         }
+        $this->inheritTenantFromRecord($data, $old);
+        $this->ensureTenantCompanyForWrite($data, $failUrl);
         unset($data['created_by']);
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
@@ -1805,7 +1813,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $formAction = trim((string) $this->input('form_action', 'save'));
-        $companyId = (int) rateb_resolve_ops_company_id();
+        $companyId = (int) ($data['company_id'] ?? TenantContext::companyId() ?? rateb_resolve_ops_company_id());
         try {
             $this->model->update($id, $data);
             $this->persistAttachments($id, $companyId);
@@ -1849,7 +1857,9 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     {
         $data = parent::formViewData($extra);
         $item = $data['item'] ?? null;
-        $companyId = rateb_resolve_ops_company_id();
+        $companyId = is_array($item) && (int) ($item['company_id'] ?? 0) > 0
+            ? (int) $item['company_id']
+            : rateb_resolve_ops_company_id();
         $supplierId = is_array($item) ? (int) ($item['supplier_id'] ?? 0) : 0;
         $commId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
         $svc = new \Rateb\App\Services\SupplierCommService();
@@ -1886,7 +1896,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             rateb_bootstrap_ops_tenant();
         }
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);

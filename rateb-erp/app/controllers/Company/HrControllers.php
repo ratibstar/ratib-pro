@@ -533,7 +533,9 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
     protected function collectData(): array
     {
         $data = parent::collectData();
-        $data['status'] = 'draft';
+        if (($data['status'] ?? '') === '') {
+            $data['status'] = 'draft';
+        }
         return $data;
     }
 

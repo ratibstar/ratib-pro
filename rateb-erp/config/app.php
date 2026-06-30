@@ -375,6 +375,50 @@ if (!function_exists('rateb_bootstrap_ops_tenant')) {
     }
 }
 
+if (!function_exists('rateb_bootstrap_write_context_from_record')) {
+    /** Align ops tenant/branch session with an existing row (edit/update/show). */
+    function rateb_bootstrap_write_context_from_record(array $record): void
+    {
+        $companyId = (int) ($record['company_id'] ?? 0);
+        if ($companyId < 1) {
+            return;
+        }
+        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_adopt_ops_company_id')) {
+            rateb_adopt_ops_company_id($companyId);
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $companyId);
+        }
+        \Rateb\App\Core\BranchContext::reset();
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
+    }
+}
+
+if (!function_exists('rateb_load_tenant_record_for_write')) {
+    /**
+     * Load a tenant-scoped row for edit/update without company/branch filter mismatch.
+     *
+     * @return array<string, mixed>|null
+     */
+    function rateb_load_tenant_record_for_write(\Rateb\App\Core\Model $model, int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        if (!$model->isTenantScoped()) {
+            return $model->find($id);
+        }
+        $record = $model->findByIdUnscoped($id);
+        if ($record) {
+            rateb_bootstrap_write_context_from_record($record);
+        }
+        return $record;
+    }
+}
+
 if (!function_exists('rateb_list_order_sql')) {
     /** Standard list sort for operational tables: newest record first. */
     function rateb_list_order_sql(string $alias = '', bool $withCreatedAt = true): string

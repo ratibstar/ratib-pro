@@ -8,9 +8,24 @@ $lines = $lines ?? [];
 $currency = (string) ($item['currency'] ?? 'SAR');
 $invoiceType = (string) ($item['invoice_type'] ?? 'tax');
 $invoiceTypeLabel = $invoiceType === 'simplified' ? __('invoice_type_simplified') : __('invoice_type_tax');
-$buyerProfile = [];
-if (!empty($item['company_id'])) {
+$buyerLegalName = trim((string) ($item['buyer_legal_name'] ?? ''));
+$buyerVat = trim((string) ($item['buyer_vat_number'] ?? ''));
+$buyerCr = trim((string) ($item['buyer_cr_number'] ?? ''));
+$buyerAddress = trim((string) ($item['buyer_address'] ?? ''));
+if ($invoiceType === 'tax' && $buyerLegalName === '' && !empty($item['company_id'])) {
     $buyerProfile = (new \Rateb\App\Services\ZatcaService())->getTaxProfile((int) $item['company_id']);
+    $buyerLegalName = trim((string) ($buyerProfile['legal_name_ar'] ?? $buyerProfile['legal_name_en'] ?? ''));
+    if ($buyerLegalName === '' && is_array($company)) {
+        $buyerLegalName = (string) ($company['name'] ?? '');
+    }
+    $buyerVat = trim((string) ($buyerProfile['vat_number'] ?? ''));
+    $buyerCr = trim((string) ($buyerProfile['cr_number'] ?? ''));
+    $buyerAddress = implode('، ', array_filter([
+        trim((string) ($buyerProfile['street'] ?? '')),
+        trim((string) ($buyerProfile['building_no'] ?? '')),
+        trim((string) ($buyerProfile['city'] ?? '')),
+        trim((string) ($buyerProfile['postal_code'] ?? '')),
+    ]));
 }
 $discountType = (string) ($item['discount_type'] ?? 'value');
 $discountVal = (float) ($item['discount_amount'] ?? 0);
@@ -45,11 +60,17 @@ $colSpan = 6;
         <div>
             <h2 class="mb-1"><?php echo Rateb\App\Core\View::escape($invoiceTypeLabel); ?></h2>
             <div class="text-muted"><?php echo Rateb\App\Core\View::escape((string) ($company['name'] ?? '')); ?></div>
-            <?php if ($invoiceType === 'tax' && !empty($buyerProfile['vat_number'])) { ?>
-            <div class="small text-muted"><?php echo __('vat_number'); ?>: <?php echo Rateb\App\Core\View::escape((string) $buyerProfile['vat_number']); ?></div>
+            <?php if ($invoiceType === 'tax' && $buyerVat !== '') { ?>
+            <div class="small text-muted"><?php echo __('vat_number'); ?>: <?php echo Rateb\App\Core\View::escape($buyerVat); ?></div>
             <?php } ?>
-            <?php if ($invoiceType === 'tax' && !empty($buyerProfile['cr_number'])) { ?>
-            <div class="small text-muted"><?php echo __('cr_number'); ?>: <?php echo Rateb\App\Core\View::escape((string) $buyerProfile['cr_number']); ?></div>
+            <?php if ($invoiceType === 'tax' && $buyerCr !== '') { ?>
+            <div class="small text-muted"><?php echo __('cr_number'); ?>: <?php echo Rateb\App\Core\View::escape($buyerCr); ?></div>
+            <?php } ?>
+            <?php if ($invoiceType === 'tax' && $buyerLegalName !== '') { ?>
+            <div class="small text-muted"><?php echo __('buyer_legal_name'); ?>: <?php echo Rateb\App\Core\View::escape($buyerLegalName); ?></div>
+            <?php } ?>
+            <?php if ($invoiceType === 'tax' && $buyerAddress !== '') { ?>
+            <div class="small text-muted"><?php echo __('buyer_address'); ?>: <?php echo Rateb\App\Core\View::escape($buyerAddress); ?></div>
             <?php } ?>
             <?php if (!empty($company['email'])) { ?>
             <div class="small text-muted"><?php echo Rateb\App\Core\View::escape((string) $company['email']); ?></div>

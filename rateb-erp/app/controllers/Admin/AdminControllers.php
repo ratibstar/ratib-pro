@@ -1447,7 +1447,9 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
                 'cr_number' => (string) ($profile['cr_number'] ?? ''),
                 'legal_name' => $legalName,
                 'address' => implode('، ', $addressParts),
-                'complete' => strlen((string) ($profile['vat_number'] ?? '')) >= 15,
+                'complete' => strlen((string) ($profile['vat_number'] ?? '')) >= 15
+                    && trim($legalName) !== ''
+                    && implode('، ', $addressParts) !== '',
             ],
         ], JSON_UNESCAPED_UNICODE);
     }
@@ -1558,6 +1560,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         $data = [];
         $names = [
             'company_id', 'subscription_id', 'invoice_no', 'invoice_type', 'po_number',
+            'buyer_legal_name', 'buyer_vat_number', 'buyer_cr_number', 'buyer_address',
             'amount', 'tax_amount', 'total_amount', 'currency', 'discount_amount', 'discount_type',
             'tax_rate', 'payment_terms_days', 'payment_method', 'supplier_account_no', 'status', 'payment_status', 'notes',
             'due_date', 'issued_at',

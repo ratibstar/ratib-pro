@@ -54,6 +54,9 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                         data-supplier-profile-url="<?php echo Rateb\App\Core\View::escape($supplierProfileUrl ?? ''); ?>"
                         data-comm-id="<?php echo $commId; ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <?php if ($isEdit && (int) ($item['company_id'] ?? 0) > 0) { ?>
+                        <input type="hidden" name="company_id" value="<?php echo (int) $item['company_id']; ?>">
+                        <?php } ?>
                         <?php Rateb\App\Core\View::partial('supplier-comm-form-fields', [
                             'item' => $item,
                             'fields' => $fields,

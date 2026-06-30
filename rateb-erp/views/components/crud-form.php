@@ -18,6 +18,9 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
             }
             ?>>
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <?php if ($isEdit && (int) (($item ?? [])['company_id'] ?? 0) > 0) { ?>
+            <input type="hidden" name="company_id" value="<?php echo (int) $item['company_id']; ?>">
+            <?php } ?>
             <div class="row g-3">
                 <?php foreach ($fields as $field) {
                     $name = $field['name'];

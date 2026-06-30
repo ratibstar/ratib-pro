@@ -880,16 +880,18 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
     public function edit(array $params): void
     {
         $this->guardManage();
-        $companyId = rateb_resolve_ops_company_id();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->queryOne(
-            'SELECT * FROM rateb_chart_of_accounts WHERE id = :id AND company_id = :cid',
-            ['id' => $id, 'cid' => $companyId]
-        );
+        $item = $this->model->findByIdUnscoped($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
             return;
+        }
+        if (function_exists('rateb_bootstrap_write_context_from_record')) {
+            rateb_bootstrap_write_context_from_record($item);
         }
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __('chart_of_accounts'),
@@ -899,8 +901,20 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
 
     public function show(array $params): void
     {
-        $companyId = rateb_resolve_ops_company_id();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->findByIdUnscoped($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        if (function_exists('rateb_bootstrap_write_context_from_record')) {
+            rateb_bootstrap_write_context_from_record($item);
+        }
+        $companyId = (int) ($item['company_id'] ?? 0);
         $item = $this->model->queryOne(
             'SELECT a.*, p.code AS parent_code, p.name AS parent_name, p.name_ar AS parent_name_ar
              FROM rateb_chart_of_accounts a
@@ -1194,20 +1208,23 @@ $perPage = rateb_list_per_page();
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $companyId = rateb_resolve_ops_company_id();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
         if ($id < 1) {
             SessionManager::flash('error', __('invalid_request'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $entry = (new JournalEntry())->queryOne(
-            'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
-            ['id' => $id, 'cid' => $companyId]
-        );
+        $entry = (new JournalEntry())->findByIdUnscoped($id);
         if (!$entry || !(new AccountingService())->isManualJournalEditable($entry)) {
             SessionManager::flash('error', __('journal_edit_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
+        if (function_exists('rateb_bootstrap_write_context_from_record')) {
+            rateb_bootstrap_write_context_from_record($entry);
+        }
+        $companyId = (int) ($entry['company_id'] ?? 0);
         $lines = (new JournalEntry())->query(
             'SELECT * FROM rateb_journal_lines WHERE journal_entry_id = :id ORDER BY id',
             ['id' => $id]
@@ -1726,16 +1743,19 @@ final class CashVouchersController extends Controller
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('cash-vouchers'));
         }
-        $companyId = rateb_resolve_ops_company_id();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
-        $voucher = (new JournalEntry())->queryOne(
-            'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid',
-            ['id' => $id, 'cid' => $companyId]
-        );
+        $voucher = (new \Rateb\App\Models\CashVoucher())->findByIdUnscoped($id);
         if (!$voucher || !(new AccountingService())->isCashVoucherEditable($voucher)) {
             SessionManager::flash('error', __('voucher_edit_denied'));
             Response::redirect(rateb_app_url('cash-vouchers/' . $id));
         }
+        if (function_exists('rateb_bootstrap_write_context_from_record')) {
+            rateb_bootstrap_write_context_from_record($voucher);
+        }
+        $companyId = (int) ($voucher['company_id'] ?? 0);
         (new AccountingService())->ensureDefaultAccounts($companyId);
         $accounts = (new ChartOfAccount())->query(
             'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts WHERE company_id = :cid AND is_active = 1 ORDER BY code',
@@ -2196,16 +2216,18 @@ final class BankAccountsController extends Controller
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('bank-accounts'));
         }
-        $companyId = rateb_resolve_ops_company_id();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
-        $item = (new JournalEntry())->queryOne(
-            'SELECT * FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid AND is_active = 1',
-            ['id' => $id, 'cid' => $companyId]
-        );
-        if (!$item) {
+        $item = (new \Rateb\App\Models\BankAccount())->findByIdUnscoped($id);
+        if (!$item || (int) ($item['is_active'] ?? 1) !== 1) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
             return;
+        }
+        if (function_exists('rateb_bootstrap_write_context_from_record')) {
+            rateb_bootstrap_write_context_from_record($item);
         }
         $this->view('company/bank-accounts/form', [
             'title' => __('edit_bank_account'),

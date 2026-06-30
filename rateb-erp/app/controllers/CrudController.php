@@ -393,7 +393,7 @@ abstract class CrudController extends Controller
         }
         try {
             $id = $this->model->create($data);
-            $item = $this->model->find($id);
+            $item = $this->resolveRecordForWrite($id);
             $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('create', $this->entityName, $id, $data);
             if ($attachmentOk) {
@@ -418,8 +418,11 @@ abstract class CrudController extends Controller
     public function edit(array $params): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->resolveRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
@@ -438,7 +441,7 @@ abstract class CrudController extends Controller
             rateb_bootstrap_ops_tenant();
         }
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->resolveRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
@@ -454,22 +457,36 @@ abstract class CrudController extends Controller
     public function update(array $params): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid CSRF token');
             $this->redirect(rateb_url($this->routePrefix));
         }
 
         $id = (int) ($params['id'] ?? 0);
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
+        $old = $this->model->isTenantScoped() ? $this->loadRecordForWrite($id) : null;
+        if ($this->model->isTenantScoped() && !$old) {
+            SessionManager::flash('error', __('record_not_found'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
         $data = $this->collectData();
+        if ($old) {
+            $this->inheritTenantFromRecord($data, $old);
+            $this->ensureTenantCompanyForWrite($data, $failUrl);
+        }
         try {
             TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+            $this->redirect($failUrl);
         }
         try {
             $this->model->update($id, $data);
-            $item = $this->model->find($id);
+            $item = $this->resolveRecordForWrite($id);
             $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('update', $this->entityName, $id, $data);
             if ($attachmentOk) {
@@ -477,7 +494,7 @@ abstract class CrudController extends Controller
             }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+            $this->redirect($failUrl);
         }
         $this->redirectAfterSave($id);
     }
@@ -485,12 +502,18 @@ abstract class CrudController extends Controller
     public function destroy(array $params): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid CSRF token');
             $this->redirect(rateb_url($this->routePrefix));
         }
 
         $id = (int) ($params['id'] ?? 0);
+        if ($this->model->isTenantScoped()) {
+            $this->loadRecordForWrite($id);
+        }
         try {
             $this->model->delete($id);
             (new AuditService())->log('delete', $this->entityName, $id);
@@ -530,7 +553,7 @@ abstract class CrudController extends Controller
     /** @return array<string, mixed>|null */
     protected function documentsViewData(int $id): ?array
     {
-        $item = $this->model->find($id);
+        $item = $this->resolveRecordForWrite($id);
         if (!$item) {
             return null;
         }
@@ -840,6 +863,10 @@ abstract class CrudController extends Controller
     /** @param array<string, mixed> $record */
     protected function bootstrapWriteContextFromRecord(array $record): void
     {
+        if (function_exists('rateb_bootstrap_write_context_from_record')) {
+            rateb_bootstrap_write_context_from_record($record);
+            return;
+        }
         $companyId = (int) ($record['company_id'] ?? 0);
         if ($companyId < 1) {
             return;
@@ -860,12 +887,27 @@ abstract class CrudController extends Controller
     /** @return array<string, mixed>|null */
     protected function loadRecordForWrite(int $id): ?array
     {
+        if (function_exists('rateb_load_tenant_record_for_write')) {
+            return rateb_load_tenant_record_for_write($this->model, $id);
+        }
         $record = $this->model->findByIdUnscoped($id);
         if (!$record) {
             return null;
         }
         $this->bootstrapWriteContextFromRecord($record);
         return $record;
+    }
+
+    /** @return array<string, mixed>|null */
+    protected function resolveRecordForWrite(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        if ($this->model->isTenantScoped()) {
+            return $this->loadRecordForWrite($id);
+        }
+        return $this->model->find($id);
     }
 
     /**

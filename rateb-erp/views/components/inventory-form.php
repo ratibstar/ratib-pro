@@ -43,6 +43,9 @@ $itemCode = $isEdit ? (string) ($item['item_code'] ?? '') : '';
               data-is-edit="<?php echo $isEdit ? '1' : '0'; ?>"
               data-current-qty="<?php echo Rateb\App\Core\View::escape((string) $currentQty); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <?php if ($isEdit && (int) (($item ?? [])['company_id'] ?? 0) > 0) { ?>
+            <input type="hidden" name="company_id" value="<?php echo (int) $item['company_id']; ?>">
+            <?php } ?>
 
             <h6 class="text-warning mb-3"><i class="fas fa-exchange-alt"></i> <?php echo __('movement_info'); ?></h6>
             <div class="row g-3 mb-4">

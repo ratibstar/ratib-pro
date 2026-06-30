@@ -1767,7 +1767,7 @@ return [
     'tax_invoice_lines_section' => 'Tax invoice line items',
     'buyer_legal_name' => 'Buyer legal name',
     'buyer_address' => 'Buyer address',
-    'tax_invoice_buyer_hint' => 'Filled automatically from the selected company zakat & income profile.',
+    'tax_invoice_buyer_hint' => 'Auto-filled when you select a company (from zakat & income settings). You can edit manually.',
     'tax_invoice_buyer_incomplete' => 'Buyer VAT data is incomplete — update the company zakat & income settings.',
     'tax_preset_local_0' => 'Local sales 0%',
     'tax_preset_vat_15' => 'VAT 15%',

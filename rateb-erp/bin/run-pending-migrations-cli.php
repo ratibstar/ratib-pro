@@ -37,6 +37,7 @@ $targets = [
     '138_permissions_complete_audit.sql',
     '139_hr_job_title_rank_codes.sql',
     '140_zatca_invoices_catchup.sql',
+    '141_invoice_buyer_fields.sql',
 ];
 
 if ($remote !== null) {

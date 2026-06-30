@@ -189,13 +189,24 @@
             }
         }
 
+        function updateBuyerWarning() {
+            if (!taxBuyerWarning) {
+                return;
+            }
+            var vat = taxBuyerVat ? taxBuyerVat.value.trim() : '';
+            var name = taxBuyerName ? taxBuyerName.value.trim() : '';
+            var address = taxBuyerAddress ? taxBuyerAddress.value.trim() : '';
+            var complete = vat.length >= 15 && name !== '' && address !== '';
+            taxBuyerWarning.classList.toggle('d-none', complete);
+        }
+
         function loadBuyerTaxProfile(companyId) {
             if (!taxProfileUrl || !companyId) {
                 if (taxBuyerName) taxBuyerName.value = '';
                 if (taxBuyerVat) taxBuyerVat.value = '';
                 if (taxBuyerCr) taxBuyerCr.value = '';
                 if (taxBuyerAddress) taxBuyerAddress.value = '';
-                if (taxBuyerWarning) taxBuyerWarning.classList.add('d-none');
+                updateBuyerWarning();
                 return;
             }
             fetch(taxProfileUrl + '?company_id=' + encodeURIComponent(companyId), {
@@ -209,9 +220,7 @@
                     if (taxBuyerVat) taxBuyerVat.value = profile.vat_number || '';
                     if (taxBuyerCr) taxBuyerCr.value = profile.cr_number || '';
                     if (taxBuyerAddress) taxBuyerAddress.value = profile.address || '';
-                    if (taxBuyerWarning) {
-                        taxBuyerWarning.classList.toggle('d-none', !!profile.complete);
-                    }
+                    updateBuyerWarning();
                 })
                 .catch(function () {});
         }
@@ -281,6 +290,10 @@
         if (invoiceTypeEl) {
             invoiceTypeEl.addEventListener('change', syncInvoiceTypeUi);
         }
+        [taxBuyerName, taxBuyerVat, taxBuyerCr, taxBuyerAddress].forEach(function (el) {
+            if (!el) return;
+            el.addEventListener('input', updateBuyerWarning);
+        });
         if (subEl) {
             subEl.addEventListener('change', function () {
                 applySubscriptionDefaults(subEl.value);
@@ -409,6 +422,7 @@
         }
         updateDueDate();
         recalc();
+        updateBuyerWarning();
     }
 
     function bootInvoiceForms() {

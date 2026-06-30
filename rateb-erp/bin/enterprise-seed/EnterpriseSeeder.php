@@ -36,6 +36,7 @@ final class EnterpriseSeeder
     {
         $this->ensureInterBranchGlAccounts();
         $this->ensurePlatformEnterpriseRoles();
+        $this->ensureJournalSourceTypeBranchTransfer();
     }
 
     public function seedCompanies(): void
@@ -121,6 +122,37 @@ final class EnterpriseSeeder
                     throw $e;
                 }
             }
+        }
+    }
+
+    /** Repair source_type enum when AccountingService runtime catch-up dropped branch_transfer. */
+    private function ensureJournalSourceTypeBranchTransfer(): void
+    {
+        if (!$this->tableExists('rateb_journal_entries')) {
+            return;
+        }
+        $stmt = $this->db->query(
+            "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rateb_journal_entries' AND COLUMN_NAME = 'source_type'"
+        );
+        $row = $stmt !== false ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+        if ($stmt instanceof \PDOStatement) {
+            $stmt->closeCursor();
+        }
+        $type = (string) ($row['COLUMN_TYPE'] ?? '');
+        if ($type !== '' && str_contains($type, 'branch_transfer')) {
+            return;
+        }
+        try {
+            $this->db->exec(
+                "ALTER TABLE rateb_journal_entries MODIFY source_type ENUM(
+                    'manual','invoice','payment','purchase_order','subscription',
+                    'cash_voucher','stock_movement','purchase_invoice',
+                    'supplier_payment','year_end_close','branch_transfer'
+                ) NOT NULL DEFAULT 'manual'"
+            );
+        } catch (\Throwable $e) {
+            // Host may block ALTER; migration 142 / enterprise cert will report.
         }
     }
 
