@@ -55,18 +55,29 @@ if (!empty($_GET['rateb_designed'])) {
 }
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-if ($path === '/' || $path === '') {
-    $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
-    if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
-        $_GET['route'] = 'site';
-        require dirname(__DIR__) . '/rateb-erp/public/index.php';
+$projectRoot = dirname(__DIR__);
+
+// Control Panel "Open" (?control=1&agency_id=) — same bootstrap as /pages/login (avoids index.php chain).
+$host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+$isControlOpen = !empty($_GET['control']) && (string) $_GET['control'] === '1'
+    && !empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id']);
+if (($path === '/' || $path === '') && $isControlOpen && !in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+    $loginPage = $projectRoot . '/pages/login.php';
+    if (is_file($loginPage)) {
+        require $loginPage;
         exit;
     }
-    require dirname(__DIR__) . '/index.php';
-    exit;
 }
 
-$projectRoot = dirname(__DIR__);
+if ($path === '/' || $path === '') {
+    if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+        $_GET['route'] = 'site';
+        require $projectRoot . '/rateb-erp/public/index.php';
+        exit;
+    }
+    require $projectRoot . '/index.php';
+    exit;
+}
 
 // QR login routes (fallback when server rewrite rules miss /{country}/login/scan).
 if (preg_match('#^/(?:([a-z0-9_-]+)/)?login/(scan|badge)/?$#i', $path, $qrRoute)) {

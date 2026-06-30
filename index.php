@@ -7,7 +7,7 @@
  * Main Entry Point - RATEB
  * Redirects to login page or dashboard if already logged in
  */
-require_once 'includes/config.php';
+require_once __DIR__ . '/includes/config.php';
 
 $getControl = !empty($_GET['control']) && (string) $_GET['control'] === '1';
 $getAgencyId = isset($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])

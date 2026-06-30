@@ -1649,7 +1649,10 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                         rateb_halt_for_agency_db_error('Agency site URL is missing.');
                     }
                     if (!$isApiReq && !$skipSiteUrlGate && $effectiveAgencyId > 0 && !rateb_url_matches_agency_site($row['site_url'] ?? '')) {
-                        rateb_halt_for_agency_db_error('Agency site URL mismatch.');
+                        // Control "Open" (?control=1&agency_id=) is an explicit CP action — do not block staging hosts.
+                        if (!$openAgencyContext) {
+                            rateb_halt_for_agency_db_error('Agency site URL mismatch.');
+                        }
                     }
                     $agencyHelper = __DIR__ . '/../control-panel/api/control/agency-db-helper.php';
                     if (is_readable($agencyHelper)) {
@@ -1687,7 +1690,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                                     'user' => $row['db_user'],
                                     'pass' => $row['db_pass'],
                                 ];
-                            } catch (Exception $e) {
+                            } catch (Throwable $e) {
                                 rateb_halt_for_agency_db_error('Failed to connect to agency DB: ' . $e->getMessage());
                             }
                         } else {
@@ -1726,7 +1729,11 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     }
                     if ($openAgencyContext && !$sessionLoggedIn && $effectiveAgencyId > 0 && !empty($_SESSION['control_logged_in'])
                         && $conn instanceof mysqli) {
-                        rateb_control_panel_try_program_sso($conn, $effectiveAgencyId, (int)($row['country_id'] ?? 0));
+                        try {
+                            rateb_control_panel_try_program_sso($conn, $effectiveAgencyId, (int)($row['country_id'] ?? 0));
+                        } catch (Throwable $e) {
+                            error_log('control SSO failed: ' . $e->getMessage());
+                        }
                     }
                     // Keep program-session tenant context synced when control session is active.
                     if ($effectiveAgencyId > 0 && (int)($_SESSION['agency_id'] ?? 0) <= 0) {

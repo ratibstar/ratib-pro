@@ -86,6 +86,12 @@ RewriteRule ^home/?$ / [R=301,L,QSA]
 RewriteRule ^pages/login/?$ pages/login.php [L,QSA]
 RewriteRule ^login/?$ pages/login.php [L,QSA]
 
+# Control Panel "Open" on agency/test hosts: /?control=1&agency_id=N → login (skip index.php redirect chain).
+RewriteCond %{HTTP_HOST} !^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{QUERY_STRING} (^|&)control=1(&|$) [NC]
+RewriteCond %{QUERY_STRING} (^|&)agency_id=[0-9]+(&|$) [NC]
+RewriteRule ^$ pages/login.php [L,QSA]
+
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
 RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]
 RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
