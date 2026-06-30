@@ -102,6 +102,7 @@ final class ErpProvisioningService
                 self::wipeErpDatabaseTables($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
             }
             self::ensureDatabaseUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
+            self::ensureAllTablesUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
             $migrationLog = self::runErpMigrations($erpDb, $dbHost, $dbPort, $dbUser, $dbPass);
             $seed = self::seedDedicatedCompany($agency, $erpDb, $dbHost, $dbPort, $dbUser, $dbPass, $planSlug);
             self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
@@ -410,6 +411,36 @@ final class ErpProvisioningService
             }
         }
         $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+    }
+
+    private static function ensureAllTablesUtf8mb4(string $host, int $port, string $user, string $pass, string $dbName): void
+    {
+        if ($dbName === '' || !self::canConnectToDatabase($host, $port, $user, $pass, $dbName)) {
+            return;
+        }
+        try {
+            $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
+            $options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+            if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+                $options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci';
+            }
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+            if (!is_array($tables)) {
+                return;
+            }
+            foreach ($tables as $table) {
+                $table = (string) $table;
+                if ($table === '') {
+                    continue;
+                }
+                $pdo->exec(
+                    'ALTER TABLE `' . str_replace('`', '``', $table) . '` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+                );
+            }
+        } catch (Throwable $e) {
+            error_log('ErpProvisioningService ensureAllTablesUtf8mb4: ' . $e->getMessage());
+        }
     }
 
     private static function ensureDatabaseUtf8mb4(string $host, int $port, string $user, string $pass, string $dbName): void

@@ -63,80 +63,9 @@
 }
 
 .agencies-table-scroll {
-    max-height: 420px;
-    overflow: auto;
-}
-
-#tableCard .agencies-table-wrap {
+    max-height: 280px;
+    overflow-y: auto;
     overflow-x: auto;
-    border: 1px solid #214b7b;
-    border-radius: 8px;
-}
-
-#tableCard .agencies-table {
-    margin-bottom: 0;
-    border-collapse: collapse;
-    table-layout: fixed;
-    width: 100%;
-    min-width: 1180px;
-}
-
-#tableCard .agencies-table col.ag-col-id { width: 108px; }
-#tableCard .agencies-table col.ag-col-name { width: 88px; }
-#tableCard .agencies-table col.ag-col-slug { width: 72px; }
-#tableCard .agencies-table col.ag-col-country { width: 108px; }
-#tableCard .agencies-table col.ag-col-site { width: 140px; }
-#tableCard .agencies-table col.ag-col-db-host { width: 88px; }
-#tableCard .agencies-table col.ag-col-db-port { width: 68px; }
-#tableCard .agencies-table col.ag-col-db-user { width: 100px; }
-#tableCard .agencies-table col.ag-col-db-name { width: 120px; }
-#tableCard .agencies-table col.ag-col-erp-db { width: 108px; }
-#tableCard .agencies-table col.ag-col-erp { width: 72px; }
-#tableCard .agencies-table col.ag-col-erp-plan { width: 88px; }
-#tableCard .agencies-table col.ag-col-created { width: 92px; }
-#tableCard .agencies-table col.ag-col-renewal { width: 92px; }
-#tableCard .agencies-table col.ag-col-status { width: 88px; }
-#tableCard .agencies-table col.ag-col-actions { width: 220px; }
-
-#tableCard .agencies-table th,
-#tableCard .agencies-table td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: middle;
-}
-
-#tableCard .agencies-table th {
-    background: #0b2d52;
-    color: #e8f0ff;
-    border-color: #214b7b;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 0.55rem 0.4rem;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-}
-
-#tableCard .agencies-table td {
-    border-color: #1f3e66;
-    color: #f1f5f9;
-    padding: 0.45rem 0.4rem;
-    font-size: 0.82rem;
-}
-
-#tableCard .ag-id-head-cell,
-#tableCard .ag-id-row-cell {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    min-width: 0;
-}
-
-#tableCard .ag-id-label {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 #tableCard .form-check-input {
@@ -146,60 +75,11 @@
     margin: 0;
     cursor: pointer;
     accent-color: #3b82f6;
-    flex-shrink: 0;
-    border: 2px solid #5b8bc4;
-    background-color: #0c2444;
-}
-
-#tableCard .form-check-input:focus {
-    box-shadow: 0 0 0 0.15rem rgba(59, 130, 246, 0.45);
-    border-color: #60a5fa;
-}
-
-#tableCard .form-check-input:checked {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-}
-
-#tableCard .ag-col-soft {
-    display: none;
-}
-
-@media (min-width: 1400px) {
-    #tableCard .ag-col-soft {
-        display: table-cell;
-    }
-}
-
-#tableCard .ag-col-actions {
-    overflow: visible !important;
-    white-space: normal;
-    position: sticky;
-    right: 0;
-    background: #16213e;
-    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.25);
-    z-index: 1;
-}
-
-#tableCard .agencies-table thead th.ag-col-actions {
-    z-index: 3;
+    vertical-align: middle;
 }
 
 #tableCard tr.agency-row-picked td {
     background-color: rgba(59, 130, 246, 0.12) !important;
-}
-
-#tableCard .action-btns {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    max-width: 220px;
-}
-
-#tableCard .action-btns .btn {
-    padding: 0.2rem 0.45rem;
-    font-size: 0.72rem;
-    line-height: 1.2;
 }
 
 .agencies-url-cell {

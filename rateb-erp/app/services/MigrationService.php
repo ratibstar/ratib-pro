@@ -176,6 +176,15 @@ final class MigrationService
                 if ($this->isBenignMigrationError($e->getMessage())) {
                     continue;
                 }
+                if (strpos($e->getMessage(), '1366') !== false) {
+                    $this->convertTablesFromCharsetError($pdo, $e->getMessage());
+                    try {
+                        $this->execStatement($pdo, $statement);
+                        continue;
+                    } catch (\PDOException $retryAfterConvert) {
+                        $e = $retryAfterConvert;
+                    }
+                }
                 $fallback = $this->permissionInsertWithoutArabic($statement);
                 if ($fallback === null || $fallback === $statement) {
                     $fallback = $this->stripNonAsciiStringLiterals($statement);
@@ -344,10 +353,36 @@ final class MigrationService
         return is_string($converted) ? $converted : null;
     }
 
+    private function convertTablesFromCharsetError(PDO $pdo, string $message): void
+    {
+        if (preg_match("/for column '[^']+'\\.'([^']+)'\\.'([^']+)'/i", $message, $m) === 1) {
+            $this->convertTableToUtf8mb4($pdo, $m[1]);
+            return;
+        }
+        if (preg_match("/for column '([^']+)'/i", $message, $m) === 1) {
+            $this->convertTableToUtf8mb4($pdo, $m[1]);
+        }
+    }
+
+    private function convertTableToUtf8mb4(PDO $pdo, string $table): void
+    {
+        $table = str_replace('`', '', trim($table));
+        if ($table === '' || !preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+            return;
+        }
+        try {
+            $pdo->exec(
+                'ALTER TABLE `' . $table . '` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+            );
+        } catch (\PDOException $e) {
+            error_log('MigrationService utf8mb4 convert for ' . $table . ': ' . $e->getMessage());
+        }
+    }
+
     /** Last-resort: replace non-ASCII SQL string literals on charset 1366 errors. */
     private function stripNonAsciiStringLiterals(string $statement): ?string
     {
-        if (stripos($statement, 'INSERT') === false) {
+        if (stripos($statement, 'INSERT') === false && stripos($statement, 'UPDATE') === false) {
             return null;
         }
         $converted = preg_replace_callback(
