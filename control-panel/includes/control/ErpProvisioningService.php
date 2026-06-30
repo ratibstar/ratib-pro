@@ -164,18 +164,23 @@ final class ErpProvisioningService
         string $pass
     ): string {
         $stored = trim((string) ($agency['erp_db_name'] ?? ''));
-        if ($stored !== '') {
+        if ($stored !== '' && self::canConnectToDatabase($host, $port, $user, $pass, $stored)) {
             return $stored;
         }
 
-        $existingDb = trim((string) ($agency['db_name'] ?? ''));
-        if ($existingDb !== '' && self::canConnectToDatabase($host, $port, $user, $pass, $existingDb)) {
-            return $existingDb;
+        $tenantDb = trim((string) ($agency['db_name'] ?? ''));
+        if ($tenantDb !== '' && self::canConnectToDatabase($host, $port, $user, $pass, $tenantDb)) {
+            return $tenantDb;
         }
 
-        return function_exists('rateb_suggested_erp_db_name')
+        $suggested = function_exists('rateb_suggested_erp_db_name')
             ? rateb_suggested_erp_db_name($slug)
             : ('admin_rateb_erp_' . preg_replace('/[^a-z0-9_]+/i', '_', strtolower($slug)));
+        if (self::canConnectToDatabase($host, $port, $user, $pass, $suggested)) {
+            return $suggested;
+        }
+
+        return $suggested;
     }
 
     private static function ensureErpDatabase(string $host, int $port, string $user, string $pass, string $dbName): void
@@ -323,7 +328,8 @@ final class ErpProvisioningService
     private static function databaseAccessHelpMessage(string $dbName, string $dbUser, ?string $createError): string
     {
         $hint = 'Control Panel could not create the ERP database automatically on this host. '
-            . 'Create "' . $dbName . '" once in DirectAdmin → MySQL Management, grant "' . $dbUser . '" ALL, then click Provision ERP again.';
+            . 'If this agency already has a tenant database (DB Name column), click Provision ERP again after deploy — it will reuse that database when reachable. '
+            . 'Otherwise create "' . $dbName . '" once in DirectAdmin → MySQL Management, grant "' . $dbUser . '" ALL, then click Provision ERP again.';
         if ($createError !== null && $createError !== '') {
             return $createError . '. ' . $hint;
         }
