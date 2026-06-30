@@ -13,7 +13,7 @@ final class Auth
     public static function attempt(string $email, string $password, string $portal = 'company'): ?array
     {
         $userModel = new User();
-        $user = $userModel->findByEmail($email);
+        $user = $userModel->findByLogin($email);
 
         if (!$user || !password_verify($password, (string) $user['password'])) {
             return null;
@@ -59,7 +59,7 @@ final class Auth
     public static function attemptAuto(string $email, string $password): ?array
     {
         $userModel = new User();
-        $user = $userModel->findByEmail($email);
+        $user = $userModel->findByLogin($email);
 
         if (!$user || !password_verify($password, (string) $user['password'])) {
             return null;

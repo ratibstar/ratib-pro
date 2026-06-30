@@ -35,7 +35,7 @@
     <p class="text-center text-muted small mb-3"><?php echo __('unified_login_hint'); ?></p>
     <div class="mb-3">
         <label class="form-label" for="email"><?php echo __('login_email'); ?></label>
-        <input type="email" class="form-control" id="email" name="email" required autocomplete="username">
+        <input type="text" class="form-control" id="email" name="email" required autocomplete="username" inputmode="email">
     </div>
     <div class="mb-3">
         <label class="form-label" for="password"><?php echo __('password'); ?></label>

@@ -117,7 +117,7 @@ final class LoginController extends Controller
         }
 
         $userModel = new User();
-        $preUser = $userModel->findByEmail($email);
+        $preUser = $userModel->findByLogin($email);
         $lockout = new AccountLockoutService();
         if ($lockout->isLocked($preUser)) {
             (new LoginActivityService())->record($preUser ? (int) $preUser['id'] : null, $email, false);

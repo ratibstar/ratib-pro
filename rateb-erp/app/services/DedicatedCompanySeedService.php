@@ -11,10 +11,15 @@ use Rateb\App\Models\User;
 
 final class DedicatedCompanySeedService
 {
+  /** Initial company admin for dedicated ERP (change after first login). */
+    public const DEFAULT_LOGIN = 'admin';
+    public const DEFAULT_EMAIL = 'admin@local';
+    public const DEFAULT_PASSWORD = '123456';
+
     /**
      * Seed exactly one company + admin user for a dedicated ERP database.
      *
-     * @return array{company_id:int,user_id:int,admin_email:string,admin_password:string}
+     * @return array{company_id:int,user_id:int,admin_email:string,admin_password:string,admin_username:string}
      */
     public function seed(
         string $companyName,
@@ -24,12 +29,9 @@ final class DedicatedCompanySeedService
     ): array {
         DedicatedTenantPolicy::assertCanCreateCompany();
 
-        $email = trim($adminEmail);
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new \InvalidArgumentException('Valid admin email is required for ERP seed.');
-        }
-        $contactName = trim($adminName) !== '' ? trim($adminName) : $companyName;
-        $password = bin2hex(random_bytes(8));
+        $email = self::DEFAULT_EMAIL;
+        $contactName = self::DEFAULT_LOGIN;
+        $password = self::DEFAULT_PASSWORD;
 
         $plan = $this->resolvePlan($planSlug);
         $planId = (int) $plan['id'];
@@ -88,7 +90,8 @@ final class DedicatedCompanySeedService
             return [
                 'company_id' => $companyId,
                 'user_id' => $userId,
-                'admin_email' => $email,
+                'admin_username' => self::DEFAULT_LOGIN,
+                'admin_email' => self::DEFAULT_LOGIN,
                 'admin_password' => $password,
             ];
         } catch (\Throwable $e) {

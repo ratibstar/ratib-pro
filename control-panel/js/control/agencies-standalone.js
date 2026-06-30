@@ -591,8 +591,9 @@
                 var seed = data.data && data.data.seed ? data.data.seed : null;
                 var plan = (data.data && data.data.erp_plan_slug) ? data.data.erp_plan_slug : planSlug;
                 var msg = 'ERP ready (' + plan + ') on ' + ((data.data && data.data.erp_db_name) ? data.data.erp_db_name : 'database');
-                if (seed && seed.admin_email && seed.admin_password) {
-                    msg += '\nAdmin: ' + seed.admin_email + '\nPassword: ' + seed.admin_password;
+                if (seed && seed.admin_password) {
+                    var login = seed.admin_username || seed.admin_email || 'admin';
+                    msg += '\nUsername: ' + login + '\nPassword: ' + seed.admin_password;
                 }
                 showAlert(msg);
                 window.location.reload();

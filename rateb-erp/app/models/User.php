@@ -30,6 +30,26 @@ final class User extends Model
         return $row ?: null;
     }
 
+    /** Email or short username (e.g. admin → admin@local). */
+    public function findByLogin(string $login): ?array
+    {
+        $login = trim($login);
+        if ($login === '') {
+            return null;
+        }
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            return $this->findByEmail($login);
+        }
+        $localEmail = strtolower($login) . '@local';
+        $stmt = $this->db->prepare(
+            'SELECT * FROM rateb_users WHERE email = :local OR name = :name LIMIT 1'
+        );
+        $stmt->execute(['local' => $localEmail, 'name' => $login]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     public function updateLastLogin(int $id): void
     {
         $stmt = $this->db->prepare('UPDATE rateb_users SET last_login_at = NOW() WHERE id = :id');

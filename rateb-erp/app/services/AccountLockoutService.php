@@ -26,7 +26,7 @@ final class AccountLockoutService
 
     public function recordFailure(string $email): void
     {
-        $user = (new User())->findByEmail(trim($email));
+        $user = (new User())->findByLogin(trim($email));
         if (!$user || (int) ($user['is_super_admin'] ?? 0) === 1) {
             return;
         }
