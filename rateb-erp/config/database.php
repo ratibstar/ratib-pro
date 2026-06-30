@@ -57,9 +57,6 @@ if (!function_exists('rateb_erp_database_candidates')) {
 }
 
 if (!defined('DB_HOST') && !defined('DB_NAME')) {
-    if (!defined('RATEB_ENV_NO_SESSION')) {
-        define('RATEB_ENV_NO_SESSION', true);
-    }
     $parentRoot = dirname(RATEB_ROOT, 1);
     $parentEnv = $parentRoot . '/config/env/load.php';
     if (is_file($parentEnv)) {

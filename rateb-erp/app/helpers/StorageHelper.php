@@ -104,7 +104,7 @@ final class StorageHelper
     public static function ensureStorageTree(string $basePath): void
     {
         self::uploadsRoot();
-        foreach (['storage/logs', 'storage/backups', 'storage/rate-limit'] as $rel) {
+        foreach (['storage/logs', 'storage/backups', 'storage/rate-limit', 'storage/sessions'] as $rel) {
             $path = rtrim(str_replace('\\', '/', $basePath), '/') . '/' . $rel;
             if (!is_dir($path)) {
                 @mkdir($path, 0777, true);

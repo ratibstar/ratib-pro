@@ -253,6 +253,7 @@ final class LoginController extends Controller
         }
         (new User())->updateLastLogin((int) $user['id']);
         (new AuditService())->log('login', 'user', (int) $user['id']);
+        Csrf::clearCookie();
         Response::redirect($next !== '' ? $next : rateb_url(Auth::homePath()));
     }
 

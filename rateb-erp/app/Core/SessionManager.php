@@ -18,7 +18,8 @@ final class SessionManager
         }
 
         session_name('rateb_erp');
-        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+        self::ensureSavePath();
+        $secure = self::requestIsSecure();
 
         if (PHP_VERSION_ID >= 70300) {
             session_set_cookie_params([
@@ -45,6 +46,26 @@ final class SessionManager
     {
         if (session_status() !== PHP_SESSION_ACTIVE || session_name() !== 'rateb_erp') {
             self::start();
+        }
+    }
+
+    private static function requestIsSecure(): bool
+    {
+        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+    }
+
+    private static function ensureSavePath(): void
+    {
+        if (!defined('RATEB_ROOT')) {
+            return;
+        }
+        $dir = rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/storage/sessions';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+        if (is_dir($dir) && is_writable($dir)) {
+            session_save_path($dir);
         }
     }
 
