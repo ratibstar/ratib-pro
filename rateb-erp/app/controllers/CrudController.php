@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Controllers;
 
+use Rateb\App\Core\BranchContext;
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Model;
@@ -834,6 +835,37 @@ abstract class CrudController extends Controller
         if ((int) (TenantContext::companyId() ?? 0) < 1) {
             TenantContext::setCompanyId($companyId);
         }
+    }
+
+    /** @param array<string, mixed> $record */
+    protected function bootstrapWriteContextFromRecord(array $record): void
+    {
+        $companyId = (int) ($record['company_id'] ?? 0);
+        if ($companyId < 1) {
+            return;
+        }
+        TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_adopt_ops_company_id')) {
+            rateb_adopt_ops_company_id($companyId);
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            SessionManager::set('rateb_ops_company_id', $companyId);
+        }
+        BranchContext::reset();
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    protected function loadRecordForWrite(int $id): ?array
+    {
+        $record = $this->model->findByIdUnscoped($id);
+        if (!$record) {
+            return null;
+        }
+        $this->bootstrapWriteContextFromRecord($record);
+        return $record;
     }
 
     /**

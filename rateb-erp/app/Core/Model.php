@@ -125,6 +125,20 @@ abstract class Model
         return rateb_branch_filter_sql($alias, $this->branchColumn);
     }
 
+    /** Load row by primary key only (no tenant/branch filters). Use before write context bootstrap. */
+    public function findByIdUnscoped(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $stmt = $this->db->prepare(
+            "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = :id LIMIT 1"
+        );
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public function find(int $id): ?array
     {
         $sql = "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = :id";

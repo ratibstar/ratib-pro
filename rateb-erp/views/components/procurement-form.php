@@ -39,6 +39,9 @@ if ($entityType === 'purchase_request') {
     <div class="rateb-card-body">
         <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data" data-procurement-form>
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <?php if ($isEdit && (int) (($item ?? [])['company_id'] ?? 0) > 0) { ?>
+            <input type="hidden" name="company_id" value="<?php echo (int) $item['company_id']; ?>">
+            <?php } ?>
             <div class="row g-3">
                 <?php if ($entityType === 'purchase_order') {
                     Rateb\App\Core\View::partial('procurement-workflow-banner', ['workflow' => $workflow]);

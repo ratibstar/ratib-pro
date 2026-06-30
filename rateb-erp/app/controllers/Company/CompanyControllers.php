@@ -93,13 +93,12 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
     {
         rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
         }
-        $this->applyTenantFromRecord($item);
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __($this->entityName),
             'item' => $item,
@@ -115,13 +114,12 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
     {
         rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
         }
-        $this->applyTenantFromRecord($item);
         $this->view('company/purchase-requests/show', [
             'title' => __('purchase_requests'),
             'request' => $item,
@@ -155,11 +153,10 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         }
         rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $old = $this->model->find($id);
+        $old = $this->loadRecordForWrite($id);
         if (!$old) {
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $this->applyTenantFromRecord($old);
         $this->model->update($id, ['status' => 'submitted']);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
             $id,
@@ -211,8 +208,9 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         $id = (int) ($params['id'] ?? 0);
         $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
         try {
-            $old = $this->model->find($id);
+            $old = $this->loadRecordForWrite($id);
             if (!$old) {
+                SessionManager::flash('error', __('record_not_found'));
                 $this->redirect(rateb_url($this->routePrefix));
             }
             $data = $this->collectData();
@@ -408,13 +406,12 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     {
         rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
         }
-        $this->applyTenantFromRecord($item);
         $companyId = (int) ($item['company_id'] ?? 0);
         if ($companyId < 1) {
             $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
@@ -462,11 +459,10 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         }
         rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $old = $this->model->find($id);
+        $old = $this->loadRecordForWrite($id);
         if (!$old) {
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $this->applyTenantFromRecord($old);
         $oldStatus = (string) ($old['status'] ?? '');
         $oversightOnly = function_exists('rateb_oversight_approve_only') && rateb_oversight_approve_only();
         if ($oversightOnly && $oldStatus !== 'draft' && $oldStatus !== 'confirmed') {
@@ -528,8 +524,9 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $id = (int) ($params['id'] ?? 0);
         $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
         try {
-            $old = $this->model->find($id);
+            $old = $this->loadRecordForWrite($id);
             if (!$old) {
+                SessionManager::flash('error', __('record_not_found'));
                 $this->redirect(rateb_url($this->routePrefix));
             }
             $data = $this->collectData();
@@ -550,11 +547,11 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->tryAutoPostPurchaseOrder($id, (string) ($data['status'] ?? ''));
             (new AuditService())->log('update', $this->entityName, $id, $data);
             SessionManager::flash('success', __('save') . ' OK');
+            $this->redirect($failUrl);
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect($failUrl);
         }
-        $this->redirect(rateb_url($this->routePrefix));
     }
 
     public function export(): void
@@ -573,13 +570,12 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     {
         rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
+        $item = $this->loadRecordForWrite($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404'], 'main');
             return;
         }
-        $this->applyTenantFromRecord($item);
         $items = \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id);
         $docBarcode = (new \Rateb\App\Services\DocumentBarcodeService())->labelData('purchase_order', $id);
         $supplierName = '';
