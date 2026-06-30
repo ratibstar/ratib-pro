@@ -287,6 +287,18 @@ return [
     'infra.providers_title' => 'مزودو البنية التحتية',
     'infra.back_dashboard' => 'العودة إلى لوحة التحكم',
 
+    'sync_test.title' => 'مزامنة test.rateb.sa',
+    'sync_test.intro' => 'ينسخ ملفات التطبيق من الموقع الحي (rateb.sa) إلى دومين الاختبار. لا ينسخ قاعدة البيانات — وكالات الاختبار تبقى على قواعدها.',
+    'sync_test.source' => 'المصدر',
+    'sync_test.target' => 'الهدف',
+    'sync_test.button' => 'نسخ الملفات إلى test.rateb.sa',
+    'sync_test.confirm' => 'نسخ كل مجلدات التطبيق من rateb.sa إلى test.rateb.sa الآن؟',
+    'sync_test.warning' => 'شغّلها فقط عند الحاجة لتحديث الاختبار بكود الإنتاج. قد تستغرق 1–3 دقائق.',
+    'sync_test.success' => 'اكتمل النسخ بنجاح.',
+    'sync_test.fail' => 'فشل النسخ — راجع السجل أدناه.',
+    'sync_test.open_test_erp' => 'فتح ERP الاختبار',
+    'sync_test.open_probe' => 'تشخيص الدومين',
+
     'site.edit_home' => 'تعديل نص الصفحة الرئيسية',
     'site.public_content' => 'محتوى الموقع العام',
 

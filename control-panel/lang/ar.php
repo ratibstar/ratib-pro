@@ -48,6 +48,7 @@ return [
     'nav.panel_settings' => 'إعدادات لوحة التحكم',
     'nav.admin_control_center' => 'مركز التحكم الإداري',
     'nav.infrastructure' => 'البنية التحتية',
+    'nav.sync_test_domain' => 'مزامنة دومين الاختبار',
     'nav.logout' => 'تسجيل الخروج',
 
     'section.rateb_erp' => 'نظام رتب ERP',

@@ -48,6 +48,7 @@ return [
     'nav.panel_settings' => 'Control Panel Settings',
     'nav.admin_control_center' => 'Admin Control Center',
     'nav.infrastructure' => 'Infrastructure',
+    'nav.sync_test_domain' => 'Sync test domain',
     'nav.logout' => 'Logout',
 
     'section.rateb_erp' => 'RATEB ERP System',

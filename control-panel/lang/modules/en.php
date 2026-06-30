@@ -301,6 +301,19 @@ return [
     'infra.providers_title' => 'Infrastructure Providers',
     'infra.back_dashboard' => 'Back to Dashboard',
 
+    // Test domain sync (rateb.sa → test.rateb.sa)
+    'sync_test.title' => 'Sync test.rateb.sa',
+    'sync_test.intro' => 'Copies application files from the live site (rateb.sa) to the test domain. Does not copy database data — test agencies keep their own DB.',
+    'sync_test.source' => 'Source',
+    'sync_test.target' => 'Target',
+    'sync_test.button' => 'Copy files to test.rateb.sa',
+    'sync_test.confirm' => 'Copy all application folders from rateb.sa to test.rateb.sa now?',
+    'sync_test.warning' => 'Run only when you need to refresh test with production code. May take 1–3 minutes.',
+    'sync_test.success' => 'Copy completed successfully.',
+    'sync_test.fail' => 'Copy failed — review the log below.',
+    'sync_test.open_test_erp' => 'Open test ERP admin',
+    'sync_test.open_probe' => 'Domain probe (diagnostics)',
+
     // Site content
     'site.edit_home' => 'Edit homepage copy',
     'site.public_content' => 'Public site content',
