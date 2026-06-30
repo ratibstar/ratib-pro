@@ -103,6 +103,9 @@ final class StorageHelper
 
     public static function ensureStorageTree(string $basePath): void
     {
+        if (!defined('RATEB_STORAGE_PATH')) {
+            define('RATEB_STORAGE_PATH', rtrim(str_replace('\\', '/', $basePath), '/') . '/storage');
+        }
         self::uploadsRoot();
         foreach (['storage/logs', 'storage/backups', 'storage/rate-limit', 'storage/sessions'] as $rel) {
             $path = rtrim(str_replace('\\', '/', $basePath), '/') . '/' . $rel;

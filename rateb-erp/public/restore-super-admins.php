@@ -49,5 +49,9 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'ok' => false,
+        'error' => $e->getMessage() !== '' ? $e->getMessage() : get_class($e),
+        'trace' => $e->getFile() . ':' . $e->getLine(),
+    ], JSON_UNESCAPED_UNICODE);
 }
