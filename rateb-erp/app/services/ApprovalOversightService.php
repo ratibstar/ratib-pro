@@ -86,12 +86,17 @@ final class ApprovalOversightService
     }
 
     /**
-     * Pending approval counts per ops sidebar resource path (e.g. purchase-requests, hr/leaves).
+     * Pending action counts for ops sidebar (المشتريات، المخزون، …).
+     * Intentionally excludes oversight approval queue — those badges live under مراقبة الإدارة only.
      *
      * @return array<string, int>
      */
     public function opsNavCounts(?int $companyFilter = null): array
     {
+        if (function_exists('rateb_oversight_approve_only') && rateb_oversight_approve_only()) {
+            return $this->opsActionCounts($companyFilter);
+        }
+
         $this->ensureAccountingSubmitSchema();
         $counts = [];
         $add = static function (array &$counts, string $path, int $n): void {
@@ -122,6 +127,86 @@ final class ApprovalOversightService
         $add($counts, 'branch-transfers', $this->countBranchTransfersPending($companyFilter));
 
         return $counts;
+    }
+
+    /**
+     * Ops-only work: drafts / rejected records still needing user action — not oversight approval queue.
+     *
+     * @return array<string, int>
+     */
+    private function opsActionCounts(?int $companyFilter): array
+    {
+        $counts = [];
+        $add = static function (array &$counts, string $path, int $n): void {
+            if ($path !== '' && $n > 0) {
+                $counts[$path] = ($counts[$path] ?? 0) + $n;
+            }
+        };
+
+        /** @var list<array{0:string,1:string,2:list<string>}> $specs */
+        $specs = [
+            ['purchase-requests', 'rateb_purchase_requests', ['draft', 'rejected']],
+            ['purchase-orders', 'rateb_purchase_orders', ['draft']],
+            ['rfq', 'rateb_rfq', ['draft']],
+            ['supplier-evaluations', 'rateb_supplier_evaluations', ['draft']],
+            ['inventory-audits', 'rateb_inventory_audits', ['draft']],
+            ['journal-entries', 'rateb_journal_entries', ['draft']],
+            ['cash-vouchers', 'rateb_cash_vouchers', ['draft']],
+            ['contracts', 'rateb_contracts', ['draft']],
+            ['hr/payroll', 'rateb_payroll_periods', ['draft']],
+        ];
+
+        foreach ($specs as [$path, $table, $statuses]) {
+            $add($counts, $path, $this->countTableStatuses($table, $statuses, $companyFilter));
+        }
+
+        return $counts;
+    }
+
+    /**
+     * @param list<string> $statuses
+     */
+    private function countTableStatuses(string $table, array $statuses, ?int $companyFilter): int
+    {
+        if ($statuses === [] || !$this->tableExists($table)) {
+            return 0;
+        }
+        if (!$this->tableHasColumn($table, 'status')) {
+            return 0;
+        }
+        try {
+            $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+            $sql = "SELECT COUNT(*) FROM {$table} t WHERE t.status IN ({$placeholders})";
+            $params = $statuses;
+            if ($companyFilter !== null && $companyFilter > 0 && $this->tableHasColumn($table, 'company_id')) {
+                $sql .= ' AND t.company_id = ?';
+                $params[] = $companyFilter;
+            }
+            $db = Database::connection();
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    private function tableHasColumn(string $table, string $column): bool
+    {
+        if (!$this->tableExists($table)) {
+            return false;
+        }
+        try {
+            $db = Database::connection();
+            $stmt = $db->prepare(
+                'SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c'
+            );
+            $stmt->execute(['t' => $table, 'c' => $column]);
+            return (int) $stmt->fetchColumn() > 0;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public static function routeKeyForWorkflowEntity(string $entityType): string

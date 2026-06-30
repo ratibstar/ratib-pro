@@ -466,6 +466,7 @@ return [
     'inventory_oversight' => 'مراقبة المخزون',
     'rfq_oversight' => 'مراقبة عروض الأسعار',
     'approvals_oversight' => 'مراقبة الاعتمادات',
+    'ops_nav_pending_hint' => 'مسودات أو إجراءات مطلوبة في العمليات',
     'supplier_evaluations_oversight' => 'مراقبة تقييم الموردين',
     'approvals_total_pending' => 'إجمالي الاعتمادات المعلقة',
     'approval_category' => 'فئة الاعتماد',

@@ -54,7 +54,7 @@ $renderHrLink = static function (array $item) use ($hrRouteActive): void {
     echo '<i class="fas ' . Rateb\App\Core\View::escape((string) ($item['icon'] ?? 'fa-circle')) . '"></i>';
     echo '<span>' . Rateb\App\Core\View::escape(__((string) ($item['label'] ?? ''))) . '</span>';
     if ($badge > 0) {
-        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $badge . '</span>';
+        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $badge . '</span>';
     }
     echo '</a>';
 };
@@ -76,7 +76,7 @@ $renderHrSubgroup = static function (array $item) use ($hrRouteActive, $renderHr
     echo '<i class="fas ' . Rateb\App\Core\View::escape((string) ($item['icon'] ?? 'fa-folder')) . '"></i>';
     echo '<span>' . Rateb\App\Core\View::escape(__((string) ($item['label'] ?? ''))) . '</span>';
     if ($subBadge > 0) {
-        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $subBadge . '</span>';
+        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $subBadge . '</span>';
     }
     echo '<i class="fas fa-chevron-down rateb-nav-subgroup-chevron" aria-hidden="true"></i>';
     echo '</button><div class="rateb-nav-subgroup-body">';
@@ -107,4 +107,4 @@ $renderNavGroup(__('human_resources'), 'fa-users-gear', $hrSectionActive, static
             $renderHrLink($item);
         }
     }
-}, $hrSectionBadge, 'rateb-nav-badge--pending');
+}, $hrSectionBadge, 'rateb-nav-badge--pending', 'ops_nav_pending_hint');

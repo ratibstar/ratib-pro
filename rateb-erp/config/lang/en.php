@@ -466,6 +466,7 @@ return [
     'inventory_oversight' => 'Inventory oversight',
     'rfq_oversight' => 'RFQ oversight',
     'approvals_oversight' => 'Approvals oversight',
+    'ops_nav_pending_hint' => 'Drafts or actions needed in operations',
     'supplier_evaluations_oversight' => 'Supplier evaluations oversight',
     'approvals_total_pending' => 'Total pending approvals',
     'approval_category' => 'Approval category',

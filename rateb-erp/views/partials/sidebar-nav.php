@@ -27,7 +27,7 @@ $opsLink = static function (
     echo '<a href="' . rateb_url($route) . '" class="rateb-nav-link' . $active . '">';
     echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span>';
     if ($badge > 0) {
-        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('approvals_oversight')) . '">' . $badge . '</span>';
+        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $badge . '</span>';
     }
     echo '</a>';
 };
@@ -97,7 +97,7 @@ $opsSection = static function (
         foreach ($links as $link) {
             $opsLink($link[0], $link[1], $link[2], $link[3] ?? '', $link[4] ?? '');
         }
-    }, $sectionBadge, 'rateb-nav-badge--pending');
+    }, $sectionBadge, 'rateb-nav-badge--pending', 'ops_nav_pending_hint');
 };
 
 $adminSection = static function (
