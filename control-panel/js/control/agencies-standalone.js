@@ -552,7 +552,13 @@
                     credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ agency_id: proAgencyId })
-                }).then(function(res) { return res.json(); }).then(function(data) {
+                }).then(function(res) {
+                var ct = (res.headers.get('content-type') || '').toLowerCase();
+                if (!ct.includes('application/json')) {
+                    throw new Error('Session expired or server error — please log in again and retry.');
+                }
+                return res.json();
+            }).then(function(data) {
                     proBtn.disabled = false;
                     if (!data || !data.success) {
                         showAlert((data && data.message) ? data.message : 'Pro provisioning failed');
@@ -627,7 +633,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ agency_id: agencyId, plan_slug: planSlug, force: force ? 1 : 0 })
                 });
-            }).then(function(res) { return res.json(); }).then(function(data) {
+            }).then(function(res) {
+                var ct = (res.headers.get('content-type') || '').toLowerCase();
+                if (!ct.includes('application/json')) {
+                    throw new Error('Session expired or server error — please log in again and retry.');
+                }
+                return res.json();
+            }).then(function(data) {
                 erpProvisionConfirmBtn.disabled = false;
                 if (modalEl && typeof bootstrap !== 'undefined') {
                     var inst = bootstrap.Modal.getInstance(modalEl);

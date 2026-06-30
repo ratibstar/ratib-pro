@@ -7,6 +7,9 @@ final class SessionManager
 {
     public static function start(): void
     {
+        if (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION) {
+            return;
+        }
         if (session_status() === PHP_SESSION_ACTIVE) {
             if (session_name() === 'rateb_erp') {
                 return;

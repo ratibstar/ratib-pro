@@ -83,14 +83,43 @@ final class Bootstrap
         self::ensureStorage($basePath);
         if (is_file($basePath . '/app/Core/SecurityHeaders.php')) {
             require_once $basePath . '/app/Core/SecurityHeaders.php';
-            SecurityHeaders::send();
+            if (!(defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION)) {
+                SecurityHeaders::send();
+            }
         }
-        if (!defined('RATEB_HEALTH_PROBE') || !RATEB_HEALTH_PROBE) {
+        $skipSession = (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION)
+            || (defined('RATEB_HEALTH_PROBE') && RATEB_HEALTH_PROBE);
+        if (!$skipSession) {
             SessionManager::start();
         }
         if (function_exists('rateb_init_marketing_locale')) {
             rateb_init_marketing_locale();
         }
+    }
+
+    /** Control-panel / CLI embed: autoload + config only — never touch PHP session. */
+    public static function initMinimal(string $basePath): void
+    {
+        static $minimalBooted = false;
+        if ($minimalBooted) {
+            return;
+        }
+        $minimalBooted = true;
+
+        $basePath = self::resolveRootPath($basePath);
+        if (!defined('RATEB_ROOT')) {
+            define('RATEB_ROOT', $basePath);
+        }
+        if (!defined('RATEB_ENV_NO_SESSION')) {
+            define('RATEB_ENV_NO_SESSION', true);
+        }
+
+        self::registerAutoloader($basePath);
+        $entities = $basePath . '/app/models/Entities.php';
+        if (is_file($entities)) {
+            require_once $entities;
+        }
+        self::loadConfig($basePath);
     }
 
     private static function registerAutoloader(string $basePath): void

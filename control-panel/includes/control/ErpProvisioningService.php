@@ -538,7 +538,7 @@ final class ErpProvisioningService
         if (!class_exists(\Rateb\App\Core\Bootstrap::class, false)) {
             require_once $erpRoot . '/app/Core/Bootstrap.php';
         }
-        \Rateb\App\Core\Bootstrap::init($erpRoot);
+        \Rateb\App\Core\Bootstrap::initMinimal($erpRoot);
     }
 
     /** @param array<string, mixed> $agency */
