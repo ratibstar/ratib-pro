@@ -91,6 +91,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
 
     public function edit(array $params): void
     {
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -98,6 +99,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
         }
+        $this->applyTenantFromRecord($item);
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __($this->entityName),
             'item' => $item,
@@ -111,6 +113,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
 
     public function show(array $params): void
     {
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -118,6 +121,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
         }
+        $this->applyTenantFromRecord($item);
         $this->view('company/purchase-requests/show', [
             'title' => __('purchase_requests'),
             'request' => $item,
@@ -149,11 +153,13 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
         $old = $this->model->find($id);
         if (!$old) {
             $this->redirect(rateb_url($this->routePrefix));
         }
+        $this->applyTenantFromRecord($old);
         $this->model->update($id, ['status' => 'submitted']);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
             $id,
@@ -201,25 +207,35 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $old = $this->model->find($id);
-        $data = $this->collectData();
-        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
-        $this->applyLineTotals($data, $lines);
-        if ($old) {
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
+        try {
+            $old = $this->model->find($id);
+            if (!$old) {
+                $this->redirect(rateb_url($this->routePrefix));
+            }
+            $data = $this->collectData();
+            $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+            $this->applyLineTotals($data, $lines);
+            $this->inheritTenantFromRecord($data, $old);
+            $this->ensureTenantCompanyForWrite($data, $failUrl);
             $this->applyNotesHistory($data, $old);
+            $this->model->update($id, $data);
+            \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
+            $this->saveQuoteAttachment($id);
+            (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
+                $id,
+                (string) ($data['status'] ?? ''),
+                (string) ($old['status'] ?? '')
+            );
+            (new AuditService())->log('update', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect($failUrl);
         }
-        $this->model->update($id, $data);
-        \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
-        $this->saveQuoteAttachment($id);
-        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
-            $id,
-            (string) ($data['status'] ?? ''),
-            $old ? (string) ($old['status'] ?? '') : null
-        );
-        (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url($this->routePrefix));
     }
 
     public function export(): void

@@ -96,7 +96,7 @@ final class WorkflowSubmissionService
         if ($newStatus !== 'submitted' || $oldStatus === 'submitted') {
             return;
         }
-        $cid = TenantContext::companyId() ?? 0;
+        $cid = $this->resolveCompanyIdForEntity('purchase_request', $entityId);
         if ($cid < 1) {
             return;
         }
@@ -108,11 +108,36 @@ final class WorkflowSubmissionService
         if ($newStatus !== 'sent' || $oldStatus === 'sent') {
             return;
         }
-        $cid = TenantContext::companyId() ?? 0;
+        $cid = $this->resolveCompanyIdForEntity('purchase_order', $entityId);
         if ($cid < 1) {
             return;
         }
         $this->submitEntity('purchase_order', $entityId, $cid);
+    }
+
+    private function resolveCompanyIdForEntity(string $entityType, int $entityId): int
+    {
+        $cid = (int) (TenantContext::companyId() ?? 0);
+        if ($cid > 0) {
+            return $cid;
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $cid = rateb_resolve_ops_company_id();
+            if ($cid > 0) {
+                TenantContext::setCompanyId($cid);
+                return $cid;
+            }
+        }
+        $row = match ($entityType) {
+            'purchase_request' => (new \Rateb\App\Models\PurchaseRequest())->find($entityId),
+            'purchase_order' => (new \Rateb\App\Models\PurchaseOrder())->find($entityId),
+            default => null,
+        };
+        $cid = (int) ($row['company_id'] ?? 0);
+        if ($cid > 0) {
+            TenantContext::setCompanyId($cid);
+        }
+        return $cid;
     }
 
     /** @return array<string, mixed>|null */

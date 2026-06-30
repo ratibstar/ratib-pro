@@ -323,11 +323,26 @@ final class LineItems
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare('DELETE FROM rateb_purchase_request_items WHERE purchase_request_id = :rid')->execute(['rid' => $requestId]);
         $agg = self::aggregateTotals($lines);
+        $companyId = 0;
+        $pr = (new \Rateb\App\Models\PurchaseRequest())->find($requestId);
+        if ($pr) {
+            $companyId = (int) ($pr['company_id'] ?? 0);
+        }
+        if ($companyId < 1) {
+            $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        }
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
         $itemIds = [];
         foreach ($lines as $i => $line) {
             $payload = $line;
             unset($payload['delivered_qty'], $payload['invoiced_qty']);
-            $itemIds[$i] = $model->create(array_merge($payload, ['purchase_request_id' => $requestId]));
+            $row = array_merge($payload, ['purchase_request_id' => $requestId]);
+            if ($companyId > 0) {
+                $row['company_id'] = $companyId;
+            }
+            $itemIds[$i] = $model->create($row);
         }
         self::processPurchaseRequestLineAttachments($itemIds);
         return $agg['total'];

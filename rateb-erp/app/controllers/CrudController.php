@@ -824,8 +824,36 @@ abstract class CrudController extends Controller
         return $data;
     }
 
+    /** @param array<string, mixed> $record */
+    protected function applyTenantFromRecord(array $record): void
+    {
+        $companyId = (int) ($record['company_id'] ?? 0);
+        if ($companyId < 1) {
+            return;
+        }
+        if ((int) (TenantContext::companyId() ?? 0) < 1) {
+            TenantContext::setCompanyId($companyId);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $record
+     */
+    protected function inheritTenantFromRecord(array &$data, array $record): void
+    {
+        $companyId = (int) ($record['company_id'] ?? 0);
+        if ($companyId < 1) {
+            return;
+        }
+        if ((int) ($data['company_id'] ?? 0) < 1) {
+            $data['company_id'] = $companyId;
+        }
+        $this->applyTenantFromRecord($record);
+    }
+
     /** @param array<string, mixed> $data */
-    protected function ensureTenantCompanyForWrite(array &$data): void
+    protected function ensureTenantCompanyForWrite(array &$data, ?string $failRedirect = null): void
     {
         if (!$this->model->isTenantScoped()) {
             return;
@@ -845,14 +873,14 @@ abstract class CrudController extends Controller
         }
         if ($companyId < 1) {
             SessionManager::flash('error', __('select_company_ops'));
-            $this->redirect(rateb_url($this->routePrefix . '/create'));
+            $this->redirect($failRedirect ?? rateb_url($this->routePrefix . '/create'));
         }
         if (function_exists('rateb_ops_company_exists') && !rateb_ops_company_exists($companyId)) {
             if (function_exists('rateb_clear_ops_company_session')) {
                 rateb_clear_ops_company_session();
             }
             SessionManager::flash('error', __('company_not_found_ops'));
-            $this->redirect(rateb_url($this->routePrefix . '/create'));
+            $this->redirect($failRedirect ?? rateb_url($this->routePrefix . '/create'));
         }
 
         $data['company_id'] = $companyId;
