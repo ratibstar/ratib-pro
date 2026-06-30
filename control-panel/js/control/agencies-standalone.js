@@ -140,6 +140,32 @@
         });
     }
 
+    function apiDeleteIds(ids, confirmToken) {
+        var body = { action: 'delete', ids: ids, agency_ids: ids };
+        if (confirmToken) body.confirm = confirmToken;
+        return apiCall('POST', body).then(function(r) {
+            if (r && r.success) return r;
+            return apiCall('DELETE', body);
+        }).then(function(r) {
+            if (r && r.success) return r;
+            var patchBody = { action: 'delete', ids: ids, agency_ids: ids };
+            if (confirmToken) patchBody.confirm = confirmToken;
+            return apiCall('PATCH', patchBody);
+        });
+    }
+
+    function syncRowPickVisual(chk) {
+        if (!chk) return;
+        var row = chk.closest('tr');
+        if (row && chk.classList.contains('agency-row-check')) {
+            row.classList.toggle('agency-row-picked', !!chk.checked);
+        }
+    }
+
+    function syncAllRowPickVisuals() {
+        document.querySelectorAll('.agency-row-check').forEach(syncRowPickVisual);
+    }
+
     // EN: Central toggle for all bulk action controls during long-running actions.
     // AR: تحكم مركزي لتعطيل/تفعيل أزرار العمليات الجماعية أثناء العمليات الطويلة.
     function setBulkButtonsDisabled(disabled) {
@@ -165,9 +191,16 @@
 
     // Delegate change/click to document so events reach even with overlay issues
     document.addEventListener('change', function(e) {
-        if (e.target && e.target.matches && e.target.matches('.row-check')) updateBulkState();
+        if (e.target && e.target.matches && e.target.matches('.agency-row-check, .row-check')) {
+            syncRowPickVisual(e.target);
+            updateBulkState();
+        }
     });
-    if (selectAll) selectAll.addEventListener('change', function() { document.querySelectorAll('.row-check').forEach(function(c) { c.checked = selectAll.checked; }); updateBulkState(); });
+    if (selectAll) selectAll.addEventListener('change', function() {
+        document.querySelectorAll('.agency-row-check, .row-check').forEach(function(c) { c.checked = selectAll.checked; syncRowPickVisual(c); });
+        updateBulkState();
+    });
+    syncAllRowPickVisuals();
     var countrySelect = document.getElementById('agenciesCountrySelect') || document.getElementById('agencyCountrySelectLegacy') || document.querySelector('select[name="country_id"]');
     if (countrySelect && countrySelect.form) {
         countrySelect.addEventListener('change', function() { countrySelect.form.submit(); });
@@ -305,7 +338,7 @@
             e.stopPropagation();
             var id = e.target.closest('.btn-delete').dataset.id;
             showConfirm('Delete this agency?').then(function(ok) {
-                if (ok) apiCall('DELETE', { ids: [id] }).then(function(r) { if (r.success) location.reload(); else showAlert(r.message); }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
+                if (ok) apiDeleteIds([parseInt(id, 10)]).then(function(r) { if (r.success) location.reload(); else showAlert(r.message || 'Delete failed'); }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
             });
         } else if (e.target.closest('.btn-mark-paid')) {
             // EN: Mark-paid operation unsuspends agency and syncs latest registration payment state.

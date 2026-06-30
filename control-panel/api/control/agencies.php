@@ -356,12 +356,57 @@ if ($method === 'GET') {
     ]);
 }
 
-// POST - create (requires add)
+// POST - create (requires add) or delete fallback (some hosts block DELETE)
 if ($method === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+    $postAction = trim((string)($input['action'] ?? ''));
+    if (in_array($postAction, ['delete', 'delete_ids'], true)) {
+        if (!hasControlPermission(CONTROL_PERM_AGENCIES) && !hasControlPermission('delete_control_agency')) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+        if (!isControlSuperAdmin()) {
+            jsonOut(['success' => false, 'message' => 'SUPER_ADMIN required for delete']);
+        }
+        $ids = $input['agency_ids'] ?? ($input['ids'] ?? []);
+        if (empty($ids)) {
+            $id = (int)($_GET['id'] ?? 0);
+            if ($id > 0) {
+                $ids = [$id];
+            }
+        }
+        if (empty($ids)) {
+            jsonOut(['success' => false, 'message' => 'No IDs']);
+        }
+        $ids = array_map('intval', $ids);
+        $confirm = (string) ($input['confirm'] ?? '');
+        if (count($ids) > 1 && $confirm !== 'DELETE') {
+            securityBlock('Blocked bulk delete without confirm=DELETE', ['action' => 'delete']);
+            jsonOut(['success' => false, 'message' => 'Bulk delete requires confirm=DELETE']);
+        }
+        if ($allowedCountryIds !== null) {
+            $ph = implode(',', $ids);
+            $rowsCheck = qAll("SELECT id, country_id FROM control_agencies WHERE id IN ($ph)");
+            foreach ($rowsCheck as $row) {
+                if (!in_array((int)$row['country_id'], $allowedCountryIds, true)) {
+                    jsonOut(['success' => false, 'message' => 'You do not have permission to delete one or more of these agencies']);
+                }
+            }
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        qStmt("DELETE FROM control_agencies WHERE id IN ($placeholders)", $ids);
+        foreach ($ids as $id) {
+            $tenantId = setTenantContextByAgencyId((int) $id);
+            emitEvent('AGENCY_DELETED', 'critical', count($ids) > 1 ? 'Bulk delete' : 'Agency deleted', eventMeta([
+                'tenant_id' => $tenantId > 0 ? $tenantId : null,
+                'agency_id' => (int) $id,
+                'action' => 'delete',
+            ]));
+        }
+        jsonOut(['success' => true, 'deleted' => count($ids)]);
+    }
     if (!hasControlPermission(CONTROL_PERM_AGENCIES) && !hasControlPermission('add_control_agency')) {
         jsonOut(['success' => false, 'message' => 'Access denied']);
     }
-    $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
     $countryId = (int)($input['country_id'] ?? 0);
     if ($hasCountryId && $countryId <= 0) {
         jsonOut(['success' => false, 'message' => 'Country is required']);
@@ -611,7 +656,7 @@ if ($method === 'PATCH') {
         securityBlock('Blocked unauthorized admin action', ['action' => $action]);
         jsonOut(['success' => false, 'message' => 'ADMIN role required']);
     }
-    if ($action === 'delete' && strtoupper(trim((string) ($input['confirm'] ?? ''))) !== 'DELETE') {
+    if ($action === 'delete' && count($ids) > 1 && strtoupper(trim((string) ($input['confirm'] ?? ''))) !== 'DELETE') {
         securityBlock('Blocked bulk delete without confirmation', ['action' => $action]);
         jsonOut(['success' => false, 'message' => 'Bulk delete requires confirm=DELETE']);
     }

@@ -300,7 +300,7 @@ if ($agencyIdFilter > 0) {
 ?>
 <!-- EN: Main agencies container switches between country-card mode and list mode.
      AR: حاوية الوكالات الرئيسية تعرض إما بطاقات الدول أو جدول الوكالات حسب الفلتر. -->
-<div class="agencies-table-card" id="tableCard" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-country-id="<?php echo (int)$countryId; ?>">
+<div class="agencies-table-card" id="tableCard" data-cp-no-i18n="1" translate="no" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-country-id="<?php echo (int)$countryId; ?>">
     <h2 class="mb-4"><i class="fas fa-building me-2"></i>Manage Agencies<?php if ($agencyIdFilter): ?> <small class="text-muted">(<?php echo htmlspecialchars($fmtId($agencyIdFilter)); ?><?php if ($agencyFilterCountryName !== ''): ?> — <?php echo htmlspecialchars($agencyFilterCountryName); ?><?php endif; ?>)</small><?php elseif ($countryId): ?> <small class="text-muted">— <?php echo htmlspecialchars($countryMap[$countryId] ?? 'Country'); ?></small><?php endif; ?></h2>
 
     <?php if ($showCountryCards): ?>
@@ -440,28 +440,49 @@ if ($agencyIdFilter > 0) {
         </div>
     </div>
 
-    <div class="<?php echo $limit > 5 ? 'agencies-table-scroll' : ''; ?>">
-        <div class="table-responsive">
-        <table class="table">
+    <div class="agencies-table-wrap <?php echo $limit > 5 ? 'agencies-table-scroll' : ''; ?>">
+        <table class="table table-dark agencies-table">
+            <colgroup>
+                <col class="ag-col-id">
+                <col class="ag-col-name">
+                <col class="ag-col-slug">
+                <col class="ag-col-country">
+                <col class="ag-col-site">
+                <col class="ag-col-db-host">
+                <col class="ag-col-db-port ag-col-soft">
+                <col class="ag-col-db-user">
+                <col class="ag-col-db-name">
+                <col class="ag-col-erp-db ag-col-soft">
+                <col class="ag-col-erp">
+                <col class="ag-col-erp-plan">
+                <col class="ag-col-created ag-col-soft">
+                <col class="ag-col-renewal ag-col-soft">
+                <col class="ag-col-status">
+                <col class="ag-col-actions">
+            </colgroup>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Slug</th>
-                    <th>Country</th>
-                    <th>Site URL</th>
-                    <th>DB Host</th>
-                    <th>DB Port</th>
-                    <th>DB User</th>
-                    <th>DB Name</th>
-                    <th>ERP DB</th>
-                    <th>ERP</th>
-                    <th>ERP Plan</th>
-                    <th>Created</th>
-                    <th>Renewal</th>
-                    <th>Status</th>
-                    <th><input type="checkbox" id="selectAll" title="Select all"></th>
-                    <th>Actions</th>
+                    <th class="ag-col-id" scope="col">
+                        <div class="ag-id-head-cell">
+                            <input type="checkbox" class="form-check-input agency-check-all" id="selectAll" title="Select all" aria-label="Select all on this page">
+                            <span>ID</span>
+                        </div>
+                    </th>
+                    <th class="ag-col-name" scope="col">Name</th>
+                    <th class="ag-col-slug" scope="col">Slug</th>
+                    <th class="ag-col-country" scope="col">Country</th>
+                    <th class="ag-col-site" scope="col">Site URL</th>
+                    <th class="ag-col-db-host" scope="col">DB Host</th>
+                    <th class="ag-col-db-port ag-col-soft" scope="col">DB Port</th>
+                    <th class="ag-col-db-user" scope="col">DB User</th>
+                    <th class="ag-col-db-name" scope="col">DB Name</th>
+                    <th class="ag-col-erp-db ag-col-soft" scope="col">ERP DB</th>
+                    <th class="ag-col-erp" scope="col">ERP</th>
+                    <th class="ag-col-erp-plan" scope="col">ERP Plan</th>
+                    <th class="ag-col-created ag-col-soft" scope="col">Created</th>
+                    <th class="ag-col-renewal ag-col-soft" scope="col">Renewal</th>
+                    <th class="ag-col-status" scope="col">Status</th>
+                    <th class="ag-col-actions" scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -470,30 +491,34 @@ if ($agencyIdFilter > 0) {
                     $isActive = (($r['is_active'] ?? 1) == 1);
                     $rowClass = $isSuspended ? 'row-suspended' : ($isActive ? 'row-active' : 'row-inactive');
 ?>
-                <tr class="<?php echo htmlspecialchars($rowClass); ?>">
-                    <td><?php echo $fmtId($r['id']); ?></td>
-                    <td><?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? '-'); ?></td>
-                    <td><?php echo htmlspecialchars($r['slug'] ?? '-'); ?></td>
-                    <td><?php
+                <tr class="<?php echo htmlspecialchars($rowClass); ?>" data-agency-id="<?php echo (int)$r['id']; ?>">
+                    <td class="ag-col-id ag-col-clip">
+                        <div class="ag-id-row-cell">
+                            <input type="checkbox" class="form-check-input agency-row-check row-check" name="agency_ids[]" value="<?php echo (int)$r['id']; ?>" data-id="<?php echo (int)$r['id']; ?>" aria-label="Select <?php echo htmlspecialchars($fmtId($r['id']), ENT_QUOTES, 'UTF-8'); ?>">
+                            <span class="ag-id-label"><?php echo $fmtId($r['id']); ?></span>
+                        </div>
+                    </td>
+                    <td class="ag-col-name ag-col-clip" title="<?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? ''); ?>"><?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? '-'); ?></td>
+                    <td class="ag-col-slug ag-col-clip"><?php echo htmlspecialchars($r['slug'] ?? '-'); ?></td>
+                    <td class="ag-col-country ag-col-clip"><?php
 $cid = isset($r['country_id']) ? (int)$r['country_id'] : 0;
 $cname = ($cid && isset($countryMap[$cid])) ? $countryMap[$cid] : (trim($r['country_name'] ?? '') ?: trim($r['country'] ?? ''));
 echo htmlspecialchars($cname ?: '-');
 ?></td>
-                    <td class="agencies-url-cell" title="<?php echo htmlspecialchars($r['site_url'] ?? ''); ?>"><?php echo htmlspecialchars(($r['site_url'] ?? '') ?: '-'); ?></td>
-                    <td><?php echo htmlspecialchars($r['db_host'] ?? '-'); ?></td>
-                    <td><?php echo $r['db_port'] ?? '-'; ?></td>
-                    <td><?php echo htmlspecialchars($r['db_user'] ?? '-'); ?></td>
-                    <td><?php echo htmlspecialchars($r['db_name'] ?? '-'); ?></td>
-                    <td class="agencies-url-cell" title="<?php echo htmlspecialchars((string) ($r['erp_db_name'] ?? '')); ?>"><?php echo htmlspecialchars((string) (($r['erp_db_name'] ?? '') ?: '—')); ?></td>
-                    <td><span class="badge badge-erp-<?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none')); ?></span></td>
-                    <td><?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional')); ?></td>
-                    <td><?php echo isset($r['created_at']) ? substr($r['created_at'], 0, 10) : '-'; ?></td>
-                    <td><?php echo $renewalDate($r); ?></td>
-                    <td><span class="badge <?php
+                    <td class="ag-col-site ag-col-clip agencies-url-cell" title="<?php echo htmlspecialchars($r['site_url'] ?? ''); ?>"><?php echo htmlspecialchars(($r['site_url'] ?? '') ?: '-'); ?></td>
+                    <td class="ag-col-db-host ag-col-clip"><?php echo htmlspecialchars($r['db_host'] ?? '-'); ?></td>
+                    <td class="ag-col-db-port ag-col-soft ag-col-clip"><?php echo $r['db_port'] ?? '-'; ?></td>
+                    <td class="ag-col-db-user ag-col-clip"><?php echo htmlspecialchars($r['db_user'] ?? '-'); ?></td>
+                    <td class="ag-col-db-name ag-col-clip" title="<?php echo htmlspecialchars($r['db_name'] ?? ''); ?>"><?php echo htmlspecialchars($r['db_name'] ?? '-'); ?></td>
+                    <td class="ag-col-erp-db ag-col-soft ag-col-clip agencies-url-cell" title="<?php echo htmlspecialchars((string) ($r['erp_db_name'] ?? '')); ?>"><?php echo htmlspecialchars((string) (($r['erp_db_name'] ?? '') ?: '—')); ?></td>
+                    <td class="ag-col-erp ag-col-clip"><span class="badge badge-erp-<?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none')); ?></span></td>
+                    <td class="ag-col-erp-plan ag-col-clip"><?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional')); ?></td>
+                    <td class="ag-col-created ag-col-soft ag-col-clip"><?php echo isset($r['created_at']) ? substr($r['created_at'], 0, 10) : '-'; ?></td>
+                    <td class="ag-col-renewal ag-col-soft ag-col-clip"><?php echo $renewalDate($r); ?></td>
+                    <td class="ag-col-status ag-col-clip"><span class="badge <?php
 if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-active'; } else { echo 'badge-inactive'; }
 ?>"><?php echo $isSuspended ? 'Suspended' : ($isActive ? 'Active' : 'Inactive'); ?></span></td>
-                    <td><input type="checkbox" class="row-check" name="agency_ids[]" value="<?php echo (int)$r['id']; ?>" data-id="<?php echo (int)$r['id']; ?>"></td>
-                    <td class="action-btns">
+                    <td class="ag-col-actions action-btns">
                         <?php
                             $cid = isset($r['country_id']) ? (int)$r['country_id'] : 0;
                             $cslug = isset($countrySlugMap[$cid]) ? trim($countrySlugMap[$cid]) : '';
@@ -553,7 +578,6 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
 <?php endforeach; ?>
             </tbody>
         </table>
-        </div>
     </div>
 
     <div class="agencies-pagination-bar">
