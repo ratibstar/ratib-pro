@@ -249,12 +249,12 @@
         if (!chk) return;
         var wrap = chk.closest('.req-check-wrap');
         if (wrap) {
-            wrap.classList.toggle('is-checked', !!chk.checked);
+            wrap.classList.toggle('is-checked', !!chk.checked && !chk.indeterminate);
             wrap.classList.toggle('is-indeterminate', !!chk.indeterminate);
         }
         var row = chk.closest('tr');
         if (row && chk.classList.contains('req-row-check')) {
-            row.classList.toggle('req-row-selected', !!chk.checked);
+            row.classList.toggle('req-row-picked', !!chk.checked);
         }
     }
     function syncAllReqCheckVisuals() {
@@ -810,7 +810,7 @@
             updateSelectedCount();
         });
         reqTableEl.addEventListener('click', function(e) {
-            if (e.target && e.target.closest('.req-select-col, .req-check-wrap, .req-check-input, a, button, .dropdown-menu, .dropdown-toggle')) return;
+            if (e.target && e.target.closest('.req-check-wrap, .req-check-input, a, button, .dropdown-menu, .dropdown-toggle, .req-col-actions')) return;
             var row = e.target && e.target.closest('tbody tr[data-id]');
             if (!row) return;
             var rowChk = row.querySelector('.req-row-check');
