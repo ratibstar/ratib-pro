@@ -1,6 +1,10 @@
 <?php
 /** @var string $csrf */
+/** @var string $loginError */
 ?>
+<?php if (!empty($loginError)) { ?>
+<div class="alert alert-danger rateb-flash mb-3" role="alert"><?php echo Rateb\App\Core\View::escape($loginError); ?></div>
+<?php } ?>
 <div class="mb-3 text-center">
     <p class="text-muted small mb-2"><?php echo __('login_method'); ?></p>
     <div class="login-method-toggle" role="group" aria-label="<?php echo __('login_method'); ?>">

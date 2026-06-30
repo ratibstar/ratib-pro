@@ -76,7 +76,31 @@ final class LoginController extends Controller
             'csrf' => Csrf::token(),
             'next' => $this->safeNextUrl((string) ($_GET['next'] ?? '')),
             'branchPortal' => $branchPortal,
+            'loginError' => $this->resolveLoginErrorFromRequest(),
         ], 'auth');
+    }
+
+    private function loginRedirect(string $errCode = ''): void
+    {
+        $url = function_exists('rateb_list_url')
+            ? rateb_list_url('login', $errCode !== '' ? ['err' => $errCode] : [])
+            : rateb_url('login');
+        Response::redirect($url);
+    }
+
+    private function resolveLoginErrorFromRequest(): string
+    {
+        $map = [
+            'credentials' => __('invalid_credentials'),
+            'csrf' => __('invalid_request'),
+            'locked' => __('account_locked'),
+            'rate' => __('too_many_attempts'),
+            'session' => __('login_session_expired'),
+            'db' => __('db_error_title'),
+        ];
+        $code = strtolower(trim((string) ($_GET['err'] ?? '')));
+
+        return $map[$code] ?? '';
     }
 
     /** @return array<string, mixed>|null */
@@ -101,60 +125,75 @@ final class LoginController extends Controller
     public function login(): void
     {
         $next = $this->safeNextUrl((string) $this->input('next', ''));
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        $email = trim((string) $this->input('email', ''));
-        $password = (string) $this->input('password', '');
-        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-
-        if (!RateLimiter::attempt('erp_login_' . md5($email), 5, 300)
-            || !IpRateLimiter::attempt('erp_login_ip_' . md5($ip), 20, 900)) {
-            SessionManager::flash('error', __('too_many_attempts'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        $userModel = new User();
-        $preUser = $userModel->findByLogin($email);
-        $lockout = new AccountLockoutService();
-        if ($lockout->isLocked($preUser)) {
-            (new LoginActivityService())->record($preUser ? (int) $preUser['id'] : null, $email, false);
-            SessionManager::flash('error', __('account_locked'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        $branchId = (int) SessionManager::get('_rateb_login_branch_id', 0);
-        if ($branchId < 1) {
-            $branchId = (new \Rateb\App\Services\BranchService())->resolvePortalBranchIdFromRequest();
-            if ($branchId > 0) {
-                SessionManager::set('_rateb_login_branch_id', $branchId);
+        try {
+            if (!$this->validateCsrf()) {
+                SessionManager::flash('error', __('invalid_request'));
+                $this->loginRedirect('csrf');
             }
+
+            $email = trim((string) $this->input('email', ''));
+            $password = (string) $this->input('password', '');
+            $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+
+            if (!RateLimiter::attempt('erp_login_' . md5($email), 5, 300)
+                || !IpRateLimiter::attempt('erp_login_ip_' . md5($ip), 20, 900)) {
+                SessionManager::flash('error', __('too_many_attempts'));
+                $this->loginRedirect('rate');
+            }
+
+            $userModel = new User();
+            $preUser = $userModel->findByLogin($email);
+            $lockout = new AccountLockoutService();
+            if ($lockout->isLocked($preUser)) {
+                (new LoginActivityService())->record($preUser ? (int) $preUser['id'] : null, $email, false);
+                SessionManager::flash('error', __('account_locked'));
+                $this->loginRedirect('locked');
+            }
+
+            $branchId = (int) SessionManager::get('_rateb_login_branch_id', 0);
+            if ($branchId < 1) {
+                $branchId = (new \Rateb\App\Services\BranchService())->resolvePortalBranchIdFromRequest();
+                if ($branchId > 0) {
+                    SessionManager::set('_rateb_login_branch_id', $branchId);
+                }
+            }
+
+            $user = Auth::attemptAuto($email, $password);
+            (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
+
+            if (!$user) {
+                $lockout->recordFailure($email);
+                SessionManager::flash('error', __('invalid_credentials'));
+                $redirect = function_exists('rateb_list_url')
+                    ? rateb_list_url('login', ['err' => 'credentials'])
+                    : rateb_url('login');
+                if ($next !== '') {
+                    $redirect = (function_exists('rateb_url_query') ? rateb_url_query($redirect, ['next' => $next]) : $redirect);
+                }
+                Response::redirect($redirect);
+            }
+
+            $lockout->clearLock((int) $user['id']);
+
+            if ((new TwoFactorService())->needsVerification($user)) {
+                SessionManager::forget('rateb_user_id');
+                SessionManager::forget('rateb_company_id');
+                SessionManager::forget('rateb_is_super_admin');
+                SessionManager::forget('rateb_portal');
+                SessionManager::set('_rateb_2fa_user_id', (int) $user['id']);
+                SessionManager::set('_rateb_2fa_next', $next);
+                Response::redirect(rateb_url('login'));
+            }
+
+            $this->finishLogin($user, $next);
+        } catch (\Throwable $e) {
+            error_log('RATEB login: ' . $e->getMessage());
+            $msg = class_exists(\Rateb\App\Services\DatabaseErrorService::class)
+                ? \Rateb\App\Services\DatabaseErrorService::userMessage($e)
+                : __('invalid_credentials');
+            SessionManager::flash('error', $msg);
+            $this->loginRedirect('db');
         }
-
-        $user = Auth::attemptAuto($email, $password);
-        (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
-
-        if (!$user) {
-            $lockout->recordFailure($email);
-            SessionManager::flash('error', __('invalid_credentials'));
-            Response::redirect($next !== '' ? rateb_url('login?next=' . rawurlencode($next)) : rateb_url('login'));
-        }
-
-        $lockout->clearLock((int) $user['id']);
-
-        if ((new TwoFactorService())->needsVerification($user)) {
-            SessionManager::forget('rateb_user_id');
-            SessionManager::forget('rateb_company_id');
-            SessionManager::forget('rateb_is_super_admin');
-            SessionManager::forget('rateb_portal');
-            SessionManager::set('_rateb_2fa_user_id', (int) $user['id']);
-            SessionManager::set('_rateb_2fa_next', $next);
-            Response::redirect(rateb_url('login'));
-        }
-
-        $this->finishLogin($user, $next);
     }
 
     public function verifyTwoFactor(): void

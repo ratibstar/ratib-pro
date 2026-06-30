@@ -590,6 +590,7 @@ return [
     'confirm_delete' => 'Delete this record?',
     'login_email' => 'Username or email',
     'invalid_credentials' => 'Invalid email or password',
+    'login_session_expired' => 'Your session ended. Please sign in again.',
     'unified_login_hint' => 'Sign in once — you will land on the unified dashboard (/admin); menus and modules depend on your permissions.',
     'company_login_admin_blocked' => 'Use the same login page — you will be routed automatically.',
     'admin_login_link' => 'Admin login',

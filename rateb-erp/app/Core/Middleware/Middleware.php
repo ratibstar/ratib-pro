@@ -32,14 +32,24 @@ final class ErpAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check()) {
-            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
+            SessionManager::flash('error', __('login_session_expired'));
+            Response::redirect(
+                function_exists('rateb_list_url')
+                    ? rateb_list_url('login', ['err' => 'session'])
+                    : (function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'))
+            );
             return false;
         }
         if (SessionManager::get('rateb_is_super_admin')) {
             return true;
         }
         if ((int) SessionManager::get('rateb_company_id', 0) < 1) {
-            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
+            SessionManager::flash('error', __('login_session_expired'));
+            Response::redirect(
+                function_exists('rateb_list_url')
+                    ? rateb_list_url('login', ['err' => 'session'])
+                    : (function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'))
+            );
             return false;
         }
         SessionManager::flash('error', __('portal_erp_blocked'));
