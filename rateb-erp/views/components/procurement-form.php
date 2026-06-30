@@ -131,9 +131,17 @@ if ($entityType === 'purchase_request') {
                 <?php if ($isEdit && $entityType === 'purchase_request' && (string)($item['status'] ?? '') === 'draft') { ?>
                 <button type="submit" formaction="<?php echo rateb_url($routePrefix . '/' . (int)$item['id'] . '/submit'); ?>" class="btn btn-success"><?php echo __('submit_for_approval'); ?></button>
                 <?php } ?>
-                <?php if ($isEdit && $entityType === 'purchase_order' && in_array((string)($item['status'] ?? ''), ['draft', 'confirmed'], true)) { ?>
+                <?php if ($isEdit && $entityType === 'purchase_order') {
+                    $poStatus = (string) ($item['status'] ?? '');
+                    $oversightOnly = function_exists('rateb_oversight_approve_only') && rateb_oversight_approve_only();
+                    if ($poStatus === 'draft' && $oversightOnly) { ?>
+                <button type="submit" formaction="<?php echo rateb_url($routePrefix . '/' . (int)$item['id'] . '/submit'); ?>" class="btn btn-success"><?php echo __('submit_for_approval'); ?></button>
+                <?php } elseif ($poStatus === 'confirmed' && $oversightOnly) { ?>
                 <button type="submit" formaction="<?php echo rateb_url($routePrefix . '/' . (int)$item['id'] . '/submit'); ?>" class="btn btn-success"><?php echo __('send_to_supplier'); ?></button>
-                <?php } ?>
+                <?php } elseif (!$oversightOnly && in_array($poStatus, ['draft', 'confirmed'], true)) { ?>
+                <button type="submit" formaction="<?php echo rateb_url($routePrefix . '/' . (int)$item['id'] . '/submit'); ?>" class="btn btn-success"><?php echo __('send_to_supplier'); ?></button>
+                <?php }
+                } ?>
                 <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
             </div>
         </form>

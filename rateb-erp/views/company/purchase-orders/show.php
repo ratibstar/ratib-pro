@@ -65,7 +65,23 @@ if ($customsStatus === 'customs_cleared') {
                 <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/print'); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
                     <i class="fas fa-print"></i> <?php echo __('print'); ?>
                 </a>
-                <?php if (in_array($status, ['draft', 'confirmed'], true)) { ?>
+                <?php
+                $oversightOnly = function_exists('rateb_oversight_approve_only') && rateb_oversight_approve_only();
+                if ($status === 'draft' && $oversightOnly) { ?>
+                <form method="post" action="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/submit'); ?>" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="fas fa-check-circle"></i> <?php echo __('submit_for_approval'); ?>
+                    </button>
+                </form>
+                <?php } elseif ($status === 'confirmed' && $oversightOnly) { ?>
+                <form method="post" action="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/submit'); ?>" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="fas fa-paper-plane"></i> <?php echo __('send_to_supplier'); ?>
+                    </button>
+                </form>
+                <?php } elseif (!$oversightOnly && in_array($status, ['draft', 'confirmed'], true)) { ?>
                 <form method="post" action="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($order['id'] ?? 0) . '/submit'); ?>" class="d-inline">
                     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                     <button type="submit" class="btn btn-sm btn-success">

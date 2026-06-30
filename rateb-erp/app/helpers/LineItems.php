@@ -305,12 +305,27 @@ final class LineItems
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare('DELETE FROM rateb_purchase_items WHERE purchase_order_id = :oid')->execute(['oid' => $orderId]);
         $agg = self::aggregateTotals($lines);
+        $companyId = 0;
+        $po = (new \Rateb\App\Models\PurchaseOrder())->find($orderId);
+        if ($po) {
+            $companyId = (int) ($po['company_id'] ?? 0);
+        }
+        if ($companyId < 1) {
+            $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        }
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
         foreach ($lines as $line) {
             $payload = $line;
             foreach (['needed_by', 'supplier_id', 'warehouse_id', 'account_id', 'attachment_path', 'attachment_name'] as $prOnly) {
                 unset($payload[$prOnly]);
             }
-            $model->create(array_merge($payload, ['purchase_order_id' => $orderId]));
+            $row = array_merge($payload, ['purchase_order_id' => $orderId]);
+            if ($companyId > 0) {
+                $row['company_id'] = $companyId;
+            }
+            $model->create($row);
         }
         return $agg['total'];
     }

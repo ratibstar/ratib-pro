@@ -363,6 +363,9 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         if (($data['currency'] ?? '') === '') {
             $data['currency'] = 'SAR';
         }
+        if (($data['status'] ?? '') === '') {
+            $data['status'] = 'draft';
+        }
         foreach (['cost_center_id', 'warehouse_id'] as $fk) {
             if (array_key_exists($fk, $data) && (string) ($data[$fk] ?? '') === '') {
                 $data[$fk] = null;
@@ -386,6 +389,8 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
 
     public function create(): void
     {
+        $this->guardManage();
+        rateb_bootstrap_ops_tenant();
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
@@ -401,12 +406,18 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
 
     public function edit(array $params): void
     {
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
+        }
+        $this->applyTenantFromRecord($item);
+        $companyId = (int) ($item['company_id'] ?? 0);
+        if ($companyId < 1) {
+            $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
         }
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __($this->entityName),
@@ -421,7 +432,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'workflow' => (new \Rateb\App\Services\WorkflowSubmissionService())->instanceForEntity(
                 'purchase_order',
                 $id,
-                (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0)
+                $companyId
             ),
         ]), $this->layout());
     }
@@ -449,23 +460,33 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
         $old = $this->model->find($id);
         if (!$old) {
             $this->redirect(rateb_url($this->routePrefix));
         }
+        $this->applyTenantFromRecord($old);
+        $oldStatus = (string) ($old['status'] ?? '');
+        $oversightOnly = function_exists('rateb_oversight_approve_only') && rateb_oversight_approve_only();
+        if ($oversightOnly && $oldStatus !== 'draft' && $oldStatus !== 'confirmed') {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id));
+        }
         $this->model->update($id, ['status' => 'sent']);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
             $id,
             'sent',
-            (string) ($old['status'] ?? '')
+            $oldStatus
         );
-        SessionManager::flash('success', __('po_sent'));
+        $flashKey = ($oversightOnly && $oldStatus === 'draft') ? 'submitted_for_approval' : 'po_sent';
+        SessionManager::flash('success', __($flashKey));
         $this->redirect(rateb_url($this->routePrefix . '/' . $id));
     }
 
     public function store(): void
     {
+        $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -473,11 +494,14 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         try {
             rateb_bootstrap_ops_tenant();
             $data = $this->collectData();
-            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
             $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
             $this->applyLineTotals($data, $lines);
+            $this->ensureTenantCompanyForWrite($data);
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
             $id = $this->model->create($data);
-            \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+            if ($lines !== []) {
+                \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+            }
             $this->saveQuoteAttachment($id);
             (new \Rateb\App\Services\DocumentBarcodeService())->ensure('purchase_order', $id);
             (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
@@ -500,31 +524,36 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
-        $old = $this->model->find($id);
-        $data = $this->collectData();
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
         try {
+            $old = $this->model->find($id);
+            if (!$old) {
+                $this->redirect(rateb_url($this->routePrefix));
+            }
+            $data = $this->collectData();
+            $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+            $this->applyLineTotals($data, $lines);
+            $this->inheritTenantFromRecord($data, $old);
+            $this->ensureTenantCompanyForWrite($data, $failUrl);
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
-        } catch (\RuntimeException $e) {
-            SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
-        }
-        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
-        $this->applyLineTotals($data, $lines);
-        if ($old) {
             $this->applyNotesHistory($data, $old);
+            $this->model->update($id, $data);
+            \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+            $this->saveQuoteAttachment($id);
+            (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
+                $id,
+                (string) ($data['status'] ?? ''),
+                (string) ($old['status'] ?? '')
+            );
+            $this->tryAutoPostPurchaseOrder($id, (string) ($data['status'] ?? ''));
+            (new AuditService())->log('update', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect($failUrl);
         }
-        $this->model->update($id, $data);
-        \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
-        $this->saveQuoteAttachment($id);
-        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
-            $id,
-            (string) ($data['status'] ?? ''),
-            $old ? (string) ($old['status'] ?? '') : null
-        );
-        $this->tryAutoPostPurchaseOrder($id, (string) ($data['status'] ?? ''));
-        (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -542,6 +571,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
 
     public function show(array $params): void
     {
+        rateb_bootstrap_ops_tenant();
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -549,6 +579,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->view('errors/404', ['title' => '404'], 'main');
             return;
         }
+        $this->applyTenantFromRecord($item);
         $items = \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id);
         $docBarcode = (new \Rateb\App\Services\DocumentBarcodeService())->labelData('purchase_order', $id);
         $supplierName = '';
