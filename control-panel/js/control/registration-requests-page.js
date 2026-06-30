@@ -245,20 +245,15 @@
             return api('/registration-requests.php', 'DELETE', body);
         });
     }
-    function syncReqCheckVisual(chk) {
+    function syncRowPickVisual(chk) {
         if (!chk) return;
-        var wrap = chk.closest('.req-check-wrap');
-        if (wrap) {
-            wrap.classList.toggle('is-checked', !!chk.checked && !chk.indeterminate);
-            wrap.classList.toggle('is-indeterminate', !!chk.indeterminate);
-        }
         var row = chk.closest('tr');
         if (row && chk.classList.contains('req-row-check')) {
             row.classList.toggle('req-row-picked', !!chk.checked);
         }
     }
-    function syncAllReqCheckVisuals() {
-        document.querySelectorAll('.req-check-input').forEach(syncReqCheckVisual);
+    function syncAllRowPickVisuals() {
+        document.querySelectorAll('.req-row-check').forEach(syncRowPickVisual);
     }
     function getSelectedRows() {
         return Array.prototype.slice.call(document.querySelectorAll('.req-row-check:checked'))
@@ -285,7 +280,6 @@
         if (checkAllEl) {
             checkAllEl.checked = allRows.length > 0 && selected === allRows.length;
             checkAllEl.indeterminate = selected > 0 && selected < allRows.length;
-            syncReqCheckVisual(checkAllEl);
         }
     }
     function requireSelection() {
@@ -375,13 +369,12 @@
     function clearSelection() {
         document.querySelectorAll('.req-row-check').forEach(function(chk) {
             chk.checked = false;
-            syncReqCheckVisual(chk);
+            syncRowPickVisual(chk);
         });
         var checkAllEl = document.getElementById('reqCheckAll');
         if (checkAllEl) {
             checkAllEl.checked = false;
             checkAllEl.indeterminate = false;
-            syncReqCheckVisual(checkAllEl);
         }
         updateSelectedCount();
     }
@@ -797,26 +790,27 @@
     var reqTableEl = document.querySelector('#registrationRequestsContent .req-table');
     if (reqTableEl) {
         reqTableEl.addEventListener('change', function(e) {
-            var chk = e.target && e.target.closest('.req-check-input');
-            if (!chk) return;
-            syncReqCheckVisual(chk);
+            var chk = e.target;
+            if (!chk || chk.type !== 'checkbox') return;
             if (chk.id === 'reqCheckAll') {
                 var checked = !!chk.checked;
                 document.querySelectorAll('.req-row-check').forEach(function(rowChk) {
                     rowChk.checked = checked;
-                    syncReqCheckVisual(rowChk);
+                    syncRowPickVisual(rowChk);
                 });
+            } else if (chk.classList.contains('req-row-check')) {
+                syncRowPickVisual(chk);
             }
             updateSelectedCount();
         });
         reqTableEl.addEventListener('click', function(e) {
-            if (e.target && e.target.closest('.req-check-wrap, .req-check-input, a, button, .dropdown-menu, .dropdown-toggle, .req-col-actions')) return;
+            if (e.target && e.target.closest('input[type="checkbox"], a, button, .dropdown-menu, .dropdown-toggle, .req-col-actions')) return;
             var row = e.target && e.target.closest('tbody tr[data-id]');
             if (!row) return;
             var rowChk = row.querySelector('.req-row-check');
             if (!rowChk) return;
             rowChk.checked = !rowChk.checked;
-            syncReqCheckVisual(rowChk);
+            syncRowPickVisual(rowChk);
             updateSelectedCount();
         });
     }
@@ -824,7 +818,7 @@
     if (btnSelectAllRows) btnSelectAllRows.onclick = function() {
         document.querySelectorAll('.req-row-check').forEach(function(chk) {
             chk.checked = true;
-            syncReqCheckVisual(chk);
+            syncRowPickVisual(chk);
         });
         updateSelectedCount();
     };
@@ -832,11 +826,11 @@
     if (btnClearSelectedRows) btnClearSelectedRows.onclick = function() {
         document.querySelectorAll('.req-row-check').forEach(function(chk) {
             chk.checked = false;
-            syncReqCheckVisual(chk);
+            syncRowPickVisual(chk);
         });
         updateSelectedCount();
     };
-    syncAllReqCheckVisuals();
+    syncAllRowPickVisuals();
     updateSelectedCount();
     refreshAllRegistrationRowVisuals();
 

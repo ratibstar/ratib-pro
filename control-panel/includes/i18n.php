@@ -238,7 +238,11 @@ if (!function_exists('cp_translate_html')) {
             if ($en === '' || $en === $ar) {
                 continue;
             }
-            $protected = str_replace($en, $ar, $protected);
+            if (preg_match('/^\w+$/u', $en)) {
+                $protected = preg_replace('/\b' . preg_quote($en, '/') . '\b/u', $ar, $protected);
+            } else {
+                $protected = str_replace($en, $ar, $protected);
+            }
         }
         if ($placeholders !== []) {
             $protected = str_replace(array_keys($placeholders), array_values($placeholders), $protected);

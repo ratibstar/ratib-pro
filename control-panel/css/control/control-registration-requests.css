@@ -44,28 +44,17 @@
 #registrationRequestsContent .req-table th { background: #0b2d52; color: #e8f0ff; border-color: #214b7b; font-size: 0.78rem; font-weight: 600; padding: 0.6rem 0.45rem; position: sticky; top: 0; z-index: 2; vertical-align: middle; }
 #registrationRequestsContent .req-table td { border-color: #1f3e66; color: #f1f5f9; padding: 0.5rem 0.45rem; font-size: 0.84rem; vertical-align: middle; }
 #registrationRequestsContent .req-reg-head-cell,
-#registrationRequestsContent .req-reg-row-cell { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+#registrationRequestsContent .req-reg-row-cell { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 #registrationRequestsContent .req-reg-id { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#registrationRequestsContent .form-check-input { width: 1.05rem; height: 1.05rem; min-width: 1.05rem; margin: 0; cursor: pointer; accent-color: #3b82f6; flex-shrink: 0; border: 2px solid #5b8bc4; background-color: #0c2444; }
+#registrationRequestsContent .form-check-input:focus { box-shadow: 0 0 0 0.15rem rgba(59, 130, 246, 0.45); border-color: #60a5fa; }
+#registrationRequestsContent .form-check-input:checked { background-color: #3b82f6; border-color: #3b82f6; }
 #registrationRequestsContent .req-col-soft { display: none; }
-#registrationRequestsContent .req-color-legend summary { cursor: pointer; user-select: none; }
 #registrationRequestsContent .req-table tbody tr { transition: background-color 0.15s ease; }
 #registrationRequestsContent .req-table tbody tr:hover td { background: rgba(56, 189, 248, 0.06); }
 #registrationRequestsContent .req-col-clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #registrationRequestsContent .req-col-actions { text-align: center; overflow: visible !important; }
-#registrationRequestsContent .req-check-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin: 0; flex-shrink: 0; cursor: pointer; user-select: none; }
-#registrationRequestsContent .req-check-wrap-head { margin: 0 auto; }
-#registrationRequestsContent .req-check-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 2; }
-#registrationRequestsContent .req-check-box { width: 18px; height: 18px; border: 2px solid #5b8bc4; border-radius: 5px; background: #0c2444; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; pointer-events: none; transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
-#registrationRequestsContent .req-check-wrap:hover .req-check-box { border-color: #7eb3f0; background: #12325c; }
-#registrationRequestsContent .req-check-input:focus-visible + .req-check-box { box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.45); }
-#registrationRequestsContent .req-check-input:checked + .req-check-box,
-#registrationRequestsContent .req-check-wrap.is-checked .req-check-box { background: #3b82f6; border-color: #3b82f6; }
-#registrationRequestsContent .req-check-input:checked + .req-check-box::after,
-#registrationRequestsContent .req-check-wrap.is-checked .req-check-box::after { content: ""; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-top: -2px; }
-#registrationRequestsContent .req-check-input:indeterminate + .req-check-box,
-#registrationRequestsContent .req-check-wrap.is-indeterminate .req-check-box { background: #3b82f6; border-color: #3b82f6; }
-#registrationRequestsContent .req-check-input:indeterminate + .req-check-box::after,
-#registrationRequestsContent .req-check-wrap.is-indeterminate .req-check-box::after { content: ""; width: 10px; height: 2px; background: #fff; border-radius: 1px; transform: none; margin: 0; }
+#registrationRequestsContent .req-color-legend summary { cursor: pointer; user-select: none; }
 #registrationRequestsContent tr.req-row-picked td { background-color: rgba(59, 130, 246, 0.12) !important; }
 #registrationRequestsContent .req-actions-dd { position: static; }
 #registrationRequestsContent .req-actions-dd .req-actions-toggle { min-width: 96px; padding: 0.28rem 0.6rem; font-size: 0.78rem; border-color: #4a6f9c; color: #e8f0ff; }

@@ -408,8 +408,7 @@ if ($tableExists) {
     }
 }
 ?>
-<!--CP_MODULE_START-->
-<div id="registrationRequestsContent" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url="<?php echo htmlspecialchars(pageUrl('control/agencies.php')); ?>" data-pending-filtered-total="<?php echo (int)$pendingFilteredCount; ?>" data-scope-total="<?php echo (int)$scopeTotalCount; ?>" data-latest-queue-url="<?php echo htmlspecialchars($latestQueueUrl); ?>">
+<div id="registrationRequestsContent" data-cp-no-i18n="1" translate="no" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url="<?php echo htmlspecialchars(pageUrl('control/agencies.php')); ?>" data-pending-filtered-total="<?php echo (int)$pendingFilteredCount; ?>" data-scope-total="<?php echo (int)$scopeTotalCount; ?>" data-latest-queue-url="<?php echo htmlspecialchars($latestQueueUrl); ?>">
 <div id="pendingAlertBanner" class="pending-alert-banner d-none">
     <span><i class="fas fa-bell me-2"></i><span id="pendingAlertCount">0</span> pending registration request(s) need your attention.</span>
     <button type="button" class="btn btn-sm btn-outline-dark" id="btnDismissPendingAlert">Dismiss</button>
@@ -580,10 +579,7 @@ if ($tableExists) {
                 <tr>
                     <th class="req-col-reg" scope="col">
                         <div class="req-reg-head-cell">
-                            <label class="req-check-wrap req-check-wrap-head" title="<?php echo htmlspecialchars($regLbl('reg.select_col', 'Select'), ENT_QUOTES, 'UTF-8'); ?>">
-                                <input type="checkbox" class="req-check-input" id="reqCheckAll" aria-label="<?php echo htmlspecialchars($regLbl('reg.select_page', 'Select all on this page'), ENT_QUOTES, 'UTF-8'); ?>">
-                                <span class="req-check-box" aria-hidden="true"></span>
-                            </label>
+                            <input type="checkbox" class="form-check-input req-check-all" id="reqCheckAll" aria-label="<?php echo htmlspecialchars($regLbl('reg.select_page', 'Select all on this page'), ENT_QUOTES, 'UTF-8'); ?>">
                             <span><?php echo htmlspecialchars($regLbl('reg.reg_id', 'Reg ID'), ENT_QUOTES, 'UTF-8'); ?></span>
                         </div>
                     </th>
@@ -630,10 +626,7 @@ if ($tableExists) {
                 <tr class="<?php echo htmlspecialchars($rowVisClass); ?>" data-id="<?php echo (int)$r['id']; ?>" data-status="<?php echo htmlspecialchars($s); ?>" data-payment-status="<?php echo htmlspecialchars((string)($r['payment_status'] ?? '')); ?>" data-plan-amount="<?php echo htmlspecialchars((string)($r['plan_amount'] ?? '')); ?>" data-created-agency-id="<?php echo (int)$aid; ?>"<?php if ($agActiveAttr !== null): ?> data-agency-is-active="<?php echo htmlspecialchars($agActiveAttr); ?>" data-agency-suspended="<?php echo htmlspecialchars($agSuspAttr); ?>"<?php endif; ?> data-json="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>">
                     <td class="req-col-reg req-col-clip">
                         <div class="req-reg-row-cell">
-                            <label class="req-check-wrap">
-                                <input type="checkbox" class="req-check-input req-row-check" name="request_ids[]" value="<?php echo (int)$r['id']; ?>" data-request-id="<?php echo (int)$r['id']; ?>" aria-label="<?php echo htmlspecialchars($regLbl('reg.select_col', 'Select') . ' ' . $fmtId($r['id']), ENT_QUOTES, 'UTF-8'); ?>">
-                                <span class="req-check-box" aria-hidden="true"></span>
-                            </label>
+                            <input type="checkbox" class="form-check-input req-row-check" name="request_ids[]" value="<?php echo (int)$r['id']; ?>" data-request-id="<?php echo (int)$r['id']; ?>" aria-label="<?php echo htmlspecialchars($regLbl('reg.select_col', 'Select') . ' ' . $fmtId($r['id']), ENT_QUOTES, 'UTF-8'); ?>">
                             <span class="req-reg-id">
                                 <strong><?php echo $fmtId($r['id']); ?></strong><?php if ($reqRowIsNew($r['created_at'] ?? null)) { ?> <span class="badge bg-info text-dark"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.new_badge'), ENT_QUOTES, 'UTF-8') : 'NEW'; ?></span><?php } ?>
                             </span>
@@ -744,7 +737,6 @@ if ($tableExists) {
     <?php endif; ?>
 </div>
 </div>
-<!--CP_MODULE_END-->
 
 <!-- View modal (read-only form) -->
 <div class="modal fade req-modal-dark" id="viewModal" tabindex="-1">

@@ -325,7 +325,6 @@ return [
     'entries' => 'سجلات',
     'Go' => 'تنفيذ',
     'Export CSV' => 'تصدير CSV',
-    'selected' => 'محدد',
     'Select page' => 'تحديد الصفحة',
     'Clear' => 'مسح',
     'Bulk Reject' => 'رفض جماعي',

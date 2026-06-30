@@ -72,7 +72,10 @@
             var updated = original;
             for (var i = 0; i < keys.length; i++) {
                 var en = keys[i];
-                if (en && updated.indexOf(en) !== -1) {
+                if (!en || updated.indexOf(en) === -1) continue;
+                if (/^\w+$/u.test(en)) {
+                    updated = updated.replace(new RegExp('\\b' + en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gu'), map[en]);
+                } else {
                     updated = updated.split(en).join(map[en]);
                 }
             }
