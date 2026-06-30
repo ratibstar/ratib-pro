@@ -104,13 +104,13 @@ if (!function_exists('agency_build_erp_open_url')) {
     }
 }
 
-if (!function_exists('agency_should_open_rateb_erp')) {
+if (!function_exists('agency_can_open_erp_portal')) {
     /**
-     * Dedicated-domain agencies with ERP DB linkage open RATEB ERP (not legacy RATEB Pro).
+     * Show ERP portal link when agency has a valid Site URL and ERP DB linkage.
      *
      * @param array<string, mixed> $agencyRow
      */
-    function agency_should_open_rateb_erp(array $agencyRow): bool
+    function agency_can_open_erp_portal(array $agencyRow): bool
     {
         $siteUrl = trim((string) ($agencyRow['site_url'] ?? ''));
         if ($siteUrl === '' || !preg_match('/^https?:\/\/.+/i', $siteUrl)) {
@@ -120,13 +120,48 @@ if (!function_exists('agency_should_open_rateb_erp')) {
             && agency_site_url_invalid_for_rateb_pro_open($siteUrl)) {
             return false;
         }
-        $erpStatus = strtolower(trim((string) ($agencyRow['erp_status'] ?? 'none')));
         $erpDb = trim((string) ($agencyRow['erp_db_name'] ?? ''));
-        if ($erpStatus === 'ready') {
-            return true;
-        }
+        $erpStatus = strtolower(trim((string) ($agencyRow['erp_status'] ?? 'none')));
 
-        return $erpDb !== '';
+        return $erpDb !== '' || in_array($erpStatus, ['ready', 'provisioning', 'failed'], true);
+    }
+}
+
+if (!function_exists('agency_build_pro_open_url')) {
+    /**
+     * Legacy RATEB Pro (workforce platform) open URL with control SSO.
+     *
+     * @param array<string, mixed> $agencyRow
+     * @return array{url:string,title:string}
+     */
+    function agency_build_pro_open_url(array $agencyRow, string $ratebBase, string $countrySlug): array
+    {
+        $agencyId = (int) ($agencyRow['id'] ?? 0);
+        $openQs = 'control=1&agency_id=' . $agencyId;
+        $siteBaseRaw = trim((string) ($agencyRow['site_url'] ?? ''));
+        $hasSiteUrlFormat = $siteBaseRaw !== '' && preg_match('/^https?:\/\/.+/i', $siteBaseRaw);
+        $useStoredSiteForOpen = $hasSiteUrlFormat && !agency_site_url_invalid_for_rateb_pro_open($siteBaseRaw);
+        $openUrl = '';
+        $viaRemote = false;
+        if ($useStoredSiteForOpen && agency_open_site_url_is_different_host($ratebBase, $siteBaseRaw)) {
+            $openUrl = agency_build_open_sso_url($siteBaseRaw, $agencyId);
+            if ($openUrl !== '') {
+                $viaRemote = true;
+            }
+        }
+        if ($openUrl === '') {
+            $cslug = trim($countrySlug);
+            if ($cslug !== '' && $ratebBase !== '') {
+                $openUrl = rtrim($ratebBase, '/') . '/' . rawurlencode($cslug) . '/?' . $openQs;
+            } elseif ($ratebBase !== '') {
+                $openUrl = rtrim($ratebBase, '/') . '/pages/dashboard.php?' . $openQs;
+            }
+        }
+        $title = $viaRemote
+            ? 'Open RATEB Pro (agency site URL)'
+            : (($countrySlug !== '' && $ratebBase !== '') ? ('Open RATEB Pro (' . $countrySlug . ')') : 'Open RATEB Pro');
+
+        return ['url' => $openUrl, 'title' => $title];
     }
 }
 
@@ -542,44 +577,28 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
                                 $ratebBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
                             }
-                            // Country root → dashboard.php (see root .htaccess); config seeds tenant DB + control SSO when control session is present.
-                            $openQs = 'control=1&agency_id=' . (int)$r['id'];
-                            $siteBaseRaw = trim((string)($r['site_url'] ?? ''));
-                            $hasSiteUrlFormat = $siteBaseRaw !== '' && preg_match('/^https?:\/\/.+/i', $siteBaseRaw);
-                            $useStoredSiteForOpen = $hasSiteUrlFormat && !agency_site_url_invalid_for_rateb_pro_open($siteBaseRaw);
-                            $openUrl = '';
-                            $openViaRemoteSiteUrl = false;
-                            $openErp = agency_should_open_rateb_erp($r);
-                            if ($openErp && $useStoredSiteForOpen) {
-                                $openUrl = agency_build_erp_open_url($siteBaseRaw);
+                            // RATEB Pro (legacy) + RATEB ERP (new) — separate open links.
+                            $proOpen = agency_build_pro_open_url($r, $ratebBase, $cslug);
+                            $proUrl = (string) ($proOpen['url'] ?? '');
+                            $proTitle = (string) ($proOpen['title'] ?? 'Open RATEB Pro');
+                            $erpUrl = '';
+                            $erpTitle = '';
+                            $siteBaseRaw = trim((string) ($r['site_url'] ?? ''));
+                            if (agency_can_open_erp_portal($r)) {
+                                $erpUrl = agency_build_erp_open_url($siteBaseRaw);
                                 $erpSt = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
-                                $openTitle = $erpSt === 'ready'
+                                $erpTitle = $erpSt === 'ready'
                                     ? 'Open RATEB ERP (company portal)'
-                                    : ('Open RATEB ERP — status: ' . ($r['erp_status'] ?? 'none') . ' (run Provision ERP if login fails)');
-                            } elseif ($useStoredSiteForOpen && agency_open_site_url_is_different_host($ratebBase, $siteBaseRaw)) {
-                                $openUrl = agency_build_open_sso_url($siteBaseRaw, (int)$r['id']);
-                                if ($openUrl !== '') {
-                                    $openViaRemoteSiteUrl = true;
-                                }
+                                    : ('Open RATEB ERP — status: ' . ($r['erp_status'] ?? 'none'));
                             }
-                            if ($openUrl === '') {
-                                if ($cslug !== '' && $ratebBase !== '') {
-                                    $openUrl = rtrim($ratebBase, '/') . '/' . rawurlencode($cslug) . '/?' . $openQs;
-                                } elseif ($ratebBase !== '') {
-                                    $openUrl = rtrim($ratebBase, '/') . '/pages/dashboard.php?' . $openQs;
-                                } else {
-                                    $openUrl = pageUrl('control/dashboard.php') . '?' . $openQs;
-                                }
-                            }
-                            if ($openUrl !== '' && !$openErp) {
-                                $openTitle = $openViaRemoteSiteUrl
-                                    ? 'Open RATEB Pro (custom site URL)'
-                                    : (($cslug !== '' && $ratebBase !== '') ? ('Open RATEB Pro (' . $cslug . ')') : 'Open RATEB Pro');
-                            }
-                        ?><?php if ($openUrl !== ''): ?>
-                        <a href="<?php echo htmlspecialchars($openUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="<?php echo htmlspecialchars($openTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">Open</a>
+                        ?>
+                        <?php if ($proUrl !== ''): ?>
+                        <a href="<?php echo htmlspecialchars($proUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="<?php echo htmlspecialchars($proTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">Pro</a>
                         <?php else: ?>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="No program URL configured">Open</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="No RATEB Pro URL configured">Pro</button>
+                        <?php endif; ?>
+                        <?php if ($erpUrl !== ''): ?>
+                        <a href="<?php echo htmlspecialchars($erpUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info" title="<?php echo htmlspecialchars($erpTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">ERP</a>
                         <?php endif; ?>
                         <?php if ($hasIsSuspended && $isSuspended): ?>
                         <button type="button" class="btn btn-sm btn-outline-primary btn-mark-paid" data-id="<?php echo (int)$r['id']; ?>" data-name="<?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? 'Agency'); ?>" data-permission="control_agencies,edit_control_agency,approve_control_registration">Mark Paid</button>
@@ -590,8 +609,6 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                         <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#query-console'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_query_activity" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Query Activity</a>
                         <?php if (($r['erp_status'] ?? 'none') !== 'ready') { ?>
                         <button type="button" class="btn btn-sm btn-outline-primary btn-provision-erp" data-agency-id="<?php echo (int) $r['id']; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency">Provision ERP</button>
-                        <?php } elseif (!empty($r['site_url']) && !agency_should_open_rateb_erp($r)) { ?>
-                        <a href="<?php echo htmlspecialchars(agency_build_erp_open_url((string) $r['site_url'])); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info">ERP Login</a>
                         <?php } ?>
                         <button type="button" class="btn btn-sm btn-outline-info btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,view_control_agencies">View</button>
                         <button type="button" class="btn btn-sm btn-outline-warning btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,edit_control_agency">Edit</button>
