@@ -128,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm']) && (string
 
 $testLogin = 'https://test.rateb.sa/pages/login.php';
 $testAgency = 'https://test.rateb.sa/?control=1&agency_id=33';
+$testProbe = 'https://test.rateb.sa/pages/rateb-test-domain-probe';
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -160,6 +161,7 @@ $testAgency = 'https://test.rateb.sa/?control=1&agency_id=33';
         <ul>
             <li><a href="<?php echo htmlspecialchars($testLogin, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($testLogin, ENT_QUOTES, 'UTF-8'); ?></a></li>
             <li><a href="<?php echo htmlspecialchars($testAgency, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($testAgency, ENT_QUOTES, 'UTF-8'); ?></a></li>
+            <li><a href="<?php echo htmlspecialchars($testProbe, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($testProbe, ENT_QUOTES, 'UTF-8'); ?></a> (تشخيص)</li>
         </ul>
         <?php endif; ?>
     </div>

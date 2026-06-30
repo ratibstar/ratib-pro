@@ -195,6 +195,13 @@ if (!function_exists('rateb_apply_agency_pro_constants')) {
         if (!defined('BASE_URL')) {
             define('BASE_URL', '');
         }
+        if (!defined('NO_BANGLA')) {
+            define('NO_BANGLA', true);
+        }
+        // Dedicated agency domains: tenant DB is already resolved by host; still need control lookup for login/Open.
+        if (!defined('SINGLE_URL_MODE')) {
+            define('SINGLE_URL_MODE', true);
+        }
     }
 }
 
