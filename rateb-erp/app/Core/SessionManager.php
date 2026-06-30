@@ -71,6 +71,7 @@ final class SessionManager
 
     public static function get(string $key, $default = null)
     {
+        self::ensureActive();
         return $_SESSION[$key] ?? $default;
     }
 
@@ -82,6 +83,7 @@ final class SessionManager
 
     public static function forget(string $key): void
     {
+        self::ensureActive();
         unset($_SESSION[$key]);
     }
 

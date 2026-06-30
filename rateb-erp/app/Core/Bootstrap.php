@@ -79,18 +79,18 @@ final class Bootstrap
                 require_once $f;
             }
         }
-        self::loadConfig($basePath);
         self::ensureStorage($basePath);
-        if (is_file($basePath . '/app/Core/SecurityHeaders.php')) {
-            require_once $basePath . '/app/Core/SecurityHeaders.php';
-            if (!(defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION)) {
-                SecurityHeaders::send();
-            }
-        }
         $skipSession = (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION)
             || (defined('RATEB_HEALTH_PROBE') && RATEB_HEALTH_PROBE);
         if (!$skipSession) {
             SessionManager::start();
+        }
+        self::loadConfig($basePath);
+        if (is_file($basePath . '/app/Core/SecurityHeaders.php')) {
+            require_once $basePath . '/app/Core/SecurityHeaders.php';
+            if (!$skipSession) {
+                SecurityHeaders::send();
+            }
         }
         if (function_exists('rateb_init_marketing_locale')) {
             rateb_init_marketing_locale();

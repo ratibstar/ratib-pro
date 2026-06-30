@@ -18,6 +18,9 @@ final class Response
 
     public static function redirect(string $url, int $status = 302): void
     {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
         http_response_code($status);
         header('Location: ' . $url);
         exit;

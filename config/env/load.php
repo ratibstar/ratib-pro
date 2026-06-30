@@ -21,7 +21,9 @@ if ($env_host === '') {
 }
 $env_dir = __DIR__;
 
-$ratebSkipSession = defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION;
+$ratebErpWeb = defined('RATEB_ROOT')
+    && is_file(rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/app/Core/SessionManager.php');
+$ratebSkipSession = (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION) || $ratebErpWeb;
 if (!$ratebSkipSession) {
     // Session ini must be set BEFORE session_start()
     ini_set('session.cookie_httponly', 1);
