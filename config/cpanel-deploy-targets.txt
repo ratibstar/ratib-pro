@@ -6,3 +6,5 @@
 /home/admin/repositories/rateb-pro
 # DirectAdmin — https://rateb.sa
 /home/admin/domains/rateb.sa/public_html
+# Agency test domain — sync same tree as rateb.sa (see pages/rateb-bootstrap-test-domain.php)
+/home/admin/domains/test.rateb.sa/public_html
