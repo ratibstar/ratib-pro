@@ -127,7 +127,6 @@ final class LoginController extends Controller
         $next = $this->safeNextUrl((string) $this->input('next', ''));
         try {
             if (!$this->validateCsrf()) {
-                SessionManager::flash('error', __('invalid_request'));
                 $this->loginRedirect('csrf');
             }
 
@@ -137,7 +136,6 @@ final class LoginController extends Controller
 
             if (!RateLimiter::attempt('erp_login_' . md5($email), 5, 300)
                 || !IpRateLimiter::attempt('erp_login_ip_' . md5($ip), 20, 900)) {
-                SessionManager::flash('error', __('too_many_attempts'));
                 $this->loginRedirect('rate');
             }
 
@@ -146,7 +144,6 @@ final class LoginController extends Controller
             $lockout = new AccountLockoutService();
             if ($lockout->isLocked($preUser)) {
                 (new LoginActivityService())->record($preUser ? (int) $preUser['id'] : null, $email, false);
-                SessionManager::flash('error', __('account_locked'));
                 $this->loginRedirect('locked');
             }
 
@@ -163,7 +160,6 @@ final class LoginController extends Controller
 
             if (!$user) {
                 $lockout->recordFailure($email);
-                SessionManager::flash('error', __('invalid_credentials'));
                 $redirect = function_exists('rateb_list_url')
                     ? rateb_list_url('login', ['err' => 'credentials'])
                     : rateb_url('login');
@@ -188,10 +184,6 @@ final class LoginController extends Controller
             $this->finishLogin($user, $next);
         } catch (\Throwable $e) {
             error_log('RATEB login: ' . $e->getMessage());
-            $msg = class_exists(\Rateb\App\Services\DatabaseErrorService::class)
-                ? \Rateb\App\Services\DatabaseErrorService::userMessage($e)
-                : __('invalid_credentials');
-            SessionManager::flash('error', $msg);
             $this->loginRedirect('db');
         }
     }

@@ -32,7 +32,6 @@ final class ErpAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check()) {
-            SessionManager::flash('error', __('login_session_expired'));
             Response::redirect(
                 function_exists('rateb_list_url')
                     ? rateb_list_url('login', ['err' => 'session'])
@@ -44,7 +43,6 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             return true;
         }
         if ((int) SessionManager::get('rateb_company_id', 0) < 1) {
-            SessionManager::flash('error', __('login_session_expired'));
             Response::redirect(
                 function_exists('rateb_list_url')
                     ? rateb_list_url('login', ['err' => 'session'])
