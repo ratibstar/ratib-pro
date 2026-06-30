@@ -63,9 +63,10 @@ if ($agency === null) {
 }
 
 $planSlug = ErpProvisioningService::resolvePlanSlug($agency, $planSlug);
+$force = !empty($data['force']);
 
 $currentStatus = strtolower(trim((string) ($agency['erp_status'] ?? 'none')));
-if ($currentStatus === 'ready' && trim((string) ($agency['erp_db_name'] ?? '')) !== '') {
+if (!$force && $currentStatus === 'ready' && trim((string) ($agency['erp_db_name'] ?? '')) !== '') {
     provisionJson([
         'success' => true,
         'message' => 'ERP already provisioned',
@@ -76,7 +77,7 @@ if ($currentStatus === 'ready' && trim((string) ($agency['erp_db_name'] ?? '')) 
 }
 
 try {
-    $result = ErpProvisioningService::provision($ctrl, $agency, $planSlug);
+    $result = ErpProvisioningService::provision($ctrl, $agency, $planSlug, $force);
     provisionJson([
         'success' => true,
         'message' => 'ERP provisioned',

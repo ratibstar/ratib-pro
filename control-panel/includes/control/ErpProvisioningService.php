@@ -57,7 +57,7 @@ final class ErpProvisioningService
      * @param array<string, mixed> $agency
      * @return array<string, mixed>
      */
-    public static function provision(mysqli $controlConn, array $agency, string $planSlug = ''): array
+    public static function provision(mysqli $controlConn, array $agency, string $planSlug = '', bool $force = false): array
     {
         $agencyId = (int) ($agency['id'] ?? 0);
         if ($agencyId < 1) {
@@ -98,7 +98,7 @@ final class ErpProvisioningService
 
         try {
             self::ensureErpDatabase($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
-            if (self::shouldWipeErpDatabase($agency, $dbHost, $dbPort, $dbUser, $dbPass, $erpDb)) {
+            if (self::shouldWipeErpDatabase($agency, $dbHost, $dbPort, $dbUser, $dbPass, $erpDb, $force)) {
                 self::wipeErpDatabaseTables($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
             }
             self::ensureDatabaseUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
@@ -345,8 +345,12 @@ final class ErpProvisioningService
         int $port,
         string $user,
         string $pass,
-        string $dbName
+        string $dbName,
+        bool $force = false
     ): bool {
+        if ($force) {
+            return true;
+        }
         $status = strtolower(trim((string) ($agency['erp_status'] ?? 'none')));
         if (in_array($status, ['failed', 'provisioning'], true)) {
             return true;
