@@ -13,7 +13,7 @@
     </div>
 </div>
 
-<form method="post" action="<?php echo rateb_url('login'); ?>" id="password-form" class="login-panel">
+<form method="post" action="<?php echo rateb_url('login'); ?>" id="password-form" class="login-panel" novalidate>
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
     <?php if (!empty($branchPortal)) { ?>
     <input type="hidden" name="branch_id" value="<?php echo (int) ($branchPortal['id'] ?? 0); ?>">
