@@ -575,7 +575,7 @@ if ($tableExists) {
             </colgroup>
             <thead>
                 <tr>
-                    <th class="req-col-reg">Reg ID</th><th class="req-col-created">Created</th><th class="req-col-agency">Agency</th><th class="req-col-agency-user">Agency ID</th><th class="req-col-country">Country</th><th class="req-col-email">Email</th><th class="req-col-phone">Phone</th><th class="req-col-site">Site URL</th><th class="req-col-notes">Notes</th><th class="req-col-plan">Plan</th><th class="req-col-amount">Amount</th><th class="req-col-payment">Payment</th><th class="req-col-status">Status</th><th class="req-col-created-agency">Created Agency</th><th class="req-select-col"><input type="checkbox" id="reqCheckAll" title="Select all on this page"></th><th class="req-col-actions">Actions</th>
+                    <th class="req-col-reg">Reg ID</th><th class="req-col-created">Created</th><th class="req-col-agency">Agency</th><th class="req-col-agency-user">Agency ID</th><th class="req-col-country">Country</th><th class="req-col-email">Email</th><th class="req-col-phone">Phone</th><th class="req-col-site">Site URL</th><th class="req-col-notes">Notes</th><th class="req-col-plan">Plan</th><th class="req-col-amount">Amount</th><th class="req-col-payment">Payment</th><th class="req-col-status">Status</th><th class="req-col-created-agency">Created Agency</th><th class="req-select-col"><label class="req-check-wrap" title="Select all on this page"><input type="checkbox" class="req-check-input" id="reqCheckAll"><span class="req-check-box" aria-hidden="true"></span></label></th><th class="req-col-actions"><?php echo htmlspecialchars($regLbl('reg.actions', 'Actions'), ENT_QUOTES, 'UTF-8'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -645,49 +645,49 @@ if ($tableExists) {
                         echo '-';
                     }
                     ?></td>
-                    <td class="req-select-col"><input type="checkbox" class="req-row-check" value="<?php echo (int)$r['id']; ?>" aria-label="Select <?php echo htmlspecialchars($fmtId($r['id'])); ?>"></td>
+                    <td class="req-select-col"><label class="req-check-wrap"><input type="checkbox" class="req-check-input req-row-check" value="<?php echo (int)$r['id']; ?>" aria-label="Select <?php echo htmlspecialchars($fmtId($r['id'])); ?>"><span class="req-check-box" aria-hidden="true"></span></label></td>
                     <td class="req-col-actions">
                         <div class="dropdown req-actions-dd">
-                            <button type="button" class="btn btn-sm btn-outline-light dropdown-toggle req-actions-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <button type="button" class="btn btn-sm btn-outline-light dropdown-toggle req-actions-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-popper-config='{"strategy":"fixed","modifiers":[{"name":"offset","options":{"offset":[0,6]}}]}' aria-expanded="false">
                                 <?php echo htmlspecialchars($regLbl('reg.actions', 'Actions'), ENT_QUOTES, 'UTF-8'); ?>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end req-actions-menu">
-                                <li>
-                                    <button type="button" class="dropdown-item btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>" data-permission="control_registration_requests,view_control_registration">
-                                        <i class="fas fa-eye me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.view', 'View'), ENT_QUOTES, 'UTF-8'); ?>
+                                <li data-permission="control_registration_requests,view_control_registration">
+                                    <button type="button" class="dropdown-item btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>">
+                                        <i class="fas fa-eye req-action-icon"></i><span><?php echo htmlspecialchars($regLbl('reg.view', 'View'), ENT_QUOTES, 'UTF-8'); ?></span>
                                     </button>
                                 </li>
-                                <li>
-                                    <button type="button" class="dropdown-item btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">
-                                        <i class="fas fa-edit me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.edit', 'Edit'), ENT_QUOTES, 'UTF-8'); ?>
+                                <li data-permission="control_registration_requests,edit_control_registration,approve_control_registration">
+                                    <button type="button" class="dropdown-item btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>">
+                                        <i class="fas fa-edit req-action-icon"></i><span><?php echo htmlspecialchars($regLbl('reg.edit', 'Edit'), ENT_QUOTES, 'UTF-8'); ?></span>
                                     </button>
                                 </li>
                                 <?php if (($r['payment_status'] ?? '') !== 'paid'): ?>
-                                <li>
-                                    <button type="button" class="dropdown-item btn-mark-paid" data-id="<?php echo (int)$r['id']; ?>" data-amount="<?php echo htmlspecialchars((string)($r['plan_amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">
-                                        <i class="fas fa-dollar-sign me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.mark_paid', 'Mark Paid'), ENT_QUOTES, 'UTF-8'); ?>
+                                <li data-permission="control_registration_requests,edit_control_registration,approve_control_registration">
+                                    <button type="button" class="dropdown-item btn-mark-paid" data-id="<?php echo (int)$r['id']; ?>" data-amount="<?php echo htmlspecialchars((string)($r['plan_amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <i class="fas fa-dollar-sign req-action-icon"></i><span><?php echo htmlspecialchars($regLbl('reg.mark_paid', 'Mark Paid'), ENT_QUOTES, 'UTF-8'); ?></span>
                                     </button>
                                 </li>
                                 <?php endif; ?>
                                 <?php if ($s === 'pending'): ?>
-                                <li>
-                                    <button type="button" class="dropdown-item text-success btn-approve" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_registration_requests,approve_control_registration">
-                                        <i class="fas fa-check me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.approve', 'Approve'), ENT_QUOTES, 'UTF-8'); ?>
+                                <li data-permission="control_registration_requests,approve_control_registration">
+                                    <button type="button" class="dropdown-item text-success btn-approve" data-id="<?php echo (int)$r['id']; ?>">
+                                        <i class="fas fa-check req-action-icon"></i><span><?php echo htmlspecialchars($regLbl('reg.approve', 'Approve'), ENT_QUOTES, 'UTF-8'); ?></span>
                                     </button>
                                 </li>
-                                <li>
-                                    <button type="button" class="dropdown-item text-warning btn-reject" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_registration_requests,reject_control_registration">
-                                        <i class="fas fa-times me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.reject', 'Reject'), ENT_QUOTES, 'UTF-8'); ?>
+                                <li data-permission="control_registration_requests,reject_control_registration">
+                                    <button type="button" class="dropdown-item text-warning btn-reject" data-id="<?php echo (int)$r['id']; ?>">
+                                        <i class="fas fa-times req-action-icon"></i><span><?php echo htmlspecialchars($regLbl('reg.reject', 'Reject'), ENT_QUOTES, 'UTF-8'); ?></span>
                                     </button>
                                 </li>
                                 <?php endif; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form method="post" action="<?php echo htmlspecialchars($formAction); ?>?control=1" class="req-delete-form m-0" data-permission="control_registration_requests,delete_control_registration" onsubmit="return window.confirm('<?php echo htmlspecialchars($regLbl('reg.delete_confirm', 'Delete this registration request? This cannot be undone.'), ENT_QUOTES, 'UTF-8'); ?>');">
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li data-permission="control_registration_requests,delete_control_registration">
+                                    <form method="post" action="<?php echo htmlspecialchars($formAction); ?>?control=1" class="req-delete-form m-0" onsubmit="return window.confirm('<?php echo htmlspecialchars($regLbl('reg.delete_confirm', 'Delete this registration request? This cannot be undone.'), ENT_QUOTES, 'UTF-8'); ?>');">
                                         <input type="hidden" name="reg_purge_action" value="delete_ids">
                                         <input type="hidden" name="ids[]" value="<?php echo (int)$r['id']; ?>">
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="fas fa-trash me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.delete', 'Delete'), ENT_QUOTES, 'UTF-8'); ?>
+                                        <button type="submit" class="dropdown-item text-danger req-delete-btn">
+                                            <i class="fas fa-trash req-action-icon"></i><span><?php echo htmlspecialchars($regLbl('reg.delete', 'Delete'), ENT_QUOTES, 'UTF-8'); ?></span>
                                         </button>
                                     </form>
                                 </li>

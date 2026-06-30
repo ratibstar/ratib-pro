@@ -138,6 +138,23 @@
     }
     cleanupStaleModalBackdrops();
 
+    function initReqActionDropdowns() {
+        if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) return;
+        document.querySelectorAll('.req-actions-dd [data-bs-toggle="dropdown"]').forEach(function(toggle) {
+            if (toggle._reqDdBound) return;
+            toggle._reqDdBound = true;
+            try {
+                bootstrap.Dropdown.getOrCreateInstance(toggle, {
+                    popperConfig: {
+                        strategy: 'fixed',
+                        modifiers: [{ name: 'offset', options: { offset: [0, 6] } }]
+                    }
+                });
+            } catch (e) { /* ignore */ }
+        });
+    }
+    initReqActionDropdowns();
+
     var regLinkSelect = document.getElementById('regLinkSelect');
     var btnCopyLink = document.getElementById('btnCopyLink');
     if (regLinkSelect) regLinkSelect.addEventListener('change', function() { document.getElementById('regLink').value = this.value; });
