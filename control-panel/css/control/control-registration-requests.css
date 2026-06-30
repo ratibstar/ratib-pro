@@ -23,13 +23,30 @@
 #registrationRequestsContent .req-controls-bar .form-control,
 #registrationRequestsContent .req-controls-bar .form-select { min-height: 36px; }
 #registrationRequestsContent .req-ctrl-input { background: #0f3460 !important; color: #fff !important; border: 1px solid #1a1a2e; }
-#registrationRequestsContent .req-table { margin-bottom: 0; }
-#registrationRequestsContent .req-table th { background: #0f3460; color: #d6e0f1; border-color: #214b7b; font-size: 0.8rem; }
-#registrationRequestsContent .req-table td { border-color: #1f3e66; color: #fff; }
-#registrationRequestsContent .req-col-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#registrationRequestsContent .req-col-actions { min-width: 260px; }
-#registrationRequestsContent .req-bulk-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.5rem 0 0.75rem; }
-#registrationRequestsContent .req-row-color-key { font-size: 0.83rem; color: #b8c6df; margin-bottom: 0.6rem; }
+#registrationRequestsContent .req-table { margin-bottom: 0; border-collapse: separate; border-spacing: 0; }
+#registrationRequestsContent .req-table th { background: #0b2d52; color: #e8f0ff; border-color: #214b7b; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em; padding: 0.65rem 0.55rem; position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 0 #214b7b; }
+#registrationRequestsContent .req-table td { border-color: #1f3e66; color: #f1f5f9; padding: 0.55rem 0.5rem; font-size: 0.84rem; vertical-align: middle; }
+#registrationRequestsContent .req-table tbody tr { transition: background-color 0.15s ease; }
+#registrationRequestsContent .req-table tbody tr:hover td { background: rgba(56, 189, 248, 0.06); }
+#registrationRequestsContent .req-col-clip { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#registrationRequestsContent .req-col-actions { width: 108px; min-width: 108px; max-width: 108px; text-align: center; white-space: nowrap; }
+#registrationRequestsContent .req-col-reg { width: 88px; min-width: 88px; }
+#registrationRequestsContent .req-col-created { width: 108px; min-width: 108px; }
+#registrationRequestsContent .req-col-agency { width: 120px; }
+#registrationRequestsContent .req-col-email { width: 150px; }
+#registrationRequestsContent .req-col-plan { width: 72px; }
+#registrationRequestsContent .req-col-amount { width: 72px; }
+#registrationRequestsContent .req-col-payment { width: 88px; }
+#registrationRequestsContent .req-col-status { width: 88px; }
+#registrationRequestsContent .req-select-col { width: 42px; min-width: 42px; text-align: center; }
+#registrationRequestsContent .req-actions-dd .req-actions-toggle { min-width: 92px; padding: 0.2rem 0.55rem; font-size: 0.78rem; border-color: #3d5f8a; }
+#registrationRequestsContent .req-actions-menu { min-width: 11rem; font-size: 0.85rem; border: 1px solid #214b7b; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+#registrationRequestsContent .req-actions-menu .dropdown-item { padding: 0.45rem 0.85rem; }
+#registrationRequestsContent .req-actions-menu .dropdown-item:hover,
+#registrationRequestsContent .req-actions-menu .dropdown-item:focus { background: rgba(56, 189, 248, 0.12); }
+#registrationRequestsContent .req-delete-form button { width: 100%; text-align: inherit; border: 0; background: transparent; }
+#registrationRequestsContent .req-bulk-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.5rem 0 0.75rem; padding: 0.65rem 0.75rem; background: rgba(15, 52, 96, 0.45); border: 1px solid #214b7b; border-radius: 8px; }
+#registrationRequestsContent .req-row-color-key { font-size: 0.8rem; color: #9fb3d1; margin-bottom: 0.65rem; padding: 0.45rem 0.65rem; background: rgba(15, 52, 96, 0.35); border-radius: 6px; border: 1px solid rgba(33, 75, 123, 0.6); }
 #registrationRequestsContent .req-en-date-block { display: inline-block; min-width: 92px; }
 #registrationRequestsContent .control-header { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #0f3460; }
 #registrationRequestsContent .control-nav { display: flex; gap: 1rem; align-items: center; }
@@ -39,22 +56,40 @@
 #registrationRequestsContent .table-card { background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; }
 #registrationRequestsContent .controls-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
 .btn-control { padding: 0.4rem 0.8rem; font-size: 0.9rem; border-radius: 6px; }
-.req-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0.5rem; border: 1px solid #0f3460; border-radius: 8px; }
-.req-table-wrap table { width: 100%; min-width: 900px; font-size: 0.9rem; background: #16213e; table-layout: fixed !important; }
-.req-table-wrap th { background: #0f3460; color: #aaa; padding: 0.5rem 0.6rem; text-align: left; white-space: nowrap !important; }
-.req-table-wrap td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #0f3460; color: #fff !important; vertical-align: middle !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; line-height: 1.3 !important; }
-.req-table-wrap td.td-agency { max-width: 110px !important; width: 110px !important; }
-.req-table-wrap td.td-siteurl { max-width: 130px !important; width: 130px !important; }
-.req-table-wrap td.td-notes { max-width: 90px !important; width: 90px !important; }
-.req-table-wrap td.action-btns { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; width: auto !important; max-width: none !important; }
-.req-table-wrap td a { color: #5dade2 !important; }
-#registrationRequestsContent table td a { color: #5dade2; }
-#registrationRequestsContent .action-btns { display: flex; gap: 0.3rem; white-space: normal; overflow: visible; }
-#registrationRequestsContent .action-btns .btn { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
+.req-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0.5rem; border: 1px solid #214b7b; border-radius: 10px; max-height: min(72vh, 900px); overflow-y: auto; }
+.req-table-wrap table { width: 100%; min-width: 1180px; font-size: 0.84rem; background: #16213e; table-layout: auto !important; }
+.req-table-wrap th { background: #0b2d52; color: #c8d8ef; padding: 0.65rem 0.55rem; text-align: start; white-space: nowrap !important; }
+.req-table-wrap td { padding: 0.55rem 0.5rem; border-bottom: 1px solid #1a3358; color: #f1f5f9 !important; vertical-align: middle !important; line-height: 1.35 !important; }
+.req-table-wrap td.req-col-clip { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.req-table-wrap td.req-col-actions { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; }
+.req-table-wrap td a { color: #60a5fa !important; text-decoration: none; }
+.req-table-wrap td a:hover { text-decoration: underline; }
+#registrationRequestsContent table td a { color: #60a5fa; }
+#registrationRequestsContent .req-actions-dd,
+#registrationRequestsContent .req-actions-dd .dropdown-toggle,
+#registrationRequestsContent .req-actions-menu .dropdown-item,
+#registrationRequestsContent .req-delete-form button { pointer-events: auto; position: relative; z-index: 2; }
+#registrationRequestsContent tr.req-row-agency-inactive td { background: rgba(239, 68, 68, 0.14) !important; }
+#registrationRequestsContent tr.req-row-agency-suspended td { background: rgba(245, 158, 11, 0.14) !important; }
+#registrationRequestsContent tr.req-row-agency-ok td { background: rgba(34, 197, 94, 0.08) !important; }
+#registrationRequestsContent tr.req-row-req-pending td { background: rgba(245, 158, 11, 0.1) !important; }
+#registrationRequestsContent tr.req-row-req-rejected td { background: rgba(185, 28, 28, 0.18) !important; }
+#registrationRequestsContent tr.req-row-req-approved td { background: rgba(56, 189, 248, 0.1) !important; }
+#registrationRequestsContent tr.req-row-updated-paid td { animation: req-flash-paid 1.2s ease; }
+#registrationRequestsContent tr.req-row-updated-rejected td { animation: req-flash-rejected 1.2s ease; }
+#registrationRequestsContent tr.req-row-updated-active td { animation: req-flash-active 1.2s ease; }
+#registrationRequestsContent tr.req-row-updated-warning td { animation: req-flash-warning 1.2s ease; }
+@keyframes req-flash-paid { 0%,100% { box-shadow: inset 0 0 0 0 transparent; } 40% { box-shadow: inset 0 0 0 999px rgba(34, 197, 94, 0.22); } }
+@keyframes req-flash-rejected { 0%,100% { box-shadow: inset 0 0 0 0 transparent; } 40% { box-shadow: inset 0 0 0 999px rgba(239, 68, 68, 0.22); } }
+@keyframes req-flash-active { 0%,100% { box-shadow: inset 0 0 0 0 transparent; } 40% { box-shadow: inset 0 0 0 999px rgba(34, 197, 94, 0.18); } }
+@keyframes req-flash-warning { 0%,100% { box-shadow: inset 0 0 0 0 transparent; } 40% { box-shadow: inset 0 0 0 999px rgba(245, 158, 11, 0.2); } }
+.cp-layout-rtl #registrationRequestsContent .req-table th,
+.cp-layout-rtl #registrationRequestsContent .req-table td { text-align: right; }
+.cp-layout-rtl #registrationRequestsContent tr.req-row-is-new td { box-shadow: inset -3px 0 0 #38bdf8; }
+html[dir="rtl"] #registrationRequestsContent tr.req-row-is-new td { box-shadow: inset -3px 0 0 #38bdf8; }
 .req-modal-dark .req-modal-content { background: #16213e; color: #eee; border: 1px solid #0f3460; }
 .req-modal-dark { z-index: 1060; }
 .modal-backdrop { z-index: 1055; }
-#registrationRequestsContent .action-btns .btn { pointer-events: auto; position: relative; z-index: 1; }
 #registrationRequestsContent tr.req-row-is-new td { box-shadow: inset 3px 0 0 #38bdf8; }
 #registrationRequestsContent tr.req-row-is-new td.req-col-reg .badge { font-size: 0.65rem; vertical-align: middle; }
 .req-modal-dark .modal-body .form-label { color: #aaa; }
@@ -103,7 +138,7 @@
 
 @media (max-width: 900px) {
     #registrationRequestsContent .req-status-cards { grid-template-columns: repeat(2, minmax(100px, 1fr)); }
-    #registrationRequestsContent .req-col-actions { min-width: 180px; }
+    #registrationRequestsContent .req-col-actions { width: 96px; min-width: 96px; }
     #registrationRequestsContent .req-date-filter,
     #registrationRequestsContent .req-amount-input { width: 100px; min-width: 100px; max-width: 100px; }
 }

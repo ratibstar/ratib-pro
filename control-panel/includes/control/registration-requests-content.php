@@ -327,6 +327,9 @@ $reqRowVisualClass = function (array $r) use ($reqAgencyState, $hasRegAgencySusp
     return implode(' ', $parts);
 };
 $formAction = pageUrl('control/registration-requests.php');
+$regLbl = static function (string $key, string $fallback): string {
+    return function_exists('cp_t') ? (string) cp_t($key) : $fallback;
+};
 $agenciesManageUrl = pageUrl('control/agencies.php');
 $regBase = control_panel_public_marketing_home_url($ctrl);
 $latestQueueUrl = $formAction . '?' . http_build_query([
@@ -427,6 +430,16 @@ if ($tableExists) {
             ENT_QUOTES,
             'UTF-8'
         ) . '</div>';
+    }
+    if (isset($_GET['deleted']) && ctype_digit((string) $_GET['deleted'])) {
+        $n = (int) $_GET['deleted'];
+        if ($n > 0) {
+            echo '<div class="alert alert-success py-2 px-3 mb-3">' . htmlspecialchars(
+                str_replace('{n}', (string) $n, $regLbl('reg.deleted_ok', 'Deleted {n} registration request(s).')),
+                ENT_QUOTES,
+                'UTF-8'
+            ) . '</div>';
+        }
     }
     ?>
     <?php if ($page > 1): ?>
@@ -633,17 +646,53 @@ if ($tableExists) {
                     }
                     ?></td>
                     <td class="req-select-col"><input type="checkbox" class="req-row-check" value="<?php echo (int)$r['id']; ?>" aria-label="Select <?php echo htmlspecialchars($fmtId($r['id'])); ?>"></td>
-                    <td class="action-btns req-col-actions">
-                        <button type="button" class="btn btn-sm btn-outline-info btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>" data-permission="control_registration_requests,view_control_registration">View</button>
-                        <button type="button" class="btn btn-sm btn-outline-warning btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">Edit</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_registration_requests,delete_control_registration">Delete</button>
-                        <?php if (($r['payment_status'] ?? '') !== 'paid'): ?>
-                        <button type="button" class="btn btn-sm btn-outline-success btn-mark-paid" data-id="<?php echo (int)$r['id']; ?>" data-amount="<?php echo htmlspecialchars((string)($r['plan_amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">Mark Paid</button>
-                        <?php endif; ?>
-                        <?php if ($s === 'pending'): ?>
-                        <button type="button" class="btn btn-sm btn-outline-success btn-approve" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_registration_requests,approve_control_registration">Approve</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-reject" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_registration_requests,reject_control_registration">Reject</button>
-                        <?php endif; ?>
+                    <td class="req-col-actions">
+                        <div class="dropdown req-actions-dd">
+                            <button type="button" class="btn btn-sm btn-outline-light dropdown-toggle req-actions-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                <?php echo htmlspecialchars($regLbl('reg.actions', 'Actions'), ENT_QUOTES, 'UTF-8'); ?>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end req-actions-menu">
+                                <li>
+                                    <button type="button" class="dropdown-item btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>" data-permission="control_registration_requests,view_control_registration">
+                                        <i class="fas fa-eye me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.view', 'View'), ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">
+                                        <i class="fas fa-edit me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.edit', 'Edit'), ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                </li>
+                                <?php if (($r['payment_status'] ?? '') !== 'paid'): ?>
+                                <li>
+                                    <button type="button" class="dropdown-item btn-mark-paid" data-id="<?php echo (int)$r['id']; ?>" data-amount="<?php echo htmlspecialchars((string)($r['plan_amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_registration_requests,edit_control_registration,approve_control_registration">
+                                        <i class="fas fa-dollar-sign me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.mark_paid', 'Mark Paid'), ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                </li>
+                                <?php endif; ?>
+                                <?php if ($s === 'pending'): ?>
+                                <li>
+                                    <button type="button" class="dropdown-item text-success btn-approve" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_registration_requests,approve_control_registration">
+                                        <i class="fas fa-check me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.approve', 'Approve'), ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                </li>
+                                <li>
+                                    <button type="button" class="dropdown-item text-warning btn-reject" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_registration_requests,reject_control_registration">
+                                        <i class="fas fa-times me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.reject', 'Reject'), ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                </li>
+                                <?php endif; ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="<?php echo htmlspecialchars($formAction); ?>?control=1" class="req-delete-form m-0" data-permission="control_registration_requests,delete_control_registration" onsubmit="return window.confirm('<?php echo htmlspecialchars($regLbl('reg.delete_confirm', 'Delete this registration request? This cannot be undone.'), ENT_QUOTES, 'UTF-8'); ?>');">
+                                        <input type="hidden" name="reg_purge_action" value="delete_ids">
+                                        <input type="hidden" name="ids[]" value="<?php echo (int)$r['id']; ?>">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-trash me-2 opacity-75"></i><?php echo htmlspecialchars($regLbl('reg.delete', 'Delete'), ENT_QUOTES, 'UTF-8'); ?>
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                     </td>
                 </tr>
 <?php endforeach; ?>

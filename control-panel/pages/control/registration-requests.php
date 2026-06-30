@@ -23,33 +23,58 @@ if (!$ctrl) {
 }
 
 $regPurgeFlash = null;
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && (string) ($_POST['reg_purge_action'] ?? '') === 'delete_all'
-) {
-    if (
-        !hasControlPermission(CONTROL_PERM_REGISTRATION)
-        && !hasControlPermission('delete_control_registration')
-    ) {
-        $regPurgeFlash = ['type' => 'danger', 'text' => 'Access denied'];
-    } elseif (strtoupper(trim((string) ($_POST['confirm'] ?? ''))) !== 'DELETE') {
-        $regPurgeFlash = ['type' => 'warning', 'text' => 'Cancelled — type DELETE exactly to confirm.'];
-    } else {
-        require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
-        $purge = registration_requests_purge_all($ctrl);
-        if (!empty($purge['success'])) {
-            $qs = http_build_query([
-                'control' => '1',
-                'all_dates' => '1',
-                'queue' => '1',
-                'limit' => 25,
-                'status' => 'pending',
-                'purged' => (int) ($purge['deleted'] ?? 0),
-            ]);
-            header('Location: ' . pageUrl('control/registration-requests.php') . '?' . $qs);
-            exit;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $purgeAction = (string) ($_POST['reg_purge_action'] ?? '');
+    if ($purgeAction === 'delete_all') {
+        if (
+            !hasControlPermission(CONTROL_PERM_REGISTRATION)
+            && !hasControlPermission('delete_control_registration')
+        ) {
+            $regPurgeFlash = ['type' => 'danger', 'text' => 'Access denied'];
+        } elseif (strtoupper(trim((string) ($_POST['confirm'] ?? ''))) !== 'DELETE') {
+            $regPurgeFlash = ['type' => 'warning', 'text' => 'Cancelled — type DELETE exactly to confirm.'];
+        } else {
+            require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
+            $purge = registration_requests_purge_all($ctrl);
+            if (!empty($purge['success'])) {
+                $qs = http_build_query([
+                    'control' => '1',
+                    'all_dates' => '1',
+                    'queue' => '1',
+                    'limit' => 25,
+                    'status' => 'pending',
+                    'purged' => (int) ($purge['deleted'] ?? 0),
+                ]);
+                header('Location: ' . pageUrl('control/registration-requests.php') . '?' . $qs);
+                exit;
+            }
+            $regPurgeFlash = ['type' => 'danger', 'text' => (string) ($purge['message'] ?? 'Delete failed')];
         }
-        $regPurgeFlash = ['type' => 'danger', 'text' => (string) ($purge['message'] ?? 'Delete failed')];
+    } elseif ($purgeAction === 'delete_ids') {
+        if (
+            !hasControlPermission(CONTROL_PERM_REGISTRATION)
+            && !hasControlPermission('delete_control_registration')
+        ) {
+            $regPurgeFlash = ['type' => 'danger', 'text' => 'Access denied'];
+        } else {
+            $rawIds = $_POST['ids'] ?? [];
+            if (!is_array($rawIds)) {
+                $rawIds = [$rawIds];
+            }
+            require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
+            $purge = registration_requests_delete_ids($ctrl, $rawIds);
+            if (!empty($purge['success'])) {
+                $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+                $target = pageUrl('control/registration-requests.php') . '?control=1&all_dates=1';
+                if ($ref !== '' && strpos($ref, 'registration-requests') !== false) {
+                    $target = $ref;
+                }
+                $sep = (strpos($target, '?') !== false) ? '&' : '?';
+                header('Location: ' . $target . $sep . 'deleted=' . (int) ($purge['deleted'] ?? 0));
+                exit;
+            }
+            $regPurgeFlash = ['type' => 'danger', 'text' => (string) ($purge['message'] ?? 'Delete failed')];
+        }
     }
 }
 

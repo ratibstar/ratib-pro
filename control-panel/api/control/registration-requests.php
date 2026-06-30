@@ -325,27 +325,47 @@ if ($method === 'DELETE') {
     if (count($ids) > 1 && $confirm !== 'DELETE') {
         jsonOut(['success' => false, 'message' => 'Bulk delete requires confirm=DELETE']);
     }
-    if ($scopeCountryIds !== null && $hasCountryId) {
-        $idList = implode(',', $ids);
-        $res = $ctrl->query("SELECT id, country_id FROM control_registration_requests WHERE id IN ($idList)");
-        while ($res && $row = $res->fetch_assoc()) {
-            if ($row['country_id'] !== null && !in_array((int) $row['country_id'], $scopeCountryIds, true)) {
-                jsonOut(['success' => false, 'message' => 'You do not have permission to delete one or more of these requests']);
-            }
-        }
-        if ($res) {
-            $res->close();
-        }
+    require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
+    $purge = registration_requests_delete_ids($ctrl, array_values($ids), $scopeCountryIds, $hasCountryId);
+    if (empty($purge['success'])) {
+        jsonOut(['success' => false, 'message' => (string) ($purge['message'] ?? 'Delete failed')]);
     }
-    $idList = implode(',', $ids);
-    if ($ctrl->query("DELETE FROM control_registration_requests WHERE id IN ($idList)")) jsonOut(['success' => true, 'message' => 'Deleted']);
-    jsonOut(['success' => false, 'message' => 'Delete failed']);
+    jsonOut([
+        'success' => true,
+        'message' => (string) ($purge['message'] ?? 'Deleted'),
+        'deleted' => (int) ($purge['deleted'] ?? 0),
+    ]);
 }
 
-// POST - delete_all fallback (some hosts block DELETE bodies)
+// POST - delete_all / delete_ids fallback (some hosts block DELETE bodies)
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
-    if (trim((string)($input['action'] ?? '')) !== 'delete_all') {
+    $action = trim((string)($input['action'] ?? ''));
+    if ($action === 'delete_ids') {
+        if (!hasControlPermission(CONTROL_PERM_REGISTRATION) && !hasControlPermission('delete_control_registration')) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+        $confirm = strtoupper(trim((string)($input['confirm'] ?? '')));
+        $ids = isset($input['ids']) && is_array($input['ids']) ? array_map('intval', $input['ids']) : [];
+        $ids = array_values(array_filter($ids, static function ($x) { return (int) $x > 0; }));
+        if ($ids === []) {
+            jsonOut(['success' => false, 'message' => 'No IDs provided']);
+        }
+        if (count($ids) > 1 && $confirm !== 'DELETE') {
+            jsonOut(['success' => false, 'message' => 'Bulk delete requires confirm=DELETE']);
+        }
+        require_once __DIR__ . '/../../includes/control/registration-requests-purge.php';
+        $purge = registration_requests_delete_ids($ctrl, $ids, $scopeCountryIds, $hasCountryId);
+        if (empty($purge['success'])) {
+            jsonOut(['success' => false, 'message' => (string) ($purge['message'] ?? 'Delete failed')]);
+        }
+        jsonOut([
+            'success' => true,
+            'message' => (string) ($purge['message'] ?? 'Deleted'),
+            'deleted' => (int) ($purge['deleted'] ?? 0),
+        ]);
+    }
+    if ($action !== 'delete_all') {
         jsonOut(['success' => false, 'message' => 'Unknown action']);
     }
     if (!hasControlPermission(CONTROL_PERM_REGISTRATION) && !hasControlPermission('delete_control_registration')) {

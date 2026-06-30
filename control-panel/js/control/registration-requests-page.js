@@ -103,9 +103,11 @@
                 return;
             }
             var done = false;
+            var confirmedOk = false;
             var finish = function(ok) {
                 if (done) return;
                 done = true;
+                if (ok) confirmedOk = true;
                 modal.hide();
                 resolve(ok);
             };
@@ -119,7 +121,7 @@
             }
             modalEl.addEventListener('hidden.bs.modal', function onHide() {
                 modalEl.removeEventListener('hidden.bs.modal', onHide);
-                finish(false);
+                if (!confirmedOk) finish(false);
             });
             modal.show();
         });
@@ -216,6 +218,14 @@
             var ct = r.headers.get('content-type');
             if (!ct || ct.indexOf('application/json') === -1) return r.text().then(function(t) { throw new Error(t || r.status); });
             return r.json();
+        });
+    }
+    function apiDeleteIds(ids, confirmToken) {
+        var body = { action: 'delete_ids', ids: ids };
+        if (confirmToken) body.confirm = confirmToken;
+        return api('/registration-requests.php', 'POST', body).then(function(r) {
+            if (r && r.success) return r;
+            return api('/registration-requests.php', 'DELETE', body);
         });
     }
     function getSelectedRows() {
@@ -574,9 +584,9 @@
             var id = btnDelete.dataset.id;
             showConfirm('Delete this registration request? This cannot be undone.').then(function(ok) {
                 if (!ok) return;
-                api('/registration-requests.php', 'DELETE', { ids: [parseInt(id, 10)] }).then(function(r) {
+                apiDeleteIds([parseInt(id, 10)]).then(function(r) {
                     if (r.success) location.reload(); else showAlert(r.message);
-                }).catch(function(e) { showAlert('Request failed: ' + (e.message || e)); });
+                }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
             });
             return;
         }
@@ -769,9 +779,8 @@
         }
         showConfirm('Delete ' + ids.length + ' selected request(s)? This cannot be undone.').then(function(ok) {
             if (!ok) return;
-            var body = { ids: ids };
-            if (ids.length > 1) body.confirm = 'DELETE';
-            api('/registration-requests.php', 'DELETE', body).then(function(r) {
+            var confirmToken = ids.length > 1 ? 'DELETE' : '';
+            apiDeleteIds(ids, confirmToken).then(function(r) {
                 if (r.success) {
                     if (ids.length > 1) {
                         location.reload();
@@ -781,7 +790,7 @@
                     clearSelection();
                     showAlert('Deleted ' + ids.length + ' request(s).');
                 } else showAlert(r.message || 'Delete failed');
-            }).catch(function(e) { showAlert('Request failed: ' + (e.message || e)); });
+            }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
         });
     };
     var btnDeleteAllRegistrationRequests = document.getElementById('formDeleteAllRegistrationRequests');
