@@ -91,6 +91,53 @@ if (!function_exists('agency_open_site_url_is_different_host')) {
     }
 }
 
+if (!function_exists('agency_site_url_subdomain_trusted_for_open')) {
+    /**
+     * rateb.sa subdomains (e.g. aaa.rateb.sa) need their own docroot. If site_url points at
+     * another subdomain (e.g. test.rateb.sa for slug aaa), prefer opening on the main domain path.
+     */
+    function agency_site_url_subdomain_trusted_for_open($siteUrl, $agencySlug, $ratebBase) {
+        $siteUrl = trim((string) $siteUrl);
+        $agencySlug = trim((string) $agencySlug);
+        $ratebBase = trim((string) $ratebBase);
+        if ($siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
+            return false;
+        }
+        $siteHost = strtolower((string) (@parse_url($siteUrl, PHP_URL_HOST) ?: ''));
+        $mainHost = strtolower((string) (@parse_url(rtrim($ratebBase, '/'), PHP_URL_HOST) ?: ''));
+        if ($siteHost === '' || $mainHost === '') {
+            return false;
+        }
+        if ($siteHost === $mainHost) {
+            return true;
+        }
+        if (strncmp($mainHost, 'www.', 4) === 0 && $siteHost === substr($mainHost, 4)) {
+            return true;
+        }
+        if (strncmp($siteHost, 'www.', 4) === 0 && substr($siteHost, 4) === $mainHost) {
+            return true;
+        }
+        $baseDomain = $mainHost;
+        if (strncmp($baseDomain, 'www.', 4) === 0) {
+            $baseDomain = substr($baseDomain, 4);
+        }
+        $suffix = '.' . $baseDomain;
+        if (!str_ends_with($siteHost, $suffix)) {
+            return true;
+        }
+        $sub = substr($siteHost, 0, -strlen($suffix));
+        if ($sub === '' || $sub === 'www') {
+            return true;
+        }
+        $expected = preg_replace('/[^a-z0-9]+/i', '', strtolower($agencySlug));
+        if ($expected === '') {
+            return false;
+        }
+
+        return $sub === $expected;
+    }
+}
+
 // EN: Load country scope and list data according to permission constraints and active filters.
 // AR: تحميل نطاق الدول وقائمة الوكالات حسب صلاحيات المستخدم والفلاتر الحالية.
 $allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
@@ -532,7 +579,9 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $openQs = 'control=1&agency_id=' . (int)$r['id'];
                             $siteBaseRaw = trim((string)($r['site_url'] ?? ''));
                             $hasSiteUrlFormat = $siteBaseRaw !== '' && preg_match('/^https?:\/\/.+/i', $siteBaseRaw);
-                            $useStoredSiteForOpen = $hasSiteUrlFormat && !agency_site_url_invalid_for_rateb_pro_open($siteBaseRaw);
+                            $useStoredSiteForOpen = $hasSiteUrlFormat
+                                && !agency_site_url_invalid_for_rateb_pro_open($siteBaseRaw)
+                                && agency_site_url_subdomain_trusted_for_open($siteBaseRaw, (string) ($r['slug'] ?? ''), $ratebBase);
                             $openUrl = '';
                             $openViaRemoteSiteUrl = false;
                             if ($useStoredSiteForOpen && agency_open_site_url_is_different_host($ratebBase, $siteBaseRaw)) {

@@ -72,13 +72,6 @@ final class ErpProvisioningService
             $slug = 'agency-' . $agencyId;
         }
 
-        $erpDb = trim((string) ($agency['erp_db_name'] ?? ''));
-        if ($erpDb === '') {
-            $erpDb = function_exists('rateb_suggested_erp_db_name')
-                ? rateb_suggested_erp_db_name($slug)
-                : ('admin_rateb_erp_' . preg_replace('/[^a-z0-9_]+/i', '_', strtolower($slug)));
-        }
-
         $dbHost = trim((string) ($agency['erp_db_host'] ?? ''));
         if ($dbHost === '') {
             $dbHost = trim((string) ($agency['db_host'] ?? 'localhost'));
@@ -98,6 +91,8 @@ final class ErpProvisioningService
         if ($dbPass === '' && defined('DB_PASS')) {
             $dbPass = (string) DB_PASS;
         }
+
+        $erpDb = self::resolveErpDatabaseName($agency, $slug, $dbHost, $dbPort, $dbUser, $dbPass);
 
         self::markStatus($controlConn, $agencyId, 'provisioning', $erpDb, $dbHost, $dbUser, $dbPass);
 
@@ -159,6 +154,30 @@ final class ErpProvisioningService
         }
     }
 
+    /** @param array<string, mixed> $agency */
+    private static function resolveErpDatabaseName(
+        array $agency,
+        string $slug,
+        string $host,
+        int $port,
+        string $user,
+        string $pass
+    ): string {
+        $stored = trim((string) ($agency['erp_db_name'] ?? ''));
+        if ($stored !== '') {
+            return $stored;
+        }
+
+        $existingDb = trim((string) ($agency['db_name'] ?? ''));
+        if ($existingDb !== '' && self::canConnectToDatabase($host, $port, $user, $pass, $existingDb)) {
+            return $existingDb;
+        }
+
+        return function_exists('rateb_suggested_erp_db_name')
+            ? rateb_suggested_erp_db_name($slug)
+            : ('admin_rateb_erp_' . preg_replace('/[^a-z0-9_]+/i', '_', strtolower($slug)));
+    }
+
     private static function ensureErpDatabase(string $host, int $port, string $user, string $pass, string $dbName): void
     {
         if (self::canConnectToDatabase($host, $port, $user, $pass, $dbName)) {
@@ -183,7 +202,11 @@ final class ErpProvisioningService
             }
         }
 
-        if (self::tryDirectAdminCreateDatabase($dbName) && self::canConnectToDatabase($host, $port, $user, $pass, $dbName)) {
+        if (self::tryDirectAdminCreateDatabase($dbName, $user, $pass) && self::canConnectToDatabase($host, $port, $user, $pass, $dbName)) {
+            return;
+        }
+
+        if (self::tryDirectAdminApiCreateDatabase($dbName, $user, $pass) && self::canConnectToDatabase($host, $port, $user, $pass, $dbName)) {
             return;
         }
 
@@ -238,19 +261,58 @@ final class ErpProvisioningService
         }
     }
 
-    private static function tryDirectAdminCreateDatabase(string $dbName): bool
+    private static function tryDirectAdminCreateDatabase(string $dbName, string $dbUser = '', string $dbPass = ''): bool
     {
         $script = '/usr/local/directadmin/scripts/create_database.sh';
         if (!is_executable($script)) {
             return false;
         }
         $daUser = getenv('RATEB_DA_LINUX_USER') ?: 'admin';
-        $cmd = escapeshellarg($script) . ' ' . escapeshellarg($daUser) . ' ' . escapeshellarg($dbName) . ' 2>&1';
+        $cmd = escapeshellarg($script) . ' ' . escapeshellarg($daUser) . ' ' . escapeshellarg($dbName);
+        if ($dbPass !== '') {
+            $cmd .= ' ' . escapeshellarg($dbPass);
+        }
+        $cmd .= ' 2>&1';
         $output = [];
         $exitCode = 1;
         @exec($cmd, $output, $exitCode);
         if ($exitCode !== 0) {
             error_log('ErpProvisioningService DA create_database failed for ' . $dbName . ': ' . implode("\n", $output));
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function tryDirectAdminApiCreateDatabase(string $dbName, string $dbUser, string $dbPass): bool
+    {
+        $da = '/usr/local/directadmin/directadmin';
+        if (!is_executable($da) || $dbUser === '') {
+            return false;
+        }
+        $daLinuxUser = getenv('RATEB_DA_LINUX_USER') ?: 'admin';
+        $shortName = $dbName;
+        $userPrefix = $dbUser . '_';
+        if (str_starts_with($dbName, $userPrefix)) {
+            $shortName = substr($dbName, strlen($userPrefix));
+        } elseif (str_starts_with($dbName, 'admin_')) {
+            $shortName = substr($dbName, 6);
+        }
+        if ($shortName === '') {
+            return false;
+        }
+        $pass = $dbPass !== '' ? $dbPass : bin2hex(random_bytes(12));
+        $cmd = escapeshellarg($da) . ' api --user=' . escapeshellarg($daLinuxUser)
+            . ' CMD_API_DATABASES action=create name=' . escapeshellarg($shortName)
+            . ' user=' . escapeshellarg($dbUser)
+            . ' passwd=' . escapeshellarg($pass)
+            . ' passwd2=' . escapeshellarg($pass) . ' 2>&1';
+        $output = [];
+        $exitCode = 1;
+        @exec($cmd, $output, $exitCode);
+        if ($exitCode !== 0) {
+            error_log('ErpProvisioningService DA API create failed for ' . $dbName . ': ' . implode("\n", $output));
 
             return false;
         }
