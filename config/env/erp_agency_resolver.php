@@ -7,6 +7,32 @@ declare(strict_types=1);
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'agency_lookup.php';
 
+if (!function_exists('rateb_erp_is_main_platform_host')) {
+    /**
+     * Main marketing / SaaS ERP hosts — never bind ERP to a per-agency database by host match.
+     * Agency ERP lives on dedicated domains (e.g. test.rateb.sa) or ?agency_id on non-main hosts.
+     */
+    function rateb_erp_is_main_platform_host(string $host): bool
+    {
+        $host = rateb_normalize_http_host($host);
+        if ($host === '') {
+            return false;
+        }
+        $main = ['rateb.sa', 'www.rateb.sa'];
+        $fromEnv = getenv('RATEB_MAIN_PLATFORM_HOSTS');
+        if ($fromEnv !== false && trim((string) $fromEnv) !== '') {
+            foreach (preg_split('/[\s,;]+/', (string) $fromEnv) ?: [] as $piece) {
+                $piece = rateb_normalize_http_host((string) $piece);
+                if ($piece !== '' && !in_array($piece, $main, true)) {
+                    $main[] = $piece;
+                }
+            }
+        }
+
+        return in_array($host, $main, true);
+    }
+}
+
 if (!function_exists('resolve_agency_erp_by_host')) {
     function resolve_agency_erp_by_host(string $host): bool
     {
@@ -17,7 +43,7 @@ if (!function_exists('resolve_agency_erp_by_host')) {
             return false;
         }
         $host = rateb_normalize_http_host($host);
-        if ($host === '') {
+        if ($host === '' || rateb_erp_is_main_platform_host($host)) {
             return false;
         }
         $row = rateb_lookup_agency_by_host($host);
@@ -50,11 +76,14 @@ if (!function_exists('rateb_resolve_agency_erp_from_request')) {
         if (PHP_SAPI === 'cli') {
             return false;
         }
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        if (rateb_erp_is_main_platform_host($host)) {
+            return false;
+        }
         $agencyId = (int) ($_GET['agency_id'] ?? $_POST['agency_id'] ?? 0);
         if ($agencyId > 0 && resolve_agency_erp_by_id($agencyId)) {
             return true;
         }
-        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
 
         return resolve_agency_erp_by_host($host);
     }
