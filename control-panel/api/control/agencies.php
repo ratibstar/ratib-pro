@@ -200,11 +200,13 @@ if ($cols) $hasCountryId = true;
 // Check if renewal_date / is_suspended columns exist
 $hasRenewalDate = false;
 $hasIsSuspended = false;
+$hasErpCompanyId = false;
 $cols2 = qAll("SHOW COLUMNS FROM control_agencies");
 if ($cols2) {
     foreach ($cols2 as $c) {
         if ($c['Field'] === 'renewal_date') $hasRenewalDate = true;
         if ($c['Field'] === 'is_suspended') $hasIsSuspended = true;
+        if ($c['Field'] === 'erp_company_id') $hasErpCompanyId = true;
     }
 }
 
@@ -596,6 +598,11 @@ if ($method === 'PUT') {
         $params[] = $id;
         $sql = "UPDATE control_agencies SET " . implode(', ', $set) . " WHERE id=?";
         qStmt($sql, $params);
+        if ($hasErpCompanyId && array_key_exists('erp_company_id', $input)) {
+            require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
+            $erpCompanyId = (int) ($input['erp_company_id'] ?? 0);
+            ErpProvisioningService::saveAgencyErpCompanyId($ctrl, $id, $erpCompanyId);
+        }
         $tenantId = setTenantContextByAgencyId($id);
         emitEvent('AGENCY_UPDATED', 'info', 'Agency updated', eventMeta([
             'tenant_id' => $tenantId > 0 ? $tenantId : null,

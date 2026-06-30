@@ -232,6 +232,38 @@ function control_rateb_erp_load_branch_stack(): void
     require_once RATEB_ROOT . '/app/services/BranchService.php';
 }
 
+/** @return list<array{id:int,name:string}> */
+function control_rateb_erp_platform_companies(): array
+{
+    $pdo = control_rateb_erp_pdo();
+    if (!$pdo) {
+        return [];
+    }
+    try {
+        $stmt = $pdo->query('SELECT id, name FROM rateb_companies ORDER BY name ASC LIMIT 500');
+        if ($stmt === false) {
+            return [];
+        }
+        $rows = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $rows[] = ['id' => $id, 'name' => trim((string) ($row['name'] ?? ''))];
+        }
+
+        return $rows;
+    } catch (Throwable $e) {
+        error_log('control_rateb_erp_platform_companies: ' . $e->getMessage());
+
+        return [];
+    }
+}
+
 /** @return array<int, array<string, mixed>> */
 function control_rateb_erp_companies_branch_overview(): array
 {

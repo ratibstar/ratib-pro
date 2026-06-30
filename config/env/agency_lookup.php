@@ -55,7 +55,13 @@ if (!function_exists('rateb_agency_lookup_select_columns')) {
             return $base;
         }
 
-        return $base . ', erp_db_name, erp_db_host, erp_db_user, erp_db_pass, erp_status, erp_provisioned_at, erp_plan_slug';
+        $base .= ', erp_db_name, erp_db_host, erp_db_user, erp_db_pass, erp_status, erp_provisioned_at, erp_plan_slug';
+        $erpCo = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'erp_company_id'");
+        if ($erpCo && $erpCo->num_rows > 0) {
+            $base .= ', erp_company_id';
+        }
+
+        return $base;
     }
 }
 
@@ -172,6 +178,78 @@ if (!function_exists('rateb_list_agencies_with_erp')) {
         $conn->close();
 
         return $rows;
+    }
+}
+
+if (!function_exists('rateb_lookup_agency_by_erp_company_id')) {
+    /**
+     * @return array<string, mixed>|null
+     */
+    function rateb_lookup_agency_by_erp_company_id(int $companyId): ?array
+    {
+        if ($companyId < 1) {
+            return null;
+        }
+        $conn = rateb_agency_lookup_connection();
+        if (!$conn || !rateb_agency_lookup_has_erp_columns($conn)) {
+            if ($conn) {
+                $conn->close();
+            }
+
+            return null;
+        }
+        $chk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'erp_company_id'");
+        if (!$chk || $chk->num_rows === 0) {
+            $conn->close();
+
+            return null;
+        }
+        $cols = rateb_agency_lookup_select_columns($conn);
+        $stmt = $conn->prepare("SELECT {$cols} FROM control_agencies WHERE erp_company_id = ? LIMIT 1");
+        if (!$stmt) {
+            $conn->close();
+
+            return null;
+        }
+        $stmt->bind_param('i', $companyId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        $conn->close();
+
+        return is_array($row) ? $row : null;
+    }
+}
+
+if (!function_exists('rateb_save_agency_erp_company_link')) {
+    function rateb_save_agency_erp_company_link(int $agencyId, int $companyId): bool
+    {
+        if ($agencyId < 1) {
+            return false;
+        }
+        $conn = rateb_agency_lookup_connection();
+        if (!$conn) {
+            return false;
+        }
+        $bridge = dirname(__DIR__, 2) . '/control-panel/includes/control/ErpProvisioningService.php';
+        if (is_file($bridge)) {
+            require_once $bridge;
+            try {
+                ErpProvisioningService::saveAgencyErpCompanyId($conn, $agencyId, $companyId);
+                $conn->close();
+
+                return true;
+            } catch (Throwable $e) {
+                error_log('rateb_save_agency_erp_company_link: ' . $e->getMessage());
+                $conn->close();
+
+                return false;
+            }
+        }
+        $conn->close();
+
+        return false;
     }
 }
 

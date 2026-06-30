@@ -5,6 +5,7 @@
     if (!cfg) return;
 
     var apiUrl = cfg.getAttribute('data-api-url') || '';
+    var linkUrl = cfg.getAttribute('data-link-url') || '';
     var csrfToken = cfg.getAttribute('data-csrf') || '';
     var btnSelected = document.getElementById('erpUpdateRunSelected');
     var btnAll = document.getElementById('erpUpdateRunAllReady');
@@ -136,4 +137,56 @@
     }
 
     refreshSelectedBtn();
+
+    function linkAgency(agencyId, companyId, btn) {
+        if (!linkUrl || agencyId < 1 || companyId < 1) return;
+        var confirmMsg = cfg.getAttribute('data-confirm-link') || 'Link agency to this company?';
+        if (!window.confirm(confirmMsg)) return;
+        if (btn) btn.disabled = true;
+        fetch(linkUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({ agency_id: agencyId, company_id: companyId })
+        })
+            .then(function (res) { return res.json().then(function (j) { return { ok: res.ok, body: j }; }); })
+            .then(function (pack) {
+                if (pack.ok && pack.body && pack.body.success) {
+                    window.location.reload();
+                    return;
+                }
+                showProgress((pack.body && pack.body.message) ? pack.body.message : (cfg.getAttribute('data-request-failed') || 'Failed'));
+            })
+            .catch(function (err) {
+                showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+            })
+            .finally(function () {
+                if (btn) btn.disabled = false;
+            });
+    }
+
+    var linkTopBtn = document.getElementById('erpLinkCompanyBtn');
+    if (linkTopBtn) {
+        linkTopBtn.addEventListener('click', function () {
+            linkAgency(
+                parseInt(linkTopBtn.getAttribute('data-agency-id') || '0', 10),
+                parseInt(linkTopBtn.getAttribute('data-company-id') || '0', 10),
+                linkTopBtn
+            );
+        });
+    }
+
+    document.querySelectorAll('.erp-link-row-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            linkAgency(
+                parseInt(btn.getAttribute('data-agency-id') || '0', 10),
+                parseInt(btn.getAttribute('data-company-id') || '0', 10),
+                btn
+            );
+        });
+    });
 })();

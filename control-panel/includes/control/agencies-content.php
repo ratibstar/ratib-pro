@@ -196,7 +196,26 @@ if ($countryIdGet) $countryId = $countryIdGet;
 $offset = ($page - 1) * $limit;
 $agenciesList = [];
 $totalAgencies = 0;
+$erpPlatformCompanies = [];
+$erpCompanyNameById = [];
 $hasCountryId = false;
+if ($ctrl instanceof mysqli) {
+    $bridge = __DIR__ . '/rateb-erp-bridge.php';
+    $erpSvc = __DIR__ . '/ErpProvisioningService.php';
+    if (is_file($bridge) && is_file($erpSvc)) {
+        require_once $erpSvc;
+        require_once $bridge;
+        ErpProvisioningService::ensureErpColumns($ctrl);
+        foreach (control_rateb_erp_platform_companies() as $c) {
+            $cid = (int) ($c['id'] ?? 0);
+            if ($cid < 1) {
+                continue;
+            }
+            $erpPlatformCompanies[] = $c;
+            $erpCompanyNameById[$cid] = (string) ($c['name'] ?? '');
+        }
+    }
+}
 try {
     $chk2 = $ctrl->query("SHOW TABLES LIKE 'control_agencies'");
     if ($chk2 && $chk2->num_rows > 0) {
@@ -532,6 +551,7 @@ if ($agencyIdFilter > 0) {
                     <th>ERP DB</th>
                     <th>ERP</th>
                     <th>ERP Plan</th>
+                    <th>ERP Company</th>
                     <th>Created</th>
                     <th>Renewal</th>
                     <th>Status</th>
@@ -562,6 +582,10 @@ echo htmlspecialchars($cname ?: '-');
                     <td class="agencies-url-cell" title="<?php echo htmlspecialchars((string) ($r['erp_db_name'] ?? '')); ?>"><?php echo htmlspecialchars((string) (($r['erp_db_name'] ?? '') ?: '—')); ?></td>
                     <td><span class="badge badge-erp-<?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($r['erp_status'] ?? 'none')); ?></span></td>
                     <td><?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional')); ?></td>
+                    <td><?php
+                        $erpCoId = (int) ($r['erp_company_id'] ?? 0);
+                        echo htmlspecialchars($erpCoId > 0 ? ($erpCompanyNameById[$erpCoId] ?? ('#' . $erpCoId)) : '—');
+                    ?></td>
                     <td><?php echo isset($r['created_at']) ? substr($r['created_at'], 0, 10) : '-'; ?></td>
                     <td><?php echo $renewalDate($r); ?></td>
                     <td><span class="badge <?php
@@ -807,6 +831,20 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                     </div>
                     <?php endif; ?>
                 </div>
+                <?php if ($erpPlatformCompanies !== []) { ?>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Platform ERP company</label>
+                        <select class="form-control" id="editErpCompanyId">
+                            <option value="">— Not linked —</option>
+                            <?php foreach ($erpPlatformCompanies as $c) { ?>
+                            <option value="<?php echo (int) ($c['id'] ?? 0); ?>"><?php echo htmlspecialchars((string) ($c['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
+                            <?php } ?>
+                        </select>
+                        <div class="form-text">Used when pushing DB updates from rateb.sa ERP admin to this agency.</div>
+                    </div>
+                </div>
+                <?php } ?>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

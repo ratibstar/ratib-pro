@@ -35,6 +35,32 @@ final class ErpProvisioningService
         return self::normalizePlanSlug($stored);
     }
 
+    public static function saveAgencyErpCompanyId(mysqli $controlConn, int $agencyId, int $companyId): void
+    {
+        if ($agencyId < 1) {
+            throw new InvalidArgumentException('agency id is required');
+        }
+        self::ensureErpColumns($controlConn);
+        if ($companyId > 0) {
+            $stmt = $controlConn->prepare('UPDATE control_agencies SET erp_company_id = ? WHERE id = ?');
+            if (!$stmt) {
+                throw new RuntimeException('Failed to save ERP company link');
+            }
+            $stmt->bind_param('ii', $companyId, $agencyId);
+            $stmt->execute();
+            $stmt->close();
+
+            return;
+        }
+        $stmt = $controlConn->prepare('UPDATE control_agencies SET erp_company_id = NULL WHERE id = ?');
+        if (!$stmt) {
+            throw new RuntimeException('Failed to clear ERP company link');
+        }
+        $stmt->bind_param('i', $agencyId);
+        $stmt->execute();
+        $stmt->close();
+    }
+
     public static function saveAgencyPlan(mysqli $controlConn, int $agencyId, string $planSlug): string
     {
         if ($agencyId < 1) {
@@ -131,6 +157,7 @@ final class ErpProvisioningService
             "erp_status" => "ENUM('none','provisioning','ready','failed') NOT NULL DEFAULT 'none'",
             'erp_provisioned_at' => 'DATETIME NULL',
             "erp_plan_slug" => "VARCHAR(32) NOT NULL DEFAULT 'professional'",
+            'erp_company_id' => 'INT UNSIGNED NULL',
         ];
         $afterMap = [
             'erp_db_name' => 'db_name',
@@ -140,6 +167,7 @@ final class ErpProvisioningService
             'erp_status' => 'erp_db_pass',
             'erp_provisioned_at' => 'erp_status',
             'erp_plan_slug' => 'erp_provisioned_at',
+            'erp_company_id' => 'erp_plan_slug',
         ];
         foreach ($columns as $name => $definition) {
             $res = @$controlConn->query("SHOW COLUMNS FROM control_agencies LIKE '" . $controlConn->real_escape_string($name) . "'");

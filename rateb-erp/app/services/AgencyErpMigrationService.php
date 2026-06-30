@@ -197,12 +197,55 @@ final class AgencyErpMigrationService
         if ($companyId < 1) {
             return 0;
         }
+        $this->ensureAgencyLookup();
+        if (function_exists('rateb_lookup_agency_by_erp_company_id')) {
+            $linked = rateb_lookup_agency_by_erp_company_id($companyId);
+            if (is_array($linked)) {
+                return (int) ($linked['id'] ?? 0);
+            }
+        }
         foreach ($this->listAgencies(false) as $agency) {
-            if ((int) ($agency['tenant_id'] ?? 0) === $companyId) {
+            if ((int) ($agency['erp_company_id'] ?? 0) === $companyId) {
                 return (int) ($agency['id'] ?? 0);
             }
         }
 
         return 0;
+    }
+
+    public function linkAgencyToCompany(int $agencyId, int $companyId): void
+    {
+        if ($agencyId < 1) {
+            throw new RuntimeException(__('agency_erp_push_link_invalid_agency'));
+        }
+        if ($companyId > 0) {
+            $company = (new \Rateb\App\Models\Company())->find($companyId);
+            if ($company === null) {
+                throw new RuntimeException(__('agency_erp_push_link_company_missing'));
+            }
+            $existing = $this->suggestedAgencyIdForCompany($companyId);
+            if ($existing > 0 && $existing !== $agencyId) {
+                throw new RuntimeException(__('agency_erp_push_link_company_taken'));
+            }
+        }
+        $this->ensureAgencyLookup();
+        if (!function_exists('rateb_save_agency_erp_company_link')
+            || !rateb_save_agency_erp_company_link($agencyId, $companyId)) {
+            throw new RuntimeException(__('agency_erp_push_link_failed'));
+        }
+    }
+
+    /** @return array<int, string> */
+    public function platformCompanyNames(): array
+    {
+        $map = [];
+        foreach ((new \Rateb\App\Models\Company())->all(500, 0) as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $map[$id] = trim((string) ($row['name'] ?? ''));
+            }
+        }
+
+        return $map;
     }
 }

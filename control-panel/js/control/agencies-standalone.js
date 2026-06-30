@@ -329,6 +329,8 @@
             else if (editRenewalDate) editRenewalDate.value = '';
             var editIsSuspended = document.getElementById('editIsSuspended');
             if (editIsSuspended) editIsSuspended.value = (r.is_suspended ? '1' : '0');
+            var editErpCompanyId = document.getElementById('editErpCompanyId');
+            if (editErpCompanyId) editErpCompanyId.value = r.erp_company_id ? String(r.erp_company_id) : '';
             document.getElementById('modalTitle').textContent = 'Edit Agency';
             if (modal) modal.show();
         } else if (e.target.closest('.btn-delete')) {
@@ -391,6 +393,8 @@
         else if (editRenewalDate) editRenewalDate.value = '';
         var editIsSuspended = document.getElementById('editIsSuspended');
         if (editIsSuspended) editIsSuspended.value = (r.is_suspended ? '1' : '0');
+        var editErpCompanyIdFromView = document.getElementById('editErpCompanyId');
+        if (editErpCompanyIdFromView) editErpCompanyIdFromView.value = r.erp_company_id ? String(r.erp_company_id) : '';
         document.getElementById('modalTitle').textContent = 'Edit Agency';
         if (modal) modal.show();
     };
@@ -436,6 +440,8 @@
         if (editRenewalDateEl && editRenewalDateEl.value.trim()) payload.renewal_date = editRenewalDateEl.value.trim();
         var editIsSuspendedEl = document.getElementById('editIsSuspended');
         if (editIsSuspendedEl) payload.is_suspended = parseInt(editIsSuspendedEl.value, 10) || 0;
+        var editErpCompanyIdEl = document.getElementById('editErpCompanyId');
+        if (editErpCompanyIdEl) payload.erp_company_id = editErpCompanyIdEl.value ? parseInt(editErpCompanyIdEl.value, 10) : 0;
         if (payload.db_pass === 'KEEP') delete payload.db_pass;
         var method = id ? 'PUT' : 'POST';
         if (id) payload.id = id;
