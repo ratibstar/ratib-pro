@@ -23,7 +23,23 @@
 #registrationRequestsContent .req-controls-bar .form-control,
 #registrationRequestsContent .req-controls-bar .form-select { min-height: 36px; }
 #registrationRequestsContent .req-ctrl-input { background: #0f3460 !important; color: #fff !important; border: 1px solid #1a1a2e; }
-#registrationRequestsContent .req-table { margin-bottom: 0; border-collapse: separate; border-spacing: 0; }
+#registrationRequestsContent .req-table { margin-bottom: 0; border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; }
+#registrationRequestsContent .req-table col.req-select-col { width: 52px; }
+#registrationRequestsContent .req-table col.req-col-reg { width: 88px; }
+#registrationRequestsContent .req-table col.req-col-created { width: 104px; }
+#registrationRequestsContent .req-table col.req-col-agency { width: 110px; }
+#registrationRequestsContent .req-table col.req-col-agency-user { width: 88px; }
+#registrationRequestsContent .req-table col.req-col-country { width: 96px; }
+#registrationRequestsContent .req-table col.req-col-email { width: 148px; }
+#registrationRequestsContent .req-table col.req-col-phone { width: 104px; }
+#registrationRequestsContent .req-table col.req-col-site { width: 120px; }
+#registrationRequestsContent .req-table col.req-col-notes { width: 96px; }
+#registrationRequestsContent .req-table col.req-col-plan { width: 72px; }
+#registrationRequestsContent .req-table col.req-col-amount { width: 76px; }
+#registrationRequestsContent .req-table col.req-col-payment { width: 88px; }
+#registrationRequestsContent .req-table col.req-col-status { width: 88px; }
+#registrationRequestsContent .req-table col.req-col-created-agency { width: 108px; }
+#registrationRequestsContent .req-table col.req-col-actions { width: 112px; }
 #registrationRequestsContent .req-table th { background: #0b2d52; color: #e8f0ff; border-color: #214b7b; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em; padding: 0.65rem 0.55rem; position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 0 #214b7b; }
 #registrationRequestsContent .req-table td { border-color: #1f3e66; color: #f1f5f9; padding: 0.55rem 0.5rem; font-size: 0.84rem; vertical-align: middle; }
 #registrationRequestsContent .req-table tbody tr { transition: background-color 0.15s ease; }
@@ -38,17 +54,27 @@
 #registrationRequestsContent .req-col-payment { width: 88px; }
 #registrationRequestsContent .req-col-status { width: 88px; }
 #registrationRequestsContent .req-col-actions { width: 118px; min-width: 118px; max-width: 118px; text-align: center; white-space: nowrap; overflow: visible; }
-#registrationRequestsContent .req-select-col { width: 48px; min-width: 48px; text-align: center; vertical-align: middle; }
-#registrationRequestsContent .req-check-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin: 0; cursor: pointer; user-select: none; }
-#registrationRequestsContent .req-check-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
-#registrationRequestsContent .req-check-box { width: 18px; height: 18px; border: 2px solid #5b8bc4; border-radius: 5px; background: #0c2444; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
+#registrationRequestsContent .req-select-col { width: 52px; min-width: 52px; max-width: 52px; text-align: center; vertical-align: middle; padding-left: 0.35rem !important; padding-right: 0.35rem !important; }
+#registrationRequestsContent .req-table thead .req-select-col { z-index: 4; background: #0b2d52; }
+#registrationRequestsContent .req-table tbody .req-select-col { background: #16213e; }
+#registrationRequestsContent .req-check-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin: 0 auto; cursor: pointer; user-select: none; }
+#registrationRequestsContent .req-check-wrap-head { margin: 0 auto; }
+#registrationRequestsContent .req-check-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 2; }
+#registrationRequestsContent .req-check-box { width: 18px; height: 18px; border: 2px solid #5b8bc4; border-radius: 5px; background: #0c2444; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; pointer-events: none; transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
 #registrationRequestsContent .req-check-wrap:hover .req-check-box { border-color: #7eb3f0; background: #12325c; }
 #registrationRequestsContent .req-check-input:focus-visible + .req-check-box { box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.45); }
-#registrationRequestsContent .req-check-input:checked + .req-check-box { background: #3b82f6; border-color: #3b82f6; }
-#registrationRequestsContent .req-check-input:checked + .req-check-box::after { content: ""; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-top: -2px; }
-#registrationRequestsContent .req-check-input:indeterminate + .req-check-box { background: #3b82f6; border-color: #3b82f6; }
-#registrationRequestsContent .req-check-input:indeterminate + .req-check-box::after { content: ""; width: 10px; height: 2px; background: #fff; border-radius: 1px; transform: none; margin: 0; }
-#registrationRequestsContent tr:has(.req-row-check:checked) td { background-image: linear-gradient(rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.08)); }
+#registrationRequestsContent .req-check-input:checked + .req-check-box,
+#registrationRequestsContent .req-check-wrap.is-checked .req-check-box { background: #3b82f6; border-color: #3b82f6; }
+#registrationRequestsContent .req-check-input:checked + .req-check-box::after,
+#registrationRequestsContent .req-check-wrap.is-checked .req-check-box::after { content: ""; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-top: -2px; }
+#registrationRequestsContent .req-check-input:indeterminate + .req-check-box,
+#registrationRequestsContent .req-check-wrap.is-indeterminate .req-check-box { background: #3b82f6; border-color: #3b82f6; }
+#registrationRequestsContent .req-check-input:indeterminate + .req-check-box::after,
+#registrationRequestsContent .req-check-wrap.is-indeterminate .req-check-box::after { content: ""; width: 10px; height: 2px; background: #fff; border-radius: 1px; transform: none; margin: 0; }
+#registrationRequestsContent tr.req-row-selected td { box-shadow: inset 0 0 0 999px rgba(59, 130, 246, 0.1); }
+html[dir="rtl"] #registrationRequestsContent .req-select-col,
+.cp-layout-rtl #registrationRequestsContent .req-select-col { position: sticky; right: 0; left: auto; z-index: 3; box-shadow: -4px 0 8px rgba(0, 0, 0, 0.18); }
+html[dir="ltr"] #registrationRequestsContent .req-select-col { position: sticky; left: 0; right: auto; z-index: 3; box-shadow: 4px 0 8px rgba(0, 0, 0, 0.18); }
 #registrationRequestsContent .req-actions-dd { position: static; }
 #registrationRequestsContent .req-actions-dd .req-actions-toggle { min-width: 96px; padding: 0.28rem 0.6rem; font-size: 0.78rem; border-color: #4a6f9c; color: #e8f0ff; }
 #registrationRequestsContent .req-actions-dd .req-actions-toggle:hover,
@@ -77,7 +103,7 @@
 #registrationRequestsContent .controls-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
 .btn-control { padding: 0.4rem 0.8rem; font-size: 0.9rem; border-radius: 6px; }
 .req-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0.5rem; border: 1px solid #214b7b; border-radius: 10px; max-height: min(72vh, 900px); overflow-y: auto; }
-.req-table-wrap table { width: 100%; min-width: 1180px; font-size: 0.84rem; background: #16213e; table-layout: auto !important; }
+.req-table-wrap table { width: 100%; min-width: 1280px; font-size: 0.84rem; background: #16213e; table-layout: fixed !important; }
 .req-table-wrap th { background: #0b2d52; color: #c8d8ef; padding: 0.65rem 0.55rem; text-align: start; white-space: nowrap !important; }
 .req-table-wrap td { padding: 0.55rem 0.5rem; border-bottom: 1px solid #1a3358; color: #f1f5f9 !important; vertical-align: middle !important; line-height: 1.35 !important; }
 .req-table-wrap td.req-col-clip { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }

@@ -245,13 +245,36 @@
             return api('/registration-requests.php', 'DELETE', body);
         });
     }
+    function syncReqCheckVisual(chk) {
+        if (!chk) return;
+        var wrap = chk.closest('.req-check-wrap');
+        if (wrap) {
+            wrap.classList.toggle('is-checked', !!chk.checked);
+            wrap.classList.toggle('is-indeterminate', !!chk.indeterminate);
+        }
+        var row = chk.closest('tr');
+        if (row && chk.classList.contains('req-row-check')) {
+            row.classList.toggle('req-row-selected', !!chk.checked);
+        }
+    }
+    function syncAllReqCheckVisuals() {
+        document.querySelectorAll('.req-check-input').forEach(syncReqCheckVisual);
+    }
     function getSelectedRows() {
         return Array.prototype.slice.call(document.querySelectorAll('.req-row-check:checked'))
-            .map(function(chk) { return chk.closest('tr'); })
+            .map(function(chk) {
+                var row = chk.closest('tr');
+                if (row) return row;
+                var rid = parseInt(chk.getAttribute('data-request-id') || chk.value || '0', 10);
+                if (rid > 0) return document.querySelector('#registrationRequestsContent tr[data-id="' + rid + '"]');
+                return null;
+            })
             .filter(Boolean);
     }
     function getSelectedRequestIds() {
-        return getSelectedRows().map(function(row) { return parseInt(row.getAttribute('data-id') || '0', 10); }).filter(function(id) { return id > 0; });
+        return Array.prototype.slice.call(document.querySelectorAll('.req-row-check:checked'))
+            .map(function(chk) { return parseInt(chk.getAttribute('data-request-id') || chk.value || '0', 10); })
+            .filter(function(id) { return id > 0; });
     }
     function updateSelectedCount() {
         var selected = getSelectedRequestIds().length;
@@ -262,6 +285,7 @@
         if (checkAllEl) {
             checkAllEl.checked = allRows.length > 0 && selected === allRows.length;
             checkAllEl.indeterminate = selected > 0 && selected < allRows.length;
+            syncReqCheckVisual(checkAllEl);
         }
     }
     function requireSelection() {
@@ -349,7 +373,16 @@
         document.querySelectorAll('.req-table tbody tr[data-id]').forEach(applyRegistrationRowVisual);
     }
     function clearSelection() {
-        document.querySelectorAll('.req-row-check').forEach(function(chk) { chk.checked = false; });
+        document.querySelectorAll('.req-row-check').forEach(function(chk) {
+            chk.checked = false;
+            syncReqCheckVisual(chk);
+        });
+        var checkAllEl = document.getElementById('reqCheckAll');
+        if (checkAllEl) {
+            checkAllEl.checked = false;
+            checkAllEl.indeterminate = false;
+            syncReqCheckVisual(checkAllEl);
+        }
         updateSelectedCount();
     }
 
@@ -761,25 +794,49 @@
     }
 
     // Bulk selection controls
-    var reqCheckAll = document.getElementById('reqCheckAll');
-    if (reqCheckAll) reqCheckAll.addEventListener('change', function() {
-        var checked = !!this.checked;
-        document.querySelectorAll('.req-row-check').forEach(function(chk) { chk.checked = checked; });
-        updateSelectedCount();
-    });
-    document.querySelectorAll('.req-row-check').forEach(function(chk) {
-        chk.addEventListener('change', updateSelectedCount);
-    });
+    var reqTableEl = document.querySelector('#registrationRequestsContent .req-table');
+    if (reqTableEl) {
+        reqTableEl.addEventListener('change', function(e) {
+            var chk = e.target && e.target.closest('.req-check-input');
+            if (!chk) return;
+            syncReqCheckVisual(chk);
+            if (chk.id === 'reqCheckAll') {
+                var checked = !!chk.checked;
+                document.querySelectorAll('.req-row-check').forEach(function(rowChk) {
+                    rowChk.checked = checked;
+                    syncReqCheckVisual(rowChk);
+                });
+            }
+            updateSelectedCount();
+        });
+        reqTableEl.addEventListener('click', function(e) {
+            if (e.target && e.target.closest('.req-select-col, .req-check-wrap, .req-check-input, a, button, .dropdown-menu, .dropdown-toggle')) return;
+            var row = e.target && e.target.closest('tbody tr[data-id]');
+            if (!row) return;
+            var rowChk = row.querySelector('.req-row-check');
+            if (!rowChk) return;
+            rowChk.checked = !rowChk.checked;
+            syncReqCheckVisual(rowChk);
+            updateSelectedCount();
+        });
+    }
     var btnSelectAllRows = document.getElementById('btnSelectAllRows');
     if (btnSelectAllRows) btnSelectAllRows.onclick = function() {
-        document.querySelectorAll('.req-row-check').forEach(function(chk) { chk.checked = true; });
+        document.querySelectorAll('.req-row-check').forEach(function(chk) {
+            chk.checked = true;
+            syncReqCheckVisual(chk);
+        });
         updateSelectedCount();
     };
     var btnClearSelectedRows = document.getElementById('btnClearSelectedRows');
     if (btnClearSelectedRows) btnClearSelectedRows.onclick = function() {
-        document.querySelectorAll('.req-row-check').forEach(function(chk) { chk.checked = false; });
+        document.querySelectorAll('.req-row-check').forEach(function(chk) {
+            chk.checked = false;
+            syncReqCheckVisual(chk);
+        });
         updateSelectedCount();
     };
+    syncAllReqCheckVisuals();
     updateSelectedCount();
     refreshAllRegistrationRowVisuals();
 

@@ -556,6 +556,7 @@ if ($tableExists) {
     <div class="req-table-wrap">
         <table class="table table-dark req-table">
             <colgroup>
+                <col class="req-select-col">
                 <col class="req-col-reg">
                 <col class="req-col-created">
                 <col class="req-col-agency">
@@ -570,12 +571,11 @@ if ($tableExists) {
                 <col class="req-col-payment">
                 <col class="req-col-status">
                 <col class="req-col-created-agency">
-                <col class="req-select-col">
                 <col class="req-col-actions">
             </colgroup>
             <thead>
                 <tr>
-                    <th class="req-col-reg">Reg ID</th><th class="req-col-created">Created</th><th class="req-col-agency">Agency</th><th class="req-col-agency-user">Agency ID</th><th class="req-col-country">Country</th><th class="req-col-email">Email</th><th class="req-col-phone">Phone</th><th class="req-col-site">Site URL</th><th class="req-col-notes">Notes</th><th class="req-col-plan">Plan</th><th class="req-col-amount">Amount</th><th class="req-col-payment">Payment</th><th class="req-col-status">Status</th><th class="req-col-created-agency">Created Agency</th><th class="req-select-col"><label class="req-check-wrap" title="Select all on this page"><input type="checkbox" class="req-check-input" id="reqCheckAll"><span class="req-check-box" aria-hidden="true"></span></label></th><th class="req-col-actions"><?php echo htmlspecialchars($regLbl('reg.actions', 'Actions'), ENT_QUOTES, 'UTF-8'); ?></th>
+                    <th class="req-select-col" scope="col"><label class="req-check-wrap req-check-wrap-head" title="<?php echo htmlspecialchars($regLbl('reg.select_col', 'Select'), ENT_QUOTES, 'UTF-8'); ?>"><input type="checkbox" class="req-check-input" id="reqCheckAll" aria-label="<?php echo htmlspecialchars($regLbl('reg.select_col', 'Select all on this page'), ENT_QUOTES, 'UTF-8'); ?>"><span class="req-check-box" aria-hidden="true"></span></label></th><th class="req-col-reg">Reg ID</th><th class="req-col-created">Created</th><th class="req-col-agency">Agency</th><th class="req-col-agency-user">Agency ID</th><th class="req-col-country">Country</th><th class="req-col-email">Email</th><th class="req-col-phone">Phone</th><th class="req-col-site">Site URL</th><th class="req-col-notes">Notes</th><th class="req-col-plan">Plan</th><th class="req-col-amount">Amount</th><th class="req-col-payment">Payment</th><th class="req-col-status">Status</th><th class="req-col-created-agency">Created Agency</th><th class="req-col-actions"><?php echo htmlspecialchars($regLbl('reg.actions', 'Actions'), ENT_QUOTES, 'UTF-8'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -603,6 +603,12 @@ if ($tableExists) {
                 }
                 ?>
                 <tr class="<?php echo htmlspecialchars($rowVisClass); ?>" data-id="<?php echo (int)$r['id']; ?>" data-status="<?php echo htmlspecialchars($s); ?>" data-payment-status="<?php echo htmlspecialchars((string)($r['payment_status'] ?? '')); ?>" data-plan-amount="<?php echo htmlspecialchars((string)($r['plan_amount'] ?? '')); ?>" data-created-agency-id="<?php echo (int)$aid; ?>"<?php if ($agActiveAttr !== null): ?> data-agency-is-active="<?php echo htmlspecialchars($agActiveAttr); ?>" data-agency-suspended="<?php echo htmlspecialchars($agSuspAttr); ?>"<?php endif; ?> data-json="<?php echo htmlspecialchars(base64_encode(json_encode($jsonRowForReq))); ?>">
+                    <td class="req-select-col">
+                        <label class="req-check-wrap">
+                            <input type="checkbox" class="req-check-input req-row-check" name="request_ids[]" value="<?php echo (int)$r['id']; ?>" data-request-id="<?php echo (int)$r['id']; ?>" aria-label="<?php echo htmlspecialchars($regLbl('reg.select_col', 'Select') . ' ' . $fmtId($r['id']), ENT_QUOTES, 'UTF-8'); ?>">
+                            <span class="req-check-box" aria-hidden="true"></span>
+                        </label>
+                    </td>
                     <td class="req-col-reg req-col-clip"><strong><?php echo $fmtId($r['id']); ?></strong><?php if ($reqRowIsNew($r['created_at'] ?? null)) { ?> <span class="badge bg-info text-dark"><?php echo function_exists('cp_t') ? htmlspecialchars(cp_t('reg.new_badge'), ENT_QUOTES, 'UTF-8') : 'NEW'; ?></span><?php } ?></td>
                     <td class="req-col-created req-col-clip" lang="en" dir="ltr"><span class="req-en-date-block"><?php echo $fmtDateEn($r['created_at'] ?? null); ?></span></td>
                     <td class="req-col-agency req-col-clip" title="<?php echo htmlspecialchars($r['agency_name'] ?? ''); ?>"><?php echo htmlspecialchars($r['agency_name'] ?? '-'); ?></td>
@@ -645,7 +651,6 @@ if ($tableExists) {
                         echo '-';
                     }
                     ?></td>
-                    <td class="req-select-col"><label class="req-check-wrap"><input type="checkbox" class="req-check-input req-row-check" value="<?php echo (int)$r['id']; ?>" aria-label="Select <?php echo htmlspecialchars($fmtId($r['id'])); ?>"><span class="req-check-box" aria-hidden="true"></span></label></td>
                     <td class="req-col-actions">
                         <div class="dropdown req-actions-dd">
                             <button type="button" class="btn btn-sm btn-outline-light dropdown-toggle req-actions-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-popper-config='{"strategy":"fixed","modifiers":[{"name":"offset","options":{"offset":[0,6]}}]}' aria-expanded="false">

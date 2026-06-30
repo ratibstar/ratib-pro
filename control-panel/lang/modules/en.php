@@ -83,6 +83,7 @@ return [
     'reg.edit' => 'Edit',
     'reg.delete' => 'Delete',
     'reg.actions' => 'Actions',
+    'reg.select_col' => 'Select',
     'reg.mark_paid' => 'Mark Paid',
     'reg.delete_confirm' => 'Delete this registration request? This cannot be undone.',
     'reg.deleted_ok' => 'Deleted {n} registration request(s).',

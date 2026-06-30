@@ -79,6 +79,7 @@ return [
     'reg.edit' => 'تعديل',
     'reg.delete' => 'حذف',
     'reg.actions' => 'إجراءات',
+    'reg.select_col' => 'تحديد',
     'reg.mark_paid' => 'تعيين كمدفوع',
     'reg.delete_confirm' => 'حذف طلب التسجيل هذا؟ لا يمكن التراجع.',
     'reg.deleted_ok' => 'تم حذف {n} طلب(طلبات) تسجيل.',
