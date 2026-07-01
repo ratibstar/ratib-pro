@@ -98,27 +98,12 @@ final class ErpProvisioningService
             $slug = 'agency-' . $agencyId;
         }
 
-        $dbHost = trim((string) ($agency['erp_db_host'] ?? ''));
-        if ($dbHost === '') {
-            $dbHost = trim((string) ($agency['db_host'] ?? 'localhost'));
-        }
-        $dbPort = (int) ($agency['db_port'] ?? 3306);
-        $dbUser = trim((string) ($agency['erp_db_user'] ?? ''));
-        if ($dbUser === '') {
-            $dbUser = trim((string) ($agency['db_user'] ?? ''));
-        }
-        $dbPass = (string) ($agency['erp_db_pass'] ?? '');
-        if ($dbPass === '') {
-            $dbPass = (string) ($agency['db_pass'] ?? '');
-        }
-        if ($dbUser === '') {
-            $dbUser = defined('DB_USER') ? (string) DB_USER : '';
-        }
-        if ($dbPass === '' && defined('DB_PASS')) {
-            $dbPass = (string) DB_PASS;
-        }
-
-        $erpDb = self::resolveErpDatabaseName($agency, $slug, $dbHost, $dbPort, $dbUser, $dbPass);
+        $target = self::resolveErpTarget($agency, $slug);
+        $erpDb = $target['db'];
+        $dbHost = $target['host'];
+        $dbPort = $target['port'];
+        $dbUser = $target['user'];
+        $dbPass = $target['pass'];
 
         self::markStatus($controlConn, $agencyId, 'provisioning', $erpDb, $dbHost, $dbUser, $dbPass);
 
@@ -183,33 +168,193 @@ final class ErpProvisioningService
         }
     }
 
-    /** @param array<string, mixed> $agency */
-    private static function resolveErpDatabaseName(
-        array $agency,
-        string $slug,
-        string $host,
-        int $port,
-        string $user,
-        string $pass
-    ): string {
+    private static function ensureAgencyDbHelper(): void
+    {
+        static $loaded = false;
+        if ($loaded) {
+            return;
+        }
+        $path = dirname(__DIR__, 2) . '/api/control/agency-db-helper.php';
+        if (is_file($path)) {
+            require_once $path;
+        }
+        $loaded = true;
+    }
+
+    /**
+     * Match getAgencyDbConnection: shared MySQL user uses .env password, not stale agency row.
+     *
+     * @param array<string, mixed> $agency
+     * @return array{host: string, port: int, user: string, pass: string}
+     */
+    private static function resolveAgencyMysqlCredentials(array $agency): array
+    {
+        $host = trim((string) ($agency['erp_db_host'] ?? ''));
+        if ($host === '') {
+            $host = trim((string) ($agency['db_host'] ?? ''));
+        }
+        if ($host === '') {
+            $host = defined('DB_HOST') ? (string) DB_HOST : 'localhost';
+        }
+        $port = (int) ($agency['db_port'] ?? (defined('DB_PORT') ? (int) DB_PORT : 3306));
+        $user = trim((string) ($agency['erp_db_user'] ?? ''));
+        if ($user === '') {
+            $user = trim((string) ($agency['db_user'] ?? ''));
+        }
+        if ($user === '') {
+            $user = defined('DB_USER') ? (string) DB_USER : '';
+        }
+        $agencyPass = (string) ($agency['erp_db_pass'] ?? '');
+        if ($agencyPass === '') {
+            $agencyPass = (string) ($agency['db_pass'] ?? '');
+        }
+        $envUser = defined('DB_USER') ? (string) DB_USER : '';
+        $envPass = defined('DB_PASS') ? (string) DB_PASS : '';
+        $pass = ($user !== '' && $user === $envUser) ? $envPass : ($agencyPass !== '' ? $agencyPass : $envPass);
+
+        return [
+            'host' => $host,
+            'port' => $port > 0 ? $port : 3306,
+            'user' => $user,
+            'pass' => $pass,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @return array{db: string, host: string, port: int, user: string, pass: string}
+     */
+    private static function resolveErpTarget(array $agency, string $slug): array
+    {
+        $cred = self::resolveAgencyMysqlCredentials($agency);
+        $host = $cred['host'];
+        $port = $cred['port'];
+        $user = $cred['user'];
+        $pass = $cred['pass'];
+
+        $tryDb = static function (string $dbName) use ($host, $port, $user, $pass): ?array {
+            return self::resolveWorkingConnection($host, $port, $user, $pass, $dbName);
+        };
+
         $stored = trim((string) ($agency['erp_db_name'] ?? ''));
-        if ($stored !== '' && self::canConnectToDatabase($host, $port, $user, $pass, $stored)) {
-            return $stored;
+        if ($stored !== '') {
+            $hit = $tryDb($stored);
+            if ($hit !== null) {
+                return $hit;
+            }
+        }
+
+        self::ensureAgencyDbHelper();
+        if (function_exists('getAgencyDbConnection')) {
+            $countryId = (int) ($agency['country_id'] ?? 0);
+            $info = getAgencyDbConnection($agency, $countryId);
+            if (is_array($info) && trim((string) ($info['db_name'] ?? '')) !== '') {
+                if (isset($info['conn']) && $info['conn'] instanceof mysqli) {
+                    $info['conn']->close();
+                }
+
+                return [
+                    'db' => (string) $info['db_name'],
+                    'host' => (string) ($info['connect_host'] ?? $host),
+                    'port' => (int) ($info['connect_port'] ?? $port),
+                    'user' => (string) ($info['connect_user'] ?? $user),
+                    'pass' => (string) ($info['connect_pass'] ?? $pass),
+                ];
+            }
         }
 
         $tenantDb = trim((string) ($agency['db_name'] ?? ''));
-        if ($tenantDb !== '' && self::canConnectToDatabase($host, $port, $user, $pass, $tenantDb)) {
-            return $tenantDb;
+        if ($tenantDb !== '') {
+            $hit = $tryDb($tenantDb);
+            if ($hit !== null) {
+                return $hit;
+            }
         }
 
         $suggested = function_exists('rateb_suggested_erp_db_name')
             ? rateb_suggested_erp_db_name($slug)
             : ('admin_rateb_erp_' . preg_replace('/[^a-z0-9_]+/i', '_', strtolower($slug)));
-        if (self::canConnectToDatabase($host, $port, $user, $pass, $suggested)) {
-            return $suggested;
+        $hit = $tryDb($suggested);
+        if ($hit !== null) {
+            return $hit;
         }
 
-        return $suggested;
+        return [
+            'db' => $suggested,
+            'host' => $host,
+            'port' => $port,
+            'user' => $user,
+            'pass' => $pass,
+        ];
+    }
+
+    /**
+     * @return array{db: string, host: string, port: int, user: string, pass: string}|null
+     */
+    private static function resolveWorkingConnection(
+        string $host,
+        int $port,
+        string $user,
+        string $pass,
+        string $dbName
+    ): ?array {
+        if ($user === '' || $dbName === '') {
+            return null;
+        }
+        $attempts = [];
+        $add = static function (string $h, string $u, string $p) use (&$attempts): void {
+            $key = $h . "\0" . $u . "\0" . $p;
+            $attempts[$key] = ['host' => $h, 'user' => $u, 'pass' => $p];
+        };
+        $add($host, $user, $pass);
+        if ($host === 'localhost') {
+            $add('127.0.0.1', $user, $pass);
+        } elseif ($host === '127.0.0.1') {
+            $add('localhost', $user, $pass);
+        }
+        if (defined('DB_USER') && defined('DB_PASS')) {
+            $envUser = (string) DB_USER;
+            $envPass = (string) DB_PASS;
+            $add($host, $envUser, $envPass);
+            if ($host === 'localhost') {
+                $add('127.0.0.1', $envUser, $envPass);
+            } elseif ($host === '127.0.0.1') {
+                $add('localhost', $envUser, $envPass);
+            }
+        }
+
+        foreach ($attempts as $a) {
+            if (!self::pdoPing($a['host'], $port, $a['user'], $a['pass'], $dbName)) {
+                continue;
+            }
+
+            return [
+                'db' => $dbName,
+                'host' => $a['host'],
+                'port' => $port,
+                'user' => $a['user'],
+                'pass' => $a['pass'],
+            ];
+        }
+
+        return null;
+    }
+
+    private static function pdoPing(string $host, int $port, string $user, string $pass, string $dbName): bool
+    {
+        try {
+            $options = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+            if (defined('PDO::ATTR_TIMEOUT')) {
+                $options[PDO::ATTR_TIMEOUT] = 3;
+            }
+            $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            $pdo->query('SELECT 1');
+
+            return true;
+        } catch (Throwable $e) {
+            return false;
+        }
     }
 
     private static function ensureErpDatabase(string $host, int $port, string $user, string $pass, string $dbName): void
@@ -281,18 +426,7 @@ final class ErpProvisioningService
 
     private static function canConnectToDatabase(string $host, int $port, string $user, string $pass, string $dbName): bool
     {
-        if ($user === '' || $dbName === '') {
-            return false;
-        }
-        try {
-            $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
-            $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-            $pdo->query('SELECT 1');
-
-            return true;
-        } catch (Throwable $e) {
-            return false;
-        }
+        return self::resolveWorkingConnection($host, $port, $user, $pass, $dbName) !== null;
     }
 
     private static function tryDirectAdminCreateDatabase(string $dbName, string $dbUser = '', string $dbPass = ''): bool
@@ -629,35 +763,17 @@ final class ErpProvisioningService
      */
     public static function agencyDatabaseConfig(array $agency): array
     {
+        $cred = self::resolveAgencyMysqlCredentials($agency);
         $dbName = trim((string) ($agency['erp_db_name'] ?? ''));
-        $dbHost = trim((string) ($agency['erp_db_host'] ?? ''));
-        if ($dbHost === '') {
-            $dbHost = trim((string) ($agency['db_host'] ?? 'localhost'));
-        }
-        $dbPort = (int) ($agency['db_port'] ?? 3306);
-        $dbUser = trim((string) ($agency['erp_db_user'] ?? ''));
-        if ($dbUser === '') {
-            $dbUser = trim((string) ($agency['db_user'] ?? ''));
-        }
-        $dbPass = (string) ($agency['erp_db_pass'] ?? '');
-        if ($dbPass === '') {
-            $dbPass = (string) ($agency['db_pass'] ?? '');
-        }
-        if ($dbUser === '') {
-            $dbUser = defined('DB_USER') ? (string) DB_USER : '';
-        }
-        if ($dbPass === '' && defined('DB_PASS')) {
-            $dbPass = (string) DB_PASS;
-        }
         if ($dbName === '') {
             $dbName = trim((string) ($agency['db_name'] ?? ''));
         }
 
         return [
-            'host' => $dbHost !== '' ? $dbHost : 'localhost',
-            'port' => $dbPort > 0 ? $dbPort : 3306,
-            'user' => $dbUser,
-            'pass' => $dbPass,
+            'host' => $cred['host'] !== '' ? $cred['host'] : 'localhost',
+            'port' => $cred['port'],
+            'user' => $cred['user'],
+            'pass' => $cred['pass'],
             'db' => $dbName,
         ];
     }
