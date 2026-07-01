@@ -488,36 +488,63 @@
         if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
     }
 
+    function resolveAgencyIdFromBtn(btn, ev) {
+        var el = btn;
+        if (ev && ev.currentTarget) {
+            el = ev.currentTarget;
+        } else if (ev && ev.target && typeof ev.target.closest === 'function') {
+            var fromTarget = ev.target.closest('.btn-provision-pro, .btn-provision-erp');
+            if (fromTarget) el = fromTarget;
+        }
+        if (!el) return 0;
+        var id = parseInt(el.getAttribute('data-agency-id') || el.getAttribute('data-id') || (el.dataset && el.dataset.agencyId) || '0', 10);
+        if (id > 0) return id;
+        var row = el.closest && el.closest('tr[data-agency-id]');
+        if (row) {
+            id = parseInt(row.getAttribute('data-agency-id') || '0', 10);
+            if (id > 0) return id;
+        }
+        if (row) {
+            var chk = row.querySelector('.agency-row-check, .row-check');
+            if (chk) {
+                id = parseInt(chk.value || chk.getAttribute('data-id') || '0', 10);
+            }
+        }
+        return id > 0 ? id : 0;
+    }
+
     function provisionProClick(btn, ev) {
         stopProvisionEvent(ev);
-        if (!btn) return false;
-        if (btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) {
+        var proBtn = (ev && ev.currentTarget) ? ev.currentTarget : btn;
+        if (!proBtn) return false;
+        if (proBtn.classList.contains('disabled') || proBtn.classList.contains('permission-denied')) {
             showAlert('You do not have permission to provision Pro for this agency.');
             return false;
         }
-        var proAgencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
+        var proAgencyId = resolveAgencyIdFromBtn(proBtn, ev);
         if (!proAgencyId) { showAlert('Invalid agency ID'); return false; }
         showConfirm('Provision RATEB Pro for this agency?\n\nCreates/updates admin user:\nUsername: admin\nPassword: 123456').then(function(ok) {
             if (!ok) return;
             closeAgencyActionDropdowns();
-            runProvisionPro(btn, proAgencyId, true);
+            runProvisionPro(proBtn, proAgencyId, true);
         });
         return false;
     }
 
     function provisionErpClick(btn, ev) {
         stopProvisionEvent(ev);
-        if (!btn) return false;
-        if (btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) {
+        var erpBtn = (ev && ev.currentTarget) ? ev.currentTarget : btn;
+        if (!erpBtn) return false;
+        if (erpBtn.classList.contains('disabled') || erpBtn.classList.contains('permission-denied')) {
             showAlert('You do not have permission to provision ERP for this agency.');
             return false;
         }
-        var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
+        var agencyId = resolveAgencyIdFromBtn(erpBtn, ev);
         if (!agencyId) { showAlert('Invalid agency ID'); return false; }
-        var erpStatus = (btn.getAttribute('data-erp-status') || 'none').toLowerCase();
+        var erpStatus = (erpBtn.getAttribute('data-erp-status') || 'none').toLowerCase();
         var openModal = function() {
             closeAgencyActionDropdowns();
-            openErpProvisionModal(btn, agencyId, erpStatus);
+            openErpProvisionModal(erpBtn, agencyId, erpStatus);
         };
         if (erpStatus === 'ready') {
             showConfirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.').then(function(ok) {
@@ -534,12 +561,12 @@
         scope.querySelectorAll('.btn-provision-pro').forEach(function(btn) {
             if (btn._agProvisionWired) return;
             btn._agProvisionWired = true;
-            btn.onclick = function(ev) { return provisionProClick(btn, ev); };
+            btn.onclick = function(ev) { return provisionProClick(this, ev); };
         });
         scope.querySelectorAll('.btn-provision-erp').forEach(function(btn) {
             if (btn._agProvisionWired) return;
             btn._agProvisionWired = true;
-            btn.onclick = function(ev) { return provisionErpClick(btn, ev); };
+            btn.onclick = function(ev) { return provisionErpClick(this, ev); };
         });
     }
 
