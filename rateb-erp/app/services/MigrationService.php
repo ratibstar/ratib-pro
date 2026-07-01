@@ -30,17 +30,17 @@ final class MigrationService
         try {
             [$pdo, $dbName] = $this->migrationConnection();
 
-            return $this->runAllOnPdo($pdo, $dbName, $log);
+            return $this->runAllOnPdo($pdo, $dbName, $log, true);
         } finally {
             Database::clearConnectionOverride();
         }
     }
 
     /** @return array<int, string> */
-    private function runAllOnPdo(PDO $pdo, string $dbName, array $log): array
+    private function runAllOnPdo(PDO $pdo, string $dbName, array $log, bool $explicitAgencyTarget = false): array
     {
         $log[] = 'Connected to database: ' . $dbName;
-        $this->assertErpTargetDatabase($dbName);
+        $this->assertErpTargetDatabase($dbName, $explicitAgencyTarget);
         $this->ensureMigrationsTable($pdo);
         $this->seedLegacyAppliedMigrations($pdo, $log);
 
@@ -405,7 +405,7 @@ final class MigrationService
         return is_string($converted) && $converted !== $statement ? $converted : null;
     }
 
-    private function assertErpTargetDatabase(string $dbName): void
+    private function assertErpTargetDatabase(string $dbName, bool $explicitAgencyTarget = false): void
     {
         $lower = strtolower(trim($dbName));
         if ($lower === 'admin_rateb' || $lower === 'admin_control_panel_db') {
@@ -414,7 +414,7 @@ final class MigrationService
                 . ' — set RATEB_ERP_DB_NAME=admin_rateb-erp in server .env and grant MySQL access.'
             );
         }
-        if (strpos($lower, 'erp') === false) {
+        if (!$explicitAgencyTarget && strpos($lower, 'erp') === false) {
             throw new \RuntimeException(
                 'Refusing ERP migrations on ' . $dbName
                 . ' — expected database admin_rateb-erp (RATEB_ERP_DB_NAME).'
