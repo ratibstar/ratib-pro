@@ -45,6 +45,18 @@
     }
     initAgencyActionDropdowns();
 
+    function closeAgencyActionDropdowns() {
+        document.querySelectorAll('.ag-actions-dropdown .ag-actions-toggle').forEach(function (toggle) {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) {
+                return;
+            }
+            var inst = bootstrap.Dropdown.getInstance(toggle);
+            if (inst) {
+                inst.hide();
+            }
+        });
+    }
+
     // EN: Utility helpers (number normalization, modal alerts, confirmations, slug sanitizer).
     // AR: دوال مساعدة (توحيد الأرقام، التنبيه، التأكيد، وتنظيف slug).
     function toWesternNum(s) {
@@ -52,12 +64,16 @@
         return String(s).replace(/[٠-٩۰-۹]/g, function(d) { return map[d] || d; });
     }
     function showAlert(msg) {
+        closeAgencyActionDropdowns();
         var el = document.getElementById('alertMessage');
         var modalEl = document.getElementById('alertModal');
         if (el) el.textContent = msg;
-        if (modalEl && typeof bootstrap !== 'undefined') new bootstrap.Modal(modalEl).show();
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
     }
     function showConfirm(msg) {
+        closeAgencyActionDropdowns();
         return new Promise(function(resolve) {
             var confirmMessage = document.getElementById('confirmMessage');
             var modalEl = document.getElementById('confirmModal');
@@ -278,9 +294,93 @@
         if (modal) modal.show();
     };
 
-    // Document-level delegation so Edit/Delete/Bulk buttons work (capture phase)
+    // Document-level delegation so row/dropdown actions work reliably.
     document.addEventListener('click', function(e) {
         if (!e.target || typeof e.target.closest !== 'function') return;
+
+        var erpBlockedBtn = e.target.closest('.ag-btn-erp-blocked');
+        if (erpBlockedBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            showAlert(erpBlockedBtn.getAttribute('data-blocked-reason') || 'ERP is not ready for this agency yet.');
+            return;
+        }
+
+        var proBtn = e.target.closest('.btn-provision-pro');
+        if (proBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
+            if (!proAgencyId) return;
+            showConfirm('Provision RATEB Pro for this agency?\n\nCreates/updates admin user:\nUsername: admin\nPassword: 123456').then(function(ok) {
+                if (!ok) return;
+                proBtn.disabled = true;
+                fetch(API_BASE + '/agencies-provision-pro.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agency_id: proAgencyId })
+                }).then(function(res) {
+                    var ct = (res.headers.get('content-type') || '').toLowerCase();
+                    if (!ct.includes('application/json')) {
+                        throw new Error('Session expired or server error — please log in again and retry.');
+                    }
+                    return res.json();
+                }).then(function(data) {
+                    proBtn.disabled = false;
+                    if (!data || !data.success) {
+                        showAlert((data && data.message) ? data.message : 'Pro provisioning failed');
+                        return;
+                    }
+                    var seed = data.data || {};
+                    var msg = 'RATEB Pro ready on ' + (seed.db_name || 'database');
+                    if (seed.admin_password) {
+                        msg += '\nUsername: ' + (seed.admin_username || 'admin') + '\nPassword: ' + seed.admin_password;
+                    }
+                    if (seed.tenant_id) {
+                        msg += '\nTenant ID: ' + seed.tenant_id;
+                    }
+                    showAlert(msg);
+                    window.location.reload();
+                }).catch(function() {
+                    proBtn.disabled = false;
+                    showAlert('Pro provisioning request failed');
+                });
+            });
+            return;
+        }
+
+        var erpProvBtn = e.target.closest('.btn-provision-erp');
+        if (erpProvBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var agencyId = parseInt(erpProvBtn.getAttribute('data-agency-id') || '0', 10);
+            if (!agencyId) return;
+            var erpStatus = (erpProvBtn.getAttribute('data-erp-status') || 'none').toLowerCase();
+            var openErpModal = function() {
+                closeAgencyActionDropdowns();
+                var planSelect = document.getElementById('erpProvisionPlanSelect');
+                var agencyInput = document.getElementById('erpProvisionAgencyId');
+                var modalEl = document.getElementById('erpProvisionModal');
+                if (!planSelect || !agencyInput || !modalEl || typeof bootstrap === 'undefined') {
+                    showAlert('ERP plan dialog is unavailable on this page.');
+                    return;
+                }
+                agencyInput.value = String(agencyId);
+                agencyInput.setAttribute('data-force', erpStatus === 'ready' ? '1' : '0');
+                var currentPlan = (erpProvBtn.getAttribute('data-erp-plan') || 'professional').toLowerCase();
+                planSelect.value = ['starter', 'professional', 'enterprise'].indexOf(currentPlan) >= 0 ? currentPlan : 'professional';
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            };
+            if (erpStatus === 'ready') {
+                showConfirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.').then(function(ok) {
+                    if (ok) openErpModal();
+                });
+                return;
+            }
+            openErpModal();
+            return;
+        }
 
         var bulkBtn = e.target.closest('#btnBulkDelete, #btnBulkActivate, #btnBulkDeactivate, #btnBulkSuspend, #btnBulkUnsuspend, #btnBulkSync, #btnBulkRebuildDb, #btnBulkRunMigration, #btnBulkTestDbConnection, #btnRepairTenantLinks');
         if (bulkBtn) {
@@ -316,6 +416,7 @@
             // AR: إجراء العرض يملأ نافذة القراءة من بيانات الصف المشفرة.
             e.preventDefault();
             e.stopPropagation();
+            closeAgencyActionDropdowns();
             var raw = e.target.closest('.btn-view').dataset.row || '';
             var r = raw ? JSON.parse(atob(raw)) : {};
             viewModalRowData = r;
@@ -342,6 +443,7 @@
             // AR: إجراء التعديل يملأ نموذج النافذة لعملية التحديث.
             e.preventDefault();
             e.stopPropagation();
+            closeAgencyActionDropdowns();
             var raw = e.target.closest('.btn-edit').dataset.row || '';
             var r = raw ? JSON.parse(atob(raw)) : {};
             document.getElementById('editId').value = r.id || '';
@@ -577,88 +679,6 @@
 
         bindStream(streamCandidates[activeIndex]);
     })();
-
-    tableBody.addEventListener('click', function(evt) {
-        var erpBlockedBtn = evt.target && evt.target.closest ? evt.target.closest('.ag-btn-erp-blocked') : null;
-        if (erpBlockedBtn) {
-            evt.preventDefault();
-            showAlert(erpBlockedBtn.getAttribute('data-blocked-reason') || 'ERP is not ready for this agency yet.');
-            return;
-        }
-
-        var proBtn = evt.target && evt.target.closest ? evt.target.closest('.btn-provision-pro') : null;
-        if (proBtn) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
-            if (!proAgencyId) return;
-            showConfirm('Provision RATEB Pro for this agency?\n\nCreates/updates admin user:\nUsername: admin\nPassword: 123456').then(function(ok) {
-                if (!ok) return;
-                proBtn.disabled = true;
-                fetch(API_BASE + '/agencies-provision-pro.php', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agency_id: proAgencyId })
-                }).then(function(res) {
-                var ct = (res.headers.get('content-type') || '').toLowerCase();
-                if (!ct.includes('application/json')) {
-                    throw new Error('Session expired or server error — please log in again and retry.');
-                }
-                return res.json();
-            }).then(function(data) {
-                    proBtn.disabled = false;
-                    if (!data || !data.success) {
-                        showAlert((data && data.message) ? data.message : 'Pro provisioning failed');
-                        return;
-                    }
-                    var seed = data.data || {};
-                    var msg = 'RATEB Pro ready on ' + (seed.db_name || 'database');
-                    if (seed.admin_password) {
-                        msg += '\nUsername: ' + (seed.admin_username || 'admin') + '\nPassword: ' + seed.admin_password;
-                    }
-                    if (seed.tenant_id) {
-                        msg += '\nTenant ID: ' + seed.tenant_id;
-                    }
-                    showAlert(msg);
-                    window.location.reload();
-                }).catch(function() {
-                    proBtn.disabled = false;
-                    showAlert('Pro provisioning request failed');
-                });
-            });
-            return;
-        }
-
-        var btn = evt.target && evt.target.closest ? evt.target.closest('.btn-provision-erp') : null;
-        if (!btn) return;
-        evt.preventDefault();
-        evt.stopPropagation();
-        var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
-        if (!agencyId) return;
-        var erpStatus = (btn.getAttribute('data-erp-status') || 'none').toLowerCase();
-        var openErpModal = function() {
-            var planSelect = document.getElementById('erpProvisionPlanSelect');
-            var agencyInput = document.getElementById('erpProvisionAgencyId');
-            var modalEl = document.getElementById('erpProvisionModal');
-            if (!planSelect || !agencyInput || !modalEl || typeof bootstrap === 'undefined') {
-                showAlert('ERP plan dialog is unavailable on this page.');
-                return;
-            }
-            agencyInput.value = String(agencyId);
-            agencyInput.setAttribute('data-force', erpStatus === 'ready' ? '1' : '0');
-            var currentPlan = (btn.getAttribute('data-erp-plan') || 'professional').toLowerCase();
-            planSelect.value = ['starter', 'professional', 'enterprise'].indexOf(currentPlan) >= 0 ? currentPlan : 'professional';
-            new bootstrap.Modal(modalEl).show();
-        };
-        if (erpStatus === 'ready') {
-            showConfirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.').then(function(ok) {
-                if (ok) openErpModal();
-            });
-            return;
-        }
-        openErpModal();
-    });
 
     var erpProvisionConfirmBtn = document.getElementById('erpProvisionConfirmBtn');
     if (erpProvisionConfirmBtn) {

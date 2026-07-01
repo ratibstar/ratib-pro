@@ -175,7 +175,19 @@
 }
 
 .ag-actions-dropdown .dropdown-menu {
-    z-index: 1090;
+    z-index: 1040;
+}
+
+#erpProvisionModal.modal,
+#confirmModal.modal,
+#alertModal.modal,
+#viewModal.modal,
+#editModal.modal {
+    z-index: 1065 !important;
+}
+
+.modal-backdrop {
+    z-index: 1060 !important;
 }
 
 #tableCard .agencies-table-scroll td.ag-actions-cell {
@@ -293,12 +305,6 @@
 .ag-btn-erp-blocked {
     opacity: 0.75;
     cursor: help;
-}
-
-#erpProvisionModal.modal,
-#confirmModal.modal,
-#alertModal.modal {
-    z-index: 1065 !important;
 }
 
 .agencies-controls-bar button:not(:disabled) {
