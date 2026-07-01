@@ -199,7 +199,7 @@ body > .modal-backdrop,
     border: 1px solid #2a4f7c;
     background: #152a45;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-    z-index: 1035 !important;
+    z-index: 1090 !important;
 }
 
 .ag-actions-menu > li {

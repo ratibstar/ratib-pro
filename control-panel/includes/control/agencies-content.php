@@ -668,7 +668,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $agencyIdRow = (int) ($r['id'] ?? 0);
                         ?>
                         <div class="dropdown ag-actions-dropdown">
-                            <button type="button" class="ag-btn ag-btn-actions dropdown-toggle ag-actions-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                            <button type="button" class="ag-btn ag-btn-actions dropdown-toggle ag-actions-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-popper-config='{"strategy":"fixed","modifiers":[{"name":"offset","options":{"offset":[0,6]}}]}' aria-expanded="false" aria-haspopup="true">
                                 <i class="fas fa-bolt"></i>
                                 <span><?php echo htmlspecialchars($agT('agencies.actions', 'Actions'), ENT_QUOTES, 'UTF-8'); ?></span>
                             </button>
@@ -690,8 +690,8 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                 <li><button type="button" class="dropdown-item ag-btn-erp-blocked" data-blocked-reason="<?php echo htmlspecialchars($erpBlocked !== '' ? $erpBlocked : $agT('agencies.erp_needs_provision', 'Run Provision ERP first'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><i class="fas fa-hospital ag-menu-ico ag-ico-erp"></i><?php echo htmlspecialchars($agT('agencies.erp', 'ERP'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                                 <?php endif; ?>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><button type="button" class="dropdown-item btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,view_control_agencies"><i class="fas fa-eye ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.view', 'View'), ENT_QUOTES, 'UTF-8'); ?></button></li>
-                                <li><button type="button" class="dropdown-item btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-pen ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.edit', 'Edit'), ENT_QUOTES, 'UTF-8'); ?></button></li>
+                                <li><button type="button" class="dropdown-item btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r, JSON_UNESCAPED_UNICODE))); ?>" data-permission="control_agencies,view_control_agencies"><i class="fas fa-eye ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.view', 'View'), ENT_QUOTES, 'UTF-8'); ?></button></li>
+                                <li><button type="button" class="dropdown-item btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r, JSON_UNESCAPED_UNICODE))); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-pen ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.edit', 'Edit'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <?php if ($hasIsSuspended && $isSuspended): ?>
                                 <li><button type="button" class="dropdown-item btn-mark-paid" data-id="<?php echo $agencyIdRow; ?>" data-name="<?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? 'Agency'); ?>" data-permission="control_agencies,edit_control_agency,approve_control_registration"><i class="fas fa-check-circle ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.mark_paid', 'Mark Paid'), ENT_QUOTES, 'UTF-8'); ?></button></li>

@@ -59,6 +59,7 @@
                         modifiers: [{ name: 'offset', options: { offset: [0, 6] } }],
                     },
                 });
+                toggle.addEventListener('shown.bs.dropdown', bindAgencyActionMenus);
             } catch (e) {
                 /* ignore */
             }
@@ -382,16 +383,36 @@
         if (modal) modal.show();
     };
 
-    function clickClosest(e, selector) {
+    function decodeAgencyRowB64(raw) {
+        if (!raw) return {};
+        try {
+            var bin = atob(String(raw));
+            if (typeof TextDecoder !== 'undefined') {
+                var bytes = new Uint8Array(bin.length);
+                for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+            }
+            return JSON.parse(bin);
+        } catch (e) {
+            try { return JSON.parse(decodeURIComponent(escape(atob(String(raw))))); } catch (e2) { return {}; }
+        }
+    }
+
+    function menuActionItem(e) {
         var el = e.target;
         if (el && el.nodeType === 3) el = el.parentElement;
         if (!el || typeof el.closest !== 'function') return null;
-        return el.closest(selector);
+        var item = el.closest('.ag-actions-menu .dropdown-item');
+        if (item) return item;
+        var li = el.closest('.ag-actions-menu li');
+        if (!li) return null;
+        var child = li.querySelector('a.dropdown-item, button.dropdown-item');
+        return (child && !child.classList.contains('disabled')) ? child : null;
     }
 
     function openViewFromBtn(viewBtn) {
-        var raw = viewBtn.dataset.row || '';
-        var r = raw ? JSON.parse(atob(raw)) : {};
+        var raw = viewBtn.getAttribute('data-row') || viewBtn.dataset.row || '';
+        var r = decodeAgencyRowB64(raw);
         viewModalRowData = r;
         var cname = (r.country_name || '').trim() || (r.country || '').trim() || '-';
         function setView(id, val) { var el = document.getElementById(id); if (el) el.textContent = val != null && val !== '' ? String(val) : '-'; }
@@ -416,8 +437,8 @@
     }
 
     function openEditFromBtn(editBtn) {
-        var raw = editBtn.dataset.row || '';
-        var r = raw ? JSON.parse(atob(raw)) : {};
+        var raw = editBtn.getAttribute('data-row') || editBtn.dataset.row || '';
+        var r = decodeAgencyRowB64(raw);
         document.getElementById('editId').value = r.id || '';
         document.getElementById('editCountryId').value = r.country_id || '';
         document.getElementById('editName').value = r.name || '';
@@ -445,52 +466,55 @@
         }, 0);
     }
 
-    // mousedown (capture) — runs before Bootstrap closes the dropdown on click
-    document.addEventListener('mousedown', function(e) {
-        var item = clickClosest(e, '.ag-actions-menu .dropdown-item');
-        if (!item || item.classList.contains('disabled') || item.classList.contains('permission-denied')) return;
-        if (item.tagName === 'A' && item.getAttribute('href')) return;
+    function clickClosest(e, selector) {
+        var el = e.target;
+        if (el && el.nodeType === 3) el = el.parentElement;
+        if (!el || typeof el.closest !== 'function') return null;
+        return el.closest(selector);
+    }
 
-        e.preventDefault();
-        e.stopPropagation();
+    function handleAgencyMenuAction(item) {
+        if (!item || item.classList.contains('disabled') || item.classList.contains('permission-denied')) return false;
+        if (item.tagName === 'A' && item.getAttribute('href')) return false;
+
         closeAgencyActionDropdowns();
 
         if (item.classList.contains('btn-provision-pro')) {
             var proAgencyId = parseInt(item.getAttribute('data-agency-id') || '0', 10);
             if (proAgencyId) runProvisionPro(item, proAgencyId);
-            return;
+            return true;
         }
         if (item.classList.contains('btn-provision-erp')) {
             var agencyId = parseInt(item.getAttribute('data-agency-id') || '0', 10);
-            if (!agencyId) return;
+            if (!agencyId) return true;
             var erpStatus = (item.getAttribute('data-erp-status') || 'none').toLowerCase();
-            if (erpStatus === 'ready' && !window.confirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.')) return;
+            if (erpStatus === 'ready' && !window.confirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.')) return true;
             openErpProvisionModal(item, agencyId, erpStatus);
-            return;
+            return true;
         }
         if (item.classList.contains('ag-btn-erp-blocked')) {
             window.alert(item.getAttribute('data-blocked-reason') || 'ERP is not ready for this agency yet.');
-            return;
+            return true;
         }
         if (item.classList.contains('btn-view')) {
             openViewFromBtn(item);
-            return;
+            return true;
         }
         if (item.classList.contains('btn-edit')) {
             openEditFromBtn(item);
-            return;
+            return true;
         }
         if (item.classList.contains('btn-delete')) {
-            var delId = item.dataset.id;
+            var delId = item.getAttribute('data-id') || item.dataset.id;
             showConfirm('Delete this agency?').then(function(ok) {
                 if (ok) apiDeleteIds([parseInt(delId, 10)]).then(function(r) { if (r.success) location.reload(); else showAlert(r.message || 'Delete failed'); }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
             });
-            return;
+            return true;
         }
         if (item.classList.contains('btn-mark-paid')) {
-            var aid = parseInt(item.dataset.id || '0', 10);
-            var aname = (item.dataset.name || 'this agency').trim();
-            if (!aid) { showAlert('Invalid agency ID'); return; }
+            var aid = parseInt(item.getAttribute('data-id') || item.dataset.id || '0', 10);
+            var aname = (item.getAttribute('data-name') || item.dataset.name || 'this agency').trim();
+            if (!aid) { showAlert('Invalid agency ID'); return true; }
             showConfirm('Mark paid for ' + aname + '? This will unsuspend the agency and mark its latest linked registration as Paid.').then(function(ok) {
                 if (!ok) return;
                 item.disabled = true;
@@ -507,11 +531,44 @@
                     showAlert('Request failed: ' + (err.message || err));
                 });
             });
+            return true;
         }
-    }, true);
+        return false;
+    }
 
-    // Bulk / non-dropdown actions (capture — before other document handlers)
+    function bindAgencyActionMenus() {
+        document.querySelectorAll('.ag-actions-menu').forEach(function(menu) {
+            if (menu._agMenuBound) return;
+            menu._agMenuBound = true;
+            menu.addEventListener('click', function(e) {
+                var item = menuActionItem(e);
+                if (!item) return;
+                if (item.tagName === 'A' && item.getAttribute('href')) return;
+                e.preventDefault();
+                e.stopPropagation();
+                try {
+                    handleAgencyMenuAction(item);
+                } catch (err) {
+                    showAlert('Action failed: ' + (err && err.message ? err.message : String(err)));
+                }
+            });
+        });
+    }
+    bindAgencyActionMenus();
+    window.setTimeout(bindAgencyActionMenus, 600);
+
+    // Same capture pattern as registration-requests-page.js
     document.addEventListener('click', function(e) {
+        if (!e.target || typeof e.target.closest !== 'function') return;
+        try {
+        var menuItem = menuActionItem(e);
+        if (menuItem && menuItem.tagName !== 'A') {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAgencyMenuAction(menuItem);
+            return;
+        }
+
         var bulkBtn = clickClosest(e, '#btnBulkDelete, #btnBulkActivate, #btnBulkDeactivate, #btnBulkSuspend, #btnBulkUnsuspend, #btnBulkSync, #btnBulkRebuildDb, #btnBulkRunMigration, #btnBulkTestDbConnection, #btnRepairTenantLinks');
         if (bulkBtn) {
             e.preventDefault();
@@ -539,6 +596,9 @@
             if (action && agencyId) {
                 apiCall('PATCH', { agency_ids: [agencyId], action: action }).catch(function() {});
             }
+        }
+        } catch (clickErr) {
+            showAlert('Action failed: ' + (clickErr && clickErr.message ? clickErr.message : String(clickErr)));
         }
     }, true);
 
