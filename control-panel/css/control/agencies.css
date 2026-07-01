@@ -138,20 +138,12 @@
 #alertModal.modal,
 #confirmModal.modal,
 #erpProvisionModal.modal {
-    z-index: 1310 !important;
-}
-
-#viewModal.modal.show,
-#editModal.modal.show,
-#alertModal.modal.show,
-#confirmModal.modal.show,
-#erpProvisionModal.modal.show {
-    display: block !important;
+    z-index: 1060 !important;
 }
 
 body > .modal-backdrop,
 .modal-backdrop {
-    z-index: 1300 !important;
+    z-index: 1055 !important;
 }
 
 #editModal .modal-content,
