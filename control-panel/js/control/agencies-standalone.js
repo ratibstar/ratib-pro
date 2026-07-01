@@ -23,13 +23,22 @@
     if (!tableBody) return;
 
     function closeAgencyActionDropdowns() {
-        if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) {
-            return;
-        }
-        document.querySelectorAll('.ag-actions-dropdown .ag-actions-toggle').forEach(function (toggle) {
-            var inst = bootstrap.Dropdown.getInstance(toggle);
-            if (inst) {
-                inst.hide();
+        document.querySelectorAll('.ag-actions-dropdown').forEach(function (wrap) {
+            var toggle = wrap.querySelector('.ag-actions-toggle');
+            var menu = wrap.querySelector('.ag-actions-menu');
+            if (menu) {
+                menu.classList.remove('show');
+            }
+            if (toggle) {
+                toggle.classList.remove('show');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+            wrap.classList.remove('show');
+            if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && toggle) {
+                var inst = bootstrap.Dropdown.getInstance(toggle);
+                if (inst) {
+                    inst.hide();
+                }
             }
         });
     }
@@ -57,6 +66,29 @@
     }
     initAgencyActionDropdowns();
 
+    function getBootstrapModal(el) {
+        if (!el || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            return null;
+        }
+        if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+            return bootstrap.Modal.getOrCreateInstance(el);
+        }
+        return new bootstrap.Modal(el);
+    }
+
+    // Stale Bootstrap backdrops block clicks after repeated confirm/alert dialogs.
+    function cleanupStaleModalBackdrops() {
+        document.querySelectorAll('.modal-backdrop').forEach(function (el) {
+            el.remove();
+        });
+        if (!document.querySelector('.modal.show')) {
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }
+    }
+    cleanupStaleModalBackdrops();
+
     // EN: Utility helpers (number normalization, modal alerts, confirmations, slug sanitizer).
     // AR: دوال مساعدة (توحيد الأرقام، التنبيه، التأكيد، وتنظيف slug).
     function toWesternNum(s) {
@@ -65,36 +97,51 @@
     }
     function showAlert(msg) {
         closeAgencyActionDropdowns();
+        cleanupStaleModalBackdrops();
         var el = document.getElementById('alertMessage');
         var modalEl = document.getElementById('alertModal');
         if (el) el.textContent = msg;
-        if (modalEl && typeof bootstrap !== 'undefined') {
-            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        var modal = getBootstrapModal(modalEl);
+        if (modal) {
+            modalEl.addEventListener('hidden.bs.modal', function onHide() {
+                modalEl.removeEventListener('hidden.bs.modal', onHide);
+                cleanupStaleModalBackdrops();
+            });
+            modal.show();
+            return;
         }
+        window.alert(msg);
     }
     function showConfirm(msg) {
         closeAgencyActionDropdowns();
+        cleanupStaleModalBackdrops();
         return new Promise(function(resolve) {
             var confirmMessage = document.getElementById('confirmMessage');
             var modalEl = document.getElementById('confirmModal');
             if (confirmMessage) confirmMessage.textContent = msg;
-            if (!modalEl || typeof bootstrap === 'undefined') { resolve(window.confirm(msg)); return; }
+            var modal = getBootstrapModal(modalEl);
+            if (!modal) {
+                resolve(window.confirm(msg));
+                return;
+            }
+            var done = false;
+            var confirmedOk = false;
+            var finish = function(ok) {
+                if (done) return;
+                done = true;
+                if (ok) confirmedOk = true;
+                modal.hide();
+                resolve(ok);
+            };
             var okBtn = modalEl.querySelector('#confirmOk');
             var cancelBtn = modalEl.querySelector('#confirmCancel');
-            if (!okBtn || !cancelBtn) { resolve(window.confirm(msg)); return; }
-            var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            var confirmed = false;
-            var onOk = function() { confirmed = true; modal.hide(); };
-            var onCancel = function() { confirmed = false; modal.hide(); };
-            var onHidden = function() {
-                okBtn.removeEventListener('click', onOk);
-                cancelBtn.removeEventListener('click', onCancel);
-                modalEl.removeEventListener('hidden.bs.modal', onHidden);
-                resolve(confirmed);
-            };
-            okBtn.addEventListener('click', onOk);
-            cancelBtn.addEventListener('click', onCancel);
-            modalEl.addEventListener('hidden.bs.modal', onHidden);
+            if (okBtn) okBtn.onclick = function() { finish(true); };
+            if (cancelBtn) cancelBtn.onclick = function() { finish(false); };
+            modalEl.addEventListener('hidden.bs.modal', function onHide() {
+                modalEl.removeEventListener('hidden.bs.modal', onHide);
+                cleanupStaleModalBackdrops();
+                if (!confirmedOk) finish(false);
+            });
             modal.show();
         });
     }
@@ -309,7 +356,7 @@
         var proBtn = e.target.closest('.btn-provision-pro');
         if (proBtn) {
             e.preventDefault();
-            e.stopPropagation();
+            closeAgencyActionDropdowns();
             var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
             if (!proAgencyId) return;
             showConfirm('Provision RATEB Pro for this agency?\n\nCreates/updates admin user:\nUsername: admin\nPassword: 123456').then(function(ok) {
@@ -353,16 +400,17 @@
         var erpProvBtn = e.target.closest('.btn-provision-erp');
         if (erpProvBtn) {
             e.preventDefault();
-            e.stopPropagation();
+            closeAgencyActionDropdowns();
             var agencyId = parseInt(erpProvBtn.getAttribute('data-agency-id') || '0', 10);
             if (!agencyId) return;
             var erpStatus = (erpProvBtn.getAttribute('data-erp-status') || 'none').toLowerCase();
             var openErpModal = function() {
                 closeAgencyActionDropdowns();
+                cleanupStaleModalBackdrops();
                 var planSelect = document.getElementById('erpProvisionPlanSelect');
                 var agencyInput = document.getElementById('erpProvisionAgencyId');
                 var modalEl = document.getElementById('erpProvisionModal');
-                if (!planSelect || !agencyInput || !modalEl || typeof bootstrap === 'undefined') {
+                if (!planSelect || !agencyInput || !modalEl) {
                     showAlert('ERP plan dialog is unavailable on this page.');
                     return;
                 }
@@ -370,7 +418,12 @@
                 agencyInput.setAttribute('data-force', erpStatus === 'ready' ? '1' : '0');
                 var currentPlan = (erpProvBtn.getAttribute('data-erp-plan') || 'professional').toLowerCase();
                 planSelect.value = ['starter', 'professional', 'enterprise'].indexOf(currentPlan) >= 0 ? currentPlan : 'professional';
-                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                var erpModal = getBootstrapModal(modalEl);
+                if (!erpModal) {
+                    showAlert('ERP plan dialog is unavailable on this page.');
+                    return;
+                }
+                erpModal.show();
             };
             if (erpStatus === 'ready') {
                 showConfirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.').then(function(ok) {
@@ -711,10 +764,9 @@
                 return res.json();
             }).then(function(data) {
                 erpProvisionConfirmBtn.disabled = false;
-                if (modalEl && typeof bootstrap !== 'undefined') {
-                    var inst = bootstrap.Modal.getInstance(modalEl);
-                    if (inst) inst.hide();
-                }
+                var inst = getBootstrapModal(modalEl);
+                if (inst) inst.hide();
+                cleanupStaleModalBackdrops();
                 if (!data || !data.success) {
                     showAlert((data && data.message) ? data.message : 'ERP provisioning failed');
                     return;

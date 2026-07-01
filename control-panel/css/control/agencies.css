@@ -132,12 +132,17 @@
     font-size: 0.85rem;
 }
 
-/* Modals and action buttons - ensure clickable */
+/* Modals and action buttons - ensure clickable (above dropdown menu at 1035) */
 #viewModal.modal,
 #editModal.modal,
 #alertModal.modal,
-#confirmModal.modal {
-    z-index: 1060 !important;
+#confirmModal.modal,
+#erpProvisionModal.modal {
+    z-index: 1080 !important;
+}
+
+.modal-backdrop {
+    z-index: 1070 !important;
 }
 
 #editModal .modal-content,
@@ -193,7 +198,7 @@
     border: 1px solid #2a4f7c;
     background: #152a45;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-    z-index: 1090 !important;
+    z-index: 1035 !important;
 }
 
 .ag-actions-menu > li {
@@ -268,16 +273,16 @@
 .ag-ico-pro { color: #4ade80; }
 .ag-ico-erp { color: #22d3ee; }
 
-#erpProvisionModal.modal,
-#confirmModal.modal,
-#alertModal.modal,
-#viewModal.modal,
-#editModal.modal {
-    z-index: 1065 !important;
-}
-
-.modal-backdrop {
-    z-index: 1060 !important;
+#confirmModal .modal-content,
+#confirmModal .modal-footer .btn,
+#alertModal .modal-content,
+#alertModal .modal-footer .btn,
+#erpProvisionModal .modal-content,
+#erpProvisionModal .modal-footer .btn,
+#erpProvisionModal .modal-header .btn-close,
+#erpProvisionModal .modal-body .form-select {
+    pointer-events: auto !important;
+    cursor: pointer;
 }
 
 #tableCard .agencies-table-scroll td.ag-actions-cell {
