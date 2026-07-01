@@ -89,6 +89,36 @@
     }
     cleanupStaleModalBackdrops();
 
+    function disposeBootstrapModal(modalEl) {
+        if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            return;
+        }
+        var inst = bootstrap.Modal.getInstance(modalEl);
+        if (inst) {
+            inst.dispose();
+        }
+        modalEl.classList.remove('show');
+        modalEl.style.removeProperty('display');
+        modalEl.setAttribute('aria-hidden', 'true');
+        modalEl.removeAttribute('aria-modal');
+    }
+
+    function openBootstrapModal(modalEl) {
+        if (!modalEl) {
+            return null;
+        }
+        cleanupStaleModalBackdrops();
+        disposeBootstrapModal(modalEl);
+        var modal = getBootstrapModal(modalEl);
+        if (!modal) {
+            return null;
+        }
+        window.setTimeout(function() {
+            modal.show();
+        }, 0);
+        return modal;
+    }
+
     // EN: Utility helpers (number normalization, modal alerts, confirmations, slug sanitizer).
     // AR: دوال مساعدة (توحيد الأرقام، التنبيه، التأكيد، وتنظيف slug).
     function toWesternNum(s) {
@@ -97,30 +127,25 @@
     }
     function showAlert(msg) {
         closeAgencyActionDropdowns();
-        cleanupStaleModalBackdrops();
         var el = document.getElementById('alertMessage');
         var modalEl = document.getElementById('alertModal');
         if (el) el.textContent = msg;
-        var modal = getBootstrapModal(modalEl);
-        if (modal) {
-            modalEl.addEventListener('hidden.bs.modal', function onHide() {
-                modalEl.removeEventListener('hidden.bs.modal', onHide);
-                cleanupStaleModalBackdrops();
-            });
-            modal.show();
+        if (!openBootstrapModal(modalEl)) {
+            window.alert(msg);
             return;
         }
-        window.alert(msg);
+        modalEl.addEventListener('hidden.bs.modal', function onHide() {
+            modalEl.removeEventListener('hidden.bs.modal', onHide);
+            cleanupStaleModalBackdrops();
+        });
     }
     function showConfirm(msg) {
         closeAgencyActionDropdowns();
-        cleanupStaleModalBackdrops();
         return new Promise(function(resolve) {
             var confirmMessage = document.getElementById('confirmMessage');
             var modalEl = document.getElementById('confirmModal');
             if (confirmMessage) confirmMessage.textContent = msg;
-            var modal = getBootstrapModal(modalEl);
-            if (!modal) {
+            if (!modalEl || typeof bootstrap === 'undefined') {
                 resolve(window.confirm(msg));
                 return;
             }
@@ -130,7 +155,8 @@
                 if (done) return;
                 done = true;
                 if (ok) confirmedOk = true;
-                modal.hide();
+                var inst = bootstrap.Modal.getInstance(modalEl);
+                if (inst) inst.hide();
                 resolve(ok);
             };
             var okBtn = modalEl.querySelector('#confirmOk');
@@ -142,7 +168,9 @@
                 cleanupStaleModalBackdrops();
                 if (!confirmedOk) finish(false);
             });
-            modal.show();
+            if (!openBootstrapModal(modalEl)) {
+                resolve(window.confirm(msg));
+            }
         });
     }
     function normalizeSlug(value) {
@@ -356,6 +384,7 @@
         var proBtn = e.target.closest('.btn-provision-pro');
         if (proBtn) {
             e.preventDefault();
+            e.stopPropagation();
             closeAgencyActionDropdowns();
             var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
             if (!proAgencyId) return;
@@ -400,13 +429,12 @@
         var erpProvBtn = e.target.closest('.btn-provision-erp');
         if (erpProvBtn) {
             e.preventDefault();
+            e.stopPropagation();
             closeAgencyActionDropdowns();
             var agencyId = parseInt(erpProvBtn.getAttribute('data-agency-id') || '0', 10);
             if (!agencyId) return;
             var erpStatus = (erpProvBtn.getAttribute('data-erp-status') || 'none').toLowerCase();
             var openErpModal = function() {
-                closeAgencyActionDropdowns();
-                cleanupStaleModalBackdrops();
                 var planSelect = document.getElementById('erpProvisionPlanSelect');
                 var agencyInput = document.getElementById('erpProvisionAgencyId');
                 var modalEl = document.getElementById('erpProvisionModal');
@@ -418,12 +446,9 @@
                 agencyInput.setAttribute('data-force', erpStatus === 'ready' ? '1' : '0');
                 var currentPlan = (erpProvBtn.getAttribute('data-erp-plan') || 'professional').toLowerCase();
                 planSelect.value = ['starter', 'professional', 'enterprise'].indexOf(currentPlan) >= 0 ? currentPlan : 'professional';
-                var erpModal = getBootstrapModal(modalEl);
-                if (!erpModal) {
+                if (!openBootstrapModal(modalEl)) {
                     showAlert('ERP plan dialog is unavailable on this page.');
-                    return;
                 }
-                erpModal.show();
             };
             if (erpStatus === 'ready') {
                 showConfirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.').then(function(ok) {
