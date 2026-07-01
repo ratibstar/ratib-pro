@@ -22,6 +22,21 @@
 
     if (!tableBody) return;
 
+    if (typeof bootstrap !== 'undefined') {
+        document.querySelectorAll('.ag-actions-dropdown .ag-actions-toggle').forEach(function (toggle) {
+            if (toggle.getAttribute('data-ag-dropdown-init') === '1') {
+                return;
+            }
+            toggle.setAttribute('data-ag-dropdown-init', '1');
+            new bootstrap.Dropdown(toggle, {
+                popperConfig: function (defaultBsPopperConfig) {
+                    defaultBsPopperConfig.strategy = 'fixed';
+                    return defaultBsPopperConfig;
+                },
+            });
+        });
+    }
+
     // EN: Utility helpers (number normalization, modal alerts, confirmations, slug sanitizer).
     // AR: دوال مساعدة (توحيد الأرقام، التنبيه، التأكيد، وتنظيف slug).
     function toWesternNum(s) {

@@ -668,7 +668,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $agencyIdRow = (int) ($r['id'] ?? 0);
                         ?>
                         <div class="dropdown ag-actions-dropdown">
-                            <button type="button" class="ag-btn ag-btn-actions dropdown-toggle" data-bs-toggle="dropdown" data-bs-display="static" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                            <button type="button" class="ag-btn ag-btn-actions dropdown-toggle ag-actions-toggle" aria-expanded="false" aria-haspopup="true">
                                 <i class="fas fa-bolt"></i>
                                 <span><?php echo htmlspecialchars($agT('agencies.actions', 'Actions'), ENT_QUOTES, 'UTF-8'); ?></span>
                             </button>
