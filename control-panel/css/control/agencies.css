@@ -226,6 +226,11 @@ body > .modal-backdrop,
     cursor: pointer;
 }
 
+/* Clicks must hit the button/link, not inner text/icon nodes */
+.ag-actions-menu .dropdown-item > * {
+    pointer-events: none;
+}
+
 .ag-actions-menu .dropdown-item .ag-menu-ico {
     width: 1rem;
     text-align: center;

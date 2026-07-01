@@ -389,36 +389,129 @@
         return el.closest(selector);
     }
 
+    function openViewFromBtn(viewBtn) {
+        var raw = viewBtn.dataset.row || '';
+        var r = raw ? JSON.parse(atob(raw)) : {};
+        viewModalRowData = r;
+        var cname = (r.country_name || '').trim() || (r.country || '').trim() || '-';
+        function setView(id, val) { var el = document.getElementById(id); if (el) el.textContent = val != null && val !== '' ? String(val) : '-'; }
+        setView('viewCountry', cname);
+        setView('viewName', r.name || r.agency_name);
+        setView('viewSlug', r.slug);
+        setView('viewSiteUrl', r.site_url);
+        setView('viewDbHost', r.db_host || 'localhost');
+        setView('viewDbPort', r.db_port || '3306');
+        setView('viewDbUser', r.db_user);
+        setView('viewDbName', r.db_name);
+        setView('viewCreated', r.created_at ? String(r.created_at).slice(0, 10) : '');
+        setView('viewRenewalDate', r.renewal_date ? String(r.renewal_date).slice(0, 10) : '');
+        var status = (r.is_active === 0 || r.is_active === '0') ? 'Inactive' : (r.is_suspended ? 'Suspended' : 'Active');
+        setView('viewStatus', status);
+        var viewSuspended = document.getElementById('viewSuspended');
+        if (viewSuspended) viewSuspended.textContent = r.is_suspended ? 'Yes (non-payment)' : 'No';
+        cleanupStaleModalBackdrops();
+        window.setTimeout(function() {
+            if (viewModal) viewModal.show();
+        }, 0);
+    }
+
+    function openEditFromBtn(editBtn) {
+        var raw = editBtn.dataset.row || '';
+        var r = raw ? JSON.parse(atob(raw)) : {};
+        document.getElementById('editId').value = r.id || '';
+        document.getElementById('editCountryId').value = r.country_id || '';
+        document.getElementById('editName').value = r.name || '';
+        document.getElementById('editSlug').value = r.slug || '';
+        slugManuallyEdited = true;
+        document.getElementById('editSiteUrl').value = r.site_url || '';
+        document.getElementById('editDbHost').value = r.db_host || 'localhost';
+        document.getElementById('editDbPort').value = r.db_port || 3306;
+        document.getElementById('editDbUser').value = r.db_user || '';
+        document.getElementById('editDbPass').value = '';
+        document.getElementById('editDbPass').placeholder = '(leave blank to keep)';
+        document.getElementById('editDbName').value = r.db_name || '';
+        document.getElementById('editIsActive').value = r.is_active !== undefined && r.is_active !== null ? r.is_active : '1';
+        var editRenewalDate = document.getElementById('editRenewalDate');
+        if (editRenewalDate && r.renewal_date) editRenewalDate.value = String(r.renewal_date).slice(0, 10);
+        else if (editRenewalDate) editRenewalDate.value = '';
+        var editIsSuspended = document.getElementById('editIsSuspended');
+        if (editIsSuspended) editIsSuspended.value = (r.is_suspended ? '1' : '0');
+        var editErpCompanyId = document.getElementById('editErpCompanyId');
+        if (editErpCompanyId) editErpCompanyId.value = r.erp_company_id ? String(r.erp_company_id) : '';
+        document.getElementById('modalTitle').textContent = 'Edit Agency';
+        cleanupStaleModalBackdrops();
+        window.setTimeout(function() {
+            if (modal) modal.show();
+        }, 0);
+    }
+
     // mousedown (capture) — runs before Bootstrap closes the dropdown on click
     document.addEventListener('mousedown', function(e) {
-        var proBtn = clickClosest(e, '.btn-provision-pro');
-        var erpProvBtn = clickClosest(e, '.btn-provision-erp');
-        if (!proBtn && !erpProvBtn) return;
+        var item = clickClosest(e, '.ag-actions-menu .dropdown-item');
+        if (!item || item.classList.contains('disabled') || item.classList.contains('permission-denied')) return;
+        if (item.tagName === 'A' && item.getAttribute('href')) return;
+
         e.preventDefault();
         e.stopPropagation();
         closeAgencyActionDropdowns();
-        if (proBtn) {
-            var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
-            if (proAgencyId) runProvisionPro(proBtn, proAgencyId);
+
+        if (item.classList.contains('btn-provision-pro')) {
+            var proAgencyId = parseInt(item.getAttribute('data-agency-id') || '0', 10);
+            if (proAgencyId) runProvisionPro(item, proAgencyId);
             return;
         }
-        var agencyId = parseInt(erpProvBtn.getAttribute('data-agency-id') || '0', 10);
-        if (!agencyId) return;
-        var erpStatus = (erpProvBtn.getAttribute('data-erp-status') || 'none').toLowerCase();
-        if (erpStatus === 'ready' && !window.confirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.')) return;
-        openErpProvisionModal(erpProvBtn, agencyId, erpStatus);
+        if (item.classList.contains('btn-provision-erp')) {
+            var agencyId = parseInt(item.getAttribute('data-agency-id') || '0', 10);
+            if (!agencyId) return;
+            var erpStatus = (item.getAttribute('data-erp-status') || 'none').toLowerCase();
+            if (erpStatus === 'ready' && !window.confirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.')) return;
+            openErpProvisionModal(item, agencyId, erpStatus);
+            return;
+        }
+        if (item.classList.contains('ag-btn-erp-blocked')) {
+            window.alert(item.getAttribute('data-blocked-reason') || 'ERP is not ready for this agency yet.');
+            return;
+        }
+        if (item.classList.contains('btn-view')) {
+            openViewFromBtn(item);
+            return;
+        }
+        if (item.classList.contains('btn-edit')) {
+            openEditFromBtn(item);
+            return;
+        }
+        if (item.classList.contains('btn-delete')) {
+            var delId = item.dataset.id;
+            showConfirm('Delete this agency?').then(function(ok) {
+                if (ok) apiDeleteIds([parseInt(delId, 10)]).then(function(r) { if (r.success) location.reload(); else showAlert(r.message || 'Delete failed'); }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
+            });
+            return;
+        }
+        if (item.classList.contains('btn-mark-paid')) {
+            var aid = parseInt(item.dataset.id || '0', 10);
+            var aname = (item.dataset.name || 'this agency').trim();
+            if (!aid) { showAlert('Invalid agency ID'); return; }
+            showConfirm('Mark paid for ' + aname + '? This will unsuspend the agency and mark its latest linked registration as Paid.').then(function(ok) {
+                if (!ok) return;
+                item.disabled = true;
+                apiCall('PATCH', { ids: [aid], action: 'mark_paid' }).then(function(r) {
+                    if (r && r.success) {
+                        showAlert('Marked paid successfully.');
+                        location.reload();
+                    } else {
+                        item.disabled = false;
+                        showAlert((r && r.message) ? r.message : 'Mark paid failed');
+                    }
+                }).catch(function(err) {
+                    item.disabled = false;
+                    showAlert('Request failed: ' + (err.message || err));
+                });
+            });
+        }
     }, true);
 
-    // Document-level delegation so row/dropdown actions work reliably.
+    // Bulk / non-dropdown actions (capture — before other document handlers)
     document.addEventListener('click', function(e) {
-        var erpBlockedBtn = clickClosest(e, '.ag-btn-erp-blocked');
-        if (erpBlockedBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.alert(erpBlockedBtn.getAttribute('data-blocked-reason') || 'ERP is not ready for this agency yet.');
-            return;
-        }
-
         var bulkBtn = clickClosest(e, '#btnBulkDelete, #btnBulkActivate, #btnBulkDeactivate, #btnBulkSuspend, #btnBulkUnsuspend, #btnBulkSync, #btnBulkRebuildDb, #btnBulkRunMigration, #btnBulkTestDbConnection, #btnRepairTenantLinks');
         if (bulkBtn) {
             e.preventDefault();
@@ -447,92 +540,7 @@
                 apiCall('PATCH', { agency_ids: [agencyId], action: action }).catch(function() {});
             }
         }
-
-        if (clickClosest(e, '.btn-view')) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeAgencyActionDropdowns();
-            var raw = clickClosest(e, '.btn-view').dataset.row || '';
-            var r = raw ? JSON.parse(atob(raw)) : {};
-            viewModalRowData = r;
-            var cid = r.country_id;
-            var cname = (r.country_name || '').trim() || (r.country || '').trim() || '-';
-            function setView(id, val) { var el = document.getElementById(id); if (el) el.textContent = val != null && val !== '' ? String(val) : '-'; }
-            setView('viewCountry', cname);
-            setView('viewName', r.name || r.agency_name);
-            setView('viewSlug', r.slug);
-            setView('viewSiteUrl', r.site_url);
-            setView('viewDbHost', r.db_host || 'localhost');
-            setView('viewDbPort', r.db_port || '3306');
-            setView('viewDbUser', r.db_user);
-            setView('viewDbName', r.db_name);
-            setView('viewCreated', r.created_at ? String(r.created_at).slice(0, 10) : '');
-            setView('viewRenewalDate', r.renewal_date ? String(r.renewal_date).slice(0, 10) : '');
-            var status = (r.is_active === 0 || r.is_active === '0') ? 'Inactive' : (r.is_suspended ? 'Suspended' : 'Active');
-            setView('viewStatus', status);
-            var viewSuspended = document.getElementById('viewSuspended');
-            if (viewSuspended) viewSuspended.textContent = r.is_suspended ? 'Yes (non-payment)' : 'No';
-            if (viewModal) viewModal.show();
-        } else if (clickClosest(e, '.btn-edit')) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeAgencyActionDropdowns();
-            var raw = clickClosest(e, '.btn-edit').dataset.row || '';
-            var r = raw ? JSON.parse(atob(raw)) : {};
-            document.getElementById('editId').value = r.id || '';
-            document.getElementById('editCountryId').value = r.country_id || '';
-            document.getElementById('editName').value = r.name || '';
-            document.getElementById('editSlug').value = r.slug || '';
-            slugManuallyEdited = true;
-            document.getElementById('editSiteUrl').value = r.site_url || '';
-            document.getElementById('editDbHost').value = r.db_host || 'localhost';
-            document.getElementById('editDbPort').value = r.db_port || 3306;
-            document.getElementById('editDbUser').value = r.db_user || '';
-            document.getElementById('editDbPass').value = '';
-            document.getElementById('editDbPass').placeholder = '(leave blank to keep)';
-            document.getElementById('editDbName').value = r.db_name || '';
-            document.getElementById('editIsActive').value = r.is_active !== undefined && r.is_active !== null ? r.is_active : '1';
-            var editRenewalDate = document.getElementById('editRenewalDate');
-            if (editRenewalDate && r.renewal_date) editRenewalDate.value = String(r.renewal_date).slice(0, 10);
-            else if (editRenewalDate) editRenewalDate.value = '';
-            var editIsSuspended = document.getElementById('editIsSuspended');
-            if (editIsSuspended) editIsSuspended.value = (r.is_suspended ? '1' : '0');
-            var editErpCompanyId = document.getElementById('editErpCompanyId');
-            if (editErpCompanyId) editErpCompanyId.value = r.erp_company_id ? String(r.erp_company_id) : '';
-            document.getElementById('modalTitle').textContent = 'Edit Agency';
-            if (modal) modal.show();
-        } else if (clickClosest(e, '.btn-delete')) {
-            e.preventDefault();
-            e.stopPropagation();
-            var id = clickClosest(e, '.btn-delete').dataset.id;
-            showConfirm('Delete this agency?').then(function(ok) {
-                if (ok) apiDeleteIds([parseInt(id, 10)]).then(function(r) { if (r.success) location.reload(); else showAlert(r.message || 'Delete failed'); }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
-            });
-        } else if (clickClosest(e, '.btn-mark-paid')) {
-            e.preventDefault();
-            e.stopPropagation();
-            var btnPaid = clickClosest(e, '.btn-mark-paid');
-            var aid = parseInt(btnPaid.dataset.id || '0', 10);
-            var aname = (btnPaid.dataset.name || 'this agency').trim();
-            if (!aid) { showAlert('Invalid agency ID'); return; }
-            showConfirm('Mark paid for ' + aname + '? This will unsuspend the agency and mark its latest linked registration as Paid.').then(function(ok) {
-                if (!ok) return;
-                btnPaid.disabled = true;
-                apiCall('PATCH', { ids: [aid], action: 'mark_paid' }).then(function(r) {
-                    if (r && r.success) {
-                        showAlert('Marked paid successfully.');
-                        location.reload();
-                    } else {
-                        btnPaid.disabled = false;
-                        showAlert((r && r.message) ? r.message : 'Mark paid failed');
-                    }
-                }).catch(function(err) {
-                    btnPaid.disabled = false;
-                    showAlert('Request failed: ' + (err.message || err));
-                });
-            });
-        }
-    });
+    }, true);
 
     var btnEditFromView = document.getElementById('btnEditFromView');
     if (btnEditFromView) btnEditFromView.onclick = function() {
