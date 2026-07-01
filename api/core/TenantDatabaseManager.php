@@ -31,6 +31,20 @@ final class TenantDatabaseManager
     private static $lockedTenantId = null;
 
     /**
+     * Shared MySQL user (e.g. admin_rateb): .env password is source of truth — tenant rows often store stale cPanel passwords.
+     */
+    public static function resolveTenantPassword(string $dbUser, string $storedPass): string
+    {
+        $envUser = defined('DB_USER') ? (string) DB_USER : '';
+        $envPass = defined('DB_PASS') ? (string) DB_PASS : '';
+        if ($dbUser !== '' && $dbUser === $envUser) {
+            return $envPass;
+        }
+
+        return $storedPass !== '' ? $storedPass : $envPass;
+    }
+
+    /**
      * @return PDO Connection to the tenant's MySQL database
      */
     public static function pdoForTenantId($tenantId)
@@ -72,7 +86,7 @@ final class TenantDatabaseManager
         }
 
         $dbPort = self::cfgPort();
-        $dbPass = (string) (isset($row['db_password']) ? $row['db_password'] : '');
+        $dbPass = self::resolveTenantPassword($dbUser, (string) (isset($row['db_password']) ? $row['db_password'] : ''));
 
         $dsn = 'mysql:host=' . $dbHost . ';port=' . (string) $dbPort . ';dbname=' . $dbName . ';charset=utf8mb4';
 
