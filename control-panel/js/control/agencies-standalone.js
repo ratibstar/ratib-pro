@@ -39,13 +39,23 @@
             var confirmMessage = document.getElementById('confirmMessage');
             var modalEl = document.getElementById('confirmModal');
             if (confirmMessage) confirmMessage.textContent = msg;
-            if (!modalEl || typeof bootstrap === 'undefined') { resolve(false); return; }
-            var modal = new bootstrap.Modal(modalEl);
-            var done = false;
-            var finish = function(ok) { if (done) return; done = true; modal.hide(); resolve(ok); };
-            modalEl.querySelector('#confirmOk').onclick = function() { finish(true); };
-            modalEl.querySelector('#confirmCancel').onclick = function() { finish(false); };
-            modalEl.addEventListener('hidden.bs.modal', function onHide() { finish(false); modalEl.removeEventListener('hidden.bs.modal', onHide); }, { once: true });
+            if (!modalEl || typeof bootstrap === 'undefined') { resolve(window.confirm(msg)); return; }
+            var okBtn = modalEl.querySelector('#confirmOk');
+            var cancelBtn = modalEl.querySelector('#confirmCancel');
+            if (!okBtn || !cancelBtn) { resolve(window.confirm(msg)); return; }
+            var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            var confirmed = false;
+            var onOk = function() { confirmed = true; modal.hide(); };
+            var onCancel = function() { confirmed = false; modal.hide(); };
+            var onHidden = function() {
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                modalEl.removeEventListener('hidden.bs.modal', onHidden);
+                resolve(confirmed);
+            };
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+            modalEl.addEventListener('hidden.bs.modal', onHidden);
             modal.show();
         });
     }
@@ -546,8 +556,17 @@
     })();
 
     tableBody.addEventListener('click', function(evt) {
+        var erpBlockedBtn = evt.target && evt.target.closest ? evt.target.closest('.ag-btn-erp-blocked') : null;
+        if (erpBlockedBtn) {
+            evt.preventDefault();
+            showAlert(erpBlockedBtn.getAttribute('data-blocked-reason') || 'ERP is not ready for this agency yet.');
+            return;
+        }
+
         var proBtn = evt.target && evt.target.closest ? evt.target.closest('.btn-provision-pro') : null;
         if (proBtn) {
+            evt.preventDefault();
+            evt.stopPropagation();
             var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
             if (!proAgencyId) return;
             showConfirm('Provision RATEB Pro for this agency?\n\nCreates/updates admin user:\nUsername: admin\nPassword: 123456').then(function(ok) {
@@ -590,6 +609,8 @@
 
         var btn = evt.target && evt.target.closest ? evt.target.closest('.btn-provision-erp') : null;
         if (!btn) return;
+        evt.preventDefault();
+        evt.stopPropagation();
         var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
         if (!agencyId) return;
         var erpStatus = (btn.getAttribute('data-erp-status') || 'none').toLowerCase();

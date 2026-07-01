@@ -13,6 +13,14 @@ $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
 $apiBase = $baseUrl . '/api/control';
 $countryId = isset($_GET['country_id']) && ctype_digit($_GET['country_id']) ? (int)$_GET['country_id'] : 0;
 $isControlSuperAdminUi = strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin';
+$agT = static function (string $key, string $fallback = '') {
+    if (function_exists('cp_t')) {
+        $v = cp_t($key);
+        return ($v !== '' && $v !== $key) ? $v : $fallback;
+    }
+    return $fallback;
+};
+$agSiteBase = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');
 
 // EN: URL helper functions for safe “open agency” behavior and SSO query composition.
 // AR: دوال مساعدة لبناء روابط "فتح الوكالة" بشكل آمن وتكوين معاملات SSO.
@@ -628,17 +636,15 @@ echo htmlspecialchars($cname ?: '-');
 if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-active'; } else { echo 'badge-inactive'; }
 ?>"><?php echo $isSuspended ? 'Suspended' : ($isActive ? 'Active' : 'Inactive'); ?></span></td>
                     <td><input type="checkbox" class="form-check-input agency-row-check row-check" name="agency_ids[]" value="<?php echo (int)$r['id']; ?>" data-id="<?php echo (int)$r['id']; ?>"></td>
-                    <td class="action-btns">
+                    <td class="action-btns ag-actions-cell">
                         <?php
                             $cid = isset($r['country_id']) ? (int)$r['country_id'] : 0;
                             $cslug = isset($countrySlugMap[$cid]) ? trim($countrySlugMap[$cid]) : '';
-                            // Base for RATEB Pro root and country slug
                             $ratebBase = rtrim(defined('RATEB_PRO_URL') ? RATEB_PRO_URL : (defined('SITE_URL') ? SITE_URL : ''), '/');
                             if ($ratebBase === '' && isset($_SERVER['HTTP_HOST'])) {
                                 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
                                 $ratebBase = $scheme . '://' . $_SERVER['HTTP_HOST'];
                             }
-                            // RATEB Pro (legacy) + RATEB ERP (new) — separate open links.
                             $proOpen = agency_build_pro_open_url($r, $ratebBase, $cslug);
                             $proUrl = (string) ($proOpen['url'] ?? '');
                             $proTitle = (string) ($proOpen['title'] ?? 'Open RATEB Pro');
@@ -647,45 +653,58 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $siteBaseRaw = trim((string) ($r['site_url'] ?? ''));
                             $hasValidSite = agency_has_valid_site_url($r);
                             $openSiteUrl = $hasValidSite ? rtrim($siteBaseRaw, '/') : '';
-                            $openSiteTitle = function_exists('cp_t') ? cp_t('agencies.open_site') : 'Open agency site';
                             $erpBlocked = agency_erp_open_blocked_reason($r);
+                            $erpStBtn = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
                             if (agency_can_open_erp_portal($r)) {
-                                $erpSt = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
-                                $erpUrl = agency_build_erp_open_url($siteBaseRaw, $erpSt);
-                                $erpTitle = $erpSt === 'ready'
-                                    ? (function_exists('cp_t') ? cp_t('agencies.erp_open_admin') : 'Open RATEB ERP admin')
+                                $erpUrl = agency_build_erp_open_url($siteBaseRaw, $erpStBtn);
+                                $erpTitle = $erpStBtn === 'ready'
+                                    ? $agT('agencies.erp_open_admin', 'Open RATEB ERP admin')
                                     : ('Open RATEB ERP — status: ' . ($r['erp_status'] ?? 'none'));
                             }
+                            $erpProvisionLabel = $erpStBtn === 'ready'
+                                ? $agT('agencies.reprovision_erp', 'Re-provision ERP')
+                                : $agT('agencies.provision_erp', 'Provision ERP');
+                            $tenantIdRow = (int) ($r['tenant_id'] ?? 0);
+                            $agencyIdRow = (int) ($r['id'] ?? 0);
                         ?>
-                        <?php if ($openSiteUrl !== ''): ?>
-                        <a href="<?php echo htmlspecialchars($openSiteUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" title="<?php echo htmlspecialchars($openSiteTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><?php echo htmlspecialchars(function_exists('cp_t') ? cp_t('agencies.open') : 'Open', ENT_QUOTES, 'UTF-8'); ?></a>
-                        <?php endif; ?>
-                        <?php if ($proUrl !== ''): ?>
-                        <a href="<?php echo htmlspecialchars($proUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="<?php echo htmlspecialchars($proTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">Pro</a>
-                        <?php else: ?>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="No RATEB Pro URL configured">Pro</button>
-                        <?php endif; ?>
-                        <?php if ($erpUrl !== ''): ?>
-                        <a href="<?php echo htmlspecialchars($erpUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info" title="<?php echo htmlspecialchars($erpTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">ERP</a>
-                        <?php elseif ($hasValidSite || $erpBlocked !== ''): ?>
-                        <button type="button" class="btn btn-sm btn-outline-info" disabled title="<?php echo htmlspecialchars($erpBlocked !== '' ? $erpBlocked : (function_exists('cp_t') ? cp_t('agencies.erp_needs_provision') : 'Run Provision ERP first'), ENT_QUOTES, 'UTF-8'); ?>">ERP</button>
-                        <?php endif; ?>
-                        <?php if ($hasIsSuspended && $isSuspended): ?>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-mark-paid" data-id="<?php echo (int)$r['id']; ?>" data-name="<?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? 'Agency'); ?>" data-permission="control_agencies,edit_control_agency,approve_control_registration">Mark Paid</button>
-                        <?php endif; ?>
-                        <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php?tenant_id=' . (int)($r['tenant_id'] ?? 0)); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary btn-agency-control-link" data-action="open_control_center" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Control Center</a>
-                        <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/event-timeline.php?tenant_id=' . (int)($r['tenant_id'] ?? 0)); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_events" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Events</a>
-                        <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#db-control'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_db_status" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">DB Status</a>
-                        <a href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/admin/control-center.php#query-console'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary btn-agency-control-link" data-action="view_query_activity" data-agency-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,view_control_agencies">Query Activity</a>
-                        <button type="button" class="btn btn-sm btn-outline-success btn-provision-pro" data-agency-id="<?php echo (int) $r['id']; ?>" data-permission="control_agencies,edit_control_agency">Provision Pro</button>
-                        <?php
-                            $erpStBtn = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
-                            $erpProvisionLabel = $erpStBtn === 'ready' ? 'Re-provision ERP' : 'Provision ERP';
-                        ?>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-provision-erp" data-agency-id="<?php echo (int) $r['id']; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-erp-status="<?php echo htmlspecialchars($erpStBtn, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency"><?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?></button>
-                        <button type="button" class="btn btn-sm btn-outline-info btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,view_control_agencies">View</button>
-                        <button type="button" class="btn btn-sm btn-outline-warning btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" data-permission="control_agencies,edit_control_agency">Edit</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?php echo (int)$r['id']; ?>" data-permission="control_agencies,delete_control_agency">Delete</button>
+                        <div class="ag-actions">
+                            <div class="ag-actions-primary">
+                                <?php if ($openSiteUrl !== ''): ?>
+                                <a href="<?php echo htmlspecialchars($openSiteUrl); ?>" target="_blank" rel="noopener noreferrer" class="ag-btn ag-btn-open" title="<?php echo htmlspecialchars($agT('agencies.open_site', 'Open agency site'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><i class="fas fa-external-link-alt"></i><span><?php echo htmlspecialchars($agT('agencies.open', 'Open'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                                <?php endif; ?>
+                                <?php if ($proUrl !== ''): ?>
+                                <a href="<?php echo htmlspecialchars($proUrl); ?>" target="_blank" rel="noopener noreferrer" class="ag-btn ag-btn-pro" title="<?php echo htmlspecialchars($proTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><i class="fas fa-briefcase"></i><span><?php echo htmlspecialchars($agT('agencies.pro', 'Pro'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                                <?php else: ?>
+                                <button type="button" class="ag-btn ag-btn-pro ag-btn-disabled" disabled title="No RATEB Pro URL configured"><i class="fas fa-briefcase"></i><span><?php echo htmlspecialchars($agT('agencies.pro', 'Pro'), ENT_QUOTES, 'UTF-8'); ?></span></button>
+                                <?php endif; ?>
+                                <?php if ($erpUrl !== ''): ?>
+                                <a href="<?php echo htmlspecialchars($erpUrl); ?>" target="_blank" rel="noopener noreferrer" class="ag-btn ag-btn-erp" title="<?php echo htmlspecialchars($erpTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><i class="fas fa-hospital"></i><span><?php echo htmlspecialchars($agT('agencies.erp', 'ERP'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                                <?php else: ?>
+                                <button type="button" class="ag-btn ag-btn-erp ag-btn-erp-blocked" data-blocked-reason="<?php echo htmlspecialchars($erpBlocked !== '' ? $erpBlocked : $agT('agencies.erp_needs_provision', 'Run Provision ERP first'), ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($erpBlocked !== '' ? $erpBlocked : $agT('agencies.erp_needs_provision', 'Run Provision ERP first'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><i class="fas fa-hospital"></i><span><?php echo htmlspecialchars($agT('agencies.erp', 'ERP'), ENT_QUOTES, 'UTF-8'); ?></span></button>
+                                <?php endif; ?>
+                            </div>
+                            <div class="ag-actions-icons">
+                                <button type="button" class="ag-btn ag-btn-icon ag-btn-view btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" title="<?php echo htmlspecialchars($agT('agencies.view', 'View'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,view_control_agencies"><i class="fas fa-eye"></i></button>
+                                <button type="button" class="ag-btn ag-btn-icon ag-btn-edit btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r))); ?>" title="<?php echo htmlspecialchars($agT('agencies.edit', 'Edit'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-pen"></i></button>
+                                <button type="button" class="ag-btn ag-btn-icon ag-btn-danger btn-delete" data-id="<?php echo $agencyIdRow; ?>" title="<?php echo htmlspecialchars($agT('agencies.delete', 'Delete'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,delete_control_agency"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                            <div class="dropdown ag-actions-more">
+                                <button type="button" class="ag-btn ag-btn-ghost dropdown-toggle" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="<?php echo htmlspecialchars($agT('agencies.more', 'More'), ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-ellipsis-h"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-dark ag-actions-menu dropdown-menu-end">
+                                    <?php if ($hasIsSuspended && $isSuspended): ?>
+                                    <li><button type="button" class="dropdown-item btn-mark-paid" data-id="<?php echo $agencyIdRow; ?>" data-name="<?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? 'Agency'); ?>" data-permission="control_agencies,edit_control_agency,approve_control_registration"><?php echo htmlspecialchars($agT('agencies.mark_paid', 'Mark Paid'), ENT_QUOTES, 'UTF-8'); ?></button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <?php endif; ?>
+                                    <li><a class="dropdown-item" href="<?php echo htmlspecialchars($agSiteBase . '/admin/control-center.php?tenant_id=' . $tenantIdRow); ?>" target="_blank" rel="noopener noreferrer" data-permission="control_agencies,view_control_agencies"><?php echo htmlspecialchars($agT('agencies.control_center', 'Control Center'), ENT_QUOTES, 'UTF-8'); ?></a></li>
+                                    <li><a class="dropdown-item" href="<?php echo htmlspecialchars($agSiteBase . '/admin/event-timeline.php?tenant_id=' . $tenantIdRow); ?>" target="_blank" rel="noopener noreferrer" data-permission="control_agencies,view_control_agencies"><?php echo htmlspecialchars($agT('agencies.events', 'Events'), ENT_QUOTES, 'UTF-8'); ?></a></li>
+                                    <li><a class="dropdown-item" href="<?php echo htmlspecialchars($agSiteBase . '/admin/control-center.php#db-control'); ?>" target="_blank" rel="noopener noreferrer" data-permission="control_agencies,view_control_agencies"><?php echo htmlspecialchars($agT('agencies.db_status', 'DB Status'), ENT_QUOTES, 'UTF-8'); ?></a></li>
+                                    <li><a class="dropdown-item" href="<?php echo htmlspecialchars($agSiteBase . '/admin/control-center.php#query-console'); ?>" target="_blank" rel="noopener noreferrer" data-permission="control_agencies,view_control_agencies"><?php echo htmlspecialchars($agT('agencies.query_activity', 'Query Activity'), ENT_QUOTES, 'UTF-8'); ?></a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button type="button" class="dropdown-item btn-provision-pro" data-agency-id="<?php echo $agencyIdRow; ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-database me-1"></i><?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?></button></li>
+                                    <li><button type="button" class="dropdown-item btn-provision-erp" data-agency-id="<?php echo $agencyIdRow; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-erp-status="<?php echo htmlspecialchars($erpStBtn, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-cogs me-1"></i><?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?></button></li>
+                                </ul>
+                            </div>
+                        </div>
                     </td>
                 </tr>
 <?php endforeach; ?>
