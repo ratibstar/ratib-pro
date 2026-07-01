@@ -200,6 +200,17 @@ body > .modal-backdrop,
     background: #152a45;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
     z-index: 1090 !important;
+    max-height: min(70vh, 420px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    pointer-events: auto !important;
+}
+
+.ag-actions-menu .btn-provision-pro,
+.ag-actions-menu .btn-provision-erp {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 2;
 }
 
 .ag-actions-menu > li {

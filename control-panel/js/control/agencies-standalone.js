@@ -59,7 +59,17 @@
                         modifiers: [{ name: 'offset', options: { offset: [0, 6] } }],
                     },
                 });
-                toggle.addEventListener('shown.bs.dropdown', bindAgencyActionMenus);
+                toggle.addEventListener('shown.bs.dropdown', function() {
+                    bindAgencyActionMenus();
+                    wireProvisionButtons();
+                });
+                toggle.addEventListener('hide.bs.dropdown', function(e) {
+                    var ce = e.clickEvent;
+                    if (!ce || !ce.target || typeof ce.target.closest !== 'function') return;
+                    if (ce.target.closest('.btn-provision-pro, .btn-provision-erp')) {
+                        e.preventDefault();
+                    }
+                });
             } catch (e) {
                 /* ignore */
             }
@@ -475,11 +485,15 @@
         return !!(el && el.classList && (el.classList.contains('btn-provision-pro') || el.classList.contains('btn-provision-erp')));
     }
 
+    function stopProvisionEvent(ev) {
+        if (!ev) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+    }
+
     function provisionProClick(btn, ev) {
-        if (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
-        }
+        stopProvisionEvent(ev);
         if (!btn || btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) return false;
         var proAgencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
         if (!proAgencyId) return false;
@@ -490,10 +504,7 @@
     }
 
     function provisionErpClick(btn, ev) {
-        if (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
-        }
+        stopProvisionEvent(ev);
         if (!btn || btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) return false;
         var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
         if (!agencyId) return false;
@@ -502,6 +513,26 @@
         closeAgencyActionDropdowns();
         openErpProvisionModal(btn, agencyId, erpStatus);
         return false;
+    }
+
+    function wireProvisionButtons(root) {
+        var scope = root || document;
+        scope.querySelectorAll('.btn-provision-pro').forEach(function(btn) {
+            if (btn._agProvisionWired) return;
+            btn._agProvisionWired = true;
+            btn.addEventListener('pointerdown', function(ev) {
+                stopProvisionEvent(ev);
+                provisionProClick(btn, ev);
+            }, true);
+        });
+        scope.querySelectorAll('.btn-provision-erp').forEach(function(btn) {
+            if (btn._agProvisionWired) return;
+            btn._agProvisionWired = true;
+            btn.addEventListener('pointerdown', function(ev) {
+                stopProvisionEvent(ev);
+                provisionErpClick(btn, ev);
+            }, true);
+        });
     }
 
     function handleAgencyMenuAction(item) {
@@ -575,7 +606,21 @@
         });
     }
     bindAgencyActionMenus();
-    window.setTimeout(bindAgencyActionMenus, 600);
+    wireProvisionButtons();
+    window.setTimeout(function() {
+        bindAgencyActionMenus();
+        wireProvisionButtons();
+    }, 600);
+    if (tableBody && typeof MutationObserver !== 'undefined') {
+        var provisionWireTimer = null;
+        var provisionObserver = new MutationObserver(function() {
+            if (provisionWireTimer) clearTimeout(provisionWireTimer);
+            provisionWireTimer = setTimeout(function() {
+                wireProvisionButtons(tableBody);
+            }, 200);
+        });
+        provisionObserver.observe(tableBody, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+    }
 
     // Same capture pattern as registration-requests-page.js
     document.addEventListener('click', function(e) {
@@ -853,7 +898,8 @@
 
     window.RatibCpAgencies = {
         provisionProClick: provisionProClick,
-        provisionErpClick: provisionErpClick
+        provisionErpClick: provisionErpClick,
+        wireProvisionButtons: wireProvisionButtons
     };
 
 })();
