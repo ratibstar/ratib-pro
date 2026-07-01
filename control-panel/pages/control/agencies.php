@@ -106,6 +106,7 @@ emitEvent('AGENCY_PANEL_LOADED', 'info', 'Agencies panel viewed', [
 ]);
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
+require_once __DIR__ . '/../../includes/control/rateb-erp-bridge.php';
 startControlLayout('Manage Agencies', ['css/control/admins.css', 'css/control/agencies.css'], []);
 
 require_once __DIR__ . '/../../includes/control/agencies-content.php';

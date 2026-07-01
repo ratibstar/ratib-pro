@@ -190,7 +190,8 @@ body > .modal-backdrop,
 }
 
 .ag-btn-provision-pro,
-.ag-btn-provision-erp {
+.ag-btn-provision-erp,
+.ag-btn-open-erp {
     width: 100%;
     min-height: 26px;
     padding: 3px 8px;
@@ -207,7 +208,8 @@ body > .modal-backdrop,
 }
 
 .ag-btn-provision-pro > *,
-.ag-btn-provision-erp > * {
+.ag-btn-provision-erp > *,
+.ag-btn-open-erp > * {
     pointer-events: none;
 }
 
@@ -215,6 +217,24 @@ body > .modal-backdrop,
 .ag-provision-btns button {
     pointer-events: auto !important;
     cursor: pointer !important;
+}
+
+.ag-btn-open-erp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none !important;
+    background: rgba(167, 139, 250, 0.2);
+    border-color: rgba(167, 139, 250, 0.5);
+    color: #ddd6fe !important;
+}
+
+.ag-btn-open-erp:hover,
+.ag-btn-open-erp:focus-visible {
+    background: rgba(167, 139, 250, 0.42) !important;
+    border-color: #a78bfa !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.35);
 }
 
 .ag-btn-provision-pro {
@@ -246,12 +266,14 @@ body > .modal-backdrop,
 }
 
 .ag-btn-provision-pro:active,
-.ag-btn-provision-erp:active {
+.ag-btn-provision-erp:active,
+.ag-btn-open-erp:active {
     transform: scale(0.98);
 }
 
 .ag-btn-provision-pro i,
-.ag-btn-provision-erp i {
+.ag-btn-provision-erp i,
+.ag-btn-open-erp i {
     font-size: 0.62rem;
     margin-inline-end: 4px;
 }

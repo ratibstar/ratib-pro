@@ -118,10 +118,55 @@ if (!function_exists('agency_has_valid_site_url')) {
     }
 }
 
+if (!function_exists('agency_main_platform_base_url')) {
+    /** Canonical rateb.sa root — never an agency subdomain from site_url. */
+    function agency_main_platform_base_url(): string
+    {
+        if (function_exists('control_rateb_pro_public_base_url')) {
+            return control_rateb_pro_public_base_url();
+        }
+        foreach (['RATEB_PRO_URL', 'SITE_URL'] as $const) {
+            if (!defined($const)) {
+                continue;
+            }
+            $u = rtrim((string) constant($const), '/');
+            if ($u === '') {
+                continue;
+            }
+            $host = strtolower((string) parse_url($u, PHP_URL_HOST));
+            if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+                return $u;
+            }
+        }
+
+        return 'https://rateb.sa';
+    }
+}
+
+if (!function_exists('agency_site_url_host_ready')) {
+    /** Known-good platform hosts; other *.rateb.sa subdomains need DirectAdmin DNS first. */
+    function agency_site_url_host_ready(string $siteUrl): bool
+    {
+        $host = strtolower((string) parse_url(trim($siteUrl), PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+        $ready = ['rateb.sa', 'www.rateb.sa', 'test.rateb.sa', 'dev.rateb.sa'];
+        if (in_array($host, $ready, true)) {
+            return true;
+        }
+        if (!str_ends_with($host, '.rateb.sa')) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('agency_build_erp_open_url')) {
     /**
      * ERP admin (ready) or company portal.
-     * Control Panel passes $preferPlatform=true so Open ERP works before agency DNS exists.
+     * Control Panel uses $preferPlatform=true → always rateb.sa + agency_id (works before agency DNS).
      */
     function agency_build_erp_open_url(
         string $siteUrl,
@@ -131,17 +176,32 @@ if (!function_exists('agency_build_erp_open_url')) {
         bool $preferPlatform = false
     ): string {
         $st = strtolower(trim($erpStatus));
-        $path = $st === 'ready' ? '/rateb-erp/public/admin' : '/rateb-erp/public/company/login';
+        $route = $st === 'ready' ? 'admin' : 'company/login';
+        if ($preferPlatform && $agencyId > 0) {
+            if (function_exists('control_rateb_erp_public_url')) {
+                return control_rateb_erp_public_url($route) . '?agency_id=' . $agencyId;
+            }
+            $platformBase = agency_main_platform_base_url();
+            $path = $st === 'ready' ? '/rateb-erp/public/admin' : '/rateb-erp/public/company/login';
+
+            return rtrim($platformBase, '/') . $path . '?agency_id=' . $agencyId;
+        }
         $platformBase = rtrim(trim($platformBase), '/');
+        $path = $st === 'ready' ? '/rateb-erp/public/admin' : '/rateb-erp/public/company/login';
         if ($preferPlatform && $agencyId > 0 && $platformBase !== '') {
             return $platformBase . $path . '?agency_id=' . $agencyId;
         }
         $siteUrl = rtrim(trim($siteUrl), '/');
-        if ($siteUrl !== '' && preg_match('/^https?:\/\//i', $siteUrl)) {
+        if ($siteUrl !== '' && preg_match('/^https?:\/\//i', $siteUrl) && agency_site_url_host_ready($siteUrl)) {
             return $siteUrl . $path;
         }
-        if ($agencyId > 0 && $platformBase !== '') {
-            return $platformBase . $path . '?agency_id=' . $agencyId;
+        if ($agencyId > 0) {
+            if (function_exists('control_rateb_erp_public_url')) {
+                return control_rateb_erp_public_url($route) . '?agency_id=' . $agencyId;
+            }
+            $base = $platformBase !== '' ? $platformBase : agency_main_platform_base_url();
+
+            return rtrim($base, '/') . $path . '?agency_id=' . $agencyId;
         }
 
         return '';
@@ -673,7 +733,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $agencyIdRow = (int) ($r['id'] ?? 0);
                             $siteBaseRaw = trim((string) ($r['site_url'] ?? ''));
                             $hasValidSite = agency_has_valid_site_url($r);
-                            $openSiteUrl = $hasValidSite ? rtrim($siteBaseRaw, '/') : '';
+                            $openSiteUrl = ($hasValidSite && agency_site_url_host_ready($siteBaseRaw)) ? rtrim($siteBaseRaw, '/') : '';
                             $erpBlocked = agency_erp_open_blocked_reason($r);
                             $erpStBtn = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
                             if (agency_can_open_erp_portal($r)) {
@@ -724,7 +784,10 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                 <li><button type="button" class="dropdown-item text-danger btn-delete" data-id="<?php echo $agencyIdRow; ?>" data-permission="control_agencies,delete_control_agency"><i class="fas fa-trash-alt ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.delete', 'Delete'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                             </ul>
                         </div>
-                        <div class="ag-provision-btns" data-permission="control_agencies,edit_control_agency" translate="no" data-cp-no-i18n="1">
+                        <div class="ag-provision-btns" data-permission="control_agencies,open_control_agency,edit_control_agency" translate="no" data-cp-no-i18n="1">
+                            <?php if ($erpUrl !== '' && $erpStBtn === 'ready'): ?>
+                            <a class="ag-btn ag-btn-open-erp" href="<?php echo htmlspecialchars($erpUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" title="<?php echo htmlspecialchars($erpTitle, ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-hospital" aria-hidden="true"></i><span><?php echo htmlspecialchars($agT('agencies.erp', 'ERP'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                            <?php endif; ?>
                             <button type="button" class="ag-btn ag-btn-provision-pro btn-provision-pro" data-agency-id="<?php echo $agencyIdRow; ?>" data-id="<?php echo $agencyIdRow; ?>" translate="no" title="<?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.RatibCpAgencies &amp;&amp; window.RatibCpAgencies.provisionProClick(this, event);"><i class="fas fa-server" aria-hidden="true"></i><span><?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?></span></button>
                             <button type="button" class="ag-btn ag-btn-provision-erp btn-provision-erp" data-agency-id="<?php echo $agencyIdRow; ?>" data-id="<?php echo $agencyIdRow; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-erp-status="<?php echo htmlspecialchars($erpStBtn, ENT_QUOTES, 'UTF-8'); ?>" translate="no" title="<?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.RatibCpAgencies &amp;&amp; window.RatibCpAgencies.provisionErpClick(this, event);"><i class="fas fa-cogs" aria-hidden="true"></i><span><?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?></span></button>
                         </div>
