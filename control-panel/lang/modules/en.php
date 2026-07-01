@@ -36,6 +36,7 @@ return [
     'agencies.pro' => 'Pro',
     'agencies.erp' => 'ERP',
     'agencies.more' => 'More',
+    'agencies.actions' => 'Actions',
     'agencies.provision_pro' => 'Provision Pro',
     'agencies.provision_erp' => 'Provision ERP',
     'agencies.reprovision_erp' => 'Re-provision ERP',

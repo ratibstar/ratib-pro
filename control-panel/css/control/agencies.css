@@ -153,188 +153,134 @@
     cursor: pointer;
 }
 
-/* Compact modern row actions */
+/* Compact actions dropdown */
 .ag-actions-cell {
-    min-width: 168px;
-    max-width: 200px;
+    min-width: 88px;
+    max-width: 110px;
     vertical-align: middle;
+    position: relative;
+    overflow: visible;
 }
 
-.ag-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
+.ag-actions-dropdown {
+    position: static;
 }
 
-.ag-actions-primary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-}
-
-.ag-actions-icons {
-    display: flex;
-    gap: 2px;
+.ag-actions-dropdown .dropdown-menu {
+    z-index: 1090;
 }
 
 .ag-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 3px 7px;
-    min-height: 24px;
-    font-size: 0.68rem;
+    gap: 5px;
+    padding: 4px 10px;
+    min-height: 28px;
+    font-size: 0.72rem;
     font-weight: 600;
     line-height: 1.15;
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1px solid transparent;
     background: rgba(15, 52, 96, 0.65);
     color: #e8eef8;
     text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .ag-btn i {
-    font-size: 0.62rem;
-    opacity: 0.92;
+    font-size: 0.68rem;
 }
 
-.ag-btn:hover,
-.ag-btn:focus-visible {
-    color: #fff;
-    text-decoration: none;
-    transform: translateY(-1px);
-}
-
-.ag-btn:active {
-    transform: translateY(0);
-}
-
-.ag-btn-open {
-    background: rgba(59, 130, 246, 0.22);
+.ag-btn-actions {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(37, 99, 235, 0.18));
     border-color: rgba(59, 130, 246, 0.45);
-    color: #93c5fd;
+    color: #dbeafe;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
 }
 
-.ag-btn-open:hover {
-    background: rgba(59, 130, 246, 0.38);
+.ag-btn-actions:hover,
+.ag-btn-actions:focus,
+.ag-btn-actions.show {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.45), rgba(37, 99, 235, 0.32));
     border-color: #3b82f6;
-}
-
-.ag-btn-pro {
-    background: rgba(34, 197, 94, 0.16);
-    border-color: rgba(34, 197, 94, 0.4);
-    color: #86efac;
-}
-
-.ag-btn-pro:hover {
-    background: rgba(34, 197, 94, 0.3);
-    border-color: #22c55e;
-}
-
-.ag-btn-erp {
-    background: rgba(6, 182, 212, 0.16);
-    border-color: rgba(6, 182, 212, 0.42);
-    color: #67e8f9;
-}
-
-.ag-btn-erp:hover {
-    background: rgba(6, 182, 212, 0.3);
-    border-color: #06b6d4;
-}
-
-.ag-btn-erp-blocked {
-    opacity: 0.62;
-    cursor: help;
-    background: rgba(6, 182, 212, 0.08);
-    border-color: rgba(6, 182, 212, 0.25);
-    color: #7dd3fc;
-}
-
-.ag-btn-erp-blocked:hover {
-    opacity: 0.9;
-    background: rgba(6, 182, 212, 0.18);
-}
-
-.ag-btn-disabled,
-.ag-btn:disabled {
-    opacity: 0.38;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-.ag-btn-icon {
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    background: rgba(26, 26, 46, 0.85);
-    border-color: rgba(148, 163, 184, 0.22);
-    color: #cbd5e1;
-}
-
-.ag-btn-icon:hover {
-    background: rgba(15, 52, 96, 0.9);
-    border-color: rgba(148, 163, 184, 0.45);
     color: #fff;
 }
 
-.ag-btn-edit:hover {
-    border-color: rgba(245, 158, 11, 0.55);
-    color: #fcd34d;
-}
-
-.ag-btn-danger:hover {
-    border-color: rgba(239, 68, 68, 0.55);
-    color: #fca5a5;
-}
-
-.ag-btn-ghost {
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    background: transparent;
-    border-color: rgba(148, 163, 184, 0.25);
-    color: #94a3b8;
-}
-
-.ag-btn-ghost:hover {
-    background: rgba(15, 52, 96, 0.55);
-    color: #e2e8f0;
-}
-
-.ag-actions-more .dropdown-toggle::after {
-    display: none;
+.ag-btn-actions.dropdown-toggle::after {
+    margin-inline-start: 4px;
+    vertical-align: 0.12em;
+    opacity: 0.75;
 }
 
 .ag-actions-menu {
-    min-width: 11.5rem;
-    padding: 0.35rem;
-    background: #1a1a2e;
-    border: 1px solid #0f3460;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    min-width: 13.5rem;
+    max-width: 16rem;
+    padding: 0.4rem;
+    background: #141b2d;
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
     font-size: 0.78rem;
-    z-index: 1080;
+}
+
+.ag-actions-menu .dropdown-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 0.35rem 0.55rem 0.2rem;
 }
 
 .ag-actions-menu .dropdown-item {
-    border-radius: 6px;
-    padding: 0.35rem 0.55rem;
-    color: #dbeafe;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 7px;
+    padding: 0.42rem 0.55rem;
+    color: #e2e8f0;
 }
 
 .ag-actions-menu .dropdown-item:hover,
 .ag-actions-menu .dropdown-item:focus {
-    background: rgba(15, 52, 96, 0.75);
+    background: rgba(59, 130, 246, 0.16);
     color: #fff;
 }
 
+.ag-actions-menu .dropdown-item.text-danger:hover {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fecaca;
+}
+
+.ag-actions-menu .dropdown-item.disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
 .ag-actions-menu .dropdown-divider {
-    border-color: #0f3460;
-    margin: 0.25rem 0;
+    border-color: rgba(148, 163, 184, 0.15);
+    margin: 0.3rem 0;
+}
+
+.ag-menu-ico {
+    width: 14px;
+    text-align: center;
+    font-size: 0.72rem;
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.ag-ico-open { color: #60a5fa; }
+.ag-ico-pro { color: #4ade80; }
+.ag-ico-erp { color: #22d3ee; }
+
+.ag-btn-erp-blocked {
+    opacity: 0.75;
+    cursor: help;
 }
 
 #erpProvisionModal.modal,
