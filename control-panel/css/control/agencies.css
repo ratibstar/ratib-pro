@@ -230,6 +230,8 @@ body > .modal-backdrop,
     text-align: start;
     white-space: nowrap;
     line-height: 1.25;
+    pointer-events: auto !important;
+    cursor: pointer;
 }
 
 .ag-actions-menu .dropdown-item .ag-menu-ico {
