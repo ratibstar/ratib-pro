@@ -38,7 +38,7 @@ if (!function_exists('rateb_erp_is_dedicated_deployment')) {
 }
 
 if (!function_exists('rateb_is_platform_oversight_host')) {
-    /** Platform super-admin oversight (companies, agency push, company approvals) — rateb.sa SaaS only. */
+    /** Platform SaaS admin (companies, billing, CMS, agency push) — rateb.sa only, not agency ERP hosts. */
     function rateb_is_platform_oversight_host(): bool
     {
         if (rateb_erp_is_dedicated_deployment()) {

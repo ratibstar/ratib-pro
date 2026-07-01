@@ -111,24 +111,22 @@ $router->get('/admin/access-control', [AccessControlController::class, 'index'],
 $router->get('/admin/access-control/matrix', [AccessControlController::class, 'matrix'], rateb_admin_mw('access.manage'));
 $router->post('/admin/access-control/matrix', [AccessControlController::class, 'saveMatrix'], rateb_admin_mw('access.manage'));
 
-$router->get('/admin/accounting', [AccountingDashboardController::class, 'index'], rateb_admin_mw('accounting.view'));
-$router->post('/admin/accounting/sync', [AccountingDashboardController::class, 'sync'], rateb_admin_mw('accounting.post'));
+$router->get('/admin/accounting', [AccountingDashboardController::class, 'index'], rateb_platform_oversight_mw('accounting.view'));
+$router->post('/admin/accounting/sync', [AccountingDashboardController::class, 'sync'], rateb_platform_oversight_mw('accounting.post'));
 
-$router->get('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'index'], rateb_admin_mw('accounting.view'));
-$router->get('/admin/coa-tree', [ChartOfAccountsController::class, 'coaTree'], rateb_admin_mw('accounting.view'));
-$router->get('/admin/chart-of-accounts/create', [ChartOfAccountsController::class, 'create'], rateb_admin_mw('accounting.manage'));
-$router->post('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'store'], rateb_admin_mw('accounting.manage'));
-$router->get('/admin/chart-of-accounts/{id}/edit', [ChartOfAccountsController::class, 'edit'], rateb_admin_mw('accounting.manage'));
-$router->post('/admin/chart-of-accounts/{id}', [ChartOfAccountsController::class, 'update'], rateb_admin_mw('accounting.manage'));
-$router->post('/admin/chart-of-accounts/{id}/delete', [ChartOfAccountsController::class, 'destroy'], rateb_admin_mw('accounting.manage'));
-$router->post('/admin/chart-of-accounts/bulk-delete', [ChartOfAccountsController::class, 'bulkDestroy'], rateb_admin_mw('accounting.manage'));
+$router->get('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'index'], rateb_platform_oversight_mw('accounting.view'));
+$router->get('/admin/coa-tree', [ChartOfAccountsController::class, 'coaTree'], rateb_platform_oversight_mw('accounting.view'));
+$router->get('/admin/chart-of-accounts/create', [ChartOfAccountsController::class, 'create'], rateb_platform_oversight_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'store'], rateb_platform_oversight_mw('accounting.manage'));
+$router->get('/admin/chart-of-accounts/{id}/edit', [ChartOfAccountsController::class, 'edit'], rateb_platform_oversight_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts/{id}', [ChartOfAccountsController::class, 'update'], rateb_platform_oversight_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts/{id}/delete', [ChartOfAccountsController::class, 'destroy'], rateb_platform_oversight_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts/bulk-delete', [ChartOfAccountsController::class, 'bulkDestroy'], rateb_platform_oversight_mw('accounting.manage'));
 
-$router->get('/admin/journal-entries', [AdminJournalEntriesController::class, 'index'], rateb_admin_mw('accounting.view'));
-$router->get('/admin/journal-entries/{id}', [AdminJournalEntriesController::class, 'show'], rateb_admin_mw('accounting.view'));
+$router->get('/admin/journal-entries', [AdminJournalEntriesController::class, 'index'], rateb_platform_oversight_mw('accounting.view'));
+$router->get('/admin/journal-entries/{id}', [AdminJournalEntriesController::class, 'show'], rateb_platform_oversight_mw('accounting.view'));
 
 $crudRoutes = [
-    'subscriptions' => [SubscriptionsController::class, 'subscriptions.manage'],
-    'plans' => [PlansController::class, 'plans.manage'],
     'users' => [UsersController::class, 'access.manage'],
     'roles' => [RolesController::class, 'access.manage'],
     'permissions' => [PermissionsController::class, 'access.manage'],
@@ -136,6 +134,27 @@ $crudRoutes = [
     'sms-templates' => [SmsTemplatesController::class, 'settings.manage'],
     'support-tickets' => [SupportTicketsController::class, 'settings.manage'],
 ];
+
+$platformCrudRoutes = [
+    'subscriptions' => [SubscriptionsController::class, 'subscriptions.manage'],
+    'plans' => [PlansController::class, 'plans.manage'],
+];
+
+foreach ($platformCrudRoutes as $path => [$class, $perm]) {
+    $router->get('/admin/' . $path, [$class, 'index'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/' . $path . '/create', [$class, 'create'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/' . $path, [$class, 'store'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/' . $path . '/export', [$class, 'export'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_platform_oversight_mw($perm));
+}
 
 foreach ($crudRoutes as $path => [$class, $perm]) {
     $router->get('/admin/' . $path, [$class, 'index'], rateb_admin_mw($perm));
@@ -160,39 +179,39 @@ $billingCrud = [
     'invoices' => InvoicesController::class,
 ];
 foreach ($billingCrud as $path => $class) {
-    $router->get('/admin/' . $path, [$class, 'index'], rateb_admin_mw('accounting.view'));
-    $router->get('/admin/' . $path . '/create', [$class, 'create'], rateb_admin_mw('billing.manage'));
-    $router->post('/admin/' . $path, [$class, 'store'], rateb_admin_mw('billing.manage'));
+    $router->get('/admin/' . $path, [$class, 'index'], rateb_platform_oversight_mw('accounting.view'));
+    $router->get('/admin/' . $path . '/create', [$class, 'create'], rateb_platform_oversight_mw('billing.manage'));
+    $router->post('/admin/' . $path, [$class, 'store'], rateb_platform_oversight_mw('billing.manage'));
     if ($path === 'invoices') {
-        $router->get('/admin/invoices/subscription-lookup', [$class, 'subscriptionLookup'], rateb_admin_mw('billing.manage'));
-        $router->get('/admin/invoices/tax-profile-lookup', [$class, 'taxProfileLookup'], rateb_admin_mw('billing.manage'));
-        $router->get('/admin/invoices/chart-accounts-lookup', [$class, 'chartAccountsLookup'], rateb_admin_mw('billing.manage'));
-        $router->get('/admin/invoices/{id}/preview', [$class, 'preview'], rateb_admin_mw('accounting.view'));
-        $router->post('/admin/invoices/preview-draft', [$class, 'previewDraft'], rateb_admin_mw('billing.manage'));
+        $router->get('/admin/invoices/subscription-lookup', [$class, 'subscriptionLookup'], rateb_platform_oversight_mw('billing.manage'));
+        $router->get('/admin/invoices/tax-profile-lookup', [$class, 'taxProfileLookup'], rateb_platform_oversight_mw('billing.manage'));
+        $router->get('/admin/invoices/chart-accounts-lookup', [$class, 'chartAccountsLookup'], rateb_platform_oversight_mw('billing.manage'));
+        $router->get('/admin/invoices/{id}/preview', [$class, 'preview'], rateb_platform_oversight_mw('accounting.view'));
+        $router->post('/admin/invoices/preview-draft', [$class, 'previewDraft'], rateb_platform_oversight_mw('billing.manage'));
     }
-    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw('billing.manage'));
-    $router->get('/admin/' . $path . '/export', [$class, 'export'], rateb_admin_mw('billing.manage'));
-    $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw('billing.manage'));
-    $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw('billing.manage'));
-    $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw('billing.manage'));
-    $router->get('/admin/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_admin_mw('billing.manage'));
-    $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw('billing.manage'));
-    $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw('billing.manage'));
-    $router->post('/admin/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_admin_mw('billing.manage'));
-    $router->post('/admin/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_admin_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_platform_oversight_mw('billing.manage'));
+    $router->get('/admin/' . $path . '/export', [$class, 'export'], rateb_platform_oversight_mw('billing.manage'));
+    $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_platform_oversight_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_platform_oversight_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_platform_oversight_mw('billing.manage'));
+    $router->get('/admin/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_platform_oversight_mw('billing.manage'));
+    $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_platform_oversight_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_platform_oversight_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_platform_oversight_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_platform_oversight_mw('billing.manage'));
 }
 
 $router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/login-activity', [\Rateb\App\Controllers\Admin\LoginActivityController::class, 'index'], rateb_admin_mw('settings.manage'));
-$router->get('/admin/queue-monitor', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'index'], rateb_admin_mw('settings.manage'));
-$router->post('/admin/queue-monitor/retry', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'retry'], rateb_admin_mw('settings.manage'));
-$router->get('/admin/automation-health', [\Rateb\App\Controllers\Admin\AutomationDashboardController::class, 'index'], rateb_admin_mw('settings.manage'));
+$router->get('/admin/queue-monitor', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'index'], rateb_platform_oversight_mw('settings.manage'));
+$router->post('/admin/queue-monitor/retry', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'retry'], rateb_platform_oversight_mw('settings.manage'));
+$router->get('/admin/automation-health', [\Rateb\App\Controllers\Admin\AutomationDashboardController::class, 'index'], rateb_platform_oversight_mw('settings.manage'));
 $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings/save-mail', [SettingsController::class, 'saveMail'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings/test-mail', [SettingsController::class, 'testMail'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/tools/fix-arabic', [SettingsController::class, 'fixArabic'], rateb_admin_mw('settings.manage'));
-$router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));
+$router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_platform_oversight_mw('reports.view'));
 $router->get('/admin/procurement', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('purchase-requests')), 301);
 }, [ErpAuthMiddleware::class]);
@@ -232,24 +251,24 @@ $router->get('/admin/workflows', static function (): void {
 $router->post('/admin/workflows', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 307);
 }, [ErpAuthMiddleware::class]);
-$router->get('/admin/oversight/approvals', [AdminApprovalsController::class, 'index'], rateb_admin_mw('workflows.view'));
+$router->get('/admin/oversight/approvals', [AdminApprovalsController::class, 'index'], rateb_platform_oversight_mw('workflows.view'));
 $router->get('/admin/oversight/companies-approvals', [AdminApprovalsController::class, 'companiesApprovals'], rateb_platform_oversight_mw('companies.view'));
-$router->get('/admin/oversight/approvals/count', [AdminApprovalsController::class, 'count'], rateb_admin_mw('workflows.view'));
-$router->get('/admin/oversight/approvals/detail', [AdminApprovalsController::class, 'detail'], rateb_admin_mw('workflows.view'));
-$router->post('/admin/oversight/approvals/decide', [AdminApprovalsController::class, 'decideAction'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/approvals/action', [AdminApprovalsController::class, 'decideAction'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/approvals/approve', [AdminApprovalsController::class, 'approve'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/approvals/reject', [AdminApprovalsController::class, 'reject'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/approvals/undo', [AdminApprovalsController::class, 'undo'], rateb_admin_mw('workflows.manage'));
-$router->get('/admin/oversight/supplier-evaluations', [SupplierEvaluationsController::class, 'index'], rateb_admin_mw('procurement.manage'));
-$router->get('/admin/oversight/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
-$router->get('/admin/oversight/rfq', [RfqOversightController::class, 'index'], rateb_admin_mw('procurement.manage'));
-$router->get('/admin/oversight/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
-$router->get('/admin/oversight/workflows', [AdminWorkflowsController::class, 'index'], rateb_admin_mw('workflows.view'));
-$router->post('/admin/oversight/workflows', [AdminWorkflowsController::class, 'store'], rateb_admin_mw('workflows.manage'));
-$router->get('/admin/oversight/workflows/{id}/edit', [AdminWorkflowsController::class, 'edit'], rateb_admin_mw('workflows.view'));
-$router->post('/admin/oversight/workflows/{id}', [AdminWorkflowsController::class, 'update'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/workflows/{id}/delete', [AdminWorkflowsController::class, 'destroy'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/workflows/{id}/toggle', [AdminWorkflowsController::class, 'toggle'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/workflows/{id}/steps', [AdminWorkflowsController::class, 'storeStep'], rateb_admin_mw('workflows.manage'));
-$router->post('/admin/oversight/workflows/{id}/steps/{stepId}/delete', [AdminWorkflowsController::class, 'destroyStep'], rateb_admin_mw('workflows.manage'));
+$router->get('/admin/oversight/approvals/count', [AdminApprovalsController::class, 'count'], rateb_platform_oversight_mw('workflows.view'));
+$router->get('/admin/oversight/approvals/detail', [AdminApprovalsController::class, 'detail'], rateb_platform_oversight_mw('workflows.view'));
+$router->post('/admin/oversight/approvals/decide', [AdminApprovalsController::class, 'decideAction'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/approvals/action', [AdminApprovalsController::class, 'decideAction'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/approvals/approve', [AdminApprovalsController::class, 'approve'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/approvals/reject', [AdminApprovalsController::class, 'reject'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/approvals/undo', [AdminApprovalsController::class, 'undo'], rateb_platform_oversight_mw('workflows.manage'));
+$router->get('/admin/oversight/supplier-evaluations', [SupplierEvaluationsController::class, 'index'], rateb_platform_oversight_mw('procurement.manage'));
+$router->get('/admin/oversight/procurement', [ProcurementController::class, 'index'], rateb_platform_oversight_mw('procurement.manage'));
+$router->get('/admin/oversight/rfq', [RfqOversightController::class, 'index'], rateb_platform_oversight_mw('procurement.manage'));
+$router->get('/admin/oversight/inventory', [AdminInventoryController::class, 'index'], rateb_platform_oversight_mw('inventory.manage'));
+$router->get('/admin/oversight/workflows', [AdminWorkflowsController::class, 'index'], rateb_platform_oversight_mw('workflows.view'));
+$router->post('/admin/oversight/workflows', [AdminWorkflowsController::class, 'store'], rateb_platform_oversight_mw('workflows.manage'));
+$router->get('/admin/oversight/workflows/{id}/edit', [AdminWorkflowsController::class, 'edit'], rateb_platform_oversight_mw('workflows.view'));
+$router->post('/admin/oversight/workflows/{id}', [AdminWorkflowsController::class, 'update'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/delete', [AdminWorkflowsController::class, 'destroy'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/toggle', [AdminWorkflowsController::class, 'toggle'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/steps', [AdminWorkflowsController::class, 'storeStep'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/workflows/{id}/steps/{stepId}/delete', [AdminWorkflowsController::class, 'destroyStep'], rateb_platform_oversight_mw('workflows.manage'));

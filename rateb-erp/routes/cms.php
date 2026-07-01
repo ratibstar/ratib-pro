@@ -41,7 +41,7 @@ require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
 /** @var Rateb\App\Core\Router $router */
 
-$router->get('/admin/cms', [CmsDashboardController::class, 'index'], rateb_admin_mw('cms.view'));
+$router->get('/admin/cms', [CmsDashboardController::class, 'index'], rateb_platform_oversight_mw('cms.view'));
 
 $cmsCrud = [
     'pages' => [CmsPagesController::class, 'cms.manage'],
@@ -73,51 +73,51 @@ $cmsCrud = [
 ];
 
 foreach ($cmsCrud as $path => [$class, $perm]) {
-    $router->get('/admin/cms/' . $path, [$class, 'index'], rateb_admin_mw($perm));
-    $router->get('/admin/cms/' . $path . '/create', [$class, 'create'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path, [$class, 'store'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
-    $router->get('/admin/cms/' . $path . '/export', [$class, 'export'], rateb_admin_mw($perm));
-    $router->get('/admin/cms/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw($perm));
-    $router->get('/admin/cms/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_admin_mw($perm));
-    $router->get('/admin/cms/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_admin_mw($perm));
-    $router->post('/admin/cms/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_admin_mw($perm));
+    $router->get('/admin/cms/' . $path, [$class, 'index'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/cms/' . $path . '/create', [$class, 'create'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/cms/' . $path, [$class, 'store'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/cms/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/cms/' . $path . '/export', [$class, 'export'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/cms/' . $path . '/{id}/edit', [$class, 'edit'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/cms/' . $path . '/{id}', [$class, 'update'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/cms/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/cms/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_platform_oversight_mw($perm));
+    $router->get('/admin/cms/' . $path . '/{id}/documents', [$class, 'documents'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/cms/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/cms/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_platform_oversight_mw($perm));
+    $router->post('/admin/cms/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_platform_oversight_mw($perm));
 }
 
-$router->get('/admin/cms/leads', [CmsLeadsController::class, 'index'], rateb_admin_mw('cms.leads'));
-$router->get('/admin/cms/leads/{id}', [CmsLeadsController::class, 'show'], rateb_admin_mw('cms.leads'));
-$router->post('/admin/cms/leads/{id}', [CmsLeadsController::class, 'update'], rateb_admin_mw('cms.leads'));
-$router->post('/admin/cms/leads/{id}/test-mail', [CmsLeadsController::class, 'testMail'], rateb_admin_mw('cms.leads'));
+$router->get('/admin/cms/leads', [CmsLeadsController::class, 'index'], rateb_platform_oversight_mw('cms.leads'));
+$router->get('/admin/cms/leads/{id}', [CmsLeadsController::class, 'show'], rateb_platform_oversight_mw('cms.leads'));
+$router->post('/admin/cms/leads/{id}', [CmsLeadsController::class, 'update'], rateb_platform_oversight_mw('cms.leads'));
+$router->post('/admin/cms/leads/{id}/test-mail', [CmsLeadsController::class, 'testMail'], rateb_platform_oversight_mw('cms.leads'));
 
-$router->get('/admin/cms/media', [CmsMediaController::class, 'index'], rateb_admin_mw('cms.media'));
-$router->get('/admin/cms/media/json', [CmsMediaController::class, 'listJson'], rateb_admin_mw('cms.media'));
-$router->post('/admin/cms/media/upload', [CmsMediaController::class, 'upload'], rateb_admin_mw('cms.media'));
-$router->post('/admin/cms/media/tinymce-upload', [CmsMediaController::class, 'tinymceUpload'], rateb_admin_mw('cms.media'));
+$router->get('/admin/cms/media', [CmsMediaController::class, 'index'], rateb_platform_oversight_mw('cms.media'));
+$router->get('/admin/cms/media/json', [CmsMediaController::class, 'listJson'], rateb_platform_oversight_mw('cms.media'));
+$router->post('/admin/cms/media/upload', [CmsMediaController::class, 'upload'], rateb_platform_oversight_mw('cms.media'));
+$router->post('/admin/cms/media/tinymce-upload', [CmsMediaController::class, 'tinymceUpload'], rateb_platform_oversight_mw('cms.media'));
 
-$router->get('/admin/cms/theme', [CmsThemeController::class, 'index'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/theme', [CmsThemeController::class, 'save'], rateb_admin_mw('cms.manage'));
+$router->get('/admin/cms/theme', [CmsThemeController::class, 'index'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/theme', [CmsThemeController::class, 'save'], rateb_platform_oversight_mw('cms.manage'));
 
-$router->get('/admin/cms/analytics', [CmsAnalyticsController::class, 'index'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/analytics', [CmsAnalyticsController::class, 'save'], rateb_admin_mw('cms.manage'));
+$router->get('/admin/cms/analytics', [CmsAnalyticsController::class, 'index'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/analytics', [CmsAnalyticsController::class, 'save'], rateb_platform_oversight_mw('cms.manage'));
 
-$router->get('/admin/cms/robots', [CmsRobotsController::class, 'index'], rateb_admin_mw('cms.seo'));
-$router->post('/admin/cms/robots', [CmsRobotsController::class, 'save'], rateb_admin_mw('cms.seo'));
+$router->get('/admin/cms/robots', [CmsRobotsController::class, 'index'], rateb_platform_oversight_mw('cms.seo'));
+$router->post('/admin/cms/robots', [CmsRobotsController::class, 'save'], rateb_platform_oversight_mw('cms.seo'));
 
-$router->get('/admin/cms/about', [CmsAboutController::class, 'index'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/about', [CmsAboutController::class, 'save'], rateb_admin_mw('cms.manage'));
+$router->get('/admin/cms/about', [CmsAboutController::class, 'index'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/about', [CmsAboutController::class, 'save'], rateb_platform_oversight_mw('cms.manage'));
 
-$router->get('/admin/cms/contact', [CmsContactController::class, 'index'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/contact', [CmsContactController::class, 'save'], rateb_admin_mw('cms.manage'));
+$router->get('/admin/cms/contact', [CmsContactController::class, 'index'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/contact', [CmsContactController::class, 'save'], rateb_platform_oversight_mw('cms.manage'));
 
-$router->get('/admin/cms/newsletter/export', [CmsNewsletterController::class, 'export'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/newsletter/import', [CmsNewsletterController::class, 'import'], rateb_admin_mw('cms.manage'));
-$router->get('/admin/cms/newsletter/campaign', [CmsNewsletterController::class, 'campaignForm'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/newsletter/campaign/save', [CmsNewsletterController::class, 'campaignSave'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/newsletter/campaign/send', [CmsNewsletterController::class, 'campaignSend'], rateb_admin_mw('cms.manage'));
+$router->get('/admin/cms/newsletter/export', [CmsNewsletterController::class, 'export'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/import', [CmsNewsletterController::class, 'import'], rateb_platform_oversight_mw('cms.manage'));
+$router->get('/admin/cms/newsletter/campaign', [CmsNewsletterController::class, 'campaignForm'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/save', [CmsNewsletterController::class, 'campaignSave'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/send', [CmsNewsletterController::class, 'campaignSend'], rateb_platform_oversight_mw('cms.manage'));
 
-$router->get('/admin/cms/page-builder', [CmsPageBuilderController::class, 'index'], rateb_admin_mw('cms.manage'));
-$router->post('/admin/cms/page-builder/reorder', [CmsPageBuilderController::class, 'reorder'], rateb_admin_mw('cms.manage'));
+$router->get('/admin/cms/page-builder', [CmsPageBuilderController::class, 'index'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/page-builder/reorder', [CmsPageBuilderController::class, 'reorder'], rateb_platform_oversight_mw('cms.manage'));

@@ -23,7 +23,7 @@ $tabs = [
     ['path' => rateb_app_route('reports/inventory-valuation'), 'label' => __('inventory_valuation_report'), 'match' => [rateb_app_route('reports/inventory-valuation')]],
     ['path' => rateb_app_route('asset-depreciation'), 'label' => __('asset_depreciation'), 'match' => [rateb_app_route('asset-depreciation')]],
 ];
-if ($accountingActive === 'admin' || rateb_is_super_admin()) {
+if (($accountingActive === 'admin' || rateb_is_super_admin()) && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
     $tabs[] = ['path' => 'admin/invoices', 'label' => __('invoices'), 'match' => ['admin/invoices']];
     $tabs[] = ['path' => 'admin/payments', 'label' => __('payments'), 'match' => ['admin/payments']];
     $tabs[] = ['path' => 'admin/subscriptions', 'label' => __('subscriptions'), 'match' => ['admin/subscriptions']];

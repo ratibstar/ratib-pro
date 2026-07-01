@@ -153,7 +153,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             </a>
             <?php } ?>
             <?php
-            if (rateb_nav_can('cms.view')) {
+            if (rateb_is_platform_oversight_host() && rateb_nav_can('cms.view')) {
                 $cmsNewLeads = rateb_nav_can('cms.leads', 'cms') ? rateb_cms_new_leads_count() : 0;
                 $cmsLeadBadges = $cmsNewLeads > 0 ? ['admin/cms/leads' => $cmsNewLeads] : [];
                 $adminSection(__('cms_section'), [
@@ -166,18 +166,21 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                     ['admin/cms/theme', 'cms_theme', 'fa-palette', 'cms.manage'],
                 ], 'fa-globe', $cmsNewLeads, $cmsLeadBadges, '', 'rateb-nav-badge--pending', 'cms_leads_new');
             }
-            $adminSection(__('access_control'), [
+            $accessControlLinks = [
                 ['admin/access-control', 'access_control', 'fa-shield-halved', 'access.manage'],
                 ['admin/access-control/matrix', 'permission_matrix', 'fa-table-cells', 'access.manage'],
                 ['admin/users', 'users', 'fa-users', 'access.manage'],
                 ['admin/roles', 'roles', 'fa-user-shield', 'access.manage'],
                 ['admin/permissions', 'permissions', 'fa-key', 'access.manage'],
-                ['admin/plans', 'plans', 'fa-layer-group', 'plans.manage'],
-                ['admin/audit-logs', 'audit_logs', 'fa-clipboard-list', 'settings.manage'],
-                ['admin/support-tickets', 'support_tickets', 'fa-life-ring', 'settings.manage'],
-                ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'],
-                ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'],
-            ], 'fa-key');
+            ];
+            if (rateb_is_platform_oversight_host()) {
+                $accessControlLinks[] = ['admin/plans', 'plans', 'fa-layer-group', 'plans.manage'];
+            }
+            $accessControlLinks[] = ['admin/audit-logs', 'audit_logs', 'fa-clipboard-list', 'settings.manage'];
+            $accessControlLinks[] = ['admin/support-tickets', 'support_tickets', 'fa-life-ring', 'settings.manage'];
+            $accessControlLinks[] = ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'];
+            $accessControlLinks[] = ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'];
+            $adminSection(__('access_control'), $accessControlLinks, 'fa-key');
             ?>
             <?php } ?>
         </nav>

@@ -40,10 +40,18 @@ if (!function_exists('rateb_admin_mw')) {
 }
 
 if (!function_exists('rateb_platform_oversight_mw')) {
-    /** Companies, agency updates, company approvals — rateb.sa platform host only. */
+    /** Companies, agency push, CMS, SaaS billing — rateb.sa platform host only. */
     function rateb_platform_oversight_mw(string $permission = ''): array
     {
         return array_merge(rateb_admin_mw($permission), [PlatformOversightHostMiddleware::class]);
+    }
+}
+
+/** @alias rateb_platform_oversight_mw */
+if (!function_exists('rateb_platform_saas_mw')) {
+    function rateb_platform_saas_mw(string $permission = ''): array
+    {
+        return rateb_platform_oversight_mw($permission);
     }
 }
 
