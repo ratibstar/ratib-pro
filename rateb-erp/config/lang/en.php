@@ -1241,6 +1241,7 @@ return [
     'agency_erp_full_deploy_running' => 'Syncing files then running migrations…',
     'agency_erp_select_agencies_first' => 'Select at least one agency in the table.',
     'platform_oversight_host_only' => 'Platform oversight is only available on rateb.sa. Open the main ERP admin.',
+    'agency_erp_no_company_context' => 'No operational company is bound to this domain — check agency ERP database linkage.',
     'active_company' => 'Active company',
     'no_companies_for_ops' => 'No companies registered yet. Create one first from',
     'company_not_found_ops' => 'The selected company does not exist. Create one under Companies, then pick it from the selector above.',

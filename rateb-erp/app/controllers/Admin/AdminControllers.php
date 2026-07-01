@@ -66,20 +66,65 @@ final class DashboardController extends Controller
         }
 
         if (SessionManager::get('rateb_is_super_admin')) {
-            $service = new DashboardService();
-            $dash = $service->adminBuild();
-            $this->view('admin/dashboard', [
-                'title' => __('dashboard'),
-                'dash' => $dash,
-                'metrics' => $dash['metrics'],
-                'charts' => $dash['charts'],
-                'csrf' => Csrf::token(),
-            ], 'main');
+            if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+                $service = new DashboardService();
+                $dash = $service->adminBuild();
+                $this->view('admin/dashboard', [
+                    'title' => __('dashboard'),
+                    'dash' => $dash,
+                    'metrics' => $dash['metrics'],
+                    'charts' => $dash['charts'],
+                    'csrf' => Csrf::token(),
+                ], 'main');
+
+                return;
+            }
+
+            $this->renderCompanyDashboard($this->resolveAgencySuperAdminCompanyId());
+
             return;
         }
 
         $companyId = (int) SessionManager::get('rateb_company_id');
+        $this->renderCompanyDashboard($companyId);
+    }
+
+    private function resolveAgencySuperAdminCompanyId(): int
+    {
+        if (\Rateb\App\Services\DedicatedTenantPolicy::isDedicated()) {
+            $id = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+            if ($id > 0) {
+                return $id;
+            }
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $id = rateb_resolve_ops_company_id();
+            if ($id > 0) {
+                return $id;
+            }
+        }
+        if (\Rateb\App\Services\DedicatedTenantPolicy::companyCount() === 1) {
+            return \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+        }
+
+        return \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+    }
+
+    private function renderCompanyDashboard(int $companyId): void
+    {
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('agency_erp_no_company_context'));
+            Response::redirect(rateb_url('admin/settings'));
+
+            return;
+        }
         TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_adopt_ops_company_id')) {
+            rateb_adopt_ops_company_id($companyId);
+        }
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
         $service = new DashboardService();
         $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
         $userCount = (new User())->count(['company_id' => $companyId]);

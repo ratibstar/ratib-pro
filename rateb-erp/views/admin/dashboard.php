@@ -37,12 +37,16 @@ foreach (
     $metrics[] = ['label' => __($key), 'value' => (int) ($m[$key] ?? 0), 'tone' => $tone];
 }
 
-$actions = [
-    ['href' => rateb_url('admin/companies/create'), 'label' => __('add_company'), 'icon' => 'fa-plus'],
-    ['href' => rateb_url('admin/users/create'), 'label' => __('add_user'), 'icon' => 'fa-user-plus'],
-];
+$actions = [];
+if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+    $actions[] = ['href' => rateb_url('admin/companies/create'), 'label' => __('add_company'), 'icon' => 'fa-plus'];
+}
+$actions[] = ['href' => rateb_url('admin/users/create'), 'label' => __('add_user'), 'icon' => 'fa-user-plus'];
 if (rateb_nav_can('accounting.view', 'accounting')) {
-    $actions[] = ['href' => rateb_url('admin/accounting'), 'label' => __('accounting_dashboard'), 'icon' => 'fa-calculator', 'primary' => true];
+    $accountingHref = (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())
+        ? rateb_url('admin/accounting')
+        : rateb_app_url('accounting');
+    $actions[] = ['href' => $accountingHref, 'label' => __('accounting_dashboard'), 'icon' => 'fa-calculator', 'primary' => true];
 }
 
 $rankRows = array_map(static fn ($r) => [

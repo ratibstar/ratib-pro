@@ -22,6 +22,22 @@ final class DedicatedTenantPolicy
         }
     }
 
+    public static function primaryCompanyId(): int
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $row = (new Company())->queryOne('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+            $cached = is_array($row) ? (int) ($row['id'] ?? 0) : 0;
+        } catch (\Throwable $e) {
+            $cached = 0;
+        }
+
+        return $cached;
+    }
+
     public static function canCreateCompany(): bool
     {
         if (!self::isDedicated()) {

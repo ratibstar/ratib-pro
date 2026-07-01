@@ -1241,6 +1241,7 @@ return [
     'agency_erp_full_deploy_running' => 'جاري المزامنة ثم الترحيل…',
     'agency_erp_select_agencies_first' => 'حدّد وكالة واحدة على الأقل من الجدول.',
     'platform_oversight_host_only' => 'مراقبة المنصة متاحة فقط على rateb.sa — افتح لوحة ERP الرئيسية.',
+    'agency_erp_no_company_context' => 'لم تُحدَّد شركة تشغيلية لهذا الدومين — تحقق من ربط قاعدة ERP للوكالة.',
     'active_company' => 'الشركة النشطة',
     'no_companies_for_ops' => 'لا توجد شركات مسجّلة. أنشئ شركة أولاً من',
     'company_not_found_ops' => 'الشركة المحددة غير موجودة. أنشئ شركة من قسم الشركات ثم اخترها من القائمة أعلاه.',
