@@ -91,16 +91,37 @@ if (!function_exists('agency_open_site_url_is_different_host')) {
     }
 }
 
+if (!function_exists('agency_has_valid_site_url')) {
+    /**
+     * @param array<string, mixed> $agencyRow
+     */
+    function agency_has_valid_site_url(array $agencyRow): bool
+    {
+        $siteUrl = trim((string) ($agencyRow['site_url'] ?? ''));
+        if ($siteUrl === '' || !preg_match('/^https?:\/\/.+/i', $siteUrl)) {
+            return false;
+        }
+        if (function_exists('agency_site_url_invalid_for_rateb_pro_open')
+            && agency_site_url_invalid_for_rateb_pro_open($siteUrl)) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('agency_build_erp_open_url')) {
-    /** Company portal on the agency Site URL (dedicated host resolves ERP DB via agency_resolver). */
-    function agency_build_erp_open_url(string $siteUrl): string
+    /** ERP admin (ready) or company portal on the agency Site URL. */
+    function agency_build_erp_open_url(string $siteUrl, string $erpStatus = 'none'): string
     {
         $siteUrl = rtrim(trim($siteUrl), '/');
         if ($siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
             return '';
         }
+        $st = strtolower(trim($erpStatus));
+        $path = $st === 'ready' ? '/rateb-erp/public/admin' : '/rateb-erp/public/company/login';
 
-        return $siteUrl . '/rateb-erp/public/company/login';
+        return $siteUrl . $path;
     }
 }
 
@@ -112,18 +133,34 @@ if (!function_exists('agency_can_open_erp_portal')) {
      */
     function agency_can_open_erp_portal(array $agencyRow): bool
     {
-        $siteUrl = trim((string) ($agencyRow['site_url'] ?? ''));
-        if ($siteUrl === '' || !preg_match('/^https?:\/\/.+/i', $siteUrl)) {
-            return false;
-        }
-        if (function_exists('agency_site_url_invalid_for_rateb_pro_open')
-            && agency_site_url_invalid_for_rateb_pro_open($siteUrl)) {
+        if (!agency_has_valid_site_url($agencyRow)) {
             return false;
         }
         $erpDb = trim((string) ($agencyRow['erp_db_name'] ?? ''));
         $erpStatus = strtolower(trim((string) ($agencyRow['erp_status'] ?? 'none')));
 
         return $erpDb !== '' || in_array($erpStatus, ['ready', 'provisioning', 'failed'], true);
+    }
+}
+
+if (!function_exists('agency_erp_open_blocked_reason')) {
+    /**
+     * @param array<string, mixed> $agencyRow
+     */
+    function agency_erp_open_blocked_reason(array $agencyRow): string
+    {
+        if (!agency_has_valid_site_url($agencyRow)) {
+            return function_exists('cp_t')
+                ? cp_t('agencies.erp_needs_site_url')
+                : 'Add a valid Site URL (https://…) in Edit, then run Provision ERP.';
+        }
+        if (!agency_can_open_erp_portal($agencyRow)) {
+            return function_exists('cp_t')
+                ? cp_t('agencies.erp_needs_provision')
+                : 'Run Provision ERP first to create the agency database.';
+        }
+
+        return '';
     }
 }
 
@@ -608,14 +645,21 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $erpUrl = '';
                             $erpTitle = '';
                             $siteBaseRaw = trim((string) ($r['site_url'] ?? ''));
+                            $hasValidSite = agency_has_valid_site_url($r);
+                            $openSiteUrl = $hasValidSite ? rtrim($siteBaseRaw, '/') : '';
+                            $openSiteTitle = function_exists('cp_t') ? cp_t('agencies.open_site') : 'Open agency site';
+                            $erpBlocked = agency_erp_open_blocked_reason($r);
                             if (agency_can_open_erp_portal($r)) {
-                                $erpUrl = agency_build_erp_open_url($siteBaseRaw);
                                 $erpSt = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
+                                $erpUrl = agency_build_erp_open_url($siteBaseRaw, $erpSt);
                                 $erpTitle = $erpSt === 'ready'
-                                    ? 'Open RATEB ERP (company portal)'
+                                    ? (function_exists('cp_t') ? cp_t('agencies.erp_open_admin') : 'Open RATEB ERP admin')
                                     : ('Open RATEB ERP — status: ' . ($r['erp_status'] ?? 'none'));
                             }
                         ?>
+                        <?php if ($openSiteUrl !== ''): ?>
+                        <a href="<?php echo htmlspecialchars($openSiteUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" title="<?php echo htmlspecialchars($openSiteTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><?php echo htmlspecialchars(function_exists('cp_t') ? cp_t('agencies.open') : 'Open', ENT_QUOTES, 'UTF-8'); ?></a>
+                        <?php endif; ?>
                         <?php if ($proUrl !== ''): ?>
                         <a href="<?php echo htmlspecialchars($proUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="<?php echo htmlspecialchars($proTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">Pro</a>
                         <?php else: ?>
@@ -623,6 +667,8 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                         <?php endif; ?>
                         <?php if ($erpUrl !== ''): ?>
                         <a href="<?php echo htmlspecialchars($erpUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info" title="<?php echo htmlspecialchars($erpTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">ERP</a>
+                        <?php elseif ($hasValidSite || $erpBlocked !== ''): ?>
+                        <button type="button" class="btn btn-sm btn-outline-info" disabled title="<?php echo htmlspecialchars($erpBlocked !== '' ? $erpBlocked : (function_exists('cp_t') ? cp_t('agencies.erp_needs_provision') : 'Run Provision ERP first'), ENT_QUOTES, 'UTF-8'); ?>">ERP</button>
                         <?php endif; ?>
                         <?php if ($hasIsSuspended && $isSuspended): ?>
                         <button type="button" class="btn btn-sm btn-outline-primary btn-mark-paid" data-id="<?php echo (int)$r['id']; ?>" data-name="<?php echo htmlspecialchars($r['name'] ?? $r['agency_name'] ?? 'Agency'); ?>" data-permission="control_agencies,edit_control_agency,approve_control_registration">Mark Paid</button>
