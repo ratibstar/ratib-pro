@@ -22,20 +22,28 @@
 
     if (!tableBody) return;
 
-    if (typeof bootstrap !== 'undefined') {
+    function initAgencyActionDropdowns() {
+        if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) {
+            return;
+        }
         document.querySelectorAll('.ag-actions-dropdown .ag-actions-toggle').forEach(function (toggle) {
-            if (toggle.getAttribute('data-ag-dropdown-init') === '1') {
+            if (toggle._agDdBound) {
                 return;
             }
-            toggle.setAttribute('data-ag-dropdown-init', '1');
-            new bootstrap.Dropdown(toggle, {
-                popperConfig: function (defaultBsPopperConfig) {
-                    defaultBsPopperConfig.strategy = 'fixed';
-                    return defaultBsPopperConfig;
-                },
-            });
+            toggle._agDdBound = true;
+            try {
+                bootstrap.Dropdown.getOrCreateInstance(toggle, {
+                    popperConfig: {
+                        strategy: 'fixed',
+                        modifiers: [{ name: 'offset', options: { offset: [0, 6] } }],
+                    },
+                });
+            } catch (e) {
+                /* ignore */
+            }
         });
     }
+    initAgencyActionDropdowns();
 
     // EN: Utility helpers (number normalization, modal alerts, confirmations, slug sanitizer).
     // AR: دوال مساعدة (توحيد الأرقام، التنبيه، التأكيد، وتنظيف slug).

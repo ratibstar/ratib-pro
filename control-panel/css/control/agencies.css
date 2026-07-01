@@ -159,15 +159,27 @@
     max-width: 110px;
     vertical-align: middle;
     position: relative;
-    overflow: visible;
+    overflow: visible !important;
+    white-space: nowrap;
 }
 
 .ag-actions-dropdown {
     position: static;
 }
 
+.ag-actions-dropdown.show .ag-btn-actions,
+.ag-actions-dropdown .ag-btn-actions.show {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.45), rgba(37, 99, 235, 0.32));
+    border-color: #3b82f6;
+    color: #fff;
+}
+
 .ag-actions-dropdown .dropdown-menu {
     z-index: 1090;
+}
+
+#tableCard .agencies-table-scroll td.ag-actions-cell {
+    overflow: visible !important;
 }
 
 .ag-btn {
