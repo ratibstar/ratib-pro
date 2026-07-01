@@ -22,6 +22,12 @@
 
     if (!tableBody) return;
 
+    window.RatibCpAgencies = window.RatibCpAgencies || {
+        provisionProClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
+        provisionErpClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
+        wireProvisionButtons: function() {}
+    };
+
     function closeAgencyActionDropdowns() {
         document.querySelectorAll('.ag-actions-dropdown').forEach(function (wrap) {
             var toggle = wrap.querySelector('.ag-actions-toggle');
@@ -484,24 +490,42 @@
 
     function provisionProClick(btn, ev) {
         stopProvisionEvent(ev);
-        if (!btn || btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) return false;
+        if (!btn) return false;
+        if (btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) {
+            showAlert('You do not have permission to provision Pro for this agency.');
+            return false;
+        }
         var proAgencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
-        if (!proAgencyId) return false;
-        if (!window.confirm('Provision RATEB Pro for this agency?\n\nCreates/updates admin user:\nUsername: admin\nPassword: 123456')) return false;
-        closeAgencyActionDropdowns();
-        runProvisionPro(btn, proAgencyId, true);
+        if (!proAgencyId) { showAlert('Invalid agency ID'); return false; }
+        showConfirm('Provision RATEB Pro for this agency?\n\nCreates/updates admin user:\nUsername: admin\nPassword: 123456').then(function(ok) {
+            if (!ok) return;
+            closeAgencyActionDropdowns();
+            runProvisionPro(btn, proAgencyId, true);
+        });
         return false;
     }
 
     function provisionErpClick(btn, ev) {
         stopProvisionEvent(ev);
-        if (!btn || btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) return false;
+        if (!btn) return false;
+        if (btn.classList.contains('disabled') || btn.classList.contains('permission-denied')) {
+            showAlert('You do not have permission to provision ERP for this agency.');
+            return false;
+        }
         var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
-        if (!agencyId) return false;
+        if (!agencyId) { showAlert('Invalid agency ID'); return false; }
         var erpStatus = (btn.getAttribute('data-erp-status') || 'none').toLowerCase();
-        if (erpStatus === 'ready' && !window.confirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.')) return false;
-        closeAgencyActionDropdowns();
-        openErpProvisionModal(btn, agencyId, erpStatus);
+        var openModal = function() {
+            closeAgencyActionDropdowns();
+            openErpProvisionModal(btn, agencyId, erpStatus);
+        };
+        if (erpStatus === 'ready') {
+            showConfirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.').then(function(ok) {
+                if (ok) openModal();
+            });
+        } else {
+            openModal();
+        }
         return false;
     }
 
@@ -510,16 +534,12 @@
         scope.querySelectorAll('.btn-provision-pro').forEach(function(btn) {
             if (btn._agProvisionWired) return;
             btn._agProvisionWired = true;
-            btn.addEventListener('click', function(ev) {
-                provisionProClick(btn, ev);
-            });
+            btn.onclick = function(ev) { return provisionProClick(btn, ev); };
         });
         scope.querySelectorAll('.btn-provision-erp').forEach(function(btn) {
             if (btn._agProvisionWired) return;
             btn._agProvisionWired = true;
-            btn.addEventListener('click', function(ev) {
-                provisionErpClick(btn, ev);
-            });
+            btn.onclick = function(ev) { return provisionErpClick(btn, ev); };
         });
     }
 
@@ -884,10 +904,17 @@
         });
     }
 
-    window.RatibCpAgencies = {
-        provisionProClick: provisionProClick,
-        provisionErpClick: provisionErpClick,
-        wireProvisionButtons: wireProvisionButtons
-    };
+    window.RatibCpAgencies.provisionProClick = provisionProClick;
+    window.RatibCpAgencies.provisionErpClick = provisionErpClick;
+    window.RatibCpAgencies.wireProvisionButtons = wireProvisionButtons;
+    wireProvisionButtons();
+
+    if (window.UserPermissions && typeof window.UserPermissions.applyPermissions === 'function') {
+        var _agApplyPerms = window.UserPermissions.applyPermissions.bind(window.UserPermissions);
+        window.UserPermissions.applyPermissions = function() {
+            _agApplyPerms();
+            wireProvisionButtons();
+        };
+    }
 
 })();
