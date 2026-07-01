@@ -126,20 +126,43 @@ final class DashboardController extends Controller
             rateb_bootstrap_branch_context($companyId);
         }
         $service = new DashboardService();
-        $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
-        $userCount = (new User())->count(['company_id' => $companyId]);
+        $dash = $service->companyBuild($companyId);
+        $limits = $dash['limits'] ?? (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
+        $userCount = $this->resolveCompanyUserCount($companyId);
         $invSvc = new \Rateb\App\Services\InventoryWorkflowService();
         $ctrSvc = new \Rateb\App\Services\ContractWorkflowService();
 
         $this->view('company/dashboard', [
             'title' => __('dashboard'),
-            'metrics' => $service->companyMetrics($companyId),
+            'dash' => $dash,
+            'metrics' => $dash['metrics'] ?? [],
+            'charts' => $dash['charts'] ?? [],
+            'modules' => $dash['modules'] ?? [],
+            'recentActivity' => $dash['recent_activity'] ?? [],
+            'companyName' => (string) ($dash['company_name'] ?? ''),
             'limits' => $limits,
             'userCount' => $userCount,
             'expiringInventory' => $invSvc->expiringItems(30),
             'expiringContracts' => $ctrSvc->expiringContracts(60),
             'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    private function resolveCompanyUserCount(int $companyId): int
+    {
+        $userCount = (new User())->count(['company_id' => $companyId]);
+        if ($userCount > 0) {
+            return $userCount;
+        }
+        if (\Rateb\App\Services\DedicatedTenantPolicy::isDedicated()) {
+            $row = (new User())->queryOne(
+                'SELECT COUNT(*) AS c FROM rateb_users WHERE is_super_admin = 0'
+            );
+
+            return (int) ($row['c'] ?? 0);
+        }
+
+        return 0;
     }
 }
 

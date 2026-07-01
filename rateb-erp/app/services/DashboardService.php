@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Models\Branch;
 use Rateb\App\Models\Company;
+use Rateb\App\Models\Employee;
 use Rateb\App\Models\Inventory;
 use Rateb\App\Models\LoginActivity;
 use Rateb\App\Models\Plan;
@@ -229,24 +231,234 @@ final class DashboardService
 
     public function companyMetrics(int $companyId): array
     {
-        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
-        if (function_exists('rateb_bootstrap_branch_context')) {
-            rateb_bootstrap_branch_context($companyId);
+        $this->bootstrapCompanyContext($companyId);
+        $inventory = new Inventory();
+        $invValue = $inventory->totalValue();
+        $lowStock = 0;
+        $row = $inventory->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_inventory
+             WHERE quantity > 0
+               AND quantity <= GREATEST(COALESCE(reorder_level, 0), COALESCE(min_stock, 0), 0)'
+        );
+        if ($row) {
+            $lowStock = (int) ($row['c'] ?? 0);
         }
+
         return [
             'purchase_requests' => (new PurchaseRequest())->count(),
             'purchase_orders' => (new PurchaseOrder())->count(),
-            'inventory_value' => (new Inventory())->totalValue(),
+            'pending_purchase_requests' => $this->pendingPurchaseRequestCount(),
+            'inventory_items' => $inventory->count(),
+            'inventory_value' => $invValue,
+            'inventory_value_fmt' => number_format($invValue, 0) . ' ' . __('sar'),
+            'low_stock_items' => $lowStock,
             'suppliers' => (new \Rateb\App\Models\Supplier())->count(),
+            'employees' => $this->employeeCount(),
+            'branches' => (new Branch())->count(['status' => 'active']),
         ];
     }
 
     /** @return array<string, mixed> */
     public function companyBuild(int $companyId): array
     {
+        $this->bootstrapCompanyContext($companyId);
+        $company = (new Company())->find($companyId) ?: [];
+        $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
+        $metrics = $this->companyMetrics($companyId);
+
         return [
-            'metrics' => $this->companyMetrics($companyId),
+            'company_id' => $companyId,
+            'company_name' => (string) ($company['name'] ?? ''),
+            'company_status' => (string) ($company['status'] ?? ''),
+            'metrics' => $metrics,
+            'charts' => $this->companyCharts($companyId),
+            'modules' => $this->companyModuleTiles($limits['modules'] ?? [], $companyId),
+            'recent_activity' => $this->companyRecentActivity($companyId),
+            'limits' => $limits,
         ];
+    }
+
+    /** @return array<string, mixed> */
+    public function companyCharts(int $companyId): array
+    {
+        $this->bootstrapCompanyContext($companyId);
+        $prRows = (new PurchaseRequest())->query(
+            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
+             FROM rateb_purchase_requests
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+             GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC"
+        );
+        $poRows = (new PurchaseOrder())->query(
+            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
+             FROM rateb_purchase_orders
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+             GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC"
+        );
+        $months = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $months[] = date('Y-m', strtotime('-' . $i . ' months'));
+        }
+        $prMap = [];
+        foreach ($prRows as $row) {
+            $prMap[(string) ($row['month'] ?? '')] = (int) ($row['total'] ?? 0);
+        }
+        $poMap = [];
+        foreach ($poRows as $row) {
+            $poMap[(string) ($row['month'] ?? '')] = (int) ($row['total'] ?? 0);
+        }
+        $prSeries = [];
+        $poSeries = [];
+        foreach ($months as $month) {
+            $prSeries[] = $prMap[$month] ?? 0;
+            $poSeries[] = $poMap[$month] ?? 0;
+        }
+
+        $health = (new Inventory())->queryOne(
+            "SELECT
+                SUM(CASE WHEN quantity = 0 THEN 1 ELSE 0 END) AS out_of_stock,
+                SUM(CASE WHEN quantity > 0 AND quantity <= GREATEST(COALESCE(reorder_level, 0), COALESCE(min_stock, 0), 0) THEN 1 ELSE 0 END) AS low_stock,
+                SUM(CASE WHEN expiry_date IS NOT NULL AND expiry_date < CURDATE() THEN 1 ELSE 0 END) AS expired,
+                SUM(CASE WHEN quantity > GREATEST(COALESCE(reorder_level, 0), COALESCE(min_stock, 0), 0)
+                          AND (expiry_date IS NULL OR expiry_date >= CURDATE()) THEN 1 ELSE 0 END) AS healthy
+             FROM rateb_inventory"
+        ) ?: [];
+
+        return [
+            'procurement_trend' => [
+                'labels' => $months,
+                'purchase_requests' => $prSeries,
+                'purchase_orders' => $poSeries,
+            ],
+            'inventory_health' => [
+                ['label' => __('inventory_health_ok'), 'value' => (int) ($health['healthy'] ?? 0)],
+                ['label' => __('inventory_health_low'), 'value' => (int) ($health['low_stock'] ?? 0)],
+                ['label' => __('inventory_health_out'), 'value' => (int) ($health['out_of_stock'] ?? 0)],
+                ['label' => __('inventory_health_expired'), 'value' => (int) ($health['expired'] ?? 0)],
+            ],
+        ];
+    }
+
+    /** @param array<int, string> $planModules @return array<int, array<string, string>> */
+    public function companyModuleTiles(array $planModules, int $companyId = 0): array
+    {
+        $catalog = [
+            'procurement' => ['path' => 'purchase-requests', 'icon' => 'fa-cart-shopping', 'label' => 'procurement'],
+            'inventory' => ['path' => 'inventory', 'icon' => 'fa-boxes-stacked', 'label' => 'inventory'],
+            'suppliers' => ['path' => 'suppliers', 'icon' => 'fa-truck-field', 'label' => 'suppliers'],
+            'hr' => ['path' => 'hr/employees', 'icon' => 'fa-users', 'label' => 'hr_employees'],
+            'accounting' => ['path' => 'accounting', 'icon' => 'fa-calculator', 'label' => 'accounting_module', 'permission' => 'accounting.view'],
+            'contracts' => ['path' => 'contracts', 'icon' => 'fa-file-contract', 'label' => 'contracts'],
+            'assets' => ['path' => 'assets', 'icon' => 'fa-toolbox', 'label' => 'assets'],
+            'tenders' => ['path' => 'tenders', 'icon' => 'fa-gavel', 'label' => 'tenders'],
+            'reports' => ['path' => 'reports', 'icon' => 'fa-chart-pie', 'label' => 'reports'],
+            'documents' => ['path' => 'documents', 'icon' => 'fa-folder-open', 'label' => 'documents'],
+            'medical_devices' => ['path' => 'medical-devices', 'icon' => 'fa-stethoscope', 'label' => 'medical_devices'],
+        ];
+
+        $tiles = [];
+        $seen = [];
+        foreach ($planModules as $module) {
+            $module = (string) $module;
+            if ($module === '' || isset($seen[$module])) {
+                continue;
+            }
+            $seen[$module] = true;
+            $def = $catalog[$module] ?? null;
+            if ($def === null) {
+                continue;
+            }
+            $entity = function_exists('rateb_entity_perms') ? rateb_entity_perms($def['path']) : ['view' => '', 'module' => $module];
+            $permission = (string) ($def['permission'] ?? $entity['view'] ?? '');
+            $mod = (string) ($entity['module'] ?? $module);
+            if (!$this->moduleTileAllowed($permission, $mod, $companyId)) {
+                continue;
+            }
+            $tiles[] = [
+                'href' => rateb_app_url($def['path']),
+                'label' => __($def['label']),
+                'icon' => (string) $def['icon'],
+            ];
+        }
+
+        if ($this->moduleTileAllowed('accounting.view', 'accounting', $companyId) && !isset($seen['accounting'])) {
+            $tiles[] = [
+                'href' => rateb_app_url('accounting'),
+                'label' => __('accounting_module'),
+                'icon' => 'fa-calculator',
+            ];
+        }
+        if ($this->moduleTileAllowed('notifications.view', 'notifications', $companyId)) {
+            $tiles[] = [
+                'href' => rateb_app_url('notifications'),
+                'label' => __('notifications'),
+                'icon' => 'fa-bell',
+            ];
+        }
+
+        return $tiles;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function companyRecentActivity(int $companyId): array
+    {
+        $this->bootstrapCompanyContext($companyId);
+        $rows = (new PurchaseRequest())->query(
+            "SELECT 'purchase_request' AS kind, request_no AS ref, title, status, created_at
+             FROM rateb_purchase_requests
+             ORDER BY created_at DESC LIMIT 4"
+        );
+        $poRows = (new PurchaseOrder())->query(
+            "SELECT 'purchase_order' AS kind, order_no AS ref, title, status, created_at
+             FROM rateb_purchase_orders
+             ORDER BY created_at DESC LIMIT 4"
+        );
+        $merged = array_merge($rows, $poRows);
+        usort($merged, static function (array $a, array $b): int {
+            return strcmp((string) ($b['created_at'] ?? ''), (string) ($a['created_at'] ?? ''));
+        });
+
+        return array_slice($merged, 0, 6);
+    }
+
+    private function bootstrapCompanyContext(int $companyId): void
+    {
+        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
+    }
+
+    private function employeeCount(): int
+    {
+        $active = (new Employee())->count(['status' => 'active']);
+        if ($active > 0) {
+            return $active;
+        }
+
+        return (new Employee())->count();
+    }
+
+    private function moduleTileAllowed(string $permission, string $module, int $companyId): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            if ($companyId > 0 && $module !== '') {
+                return (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $module);
+            }
+
+            return true;
+        }
+
+        return rateb_nav_can($permission, $module);
+    }
+
+    private function pendingPurchaseRequestCount(): int
+    {
+        $row = (new PurchaseRequest())->queryOne(
+            "SELECT COUNT(*) AS c FROM rateb_purchase_requests
+             WHERE status IN ('draft', 'submitted', 'pending', 'in_review')"
+        );
+
+        return (int) ($row['c'] ?? 0);
     }
 
     /** @param array<int, array<string, mixed>> $rows */
