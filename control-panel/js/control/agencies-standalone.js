@@ -59,17 +59,7 @@
                         modifiers: [{ name: 'offset', options: { offset: [0, 6] } }],
                     },
                 });
-                toggle.addEventListener('shown.bs.dropdown', function() {
-                    bindAgencyActionMenus();
-                    wireProvisionButtons();
-                });
-                toggle.addEventListener('hide.bs.dropdown', function(e) {
-                    var ce = e.clickEvent;
-                    if (!ce || !ce.target || typeof ce.target.closest !== 'function') return;
-                    if (ce.target.closest('.btn-provision-pro, .btn-provision-erp')) {
-                        e.preventDefault();
-                    }
-                });
+                toggle.addEventListener('shown.bs.dropdown', bindAgencyActionMenus);
             } catch (e) {
                 /* ignore */
             }
@@ -520,18 +510,16 @@
         scope.querySelectorAll('.btn-provision-pro').forEach(function(btn) {
             if (btn._agProvisionWired) return;
             btn._agProvisionWired = true;
-            btn.addEventListener('pointerdown', function(ev) {
-                stopProvisionEvent(ev);
+            btn.addEventListener('click', function(ev) {
                 provisionProClick(btn, ev);
-            }, true);
+            });
         });
         scope.querySelectorAll('.btn-provision-erp').forEach(function(btn) {
             if (btn._agProvisionWired) return;
             btn._agProvisionWired = true;
-            btn.addEventListener('pointerdown', function(ev) {
-                stopProvisionEvent(ev);
+            btn.addEventListener('click', function(ev) {
                 provisionErpClick(btn, ev);
-            }, true);
+            });
         });
     }
 

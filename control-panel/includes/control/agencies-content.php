@@ -667,6 +667,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $tenantIdRow = (int) ($r['tenant_id'] ?? 0);
                             $agencyIdRow = (int) ($r['id'] ?? 0);
                         ?>
+                        <div class="ag-actions-wrap">
                         <div class="dropdown ag-actions-dropdown">
                             <button type="button" class="ag-btn ag-btn-actions dropdown-toggle ag-actions-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-popper-config='{"strategy":"fixed","modifiers":[{"name":"offset","options":{"offset":[0,6]}}]}' aria-expanded="false" aria-haspopup="true">
                                 <i class="fas fa-bolt"></i>
@@ -701,11 +702,13 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                 <li><a class="dropdown-item" href="<?php echo htmlspecialchars($agSiteBase . '/admin/control-center.php#db-control'); ?>" target="_blank" rel="noopener noreferrer" data-permission="control_agencies,view_control_agencies"><i class="fas fa-database ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.db_status', 'DB Status'), ENT_QUOTES, 'UTF-8'); ?></a></li>
                                 <li><a class="dropdown-item" href="<?php echo htmlspecialchars($agSiteBase . '/admin/control-center.php#query-console'); ?>" target="_blank" rel="noopener noreferrer" data-permission="control_agencies,view_control_agencies"><i class="fas fa-terminal ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.query_activity', 'Query Activity'), ENT_QUOTES, 'UTF-8'); ?></a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><button type="button" class="dropdown-item btn-provision-pro" data-agency-id="<?php echo $agencyIdRow; ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-server ag-menu-ico ag-ico-pro"></i><?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?></button></li>
-                                <li><button type="button" class="dropdown-item btn-provision-erp" data-agency-id="<?php echo $agencyIdRow; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-erp-status="<?php echo htmlspecialchars($erpStBtn, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-cogs ag-menu-ico ag-ico-erp"></i><?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?></button></li>
-                                <li><hr class="dropdown-divider"></li>
                                 <li><button type="button" class="dropdown-item text-danger btn-delete" data-id="<?php echo $agencyIdRow; ?>" data-permission="control_agencies,delete_control_agency"><i class="fas fa-trash-alt ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.delete', 'Delete'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                             </ul>
+                        </div>
+                        <div class="ag-provision-btns">
+                            <button type="button" class="ag-btn ag-btn-provision-pro btn-provision-pro" data-agency-id="<?php echo $agencyIdRow; ?>" data-permission="control_agencies,edit_control_agency" title="<?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-server"></i><span><?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?></span></button>
+                            <button type="button" class="ag-btn ag-btn-provision-erp btn-provision-erp" data-agency-id="<?php echo $agencyIdRow; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-erp-status="<?php echo htmlspecialchars($erpStBtn, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency" title="<?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-cogs"></i><span><?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?></span></button>
+                        </div>
                         </div>
                     </td>
                 </tr>
