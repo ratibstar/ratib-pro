@@ -44,7 +44,12 @@
             }
             toggle._agDdBound = true;
             try {
-                bootstrap.Dropdown.getOrCreateInstance(toggle, { display: 'static' });
+                bootstrap.Dropdown.getOrCreateInstance(toggle, {
+                    popperConfig: {
+                        strategy: 'fixed',
+                        modifiers: [{ name: 'offset', options: { offset: [0, 6] } }],
+                    },
+                });
             } catch (e) {
                 /* ignore */
             }
