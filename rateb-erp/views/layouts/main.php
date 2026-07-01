@@ -105,6 +105,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             </a>
             <?php } ?>
             <?php if (rateb_is_super_admin()) { ?>
+            <?php if (rateb_is_platform_oversight_host()) { ?>
             <?php
             $oversightCounts = rateb_oversight_menu_counts();
             $oversightLinkBadges = [
@@ -142,6 +143,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 ['type' => 'link', 'link' => ['admin/settings', 'settings', 'fa-gear', 'settings.manage']],
             ], 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges, 'rateb-nav-badge--pending');
             ?>
+            <?php } ?>
             <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
             <?php if (rateb_is_super_admin()) { ?>
@@ -230,7 +232,9 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             </div>
             <?php } ?>
             <?php
-            $showOpsCompanyPicker = rateb_is_super_admin() && (
+            $showOpsCompanyPicker = rateb_is_super_admin()
+                && rateb_is_platform_oversight_host()
+                && (
                 rateb_is_ops_route($erpRoute)
                 || strpos($currentPath, '/admin/ops/') !== false
                 || $navActive('admin/agency-updates')

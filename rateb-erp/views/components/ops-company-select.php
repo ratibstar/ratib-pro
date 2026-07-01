@@ -58,11 +58,13 @@ foreach ($companies as $c) {
             </div>
             <div class="col-md-7">
                 <p class="text-muted small mb-1"><?php echo __('ops_company_select_help'); ?></p>
+                <?php if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) { ?>
                 <p class="small mb-0">
                     <a href="<?php echo rateb_url('admin/agency-updates' . ($selectedId > 0 ? '?company_id=' . (int) $selectedId : '')); ?>" class="text-decoration-none">
                         <i class="fas fa-cloud-upload-alt me-1"></i><?php echo __('agency_erp_push_after_ops'); ?>
                     </a>
                 </p>
+                <?php } ?>
             </div>
         </form>
         <?php } ?>

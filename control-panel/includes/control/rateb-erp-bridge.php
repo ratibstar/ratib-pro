@@ -449,8 +449,12 @@ function control_rateb_erp_nav_links(): array
         'settings' => ['route' => 'admin/settings', 'label' => 'Settings', 'icon' => 'fa-gear', 'description' => 'System settings, templates, and configuration.'],
     ];
 
+    $platformOnlyCpKeys = ['companies'];
     $links = [];
     foreach ($routes as $key => $item) {
+        if (in_array($key, $platformOnlyCpKeys, true)) {
+            continue;
+        }
         $links[$key] = [
             'href' => control_rateb_erp_app_url($item['route']),
             'label' => $item['label'],

@@ -9,6 +9,7 @@ use Rateb\App\Core\Middleware\EntityPermissionMiddleware;
 use Rateb\App\Core\Middleware\ErpAuthMiddleware;
 use Rateb\App\Core\Middleware\GuestMiddleware;
 use Rateb\App\Core\Middleware\MarketingCompanyAuthMiddleware;
+use Rateb\App\Core\Middleware\PlatformOversightHostMiddleware;
 use Rateb\App\Core\Middleware\RequirePermissionMiddleware;
 use Rateb\App\Core\Middleware\SuperAdminMiddleware;
 
@@ -35,6 +36,14 @@ if (!function_exists('rateb_admin_mw')) {
             $stack[] = [RequirePermissionMiddleware::class, $permission];
         }
         return $stack;
+    }
+}
+
+if (!function_exists('rateb_platform_oversight_mw')) {
+    /** Companies, agency updates, company approvals — rateb.sa platform host only. */
+    function rateb_platform_oversight_mw(string $permission = ''): array
+    {
+        return array_merge(rateb_admin_mw($permission), [PlatformOversightHostMiddleware::class]);
     }
 }
 

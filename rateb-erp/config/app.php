@@ -37,6 +37,42 @@ if (!function_exists('rateb_erp_is_dedicated_deployment')) {
     }
 }
 
+if (!function_exists('rateb_is_platform_oversight_host')) {
+    /** Platform super-admin oversight (companies, agency push, company approvals) — rateb.sa SaaS only. */
+    function rateb_is_platform_oversight_host(): bool
+    {
+        if (rateb_erp_is_dedicated_deployment()) {
+            return false;
+        }
+        $resolver = dirname(RATEB_ROOT) . '/config/env/erp_agency_resolver.php';
+        if (is_file($resolver)) {
+            require_once $resolver;
+        }
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        if (function_exists('rateb_erp_is_main_platform_host')) {
+            return rateb_erp_is_main_platform_host($host);
+        }
+
+        return !rateb_erp_is_dedicated_deployment();
+    }
+}
+
+if (!function_exists('rateb_platform_oversight_public_url')) {
+    function rateb_platform_oversight_public_url(string $route = 'admin'): string
+    {
+        $route = ltrim($route, '/');
+        $fromEnv = getenv('RATEB_PLATFORM_ERP_PUBLIC_BASE');
+        if ($fromEnv !== false && trim((string) $fromEnv) !== '') {
+            return rtrim((string) $fromEnv, '/') . ($route !== '' ? '/' . $route : '');
+        }
+        if (function_exists('rateb_url') && rateb_is_platform_oversight_host()) {
+            return rateb_url($route !== '' ? $route : 'admin');
+        }
+
+        return 'https://rateb.sa/rateb-erp/public' . ($route !== '' ? '/' . $route : '');
+    }
+}
+
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
     {

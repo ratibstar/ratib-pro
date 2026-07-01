@@ -71,6 +71,24 @@ final class SuperAdminMiddleware implements MiddlewareInterface
     }
 }
 
+/** Block platform oversight routes on agency / non-main hosts (rateb.sa only). */
+final class PlatformOversightHostMiddleware implements MiddlewareInterface
+{
+    public function handle(): bool
+    {
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return true;
+        }
+        SessionManager::flash('error', __('platform_oversight_host_only'));
+        $path = function_exists('rateb_current_erp_route') ? trim((string) rateb_current_erp_route(), '/') : '';
+        $target = function_exists('rateb_platform_oversight_public_url')
+            ? rateb_platform_oversight_public_url($path !== '' ? $path : 'admin')
+            : 'https://rateb.sa/rateb-erp/public/admin';
+        Response::redirect($target);
+        return false;
+    }
+}
+
 final class CompanyAuthMiddleware implements MiddlewareInterface
 {
     public function handle(): bool

@@ -1207,6 +1207,7 @@ return [
     'agency_erp_push_link_company_missing' => 'Platform company not found.',
     'agency_erp_push_link_company_taken' => 'This company is already linked to another agency.',
     'agency_erp_push_bulk_label' => 'agencies selected',
+    'platform_oversight_host_only' => 'Platform oversight is only available on rateb.sa. Open the main ERP admin.',
     'active_company' => 'Active company',
     'no_companies_for_ops' => 'No companies registered yet. Create one first from',
     'company_not_found_ops' => 'The selected company does not exist. Create one under Companies, then pick it from the selector above.',

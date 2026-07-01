@@ -437,7 +437,6 @@ if ($agencyIdFilter > 0) {
         <span class="ms-3 text-muted"><?php echo $lastAgencyControlEvent !== '' ? ('Last event: ' . htmlspecialchars($lastAgencyControlEvent)) : 'Last event: none'; ?></span>
         <?php if ($isControlSuperAdminUi): ?>
         <button type="button" class="btn btn-sm btn-outline-danger ms-3" id="btnRepairTenantLinks" data-permission="control_agencies,delete_control_agency">Repair Missing Tenant Link</button>
-        <a href="<?php echo htmlspecialchars(function_exists('control_panel_page_with_control') ? control_panel_page_with_control('control/erp-agency-updates.php') : '/control-panel/pages/control/erp-agency-updates.php?control=1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-primary ms-2" title="تطبيق ترحيلات ERP على الوكالات"><i class="fas fa-cloud-upload-alt me-1"></i> Push ERP updates</a>
         <?php endif; ?>
     </div>
     <a href="<?php echo htmlspecialchars($formAction . '?control=1'); ?>" class="btn btn-outline-secondary btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i> Back to countries</a>

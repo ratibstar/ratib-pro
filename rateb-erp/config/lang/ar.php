@@ -1207,6 +1207,7 @@ return [
     'agency_erp_push_link_company_missing' => 'شركة المنصة غير موجودة.',
     'agency_erp_push_link_company_taken' => 'هذه الشركة مربوطة بوكالة أخرى مسبقاً.',
     'agency_erp_push_bulk_label' => 'وكالة محددة',
+    'platform_oversight_host_only' => 'مراقبة المنصة متاحة فقط على rateb.sa — افتح لوحة ERP الرئيسية.',
     'active_company' => 'الشركة النشطة',
     'no_companies_for_ops' => 'لا توجد شركات مسجّلة. أنشئ شركة أولاً من',
     'company_not_found_ops' => 'الشركة المحددة غير موجودة. أنشئ شركة من قسم الشركات ثم اخترها من القائمة أعلاه.',

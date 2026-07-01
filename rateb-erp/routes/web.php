@@ -85,26 +85,26 @@ $router->get('/barcode/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::
 $router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class, [RequirePermissionMiddleware::class, 'dashboard.view']]);
 $router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('executive.dashboard.view'));
 
-$router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_admin_mw('companies.view'));
-$router->get('/admin/companies/create', [CompaniesController::class, 'create'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies', [CompaniesController::class, 'store'], rateb_admin_mw('companies.manage'));
-$router->get('/admin/companies/{id}/edit', [CompaniesController::class, 'edit'], rateb_admin_mw('company_plans.manage'));
-$router->post('/admin/companies/{id}', [CompaniesController::class, 'update'], rateb_admin_mw('company_plans.manage'));
-$router->post('/admin/companies/{id}/delete', [CompaniesController::class, 'destroy'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies/{id}/suspend', [CompaniesController::class, 'suspend'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'activate'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies/bulk-delete', [CompaniesController::class, 'bulkDestroy'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies/bulk-suspend', [CompaniesController::class, 'bulkSuspend'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies/bulk-activate', [CompaniesController::class, 'bulkActivate'], rateb_admin_mw('companies.manage'));
-$router->get('/admin/companies/{id}/documents/panel', [CompaniesController::class, 'documentsPanel'], rateb_admin_mw('companies.view'));
-$router->get('/admin/companies/{id}/documents', [CompaniesController::class, 'documents'], rateb_admin_mw('companies.view'));
-$router->post('/admin/companies/{id}/documents', [CompaniesController::class, 'storeDocument'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies/{id}/documents/{docId}', [CompaniesController::class, 'updateDocument'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/companies/{id}/documents/{docId}/delete', [CompaniesController::class, 'destroyDocument'], rateb_admin_mw('companies.manage'));
+$router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_platform_oversight_mw('companies.view'));
+$router->get('/admin/companies/create', [CompaniesController::class, 'create'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies', [CompaniesController::class, 'store'], rateb_platform_oversight_mw('companies.manage'));
+$router->get('/admin/companies/{id}/edit', [CompaniesController::class, 'edit'], rateb_platform_oversight_mw('company_plans.manage'));
+$router->post('/admin/companies/{id}', [CompaniesController::class, 'update'], rateb_platform_oversight_mw('company_plans.manage'));
+$router->post('/admin/companies/{id}/delete', [CompaniesController::class, 'destroy'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/{id}/suspend', [CompaniesController::class, 'suspend'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'activate'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/bulk-delete', [CompaniesController::class, 'bulkDestroy'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/bulk-suspend', [CompaniesController::class, 'bulkSuspend'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/bulk-activate', [CompaniesController::class, 'bulkActivate'], rateb_platform_oversight_mw('companies.manage'));
+$router->get('/admin/companies/{id}/documents/panel', [CompaniesController::class, 'documentsPanel'], rateb_platform_oversight_mw('companies.view'));
+$router->get('/admin/companies/{id}/documents', [CompaniesController::class, 'documents'], rateb_platform_oversight_mw('companies.view'));
+$router->post('/admin/companies/{id}/documents', [CompaniesController::class, 'storeDocument'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/{id}/documents/{docId}', [CompaniesController::class, 'updateDocument'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/{id}/documents/{docId}/delete', [CompaniesController::class, 'destroyDocument'], rateb_platform_oversight_mw('companies.manage'));
 
-$router->get('/admin/agency-updates', [AgencyUpdatesController::class, 'index'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/agency-updates/push', [AgencyUpdatesController::class, 'push'], rateb_admin_mw('companies.manage'));
-$router->post('/admin/agency-updates/link', [AgencyUpdatesController::class, 'link'], rateb_admin_mw('companies.manage'));
+$router->get('/admin/agency-updates', [AgencyUpdatesController::class, 'index'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/agency-updates/push', [AgencyUpdatesController::class, 'push'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/agency-updates/link', [AgencyUpdatesController::class, 'link'], rateb_platform_oversight_mw('companies.manage'));
 
 $router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));
 $router->get('/admin/access-control/matrix', [AccessControlController::class, 'matrix'], rateb_admin_mw('access.manage'));
@@ -232,7 +232,7 @@ $router->post('/admin/workflows', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 307);
 }, [ErpAuthMiddleware::class]);
 $router->get('/admin/oversight/approvals', [AdminApprovalsController::class, 'index'], rateb_admin_mw('workflows.view'));
-$router->get('/admin/oversight/companies-approvals', [AdminApprovalsController::class, 'companiesApprovals'], rateb_admin_mw('companies.view'));
+$router->get('/admin/oversight/companies-approvals', [AdminApprovalsController::class, 'companiesApprovals'], rateb_platform_oversight_mw('companies.view'));
 $router->get('/admin/oversight/approvals/count', [AdminApprovalsController::class, 'count'], rateb_admin_mw('workflows.view'));
 $router->get('/admin/oversight/approvals/detail', [AdminApprovalsController::class, 'detail'], rateb_admin_mw('workflows.view'));
 $router->post('/admin/oversight/approvals/decide', [AdminApprovalsController::class, 'decideAction'], rateb_admin_mw('workflows.manage'));
