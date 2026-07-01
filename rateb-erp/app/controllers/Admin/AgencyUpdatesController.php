@@ -46,6 +46,7 @@ final class AgencyUpdatesController extends Controller
             'pushUrl' => rateb_url('admin/agency-updates/push'),
             'linkUrl' => rateb_url('admin/agency-updates/link'),
             'syncUrl' => rateb_url('admin/agency-updates/sync-files'),
+            'restoreAdminUrl' => rateb_url('admin/agency-updates/restore-admin'),
         ], 'main');
     }
 
@@ -125,6 +126,32 @@ final class AgencyUpdatesController extends Controller
             $payload = (new AgencyFileSyncService())->sync([
                 'scope' => (string) ($data['scope'] ?? ''),
                 'confirm' => (string) ($data['confirm'] ?? ''),
+                'agency_ids' => $data['agency_ids'] ?? ($data['ids'] ?? []),
+            ]);
+            Response::json($payload, empty($payload['success']) ? 422 : 200);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function restoreAdmin(): void
+    {
+        if (!rateb_is_super_admin()) {
+            Response::json(['success' => false, 'message' => __('access_denied')], 403);
+        }
+        if (!$this->validateCsrf()) {
+            Response::json(['success' => false, 'message' => __('csrf_invalid')], 403);
+        }
+
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw ?: '{}', true);
+        if (!is_array($data)) {
+            $data = $_POST;
+        }
+
+        try {
+            $payload = (new AgencyErpMigrationService())->restoreSuperAdmins([
+                'scope' => (string) ($data['scope'] ?? ''),
                 'agency_ids' => $data['agency_ids'] ?? ($data['ids'] ?? []),
             ]);
             Response::json($payload, empty($payload['success']) ? 422 : 200);

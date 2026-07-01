@@ -7,6 +7,7 @@
     var apiUrl = cfg.getAttribute('data-api-url') || '';
     var linkUrl = cfg.getAttribute('data-link-url') || '';
     var syncUrl = cfg.getAttribute('data-sync-url') || '';
+    var restoreAdminUrl = cfg.getAttribute('data-restore-admin-url') || '';
     var csrfToken = cfg.getAttribute('data-csrf') || '';
     var table = document.getElementById('erpAgencyUpdatesTable');
     var filterCompany = document.getElementById('erpAgencyFilterCompany');
@@ -14,6 +15,7 @@
     var btnSyncSelected = document.getElementById('erpSyncRunSelected');
     var btnPushSelected = document.getElementById('erpUpdateRunSelected');
     var btnFullSelected = document.getElementById('erpFullDeploySelected');
+    var btnRestoreSelected = document.getElementById('erpRestoreAdminSelected');
     var btnSyncAll = document.getElementById('erpSyncRunAllReady');
     var btnPushAll = document.getElementById('erpUpdateRunAllReady');
     var btnFullAll = document.getElementById('erpFullDeployAllReady');
@@ -102,6 +104,9 @@
         if (btnPushSelected) {
             btnPushSelected.disabled = !hasSel && !(includePlatform && includePlatform.checked);
         }
+        if (btnRestoreSelected) {
+            btnRestoreSelected.disabled = !hasSel;
+        }
         [btnSyncAll, btnFullAll].forEach(function (b) {
             if (b) b.disabled = !syncReady;
         });
@@ -109,7 +114,7 @@
 
     function setBusy(busy) {
         [
-            btnSyncSelected, btnPushSelected, btnFullSelected,
+            btnSyncSelected, btnPushSelected, btnFullSelected, btnRestoreSelected,
             btnSyncAll, btnPushAll, btnFullAll, btnPushSub
         ].forEach(function (b) {
             if (b) b.disabled = !!busy;
@@ -373,6 +378,50 @@
     if (btnFullSelected) {
         btnFullSelected.addEventListener('click', function () {
             runFullDeploy(null, cfg.getAttribute('data-confirm-full-selected'));
+        });
+    }
+    if (btnRestoreSelected) {
+        btnRestoreSelected.addEventListener('click', function () {
+            var ids = selectedIds();
+            if (!ids.length) {
+                showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                return;
+            }
+            if (!window.confirm(cfg.getAttribute('data-confirm-restore-selected') || 'Restore admin@rateb.sa?')) {
+                return;
+            }
+            setBusy(true);
+            showProgress(cfg.getAttribute('data-restore-running') || 'Restoring…');
+            if (resultsBox) {
+                resultsBox.classList.remove('d-none');
+                if (logEl) logEl.textContent = '';
+            }
+            postJson(restoreAdminUrl, { agency_ids: ids })
+                .then(function (pack) {
+                    var data = pack.body || {};
+                    var lines = ['Restore admin@rateb.sa / password'];
+                    lines.push('Total: ' + (data.total || 0) + ' | Failed: ' + (data.failed_count || 0));
+                    (data.results || []).forEach(function (r) {
+                        lines.push('');
+                        lines.push('=== Agency #' + (r.agency_id || '?') + ' ===');
+                        if (!r.ok) {
+                            lines.push('ERROR: ' + (r.error || 'failed'));
+                            return;
+                        }
+                        var rep = r.report || {};
+                        (rep.actions || []).forEach(function (a) { lines.push(a); });
+                        lines.push('restored_users: ' + (rep.restored_users || 0));
+                        lines.push('password_hashes_reset: ' + (rep.password_hashes_reset || 0));
+                    });
+                    if (logEl) logEl.textContent = lines.join('\n');
+                    showProgress(data.success
+                        ? (cfg.getAttribute('data-done-ok') || 'Done.')
+                        : (cfg.getAttribute('data-done-errors') || 'Done with errors.'));
+                })
+                .catch(function (err) {
+                    showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                })
+                .then(function () { setBusy(false); });
         });
     }
     if (btnSyncAll) {

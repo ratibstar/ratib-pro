@@ -8,6 +8,7 @@
 /** @var string $pushUrl */
 /** @var string $linkUrl */
 /** @var string $syncUrl */
+/** @var string $restoreAdminUrl */
 /** @var string $syncSource */
 $readyCount = 0;
 $subscribedCount = 0;
@@ -114,8 +115,13 @@ foreach ($agencies as $agency) {
                         <td><code><?php echo Rateb\App\Core\View::escape($erpDb); ?></code></td>
                         <td><?php echo Rateb\App\Core\View::escape($status); ?></td>
                         <td>
-                            <?php if ($site !== '') { ?>
-                            <a href="<?php echo Rateb\App\Core\View::escape($site); ?>" target="_blank" rel="noopener"><?php echo Rateb\App\Core\View::escape($site); ?></a>
+                            <?php if ($site !== '') {
+                                $openUrl = $site;
+                                if ($isReady && $erpDb !== '') {
+                                    $openUrl = rtrim($site, '/') . '/rateb-erp/public/admin';
+                                }
+                                ?>
+                            <a href="<?php echo Rateb\App\Core\View::escape($openUrl); ?>" target="_blank" rel="noopener" title="<?php echo Rateb\App\Core\View::escape($openUrl); ?>"><?php echo Rateb\App\Core\View::escape($site); ?></a>
                             <?php } else { ?>
                             <span class="text-muted">—</span>
                             <?php } ?>
@@ -185,6 +191,9 @@ foreach ($agencies as $agency) {
                     <button type="button" class="btn btn-primary btn-sm" id="erpFullDeploySelected" disabled>
                         <i class="fas fa-rocket me-1"></i><?php echo __('agency_erp_full_deploy_selected'); ?>
                     </button>
+                    <button type="button" class="btn btn-warning btn-sm" id="erpRestoreAdminSelected" disabled>
+                        <i class="fas fa-user-shield me-1"></i><?php echo __('agency_erp_restore_admin_selected'); ?>
+                    </button>
                 </div>
                 <p class="small fw-semibold mb-2 text-muted"><?php echo __('agency_erp_actions_on_all'); ?></p>
                 <div class="d-flex flex-wrap gap-2">
@@ -217,6 +226,7 @@ foreach ($agencies as $agency) {
     data-api-url="<?php echo Rateb\App\Core\View::escape($pushUrl); ?>"
     data-link-url="<?php echo Rateb\App\Core\View::escape($linkUrl); ?>"
     data-sync-url="<?php echo Rateb\App\Core\View::escape($syncUrl); ?>"
+    data-restore-admin-url="<?php echo Rateb\App\Core\View::escape($restoreAdminUrl ?? ''); ?>"
     data-csrf="<?php echo Rateb\App\Core\View::escape($csrf); ?>"
     data-confirm-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_selected')); ?>"
     data-confirm-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_all')); ?>"
@@ -233,5 +243,7 @@ foreach ($agencies as $agency) {
     data-done-errors="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_done_errors')); ?>"
     data-request-failed="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_request_failed')); ?>"
     data-sync-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_required')); ?>"
+    data-confirm-restore-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_restore_admin_confirm')); ?>"
+    data-restore-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_restore_admin_running')); ?>"
     data-select-first="<?php echo Rateb\App\Core\View::escape(__('agency_erp_select_agencies_first')); ?>">
 </div>

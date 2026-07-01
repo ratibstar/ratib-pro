@@ -75,6 +75,19 @@ if ($path === '/' || $path === '') {
         require $projectRoot . '/rateb-erp/public/index.php';
         exit;
     }
+    $agencyLookup = $projectRoot . '/config/env/agency_lookup.php';
+    if (is_file($agencyLookup)) {
+        require_once $agencyLookup;
+        if (function_exists('rateb_lookup_agency_by_host')) {
+            $agencyRow = rateb_lookup_agency_by_host($host);
+            $erpDb = is_array($agencyRow) ? trim((string) ($agencyRow['erp_db_name'] ?? '')) : '';
+            $erpReady = is_array($agencyRow) && (string) ($agencyRow['erp_status'] ?? '') === 'ready';
+            if ($erpDb !== '' && $erpReady) {
+                header('Location: /rateb-erp/public/admin', true, 302);
+                exit;
+            }
+        }
+    }
     require $projectRoot . '/index.php';
     exit;
 }
