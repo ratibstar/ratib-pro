@@ -23,55 +23,30 @@
     if (!tableBody) return;
 
     function closeAgencyActionDropdowns() {
-        document.querySelectorAll('.ag-actions-dropdown').forEach(function (wrap) {
-            var toggle = wrap.querySelector('.ag-actions-toggle');
-            var menu = wrap.querySelector('.ag-actions-menu');
-            if (menu) {
-                menu.classList.remove('show');
-            }
-            if (toggle) {
-                toggle.classList.remove('show');
-                toggle.setAttribute('aria-expanded', 'false');
-            }
-            wrap.classList.remove('show');
-            if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown && toggle) {
-                var inst = bootstrap.Dropdown.getInstance(toggle);
-                if (inst) {
-                    inst.hide();
-                }
+        if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) {
+            return;
+        }
+        document.querySelectorAll('.ag-actions-dropdown .ag-actions-toggle').forEach(function (toggle) {
+            var inst = bootstrap.Dropdown.getInstance(toggle);
+            if (inst) {
+                inst.hide();
             }
         });
     }
 
     function initAgencyActionDropdowns() {
-        document.querySelectorAll('.ag-actions-dropdown').forEach(function (wrap) {
-            var toggle = wrap.querySelector('.ag-actions-toggle');
-            var menu = wrap.querySelector('.ag-actions-menu');
-            if (!toggle || !menu || toggle._agCustomDd) {
+        if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) {
+            return;
+        }
+        document.querySelectorAll('.ag-actions-dropdown .ag-actions-toggle').forEach(function (toggle) {
+            if (toggle._agDdBound) {
                 return;
             }
-            toggle._agCustomDd = true;
-            toggle.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var isOpen = menu.classList.contains('show');
-                closeAgencyActionDropdowns();
-                if (!isOpen) {
-                    menu.classList.add('show');
-                    toggle.classList.add('show');
-                    toggle.setAttribute('aria-expanded', 'true');
-                    wrap.classList.add('show');
-                }
-            });
-        });
-        document.addEventListener('click', function (e) {
-            if (!e.target || !e.target.closest || !e.target.closest('.ag-actions-dropdown')) {
-                closeAgencyActionDropdowns();
-            }
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                closeAgencyActionDropdowns();
+            toggle._agDdBound = true;
+            try {
+                bootstrap.Dropdown.getOrCreateInstance(toggle, { display: 'static' });
+            } catch (e) {
+                /* ignore */
             }
         });
     }
