@@ -77,12 +77,12 @@ if (!function_exists('rateb_resolve_agency_erp_from_request')) {
             return false;
         }
         $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
-        if (rateb_erp_is_main_platform_host($host)) {
-            return false;
-        }
         $agencyId = (int) ($_GET['agency_id'] ?? $_POST['agency_id'] ?? 0);
         if ($agencyId > 0 && resolve_agency_erp_by_id($agencyId)) {
             return true;
+        }
+        if (rateb_erp_is_main_platform_host($host)) {
+            return false;
         }
 
         return resolve_agency_erp_by_host($host);

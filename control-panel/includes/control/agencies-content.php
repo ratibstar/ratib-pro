@@ -119,17 +119,32 @@ if (!function_exists('agency_has_valid_site_url')) {
 }
 
 if (!function_exists('agency_build_erp_open_url')) {
-    /** ERP admin (ready) or company portal on the agency Site URL. */
-    function agency_build_erp_open_url(string $siteUrl, string $erpStatus = 'none'): string
-    {
-        $siteUrl = rtrim(trim($siteUrl), '/');
-        if ($siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
-            return '';
-        }
+    /**
+     * ERP admin (ready) or company portal.
+     * Control Panel passes $preferPlatform=true so Open ERP works before agency DNS exists.
+     */
+    function agency_build_erp_open_url(
+        string $siteUrl,
+        string $erpStatus = 'none',
+        int $agencyId = 0,
+        string $platformBase = '',
+        bool $preferPlatform = false
+    ): string {
         $st = strtolower(trim($erpStatus));
         $path = $st === 'ready' ? '/rateb-erp/public/admin' : '/rateb-erp/public/company/login';
+        $platformBase = rtrim(trim($platformBase), '/');
+        if ($preferPlatform && $agencyId > 0 && $platformBase !== '') {
+            return $platformBase . $path . '?agency_id=' . $agencyId;
+        }
+        $siteUrl = rtrim(trim($siteUrl), '/');
+        if ($siteUrl !== '' && preg_match('/^https?:\/\//i', $siteUrl)) {
+            return $siteUrl . $path;
+        }
+        if ($agencyId > 0 && $platformBase !== '') {
+            return $platformBase . $path . '?agency_id=' . $agencyId;
+        }
 
-        return $siteUrl . $path;
+        return '';
     }
 }
 
@@ -141,13 +156,15 @@ if (!function_exists('agency_can_open_erp_portal')) {
      */
     function agency_can_open_erp_portal(array $agencyRow): bool
     {
-        if (!agency_has_valid_site_url($agencyRow)) {
-            return false;
-        }
         $erpDb = trim((string) ($agencyRow['erp_db_name'] ?? ''));
         $erpStatus = strtolower(trim((string) ($agencyRow['erp_status'] ?? 'none')));
+        $erpReady = $erpDb !== '' && $erpStatus === 'ready';
+        if ($erpReady) {
+            return true;
+        }
 
-        return $erpDb !== '' || in_array($erpStatus, ['ready', 'provisioning', 'failed'], true);
+        return agency_has_valid_site_url($agencyRow)
+            && ($erpDb !== '' || in_array($erpStatus, ['provisioning', 'failed'], true));
     }
 }
 
@@ -157,12 +174,14 @@ if (!function_exists('agency_erp_open_blocked_reason')) {
      */
     function agency_erp_open_blocked_reason(array $agencyRow): string
     {
-        if (!agency_has_valid_site_url($agencyRow)) {
-            return function_exists('cp_t')
-                ? cp_t('agencies.erp_needs_site_url')
-                : 'Add a valid Site URL (https://…) in Edit, then run Provision ERP.';
-        }
         if (!agency_can_open_erp_portal($agencyRow)) {
+            $erpDb = trim((string) ($agencyRow['erp_db_name'] ?? ''));
+            if ($erpDb === '') {
+                return function_exists('cp_t')
+                    ? cp_t('agencies.erp_needs_provision')
+                    : 'Run Provision ERP first to create the agency database.';
+            }
+
             return function_exists('cp_t')
                 ? cp_t('agencies.erp_needs_provision')
                 : 'Run Provision ERP first to create the agency database.';
@@ -656,7 +675,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $erpBlocked = agency_erp_open_blocked_reason($r);
                             $erpStBtn = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
                             if (agency_can_open_erp_portal($r)) {
-                                $erpUrl = agency_build_erp_open_url($siteBaseRaw, $erpStBtn);
+                                $erpUrl = agency_build_erp_open_url($siteBaseRaw, $erpStBtn, $agencyIdRow, $ratebBase, true);
                                 $erpTitle = $erpStBtn === 'ready'
                                     ? $agT('agencies.erp_open_admin', 'Open RATEB ERP admin')
                                     : ('Open RATEB ERP — status: ' . ($r['erp_status'] ?? 'none'));
