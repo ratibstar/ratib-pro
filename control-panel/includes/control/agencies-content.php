@@ -669,6 +669,8 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $proTitle = (string) ($proOpen['title'] ?? 'Open RATEB Pro');
                             $erpUrl = '';
                             $erpTitle = '';
+                            $tenantIdRow = (int) ($r['tenant_id'] ?? 0);
+                            $agencyIdRow = (int) ($r['id'] ?? 0);
                             $siteBaseRaw = trim((string) ($r['site_url'] ?? ''));
                             $hasValidSite = agency_has_valid_site_url($r);
                             $openSiteUrl = $hasValidSite ? rtrim($siteBaseRaw, '/') : '';
@@ -683,8 +685,6 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $erpProvisionLabel = $erpStBtn === 'ready'
                                 ? $agT('agencies.reprovision_erp', 'Re-provision ERP')
                                 : $agT('agencies.provision_erp', 'Provision ERP');
-                            $tenantIdRow = (int) ($r['tenant_id'] ?? 0);
-                            $agencyIdRow = (int) ($r['id'] ?? 0);
                         ?>
                         <div class="ag-actions-wrap">
                         <div class="dropdown ag-actions-dropdown">
