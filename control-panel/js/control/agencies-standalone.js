@@ -382,11 +382,36 @@
         if (modal) modal.show();
     };
 
+    function clickClosest(e, selector) {
+        var el = e.target;
+        if (el && el.nodeType === 3) el = el.parentElement;
+        if (!el || typeof el.closest !== 'function') return null;
+        return el.closest(selector);
+    }
+
+    // mousedown (capture) — runs before Bootstrap closes the dropdown on click
+    document.addEventListener('mousedown', function(e) {
+        var proBtn = clickClosest(e, '.btn-provision-pro');
+        var erpProvBtn = clickClosest(e, '.btn-provision-erp');
+        if (!proBtn && !erpProvBtn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        closeAgencyActionDropdowns();
+        if (proBtn) {
+            var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
+            if (proAgencyId) runProvisionPro(proBtn, proAgencyId);
+            return;
+        }
+        var agencyId = parseInt(erpProvBtn.getAttribute('data-agency-id') || '0', 10);
+        if (!agencyId) return;
+        var erpStatus = (erpProvBtn.getAttribute('data-erp-status') || 'none').toLowerCase();
+        if (erpStatus === 'ready' && !window.confirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.')) return;
+        openErpProvisionModal(erpProvBtn, agencyId, erpStatus);
+    }, true);
+
     // Document-level delegation so row/dropdown actions work reliably.
     document.addEventListener('click', function(e) {
-        if (!e.target || typeof e.target.closest !== 'function') return;
-
-        var erpBlockedBtn = e.target.closest('.ag-btn-erp-blocked');
+        var erpBlockedBtn = clickClosest(e, '.ag-btn-erp-blocked');
         if (erpBlockedBtn) {
             e.preventDefault();
             e.stopPropagation();
@@ -394,31 +419,7 @@
             return;
         }
 
-        var proBtn = e.target.closest('.btn-provision-pro');
-        if (proBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            var proAgencyId = parseInt(proBtn.getAttribute('data-agency-id') || '0', 10);
-            if (!proAgencyId) return;
-            closeAgencyActionDropdowns();
-            runProvisionPro(proBtn, proAgencyId);
-            return;
-        }
-
-        var erpProvBtn = e.target.closest('.btn-provision-erp');
-        if (erpProvBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            var agencyId = parseInt(erpProvBtn.getAttribute('data-agency-id') || '0', 10);
-            if (!agencyId) return;
-            var erpStatus = (erpProvBtn.getAttribute('data-erp-status') || 'none').toLowerCase();
-            closeAgencyActionDropdowns();
-            if (erpStatus === 'ready' && !window.confirm('Re-provision ERP? This resets the ERP database and creates a fresh company with admin / 123456.')) return;
-            openErpProvisionModal(erpProvBtn, agencyId, erpStatus);
-            return;
-        }
-
-        var bulkBtn = e.target.closest('#btnBulkDelete, #btnBulkActivate, #btnBulkDeactivate, #btnBulkSuspend, #btnBulkUnsuspend, #btnBulkSync, #btnBulkRebuildDb, #btnBulkRunMigration, #btnBulkTestDbConnection, #btnRepairTenantLinks');
+        var bulkBtn = clickClosest(e, '#btnBulkDelete, #btnBulkActivate, #btnBulkDeactivate, #btnBulkSuspend, #btnBulkUnsuspend, #btnBulkSync, #btnBulkRebuildDb, #btnBulkRunMigration, #btnBulkTestDbConnection, #btnRepairTenantLinks');
         if (bulkBtn) {
             e.preventDefault();
             e.stopPropagation();
@@ -438,8 +439,8 @@
             else if (id === 'btnRepairTenantLinks') handleBulkAction('Repair tenant link for selected agencies without tenant_id? (SUPER_ADMIN)', 'PATCH', function(ids) { return { agency_ids: ids, ids: ids, action: 'repair_tenant_link' }; });
             return;
         }
-        if (e.target.closest('.btn-agency-control-link')) {
-            var controlLink = e.target.closest('.btn-agency-control-link');
+        if (clickClosest(e, '.btn-agency-control-link')) {
+            var controlLink = clickClosest(e, '.btn-agency-control-link');
             var action = controlLink.getAttribute('data-action');
             var agencyId = parseInt(controlLink.getAttribute('data-agency-id') || '0', 10);
             if (action && agencyId) {
@@ -447,13 +448,11 @@
             }
         }
 
-        if (e.target.closest('.btn-view')) {
-            // EN: View action hydrates read-only modal from encoded row payload.
-            // AR: إجراء العرض يملأ نافذة القراءة من بيانات الصف المشفرة.
+        if (clickClosest(e, '.btn-view')) {
             e.preventDefault();
             e.stopPropagation();
             closeAgencyActionDropdowns();
-            var raw = e.target.closest('.btn-view').dataset.row || '';
+            var raw = clickClosest(e, '.btn-view').dataset.row || '';
             var r = raw ? JSON.parse(atob(raw)) : {};
             viewModalRowData = r;
             var cid = r.country_id;
@@ -474,13 +473,11 @@
             var viewSuspended = document.getElementById('viewSuspended');
             if (viewSuspended) viewSuspended.textContent = r.is_suspended ? 'Yes (non-payment)' : 'No';
             if (viewModal) viewModal.show();
-        } else if (e.target.closest('.btn-edit')) {
-            // EN: Edit action hydrates form modal for update workflow.
-            // AR: إجراء التعديل يملأ نموذج النافذة لعملية التحديث.
+        } else if (clickClosest(e, '.btn-edit')) {
             e.preventDefault();
             e.stopPropagation();
             closeAgencyActionDropdowns();
-            var raw = e.target.closest('.btn-edit').dataset.row || '';
+            var raw = clickClosest(e, '.btn-edit').dataset.row || '';
             var r = raw ? JSON.parse(atob(raw)) : {};
             document.getElementById('editId').value = r.id || '';
             document.getElementById('editCountryId').value = r.country_id || '';
@@ -504,21 +501,17 @@
             if (editErpCompanyId) editErpCompanyId.value = r.erp_company_id ? String(r.erp_company_id) : '';
             document.getElementById('modalTitle').textContent = 'Edit Agency';
             if (modal) modal.show();
-        } else if (e.target.closest('.btn-delete')) {
-            // EN: Delete action uses confirmation then calls API.
-            // AR: إجراء الحذف يطلب تأكيداً ثم يستدعي API.
+        } else if (clickClosest(e, '.btn-delete')) {
             e.preventDefault();
             e.stopPropagation();
-            var id = e.target.closest('.btn-delete').dataset.id;
+            var id = clickClosest(e, '.btn-delete').dataset.id;
             showConfirm('Delete this agency?').then(function(ok) {
                 if (ok) apiDeleteIds([parseInt(id, 10)]).then(function(r) { if (r.success) location.reload(); else showAlert(r.message || 'Delete failed'); }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); });
             });
-        } else if (e.target.closest('.btn-mark-paid')) {
-            // EN: Mark-paid operation unsuspends agency and syncs latest registration payment state.
-            // AR: عملية "تم الدفع" تفك الإيقاف وتزامن حالة آخر طلب تسجيل مرتبط.
+        } else if (clickClosest(e, '.btn-mark-paid')) {
             e.preventDefault();
             e.stopPropagation();
-            var btnPaid = e.target.closest('.btn-mark-paid');
+            var btnPaid = clickClosest(e, '.btn-mark-paid');
             var aid = parseInt(btnPaid.dataset.id || '0', 10);
             var aname = (btnPaid.dataset.name || 'this agency').trim();
             if (!aid) { showAlert('Invalid agency ID'); return; }
