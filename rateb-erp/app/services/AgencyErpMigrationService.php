@@ -248,4 +248,98 @@ final class AgencyErpMigrationService
 
         return $map;
     }
+
+    /** @return \PDO */
+    public function agencyPdo(array $agency): \PDO
+    {
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException('No ERP database configured');
+        }
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+            $cfg['host'],
+            $cfg['port'],
+            $cfg['db']
+        );
+
+        return new \PDO($dsn, $cfg['user'], $cfg['pass'], [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    public function restoreSuperAdminForAgency(array $agency, bool $resetPassword = true): array
+    {
+        $runnerFile = (defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2)) . '/bin/SuperAdminRestoreRunner.php';
+        if (!is_file($runnerFile)) {
+            throw new RuntimeException('SuperAdminRestoreRunner missing');
+        }
+        require_once $runnerFile;
+        $pdo = $this->agencyPdo($agency);
+        $runner = new \SuperAdminRestoreRunner($pdo);
+        $report = $runner->restore($resetPassword);
+        $report['agency_id'] = (int) ($agency['id'] ?? 0);
+        $report['agency_name'] = trim((string) ($agency['name'] ?? ''));
+        $report['erp_db_name'] = $this->agencyDatabaseConfig($agency)['db'];
+
+        return $report;
+    }
+
+    /**
+     * @param array{agency_ids?:list<int>,scope?:string} $options
+     * @return array<string, mixed>
+     */
+    public function restoreSuperAdmins(array $options): array
+    {
+        $this->ensureAgencyLookup();
+        $agencyIds = $options['agency_ids'] ?? [];
+        if (!is_array($agencyIds)) {
+            $agencyIds = [];
+        }
+        $agencyIds = array_values(array_unique(array_filter(array_map('intval', $agencyIds), static fn (int $id): bool => $id > 0)));
+        $scope = strtolower(trim((string) ($options['scope'] ?? '')));
+        if ($scope === 'all_ready' || $scope === 'all_subscribed') {
+            $rows = $this->listAgencies($scope === 'all_subscribed');
+            $agencyIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+            $agencyIds = array_values(array_filter($agencyIds, static fn (int $id): bool => $id > 0));
+        }
+        if ($agencyIds === []) {
+            throw new RuntimeException(__('agency_erp_push_select_target'));
+        }
+
+        $results = [];
+        $failed = 0;
+        foreach ($agencyIds as $agencyId) {
+            $agency = function_exists('rateb_lookup_agency_by_id') ? rateb_lookup_agency_by_id($agencyId) : null;
+            if ($agency === null) {
+                $results[] = ['agency_id' => $agencyId, 'ok' => false, 'error' => __('agency_erp_push_not_found')];
+                $failed++;
+                continue;
+            }
+            try {
+                $report = $this->restoreSuperAdminForAgency($agency, true);
+                $results[] = ['agency_id' => $agencyId, 'ok' => true, 'report' => $report];
+            } catch (Throwable $e) {
+                $results[] = [
+                    'agency_id' => $agencyId,
+                    'agency_name' => (string) ($agency['name'] ?? ''),
+                    'ok' => false,
+                    'error' => $e->getMessage(),
+                ];
+                $failed++;
+            }
+        }
+
+        return [
+            'success' => $failed === 0,
+            'total' => count($results),
+            'failed_count' => $failed,
+            'results' => $results,
+        ];
+    }
 }
