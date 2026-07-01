@@ -3,119 +3,69 @@
 /** @var string $platformDb */
 /** @var int $suggestedAgencyId */
 /** @var int $opsCompanyId */
-/** @var string $opsCompanyName */
 /** @var array<int, string> $companyNames */
 /** @var string $csrf */
 /** @var string $pushUrl */
 /** @var string $linkUrl */
 /** @var string $syncUrl */
 /** @var string $syncSource */
-/** @var string $syncTargetExample */
-$hasLinkedAgency = $opsCompanyId > 0 && $suggestedAgencyId > 0;
-$singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
+$readyCount = 0;
+$subscribedCount = 0;
+foreach ($agencies as $agency) {
+    $st = (string) ($agency['erp_status'] ?? 'none');
+    if ($st === 'ready') {
+        $readyCount++;
+    }
+    if ($st === 'ready' && !empty($agency['is_active'])) {
+        $subscribedCount++;
+    }
+}
 ?>
 <div class="rateb-page-header mb-3">
     <h1 class="h4 mb-1"><i class="fas fa-cloud-upload-alt me-2"></i><?php echo __('agency_erp_push_title'); ?></h1>
-    <p class="text-muted small mb-0"><?php echo __('agency_erp_push_intro'); ?></p>
-</div>
-
-<?php if ($opsCompanyId > 0 && $opsCompanyName !== '' && !$hasLinkedAgency) { ?>
-<div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3" id="erpCompanyLinkWarning">
-    <div>
-        <i class="fas fa-link-slash me-1"></i>
-        <?php echo __('agency_erp_push_unlinked_warning', ['company' => $opsCompanyName]); ?>
-    </div>
-    <?php if ($agencies !== [] && $singleAgencyId > 0) { ?>
-    <button type="button" class="btn btn-sm btn-warning" id="erpLinkCompanyBtn"
-        data-agency-id="<?php echo $singleAgencyId; ?>"
-        data-company-id="<?php echo $opsCompanyId; ?>">
-        <i class="fas fa-link me-1"></i><?php echo __('agency_erp_push_link_now'); ?>
-    </button>
-    <?php } ?>
-</div>
-<?php } elseif ($hasLinkedAgency && $opsCompanyName !== '') { ?>
-<div class="alert alert-info py-2 mb-3">
-    <i class="fas fa-link me-1"></i>
-    <?php echo __('agency_erp_push_linked_ok', ['company' => $opsCompanyName]); ?>
-</div>
-<?php } ?>
-
-<div class="rateb-card mb-3">
-    <div class="rateb-card-body">
-        <ul class="small text-muted mb-0">
-            <li><?php echo __('agency_erp_push_note_code'); ?></li>
-            <li><?php echo __('agency_erp_push_note_db'); ?></li>
-            <li><?php echo __('agency_erp_push_note_file_sync'); ?></li>
-        </ul>
-    </div>
+    <p class="text-muted small mb-0"><?php echo __('agency_erp_control_intro'); ?></p>
 </div>
 
 <?php if ($agencies === []) { ?>
 <div class="alert alert-warning"><?php echo __('agency_erp_push_no_agencies'); ?></div>
 <?php } else { ?>
-<div class="rateb-card mb-3 border-primary">
-    <div class="rateb-card-body">
-        <h2 class="h6 mb-2"><i class="fas fa-clone me-2"></i><?php echo __('agency_erp_sync_title'); ?></h2>
-        <p class="text-muted small mb-3"><?php echo __('agency_erp_sync_intro'); ?></p>
-        <?php if ($syncSource !== '' || $syncTargetExample !== '') { ?>
-        <dl class="row mb-3 small">
-            <dt class="col-sm-2"><?php echo __('agency_erp_sync_source'); ?></dt>
-            <dd class="col-sm-10"><code class="small"><?php echo Rateb\App\Core\View::escape($syncSource); ?></code></dd>
-            <dt class="col-sm-2"><?php echo __('agency_erp_sync_target_example'); ?></dt>
-            <dd class="col-sm-10"><code class="small"><?php echo Rateb\App\Core\View::escape($syncTargetExample); ?></code></dd>
-        </dl>
-        <?php } ?>
-        <div class="row g-2 align-items-end mb-3">
-            <div class="col-sm-4 col-md-3">
-                <label class="form-label small mb-1" for="erpSyncConfirmInput"><?php echo __('agency_erp_sync_confirm_label'); ?></label>
-                <input type="text" class="form-control form-control-sm font-monospace" id="erpSyncConfirmInput" autocomplete="off" spellcheck="false" placeholder="SYNC">
+<div class="rateb-card mb-3">
+    <div class="rateb-card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small mb-1" for="erpAgencyFilterCompany"><?php echo __('agency_erp_filter_company'); ?></label>
+                <select class="form-select form-select-sm" id="erpAgencyFilterCompany">
+                    <option value=""><?php echo __('agency_erp_filter_all_companies'); ?></option>
+                    <?php foreach ($companyNames as $coId => $coName) { ?>
+                    <option value="<?php echo (int) $coId; ?>"<?php echo $opsCompanyId === (int) $coId ? ' selected' : ''; ?>>
+                        <?php echo Rateb\App\Core\View::escape($coName); ?>
+                    </option>
+                    <?php } ?>
+                    <option value="0"><?php echo __('agency_erp_filter_unlinked'); ?></option>
+                </select>
             </div>
-            <div class="col-sm-8 col-md-9 d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-primary btn-sm" id="erpSyncRunSelected" disabled>
-                    <i class="fas fa-clone me-1"></i><?php echo __('agency_erp_sync_run_selected'); ?>
+            <div class="col-md-8 d-flex flex-wrap gap-2 align-items-center">
+                <span class="small text-muted me-1"><?php echo __('agency_erp_quick_select'); ?>:</span>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="erpSelectAllRows">
+                    <i class="fas fa-check-double me-1"></i><?php echo __('select_all'); ?>
                 </button>
-                <button type="button" class="btn btn-outline-primary btn-sm" id="erpSyncRunAllReady">
-                    <i class="fas fa-layer-group me-1"></i><?php echo __('agency_erp_sync_run_all_ready'); ?>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="erpSelectReadyRows">
+                    <i class="fas fa-layer-group me-1"></i><?php echo __('agency_erp_push_run_all_ready'); ?>
+                    <span class="badge bg-secondary ms-1"><?php echo $readyCount; ?></span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="erpSelectSubscribedRows">
+                    <i class="fas fa-check-circle me-1"></i><?php echo __('agency_erp_push_run_subscribed'); ?>
+                    <span class="badge bg-secondary ms-1"><?php echo $subscribedCount; ?></span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="erpSelectNoneRows">
+                    <i class="fas fa-times me-1"></i><?php echo __('agency_erp_clear_selection'); ?>
                 </button>
             </div>
         </div>
-        <p class="text-warning small mb-0"><?php echo __('agency_erp_sync_warning'); ?></p>
     </div>
 </div>
 
 <div class="rateb-card mb-3">
-    <div class="rateb-card-body">
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="erpUpdateIncludePlatform" checked>
-            <label class="form-check-label" for="erpUpdateIncludePlatform">
-                <?php echo __('agency_erp_push_include_platform'); ?>
-                <?php if ($platformDb !== '') { ?>
-                <code><?php echo Rateb\App\Core\View::escape($platformDb); ?></code>
-                <?php } ?>
-            </label>
-        </div>
-        <div class="d-flex flex-wrap gap-2 mb-3">
-            <button type="button" class="btn btn-outline-primary btn-sm" id="erpUpdateRunAllReady">
-                <i class="fas fa-layer-group me-1"></i><?php echo __('agency_erp_push_run_all_ready'); ?>
-            </button>
-            <button type="button" class="btn btn-outline-success btn-sm" id="erpUpdateRunSubscribed">
-                <i class="fas fa-check-circle me-1"></i><?php echo __('agency_erp_push_run_subscribed'); ?>
-            </button>
-        </div>
-        <div id="erpUpdateProgress" class="alert alert-secondary py-2 small d-none" role="status"></div>
-        <div id="erpUpdateResults" class="d-none">
-            <pre class="bg-dark text-light p-3 rounded small mb-0" id="erpUpdateLog" style="max-height:420px;overflow:auto;"></pre>
-        </div>
-    </div>
-</div>
-
-<div class="rateb-card">
-    <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar id="erpAgencyBulkBar">
-        <span class="rateb-bulk-count" data-rateb-bulk-count data-label="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_bulk_label')); ?>">0</span>
-        <button type="button" class="btn btn-primary btn-sm erp-push-bulk-btn" id="erpUpdateRunSelected">
-            <i class="fas fa-play me-1"></i><?php echo __('agency_erp_push_run_selected'); ?>
-        </button>
-    </div>
     <div class="rateb-card-body p-0">
         <div class="table-responsive">
             <table class="table table-sm table-hover mb-0 rateb-table" id="erpAgencyUpdatesTable" data-rateb-bulk-table="1">
@@ -129,6 +79,7 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
                         <th><?php echo __('agency_erp_push_col_db'); ?></th>
                         <th><?php echo __('agency_erp_push_col_status'); ?></th>
                         <th><?php echo __('agency_erp_push_col_site'); ?></th>
+                        <th class="text-end"><?php echo __('actions'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -140,33 +91,24 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
                         $site = rtrim((string) ($agency['site_url'] ?? ''), '/');
                         $linkedCoId = (int) ($agency['erp_company_id'] ?? 0);
                         $linkedCoName = $linkedCoId > 0 ? (string) ($companyNames[$linkedCoId] ?? ('#' . $linkedCoId)) : '';
-                        $checked = false;
-                        if ($suggestedAgencyId > 0) {
-                            $checked = $id === $suggestedAgencyId;
-                        } elseif ($opsCompanyId < 1 && count($agencies) === 1) {
-                            $checked = true;
-                        }
+                        $isReady = $status === 'ready';
+                        $isSubscribed = $isReady && !empty($agency['is_active']);
                         ?>
-                    <tr class="erp-agency-row" data-agency-id="<?php echo $id; ?>" data-erp-company-id="<?php echo $linkedCoId; ?>">
+                    <tr class="erp-agency-row"
+                        data-agency-id="<?php echo $id; ?>"
+                        data-erp-company-id="<?php echo $linkedCoId; ?>"
+                        data-erp-status="<?php echo Rateb\App\Core\View::escape($status); ?>"
+                        data-subscribed="<?php echo $isSubscribed ? '1' : '0'; ?>"
+                        data-ready="<?php echo $isReady ? '1' : '0'; ?>">
                         <td class="rateb-bulk-td">
-                            <input type="checkbox" class="form-check-input rateb-row-check erp-update-agency-cb" value="<?php echo $id; ?>" data-rateb-row-check<?php echo $checked ? ' checked' : ''; ?>>
+                            <input type="checkbox" class="form-check-input rateb-row-check erp-update-agency-cb" value="<?php echo $id; ?>" data-rateb-row-check>
                         </td>
-                        <td>
-                            <?php echo Rateb\App\Core\View::escape($name); ?>
-                            <?php if ($id === $suggestedAgencyId && $opsCompanyId > 0) { ?>
-                            <span class="badge bg-info ms-1"><?php echo __('agency_erp_push_linked_company'); ?></span>
-                            <?php } ?>
-                        </td>
+                        <td><?php echo Rateb\App\Core\View::escape($name); ?></td>
                         <td>
                             <?php if ($linkedCoName !== '') { ?>
                             <?php echo Rateb\App\Core\View::escape($linkedCoName); ?>
                             <?php } else { ?>
                             <span class="text-muted">—</span>
-                            <?php if ($opsCompanyId > 0 && $singleAgencyId === $id) { ?>
-                            <button type="button" class="btn btn-link btn-sm p-0 ms-1 erp-link-row-btn"
-                                data-agency-id="<?php echo $id; ?>"
-                                data-company-id="<?php echo $opsCompanyId; ?>"><?php echo __('agency_erp_push_link_now'); ?></button>
-                            <?php } ?>
                             <?php } ?>
                         </td>
                         <td><code><?php echo Rateb\App\Core\View::escape($erpDb); ?></code></td>
@@ -178,12 +120,96 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
                             <span class="text-muted">—</span>
                             <?php } ?>
                         </td>
+                        <td class="text-end text-nowrap">
+                            <div class="dropdown d-inline-block">
+                                <button type="button" class="btn btn-link btn-sm p-0 erp-link-row-btn"
+                                    data-agency-id="<?php echo $id; ?>"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-link me-1"></i><?php echo __('agency_erp_push_link_now'); ?>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <?php foreach ($companyNames as $coId => $coName) { ?>
+                                    <li>
+                                        <button type="button" class="dropdown-item erp-link-pick-btn"
+                                            data-agency-id="<?php echo $id; ?>"
+                                            data-company-id="<?php echo (int) $coId; ?>">
+                                            <?php echo Rateb\App\Core\View::escape($coName); ?>
+                                        </button>
+                                    </li>
+                                    <?php } ?>
+                                </ul>
+                            </div>
+                        </td>
                     </tr>
                     <?php } ?>
                 </tbody>
             </table>
         </div>
     </div>
+</div>
+
+<div class="rateb-card mb-3 border-primary" id="erpAgencyCommandBar">
+    <div class="rateb-card-body">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span class="badge bg-primary fs-6" id="erpSelectionBadge">0 <?php echo __('agency_erp_push_bulk_label'); ?></span>
+            <?php if ($syncSource !== '') { ?>
+            <span class="small text-muted ms-md-2">
+                <i class="fas fa-folder-open me-1"></i><code class="small"><?php echo Rateb\App\Core\View::escape($syncSource); ?></code>
+            </span>
+            <?php } ?>
+        </div>
+
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-4">
+                <label class="form-label small mb-1" for="erpSyncConfirmInput"><?php echo __('agency_erp_sync_confirm_label'); ?></label>
+                <input type="text" class="form-control form-control-sm font-monospace" id="erpSyncConfirmInput" autocomplete="off" spellcheck="false" placeholder="SYNC">
+            </div>
+            <div class="col-lg-9 col-md-8">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="erpUpdateIncludePlatform" checked>
+                    <label class="form-check-label small" for="erpUpdateIncludePlatform">
+                        <?php echo __('agency_erp_push_include_platform'); ?>
+                        <?php if ($platformDb !== '') { ?>
+                        <code><?php echo Rateb\App\Core\View::escape($platformDb); ?></code>
+                        <?php } ?>
+                    </label>
+                </div>
+                <p class="small fw-semibold mb-2 text-muted"><?php echo __('agency_erp_actions_on_selection'); ?></p>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="erpSyncRunSelected" disabled>
+                        <i class="fas fa-clone me-1"></i><?php echo __('agency_erp_sync_run_selected'); ?>
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="erpUpdateRunSelected" disabled>
+                        <i class="fas fa-database me-1"></i><?php echo __('agency_erp_push_db_selected'); ?>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="erpFullDeploySelected" disabled>
+                        <i class="fas fa-rocket me-1"></i><?php echo __('agency_erp_full_deploy_selected'); ?>
+                    </button>
+                </div>
+                <p class="small fw-semibold mb-2 text-muted"><?php echo __('agency_erp_actions_on_all'); ?></p>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="erpSyncRunAllReady">
+                        <i class="fas fa-clone me-1"></i><?php echo __('agency_erp_sync_all_ready'); ?>
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="erpUpdateRunAllReady">
+                        <i class="fas fa-database me-1"></i><?php echo __('agency_erp_push_all_ready'); ?>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="erpFullDeployAllReady">
+                        <i class="fas fa-rocket me-1"></i><?php echo __('agency_erp_full_deploy_all_ready'); ?>
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="erpUpdateRunSubscribed">
+                        <i class="fas fa-check-circle me-1"></i><?php echo __('agency_erp_push_run_subscribed'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <p class="text-warning small mb-0 mt-3"><?php echo __('agency_erp_sync_warning'); ?></p>
+    </div>
+</div>
+
+<div id="erpUpdateProgress" class="alert alert-secondary py-2 small d-none mb-3" role="status"></div>
+<div id="erpUpdateResults" class="d-none mb-3">
+    <pre class="bg-dark text-light p-3 rounded small mb-0" id="erpUpdateLog" style="max-height:420px;overflow:auto;"></pre>
 </div>
 <?php } ?>
 
@@ -197,11 +223,15 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
     data-confirm-subscribed="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_subscribed')); ?>"
     data-confirm-sync-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_selected')); ?>"
     data-confirm-sync-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_all')); ?>"
+    data-confirm-full-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_full_deploy_confirm_selected')); ?>"
+    data-confirm-full-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_full_deploy_confirm_all')); ?>"
     data-confirm-link="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_link')); ?>"
     data-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_running')); ?>"
     data-sync-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_running')); ?>"
+    data-full-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_full_deploy_running')); ?>"
     data-done-ok="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_done_ok')); ?>"
     data-done-errors="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_done_errors')); ?>"
     data-request-failed="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_request_failed')); ?>"
-    data-sync-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_required')); ?>">
+    data-sync-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_required')); ?>"
+    data-select-first="<?php echo Rateb\App\Core\View::escape(__('agency_erp_select_agencies_first')); ?>">
 </div>

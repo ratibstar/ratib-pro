@@ -237,7 +237,6 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 && (
                 rateb_is_ops_route($erpRoute)
                 || strpos($currentPath, '/admin/ops/') !== false
-                || $navActive('admin/agency-updates')
             );
             if ($showOpsCompanyPicker) {
                 Rateb\App\Core\View::partial('ops-company-select');
