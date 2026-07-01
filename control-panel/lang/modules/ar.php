@@ -289,6 +289,7 @@ return [
 
     'sync_test.title' => 'مزامنة test.rateb.sa',
     'sync_test.intro' => 'ينسخ ملفات التطبيق من الموقع الحي (rateb.sa) إلى دومين الاختبار. لا ينسخ قاعدة البيانات — وكالات الاختبار تبقى على قواعدها.',
+    'sync_test.erp_page_hint' => 'الطريقة المفضلة: من ERP المنصة ← رفع التحديثات للوكالات (مزامنة ملفات + ترحيلات):',
     'sync_test.source' => 'المصدر',
     'sync_test.target' => 'الهدف',
     'sync_test.button' => 'نسخ الملفات إلى test.rateb.sa',

@@ -8,6 +8,9 @@
 /** @var string $csrf */
 /** @var string $pushUrl */
 /** @var string $linkUrl */
+/** @var string $syncUrl */
+/** @var string $syncSource */
+/** @var string $syncTargetExample */
 $hasLinkedAgency = $opsCompanyId > 0 && $suggestedAgencyId > 0;
 $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
 ?>
@@ -42,6 +45,7 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
         <ul class="small text-muted mb-0">
             <li><?php echo __('agency_erp_push_note_code'); ?></li>
             <li><?php echo __('agency_erp_push_note_db'); ?></li>
+            <li><?php echo __('agency_erp_push_note_file_sync'); ?></li>
         </ul>
     </div>
 </div>
@@ -49,6 +53,36 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
 <?php if ($agencies === []) { ?>
 <div class="alert alert-warning"><?php echo __('agency_erp_push_no_agencies'); ?></div>
 <?php } else { ?>
+<div class="rateb-card mb-3 border-primary">
+    <div class="rateb-card-body">
+        <h2 class="h6 mb-2"><i class="fas fa-clone me-2"></i><?php echo __('agency_erp_sync_title'); ?></h2>
+        <p class="text-muted small mb-3"><?php echo __('agency_erp_sync_intro'); ?></p>
+        <?php if ($syncSource !== '' || $syncTargetExample !== '') { ?>
+        <dl class="row mb-3 small">
+            <dt class="col-sm-2"><?php echo __('agency_erp_sync_source'); ?></dt>
+            <dd class="col-sm-10"><code class="small"><?php echo Rateb\App\Core\View::escape($syncSource); ?></code></dd>
+            <dt class="col-sm-2"><?php echo __('agency_erp_sync_target_example'); ?></dt>
+            <dd class="col-sm-10"><code class="small"><?php echo Rateb\App\Core\View::escape($syncTargetExample); ?></code></dd>
+        </dl>
+        <?php } ?>
+        <div class="row g-2 align-items-end mb-3">
+            <div class="col-sm-4 col-md-3">
+                <label class="form-label small mb-1" for="erpSyncConfirmInput"><?php echo __('agency_erp_sync_confirm_label'); ?></label>
+                <input type="text" class="form-control form-control-sm font-monospace" id="erpSyncConfirmInput" autocomplete="off" spellcheck="false" placeholder="SYNC">
+            </div>
+            <div class="col-sm-8 col-md-9 d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-primary btn-sm" id="erpSyncRunSelected" disabled>
+                    <i class="fas fa-clone me-1"></i><?php echo __('agency_erp_sync_run_selected'); ?>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="erpSyncRunAllReady">
+                    <i class="fas fa-layer-group me-1"></i><?php echo __('agency_erp_sync_run_all_ready'); ?>
+                </button>
+            </div>
+        </div>
+        <p class="text-warning small mb-0"><?php echo __('agency_erp_sync_warning'); ?></p>
+    </div>
+</div>
+
 <div class="rateb-card mb-3">
     <div class="rateb-card-body">
         <div class="form-check mb-3">
@@ -156,13 +190,18 @@ $singleAgencyId = count($agencies) === 1 ? (int) ($agencies[0]['id'] ?? 0) : 0;
 <div id="erpAgencyUpdatesConfig"
     data-api-url="<?php echo Rateb\App\Core\View::escape($pushUrl); ?>"
     data-link-url="<?php echo Rateb\App\Core\View::escape($linkUrl); ?>"
+    data-sync-url="<?php echo Rateb\App\Core\View::escape($syncUrl); ?>"
     data-csrf="<?php echo Rateb\App\Core\View::escape($csrf); ?>"
     data-confirm-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_selected')); ?>"
     data-confirm-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_all')); ?>"
     data-confirm-subscribed="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_subscribed')); ?>"
+    data-confirm-sync-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_selected')); ?>"
+    data-confirm-sync-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_all')); ?>"
     data-confirm-link="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_link')); ?>"
     data-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_running')); ?>"
+    data-sync-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_running')); ?>"
     data-done-ok="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_done_ok')); ?>"
     data-done-errors="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_done_errors')); ?>"
-    data-request-failed="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_request_failed')); ?>">
+    data-request-failed="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_request_failed')); ?>"
+    data-sync-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_required')); ?>">
 </div>

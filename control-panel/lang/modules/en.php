@@ -304,6 +304,7 @@ return [
     // Test domain sync (rateb.sa → test.rateb.sa)
     'sync_test.title' => 'Sync test.rateb.sa',
     'sync_test.intro' => 'Copies application files from the live site (rateb.sa) to the test domain. Does not copy database data — test agencies keep their own DB.',
+    'sync_test.erp_page_hint' => 'Preferred: Platform ERP → Push updates to agencies (file sync + migrations):',
     'sync_test.source' => 'Source',
     'sync_test.target' => 'Target',
     'sync_test.button' => 'Copy files to test.rateb.sa',

@@ -106,6 +106,81 @@ if (!function_exists('rateb_test_domain_copy_tree')) {
     }
 }
 
+if (!function_exists('rateb_agency_site_sync_resolve')) {
+    /**
+     * Resolve document-root paths for copying platform tree → an agency site on the same server.
+     *
+     * @return array{source:string,target:string,host:string}
+     */
+    function rateb_agency_site_sync_resolve(string $siteUrl, ?string $sourceOverride = null): array
+    {
+        $paths = rateb_test_domain_sync_resolve($sourceOverride, null);
+        $source = $paths['source'];
+        $siteUrl = trim($siteUrl);
+        if ($siteUrl === '') {
+            return ['source' => $source, 'target' => $paths['target'], 'host' => ''];
+        }
+        $host = strtolower(trim((string) (parse_url($siteUrl, PHP_URL_HOST) ?: '')));
+        if ($host === '') {
+            return ['source' => $source, 'target' => '', 'host' => ''];
+        }
+        $resolver = dirname(__DIR__) . '/config/env/erp_agency_resolver.php';
+        if (is_file($resolver)) {
+            require_once $resolver;
+        }
+        if (function_exists('rateb_erp_is_main_platform_host') && rateb_erp_is_main_platform_host($host)) {
+            return ['source' => $source, 'target' => '', 'host' => $host];
+        }
+        $target = $source;
+        if (strpos($target, DIRECTORY_SEPARATOR . 'rateb.sa' . DIRECTORY_SEPARATOR) !== false) {
+            $target = str_replace(
+                DIRECTORY_SEPARATOR . 'rateb.sa' . DIRECTORY_SEPARATOR,
+                DIRECTORY_SEPARATOR . $host . DIRECTORY_SEPARATOR,
+                $target
+            );
+        } elseif (strpos($target, '/rateb.sa/') !== false) {
+            $target = str_replace('/rateb.sa/', '/' . $host . '/', $target);
+        } else {
+            $parent = dirname($source);
+            $target = $parent . DIRECTORY_SEPARATOR . $host . DIRECTORY_SEPARATOR . 'public_html';
+        }
+        $target = rtrim((string) $target, '/\\');
+
+        return ['source' => $source, 'target' => $target, 'host' => $host];
+    }
+}
+
+if (!function_exists('rateb_agency_site_sync_run')) {
+    /**
+     * @return array{ok:bool,log:list<string>,source:string,target:string,host:string}
+     */
+    function rateb_agency_site_sync_run(string $siteUrl, ?string $sourceOverride = null): array
+    {
+        $resolved = rateb_agency_site_sync_resolve($siteUrl, $sourceOverride);
+        if ($resolved['target'] === '' || $resolved['target'] === $resolved['source']) {
+            $host = $resolved['host'] !== '' ? $resolved['host'] : trim($siteUrl);
+
+            return [
+                'ok' => false,
+                'log' => ['Target path could not be resolved for: ' . $host],
+                'source' => $resolved['source'],
+                'target' => $resolved['target'],
+                'host' => $resolved['host'],
+            ];
+        }
+
+        $run = rateb_test_domain_sync_run($resolved['source'], $resolved['target']);
+
+        return [
+            'ok' => !empty($run['ok']),
+            'log' => (array) ($run['log'] ?? []),
+            'source' => (string) ($run['source'] ?? $resolved['source']),
+            'target' => (string) ($run['target'] ?? $resolved['target']),
+            'host' => $resolved['host'],
+        ];
+    }
+}
+
 if (!function_exists('rateb_test_domain_sync_run')) {
     /**
      * @return array{ok:bool,log:list<string>,source:string,target:string}

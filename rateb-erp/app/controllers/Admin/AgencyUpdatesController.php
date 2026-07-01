@@ -8,6 +8,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Response;
 use Rateb\App\Models\Company;
 use Rateb\App\Services\AgencyErpMigrationService;
+use Rateb\App\Services\AgencyFileSyncService;
 
 final class AgencyUpdatesController extends Controller
 {
@@ -29,6 +30,8 @@ final class AgencyUpdatesController extends Controller
             $opsCompanyName = trim((string) ($row['name'] ?? ''));
         }
         $companyNames = $svc->platformCompanyNames();
+        $fileSyncSvc = new AgencyFileSyncService();
+        $syncPreview = $fileSyncSvc->previewForSiteUrl('https://test.rateb.sa/');
         $this->view('admin/agency-updates/index', [
             'title' => __('agency_erp_push_title'),
             'agencies' => $svc->listAgencies(false),
@@ -37,9 +40,12 @@ final class AgencyUpdatesController extends Controller
             'opsCompanyId' => $opsCompanyId,
             'opsCompanyName' => $opsCompanyName,
             'companyNames' => $companyNames,
+            'syncSource' => (string) ($syncPreview['source'] ?? ''),
+            'syncTargetExample' => (string) ($syncPreview['target'] ?? ''),
             'csrf' => Csrf::token(),
             'pushUrl' => rateb_url('admin/agency-updates/push'),
             'linkUrl' => rateb_url('admin/agency-updates/link'),
+            'syncUrl' => rateb_url('admin/agency-updates/sync-files'),
         ], 'main');
     }
 
@@ -95,6 +101,33 @@ final class AgencyUpdatesController extends Controller
                 'company_id' => $companyId,
                 'message' => __('agency_erp_push_link_ok'),
             ]);
+        } catch (\Throwable $e) {
+            Response::json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function syncFiles(): void
+    {
+        if (!rateb_is_super_admin()) {
+            Response::json(['success' => false, 'message' => __('access_denied')], 403);
+        }
+        if (!$this->validateCsrf()) {
+            Response::json(['success' => false, 'message' => __('csrf_invalid')], 403);
+        }
+
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw ?: '{}', true);
+        if (!is_array($data)) {
+            $data = $_POST;
+        }
+
+        try {
+            $payload = (new AgencyFileSyncService())->sync([
+                'scope' => (string) ($data['scope'] ?? ''),
+                'confirm' => (string) ($data['confirm'] ?? ''),
+                'agency_ids' => $data['agency_ids'] ?? ($data['ids'] ?? []),
+            ]);
+            Response::json($payload, empty($payload['success']) ? 422 : 200);
         } catch (\Throwable $e) {
             Response::json(['success' => false, 'message' => $e->getMessage()], 400);
         }

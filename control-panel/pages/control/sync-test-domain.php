@@ -56,6 +56,10 @@ startControlLayout(cp_t('sync_test.title'), ['css/control/system.css'], []);
     <div class="card-body">
         <h2 class="h5 mb-3"><i class="fas fa-clone me-2"></i><?php echo htmlspecialchars(cp_t('sync_test.title'), ENT_QUOTES, 'UTF-8'); ?></h2>
         <p class="text-muted mb-3"><?php echo htmlspecialchars(cp_t('sync_test.intro'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <p class="small mb-3">
+            <?php echo htmlspecialchars(cp_t('sync_test.erp_page_hint'), ENT_QUOTES, 'UTF-8'); ?>
+            <a href="https://rateb.sa/rateb-erp/public/admin/agency-updates" target="_blank" rel="noopener">rateb.sa/…/admin/agency-updates</a>
+        </p>
         <dl class="row mb-0 small">
             <dt class="col-sm-2"><?php echo htmlspecialchars(cp_t('sync_test.source'), ENT_QUOTES, 'UTF-8'); ?></dt>
             <dd class="col-sm-10"><code><?php echo htmlspecialchars($paths['source'], ENT_QUOTES, 'UTF-8'); ?></code></dd>

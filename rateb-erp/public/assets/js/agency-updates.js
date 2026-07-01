@@ -6,12 +6,16 @@
 
     var apiUrl = cfg.getAttribute('data-api-url') || '';
     var linkUrl = cfg.getAttribute('data-link-url') || '';
+    var syncUrl = cfg.getAttribute('data-sync-url') || '';
     var csrfToken = cfg.getAttribute('data-csrf') || '';
     var table = document.getElementById('erpAgencyUpdatesTable');
     var bulkBar = document.getElementById('erpAgencyBulkBar');
     var btnSelected = document.getElementById('erpUpdateRunSelected');
     var btnAll = document.getElementById('erpUpdateRunAllReady');
     var btnSub = document.getElementById('erpUpdateRunSubscribed');
+    var btnSyncSelected = document.getElementById('erpSyncRunSelected');
+    var btnSyncAll = document.getElementById('erpSyncRunAllReady');
+    var syncConfirmInput = document.getElementById('erpSyncConfirmInput');
     var progress = document.getElementById('erpUpdateProgress');
     var resultsBox = document.getElementById('erpUpdateResults');
     var logEl = document.getElementById('erpUpdateLog');
@@ -65,9 +69,28 @@
     }
 
     function setBusy(busy) {
-        [btnSelected, btnAll, btnSub].forEach(function (b) {
-            if (b) b.disabled = busy || (b === btnSelected && selectedIds().length === 0);
+        [btnSelected, btnAll, btnSub, btnSyncSelected, btnSyncAll].forEach(function (b) {
+            if (!b) return;
+            if (b === btnSelected || b === btnSyncSelected) {
+                b.disabled = busy || selectedIds().length === 0;
+            } else {
+                b.disabled = !!busy;
+            }
         });
+    }
+
+    function syncConfirmValue() {
+        return syncConfirmInput ? String(syncConfirmInput.value || '').trim().toUpperCase() : '';
+    }
+
+    function syncButtonsReady() {
+        var hasSelection = selectedIds().length > 0;
+        if (btnSyncSelected) {
+            btnSyncSelected.disabled = !hasSelection || syncConfirmValue() !== 'SYNC';
+        }
+        if (btnSyncAll) {
+            btnSyncAll.disabled = syncConfirmValue() !== 'SYNC';
+        }
     }
 
     function showProgress(msg) {
@@ -83,6 +106,10 @@
             lines.push('');
             if (r.target === 'platform') {
                 lines.push('=== ' + (r.label || 'Platform') + ' ===');
+            } else if (r.target === 'files') {
+                lines.push('=== FILES Agency #' + (r.agency_id || '?') + ' ' + (r.agency_name || '') + ' (' + (r.site_url || r.host || '') + ') ===');
+                if (r.source) lines.push('Source: ' + r.source);
+                if (r.target_path) lines.push('Target: ' + r.target_path);
             } else {
                 lines.push('=== Agency #' + (r.agency_id || '?') + ' ' + (r.agency_name || '') + ' (' + (r.erp_db_name || '') + ') ===');
             }
@@ -95,13 +122,13 @@
         return lines.join('\n');
     }
 
-    function run(payload, confirmMsg) {
+    function run(payload, confirmMsg, url, runningMsg) {
         if (confirmMsg && !window.confirm(confirmMsg)) return;
         setBusy(true);
-        showProgress(cfg.getAttribute('data-running') || 'Running…');
+        showProgress(runningMsg || cfg.getAttribute('data-running') || 'Running…');
         if (resultsBox) resultsBox.classList.add('d-none');
 
-        fetch(apiUrl, {
+        fetch(url || apiUrl, {
             method: 'POST',
             credentials: 'same-origin',
             headers: {
@@ -131,7 +158,17 @@
             .finally(function () {
                 setBusy(false);
                 syncBulkBar();
+                syncButtonsReady();
             });
+    }
+
+    function runSync(payload, confirmMsg) {
+        if (syncConfirmValue() !== 'SYNC') {
+            showProgress(cfg.getAttribute('data-sync-confirm-required') || 'Type SYNC to confirm.');
+            return;
+        }
+        payload.confirm = 'SYNC';
+        run(payload, confirmMsg, syncUrl, cfg.getAttribute('data-sync-running'));
     }
 
     if (table) {
@@ -145,6 +182,7 @@
                 boxes().forEach(function (cb) { cb.checked = on; });
             }
             syncBulkBar();
+            syncButtonsReady();
         });
 
         table.addEventListener('click', function (e) {
@@ -159,7 +197,25 @@
             if (cb) {
                 cb.checked = !cb.checked;
                 syncBulkBar();
+                syncButtonsReady();
             }
+        });
+    }
+
+    if (syncConfirmInput) {
+        syncConfirmInput.addEventListener('input', syncButtonsReady);
+    }
+
+    if (btnSyncSelected) {
+        btnSyncSelected.addEventListener('click', function () {
+            var ids = selectedIds();
+            if (!ids.length) return;
+            runSync({ agency_ids: ids }, cfg.getAttribute('data-confirm-sync-selected'));
+        });
+    }
+    if (btnSyncAll) {
+        btnSyncAll.addEventListener('click', function () {
+            runSync({ scope: 'all_ready' }, cfg.getAttribute('data-confirm-sync-all'));
         });
     }
 
@@ -192,6 +248,7 @@
 
     function boot() {
         syncBulkBar();
+        syncButtonsReady();
     }
 
     if (document.readyState === 'loading') {
