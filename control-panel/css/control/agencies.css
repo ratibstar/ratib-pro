@@ -164,7 +164,43 @@
 }
 
 .ag-actions-dropdown {
-    position: static;
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.ag-actions-dropdown .ag-actions-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    inset-inline-end: 0;
+    inset-inline-start: auto;
+    left: auto;
+    right: 0;
+    transform: none !important;
+    float: none;
+    z-index: 1040;
+    min-width: 14rem;
+    max-width: 17rem;
+    max-height: min(70vh, 420px);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.ag-actions-dropdown .ag-actions-menu.show {
+    display: block;
+}
+
+html[dir="rtl"] .ag-actions-dropdown .ag-actions-menu,
+.cp-layout-rtl .ag-actions-dropdown .ag-actions-menu {
+    right: 0;
+    left: auto;
+}
+
+.ag-actions-menu > li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .ag-actions-dropdown.show .ag-btn-actions,
@@ -176,6 +212,46 @@
 
 .ag-actions-dropdown .dropdown-menu {
     z-index: 1040;
+}
+
+.ag-actions-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    border-radius: 7px;
+    padding: 0.42rem 0.55rem;
+    color: #e2e8f0;
+    white-space: nowrap;
+    text-align: start;
+    line-height: 1.25;
+    border: 0;
+    background: transparent;
+}
+
+.ag-actions-menu .dropdown-item span,
+.ag-actions-menu .dropdown-item {
+    white-space: nowrap;
+}
+
+.ag-actions-menu {
+    min-width: 14rem;
+    max-width: 17rem;
+    padding: 0.4rem;
+    background: #141b2d;
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
+    font-size: 0.78rem;
+}
+
+.ag-actions-menu .dropdown-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 0.35rem 0.55rem 0.2rem;
 }
 
 #erpProvisionModal.modal,
@@ -238,35 +314,6 @@
     margin-inline-start: 4px;
     vertical-align: 0.12em;
     opacity: 0.75;
-}
-
-.ag-actions-menu {
-    min-width: 13.5rem;
-    max-width: 16rem;
-    padding: 0.4rem;
-    background: #141b2d;
-    border: 1px solid rgba(59, 130, 246, 0.22);
-    border-radius: 10px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
-    font-size: 0.78rem;
-}
-
-.ag-actions-menu .dropdown-header {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #64748b;
-    padding: 0.35rem 0.55rem 0.2rem;
-}
-
-.ag-actions-menu .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 7px;
-    padding: 0.42rem 0.55rem;
-    color: #e2e8f0;
 }
 
 .ag-actions-menu .dropdown-item:hover,
