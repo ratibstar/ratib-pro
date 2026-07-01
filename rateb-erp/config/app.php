@@ -250,11 +250,20 @@ if (!function_exists('rateb_asset')) {
 }
 
 if (!function_exists('rateb_url')) {
-    /** Always use standalone public URLs (no CP session required). */
     function rateb_url(string $path = ''): string
     {
         $path = ltrim($path, '/');
-        return rateb_public_url($path !== '' ? $path : 'admin');
+        if ($path === '') {
+            $path = 'admin';
+        }
+        if (defined('RATEB_CP_MODE') && RATEB_CP_MODE && defined('RATEB_CP_APP_URL')) {
+            $base = (string) RATEB_CP_APP_URL;
+            $sep = strpos($base, '?') !== false ? '&' : '?';
+
+            return $base . $sep . 'route=' . rawurlencode($path);
+        }
+
+        return rateb_public_url($path);
     }
 }
 

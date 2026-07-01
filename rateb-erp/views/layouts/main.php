@@ -24,7 +24,11 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 if (isset($_GET['dismiss_approvals_alert']) && rateb_is_super_admin()) {
     \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
 }
-if ($navActive('admin/oversight/approvals') && rateb_is_super_admin()) {
+$approvalsOversightJs = $erpRoute !== '' && (
+    str_starts_with($erpRoute, 'admin/oversight/approvals')
+    || str_starts_with($erpRoute, 'admin/oversight/companies-approvals')
+);
+if ($approvalsOversightJs && rateb_is_super_admin()) {
     \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
 }
 $oversightPendingApprovals = rateb_oversight_pending_approvals_count();
@@ -272,7 +276,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <script src="<?php echo rateb_asset('js/charts.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/cms-admin.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/entity-documents-modal.js'); ?>"></script>
-<?php if ($navActive('admin/oversight/approvals')) { ?>
+<?php if ($approvalsOversightJs) { ?>
 <script src="<?php echo rateb_asset('js/approvals-oversight.js'); ?>"></script>
 <?php } ?>
 <?php if ($navActive('admin/agency-updates')) { ?>

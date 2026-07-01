@@ -438,10 +438,12 @@ function control_rateb_erp_nav_links(): array
     $routes = [
         'dashboard' => ['route' => 'admin', 'label' => 'Dashboard', 'icon' => 'fa-chart-line', 'description' => 'KPIs, revenue charts, and platform overview.'],
         'companies' => ['route' => 'admin/companies', 'label' => 'Companies', 'icon' => 'fa-building', 'description' => 'Create, activate, suspend, and manage tenant companies.'],
+        'companies_approvals' => ['route' => 'admin/oversight/companies-approvals', 'label' => 'Company approvals', 'icon' => 'fa-building-circle-check', 'description' => 'Approve or reject pending company registrations.'],
+        'approvals' => ['route' => 'admin/oversight/approvals', 'label' => 'Approvals oversight', 'icon' => 'fa-check-double', 'description' => 'Pending workflow and manager approvals across companies.'],
         'subscriptions' => ['route' => 'admin/subscriptions', 'label' => 'Subscriptions', 'icon' => 'fa-credit-card', 'description' => 'Billing cycles, plans, and subscription status.'],
-        'procurement' => ['route' => 'admin/procurement', 'label' => 'Procurement', 'icon' => 'fa-cart-shopping', 'description' => 'Purchase requests and orders across all companies.'],
-        'inventory' => ['route' => 'admin/inventory', 'label' => 'Inventory', 'icon' => 'fa-boxes-stacked', 'description' => 'Stock levels, warehouses, and inventory value.'],
-        'suppliers' => ['route' => 'admin/suppliers', 'label' => 'Suppliers', 'icon' => 'fa-truck-field', 'description' => 'Supplier directory and status.'],
+        'procurement' => ['route' => 'admin/oversight/procurement', 'label' => 'Procurement', 'icon' => 'fa-cart-shopping', 'description' => 'Purchase requests and orders across all companies (read-only oversight).'],
+        'inventory' => ['route' => 'admin/oversight/inventory', 'label' => 'Inventory', 'icon' => 'fa-boxes-stacked', 'description' => 'Stock levels, warehouses, and inventory value (read-only oversight).'],
+        'suppliers' => ['route' => 'admin/oversight/supplier-evaluations', 'label' => 'Suppliers', 'icon' => 'fa-truck-field', 'description' => 'Supplier evaluations and status oversight.'],
         'assets' => ['route' => 'admin/assets', 'label' => 'Assets', 'icon' => 'fa-toolbox', 'description' => 'Fixed assets and medical equipment registry.'],
         'contracts' => ['route' => 'admin/contracts', 'label' => 'Contracts', 'icon' => 'fa-file-contract', 'description' => 'Healthcare and procurement contracts.'],
         'reports' => ['route' => 'admin/reports', 'label' => 'Reports', 'icon' => 'fa-chart-pie', 'description' => 'Platform analytics and export views.'],
@@ -449,12 +451,8 @@ function control_rateb_erp_nav_links(): array
         'settings' => ['route' => 'admin/settings', 'label' => 'Settings', 'icon' => 'fa-gear', 'description' => 'System settings, templates, and configuration.'],
     ];
 
-    $platformOnlyCpKeys = ['companies'];
     $links = [];
     foreach ($routes as $key => $item) {
-        if (in_array($key, $platformOnlyCpKeys, true)) {
-            continue;
-        }
         $links[$key] = [
             'href' => control_rateb_erp_app_url($item['route']),
             'label' => $item['label'],

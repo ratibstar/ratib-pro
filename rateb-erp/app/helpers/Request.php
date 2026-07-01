@@ -7,6 +7,20 @@ final class Request
 {
     public static function resolvePath(): string
     {
+        if (defined('RATEB_CP_ROUTE')) {
+            $cpRoute = trim((string) constant('RATEB_CP_ROUTE'), '/');
+            if ($cpRoute !== '') {
+                return self::normalize('/' . $cpRoute);
+            }
+        }
+
+        if (isset($_GET['route']) && is_string($_GET['route']) && $_GET['route'] !== '') {
+            $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+            if (defined('RATEB_CP_ENTRY') || str_contains($script, 'rateb-erp-app.php')) {
+                return self::normalize('/' . ltrim($_GET['route'], '/'));
+            }
+        }
+
         $uriPath = self::extractUriPath();
         if ($uriPath !== '/' && $uriPath !== '') {
             return self::normalize($uriPath);

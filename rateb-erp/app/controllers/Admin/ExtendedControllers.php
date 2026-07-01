@@ -230,6 +230,9 @@ final class AdminApprovalsController extends Controller
         $svc = new ApprovalOversightService();
         $summary = $svc->summary($companyFilter);
         SessionManager::set('rateb_oversight_approvals_seen', (int) ($summary['total'] ?? 0));
+        $formPath = $typeFilter === 'companies'
+            ? 'admin/oversight/companies-approvals'
+            : 'admin/oversight/approvals';
         $this->view('admin/approvals/index', [
             'title' => __('approvals_oversight'),
             'items' => $svc->listPending($companyFilter, $typeFilter !== '' ? $typeFilter : null),
@@ -238,7 +241,7 @@ final class AdminApprovalsController extends Controller
             'typeFilter' => $typeFilter,
             'companies' => $ofs->companies(),
             'filters' => $filters,
-            'formAction' => rateb_url('admin/oversight/approvals'),
+            'formAction' => rateb_url($formPath),
             'csrf' => Csrf::token(),
         ], 'main');
     }
