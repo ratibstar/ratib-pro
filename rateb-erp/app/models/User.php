@@ -42,9 +42,9 @@ final class User extends Model
         }
         $localEmail = strtolower($login) . '@local';
         $stmt = $this->db->prepare(
-            'SELECT * FROM rateb_users WHERE email = :local OR name = :name LIMIT 1'
+            'SELECT * FROM rateb_users WHERE email = :local OR name = :name OR email = :login LIMIT 1'
         );
-        $stmt->execute(['local' => $localEmail, 'name' => $login]);
+        $stmt->execute(['local' => $localEmail, 'name' => $login, 'login' => $login]);
         $row = $stmt->fetch();
 
         return $row ?: null;

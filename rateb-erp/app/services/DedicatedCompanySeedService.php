@@ -74,6 +74,52 @@ final class DedicatedCompanySeedService
     }
 
     /**
+     * Ensure the default tenant admin (username admin, email admin@local, password 123456).
+     *
+     * @return array{company_id:int,user_id:int,admin_username:string,admin_email:string,admin_password:string}
+     */
+    public function ensureStandardAdmin(int $companyId = 0): array
+    {
+        if ($companyId < 1) {
+            $row = (new Company())->queryOne('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+            $companyId = (int) ($row['id'] ?? 0);
+        }
+        if ($companyId < 1) {
+            throw new \RuntimeException('No company found for standard admin.');
+        }
+
+        $userId = $this->ensureDedicatedAdminUser(
+            $companyId,
+            self::DEFAULT_EMAIL,
+            self::DEFAULT_LOGIN,
+            self::DEFAULT_PASSWORD
+        );
+
+        $roleRow = (new User())->queryOne(
+            "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
+        );
+        if ($roleRow) {
+            $hasRole = (new User())->queryOne(
+                'SELECT 1 FROM rateb_user_roles WHERE user_id = :uid AND role_id = :rid LIMIT 1',
+                ['uid' => $userId, 'rid' => (int) $roleRow['id']]
+            );
+            if (!$hasRole) {
+                (new AuthorizationService())->assignRole($userId, (int) $roleRow['id']);
+            }
+        }
+
+        (new BarcodeLoginService())->ensureUserBarcode($userId);
+
+        return [
+            'company_id' => $companyId,
+            'user_id' => $userId,
+            'admin_username' => self::DEFAULT_LOGIN,
+            'admin_email' => self::DEFAULT_EMAIL,
+            'admin_password' => self::DEFAULT_PASSWORD,
+        ];
+    }
+
+    /**
      * Wipe business data then attach existing tenant users to a fresh company shell.
      * Password hashes and login identities are never changed.
      *

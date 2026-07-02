@@ -108,6 +108,22 @@ final class ErpProvisioningService
         self::markStatus($controlConn, $agencyId, 'provisioning', $erpDb, $dbHost, $dbUser, $dbPass);
 
         try {
+            $currentStatus = strtolower(trim((string) ($agency['erp_status'] ?? 'none')));
+            $hasErpDb = trim((string) ($agency['erp_db_name'] ?? '')) !== '';
+            if ($force && $currentStatus === 'ready' && $hasErpDb) {
+                return self::softReprovisionReady(
+                    $controlConn,
+                    $agency,
+                    $agencyId,
+                    $planSlug,
+                    $erpDb,
+                    $dbHost,
+                    $dbPort,
+                    $dbUser,
+                    $dbPass
+                );
+            }
+
             self::ensureErpDatabase($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
             if (self::shouldWipeErpDatabase($agency, $dbHost, $dbPort, $dbUser, $dbPass, $erpDb, $force)) {
                 self::wipeErpDatabaseTables($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
@@ -130,6 +146,75 @@ final class ErpProvisioningService
             self::markStatus($controlConn, $agencyId, 'failed', $erpDb, $dbHost, $dbUser, $dbPass);
             throw $e;
         }
+    }
+
+    /**
+     * Ready agency re-provision: apply migrations, wipe business data, standard admin / 123456.
+     *
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    private static function softReprovisionReady(
+        mysqli $controlConn,
+        array $agency,
+        int $agencyId,
+        string $planSlug,
+        string $erpDb,
+        string $dbHost,
+        int $dbPort,
+        string $dbUser,
+        string $dbPass
+    ): array {
+        self::ensureErpDatabase($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
+        self::ensureDatabaseUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
+        self::ensureAllTablesUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
+        $migrationLog = self::runErpMigrations($erpDb, $dbHost, $dbPort, $dbUser, $dbPass);
+        $emptyReport = self::emptyAgencyForReprovision($agency);
+        $companyId = (int) (($emptyReport['shell']['company_id'] ?? 0));
+        if ($companyId > 0) {
+            self::saveAgencyErpCompanyId($controlConn, $agencyId, $companyId);
+        }
+        self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
+
+        return [
+            'agency_id' => $agencyId,
+            'erp_db_name' => $erpDb,
+            'erp_status' => 'ready',
+            'erp_plan_slug' => $planSlug,
+            'reprovision_mode' => 'empty_migrations',
+            'migration_log' => $migrationLog,
+            'empty_report' => $emptyReport,
+            'standard_admin' => $emptyReport['standard_admin'] ?? null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    private static function emptyAgencyForReprovision(array $agency): array
+    {
+        $erpRoot = self::erpRootPath();
+        self::bootstrapErpForSeed($erpRoot);
+        $lookup = dirname(__DIR__, 2) . '/../config/env/agency_lookup.php';
+        if (!is_file($lookup)) {
+            $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+        }
+        if (is_file($lookup)) {
+            require_once $lookup;
+        }
+        if (!is_file($erpRoot . '/app/services/AgencyErpMigrationService.php')) {
+            throw new RuntimeException('AgencyErpMigrationService missing');
+        }
+        require_once $erpRoot . '/app/services/AgencyErpMigrationService.php';
+
+        $override = (int) ($agency['erp_company_id'] ?? 0);
+        $platformOverride = $override > 0 ? $override : null;
+
+        return (new \Rateb\App\Services\AgencyErpMigrationService())->reprovisionAgencyEmpty(
+            $agency,
+            $platformOverride
+        );
     }
 
     public static function ensureErpColumns(mysqli $controlConn): void

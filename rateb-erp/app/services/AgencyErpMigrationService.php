@@ -1037,6 +1037,41 @@ final class AgencyErpMigrationService
     }
 
     /**
+     * Re-provision a ready agency: wipe business data, rebuild shell, reset login to admin / 123456.
+     *
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    public function reprovisionAgencyEmpty(array $agency, ?int $platformCompanyOverride = null): array
+    {
+        $report = $this->resetAgencyData($agency, $platformCompanyOverride);
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException(__('agency_erp_reset_no_db'));
+        }
+
+        if (!defined('RATEB_ERP_DEPLOYMENT_MODE')) {
+            define('RATEB_ERP_DEPLOYMENT_MODE', 'dedicated');
+        }
+        Database::useConnectionOverride([
+            'db' => $cfg['db'],
+            'host' => $cfg['host'],
+            'port' => $cfg['port'],
+            'user' => $cfg['user'],
+            'pass' => $cfg['pass'],
+        ]);
+
+        try {
+            $companyId = (int) (($report['shell']['company_id'] ?? 0));
+            $report['standard_admin'] = (new DedicatedCompanySeedService())->ensureStandardAdmin($companyId);
+        } finally {
+            Database::clearConnectionOverride();
+        }
+
+        return $report;
+    }
+
+    /**
      * @param array{agency_ids?:list<int>,scope?:string,confirm?:string} $options
      * @return array<string, mixed>
      */
