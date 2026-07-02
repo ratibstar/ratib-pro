@@ -114,45 +114,7 @@ final class Auth
 
     public static function homePath(): string
     {
-        if (SessionManager::get('rateb_is_super_admin')) {
-            return 'admin';
-        }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
-        if ($companyId > 0) {
-            if (function_exists('rateb_portal_branch_id') && rateb_portal_branch_id() > 0) {
-                return 'admin';
-            }
-            if (self::companyUserUsesErpDashboard()) {
-                return 'admin';
-            }
-
-            return 'site/portal';
-        }
-
         return 'admin';
-    }
-
-    private static function companyUserUsesErpDashboard(): bool
-    {
-        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
-            return true;
-        }
-
-        $userId = (int) SessionManager::get('rateb_user_id', 0);
-        if ($userId < 1) {
-            return false;
-        }
-
-        $row = (new \Rateb\App\Models\Role())->queryOne(
-            "SELECT 1 FROM rateb_user_roles ur
-             INNER JOIN rateb_roles r ON r.id = ur.role_id
-             WHERE ur.user_id = :uid
-               AND r.slug IN ('company-full-access', 'hq_admin', 'hq_manager', 'branch_manager', 'branch_user')
-             LIMIT 1",
-            ['uid' => $userId]
-        );
-
-        return $row !== null;
     }
 
     public static function user(): ?array

@@ -18,6 +18,12 @@ final class CustomerPortalController extends Controller
 {
     public function index(): void
     {
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            Response::redirect(rateb_url('admin'));
+
+            return;
+        }
+
         $this->renderPortal('marketing/portal/index', __('portal_dashboard'), 'home', [
             'portal' => (new CustomerPortalService())->snapshot(),
         ]);
