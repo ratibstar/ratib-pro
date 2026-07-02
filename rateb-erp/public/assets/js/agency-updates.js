@@ -547,11 +547,30 @@
             showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
             return;
         }
-        runReset({ agency_ids: ids }, cfg.getAttribute('data-confirm-reset-selected'));
+        var payload = { agency_ids: ids };
+        var platformCompanyId = resetPlatformCompanyId();
+        if (platformCompanyId > 0) {
+            payload.platform_company_id = platformCompanyId;
+        }
+        runReset(payload, cfg.getAttribute('data-confirm-reset-selected'));
     }
 
     function triggerResetAllReady() {
-        runReset({ scope: 'all_ready' }, cfg.getAttribute('data-confirm-reset-all'));
+        var payload = { scope: 'all_ready' };
+        var platformCompanyId = resetPlatformCompanyId();
+        if (platformCompanyId > 0) {
+            payload.platform_company_id = platformCompanyId;
+        }
+        runReset(payload, cfg.getAttribute('data-confirm-reset-all'));
+    }
+
+    function resetPlatformCompanyId() {
+        var sel = document.getElementById('erpAgencyFilterCompany');
+        if (!sel) {
+            return 0;
+        }
+        var value = parseInt(String(sel.value || ''), 10);
+        return value > 0 ? value : 0;
     }
 
     if (btnResetSelected) {

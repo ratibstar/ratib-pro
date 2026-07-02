@@ -1263,6 +1263,8 @@ return [
     'agency_erp_reset_warning' => 'Reset data wipes the agency ERP database and the linked platform company when they differ. Agency login passwords are kept. Use RESET-DATA to confirm.',
     'agency_erp_reset_not_ready' => 'Agency ERP is not ready for reset.',
     'agency_erp_reset_platform_blocked' => 'Cannot reset the platform ERP database from this screen.',
+    'agency_erp_reset_platform_company_unmatched' => 'Could not match a platform company for this agency. Pick the platform company from the filter above before reset, or link the agency via Control Panel → Agencies.',
+    'agency_erp_reset_platform_company_hint' => 'For reset: pick the platform company to wipe (e.g. the one shown on admin.rateb.sa before binding).',
     'agency_erp_sync_all_ready' => 'Sync files — all ready',
     'agency_erp_push_all_ready' => 'DB migrations — all ready',
     'agency_erp_full_deploy_all_ready' => 'Sync + migrate — all ready',

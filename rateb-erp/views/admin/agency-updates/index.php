@@ -45,6 +45,7 @@ foreach ($agencies as $agency) {
                     <?php } ?>
                     <option value="0"><?php echo __('agency_erp_filter_unlinked'); ?></option>
                 </select>
+                <p class="small text-muted mb-0 mt-1"><?php echo __('agency_erp_reset_platform_company_hint'); ?></p>
             </div>
             <div class="col-md-8 d-flex flex-wrap gap-2 align-items-center">
                 <span class="small text-muted me-1"><?php echo __('agency_erp_quick_select'); ?>:</span>

@@ -313,8 +313,19 @@ final class AgencyErpMigrationService
      * @param array<string, mixed> $agency
      * @return list<int>
      */
-    private function resolvePlatformCompanyIds(array $agency, \PDO $platformPdo, ?\PDO $agencyPdo = null): array
-    {
+    private function resolvePlatformCompanyIds(
+        array $agency,
+        \PDO $platformPdo,
+        ?\PDO $agencyPdo = null,
+        ?int $forcePlatformCompanyId = null
+    ): array {
+        if ($forcePlatformCompanyId !== null && $forcePlatformCompanyId > 0) {
+            $forced = $this->validatePlatformCompanyIds($platformPdo, [$forcePlatformCompanyId]);
+            if ($forced !== []) {
+                return $forced;
+            }
+        }
+
         $agencyId = (int) ($agency['id'] ?? 0);
         $ids = [];
         $linked = (int) ($agency['erp_company_id'] ?? 0);
@@ -518,9 +529,19 @@ final class AgencyErpMigrationService
         return $valid;
     }
 
-    /** @return list<int> */
-    private function platformCompanyIdsTakenByOtherAgencies(int $excludeAgencyId): array
+    /**
+     * Reserve a platform company only for another agency on the same site host.
+     *
+     * @param array<string, mixed>|null $forAgency
+     * @return list<int>
+     */
+    private function platformCompanyIdsTakenByOtherAgencies(int $excludeAgencyId, ?array $forAgency = null): array
     {
+        $resetHost = '';
+        if (is_array($forAgency) && function_exists('rateb_agency_host_from_site_url')) {
+            $resetHost = rateb_agency_host_from_site_url(trim((string) ($forAgency['site_url'] ?? '')));
+        }
+
         $taken = [];
         foreach ($this->listAgencies(false) as $row) {
             $agencyId = (int) ($row['id'] ?? 0);
@@ -528,9 +549,16 @@ final class AgencyErpMigrationService
                 continue;
             }
             $linked = (int) ($row['erp_company_id'] ?? 0);
-            if ($linked > 0) {
-                $taken[] = $linked;
+            if ($linked < 1) {
+                continue;
             }
+            if ($resetHost !== '' && function_exists('rateb_agency_host_from_site_url')) {
+                $otherHost = rateb_agency_host_from_site_url(trim((string) ($row['site_url'] ?? '')));
+                if ($otherHost !== '' && strcasecmp($otherHost, $resetHost) !== 0) {
+                    continue;
+                }
+            }
+            $taken[] = $linked;
         }
 
         return array_values(array_unique($taken));
@@ -542,38 +570,92 @@ final class AgencyErpMigrationService
      */
     private function discoverPlatformCompaniesWithData(\PDO $platformPdo, array $agency, int $agencyId): array
     {
-        $taken = $this->platformCompanyIdsTakenByOtherAgencies($agencyId);
+        $taken = $this->platformCompanyIdsTakenByOtherAgencies($agencyId, $agency);
+        $candidates = $this->collectPlatformBusinessCandidates($platformPdo, $agency, $taken);
+        if ($candidates === []) {
+            $candidates = $this->collectPlatformBusinessCandidates($platformPdo, $agency, []);
+        }
+
+        $picked = $this->pickBestPlatformCandidate($candidates);
+        if ($picked !== []) {
+            return $picked;
+        }
+
+        if ((int) ($agency['erp_company_id'] ?? 0) < 1) {
+            return $this->topPlatformCompanyWithBusinessData($platformPdo);
+        }
+
+        return [];
+    }
+
+    /**
+     * @param list<int> $excludeIds
+     * @return list<array{id:int,pr_count:int,score:int}>
+     */
+    private function collectPlatformBusinessCandidates(\PDO $platformPdo, array $agency, array $excludeIds): array
+    {
+        $scores = [];
         try {
             $stmt = $platformPdo->query(
                 'SELECT company_id, COUNT(*) AS c
                  FROM rateb_purchase_requests
                  GROUP BY company_id
-                 HAVING c > 0
-                 ORDER BY c DESC'
+                 HAVING c > 0'
             );
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $companyId = (int) ($row['company_id'] ?? 0);
+                if ($companyId < 1 || in_array($companyId, $excludeIds, true)) {
+                    continue;
+                }
+                $prCount = (int) ($row['c'] ?? 0);
+                $scores[$companyId] = ($scores[$companyId] ?? 0) + $prCount;
+            }
         } catch (\Throwable $e) {
-            return [];
+            // ignore
+        }
+
+        try {
+            $stmt = $platformPdo->query(
+                'SELECT company_id, COUNT(*) AS c
+                 FROM rateb_inventory
+                 GROUP BY company_id
+                 HAVING c > 0'
+            );
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $companyId = (int) ($row['company_id'] ?? 0);
+                if ($companyId < 1 || in_array($companyId, $excludeIds, true)) {
+                    continue;
+                }
+                $scores[$companyId] = ($scores[$companyId] ?? 0) + (int) ($row['c'] ?? 0);
+            }
+        } catch (\Throwable $e) {
+            // ignore
         }
 
         $candidates = [];
-        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $companyId = (int) ($row['company_id'] ?? 0);
-            if ($companyId < 1 || in_array($companyId, $taken, true)) {
-                continue;
-            }
-            $prCount = (int) ($row['c'] ?? 0);
+        foreach ($scores as $companyId => $weight) {
             $candidates[] = [
-                'id' => $companyId,
-                'pr_count' => $prCount,
-                'score' => $prCount + ($this->platformCompanyMatchScore($platformPdo, $companyId, $agency) * 1000),
+                'id' => (int) $companyId,
+                'pr_count' => (int) $weight,
+                'score' => (int) $weight + ($this->platformCompanyMatchScore($platformPdo, (int) $companyId, $agency) * 1000),
             ];
         }
 
+        usort($candidates, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+
+        return $candidates;
+    }
+
+    /**
+     * @param list<array{id:int,pr_count:int,score:int}> $candidates
+     * @return list<int>
+     */
+    private function pickBestPlatformCandidate(array $candidates): array
+    {
         if ($candidates === []) {
             return [];
         }
 
-        usort($candidates, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
         $top = $candidates[0];
         $second = $candidates[1] ?? null;
         if ($second === null) {
@@ -586,7 +668,44 @@ final class AgencyErpMigrationService
             return [(int) $top['id']];
         }
 
-        return [];
+        return [(int) $top['id']];
+    }
+
+    /** @return list<int> */
+    private function topPlatformCompanyWithBusinessData(\PDO $platformPdo): array
+    {
+        try {
+            $stmt = $platformPdo->query(
+                'SELECT company_id, COUNT(*) AS c
+                 FROM rateb_purchase_requests
+                 GROUP BY company_id
+                 ORDER BY c DESC
+                 LIMIT 1'
+            );
+            $row = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+            $companyId = is_array($row) ? (int) ($row['company_id'] ?? 0) : 0;
+            if ($companyId > 0) {
+                return [$companyId];
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        try {
+            $stmt = $platformPdo->query(
+                'SELECT company_id, COUNT(*) AS c
+                 FROM rateb_inventory
+                 GROUP BY company_id
+                 ORDER BY c DESC
+                 LIMIT 1'
+            );
+            $row = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+            $companyId = is_array($row) ? (int) ($row['company_id'] ?? 0) : 0;
+
+            return $companyId > 0 ? [$companyId] : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /** @param array<string, mixed> $agency */
@@ -723,7 +842,7 @@ final class AgencyErpMigrationService
      * @param array<string, mixed> $agency
      * @return array<string, mixed>
      */
-    public function resetAgencyData(array $agency): array
+    public function resetAgencyData(array $agency, ?int $platformCompanyOverride = null): array
     {
         $agencyId = (int) ($agency['id'] ?? 0);
         $status = strtolower(trim((string) ($agency['erp_status'] ?? '')));
@@ -781,7 +900,7 @@ final class AgencyErpMigrationService
         $platformPdo = null;
         if ($platformDb !== '' && strcasecmp($cfg['db'], $platformDb) !== 0) {
             $platformPdo = $this->pdoFromConfig($platformCfg);
-            $platformCompanyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo, $pdo);
+            $platformCompanyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo, $pdo, $platformCompanyOverride);
         }
 
         $runner = new \ProductionResetRunner($pdo, $cfg['db']);
@@ -797,14 +916,15 @@ final class AgencyErpMigrationService
             try {
                 $companyIds = $platformCompanyIds;
                 if ($companyIds === []) {
-                    $companyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo);
+                    $companyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo, null, $platformCompanyOverride);
                 }
                 $report['platform_company_ids'] = $companyIds;
+                $report['platform_company_override'] = $platformCompanyOverride;
                 $report['platform_company_ids_discovered'] = (int) ($agency['erp_company_id'] ?? 0) < 1 && $companyIds !== [];
                 $report['platform_pr_before'] = $this->countPurchaseRequests($platformPdo);
                 if ($companyIds === []) {
                     if ($report['platform_pr_before'] > 0) {
-                        $platformErrors[] = 'Could not match a platform company for this agency. Set erp_company_id on the agency in Control Panel, or ensure the company slug/name matches the agency site.';
+                        $platformErrors[] = __('agency_erp_reset_platform_company_unmatched');
                     }
                 } else {
                     $report['platform_pr_by_company_before'] = [];
@@ -875,6 +995,11 @@ final class AgencyErpMigrationService
             @set_time_limit(1800);
         }
 
+        $platformCompanyOverride = (int) ($options['platform_company_id'] ?? 0);
+        if ($platformCompanyOverride < 1) {
+            $platformCompanyOverride = null;
+        }
+
         $results = [];
         $failed = 0;
         $success = 0;
@@ -886,7 +1011,7 @@ final class AgencyErpMigrationService
                 continue;
             }
             try {
-                $report = $this->resetAgencyData($agency);
+                $report = $this->resetAgencyData($agency, $platformCompanyOverride);
                 $results[] = [
                     'agency_id' => $agencyId,
                     'agency_name' => (string) ($agency['name'] ?? ''),

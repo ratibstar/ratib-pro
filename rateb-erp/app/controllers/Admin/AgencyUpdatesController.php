@@ -181,6 +181,7 @@ final class AgencyUpdatesController extends Controller
                 'scope' => (string) ($data['scope'] ?? ''),
                 'confirm' => (string) ($data['confirm'] ?? ''),
                 'agency_ids' => $data['agency_ids'] ?? ($data['ids'] ?? []),
+                'platform_company_id' => (int) ($data['platform_company_id'] ?? 0),
             ]);
             Response::json($payload, empty($payload['success']) ? 422 : 200);
         } catch (\Throwable $e) {
