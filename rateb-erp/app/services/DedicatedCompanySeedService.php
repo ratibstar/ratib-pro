@@ -120,6 +120,17 @@ final class DedicatedCompanySeedService
             $userModel->query(
                 'DELETE ur FROM rateb_user_roles ur
                  INNER JOIN rateb_users u ON u.id = ur.user_id
+                 WHERE u.email = :email AND COALESCE(u.is_super_admin, 0) = 0 AND u.id <> :uid',
+                ['email' => self::DEFAULT_EMAIL, 'uid' => $userId]
+            );
+            $userModel->query(
+                'DELETE FROM rateb_users
+                 WHERE email = :email AND COALESCE(is_super_admin, 0) = 0 AND id <> :uid',
+                ['email' => self::DEFAULT_EMAIL, 'uid' => $userId]
+            );
+            $userModel->query(
+                'DELETE ur FROM rateb_user_roles ur
+                 INNER JOIN rateb_users u ON u.id = ur.user_id
                  WHERE u.company_id = :cid AND COALESCE(u.is_super_admin, 0) = 0 AND u.id <> :uid',
                 ['cid' => $companyId, 'uid' => $userId]
             );

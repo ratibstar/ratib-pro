@@ -33,47 +33,90 @@ final class User extends Model
     /** Email or short username (e.g. admin → admin@local or admin+slug@rateb.sa). */
     public function findByLogin(string $login): ?array
     {
-        $login = trim($login);
-        if ($login === '') {
+        $candidates = $this->loginCandidates($login);
+
+        return $candidates[0] ?? null;
+    }
+
+    /**
+     * Resolve login to an active user row when password matches.
+     * Tries every candidate (fixes stale admin@local vs admin+slug@rateb.sa).
+     */
+    public function authenticate(string $login, string $password): ?array
+    {
+        $password = (string) $password;
+        if ($password === '') {
             return null;
         }
+
+        foreach ($this->loginCandidates($login) as $user) {
+            if ((string) ($user['status'] ?? '') !== 'active') {
+                continue;
+            }
+            if (!password_verify($password, (string) ($user['password'] ?? ''))) {
+                continue;
+            }
+
+            return $user;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function loginCandidates(string $login): array
+    {
+        $login = trim($login);
+        if ($login === '') {
+            return [];
+        }
+
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            return $this->findByEmail($login);
+            $user = $this->findByEmail($login);
+
+            return $user ? [$user] : [];
         }
 
         $norm = strtolower($login);
         $localEmail = $norm . '@local';
 
-        $user = $this->findByEmail($localEmail);
-        if ($user !== null) {
-            return $user;
-        }
-
         if ($norm === 'admin') {
-            $user = $this->queryOne(
+            $rows = $this->query(
                 "SELECT * FROM rateb_users
                  WHERE COALESCE(is_super_admin, 0) = 0
                    AND status = 'active'
                    AND (
-                     email = :local
-                     OR email LIKE 'admin+%'
+                     email LIKE 'admin+%'
+                     OR email = :local
                      OR LOWER(name) = 'admin'
                    )
                  ORDER BY
                    CASE
-                     WHEN email = :local2 THEN 0
-                     WHEN email LIKE 'admin+%@rateb.sa' THEN 1
-                     WHEN email LIKE 'admin+%' THEN 2
-                     WHEN LOWER(name) = 'admin' THEN 3
+                     WHEN email LIKE 'admin+%@rateb.sa' THEN 0
+                     WHEN email LIKE 'admin+%' THEN 1
+                     WHEN LOWER(name) = 'admin' THEN 2
+                     WHEN email = :local2 THEN 3
                      ELSE 9
                    END,
-                   id ASC
-                 LIMIT 1",
+                   id ASC",
                 ['local' => $localEmail, 'local2' => $localEmail]
             );
-            if ($user !== null) {
-                return $user;
+            if ($rows !== []) {
+                return $rows;
             }
+
+            $fallback = $this->queryOne(
+                "SELECT u.* FROM rateb_users u
+                 INNER JOIN rateb_user_roles ur ON ur.user_id = u.id
+                 INNER JOIN rateb_roles r ON r.id = ur.role_id AND r.slug = 'company-full-access'
+                 WHERE COALESCE(u.is_super_admin, 0) = 0 AND u.status = 'active'
+                 ORDER BY u.id ASC
+                 LIMIT 1"
+            );
+
+            return $fallback ? [$fallback] : [];
         }
 
         $user = $this->queryOne(
@@ -85,7 +128,7 @@ final class User extends Model
             ['name' => $norm]
         );
 
-        return $user ?: null;
+        return $user ? [$user] : [];
     }
 
     public function updateLastLogin(int $id): void

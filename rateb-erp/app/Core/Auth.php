@@ -10,16 +10,32 @@ use Rateb\App\Services\RememberMeService;
 
 final class Auth
 {
-    public static function attempt(string $email, string $password, string $portal = 'company'): ?array
+    public static function attempt(string $login, string $password, string $portal = 'company'): ?array
     {
-        $userModel = new User();
-        $user = $userModel->findByLogin($email);
-
-        if (!$user || !password_verify($password, (string) $user['password'])) {
+        $user = (new User())->authenticate($login, $password);
+        if (!$user) {
             return null;
         }
 
-        if ((string) $user['status'] !== 'active') {
+        return self::attemptWithUser($user, $portal);
+    }
+
+    public static function attemptAuto(string $login, string $password): ?array
+    {
+        $user = (new User())->authenticate($login, $password);
+        if (!$user) {
+            return null;
+        }
+
+        $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
+
+        return self::attemptWithUser($user, $isSuper ? 'admin' : 'company');
+    }
+
+    /** @param array<string, mixed> $user */
+    private static function attemptWithUser(array $user, string $portal): ?array
+    {
+        if ((string) ($user['status'] ?? '') !== 'active') {
             return null;
         }
 
@@ -53,29 +69,8 @@ final class Auth
 
         $lockout->clearLock((int) $user['id']);
         self::establishSession($user, $portal);
+
         return $user;
-    }
-
-    public static function attemptAuto(string $email, string $password): ?array
-    {
-        $userModel = new User();
-        $user = $userModel->findByLogin($email);
-
-        if (!$user || !password_verify($password, (string) $user['password'])) {
-            return null;
-        }
-
-        if ((string) $user['status'] !== 'active') {
-            return null;
-        }
-
-        $lockout = new AccountLockoutService();
-        if ($lockout->isLocked($user)) {
-            return null;
-        }
-
-        $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
-        return self::attempt($email, $password, $isSuper ? 'admin' : 'company');
     }
 
     public static function loginUser(array $user): bool

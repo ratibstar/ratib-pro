@@ -1,1 +1,1 @@
-20260702-admin-login-fix
+20260702-admin-auth-candidates
