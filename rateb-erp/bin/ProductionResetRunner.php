@@ -172,10 +172,20 @@ final class ProductionResetRunner
         'errors' => [],
     ];
 
-    public function __construct(\PDO $db)
+    public function __construct(\PDO $db, ?string $databaseName = null)
     {
         $this->db = $db;
-        $this->report['database'] = Rateb\App\Core\Database::resolvedDatabaseName();
+        if ($databaseName !== null && $databaseName !== '') {
+            $this->report['database'] = $databaseName;
+        } elseif (class_exists(\Rateb\App\Core\Database::class)) {
+            $this->report['database'] = \Rateb\App\Core\Database::resolvedDatabaseName();
+        } else {
+            try {
+                $this->report['database'] = (string) $db->query('SELECT DATABASE()')->fetchColumn();
+            } catch (\Throwable $e) {
+                $this->report['database'] = '';
+            }
+        }
     }
 
     /** @return array<string, mixed> */
@@ -184,7 +194,7 @@ final class ProductionResetRunner
         return $this->report;
     }
 
-    public function run(bool $dryRun): void
+    public function run(bool $dryRun, bool $quiet = false, bool $wipeFiles = true): void
     {
         $this->report['mode'] = $dryRun ? 'dry-run' : 'execute';
         $this->report['started_at'] = date('c');
@@ -207,9 +217,10 @@ final class ProductionResetRunner
             $toWipe[] = $table;
         }
 
-        echo "Database: {$this->report['database']}\n";
-        echo 'Mode: ' . ($dryRun ? 'DRY-RUN (no changes)' : 'EXECUTE') . "\n";
-        echo 'Tables to wipe: ' . count($toWipe) . "\n\n";
+        $this->writeln("Database: {$this->report['database']}", $quiet);
+        $this->writeln('Mode: ' . ($dryRun ? 'DRY-RUN (no changes)' : 'EXECUTE'), $quiet);
+        $this->writeln('Tables to wipe: ' . count($toWipe), $quiet);
+        $this->writeln('', $quiet);
 
         if (!$dryRun) {
             $this->db->exec('SET FOREIGN_KEY_CHECKS=0');
@@ -218,7 +229,7 @@ final class ProductionResetRunner
         foreach ($toWipe as $table) {
             $count = $this->tableRowCount($table);
             $this->report['tables'][$table] = ['before' => $count, 'action' => 'TRUNCATE'];
-            echo sprintf("  %-40s %8d rows\n", $table, $count);
+            $this->writeln(sprintf('  %-40s %8d rows', $table, $count), $quiet);
             if (!$dryRun && $count >= 0) {
                 try {
                     $this->db->exec('TRUNCATE TABLE `' . str_replace('`', '', $table) . '`');
@@ -228,8 +239,10 @@ final class ProductionResetRunner
             }
         }
 
-        $this->handleUsers($dryRun);
-        $this->handleFiles($dryRun);
+        $this->handleUsers($dryRun, $quiet);
+        if ($wipeFiles) {
+            $this->handleFiles($dryRun, $quiet);
+        }
 
         if (!$dryRun) {
             $this->db->exec('SET FOREIGN_KEY_CHECKS=1');
@@ -238,7 +251,15 @@ final class ProductionResetRunner
         $this->report['finished_at'] = date('c');
     }
 
-    private function handleUsers(bool $dryRun): void
+    private function writeln(string $message, bool $quiet): void
+    {
+        if ($quiet) {
+            return;
+        }
+        echo $message . "\n";
+    }
+
+    private function handleUsers(bool $dryRun, bool $quiet = false): void
     {
         $admins = $this->db->query(
             'SELECT id, email FROM rateb_users WHERE is_super_admin = 1'
@@ -249,9 +270,9 @@ final class ProductionResetRunner
             'SELECT COUNT(*) FROM rateb_users WHERE is_super_admin = 0 OR is_super_admin IS NULL'
         )->fetchColumn();
         $this->report['users']['deleted_non_admin'] = $toDelete;
-        echo "\nUsers to delete (non-super-admin): {$toDelete}\n";
+        $this->writeln("\nUsers to delete (non-super-admin): {$toDelete}", $quiet);
         foreach ($admins as $a) {
-            echo '  preserve super-admin id=' . ($a['id'] ?? '?') . ' ' . ($a['email'] ?? '') . "\n";
+            $this->writeln('  preserve super-admin id=' . ($a['id'] ?? '?') . ' ' . ($a['email'] ?? ''), $quiet);
         }
 
         if ($dryRun || $toDelete < 1) {
@@ -262,7 +283,7 @@ final class ProductionResetRunner
         $this->db->exec('DELETE FROM rateb_users WHERE is_super_admin = 0 OR is_super_admin IS NULL');
     }
 
-    private function handleFiles(bool $dryRun): void
+    private function handleFiles(bool $dryRun, bool $quiet = false): void
     {
         $dirs = [
             RATEB_ROOT . '/storage/uploads',
@@ -285,10 +306,10 @@ final class ProductionResetRunner
                     }
                 }
                 $entry['would_remove'] = $count;
-                echo "Files under {$dir}: would remove {$count} files\n";
+                $this->writeln("Files under {$dir}: would remove {$count} files", $quiet);
             } else {
                 $entry['removed'] = $this->emptyDirectory($dir);
-                echo "Files under {$dir}: removed {$entry['removed']} files\n";
+                $this->writeln("Files under {$dir}: removed {$entry['removed']} files", $quiet);
             }
             $this->report['files'][] = $entry;
         }

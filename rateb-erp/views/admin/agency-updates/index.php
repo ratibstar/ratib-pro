@@ -9,6 +9,7 @@
 /** @var string $linkUrl */
 /** @var string $syncUrl */
 /** @var string $restoreAdminUrl */
+/** @var string $resetDataUrl */
 /** @var string $syncSource */
 $readyCount = 0;
 $subscribedCount = 0;
@@ -170,7 +171,11 @@ foreach ($agencies as $agency) {
                 <label class="form-label small mb-1" for="erpSyncConfirmInput"><?php echo __('agency_erp_sync_confirm_label'); ?></label>
                 <input type="text" class="form-control form-control-sm font-monospace" id="erpSyncConfirmInput" autocomplete="off" spellcheck="false" placeholder="SYNC">
             </div>
-            <div class="col-lg-9 col-md-8">
+            <div class="col-lg-3 col-md-4">
+                <label class="form-label small mb-1" for="erpResetConfirmInput"><?php echo __('agency_erp_reset_confirm_label'); ?></label>
+                <input type="text" class="form-control form-control-sm font-monospace" id="erpResetConfirmInput" autocomplete="off" spellcheck="false" placeholder="RESET-DATA">
+            </div>
+            <div class="col-lg-6 col-md-4">
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" id="erpUpdateIncludePlatform" checked>
                     <label class="form-check-label small" for="erpUpdateIncludePlatform">
@@ -194,6 +199,9 @@ foreach ($agencies as $agency) {
                     <button type="button" class="btn btn-warning btn-sm" id="erpRestoreAdminSelected" disabled>
                         <i class="fas fa-user-shield me-1"></i><?php echo __('agency_erp_restore_admin_selected'); ?>
                     </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataSelected" disabled>
+                        <i class="fas fa-eraser me-1"></i><?php echo __('agency_erp_reset_data_selected'); ?>
+                    </button>
                 </div>
                 <p class="small fw-semibold mb-2 text-muted"><?php echo __('agency_erp_actions_on_all'); ?></p>
                 <div class="d-flex flex-wrap gap-2">
@@ -209,10 +217,14 @@ foreach ($agencies as $agency) {
                     <button type="button" class="btn btn-outline-success btn-sm" id="erpUpdateRunSubscribed">
                         <i class="fas fa-check-circle me-1"></i><?php echo __('agency_erp_push_run_subscribed'); ?>
                     </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataAllReady">
+                        <i class="fas fa-eraser me-1"></i><?php echo __('agency_erp_reset_data_all_ready'); ?>
+                    </button>
                 </div>
             </div>
         </div>
         <p class="text-warning small mb-0 mt-3"><?php echo __('agency_erp_sync_warning'); ?></p>
+        <p class="text-danger small mb-0 mt-1"><?php echo __('agency_erp_reset_warning'); ?></p>
     </div>
 </div>
 
@@ -227,6 +239,7 @@ foreach ($agencies as $agency) {
     data-link-url="<?php echo Rateb\App\Core\View::escape($linkUrl); ?>"
     data-sync-url="<?php echo Rateb\App\Core\View::escape($syncUrl); ?>"
     data-restore-admin-url="<?php echo Rateb\App\Core\View::escape($restoreAdminUrl ?? ''); ?>"
+    data-reset-data-url="<?php echo Rateb\App\Core\View::escape($resetDataUrl ?? ''); ?>"
     data-csrf="<?php echo Rateb\App\Core\View::escape($csrf); ?>"
     data-confirm-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_selected')); ?>"
     data-confirm-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_all')); ?>"
@@ -245,5 +258,9 @@ foreach ($agencies as $agency) {
     data-sync-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_sync_confirm_required')); ?>"
     data-confirm-restore-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_restore_admin_confirm')); ?>"
     data-restore-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_restore_admin_running')); ?>"
+    data-reset-running="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_data_running')); ?>"
+    data-confirm-reset-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_data_confirm_selected')); ?>"
+    data-confirm-reset-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_data_confirm_all')); ?>"
+    data-reset-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_confirm_required')); ?>"
     data-select-first="<?php echo Rateb\App\Core\View::escape(__('agency_erp_select_agencies_first')); ?>">
 </div>

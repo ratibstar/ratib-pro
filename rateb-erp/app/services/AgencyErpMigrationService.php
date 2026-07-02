@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\Database;
 use RuntimeException;
 use Throwable;
 
 final class AgencyErpMigrationService
 {
+    public const RESET_DATA_CONFIRM = 'RESET-DATA';
     private function ensureAgencyLookup(): void
     {
         if (function_exists('rateb_agency_lookup_connection')) {
@@ -341,5 +343,168 @@ final class AgencyErpMigrationService
             'failed_count' => $failed,
             'results' => $results,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    public function resetAgencyData(array $agency): array
+    {
+        $agencyId = (int) ($agency['id'] ?? 0);
+        $status = strtolower(trim((string) ($agency['erp_status'] ?? '')));
+        if ($status !== 'ready') {
+            throw new RuntimeException(__('agency_erp_reset_not_ready'));
+        }
+
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException('No ERP database configured for agency #' . $agencyId);
+        }
+
+        $platformDb = function_exists('rateb_erp_database_name') ? trim((string) rateb_erp_database_name()) : '';
+        if ($platformDb !== '' && strcasecmp($cfg['db'], $platformDb) === 0) {
+            throw new RuntimeException(__('agency_erp_reset_platform_blocked'));
+        }
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(600);
+        }
+
+        $runnerFile = (defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2)) . '/bin/ProductionResetRunner.php';
+        if (!is_file($runnerFile)) {
+            throw new RuntimeException('ProductionResetRunner missing');
+        }
+        require_once $runnerFile;
+
+        $pdo = $this->agencyPdo($agency);
+        $runner = new \ProductionResetRunner($pdo, $cfg['db']);
+        $runner->run(false, true, false);
+        $report = $runner->report();
+
+        $seed = $this->reseedAgencyCompany($agency, $cfg);
+        if ($seed['company_id'] > 0 && function_exists('rateb_save_agency_erp_company_link')) {
+            rateb_save_agency_erp_company_link($agencyId, (int) $seed['company_id']);
+        }
+
+        $report['agency_id'] = $agencyId;
+        $report['agency_name'] = trim((string) ($agency['name'] ?? ''));
+        $report['erp_db_name'] = $cfg['db'];
+        $report['seed'] = $seed;
+
+        return $report;
+    }
+
+    /**
+     * @param array{agency_ids?:list<int>,scope?:string,confirm?:string} $options
+     * @return array<string, mixed>
+     */
+    public function resetAgencyDataBulk(array $options): array
+    {
+        $confirm = strtoupper(trim((string) ($options['confirm'] ?? '')));
+        if ($confirm !== self::RESET_DATA_CONFIRM) {
+            throw new RuntimeException(__('agency_erp_reset_confirm_required'));
+        }
+
+        $this->ensureAgencyLookup();
+        $agencyIds = $options['agency_ids'] ?? [];
+        if (!is_array($agencyIds)) {
+            $agencyIds = [];
+        }
+        $agencyIds = array_values(array_unique(array_filter(array_map('intval', $agencyIds), static fn (int $id): bool => $id > 0)));
+        $scope = strtolower(trim((string) ($options['scope'] ?? '')));
+        if ($scope === 'all_ready' || $scope === 'all_subscribed') {
+            $rows = $this->listAgencies($scope === 'all_subscribed');
+            $agencyIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+            $agencyIds = array_values(array_filter($agencyIds, static fn (int $id): bool => $id > 0));
+        }
+        if ($agencyIds === []) {
+            throw new RuntimeException(__('agency_erp_push_select_target'));
+        }
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(1800);
+        }
+
+        $results = [];
+        $failed = 0;
+        $success = 0;
+        foreach ($agencyIds as $agencyId) {
+            $agency = function_exists('rateb_lookup_agency_by_id') ? rateb_lookup_agency_by_id($agencyId) : null;
+            if ($agency === null) {
+                $results[] = ['agency_id' => $agencyId, 'ok' => false, 'error' => __('agency_erp_push_not_found')];
+                $failed++;
+                continue;
+            }
+            try {
+                $report = $this->resetAgencyData($agency);
+                $results[] = [
+                    'agency_id' => $agencyId,
+                    'agency_name' => (string) ($agency['name'] ?? ''),
+                    'erp_db_name' => (string) ($report['erp_db_name'] ?? ''),
+                    'ok' => true,
+                    'report' => $report,
+                ];
+                $success++;
+            } catch (Throwable $e) {
+                $results[] = [
+                    'agency_id' => $agencyId,
+                    'agency_name' => (string) ($agency['name'] ?? ''),
+                    'erp_db_name' => (string) ($agency['erp_db_name'] ?? ''),
+                    'ok' => false,
+                    'error' => $e->getMessage(),
+                ];
+                $failed++;
+            }
+        }
+
+        return [
+            'success' => $failed === 0,
+            'total' => count($results),
+            'success_count' => $success,
+            'failed_count' => $failed,
+            'results' => $results,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @param array{host:string,port:int,user:string,pass:string,db:string} $cfg
+     * @return array<string, mixed>
+     */
+    private function reseedAgencyCompany(array $agency, array $cfg): array
+    {
+        Database::useConnectionOverride([
+            'db' => $cfg['db'],
+            'host' => $cfg['host'],
+            'port' => $cfg['port'],
+            'user' => $cfg['user'],
+            'pass' => $cfg['pass'],
+        ]);
+
+        try {
+            $companyName = trim((string) ($agency['name'] ?? 'Company'));
+            if ($companyName === '') {
+                $companyName = 'Company';
+            }
+            $planSlug = trim((string) ($agency['erp_plan_slug'] ?? 'professional'));
+            if ($planSlug === '') {
+                $planSlug = 'professional';
+            }
+            $slug = preg_replace('/[^a-z0-9]+/i', '', strtolower((string) ($agency['slug'] ?? 'client')));
+            if ($slug === '') {
+                $slug = 'client' . (int) ($agency['id'] ?? 0);
+            }
+            $email = 'admin+' . $slug . '@rateb.sa';
+
+            return (new DedicatedCompanySeedService())->seed(
+                $companyName,
+                $email,
+                $planSlug,
+                $companyName
+            );
+        } finally {
+            Database::clearConnectionOverride();
+        }
     }
 }

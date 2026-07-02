@@ -181,6 +181,7 @@ return [
         'admin/agency-updates' => 'companies.manage',
         'admin/agency-updates/link' => 'companies.manage',
         'admin/agency-updates/sync-files' => 'companies.manage',
+        'admin/agency-updates/reset-data' => 'companies.manage',
         'admin/companies' => 'companies.view',
         'admin/companies/create' => 'companies.manage',
         'admin/access-control' => 'access.manage',

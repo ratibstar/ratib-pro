@@ -279,40 +279,20 @@ function logSystemEvent(string $eventType, array $context = []): void
 // AR: فتح اتصال PDO بقاعدة المستأجر باستخدام بيانات الاتصال المحفوظة للمستأجر.
 function ccTenantPdo(array $tenant): PDO
 {
-    if (!class_exists('TenantDatabaseManager', false)) {
-        require_once __DIR__ . '/../api/core/TenantDatabaseManager.php';
-    }
     $host = trim((string) ($tenant['db_host'] ?? '')) ?: (defined('DB_HOST') ? DB_HOST : 'localhost');
     $port = defined('DB_PORT') ? (int) DB_PORT : 3306;
     $dbName = (string) ($tenant['database_name'] ?? '');
     $user = (string) ($tenant['db_user'] ?? '');
-    $pass = TenantDatabaseManager::resolveTenantPassword($user, (string) ($tenant['db_password'] ?? ''));
+    $pass = (string) ($tenant['db_password'] ?? '');
     if ($dbName === '' || $user === '') {
         throw new RuntimeException('Tenant DB credentials incomplete.');
     }
-    $hosts = [$host];
-    if ($host === 'localhost') {
-        $hosts[] = '127.0.0.1';
-    } elseif ($host === '127.0.0.1') {
-        $hosts[] = 'localhost';
-    }
-    $last = null;
-    foreach ($hosts as $tryHost) {
-        try {
-            $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $tryHost, $port, $dbName);
-            return new PDO($dsn, $user, $pass, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ]);
-        } catch (Throwable $e) {
-            $last = $e;
-        }
-    }
-    if ($last instanceof Throwable) {
-        throw $last;
-    }
-    throw new RuntimeException('Tenant DB connection failed.');
+    $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
+    return new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]);
 }
 
 // EN: Issue per-session CSRF token for state-changing control-center requests.

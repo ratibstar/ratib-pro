@@ -8,6 +8,7 @@
     var linkUrl = cfg.getAttribute('data-link-url') || '';
     var syncUrl = cfg.getAttribute('data-sync-url') || '';
     var restoreAdminUrl = cfg.getAttribute('data-restore-admin-url') || '';
+    var resetDataUrl = cfg.getAttribute('data-reset-data-url') || '';
     var csrfToken = cfg.getAttribute('data-csrf') || '';
     var table = document.getElementById('erpAgencyUpdatesTable');
     var filterCompany = document.getElementById('erpAgencyFilterCompany');
@@ -16,11 +17,14 @@
     var btnPushSelected = document.getElementById('erpUpdateRunSelected');
     var btnFullSelected = document.getElementById('erpFullDeploySelected');
     var btnRestoreSelected = document.getElementById('erpRestoreAdminSelected');
+    var btnResetSelected = document.getElementById('erpResetDataSelected');
+    var btnResetAll = document.getElementById('erpResetDataAllReady');
     var btnSyncAll = document.getElementById('erpSyncRunAllReady');
     var btnPushAll = document.getElementById('erpUpdateRunAllReady');
     var btnFullAll = document.getElementById('erpFullDeployAllReady');
     var btnPushSub = document.getElementById('erpUpdateRunSubscribed');
     var syncConfirmInput = document.getElementById('erpSyncConfirmInput');
+    var resetConfirmInput = document.getElementById('erpResetConfirmInput');
     var includePlatform = document.getElementById('erpUpdateIncludePlatform');
     var progress = document.getElementById('erpUpdateProgress');
     var resultsBox = document.getElementById('erpUpdateResults');
@@ -48,6 +52,14 @@
 
     function syncConfirmValue() {
         return syncConfirmInput ? String(syncConfirmInput.value || '').trim().toUpperCase() : '';
+    }
+
+    function resetConfirmValue() {
+        return resetConfirmInput ? String(resetConfirmInput.value || '').trim().toUpperCase() : '';
+    }
+
+    function resetOk() {
+        return resetConfirmValue() === 'RESET-DATA';
     }
 
     function syncOk() {
@@ -107,15 +119,21 @@
         if (btnRestoreSelected) {
             btnRestoreSelected.disabled = !hasSel;
         }
+        if (btnResetSelected) {
+            btnResetSelected.disabled = !hasSel || !resetOk();
+        }
         [btnSyncAll, btnFullAll].forEach(function (b) {
             if (b) b.disabled = !syncReady;
         });
+        if (btnResetAll) {
+            btnResetAll.disabled = !resetOk();
+        }
     }
 
     function setBusy(busy) {
         [
-            btnSyncSelected, btnPushSelected, btnFullSelected, btnRestoreSelected,
-            btnSyncAll, btnPushAll, btnFullAll, btnPushSub
+            btnSyncSelected, btnPushSelected, btnFullSelected, btnRestoreSelected, btnResetSelected,
+            btnSyncAll, btnPushAll, btnFullAll, btnPushSub, btnResetAll
         ].forEach(function (b) {
             if (b) b.disabled = !!busy;
         });
@@ -325,6 +343,9 @@
     if (syncConfirmInput) {
         syncConfirmInput.addEventListener('input', syncUi);
     }
+    if (resetConfirmInput) {
+        resetConfirmInput.addEventListener('input', syncUi);
+    }
     if (includePlatform) {
         includePlatform.addEventListener('change', syncUi);
     }
@@ -422,6 +443,84 @@
                     showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
                 })
                 .then(function () { setBusy(false); });
+        });
+    }
+
+    function formatResetResults(data) {
+        var lines = [];
+        lines.push('Total: ' + (data.total || 0) + ' | OK: ' + (data.success_count || 0) + ' | Failed: ' + (data.failed_count || 0));
+        (data.results || []).forEach(function (r) {
+            lines.push('');
+            lines.push('=== Agency #' + (r.agency_id || '?') + ' ' + (r.agency_name || '') + ' (' + (r.erp_db_name || '') + ') ===');
+            if (!r.ok) {
+                lines.push('ERROR: ' + (r.error || 'failed'));
+                return;
+            }
+            var rep = r.report || {};
+            var tables = rep.tables || {};
+            var tableCount = Object.keys(tables).length;
+            lines.push('tables_truncated: ' + tableCount);
+            if (rep.errors && rep.errors.length) {
+                rep.errors.forEach(function (err) { lines.push('WARN: ' + err); });
+            }
+            var seed = rep.seed || {};
+            if (seed.company_id) {
+                lines.push('seeded company_id: ' + seed.company_id + ' | login: ' + (seed.admin_username || 'admin') + ' / ' + (seed.admin_password || '123456'));
+            }
+        });
+        return lines.join('\n');
+    }
+
+    function runReset(payload, confirmMsg) {
+        if (!resetOk()) {
+            showProgress(cfg.getAttribute('data-reset-confirm-required') || 'Type RESET-DATA first.');
+            return Promise.resolve(null);
+        }
+        if (confirmMsg && !window.confirm(confirmMsg)) {
+            return Promise.resolve(null);
+        }
+        payload.confirm = 'RESET-DATA';
+        setBusy(true);
+        showProgress(cfg.getAttribute('data-reset-running') || 'Resetting…');
+        if (resultsBox) {
+            resultsBox.classList.remove('d-none');
+            if (logEl) logEl.textContent = '';
+        }
+        return postJson(resetDataUrl, payload)
+            .then(function (pack) {
+                var data = pack.body || {};
+                if (logEl) {
+                    logEl.textContent = formatResetResults(data);
+                }
+                var msg = data.success
+                    ? (cfg.getAttribute('data-done-ok') || 'Done.')
+                    : (cfg.getAttribute('data-done-errors') || 'Done with errors.');
+                if (!pack.ok && data.message) msg = data.message;
+                showProgress(msg);
+                return data;
+            })
+            .catch(function (err) {
+                showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                return null;
+            })
+            .finally(function () {
+                setBusy(false);
+            });
+    }
+
+    if (btnResetSelected) {
+        btnResetSelected.addEventListener('click', function () {
+            var ids = selectedIds();
+            if (!ids.length) {
+                showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                return;
+            }
+            runReset({ agency_ids: ids }, cfg.getAttribute('data-confirm-reset-selected'));
+        });
+    }
+    if (btnResetAll) {
+        btnResetAll.addEventListener('click', function () {
+            runReset({ scope: 'all_ready' }, cfg.getAttribute('data-confirm-reset-all'));
         });
     }
     if (btnSyncAll) {

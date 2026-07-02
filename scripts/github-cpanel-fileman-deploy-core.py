@@ -29,7 +29,6 @@ DEPLOY_ALLOW_PREFIXES = (
     "js/",
     "css/",
     "api/",
-    "admin/",
     "storage/",
     "modules/infrastructure-marketplace/",
     "config/env/",

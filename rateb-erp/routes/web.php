@@ -107,6 +107,7 @@ $router->post('/admin/agency-updates/push', [AgencyUpdatesController::class, 'pu
 $router->post('/admin/agency-updates/link', [AgencyUpdatesController::class, 'link'], rateb_platform_oversight_mw('companies.manage'));
 $router->post('/admin/agency-updates/sync-files', [AgencyUpdatesController::class, 'syncFiles'], rateb_platform_oversight_mw('companies.manage'));
 $router->post('/admin/agency-updates/restore-admin', [AgencyUpdatesController::class, 'restoreAdmin'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/agency-updates/reset-data', [AgencyUpdatesController::class, 'resetData'], rateb_platform_oversight_mw('companies.manage'));
 
 $router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));
 $router->get('/admin/access-control/matrix', [AccessControlController::class, 'matrix'], rateb_admin_mw('access.manage'));
