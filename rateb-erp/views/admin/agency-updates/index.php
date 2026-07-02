@@ -199,7 +199,8 @@ foreach ($agencies as $agency) {
                     <button type="button" class="btn btn-warning btn-sm" id="erpRestoreAdminSelected" disabled>
                         <i class="fas fa-user-shield me-1"></i><?php echo __('agency_erp_restore_admin_selected'); ?>
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataSelected" disabled>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataSelected" disabled
+                        onclick="if(window.__erpAgencyResetSelected){window.__erpAgencyResetSelected();}">
                         <i class="fas fa-eraser me-1"></i><?php echo __('agency_erp_reset_data_selected'); ?>
                     </button>
                 </div>
@@ -217,7 +218,8 @@ foreach ($agencies as $agency) {
                     <button type="button" class="btn btn-outline-success btn-sm" id="erpUpdateRunSubscribed">
                         <i class="fas fa-check-circle me-1"></i><?php echo __('agency_erp_push_run_subscribed'); ?>
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataAllReady">
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataAllReady"
+                        onclick="if(window.__erpAgencyResetAllReady){window.__erpAgencyResetAllReady();}">
                         <i class="fas fa-eraser me-1"></i><?php echo __('agency_erp_reset_data_all_ready'); ?>
                     </button>
                 </div>

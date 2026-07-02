@@ -1254,7 +1254,7 @@ return [
     'agency_erp_restore_admin_confirm' => 'Restore admin@rateb.sa with password "password" on selected agencies? (Company data is not deleted.)',
     'agency_erp_restore_admin_running' => 'Restoring super admin…',
     'agency_erp_reset_confirm_label' => 'Type RESET-DATA to confirm data wipe',
-    'agency_erp_reset_confirm_required' => 'Type RESET-DATA in the reset confirmation field first.',
+    'agency_erp_reset_confirm_required' => 'Type RESET-DATA in either confirmation field first.',
     'agency_erp_reset_data_selected' => 'Reset ERP data — selected',
     'agency_erp_reset_data_all_ready' => 'Reset ERP data — all ready',
     'agency_erp_reset_data_confirm_selected' => 'DELETE all business data on selected agency ERP databases? Schema, roles, and super-admins are kept. A fresh company will be seeded (admin / 123456). This cannot be undone.',

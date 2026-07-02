@@ -59,7 +59,7 @@
     }
 
     function resetOk() {
-        return resetConfirmValue() === 'RESET-DATA';
+        return resetConfirmValue() === 'RESET-DATA' || syncConfirmValue() === 'RESET-DATA';
     }
 
     function syncOk() {
@@ -120,14 +120,11 @@
             btnRestoreSelected.disabled = !hasSel;
         }
         if (btnResetSelected) {
-            btnResetSelected.disabled = !hasSel || !resetOk();
+            btnResetSelected.disabled = !hasSel;
         }
         [btnSyncAll, btnFullAll].forEach(function (b) {
             if (b) b.disabled = !syncReady;
         });
-        if (btnResetAll) {
-            btnResetAll.disabled = !resetOk();
-        }
     }
 
     function setBusy(busy) {
@@ -179,6 +176,9 @@
     }
 
     function postJson(url, payload) {
+        if (!url) {
+            return Promise.reject(new Error('API URL missing — refresh the page or redeploy rateb-erp.'));
+        }
         return fetch(url, {
             method: 'POST',
             credentials: 'same-origin',
@@ -189,8 +189,17 @@
             },
             body: JSON.stringify(payload)
         }).then(function (res) {
-            return res.json().then(function (j) {
-                return { ok: res.ok, body: j };
+            return res.text().then(function (text) {
+                var body = {};
+                if (text) {
+                    try {
+                        body = JSON.parse(text);
+                    } catch (parseErr) {
+                        var snippet = text.replace(/\s+/g, ' ').trim().slice(0, 120);
+                        throw new Error('HTTP ' + res.status + (snippet ? ': ' + snippet : ''));
+                    }
+                }
+                return { ok: res.ok, status: res.status, body: body };
             });
         });
     }
@@ -342,9 +351,11 @@
     }
     if (syncConfirmInput) {
         syncConfirmInput.addEventListener('input', syncUi);
+        syncConfirmInput.addEventListener('change', syncUi);
     }
     if (resetConfirmInput) {
         resetConfirmInput.addEventListener('input', syncUi);
+        resetConfirmInput.addEventListener('change', syncUi);
     }
     if (includePlatform) {
         includePlatform.addEventListener('change', syncUi);
@@ -508,21 +519,27 @@
             });
     }
 
+    function triggerResetSelected() {
+        var ids = selectedIds();
+        if (!ids.length) {
+            showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
+            return;
+        }
+        runReset({ agency_ids: ids }, cfg.getAttribute('data-confirm-reset-selected'));
+    }
+
+    function triggerResetAllReady() {
+        runReset({ scope: 'all_ready' }, cfg.getAttribute('data-confirm-reset-all'));
+    }
+
     if (btnResetSelected) {
-        btnResetSelected.addEventListener('click', function () {
-            var ids = selectedIds();
-            if (!ids.length) {
-                showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
-                return;
-            }
-            runReset({ agency_ids: ids }, cfg.getAttribute('data-confirm-reset-selected'));
-        });
+        btnResetSelected.addEventListener('click', triggerResetSelected);
     }
     if (btnResetAll) {
-        btnResetAll.addEventListener('click', function () {
-            runReset({ scope: 'all_ready' }, cfg.getAttribute('data-confirm-reset-all'));
-        });
+        btnResetAll.addEventListener('click', triggerResetAllReady);
     }
+    window.__erpAgencyResetSelected = triggerResetSelected;
+    window.__erpAgencyResetAllReady = triggerResetAllReady;
     if (btnSyncAll) {
         btnSyncAll.addEventListener('click', function () {
             runSync({ scope: 'all_ready' }, cfg.getAttribute('data-confirm-sync-all'), true);

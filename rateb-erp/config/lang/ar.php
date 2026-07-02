@@ -1254,7 +1254,7 @@ return [
     'agency_erp_restore_admin_confirm' => 'استعادة حساب admin@rateb.sa بكلمة المرور password على الوكالات المحددة؟ (لا يحذف بيانات الشركة)',
     'agency_erp_restore_admin_running' => 'جاري استعادة مدير النظام…',
     'agency_erp_reset_confirm_label' => 'اكتب RESET-DATA لتأكيد مسح البيانات',
-    'agency_erp_reset_confirm_required' => 'اكتب RESET-DATA في حقل تأكيد المسح أولاً.',
+    'agency_erp_reset_confirm_required' => 'اكتب RESET-DATA في أي من حقلي التأكيد أولاً.',
     'agency_erp_reset_data_selected' => 'مسح بيانات ERP — المحدد',
     'agency_erp_reset_data_all_ready' => 'مسح بيانات ERP — كل الجاهز',
     'agency_erp_reset_data_confirm_selected' => 'حذف كل بيانات الأعمال في قواعد ERP للوكالات المحددة؟ يُحتفظ بالمخطط والأدوار ومديري النظام. تُنشأ شركة جديدة (admin / 123456). لا يمكن التراجع.',
