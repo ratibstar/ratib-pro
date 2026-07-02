@@ -910,14 +910,13 @@ final class AgencyErpMigrationService
     {
         $agencyId = (int) ($agency['id'] ?? 0);
         $status = strtolower(trim((string) ($agency['erp_status'] ?? '')));
-        if ($status !== 'ready') {
-            throw new RuntimeException(__('agency_erp_reset_not_ready'));
-        }
 
         $cfg = $this->agencyDatabaseConfig($agency);
         if ($cfg['db'] === '') {
-            throw new RuntimeException('No ERP database configured for agency #' . $agencyId);
+            throw new RuntimeException(__('agency_erp_reset_no_db'));
         }
+
+        $platformCompanyOverride = $this->resolveResetPlatformCompanyForAgency($agency, $platformCompanyOverride);
 
         $siteHost = '';
         if (function_exists('rateb_agency_host_from_site_url')) {
@@ -1026,6 +1025,8 @@ final class AgencyErpMigrationService
         $report['agency_id'] = $agencyId;
         $report['agency_name'] = trim((string) ($agency['name'] ?? ''));
         $report['erp_db_name'] = $cfg['db'];
+        $report['erp_status'] = $status;
+        $report['site_url'] = rtrim(trim((string) ($agency['site_url'] ?? '')), '/');
         $report['site_host'] = $siteHost;
         $report['shell'] = $shell;
         $report['platform_db'] = $platformDb;
@@ -1053,7 +1054,7 @@ final class AgencyErpMigrationService
         }
         $agencyIds = array_values(array_unique(array_filter(array_map('intval', $agencyIds), static fn (int $id): bool => $id > 0)));
         $scope = strtolower(trim((string) ($options['scope'] ?? '')));
-        if ($scope === 'all_ready' || $scope === 'all_subscribed') {
+        if ($scope === 'all_ready' || $scope === 'all_with_db' || $scope === 'all_subscribed') {
             $rows = $this->listAgencies($scope === 'all_subscribed');
             $agencyIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
             $agencyIds = array_values(array_filter($agencyIds, static fn (int $id): bool => $id > 0));
@@ -1082,7 +1083,11 @@ final class AgencyErpMigrationService
                 continue;
             }
             try {
-                $report = $this->resetAgencyData($agency, $platformCompanyOverride);
+                $perAgencyOverride = $this->resolveResetPlatformCompanyForAgency(
+                    $agency,
+                    $platformCompanyOverride
+                );
+                $report = $this->resetAgencyData($agency, $perAgencyOverride);
                 $results[] = [
                     'agency_id' => $agencyId,
                     'agency_name' => (string) ($agency['name'] ?? ''),
@@ -1110,6 +1115,21 @@ final class AgencyErpMigrationService
             'failed_count' => $failed,
             'results' => $results,
         ];
+    }
+
+    /**
+     * Prefer each agency's linked platform company; optional UI override is fallback only.
+     *
+     * @param array<string, mixed> $agency
+     */
+    private function resolveResetPlatformCompanyForAgency(array $agency, ?int $globalOverride): ?int
+    {
+        $linked = (int) ($agency['erp_company_id'] ?? 0);
+        if ($linked > 0) {
+            return $linked;
+        }
+
+        return $globalOverride;
     }
 
     /**

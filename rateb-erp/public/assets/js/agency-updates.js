@@ -514,7 +514,16 @@
                 lines.push('orphan_rows_deleted: ' + JSON.stringify(orphan.orphan_rows_deleted));
             }
             lines.push('');
+            var verifySite = rep.site_url || '';
+            if (!verifySite && rep.site_host) {
+                verifySite = 'https://' + rep.site_host;
+            }
+            if (verifySite) {
+                verifySite = verifySite.replace(/\/$/, '') + '/rateb-erp/public/admin';
+                lines.push((cfg.getAttribute('data-reset-verify-site') || 'Verify on agency site: %s').replace('%s', verifySite));
+            }
             lines.push(cfg.getAttribute('data-reset-logout-hint') || 'Log out and log in again on the agency site, then verify lists are empty.');
+            lines.push(cfg.getAttribute('data-reset-shell-note') || '');
         });
         return lines.join('\n');
     }
@@ -564,10 +573,32 @@
         }
         var payload = { agency_ids: ids };
         var platformCompanyId = resetPlatformCompanyId();
-        if (platformCompanyId > 0) {
-            payload.platform_company_id = platformCompanyId;
+        if (platformCompanyId > 0 && ids.length === 1) {
+            var row = document.querySelector('.erp-agency-row[data-agency-id="' + ids[0] + '"]');
+            var linked = row ? parseInt(row.getAttribute('data-erp-company-id') || '0', 10) : 0;
+            if (linked < 1) {
+                payload.platform_company_id = platformCompanyId;
+            }
         }
         runReset(payload, cfg.getAttribute('data-confirm-reset-selected'));
+    }
+
+    function triggerResetRow(agencyId, agencyName, siteUrl) {
+        if (agencyId < 1) {
+            return;
+        }
+        var msg = (cfg.getAttribute('data-confirm-reset-row') || 'Reset ERP data for %s?')
+            .replace('%s', agencyName || ('#' + agencyId));
+        var payload = { agency_ids: [agencyId] };
+        var row = document.querySelector('.erp-agency-row[data-agency-id="' + agencyId + '"]');
+        var linked = row ? parseInt(row.getAttribute('data-erp-company-id') || '0', 10) : 0;
+        if (linked < 1) {
+            var platformCompanyId = resetPlatformCompanyId();
+            if (platformCompanyId > 0) {
+                payload.platform_company_id = platformCompanyId;
+            }
+        }
+        runReset(payload, msg);
     }
 
     function triggerResetAllReady() {
@@ -594,6 +625,13 @@
     if (btnResetAll) {
         btnResetAll.addEventListener('click', triggerResetAllReady);
     }
+    document.querySelectorAll('.erp-reset-row-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
+            var agencyName = btn.getAttribute('data-agency-name') || '';
+            triggerResetRow(agencyId, agencyName, btn.getAttribute('data-site-url') || '');
+        });
+    });
     window.__erpAgencyResetSelected = triggerResetSelected;
     window.__erpAgencyResetAllReady = triggerResetAllReady;
     if (btnSyncAll) {

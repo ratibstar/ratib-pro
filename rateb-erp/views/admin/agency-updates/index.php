@@ -46,6 +46,7 @@ foreach ($agencies as $agency) {
                     <option value="0"><?php echo __('agency_erp_filter_unlinked'); ?></option>
                 </select>
                 <p class="small text-muted mb-0 mt-1"><?php echo __('agency_erp_reset_platform_company_hint'); ?></p>
+                <p class="small text-muted mb-0"><?php echo __('agency_erp_reset_any_agency_hint'); ?></p>
             </div>
             <div class="col-md-8 d-flex flex-wrap gap-2 align-items-center">
                 <span class="small text-muted me-1"><?php echo __('agency_erp_quick_select'); ?>:</span>
@@ -102,7 +103,9 @@ foreach ($agencies as $agency) {
                         data-erp-company-id="<?php echo $linkedCoId; ?>"
                         data-erp-status="<?php echo Rateb\App\Core\View::escape($status); ?>"
                         data-subscribed="<?php echo $isSubscribed ? '1' : '0'; ?>"
-                        data-ready="<?php echo $isReady ? '1' : '0'; ?>">
+                        data-ready="<?php echo $isReady ? '1' : '0'; ?>"
+                        data-resettable="<?php echo $erpDb !== '' ? '1' : '0'; ?>"
+                        data-site-url="<?php echo Rateb\App\Core\View::escape($site); ?>">
                         <td class="rateb-bulk-td">
                             <input type="checkbox" class="form-check-input rateb-row-check erp-update-agency-cb" value="<?php echo $id; ?>" data-rateb-row-check>
                         </td>
@@ -129,6 +132,15 @@ foreach ($agencies as $agency) {
                             <?php } ?>
                         </td>
                         <td class="text-end text-nowrap">
+                            <?php if ($erpDb !== '') { ?>
+                            <button type="button" class="btn btn-outline-danger btn-sm erp-reset-row-btn me-1"
+                                data-agency-id="<?php echo $id; ?>"
+                                data-agency-name="<?php echo Rateb\App\Core\View::escape($name); ?>"
+                                data-site-url="<?php echo Rateb\App\Core\View::escape($site); ?>"
+                                title="<?php echo __('agency_erp_reset_row_btn'); ?>">
+                                <i class="fas fa-eraser"></i>
+                            </button>
+                            <?php } ?>
                             <div class="dropdown d-inline-block">
                                 <button type="button" class="btn btn-link btn-sm p-0 erp-link-row-btn"
                                     data-agency-id="<?php echo $id; ?>"
@@ -266,5 +278,8 @@ foreach ($agencies as $agency) {
     data-confirm-reset-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_data_confirm_all')); ?>"
     data-reset-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_confirm_required')); ?>"
     data-reset-logout-hint="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_logout_hint')); ?>"
+    data-reset-verify-site="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_verify_site')); ?>"
+    data-reset-shell-note="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_shell_note')); ?>"
+    data-confirm-reset-row="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_row_confirm')); ?>"
     data-select-first="<?php echo Rateb\App\Core\View::escape(__('agency_erp_select_agencies_first')); ?>">
 </div>
