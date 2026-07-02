@@ -206,6 +206,10 @@ final class MarketingCompanyAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check() || SessionManager::get('rateb_is_super_admin')) {
+            if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+                Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
+                return false;
+            }
             $next = 'site/portal';
             Response::redirect(function_exists('rateb_url')
                 ? rateb_url('site/login?next=' . rawurlencode($next))

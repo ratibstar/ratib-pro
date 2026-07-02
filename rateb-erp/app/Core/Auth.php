@@ -117,6 +117,69 @@ final class Auth
         return 'admin';
     }
 
+    /**
+     * Post-login redirect: ERP operators never land on marketing customer portal.
+     *
+     * @param array<string, mixed> $user
+     */
+    public static function resolvePostLoginUrl(string $next, array $user): string
+    {
+        $next = trim($next);
+        $erpHome = function_exists('rateb_url') ? rateb_url('admin') : '/admin';
+
+        if ($next !== '' && self::shouldUseErpDashboard($user) && self::urlIsCustomerPortal($next)) {
+            return $erpHome;
+        }
+
+        if ($next !== '') {
+            return $next;
+        }
+
+        if (self::shouldUseErpDashboard($user)) {
+            return $erpHome;
+        }
+
+        return function_exists('rateb_url') ? rateb_url('site/portal') : '/site/portal';
+    }
+
+    public static function urlIsCustomerPortal(string $url): bool
+    {
+        return preg_match('#/site/portal(?:[/?#]|$)#i', $url) === 1;
+    }
+
+    /** @param array<string, mixed> $user */
+    public static function shouldUseErpDashboard(array $user): bool
+    {
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
+        if ((int) ($user['is_super_admin'] ?? 0) === 1) {
+            return true;
+        }
+
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        $name = strtolower(trim((string) ($user['name'] ?? '')));
+        if ($email === 'admin@local' || $name === 'admin' || strpos($email, 'admin+') === 0) {
+            return true;
+        }
+
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId < 1) {
+            return false;
+        }
+
+        $row = (new \Rateb\App\Models\Role())->queryOne(
+            "SELECT 1 FROM rateb_user_roles ur
+             INNER JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid
+               AND r.slug IN ('company-full-access', 'hq_admin', 'hq_manager', 'branch_manager', 'branch_user')
+             LIMIT 1",
+            ['uid' => $userId]
+        );
+
+        return $row !== null;
+    }
+
     public static function user(): ?array
     {
         $id = SessionManager::get('rateb_user_id');

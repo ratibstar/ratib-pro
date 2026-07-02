@@ -225,7 +225,7 @@ final class MarketingAuthController extends Controller
         }
         (new User())->updateLastLogin((int) $user['id']);
         (new AuditService())->log('login', 'user', (int) $user['id'], ['portal' => 'company']);
-        Response::redirect($next !== '' ? $next : rateb_url(Auth::homePath()));
+        Response::redirect(Auth::resolvePostLoginUrl($next, $user));
     }
 
     private function safeNextUrl(string $next): string
@@ -236,9 +236,18 @@ final class MarketingAuthController extends Controller
         }
         if (preg_match('#^https?://#i', $next)) {
             $appBase = rateb_public_url('');
-            return strpos($next, $appBase) === 0 ? $next : '';
+            $next = strpos($next, $appBase) === 0 ? $next : '';
+        } else {
+            $next = rateb_public_url(ltrim($next, '/'));
         }
-        return rateb_public_url(ltrim($next, '/'));
+        if ($next !== ''
+            && function_exists('rateb_erp_is_dedicated_deployment')
+            && rateb_erp_is_dedicated_deployment()
+            && Auth::urlIsCustomerPortal($next)) {
+            return '';
+        }
+
+        return $next;
     }
 
     /** @param array<string, mixed> $extra */

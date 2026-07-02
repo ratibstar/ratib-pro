@@ -41,6 +41,10 @@ $router->get('/rateb-erp', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin'), 302);
 });
 
+$router->get('/favicon.ico', static function (): void {
+    require RATEB_ROOT . '/public/favicon.php';
+});
+
 $router->get('/', static function (): void {
     if (\Rateb\App\Core\Auth::check()) {
         \Rateb\App\Core\Response::redirect(rateb_url(\Rateb\App\Core\Auth::homePath()));
