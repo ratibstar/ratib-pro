@@ -121,6 +121,7 @@ if (!function_exists('rateb_lookup_agency_row_by_host')) {
                 WHERE (
                     site_url = ? OR site_url = ? OR site_url = ? OR site_url = ?
                     OR site_url LIKE ? OR site_url LIKE ?
+                    OR site_url LIKE ?
                     OR LOWER(TRIM(TRAILING '/' FROM REPLACE(REPLACE(site_url, 'https://', ''), 'http://', ''))) = ?
                     OR LOWER(TRIM(TRAILING '/' FROM REPLACE(REPLACE(site_url, 'https://', ''), 'http://', ''))) LIKE ?
                 ){$activeSql}
@@ -138,8 +139,9 @@ if (!function_exists('rateb_lookup_agency_row_by_host')) {
         $httpSlash = 'http://' . $host . '/';
         $httpsLike = 'https://' . $host . '/%';
         $httpLike = 'http://' . $host . '/%';
-        $hostLike = $host . '/%';
-        $stmt->bind_param('ssssssss', $https, $httpsSlash, $http, $httpSlash, $httpsLike, $httpLike, $host, $hostLike);
+        $hostLike = '%' . $host . '%';
+        $hostPathLike = $host . '/%';
+        $stmt->bind_param('sssssssss', $https, $httpsSlash, $http, $httpSlash, $httpsLike, $httpLike, $hostLike, $host, $hostPathLike);
         $stmt->execute();
         $res = $stmt->get_result();
         $row = $res ? $res->fetch_assoc() : null;

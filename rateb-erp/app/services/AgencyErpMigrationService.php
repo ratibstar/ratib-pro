@@ -254,7 +254,14 @@ final class AgencyErpMigrationService
     /** @return \PDO */
     public function agencyPdo(array $agency): \PDO
     {
-        $cfg = $this->agencyDatabaseConfig($agency);
+        return $this->pdoFromConfig($this->agencyDatabaseConfig($agency));
+    }
+
+    /**
+     * @param array{host:string,port:int,user:string,pass:string,db:string} $cfg
+     */
+    public function pdoFromConfig(array $cfg): \PDO
+    {
         if ($cfg['db'] === '') {
             throw new RuntimeException('No ERP database configured');
         }
@@ -269,6 +276,117 @@ final class AgencyErpMigrationService
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
         ]);
+    }
+
+    /**
+     * Platform ERP credentials (rateb.sa context) — not per-agency DB user.
+     *
+     * @return array{host:string,port:int,user:string,pass:string,db:string}
+     */
+    public function platformErpDatabaseConfig(): array
+    {
+        $dbName = function_exists('rateb_platform_erp_database_name')
+            ? trim((string) rateb_platform_erp_database_name())
+            : 'admin_rateb-erp';
+        if ($dbName === '') {
+            $dbName = 'admin_rateb-erp';
+        }
+        $host = defined('RATEB_DB_HOST') ? (string) RATEB_DB_HOST : 'localhost';
+        $port = defined('RATEB_DB_PORT') ? (int) RATEB_DB_PORT : 3306;
+        if (function_exists('rateb_erp_db_credentials')) {
+            [$user, $pass] = rateb_erp_db_credentials();
+        } else {
+            $user = defined('RATEB_DB_USER') ? (string) RATEB_DB_USER : 'root';
+            $pass = defined('RATEB_DB_PASS') ? (string) RATEB_DB_PASS : '';
+        }
+
+        return [
+            'host' => $host !== '' ? $host : 'localhost',
+            'port' => $port > 0 ? $port : 3306,
+            'user' => $user,
+            'pass' => $pass,
+            'db' => $dbName,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @return list<int>
+     */
+    private function resolvePlatformCompanyIds(array $agency, \PDO $platformPdo): array
+    {
+        $ids = [];
+        $linked = (int) ($agency['erp_company_id'] ?? 0);
+        if ($linked > 0) {
+            $ids[] = $linked;
+        }
+
+        $agencyName = trim((string) ($agency['name'] ?? ''));
+        if ($agencyName !== '') {
+            $stmt = $platformPdo->prepare(
+                'SELECT id FROM rateb_companies WHERE LOWER(name) = LOWER(:n) OR LOWER(slug) = LOWER(:s) LIMIT 5'
+            );
+            $slug = strtolower(preg_replace('/[^a-z0-9]+/', '-', $agencyName) ?? $agencyName);
+            $stmt->execute(['n' => $agencyName, 's' => trim($slug, '-')]);
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+            }
+        }
+
+        if ($linked > 0) {
+            try {
+                $row = (new \Rateb\App\Models\Company())->find($linked);
+                $platformName = trim((string) ($row['name'] ?? ''));
+                if ($platformName !== '') {
+                    $stmt = $platformPdo->prepare(
+                        'SELECT id FROM rateb_companies WHERE LOWER(name) = LOWER(:n) LIMIT 5'
+                    );
+                    $stmt->execute(['n' => $platformName]);
+                    while ($found = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                        $id = (int) ($found['id'] ?? 0);
+                        if ($id > 0) {
+                            $ids[] = $id;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // ignore — fall back to linked id only
+            }
+        }
+
+        $valid = [];
+        foreach (array_unique($ids) as $id) {
+            $id = (int) $id;
+            if ($id < 1) {
+                continue;
+            }
+            $chk = $platformPdo->prepare('SELECT id FROM rateb_companies WHERE id = :id LIMIT 1');
+            $chk->execute(['id' => $id]);
+            if ($chk->fetch()) {
+                $valid[] = $id;
+            }
+        }
+
+        return $valid;
+    }
+
+    private function countPurchaseRequests(\PDO $pdo, ?int $companyId = null): int
+    {
+        try {
+            if ($companyId !== null && $companyId > 0) {
+                $stmt = $pdo->prepare('SELECT COUNT(*) FROM rateb_purchase_requests WHERE company_id = :cid');
+                $stmt->execute(['cid' => $companyId]);
+
+                return (int) $stmt->fetchColumn();
+            }
+
+            return (int) $pdo->query('SELECT COUNT(*) FROM rateb_purchase_requests')->fetchColumn();
+        } catch (\Throwable $e) {
+            return -1;
+        }
     }
 
     /**
@@ -400,24 +518,48 @@ final class AgencyErpMigrationService
         }
         require_once $runnerFile;
 
-        $pdo = $this->agencyPdo($agency);
+        $pdo = $this->pdoFromConfig($cfg);
         $runner = new \ProductionResetRunner($pdo, $cfg['db']);
         $runner->run(false, true, false, true);
         $report = $runner->report();
+        $report['purchase_requests_before'] = $this->countPurchaseRequests($pdo);
 
         $shell = $this->rebuildAgencyShellPreserveLogins($agency, $cfg);
         if ($shell['company_id'] > 0 && function_exists('rateb_save_agency_erp_company_link')) {
             rateb_save_agency_erp_company_link($agencyId, (int) $shell['company_id']);
         }
 
-        $linkedCompanyId = (int) ($agency['erp_company_id'] ?? 0);
-        $platformWipe = null;
-        if ($linkedCompanyId > 0 && $platformDb !== '' && strcasecmp($cfg['db'], $platformDb) !== 0) {
+        $platformCfg = $this->platformErpDatabaseConfig();
+        $platformDb = $platformCfg['db'];
+        $platformWipes = [];
+        $platformErrors = [];
+        if ($platformDb !== '' && strcasecmp($cfg['db'], $platformDb) !== 0) {
             try {
-                $platformWipe = $this->wipePlatformCompanyTenant($platformDb, $linkedCompanyId, $cfg);
+                $platformPdo = $this->pdoFromConfig($platformCfg);
+                $companyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo);
+                $report['platform_company_ids'] = $companyIds;
+                $report['platform_pr_before'] = $this->countPurchaseRequests($platformPdo);
+                if ($companyIds === []) {
+                    if ($report['platform_pr_before'] > 0) {
+                        $platformErrors[] = 'Platform DB still has purchase data but no company id is linked (set erp_company_id on the agency).';
+                    }
+                } else {
+                    foreach ($companyIds as $companyId) {
+                        $platformWipes[] = $this->wipePlatformCompanyTenant($platformCfg, $companyId);
+                    }
+                    $report['platform_pr_after'] = $this->countPurchaseRequests($platformPdo);
+                    if ($report['platform_pr_after'] > 0) {
+                        $platformErrors[] = 'Platform still has ' . $report['platform_pr_after'] . ' purchase requests after company wipe.';
+                    }
+                }
             } catch (Throwable $e) {
-                $platformWipe = ['ok' => false, 'error' => $e->getMessage()];
+                $platformErrors[] = $e->getMessage();
             }
+        }
+
+        if ($platformErrors !== []) {
+            $report['platform_errors'] = $platformErrors;
+            throw new RuntimeException(implode(' ', $platformErrors));
         }
 
         $report['agency_id'] = $agencyId;
@@ -426,7 +568,7 @@ final class AgencyErpMigrationService
         $report['site_host'] = $siteHost;
         $report['shell'] = $shell;
         $report['platform_db'] = $platformDb;
-        $report['platform_wipe'] = $platformWipe;
+        $report['platform_wipes'] = $platformWipes;
 
         return $report;
     }
@@ -538,23 +680,14 @@ final class AgencyErpMigrationService
     }
 
     /**
-     * @param array{host:string,port:int,user:string,pass:string,db:string} $cfg
+     * @param array{host:string,port:int,user:string,pass:string,db:string} $platformCfg
      * @return array<string, mixed>
      */
-    private function wipePlatformCompanyTenant(string $platformDb, int $companyId, array $cfg): array
+    private function wipePlatformCompanyTenant(array $platformCfg, int $companyId): array
     {
-        $dsn = sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
-            $cfg['host'],
-            $cfg['port'],
-            $platformDb
-        );
-        $pdo = new \PDO($dsn, $cfg['user'], $cfg['pass'], [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-        ]);
+        $pdo = $this->pdoFromConfig($platformCfg);
         $wipe = (new CompanyTenantWipeService())->wipeCompany($pdo, $companyId, false);
 
-        return array_merge(['ok' => true, 'database' => $platformDb], $wipe);
+        return array_merge(['ok' => true, 'database' => $platformCfg['db']], $wipe);
     }
 }

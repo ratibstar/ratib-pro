@@ -483,11 +483,22 @@
             } else if (shell.credentials_unchanged) {
                 lines.push('credentials: unchanged');
             }
+            var platformWipes = rep.platform_wipes || [];
+            if (platformWipes.length) {
+                platformWipes.forEach(function (pw) {
+                    lines.push('platform_db wiped: ' + (pw.database || rep.platform_db || '') + ' company_id=' + (pw.company_id || '?'));
+                });
+            } else if (rep.platform_pr_before !== undefined) {
+                lines.push('platform_pr: ' + rep.platform_pr_before + ' -> ' + (rep.platform_pr_after || 0));
+            }
             var platformWipe = rep.platform_wipe || {};
             if (platformWipe && platformWipe.ok) {
                 lines.push('platform_db wiped: ' + (rep.platform_db || platformWipe.database || '') + ' company_id=' + (platformWipe.company_id || '?'));
             } else if (platformWipe && platformWipe.error) {
                 lines.push('platform_wipe ERROR: ' + platformWipe.error);
+            }
+            if (rep.platform_errors && rep.platform_errors.length) {
+                rep.platform_errors.forEach(function (err) { lines.push('platform ERROR: ' + err); });
             }
         });
         return lines.join('\n');

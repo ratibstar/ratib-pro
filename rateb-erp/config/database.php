@@ -213,6 +213,15 @@ if (!function_exists('rateb_apply_agency_erp_request_binding')) {
         require_once $lookupFile;
         $binding = rateb_agency_erp_binding_for_request_host();
         if ($binding === null || trim((string) ($binding['db'] ?? '')) === '') {
+            $host = rateb_normalize_http_host((string) ($_SERVER['HTTP_HOST'] ?? ''));
+            if ($host !== '' && function_exists('rateb_lookup_agency_erp_by_host')) {
+                $row = rateb_lookup_agency_erp_by_host($host);
+                if (is_array($row) && function_exists('rateb_agency_erp_binding_for_host')) {
+                    $binding = rateb_agency_erp_binding_for_host($host);
+                }
+            }
+        }
+        if ($binding === null || trim((string) ($binding['db'] ?? '')) === '') {
             return;
         }
         if (!defined('RATEB_ERP_AGENCY_RESOLVED')) {
