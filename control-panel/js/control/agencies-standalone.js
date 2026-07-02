@@ -227,6 +227,7 @@
             html += '</div>';
         }
         if (verify) {
+            html += '<p class="small text-muted mb-2">' + (ar ? 'ملاحظة: قد يظهر مستودع رئيسي فارغ واحد (WH-MAIN) بعد أول دخول — هذا هيكل افتراضي.' : 'Note: one empty main warehouse (WH-MAIN) may appear on first login — that is the default shell.') + '</p>';
             html += '<p class="small mb-0">' + (ar ? 'سجّل خروجاً ثم دخولاً من:' : 'Log out, then sign in again at:') + '<br><a class="agencies-alert-link" href="' + escapeHtml(verify) + '" dir="ltr" target="_blank" rel="noopener noreferrer">' + escapeHtml(verify) + '</a></p>';
         }
         showAlert(html, true);

@@ -25,38 +25,49 @@ final class WarehouseService
         if ($companyId < 1) {
             return 0;
         }
-        $existing = (new Warehouse())->queryOne(
-            'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND code = :code ORDER BY id ASC LIMIT 1',
-            ['cid' => $companyId, 'code' => self::MAIN_CODE]
-        );
-        if (!$existing) {
-            $existing = (new Warehouse())->queryOne(
-                'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND status = :st ORDER BY id ASC LIMIT 1',
-                ['cid' => $companyId, 'st' => 'active']
-            );
-        }
-        if ($existing) {
-            $this->backfillBranchLinks($companyId);
-            $this->dedupeMainWarehouses($companyId);
-            return (int) ($existing['id'] ?? 0);
+        $pdo = \Rateb\App\Core\Database::connection();
+        $lockName = 'rateb_wh_main_' . $companyId;
+        $gotLock = false;
+        try {
+            $lockStmt = $pdo->query("SELECT GET_LOCK(" . $pdo->quote($lockName) . ", 8)");
+            $gotLock = (int) $lockStmt->fetchColumn() === 1;
+        } catch (\Throwable $e) {
+            $gotLock = false;
         }
 
-        $branchId = (new BranchService())->defaultBranchId($companyId);
-        $prevCompany = TenantContext::companyId();
-        TenantContext::setCompanyId($companyId);
         try {
-            $id = (new Warehouse())->create([
-                'company_id' => $companyId,
-                'name' => __('main_warehouse'),
-                'code' => self::MAIN_CODE,
-                'location' => '',
-                'status' => 'active',
-                'branch_id' => $branchId > 0 ? $branchId : null,
-            ]);
-            $this->dedupeMainWarehouses($companyId);
-            return $id;
+            $existingId = $this->findMainWarehouseIdUnscoped($pdo, $companyId);
+            if ($existingId > 0) {
+                $this->backfillBranchLinks($companyId);
+                $this->dedupeMainWarehouses($companyId);
+                return $existingId;
+            }
+
+            $branchId = (new BranchService())->defaultBranchId($companyId);
+            $prevCompany = TenantContext::companyId();
+            TenantContext::setCompanyId($companyId);
+            try {
+                $id = (new Warehouse())->create([
+                    'company_id' => $companyId,
+                    'name' => __('main_warehouse'),
+                    'code' => self::MAIN_CODE,
+                    'location' => '',
+                    'status' => 'active',
+                    'branch_id' => $branchId > 0 ? $branchId : null,
+                ]);
+                $this->dedupeMainWarehouses($companyId);
+                return $id;
+            } finally {
+                TenantContext::setCompanyId($prevCompany);
+            }
         } finally {
-            TenantContext::setCompanyId($prevCompany);
+            if ($gotLock) {
+                try {
+                    $pdo->query("SELECT RELEASE_LOCK(" . $pdo->quote($lockName) . ")");
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
         }
     }
 
@@ -66,23 +77,41 @@ final class WarehouseService
             return;
         }
         try {
-            $rows = (new Warehouse())->query(
-                'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND code = :code ORDER BY id ASC',
-                ['cid' => $companyId, 'code' => self::MAIN_CODE]
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->prepare(
+                'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND code = :code ORDER BY id ASC'
             );
+            $stmt->execute(['cid' => $companyId, 'code' => self::MAIN_CODE]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             if (count($rows) <= 1) {
                 return;
             }
             $keepId = (int) ($rows[0]['id'] ?? 0);
-            foreach (array_slice($rows, 1) as $row) {
-                $extraId = (int) ($row['id'] ?? 0);
-                if ($extraId > 0 && $extraId !== $keepId) {
-                    (new Warehouse())->delete($extraId);
-                }
-            }
+            $del = $pdo->prepare(
+                'DELETE FROM rateb_warehouses WHERE company_id = :cid AND code = :code AND id <> :keep'
+            );
+            $del->execute(['cid' => $companyId, 'code' => self::MAIN_CODE, 'keep' => $keepId]);
         } catch (\Throwable $e) {
             // ignore
         }
+    }
+
+    private function findMainWarehouseIdUnscoped(\PDO $pdo, int $companyId): int
+    {
+        $stmt = $pdo->prepare(
+            'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND code = :code ORDER BY id ASC LIMIT 1'
+        );
+        $stmt->execute(['cid' => $companyId, 'code' => self::MAIN_CODE]);
+        $id = (int) $stmt->fetchColumn();
+        if ($id > 0) {
+            return $id;
+        }
+        $stmt = $pdo->prepare(
+            'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND status = :st ORDER BY id ASC LIMIT 1'
+        );
+        $stmt->execute(['cid' => $companyId, 'st' => 'active']);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /** @return array<int, array<string, mixed>> */

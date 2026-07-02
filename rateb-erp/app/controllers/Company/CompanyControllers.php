@@ -1444,7 +1444,10 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
             $companyId = rateb_resolve_ops_company_id();
         }
         if ($companyId > 0) {
-            (new \Rateb\App\Services\WarehouseService())->dedupeMainWarehouses($companyId);
+            $wh = new \Rateb\App\Services\WarehouseService();
+            $wh->dedupeMainWarehouses($companyId);
+            $wh->ensureDefaultWarehouse($companyId);
+            $wh->dedupeMainWarehouses($companyId);
         }
         parent::index();
     }

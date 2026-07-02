@@ -100,7 +100,9 @@ final class DedicatedCompanySeedService
             );
             $this->ensureDedicatedSubscription($companyId, $plan);
             (new BranchService())->ensureMainBranch($companyId);
-            $this->dedupeDefaultWarehouse($companyId);
+            (new WarehouseService())->dedupeMainWarehouses($companyId);
+            (new WarehouseService())->ensureDefaultWarehouse($companyId);
+            (new WarehouseService())->dedupeMainWarehouses($companyId);
             $this->dedupeDefaultCategory($companyId);
 
             $userModel = new User();
