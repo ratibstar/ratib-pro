@@ -656,7 +656,7 @@
             intro.textContent = 'DELETE all ERP business data for "' + agencyName + '". Login passwords are kept.';
         }
         if (coInput) {
-            var coWrap = coInput.closest('div');
+            var coWrap = document.getElementById('erpResetPlatformCoWrap');
             if (linkedCo > 0) {
                 coInput.value = String(linkedCo);
                 if (coWrap) coWrap.style.display = 'none';
@@ -666,6 +666,8 @@
             }
         }
         var modalEl = document.getElementById('erpResetModal');
+        var modalBody = modalEl ? modalEl.querySelector('.modal-body') : null;
+        if (modalBody) modalBody.style.display = '';
         closeAgencyActionDropdowns();
         prepareModalForShow(modalEl);
         var modal = getBootstrapModal(modalEl);

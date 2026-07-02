@@ -1060,8 +1060,10 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                 <p class="small mb-2" id="erpResetStatus" style="display:none" aria-live="polite"></p>
                 <label class="form-label small" for="erpResetConfirmInput">Type <code>RESET-DATA</code></label>
                 <input type="text" class="form-control form-control-sm font-monospace" id="erpResetConfirmInput" autocomplete="off" spellcheck="false" placeholder="RESET-DATA">
-                <label class="form-label small mt-2" for="erpResetPlatformCoInput"><?php echo htmlspecialchars($agT('agencies.reset_platform_company_optional', 'Platform company id (optional)'), ENT_QUOTES, 'UTF-8'); ?></label>
-                <input type="number" class="form-control form-control-sm" id="erpResetPlatformCoInput" min="0" step="1" placeholder="">
+                <div id="erpResetPlatformCoWrap">
+                    <label class="form-label small mt-2" for="erpResetPlatformCoInput"><?php echo htmlspecialchars($agT('agencies.reset_platform_company_optional', 'Platform company id (optional)'), ENT_QUOTES, 'UTF-8'); ?></label>
+                    <input type="number" class="form-control form-control-sm" id="erpResetPlatformCoInput" min="0" step="1" placeholder="">
+                </div>
                 <input type="hidden" id="erpResetAgencyId" value="">
                 <input type="hidden" id="erpResetAgencyName" value="">
                 <input type="hidden" id="erpResetSiteUrl" value="">

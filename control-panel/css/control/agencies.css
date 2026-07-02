@@ -446,6 +446,12 @@ body > .modal-backdrop,
     cursor: pointer;
 }
 
+#erpResetModal .modal-body,
+#erpResetModal .modal-body .form-label,
+#erpResetModal .modal-body .form-control {
+    pointer-events: auto !important;
+}
+
 #erpResetModal .modal-body .form-control {
     cursor: text;
 }
