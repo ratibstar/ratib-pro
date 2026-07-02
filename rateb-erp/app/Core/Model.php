@@ -38,19 +38,23 @@ abstract class Model
         }
         if (function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops()) {
             $cid = TenantContext::companyId();
-            if ($cid !== null && $cid > 0) {
-                return true;
+            if ($cid === null || $cid < 1) {
+                if (function_exists('rateb_resolve_ops_company_id')) {
+                    $resolved = rateb_resolve_ops_company_id();
+                    if ($resolved > 0) {
+                        TenantContext::setCompanyId($resolved);
+                    }
+                }
             }
-            if (function_exists('rateb_resolve_ops_company_id')) {
-                $resolved = rateb_resolve_ops_company_id();
-                if ($resolved > 0) {
-                    TenantContext::setCompanyId($resolved);
-
-                    return true;
+            $cid = TenantContext::companyId();
+            if ($cid === null || $cid < 1) {
+                $primary = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+                if ($primary > 0) {
+                    TenantContext::setCompanyId($primary);
                 }
             }
 
-            return false;
+            return true;
         }
         if (TenantContext::isSuperAdmin()) {
             return false;
@@ -84,7 +88,15 @@ abstract class Model
         }
 
         $col = ($alias !== '' ? $alias . '.' : '') . $this->tenantColumn;
-        return [" AND {$col} = :company_id", ['company_id' => TenantContext::companyId()]];
+        $companyId = TenantContext::companyId();
+        if ($companyId === null || $companyId < 1) {
+            $companyId = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+        }
+        if ($companyId < 1) {
+            return [' AND 1=0', []];
+        }
+
+        return [" AND {$col} = :company_id", ['company_id' => $companyId]];
     }
 
     /** Optional ?company_id= filter for Super Admin list views. */

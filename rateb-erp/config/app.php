@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260702-agency-reset-complete');
+define('RATEB_ASSET_BUILD', '20260702-agency-reset-v2');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1558,6 +1558,19 @@ if (!function_exists('rateb_force_single_tenant_ops')) {
         }
         if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
             return false;
+        }
+        if (PHP_SAPI !== 'cli') {
+            $lookupFile = dirname(RATEB_ROOT, 1) . '/config/env/agency_lookup.php';
+            if (is_file($lookupFile)) {
+                require_once $lookupFile;
+                $host = function_exists('rateb_normalize_http_host')
+                    ? rateb_normalize_http_host((string) ($_SERVER['HTTP_HOST'] ?? ''))
+                    : strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+                if ($host !== '' && function_exists('rateb_lookup_agency_erp_by_host')
+                    && rateb_lookup_agency_erp_by_host($host) !== null) {
+                    return true;
+                }
+            }
         }
 
         return \Rateb\App\Services\DedicatedTenantPolicy::companyCount() === 1;

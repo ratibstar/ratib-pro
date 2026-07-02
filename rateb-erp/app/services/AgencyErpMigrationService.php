@@ -915,6 +915,10 @@ final class AgencyErpMigrationService
         $report['purchase_requests_before'] = $this->countPurchaseRequests($pdo);
 
         $shell = $this->rebuildAgencyShellPreserveLogins($agency, $cfg);
+        $keepCompanyId = (int) ($shell['company_id'] ?? 0);
+        if ($keepCompanyId > 0) {
+            $shell['orphan_cleanup'] = $this->purgeExtraAgencyTenantData($pdo, $keepCompanyId);
+        }
 
         $platformWipes = [];
         $platformErrors = [];
@@ -957,8 +961,7 @@ final class AgencyErpMigrationService
         }
 
         if ($platformErrors !== []) {
-            $report['platform_errors'] = $platformErrors;
-            throw new RuntimeException(implode(' ', $platformErrors));
+            $report['platform_warnings'] = $platformErrors;
         }
 
         $report['agency_id'] = $agencyId;
@@ -968,6 +971,7 @@ final class AgencyErpMigrationService
         $report['shell'] = $shell;
         $report['platform_db'] = $platformDb;
         $report['platform_wipes'] = $platformWipes;
+        $report['post_reset_counts'] = $this->agencyBusinessRowCounts($pdo, (int) ($shell['company_id'] ?? 0));
 
         return $report;
     }
@@ -1056,6 +1060,9 @@ final class AgencyErpMigrationService
      */
     private function rebuildAgencyShellPreserveLogins(array $agency, array $cfg): array
     {
+        if (!defined('RATEB_ERP_DEPLOYMENT_MODE')) {
+            define('RATEB_ERP_DEPLOYMENT_MODE', 'dedicated');
+        }
         Database::useConnectionOverride([
             'db' => $cfg['db'],
             'host' => $cfg['host'],
@@ -1076,11 +1083,96 @@ final class AgencyErpMigrationService
 
             return (new DedicatedCompanySeedService())->rebuildShellPreserveLogins(
                 $companyName,
-                $planSlug
+                $planSlug,
+                true
             );
         } finally {
             Database::clearConnectionOverride();
         }
+    }
+
+    /**
+     * Remove extra companies and orphan tenant rows after agency reset shell rebuild.
+     *
+     * @return array<string, mixed>
+     */
+    private function purgeExtraAgencyTenantData(\PDO $pdo, int $keepCompanyId): array
+    {
+        $report = ['extra_companies_removed' => [], 'orphan_rows_deleted' => []];
+        if ($keepCompanyId < 1) {
+            return $report;
+        }
+
+        try {
+            $rows = $pdo->query('SELECT id FROM rateb_companies WHERE id <> ' . (int) $keepCompanyId)->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as $row) {
+                $extraId = (int) ($row['id'] ?? 0);
+                if ($extraId < 1) {
+                    continue;
+                }
+                $wipe = (new CompanyTenantWipeService())->wipeCompany($pdo, $extraId, true);
+                $report['extra_companies_removed'][] = ['company_id' => $extraId, 'wipe' => $wipe];
+            }
+        } catch (\Throwable $e) {
+            $report['extra_companies_error'] = $e->getMessage();
+        }
+
+        $tables = [
+            'rateb_inventory',
+            'rateb_suppliers',
+            'rateb_warehouses',
+            'rateb_product_categories',
+            'rateb_purchase_requests',
+            'rateb_notifications',
+            'rateb_support_tickets',
+        ];
+        foreach ($tables as $table) {
+            try {
+                $chk = $pdo->query("SHOW TABLES LIKE " . $pdo->quote($table))->fetch();
+                if (!$chk) {
+                    continue;
+                }
+                $stmt = $pdo->prepare(
+                    "DELETE FROM {$table} WHERE company_id IS NOT NULL AND company_id > 0 AND company_id <> :cid"
+                );
+                $stmt->execute(['cid' => $keepCompanyId]);
+                $deleted = $stmt->rowCount();
+                if ($deleted > 0) {
+                    $report['orphan_rows_deleted'][$table] = $deleted;
+                }
+            } catch (\Throwable $e) {
+                $report['orphan_rows_deleted'][$table . '_error'] = $e->getMessage();
+            }
+        }
+
+        return $report;
+    }
+
+    /** @return array<string, int> */
+    private function agencyBusinessRowCounts(\PDO $pdo, int $companyId): array
+    {
+        $counts = [];
+        $tables = [
+            'inventory' => 'rateb_inventory',
+            'suppliers' => 'rateb_suppliers',
+            'warehouses' => 'rateb_warehouses',
+            'purchase_requests' => 'rateb_purchase_requests',
+        ];
+        foreach ($tables as $key => $table) {
+            try {
+                if ($companyId > 0) {
+                    $stmt = $pdo->prepare("SELECT COUNT(*) FROM {$table} WHERE company_id = :cid");
+                    $stmt->execute(['cid' => $companyId]);
+                } else {
+                    $stmt = $pdo->query("SELECT COUNT(*) FROM {$table}");
+                }
+                $counts[$key] = (int) $stmt->fetchColumn();
+            } catch (\Throwable $e) {
+                $counts[$key] = -1;
+            }
+        }
+
+        return $counts;
     }
 
     /**

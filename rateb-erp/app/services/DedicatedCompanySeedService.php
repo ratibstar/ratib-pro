@@ -81,7 +81,8 @@ final class DedicatedCompanySeedService
      */
     public function rebuildShellPreserveLogins(
         string $companyName,
-        string $planSlug = 'professional'
+        string $planSlug = 'professional',
+        bool $forceSingleTenant = false
     ): array {
         $plan = $this->resolvePlan($planSlug);
         $planId = (int) $plan['id'];
@@ -94,7 +95,8 @@ final class DedicatedCompanySeedService
                 $companyName,
                 self::DEFAULT_EMAIL,
                 $plan,
-                $modules
+                $modules,
+                $forceSingleTenant
             );
             $this->ensureDedicatedSubscription($companyId, $plan);
             (new BranchService())->ensureMainBranch($companyId);
@@ -147,8 +149,13 @@ final class DedicatedCompanySeedService
     }
 
   /** @param array<string, mixed> $plan */
-    private function resolveDedicatedCompanyId(string $companyName, string $email, array $plan, string $modules): int
-    {
+    private function resolveDedicatedCompanyId(
+        string $companyName,
+        string $email,
+        array $plan,
+        string $modules,
+        bool $forceSingleTenant = false
+    ): int {
         $companyModel = new Company();
         $rows = $companyModel->query('SELECT id, slug FROM rateb_companies ORDER BY id ASC');
 
@@ -156,7 +163,8 @@ final class DedicatedCompanySeedService
             return (int) $companyModel->create($this->companyPayload($companyName, $email, $plan, $modules));
         }
 
-        if (!DedicatedTenantPolicy::isDedicated()) {
+        $singleTenant = $forceSingleTenant || DedicatedTenantPolicy::isDedicated();
+        if (!$singleTenant) {
             DedicatedTenantPolicy::assertCanCreateCompany();
 
             return (int) $companyModel->create($this->companyPayload($companyName, $email, $plan, $modules));

@@ -503,6 +503,16 @@
             if (rep.platform_errors && rep.platform_errors.length) {
                 rep.platform_errors.forEach(function (err) { lines.push('platform ERROR: ' + err); });
             }
+            if (rep.platform_warnings && rep.platform_warnings.length) {
+                rep.platform_warnings.forEach(function (err) { lines.push('platform WARN: ' + err); });
+            }
+            if (rep.post_reset_counts) {
+                lines.push('post_reset_counts: ' + JSON.stringify(rep.post_reset_counts));
+            }
+            var orphan = (shell && shell.orphan_cleanup) ? shell.orphan_cleanup : null;
+            if (orphan && orphan.orphan_rows_deleted && Object.keys(orphan.orphan_rows_deleted).length) {
+                lines.push('orphan_rows_deleted: ' + JSON.stringify(orphan.orphan_rows_deleted));
+            }
             lines.push('');
             lines.push(cfg.getAttribute('data-reset-logout-hint') || 'Log out and log in again on the agency site, then verify lists are empty.');
         });
