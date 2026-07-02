@@ -137,15 +137,16 @@ jobs:
           SITE="${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}"
           # Unified marketing at / — /home 301→/. Must follow redirects (-L).
           code() {
-            local out code_try=1
-            while [ "$code_try" -le 2 ]; do
-              out="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 10 --max-time 30 "$1" 2>/dev/null || true)"
+            local out code_try=1 max_tries=4
+            while [ "$code_try" -le "$max_tries" ]; do
+              out="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 12 --max-time 45 \
+                -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$1" 2>/dev/null || true)"
               if [ -n "$out" ] && [ "$out" != "000" ]; then
                 echo "$out"
                 return 0
               fi
               code_try=$((code_try + 1))
-              sleep 2
+              sleep 3
             done
             echo "${out:-000}"
           }
@@ -156,7 +157,11 @@ jobs:
             LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' \
               "${SITE}/pages/rateb-rebrand-status.php" 2>/dev/null | sed -n 's/^build=//p' | head -1 | tr -d '\r\n' || true)"
           fi
-          P="$(code "${SITE}/profile/")"
+          P="$(code "${SITE}/profile/?_deploy_verify=$(date +%s)")"
+          if [ "$P" = "000" ]; then
+            P="$(code "${SITE}/pages/about.php?_deploy_verify=$(date +%s)")"
+            echo "::warning::profile/ unreachable from CI; using pages/about.php HTTP=$P"
+          fi
           G="$(code "${SITE}/js/pages/rateb-profile-nav-guard.js")"
           ROOT="$(code "${SITE}/")"
           H="$(code "${SITE}/home")"

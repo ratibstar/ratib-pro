@@ -72,6 +72,7 @@ CRITICAL_FILES=(
   "includes/rateb-operational-proof-data.dist.php"
   "pages/home.php"
   "pages/about.php"
+  "profile/index.php"
   "pages/site-content-media.php"
   "public/cms-media.php"
   "public/cms_media.php"

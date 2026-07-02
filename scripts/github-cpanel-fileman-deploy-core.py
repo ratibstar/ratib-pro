@@ -286,6 +286,7 @@ CRITICAL = [
     "erp-health.php",
     "public/rateb-build.txt",
     "pages/about.php",
+    "profile/index.php",
     "pages/deploy-root.php",
     "pages/company-profile.php",
     "includes/rateb-public-base-url.php",
