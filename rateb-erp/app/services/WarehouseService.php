@@ -37,6 +37,7 @@ final class WarehouseService
         }
         if ($existing) {
             $this->backfillBranchLinks($companyId);
+            $this->dedupeMainWarehouses($companyId);
             return (int) ($existing['id'] ?? 0);
         }
 
@@ -52,9 +53,35 @@ final class WarehouseService
                 'status' => 'active',
                 'branch_id' => $branchId > 0 ? $branchId : null,
             ]);
+            $this->dedupeMainWarehouses($companyId);
             return $id;
         } finally {
             TenantContext::setCompanyId($prevCompany);
+        }
+    }
+
+    private function dedupeMainWarehouses(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        try {
+            $rows = (new Warehouse())->query(
+                'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND code = :code ORDER BY id ASC',
+                ['cid' => $companyId, 'code' => self::MAIN_CODE]
+            );
+            if (count($rows) <= 1) {
+                return;
+            }
+            $keepId = (int) ($rows[0]['id'] ?? 0);
+            foreach (array_slice($rows, 1) as $row) {
+                $extraId = (int) ($row['id'] ?? 0);
+                if ($extraId > 0 && $extraId !== $keepId) {
+                    (new Warehouse())->delete($extraId);
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
         }
     }
 

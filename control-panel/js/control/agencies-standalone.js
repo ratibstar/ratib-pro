@@ -25,6 +25,7 @@
     window.RatibCpAgencies = window.RatibCpAgencies || {
         provisionProClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
         provisionErpClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
+        resetErpClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
         wireProvisionButtons: function() {}
     };
 
@@ -556,6 +557,69 @@
         return false;
     }
 
+    function resetErpClick(btn, ev) {
+        stopProvisionEvent(ev);
+        var resetBtn = (ev && ev.currentTarget) ? ev.currentTarget : btn;
+        if (!resetBtn) return false;
+        if (resetBtn.classList.contains('disabled') || resetBtn.classList.contains('permission-denied')) {
+            showAlert('You do not have permission to reset ERP data for this agency.');
+            return false;
+        }
+        var agencyId = resolveAgencyIdFromBtn(resetBtn, ev);
+        if (!agencyId) { showAlert('Invalid agency ID'); return false; }
+        var agencyName = resetBtn.getAttribute('data-agency-name') || ('#' + agencyId);
+        var siteUrl = resetBtn.getAttribute('data-site-url') || '';
+        var linkedCo = parseInt(resetBtn.getAttribute('data-erp-company-id') || '0', 10);
+        var msg = 'DELETE all ERP business data for "' + agencyName + '"?\n\nLogin usernames and passwords are kept.\nCompanies, inventory, suppliers, HR, etc. are wiped.';
+        showConfirm(msg).then(function(ok) {
+            if (!ok) return;
+            var typed = window.prompt('Type RESET-DATA to confirm');
+            if (typed !== 'RESET-DATA') {
+                showAlert('Type RESET-DATA exactly to confirm.');
+                return;
+            }
+            closeAgencyActionDropdowns();
+            resetBtn.disabled = true;
+            var body = { agency_id: agencyId, confirm: 'RESET-DATA' };
+            if (linkedCo < 1) {
+                var coPick = window.prompt('Platform company id (optional, leave empty to auto-detect):', '');
+                if (coPick && String(coPick).trim() !== '') {
+                    var coId = parseInt(String(coPick).trim(), 10);
+                    if (coId > 0) body.platform_company_id = coId;
+                }
+            }
+            fetch(API_BASE + '/agencies-reset-erp-data.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(function(res) {
+                var ct = (res.headers.get('content-type') || '').toLowerCase();
+                if (!ct.includes('application/json')) {
+                    throw new Error('Session expired or server error — please log in again and retry.');
+                }
+                return res.json();
+            }).then(function(data) {
+                resetBtn.disabled = false;
+                if (!data || !data.success) {
+                    showAlert((data && data.message) ? data.message : 'ERP reset failed');
+                    return;
+                }
+                var rep = data.data || {};
+                var counts = rep.post_reset_counts ? JSON.stringify(rep.post_reset_counts) : '';
+                var verify = siteUrl ? (siteUrl.replace(/\/$/, '') + '/rateb-erp/public/admin') : '';
+                var out = 'ERP data reset OK on ' + (rep.erp_db_name || 'database') + '.';
+                if (counts) out += '\nCounts: ' + counts;
+                if (verify) out += '\n\nLog out and log in again at:\n' + verify;
+                showAlert(out);
+            }).catch(function(err) {
+                resetBtn.disabled = false;
+                showAlert('ERP reset request failed: ' + (err && err.message ? err.message : 'unknown'));
+            });
+        });
+        return false;
+    }
+
     function wireProvisionButtons(root) {
         var scope = root || document;
         scope.querySelectorAll('.btn-provision-pro').forEach(function(btn) {
@@ -567,6 +631,11 @@
             if (btn._agProvisionWired) return;
             btn._agProvisionWired = true;
             btn.onclick = function(ev) { return provisionErpClick(this, ev); };
+        });
+        scope.querySelectorAll('.btn-reset-erp').forEach(function(btn) {
+            if (btn._agResetWired) return;
+            btn._agResetWired = true;
+            btn.onclick = function(ev) { return resetErpClick(this, ev); };
         });
     }
 
@@ -933,6 +1002,7 @@
 
     window.RatibCpAgencies.provisionProClick = provisionProClick;
     window.RatibCpAgencies.provisionErpClick = provisionErpClick;
+    window.RatibCpAgencies.resetErpClick = resetErpClick;
     window.RatibCpAgencies.wireProvisionButtons = wireProvisionButtons;
     wireProvisionButtons();
 

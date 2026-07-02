@@ -46,7 +46,6 @@ foreach ($agencies as $agency) {
                     <option value="0"><?php echo __('agency_erp_filter_unlinked'); ?></option>
                 </select>
                 <p class="small text-muted mb-0 mt-1"><?php echo __('agency_erp_reset_platform_company_hint'); ?></p>
-                <p class="small text-muted mb-0"><?php echo __('agency_erp_reset_any_agency_hint'); ?></p>
             </div>
             <div class="col-md-8 d-flex flex-wrap gap-2 align-items-center">
                 <span class="small text-muted me-1"><?php echo __('agency_erp_quick_select'); ?>:</span>
@@ -132,15 +131,6 @@ foreach ($agencies as $agency) {
                             <?php } ?>
                         </td>
                         <td class="text-end text-nowrap">
-                            <?php if ($erpDb !== '') { ?>
-                            <button type="button" class="btn btn-outline-danger btn-sm erp-reset-row-btn me-1"
-                                data-agency-id="<?php echo $id; ?>"
-                                data-agency-name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-                                data-site-url="<?php echo Rateb\App\Core\View::escape($site); ?>"
-                                title="<?php echo __('agency_erp_reset_row_btn'); ?>">
-                                <i class="fas fa-eraser"></i>
-                            </button>
-                            <?php } ?>
                             <div class="dropdown d-inline-block">
                                 <button type="button" class="btn btn-link btn-sm p-0 erp-link-row-btn"
                                     data-agency-id="<?php echo $id; ?>"
@@ -184,11 +174,7 @@ foreach ($agencies as $agency) {
                 <label class="form-label small mb-1" for="erpSyncConfirmInput"><?php echo __('agency_erp_sync_confirm_label'); ?></label>
                 <input type="text" class="form-control form-control-sm font-monospace" id="erpSyncConfirmInput" autocomplete="off" spellcheck="false" placeholder="SYNC">
             </div>
-            <div class="col-lg-3 col-md-4">
-                <label class="form-label small mb-1" for="erpResetConfirmInput"><?php echo __('agency_erp_reset_confirm_label'); ?></label>
-                <input type="text" class="form-control form-control-sm font-monospace" id="erpResetConfirmInput" autocomplete="off" spellcheck="false" placeholder="RESET-DATA">
-            </div>
-            <div class="col-lg-6 col-md-4">
+            <div class="col-lg-9 col-md-8">
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" id="erpUpdateIncludePlatform" checked>
                     <label class="form-check-label small" for="erpUpdateIncludePlatform">
@@ -212,10 +198,6 @@ foreach ($agencies as $agency) {
                     <button type="button" class="btn btn-warning btn-sm" id="erpRestoreAdminSelected" disabled>
                         <i class="fas fa-user-shield me-1"></i><?php echo __('agency_erp_restore_admin_selected'); ?>
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataSelected" disabled
-                        onclick="if(window.__erpAgencyResetSelected){window.__erpAgencyResetSelected();}">
-                        <i class="fas fa-eraser me-1"></i><?php echo __('agency_erp_reset_data_selected'); ?>
-                    </button>
                 </div>
                 <p class="small fw-semibold mb-2 text-muted"><?php echo __('agency_erp_actions_on_all'); ?></p>
                 <div class="d-flex flex-wrap gap-2">
@@ -231,15 +213,11 @@ foreach ($agencies as $agency) {
                     <button type="button" class="btn btn-outline-success btn-sm" id="erpUpdateRunSubscribed">
                         <i class="fas fa-check-circle me-1"></i><?php echo __('agency_erp_push_run_subscribed'); ?>
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="erpResetDataAllReady"
-                        onclick="if(window.__erpAgencyResetAllReady){window.__erpAgencyResetAllReady();}">
-                        <i class="fas fa-eraser me-1"></i><?php echo __('agency_erp_reset_data_all_ready'); ?>
-                    </button>
                 </div>
             </div>
         </div>
         <p class="text-warning small mb-0 mt-3"><?php echo __('agency_erp_sync_warning'); ?></p>
-        <p class="text-danger small mb-0 mt-1"><?php echo __('agency_erp_reset_warning'); ?></p>
+        <p class="text-muted small mb-0 mt-1"><?php echo __('agency_erp_reset_moved_hint'); ?></p>
     </div>
 </div>
 

@@ -37,6 +37,8 @@ return [
     'agencies.provision_pro' => 'Provision Pro',
     'agencies.provision_erp' => 'Provision ERP',
     'agencies.reprovision_erp' => 'Re-provision ERP',
+    'agencies.reset_erp_data' => 'مسح بيانات ERP (مع الإبقاء على كلمات مرور الدخول)',
+    'agencies.reset_erp_data_short' => 'مسح البيانات',
     'agencies.view' => 'عرض',
     'agencies.edit' => 'تعديل',
     'agencies.delete' => 'حذف',

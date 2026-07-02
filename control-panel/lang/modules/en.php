@@ -40,6 +40,8 @@ return [
     'agencies.provision_pro' => 'Provision Pro',
     'agencies.provision_erp' => 'Provision ERP',
     'agencies.reprovision_erp' => 'Re-provision ERP',
+    'agencies.reset_erp_data' => 'Reset ERP data (keep login passwords)',
+    'agencies.reset_erp_data_short' => 'Reset data',
     'agencies.view' => 'View',
     'agencies.edit' => 'Edit',
     'agencies.delete' => 'Delete',

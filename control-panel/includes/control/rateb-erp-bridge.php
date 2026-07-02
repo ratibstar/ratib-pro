@@ -613,6 +613,43 @@ function control_rateb_erp_db_diagnose(): array
     ];
 }
 
+/**
+ * Wipe agency ERP business data (preserve login passwords). Used from Control Panel → Agencies.
+ *
+ * @return array<string, mixed>
+ */
+function control_rateb_erp_reset_agency_data(int $agencyId, ?int $platformCompanyId = null, string $confirm = ''): array
+{
+    control_rateb_erp_ensure_root();
+    $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+    if (is_file($lookup)) {
+        require_once $lookup;
+    }
+    require_once RATEB_ROOT . '/config/database.php';
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+    require_once RATEB_ROOT . '/app/services/AgencyErpMigrationService.php';
+
+    if ($agencyId < 1) {
+        throw new InvalidArgumentException('Invalid agency id');
+    }
+    $agency = function_exists('rateb_lookup_agency_by_id') ? rateb_lookup_agency_by_id($agencyId) : null;
+    if ($agency === null) {
+        throw new RuntimeException('Agency not found');
+    }
+
+    if (function_exists('set_time_limit')) {
+        @set_time_limit(600);
+    }
+
+    $override = $platformCompanyId !== null && $platformCompanyId > 0 ? $platformCompanyId : null;
+    $linked = (int) ($agency['erp_company_id'] ?? 0);
+    if ($linked > 0) {
+        $override = $linked;
+    }
+
+    return (new \Rateb\App\Services\AgencyErpMigrationService())->resetAgencyData($agency, $override);
+}
+
 function control_rateb_erp_assets_base_url(): string
 {
     $site = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');
