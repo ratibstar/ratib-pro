@@ -73,6 +73,78 @@ final class DedicatedCompanySeedService
         }
     }
 
+    /**
+     * Wipe business data then attach existing tenant users to a fresh company shell.
+     * Password hashes and login identities are never changed.
+     *
+     * @return array{company_id:int,users_preserved:int,credentials_unchanged:bool}
+     */
+    public function rebuildShellPreserveLogins(
+        string $companyName,
+        string $planSlug = 'professional'
+    ): array {
+        $plan = $this->resolvePlan($planSlug);
+        $planId = (int) $plan['id'];
+        $modules = $plan['modules'] ?? json_encode(PlanLimitService::defaultModules(), JSON_UNESCAPED_UNICODE);
+
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $companyModel = new Company();
+            $companyId = (int) $companyModel->create($this->companyPayload(
+                $companyName,
+                self::DEFAULT_EMAIL,
+                $plan,
+                $modules
+            ));
+            $this->ensureDedicatedSubscription($companyId, $plan);
+            (new BranchService())->ensureMainBranch($companyId);
+
+            $userModel = new User();
+            $tenantUsers = $userModel->query(
+                'SELECT id, email, name FROM rateb_users WHERE is_super_admin = 0 OR is_super_admin IS NULL ORDER BY id ASC'
+            );
+            $roleRow = $userModel->queryOne(
+                "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
+            );
+            $roleId = $roleRow ? (int) $roleRow['id'] : 0;
+            $auth = new AuthorizationService();
+            $barcode = new BarcodeLoginService();
+
+            foreach ($tenantUsers as $user) {
+                $userId = (int) ($user['id'] ?? 0);
+                if ($userId < 1) {
+                    continue;
+                }
+                $userModel->update($userId, [
+                    'company_id' => $companyId,
+                    'status' => 'active',
+                ]);
+                if ($roleId > 0) {
+                    $hasRole = $userModel->queryOne(
+                        'SELECT 1 FROM rateb_user_roles WHERE user_id = :uid AND role_id = :rid LIMIT 1',
+                        ['uid' => $userId, 'rid' => $roleId]
+                    );
+                    if (!$hasRole) {
+                        $auth->assignRole($userId, $roleId);
+                    }
+                }
+                $barcode->ensureUserBarcode($userId);
+            }
+
+            $db->commit();
+
+            return [
+                'company_id' => $companyId,
+                'users_preserved' => count($tenantUsers),
+                'credentials_unchanged' => true,
+            ];
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
   /** @param array<string, mixed> $plan */
     private function resolveDedicatedCompanyId(string $companyName, string $email, array $plan, string $modules): int
     {

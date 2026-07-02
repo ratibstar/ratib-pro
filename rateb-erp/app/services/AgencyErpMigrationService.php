@@ -379,18 +379,18 @@ final class AgencyErpMigrationService
 
         $pdo = $this->agencyPdo($agency);
         $runner = new \ProductionResetRunner($pdo, $cfg['db']);
-        $runner->run(false, true, false);
+        $runner->run(false, true, false, true);
         $report = $runner->report();
 
-        $seed = $this->reseedAgencyCompany($agency, $cfg);
-        if ($seed['company_id'] > 0 && function_exists('rateb_save_agency_erp_company_link')) {
-            rateb_save_agency_erp_company_link($agencyId, (int) $seed['company_id']);
+        $shell = $this->rebuildAgencyShellPreserveLogins($agency, $cfg);
+        if ($shell['company_id'] > 0 && function_exists('rateb_save_agency_erp_company_link')) {
+            rateb_save_agency_erp_company_link($agencyId, (int) $shell['company_id']);
         }
 
         $report['agency_id'] = $agencyId;
         $report['agency_name'] = trim((string) ($agency['name'] ?? ''));
         $report['erp_db_name'] = $cfg['db'];
-        $report['seed'] = $seed;
+        $report['shell'] = $shell;
 
         return $report;
     }
@@ -472,7 +472,7 @@ final class AgencyErpMigrationService
      * @param array{host:string,port:int,user:string,pass:string,db:string} $cfg
      * @return array<string, mixed>
      */
-    private function reseedAgencyCompany(array $agency, array $cfg): array
+    private function rebuildAgencyShellPreserveLogins(array $agency, array $cfg): array
     {
         Database::useConnectionOverride([
             'db' => $cfg['db'],
@@ -491,17 +491,10 @@ final class AgencyErpMigrationService
             if ($planSlug === '') {
                 $planSlug = 'professional';
             }
-            $slug = preg_replace('/[^a-z0-9]+/i', '', strtolower((string) ($agency['slug'] ?? 'client')));
-            if ($slug === '') {
-                $slug = 'client' . (int) ($agency['id'] ?? 0);
-            }
-            $email = 'admin+' . $slug . '@rateb.sa';
 
-            return (new DedicatedCompanySeedService())->seed(
+            return (new DedicatedCompanySeedService())->rebuildShellPreserveLogins(
                 $companyName,
-                $email,
-                $planSlug,
-                $companyName
+                $planSlug
             );
         } finally {
             Database::clearConnectionOverride();

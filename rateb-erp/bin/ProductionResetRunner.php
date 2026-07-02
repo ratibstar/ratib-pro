@@ -194,9 +194,10 @@ final class ProductionResetRunner
         return $this->report;
     }
 
-    public function run(bool $dryRun, bool $quiet = false, bool $wipeFiles = true): void
+    public function run(bool $dryRun, bool $quiet = false, bool $wipeFiles = true, bool $preserveCredentials = false): void
     {
         $this->report['mode'] = $dryRun ? 'dry-run' : 'execute';
+        $this->report['preserve_credentials'] = $preserveCredentials;
         $this->report['started_at'] = date('c');
 
         $existing = $this->listErpTables();
@@ -204,11 +205,17 @@ final class ProductionResetRunner
         $toWipe = [];
         foreach (self::WIPE_ORDER as $table) {
             if (isset($existing[$table]) && !isset($preserve[$table])) {
+                if ($preserveCredentials && $this->isCredentialTable($table)) {
+                    continue;
+                }
                 $toWipe[] = $table;
             }
         }
         foreach ($existing as $table => $_) {
             if (isset($preserve[$table]) || in_array($table, $toWipe, true)) {
+                continue;
+            }
+            if ($preserveCredentials && $this->isCredentialTable($table)) {
                 continue;
             }
             if ($table === 'rateb_users') {
@@ -239,7 +246,7 @@ final class ProductionResetRunner
             }
         }
 
-        $this->handleUsers($dryRun, $quiet);
+        $this->handleUsers($dryRun, $quiet, $preserveCredentials);
         if ($wipeFiles) {
             $this->handleFiles($dryRun, $quiet);
         }
@@ -259,8 +266,27 @@ final class ProductionResetRunner
         echo $message . "\n";
     }
 
-    private function handleUsers(bool $dryRun, bool $quiet = false): void
+    private function isCredentialTable(string $table): bool
     {
+        return in_array($table, ['rateb_users', 'rateb_user_roles', 'rateb_login_barcode_pairs'], true);
+    }
+
+    private function handleUsers(bool $dryRun, bool $quiet = false, bool $preserveCredentials = false): void
+    {
+        if ($preserveCredentials) {
+            $users = $this->db->query(
+                'SELECT id, email, name FROM rateb_users ORDER BY id ASC'
+            )->fetchAll(\PDO::FETCH_ASSOC);
+            $this->report['users']['preserved_all'] = $users;
+            $this->report['users']['preserved_count'] = count($users);
+            $this->writeln("\nUsers preserved (credentials unchanged): " . count($users), $quiet);
+            foreach ($users as $u) {
+                $this->writeln('  keep id=' . ($u['id'] ?? '?') . ' ' . ($u['email'] ?? ''), $quiet);
+            }
+
+            return;
+        }
+
         $admins = $this->db->query(
             'SELECT id, email FROM rateb_users WHERE is_super_admin = 1'
         )->fetchAll(\PDO::FETCH_ASSOC);

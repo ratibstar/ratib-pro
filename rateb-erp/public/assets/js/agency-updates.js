@@ -474,9 +474,14 @@
             if (rep.errors && rep.errors.length) {
                 rep.errors.forEach(function (err) { lines.push('WARN: ' + err); });
             }
-            var seed = rep.seed || {};
-            if (seed.company_id) {
-                lines.push('seeded company_id: ' + seed.company_id + ' | login: ' + (seed.admin_username || 'admin') + ' / ' + (seed.admin_password || '123456'));
+            var shell = rep.shell || rep.seed || {};
+            if (shell.company_id) {
+                lines.push('company_id: ' + shell.company_id);
+            }
+            if (shell.users_preserved) {
+                lines.push('users_preserved: ' + shell.users_preserved + ' (passwords unchanged)');
+            } else if (shell.credentials_unchanged) {
+                lines.push('credentials: unchanged');
             }
         });
         return lines.join('\n');
