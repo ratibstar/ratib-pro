@@ -362,6 +362,24 @@ final class AgencyErpMigrationService
             throw new RuntimeException('No ERP database configured for agency #' . $agencyId);
         }
 
+        $siteHost = '';
+        if (function_exists('rateb_agency_host_from_site_url')) {
+            $siteHost = rateb_agency_host_from_site_url(trim((string) ($agency['site_url'] ?? '')));
+        }
+        if ($siteHost !== '' && function_exists('rateb_agency_erp_binding_for_host')) {
+            $this->ensureAgencyLookup();
+            $siteBinding = rateb_agency_erp_binding_for_host($siteHost);
+            if (is_array($siteBinding) && trim((string) ($siteBinding['db'] ?? '')) !== '') {
+                $cfg = [
+                    'host' => (string) $siteBinding['host'],
+                    'port' => (int) $siteBinding['port'],
+                    'user' => (string) $siteBinding['user'],
+                    'pass' => (string) $siteBinding['pass'],
+                    'db' => (string) $siteBinding['db'],
+                ];
+            }
+        }
+
         $platformDb = function_exists('rateb_erp_database_name') ? trim((string) rateb_erp_database_name()) : '';
         if ($platformDb !== '' && strcasecmp($cfg['db'], $platformDb) === 0) {
             throw new RuntimeException(__('agency_erp_reset_platform_blocked'));
@@ -390,6 +408,7 @@ final class AgencyErpMigrationService
         $report['agency_id'] = $agencyId;
         $report['agency_name'] = trim((string) ($agency['name'] ?? ''));
         $report['erp_db_name'] = $cfg['db'];
+        $report['site_host'] = $siteHost;
         $report['shell'] = $shell;
 
         return $report;

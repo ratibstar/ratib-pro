@@ -77,11 +77,29 @@ if (!function_exists('rateb_normalize_http_host')) {
     }
 }
 
-if (!function_exists('rateb_lookup_agency_by_host')) {
+if (!function_exists('rateb_agency_host_from_site_url')) {
+    function rateb_agency_host_from_site_url(string $siteUrl): string
+    {
+        $siteUrl = trim($siteUrl);
+        if ($siteUrl === '') {
+            return '';
+        }
+        $host = parse_url($siteUrl, PHP_URL_HOST);
+        if (is_string($host) && $host !== '') {
+            return rateb_normalize_http_host($host);
+        }
+        $clean = preg_replace('#^https?://#i', '', $siteUrl) ?? $siteUrl;
+        $clean = explode('/', $clean, 2)[0];
+
+        return rateb_normalize_http_host($clean);
+    }
+}
+
+if (!function_exists('rateb_lookup_agency_row_by_host')) {
     /**
      * @return array<string, mixed>|null
      */
-    function rateb_lookup_agency_by_host(string $host): ?array
+    function rateb_lookup_agency_row_by_host(string $host, bool $activeOnly): ?array
     {
         $host = rateb_normalize_http_host($host);
         if ($host === '') {
@@ -98,9 +116,15 @@ if (!function_exists('rateb_lookup_agency_by_host')) {
             return null;
         }
         $cols = rateb_agency_lookup_select_columns($conn);
+        $activeSql = $activeOnly ? ' AND is_active = 1' : '';
         $sql = "SELECT {$cols} FROM control_agencies
-                WHERE (site_url = ? OR site_url = ? OR site_url = ? OR site_url = ? OR site_url LIKE ? OR site_url LIKE ?)
-                  AND is_active = 1
+                WHERE (
+                    site_url = ? OR site_url = ? OR site_url = ? OR site_url = ?
+                    OR site_url LIKE ? OR site_url LIKE ?
+                    OR LOWER(TRIM(TRAILING '/' FROM REPLACE(REPLACE(site_url, 'https://', ''), 'http://', ''))) = ?
+                    OR LOWER(TRIM(TRAILING '/' FROM REPLACE(REPLACE(site_url, 'https://', ''), 'http://', ''))) LIKE ?
+                ){$activeSql}
+                ORDER BY id ASC
                 LIMIT 1";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
@@ -114,7 +138,8 @@ if (!function_exists('rateb_lookup_agency_by_host')) {
         $httpSlash = 'http://' . $host . '/';
         $httpsLike = 'https://' . $host . '/%';
         $httpLike = 'http://' . $host . '/%';
-        $stmt->bind_param('ssssss', $https, $httpsSlash, $http, $httpSlash, $httpsLike, $httpLike);
+        $hostLike = $host . '/%';
+        $stmt->bind_param('ssssssss', $https, $httpsSlash, $http, $httpSlash, $httpsLike, $httpLike, $host, $hostLike);
         $stmt->execute();
         $res = $stmt->get_result();
         $row = $res ? $res->fetch_assoc() : null;
@@ -122,6 +147,114 @@ if (!function_exists('rateb_lookup_agency_by_host')) {
         $conn->close();
 
         return is_array($row) ? $row : null;
+    }
+}
+
+if (!function_exists('rateb_lookup_agency_erp_by_host')) {
+    /**
+     * ERP host binding — ready agencies with erp_db_name, even when is_active is off.
+     *
+     * @return array<string, mixed>|null
+     */
+    function rateb_lookup_agency_erp_by_host(string $host): ?array
+    {
+        $host = rateb_normalize_http_host($host);
+        if ($host === '') {
+            return null;
+        }
+        foreach ([true, false] as $activeOnly) {
+            $row = rateb_lookup_agency_row_by_host($host, $activeOnly);
+            if ($row === null) {
+                continue;
+            }
+            $erpDb = trim((string) ($row['erp_db_name'] ?? ''));
+            $status = strtolower(trim((string) ($row['erp_status'] ?? '')));
+            if ($erpDb !== '' && $status === 'ready') {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('rateb_agency_erp_binding_for_host')) {
+    /**
+     * @return array{host:string,port:int,user:string,pass:string,db:string,agency_id:int}|null
+     */
+    function rateb_agency_erp_binding_for_host(string $host): ?array
+    {
+        $row = rateb_lookup_agency_erp_by_host($host);
+        if ($row === null) {
+            return null;
+        }
+        $db = trim((string) ($row['erp_db_name'] ?? ''));
+        if ($db === '') {
+            return null;
+        }
+        $dbHost = trim((string) ($row['erp_db_host'] ?? ''));
+        if ($dbHost === '') {
+            $dbHost = trim((string) ($row['db_host'] ?? ''));
+        }
+        if ($dbHost === '') {
+            $dbHost = defined('DB_HOST') ? (string) DB_HOST : 'localhost';
+        }
+        $dbUser = trim((string) ($row['erp_db_user'] ?? ''));
+        if ($dbUser === '') {
+            $dbUser = trim((string) ($row['db_user'] ?? ''));
+        }
+        $dbPass = (string) ($row['erp_db_pass'] ?? '');
+        if ($dbPass === '' && array_key_exists('db_pass', $row)) {
+            $dbPass = (string) ($row['db_pass'] ?? '');
+        }
+        if ($dbUser === '' && defined('DB_USER')) {
+            $dbUser = (string) DB_USER;
+        }
+        if ($dbPass === '' && defined('DB_PASS')) {
+            $dbPass = (string) DB_PASS;
+        }
+
+        return [
+            'host' => $dbHost !== '' ? $dbHost : 'localhost',
+            'port' => (int) ($row['db_port'] ?? 3306),
+            'user' => $dbUser,
+            'pass' => $dbPass,
+            'db' => $db,
+            'agency_id' => (int) ($row['id'] ?? 0),
+        ];
+    }
+}
+
+if (!function_exists('rateb_agency_erp_binding_for_request_host')) {
+    /**
+     * @return array{host:string,port:int,user:string,pass:string,db:string,agency_id:int}|null
+     */
+    function rateb_agency_erp_binding_for_request_host(): ?array
+    {
+        if (PHP_SAPI === 'cli') {
+            return null;
+        }
+        $resolver = __DIR__ . DIRECTORY_SEPARATOR . 'erp_agency_resolver.php';
+        if (is_file($resolver)) {
+            require_once $resolver;
+        }
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        $host = rateb_normalize_http_host($host);
+        if ($host === '' || (function_exists('rateb_erp_is_main_platform_host') && rateb_erp_is_main_platform_host($host))) {
+            return null;
+        }
+
+        return rateb_agency_erp_binding_for_host($host);
+    }
+}
+
+if (!function_exists('rateb_lookup_agency_by_host')) {
+    /**
+     * @return array<string, mixed>|null
+     */
+    function rateb_lookup_agency_by_host(string $host): ?array
+    {
+        return rateb_lookup_agency_row_by_host($host, true);
     }
 }
 

@@ -39,14 +39,13 @@ if (!function_exists('resolve_agency_erp_by_host')) {
         if (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED) {
             return defined('RATEB_ERP_DB_NAME') && (string) RATEB_ERP_DB_NAME !== '';
         }
-        if (defined('RATEB_ERP_DB_NAME') && (string) RATEB_ERP_DB_NAME !== '' && !defined('RATEB_ERP_AGENCY_RESOLVED')) {
-            return false;
-        }
         $host = rateb_normalize_http_host($host);
         if ($host === '' || rateb_erp_is_main_platform_host($host)) {
             return false;
         }
-        $row = rateb_lookup_agency_by_host($host);
+        $row = function_exists('rateb_lookup_agency_erp_by_host')
+            ? rateb_lookup_agency_erp_by_host($host)
+            : rateb_lookup_agency_by_host($host);
         if ($row === null) {
             return false;
         }

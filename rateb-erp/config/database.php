@@ -11,6 +11,17 @@ if (is_file($erpAgencyResolver) && !defined('RATEB_ERP_AGENCY_RESOLVED')) {
 if (!function_exists('rateb_erp_database_name')) {
     function rateb_erp_database_name(): string
     {
+        if (PHP_SAPI !== 'cli' && function_exists('rateb_agency_erp_binding_for_request_host')) {
+            $lookupFile = dirname(__DIR__, 2) . '/config/env/agency_lookup.php';
+            if (is_file($lookupFile)) {
+                require_once $lookupFile;
+                $binding = rateb_agency_erp_binding_for_request_host();
+                if (is_array($binding) && trim((string) ($binding['db'] ?? '')) !== '') {
+                    return (string) $binding['db'];
+                }
+            }
+        }
+
         $name = '';
         if (defined('RATEB_ERP_DB_NAME') && (string) RATEB_ERP_DB_NAME !== '') {
             $name = (string) RATEB_ERP_DB_NAME;
@@ -87,6 +98,21 @@ if (!function_exists('rateb_erp_db_credentials')) {
     /** @return array{0:string,1:string} */
     function rateb_erp_db_credentials(): array
     {
+        if (PHP_SAPI !== 'cli' && function_exists('rateb_agency_erp_binding_for_request_host')) {
+            $lookupFile = dirname(__DIR__, 2) . '/config/env/agency_lookup.php';
+            if (is_file($lookupFile)) {
+                require_once $lookupFile;
+                $binding = rateb_agency_erp_binding_for_request_host();
+                if (is_array($binding)) {
+                    $user = trim((string) ($binding['user'] ?? ''));
+                    $pass = (string) ($binding['pass'] ?? '');
+                    if ($user !== '') {
+                        return [$user, $pass];
+                    }
+                }
+            }
+        }
+
         $user = '';
         $pass = '';
         if (defined('RATEB_ERP_DB_USER') && (string) RATEB_ERP_DB_USER !== '') {
