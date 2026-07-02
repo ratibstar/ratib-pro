@@ -60,7 +60,7 @@ final class WarehouseService
         }
     }
 
-    private function dedupeMainWarehouses(int $companyId): void
+    public function dedupeMainWarehouses(int $companyId): void
     {
         if ($companyId < 1) {
             return;

@@ -1433,6 +1433,21 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
     {
         return 'main';
     }
+
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        if ($companyId > 0) {
+            (new \Rateb\App\Services\WarehouseService())->dedupeMainWarehouses($companyId);
+        }
+        parent::index();
+    }
 }
 
 final class BranchesController extends \Rateb\App\Controllers\CrudController

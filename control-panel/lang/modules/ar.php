@@ -39,6 +39,7 @@ return [
     'agencies.reprovision_erp' => 'Re-provision ERP',
     'agencies.reset_erp_data' => 'مسح بيانات ERP (مع الإبقاء على كلمات مرور الدخول)',
     'agencies.reset_erp_data_short' => 'مسح البيانات',
+    'agencies.reset_platform_company_optional' => 'رقم شركة المنصة (اختياري إن لم تكن مربوطة)',
     'agencies.view' => 'عرض',
     'agencies.edit' => 'تعديل',
     'agencies.delete' => 'حذف',

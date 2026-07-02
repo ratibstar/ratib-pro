@@ -42,6 +42,7 @@ return [
     'agencies.reprovision_erp' => 'Re-provision ERP',
     'agencies.reset_erp_data' => 'Reset ERP data (keep login passwords)',
     'agencies.reset_erp_data_short' => 'Reset data',
+    'agencies.reset_platform_company_optional' => 'Platform company id (optional if not linked)',
     'agencies.view' => 'View',
     'agencies.edit' => 'Edit',
     'agencies.delete' => 'Delete',

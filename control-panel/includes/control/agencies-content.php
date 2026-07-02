@@ -770,6 +770,9 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                 <li><button type="button" class="dropdown-item ag-btn-erp-blocked" data-blocked-reason="<?php echo htmlspecialchars($erpBlocked !== '' ? $erpBlocked : $agT('agencies.erp_needs_provision', 'Run Provision ERP first'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><i class="fas fa-hospital ag-menu-ico ag-ico-erp"></i><?php echo htmlspecialchars($agT('agencies.erp', 'ERP'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                                 <?php endif; ?>
                                 <li><hr class="dropdown-divider"></li>
+                                <?php if (trim((string) ($r['erp_db_name'] ?? '')) !== '') { ?>
+                                <li><button type="button" class="dropdown-item text-danger btn-reset-erp" data-agency-id="<?php echo $agencyIdRow; ?>" data-id="<?php echo $agencyIdRow; ?>" data-agency-name="<?php echo htmlspecialchars((string) ($r['name'] ?? $r['agency_name'] ?? 'Agency'), ENT_QUOTES, 'UTF-8'); ?>" data-site-url="<?php echo htmlspecialchars($openSiteUrl, ENT_QUOTES, 'UTF-8'); ?>" data-erp-company-id="<?php echo (int) ($r['erp_company_id'] ?? 0); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-eraser ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.reset_erp_data_short', 'Reset data'), ENT_QUOTES, 'UTF-8'); ?></button></li>
+                                <?php } ?>
                                 <li><button type="button" class="dropdown-item btn-view" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r, JSON_UNESCAPED_UNICODE))); ?>" data-permission="control_agencies,view_control_agencies"><i class="fas fa-eye ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.view', 'View'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                                 <li><button type="button" class="dropdown-item btn-edit" data-row="<?php echo htmlspecialchars(base64_encode(json_encode($r, JSON_UNESCAPED_UNICODE))); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-pen ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.edit', 'Edit'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                                 <li><hr class="dropdown-divider"></li>
@@ -1041,6 +1044,31 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
             <div class="modal-footer border-top border-secondary py-2 gap-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary btn-sm" id="erpProvisionConfirmBtn">Provision ERP</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="erpResetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content agencies-modal-content" dir="ltr">
+            <div class="modal-header border-bottom border-secondary py-2">
+                <h5 class="modal-title h6 mb-0"><?php echo htmlspecialchars($agT('agencies.reset_erp_data_short', 'Reset data'), ENT_QUOTES, 'UTF-8'); ?></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="small text-danger mb-2" id="erpResetModalIntro">Deletes business data; login passwords are kept.</p>
+                <label class="form-label small" for="erpResetConfirmInput">Type <code>RESET-DATA</code></label>
+                <input type="text" class="form-control form-control-sm font-monospace" id="erpResetConfirmInput" autocomplete="off" spellcheck="false" placeholder="RESET-DATA">
+                <label class="form-label small mt-2" for="erpResetPlatformCoInput"><?php echo htmlspecialchars($agT('agencies.reset_platform_company_optional', 'Platform company id (optional)'), ENT_QUOTES, 'UTF-8'); ?></label>
+                <input type="number" class="form-control form-control-sm" id="erpResetPlatformCoInput" min="0" step="1" placeholder="">
+                <input type="hidden" id="erpResetAgencyId" value="">
+                <input type="hidden" id="erpResetAgencyName" value="">
+                <input type="hidden" id="erpResetSiteUrl" value="">
+                <input type="hidden" id="erpResetLinkedCo" value="0">
+            </div>
+            <div class="modal-footer border-top border-secondary py-2 gap-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm" id="erpResetConfirmBtn">Reset ERP data</button>
             </div>
         </div>
     </div>

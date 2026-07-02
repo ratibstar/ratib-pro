@@ -15,7 +15,7 @@
     if (!API_BASE) API_BASE = (window.location.origin + (document.location.pathname.replace(/\/pages\/.*$/, '') || '')) + '/api/control';
 
     // Move modals to body to avoid overlay/stacking blocking clicks (run even on country-cards view)
-    ['viewModal', 'editModal', 'alertModal', 'confirmModal', 'erpProvisionModal'].forEach(function(id) {
+    ['viewModal', 'editModal', 'alertModal', 'confirmModal', 'erpProvisionModal', 'erpResetModal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el && el.parentNode !== document.body) document.body.appendChild(el);
     });
@@ -494,7 +494,7 @@
         if (ev && ev.currentTarget) {
             el = ev.currentTarget;
         } else if (ev && ev.target && typeof ev.target.closest === 'function') {
-            var fromTarget = ev.target.closest('.btn-provision-pro, .btn-provision-erp');
+            var fromTarget = ev.target.closest('.btn-provision-pro, .btn-provision-erp, .btn-reset-erp');
             if (fromTarget) el = fromTarget;
         }
         if (!el) return 0;
@@ -557,6 +557,104 @@
         return false;
     }
 
+    function openErpResetModal(resetBtn) {
+        var agencyId = resolveAgencyIdFromBtn(resetBtn, null);
+        if (!agencyId) {
+            showAlert('Invalid agency ID');
+            return;
+        }
+        var agencyName = resetBtn.getAttribute('data-agency-name') || ('#' + agencyId);
+        var siteUrl = resetBtn.getAttribute('data-site-url') || '';
+        var linkedCo = parseInt(resetBtn.getAttribute('data-erp-company-id') || '0', 10);
+        var agencyIdEl = document.getElementById('erpResetAgencyId');
+        var nameEl = document.getElementById('erpResetAgencyName');
+        var siteEl = document.getElementById('erpResetSiteUrl');
+        var linkedEl = document.getElementById('erpResetLinkedCo');
+        var confirmInput = document.getElementById('erpResetConfirmInput');
+        var coInput = document.getElementById('erpResetPlatformCoInput');
+        var intro = document.getElementById('erpResetModalIntro');
+        if (agencyIdEl) agencyIdEl.value = String(agencyId);
+        if (nameEl) nameEl.value = agencyName;
+        if (siteEl) siteEl.value = siteUrl;
+        if (linkedEl) linkedEl.value = String(linkedCo);
+        if (confirmInput) confirmInput.value = '';
+        if (intro) {
+            intro.textContent = 'DELETE all ERP business data for "' + agencyName + '". Login passwords are kept.';
+        }
+        if (coInput) {
+            var coWrap = coInput.closest('div');
+            if (linkedCo > 0) {
+                coInput.value = String(linkedCo);
+                if (coWrap) coWrap.style.display = 'none';
+            } else {
+                coInput.value = '';
+                if (coWrap) coWrap.style.display = '';
+            }
+        }
+        closeAgencyActionDropdowns();
+        cleanupStaleModalBackdrops();
+        var modalEl = document.getElementById('erpResetModal');
+        var modal = getBootstrapModal(modalEl);
+        if (!modal) {
+            showAlert('Reset modal is not available. Refresh the page.');
+            return;
+        }
+        window.setTimeout(function() { modal.show(); }, 0);
+    }
+
+    function runErpResetFromModal() {
+        var agencyId = parseInt((document.getElementById('erpResetAgencyId') || {}).value || '0', 10);
+        var agencyName = (document.getElementById('erpResetAgencyName') || {}).value || ('#' + agencyId);
+        var siteUrl = (document.getElementById('erpResetSiteUrl') || {}).value || '';
+        var linkedCo = parseInt((document.getElementById('erpResetLinkedCo') || {}).value || '0', 10);
+        var confirmInput = document.getElementById('erpResetConfirmInput');
+        var typed = confirmInput ? String(confirmInput.value || '').trim().toUpperCase() : '';
+        if (typed !== 'RESET-DATA') {
+            showAlert('Type RESET-DATA exactly to confirm.');
+            return;
+        }
+        var body = { agency_id: agencyId, confirm: 'RESET-DATA' };
+        if (linkedCo < 1) {
+            var coInput = document.getElementById('erpResetPlatformCoInput');
+            var coId = coInput ? parseInt(String(coInput.value || '').trim(), 10) : 0;
+            if (coId > 0) body.platform_company_id = coId;
+        }
+        var runBtn = document.getElementById('erpResetConfirmBtn');
+        if (runBtn) runBtn.disabled = true;
+        fetch(API_BASE + '/agencies-reset-erp-data.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        }).then(function(res) {
+            var ct = (res.headers.get('content-type') || '').toLowerCase();
+            if (!ct.includes('application/json')) {
+                throw new Error('Session expired or server error — please log in again and retry.');
+            }
+            return res.json();
+        }).then(function(data) {
+            if (runBtn) runBtn.disabled = false;
+            var modalEl = document.getElementById('erpResetModal');
+            var modal = getBootstrapModal(modalEl);
+            if (modal) modal.hide();
+            cleanupStaleModalBackdrops();
+            if (!data || !data.success) {
+                showAlert((data && data.message) ? data.message : 'ERP reset failed');
+                return;
+            }
+            var rep = data.data || {};
+            var counts = rep.post_reset_counts ? JSON.stringify(rep.post_reset_counts) : '';
+            var verify = siteUrl ? (siteUrl.replace(/\/$/, '') + '/rateb-erp/public/admin') : '';
+            var out = 'ERP data reset OK for "' + agencyName + '" on ' + (rep.erp_db_name || 'database') + '.';
+            if (counts) out += '\nCounts: ' + counts;
+            if (verify) out += '\n\nLog out and log in again at:\n' + verify;
+            showAlert(out);
+        }).catch(function(err) {
+            if (runBtn) runBtn.disabled = false;
+            showAlert('ERP reset request failed: ' + (err && err.message ? err.message : 'unknown'));
+        });
+    }
+
     function resetErpClick(btn, ev) {
         stopProvisionEvent(ev);
         var resetBtn = (ev && ev.currentTarget) ? ev.currentTarget : btn;
@@ -565,58 +663,7 @@
             showAlert('You do not have permission to reset ERP data for this agency.');
             return false;
         }
-        var agencyId = resolveAgencyIdFromBtn(resetBtn, ev);
-        if (!agencyId) { showAlert('Invalid agency ID'); return false; }
-        var agencyName = resetBtn.getAttribute('data-agency-name') || ('#' + agencyId);
-        var siteUrl = resetBtn.getAttribute('data-site-url') || '';
-        var linkedCo = parseInt(resetBtn.getAttribute('data-erp-company-id') || '0', 10);
-        var msg = 'DELETE all ERP business data for "' + agencyName + '"?\n\nLogin usernames and passwords are kept.\nCompanies, inventory, suppliers, HR, etc. are wiped.';
-        showConfirm(msg).then(function(ok) {
-            if (!ok) return;
-            var typed = window.prompt('Type RESET-DATA to confirm');
-            if (typed !== 'RESET-DATA') {
-                showAlert('Type RESET-DATA exactly to confirm.');
-                return;
-            }
-            closeAgencyActionDropdowns();
-            resetBtn.disabled = true;
-            var body = { agency_id: agencyId, confirm: 'RESET-DATA' };
-            if (linkedCo < 1) {
-                var coPick = window.prompt('Platform company id (optional, leave empty to auto-detect):', '');
-                if (coPick && String(coPick).trim() !== '') {
-                    var coId = parseInt(String(coPick).trim(), 10);
-                    if (coId > 0) body.platform_company_id = coId;
-                }
-            }
-            fetch(API_BASE + '/agencies-reset-erp-data.php', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            }).then(function(res) {
-                var ct = (res.headers.get('content-type') || '').toLowerCase();
-                if (!ct.includes('application/json')) {
-                    throw new Error('Session expired or server error — please log in again and retry.');
-                }
-                return res.json();
-            }).then(function(data) {
-                resetBtn.disabled = false;
-                if (!data || !data.success) {
-                    showAlert((data && data.message) ? data.message : 'ERP reset failed');
-                    return;
-                }
-                var rep = data.data || {};
-                var counts = rep.post_reset_counts ? JSON.stringify(rep.post_reset_counts) : '';
-                var verify = siteUrl ? (siteUrl.replace(/\/$/, '') + '/rateb-erp/public/admin') : '';
-                var out = 'ERP data reset OK on ' + (rep.erp_db_name || 'database') + '.';
-                if (counts) out += '\nCounts: ' + counts;
-                if (verify) out += '\n\nLog out and log in again at:\n' + verify;
-                showAlert(out);
-            }).catch(function(err) {
-                resetBtn.disabled = false;
-                showAlert('ERP reset request failed: ' + (err && err.message ? err.message : 'unknown'));
-            });
-        });
+        openErpResetModal(resetBtn);
         return false;
     }
 
@@ -646,6 +693,10 @@
 
         closeAgencyActionDropdowns();
 
+        if (item.classList.contains('btn-reset-erp')) {
+            resetErpClick(item, { currentTarget: item, preventDefault: function () {}, stopPropagation: function () {} });
+            return true;
+        }
         if (item.classList.contains('ag-btn-erp-blocked')) {
             window.alert(item.getAttribute('data-blocked-reason') || 'ERP is not ready for this agency yet.');
             return true;
@@ -998,6 +1049,11 @@
                 showAlert('ERP provisioning request failed');
             });
         });
+    }
+
+    var erpResetConfirmBtn = document.getElementById('erpResetConfirmBtn');
+    if (erpResetConfirmBtn) {
+        erpResetConfirmBtn.addEventListener('click', runErpResetFromModal);
     }
 
     window.RatibCpAgencies.provisionProClick = provisionProClick;
