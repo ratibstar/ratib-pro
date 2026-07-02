@@ -25,6 +25,12 @@ final class MarketingAuthController extends Controller
 {
     public function showLogin(): void
     {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            Response::redirect(rateb_url('login'));
+
+            return;
+        }
+
         if (SessionManager::get('_rateb_2fa_user_id')) {
             $this->renderAuth('marketing/auth/two-factor', __('two_factor_verify'), [
                 'csrf' => Csrf::token(),
@@ -40,6 +46,12 @@ final class MarketingAuthController extends Controller
 
     public function login(): void
     {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            Response::redirect(rateb_url('login'));
+
+            return;
+        }
+
         $next = $this->safeNextUrl((string) $this->input('next', ''));
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));

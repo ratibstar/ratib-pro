@@ -124,19 +124,15 @@ final class Auth
      */
     public static function resolvePostLoginUrl(string $next, array $user): string
     {
-        $next = trim($next);
         $erpHome = function_exists('rateb_url') ? rateb_url('admin') : '/admin';
-
-        if ($next !== '' && self::shouldUseErpDashboard($user) && self::urlIsCustomerPortal($next)) {
-            return $erpHome;
-        }
-
-        if ($next !== '') {
-            return $next;
-        }
 
         if (self::shouldUseErpDashboard($user)) {
             return $erpHome;
+        }
+
+        $next = trim($next);
+        if ($next !== '') {
+            return $next;
         }
 
         return function_exists('rateb_url') ? rateb_url('site/portal') : '/site/portal';
@@ -150,6 +146,9 @@ final class Auth
     /** @param array<string, mixed> $user */
     public static function shouldUseErpDashboard(array $user): bool
     {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return true;
+        }
         if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
             return true;
         }

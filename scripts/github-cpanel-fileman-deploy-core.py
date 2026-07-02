@@ -353,6 +353,8 @@ CRITICAL = [
     "rateb-erp/app/controllers/Shared/LoginController.php",
     "rateb-erp/app/controllers/Marketing/MarketingAuthController.php",
     "rateb-erp/app/controllers/Marketing/CustomerPortalController.php",
+    "rateb-erp/routes/middleware-helpers.php",
+    "rateb-erp/config/app.php",
     "rateb-erp/public/favicon.php",
     "rateb-erp/public/.htaccess",
     "rateb-erp/views/shared/auth/login.php",

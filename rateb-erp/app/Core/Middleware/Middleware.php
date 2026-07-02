@@ -206,6 +206,10 @@ final class MarketingCompanyAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check() || SessionManager::get('rateb_is_super_admin')) {
+            if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+                Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
+                return false;
+            }
             if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
                 Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
                 return false;
@@ -228,6 +232,26 @@ final class MarketingCompanyAuthMiddleware implements MiddlewareInterface
         }
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
         \Rateb\App\Core\TenantContext::setSuperAdmin(false);
+        return true;
+    }
+}
+
+/** ERP operators must never browse the marketing customer portal. */
+final class ErpOperatorPortalRedirectMiddleware implements MiddlewareInterface
+{
+    public function handle(): bool
+    {
+        Auth::bootstrapFromSession();
+        if (!Auth::check()) {
+            return true;
+        }
+        $user = Auth::user();
+        if (is_array($user) && Auth::shouldUseErpDashboard($user)) {
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+
+            return false;
+        }
+
         return true;
     }
 }

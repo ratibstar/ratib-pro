@@ -7,6 +7,7 @@ use Rateb\App\Core\Middleware\CompanyPermissionMiddleware;
 use Rateb\App\Core\Middleware\CompanySaaSMiddleware;
 use Rateb\App\Core\Middleware\EntityPermissionMiddleware;
 use Rateb\App\Core\Middleware\ErpAuthMiddleware;
+use Rateb\App\Core\Middleware\ErpOperatorPortalRedirectMiddleware;
 use Rateb\App\Core\Middleware\GuestMiddleware;
 use Rateb\App\Core\Middleware\MarketingCompanyAuthMiddleware;
 use Rateb\App\Core\Middleware\PlatformOversightHostMiddleware;
@@ -23,7 +24,7 @@ if (!function_exists('rateb_guest_mw')) {
 if (!function_exists('rateb_portal_mw')) {
     function rateb_portal_mw(): array
     {
-        return [MarketingCompanyAuthMiddleware::class];
+        return [MarketingCompanyAuthMiddleware::class, ErpOperatorPortalRedirectMiddleware::class];
     }
 }
 

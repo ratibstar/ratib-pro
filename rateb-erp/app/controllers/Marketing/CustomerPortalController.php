@@ -18,12 +18,6 @@ final class CustomerPortalController extends Controller
 {
     public function index(): void
     {
-        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
-            Response::redirect(rateb_url('admin'));
-
-            return;
-        }
-
         $this->renderPortal('marketing/portal/index', __('portal_dashboard'), 'home', [
             'portal' => (new CustomerPortalService())->snapshot(),
         ]);
@@ -104,6 +98,13 @@ final class CustomerPortalController extends Controller
     /** @param array<string, mixed> $extra */
     private function renderPortal(string $view, string $title, string $section, array $extra = []): void
     {
+        $user = Auth::user();
+        if (is_array($user) && Auth::shouldUseErpDashboard($user)) {
+            Response::redirect(rateb_url('admin'));
+
+            return;
+        }
+
         $cms = new CmsService();
         $this->view($view, array_merge([
             'title' => $title,

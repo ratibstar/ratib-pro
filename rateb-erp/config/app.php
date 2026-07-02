@@ -46,6 +46,33 @@ if (!function_exists('rateb_erp_is_dedicated_deployment')) {
     }
 }
 
+if (!function_exists('rateb_is_agency_erp_host')) {
+    /** Agency subdomain with its own ERP DB (e.g. test.rateb.sa) — not rateb.sa SaaS. */
+    function rateb_is_agency_erp_host(): bool
+    {
+        if (rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
+        if (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED) {
+            return true;
+        }
+        if (PHP_SAPI === 'cli') {
+            return false;
+        }
+        $lookupFile = dirname(RATEB_ROOT, 1) . '/config/env/agency_lookup.php';
+        if (!is_file($lookupFile)) {
+            return false;
+        }
+        require_once $lookupFile;
+        if (!function_exists('rateb_agency_erp_binding_for_request_host')) {
+            return false;
+        }
+        $binding = rateb_agency_erp_binding_for_request_host();
+
+        return is_array($binding) && trim((string) ($binding['db'] ?? '')) !== '';
+    }
+}
+
 if (!function_exists('rateb_is_platform_oversight_host')) {
     /** Platform SaaS admin (companies, billing, CMS, agency push) — rateb.sa only, not agency ERP hosts. */
     function rateb_is_platform_oversight_host(): bool
