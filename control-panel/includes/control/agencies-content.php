@@ -1013,13 +1013,13 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
 
 <!-- Alert / Confirm modals -->
 <div class="modal fade" id="alertModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content agencies-modal-content" dir="ltr">
-            <div class="modal-body py-3 text-center">
-                <p id="alertMessage" class="mb-0"></p>
+    <div class="modal-dialog modal-dialog-centered agencies-alert-dialog">
+        <div class="modal-content agencies-modal-content agencies-alert-modal" translate="no">
+            <div class="modal-body py-3">
+                <div id="alertMessage" class="agencies-alert-body mb-0"></div>
             </div>
             <div class="modal-footer justify-content-center border-top border-secondary py-2">
-                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">OK</button>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal"><?php echo htmlspecialchars($agT('common.ok', 'OK'), ENT_QUOTES, 'UTF-8'); ?></button>
             </div>
         </div>
     </div>

@@ -145,10 +145,28 @@
         modal.hide();
     }
 
-    function showAlert(msg) {
+    function escapeHtml(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function cpLocaleIsAr() {
+        return !!(window.__CP_I18N && window.__CP_I18N.locale === 'ar');
+    }
+
+    function showAlert(msg, asHtml) {
         var messageEl = document.getElementById('alertMessage');
         var alertEl = document.getElementById('alertModal');
-        if (messageEl) messageEl.textContent = msg;
+        if (messageEl) {
+            if (asHtml) {
+                messageEl.innerHTML = msg;
+            } else {
+                messageEl.textContent = msg;
+            }
+        }
         if (!alertEl) {
             window.alert(msg);
             return;
@@ -178,6 +196,40 @@
                 }
             });
         });
+    }
+
+    function resetCountLabel(key) {
+        var labels = {
+            inventory: cpLocaleIsAr() ? 'المخزون' : 'Inventory',
+            suppliers: cpLocaleIsAr() ? 'الموردون' : 'Suppliers',
+            warehouses: cpLocaleIsAr() ? 'المستودعات' : 'Warehouses',
+            purchase_requests: cpLocaleIsAr() ? 'طلبات الشراء' : 'Purchase requests'
+        };
+        return labels[key] || key.replace(/_/g, ' ');
+    }
+
+    function showErpResetSuccessAlert(agencyName, rep, siteUrl) {
+        var counts = (rep && rep.post_reset_counts) ? rep.post_reset_counts : {};
+        var db = (rep && rep.erp_db_name) ? rep.erp_db_name : 'database';
+        var verify = siteUrl ? (siteUrl.replace(/\/$/, '') + '/rateb-erp/public/admin') : '';
+        var ar = cpLocaleIsAr();
+        var title = ar
+            ? 'تم مسح بيانات ERP للوكالة «' + agencyName + '»'
+            : 'ERP business data cleared for "' + agencyName + '"';
+        var html = '<p class="agencies-alert-title text-success mb-2"><i class="fas fa-check-circle" aria-hidden="true"></i> ' + escapeHtml(title) + '</p>';
+        html += '<p class="small text-muted mb-2">' + (ar ? 'قاعدة البيانات:' : 'Database:') + ' <code dir="ltr">' + escapeHtml(db) + '</code></p>';
+        var keys = Object.keys(counts);
+        if (keys.length) {
+            html += '<div class="agencies-alert-counts">';
+            keys.forEach(function (key) {
+                html += '<div class="agencies-alert-counts-row"><span>' + escapeHtml(resetCountLabel(key)) + '</span><strong dir="ltr">' + escapeHtml(String(counts[key])) + '</strong></div>';
+            });
+            html += '</div>';
+        }
+        if (verify) {
+            html += '<p class="small mb-0">' + (ar ? 'سجّل خروجاً ثم دخولاً من:' : 'Log out, then sign in again at:') + '<br><a class="agencies-alert-link" href="' + escapeHtml(verify) + '" dir="ltr" target="_blank" rel="noopener noreferrer">' + escapeHtml(verify) + '</a></p>';
+        }
+        showAlert(html, true);
     }
 
     function showConfirm(msg) {
@@ -757,12 +809,10 @@
                 return;
             }
             var rep = data.data || {};
-            var counts = rep.post_reset_counts ? JSON.stringify(rep.post_reset_counts) : '';
-            var verify = siteUrl ? (siteUrl.replace(/\/$/, '') + '/rateb-erp/public/admin') : '';
-            var out = 'ERP data reset OK for "' + agencyName + '" on ' + (rep.erp_db_name || 'database') + '.';
-            if (counts) out += '\nCounts: ' + counts;
-            if (verify) out += '\n\nLog out and log in again at:\n' + verify;
-            finishAlert(out);
+            hideModalThen(modalEl, function () {
+                cleanupStaleModalBackdrops();
+                showErpResetSuccessAlert(agencyName, rep, siteUrl);
+            });
         }).catch(function(err) {
             if (runBtn) runBtn.disabled = false;
             if (cancelBtn) cancelBtn.disabled = false;
