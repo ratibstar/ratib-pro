@@ -1,4 +1,4 @@
-<?php $d = $data ?? []; ?>
+<?php $d = is_array($data ?? null) ? $data : []; ?>
 <div class="rateb-card">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></span>
@@ -7,13 +7,22 @@
     <div class="rateb-card-body">
         <div class="row g-3">
             <?php
-            $skip = ['pr_by_status', 'po_by_status'];
-            foreach ($d as $key => $val) {
-                if (in_array($key, $skip, true) || is_array($val)) {
+            $metricKeys = [
+                'purchase_requests', 'purchase_orders', 'pending_purchase_requests',
+                'inventory_items', 'inventory_value', 'inventory_value_fmt',
+                'low_stock_items', 'low_stock', 'expiring_soon', 'pending_workflows',
+                'suppliers', 'employees', 'branches',
+            ];
+            foreach ($metricKeys as $key) {
+                if (!array_key_exists($key, $d)) {
+                    continue;
+                }
+                $val = $d[$key];
+                if (is_array($val)) {
                     continue;
                 }
                 ?>
-            <div class="col-md-3"><div class="rateb-widget"><div class="rateb-widget-value"><?php echo is_numeric($val) ? number_format((float) $val, is_float($val + 0) && floor($val) != $val ? 2 : 0) : Rateb\App\Core\View::escape((string) $val); ?></div><div class="rateb-widget-label"><?php echo __( $key); ?></div></div></div>
+            <div class="col-md-3"><div class="rateb-widget"><div class="rateb-widget-value"><?php echo is_numeric($val) ? number_format((float) $val, is_float($val + 0) && floor($val) != $val ? 2 : 0) : Rateb\App\Core\View::escape((string) $val); ?></div><div class="rateb-widget-label"><?php echo __($key); ?></div></div></div>
             <?php } ?>
         </div>
     </div>

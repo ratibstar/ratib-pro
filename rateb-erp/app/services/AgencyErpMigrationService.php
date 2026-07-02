@@ -576,7 +576,10 @@ final class AgencyErpMigrationService
             $candidates = $this->collectPlatformBusinessCandidates($platformPdo, $agency, []);
         }
 
-        $picked = $this->pickBestPlatformCandidate($candidates);
+        $picked = $this->pickBestPlatformCandidate(
+            $candidates,
+            (int) ($agency['erp_company_id'] ?? 0) < 1
+        );
         if ($picked !== []) {
             return $picked;
         }
@@ -650,7 +653,7 @@ final class AgencyErpMigrationService
      * @param list<array{id:int,pr_count:int,score:int}> $candidates
      * @return list<int>
      */
-    private function pickBestPlatformCandidate(array $candidates): array
+    private function pickBestPlatformCandidate(array $candidates, bool $allowAmbiguous = false): array
     {
         if ($candidates === []) {
             return [];
@@ -658,13 +661,16 @@ final class AgencyErpMigrationService
 
         $top = $candidates[0];
         $second = $candidates[1] ?? null;
-        if ($second === null) {
+        if ($second === null || $allowAmbiguous) {
             return [(int) $top['id']];
         }
         if ($top['score'] > (int) $second['score']) {
             return [(int) $top['id']];
         }
         if ((int) $top['pr_count'] >= 2 * max(1, (int) ($second['pr_count'] ?? 0))) {
+            return [(int) $top['id']];
+        }
+        if ($allowAmbiguous) {
             return [(int) $top['id']];
         }
 
@@ -939,8 +945,10 @@ final class AgencyErpMigrationService
                         }
                     }
                     $report['platform_pr_after'] = $this->countPurchaseRequests($platformPdo);
-                    if (function_exists('rateb_save_agency_erp_company_link')) {
-                        rateb_save_agency_erp_company_link($agencyId, 0);
+                    $primaryPlatformId = (int) ($companyIds[0] ?? 0);
+                    if ($primaryPlatformId > 0 && function_exists('rateb_save_agency_erp_company_link')) {
+                        rateb_save_agency_erp_company_link($agencyId, $primaryPlatformId);
+                        $report['platform_company_linked'] = $primaryPlatformId;
                     }
                 }
             } catch (Throwable $e) {

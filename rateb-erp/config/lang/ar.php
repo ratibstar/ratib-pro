@@ -1265,6 +1265,7 @@ return [
     'agency_erp_reset_platform_blocked' => 'لا يمكن مسح قاعدة ERP المنصة من هذه الشاشة.',
     'agency_erp_reset_platform_company_unmatched' => 'تعذّر ربط شركة على المنصة لهذه الوكالة. اختر الشركة من القائمة أعلاه قبل المسح، أو اربط الوكالة من لوحة التحكم → الوكالات.',
     'agency_erp_reset_platform_company_hint' => 'عند المسح: اختر شركة المنصة المراد حذف بياناتها (مثل الشركة التي كانت تظهر على admin.rateb.sa).',
+    'agency_erp_reset_logout_hint' => 'الخطوة التالية: سجّل الخروج ثم الدخول من جديد على موقع الوكالة (admin.rateb.sa) وتأكد أن المخزون والموردين فارغين.',
     'agency_erp_sync_all_ready' => 'مزامنة ملفات — كل الجاهزة',
     'agency_erp_push_all_ready' => 'ترحيلات DB — كل الجاهزة',
     'agency_erp_full_deploy_all_ready' => 'مزامنة + ترحيل — كل الجاهزة',

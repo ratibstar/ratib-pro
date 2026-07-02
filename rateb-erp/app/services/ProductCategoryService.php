@@ -341,9 +341,15 @@ final class ProductCategoryService
             return 0;
         }
         $row = (new ProductCategory())->queryOne(
-            'SELECT id FROM rateb_product_categories WHERE company_id = :cid AND is_active = 1 LIMIT 1',
-            ['cid' => $companyId]
+            'SELECT id FROM rateb_product_categories WHERE company_id = :cid AND code = :code LIMIT 1',
+            ['cid' => $companyId, 'code' => 'GEN']
         );
+        if (!$row) {
+            $row = (new ProductCategory())->queryOne(
+                'SELECT id FROM rateb_product_categories WHERE company_id = :cid AND is_active = 1 LIMIT 1',
+                ['cid' => $companyId]
+            );
+        }
         if ($row) {
             return (int) ($row['id'] ?? 0);
         }

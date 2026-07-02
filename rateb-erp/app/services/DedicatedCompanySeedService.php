@@ -90,15 +90,16 @@ final class DedicatedCompanySeedService
         $db = Database::connection();
         $db->beginTransaction();
         try {
-            $companyModel = new Company();
-            $companyId = (int) $companyModel->create($this->companyPayload(
+            $companyId = $this->resolveDedicatedCompanyId(
                 $companyName,
                 self::DEFAULT_EMAIL,
                 $plan,
                 $modules
-            ));
+            );
             $this->ensureDedicatedSubscription($companyId, $plan);
             (new BranchService())->ensureMainBranch($companyId);
+            $this->dedupeDefaultWarehouse($companyId);
+            $this->dedupeDefaultCategory($companyId);
 
             $userModel = new User();
             $tenantUsers = $userModel->query(
@@ -312,6 +313,56 @@ final class DedicatedCompanySeedService
         }
 
         return $fallback;
+    }
+
+    private function dedupeDefaultWarehouse(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        try {
+            $rows = (new \Rateb\App\Models\Warehouse())->query(
+                'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND code = :code ORDER BY id ASC',
+                ['cid' => $companyId, 'code' => WarehouseService::MAIN_CODE]
+            );
+            if (count($rows) <= 1) {
+                return;
+            }
+            $keepId = (int) ($rows[0]['id'] ?? 0);
+            foreach (array_slice($rows, 1) as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0 && $id !== $keepId) {
+                    (new \Rateb\App\Models\Warehouse())->delete($id);
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
+    private function dedupeDefaultCategory(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        try {
+            $rows = (new \Rateb\App\Models\ProductCategory())->query(
+                'SELECT id FROM rateb_product_categories WHERE company_id = :cid AND code = :code ORDER BY id ASC',
+                ['cid' => $companyId, 'code' => 'GEN']
+            );
+            if (count($rows) <= 1) {
+                return;
+            }
+            $keepId = (int) ($rows[0]['id'] ?? 0);
+            foreach (array_slice($rows, 1) as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0 && $id !== $keepId) {
+                    (new \Rateb\App\Models\ProductCategory())->delete($id);
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
     }
 
     private function uniqueCompanySlug(string $name, ?int $exceptId = null): string

@@ -491,6 +491,9 @@
             } else if (rep.platform_pr_before !== undefined) {
                 lines.push('platform_pr: ' + rep.platform_pr_before + ' -> ' + (rep.platform_pr_after || 0));
             }
+            if (rep.platform_company_linked) {
+                lines.push('platform_company_linked: #' + rep.platform_company_linked);
+            }
             var platformWipe = rep.platform_wipe || {};
             if (platformWipe && platformWipe.ok) {
                 lines.push('platform_db wiped: ' + (rep.platform_db || platformWipe.database || '') + ' company_id=' + (platformWipe.company_id || '?'));
@@ -500,6 +503,8 @@
             if (rep.platform_errors && rep.platform_errors.length) {
                 rep.platform_errors.forEach(function (err) { lines.push('platform ERROR: ' + err); });
             }
+            lines.push('');
+            lines.push(cfg.getAttribute('data-reset-logout-hint') || 'Log out and log in again on the agency site, then verify lists are empty.');
         });
         return lines.join('\n');
     }

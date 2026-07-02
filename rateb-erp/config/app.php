@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260702-reset-platform-taken-fix');
+define('RATEB_ASSET_BUILD', '20260702-agency-reset-complete');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -422,6 +422,20 @@ if (!function_exists('rateb_bootstrap_ops_tenant')) {
     /** Ensure TenantContext has company for ops lookups and CRUD (super admin ?company_id=). */
     function rateb_bootstrap_ops_tenant(): void
     {
+        if (function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops()) {
+            if (function_exists('rateb_resolve_ops_company_id')) {
+                $id = rateb_resolve_ops_company_id();
+                if ($id > 0) {
+                    \Rateb\App\Core\TenantContext::setCompanyId($id);
+                    if (function_exists('rateb_bootstrap_branch_context')) {
+                        rateb_bootstrap_branch_context($id);
+                    }
+
+                    return;
+                }
+            }
+        }
+
         $cid = \Rateb\App\Core\TenantContext::companyId();
         if ($cid !== null && $cid > 0) {
             if (function_exists('rateb_bootstrap_branch_context')) {

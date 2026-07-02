@@ -30,15 +30,32 @@ abstract class Model
         return $this->tenantScoped;
     }
 
-    /** Super Admin on admin portal sees all tenants; company users stay scoped. */
+    /** Super Admin on platform oversight sees all tenants; agency/dedicated hosts stay scoped. */
     protected function appliesTenantScope(): bool
     {
         if (!$this->tenantScoped) {
             return false;
         }
+        if (function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops()) {
+            $cid = TenantContext::companyId();
+            if ($cid !== null && $cid > 0) {
+                return true;
+            }
+            if (function_exists('rateb_resolve_ops_company_id')) {
+                $resolved = rateb_resolve_ops_company_id();
+                if ($resolved > 0) {
+                    TenantContext::setCompanyId($resolved);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
         if (TenantContext::isSuperAdmin()) {
             return false;
         }
+
         return TenantContext::companyId() !== null;
     }
 

@@ -26,9 +26,15 @@ final class WarehouseService
             return 0;
         }
         $existing = (new Warehouse())->queryOne(
-            'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND status = :st ORDER BY id ASC LIMIT 1',
-            ['cid' => $companyId, 'st' => 'active']
+            'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND code = :code ORDER BY id ASC LIMIT 1',
+            ['cid' => $companyId, 'code' => self::MAIN_CODE]
         );
+        if (!$existing) {
+            $existing = (new Warehouse())->queryOne(
+                'SELECT id FROM rateb_warehouses WHERE company_id = :cid AND status = :st ORDER BY id ASC LIMIT 1',
+                ['cid' => $companyId, 'st' => 'active']
+            );
+        }
         if ($existing) {
             $this->backfillBranchLinks($companyId);
             return (int) ($existing['id'] ?? 0);

@@ -265,5 +265,6 @@ foreach ($agencies as $agency) {
     data-confirm-reset-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_data_confirm_selected')); ?>"
     data-confirm-reset-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_data_confirm_all')); ?>"
     data-reset-confirm-required="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_confirm_required')); ?>"
+    data-reset-logout-hint="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_logout_hint')); ?>"
     data-select-first="<?php echo Rateb\App\Core\View::escape(__('agency_erp_select_agencies_first')); ?>">
 </div>
