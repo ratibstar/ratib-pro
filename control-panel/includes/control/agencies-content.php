@@ -1057,6 +1057,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
             </div>
             <div class="modal-body py-3">
                 <p class="small text-danger mb-2" id="erpResetModalIntro">Deletes business data; login passwords are kept.</p>
+                <p class="small mb-2" id="erpResetStatus" style="display:none" aria-live="polite"></p>
                 <label class="form-label small" for="erpResetConfirmInput">Type <code>RESET-DATA</code></label>
                 <input type="text" class="form-control form-control-sm font-monospace" id="erpResetConfirmInput" autocomplete="off" spellcheck="false" placeholder="RESET-DATA">
                 <label class="form-label small mt-2" for="erpResetPlatformCoInput"><?php echo htmlspecialchars($agT('agencies.reset_platform_company_optional', 'Platform company id (optional)'), ENT_QUOTES, 'UTF-8'); ?></label>

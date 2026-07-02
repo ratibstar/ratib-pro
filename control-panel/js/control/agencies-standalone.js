@@ -126,16 +126,58 @@
     }
     cleanupStaleModalBackdrops();
 
-    function showAlert(msg) {
-        var el = document.getElementById('alertMessage');
-        var modalEl = document.getElementById('alertModal');
-        if (el) el.textContent = msg;
-        var modal = getBootstrapModal(modalEl);
-        if (modal) {
-            modal.show();
+    function hideModalThen(modalEl, cb) {
+        if (!modalEl || !modalEl.classList.contains('show')) {
+            if (typeof cb === 'function') cb();
             return;
         }
-        window.alert(msg);
+        var modal = getBootstrapModal(modalEl);
+        if (!modal) {
+            modalEl.classList.remove('show');
+            modalEl.setAttribute('aria-hidden', 'true');
+            if (typeof cb === 'function') cb();
+            return;
+        }
+        modalEl.addEventListener('hidden.bs.modal', function onHide() {
+            modalEl.removeEventListener('hidden.bs.modal', onHide);
+            if (typeof cb === 'function') cb();
+        });
+        modal.hide();
+    }
+
+    function showAlert(msg) {
+        var messageEl = document.getElementById('alertMessage');
+        var alertEl = document.getElementById('alertModal');
+        if (messageEl) messageEl.textContent = msg;
+        if (!alertEl) {
+            window.alert(msg);
+            return;
+        }
+        function revealAlert() {
+            prepareModalForShow(alertEl);
+            var modal = getBootstrapModal(alertEl);
+            if (!modal) {
+                window.alert(msg);
+                return;
+            }
+            modal.show();
+        }
+        var openModals = document.querySelectorAll('.modal.show');
+        if (!openModals.length) {
+            cleanupStaleModalBackdrops();
+            revealAlert();
+            return;
+        }
+        var pending = openModals.length;
+        openModals.forEach(function (openModal) {
+            hideModalThen(openModal, function () {
+                pending -= 1;
+                if (pending <= 0) {
+                    cleanupStaleModalBackdrops();
+                    window.setTimeout(revealAlert, 100);
+                }
+            });
+        });
     }
 
     function showConfirm(msg) {
@@ -609,6 +651,7 @@
         if (siteEl) siteEl.value = siteUrl;
         if (linkedEl) linkedEl.value = String(linkedCo);
         if (confirmInput) confirmInput.value = '';
+        setErpResetStatus('', '');
         if (intro) {
             intro.textContent = 'DELETE all ERP business data for "' + agencyName + '". Login passwords are kept.';
         }
@@ -646,6 +689,20 @@
         window.setTimeout(function() { modal.show(); }, 0);
     }
 
+    function setErpResetStatus(kind, text) {
+        var statusEl = document.getElementById('erpResetStatus');
+        if (!statusEl) return;
+        if (!text) {
+            statusEl.style.display = 'none';
+            statusEl.textContent = '';
+            statusEl.className = 'small mb-2';
+            return;
+        }
+        statusEl.style.display = '';
+        statusEl.textContent = text;
+        statusEl.className = 'small mb-2 ' + (kind === 'error' ? 'text-warning' : kind === 'ok' ? 'text-success' : 'text-info');
+    }
+
     function runErpResetFromModal() {
         var agencyId = parseInt((document.getElementById('erpResetAgencyId') || {}).value || '0', 10);
         var agencyName = (document.getElementById('erpResetAgencyName') || {}).value || ('#' + agencyId);
@@ -654,9 +711,11 @@
         var confirmInput = document.getElementById('erpResetConfirmInput');
         var typed = confirmInput ? String(confirmInput.value || '').trim().toUpperCase() : '';
         if (typed !== 'RESET-DATA') {
-            showAlert('Type RESET-DATA exactly to confirm.');
+            setErpResetStatus('error', 'Type RESET-DATA exactly to confirm.');
+            if (confirmInput) confirmInput.focus();
             return;
         }
+        setErpResetStatus('info', 'Reset in progress… please wait.');
         var body = { agency_id: agencyId, confirm: 'RESET-DATA' };
         if (linkedCo < 1) {
             var coInput = document.getElementById('erpResetPlatformCoInput');
@@ -664,7 +723,10 @@
             if (coId > 0) body.platform_company_id = coId;
         }
         var runBtn = document.getElementById('erpResetConfirmBtn');
+        var cancelBtn = document.querySelector('#erpResetModal [data-bs-dismiss="modal"]');
         if (runBtn) runBtn.disabled = true;
+        if (cancelBtn) cancelBtn.disabled = true;
+        if (confirmInput) confirmInput.disabled = true;
         fetch(API_BASE + '/agencies-reset-erp-data.php', {
             method: 'POST',
             credentials: 'same-origin',
@@ -678,12 +740,18 @@
             return res.json();
         }).then(function(data) {
             if (runBtn) runBtn.disabled = false;
+            if (cancelBtn) cancelBtn.disabled = false;
+            if (confirmInput) confirmInput.disabled = false;
+            setErpResetStatus('', '');
             var modalEl = document.getElementById('erpResetModal');
-            var modal = getBootstrapModal(modalEl);
-            if (modal) modal.hide();
-            cleanupStaleModalBackdrops();
+            function finishAlert(message) {
+                hideModalThen(modalEl, function () {
+                    cleanupStaleModalBackdrops();
+                    showAlert(message);
+                });
+            }
             if (!data || !data.success) {
-                showAlert((data && data.message) ? data.message : 'ERP reset failed');
+                finishAlert((data && data.message) ? data.message : 'ERP reset failed');
                 return;
             }
             var rep = data.data || {};
@@ -692,10 +760,17 @@
             var out = 'ERP data reset OK for "' + agencyName + '" on ' + (rep.erp_db_name || 'database') + '.';
             if (counts) out += '\nCounts: ' + counts;
             if (verify) out += '\n\nLog out and log in again at:\n' + verify;
-            showAlert(out);
+            finishAlert(out);
         }).catch(function(err) {
             if (runBtn) runBtn.disabled = false;
-            showAlert('ERP reset request failed: ' + (err && err.message ? err.message : 'unknown'));
+            if (cancelBtn) cancelBtn.disabled = false;
+            if (confirmInput) confirmInput.disabled = false;
+            setErpResetStatus('', '');
+            var modalEl = document.getElementById('erpResetModal');
+            hideModalThen(modalEl, function () {
+                cleanupStaleModalBackdrops();
+                showAlert('ERP reset request failed: ' + (err && err.message ? err.message : 'unknown'));
+            });
         });
     }
 

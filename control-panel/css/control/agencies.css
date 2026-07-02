@@ -133,6 +133,11 @@
 }
 
 /* Modals and action buttons - ensure clickable (above dropdown menu at 1090) */
+#alertModal.modal,
+#confirmModal.modal {
+    z-index: 1120 !important;
+}
+
 #viewModal.modal,
 #editModal.modal,
 #alertModal.modal,
