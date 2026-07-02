@@ -159,12 +159,29 @@ define('RATEB_SUPPORTED_LOCALES', ['en', 'ar']);
 if (!function_exists('rateb_site_origin')) {
     function rateb_site_origin(): string
     {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+        if ($host !== '' && $host !== 'localhost') {
+            if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+                return $scheme . '://' . $host;
+            }
+            if (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED) {
+                return $scheme . '://' . $host;
+            }
+            if (defined('SITE_URL') && (string) SITE_URL !== '') {
+                $siteHost = strtolower((string) parse_url((string) SITE_URL, PHP_URL_HOST));
+                if ($siteHost === $host) {
+                    return rtrim((string) SITE_URL, '/');
+                }
+            }
+
+            return $scheme . '://' . $host;
+        }
         if (defined('SITE_URL') && (string) SITE_URL !== '') {
             return rtrim((string) SITE_URL, '/');
         }
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
-        return $scheme . '://' . $host;
+
+        return $scheme . '://' . ($host !== '' ? $host : 'rateb.sa');
     }
 }
 

@@ -390,6 +390,18 @@ if (!function_exists('rateb_apply_agency_erp_constants')) {
         if (!defined('RATEB_ERP_AGENCY_RESOLVED')) {
             define('RATEB_ERP_AGENCY_RESOLVED', true);
         }
+        if (!defined('SITE_URL')) {
+            $site = rtrim(trim((string) ($row['site_url'] ?? '')), '/');
+            $host = function_exists('rateb_normalize_http_host')
+                ? rateb_normalize_http_host((string) ($_SERVER['HTTP_HOST'] ?? ''))
+                : strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+            if ($site === '' && $host !== '') {
+                $site = 'https://' . $host;
+            }
+            if ($site !== '') {
+                define('SITE_URL', $site);
+            }
+        }
 
         return true;
     }

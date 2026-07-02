@@ -89,6 +89,17 @@ if ($env_file !== null) {
     require_once $env_dir . DIRECTORY_SEPARATOR . 'agency_resolver.php';
     if (resolve_agency_by_host($env_host)) {
         // Agency found: DB_* and SITE_URL already defined
+    } elseif (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED) {
+        if (!defined('SITE_URL') && $env_host !== '' && $env_host !== 'default') {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            define('SITE_URL', $scheme . '://' . $env_host);
+        }
+    } elseif (defined('RATEB_ROOT') && $env_host !== '' && $env_host !== 'default'
+        && !in_array($env_host, ['rateb.sa', 'www.rateb.sa'], true)) {
+        if (!defined('SITE_URL')) {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            define('SITE_URL', $scheme . '://' . $env_host);
+        }
     } else {
         require $env_dir . DIRECTORY_SEPARATOR . 'default.php';
     }
