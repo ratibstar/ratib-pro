@@ -25,7 +25,7 @@ final class AdminAuthMiddleware implements MiddlewareInterface
     }
 }
 
-/** Any authenticated ERP user (platform admin or company user). */
+/** Any authenticated ERP user (platform super-admin or company operator). */
 final class ErpAuthMiddleware implements MiddlewareInterface
 {
     public function handle(): bool
@@ -50,9 +50,8 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             );
             return false;
         }
-        SessionManager::flash('error', __('portal_erp_blocked'));
-        Response::redirect(function_exists('rateb_url') ? rateb_url('site/portal') : (RATEB_BASE_URL . '/site/portal'));
-        return false;
+
+        return true;
     }
 }
 

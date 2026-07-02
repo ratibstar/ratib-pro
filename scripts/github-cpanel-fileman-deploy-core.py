@@ -349,6 +349,7 @@ CRITICAL = [
     "rateb-erp/app/services/DedicatedCompanySeedService.php",
     "rateb-erp/app/models/User.php",
     "rateb-erp/app/Core/Auth.php",
+    "rateb-erp/app/Core/Middleware/Middleware.php",
     "rateb-erp/views/shared/auth/login.php",
     "rateb-erp/app/services/CompanyTenantWipeService.php",
     "rateb-erp/bin/ProductionResetRunner.php",
