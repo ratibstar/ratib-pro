@@ -222,6 +222,26 @@ if (!function_exists('rateb_apply_agency_erp_request_binding')) {
             }
         }
         if ($binding === null || trim((string) ($binding['db'] ?? '')) === '') {
+            $binding = null;
+            if (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED
+                && defined('RATEB_ERP_DB_NAME') && trim((string) RATEB_ERP_DB_NAME) !== '') {
+                $binding = [
+                    'host' => defined('RATEB_ERP_DB_HOST') && (string) RATEB_ERP_DB_HOST !== ''
+                        ? (string) RATEB_ERP_DB_HOST
+                        : (defined('RATEB_DB_HOST') ? (string) RATEB_DB_HOST : '127.0.0.1'),
+                    'port' => defined('RATEB_DB_PORT') ? (int) RATEB_DB_PORT : 3306,
+                    'user' => defined('RATEB_ERP_DB_USER') && (string) RATEB_ERP_DB_USER !== ''
+                        ? (string) RATEB_ERP_DB_USER
+                        : (defined('RATEB_DB_USER') ? (string) RATEB_DB_USER : 'root'),
+                    'pass' => defined('RATEB_ERP_DB_PASS')
+                        ? (string) RATEB_ERP_DB_PASS
+                        : (defined('RATEB_DB_PASS') ? (string) RATEB_DB_PASS : ''),
+                    'db' => (string) RATEB_ERP_DB_NAME,
+                    'agency_id' => defined('RATEB_ERP_AGENCY_ID') ? (int) RATEB_ERP_AGENCY_ID : 0,
+                ];
+            }
+        }
+        if ($binding === null || trim((string) ($binding['db'] ?? '')) === '') {
             return;
         }
         if (!defined('RATEB_ERP_AGENCY_RESOLVED')) {

@@ -635,6 +635,26 @@ final class AgencyErpMigrationService
             // ignore
         }
 
+        foreach (['rateb_suppliers', 'rateb_supplier_classifications'] as $table) {
+            try {
+                $stmt = $platformPdo->query(
+                    "SELECT company_id, COUNT(*) AS c
+                     FROM {$table}
+                     GROUP BY company_id
+                     HAVING c > 0"
+                );
+                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $companyId = (int) ($row['company_id'] ?? 0);
+                    if ($companyId < 1 || in_array($companyId, $excludeIds, true)) {
+                        continue;
+                    }
+                    $scores[$companyId] = ($scores[$companyId] ?? 0) + (int) ($row['c'] ?? 0);
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
         $candidates = [];
         foreach ($scores as $companyId => $weight) {
             $candidates[] = [
@@ -707,11 +727,33 @@ final class AgencyErpMigrationService
             );
             $row = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
             $companyId = is_array($row) ? (int) ($row['company_id'] ?? 0) : 0;
-
-            return $companyId > 0 ? [$companyId] : [];
+            if ($companyId > 0) {
+                return [$companyId];
+            }
         } catch (\Throwable $e) {
-            return [];
+            // ignore
         }
+
+        foreach (['rateb_suppliers', 'rateb_supplier_classifications'] as $table) {
+            try {
+                $stmt = $platformPdo->query(
+                    "SELECT company_id, COUNT(*) AS c
+                     FROM {$table}
+                     GROUP BY company_id
+                     ORDER BY c DESC
+                     LIMIT 1"
+                );
+                $row = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+                $companyId = is_array($row) ? (int) ($row['company_id'] ?? 0) : 0;
+                if ($companyId > 0) {
+                    return [$companyId];
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
+        return [];
     }
 
     /** @param array<string, mixed> $agency */
@@ -765,6 +807,22 @@ final class AgencyErpMigrationService
             }
 
             return (int) $pdo->query('SELECT COUNT(*) FROM rateb_purchase_requests')->fetchColumn();
+        } catch (\Throwable $e) {
+            return -1;
+        }
+    }
+
+    private function countPlatformTableRows(\PDO $pdo, string $table, ?int $companyId = null): int
+    {
+        try {
+            if ($companyId !== null && $companyId > 0) {
+                $stmt = $pdo->prepare("SELECT COUNT(*) FROM {$table} WHERE company_id = :cid");
+                $stmt->execute(['cid' => $companyId]);
+
+                return (int) $stmt->fetchColumn();
+            }
+
+            return (int) $pdo->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
         } catch (\Throwable $e) {
             return -1;
         }
@@ -932,8 +990,9 @@ final class AgencyErpMigrationService
                 $report['platform_company_override'] = $platformCompanyOverride;
                 $report['platform_company_ids_discovered'] = (int) ($agency['erp_company_id'] ?? 0) < 1 && $companyIds !== [];
                 $report['platform_pr_before'] = $this->countPurchaseRequests($platformPdo);
+                $report['platform_suppliers_before'] = $this->countPlatformTableRows($platformPdo, 'rateb_suppliers');
                 if ($companyIds === []) {
-                    if ($report['platform_pr_before'] > 0) {
+                    if ($report['platform_pr_before'] > 0 || (int) ($report['platform_suppliers_before'] ?? 0) > 0) {
                         $platformErrors[] = __('agency_erp_reset_platform_company_unmatched');
                     }
                 } else {

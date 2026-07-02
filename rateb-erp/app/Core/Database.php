@@ -70,10 +70,25 @@ final class Database
             return self::$pdo;
         }
 
+        $agencyBinding = self::resolveAgencyBindingForRequest();
+        if ($agencyBinding !== null) {
+            self::$pdo = self::openWith(
+                (string) $agencyBinding['db'],
+                (string) $agencyBinding['host'],
+                (int) $agencyBinding['port'],
+                (string) $agencyBinding['user'],
+                (string) $agencyBinding['pass']
+            );
+            self::$resolvedDbName = (string) $agencyBinding['db'];
+
+            return self::$pdo;
+        }
+
         $candidates = function_exists('rateb_erp_database_candidates')
             ? rateb_erp_database_candidates()
             : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'admin_rateb-erp'];
 
+        $dedicatedOnly = self::mustUseAgencyDatabaseOnly();
         $last = null;
         $tried = [];
         foreach ($candidates as $dbName) {
@@ -86,32 +101,110 @@ final class Database
                 $last = $e;
                 $msg = $e->getMessage();
                 $isAccessDenied = strpos($msg, '1044') !== false || strpos($msg, '1049') !== false;
-                if (!$isAccessDenied) {
+                if (!$isAccessDenied || $dedicatedOnly) {
                     throw $e;
                 }
             }
         }
 
-        $probed = self::probeErpDatabase($candidates);
-        if ($probed !== null && !in_array($probed, $tried, true)) {
-            try {
-                self::$pdo = self::open($probed);
-                self::$resolvedDbName = $probed;
-                return self::$pdo;
-            } catch (PDOException $e) {
-                $last = $e;
-                $tried[] = $probed;
+        if (!$dedicatedOnly) {
+            $probed = self::probeErpDatabase($candidates);
+            if ($probed !== null && !in_array($probed, $tried, true)) {
+                try {
+                    self::$pdo = self::open($probed);
+                    self::$resolvedDbName = $probed;
+                    return self::$pdo;
+                } catch (PDOException $e) {
+                    $last = $e;
+                    $tried[] = $probed;
+                }
             }
         }
 
         if ($last instanceof PDOException) {
-            $hint = 'Tried: ' . implode(', ', $tried) . '. Grant ' . RATEB_DB_USER
-                . ' ALL PRIVILEGES on admin_rateb-erp in cPanel → MySQL® Databases.';
+            $expectedDb = defined('RATEB_ERP_DB_NAME') ? (string) RATEB_ERP_DB_NAME : '';
+            $hint = 'Tried: ' . implode(', ', $tried) . '.';
+            if ($dedicatedOnly && $expectedDb !== '') {
+                $hint .= ' This agency host must use ERP database "' . $expectedDb
+                    . '". Grant MySQL ALL on that database in cPanel → MySQL® Databases.';
+            } else {
+                $hint .= ' Grant ' . RATEB_DB_USER
+                    . ' ALL PRIVILEGES on admin_rateb-erp in cPanel → MySQL® Databases.';
+            }
             error_log('RATEB ERP DB connection failed: ' . $last->getMessage() . ' — ' . $hint);
             throw new PDOException($last->getMessage() . "\n\n" . $hint, (int) $last->getCode(), $last);
         }
 
         throw new PDOException('RATEB ERP database connection failed.');
+    }
+
+    /** @return array{host:string,port:int,user:string,pass:string,db:string,agency_id?:int}|null */
+    private static function resolveAgencyBindingForRequest(): ?array
+    {
+        if (PHP_SAPI === 'cli') {
+            return null;
+        }
+        $lookupFile = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+        if (is_file($lookupFile)) {
+            require_once $lookupFile;
+            if (function_exists('rateb_agency_erp_binding_for_request_host')) {
+                $binding = rateb_agency_erp_binding_for_request_host();
+                if (is_array($binding) && trim((string) ($binding['db'] ?? '')) !== '') {
+                    return $binding;
+                }
+            }
+        }
+
+        return self::agencyBindingFromConstants();
+    }
+
+    /** @return array{host:string,port:int,user:string,pass:string,db:string}|null */
+    private static function agencyBindingFromConstants(): ?array
+    {
+        if (!(defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED)) {
+            return null;
+        }
+        if (!defined('RATEB_ERP_DB_NAME') || trim((string) RATEB_ERP_DB_NAME) === '') {
+            return null;
+        }
+        $host = defined('RATEB_ERP_DB_HOST') && (string) RATEB_ERP_DB_HOST !== ''
+            ? (string) RATEB_ERP_DB_HOST
+            : (defined('RATEB_DB_HOST') ? (string) RATEB_DB_HOST : '127.0.0.1');
+        $port = defined('RATEB_DB_PORT') ? (int) RATEB_DB_PORT : 3306;
+        $user = defined('RATEB_ERP_DB_USER') && (string) RATEB_ERP_DB_USER !== ''
+            ? (string) RATEB_ERP_DB_USER
+            : (defined('RATEB_DB_USER') ? (string) RATEB_DB_USER : 'root');
+        $pass = defined('RATEB_ERP_DB_PASS')
+            ? (string) RATEB_ERP_DB_PASS
+            : (defined('RATEB_DB_PASS') ? (string) RATEB_DB_PASS : '');
+
+        return [
+            'host' => $host,
+            'port' => $port,
+            'user' => $user,
+            'pass' => $pass,
+            'db' => (string) RATEB_ERP_DB_NAME,
+        ];
+    }
+
+    private static function mustUseAgencyDatabaseOnly(): bool
+    {
+        if (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED) {
+            return true;
+        }
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
+        if (PHP_SAPI !== 'cli' && function_exists('rateb_erp_is_main_platform_host')) {
+            $host = function_exists('rateb_normalize_http_host')
+                ? rateb_normalize_http_host((string) ($_SERVER['HTTP_HOST'] ?? ''))
+                : strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+            if ($host !== '' && !rateb_erp_is_main_platform_host($host)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function probeErpDatabase(array $preferred): ?string
