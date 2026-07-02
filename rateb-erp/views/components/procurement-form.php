@@ -25,14 +25,6 @@ if ($entityType === 'purchase_request' && $isEdit) {
         $estimatedTotalManual = $storedTotal > 0 && abs($storedTotal - $agg['total']) > 0.009;
     }
 }
-$prLineLookups = [];
-if ($entityType === 'purchase_request') {
-    $prLineLookups = (new \Rateb\App\Services\FormLookupService())->forFields([
-        ['lookup' => 'suppliers'],
-        ['lookup' => 'warehouses'],
-        ['lookup' => 'chart_of_accounts'],
-    ]);
-}
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -106,12 +98,6 @@ if ($entityType === 'purchase_request') {
                     'lookups' => $lookups,
                     'showTableTotals' => $entityType !== 'purchase_order',
                     'lineItemContext' => $entityType,
-                    'supplierOptions' => $prLineLookups['suppliers'] ?? [],
-                    'warehouseOptions' => $prLineLookups['warehouses'] ?? [],
-                    'chartAccounts' => $prLineLookups['chart_of_accounts'] ?? [],
-                    'lineAttachmentRoute' => $entityType === 'purchase_request'
-                        ? rateb_url(rateb_app_route('purchase-requests/line-attachment'))
-                        : '',
                 ]); ?>
                 <?php if ($entityType === 'purchase_request') {
                     Rateb\App\Core\View::partial('procurement-estimated-total', [
