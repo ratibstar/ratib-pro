@@ -1160,7 +1160,7 @@ final class AgencyErpMigrationService
                 $planSlug = 'professional';
             }
 
-            return (new DedicatedCompanySeedService())->rebuildShellPreserveLogins(
+            return (new \Rateb\App\Services\DedicatedCompanySeedService())->rebuildShellPreserveLogins(
                 $companyName,
                 $planSlug,
                 true

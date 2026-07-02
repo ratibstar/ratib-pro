@@ -116,6 +116,22 @@ function control_rateb_erp_ensure_root(): string
     return (string) RATEB_ROOT;
 }
 
+/** Bootstrap ERP autoloader for control-panel API calls (reset, seed, etc.). */
+function control_rateb_erp_bootstrap_minimal(): void
+{
+    $erpRoot = control_rateb_erp_ensure_root();
+    if (!defined('RATEB_ENV_NO_SESSION')) {
+        define('RATEB_ENV_NO_SESSION', true);
+    }
+    if (!defined('RATEB_ERP_DEPLOYMENT_MODE')) {
+        define('RATEB_ERP_DEPLOYMENT_MODE', 'dedicated');
+    }
+    if (!class_exists(\Rateb\App\Core\Bootstrap::class, false)) {
+        require_once $erpRoot . '/app/Core/Bootstrap.php';
+    }
+    \Rateb\App\Core\Bootstrap::initMinimal($erpRoot);
+}
+
 function control_rateb_erp_schema_ready(): bool
 {
     $test = control_rateb_erp_db_test();
@@ -620,14 +636,13 @@ function control_rateb_erp_db_diagnose(): array
  */
 function control_rateb_erp_reset_agency_data(int $agencyId, ?int $platformCompanyId = null, string $confirm = ''): array
 {
-    control_rateb_erp_ensure_root();
+    control_rateb_erp_bootstrap_minimal();
     $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
     if (is_file($lookup)) {
         require_once $lookup;
     }
     require_once RATEB_ROOT . '/config/database.php';
     require_once RATEB_ROOT . '/app/Core/Database.php';
-    require_once RATEB_ROOT . '/app/services/AgencyErpMigrationService.php';
 
     if ($agencyId < 1) {
         throw new InvalidArgumentException('Invalid agency id');
