@@ -1033,6 +1033,25 @@ final class AgencyErpMigrationService
         $report['platform_wipes'] = $platformWipes;
         $report['post_reset_counts'] = $this->agencyBusinessRowCounts($pdo, (int) ($shell['company_id'] ?? 0));
 
+        $companyId = (int) ($shell['company_id'] ?? 0);
+        if ($companyId > 0) {
+            if (!defined('RATEB_ERP_DEPLOYMENT_MODE')) {
+                define('RATEB_ERP_DEPLOYMENT_MODE', 'dedicated');
+            }
+            Database::useConnectionOverride([
+                'db' => $cfg['db'],
+                'host' => $cfg['host'],
+                'port' => $cfg['port'],
+                'user' => $cfg['user'],
+                'pass' => $cfg['pass'],
+            ]);
+            try {
+                $report['standard_admin'] = (new DedicatedCompanySeedService())->ensureStandardAdmin($companyId);
+            } finally {
+                Database::clearConnectionOverride();
+            }
+        }
+
         return $report;
     }
 

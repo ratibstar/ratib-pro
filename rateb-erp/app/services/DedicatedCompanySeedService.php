@@ -88,12 +88,62 @@ final class DedicatedCompanySeedService
             throw new \RuntimeException('No company found for standard admin.');
         }
 
-        $userId = $this->ensureDedicatedAdminUser(
-            $companyId,
-            self::DEFAULT_EMAIL,
-            self::DEFAULT_LOGIN,
-            self::DEFAULT_PASSWORD
-        );
+        $userModel = new User();
+        $candidate = $userModel->findByEmail(self::DEFAULT_EMAIL);
+        if ($candidate === null) {
+            $candidate = $userModel->queryOne(
+                "SELECT * FROM rateb_users
+                 WHERE company_id = :cid
+                   AND COALESCE(is_super_admin, 0) = 0
+                   AND (
+                     email LIKE 'admin+%'
+                     OR LOWER(name) = 'admin'
+                   )
+                 ORDER BY id ASC
+                 LIMIT 1",
+                ['cid' => $companyId]
+            );
+        }
+        if ($candidate === null) {
+            $candidate = $userModel->queryOne(
+                'SELECT * FROM rateb_users
+                 WHERE company_id = :cid AND COALESCE(is_super_admin, 0) = 0
+                 ORDER BY id ASC
+                 LIMIT 1',
+                ['cid' => $companyId]
+            );
+        }
+
+        $hash = password_hash(self::DEFAULT_PASSWORD, PASSWORD_DEFAULT);
+        if ($candidate !== null) {
+            $userId = (int) ($candidate['id'] ?? 0);
+            $userModel->query(
+                'DELETE ur FROM rateb_user_roles ur
+                 INNER JOIN rateb_users u ON u.id = ur.user_id
+                 WHERE u.company_id = :cid AND COALESCE(u.is_super_admin, 0) = 0 AND u.id <> :uid',
+                ['cid' => $companyId, 'uid' => $userId]
+            );
+            $userModel->query(
+                'DELETE FROM rateb_users
+                 WHERE company_id = :cid AND COALESCE(is_super_admin, 0) = 0 AND id <> :uid',
+                ['cid' => $companyId, 'uid' => $userId]
+            );
+            $userModel->update($userId, [
+                'company_id' => $companyId,
+                'name' => self::DEFAULT_LOGIN,
+                'email' => self::DEFAULT_EMAIL,
+                'password' => $hash,
+                'status' => 'active',
+                'is_super_admin' => 0,
+            ]);
+        } else {
+            $userId = $this->ensureDedicatedAdminUser(
+                $companyId,
+                self::DEFAULT_EMAIL,
+                self::DEFAULT_LOGIN,
+                self::DEFAULT_PASSWORD
+            );
+        }
 
         $roleRow = (new User())->queryOne(
             "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
