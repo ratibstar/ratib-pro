@@ -69,7 +69,10 @@
     function applyCompanyFilter() {
         if (!table || !filterCompany) return;
         var val = filterCompany.value;
+        var total = 0;
+        var visible = 0;
         table.querySelectorAll('tbody tr.erp-agency-row').forEach(function (tr) {
+            total++;
             var coId = String(tr.getAttribute('data-erp-company-id') || '0');
             var show = true;
             if (val === '0') {
@@ -78,7 +81,12 @@
                 show = coId === val;
             }
             tr.style.display = show ? '' : 'none';
+            if (show) visible++;
         });
+        var emptyEl = document.getElementById('erpAgencyFilterEmpty');
+        if (emptyEl) {
+            emptyEl.classList.toggle('d-none', visible > 0 || total === 0);
+        }
         syncUi();
     }
 

@@ -19,14 +19,12 @@ final class AgencyUpdatesController extends Controller
         }
         $svc = new AgencyErpMigrationService();
         $opsCompanyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
-        $queryCompanyId = (int) ($_GET['company_id'] ?? 0);
-        if ($queryCompanyId > 0) {
-            $opsCompanyId = $queryCompanyId;
-        }
-        $suggestedAgencyId = $svc->suggestedAgencyIdForCompany($opsCompanyId);
+        $filterCompanyId = (int) ($_GET['company_id'] ?? 0);
+        $suggestedAgencyId = $svc->suggestedAgencyIdForCompany($filterCompanyId > 0 ? $filterCompanyId : $opsCompanyId);
         $opsCompanyName = '';
-        if ($opsCompanyId > 0) {
-            $row = (new Company())->find($opsCompanyId);
+        $nameCompanyId = $filterCompanyId > 0 ? $filterCompanyId : $opsCompanyId;
+        if ($nameCompanyId > 0) {
+            $row = (new Company())->find($nameCompanyId);
             $opsCompanyName = trim((string) ($row['name'] ?? ''));
         }
         $companyNames = $svc->platformCompanyNames();
@@ -38,6 +36,7 @@ final class AgencyUpdatesController extends Controller
             'platformDb' => function_exists('rateb_erp_database_name') ? rateb_erp_database_name() : '',
             'suggestedAgencyId' => $suggestedAgencyId,
             'opsCompanyId' => $opsCompanyId,
+            'filterCompanyId' => $filterCompanyId,
             'opsCompanyName' => $opsCompanyName,
             'companyNames' => $companyNames,
             'syncSource' => (string) ($syncPreview['source'] ?? ''),

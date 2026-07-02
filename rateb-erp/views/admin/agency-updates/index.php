@@ -2,6 +2,7 @@
 /** @var list<array<string, mixed>> $agencies */
 /** @var string $platformDb */
 /** @var int $suggestedAgencyId */
+/** @var int $filterCompanyId */
 /** @var int $opsCompanyId */
 /** @var array<int, string> $companyNames */
 /** @var string $csrf */
@@ -26,6 +27,9 @@ foreach ($agencies as $agency) {
 <div class="rateb-page-header mb-3">
     <h1 class="h4 mb-1"><i class="fas fa-cloud-upload-alt me-2"></i><?php echo __('agency_erp_push_title'); ?></h1>
     <p class="text-muted small mb-0"><?php echo __('agency_erp_control_intro'); ?></p>
+    <?php if ($agencies !== []) { ?>
+    <p class="small mb-0 mt-1"><span class="badge bg-secondary"><?php echo count($agencies); ?></span> <?php echo __('agency_erp_push_agency_count'); ?></p>
+    <?php } ?>
 </div>
 
 <?php if ($agencies === []) { ?>
@@ -39,7 +43,7 @@ foreach ($agencies as $agency) {
                 <select class="form-select form-select-sm" id="erpAgencyFilterCompany">
                     <option value=""><?php echo __('agency_erp_filter_all_companies'); ?></option>
                     <?php foreach ($companyNames as $coId => $coName) { ?>
-                    <option value="<?php echo (int) $coId; ?>"<?php echo $opsCompanyId === (int) $coId ? ' selected' : ''; ?>>
+                    <option value="<?php echo (int) $coId; ?>"<?php echo ($filterCompanyId ?? 0) === (int) $coId ? ' selected' : ''; ?>>
                         <?php echo Rateb\App\Core\View::escape($coName); ?>
                     </option>
                     <?php } ?>
@@ -154,6 +158,9 @@ foreach ($agencies as $agency) {
                     <?php } ?>
                 </tbody>
             </table>
+        </div>
+        <div id="erpAgencyFilterEmpty" class="alert alert-info border-0 rounded-0 mb-0 d-none" role="status">
+            <i class="fas fa-filter me-1"></i><?php echo __('agency_erp_filter_no_match'); ?>
         </div>
     </div>
 </div>

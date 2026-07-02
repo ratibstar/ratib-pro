@@ -1245,6 +1245,8 @@ return [
     'agency_erp_filter_company' => 'تصفية حسب شركة المنصة',
     'agency_erp_filter_all_companies' => 'كل الشركات / كل الوكالات',
     'agency_erp_filter_unlinked' => 'غير مربوطة بشركة',
+    'agency_erp_filter_no_match' => 'لا توجد وكالات تطابق التصفية — اختر «كل الشركات / كل الوكالات» لعرض الجميع.',
+    'agency_erp_push_agency_count' => 'وكالة ERP',
     'agency_erp_quick_select' => 'تحديد سريع',
     'agency_erp_clear_selection' => 'إلغاء التحديد',
     'agency_erp_actions_on_selection' => 'على المحدد في الجدول',

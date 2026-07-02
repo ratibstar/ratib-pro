@@ -1245,6 +1245,8 @@ return [
     'agency_erp_filter_company' => 'Filter by platform company',
     'agency_erp_filter_all_companies' => 'All companies / all agencies',
     'agency_erp_filter_unlinked' => 'Not linked to a company',
+    'agency_erp_filter_no_match' => 'No agencies match this filter — choose “All companies / all agencies” to see everyone.',
+    'agency_erp_push_agency_count' => 'ERP agencies',
     'agency_erp_quick_select' => 'Quick select',
     'agency_erp_clear_selection' => 'Clear selection',
     'agency_erp_actions_on_selection' => 'On table selection',
