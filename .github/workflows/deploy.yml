@@ -71,6 +71,7 @@ jobs:
       - name: Run RATEB ERP migrations
         if: steps.deploy.outcome == 'success'
         env:
+          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
           CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
           RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
