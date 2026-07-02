@@ -313,68 +313,320 @@ final class AgencyErpMigrationService
      * @param array<string, mixed> $agency
      * @return list<int>
      */
-    private function resolvePlatformCompanyIds(array $agency, \PDO $platformPdo): array
+    private function resolvePlatformCompanyIds(array $agency, \PDO $platformPdo, ?\PDO $agencyPdo = null): array
     {
+        $agencyId = (int) ($agency['id'] ?? 0);
         $ids = [];
         $linked = (int) ($agency['erp_company_id'] ?? 0);
         if ($linked > 0) {
             $ids[] = $linked;
         }
 
-        $agencyName = trim((string) ($agency['name'] ?? ''));
-        if ($agencyName !== '') {
-            $stmt = $platformPdo->prepare(
-                'SELECT id FROM rateb_companies WHERE LOWER(name) = LOWER(:n) OR LOWER(slug) = LOWER(:s) LIMIT 5'
-            );
-            $slug = strtolower(preg_replace('/[^a-z0-9]+/', '-', $agencyName) ?? $agencyName);
-            $stmt->execute(['n' => $agencyName, 's' => trim($slug, '-')]);
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $id = (int) ($row['id'] ?? 0);
-                if ($id > 0) {
-                    $ids[] = $id;
+        $this->collectPlatformCompanyIdsByName($platformPdo, $ids, trim((string) ($agency['name'] ?? '')));
+
+        $slug = trim((string) ($agency['slug'] ?? ''));
+        if ($slug !== '') {
+            $this->collectPlatformCompanyIdsBySlug($platformPdo, $ids, $slug);
+        }
+
+        $siteHost = '';
+        if (function_exists('rateb_agency_host_from_site_url')) {
+            $siteHost = rateb_agency_host_from_site_url(trim((string) ($agency['site_url'] ?? '')));
+        }
+        if ($siteHost !== '') {
+            $this->collectPlatformCompanyIdsBySiteHost($platformPdo, $ids, $siteHost);
+        }
+
+        $this->collectPlatformCompanyIdsByAgencyEmail($platformPdo, $ids, $agency);
+
+        if ($agencyPdo !== null) {
+            foreach ($this->agencyCompanyHints($agencyPdo) as $hint) {
+                $this->collectPlatformCompanyIdsByName($platformPdo, $ids, (string) ($hint['name'] ?? ''));
+                $this->collectPlatformCompanyIdsBySlug($platformPdo, $ids, (string) ($hint['slug'] ?? ''));
+                $email = trim((string) ($hint['email'] ?? ''));
+                if ($email !== '' && str_contains($email, '@')) {
+                    $this->collectPlatformCompanyIdsByEmail($platformPdo, $ids, $email);
                 }
             }
         }
 
         if ($linked > 0) {
             try {
-                $stmt = $platformPdo->prepare(
-                    'SELECT name FROM rateb_companies WHERE id = :id LIMIT 1'
-                );
+                $stmt = $platformPdo->prepare('SELECT name, slug FROM rateb_companies WHERE id = :id LIMIT 1');
                 $stmt->execute(['id' => $linked]);
                 $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-                $platformName = is_array($row) ? trim((string) ($row['name'] ?? '')) : '';
-                if ($platformName !== '') {
-                    $stmt = $platformPdo->prepare(
-                        'SELECT id FROM rateb_companies WHERE LOWER(name) = LOWER(:n) LIMIT 5'
-                    );
-                    $stmt->execute(['n' => $platformName]);
-                    while ($found = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                        $id = (int) ($found['id'] ?? 0);
-                        if ($id > 0) {
-                            $ids[] = $id;
-                        }
-                    }
+                if (is_array($row)) {
+                    $this->collectPlatformCompanyIdsByName($platformPdo, $ids, (string) ($row['name'] ?? ''));
+                    $this->collectPlatformCompanyIdsBySlug($platformPdo, $ids, (string) ($row['slug'] ?? ''));
                 }
             } catch (\Throwable $e) {
-                // ignore — fall back to linked id only
+                // ignore
             }
         }
 
+        $valid = $this->validatePlatformCompanyIds($platformPdo, $ids);
+        if ($valid !== []) {
+            return $valid;
+        }
+
+        return $this->discoverPlatformCompaniesWithData($platformPdo, $agency, $agencyId);
+    }
+
+    /** @param list<int> $ids */
+    private function collectPlatformCompanyIdsByName(\PDO $platformPdo, array &$ids, string $name): void
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return;
+        }
+        $slug = strtolower(trim((string) (preg_replace('/[^a-z0-9]+/', '-', $name) ?? $name), '-'));
+        try {
+            $stmt = $platformPdo->prepare(
+                'SELECT id FROM rateb_companies
+                 WHERE LOWER(name) = LOWER(:n) OR LOWER(slug) = LOWER(:s) LIMIT 5'
+            );
+            $stmt->execute(['n' => $name, 's' => $slug]);
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
+    /** @param list<int> $ids */
+    private function collectPlatformCompanyIdsBySlug(\PDO $platformPdo, array &$ids, string $slug): void
+    {
+        $slug = strtolower(trim($slug));
+        if ($slug === '') {
+            return;
+        }
+        try {
+            $stmt = $platformPdo->prepare(
+                'SELECT id FROM rateb_companies WHERE LOWER(slug) = LOWER(:s) LIMIT 5'
+            );
+            $stmt->execute(['s' => $slug]);
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
+    /** @param list<int> $ids */
+    private function collectPlatformCompanyIdsBySiteHost(\PDO $platformPdo, array &$ids, string $host): void
+    {
+        $host = strtolower(trim($host));
+        if ($host === '') {
+            return;
+        }
+        $parts = explode('.', $host);
+        $sub = trim((string) ($parts[0] ?? ''));
+        if ($sub !== '' && $sub !== 'www') {
+            $this->collectPlatformCompanyIdsBySlug($platformPdo, $ids, $sub);
+        }
+        try {
+            $stmt = $platformPdo->prepare(
+                "SELECT id FROM rateb_companies
+                 WHERE LOWER(slug) LIKE :like OR LOWER(name) LIKE :like
+                 LIMIT 5"
+            );
+            $stmt->execute(['like' => '%' . $sub . '%']);
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
+    /** @param array<string, mixed> $agency
+     * @param list<int> $ids */
+    private function collectPlatformCompanyIdsByAgencyEmail(\PDO $platformPdo, array &$ids, array $agency): void
+    {
+        $slug = preg_replace('/[^a-z0-9]+/i', '', strtolower((string) ($agency['slug'] ?? 'client')));
+        if ($slug === '') {
+            $slug = 'client' . (int) ($agency['id'] ?? 0);
+        }
+        $this->collectPlatformCompanyIdsByEmail($platformPdo, $ids, 'admin+' . $slug . '@rateb.sa');
+    }
+
+    /** @param list<int> $ids */
+    private function collectPlatformCompanyIdsByEmail(\PDO $platformPdo, array &$ids, string $email): void
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || !str_contains($email, '@')) {
+            return;
+        }
+        try {
+            $stmt = $platformPdo->prepare('SELECT id FROM rateb_companies WHERE LOWER(email) = :e LIMIT 5');
+            $stmt->execute(['e' => $email]);
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
+    /** @return list<array{name:string,slug:string,email:string}> */
+    private function agencyCompanyHints(\PDO $agencyPdo): array
+    {
+        try {
+            $rows = $agencyPdo->query('SELECT name, slug, email FROM rateb_companies ORDER BY id ASC LIMIT 20')->fetchAll(\PDO::FETCH_ASSOC);
+
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /** @param list<int> $ids
+     * @return list<int> */
+    private function validatePlatformCompanyIds(\PDO $platformPdo, array $ids): array
+    {
         $valid = [];
         foreach (array_unique($ids) as $id) {
             $id = (int) $id;
             if ($id < 1) {
                 continue;
             }
-            $chk = $platformPdo->prepare('SELECT id FROM rateb_companies WHERE id = :id LIMIT 1');
-            $chk->execute(['id' => $id]);
-            if ($chk->fetch()) {
-                $valid[] = $id;
+            try {
+                $chk = $platformPdo->prepare('SELECT id FROM rateb_companies WHERE id = :id LIMIT 1');
+                $chk->execute(['id' => $id]);
+                if ($chk->fetch()) {
+                    $valid[] = $id;
+                }
+            } catch (\Throwable $e) {
+                // ignore
             }
         }
 
         return $valid;
+    }
+
+    /** @return list<int> */
+    private function platformCompanyIdsTakenByOtherAgencies(int $excludeAgencyId): array
+    {
+        $taken = [];
+        foreach ($this->listAgencies(false) as $row) {
+            $agencyId = (int) ($row['id'] ?? 0);
+            if ($agencyId < 1 || $agencyId === $excludeAgencyId) {
+                continue;
+            }
+            $linked = (int) ($row['erp_company_id'] ?? 0);
+            if ($linked > 0) {
+                $taken[] = $linked;
+            }
+        }
+
+        return array_values(array_unique($taken));
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     * @return list<int>
+     */
+    private function discoverPlatformCompaniesWithData(\PDO $platformPdo, array $agency, int $agencyId): array
+    {
+        $taken = $this->platformCompanyIdsTakenByOtherAgencies($agencyId);
+        try {
+            $stmt = $platformPdo->query(
+                'SELECT company_id, COUNT(*) AS c
+                 FROM rateb_purchase_requests
+                 GROUP BY company_id
+                 HAVING c > 0
+                 ORDER BY c DESC'
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $candidates = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $companyId = (int) ($row['company_id'] ?? 0);
+            if ($companyId < 1 || in_array($companyId, $taken, true)) {
+                continue;
+            }
+            $prCount = (int) ($row['c'] ?? 0);
+            $candidates[] = [
+                'id' => $companyId,
+                'pr_count' => $prCount,
+                'score' => $prCount + ($this->platformCompanyMatchScore($platformPdo, $companyId, $agency) * 1000),
+            ];
+        }
+
+        if ($candidates === []) {
+            return [];
+        }
+
+        usort($candidates, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+        $top = $candidates[0];
+        $second = $candidates[1] ?? null;
+        if ($second === null) {
+            return [(int) $top['id']];
+        }
+        if ($top['score'] > (int) $second['score']) {
+            return [(int) $top['id']];
+        }
+        if ((int) $top['pr_count'] >= 2 * max(1, (int) ($second['pr_count'] ?? 0))) {
+            return [(int) $top['id']];
+        }
+
+        return [];
+    }
+
+    /** @param array<string, mixed> $agency */
+    private function platformCompanyMatchScore(\PDO $platformPdo, int $companyId, array $agency): int
+    {
+        try {
+            $stmt = $platformPdo->prepare('SELECT name, slug, email FROM rateb_companies WHERE id = :id LIMIT 1');
+            $stmt->execute(['id' => $companyId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                return 0;
+            }
+        } catch (\Throwable $e) {
+            return 0;
+        }
+
+        $score = 0;
+        $name = strtolower(trim((string) ($row['name'] ?? '')));
+        $slug = strtolower(trim((string) ($row['slug'] ?? '')));
+        $agencyName = strtolower(trim((string) ($agency['name'] ?? '')));
+        $agencySlug = strtolower(trim((string) ($agency['slug'] ?? '')));
+        if ($agencyName !== '' && $name === $agencyName) {
+            $score += 3;
+        }
+        if ($agencySlug !== '' && $slug === $agencySlug) {
+            $score += 3;
+        }
+
+        $siteHost = '';
+        if (function_exists('rateb_agency_host_from_site_url')) {
+            $siteHost = rateb_agency_host_from_site_url(trim((string) ($agency['site_url'] ?? '')));
+        }
+        if ($siteHost !== '') {
+            $sub = strtolower(trim((string) (explode('.', $siteHost)[0] ?? '')));
+            if ($sub !== '' && ($slug === $sub || str_contains($slug, $sub) || str_contains($name, $sub))) {
+                $score += 2;
+            }
+        }
+
+        return $score;
     }
 
     private function countPurchaseRequests(\PDO $pdo, ?int $companyId = null): int
@@ -523,29 +775,36 @@ final class AgencyErpMigrationService
         require_once $runnerFile;
 
         $pdo = $this->pdoFromConfig($cfg);
+        $platformCfg = $this->platformErpDatabaseConfig();
+        $platformDb = $platformCfg['db'];
+        $platformCompanyIds = [];
+        $platformPdo = null;
+        if ($platformDb !== '' && strcasecmp($cfg['db'], $platformDb) !== 0) {
+            $platformPdo = $this->pdoFromConfig($platformCfg);
+            $platformCompanyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo, $pdo);
+        }
+
         $runner = new \ProductionResetRunner($pdo, $cfg['db']);
         $runner->run(false, true, false, true);
         $report = $runner->report();
         $report['purchase_requests_before'] = $this->countPurchaseRequests($pdo);
 
         $shell = $this->rebuildAgencyShellPreserveLogins($agency, $cfg);
-        if ($shell['company_id'] > 0 && function_exists('rateb_save_agency_erp_company_link')) {
-            rateb_save_agency_erp_company_link($agencyId, (int) $shell['company_id']);
-        }
 
-        $platformCfg = $this->platformErpDatabaseConfig();
-        $platformDb = $platformCfg['db'];
         $platformWipes = [];
         $platformErrors = [];
-        if ($platformDb !== '' && strcasecmp($cfg['db'], $platformDb) !== 0) {
+        if ($platformPdo instanceof \PDO && $platformDb !== '' && strcasecmp($cfg['db'], $platformDb) !== 0) {
             try {
-                $platformPdo = $this->pdoFromConfig($platformCfg);
-                $companyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo);
+                $companyIds = $platformCompanyIds;
+                if ($companyIds === []) {
+                    $companyIds = $this->resolvePlatformCompanyIds($agency, $platformPdo);
+                }
                 $report['platform_company_ids'] = $companyIds;
+                $report['platform_company_ids_discovered'] = (int) ($agency['erp_company_id'] ?? 0) < 1 && $companyIds !== [];
                 $report['platform_pr_before'] = $this->countPurchaseRequests($platformPdo);
                 if ($companyIds === []) {
                     if ($report['platform_pr_before'] > 0) {
-                        $platformErrors[] = 'Platform DB still has purchase data but no company id is linked (set erp_company_id on the agency).';
+                        $platformErrors[] = 'Could not match a platform company for this agency. Set erp_company_id on the agency in Control Panel, or ensure the company slug/name matches the agency site.';
                     }
                 } else {
                     $report['platform_pr_by_company_before'] = [];
@@ -560,6 +819,9 @@ final class AgencyErpMigrationService
                         }
                     }
                     $report['platform_pr_after'] = $this->countPurchaseRequests($platformPdo);
+                    if (function_exists('rateb_save_agency_erp_company_link')) {
+                        rateb_save_agency_erp_company_link($agencyId, 0);
+                    }
                 }
             } catch (Throwable $e) {
                 $platformErrors[] = $e->getMessage();

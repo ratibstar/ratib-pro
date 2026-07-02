@@ -22,6 +22,12 @@ final class AccountingDashboardController extends Controller
     public function index(): void
     {
         $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1 && function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops()) {
+            $companyId = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+            if ($companyId > 0 && function_exists('rateb_adopt_ops_company_id')) {
+                rateb_adopt_ops_company_id($companyId);
+            }
+        }
         if ($companyId > 0) {
             TenantContext::setCompanyId($companyId);
         }
@@ -29,9 +35,12 @@ final class AccountingDashboardController extends Controller
         $service->ensureDefaultAccounts($companyId > 0 ? $companyId : null);
         $dashSvc = new AccountingDashboardService($service);
 
+        $allowPlatformWide = rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host();
         $dash = $companyId > 0
             ? $dashSvc->build($companyId)
-            : (rateb_is_super_admin() ? $dashSvc->build(null) : ['metrics' => [], 'kpis' => [], 'charts' => [], 'alerts' => [], 'recent' => []]);
+            : ($allowPlatformWide ? $dashSvc->build(null) : ['metrics' => [], 'kpis' => [], 'charts' => [], 'alerts' => [], 'recent' => []]);
 
         $this->view('company/accounting/dashboard', [
             'title' => __('accounting_dashboard'),
