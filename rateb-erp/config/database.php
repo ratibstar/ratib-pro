@@ -178,3 +178,51 @@ if (!defined('RATEB_DB_HOST')) {
 if (!defined('RATEB_ERP_DB_NAME')) {
     define('RATEB_ERP_DB_NAME', RATEB_DB_NAME);
 }
+
+if (!function_exists('rateb_platform_erp_database_name')) {
+    function rateb_platform_erp_database_name(): string
+    {
+        $directadmin = dirname(__DIR__, 2) . '/config/env/directadmin_db.php';
+        if (is_file($directadmin)) {
+            require_once $directadmin;
+        }
+        $fromEnv = getenv('RATEB_ERP_DB_NAME');
+        if ($fromEnv !== false && $fromEnv !== '') {
+            $name = (string) $fromEnv;
+        } else {
+            $name = function_exists('rateb_db_prefix') ? rateb_db_prefix() . '_rateb-erp' : 'admin_rateb-erp';
+        }
+        if ($name === 'admin-rateb-erp') {
+            $name = 'admin_rateb-erp';
+        }
+
+        return $name;
+    }
+}
+
+if (!function_exists('rateb_apply_agency_erp_request_binding')) {
+    function rateb_apply_agency_erp_request_binding(): void
+    {
+        if (PHP_SAPI === 'cli') {
+            return;
+        }
+        $lookupFile = dirname(__DIR__, 2) . '/config/env/agency_lookup.php';
+        if (!is_file($lookupFile)) {
+            return;
+        }
+        require_once $lookupFile;
+        $binding = rateb_agency_erp_binding_for_request_host();
+        if ($binding === null || trim((string) ($binding['db'] ?? '')) === '') {
+            return;
+        }
+        if (!defined('RATEB_ERP_AGENCY_RESOLVED')) {
+            define('RATEB_ERP_AGENCY_RESOLVED', true);
+        }
+        if (!defined('RATEB_ERP_DEPLOYMENT_MODE')) {
+            define('RATEB_ERP_DEPLOYMENT_MODE', 'dedicated');
+        }
+        if (class_exists(\Rateb\App\Core\Database::class)) {
+            \Rateb\App\Core\Database::useConnectionOverride($binding);
+        }
+    }
+}

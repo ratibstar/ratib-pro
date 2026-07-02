@@ -483,6 +483,12 @@
             } else if (shell.credentials_unchanged) {
                 lines.push('credentials: unchanged');
             }
+            var platformWipe = rep.platform_wipe || {};
+            if (platformWipe && platformWipe.ok) {
+                lines.push('platform_db wiped: ' + (rep.platform_db || platformWipe.database || '') + ' company_id=' + (platformWipe.company_id || '?'));
+            } else if (platformWipe && platformWipe.error) {
+                lines.push('platform_wipe ERROR: ' + platformWipe.error);
+            }
         });
         return lines.join('\n');
     }

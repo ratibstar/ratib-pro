@@ -1260,7 +1260,7 @@ return [
     'agency_erp_reset_data_confirm_selected' => 'DELETE all business data on selected agency ERP databases? Login usernames and passwords are kept. Companies, transactions, HR, inventory, etc. are wiped. This cannot be undone.',
     'agency_erp_reset_data_confirm_all' => 'DELETE all business data on EVERY ready agency ERP database? Login usernames and passwords are kept. Fresh empty companies are created. This cannot be undone.',
     'agency_erp_reset_data_running' => 'Resetting agency ERP data…',
-    'agency_erp_reset_warning' => 'Reset data wipes companies, transactions, HR, inventory, etc. Existing login usernames and passwords are not changed. Uploaded files on the server are not deleted. Use RESET-DATA to confirm.',
+    'agency_erp_reset_warning' => 'Reset data wipes the agency ERP database and the linked platform company when they differ. Agency login passwords are kept. Use RESET-DATA to confirm.',
     'agency_erp_reset_not_ready' => 'Agency ERP is not ready for reset.',
     'agency_erp_reset_platform_blocked' => 'Cannot reset the platform ERP database from this screen.',
     'agency_erp_sync_all_ready' => 'Sync files — all ready',

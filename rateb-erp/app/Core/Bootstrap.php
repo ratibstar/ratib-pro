@@ -85,6 +85,9 @@ final class Bootstrap
             SessionManager::start();
         }
         self::loadConfig($basePath);
+        if (function_exists('rateb_apply_agency_erp_request_binding')) {
+            rateb_apply_agency_erp_request_binding();
+        }
         self::ensureStorage($basePath);
         if (is_file($basePath . '/app/Core/SecurityHeaders.php')) {
             require_once $basePath . '/app/Core/SecurityHeaders.php';

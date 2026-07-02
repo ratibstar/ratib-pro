@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260629-admin-host-db-bind');
+define('RATEB_ASSET_BUILD', '20260702-reset-platform-company');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -21,6 +21,15 @@ if (!function_exists('rateb_erp_deployment_mode')) {
             $mode = strtolower(trim((string) RATEB_ERP_DEPLOYMENT_MODE));
 
             return $mode === 'dedicated' ? 'dedicated' : 'saas';
+        }
+        if (PHP_SAPI !== 'cli' && function_exists('rateb_agency_erp_binding_for_request_host')) {
+            $lookupFile = dirname(RATEB_ROOT, 1) . '/config/env/agency_lookup.php';
+            if (is_file($lookupFile)) {
+                require_once $lookupFile;
+                if (rateb_agency_erp_binding_for_request_host() !== null) {
+                    return 'dedicated';
+                }
+            }
         }
         if (defined('RATEB_ERP_AGENCY_RESOLVED') && RATEB_ERP_AGENCY_RESOLVED) {
             return 'dedicated';
@@ -1549,6 +1558,13 @@ if (!function_exists('rateb_adopt_ops_company_id')) {
 if (!function_exists('rateb_resolve_ops_company_id')) {
     function rateb_resolve_ops_company_id(): int
     {
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            $primary = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+            if ($primary > 0) {
+                return rateb_adopt_ops_company_id($primary);
+            }
+        }
+
         $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
         if ($sessionCompany > 0) {
             $valid = rateb_adopt_ops_company_id($sessionCompany);

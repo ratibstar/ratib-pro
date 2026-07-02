@@ -380,7 +380,12 @@ final class AgencyErpMigrationService
             }
         }
 
-        $platformDb = function_exists('rateb_erp_database_name') ? trim((string) rateb_erp_database_name()) : '';
+        $platformDb = function_exists('rateb_platform_erp_database_name')
+            ? trim((string) rateb_platform_erp_database_name())
+            : '';
+        if ($platformDb === '' && function_exists('rateb_erp_database_name')) {
+            $platformDb = trim((string) rateb_erp_database_name());
+        }
         if ($platformDb !== '' && strcasecmp($cfg['db'], $platformDb) === 0) {
             throw new RuntimeException(__('agency_erp_reset_platform_blocked'));
         }
@@ -405,11 +410,23 @@ final class AgencyErpMigrationService
             rateb_save_agency_erp_company_link($agencyId, (int) $shell['company_id']);
         }
 
+        $linkedCompanyId = (int) ($agency['erp_company_id'] ?? 0);
+        $platformWipe = null;
+        if ($linkedCompanyId > 0 && $platformDb !== '' && strcasecmp($cfg['db'], $platformDb) !== 0) {
+            try {
+                $platformWipe = $this->wipePlatformCompanyTenant($platformDb, $linkedCompanyId, $cfg);
+            } catch (Throwable $e) {
+                $platformWipe = ['ok' => false, 'error' => $e->getMessage()];
+            }
+        }
+
         $report['agency_id'] = $agencyId;
         $report['agency_name'] = trim((string) ($agency['name'] ?? ''));
         $report['erp_db_name'] = $cfg['db'];
         $report['site_host'] = $siteHost;
         $report['shell'] = $shell;
+        $report['platform_db'] = $platformDb;
+        $report['platform_wipe'] = $platformWipe;
 
         return $report;
     }
@@ -518,5 +535,26 @@ final class AgencyErpMigrationService
         } finally {
             Database::clearConnectionOverride();
         }
+    }
+
+    /**
+     * @param array{host:string,port:int,user:string,pass:string,db:string} $cfg
+     * @return array<string, mixed>
+     */
+    private function wipePlatformCompanyTenant(string $platformDb, int $companyId, array $cfg): array
+    {
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+            $cfg['host'],
+            $cfg['port'],
+            $platformDb
+        );
+        $pdo = new \PDO($dsn, $cfg['user'], $cfg['pass'], [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+        ]);
+        $wipe = (new CompanyTenantWipeService())->wipeCompany($pdo, $companyId, false);
+
+        return array_merge(['ok' => true, 'database' => $platformDb], $wipe);
     }
 }
