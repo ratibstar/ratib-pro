@@ -230,9 +230,9 @@ jobs:
           ERP_HEALTH_CLEAN="$(curl -sS -o /tmp/erp-health.json -w "%{http_code}" --connect-timeout 8 --max-time 30 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
             "${SITE}/rateb-erp/public/erp-health.php" 2>/dev/null || echo "000")"
-          ERP_HEALTH_CANON="$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 8 --max-time 15 \
+          ERP_HEALTH_CANON="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 10 --max-time 30 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
-            "${SITE}/erp-health.php" 2>/dev/null || echo "000")"
+            "${SITE}/erp-health.php?deploy_verify=$(date +%s)" 2>/dev/null || echo "000")"
           echo "erp-health-clean=$ERP_HEALTH_CLEAN erp-health-canonical=$ERP_HEALTH_CANON"
           if [ "$ERP_HEALTH_CLEAN" != "200" ] || [ "$ERP_HEALTH_CANON" != "200" ]; then
             echo "::error::ERP health probes failed (clean=$ERP_HEALTH_CLEAN canonical=$ERP_HEALTH_CANON)"

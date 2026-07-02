@@ -45,6 +45,7 @@ DEPLOY_ALLOW_PREFIXES = (
 DEPLOY_ALLOW_FILES = frozenset({
     ".htaccess",
     "index.php",
+    "erp-health.php",
     "rateb-profile-fix.php",
     "config/env.php",
     "config/test-control-db.php",
@@ -172,6 +173,7 @@ def mime_for_filename(name: str) -> str:
 FAST_FILES = [
     ".htaccess",
     "index.php",
+    "erp-health.php",
     "includes/config.php",
     "includes/rateb-clean-url.php",
     "includes/rateb-public-base-url.php",
@@ -281,6 +283,7 @@ FAST_FILES = [
 
 CRITICAL = [
     ".htaccess",
+    "erp-health.php",
     "public/rateb-build.txt",
     "pages/about.php",
     "pages/deploy-root.php",
