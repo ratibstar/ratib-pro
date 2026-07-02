@@ -132,18 +132,19 @@
     font-size: 0.85rem;
 }
 
-/* Modals and action buttons - ensure clickable (above dropdown menu at 1035) */
+/* Modals and action buttons - ensure clickable (above dropdown menu at 1090) */
 #viewModal.modal,
 #editModal.modal,
 #alertModal.modal,
 #confirmModal.modal,
-#erpProvisionModal.modal {
-    z-index: 1060 !important;
+#erpProvisionModal.modal,
+#erpResetModal.modal {
+    z-index: 1110 !important;
 }
 
 body > .modal-backdrop,
 .modal-backdrop {
-    z-index: 1055 !important;
+    z-index: 1105 !important;
 }
 
 #editModal .modal-content,
@@ -334,7 +335,8 @@ body > .modal-backdrop,
 }
 
 .ag-actions-menu .btn-provision-pro,
-.ag-actions-menu .btn-provision-erp {
+.ag-actions-menu .btn-provision-erp,
+.ag-actions-menu .btn-reset-erp {
     pointer-events: auto !important;
     position: relative;
     z-index: 2;
@@ -429,9 +431,18 @@ body > .modal-backdrop,
 #erpProvisionModal .modal-dialog,
 #erpProvisionModal .modal-footer .btn,
 #erpProvisionModal .modal-header .btn-close,
-#erpProvisionModal .modal-body .form-select {
+#erpProvisionModal .modal-body .form-select,
+#erpResetModal .modal-content,
+#erpResetModal .modal-dialog,
+#erpResetModal .modal-footer .btn,
+#erpResetModal .modal-header .btn-close,
+#erpResetModal .modal-body .form-control {
     pointer-events: auto !important;
     cursor: pointer;
+}
+
+#erpResetModal .modal-body .form-control {
+    cursor: text;
 }
 
 #tableCard .agencies-table-scroll td.ag-actions-cell {

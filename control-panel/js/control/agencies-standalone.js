@@ -93,6 +93,37 @@
             document.body.style.removeProperty('padding-right');
         }
     }
+
+    function hideAllOpenDropdownMenus() {
+        document.querySelectorAll('.dropdown-menu.show, .ag-actions-menu.show').forEach(function (menu) {
+            menu.classList.remove('show');
+        });
+        document.querySelectorAll('.ag-actions-dropdown.show, .dropdown.show').forEach(function (wrap) {
+            wrap.classList.remove('show');
+            var toggle = wrap.querySelector('[data-bs-toggle="dropdown"]');
+            if (toggle) {
+                toggle.classList.remove('show');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function (toggle) {
+                var inst = bootstrap.Dropdown.getInstance(toggle);
+                if (inst) {
+                    try { inst.hide(); } catch (e) { /* ignore */ }
+                }
+            });
+        }
+    }
+
+    function prepareModalForShow(modalEl) {
+        hideAllOpenDropdownMenus();
+        closeAgencyActionDropdowns();
+        cleanupStaleModalBackdrops();
+        if (modalEl && modalEl.parentNode !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+    }
     cleanupStaleModalBackdrops();
 
     function showAlert(msg) {
@@ -591,14 +622,27 @@
                 if (coWrap) coWrap.style.display = '';
             }
         }
-        closeAgencyActionDropdowns();
-        cleanupStaleModalBackdrops();
         var modalEl = document.getElementById('erpResetModal');
+        closeAgencyActionDropdowns();
+        prepareModalForShow(modalEl);
         var modal = getBootstrapModal(modalEl);
         if (!modal) {
             showAlert('Reset modal is not available. Refresh the page.');
             return;
         }
+        modalEl.addEventListener('shown.bs.modal', function onResetShown() {
+            modalEl.removeEventListener('shown.bs.modal', onResetShown);
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 1) {
+                for (var i = 0; i < backdrops.length - 1; i++) {
+                    backdrops[i].remove();
+                }
+            }
+            var inp = document.getElementById('erpResetConfirmInput');
+            if (inp) {
+                window.setTimeout(function () { inp.focus(); }, 50);
+            }
+        });
         window.setTimeout(function() { modal.show(); }, 0);
     }
 
@@ -780,6 +824,7 @@
     // Same capture pattern as registration-requests-page.js
     document.addEventListener('click', function(e) {
         if (!e.target || typeof e.target.closest !== 'function') return;
+        if (e.target.closest('.modal.show')) return;
         try {
         var menuItem = menuActionItem(e);
         if (menuItem && menuItem.tagName !== 'A' && !isProvisionMenuButton(menuItem)) {
