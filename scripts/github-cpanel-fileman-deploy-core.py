@@ -283,6 +283,7 @@ FAST_FILES = [
 
 CRITICAL = [
     ".htaccess",
+    "favicon.php",
     "erp-health.php",
     "public/rateb-build.txt",
     "pages/about.php",

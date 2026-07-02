@@ -133,8 +133,11 @@ RewriteRule ^([a-z0-9_-]+)/pages/(.+?)/?$ /pages/$2?country_slug=$1 [L,QSA]
 RewriteCond %{REQUEST_URI} ^/pages/control/ [NC]
 RewriteRule ^pages/control/(.*)$ /control-panel/pages/control/$1 [R=302,L,QSA]
 
-# Favicon - serve via PHP to prevent 404
+# Favicon — agency hosts → ERP public handler; main site → root favicon.php
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
 RewriteRule ^favicon\.ico$ favicon.php [L]
+RewriteCond %{HTTP_HOST} !^(www\.)?rateb\.sa$ [NC]
+RewriteRule ^favicon\.ico$ rateb-erp/public/favicon.php [L]
 
 # Admin tenant creation page (extensionless URL)
 RewriteRule ^admin/create-tenant/?$ /admin/create-tenant.php [L,QSA]

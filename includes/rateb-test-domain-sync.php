@@ -20,7 +20,7 @@ if (!function_exists('rateb_test_domain_sync_root_files')) {
     /** @return list<string> */
     function rateb_test_domain_sync_root_files(): array
     {
-        return ['index.php', '.htaccess', 'composer.json', 'control.php'];
+        return ['index.php', '.htaccess', 'favicon.php', 'composer.json', 'control.php'];
     }
 }
 
