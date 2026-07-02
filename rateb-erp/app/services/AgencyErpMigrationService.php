@@ -338,8 +338,12 @@ final class AgencyErpMigrationService
 
         if ($linked > 0) {
             try {
-                $row = (new \Rateb\App\Models\Company())->find($linked);
-                $platformName = trim((string) ($row['name'] ?? ''));
+                $stmt = $platformPdo->prepare(
+                    'SELECT name FROM rateb_companies WHERE id = :id LIMIT 1'
+                );
+                $stmt->execute(['id' => $linked]);
+                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $platformName = is_array($row) ? trim((string) ($row['name'] ?? '')) : '';
                 if ($platformName !== '') {
                     $stmt = $platformPdo->prepare(
                         'SELECT id FROM rateb_companies WHERE LOWER(name) = LOWER(:n) LIMIT 5'
@@ -544,13 +548,18 @@ final class AgencyErpMigrationService
                         $platformErrors[] = 'Platform DB still has purchase data but no company id is linked (set erp_company_id on the agency).';
                     }
                 } else {
+                    $report['platform_pr_by_company_before'] = [];
+                    $report['platform_pr_by_company_after'] = [];
                     foreach ($companyIds as $companyId) {
+                        $report['platform_pr_by_company_before'][$companyId] = $this->countPurchaseRequests($platformPdo, $companyId);
                         $platformWipes[] = $this->wipePlatformCompanyTenant($platformCfg, $companyId);
+                        $after = $this->countPurchaseRequests($platformPdo, $companyId);
+                        $report['platform_pr_by_company_after'][$companyId] = $after;
+                        if ($after > 0) {
+                            $platformErrors[] = 'Platform company #' . $companyId . ' still has ' . $after . ' purchase requests after wipe.';
+                        }
                     }
                     $report['platform_pr_after'] = $this->countPurchaseRequests($platformPdo);
-                    if ($report['platform_pr_after'] > 0) {
-                        $platformErrors[] = 'Platform still has ' . $report['platform_pr_after'] . ' purchase requests after company wipe.';
-                    }
                 }
             } catch (Throwable $e) {
                 $platformErrors[] = $e->getMessage();

@@ -82,6 +82,18 @@ abstract class Model
             $filterId = rateb_resolve_ops_company_id();
         }
         if ($filterId < 1) {
+            $ctx = TenantContext::companyId();
+            if ($ctx !== null && $ctx > 0) {
+                $filterId = (int) $ctx;
+            }
+        }
+        if ($filterId < 1 && function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops()) {
+            $primary = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+            if ($primary > 0) {
+                $filterId = $primary;
+            }
+        }
+        if ($filterId < 1) {
             return ['', []];
         }
         $col = ($alias !== '' ? $alias . '.' : '') . $this->tenantColumn;

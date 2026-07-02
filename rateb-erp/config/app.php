@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260702-reset-platform-creds-fix');
+define('RATEB_ASSET_BUILD', '20260702-ops-tenant-scope-fix');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1515,6 +1515,58 @@ if (!function_exists('rateb_branch_filter_label')) {
     }
 }
 
+/** Agency ERP host or dedicated DB — ops must use the single primary tenant (not stale platform session). */
+if (!function_exists('rateb_agency_erp_binding_active')) {
+    function rateb_agency_erp_binding_active(): bool
+    {
+        if (PHP_SAPI === 'cli') {
+            return false;
+        }
+        $lookupFile = dirname(RATEB_ROOT, 1) . '/config/env/agency_lookup.php';
+        if (!is_file($lookupFile)) {
+            return false;
+        }
+        require_once $lookupFile;
+
+        return function_exists('rateb_agency_erp_binding_for_request_host')
+            && rateb_agency_erp_binding_for_request_host() !== null;
+    }
+}
+
+if (!function_exists('rateb_force_single_tenant_ops')) {
+    function rateb_force_single_tenant_ops(): bool
+    {
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
+        if (rateb_agency_erp_binding_active()) {
+            return true;
+        }
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return false;
+        }
+
+        return \Rateb\App\Services\DedicatedTenantPolicy::companyCount() === 1;
+    }
+}
+
+if (!function_exists('rateb_sync_ops_session_to_company')) {
+    function rateb_sync_ops_session_to_company(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $ops = (int) (\Rateb\App\Core\SessionManager::get('rateb_ops_company_id', 0) ?? 0);
+        $sess = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+        if ($ops !== $companyId) {
+            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $companyId);
+        }
+        if ($sess !== $companyId) {
+            \Rateb\App\Core\SessionManager::set('rateb_company_id', $companyId);
+        }
+    }
+}
+
 /** Resolve active company for ops routes (session, then ?company_id=, then ops session). */
 if (!function_exists('rateb_ops_company_exists')) {
     function rateb_ops_company_exists(int $companyId): bool
@@ -1558,9 +1610,11 @@ if (!function_exists('rateb_adopt_ops_company_id')) {
 if (!function_exists('rateb_resolve_ops_company_id')) {
     function rateb_resolve_ops_company_id(): int
     {
-        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+        if (function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops()) {
             $primary = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
             if ($primary > 0) {
+                rateb_sync_ops_session_to_company($primary);
+
                 return rateb_adopt_ops_company_id($primary);
             }
         }

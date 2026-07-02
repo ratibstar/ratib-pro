@@ -233,5 +233,8 @@ if (!function_exists('rateb_apply_agency_erp_request_binding')) {
         if (class_exists(\Rateb\App\Core\Database::class)) {
             \Rateb\App\Core\Database::useConnectionOverride($binding);
         }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            rateb_resolve_ops_company_id();
+        }
     }
 }
