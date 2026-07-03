@@ -840,6 +840,9 @@ abstract class CrudController extends Controller
                 continue;
             }
             if ($type === 'number') {
+                if ($raw !== '' && function_exists('rateb_western_digits')) {
+                    $raw = rateb_western_digits($raw);
+                }
                 $data[$name] = $raw === '' ? null : $raw;
                 continue;
             }

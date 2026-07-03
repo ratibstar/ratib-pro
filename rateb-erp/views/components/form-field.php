@@ -195,10 +195,11 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
            value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
            <?php echo $required && !$displayOnly ? ' required' : ''; ?><?php echo $readonly || $displayOnly ? ' readonly' : ''; ?>
            <?php echo $fieldAttrs; ?>
-           <?php if ($isNumberField) { ?>dir="ltr" lang="en" inputmode="decimal" autocomplete="off"<?php } ?>
+           <?php if ($isNumberField) { ?>dir="ltr" lang="en" inputmode="decimal" autocomplete="off"<?php } else { ?>
            <?php if (!empty($field['step'])) { ?>step="<?php echo Rateb\App\Core\View::escape((string) $field['step']); ?>"<?php } ?>
            <?php if (isset($field['min'])) { ?>min="<?php echo Rateb\App\Core\View::escape((string) $field['min']); ?>"<?php } ?>
-           <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>>
+           <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>
+           <?php } ?>>
         <?php } ?>
     <?php if (!empty($field['hint'])) { ?>
     <small class="text-muted d-block mt-1"><?php echo __((string) $field['hint']); ?></small>

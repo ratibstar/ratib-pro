@@ -207,7 +207,7 @@ final class MarketingController extends Controller
         http_response_code(404);
         $this->sendMarketingNoCacheHeaders();
         $this->view('marketing/404', [
-            'title' => '404',
+            'title' => __('cms_not_found'),
             'menuItems' => $this->cms->menuItems(),
             'theme' => $this->cms->theme(),
         ], 'marketing');
