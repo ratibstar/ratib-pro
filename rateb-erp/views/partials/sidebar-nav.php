@@ -126,19 +126,23 @@ $adminSection = static function (
         echo '</a>';
     };
 
-    $renderAdminSubGroup = static function (array $subGroup) use ($navActive, $renderAdminLink): void {
+    $renderAdminSubGroup = static function (array $subGroup) use ($navActive, $renderAdminLink, $linkBadges): void {
         $subOpen = false;
+        $subBadge = 0;
         foreach ($subGroup['links'] as $link) {
             if ($navActive($link[0])) {
                 $subOpen = true;
-                break;
             }
+            $subBadge += (int) ($linkBadges[$link[0]] ?? 0);
         }
         $openClass = $subOpen ? ' is-open' : '';
         echo '<div class="rateb-nav-subgroup' . $openClass . '" data-nav-group>';
         echo '<button type="button" class="rateb-nav-subgroup-toggle" data-nav-group-toggle aria-expanded="' . ($subOpen ? 'true' : 'false') . '">';
         echo '<i class="fas ' . Rateb\App\Core\View::escape($subGroup['icon']) . '"></i>';
         echo '<span>' . Rateb\App\Core\View::escape($subGroup['label']) . '</span>';
+        if ($subBadge > 0) {
+            echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $subBadge . '</span>';
+        }
         echo '<i class="fas fa-chevron-down rateb-nav-subgroup-chevron" aria-hidden="true"></i>';
         echo '</button><div class="rateb-nav-subgroup-body">';
         foreach ($subGroup['links'] as $link) {
@@ -151,6 +155,14 @@ $adminSection = static function (
     $hasActive = false;
     foreach ($items as $item) {
         if (($item['type'] ?? 'link') === 'subgroup') {
+            $gate = $item['gate'] ?? null;
+            if (is_array($gate) && count($gate) >= 1) {
+                $gatePerm = (string) ($gate[0] ?? '');
+                $gateModule = (string) ($gate[1] ?? '');
+                if ($gatePerm !== '' && !rateb_nav_can($gatePerm, $gateModule)) {
+                    continue;
+                }
+            }
             $subLinks = [];
             foreach ($item['links'] ?? [] as $link) {
                 $module = $link[4] ?? '';

@@ -378,7 +378,12 @@ final class AuthorizationService
         if (!$role) {
             return;
         }
-        $this->syncCompanyFullAccessPermissions((int) $role['id']);
+        $configFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+        $config = is_file($configFile) ? require $configFile : [];
+        $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
+        if ($extra !== []) {
+            $this->grantRolePermissionsBySlugs((int) $role['id'], $extra);
+        }
     }
 
     /** Ensure agency company admin has company-full-access role (idempotent). */

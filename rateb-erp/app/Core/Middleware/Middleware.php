@@ -387,6 +387,16 @@ final class CompanyPermissionMiddleware implements MiddlewareInterface
             return false;
         }
 
+        if ($this->permission !== ''
+            && function_exists('rateb_is_branch_permission_slug')
+            && rateb_is_branch_permission_slug($this->permission)
+            && function_exists('rateb_company_branches_nav_enabled')
+            && !rateb_company_branches_nav_enabled()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+            return false;
+        }
+
         $authz = new \Rateb\App\Services\AuthorizationService();
         if (!$authz->companyUserCan($userId, $this->permission, $this->module)) {
             SessionManager::flash('error', __('access_denied'));
@@ -416,6 +426,15 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
 
         if ($this->resource === '' || !function_exists('rateb_entity_perms')) {
             return true;
+        }
+
+        if (function_exists('rateb_resource_requires_branches_view')
+            && rateb_resource_requires_branches_view($this->resource)
+            && function_exists('rateb_company_branches_nav_enabled')
+            && !rateb_company_branches_nav_enabled()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+            return false;
         }
 
         $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));

@@ -200,6 +200,66 @@ if (!function_exists('rateb_agency_access_nav_permissions')) {
     }
 }
 
+if (!function_exists('rateb_company_branches_nav_enabled')) {
+    /**
+     * Show الفروع in sidebar on agency / dedicated ERP hosts.
+     * Revoke branches.view in the role matrix to hide the whole section.
+     */
+    function rateb_company_branches_nav_enabled(): bool
+    {
+        if (!function_exists('rateb_nav_can')) {
+            return true;
+        }
+        $agencyScoped = (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host())
+            || (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment());
+        if (!$agencyScoped) {
+            return true;
+        }
+
+        return rateb_nav_can('branches.view', 'branches');
+    }
+}
+
+if (!function_exists('rateb_is_branch_permission_slug')) {
+    /** Branch module slugs gated by branches.view on agency / dedicated hosts. */
+    function rateb_is_branch_permission_slug(string $slug): bool
+    {
+        $slug = trim($slug);
+        if ($slug === '' || $slug === 'branches.view') {
+            return false;
+        }
+        static $branchSlugs = null;
+        if ($branchSlugs === null) {
+            $file = RATEB_ROOT . '/config/permissions-system.php';
+            $cfg = is_file($file) ? require $file : [];
+            $branchSlugs = array_flip((array) ($cfg['branch_permission_slugs'] ?? []));
+        }
+        if (isset($branchSlugs[$slug])) {
+            return true;
+        }
+
+        return str_starts_with($slug, 'branch.');
+    }
+}
+
+if (!function_exists('rateb_resource_requires_branches_view')) {
+    function rateb_resource_requires_branches_view(string $resource): bool
+    {
+        $resource = trim($resource);
+        if ($resource === '' || $resource === 'branches') {
+            return $resource === 'branches';
+        }
+        if (str_starts_with($resource, 'branch-')) {
+            return true;
+        }
+        if (!function_exists('rateb_entity_perms')) {
+            return false;
+        }
+
+        return (rateb_entity_perms($resource)['module'] ?? '') === 'branches';
+    }
+}
+
 if (!function_exists('rateb_is_platform_oversight_host')) {
     /** Platform SaaS admin (companies, billing, CMS, agency push) — rateb.sa only, not agency ERP hosts. */
     function rateb_is_platform_oversight_host(): bool

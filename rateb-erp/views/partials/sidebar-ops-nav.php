@@ -8,7 +8,7 @@ declare(strict_types=1);
 if (function_exists('rateb_bootstrap_ops_tenant')) {
     rateb_bootstrap_ops_tenant();
 }
-if (!rateb_is_super_admin()) {
+if (!rateb_is_super_admin() && rateb_company_branches_nav_enabled()) {
     $opsSection(__('branches'), [
         ['branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branches', 'branch.dashboard.view'],
         ['branch-financial', 'branch_financial_reports', 'fa-file-invoice-dollar', 'accounting', 'branch.financial.pl'],

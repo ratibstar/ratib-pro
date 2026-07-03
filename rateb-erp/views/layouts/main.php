@@ -131,6 +131,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                     'type' => 'subgroup',
                     'label' => __('branches'),
                     'icon' => 'fa-code-branch',
+                    'gate' => ['branches.view', 'branches'],
                     'links' => [
                         ['admin/ops/branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branch.dashboard.view', 'branches'],
                         ['admin/ops/branch-financial', 'branch_financial_reports', 'fa-file-invoice-dollar', 'branch.financial.pl', 'accounting'],
@@ -139,15 +140,22 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                         ['admin/ops/branch-transfers', 'branch_transfers', 'fa-shuffle', 'branch.transfers.view', 'branches'],
                     ],
                 ],
-                ['type' => 'link', 'link' => ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage']],
-                ['type' => 'link', 'link' => ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view']],
-                ['type' => 'link', 'link' => ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage']],
-                ['type' => 'link', 'link' => ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage']],
-                ['type' => 'link', 'link' => ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage']],
-                ['type' => 'link', 'link' => ['admin/oversight/supplier-evaluations', 'supplier_evaluations_oversight', 'fa-star-half-stroke', 'procurement.manage']],
-                ['type' => 'link', 'link' => ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view']],
-                ['type' => 'link', 'link' => ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view']],
-                ['type' => 'link', 'link' => ['admin/settings', 'settings', 'fa-gear', 'settings.manage']],
+                [
+                    'type' => 'subgroup',
+                    'label' => __('admin_oversight_monitoring'),
+                    'icon' => 'fa-eye',
+                    'links' => [
+                        ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
+                        ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view'],
+                        ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
+                        ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],
+                        ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage'],
+                        ['admin/oversight/supplier-evaluations', 'supplier_evaluations_oversight', 'fa-star-half-stroke', 'procurement.manage'],
+                        ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view'],
+                        ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
+                        ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
+                    ],
+                ],
             ], 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges, 'rateb-nav-badge--pending');
             ?>
             <?php } ?>
@@ -229,7 +237,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             </div>
             <?php }
             } ?>
-            <?php if (function_exists('rateb_branch_access_all') && rateb_branch_access_all() && !rateb_is_portal_branch_session()) {
+            <?php if (function_exists('rateb_branch_access_all') && rateb_branch_access_all() && !rateb_is_portal_branch_session() && rateb_company_branches_nav_enabled()) {
                 $hoBranches = (new \Rateb\App\Services\BranchService())->listForCompany((int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? rateb_resolve_ops_company_id()));
                 if ($hoBranches !== []) {
                     Rateb\App\Core\View::partial('branch-filter-switcher', [

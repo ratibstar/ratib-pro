@@ -22,7 +22,7 @@ return [
     'tenders.manage' => ['Manage Tenders', 'Tender management'],
     'reports.view' => ['View Reports', 'View operational reports'],
     'settings.manage' => ['Manage Settings', 'System settings and automation'],
-    'branches.view' => ['View Branches', 'View company branch list'],
+    'branches.view' => ['View Branches', 'Show branches menu and view company branch list'],
     'branches.manage' => ['Manage Branches', 'Create and edit branches'],
     'branches.access_all' => ['Access All Branches', 'View and operate across all branches from HQ'],
     'evaluations.manage' => ['Manage Supplier Evaluations', 'Create and manage supplier evaluations'],

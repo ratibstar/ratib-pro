@@ -59,6 +59,10 @@
                                     <li><?php echo __('accounting_perm_bank_import_hint'); ?></li>
                                 </ul>
                             </div>
+                            <?php } elseif ($module === 'branches') { ?>
+                            <div class="rateb-matrix-module-note text-muted small fw-normal mt-2">
+                                <?php echo __('branches_permissions_matrix_note'); ?>
+                            </div>
                             <?php } ?>
                         </td>
                     </tr>

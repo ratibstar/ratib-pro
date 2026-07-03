@@ -39,6 +39,8 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                 <div class="rateb-card-body">
                     <?php if ($module === 'accounting') { ?>
                     <p class="text-muted small mb-3"><?php echo __('accounting_permissions_role_note'); ?></p>
+                    <?php } elseif ($module === 'branches') { ?>
+                    <p class="text-muted small mb-3"><?php echo __('branches_permissions_matrix_note'); ?></p>
                     <?php } ?>
                     <div class="row g-2">
                         <?php foreach ($perms as $perm) {
