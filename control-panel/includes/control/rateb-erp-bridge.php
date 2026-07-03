@@ -211,15 +211,43 @@ function control_rateb_erp_branch_portal_url(int $branchId, ?array $branchRow = 
 function control_rateb_erp_branch_manage_url(int $companyId = 0): string
 {
     $url = control_rateb_erp_branches_hub_page_url();
+    $sep = strpos($url, '?') !== false ? '&' : '?';
+    $url .= $sep . 'platform=1';
     if ($companyId > 0) {
-        $url .= (strpos($url, '?') !== false ? '&' : '?') . 'company_id=' . $companyId;
+        $url .= '&company_id=' . $companyId . '#company-branches-' . $companyId;
     }
+
     return $url;
+}
+
+/** Platform companies hub (rateb.sa) — ignore session agency when company_id is set without agency_id. */
+function control_rateb_erp_is_platform_branch_context(): bool
+{
+    if (isset($_GET['platform']) && (string) $_GET['platform'] === '1') {
+        return true;
+    }
+    if (isset($_POST['platform']) && (string) $_POST['platform'] === '1') {
+        return true;
+    }
+    $hasAgencyParam = array_key_exists('agency_id', $_GET) || array_key_exists('agency_id', $_POST);
+    if ($hasAgencyParam) {
+        return false;
+    }
+    $companyId = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+
+    return $companyId > 0;
 }
 
 function control_rateb_erp_resolve_agency_id(): int
 {
-    return (int) ($_POST['agency_id'] ?? $_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+    if (control_rateb_erp_is_platform_branch_context()) {
+        return 0;
+    }
+    if (array_key_exists('agency_id', $_POST) || array_key_exists('agency_id', $_GET)) {
+        return (int) ($_POST['agency_id'] ?? $_GET['agency_id'] ?? 0);
+    }
+
+    return (int) ($_SESSION['control_agency_id'] ?? 0);
 }
 
 /** Branches hub scoped to an agency ERP database. */
@@ -613,7 +641,7 @@ function control_rateb_erp_pdo_for_agency(int $agencyId): ?\PDO
 
 function control_rateb_erp_db_name(): string
 {
-    $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+    $agencyId = control_rateb_erp_resolve_agency_id();
     if ($agencyId > 0) {
         $agencyDb = control_rateb_erp_agency_db_name($agencyId);
         if ($agencyDb !== '') {

@@ -82,6 +82,15 @@ $companies = $schemaReady ? control_rateb_erp_companies_branch_overview() : [];
 if ($focusCompanyId < 1 && $agencyId > 0 && count($companies) === 1) {
     $focusCompanyId = (int) ($companies[0]['id'] ?? 0);
 }
+$focusCompanyKnown = $focusCompanyId < 1;
+if ($focusCompanyId > 0) {
+    foreach ($companies as $coRow) {
+        if ((int) ($coRow['id'] ?? 0) === $focusCompanyId) {
+            $focusCompanyKnown = true;
+            break;
+        }
+    }
+}
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('الشركات والفروع — نظام رتب ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
@@ -111,6 +120,9 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
 <?php } ?>
 <?php if ($flashErr !== '') { ?>
 <div class="alert alert-danger"><?php echo htmlspecialchars($flashErr, ENT_QUOTES, 'UTF-8'); ?></div>
+<?php } ?>
+<?php if ($focusCompanyId > 0 && !$focusCompanyKnown) { ?>
+<div class="alert alert-warning">الشركة رقم <?php echo (int) $focusCompanyId; ?> غير موجودة في قاعدة ERP الحالية — تأكد أنك تدير فروع <strong>منصة rateb.sa</strong> وليس وكالة أخرى.</div>
 <?php } ?>
 <?php if ($newPortalUrl !== '') { ?>
 <div class="alert alert-info">
@@ -144,9 +156,9 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
     $canAdd = !empty($company['can_add_branch']);
     $branches = control_rateb_erp_company_branches($cid);
     $cardId = 'company-branches-' . $cid;
-    $expanded = $focusCompanyId === $cid || $focusCompanyId === 0;
+    $expanded = $focusCompanyId > 0 ? ($focusCompanyId === $cid) : false;
     ?>
-<div class="control-settings-card mb-4" id="<?php echo htmlspecialchars($cardId, ENT_QUOTES, 'UTF-8'); ?>">
+<div class="control-settings-card mb-4<?php echo $focusCompanyId === $cid ? ' border border-primary border-2' : ''; ?>" id="<?php echo htmlspecialchars($cardId, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
         <div>
             <h3 class="h5 mb-1">
@@ -162,7 +174,7 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
         </div>
         <form method="post" class="d-flex align-items-end gap-2 flex-wrap">
             <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
-            <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } ?>
+            <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } else { ?><input type="hidden" name="platform" value="1"><?php } ?>
             <input type="hidden" name="action" value="set_branch_limit">
             <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
             <div>
@@ -209,7 +221,7 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
                     <?php if (!$isMain) { ?>
                     <form method="post" class="d-inline">
                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } ?>
+                        <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } else { ?><input type="hidden" name="platform" value="1"><?php } ?>
                         <input type="hidden" name="action" value="toggle_branch">
                         <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
                         <input type="hidden" name="branch_id" value="<?php echo $bid; ?>">
@@ -232,7 +244,7 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
         <summary class="fw-semibold cursor-pointer"><i class="fas fa-plus-circle text-primary"></i> إضافة فرع لهذه الشركة</summary>
         <form method="post" class="row g-2 mt-3">
             <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
-            <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } ?>
+            <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } else { ?><input type="hidden" name="platform" value="1"><?php } ?>
             <input type="hidden" name="action" value="create_branch">
             <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
             <div class="col-md-4">

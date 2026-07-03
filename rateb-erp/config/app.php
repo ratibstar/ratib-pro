@@ -323,9 +323,11 @@ if (!function_exists('rateb_control_panel_branch_manage_url')) {
         $url = $base . '/control-panel/pages/control/rateb-erp-branches?control=1';
         if ($agencyId > 0) {
             $url .= '&agency_id=' . $agencyId;
+        } else {
+            $url .= '&platform=1';
         }
         if ($companyId > 0) {
-            $url .= '&company_id=' . $companyId;
+            $url .= '&company_id=' . $companyId . '#company-branches-' . $companyId;
         }
 
         return $url;
