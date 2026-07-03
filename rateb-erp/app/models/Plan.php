@@ -89,4 +89,23 @@ final class Plan extends Model
         }
         return $out;
     }
+
+    /** @param array<string, mixed> $plan */
+    public static function marketingLimitsSummary(array $plan): string
+    {
+        $users = (int) ($plan['max_users'] ?? 0);
+        $branches = (int) ($plan['max_branches'] ?? 0);
+        if ($users < 1 && $branches < 1) {
+            return '';
+        }
+        $parts = [];
+        if ($users > 0) {
+            $parts[] = __('plan_up_to_users', ['n' => (string) $users]);
+        }
+        if ($branches > 0) {
+            $parts[] = __('plan_up_to_branches', ['n' => (string) $branches]);
+        }
+
+        return implode(' · ', $parts);
+    }
 }

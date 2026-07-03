@@ -44,6 +44,11 @@ $featuredSlug = 'professional';
                         <?php echo __('sar'); ?> / <?php echo __('cms_per_year'); ?>
                     </p>
                     <?php } ?>
+                    <?php
+                    $limitsLine = Plan::marketingLimitsSummary($plan);
+                    if ($limitsLine !== '') { ?>
+                    <p class="small text-muted mb-2"><?php echo Rateb\App\Core\View::escape($limitsLine); ?></p>
+                    <?php } ?>
                     <?php if ($features !== []) { ?>
                     <ul class="rateb-mkt-plan-features">
                         <?php foreach ($features as $feature) { ?>
