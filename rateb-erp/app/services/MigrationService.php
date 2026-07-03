@@ -497,6 +497,39 @@ final class MigrationService
         }
     }
 
+    /** @return list<string> */
+    public function pendingFilenames(): array
+    {
+        try {
+            [$pdo, $dbName] = $this->migrationConnection();
+            $seedLog = [];
+            $this->ensureMigrationsTable($pdo);
+            $this->seedLegacyAppliedMigrations($pdo, $seedLog);
+            $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+            $files = glob($root . '/migrations/*.sql') ?: [];
+            sort($files);
+            $pending = [];
+            foreach ($files as $file) {
+                $name = basename($file);
+                if (!$this->isRunnableMigration($name)) {
+                    continue;
+                }
+                if (!$this->isApplied($pdo, $name)) {
+                    $pending[] = $name;
+                }
+            }
+
+            return $pending;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    public function hasPending(): bool
+    {
+        return $this->pendingFilenames() !== [];
+    }
+
     /** @return array<int, string> */
     public function rollbackLast(): array
     {

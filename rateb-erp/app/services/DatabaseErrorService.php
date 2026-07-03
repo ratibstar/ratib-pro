@@ -129,11 +129,10 @@ final class DatabaseErrorService
             $lightCss = $assetBase . '/css/light.css';
         }
         $homeUrl = function_exists('rateb_url') ? rateb_url('admin') : '/rateb-erp/public/admin';
-        $migrateUrl = '';
-        if (function_exists('control_rateb_erp_migrate_page_url')) {
-            $migrateUrl = control_rateb_erp_migrate_page_url();
-        } elseif (function_exists('rateb_url')) {
-            $migrateUrl = rateb_url('../control-panel/pages/control/rateb-erp-migrate.php');
+        $migrateUrl = self::resolveMigrateUrl();
+        $agencyMigrateHint = '';
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            $agencyMigrateHint = self::t('agency_erp_migrate_from_platform');
         }
         $companiesUrl = function_exists('rateb_url') ? rateb_url('admin/companies') : '/rateb-erp/public/admin/companies';
 
@@ -146,6 +145,9 @@ final class DatabaseErrorService
         echo '</head><body class="rateb-app"><div class="rateb-err">';
         echo '<h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
         echo '<p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
+        if ($agencyMigrateHint !== '') {
+            echo '<p class="small text-muted">' . htmlspecialchars($agencyMigrateHint, ENT_QUOTES, 'UTF-8') . '</p>';
+        }
         $tech = self::technicalDetail($e);
         if ($tech !== '' && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             echo '<p style="font-size:.85rem;color:#5a6a7e;margin-top:.75rem"><code style="white-space:pre-wrap">'
@@ -155,7 +157,7 @@ final class DatabaseErrorService
         echo '<a class="btn btn-primary btn-sm" href="' . htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('dashboard'), ENT_QUOTES, 'UTF-8') . '</a>';
         if ($schema && $migrateUrl !== '') {
             echo '<a class="btn btn-outline-primary btn-sm" href="' . htmlspecialchars($migrateUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('run_erp_migrations'), ENT_QUOTES, 'UTF-8') . '</a>';
-        } elseif (!$schema && $migrateUrl !== '' && ($e instanceof PDOException || $e->getPrevious() instanceof PDOException)) {
+        } elseif (!$schema && $migrateUrl !== '' && ($e instanceof PDOException || $e->getPrevious() instanceof PDOException || self::looksLikePdoMessage(self::rawMessage($e)))) {
             echo '<a class="btn btn-outline-primary btn-sm" href="' . htmlspecialchars($migrateUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('run_erp_migrations'), ENT_QUOTES, 'UTF-8') . '</a>';
         }
         if ($company) {
@@ -270,5 +272,24 @@ final class DatabaseErrorService
     private static function t(string $key): string
     {
         return function_exists('__') ? (string) __($key) : $key;
+    }
+
+    private static function resolveMigrateUrl(): string
+    {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            if (function_exists('rateb_platform_oversight_public_url')) {
+                return rateb_platform_oversight_public_url('admin/agency-updates');
+            }
+
+            return 'https://rateb.sa/rateb-erp/public/admin/agency-updates';
+        }
+        if (function_exists('control_rateb_erp_migrate_page_url')) {
+            return control_rateb_erp_migrate_page_url();
+        }
+        if (function_exists('rateb_url')) {
+            return rateb_url('../control-panel/pages/control/rateb-erp-migrate.php');
+        }
+
+        return '';
     }
 }

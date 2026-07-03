@@ -29,6 +29,7 @@ final class DashboardController extends Controller
     public function index(): void
     {
         try {
+            $this->ensureAgencySchemaReady();
             $this->renderDashboard();
         } catch (\Throwable $e) {
             if (class_exists(\Rateb\App\Services\DatabaseErrorService::class)) {
@@ -126,11 +127,23 @@ final class DashboardController extends Controller
             rateb_bootstrap_branch_context($companyId);
         }
         $service = new DashboardService();
-        $dash = $service->companyBuild($companyId);
+        $dash = $this->safeDashboardBuild($service, $companyId);
         $limits = $dash['limits'] ?? (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
         $userCount = $this->resolveCompanyUserCount($companyId);
         $invSvc = new \Rateb\App\Services\InventoryWorkflowService();
         $ctrSvc = new \Rateb\App\Services\ContractWorkflowService();
+        $expiringInventory = [];
+        $expiringContracts = [];
+        try {
+            $expiringInventory = $invSvc->expiringItems(30);
+        } catch (\Throwable $e) {
+            error_log('Dashboard expiring inventory: ' . $e->getMessage());
+        }
+        try {
+            $expiringContracts = $ctrSvc->expiringContracts(60);
+        } catch (\Throwable $e) {
+            error_log('Dashboard expiring contracts: ' . $e->getMessage());
+        }
 
         $this->view('company/dashboard', [
             'title' => __('dashboard'),
@@ -142,10 +155,61 @@ final class DashboardController extends Controller
             'companyName' => (string) ($dash['company_name'] ?? ''),
             'limits' => $limits,
             'userCount' => $userCount,
-            'expiringInventory' => $invSvc->expiringItems(30),
-            'expiringContracts' => $ctrSvc->expiringContracts(60),
+            'expiringInventory' => $expiringInventory,
+            'expiringContracts' => $expiringContracts,
             'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    /** @return array<string, mixed> */
+    private function safeDashboardBuild(DashboardService $service, int $companyId): array
+    {
+        try {
+            return $service->companyBuild($companyId);
+        } catch (\Throwable $e) {
+            error_log('Dashboard companyBuild: ' . $e->getMessage());
+            if (class_exists(\Rateb\App\Services\DatabaseErrorService::class)) {
+                SessionManager::flash('warning', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            }
+
+            return [
+                'company_id' => $companyId,
+                'company_name' => '',
+                'company_status' => '',
+                'metrics' => [],
+                'charts' => [
+                    'procurement_trend' => ['labels' => [], 'purchase_requests' => [], 'purchase_orders' => []],
+                    'inventory_health' => [],
+                ],
+                'modules' => [],
+                'recent_activity' => [],
+                'limits' => (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId),
+            ];
+        }
+    }
+
+    private function ensureAgencySchemaReady(): void
+    {
+        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+            return;
+        }
+        if (!SessionManager::get('rateb_is_super_admin')) {
+            return;
+        }
+        if (SessionManager::get('rateb_agency_schema_synced') === date('Y-m-d')) {
+            return;
+        }
+        $migration = new \Rateb\App\Services\MigrationService();
+        if (!$migration->hasPending()) {
+            SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
+            return;
+        }
+        try {
+            $migration->runAll();
+            SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
+        } catch (\Throwable $e) {
+            error_log('Agency schema sync: ' . $e->getMessage());
+        }
     }
 
     private function resolveCompanyUserCount(int $companyId): int

@@ -1298,6 +1298,7 @@ return [
     'hr_attendance_duplicate_day' => 'Attendance for this employee on this date already exists.',
     'system_error_generic' => 'An unexpected error occurred. Please try again later.',
     'run_erp_migrations' => 'Run ERP migrations',
+    'agency_erp_migrate_from_platform' => 'On an agency host: run migrations from rateb.sa → Push agency updates (select the agency, then run database migrations).',
     'cost_centers' => 'Cost centers',
     'cost_center' => 'Cost center',
     'cost_center_report' => 'Cost center report',

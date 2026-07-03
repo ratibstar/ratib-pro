@@ -1298,6 +1298,7 @@ return [
     'hr_attendance_duplicate_day' => 'يوجد سجل حضور لهذا الموظف في نفس اليوم.',
     'system_error_generic' => 'حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.',
     'run_erp_migrations' => 'تشغيل ترحيلات ERP',
+    'agency_erp_migrate_from_platform' => 'على نطاق الوكالة: شغّل الترحيلات من rateb.sa ← رفع التحديثات للوكالات (اختر الوكالة ثم «ترحيل قاعدة البيانات»).',
     'cost_centers' => 'مراكز التكلفة',
     'cost_center' => 'مركز التكلفة',
     'cost_center_report' => 'تقرير مراكز التكلفة',
