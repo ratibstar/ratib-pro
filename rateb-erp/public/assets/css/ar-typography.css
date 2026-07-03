@@ -50,6 +50,25 @@ html[dir="rtl"] .rateb-date-wrap input::-webkit-datetime-edit-fields-wrapper {
     unicode-bidi: plaintext !important;
 }
 
+input[type="number"].rateb-ltr-num,
+input.rateb-ltr-num[type="number"] {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: isolate;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+html[dir="rtl"] input[type="number"].rateb-ltr-num,
+html[dir="rtl"] input.rateb-ltr-num[type="number"] {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+html[lang="en"] input[type="number"].rateb-ltr-num,
+html[lang="en"] input.rateb-ltr-num[type="number"] {
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
 html[dir="rtl"] td.rateb-ltr-date,
 html[dir="rtl"] dd.rateb-ltr-date,
 html[dir="rtl"] span.rateb-ltr-date,

@@ -597,23 +597,23 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/plans';
         $this->entityName = 'plans';
         $this->fields = [
-            ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
-            ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
+            ['name' => 'name', 'label' => 'name', 'type' => 'text'],
+            ['name' => 'slug', 'label' => 'slug', 'type' => 'text'],
             ['name' => 'description', 'label' => 'description', 'type' => 'textarea'],
-            ['name' => 'price_monthly', 'label' => 'Monthly', 'type' => 'number'],
-            ['name' => 'price_yearly', 'label' => 'Yearly', 'type' => 'number'],
-            ['name' => 'max_users', 'label' => 'Max Users', 'type' => 'number'],
+            ['name' => 'price_monthly', 'label' => 'price_monthly', 'type' => 'number'],
+            ['name' => 'price_yearly', 'label' => 'price_yearly', 'type' => 'number'],
+            ['name' => 'max_users', 'label' => 'user_limit', 'type' => 'number'],
             ['name' => 'max_branches', 'label' => 'max_branches', 'type' => 'number'],
-            ['name' => 'max_storage_mb', 'label' => 'Storage MB', 'type' => 'number'],
+            ['name' => 'max_storage_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
         ];
         $this->indexFields = [
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'slug', 'label' => 'slug', 'type' => 'slug'],
-            ['name' => 'price_monthly', 'label' => 'Monthly'],
-            ['name' => 'price_yearly', 'label' => 'Yearly'],
-            ['name' => 'max_users', 'label' => 'max_users'],
+            ['name' => 'price_monthly', 'label' => 'price_monthly'],
+            ['name' => 'price_yearly', 'label' => 'price_yearly'],
+            ['name' => 'max_users', 'label' => 'user_limit'],
             ['name' => 'max_branches', 'label' => 'max_branches'],
-            ['name' => 'max_storage_mb', 'label' => 'Storage MB'],
+            ['name' => 'max_storage_mb', 'label' => 'storage_limit_mb'],
             ['name' => 'modules_summary', 'label' => 'modules'],
         ];
     }
@@ -623,6 +623,7 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
         foreach ($data['items'] as &$row) {
+            $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
             $row['modules_summary'] = $this->formatModulesSummary($row, $catalog);
         }
         unset($row);

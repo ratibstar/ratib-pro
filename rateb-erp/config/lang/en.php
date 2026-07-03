@@ -662,6 +662,8 @@ return [
     'plan_modules' => 'Enabled Modules',
     'plan_modules_help' => 'Choose modules included in this plan. Standard tiers (starter / professional / enterprise) are auto-synced on migration — you can override here.',
     'plan_tier_presets' => 'Plan templates',
+    'price_monthly' => 'Monthly price',
+    'price_yearly' => 'Yearly price',
     'plan_starter_name' => 'Starter',
     'plan_starter_desc' => 'Essential procurement for small clinics and teams.',
     'plan_professional_name' => 'Professional',
