@@ -100,6 +100,9 @@ try {
         $report = [
             'ok' => $allApplied,
             'status' => $allApplied ? 'ok' : 'degraded',
+            'database' => class_exists(\Rateb\App\Core\Database::class)
+                ? \Rateb\App\Core\Database::resolvedDatabaseName()
+                : '',
             'migrations' => [],
             'columns' => [],
         ];
@@ -111,6 +114,8 @@ try {
         foreach ([
             ['rateb_journal_lines', 'branch_id'],
             ['rateb_journal_entries', 'branch_id'],
+            ['rateb_purchase_orders', 'branch_id'],
+            ['rateb_purchase_requests', 'branch_id'],
             ['rateb_branch_transfers', 'status'],
         ] as [$table, $col]) {
             $stmt = $pdo->query(

@@ -39,10 +39,10 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             );
             return false;
         }
+        if (function_exists('rateb_ensure_agency_schema_once')) {
+            rateb_ensure_agency_schema_once();
+        }
         if (SessionManager::get('rateb_is_super_admin')) {
-            if (function_exists('rateb_ensure_agency_schema_once')) {
-                rateb_ensure_agency_schema_once();
-            }
             return true;
         }
         if ((int) SessionManager::get('rateb_company_id', 0) < 1) {

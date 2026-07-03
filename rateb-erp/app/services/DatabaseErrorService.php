@@ -153,7 +153,7 @@ final class DatabaseErrorService
             echo '<p style="font-size:.85rem;color:#5a6a7e;margin-top:.75rem"><code style="white-space:pre-wrap">'
                 . htmlspecialchars($tech, ENT_QUOTES, 'UTF-8') . '</code></p>';
         }
-        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+        if ($schema && function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()
             && class_exists(\Rateb\App\Core\Database::class)) {
             try {
                 $activeDb = \Rateb\App\Core\Database::resolvedDatabaseName();
