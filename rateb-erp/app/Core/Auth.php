@@ -110,6 +110,10 @@ final class Auth
         SessionManager::set('rateb_portal', $portal);
         TenantContext::setSuperAdmin($isSuper);
         TenantContext::setCompanyId($user['company_id'] !== null ? (int) $user['company_id'] : null);
+        SessionManager::forget('rateb_agency_access_perms_synced');
+        if (function_exists('rateb_ensure_agency_access_permissions_once')) {
+            rateb_ensure_agency_access_permissions_once();
+        }
     }
 
     public static function homePath(): string

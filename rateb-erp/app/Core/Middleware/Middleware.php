@@ -372,6 +372,14 @@ final class CompanyPermissionMiddleware implements MiddlewareInterface
             return true;
         }
 
+        if ($this->permission !== ''
+            && function_exists('rateb_is_agency_company_ops_admin')
+            && rateb_is_agency_company_ops_admin()
+            && function_exists('rateb_agency_access_nav_permissions')
+            && in_array($this->permission, rateb_agency_access_nav_permissions(), true)) {
+            return true;
+        }
+
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId < 1 || $this->permission === '') {
             SessionManager::flash('error', __('access_denied'));

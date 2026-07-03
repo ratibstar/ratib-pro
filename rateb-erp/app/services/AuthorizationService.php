@@ -371,6 +371,7 @@ final class AuthorizationService
         if (!self::isAgencyPermissionMatrixContext()) {
             return;
         }
+        $this->ensureSuggestedRoles();
         $role = (new Role())->queryOne(
             "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
         );
@@ -378,6 +379,44 @@ final class AuthorizationService
             return;
         }
         $this->syncCompanyFullAccessPermissions((int) $role['id']);
+    }
+
+    /** Ensure agency company admin has company-full-access role (idempotent). */
+    public function ensureAgencyCompanyAdminRole(int $userId): void
+    {
+        if ($userId < 1 || !self::isAgencyPermissionMatrixContext()) {
+            return;
+        }
+        $user = (new \Rateb\App\Models\User())->find($userId);
+        if (!$user || !empty($user['is_super_admin'])) {
+            return;
+        }
+        $eligible = (int) ($user['company_id'] ?? 0) > 0;
+        if (!$eligible) {
+            $email = strtolower(trim((string) ($user['email'] ?? '')));
+            $name = strtolower(trim((string) ($user['name'] ?? '')));
+            $eligible = $email === 'admin@local' || $name === 'admin' || str_starts_with($email, 'admin+');
+        }
+        if (!$eligible) {
+            return;
+        }
+        $role = (new Role())->queryOne(
+            "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
+        );
+        if (!$role) {
+            return;
+        }
+        $roleId = (int) $role['id'];
+        $existing = (new Role())->queryOne(
+            'SELECT 1 FROM rateb_user_roles WHERE user_id = :uid AND role_id = :rid LIMIT 1',
+            ['uid' => $userId, 'rid' => $roleId]
+        );
+        if ($existing === null) {
+            $db = \Rateb\App\Core\Database::connection();
+            $db->prepare(
+                'INSERT IGNORE INTO rateb_user_roles (user_id, role_id) VALUES (:uid, :rid)'
+            )->execute(['uid' => $userId, 'rid' => $roleId]);
+        }
     }
 
     private static function isAgencyPermissionMatrixContext(): bool

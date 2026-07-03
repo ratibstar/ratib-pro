@@ -110,13 +110,92 @@ if (!function_exists('rateb_ensure_agency_schema_once')) {
             } else {
                 $migration->repairBranchOpsSchemaIfNeeded();
             }
-            if (class_exists(\Rateb\App\Services\AuthorizationService::class)) {
-                (new \Rateb\App\Services\AuthorizationService())->refreshDedicatedCompanyAccessPermissions();
-            }
             \Rateb\App\Core\SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
         } catch (\Throwable $e) {
             error_log('rateb_ensure_agency_schema_once: ' . $e->getMessage());
         }
+        rateb_ensure_agency_access_permissions_once();
+    }
+}
+
+if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
+    /** Grant company-full-access role access.manage on agency DBs (once per login session). */
+    function rateb_ensure_agency_access_permissions_once(): void
+    {
+        static $ran = false;
+        if ($ran) {
+            return;
+        }
+        $ran = true;
+        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+            return;
+        }
+        if (!\Rateb\App\Core\Auth::check()) {
+            return;
+        }
+        if (\Rateb\App\Core\SessionManager::get('rateb_agency_access_perms_synced') === 1) {
+            return;
+        }
+        try {
+            $authz = new \Rateb\App\Services\AuthorizationService();
+            $authz->ensureSuggestedRoles();
+            $authz->refreshDedicatedCompanyAccessPermissions();
+            $authz->ensureAgencyCompanyAdminRole((int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0));
+            \Rateb\App\Core\SessionManager::set('rateb_agency_access_perms_synced', 1);
+        } catch (\Throwable $e) {
+            error_log('rateb_ensure_agency_access_permissions_once: ' . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('rateb_is_agency_company_ops_admin')) {
+    /** Primary company admin on agency ERP (full-access role or dedicated admin login). */
+    function rateb_is_agency_company_ops_admin(?int $userId = null): bool
+    {
+        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+            return false;
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        $userId = $userId ?? (int) ($_SESSION['rateb_user_id'] ?? 0);
+        if ($userId < 1) {
+            return false;
+        }
+        try {
+            $row = (new \Rateb\App\Models\Role())->queryOne(
+                "SELECT 1 FROM rateb_user_roles ur
+                 INNER JOIN rateb_roles r ON r.id = ur.role_id
+                 WHERE ur.user_id = :uid
+                   AND r.slug IN ('company-full-access', 'access-manager', 'hq_admin')
+                 LIMIT 1",
+                ['uid' => $userId]
+            );
+            if ($row !== null) {
+                return true;
+            }
+            $user = (new \Rateb\App\Models\User())->find($userId);
+            if (!$user || !empty($user['is_super_admin'])) {
+                return false;
+            }
+            $email = strtolower(trim((string) ($user['email'] ?? '')));
+            $name = strtolower(trim((string) ($user['name'] ?? '')));
+            if ($email === 'admin@local' || $name === 'admin' || str_starts_with($email, 'admin+')) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            error_log('rateb_is_agency_company_ops_admin: ' . $e->getMessage());
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('rateb_agency_access_nav_permissions')) {
+    /** @return list<string> */
+    function rateb_agency_access_nav_permissions(): array
+    {
+        return ['access.manage', 'settings.manage', 'dashboard.view'];
     }
 }
 
@@ -2045,6 +2124,12 @@ if (!function_exists('rateb_ops_nav_pending_badge')) {
 if (!function_exists('rateb_nav_can')) {
     function rateb_nav_can(string $permission = '', string $module = ''): bool
     {
+        if ($permission !== ''
+            && function_exists('rateb_is_agency_company_ops_admin')
+            && rateb_is_agency_company_ops_admin()
+            && in_array($permission, rateb_agency_access_nav_permissions(), true)) {
+            return true;
+        }
         if (rateb_is_super_admin()) {
             return $permission === '' || rateb_can($permission);
         }
