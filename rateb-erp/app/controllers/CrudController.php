@@ -843,6 +843,21 @@ abstract class CrudController extends Controller
                 $data[$name] = $raw === '' ? null : $raw;
                 continue;
             }
+            if (in_array($type, ['date', 'datetime-local', 'time', 'month', 'week'], true)) {
+                $data[$name] = function_exists('rateb_normalize_sql_datetime')
+                    ? rateb_normalize_sql_datetime($raw, $type)
+                    : ($raw === '' ? null : $raw);
+                continue;
+            }
+            if ($type === 'text' && function_exists('rateb_date_column_kind')) {
+                $dateKind = rateb_date_column_kind($name, $type);
+                if ($dateKind === 'datetime' || $dateKind === 'date') {
+                    $data[$name] = function_exists('rateb_normalize_sql_datetime')
+                        ? rateb_normalize_sql_datetime($raw, $dateKind === 'datetime' ? 'datetime-local' : 'date')
+                        : ($raw === '' ? null : $raw);
+                    continue;
+                }
+            }
             $data[$name] = $raw;
         }
         return $data;

@@ -934,6 +934,48 @@ if (!function_exists('rateb_date_column_kind')) {
     }
 }
 
+if (!function_exists('rateb_normalize_sql_datetime')) {
+    /**
+     * Normalize HTML date/time input for MySQL (empty → NULL).
+     *
+     * @return string|null
+     */
+    function rateb_normalize_sql_datetime(string $raw, string $fieldType = 'datetime-local')
+    {
+        $raw = trim($raw);
+        if ($raw === '' || $raw === '—' || $raw === '0000-00-00' || $raw === '0000-00-00 00:00:00') {
+            return null;
+        }
+
+        $fieldType = strtolower(trim($fieldType));
+        if ($fieldType === 'datetime-local' || str_contains($raw, 'T')) {
+            $normalized = str_replace('T', ' ', $raw);
+            if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $normalized)) {
+                $normalized .= ':00';
+            }
+            $dt = date_create($normalized);
+
+            return $dt ? $dt->format('Y-m-d H:i:s') : null;
+        }
+        if ($fieldType === 'date') {
+            $dt = date_create($raw);
+
+            return $dt ? $dt->format('Y-m-d') : null;
+        }
+        if ($fieldType === 'time') {
+            if (preg_match('/^\d{2}:\d{2}$/', $raw)) {
+                return $raw . ':00';
+            }
+
+            return preg_match('/^\d{2}:\d{2}:\d{2}$/', $raw) ? $raw : null;
+        }
+
+        $dt = date_create($raw);
+
+        return $dt ? $dt->format('Y-m-d H:i:s') : null;
+    }
+}
+
 if (!function_exists('rateb_looks_like_date_value')) {
     function rateb_looks_like_date_value($value): bool
     {
