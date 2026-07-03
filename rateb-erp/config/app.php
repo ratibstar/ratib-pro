@@ -109,6 +109,7 @@ if (!function_exists('rateb_ensure_agency_schema_once')) {
                 $migration->runAll();
             } else {
                 $migration->repairBranchOpsSchemaIfNeeded();
+                $migration->repairMarketingPlansCanonicalIfNeeded();
             }
             \Rateb\App\Core\SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
         } catch (\Throwable $e) {

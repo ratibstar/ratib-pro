@@ -100,12 +100,52 @@ final class Plan extends Model
         }
         $parts = [];
         if ($users > 0) {
-            $parts[] = __('plan_up_to_users', ['n' => (string) $users]);
+            $parts[] = self::marketingUsersPhrase($users);
         }
         if ($branches > 0) {
-            $parts[] = __('plan_up_to_branches', ['n' => (string) $branches]);
+            $parts[] = self::marketingBranchesPhrase($branches);
         }
 
         return implode(' · ', $parts);
+    }
+
+    private static function marketingUsersPhrase(int $users): string
+    {
+        if (function_exists('rateb_locale') && rateb_locale() === 'ar') {
+            if ($users === 1) {
+                return 'مستخدم واحد';
+            }
+            if ($users === 2) {
+                return 'مستخدمان';
+            }
+            if ($users >= 3 && $users <= 10) {
+                return 'حتى ' . $users . ' مستخدمين';
+            }
+
+            return 'حتى ' . $users . ' مستخدم';
+        }
+
+        return $users === 1
+            ? __('plan_up_to_users', ['n' => '1'])
+            : __('plan_up_to_users', ['n' => (string) $users]);
+    }
+
+    private static function marketingBranchesPhrase(int $branches): string
+    {
+        if (function_exists('rateb_locale') && rateb_locale() === 'ar') {
+            if ($branches === 1) {
+                return 'فرع واحد';
+            }
+            if ($branches === 2) {
+                return 'فرعان';
+            }
+            if ($branches >= 3 && $branches <= 10) {
+                return $branches . ' فروع';
+            }
+
+            return $branches . ' فرعاً';
+        }
+
+        return __('plan_up_to_branches', ['n' => (string) $branches]);
     }
 }

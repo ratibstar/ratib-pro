@@ -79,8 +79,68 @@ final class MigrationService
         }
 
         $this->repairBranchOpsSchemaIfNeeded($pdo, $log);
+        $this->repairMarketingPlansCanonicalIfNeeded($pdo, $log);
 
         return $log;
+    }
+
+    /** @return list<string> */
+    public function repairMarketingPlansCanonicalIfNeeded(?PDO $pdo = null, ?array &$log = null): array
+    {
+        $localLog = [];
+        if ($log === null) {
+            $log = &$localLog;
+        }
+        try {
+            if ($pdo === null) {
+                [$pdo, ] = $this->migrationConnection();
+            }
+        } catch (\Throwable $e) {
+            $log[] = 'Plans canonical repair skipped: ' . $e->getMessage();
+            return $localLog;
+        }
+
+        try {
+            $stmt = $pdo->query(
+                "SELECT slug, max_users, max_branches, price_monthly FROM rateb_plans
+                 WHERE slug IN ('starter','professional','enterprise')"
+            );
+            $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+            if ($stmt) {
+                $this->drainStatement($stmt);
+            }
+            if ($rows === []) {
+                return $localLog;
+            }
+            foreach ($rows as $row) {
+                $slug = (string) ($row['slug'] ?? '');
+                $log[] = 'Plans verify: ' . $slug
+                    . ' users=' . (int) ($row['max_users'] ?? 0)
+                    . ' branches=' . (int) ($row['max_branches'] ?? 0)
+                    . ' monthly=' . (string) ($row['price_monthly'] ?? '');
+            }
+        } catch (\Throwable $e) {
+            $log[] = 'Plans verify skipped: ' . $e->getMessage();
+            return $localLog;
+        }
+
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $catchup = $root . '/migrations/148_marketing_plans_canonical.sql';
+        if (!is_file($catchup)) {
+            return $localLog;
+        }
+        $sql = file_get_contents($catchup);
+        if ($sql === false || trim($sql) === '') {
+            return $localLog;
+        }
+        $log[] = 'Applying marketing plans canonical catchup (148)…';
+        $this->execSqlFile($pdo, $sql);
+        if (!$this->isApplied($pdo, '148_marketing_plans_canonical.sql')) {
+            $this->markApplied($pdo, '148_marketing_plans_canonical.sql');
+        }
+        $log[] = 'Marketing plans catchup: enterprise max_users → 100.';
+
+        return $localLog;
     }
 
     /** @return list<string> */
