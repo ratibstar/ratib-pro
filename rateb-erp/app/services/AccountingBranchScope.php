@@ -9,37 +9,21 @@ use Rateb\App\Models\JournalEntry;
 trait AccountingBranchScope
 {
     private ?BranchIsolationService $accountingBranchIsolation = null;
-    private static ?bool $journalLineBranchColumnExists = null;
 
     protected function tableColumnExists(string $table, string $column): bool
     {
-        static $cache = [];
-        $key = $table . '.' . $column;
-        if (array_key_exists($key, $cache)) {
-            return $cache[$key];
-        }
-        try {
-            $pdo = \Rateb\App\Core\Database::connection();
-            $stmt = $pdo->query(
-                'SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE ' . $pdo->quote($column)
-            );
-            $cache[$key] = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable $e) {
-            $cache[$key] = false;
-        }
-        return $cache[$key];
+        return \Rateb\App\Core\Database::tableHasColumn($table, $column);
     }
 
     protected function journalLineBranchColumnExists(): bool
     {
-        if (self::$journalLineBranchColumnExists !== null) {
-            return self::$journalLineBranchColumnExists;
+        static $cache = [];
+        $db = \Rateb\App\Core\Database::resolvedDatabaseName();
+        if (array_key_exists($db, $cache)) {
+            return $cache[$db];
         }
-        self::$journalLineBranchColumnExists = $this->tableColumnExists('rateb_journal_lines', 'branch_id');
-        return self::$journalLineBranchColumnExists;
+        $cache[$db] = $this->tableColumnExists('rateb_journal_lines', 'branch_id');
+        return $cache[$db];
     }
 
     protected function accountingBranch(): BranchIsolationService
@@ -163,7 +147,11 @@ trait AccountingBranchScope
         if (!$this->tableColumnExists($table, 'branch_id')) {
             return [$sql, $params];
         }
-        return $this->accountingBranch()->appendFilter($sql, $params, $alias, 'branch_id');
+        $safeAlias = preg_replace('/[^a-z_]/', '', $alias);
+        if ($safeAlias !== '' && !preg_match('/\b' . preg_quote($safeAlias, '/') . '\b/i', $sql)) {
+            return [$sql, $params];
+        }
+        return $this->accountingBranch()->appendFilter($sql, $params, $safeAlias, 'branch_id');
     }
 
     /**

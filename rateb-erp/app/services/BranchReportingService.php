@@ -129,28 +129,9 @@ final class BranchReportingService
         }
     }
 
-    /** @var array<string, bool> */
-    private static array $columnCache = [];
-
     private function tableHasColumn(string $table, string $column): bool
     {
-        $key = $table . '.' . $column;
-        if (array_key_exists($key, self::$columnCache)) {
-            return self::$columnCache[$key];
-        }
-        try {
-            $pdo = \Rateb\App\Core\Database::connection();
-            $stmt = $pdo->query(
-                'SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE ' . $pdo->quote($column)
-            );
-            self::$columnCache[$key] = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable $e) {
-            self::$columnCache[$key] = false;
-        }
-        return self::$columnCache[$key];
+        return \Rateb\App\Core\Database::tableHasColumn($table, $column);
     }
 
     /** @return array<string, mixed> */

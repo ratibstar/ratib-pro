@@ -23,6 +23,11 @@ final class SecurityHeaders
         header('Referrer-Policy: strict-origin-when-cross-origin');
         header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 
+        if (PHP_SAPI !== 'cli' && !defined('RATEB_HEALTH_PROBE')) {
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+        }
+
         if ($isHttps) {
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }

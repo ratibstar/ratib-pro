@@ -1,3 +1,8 @@
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
 body.rateb-app {
     font-family: var(--rateb-font);
     background: var(--rateb-bg);

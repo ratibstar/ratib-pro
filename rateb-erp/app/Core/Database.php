@@ -50,6 +50,30 @@ final class Database
         return defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : '';
     }
 
+    /** Cached per database — safe when one PHP-FPM pool serves multiple agency DBs. */
+    public static function tableHasColumn(string $table, string $column): bool
+    {
+        static $cache = [];
+        $pdo = self::connection();
+        $db = self::$resolvedDbName !== '' ? self::$resolvedDbName : self::resolvedDatabaseName();
+        $key = $db . '|' . str_replace('`', '', $table) . '.' . $column;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        try {
+            $stmt = $pdo->query(
+                'SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE ' . $pdo->quote($column)
+            );
+            $cache[$key] = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            $cache[$key] = false;
+        }
+        return $cache[$key];
+    }
+
     public static function connection(): PDO
     {
         if (self::$pdo instanceof PDO) {
