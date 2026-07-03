@@ -29,7 +29,6 @@ final class DashboardController extends Controller
     public function index(): void
     {
         try {
-            $this->ensureAgencySchemaReady();
             $this->renderDashboard();
         } catch (\Throwable $e) {
             if (class_exists(\Rateb\App\Services\DatabaseErrorService::class)) {
@@ -185,30 +184,6 @@ final class DashboardController extends Controller
                 'recent_activity' => [],
                 'limits' => (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId),
             ];
-        }
-    }
-
-    private function ensureAgencySchemaReady(): void
-    {
-        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
-            return;
-        }
-        if (!SessionManager::get('rateb_is_super_admin')) {
-            return;
-        }
-        if (SessionManager::get('rateb_agency_schema_synced') === date('Y-m-d')) {
-            return;
-        }
-        $migration = new \Rateb\App\Services\MigrationService();
-        if (!$migration->hasPending()) {
-            SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
-            return;
-        }
-        try {
-            $migration->runAll();
-            SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
-        } catch (\Throwable $e) {
-            error_log('Agency schema sync: ' . $e->getMessage());
         }
     }
 

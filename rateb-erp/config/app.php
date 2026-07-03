@@ -73,6 +73,38 @@ if (!function_exists('rateb_is_agency_erp_host')) {
     }
 }
 
+if (!function_exists('rateb_ensure_agency_schema_once')) {
+    /** Run pending migrations + branch column catchup on agency ERP hosts (once per session per day). */
+    function rateb_ensure_agency_schema_once(): void
+    {
+        static $ran = false;
+        if ($ran) {
+            return;
+        }
+        $ran = true;
+        if (!rateb_is_agency_erp_host()) {
+            return;
+        }
+        if (!\Rateb\App\Core\SessionManager::get('rateb_is_super_admin')) {
+            return;
+        }
+        if (\Rateb\App\Core\SessionManager::get('rateb_agency_schema_synced') === date('Y-m-d')) {
+            return;
+        }
+        try {
+            $migration = new \Rateb\App\Services\MigrationService();
+            if ($migration->hasPending()) {
+                $migration->runAll();
+            } else {
+                $migration->repairBranchOpsSchemaIfNeeded();
+            }
+            \Rateb\App\Core\SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
+        } catch (\Throwable $e) {
+            error_log('rateb_ensure_agency_schema_once: ' . $e->getMessage());
+        }
+    }
+}
+
 if (!function_exists('rateb_is_platform_oversight_host')) {
     /** Platform SaaS admin (companies, billing, CMS, agency push) — rateb.sa only, not agency ERP hosts. */
     function rateb_is_platform_oversight_host(): bool

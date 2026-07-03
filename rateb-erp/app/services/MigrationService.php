@@ -78,7 +78,94 @@ final class MigrationService
             $log[] = 'No new migrations to run.';
         }
 
+        $this->repairBranchOpsSchemaIfNeeded($pdo, $log);
+
         return $log;
+    }
+
+    /** @return list<string> */
+    public function repairBranchOpsSchemaIfNeeded(?PDO $pdo = null, ?array &$log = null): array
+    {
+        $localLog = [];
+        if ($log === null) {
+            $log = &$localLog;
+        }
+        try {
+            if ($pdo === null) {
+                [$pdo, ] = $this->migrationConnection();
+            }
+        } catch (\Throwable $e) {
+            $log[] = 'Branch schema repair skipped: ' . $e->getMessage();
+            return $localLog;
+        }
+
+        $required = [
+            ['rateb_purchase_orders', 'branch_id'],
+            ['rateb_purchase_requests', 'branch_id'],
+        ];
+        $missing = [];
+        foreach ($required as [$table, $column]) {
+            if (!$this->pdoColumnExists($pdo, $table, $column)) {
+                $missing[] = $table . '.' . $column;
+            }
+        }
+        if ($missing === []) {
+            return $localLog;
+        }
+
+        $log[] = 'Schema repair: missing ' . implode(', ', $missing) . ' — applying branch ops catchup.';
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        foreach (['146_branch_ops_branch_id_catchup.sql', '126_branch_ops_isolation.sql'] as $basename) {
+            $path = $root . '/migrations/' . $basename;
+            if (!is_file($path)) {
+                continue;
+            }
+            $sql = file_get_contents($path);
+            if ($sql === false || trim($sql) === '') {
+                continue;
+            }
+            $this->execSqlFile($pdo, $sql);
+            if (!$this->isApplied($pdo, $basename)) {
+                $this->markApplied($pdo, $basename);
+            }
+            break;
+        }
+
+        $stillMissing = [];
+        foreach ($required as [$table, $column]) {
+            if (!$this->pdoColumnExists($pdo, $table, $column)) {
+                $stillMissing[] = $table . '.' . $column;
+            }
+        }
+        if ($stillMissing === []) {
+            $log[] = 'Branch schema repair: OK.';
+        } else {
+            $log[] = 'Branch schema repair: still missing ' . implode(', ', $stillMissing);
+        }
+
+        return $localLog;
+    }
+
+    private function pdoColumnExists(PDO $pdo, string $table, string $column): bool
+    {
+        try {
+            $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
+            $dbName = is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
+            if ($dbName === '') {
+                return false;
+            }
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = :db AND table_name = :tbl AND column_name = :col LIMIT 1'
+            );
+            $stmt->execute(['db' => $dbName, 'tbl' => $table, 'col' => $column]);
+            $exists = (bool) $stmt->fetchColumn();
+            $this->drainStatement($stmt);
+
+            return $exists;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     private function ensureMigrationsTable(PDO $pdo): void
