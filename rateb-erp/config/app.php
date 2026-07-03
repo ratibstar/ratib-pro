@@ -85,7 +85,7 @@ if (!function_exists('rateb_ensure_agency_schema_once')) {
         if (!rateb_is_agency_erp_host()) {
             return;
         }
-        if (!\Rateb\App\Core\SessionManager::get('rateb_is_super_admin')) {
+        if (!\Rateb\App\Core\Auth::check()) {
             return;
         }
         if (\Rateb\App\Core\SessionManager::get('rateb_agency_schema_synced') === date('Y-m-d')) {

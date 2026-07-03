@@ -1340,7 +1340,7 @@ final class AccountingService
         $params = ['cid' => $companyId];
         [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
         $branchIds = $this->accountingBranch()->effectiveBranchIds();
-        if ($branchIds !== []) {
+        if ($branchIds !== [] && $this->tableColumnExists('rateb_purchase_orders', 'branch_id')) {
             $parts = [];
             foreach ($branchIds as $i => $bid) {
                 $key = '_ar_pob_' . $i;
