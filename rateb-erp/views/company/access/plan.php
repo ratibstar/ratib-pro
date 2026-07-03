@@ -41,11 +41,18 @@ $catalog = $moduleCatalog ?? [];
         <?php if ($modules !== []) { ?>
         <h3 class="h6 mt-4"><?php echo __('modules'); ?></h3>
         <ul class="mb-0">
-            <?php foreach ($modules as $mod) {
-                $key = (string) $mod;
-                $label = is_array($catalog[$key] ?? null)
-                    ? (string) ($catalog[$key]['label'] ?? $key)
-                    : __((string) ($catalog[$key] ?? $key));
+            <?php
+            $modLines = $moduleLines ?? [];
+            if ($modLines === []) {
+                foreach ($modules as $mod) {
+                    $key = (string) $mod;
+                    $label = is_array($catalog[$key] ?? null)
+                        ? (string) ($catalog[$key]['label'] ?? $key)
+                        : __((string) ($catalog[$key] ?? $key));
+                    $modLines[] = $label;
+                }
+            }
+            foreach ($modLines as $label) {
                 echo '<li>' . Rateb\App\Core\View::escape($label) . '</li>';
             } ?>
         </ul>

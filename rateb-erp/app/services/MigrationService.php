@@ -138,7 +138,7 @@ final class MigrationService
         if (!$this->isApplied($pdo, '148_marketing_plans_canonical.sql')) {
             $this->markApplied($pdo, '148_marketing_plans_canonical.sql');
         }
-        $log[] = 'Marketing plans catchup: enterprise max_users → 100.';
+        $log[] = 'Marketing plans catchup: limits + modules synced (enterprise → 100 users).';
 
         return $localLog;
     }

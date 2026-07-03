@@ -1,4 +1,4 @@
--- Canonical plan prices/limits — must match site/pricing and config/lang plan_*_features.
+-- Canonical plan prices, limits, and module bundles (starter / professional / enterprise).
 SET NAMES utf8mb4;
 
 UPDATE rateb_plans SET
@@ -9,17 +9,19 @@ UPDATE rateb_plans SET
     max_users = 5,
     max_branches = 3,
     max_storage_mb = 512,
+    modules = '["procurement","inventory","suppliers","reports"]',
     is_active = 1
 WHERE slug = 'starter';
 
 UPDATE rateb_plans SET
     name = 'Professional',
-    description = 'Full procurement and inventory suite',
+    description = 'Full procurement, inventory, contracts, and reporting suite',
     price_monthly = 1800.00,
     price_yearly = 19999.00,
     max_users = 25,
     max_branches = 5,
     max_storage_mb = 2048,
+    modules = '["procurement","inventory","suppliers","assets","contracts","reports","accounting","documents","workflows","hr"]',
     is_active = 1
 WHERE slug = 'professional';
 
@@ -31,6 +33,7 @@ UPDATE rateb_plans SET
     max_users = 100,
     max_branches = 25,
     max_storage_mb = 10240,
+    modules = '["procurement","inventory","suppliers","assets","contracts","tenders","reports","medical_devices","accounting","documents","workflows","hr"]',
     is_active = 1
 WHERE slug = 'enterprise';
 

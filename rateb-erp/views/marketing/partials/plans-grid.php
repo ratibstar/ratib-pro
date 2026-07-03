@@ -49,6 +49,15 @@ $featuredSlug = 'professional';
                     if ($limitsLine !== '') { ?>
                     <p class="small text-muted mb-2"><?php echo Rateb\App\Core\View::escape($limitsLine); ?></p>
                     <?php } ?>
+                    <?php
+                    $moduleLines = Plan::marketingModuleHighlights($plan);
+                    if ($moduleLines !== []) { ?>
+                    <ul class="rateb-mkt-plan-features rateb-mkt-plan-modules mb-2">
+                        <?php foreach ($moduleLines as $modLine) { ?>
+                        <li><?php echo Rateb\App\Core\View::escape($modLine); ?></li>
+                        <?php } ?>
+                    </ul>
+                    <?php } ?>
                     <?php if ($features !== []) { ?>
                     <ul class="rateb-mkt-plan-features">
                         <?php foreach ($features as $feature) { ?>

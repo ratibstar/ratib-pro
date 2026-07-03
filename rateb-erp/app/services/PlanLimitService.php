@@ -9,6 +9,46 @@ use Rateb\App\Models\User;
 
 final class PlanLimitService
 {
+    /** @return array<string, array<string, mixed>> */
+    public static function tierDefinitions(): array
+    {
+        static $tiers = null;
+        if ($tiers !== null) {
+            return $tiers;
+        }
+        $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/plan-tiers.php';
+        $tiers = is_file($file) ? require $file : [];
+
+        return is_array($tiers) ? $tiers : [];
+    }
+
+    /** @return array<string, mixed>|null */
+    public static function tierForSlug(string $slug): ?array
+    {
+        $slug = strtolower(trim($slug));
+        if ($slug === '') {
+            return null;
+        }
+        $tier = self::tierDefinitions()[$slug] ?? null;
+
+        return is_array($tier) ? $tier : null;
+    }
+
+    /** @return list<string> */
+    public static function modulesForSlug(string $slug): array
+    {
+        $tier = self::tierForSlug($slug);
+        if ($tier === null) {
+            return self::defaultModules();
+        }
+        $mods = $tier['modules'] ?? [];
+        if (!is_array($mods) || $mods === []) {
+            return self::defaultModules();
+        }
+
+        return array_values(array_filter(array_map('strval', $mods)));
+    }
+
     /** @return array<string, string> */
     public static function moduleCatalog(): array
     {

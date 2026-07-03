@@ -599,19 +599,80 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
+            ['name' => 'description', 'label' => 'description', 'type' => 'textarea'],
             ['name' => 'price_monthly', 'label' => 'Monthly', 'type' => 'number'],
             ['name' => 'price_yearly', 'label' => 'Yearly', 'type' => 'number'],
             ['name' => 'max_users', 'label' => 'Max Users', 'type' => 'number'],
             ['name' => 'max_branches', 'label' => 'max_branches', 'type' => 'number'],
             ['name' => 'max_storage_mb', 'label' => 'Storage MB', 'type' => 'number'],
         ];
+        $this->indexFields = [
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'slug', 'label' => 'slug', 'type' => 'slug'],
+            ['name' => 'price_monthly', 'label' => 'Monthly'],
+            ['name' => 'price_yearly', 'label' => 'Yearly'],
+            ['name' => 'max_users', 'label' => 'max_users'],
+            ['name' => 'max_branches', 'label' => 'max_branches'],
+            ['name' => 'max_storage_mb', 'label' => 'Storage MB'],
+            ['name' => 'modules_summary', 'label' => 'modules'],
+        ];
+    }
+
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
+        foreach ($data['items'] as &$row) {
+            $row['modules_summary'] = $this->formatModulesSummary($row, $catalog);
+        }
+        unset($row);
+
+        return $data;
+    }
+
+    /** @param array<string, mixed> $row @param array<string, string> $catalog */
+    private function formatModulesSummary(array $row, array $catalog): string
+    {
+        $decoded = json_decode((string) ($row['modules'] ?? ''), true);
+        if (!is_array($decoded) || $decoded === []) {
+            $slug = (string) ($row['slug'] ?? '');
+            $decoded = $slug !== ''
+                ? \Rateb\App\Services\PlanLimitService::modulesForSlug($slug)
+                : [];
+        }
+        if ($decoded === []) {
+            return '—';
+        }
+        $labels = [];
+        foreach ($decoded as $mod) {
+            $key = (string) $mod;
+            $labels[] = __((string) ($catalog[$key] ?? $key));
+        }
+
+        return implode(' · ', $labels);
     }
 
     public function create(): void
     {
+        $slug = strtolower(trim((string) ($_GET['tier'] ?? '')));
+        $preset = $slug !== '' ? \Rateb\App\Services\PlanLimitService::tierForSlug($slug) : null;
+        $item = null;
+        if (is_array($preset)) {
+            $item = [
+                'slug' => $slug,
+                'name' => (string) ($preset['name'] ?? ''),
+                'description' => (string) ($preset['description'] ?? ''),
+                'price_monthly' => $preset['price_monthly'] ?? '',
+                'price_yearly' => $preset['price_yearly'] ?? '',
+                'max_users' => $preset['max_users'] ?? '',
+                'max_branches' => $preset['max_branches'] ?? '',
+                'max_storage_mb' => $preset['max_storage_mb'] ?? '',
+            ];
+        }
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __('plans'),
-            'item' => null,
+            'item' => $item,
+            'tierPresets' => array_keys(\Rateb\App\Services\PlanLimitService::tierDefinitions()),
         ]), $this->layout());
     }
 
@@ -639,6 +700,12 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             $decoded = json_decode((string) $item['modules'], true);
             $selectedModules = is_array($decoded) ? $decoded : [];
         }
+        if ($selectedModules === [] && is_array($item)) {
+            $slug = (string) ($item['slug'] ?? '');
+            if ($slug !== '') {
+                $selectedModules = \Rateb\App\Services\PlanLimitService::modulesForSlug($slug);
+            }
+        }
         if ($selectedModules === []) {
             $selectedModules = \Rateb\App\Services\PlanLimitService::defaultModules();
         }
@@ -646,6 +713,7 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         return array_merge(parent::formViewData($extra), [
             'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
             'selectedModules' => $selectedModules,
+            'tierPresets' => $extra['tierPresets'] ?? array_keys(\Rateb\App\Services\PlanLimitService::tierDefinitions()),
         ]);
     }
 

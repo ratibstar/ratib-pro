@@ -90,6 +90,38 @@ final class Plan extends Model
         return $out;
     }
 
+    /** @param array<string, mixed> $plan
+     * @return list<string>
+     */
+    public static function marketingModuleHighlights(array $plan, int $max = 8): array
+    {
+        $decoded = json_decode((string) ($plan['modules'] ?? ''), true);
+        if (!is_array($decoded) || $decoded === []) {
+            $slug = trim((string) ($plan['slug'] ?? ''));
+            if ($slug !== '') {
+                $decoded = \Rateb\App\Services\PlanLimitService::modulesForSlug($slug);
+            }
+        }
+        if ($decoded === []) {
+            return [];
+        }
+        $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
+        $lines = [];
+        foreach ($decoded as $mod) {
+            $key = (string) $mod;
+            if ($key === '') {
+                continue;
+            }
+            $labelKey = (string) ($catalog[$key] ?? $key);
+            $lines[] = __($labelKey);
+            if (count($lines) >= $max) {
+                break;
+            }
+        }
+
+        return $lines;
+    }
+
     /** @param array<string, mixed> $plan */
     public static function marketingLimitsSummary(array $plan): string
     {

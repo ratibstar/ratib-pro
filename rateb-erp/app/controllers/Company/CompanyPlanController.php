@@ -36,7 +36,8 @@ final class CompanyPlanController extends Controller
             'company' => $company,
             'plan' => $plan,
             'subscription' => $subscription,
-            'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
+            'modules' => $modules,
+            'moduleLines' => is_array($plan) ? Plan::marketingModuleHighlights($plan, 20) : [],
         ], 'main');
     }
 }

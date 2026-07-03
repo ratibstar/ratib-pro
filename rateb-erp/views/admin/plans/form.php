@@ -2,12 +2,29 @@
 /** @var array<string, mixed>|null $item */
 /** @var array<string, string> $moduleCatalog */
 /** @var array<int, string> $selectedModules */
+/** @var array<int, string> $tierPresets */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
+$tierPresets = $tierPresets ?? ['starter', 'professional', 'enterprise'];
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
+        <?php if (!$isEdit && $tierPresets !== []) { ?>
+        <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+            <span class="text-muted small"><?php echo __('plan_tier_presets'); ?>:</span>
+            <?php foreach ($tierPresets as $tierSlug) {
+                $tier = \Rateb\App\Services\PlanLimitService::tierForSlug((string) $tierSlug);
+                if ($tier === null) {
+                    continue;
+                }
+                ?>
+            <a href="<?php echo rateb_url($routePrefix . '/create?tier=' . urlencode((string) $tierSlug)); ?>" class="btn btn-sm btn-outline-primary">
+                <?php echo Rateb\App\Core\View::escape(\Rateb\App\Models\Plan::marketingName(['slug' => $tierSlug, 'name' => (string) ($tier['name'] ?? $tierSlug)])); ?>
+            </a>
+            <?php } ?>
+        </div>
+        <?php } ?>
         <form method="post" action="<?php echo $action; ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">
@@ -17,10 +34,14 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     $label = (string) ($field['label'] ?? $name);
                     $value = $item[$name] ?? '';
                     ?>
-                <div class="col-md-6">
+                <div class="col-md-<?php echo $type === 'textarea' ? '12' : '6'; ?>">
                     <label class="form-label"><?php echo Rateb\App\Core\View::escape(__($label)); ?></label>
+                    <?php if ($type === 'textarea') { ?>
+                    <textarea class="form-control" name="<?php echo Rateb\App\Core\View::escape($name); ?>" rows="2"><?php echo Rateb\App\Core\View::escape((string) $value); ?></textarea>
+                    <?php } else { ?>
                     <input class="form-control" type="<?php echo Rateb\App\Core\View::escape($type); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-                        value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"<?php echo $name === 'name' || $name === 'slug' ? ' required' : ''; ?>>
+                        value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"<?php echo $name === 'name' || $name === 'slug' ? ' required' : ''; ?><?php echo $isEdit && $name === 'slug' ? ' readonly' : ''; ?>>
+                    <?php } ?>
                 </div>
                 <?php } ?>
             </div>
