@@ -891,8 +891,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        if (trim((string) $this->input('password', '')) === '') {
+            SessionManager::flash('error', __('password_required'));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         $data = $this->collectData();
         $roleIds = array_map('intval', (array) $this->input('role_ids', []));
+        $this->prepareCompanyUserForLogin($data, $roleIds);
         $companyId = (int) ($data['company_id'] ?? 0);
         if ($companyId > 0 && !(new \Rateb\App\Services\PlanLimitService())->canAddUser($companyId)) {
             SessionManager::flash('error', __('user_limit_reached'));
@@ -925,6 +930,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $data = $this->collectData();
         $roleIds = array_map('intval', (array) $this->input('role_ids', []));
+        $this->prepareCompanyUserForLogin($data, $roleIds);
         $companyId = (int) ($data['company_id'] ?? 0);
         if ($companyId > 0) {
             $wasOtherCompany = (int) ($existing['company_id'] ?? 0) !== $companyId;
@@ -1010,6 +1016,45 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $data['company_id'] = $company ? $companyId : null;
         }
         return $data;
+    }
+
+    /** @param array<string, mixed> $data @param array<int, int> $roleIds */
+    private function prepareCompanyUserForLogin(array &$data, array &$roleIds): void
+    {
+        if (!empty($data['is_super_admin'])) {
+            return;
+        }
+
+        $agencyHost = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+        $dedicated = \Rateb\App\Services\DedicatedTenantPolicy::isDedicated();
+        if (!$agencyHost && !$dedicated) {
+            return;
+        }
+
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if ($companyId < 1) {
+            $companyId = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+            if ($companyId > 0) {
+                $data['company_id'] = $companyId;
+            }
+        }
+
+        if ($companyId > 0) {
+            try {
+                (new \Rateb\App\Services\DedicatedCompanySeedService())->ensureCompanyLoginReady($companyId);
+            } catch (\Throwable $e) {
+                error_log('prepareCompanyUserForLogin: ' . $e->getMessage());
+            }
+        }
+
+        if ($roleIds === [] && $companyId > 0) {
+            $roleRow = (new User())->queryOne(
+                "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
+            );
+            if ($roleRow) {
+                $roleIds = [(int) $roleRow['id']];
+            }
+        }
     }
 
     public function regenerateBarcode(array $params): void

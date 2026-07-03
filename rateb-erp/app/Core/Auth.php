@@ -10,6 +10,16 @@ use Rateb\App\Services\RememberMeService;
 
 final class Auth
 {
+    private static ?string $lastLoginFailureReason = null;
+
+    public static function consumeLoginFailureReason(): ?string
+    {
+        $reason = self::$lastLoginFailureReason;
+        self::$lastLoginFailureReason = null;
+
+        return $reason;
+    }
+
     public static function attempt(string $login, string $password, string $portal = 'company'): ?array
     {
         $user = (new User())->authenticate($login, $password);
@@ -22,8 +32,11 @@ final class Auth
 
     public static function attemptAuto(string $login, string $password): ?array
     {
+        self::$lastLoginFailureReason = null;
         $user = (new User())->authenticate($login, $password);
         if (!$user) {
+            self::$lastLoginFailureReason = 'credentials';
+
             return null;
         }
 
@@ -36,39 +49,54 @@ final class Auth
     private static function attemptWithUser(array $user, string $portal): ?array
     {
         if ((string) ($user['status'] ?? '') !== 'active') {
+            self::$lastLoginFailureReason = 'inactive';
+
             return null;
         }
 
         $lockout = new AccountLockoutService();
         if ($lockout->isLocked($user)) {
+            self::$lastLoginFailureReason = 'locked';
+
             return null;
         }
 
         $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
         if ($portal === 'admin' && !$isSuper) {
+            self::$lastLoginFailureReason = 'credentials';
+
             return null;
         }
         if ($portal === 'company' && $isSuper) {
+            self::$lastLoginFailureReason = 'credentials';
+
             return null;
         }
 
         if ($portal === 'company') {
             $companyId = (int) ($user['company_id'] ?? 0);
             if ($companyId < 1) {
+                self::$lastLoginFailureReason = 'no_company';
+
                 return null;
             }
             $company = (new \Rateb\App\Models\Company())->find($companyId);
             if (!$company || (string) ($company['status'] ?? '') !== 'active') {
+                self::$lastLoginFailureReason = 'company_inactive';
+
                 return null;
             }
             $limits = new \Rateb\App\Services\PlanLimitService();
             if (!$limits->companyAccessAllowed($companyId)) {
+                self::$lastLoginFailureReason = 'access';
+
                 return null;
             }
         }
 
         $lockout->clearLock((int) $user['id']);
         self::establishSession($user, $portal);
+        self::$lastLoginFailureReason = null;
 
         return $user;
     }

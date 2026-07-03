@@ -5,6 +5,18 @@ namespace Rateb\App\Core;
 
 final class RateLimiter
 {
+    public static function isLimited(string $key, int $maxAttempts): bool
+    {
+        $now = time();
+        $bucket = $_SESSION['_rate_limit'][$key] ?? ['count' => 0, 'reset' => $now];
+
+        if ($now > (int) ($bucket['reset'] ?? 0)) {
+            return false;
+        }
+
+        return (int) ($bucket['count'] ?? 0) >= $maxAttempts;
+    }
+
     public static function attempt(string $key, int $maxAttempts, int $decaySeconds): bool
     {
         $now = time();

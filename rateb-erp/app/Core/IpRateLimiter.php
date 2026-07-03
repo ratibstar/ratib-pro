@@ -5,6 +5,27 @@ namespace Rateb\App\Core;
 
 final class IpRateLimiter
 {
+    public static function isLimited(string $key, int $maxAttempts): bool
+    {
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $dir = $root . '/storage/rate-limit';
+        $file = $dir . '/' . hash('sha256', $key) . '.json';
+        if (!is_file($file)) {
+            return false;
+        }
+        $raw = @file_get_contents($file);
+        $decoded = $raw !== false ? json_decode($raw, true) : null;
+        if (!is_array($decoded)) {
+            return false;
+        }
+        $now = time();
+        if ($now > (int) ($decoded['reset'] ?? 0)) {
+            return false;
+        }
+
+        return (int) ($decoded['count'] ?? 0) >= $maxAttempts;
+    }
+
     public static function attempt(string $key, int $maxAttempts, int $decaySeconds): bool
     {
         $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);

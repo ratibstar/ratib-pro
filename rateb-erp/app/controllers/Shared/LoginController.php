@@ -102,6 +102,10 @@ final class LoginController extends Controller
             'rate' => __('too_many_attempts'),
             'session' => __('login_session_expired'),
             'db' => __('db_error_title'),
+            'inactive' => __('login_user_inactive'),
+            'no_company' => __('login_no_company'),
+            'company_inactive' => __('login_company_inactive'),
+            'access' => __('company_access_denied'),
         ];
         $code = strtolower(trim((string) ($_GET['err'] ?? '')));
 
@@ -138,9 +142,10 @@ final class LoginController extends Controller
             $email = trim((string) $this->input('email', ''));
             $password = (string) $this->input('password', '');
             $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+            $emailKey = 'erp_login_' . md5($email);
+            $ipKey = 'erp_login_ip_' . md5($ip);
 
-            if (!RateLimiter::attempt('erp_login_' . md5($email), 5, 300)
-                || !IpRateLimiter::attempt('erp_login_ip_' . md5($ip), 20, 900)) {
+            if (RateLimiter::isLimited($emailKey, 5) || IpRateLimiter::isLimited($ipKey, 20)) {
                 $this->loginRedirect('rate');
             }
 
@@ -164,9 +169,12 @@ final class LoginController extends Controller
             (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
 
             if (!$user) {
+                RateLimiter::attempt($emailKey, 5, 300);
+                IpRateLimiter::attempt($ipKey, 20, 900);
                 $lockout->recordFailure($email);
+                $errCode = Auth::consumeLoginFailureReason() ?? 'credentials';
                 $redirect = function_exists('rateb_list_url')
-                    ? rateb_list_url('login', ['err' => 'credentials'])
+                    ? rateb_list_url('login', ['err' => $errCode])
                     : rateb_url('login');
                 if ($next !== '') {
                     $redirect = (function_exists('rateb_url_query') ? rateb_url_query($redirect, ['next' => $next]) : $redirect);

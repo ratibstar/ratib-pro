@@ -185,6 +185,13 @@ final class PlanLimitService
 
     public function hasValidSubscription(int $companyId): bool
     {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return true;
+        }
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
+
         $sub = (new \Rateb\App\Models\Subscription())->queryOne(
             'SELECT status, ends_at FROM rateb_subscriptions WHERE company_id = :cid ORDER BY id DESC LIMIT 1',
             ['cid' => $companyId]

@@ -346,6 +346,38 @@ final class DedicatedCompanySeedService
         $subscription->create($payload);
     }
 
+    /** Ensure company status + subscription so company users can sign in on agency/dedicated ERP. */
+    public function ensureCompanyLoginReady(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+
+        $companyModel = new Company();
+        $company = $companyModel->find($companyId);
+        if (!$company) {
+            return;
+        }
+
+        if ((string) ($company['status'] ?? '') !== 'active') {
+            $companyModel->update($companyId, ['status' => 'active']);
+        }
+
+        $planId = (int) ($company['plan_id'] ?? 0);
+        $plan = null;
+        if ($planId > 0) {
+            $plan = (new Plan())->find($planId);
+        }
+        if (!is_array($plan)) {
+            $plan = $this->resolvePlan('professional');
+            if ($planId < 1) {
+                $companyModel->update($companyId, ['plan_id' => (int) $plan['id']]);
+            }
+        }
+
+        $this->ensureDedicatedSubscription($companyId, $plan);
+    }
+
     private function ensureDedicatedAdminUser(
         int $companyId,
         string $email,
