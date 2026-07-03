@@ -63,11 +63,18 @@ $ratebRowRecordLabel = static function (array $row): string {
     <?php if (!empty($title)) { ?>
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title); ?></span>
+        <div class="d-flex flex-wrap gap-2">
+        <?php if ($isCompanies && function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled()) { ?>
+        <a href="<?php echo Rateb\App\Core\View::escape(rateb_control_panel_branch_manage_url()); ?>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener" title="<?php echo Rateb\App\Core\View::escape(__('manage_branches_cp')); ?>">
+            <i class="fas fa-code-branch"></i> <?php echo __('manage_branches_cp'); ?>
+        </a>
+        <?php } ?>
         <?php if ($createEnabled) { ?>
         <a href="<?php echo rateb_url($routePrefix . '/create'); ?>" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> <?php echo __('create'); ?>
         </a>
         <?php } ?>
+        </div>
     </div>
     <?php } ?>
     <?php if ($bulkEnabled && !empty($items)) { ?>
@@ -258,6 +265,11 @@ $ratebRowRecordLabel = static function (array $row): string {
                         </form>
                         <?php if ($isCompanies) {
                             $companyStatus = (string) ($row['status'] ?? '');
+                            if (function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled() && $companyStatus === 'active') {
+                                $branchCpUrl = rateb_control_panel_branch_manage_url((int) ($row['id'] ?? 0));
+                                ?>
+                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape(__('add_branch')); ?>" target="_blank" rel="noopener"><i class="fas fa-code-branch"></i></a>
+                        <?php }
                             if ($companyStatus === 'active') { ?>
                         <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/suspend'); ?>" class="d-inline">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

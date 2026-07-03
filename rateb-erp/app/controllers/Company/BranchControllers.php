@@ -39,8 +39,13 @@ final class BranchDashboardController extends Controller
         $this->branchOpsSafe(function (): void {
             rateb_bootstrap_ops_tenant();
             $companyId = (int) TenantContext::companyId();
+            $branchSvc = new BranchService();
             $rows = (new BranchReportingService())->branchesOverview($companyId);
             $branches = (new BranchAccessService())->allowedBranchIds($companyId);
+            $branchManageUrl = '';
+            if ($companyId > 0 && function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled()) {
+                $branchManageUrl = rateb_control_panel_branch_manage_url($companyId);
+            }
 
             $this->view('company/branch-dashboard/index', [
                 'title' => __('branch_dashboard'),
@@ -48,6 +53,9 @@ final class BranchDashboardController extends Controller
                 'branches' => $this->branchOptions($companyId, $branches),
                 'activeFilter' => function_exists('rateb_active_branch_filter_id') ? rateb_active_branch_filter_id() : 0,
                 'isHeadOffice' => (new BranchAccessService())->isHeadOfficeUser(),
+                'branchManageUrl' => $branchManageUrl,
+                'branchStats' => $branchSvc->stats($companyId),
+                'canAddBranch' => $companyId > 0 && $branchSvc->canAddBranch($companyId),
                 'csrf' => Csrf::token(),
             ]);
         });

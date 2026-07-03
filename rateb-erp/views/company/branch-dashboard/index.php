@@ -1,10 +1,34 @@
-<?php declare(strict_types=1); ?>
+<?php declare(strict_types=1);
+$branchManageUrl = (string) ($branchManageUrl ?? '');
+$branchStats = $branchStats ?? ['count' => 0, 'limit' => 0];
+$canAddBranch = !empty($canAddBranch);
+?>
 <div class="rateb-page-header d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <h1 class="h4 mb-0"><?php echo Rateb\App\Core\View::escape($title ?? __('branch_dashboard')); ?></h1>
-    <?php if (!empty($isHeadOffice)) {
-        Rateb\App\Core\View::partial('branch-filter-switcher', ['branches' => $branches ?? [], 'activeFilter' => $activeFilter ?? 0]);
-    } ?>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <h1 class="h4 mb-0"><?php echo Rateb\App\Core\View::escape($title ?? __('branch_dashboard')); ?></h1>
+        <?php if ((int) ($branchStats['limit'] ?? 0) > 0) { ?>
+        <span class="badge bg-secondary"><?php echo __('branch_count_limit', [
+            'count' => (int) ($branchStats['count'] ?? 0),
+            'limit' => (int) ($branchStats['limit'] ?? 0),
+        ]); ?></span>
+        <?php } ?>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <?php if ($branchManageUrl !== '') { ?>
+        <a href="<?php echo Rateb\App\Core\View::escape($branchManageUrl); ?>" class="btn btn-primary btn-sm" target="_blank" rel="noopener" title="<?php echo Rateb\App\Core\View::escape(__('add_branch_cp_hint')); ?>">
+            <i class="fas fa-plus"></i> <?php echo __('add_branch'); ?>
+        </a>
+        <?php } ?>
+        <?php if (!empty($isHeadOffice)) {
+            Rateb\App\Core\View::partial('branch-filter-switcher', ['branches' => $branches ?? [], 'activeFilter' => $activeFilter ?? 0]);
+        } ?>
+    </div>
 </div>
+<?php if ($branchManageUrl !== '' && !$canAddBranch) { ?>
+<div class="alert alert-warning py-2 small mb-3">
+    <i class="fas fa-info-circle"></i> <?php echo __('branch_limit_reached_cp_hint'); ?>
+</div>
+<?php } ?>
 
 <div class="row g-3">
 <?php foreach ($rows ?? [] as $row) { ?>
