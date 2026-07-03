@@ -132,6 +132,17 @@ final class AuthorizationService
                 continue;
             }
             $mod = (string) ($row['module'] ?? 'general');
+            if (self::isAgencyPermissionMatrixContext()) {
+                $platformMods = is_array($cfg['platform_modules'] ?? null) ? $cfg['platform_modules'] : [];
+                if (in_array($mod, $platformMods, true)) {
+                    continue;
+                }
+                $excluded = is_array($cfg['company_role_excluded_slugs'] ?? null) ? $cfg['company_role_excluded_slugs'] : [];
+                $dedicatedExtra = is_array($cfg['dedicated_company_admin_slugs'] ?? null) ? $cfg['dedicated_company_admin_slugs'] : [];
+                if (in_array($slug, $excluded, true) && !in_array($slug, $dedicatedExtra, true)) {
+                    continue;
+                }
+            }
             $grouped[$mod][] = $row;
         }
 
@@ -339,6 +350,10 @@ final class AuthorizationService
         $configFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
         $config = is_file($configFile) ? require $configFile : [];
         $excluded = (array) ($config['company_role_excluded_slugs'] ?? []);
+        if (self::isAgencyPermissionMatrixContext()) {
+            $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
+            $excluded = array_values(array_diff($excluded, $extra));
+        }
         $rows = (new Permission())->query('SELECT id, slug FROM rateb_permissions');
         $ids = [];
         foreach ($rows as $row) {
@@ -349,5 +364,27 @@ final class AuthorizationService
             $ids[] = (int) ($row['id'] ?? 0);
         }
         $this->syncRolePermissions($roleId, array_values(array_filter($ids)));
+    }
+
+    public function refreshDedicatedCompanyAccessPermissions(): void
+    {
+        if (!self::isAgencyPermissionMatrixContext()) {
+            return;
+        }
+        $role = (new Role())->queryOne(
+            "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
+        );
+        if (!$role) {
+            return;
+        }
+        $this->syncCompanyFullAccessPermissions((int) $role['id']);
+    }
+
+    private static function isAgencyPermissionMatrixContext(): bool
+    {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return true;
+        }
+        return function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment();
     }
 }

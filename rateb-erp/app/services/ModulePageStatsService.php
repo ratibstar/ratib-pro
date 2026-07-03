@@ -111,6 +111,10 @@ final class ModulePageStatsService
 
         $path = $this->opsPath($route);
 
+        if (preg_match('#^(access-control|users|roles|permissions|plans|audit-logs|support-tickets|email-templates|sms-templates)(/|$)#', $path)) {
+            return 'access';
+        }
+
         if (preg_match('#^(branch-dashboard|branch-financial|branch-transfers)(/|$)#', $path)) {
             return 'branches';
         }

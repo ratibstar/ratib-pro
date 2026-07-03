@@ -4,11 +4,11 @@
 /** @var array<int, array<int, int>> $matrix */
 ?>
 <div class="mb-3">
-    <a href="<?php echo rateb_url('admin/access-control'); ?>" class="btn btn-outline-secondary btn-sm">
+    <a href="<?php echo rateb_app_url('access-control'); ?>" class="btn btn-outline-secondary btn-sm">
         <i class="fas fa-arrow-right"></i> <?php echo __('access_control'); ?>
     </a>
 </div>
-<form method="post" action="<?php echo rateb_url('admin/access-control/matrix'); ?>" id="rateb-perm-matrix">
+<form method="post" action="<?php echo rateb_app_url('access-control/matrix'); ?>" id="rateb-perm-matrix">
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
     <div class="rateb-card mb-3">
         <div class="rateb-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -102,7 +102,7 @@
     </div>
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
-        <a href="<?php echo rateb_url('admin/roles'); ?>" class="btn btn-outline-secondary"><?php echo __('roles'); ?></a>
-        <a href="<?php echo rateb_url('admin/users'); ?>" class="btn btn-outline-secondary"><?php echo __('users'); ?></a>
+        <a href="<?php echo rateb_app_url('roles'); ?>" class="btn btn-outline-secondary"><?php echo __('roles'); ?></a>
+        <a href="<?php echo rateb_app_url('users'); ?>" class="btn btn-outline-secondary"><?php echo __('users'); ?></a>
     </div>
 </form>

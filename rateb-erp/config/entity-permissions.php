@@ -399,6 +399,51 @@ return [
         'view' => '',
         'manage' => '',
     ],
+    'access-control' => [
+        'module' => '',
+        'view' => 'access.manage',
+        'manage' => 'access.manage',
+    ],
+    'users' => [
+        'module' => '',
+        'view' => 'access.manage',
+        'manage' => 'access.manage',
+    ],
+    'roles' => [
+        'module' => '',
+        'view' => 'access.manage',
+        'manage' => 'access.manage',
+    ],
+    'permissions' => [
+        'module' => '',
+        'view' => 'access.manage',
+        'manage' => 'access.manage',
+    ],
+    'plans' => [
+        'module' => '',
+        'view' => 'settings.manage',
+        'manage' => 'settings.manage',
+    ],
+    'audit-logs' => [
+        'module' => '',
+        'view' => 'settings.manage',
+        'manage' => 'settings.manage',
+    ],
+    'support-tickets' => [
+        'module' => '',
+        'view' => 'settings.manage',
+        'manage' => 'settings.manage',
+    ],
+    'email-templates' => [
+        'module' => '',
+        'view' => 'settings.manage',
+        'manage' => 'settings.manage',
+    ],
+    'sms-templates' => [
+        'module' => '',
+        'view' => 'settings.manage',
+        'manage' => 'settings.manage',
+    ],
     'hr' => [
         'module' => 'hr',
         'view' => 'hr.view',

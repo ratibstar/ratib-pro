@@ -43,14 +43,21 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('companies'); ?></label>
-                    <select class="form-select" name="company_id">
+                    <select class="form-select" name="company_id"<?php echo !empty($hideSuperAdminFlag) ? ' disabled' : ''; ?>>
+                        <?php if (empty($hideSuperAdminFlag)) { ?>
                         <option value=""><?php echo __('super_admin'); ?> / <?php echo __('platform'); ?></option>
-                        <?php foreach ($companies as $co) { ?>
-                        <option value="<?php echo (int) $co['id']; ?>"<?php echo (int) ($item['company_id'] ?? 0) === (int) $co['id'] ? ' selected' : ''; ?>>
+                        <?php } ?>
+                        <?php
+                        $selectedCompanyId = (int) ($item['company_id'] ?? ($defaultCompanyId ?? 0));
+                        foreach ($companies as $co) { ?>
+                        <option value="<?php echo (int) $co['id']; ?>"<?php echo $selectedCompanyId === (int) $co['id'] ? ' selected' : ''; ?>>
                             <?php echo Rateb\App\Core\View::escape($co['name']); ?>
                         </option>
                         <?php } ?>
                     </select>
+                    <?php if (!empty($hideSuperAdminFlag) && !empty($defaultCompanyId)) { ?>
+                    <input type="hidden" name="company_id" value="<?php echo (int) $defaultCompanyId; ?>">
+                    <?php } ?>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('status'); ?></label>
@@ -68,10 +75,12 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     </select>
                 </div>
                 <div class="col-12">
+                    <?php if (empty($hideSuperAdminFlag)) { ?>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="is_super_admin" value="1" id="is_super_admin"<?php echo !empty($isSuperAdmin) ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="is_super_admin"><?php echo __('super_admin'); ?></label>
                     </div>
+                    <?php } ?>
                 </div>
             </div>
             <div class="mt-4" id="user-branches-section" style="display:none">

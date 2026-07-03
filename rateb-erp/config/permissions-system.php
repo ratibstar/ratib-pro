@@ -78,6 +78,13 @@ return [
     /** Default role slug for demo / full company ERP access. */
     'company_full_access_role' => 'company-full-access',
 
+    /** Extra permission slugs granted to company-full-access on dedicated / agency ERP hosts only. */
+    'dedicated_company_admin_slugs' => [
+        'access.manage',
+        'settings.manage',
+        'dashboard.view',
+    ],
+
     /**
      * Accounting permission tiers (company matrix):
      * - accounting.view — read reports, lists, and entry details

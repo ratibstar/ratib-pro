@@ -681,7 +681,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\User();
         $this->viewPrefix = 'admin/users';
-        $this->routePrefix = 'admin/users';
+        $this->routePrefix = rateb_app_route('users');
         $this->entityName = 'users';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -699,7 +699,23 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $authz = new \Rateb\App\Services\AuthorizationService();
-        $items = $this->model->all($limit, $offset);
+        $companyId = $this->scopedCompanyId();
+        if ($companyId > 0) {
+            $items = $this->model->query(
+                'SELECT * FROM rateb_users
+                 WHERE COALESCE(is_super_admin, 0) = 0 AND company_id = :cid
+                 ORDER BY id DESC LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset,
+                ['cid' => $companyId]
+            );
+            $total = (int) ($this->model->queryOne(
+                'SELECT COUNT(*) AS c FROM rateb_users
+                 WHERE COALESCE(is_super_admin, 0) = 0 AND company_id = :cid',
+                ['cid' => $companyId]
+            )['c'] ?? 0);
+        } else {
+            $items = $this->model->all($limit, $offset);
+            $total = $this->model->count();
+        }
         foreach ($items as &$row) {
             $row['roles_list'] = $authz->getUserRoleNames((int) $row['id']);
             if (!empty($row['is_super_admin'])) {
@@ -721,7 +737,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $this->view($this->viewPrefix . '/index', [
             'title' => __($this->entityName),
             'items' => $items,
-            'total' => $this->model->count(),
+            'total' => $total,
             'page' => $page,
             'limit' => $limit,
             'routePrefix' => $this->routePrefix,
@@ -742,7 +758,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
     {
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
-        if (!$item) {
+        if (!$item || !$this->userInScope($item)) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
             return;
@@ -767,6 +783,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             }
         }
         $branchSvc = new \Rateb\App\Services\BranchService();
+        $companyId = $this->scopedCompanyId();
+        $companies = $companyId > 0
+            ? array_values(array_filter(
+                (new \Rateb\App\Models\Company())->all(200, 0),
+                static fn (array $row): bool => (int) ($row['id'] ?? 0) === $companyId
+            ))
+            : (new \Rateb\App\Models\Company())->all(200, 0);
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('users'),
             'item' => $item,
@@ -774,11 +797,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
             'roles' => $authz->allRoles(),
-            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
+            'companies' => $companies,
             'selectedRoles' => $userId > 0 ? $authz->getUserRoleIds($userId) : [],
             'selectedBranches' => $userId > 0 ? $branchSvc->getUserBranchIds($userId) : [],
             'branchesByCompany' => $branchSvc->optionsByCompany(),
             'isSuperAdmin' => !empty($item['is_super_admin']),
+            'hideSuperAdminFlag' => $companyId > 0,
+            'defaultCompanyId' => $companyId > 0 ? $companyId : null,
             'loginBarcode' => $barcode,
             'badgeScanQrUrl' => $badgeScanQrUrl,
             'badgeLoginUrl' => $badgeLoginUrl,
@@ -818,13 +843,18 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $existing = $this->model->find($id);
+        if (!$existing || !$this->userInScope($existing)) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
         $data = $this->collectData();
         $roleIds = array_map('intval', (array) $this->input('role_ids', []));
         $companyId = (int) ($data['company_id'] ?? 0);
         if ($companyId > 0) {
-            $existing = $this->model->find($id);
-            $wasOtherCompany = $existing && (int) ($existing['company_id'] ?? 0) !== $companyId;
-            if ($wasOtherCompany || !$existing) {
+            $wasOtherCompany = (int) ($existing['company_id'] ?? 0) !== $companyId;
+            if ($wasOtherCompany) {
                 try {
                     (new \Rateb\App\Services\PlanLimitService())->assertCanAddUser($companyId);
                 } catch (\RuntimeException $e) {
@@ -845,6 +875,47 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $this->redirect(rateb_url($this->routePrefix));
     }
 
+    public function destroy(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $existing = $this->model->find($id);
+        if (!$existing || !$this->userInScope($existing)) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        parent::destroy($params);
+    }
+
+    public function bulkDestroy(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $ids = array_values(array_filter(array_map('intval', (array) $this->input('ids', []))));
+        if ($this->scopedCompanyId() > 0) {
+            $ids = array_values(array_filter($ids, function (int $id): bool {
+                $row = $this->model->find($id);
+                return $row !== null && $this->userInScope($row);
+            }));
+        }
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $deleted = $this->model->deleteMany($ids);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_delete', $this->entityName, $id);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
     protected function collectData(): array
     {
         $data = parent::collectData();
@@ -853,7 +924,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
         $data['is_super_admin'] = $this->input('is_super_admin') ? 1 : 0;
-        if ($data['company_id'] === '' || $data['company_id'] === '0' || $data['company_id'] === null) {
+        $scopedCompanyId = $this->scopedCompanyId();
+        if ($scopedCompanyId > 0) {
+            $data['is_super_admin'] = 0;
+            $data['company_id'] = $scopedCompanyId;
+        } elseif ($data['company_id'] === '' || $data['company_id'] === '0' || $data['company_id'] === null) {
             $data['company_id'] = null;
         } else {
             $companyId = (int) $data['company_id'];
@@ -871,7 +946,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $id = (int) ($params['id'] ?? 0);
         $user = $this->model->find($id);
-        if (!$user) {
+        if (!$user || !$this->userInScope($user)) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
@@ -882,6 +957,38 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         SessionManager::flash('success', __('barcode_regenerated'));
         $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
     }
+
+    private function scopedCompanyId(): int
+    {
+        if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled() || rateb_is_super_admin()) {
+            return 0;
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $id = rateb_resolve_ops_company_id();
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        return (int) ($_SESSION['rateb_company_id'] ?? 0);
+    }
+
+    /** @param array<string, mixed>|null $user */
+    private function userInScope(?array $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+        if (!empty($user['is_super_admin'])) {
+            return false;
+        }
+        $companyId = $this->scopedCompanyId();
+        if ($companyId < 1) {
+            return true;
+        }
+
+        return (int) ($user['company_id'] ?? 0) === $companyId;
+    }
 }
 
 final class RolesController extends \Rateb\App\Controllers\CrudController
@@ -890,7 +997,7 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Role();
         $this->viewPrefix = 'admin/roles';
-        $this->routePrefix = 'admin/roles';
+        $this->routePrefix = rateb_app_route('roles');
         $this->entityName = 'roles';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -1083,7 +1190,7 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Permission();
         $this->viewPrefix = 'admin/permissions';
-        $this->routePrefix = 'admin/permissions';
+        $this->routePrefix = rateb_app_route('permissions');
         $this->entityName = 'permissions';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -1947,7 +2054,7 @@ final class EmailTemplatesController extends \Rateb\App\Controllers\CrudControll
     {
         $this->model = new \Rateb\App\Models\EmailTemplate();
         $this->viewPrefix = 'admin/email-templates';
-        $this->routePrefix = 'admin/email-templates';
+        $this->routePrefix = rateb_app_route('email-templates');
         $this->entityName = 'email_templates';
         $this->fields = [
             ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
@@ -1992,7 +2099,7 @@ final class SmsTemplatesController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\SmsTemplate();
         $this->viewPrefix = 'admin/sms-templates';
-        $this->routePrefix = 'admin/sms-templates';
+        $this->routePrefix = rateb_app_route('sms-templates');
         $this->entityName = 'sms_templates';
         $this->fields = [
             ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
@@ -2020,7 +2127,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     {
         $this->model = new \Rateb\App\Models\SupportTicket();
         $this->viewPrefix = 'admin/support-tickets';
-        $this->routePrefix = 'admin/support-tickets';
+        $this->routePrefix = rateb_app_route('support-tickets');
         $this->entityName = 'support_tickets';
         $this->fields = [
             ['name' => 'ticket_no', 'label' => 'Ticket No', 'type' => 'text'],

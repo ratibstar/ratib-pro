@@ -73,6 +73,18 @@ if (!function_exists('rateb_is_agency_erp_host')) {
     }
 }
 
+if (!function_exists('rateb_company_access_routes_enabled')) {
+    /** Agency / dedicated ERP hosts expose access-control under admin/ops (not platform super-admin only). */
+    function rateb_company_access_routes_enabled(): bool
+    {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return true;
+        }
+
+        return function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment();
+    }
+}
+
 if (!function_exists('rateb_ensure_agency_schema_once')) {
     /** Run pending migrations + branch column catchup on agency ERP hosts (once per session per day). */
     function rateb_ensure_agency_schema_once(): void
@@ -97,6 +109,9 @@ if (!function_exists('rateb_ensure_agency_schema_once')) {
                 $migration->runAll();
             } else {
                 $migration->repairBranchOpsSchemaIfNeeded();
+            }
+            if (class_exists(\Rateb\App\Services\AuthorizationService::class)) {
+                (new \Rateb\App\Services\AuthorizationService())->refreshDedicatedCompanyAccessPermissions();
             }
             \Rateb\App\Core\SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));
         } catch (\Throwable $e) {
@@ -1874,6 +1889,12 @@ if (!function_exists('rateb_app_route')) {
             'asset-depreciation', 'device-maintenance', 'device-spare-parts', 'device-warranty',
             'documents', 'profile',
         ];
+        if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
+            $conflictRoots = array_merge($conflictRoots, [
+                'access-control', 'users', 'roles', 'permissions', 'plans',
+                'audit-logs', 'support-tickets', 'email-templates', 'sms-templates',
+            ]);
+        }
         $root = explode('/', $path)[0];
         if (in_array($root, $conflictRoots, true)) {
             return 'admin/ops/' . $path;

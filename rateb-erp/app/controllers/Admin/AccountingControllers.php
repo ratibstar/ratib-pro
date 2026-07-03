@@ -17,7 +17,16 @@ final class AccessControlController extends Controller
 {
     public function index(): void
     {
-        $users = (new \Rateb\App\Models\User())->count();
+        $userModel = new \Rateb\App\Models\User();
+        $companyId = $this->scopedCompanyId();
+        if ($companyId > 0) {
+            $users = (int) ($userModel->queryOne(
+                'SELECT COUNT(*) AS c FROM rateb_users WHERE COALESCE(is_super_admin, 0) = 0 AND company_id = :cid',
+                ['cid' => $companyId]
+            )['c'] ?? 0);
+        } else {
+            $users = $userModel->count();
+        }
         $roles = (new \Rateb\App\Models\Role())->count();
         $permissions = (new \Rateb\App\Models\Permission())->count();
 
@@ -45,13 +54,28 @@ final class AccessControlController extends Controller
     {
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_url('admin/access-control/matrix'));
+            Response::redirect(rateb_app_url('access-control/matrix'));
         }
         $matrix = (array) $this->input('matrix', []);
         (new \Rateb\App\Services\AuthorizationService())->syncMatrixFromPost($matrix);
         (new AuditService())->log('update', 'role_permissions_matrix', null, ['roles' => count($matrix)]);
         SessionManager::flash('success', __('save') . ' OK');
-        Response::redirect(rateb_url('admin/access-control/matrix'));
+        Response::redirect(rateb_app_url('access-control/matrix'));
+    }
+
+    private function scopedCompanyId(): int
+    {
+        if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled() || rateb_is_super_admin()) {
+            return 0;
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $id = rateb_resolve_ops_company_id();
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        return (int) ($_SESSION['rateb_company_id'] ?? 0);
     }
 }
 

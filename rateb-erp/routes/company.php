@@ -654,3 +654,5 @@ $router->get($app('branch-financial/ar-aging'), [BranchFinancialReportsControlle
 $router->get($app('branch-financial/ap-aging'), [BranchFinancialReportsController::class, 'branchApAging'], $branchFinApMw);
 $router->get($app('branch-financial/receivables'), [BranchFinancialReportsController::class, 'branchReceivables'], $branchFinRecMw);
 $router->get($app('branch-financial/payables'), [BranchFinancialReportsController::class, 'branchPayables'], $branchFinPayMw);
+
+require RATEB_ROOT . '/routes/company-access.php';
