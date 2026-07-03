@@ -607,6 +607,8 @@ return [
     'company_login_admin_blocked' => 'Use the same login page — you will be routed automatically.',
     'admin_login_link' => 'Admin login',
     'too_many_attempts' => 'Too many login attempts. Try again later.',
+    'too_many_attempts_agency' => 'Too many attempts for this account. Wait 5 minutes or use admin / 123456 for the default manager.',
+    'agency_erp_login_hint' => 'Agency ERP: default manager is admin with password 123456. rateb.sa accounts (e.g. admin@rateb.sa) do not work here — create users under ERP → Users.',
     'invalid_request' => 'Invalid request. Please refresh and try again.',
     'company_growth' => 'Company Growth',
     'subscription_growth' => 'Subscription Growth',

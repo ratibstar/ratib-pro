@@ -334,6 +334,35 @@ if (!function_exists('rateb_control_panel_branch_manage_url')) {
     }
 }
 
+if (!function_exists('rateb_erp_login_rate_policy')) {
+    /**
+     * Login throttling — agency hosts skip shared-IP blocking (many users, one office IP).
+     *
+     * @return array{email_max:int,email_decay:int,ip_max:int,ip_decay:int,ip_enabled:bool}
+     */
+    function rateb_erp_login_rate_policy(): array
+    {
+        $agency = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+        if ($agency) {
+            return [
+                'email_max' => 20,
+                'email_decay' => 300,
+                'ip_max' => 20,
+                'ip_decay' => 900,
+                'ip_enabled' => false,
+            ];
+        }
+
+        return [
+            'email_max' => 5,
+            'email_decay' => 300,
+            'ip_max' => 20,
+            'ip_decay' => 900,
+            'ip_enabled' => true,
+        ];
+    }
+}
+
 if (!function_exists('rateb_is_production')) {
     function rateb_is_production(): bool
     {

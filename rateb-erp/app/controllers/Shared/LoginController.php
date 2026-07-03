@@ -27,6 +27,11 @@ final class LoginController extends Controller
             return;
         }
 
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+            IpRateLimiter::reset('erp_login_ip_' . md5($ip));
+        }
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $pairToken = isset($_GET['barcode_pair'])
                 ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['barcode_pair']))
@@ -82,6 +87,7 @@ final class LoginController extends Controller
             'next' => $this->safeNextUrl((string) ($_GET['next'] ?? '')),
             'branchPortal' => $branchPortal,
             'loginError' => $this->resolveLoginErrorFromRequest(),
+            'agencyLoginHint' => $this->agencyLoginHint(),
         ], 'auth');
     }
 
@@ -99,7 +105,9 @@ final class LoginController extends Controller
             'credentials' => __('invalid_credentials'),
             'csrf' => __('invalid_request'),
             'locked' => __('account_locked'),
-            'rate' => __('too_many_attempts'),
+            'rate' => (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host())
+                ? __('too_many_attempts_agency')
+                : __('too_many_attempts'),
             'session' => __('login_session_expired'),
             'db' => __('db_error_title'),
             'inactive' => __('login_user_inactive'),
@@ -110,6 +118,31 @@ final class LoginController extends Controller
         $code = strtolower(trim((string) ($_GET['err'] ?? '')));
 
         return $map[$code] ?? '';
+    }
+
+    private function agencyLoginHint(): string
+    {
+        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+            return '';
+        }
+
+        return __('agency_erp_login_hint');
+    }
+
+    /** @return array{email_max:int,email_decay:int,ip_max:int,ip_decay:int,ip_enabled:bool} */
+    private function loginRatePolicy(): array
+    {
+        if (function_exists('rateb_erp_login_rate_policy')) {
+            return rateb_erp_login_rate_policy();
+        }
+
+        return [
+            'email_max' => 5,
+            'email_decay' => 300,
+            'ip_max' => 20,
+            'ip_decay' => 900,
+            'ip_enabled' => true,
+        ];
     }
 
     /** @return array<string, mixed>|null */
@@ -144,8 +177,15 @@ final class LoginController extends Controller
             $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
             $emailKey = 'erp_login_' . md5($email);
             $ipKey = 'erp_login_ip_' . md5($ip);
+            $ratePolicy = $this->loginRatePolicy();
+            $emailMax = (int) ($ratePolicy['email_max'] ?? 5);
+            $emailDecay = (int) ($ratePolicy['email_decay'] ?? 300);
+            $ipMax = (int) ($ratePolicy['ip_max'] ?? 20);
+            $ipDecay = (int) ($ratePolicy['ip_decay'] ?? 900);
+            $ipEnabled = !empty($ratePolicy['ip_enabled']);
 
-            if (RateLimiter::isLimited($emailKey, 5) || IpRateLimiter::isLimited($ipKey, 20)) {
+            if (RateLimiter::isLimited($emailKey, $emailMax)
+                || ($ipEnabled && IpRateLimiter::isLimited($ipKey, $ipMax))) {
                 $this->loginRedirect('rate');
             }
 
@@ -169,8 +209,10 @@ final class LoginController extends Controller
             (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
 
             if (!$user) {
-                RateLimiter::attempt($emailKey, 5, 300);
-                IpRateLimiter::attempt($ipKey, 20, 900);
+                RateLimiter::attempt($emailKey, $emailMax, $emailDecay);
+                if ($ipEnabled) {
+                    IpRateLimiter::attempt($ipKey, $ipMax, $ipDecay);
+                }
                 $lockout->recordFailure($email);
                 $errCode = Auth::consumeLoginFailureReason() ?? 'credentials';
                 $redirect = function_exists('rateb_list_url')
@@ -183,6 +225,10 @@ final class LoginController extends Controller
             }
 
             $lockout->clearLock((int) $user['id']);
+            RateLimiter::reset($emailKey);
+            if ($ipEnabled) {
+                IpRateLimiter::reset($ipKey);
+            }
 
             if ((new TwoFactorService())->needsVerification($user)) {
                 SessionManager::forget('rateb_user_id');

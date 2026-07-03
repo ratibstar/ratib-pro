@@ -607,6 +607,8 @@ return [
     'company_login_admin_blocked' => 'استخدم نفس صفحة الدخول — سيتم توجيهك تلقائياً.',
     'admin_login_link' => 'دخول الإدارة',
     'too_many_attempts' => 'محاولات كثيرة. حاول لاحقاً.',
+    'too_many_attempts_agency' => 'محاولات كثيرة لهذا الحساب. انتظر 5 دقائق أو استخدم admin / 123456 للمدير الافتراضي.',
+    'agency_erp_login_hint' => 'وكالة ERP: المدير الافتراضي admin وكلمة المرور 123456. حسابات rateb.sa (مثل admin@rateb.sa) لا تعمل هنا — أنشئ المستخدمين من ERP → المستخدمون.',
     'invalid_request' => 'طلب غير صالح. حدّث الصفحة وحاول مجدداً.',
     'company_growth' => 'نمو الشركات',
     'subscription_growth' => 'نمو الاشتراكات',

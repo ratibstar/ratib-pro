@@ -36,6 +36,12 @@
     <?php if (!empty($next)) { ?>
     <input type="hidden" name="next" value="<?php echo Rateb\App\Core\View::escape((string) $next); ?>">
     <?php } ?>
+    <?php if (!empty($agencyLoginHint)) { ?>
+    <div class="alert alert-secondary py-2 small mb-3">
+        <i class="fas fa-info-circle me-1"></i>
+        <?php echo Rateb\App\Core\View::escape((string) $agencyLoginHint); ?>
+    </div>
+    <?php } ?>
     <p class="text-center text-muted small mb-3"><?php echo __('unified_login_hint'); ?></p>
     <div class="mb-3">
         <label class="form-label" for="email"><?php echo __('login_email'); ?></label>

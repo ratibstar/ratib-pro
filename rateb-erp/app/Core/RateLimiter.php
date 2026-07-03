@@ -35,4 +35,9 @@ final class RateLimiter
         $_SESSION['_rate_limit'][$key] = $bucket;
         return true;
     }
+
+    public static function reset(string $key): void
+    {
+        unset($_SESSION['_rate_limit'][$key]);
+    }
 }

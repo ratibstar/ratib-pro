@@ -54,4 +54,13 @@ final class IpRateLimiter
         @file_put_contents($file, json_encode($bucket), LOCK_EX);
         return true;
     }
+
+    public static function reset(string $key): void
+    {
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $file = $root . '/storage/rate-limit/' . hash('sha256', $key) . '.json';
+        if (is_file($file)) {
+            @unlink($file);
+        }
+    }
 }
