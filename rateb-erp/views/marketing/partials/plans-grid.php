@@ -22,7 +22,7 @@ $featuredSlug = 'professional';
             <?php foreach ($plans as $plan) {
                 $slug = trim((string) ($plan['slug'] ?? ''));
                 $isFeatured = $slug === $featuredSlug;
-                $features = Plan::marketingFeatures($plan);
+                $features = Plan::marketingDisplayFeatures($plan);
                 if ($compact && count($features) > 4) {
                     $features = array_slice($features, 0, 4);
                 }
@@ -43,20 +43,6 @@ $featuredSlug = 'professional';
                         <?php echo Rateb\App\Core\View::escape(Plan::marketingYearlyPrice($plan)); ?>
                         <?php echo __('sar'); ?> / <?php echo __('cms_per_year'); ?>
                     </p>
-                    <?php } ?>
-                    <?php
-                    $limitsLine = Plan::marketingLimitsSummary($plan);
-                    if ($limitsLine !== '') { ?>
-                    <p class="small text-muted mb-2"><?php echo Rateb\App\Core\View::escape($limitsLine); ?></p>
-                    <?php } ?>
-                    <?php
-                    $moduleLines = Plan::marketingModuleHighlights($plan);
-                    if ($moduleLines !== []) { ?>
-                    <ul class="rateb-mkt-plan-features rateb-mkt-plan-modules mb-2">
-                        <?php foreach ($moduleLines as $modLine) { ?>
-                        <li><?php echo Rateb\App\Core\View::escape($modLine); ?></li>
-                        <?php } ?>
-                    </ul>
                     <?php } ?>
                     <?php if ($features !== []) { ?>
                     <ul class="rateb-mkt-plan-features">

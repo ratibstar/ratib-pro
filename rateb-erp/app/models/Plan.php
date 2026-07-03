@@ -90,6 +90,21 @@ final class Plan extends Model
         return $out;
     }
 
+    /** Curated marketing bullets: DB limits first, then lang features (no raw module list). */
+    /** @param array<string, mixed> $plan
+     * @return list<string>
+     */
+    public static function marketingDisplayFeatures(array $plan): array
+    {
+        $features = self::marketingFeatures($plan);
+        $limits = self::marketingLimitsSummary($plan);
+        if ($limits !== '') {
+            array_unshift($features, $limits);
+        }
+
+        return $features;
+    }
+
     /** @param array<string, mixed> $plan
      * @return list<string>
      */
@@ -152,6 +167,12 @@ final class Plan extends Model
             }
             if ($users >= 3 && $users <= 10) {
                 return 'حتى ' . $users . ' مستخدمين';
+            }
+            if ($users === 100) {
+                return 'حتى مائة مستخدم';
+            }
+            if ($users > 10) {
+                return 'حتى ' . $users . ' مستخدمًا';
             }
 
             return 'حتى ' . $users . ' مستخدم';
