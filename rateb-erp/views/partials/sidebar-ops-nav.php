@@ -86,7 +86,6 @@ if (function_exists('rateb_company_access_routes_enabled') && rateb_company_acce
         ['users', 'users', 'fa-users', '', 'access.manage'],
         ['roles', 'roles', 'fa-user-shield', '', 'access.manage'],
         ['permissions', 'permissions', 'fa-key', '', 'access.manage'],
-        ['plans', 'plans', 'fa-layer-group', '', 'settings.manage'],
         ['audit-logs', 'audit_logs', 'fa-clipboard-list', '', 'settings.manage'],
         ['support-tickets', 'support_tickets', 'fa-life-ring', '', 'settings.manage'],
         ['email-templates', 'email_templates', 'fa-envelope', '', 'settings.manage'],

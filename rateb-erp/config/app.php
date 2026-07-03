@@ -2061,7 +2061,7 @@ if (!function_exists('rateb_app_route')) {
         ];
         if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
             $conflictRoots = array_merge($conflictRoots, [
-                'access-control', 'users', 'roles', 'permissions', 'plans',
+                'access-control', 'users', 'roles', 'permissions',
                 'audit-logs', 'support-tickets', 'email-templates', 'sms-templates',
             ]);
         }

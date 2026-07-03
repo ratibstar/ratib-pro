@@ -419,11 +419,6 @@ return [
         'view' => 'access.manage',
         'manage' => 'access.manage',
     ],
-    'plans' => [
-        'module' => '',
-        'view' => 'settings.manage',
-        'manage' => 'settings.manage',
-    ],
     'audit-logs' => [
         'module' => '',
         'view' => 'settings.manage',

@@ -5,12 +5,10 @@ use Rateb\App\Controllers\Admin\AccessControlController;
 use Rateb\App\Controllers\Admin\AuditLogsController;
 use Rateb\App\Controllers\Admin\EmailTemplatesController;
 use Rateb\App\Controllers\Admin\PermissionsController;
-use Rateb\App\Controllers\Admin\PlansController;
 use Rateb\App\Controllers\Admin\RolesController;
 use Rateb\App\Controllers\Admin\SmsTemplatesController;
 use Rateb\App\Controllers\Admin\SupportTicketsController;
 use Rateb\App\Controllers\Admin\UsersController;
-use Rateb\App\Controllers\Company\CompanyPlanController;
 
 /** @var Rateb\App\Core\Router $router */
 
@@ -55,5 +53,3 @@ foreach ($accessCrud as $path => [$class, $perm]) {
 $router->post($app('users/{id}/regenerate-barcode'), [UsersController::class, 'regenerateBarcode'], $accessMw());
 
 $router->get($app('audit-logs'), [AuditLogsController::class, 'index'], $settingsMw());
-$router->get($app('plans'), [CompanyPlanController::class, 'index'], $settingsMw());
-$router->get($app('plans/{id}'), [PlansController::class, 'edit'], $settingsMw());
