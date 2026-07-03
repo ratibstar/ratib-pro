@@ -979,12 +979,12 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ($user === null) {
             return false;
         }
-        if (!empty($user['is_super_admin'])) {
-            return false;
-        }
         $companyId = $this->scopedCompanyId();
         if ($companyId < 1) {
             return true;
+        }
+        if (!empty($user['is_super_admin'])) {
+            return false;
         }
 
         return (int) ($user['company_id'] ?? 0) === $companyId;
