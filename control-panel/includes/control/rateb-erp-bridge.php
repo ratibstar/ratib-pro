@@ -149,7 +149,7 @@ function control_rateb_erp_db_test(): array
     try {
         control_rateb_erp_ensure_root();
         require_once RATEB_ROOT . '/app/Core/Database.php';
-        $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+        $agencyId = control_rateb_erp_resolve_agency_id();
         $cfg = $agencyId > 0 ? control_rateb_erp_agency_db_config($agencyId) : null;
         if ($cfg !== null) {
             \Rateb\App\Core\Database::useConnectionOverride($cfg);
@@ -217,9 +217,51 @@ function control_rateb_erp_branch_manage_url(int $companyId = 0): string
     return $url;
 }
 
+function control_rateb_erp_resolve_agency_id(): int
+{
+    return (int) ($_POST['agency_id'] ?? $_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+}
+
+/** Branches hub scoped to an agency ERP database. */
+function control_rateb_erp_agency_branch_manage_url(int $agencyId, int $companyId = 0): string
+{
+    if ($agencyId < 1) {
+        return control_rateb_erp_branch_manage_url($companyId);
+    }
+    $url = control_rateb_erp_branches_hub_page_url();
+    $url .= (strpos($url, '?') !== false ? '&' : '?') . 'agency_id=' . $agencyId;
+    if ($companyId > 0) {
+        $url .= '&company_id=' . $companyId;
+    }
+
+    return $url;
+}
+
+function control_rateb_erp_agency_label(int $agencyId): string
+{
+    if ($agencyId < 1) {
+        return '';
+    }
+    $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+    if (!is_file($lookup)) {
+        return '';
+    }
+    require_once $lookup;
+    if (!function_exists('rateb_lookup_agency_by_id')) {
+        return '';
+    }
+    $row = rateb_lookup_agency_by_id($agencyId);
+    if ($row === null) {
+        return '';
+    }
+    $name = trim((string) ($row['name'] ?? $row['agency_name'] ?? ''));
+
+    return $name !== '' ? $name : ('Agency #' . $agencyId);
+}
+
 function control_rateb_erp_pdo(): ?\PDO
 {
-    $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+    $agencyId = control_rateb_erp_resolve_agency_id();
     if ($agencyId > 0) {
         $pdo = control_rateb_erp_pdo_for_agency($agencyId);
         if ($pdo instanceof \PDO) {

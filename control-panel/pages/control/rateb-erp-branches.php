@@ -21,7 +21,9 @@ $flashOk = '';
 $flashErr = '';
 $newPortalUrl = '';
 $newBranchName = '';
-$focusCompanyId = (int) ($_GET['company_id'] ?? 0);
+$agencyId = control_rateb_erp_resolve_agency_id();
+$agencyLabel = $agencyId > 0 ? control_rateb_erp_agency_label($agencyId) : '';
+$focusCompanyId = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
 
 if (empty($_SESSION['rateb_erp_branches_csrf'])) {
     $_SESSION['rateb_erp_branches_csrf'] = bin2hex(random_bytes(16));
@@ -77,6 +79,9 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $companies = $schemaReady ? control_rateb_erp_companies_branch_overview() : [];
+if ($focusCompanyId < 1 && $agencyId > 0 && count($companies) === 1) {
+    $focusCompanyId = (int) ($companies[0]['id'] ?? 0);
+}
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('الشركات والفروع — نظام رتب ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
@@ -87,6 +92,15 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
     — كل شركة مشتركة مستقلة بفروعها. التحكم هنا من <strong>لوحة التحكم فقط</strong> (لا يظهر قسم الفروع داخل ERP للعملاء).
     حدّد <strong>حد الفروع</strong> لكل شركة ثم أضف الفروع — يُنشأ <strong>رابط دخول تلقائي</strong> لكل فرع.
 </p>
+<?php if ($agencyId > 0) { ?>
+<div class="alert alert-primary py-2 mb-3">
+    <i class="fas fa-store me-1"></i>
+    <strong>وكالة:</strong> <?php echo htmlspecialchars($agencyLabel !== '' ? $agencyLabel : ('#' . $agencyId), ENT_QUOTES, 'UTF-8'); ?>
+    <?php if (control_rateb_erp_agency_db_name($agencyId) !== '') { ?>
+    · <code><?php echo htmlspecialchars(control_rateb_erp_agency_db_name($agencyId), ENT_QUOTES, 'UTF-8'); ?></code>
+    <?php } ?>
+</div>
+<?php } ?>
 
 <?php if (!$schemaReady) { ?>
 <div class="alert alert-warning">شغّل إعداد قاعدة البيانات أولاً من <a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>">هنا</a>.</div>
@@ -148,6 +162,7 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
         </div>
         <form method="post" class="d-flex align-items-end gap-2 flex-wrap">
             <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
+            <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } ?>
             <input type="hidden" name="action" value="set_branch_limit">
             <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
             <div>
@@ -194,6 +209,7 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
                     <?php if (!$isMain) { ?>
                     <form method="post" class="d-inline">
                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } ?>
                         <input type="hidden" name="action" value="toggle_branch">
                         <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
                         <input type="hidden" name="branch_id" value="<?php echo $bid; ?>">
@@ -216,6 +232,7 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
         <summary class="fw-semibold cursor-pointer"><i class="fas fa-plus-circle text-primary"></i> إضافة فرع لهذه الشركة</summary>
         <form method="post" class="row g-2 mt-3">
             <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
+            <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } ?>
             <input type="hidden" name="action" value="create_branch">
             <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
             <div class="col-md-4">

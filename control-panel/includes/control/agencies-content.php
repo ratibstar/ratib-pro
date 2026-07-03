@@ -657,6 +657,15 @@ if ($agencyIdFilter > 0) {
         </div>
     </div>
 
+    <?php
+    if (!function_exists('control_rateb_erp_agency_branch_manage_url')) {
+        $erpBridge = __DIR__ . '/rateb-erp-bridge.php';
+        if (is_file($erpBridge)) {
+            require_once $erpBridge;
+        }
+    }
+    ?>
+
     <div class="<?php echo $limit > 5 ? 'agencies-table-scroll' : ''; ?>">
         <div class="table-responsive">
         <table class="table">
@@ -745,6 +754,10 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $erpProvisionLabel = $erpStBtn === 'ready'
                                 ? $agT('agencies.reprovision_erp', 'Re-provision ERP')
                                 : $agT('agencies.provision_erp', 'Provision ERP');
+                            $hasErpDb = trim((string) ($r['erp_db_name'] ?? '')) !== '';
+                            $branchesManageUrl = ($hasErpDb && function_exists('control_rateb_erp_agency_branch_manage_url'))
+                                ? control_rateb_erp_agency_branch_manage_url($agencyIdRow, $erpCoId)
+                                : '';
                         ?>
                         <div class="ag-actions-wrap">
                         <div class="dropdown ag-actions-dropdown">
@@ -769,6 +782,9 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                 <?php else: ?>
                                 <li><button type="button" class="dropdown-item ag-btn-erp-blocked" data-blocked-reason="<?php echo htmlspecialchars($erpBlocked !== '' ? $erpBlocked : $agT('agencies.erp_needs_provision', 'Run Provision ERP first'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency"><i class="fas fa-hospital ag-menu-ico ag-ico-erp"></i><?php echo htmlspecialchars($agT('agencies.erp', 'ERP'), ENT_QUOTES, 'UTF-8'); ?></button></li>
                                 <?php endif; ?>
+                                <?php if ($branchesManageUrl !== '') { ?>
+                                <li><a class="dropdown-item" href="<?php echo htmlspecialchars($branchesManageUrl, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($agT('agencies.manage_branches_hint', 'Set branch limit and create branches'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-code-branch ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.manage_branches', 'Manage branches'), ENT_QUOTES, 'UTF-8'); ?></a></li>
+                                <?php } ?>
                                 <li><hr class="dropdown-divider"></li>
                                 <?php if (trim((string) ($r['erp_db_name'] ?? '')) !== '') { ?>
                                 <li><button type="button" class="dropdown-item text-danger btn-reset-erp" data-agency-id="<?php echo $agencyIdRow; ?>" data-id="<?php echo $agencyIdRow; ?>" data-agency-name="<?php echo htmlspecialchars((string) ($r['name'] ?? $r['agency_name'] ?? 'Agency'), ENT_QUOTES, 'UTF-8'); ?>" data-site-url="<?php echo htmlspecialchars($openSiteUrl, ENT_QUOTES, 'UTF-8'); ?>" data-erp-company-id="<?php echo (int) ($r['erp_company_id'] ?? 0); ?>" data-permission="control_agencies,edit_control_agency"><i class="fas fa-eraser ag-menu-ico"></i><?php echo htmlspecialchars($agT('agencies.reset_erp_data_short', 'Reset data'), ENT_QUOTES, 'UTF-8'); ?></button></li>
@@ -791,6 +807,9 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             <?php if ($erpUrl !== '' && $erpStBtn === 'ready'): ?>
                             <a class="ag-btn ag-btn-open-erp" href="<?php echo htmlspecialchars($erpUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" title="<?php echo htmlspecialchars($erpTitle, ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-hospital" aria-hidden="true"></i><span><?php echo htmlspecialchars($agT('agencies.erp', 'ERP'), ENT_QUOTES, 'UTF-8'); ?></span></a>
                             <?php endif; ?>
+                            <?php if ($branchesManageUrl !== '') { ?>
+                            <a class="ag-btn ag-btn-branches" href="<?php echo htmlspecialchars($branchesManageUrl, ENT_QUOTES, 'UTF-8'); ?>" title="<?php echo htmlspecialchars($agT('agencies.manage_branches_hint', 'Set branch limit and create branches'), ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-code-branch" aria-hidden="true"></i><span><?php echo htmlspecialchars($agT('agencies.manage_branches_short', 'Branches'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                            <?php } ?>
                             <button type="button" class="ag-btn ag-btn-provision-pro btn-provision-pro" data-agency-id="<?php echo $agencyIdRow; ?>" data-id="<?php echo $agencyIdRow; ?>" translate="no" title="<?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.RatibCpAgencies &amp;&amp; window.RatibCpAgencies.provisionProClick(this, event);"><i class="fas fa-server" aria-hidden="true"></i><span><?php echo htmlspecialchars($agT('agencies.provision_pro', 'Provision Pro'), ENT_QUOTES, 'UTF-8'); ?></span></button>
                             <button type="button" class="ag-btn ag-btn-provision-erp btn-provision-erp" data-agency-id="<?php echo $agencyIdRow; ?>" data-id="<?php echo $agencyIdRow; ?>" data-erp-plan="<?php echo htmlspecialchars((string) ($r['erp_plan_slug'] ?? 'professional'), ENT_QUOTES, 'UTF-8'); ?>" data-erp-status="<?php echo htmlspecialchars($erpStBtn, ENT_QUOTES, 'UTF-8'); ?>" translate="no" title="<?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.RatibCpAgencies &amp;&amp; window.RatibCpAgencies.provisionErpClick(this, event);"><i class="fas fa-cogs" aria-hidden="true"></i><span><?php echo htmlspecialchars($erpProvisionLabel, ENT_QUOTES, 'UTF-8'); ?></span></button>
                             <?php if (trim((string) ($r['erp_db_name'] ?? '')) !== '') { ?>
