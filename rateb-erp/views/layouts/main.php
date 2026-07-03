@@ -166,11 +166,16 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
                 $adminSection(__('cms_section'), [
                     ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],
                     ['admin/cms/pages', 'cms_pages', 'fa-file-lines', 'cms.manage'],
+                    ['admin/cms/page-builder', 'cms_page_builder', 'fa-sitemap', 'cms.manage'],
                     ['admin/cms/leads', 'cms_leads', 'fa-user-plus', 'cms.leads'],
                     ['admin/cms/blog-articles', 'cms_blog', 'fa-newspaper', 'cms.manage'],
+                    ['admin/cms/newsletter', 'cms_newsletter', 'fa-envelope-open-text', 'cms.manage'],
                     ['admin/cms/media', 'cms_media', 'fa-images', 'cms.media'],
                     ['admin/cms/seo', 'cms_seo', 'fa-magnifying-glass', 'cms.seo'],
+                    ['admin/cms/faqs', 'cms_faqs', 'fa-circle-question', 'cms.manage'],
+                    ['admin/cms/testimonials', 'cms_testimonials', 'fa-star', 'cms.manage'],
                     ['admin/cms/theme', 'cms_theme', 'fa-palette', 'cms.manage'],
+                    ['admin/cms/about', 'cms_about', 'fa-building', 'cms.manage'],
                 ], 'fa-globe', $cmsNewLeads, $cmsLeadBadges, '', 'rateb-nav-badge--pending', 'cms_leads_new');
             }
             $accessControlLinks = [

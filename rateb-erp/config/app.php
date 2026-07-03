@@ -1417,6 +1417,38 @@ if (!function_exists('rateb_permission_description')) {
     }
 }
 
+if (!function_exists('rateb_arabic_compound_label')) {
+    /**
+     * @param list<string> $parts
+     * @param list<string> $translated
+     */
+    function rateb_arabic_compound_label(array $parts, array $translated): ?string
+    {
+        if (rateb_locale() !== 'ar' || $translated === []) {
+            return null;
+        }
+        $clean = array_values(array_filter($parts, static fn(string $p): bool => $p !== 'id'));
+        if ($clean === [] || count($clean) !== count($translated)) {
+            return null;
+        }
+        $suffix = end($clean);
+        $head = array_slice($translated, 0, -1);
+        $tail = $translated[count($translated) - 1];
+
+        return match ($suffix) {
+            'date', 'at' => $tail . ($head !== [] ? ' ' . implode(' ', $head) : ''),
+            'value', 'amount', 'total', 'cost', 'tax', 'percent', 'days', 'due' => $tail . ($head !== [] ? ' ' . implode(' ', $head) : ''),
+            'name', 'title', 'label' => ($suffix === 'name' ? 'اسم' : ($suffix === 'title' ? 'عنوان' : 'تسمية'))
+                . ($head !== [] ? ' ' . implode(' ', $head) : ''),
+            'no', 'number' => 'رقم' . ($head !== [] ? ' ' . implode(' ', $head) : ''),
+            'path', 'url' => ($suffix === 'path' ? 'مسار' : 'رابط') . ($head !== [] ? ' ' . implode(' ', $head) : ''),
+            'count' => 'عدد' . ($head !== [] ? ' ' . implode(' ', $head) : ''),
+            'display' => 'عرض' . ($head !== [] ? ' ' . implode(' ', $head) : ''),
+            default => null,
+        };
+    }
+}
+
 if (!function_exists('rateb_label')) {
     function rateb_label(string $labelOrKey): string
     {
@@ -1486,6 +1518,11 @@ if (!function_exists('rateb_label')) {
                 $translated[] = $pt;
             }
             if ($ok && $translated !== []) {
+                $compound = rateb_arabic_compound_label($parts, $translated);
+                if ($compound !== null) {
+                    return $compound;
+                }
+
                 return implode(' ', $translated);
             }
         }

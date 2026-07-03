@@ -21,7 +21,7 @@ $id = (int) ($item['id'] ?? 0);
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('cms_segment'); ?></label>
                     <select class="form-select" name="segment_slug">
-                        <option value="all">all</option>
+                        <option value="all"><?php echo __('cms_segment_all'); ?></option>
                         <?php foreach ($segments as $seg) {
                             $slug = (string) ($seg['slug'] ?? '');
                             ?>

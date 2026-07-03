@@ -17,11 +17,11 @@ $links = [
     ['admin/cms/testimonials', 'cms_testimonials'], ['admin/cms/slides', 'cms_slides'], ['admin/cms/leads', 'cms_leads'],
     ['admin/cms/newsletter', 'cms_newsletter'], ['admin/cms/seo', 'cms_seo'], ['admin/cms/media', 'cms_media'],
     ['admin/cms/theme', 'cms_theme'], ['admin/cms/analytics', 'cms_analytics'], ['admin/cms/about', 'cms_about'],
-    ['admin/cms/contact', 'cms_contact'], ['admin/site', 'cms_view_site', true],
+    ['admin/cms/contact', 'cms_contact'], ['site', 'cms_view_site', true],
 ];
 foreach ($links as $link) {
     $external = !empty($link[2]);
-    $href = $external ? rateb_url($link[0]) : rateb_url($link[0]);
+    $href = $external ? rateb_url((string) $link[0]) : rateb_url($link[0]);
     echo '<div class="col-md-4"><a class="btn btn-outline-primary w-100" href="' . Rateb\App\Core\View::escape($href) . '"';
     if ($external) echo ' target="_blank" rel="noopener"';
     echo '>' . __($link[1]) . '</a></div>';

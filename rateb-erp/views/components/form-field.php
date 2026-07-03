@@ -155,7 +155,14 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
     <?php } else {
         $dateTypes = ['date', 'datetime-local', 'time', 'month', 'week'];
         $isDateInput = in_array($type, $dateTypes, true);
+        $isNumberField = $type === 'number';
+        $renderType = $isNumberField ? 'text' : $type;
+        if ($isNumberField && $value !== '' && $value !== null && function_exists('rateb_western_digits')) {
+            $western = rateb_western_digits((string) $value);
+            $value = is_numeric($western) ? (string) (0 + $western) : $western;
+        }
         $dateClass = $isDateInput ? ' rateb-ltr-date rateb-date-input' : '';
+        $numClass = $isNumberField ? ' rateb-ltr-num' : '';
         $dateHintKey = match ($type) {
             'datetime-local' => 'datetime_format_hint',
             'time' => 'time_format_hint',
@@ -170,7 +177,7 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
         <button type="button" class="rateb-date-wrap-icon" tabindex="-1" aria-hidden="true">
             <i class="fas fa-calendar-alt"></i>
         </button>
-        <input class="<?php echo Rateb\App\Core\View::escape($inputClass . $dateClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
+        <input class="<?php echo Rateb\App\Core\View::escape($inputClass . $dateClass); ?>" type="<?php echo Rateb\App\Core\View::escape($renderType); ?>"
                id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
                <?php if (!$displayOnly) { ?>name="<?php echo Rateb\App\Core\View::escape($name); ?>" <?php } ?>
                value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
@@ -182,12 +189,13 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
                <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>>
     </div>
         <?php } else { ?>
-    <input class="<?php echo Rateb\App\Core\View::escape($inputClass . $dateClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
+    <input class="<?php echo Rateb\App\Core\View::escape($inputClass . $dateClass . $numClass); ?>" type="<?php echo Rateb\App\Core\View::escape($renderType); ?>"
            id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
            <?php if (!$displayOnly) { ?>name="<?php echo Rateb\App\Core\View::escape($name); ?>" <?php } ?>
            value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
            <?php echo $required && !$displayOnly ? ' required' : ''; ?><?php echo $readonly || $displayOnly ? ' readonly' : ''; ?>
            <?php echo $fieldAttrs; ?>
+           <?php if ($isNumberField) { ?>dir="ltr" lang="en" inputmode="decimal" autocomplete="off"<?php } ?>
            <?php if (!empty($field['step'])) { ?>step="<?php echo Rateb\App\Core\View::escape((string) $field['step']); ?>"<?php } ?>
            <?php if (isset($field['min'])) { ?>min="<?php echo Rateb\App\Core\View::escape((string) $field['min']); ?>"<?php } ?>
            <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>>
