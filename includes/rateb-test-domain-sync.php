@@ -2,8 +2,251 @@
 declare(strict_types=1);
 
 /**
- * Copy rateb.sa application tree → test.rateb.sa (platform ops).
+ * Copy rateb.sa application tree → agency domains on the same server.
+ * Agency ERP push uses a filtered bundle (ERP only); test bootstrap may use the full tree.
  */
+
+if (!function_exists('rateb_agency_erp_sync_rateb_erp_skip_rel')) {
+    /**
+     * Relative paths under rateb-erp/ skipped for agency file sync (platform-only UI).
+     *
+     * @return list<string>
+     */
+    function rateb_agency_erp_sync_rateb_erp_skip_rel(): array
+    {
+        return [
+            'views/admin/cms',
+            'views/marketing',
+            'views/admin/agency-updates',
+            'views/admin/executive-dashboard',
+            'storage/backups',
+            'storage/logs',
+            'storage/cache',
+            'storage/sessions',
+        ];
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_should_skip_rel')) {
+    function rateb_agency_erp_sync_should_skip_rel(string $relPath, array $skipPrefixes): bool
+    {
+        $rel = str_replace('\\', '/', strtolower(trim($relPath, '/\\')));
+        if ($rel === '') {
+            return false;
+        }
+        foreach ($skipPrefixes as $prefix) {
+            $prefix = str_replace('\\', '/', strtolower(trim((string) $prefix, '/\\')));
+            if ($prefix === '') {
+                continue;
+            }
+            if ($rel === $prefix || str_starts_with($rel, $prefix . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_include_files')) {
+    /** @return list<string> */
+    function rateb_agency_erp_sync_include_files(): array
+    {
+        return [
+            'includes/rateb-agency-super-admin-restore.php',
+            'includes/rateb-test-domain-sync.php',
+        ];
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_config_env_files')) {
+    /** @return list<string> */
+    function rateb_agency_erp_sync_config_env_files(): array
+    {
+        return [
+            'agency_lookup.php',
+            'erp_agency_resolver.php',
+            'agency_resolver.php',
+            'control_db_for_lookup.php',
+            'load.php',
+            'dotenv_bridge.php',
+            'default.php',
+        ];
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_root_files')) {
+    /** @return list<string> */
+    function rateb_agency_erp_sync_root_files(): array
+    {
+        return ['index.php', '.htaccess', 'favicon.php'];
+    }
+}
+
+if (!function_exists('rateb_agency_copy_tree_filtered')) {
+    /**
+     * @param list<string> $skipPrefixes relative paths under $src root to skip
+     */
+    function rateb_agency_copy_tree_filtered(string $src, string $dst, array $skipPrefixes, array &$log, string $relBase = ''): bool
+    {
+        if (!is_dir($src)) {
+            $log[] = 'SKIP missing: ' . $src;
+            return true;
+        }
+        if (rateb_agency_erp_sync_should_skip_rel($relBase, $skipPrefixes)) {
+            $log[] = 'SKIP agency-excluded: ' . ($relBase !== '' ? $relBase : basename($src));
+            return true;
+        }
+        if (!is_dir($dst) && !@mkdir($dst, 0755, true) && !is_dir($dst)) {
+            $log[] = 'FAIL mkdir: ' . $dst;
+            return false;
+        }
+        $items = @scandir($src);
+        if (!is_array($items)) {
+            $log[] = 'FAIL scandir: ' . $src;
+            return false;
+        }
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            $childRel = $relBase === '' ? $item : $relBase . '/' . $item;
+            if (rateb_agency_erp_sync_should_skip_rel($childRel, $skipPrefixes)) {
+                $log[] = 'SKIP agency-excluded: ' . $childRel;
+                continue;
+            }
+            $from = $src . DIRECTORY_SEPARATOR . $item;
+            $to = $dst . DIRECTORY_SEPARATOR . $item;
+            if (is_dir($from)) {
+                if (!rateb_agency_copy_tree_filtered($from, $to, $skipPrefixes, $log, $childRel)) {
+                    return false;
+                }
+                continue;
+            }
+            if (!@copy($from, $to)) {
+                $log[] = 'FAIL copy: ' . $from;
+                return false;
+            }
+            @chmod($to, 0644);
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_run')) {
+    /**
+     * ERP-only bundle for any agency domain (not full rateb.sa tree).
+     *
+     * @return array{ok:bool,log:list<string>,source:string,target:string}
+     */
+    function rateb_agency_erp_sync_run(?string $sourceOverride = null, ?string $targetOverride = null): array
+    {
+        $paths = rateb_test_domain_sync_resolve($sourceOverride, $targetOverride);
+        $source = $paths['source'];
+        $target = $paths['target'];
+        $log = [];
+        $ok = true;
+
+        if ($source === '' || !is_dir($source)) {
+            return ['ok' => false, 'log' => ['Source document root not found.'], 'source' => $source, 'target' => $target];
+        }
+        if ($target === '' || $target === $source) {
+            return [
+                'ok' => false,
+                'log' => ['Target path could not be resolved.'],
+                'source' => $source,
+                'target' => $target,
+            ];
+        }
+        if (!is_dir($target) && !@mkdir($target, 0755, true) && !is_dir($target)) {
+            return ['ok' => false, 'log' => ['Cannot create target: ' . $target], 'source' => $source, 'target' => $target];
+        }
+
+        $log[] = 'Source: ' . $source;
+        $log[] = 'Target: ' . $target;
+        $log[] = 'Mode: agency ERP bundle (filtered)';
+
+        $skip = rateb_agency_erp_sync_rateb_erp_skip_rel();
+        $erpSrc = $source . DIRECTORY_SEPARATOR . 'rateb-erp';
+        $erpDst = $target . DIRECTORY_SEPARATOR . 'rateb-erp';
+        if (!is_dir($erpSrc)) {
+            $log[] = 'FAIL missing rateb-erp on source';
+            return ['ok' => false, 'log' => $log, 'source' => $source, 'target' => $target];
+        }
+        $log[] = 'COPY rateb-erp (agency ERP only) …';
+        if (!rateb_agency_copy_tree_filtered($erpSrc, $erpDst, $skip, $log, '')) {
+            return ['ok' => false, 'log' => $log, 'source' => $source, 'target' => $target];
+        }
+
+        foreach (rateb_agency_erp_sync_include_files() as $rel) {
+            $src = $source . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+            $dst = $target . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+            if (!is_file($src)) {
+                $log[] = 'SKIP ' . $rel;
+                continue;
+            }
+            $dir = dirname($dst);
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                $log[] = 'FAIL mkdir: ' . $dir;
+                $ok = false;
+                continue;
+            }
+            if (!@copy($src, $dst)) {
+                $log[] = 'FAIL ' . $rel;
+                $ok = false;
+            } else {
+                $log[] = 'OK ' . $rel;
+            }
+        }
+
+        $envSrcDir = $source . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'env';
+        $envDstDir = $target . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'env';
+        if (is_dir($envSrcDir)) {
+            if (!is_dir($envDstDir) && !@mkdir($envDstDir, 0755, true) && !is_dir($envDstDir)) {
+                $log[] = 'FAIL mkdir: ' . $envDstDir;
+                $ok = false;
+            } else {
+                foreach (rateb_agency_erp_sync_config_env_files() as $envFile) {
+                    $src = $envSrcDir . DIRECTORY_SEPARATOR . $envFile;
+                    $dst = $envDstDir . DIRECTORY_SEPARATOR . $envFile;
+                    if (!is_file($src)) {
+                        $log[] = 'SKIP config/env/' . $envFile;
+                        continue;
+                    }
+                    if (!@copy($src, $dst)) {
+                        $log[] = 'FAIL config/env/' . $envFile;
+                        $ok = false;
+                    } else {
+                        $log[] = 'OK config/env/' . $envFile;
+                    }
+                }
+            }
+        } else {
+            $log[] = 'SKIP config/env (missing on source)';
+        }
+
+        foreach (rateb_agency_erp_sync_root_files() as $file) {
+            $src = $source . DIRECTORY_SEPARATOR . $file;
+            if (!is_file($src)) {
+                continue;
+            }
+            if (!@copy($src, $target . DIRECTORY_SEPARATOR . $file)) {
+                $log[] = 'FAIL root file: ' . $file;
+                $ok = false;
+            } else {
+                $log[] = 'OK ' . $file;
+            }
+        }
+
+        $buildMarker = $erpSrc . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'ratib-erp-build.txt';
+        if (is_file($buildMarker)) {
+            $log[] = 'BUILD ' . trim((string) @file_get_contents($buildMarker));
+        }
+
+        return ['ok' => $ok, 'log' => $log, 'source' => $source, 'target' => $target];
+    }
+}
 
 if (!function_exists('rateb_test_domain_sync_paths')) {
     /** @return list<string> */
@@ -169,7 +412,7 @@ if (!function_exists('rateb_agency_site_sync_run')) {
             ];
         }
 
-        $run = rateb_test_domain_sync_run($resolved['source'], $resolved['target']);
+        $run = rateb_agency_erp_sync_run($resolved['source'], $resolved['target']);
 
         return [
             'ok' => !empty($run['ok']),
