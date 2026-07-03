@@ -88,6 +88,7 @@ final class Bootstrap
         if (function_exists('rateb_apply_agency_erp_request_binding')) {
             rateb_apply_agency_erp_request_binding();
         }
+        self::bootstrapControlPanelSso();
         self::ensureStorage($basePath);
         if (is_file($basePath . '/app/Core/SecurityHeaders.php')) {
             require_once $basePath . '/app/Core/SecurityHeaders.php';
@@ -264,5 +265,44 @@ final class Bootstrap
     private static function ensureStorage(string $basePath): void
     {
         \Rateb\App\Helpers\StorageHelper::ensureStorageTree($basePath);
+    }
+
+    /** Auto-login ERP when opened from Control Panel (separate PHP session). */
+    private static function bootstrapControlPanelSso(): void
+    {
+        if (!defined('RATEB_CP_SSO') || !RATEB_CP_SSO || !defined('RATEB_CP_ENTRY')) {
+            return;
+        }
+        if (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION) {
+            return;
+        }
+        if (\Rateb\App\Core\Auth::check()) {
+            return;
+        }
+
+        $userModel = new \Rateb\App\Models\User();
+        $user = $userModel->queryOne(
+            'SELECT * FROM rateb_users WHERE is_super_admin = 1 AND status = :st ORDER BY id ASC LIMIT 1',
+            ['st' => 'active']
+        );
+        if (!$user) {
+            $user = $userModel->queryOne(
+                "SELECT u.* FROM rateb_users u
+                 INNER JOIN rateb_user_roles ur ON ur.user_id = u.id
+                 INNER JOIN rateb_roles r ON r.id = ur.role_id
+                 WHERE u.status = :st AND r.slug = 'company-full-access'
+                 ORDER BY u.id ASC LIMIT 1",
+                ['st' => 'active']
+            );
+        }
+        if (!$user) {
+            $user = $userModel->queryOne(
+                'SELECT * FROM rateb_users WHERE status = :st ORDER BY id ASC LIMIT 1',
+                ['st' => 'active']
+            );
+        }
+        if ($user) {
+            \Rateb\App\Core\Auth::loginUser($user);
+        }
     }
 }

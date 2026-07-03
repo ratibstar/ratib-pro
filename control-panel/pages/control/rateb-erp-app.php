@@ -54,6 +54,8 @@ define('RATEB_CP_ENTRY', true);
 define('RATEB_CP_ROUTE', $route);
 define('RATEB_CP_APP_URL', control_rateb_erp_app_base_url());
 define('RATEB_CP_ASSETS_URL', control_rateb_erp_assets_base_url());
+define('RATEB_CP_SSO', true);
+define('RATEB_CP_SSO_AGENCY_ID', control_rateb_erp_resolve_agency_id());
 
 $_GET['route'] = $route;
 $_SERVER['REQUEST_METHOD'] = $_SERVER['REQUEST_METHOD'] ?? 'GET';

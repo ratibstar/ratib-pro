@@ -124,7 +124,7 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
 <?php } ?>
 
 <div class="d-flex flex-wrap gap-2 mb-4">
-    <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('admin/companies'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary" target="_blank" rel="noopener">
+    <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/companies'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary" target="_blank" rel="noopener">
         <i class="fas fa-building"></i> إدارة الشركات (ERP)
     </a>
     <a href="<?php echo htmlspecialchars(control_rateb_erp_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">

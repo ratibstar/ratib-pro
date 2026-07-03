@@ -22,6 +22,11 @@ final class LoginController extends Controller
 {
     public function showLogin(): void
     {
+        if (Auth::check()) {
+            Response::redirect(rateb_url(Auth::homePath()));
+            return;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $pairToken = isset($_GET['barcode_pair'])
                 ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['barcode_pair']))
