@@ -355,6 +355,17 @@ if (!function_exists('rateb_phone_digits')) {
     }
 }
 
+if (!function_exists('rateb_western_digits')) {
+    /** Eastern Arabic / Persian digits → Western 0-9 (form inputs, POST parsing). */
+    function rateb_western_digits(string $value): string
+    {
+        static $from = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        static $to = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        return str_replace($from, $to, $value);
+    }
+}
+
 if (!function_exists('rateb_phone_display')) {
     function rateb_phone_display(string $phone): string
     {

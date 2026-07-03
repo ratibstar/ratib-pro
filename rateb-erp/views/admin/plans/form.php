@@ -45,17 +45,19 @@ $tierPresets = $tierPresets ?? ['starter', 'professional', 'enterprise'];
                     }
                     $isLtrField = $type === 'number' || $name === 'slug';
                     $inputClass = 'form-control' . ($isLtrField ? ' rateb-ltr-num' : '');
-                    if ($type === 'number' && $value !== '' && $value !== null && is_numeric($value)) {
-                        $value = (string) (0 + $value);
+                    if ($type === 'number' && $value !== '' && $value !== null) {
+                        $western = rateb_western_digits((string) $value);
+                        $value = is_numeric($western) ? (string) (0 + $western) : $western;
                     }
+                    $renderType = $type === 'number' ? 'text' : $type;
                     ?>
                 <div class="col-md-<?php echo $type === 'textarea' ? '12' : '6'; ?>">
                     <label class="form-label"><?php echo Rateb\App\Core\View::escape(__($label)); ?></label>
                     <?php if ($type === 'textarea') { ?>
                     <textarea class="form-control" name="<?php echo Rateb\App\Core\View::escape($name); ?>" rows="2"><?php echo Rateb\App\Core\View::escape((string) $value); ?></textarea>
                     <?php } else { ?>
-                    <input class="<?php echo Rateb\App\Core\View::escape($inputClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-                        value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"<?php echo $isLtrField ? ' dir="ltr" lang="en"' : ''; ?><?php echo $type === 'number' ? ' inputmode="decimal"' : ''; ?><?php echo $name === 'name' || $name === 'slug' ? ' required' : ''; ?><?php echo $isEdit && $name === 'slug' ? ' readonly' : ''; ?>>
+                    <input class="<?php echo Rateb\App\Core\View::escape($inputClass); ?>" type="<?php echo Rateb\App\Core\View::escape($renderType); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
+                        value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"<?php echo $isLtrField ? ' dir="ltr" lang="en"' : ''; ?><?php echo $type === 'number' ? ' inputmode="decimal" autocomplete="off"' : ''; ?><?php echo $name === 'name' || $name === 'slug' ? ' required' : ''; ?><?php echo $isEdit && $name === 'slug' ? ' readonly' : ''; ?>>
                     <?php } ?>
                 </div>
                 <?php } ?>

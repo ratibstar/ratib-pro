@@ -51,7 +51,9 @@ html[dir="rtl"] .rateb-date-wrap input::-webkit-datetime-edit-fields-wrapper {
 }
 
 input[type="number"].rateb-ltr-num,
-input.rateb-ltr-num[type="number"] {
+input.rateb-ltr-num[type="number"],
+input[type="text"].rateb-ltr-num,
+input.rateb-ltr-num[type="text"] {
     direction: ltr !important;
     text-align: left !important;
     unicode-bidi: isolate;
@@ -59,13 +61,17 @@ input.rateb-ltr-num[type="number"] {
 }
 
 html[dir="rtl"] input[type="number"].rateb-ltr-num,
-html[dir="rtl"] input.rateb-ltr-num[type="number"] {
+html[dir="rtl"] input.rateb-ltr-num[type="number"],
+html[dir="rtl"] input[type="text"].rateb-ltr-num,
+html[dir="rtl"] input.rateb-ltr-num[type="text"] {
     direction: ltr !important;
     text-align: left !important;
 }
 
 html[lang="en"] input[type="number"].rateb-ltr-num,
-html[lang="en"] input.rateb-ltr-num[type="number"] {
+html[lang="en"] input.rateb-ltr-num[type="number"],
+html[lang="en"] input[type="text"].rateb-ltr-num,
+html[lang="en"] input.rateb-ltr-num[type="text"] {
     font-variant-numeric: lining-nums tabular-nums;
 }
 

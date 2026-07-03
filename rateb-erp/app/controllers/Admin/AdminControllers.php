@@ -721,6 +721,11 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
     protected function collectData(): array
     {
         $data = parent::collectData();
+        foreach (['price_monthly', 'price_yearly', 'max_users', 'max_branches', 'max_storage_mb'] as $key) {
+            if (array_key_exists($key, $data)) {
+                $data[$key] = rateb_western_digits((string) $data[$key]);
+            }
+        }
         $modules = $this->input('modules', []);
         if (is_array($modules)) {
             $data['modules'] = json_encode(array_values(array_filter(array_map('strval', $modules))), JSON_UNESCAPED_UNICODE);
