@@ -101,28 +101,32 @@ final class AccountingDashboardService
         $metrics['inventory_value'] = (new Inventory())->totalValue();
         $metrics['revenue'] = (float) ($summary['payments_total'] ?? 0);
 
-        $cfo = $this->acct->cfoMetrics($companyId);
-        $vat = $this->acct->vatReport($companyId, date('Y') . '-01-01', date('Y-m-d'));
-        $invoiceStats = $this->invoiceStats($companyId);
-        $workflow = $this->workflowCounts($companyId);
-        $bank = $this->acct->bankReconciliation($companyId);
-        $unreconciled = 0;
-        foreach ($bank['accounts'] ?? [] as $acc) {
-            $unreconciled += (int) ($acc['unreconciled_count'] ?? 0);
+        try {
+            $cfo = $this->acct->cfoMetrics($companyId);
+            $vat = $this->acct->vatReport($companyId, date('Y') . '-01-01', date('Y-m-d'));
+            $bank = $this->acct->bankReconciliation($companyId);
+            $metrics['cash_position'] = (float) ($cfo['cash_position'] ?? 0);
+            $metrics['ar_open'] = (float) ($cfo['ar_open'] ?? 0);
+            $metrics['ap_open'] = (float) ($cfo['ap_open'] ?? 0);
+            $metrics['revenue_ytd'] = (float) ($cfo['revenue_ytd'] ?? 0);
+            $metrics['expenses_ytd'] = (float) ($cfo['expenses_ytd'] ?? 0);
+            $metrics['net_profit_ytd'] = (float) ($cfo['net_margin'] ?? 0);
+            $metrics['vat_net'] = (float) ($vat['net_vat'] ?? 0);
+            $unreconciled = 0;
+            foreach ($bank['accounts'] ?? [] as $acc) {
+                $unreconciled += (int) ($acc['unreconciled_count'] ?? 0);
+            }
+            $metrics['unreconciled_bank'] = $unreconciled;
+        } catch (\Throwable $e) {
+            error_log('AccountingDashboardService::metrics branch scope: ' . $e->getMessage());
         }
 
-        $metrics['cash_position'] = (float) ($cfo['cash_position'] ?? 0);
-        $metrics['ar_open'] = (float) ($cfo['ar_open'] ?? 0);
-        $metrics['ap_open'] = (float) ($cfo['ap_open'] ?? 0);
-        $metrics['revenue_ytd'] = (float) ($cfo['revenue_ytd'] ?? 0);
-        $metrics['expenses_ytd'] = (float) ($cfo['expenses_ytd'] ?? 0);
-        $metrics['net_profit_ytd'] = (float) ($cfo['net_margin'] ?? 0);
-        $metrics['vat_net'] = (float) ($vat['net_vat'] ?? 0);
+        $invoiceStats = $this->invoiceStats($companyId);
+        $workflow = $this->workflowCounts($companyId);
         $metrics['unpaid_invoices'] = (int) ($invoiceStats['unpaid'] ?? 0);
         $metrics['overdue_invoices'] = (int) ($invoiceStats['overdue'] ?? 0);
         $metrics['draft_journals'] = (int) ($workflow['draft_journals'] ?? 0);
         $metrics['pending_vouchers'] = (int) ($workflow['pending_vouchers'] ?? 0);
-        $metrics['unreconciled_bank'] = $unreconciled;
         $metrics['total_expenses'] = (float) ($metrics['expenses_ytd'] ?? 0);
         $metrics['new_customers'] = $this->newCustomersCount($companyId);
 
@@ -372,12 +376,16 @@ final class AccountingDashboardService
 
         $arAp = [];
         if ($companyId !== null && $companyId > 0) {
-            $arData = $this->acct->accountsReceivable($companyId);
-            $apData = $this->acct->accountsPayable($companyId);
-            $arAp = [
-                ['label' => 'ar_open', 'value' => (float) ($arData['total_open'] ?? 0)],
-                ['label' => 'ap_open', 'value' => (float) ($apData['total_open'] ?? 0)],
-            ];
+            try {
+                $arData = $this->acct->accountsReceivable($companyId);
+                $apData = $this->acct->accountsPayable($companyId);
+                $arAp = [
+                    ['label' => 'ar_open', 'value' => (float) ($arData['total_open'] ?? 0)],
+                    ['label' => 'ap_open', 'value' => (float) ($apData['total_open'] ?? 0)],
+                ];
+            } catch (\Throwable $e) {
+                error_log('AccountingDashboardService::charts ar/ap: ' . $e->getMessage());
+            }
         } else {
             $invStats = $pdo->query(
                 "SELECT payment_status, COUNT(*) AS total FROM rateb_invoices

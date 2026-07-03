@@ -99,48 +99,51 @@ final class MigrationService
             return $localLog;
         }
 
-        $required = [
+        $verify = [
             ['rateb_purchase_orders', 'branch_id'],
             ['rateb_purchase_requests', 'branch_id'],
+            ['rateb_journal_entries', 'branch_id'],
+            ['rateb_suppliers', 'branch_id'],
+            ['rateb_inventory', 'branch_id'],
         ];
-        $missing = [];
-        foreach ($required as [$table, $column]) {
-            if (!$this->pdoColumnExists($pdo, $table, $column)) {
-                $missing[] = $table . '.' . $column;
-            }
-        }
-        if ($missing === []) {
-            return $localLog;
+        foreach ($verify as [$table, $column]) {
+            $log[] = 'Schema verify: ' . $table . '.' . $column . ' = '
+                . ($this->pdoColumnExists($pdo, $table, $column) ? 'yes' : 'NO');
         }
 
-        $log[] = 'Schema repair: missing ' . implode(', ', $missing) . ' — applying branch ops catchup.';
         $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
-        foreach (['146_branch_ops_branch_id_catchup.sql', '126_branch_ops_isolation.sql'] as $basename) {
-            $path = $root . '/migrations/' . $basename;
-            if (!is_file($path)) {
-                continue;
+        $catchup = $root . '/migrations/146_branch_ops_branch_id_catchup.sql';
+        if (is_file($catchup)) {
+            $sql = file_get_contents($catchup);
+            if ($sql !== false && trim($sql) !== '') {
+                $log[] = 'Applying idempotent branch ops catchup (146)…';
+                $this->execSqlFile($pdo, $sql);
+                if (!$this->isApplied($pdo, '146_branch_ops_branch_id_catchup.sql')) {
+                    $this->markApplied($pdo, '146_branch_ops_branch_id_catchup.sql');
+                }
+                $log[] = 'Branch ops catchup: done.';
             }
-            $sql = file_get_contents($path);
-            if ($sql === false || trim($sql) === '') {
-                continue;
-            }
-            $this->execSqlFile($pdo, $sql);
-            if (!$this->isApplied($pdo, $basename)) {
-                $this->markApplied($pdo, $basename);
-            }
-            break;
         }
 
         $stillMissing = [];
-        foreach ($required as [$table, $column]) {
+        foreach ([
+            ['rateb_purchase_orders', 'branch_id'],
+            ['rateb_purchase_requests', 'branch_id'],
+        ] as [$table, $column]) {
             if (!$this->pdoColumnExists($pdo, $table, $column)) {
                 $stillMissing[] = $table . '.' . $column;
             }
         }
-        if ($stillMissing === []) {
-            $log[] = 'Branch schema repair: OK.';
-        } else {
+        if ($stillMissing !== []) {
             $log[] = 'Branch schema repair: still missing ' . implode(', ', $stillMissing);
+            $fallback = $root . '/migrations/126_branch_ops_isolation.sql';
+            if (is_file($fallback)) {
+                $sql = file_get_contents($fallback);
+                if ($sql !== false && trim($sql) !== '') {
+                    $log[] = 'Applying fallback 126_branch_ops_isolation.sql…';
+                    $this->execSqlFile($pdo, $sql);
+                }
+            }
         }
 
         return $localLog;

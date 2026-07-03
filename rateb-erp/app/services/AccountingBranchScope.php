@@ -48,7 +48,14 @@ trait AccountingBranchScope
         if (stripos($sql, 'rateb_journal_entries') === false && !preg_match('/\b' . preg_quote($alias, '/') . '\./i', $sql)) {
             return [$sql, $params];
         }
-        return $this->accountingBranch()->appendFilter($sql, $params, $alias, 'branch_id');
+        if (!$this->tableColumnExists('rateb_journal_entries', 'branch_id')) {
+            return [$sql, $params];
+        }
+        $safeAlias = preg_replace('/[^a-z_]/', '', $alias);
+        if ($safeAlias !== '' && !preg_match('/\b' . preg_quote($safeAlias, '/') . '\b/i', $sql)) {
+            return [$sql, $params];
+        }
+        return $this->accountingBranch()->appendFilter($sql, $params, $safeAlias, 'branch_id');
     }
 
     /**
@@ -163,6 +170,12 @@ trait AccountingBranchScope
     protected function scopeOptionalJournalEntrySql(string $sql, array $params, string $alias = 'je', ?int $branchId = null): array
     {
         $safe = preg_replace('/[^a-z_]/', '', $alias);
+        if ($safe !== '' && !preg_match('/\b' . preg_quote($safe, '/') . '\b/i', $sql)) {
+            return [$sql, $params];
+        }
+        if (!$this->tableColumnExists('rateb_journal_entries', 'branch_id')) {
+            return [$sql, $params];
+        }
         if ($branchId !== null && $branchId > 0) {
             $key = '_oje_bf_single';
             return [$sql . ' AND (' . $safe . '.id IS NULL OR ' . $safe . '.branch_id = :' . $key . ')', array_merge($params, [$key => $branchId])];

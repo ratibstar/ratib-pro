@@ -129,24 +129,12 @@ abstract class Model
         return [" AND {$col} = :admin_company_filter", ['admin_company_filter' => $filterId]];
     }
 
-    /** @var array<string, bool> */
-    private static array $branchColumnCache = [];
-
     protected function tableHasBranchColumn(): bool
     {
         if (!$this->branchScoped) {
             return false;
         }
-        $db = \Rateb\App\Core\Database::resolvedDatabaseName();
-        $key = $db . '|' . $this->table . '.' . $this->branchColumn;
-        if (array_key_exists($key, self::$branchColumnCache)) {
-            return self::$branchColumnCache[$key];
-        }
-        self::$branchColumnCache[$key] = \Rateb\App\Core\Database::tableHasColumn(
-            $this->table,
-            $this->branchColumn
-        );
-        return self::$branchColumnCache[$key];
+        return \Rateb\App\Core\Database::tableHasColumn($this->table, $this->branchColumn);
     }
 
     /** @return array{0:string,1:array<string,mixed>} */

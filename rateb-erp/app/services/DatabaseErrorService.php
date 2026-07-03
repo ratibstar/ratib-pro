@@ -167,6 +167,11 @@ final class DatabaseErrorService
             } catch (\Throwable $ignored) {
             }
         }
+        if ($schema) {
+            echo '<p class="small text-muted mt-2">'
+                . htmlspecialchars(self::t('db_error_clear_browser_cache'), ENT_QUOTES, 'UTF-8')
+                . '</p>';
+        }
         echo '<div class="actions">';
         echo '<a class="btn btn-primary btn-sm" href="' . htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('dashboard'), ENT_QUOTES, 'UTF-8') . '</a>';
         if ($schema && $migrateUrl !== '') {

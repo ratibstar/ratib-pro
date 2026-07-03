@@ -1300,6 +1300,7 @@ return [
     'run_erp_migrations' => 'Run ERP migrations',
     'agency_erp_migrate_from_platform' => 'On an agency host: run migrations from rateb.sa → Push agency updates (select the agency, then run database migrations).',
     'db_error_active_database' => 'Connected database',
+    'db_error_clear_browser_cache' => 'If the database is correct: clear browser cache (Ctrl+Shift+R) or try a private window.',
     'cost_centers' => 'Cost centers',
     'cost_center' => 'Cost center',
     'cost_center_report' => 'Cost center report',

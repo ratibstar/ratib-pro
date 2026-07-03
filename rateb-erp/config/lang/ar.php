@@ -1300,6 +1300,7 @@ return [
     'run_erp_migrations' => 'تشغيل ترحيلات ERP',
     'agency_erp_migrate_from_platform' => 'على نطاق الوكالة: شغّل الترحيلات من rateb.sa ← رفع التحديثات للوكالات (اختر الوكالة ثم «ترحيل قاعدة البيانات»).',
     'db_error_active_database' => 'قاعدة البيانات المتصلة',
+    'db_error_clear_browser_cache' => 'إذا كانت القاعدة صحيحة: امسح كاش المتصفح (Ctrl+Shift+R) أو جرّب نافذة خاصة.',
     'cost_centers' => 'مراكز التكلفة',
     'cost_center' => 'مركز التكلفة',
     'cost_center_report' => 'تقرير مراكز التكلفة',

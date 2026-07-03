@@ -185,6 +185,10 @@ final class AgencyErpMigrationService
             }
         }
 
+        if ($success > 0 && function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
+
         return [
             'success' => $failed === 0,
             'total' => count($results),
