@@ -3,6 +3,8 @@
 /** @var array<string, string> $moduleCatalog */
 /** @var array<int, string> $selectedModules */
 /** @var array<int, string> $tierPresets */
+use Rateb\App\Models\Plan;
+
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $tierPresets = $tierPresets ?? ['starter', 'professional', 'enterprise'];
