@@ -7,6 +7,7 @@ use App\Accounting\Infrastructure\AccountingConnectionFactory;
 
 /**
  * Persistence for materialized financial snapshot tables (Phase 4).
+ * All snapshot rows use: company_id, branch_id, period_from, period_to, payload, created_at.
  */
 final class ProjectionRepository
 {
@@ -35,18 +36,43 @@ final class ProjectionRepository
         }
     }
 
+    public function isPeriodHardClosed(int $companyId, string $periodFrom, string $periodTo, ?int $branchId = null): bool
+    {
+        return $this->periodHasStatus($companyId, $periodFrom, $periodTo, 'hard_closed', $branchId);
+    }
+
+    public function isPeriodSoftClosed(int $companyId, string $periodFrom, string $periodTo, ?int $branchId = null): bool
+    {
+        return $this->periodHasStatus($companyId, $periodFrom, $periodTo, 'soft_closed', $branchId)
+            || $this->isPeriodHardClosed($companyId, $periodFrom, $periodTo, $branchId);
+    }
+
+    /** @deprecated alias — hard close locks snapshot writes */
     public function isPeriodClosed(int $companyId, string $periodStart, string $periodEnd): bool
+    {
+        return $this->isPeriodHardClosed($companyId, $periodStart, $periodEnd);
+    }
+
+    private function periodHasStatus(int $companyId, string $periodFrom, string $periodTo, string $status, ?int $branchId): bool
     {
         $pdo = $this->db();
         if ($pdo === null || !$this->tableExists('accounting_period_closures')) {
             return false;
         }
 
-        $stmt = $pdo->prepare(
-            'SELECT 1 FROM accounting_period_closures
-             WHERE company_id = :cid AND period_start = :ps AND period_end = :pe AND status = \'closed\' LIMIT 1'
-        );
-        $stmt->execute(['cid' => $companyId, 'ps' => $periodStart, 'pe' => $periodEnd]);
+        $sql = 'SELECT 1 FROM accounting_period_closures
+                WHERE company_id = :cid AND period_from = :pf AND period_to = :pt AND status = :st';
+        $params = ['cid' => $companyId, 'pf' => $periodFrom, 'pt' => $periodTo, 'st' => $status];
+        if ($branchId !== null) {
+            $sql .= ' AND branch_id = :bid';
+            $params['bid'] = $branchId;
+        } else {
+            $sql .= ' AND branch_id IS NULL';
+        }
+        $sql .= ' LIMIT 1';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
 
         return (bool) $stmt->fetchColumn();
     }
@@ -54,148 +80,45 @@ final class ProjectionRepository
     /**
      * @param list<array<string, mixed>> $rows
      */
-    public function replaceTrialBalanceSnapshots(
-        int $companyId,
-        ?int $branchId,
-        string $periodStart,
-        string $periodEnd,
-        array $rows
-    ): int {
-        return $this->replaceSnapshotBatch(
-            'accounting_trial_balance_snapshots',
-            $companyId,
-            $branchId,
-            $periodStart,
-            $periodEnd,
-            $rows,
-            static function (array $r) use ($companyId, $branchId, $periodStart, $periodEnd): array {
-                $code = (string) ($r['account_code'] ?? '');
-                $key = implode('|', [$companyId, $branchId ?? 0, $periodStart, $periodEnd, 'tb', $code]);
-
-                return [
-                    'snapshot_key' => $key,
-                    'account_code' => $code,
-                    'account_name' => $r['account_name'] ?? null,
-                    'debit_total' => $r['debit'] ?? $r['debit_total'] ?? 0,
-                    'credit_total' => $r['credit'] ?? $r['credit_total'] ?? 0,
-                    'balance' => $r['balance'] ?? (($r['debit'] ?? 0) - ($r['credit'] ?? 0)),
-                    'source_systems' => json_encode($r['source_systems'] ?? []),
-                ];
-            }
-        );
+    public function replaceTrialBalanceSnapshots(int $companyId, ?int $branchId, string $periodFrom, string $periodTo, array $rows): int
+    {
+        return $this->replacePayloadSnapshots('accounting_trial_balance_snapshots', $companyId, $branchId, $periodFrom, $periodTo, $rows, 'tb');
     }
 
     /**
      * @param list<array<string, mixed>> $rows
      */
-    public function replaceBalanceSheetSnapshots(
-        int $companyId,
-        ?int $branchId,
-        string $periodStart,
-        string $periodEnd,
-        array $rows
-    ): int {
-        return $this->replaceSnapshotBatch(
-            'accounting_balance_sheet_snapshots',
-            $companyId,
-            $branchId,
-            $periodStart,
-            $periodEnd,
-            $rows,
-            static function (array $r) use ($companyId, $branchId, $periodStart, $periodEnd): array {
-                $code = (string) ($r['account_code'] ?? '');
-                $section = (string) ($r['section'] ?? 'asset');
-                $key = implode('|', [$companyId, $branchId ?? 0, $periodStart, $periodEnd, 'bs', $section, $code]);
-
-                return [
-                    'snapshot_key' => $key,
-                    'section' => $section,
-                    'account_code' => $code,
-                    'account_name' => $r['account_name'] ?? null,
-                    'amount' => $r['amount'] ?? 0,
-                    'source_systems' => json_encode($r['source_systems'] ?? []),
-                ];
-            }
-        );
+    public function replaceBalanceSheetSnapshots(int $companyId, ?int $branchId, string $periodFrom, string $periodTo, array $rows): int
+    {
+        return $this->replacePayloadSnapshots('accounting_balance_sheet_snapshots', $companyId, $branchId, $periodFrom, $periodTo, $rows, 'bs');
     }
 
     /**
      * @param list<array<string, mixed>> $rows
      */
-    public function replaceProfitLossSnapshots(
-        int $companyId,
-        ?int $branchId,
-        string $periodStart,
-        string $periodEnd,
-        array $rows
-    ): int {
-        return $this->replaceSnapshotBatch(
-            'accounting_profit_loss_snapshots',
-            $companyId,
-            $branchId,
-            $periodStart,
-            $periodEnd,
-            $rows,
-            static function (array $r) use ($companyId, $branchId, $periodStart, $periodEnd): array {
-                $code = (string) ($r['account_code'] ?? '');
-                $cat = (string) ($r['category'] ?? 'expense');
-                $key = implode('|', [$companyId, $branchId ?? 0, $periodStart, $periodEnd, 'pl', $cat, $code]);
-
-                return [
-                    'snapshot_key' => $key,
-                    'category' => $cat,
-                    'account_code' => $code,
-                    'account_name' => $r['account_name'] ?? null,
-                    'amount' => $r['amount'] ?? 0,
-                    'source_systems' => json_encode($r['source_systems'] ?? []),
-                ];
-            }
-        );
+    public function replaceProfitLossSnapshots(int $companyId, ?int $branchId, string $periodFrom, string $periodTo, array $rows): int
+    {
+        return $this->replacePayloadSnapshots('accounting_profit_loss_snapshots', $companyId, $branchId, $periodFrom, $periodTo, $rows, 'pl');
     }
 
     /**
      * @param list<array<string, mixed>> $rows
      */
-    public function replaceCashflowSnapshots(
-        int $companyId,
-        ?int $branchId,
-        string $periodStart,
-        string $periodEnd,
-        array $rows
-    ): int {
-        return $this->replaceSnapshotBatch(
-            'accounting_cashflow_snapshots',
-            $companyId,
-            $branchId,
-            $periodStart,
-            $periodEnd,
-            $rows,
-            static function (array $r) use ($companyId, $branchId, $periodStart, $periodEnd): array {
-                $cat = (string) ($r['category'] ?? 'operating');
-                $code = (string) ($r['account_code'] ?? $cat);
-                $key = implode('|', [$companyId, $branchId ?? 0, $periodStart, $periodEnd, 'cf', $cat, $code]);
-
-                return [
-                    'snapshot_key' => $key,
-                    'category' => $cat,
-                    'account_code' => $r['account_code'] ?? null,
-                    'description' => $r['description'] ?? null,
-                    'amount' => $r['amount'] ?? 0,
-                    'source_systems' => json_encode($r['source_systems'] ?? []),
-                ];
-            }
-        );
+    public function replaceCashflowSnapshots(int $companyId, ?int $branchId, string $periodFrom, string $periodTo, array $rows): int
+    {
+        return $this->replacePayloadSnapshots('accounting_cashflow_snapshots', $companyId, $branchId, $periodFrom, $periodTo, $rows, 'cf');
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param array<string, mixed> $payload
      */
     public function recordPeriodClosure(
         int $companyId,
-        string $periodStart,
-        string $periodEnd,
-        array $meta,
-        string $status = 'closed'
+        string $periodFrom,
+        string $periodTo,
+        array $payload,
+        string $status = 'soft_closed',
+        ?int $branchId = null
     ): bool {
         $pdo = $this->db();
         if ($pdo === null || !$this->tableExists('accounting_period_closures')) {
@@ -203,17 +126,18 @@ final class ProjectionRepository
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO accounting_period_closures (company_id, period_start, period_end, status, snapshot_meta)
-             VALUES (:cid, :ps, :pe, :st, :meta)
-             ON DUPLICATE KEY UPDATE status = VALUES(status), snapshot_meta = VALUES(snapshot_meta)'
+            'INSERT INTO accounting_period_closures (company_id, branch_id, period_from, period_to, status, payload)
+             VALUES (:cid, :bid, :pf, :pt, :st, :payload)
+             ON DUPLICATE KEY UPDATE status = VALUES(status), payload = VALUES(payload)'
         );
 
         return $stmt->execute([
             'cid' => $companyId,
-            'ps' => $periodStart,
-            'pe' => $periodEnd,
+            'bid' => $branchId,
+            'pf' => $periodFrom,
+            'pt' => $periodTo,
             'st' => $status,
-            'meta' => json_encode($meta, JSON_UNESCAPED_UNICODE),
+            'payload' => json_encode($payload, JSON_UNESCAPED_UNICODE),
         ]);
     }
 
@@ -222,9 +146,10 @@ final class ProjectionRepository
      */
     public function saveDriftReport(
         ?int $companyId,
-        ?string $periodStart,
-        ?string $periodEnd,
-        array $findings
+        ?string $periodFrom,
+        ?string $periodTo,
+        array $findings,
+        ?int $branchId = null
     ): ?int {
         $pdo = $this->db();
         if ($pdo === null || !$this->tableExists('accounting_drift_reports')) {
@@ -232,74 +157,97 @@ final class ProjectionRepository
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO accounting_drift_reports
-            (company_id, period_start, period_end, status, missing_entries, duplicate_entries, mismatched_amounts, orphan_transactions, summary)
-            VALUES (:cid, :ps, :pe, :st, :miss, :dup, :mis, :orph, :sum)'
+            'INSERT INTO accounting_drift_reports (company_id, branch_id, period_from, period_to, payload)
+             VALUES (:cid, :bid, :pf, :pt, :payload)'
         );
         $stmt->execute([
             'cid' => $companyId,
-            'ps' => $periodStart,
-            'pe' => $periodEnd,
-            'st' => 'completed',
-            'miss' => json_encode($findings['missing_entries'] ?? []),
-            'dup' => json_encode($findings['duplicate_entries'] ?? []),
-            'mis' => json_encode($findings['mismatched_amounts'] ?? []),
-            'orph' => json_encode($findings['orphan_transactions'] ?? []),
-            'sum' => json_encode($findings['summary'] ?? []),
+            'bid' => $branchId,
+            'pf' => $periodFrom,
+            'pt' => $periodTo,
+            'payload' => json_encode($findings, JSON_UNESCAPED_UNICODE),
         ]);
 
         return (int) $pdo->lastInsertId();
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
-     * @param callable(array): array $mapRow
+     * @return list<array<string, mixed>>
      */
-    private function replaceSnapshotBatch(
+    public function fetchSnapshotPayloads(string $table, int $companyId, string $periodFrom, string $periodTo, ?int $branchId = null): array
+    {
+        $pdo = $this->db();
+        if ($pdo === null || !$this->tableExists($table)) {
+            return [];
+        }
+
+        $sql = "SELECT payload FROM {$table} WHERE company_id = :cid AND period_from = :pf AND period_to = :pt";
+        $params = ['cid' => $companyId, 'pf' => $periodFrom, 'pt' => $periodTo];
+        if ($branchId !== null) {
+            $sql .= ' AND branch_id = :bid';
+            $params['bid'] = $branchId;
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $out = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $decoded = json_decode((string) ($row['payload'] ?? '{}'), true);
+            if (is_array($decoded)) {
+                $out[] = $decoded;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function replacePayloadSnapshots(
         string $table,
         int $companyId,
         ?int $branchId,
-        string $periodStart,
-        string $periodEnd,
+        string $periodFrom,
+        string $periodTo,
         array $rows,
-        callable $mapRow
+        string $prefix
     ): int {
         $pdo = $this->db();
         if ($pdo === null || !$this->tableExists($table)) {
             return 0;
         }
 
-        if ($this->isPeriodClosed($companyId, $periodStart, $periodEnd)) {
+        if ($this->isPeriodHardClosed($companyId, $periodFrom, $periodTo, $branchId)) {
             return 0;
         }
 
         $pdo->beginTransaction();
         try {
-            $del = $pdo->prepare(
-                "DELETE FROM {$table} WHERE company_id = :cid AND period_start = :ps AND period_end = :pe"
-                . ($branchId !== null ? ' AND branch_id = :bid' : ' AND branch_id IS NULL')
-            );
-            $delParams = ['cid' => $companyId, 'ps' => $periodStart, 'pe' => $periodEnd];
+            $delSql = "DELETE FROM {$table} WHERE company_id = :cid AND period_from = :pf AND period_to = :pt"
+                . ($branchId !== null ? ' AND branch_id = :bid' : ' AND branch_id IS NULL');
+            $delParams = ['cid' => $companyId, 'pf' => $periodFrom, 'pt' => $periodTo];
             if ($branchId !== null) {
                 $delParams['bid'] = $branchId;
             }
-            $del->execute($delParams);
+            $pdo->prepare($delSql)->execute($delParams);
+
+            $stmt = $pdo->prepare(
+                "INSERT INTO {$table} (company_id, branch_id, period_from, period_to, payload, snapshot_key)
+                 VALUES (:cid, :bid, :pf, :pt, :payload, :key)"
+            );
 
             $inserted = 0;
-            foreach ($rows as $row) {
-                $mapped = $mapRow($row);
-                $cols = array_merge([
-                    'company_id' => $companyId,
-                    'branch_id' => $branchId,
-                    'period_start' => $periodStart,
-                    'period_end' => $periodEnd,
-                ], $mapped);
-
-                $fields = array_keys($cols);
-                $placeholders = array_map(static fn (string $f): string => ':' . $f, $fields);
-                $sql = "INSERT INTO {$table} (" . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')';
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($cols);
+            foreach ($rows as $i => $row) {
+                $code = (string) ($row['account_code'] ?? $row['category'] ?? "row{$i}");
+                $key = implode('|', [$companyId, $branchId ?? 0, $periodFrom, $periodTo, $prefix, $code, $i]);
+                $stmt->execute([
+                    'cid' => $companyId,
+                    'bid' => $branchId,
+                    'pf' => $periodFrom,
+                    'pt' => $periodTo,
+                    'payload' => json_encode($row, JSON_UNESCAPED_UNICODE),
+                    'key' => substr($key, 0, 191),
+                ]);
                 $inserted++;
             }
 
@@ -308,9 +256,40 @@ final class ProjectionRepository
             return $inserted;
         } catch (\Throwable $e) {
             $pdo->rollBack();
-            error_log("ProjectionRepository::replaceSnapshotBatch failed: {$e->getMessage()}");
+            error_log("ProjectionRepository::replacePayloadSnapshots failed: {$e->getMessage()}");
 
             return 0;
         }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    public function insertConsolidatedRows(string $table, int $companyId, ?int $branchId, string $periodFrom, string $periodTo, string $runId, array $rows): int
+    {
+        $pdo = $this->db();
+        if ($pdo === null || !$this->tableExists($table)) {
+            return 0;
+        }
+
+        $stmt = $pdo->prepare(
+            "INSERT INTO {$table} (company_id, branch_id, period_from, period_to, payload, consolidation_run_id)
+             VALUES (:cid, :bid, :pf, :pt, :payload, :run)"
+        );
+
+        $n = 0;
+        foreach ($rows as $row) {
+            $stmt->execute([
+                'cid' => $companyId,
+                'bid' => $branchId,
+                'pf' => $periodFrom,
+                'pt' => $periodTo,
+                'payload' => json_encode($row, JSON_UNESCAPED_UNICODE),
+                'run' => $runId,
+            ]);
+            $n++;
+        }
+
+        return $n;
     }
 }

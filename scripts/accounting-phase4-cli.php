@@ -5,8 +5,8 @@ declare(strict_types=1);
  * Phase 4 CLI — Enterprise Financial Projection & Consolidation
  *
  * Usage:
- *   php scripts/accounting-phase4-cli.php rebuild --company=12 --from=2026-01-01 --to=2026-01-31
- *   php scripts/accounting-phase4-cli.php closePeriod --company=12 --from=2026-01-01 --to=2026-01-31
+ *   php scripts/accounting-phase4-cli.php rebuild --company=12 --from=2026-01-01 --to=2026-01-31 [--branch=3]
+ *   php scripts/accounting-phase4-cli.php closePeriod --company=12 --from=2026-01-01 --to=2026-01-31 [--mode=soft|hard]
  *   php scripts/accounting-phase4-cli.php runConsolidation --company=12 --from=2026-01-01 --to=2026-01-31
  *   php scripts/accounting-phase4-cli.php detectDrift --company=12 --from=2026-01-01 --to=2026-01-31
  */
@@ -34,23 +34,29 @@ foreach (array_slice($args, 2) as $arg) {
 $companyId = (int) ($params['company'] ?? 0);
 $from = (string) ($params['from'] ?? date('Y-m-01'));
 $to = (string) ($params['to'] ?? date('Y-m-t'));
+$branchId = isset($params['branch']) ? (int) $params['branch'] : null;
+$mode = strtolower((string) ($params['mode'] ?? 'soft'));
 
 switch ($command) {
     case 'rebuild':
-        $result = (new AccountingSnapshotRebuilder())->rebuild($companyId, $from, $to);
+        $result = (new AccountingSnapshotRebuilder())->rebuild($companyId, $from, $to, $branchId);
         echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
         exit($result['ok'] ? 0 : 1);
 
     case 'closePeriod':
-        $result = (new AccountingPeriodCloser())->closePeriod($companyId, $from, $to);
+        $closer = new AccountingPeriodCloser();
+        $result = $mode === 'hard'
+            ? $closer->hardClosePeriod($companyId, $from, $to, $branchId)
+            : $closer->softClosePeriod($companyId, $from, $to, $branchId);
         echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
         exit($result['ok'] ? 0 : 1);
 
     case 'runConsolidation':
         $result = (new AccountingConsolidationEngine())->runConsolidation([
             'company_id' => $companyId,
-            'period_start' => $from,
-            'period_end' => $to,
+            'branch_id' => $branchId,
+            'period_from' => $from,
+            'period_to' => $to,
         ]);
         echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
         exit(0);
@@ -58,14 +64,15 @@ switch ($command) {
     case 'detectDrift':
         $report = (new AccountingDriftDetector())->detectDrift([
             'company_id' => $companyId,
-            'period_start' => $from,
-            'period_end' => $to,
+            'branch_id' => $branchId,
+            'period_from' => $from,
+            'period_to' => $to,
         ]);
         echo json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
         exit($report->hasDrift() ? 2 : 0);
 
     default:
         echo "Commands: rebuild | closePeriod | runConsolidation | detectDrift\n";
-        echo "Options: --company=ID --from=YYYY-MM-DD --to=YYYY-MM-DD\n";
+        echo "Options: --company=ID --from=YYYY-MM-DD --to=YYYY-MM-DD [--branch=ID] [--mode=soft|hard]\n";
         exit(1);
 }

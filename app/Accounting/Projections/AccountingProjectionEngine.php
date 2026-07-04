@@ -25,7 +25,7 @@ final class AccountingProjectionEngine
     }
 
     /**
-     * @param array<string, mixed> $context company_id, branch_id, period_start, period_end
+     * @param array<string, mixed> $context company_id, branch_id?, period_from, period_to
      * @return array<string, int>
      */
     public function projectPeriod(array $context): array
@@ -36,25 +36,25 @@ final class AccountingProjectionEngine
 
         $companyId = (int) ($context['company_id'] ?? 0);
         $branchId = isset($context['branch_id']) ? (int) $context['branch_id'] : null;
-        $periodStart = (string) ($context['period_start'] ?? date('Y-m-01'));
-        $periodEnd = (string) ($context['period_end'] ?? date('Y-m-d'));
+        $periodFrom = (string) ($context['period_from'] ?? $context['period_start'] ?? date('Y-m-01'));
+        $periodTo = (string) ($context['period_to'] ?? $context['period_end'] ?? date('Y-m-d'));
 
         if ($companyId < 1) {
             return ['trial_balance' => 0, 'balance_sheet' => 0, 'profit_loss' => 0, 'cashflow' => 0];
         }
 
-        if ($this->repository->isPeriodClosed($companyId, $periodStart, $periodEnd)) {
+        if ($this->repository->isPeriodHardClosed($companyId, $periodFrom, $periodTo, $branchId)) {
             return ['trial_balance' => 0, 'balance_sheet' => 0, 'profit_loss' => 0, 'cashflow' => 0, 'locked' => 1];
         }
 
         $filters = [
             'company_id' => $companyId,
             'branch_id' => $branchId,
-            'from_date' => $periodStart,
-            'to_date' => $periodEnd,
+            'from_date' => $periodFrom,
+            'to_date' => $periodTo,
         ];
 
-        $eventUuids = $this->collectEventUuids($companyId, $periodStart, $periodEnd);
+        $eventUuids = $this->collectEventUuids($companyId, $periodFrom, $periodTo);
 
         $tb = $this->reports->trialBalance($filters);
         $pl = $this->reports->profitAndLoss($filters);
@@ -67,10 +67,10 @@ final class AccountingProjectionEngine
         $cfRows = $this->mapCashflowRows($cf['rows'] ?? [], $eventUuids);
 
         return [
-            'trial_balance' => $this->repository->replaceTrialBalanceSnapshots($companyId, $branchId, $periodStart, $periodEnd, $tbRows),
-            'balance_sheet' => $this->repository->replaceBalanceSheetSnapshots($companyId, $branchId, $periodStart, $periodEnd, $bsRows),
-            'profit_loss' => $this->repository->replaceProfitLossSnapshots($companyId, $branchId, $periodStart, $periodEnd, $plRows),
-            'cashflow' => $this->repository->replaceCashflowSnapshots($companyId, $branchId, $periodStart, $periodEnd, $cfRows),
+            'trial_balance' => $this->repository->replaceTrialBalanceSnapshots($companyId, $branchId, $periodFrom, $periodTo, $tbRows),
+            'balance_sheet' => $this->repository->replaceBalanceSheetSnapshots($companyId, $branchId, $periodFrom, $periodTo, $bsRows),
+            'profit_loss' => $this->repository->replaceProfitLossSnapshots($companyId, $branchId, $periodFrom, $periodTo, $plRows),
+            'cashflow' => $this->repository->replaceCashflowSnapshots($companyId, $branchId, $periodFrom, $periodTo, $cfRows),
         ];
     }
 
@@ -91,8 +91,8 @@ final class AccountingProjectionEngine
         }
 
         $entryDate = (string) ($event['metadata']['entry_date'] ?? date('Y-m-d'));
-        $periodStart = date('Y-m-01', strtotime($entryDate) ?: time());
-        $periodEnd = date('Y-m-t', strtotime($entryDate) ?: time());
+        $periodFrom = date('Y-m-01', strtotime($entryDate) ?: time());
+        $periodTo = date('Y-m-t', strtotime($entryDate) ?: time());
         $branchId = array_key_exists('branch_id', $event) && $event['branch_id'] !== null
             ? (int) $event['branch_id']
             : null;
@@ -101,8 +101,8 @@ final class AccountingProjectionEngine
             $this->projectPeriod([
                 'company_id' => $companyId,
                 'branch_id' => $branchId,
-                'period_start' => $periodStart,
-                'period_end' => $periodEnd,
+                'period_from' => $periodFrom,
+                'period_to' => $periodTo,
                 'trigger_event_uuid' => $eventUuid,
             ]);
         } catch (\Throwable $e) {
