@@ -71,26 +71,196 @@ final class PlatformCompanyBranchService
         return null;
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /** @deprecated Use listBranches() — returns items only for legacy callers. */
     public static function companyBranches(int $companyId): array
     {
+        $result = self::listBranches($companyId, ['per_page' => 500, 'page' => 1, 'archive' => 'all']);
+
+        return $result['items'];
+    }
+
+    /**
+     * Single production branch listing (search, filters, sort, pagination).
+     *
+     * @param array<string, mixed> $opts q, status, branch_type, archive, sort, dir, page, per_page
+     * @return array{items:array<int,array<string,mixed>>,total:int,page:int,per_page:int,pages:int}
+     */
+    public static function listBranches(int $companyId, array $opts = []): array
+    {
         if ($companyId < 1) {
-            return [];
+            return ['items' => [], 'total' => 0, 'page' => 1, 'per_page' => 25, 'pages' => 1];
         }
         self::bootstrapSuperAdmin();
+        $normalized = self::normalizeListOptions($opts);
+        [$where, $params] = self::buildListWhere($companyId, $normalized);
+        $orderSql = self::buildListOrderSql($normalized);
         $pdo = Database::connection();
-        $stmt = $pdo->prepare(
-            'SELECT b.id, b.name, b.code, b.status, b.is_main, b.address, b.phone, b.email, b.map_url, b.company_id,
-                    c.name AS company_name, c.slug AS company_slug
-             FROM rateb_branches b
-             INNER JOIN rateb_companies c ON c.id = b.company_id
-             WHERE b.company_id = :cid
-             ORDER BY b.is_main DESC, b.name ASC'
+        $countStmt = $pdo->prepare(
+            'SELECT COUNT(*) AS c FROM rateb_branches b WHERE ' . $where
         );
-        $stmt->execute(['cid' => $companyId]);
+        $countStmt->execute($params);
+        $total = (int) ($countStmt->fetchColumn() ?: 0);
+        $perPage = (int) $normalized['per_page'];
+        $page = (int) $normalized['page'];
+        $pages = $perPage > 0 ? max(1, (int) ceil($total / $perPage)) : 1;
+        if ($page > $pages) {
+            $page = $pages;
+        }
+        $offset = ($page - 1) * $perPage;
+        $archiveCols = BranchService::branchesHaveArchiveColumns()
+            ? 'b.is_archived, b.archived_at,'
+            : '0 AS is_archived, NULL AS archived_at,';
+        $sql = 'SELECT b.id, b.name, b.code, b.status, b.is_main, ' . $archiveCols . '
+                b.address, b.phone, b.email, b.map_url, b.company_id, b.created_at,
+                c.name AS company_name, c.slug AS company_slug
+                FROM rateb_branches b
+                INNER JOIN rateb_companies c ON c.id = b.company_id
+                WHERE ' . $where . ' ORDER BY ' . $orderSql
+            . ' LIMIT ' . $perPage . ' OFFSET ' . $offset;
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        return is_array($rows) ? $rows : [];
+        return [
+            'items' => is_array($rows) ? $rows : [],
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'pages' => $pages,
+        ];
+    }
+
+    /** @param array<string, mixed> $input */
+    public static function listOptionsFromRequest(array $input): array
+    {
+        return [
+            'q' => trim((string) ($input['q'] ?? '')),
+            'status' => trim((string) ($input['status'] ?? '')),
+            'branch_type' => trim((string) ($input['branch_type'] ?? '')),
+            'archive' => trim((string) ($input['archive'] ?? '')),
+            'sort' => trim((string) ($input['sort'] ?? '')),
+            'dir' => trim((string) ($input['dir'] ?? '')),
+            'page' => (int) ($input['page'] ?? 1),
+            'per_page' => (int) ($input['per_page'] ?? 0),
+        ];
+    }
+
+    /** @return array{ok:bool, error?:string, noop?:bool} */
+    public static function archiveBranch(int $companyId, int $branchId): array
+    {
+        if ($companyId < 1 || $branchId < 1) {
+            return ['ok' => false, 'error' => 'invalid_request'];
+        }
+        if (!BranchService::branchesHaveArchiveColumns()) {
+            return ['ok' => false, 'error' => 'db_schema_outdated'];
+        }
+        self::bootstrapSuperAdmin();
+        TenantContext::setCompanyId($companyId);
+        $row = self::loadBranchForCompany($companyId, $branchId);
+        if (!$row) {
+            return ['ok' => false, 'error' => 'record_not_found'];
+        }
+        if ((int) ($row['is_archived'] ?? 0) === 1) {
+            return ['ok' => true, 'noop' => true];
+        }
+        $err = (new BranchService())->validateBranchArchiveForSave($companyId, $row);
+        if ($err !== null) {
+            return ['ok' => false, 'error' => $err];
+        }
+        $now = date('Y-m-d H:i:s');
+        (new Branch())->update($branchId, ['is_archived' => 1, 'archived_at' => $now]);
+        (new AuditService())->log('archive', 'branches', $branchId, [
+            'branch_id' => $branchId,
+            'company_id' => $companyId,
+            'previous_status' => (string) ($row['status'] ?? ''),
+            'is_archived' => 1,
+            'archived_at' => $now,
+            'actor_user_id' => $_SESSION['rateb_user_id'] ?? ($_SESSION['control_user_id'] ?? null),
+            'timestamp' => date('c'),
+        ]);
+
+        return ['ok' => true];
+    }
+
+    /** @return array{ok:bool, error?:string, noop?:bool} */
+    public static function restoreBranch(int $companyId, int $branchId): array
+    {
+        if ($companyId < 1 || $branchId < 1) {
+            return ['ok' => false, 'error' => 'invalid_request'];
+        }
+        if (!BranchService::branchesHaveArchiveColumns()) {
+            return ['ok' => false, 'error' => 'db_schema_outdated'];
+        }
+        self::bootstrapSuperAdmin();
+        TenantContext::setCompanyId($companyId);
+        $row = self::loadBranchForCompany($companyId, $branchId);
+        if (!$row) {
+            return ['ok' => false, 'error' => 'record_not_found'];
+        }
+        if ((int) ($row['is_archived'] ?? 0) !== 1) {
+            return ['ok' => true, 'noop' => true];
+        }
+        (new Branch())->update($branchId, ['is_archived' => 0, 'archived_at' => null]);
+        (new AuditService())->log('restore', 'branches', $branchId, [
+            'branch_id' => $branchId,
+            'company_id' => $companyId,
+            'previous_status' => (string) ($row['status'] ?? ''),
+            'is_archived' => 0,
+            'actor_user_id' => $_SESSION['rateb_user_id'] ?? ($_SESSION['control_user_id'] ?? null),
+            'timestamp' => date('c'),
+        ]);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * @param array<int, int|string> $branchIds
+     * @return array{ok:bool, success:int, failed:int, errors:array<int,string>}
+     */
+    public static function bulkBranchAction(int $companyId, array $branchIds, string $action): array
+    {
+        $action = strtolower(trim($action));
+        $allowed = ['archive', 'restore', 'enable', 'disable'];
+        if ($companyId < 1 || !in_array($action, $allowed, true)) {
+            return ['ok' => false, 'success' => 0, 'failed' => 0, 'errors' => ['invalid_request']];
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', $branchIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return ['ok' => false, 'success' => 0, 'failed' => 0, 'errors' => ['bulk_none_selected']];
+        }
+        $success = 0;
+        $failed = 0;
+        $errors = [];
+        foreach ($ids as $branchId) {
+            $result = match ($action) {
+                'archive' => self::archiveBranch($companyId, $branchId),
+                'restore' => self::restoreBranch($companyId, $branchId),
+                'enable' => self::setBranchStatus($companyId, $branchId, 'active'),
+                'disable' => self::setBranchStatus($companyId, $branchId, 'inactive'),
+                default => ['ok' => false, 'error' => 'invalid_request'],
+            };
+            if (!empty($result['ok'])) {
+                $success++;
+            } else {
+                $failed++;
+                $err = (string) ($result['error'] ?? 'invalid_request');
+                $errors[$branchId] = $err;
+            }
+        }
+
+        if ($success > 0) {
+            (new AuditService())->log('bulk_' . $action, 'branches', $companyId, [
+                'company_id' => $companyId,
+                'action' => $action,
+                'branch_ids' => $ids,
+                'success' => $success,
+                'failed' => $failed,
+                'actor_user_id' => $_SESSION['rateb_user_id'] ?? ($_SESSION['control_user_id'] ?? null),
+                'timestamp' => date('c'),
+            ]);
+        }
+
+        return ['ok' => $failed === 0, 'success' => $success, 'failed' => $failed, 'errors' => $errors];
     }
 
     public static function setBranchLimit(int $companyId, int $limit): bool
@@ -178,12 +348,12 @@ final class PlatformCompanyBranchService
         }
         self::bootstrapSuperAdmin();
         TenantContext::setCompanyId($companyId);
-        $row = (new Branch())->queryOne(
-            'SELECT id, status FROM rateb_branches WHERE id = :id AND company_id = :cid LIMIT 1',
-            ['id' => $branchId, 'cid' => $companyId]
-        );
+        $row = self::loadBranchForCompany($companyId, $branchId);
         if (!$row) {
             return ['ok' => false, 'error' => 'record_not_found'];
+        }
+        if (BranchService::branchesHaveArchiveColumns() && (int) ($row['is_archived'] ?? 0) === 1) {
+            return ['ok' => false, 'error' => 'branch_archived'];
         }
         $current = (string) ($row['status'] ?? 'active');
         if ($current === $status) {
@@ -220,6 +390,9 @@ final class PlatformCompanyBranchService
         );
         if (!$row) {
             return ['ok' => false, 'error' => 'record_not_found'];
+        }
+        if (BranchService::branchesHaveArchiveColumns() && (int) ($row['is_archived'] ?? 0) === 1) {
+            return ['ok' => false, 'error' => 'branch_archived'];
         }
         $input = self::whitelistBranchUpdateData($data);
         $svc = new BranchService();
@@ -319,5 +492,96 @@ final class PlatformCompanyBranchService
     private static function bootstrapSuperAdmin(): void
     {
         TenantContext::setSuperAdmin(true);
+    }
+
+    /** @return array<string, mixed>|null */
+    private static function loadBranchForCompany(int $companyId, int $branchId): ?array
+    {
+        return (new Branch())->queryOne(
+            'SELECT * FROM rateb_branches WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $branchId, 'cid' => $companyId]
+        ) ?: null;
+    }
+
+    /** @param array<string, mixed> $opts @return array<string, mixed> */
+    private static function normalizeListOptions(array $opts): array
+    {
+        $defaultPerPage = function_exists('rateb_list_per_page') ? rateb_list_per_page() : 25;
+        $perPage = (int) ($opts['per_page'] ?? 0);
+        if ($perPage < 1) {
+            $perPage = $defaultPerPage;
+        }
+        $perPage = max(5, min(100, $perPage));
+        $page = max(1, (int) ($opts['page'] ?? 1));
+        $sort = (string) ($opts['sort'] ?? 'name');
+        if (!in_array($sort, ['name', 'code', 'status', 'created_at'], true)) {
+            $sort = 'name';
+        }
+        $dir = strtolower((string) ($opts['dir'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
+
+        return [
+            'q' => trim((string) ($opts['q'] ?? '')),
+            'status' => trim((string) ($opts['status'] ?? '')),
+            'branch_type' => trim((string) ($opts['branch_type'] ?? '')),
+            'archive' => trim((string) ($opts['archive'] ?? '')),
+            'sort' => $sort,
+            'dir' => $dir,
+            'page' => $page,
+            'per_page' => $perPage,
+        ];
+    }
+
+    /** @param array<string, mixed> $opts @return array{0:string,1:array<string,mixed>} */
+    private static function buildListWhere(int $companyId, array $opts): array
+    {
+        $where = 'b.company_id = :cid';
+        $params = ['cid' => $companyId];
+        $archive = (string) ($opts['archive'] ?? '');
+        if (BranchService::branchesHaveArchiveColumns()) {
+            if ($archive === 'archived') {
+                $where .= ' AND b.is_archived = 1';
+            } elseif ($archive !== 'all') {
+                $where .= ' AND b.is_archived = 0';
+            }
+        }
+        $status = (string) ($opts['status'] ?? '');
+        if (in_array($status, ['active', 'inactive'], true)) {
+            $where .= ' AND b.status = :st';
+            $params['st'] = $status;
+        }
+        $branchType = (string) ($opts['branch_type'] ?? '');
+        if ($branchType === 'main') {
+            $where .= ' AND b.is_main = 1';
+        } elseif ($branchType === 'child') {
+            $where .= ' AND b.is_main = 0';
+        }
+        $q = (string) ($opts['q'] ?? '');
+        if ($q !== '') {
+            $like = '%' . $q . '%';
+            $where .= ' AND (b.name LIKE :q OR b.code LIKE :q OR b.phone LIKE :q OR b.email LIKE :q';
+            $params['q'] = $like;
+            if (in_array($q, ['active', 'inactive'], true)) {
+                $where .= ' OR b.status = :qst';
+                $params['qst'] = $q;
+            }
+            $where .= ')';
+        }
+
+        return [$where, $params];
+    }
+
+    /** @param array<string, mixed> $opts */
+    private static function buildListOrderSql(array $opts): string
+    {
+        $sort = (string) ($opts['sort'] ?? 'name');
+        $dir = (string) ($opts['dir'] ?? 'ASC');
+        $col = match ($sort) {
+            'code' => 'b.code',
+            'status' => 'b.status',
+            'created_at' => 'b.created_at',
+            default => 'b.name',
+        };
+
+        return 'b.is_main DESC, ' . $col . ' ' . $dir . ', b.id ASC';
     }
 }

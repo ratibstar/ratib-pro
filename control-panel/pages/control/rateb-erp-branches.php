@@ -116,9 +116,50 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                 : 'تعذّر تحديث الفرع: ' . $err)));
                 $focusCompanyId = $companyId;
             }
+        } elseif ($action === 'archive_branch' && $companyId > 0) {
+            $branchId = (int) ($_POST['branch_id'] ?? 0);
+            $result = control_rateb_erp_branch_archive($companyId, $branchId);
+            if (!empty($result['ok']) && empty($result['noop'])) {
+                $flashOk = 'تم أرشفة الفرع.';
+            }
+            $focusCompanyId = $companyId;
+            if (empty($result['ok'])) {
+                $err = (string) ($result['error'] ?? '');
+                $flashErr = $err === 'branch_main_archive_denied'
+                    ? 'لا يمكن أرشفة الفرع الرئيسي.'
+                    : ($err === 'branch_last_active'
+                        ? 'لا يمكن أرشفة آخر فرع نشط.'
+                        : 'تعذّر أرشفة الفرع.');
+            }
+        } elseif ($action === 'restore_branch' && $companyId > 0) {
+            $branchId = (int) ($_POST['branch_id'] ?? 0);
+            $result = control_rateb_erp_branch_restore($companyId, $branchId);
+            if (!empty($result['ok']) && empty($result['noop'])) {
+                $flashOk = 'تم استعادة الفرع من الأرشيف.';
+            }
+            $focusCompanyId = $companyId;
+            if (empty($result['ok'])) {
+                $flashErr = 'تعذّر استعادة الفرع.';
+            }
+        } elseif ($action === 'bulk_branch' && $companyId > 0) {
+            $bulkAction = (string) ($_POST['bulk_action'] ?? '');
+            $ids = isset($_POST['branch_ids']) && is_array($_POST['branch_ids']) ? $_POST['branch_ids'] : [];
+            $result = control_rateb_erp_branch_bulk($companyId, $ids, $bulkAction);
+            $focusCompanyId = $companyId;
+            if (!empty($result['ok'])) {
+                $flashOk = 'تم تنفيذ الإجراء الجماعي على ' . (int) ($result['success'] ?? 0) . ' فرع.';
+            } else {
+                $flashErr = (int) ($result['success'] ?? 0) > 0
+                    ? 'اكتمل جزئياً — نجح ' . (int) $result['success'] . ' وفشل ' . (int) ($result['failed'] ?? 0) . '.'
+                    : 'تعذّر تنفيذ الإجراء الجماعي.';
+            }
         }
     }
 }
+
+$branchListOpts = function_exists('control_rateb_erp_branch_list_opts_from_request')
+    ? control_rateb_erp_branch_list_opts_from_request($_GET)
+    : ['q' => '', 'status' => '', 'branch_type' => '', 'archive' => '', 'sort' => 'name', 'dir' => 'asc', 'page' => 1, 'per_page' => 25];
 
 $companies = $schemaReady ? control_rateb_erp_companies_branch_overview() : [];
 $countryId = (int) ($_GET['country_id'] ?? 0);
@@ -295,7 +336,24 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
     $limitEff = (int) ($company['branch_limit_effective'] ?? 0);
     $limitSet = (int) ($company['branch_limit'] ?? 0);
     $canAdd = !empty($company['can_add_branch']);
-    $branches = control_rateb_erp_company_branches($cid);
+    $branchList = control_rateb_erp_branch_list($cid, $branchListOpts);
+    $branches = $branchList['items'];
+    $branchListTotal = (int) ($branchList['total'] ?? 0);
+    $branchListPage = (int) ($branchList['page'] ?? 1);
+    $branchListPerPage = (int) ($branchList['per_page'] ?? 25);
+    $branchListPages = (int) ($branchList['pages'] ?? 1);
+    $listQueryBase = array_filter([
+        'company_id' => $focusCompanyId > 0 ? $focusCompanyId : null,
+        'agency_id' => $agencyId > 0 ? $agencyId : null,
+        'platform' => $agencyId < 1 ? 1 : null,
+        'q' => $branchListOpts['q'] !== '' ? $branchListOpts['q'] : null,
+        'status' => $branchListOpts['status'] !== '' ? $branchListOpts['status'] : null,
+        'branch_type' => $branchListOpts['branch_type'] !== '' ? $branchListOpts['branch_type'] : null,
+        'archive' => $branchListOpts['archive'] !== '' ? $branchListOpts['archive'] : null,
+        'sort' => ($branchListOpts['sort'] ?? 'name') !== 'name' ? $branchListOpts['sort'] : null,
+        'dir' => ($branchListOpts['dir'] ?? 'asc') !== 'asc' ? $branchListOpts['dir'] : null,
+        'per_page' => $branchListPerPage !== 25 ? $branchListPerPage : null,
+    ], static fn ($v): bool => $v !== null && $v !== '');
     $cardId = 'company-branches-' . $cid;
     $expanded = $focusCompanyId > 0 ? ($focusCompanyId === $cid) : false;
     ?>
@@ -326,123 +384,10 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
         </form>
     </div>
 
-    <?php if ($branches !== []) { ?>
-    <div class="table-responsive mb-3">
-        <table class="table table-sm align-middle mb-0">
-            <thead>
-            <tr>
-                <th>الفرع</th>
-                <th>الكود</th>
-                <th>النوع</th>
-                <th>الحالة</th>
-                <th>رابط دخول الفرع</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($branches as $branch) {
-                $bid = (int) ($branch['id'] ?? 0);
-                $portalUrl = control_rateb_erp_branch_portal_url($bid, $branch);
-                $isMain = !empty($branch['is_main']);
-                $isActive = (string) ($branch['status'] ?? '') === 'active';
-                ?>
-            <tr>
-                <td><?php echo htmlspecialchars((string) ($branch['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><code><?php echo htmlspecialchars((string) ($branch['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></td>
-                <td><?php echo $isMain ? '<span class="badge bg-info">رئيسي</span>' : '<span class="badge bg-secondary">فرع</span>'; ?></td>
-                <td><?php echo $isActive ? '<span class="badge bg-success">نشط</span>' : '<span class="badge bg-warning text-dark">موقوف</span>'; ?></td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <input type="text" class="form-control font-monospace" readonly value="<?php echo htmlspecialchars($portalUrl, ENT_QUOTES, 'UTF-8'); ?>" id="branch-url-<?php echo $bid; ?>">
-                        <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('branch-url-<?php echo $bid; ?>').value)"><i class="fas fa-copy"></i></button>
-                        <a href="<?php echo htmlspecialchars($portalUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i></a>
-                    </div>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-branch-<?php echo $bid; ?>">
-                        <i class="fas fa-edit"></i> تعديل
-                    </button>
-                    <?php if (!$isMain) { ?>
-                    <form method="post" class="d-inline">
-                        <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } else { ?><input type="hidden" name="platform" value="1"><?php } ?>
-                        <input type="hidden" name="action" value="toggle_branch">
-                        <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
-                        <input type="hidden" name="branch_id" value="<?php echo $bid; ?>">
-                        <input type="hidden" name="status" value="<?php echo $isActive ? 'inactive' : 'active'; ?>">
-                        <button type="submit" class="btn btn-sm btn-outline-<?php echo $isActive ? 'warning' : 'success'; ?>"><?php echo $isActive ? 'إيقاف' : 'تفعيل'; ?></button>
-                    </form>
-                    <?php } ?>
-                </td>
-            </tr>
-            <?php } ?>
-            </tbody>
-        </table>
-    </div>
-    <?php foreach ($branches as $branch) {
-        $bid = (int) ($branch['id'] ?? 0);
-        $isActive = (string) ($branch['status'] ?? '') === 'active';
-        ?>
-    <div class="modal fade" id="edit-branch-<?php echo $bid; ?>" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form method="post">
-                    <div class="modal-header">
-                        <h5 class="modal-title">تعديل الفرع</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php if ($agencyId > 0) { ?><input type="hidden" name="agency_id" value="<?php echo $agencyId; ?>"><?php } else { ?><input type="hidden" name="platform" value="1"><?php } ?>
-                        <input type="hidden" name="action" value="update_branch">
-                        <input type="hidden" name="company_id" value="<?php echo $cid; ?>">
-                        <input type="hidden" name="branch_id" value="<?php echo $bid; ?>">
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <label class="form-label small">اسم الفرع *</label>
-                                <input type="text" name="branch_name" class="form-control form-control-sm" required value="<?php echo htmlspecialchars((string) ($branch['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small">الكود</label>
-                                <input type="text" name="branch_code" class="form-control form-control-sm" value="<?php echo htmlspecialchars((string) ($branch['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small">الحالة</label>
-                                <select name="branch_status" class="form-select form-select-sm">
-                                    <option value="active"<?php echo $isActive ? ' selected' : ''; ?>>نشط</option>
-                                    <option value="inactive"<?php echo !$isActive ? ' selected' : ''; ?>>موقوف</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small">الهاتف</label>
-                                <input type="text" name="branch_phone" class="form-control form-control-sm" value="<?php echo htmlspecialchars((string) ($branch['phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small">البريد</label>
-                                <input type="email" name="branch_email" class="form-control form-control-sm" value="<?php echo htmlspecialchars((string) ($branch['email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small">رابط الخريطة</label>
-                                <input type="text" name="branch_map_url" class="form-control form-control-sm" value="<?php echo htmlspecialchars((string) ($branch['map_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small">العنوان</label>
-                                <input type="text" name="branch_address" class="form-control form-control-sm" value="<?php echo htmlspecialchars((string) ($branch['address'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> حفظ التعديلات</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <?php } ?>
-    <?php } else { ?>
-    <p class="small text-muted mb-3">لا فروع بعد — سيُنشأ الفرع الرئيسي تلقائياً عند إضافة أول فرع.</p>
-    <?php } ?>
+    <?php
+    $branchListOpts = $branchListOpts ?? control_rateb_erp_branch_list_opts_from_request($_GET);
+    require __DIR__ . '/../../includes/control/rateb-erp-branch-list-section.php';
+    ?>
 
     <?php if ($canAdd) { ?>
     <details class="border rounded p-3 bg-light-subtle"<?php echo $focusCompanyId === $cid ? ' open' : ''; ?>>

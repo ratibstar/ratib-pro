@@ -15,6 +15,7 @@ final class BranchService
     private static ?bool $branchesTableExists = null;
     private static ?bool $userBranchesTableExists = null;
     private static ?bool $branchesHaveIsMain = null;
+    private static ?bool $branchesHaveArchive = null;
 
     public static function branchesTableExists(): bool
     {
@@ -73,6 +74,66 @@ final class BranchService
         return self::$branchesHaveIsMain;
     }
 
+    public static function branchesHaveArchiveColumns(): bool
+    {
+        if (!self::branchesTableExists()) {
+            return false;
+        }
+        if (self::$branchesHaveArchive !== null) {
+            return self::$branchesHaveArchive;
+        }
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query('SHOW COLUMNS FROM rateb_branches LIKE \'is_archived\'');
+            self::$branchesHaveArchive = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            self::$branchesHaveArchive = false;
+        }
+        return self::$branchesHaveArchive;
+    }
+
+    public function activeBranchCountForCompany(int $companyId): int
+    {
+        if ($companyId < 1) {
+            return 0;
+        }
+        if (self::branchesHaveArchiveColumns()) {
+            $row = (new Branch())->queryOne(
+                'SELECT COUNT(*) AS c FROM rateb_branches
+                 WHERE company_id = :cid AND status = :st AND is_archived = 0',
+                ['cid' => $companyId, 'st' => 'active']
+            );
+
+            return (int) ($row['c'] ?? 0);
+        }
+
+        return (new Branch())->count(['company_id' => $companyId, 'status' => 'active']);
+    }
+
+    /** @return null|string Error slug or null when archive is allowed. */
+    public function validateBranchArchiveForSave(int $companyId, array $branchRow): ?string
+    {
+        if ($companyId < 1) {
+            return 'invalid_request';
+        }
+        if (!empty($branchRow['is_main'])) {
+            return 'branch_main_archive_denied';
+        }
+        if ((int) ($branchRow['is_archived'] ?? 0) === 1) {
+            return null;
+        }
+        if ((string) ($branchRow['status'] ?? '') === 'active') {
+            if ($this->activeBranchCountForCompany($companyId) <= 1) {
+                return 'branch_last_active';
+            }
+        }
+
+        return null;
+    }
+
     public static function branchOrderSql(string $alias = ''): string
     {
         $prefix = $alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '';
@@ -87,6 +148,15 @@ final class BranchService
         if ($companyId < 1) {
             return 0;
         }
+        if (self::branchesHaveArchiveColumns()) {
+            $row = (new Branch())->queryOne(
+                'SELECT COUNT(*) AS c FROM rateb_branches WHERE company_id = :cid AND is_archived = 0',
+                ['cid' => $companyId]
+            );
+
+            return (int) ($row['c'] ?? 0);
+        }
+
         return (new Branch())->count(['company_id' => $companyId]);
     }
 
@@ -147,8 +217,7 @@ final class BranchService
         if ($newStatus !== 'inactive' || $currentStatus !== 'active' || $companyId < 1) {
             return null;
         }
-        $activeCount = (new Branch())->count(['company_id' => $companyId, 'status' => 'active']);
-        if ($activeCount <= 1) {
+        if ($this->activeBranchCountForCompany($companyId) <= 1) {
             return 'branch_last_active';
         }
 

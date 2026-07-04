@@ -531,19 +531,67 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                                         : $err)))
                     );
                 }
+            } elseif ($action === 'archive_branch') {
+                $branchId = (int) $this->input('branch_id', 0);
+                $result = \Rateb\App\Services\PlatformCompanyBranchService::archiveBranch($companyId, $branchId);
+                if (!empty($result['ok']) && empty($result['noop'])) {
+                    SessionManager::flash('success', __('branch_archive') . ' OK');
+                } elseif (empty($result['ok'])) {
+                    $err = (string) ($result['error'] ?? '');
+                    SessionManager::flash(
+                        'error',
+                        $err === 'branch_main_archive_denied'
+                            ? __('branch_main_archive_denied')
+                            : ($err === 'branch_last_active'
+                                ? __('branch_last_active')
+                                : __('invalid_request'))
+                    );
+                }
+            } elseif ($action === 'restore_branch') {
+                $branchId = (int) $this->input('branch_id', 0);
+                $result = \Rateb\App\Services\PlatformCompanyBranchService::restoreBranch($companyId, $branchId);
+                if (!empty($result['ok']) && empty($result['noop'])) {
+                    SessionManager::flash('success', __('branch_restore') . ' OK');
+                } elseif (empty($result['ok'])) {
+                    SessionManager::flash('error', __('invalid_request'));
+                }
+            } elseif ($action === 'bulk_branch') {
+                $ids = $this->input('branch_ids', []);
+                if (!is_array($ids)) {
+                    $ids = [];
+                }
+                $result = \Rateb\App\Services\PlatformCompanyBranchService::bulkBranchAction(
+                    $companyId,
+                    $ids,
+                    (string) $this->input('bulk_action', '')
+                );
+                if (!empty($result['ok'])) {
+                    SessionManager::flash('success', __('bulk_apply') . ': ' . (int) ($result['success'] ?? 0));
+                } else {
+                    SessionManager::flash(
+                        'error',
+                        (int) ($result['success'] ?? 0) > 0
+                            ? __('bulk_apply') . ' (' . (int) $result['success'] . '/' . ((int) ($result['success'] ?? 0) + (int) ($result['failed'] ?? 0)) . ')'
+                            : __('invalid_request')
+                    );
+                }
             }
             Response::redirect($branchUrl);
         }
-        $branches = \Rateb\App\Services\PlatformCompanyBranchService::companyBranches($companyId);
+        $listOpts = \Rateb\App\Services\PlatformCompanyBranchService::listOptionsFromRequest($_GET);
+        $branchList = \Rateb\App\Services\PlatformCompanyBranchService::listBranches($companyId, $listOpts);
         $newPortalUrl = trim((string) (SessionManager::flash('branch_portal_url') ?? ''));
         $this->view($this->viewPrefix . '/branches', [
             'title' => __('manage_branches_cp') . ' — ' . (string) ($company['name'] ?? '') . ' #' . $companyId,
             'company' => $company,
-            'branches' => $branches,
+            'branchList' => $branchList,
+            'listOpts' => $listOpts,
             'companyId' => $companyId,
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
             'newPortalUrl' => $newPortalUrl,
+            'branchAction' => $branchUrl,
+            'listBaseUrl' => $branchUrl,
         ], $this->layout());
     }
 

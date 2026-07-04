@@ -528,27 +528,58 @@ function control_rateb_erp_companies_branch_overview(): array
     }
 }
 
-/** @return array<int, array<string, mixed>> */
+/** @return array{items:array<int,array<string,mixed>>,total:int,page:int,per_page:int,pages:int} */
+function control_rateb_erp_branch_list(int $companyId, array $opts = []): array
+{
+    control_rateb_erp_load_branch_stack();
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+
+    return \Rateb\App\Services\PlatformCompanyBranchService::listBranches($companyId, $opts);
+}
+
+/** @param array<string, mixed> $source */
+function control_rateb_erp_branch_list_opts_from_request(array $source = []): array
+{
+    control_rateb_erp_load_branch_stack();
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+    $src = $source !== [] ? $source : $_GET;
+
+    return \Rateb\App\Services\PlatformCompanyBranchService::listOptionsFromRequest($src);
+}
+
+/** @deprecated Use control_rateb_erp_branch_list() */
 function control_rateb_erp_company_branches(int $companyId): array
 {
-    if ($companyId < 1) {
-        return [];
-    }
-    $pdo = control_rateb_erp_pdo();
-    if (!$pdo) {
-        return [];
-    }
-    $stmt = $pdo->prepare(
-        'SELECT b.id, b.name, b.code, b.status, b.is_main, b.address, b.phone, b.email, b.map_url, b.company_id,
-                c.name AS company_name, c.slug AS company_slug
-         FROM rateb_branches b
-         INNER JOIN rateb_companies c ON c.id = b.company_id
-         WHERE b.company_id = :cid
-         ORDER BY b.is_main DESC, b.name ASC'
-    );
-    $stmt->execute(['cid' => $companyId]);
-    $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    return is_array($rows) ? $rows : [];
+    $result = control_rateb_erp_branch_list($companyId, ['per_page' => 500, 'page' => 1, 'archive' => 'all']);
+
+    return $result['items'];
+}
+
+/** @return array{ok:bool, error?:string, noop?:bool} */
+function control_rateb_erp_branch_archive(int $companyId, int $branchId): array
+{
+    control_rateb_erp_load_branch_stack();
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+
+    return \Rateb\App\Services\PlatformCompanyBranchService::archiveBranch($companyId, $branchId);
+}
+
+/** @return array{ok:bool, error?:string, noop?:bool} */
+function control_rateb_erp_branch_restore(int $companyId, int $branchId): array
+{
+    control_rateb_erp_load_branch_stack();
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+
+    return \Rateb\App\Services\PlatformCompanyBranchService::restoreBranch($companyId, $branchId);
+}
+
+/** @param array<int, int|string> $branchIds @return array{ok:bool, success:int, failed:int, errors:array<int,string>} */
+function control_rateb_erp_branch_bulk(int $companyId, array $branchIds, string $action): array
+{
+    control_rateb_erp_load_branch_stack();
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+
+    return \Rateb\App\Services\PlatformCompanyBranchService::bulkBranchAction($companyId, $branchIds, $action);
 }
 
 function control_rateb_erp_company_set_branch_limit(int $companyId, int $limit): bool
