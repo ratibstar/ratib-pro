@@ -318,6 +318,14 @@ final class PlatformCompanyBranchService
             if (!$row) {
                 return ['ok' => false, 'error' => 'create_failed'];
             }
+            (new AuditService())->log('create', 'branches', $id, [
+                'branch_id' => $id,
+                'company_id' => $companyId,
+                'branch_code' => $code,
+                'branch_name' => $name,
+                'actor_user_id' => $_SESSION['rateb_user_id'] ?? ($_SESSION['control_user_id'] ?? null),
+                'timestamp' => date('c'),
+            ]);
 
             return [
                 'ok' => true,
