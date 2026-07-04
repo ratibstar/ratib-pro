@@ -32,6 +32,11 @@ final class AccountingControlBootstrap
         }
 
         AccountingGatewayBootstrap::registerAutoloader();
+
+        $catchupFile = dirname(__DIR__) . '/Infrastructure/AccountingSchemaCatchup.php';
+        if (is_file($catchupFile)) {
+            require_once $catchupFile;
+        }
         AccountingSchemaCatchup::ensure();
     }
 }

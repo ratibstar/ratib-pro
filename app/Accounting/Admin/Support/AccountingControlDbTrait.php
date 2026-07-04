@@ -30,6 +30,23 @@ trait AccountingControlDbTrait
         }
     }
 
+    protected function columnExists(string $table, string $column): bool
+    {
+        $pdo = $this->controlPdo();
+        if ($pdo === null || !$this->tableExists($table)) {
+            return false;
+        }
+        try {
+            $safeTable = str_replace('`', '', $table);
+            $stmt = $pdo->prepare('SHOW COLUMNS FROM `' . $safeTable . '` LIKE :col');
+            $stmt->execute(['col' => $column]);
+
+            return (bool) $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /**
      * @param array<string, scalar|null> $params
      * @return array{rows:list<array<string,mixed>>, total:int}

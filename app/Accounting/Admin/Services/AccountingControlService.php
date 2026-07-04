@@ -583,6 +583,12 @@ final class AccountingControlService
                 'reconciliation' => $this->tableExists('accounting_reconciliation_reports'),
                 'evidence_packs' => $this->tableExists('accounting_audit_evidence_packs'),
             ],
+            'schema' => [
+                'events_payload' => $this->columnExists('accounting_events', 'payload'),
+                'drift_payload' => $this->columnExists('accounting_drift_reports', 'payload'),
+                'reconciliation_payload' => $this->columnExists('accounting_reconciliation_reports', 'payload'),
+                'snapshots_payload' => $this->columnExists('accounting_trial_balance_snapshots', 'payload'),
+            ],
         ];
     }
 

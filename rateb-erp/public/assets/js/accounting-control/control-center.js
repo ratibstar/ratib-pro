@@ -46,7 +46,7 @@
     }
 
     function initLocaleInputs() {
-        var inputLang = isAr ? 'ar-SA' : 'en-US';
+        var inputLang = isAr ? 'ar-SA' : 'en';
         root.querySelectorAll('.acc-locale-num').forEach(function (el) {
             el.setAttribute('lang', inputLang);
             el.setAttribute('dir', 'ltr');
@@ -55,11 +55,21 @@
             syncNumInput(el);
         });
         root.querySelectorAll('.acc-locale-date').forEach(function (el) {
-            el.setAttribute('lang', inputLang);
             el.setAttribute('dir', 'ltr');
             el.setAttribute('translate', 'no');
-            el.classList.toggle('rateb-ltr-date', !isAr);
+            if (isAr) {
+                el.setAttribute('lang', 'ar-SA');
+                el.setAttribute('data-acc-locale-managed', '1');
+                el.classList.remove('rateb-ltr-date');
+            } else {
+                el.setAttribute('lang', 'en');
+                el.removeAttribute('data-acc-locale-managed');
+                el.classList.add('rateb-ltr-date');
+            }
         });
+        if (!isAr && typeof window.ratebInitDateInputs === 'function') {
+            window.ratebInitDateInputs(root);
+        }
     }
 
     function bindLocaleInputs() {
@@ -717,10 +727,17 @@
             }
             var list = root.querySelector('.acc-migration-list');
             if (list && res.data.migrations) {
-                list.innerHTML = Object.keys(res.data.migrations).map(function (k) {
+                var items = Object.keys(res.data.migrations).map(function (k) {
                     var ok = res.data.migrations[k];
                     return '<li class="list-group-item d-flex justify-content-between"><span>' + escapeHtml(k) + '</span><span>' + (ok ? '✓' : '✗') + '</span></li>';
-                }).join('');
+                });
+                if (res.data.schema) {
+                    Object.keys(res.data.schema).forEach(function (k) {
+                        var ok = res.data.schema[k];
+                        items.push('<li class="list-group-item d-flex justify-content-between"><span>schema.' + escapeHtml(k) + '</span><span>' + (ok ? '✓' : '✗') + '</span></li>');
+                    });
+                }
+                list.innerHTML = items.join('');
             }
         });
     }

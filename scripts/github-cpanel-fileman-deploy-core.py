@@ -506,11 +506,16 @@ def rateb_accounting_control_ui_files() -> list[str]:
     """Phase 6 Control Center — ERP views + static assets (always ship)."""
     fixed = [
         "rateb-erp/views/admin/accounting-control/layout.php",
+        "rateb-erp/views/admin/accounting-control/i18n-payload.php",
+        "rateb-erp/public/assets/accounting-control/build.txt",
         "rateb-erp/public/assets/js/accounting-control/control-center.js",
         "rateb-erp/public/assets/css/accounting-control/control-center.css",
         "rateb-erp/public/assets/accounting-control/control-center.js",
         "rateb-erp/public/assets/accounting-control/control-center.css",
+        "rateb-erp/app/bootstrap/accounting-control-bridge.php",
         "rateb-erp/app/controllers/Admin/AccountingControlController.php",
+        "public/run-accounting-schema-catchup.php",
+        "config/accounting.php",
         "js/accounting-control/control-center.js",
         "css/accounting-control/control-center.css",
     ]

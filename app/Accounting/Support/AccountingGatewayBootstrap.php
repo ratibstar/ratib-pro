@@ -58,6 +58,14 @@ final class AccountingGatewayBootstrap
             return filter_var($env, FILTER_VALIDATE_BOOLEAN);
         }
 
+        $acctPath = dirname(__DIR__, 3) . '/config/accounting.php';
+        if (is_file($acctPath)) {
+            $cfg = require $acctPath;
+            if (array_key_exists('gateway_enabled', $cfg)) {
+                return (bool) $cfg['gateway_enabled'];
+            }
+        }
+
         $configPath = dirname(__DIR__, 3) . '/config/accounting-gateway.php';
         if (is_file($configPath)) {
             $config = require $configPath;
