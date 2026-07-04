@@ -7,6 +7,8 @@ declare(strict_types=1);
  */
 
 use App\Accounting\Core\AccountingResult;
+use App\Accounting\Pipeline\AccountingEventPipeline;
+use App\Accounting\Support\AccountingConfig;
 use App\Accounting\Support\AccountingGatewayBootstrap;
 
 if (!function_exists('postAccountingEvent')) {
@@ -15,11 +17,23 @@ if (!function_exists('postAccountingEvent')) {
      */
     function postAccountingEvent(array $event): ?AccountingResult
     {
-        if (!AccountingGatewayBootstrap::isEnabled()) {
+        if (!AccountingGatewayBootstrap::isEnabled() && !AccountingConfig::eventStoreEnabled()) {
             return null;
         }
 
         try {
+            AccountingGatewayBootstrap::registerAutoloader();
+
+            if (AccountingEventPipeline::isEnabled()) {
+                $pipeline = new AccountingEventPipeline(AccountingGatewayBootstrap::gateway());
+
+                return $pipeline->post($event);
+            }
+
+            if (!AccountingGatewayBootstrap::isEnabled()) {
+                return null;
+            }
+
             return AccountingGatewayBootstrap::gateway()->post($event);
         } catch (\Throwable $e) {
             error_log('postAccountingEvent failed: ' . $e->getMessage());
