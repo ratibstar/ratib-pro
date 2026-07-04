@@ -1605,13 +1605,11 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
         }
         $current = (string) ($row['status'] ?? 'active');
         $next = $current === 'active' ? 'inactive' : 'active';
-        if ($next === 'inactive') {
-            $companyId = (int) ($row['company_id'] ?? 0);
-            $activeCount = $this->model->count(['company_id' => $companyId, 'status' => 'active']);
-            if ($activeCount <= 1 && $current === 'active') {
-                \Rateb\App\Core\SessionManager::flash('error', __('branch_last_active'));
-                $this->redirect(rateb_url($this->routePrefix));
-            }
+        $companyId = (int) ($row['company_id'] ?? 0);
+        $statusErr = (new \Rateb\App\Services\BranchService())->validateBranchStatusForSave($companyId, $current, $next);
+        if ($statusErr !== null) {
+            \Rateb\App\Core\SessionManager::flash('error', __($statusErr));
+            $this->redirect(rateb_url($this->routePrefix));
         }
         $this->model->update($id, ['status' => $next]);
         (new \Rateb\App\Services\AuditService())->log('toggle_status', $this->entityName, $id, [

@@ -491,6 +491,34 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 } else {
                     SessionManager::flash('error', __('invalid_request'));
                 }
+            } elseif ($action === 'update_branch') {
+                $branchId = (int) $this->input('branch_id', 0);
+                $result = \Rateb\App\Services\PlatformCompanyBranchService::updateBranch($companyId, $branchId, [
+                    'name' => (string) $this->input('branch_name', ''),
+                    'code' => (string) $this->input('branch_code', ''),
+                    'phone' => (string) $this->input('branch_phone', ''),
+                    'email' => (string) $this->input('branch_email', ''),
+                    'address' => (string) $this->input('branch_address', ''),
+                    'map_url' => (string) $this->input('branch_map_url', ''),
+                    'status' => (string) $this->input('branch_status', ''),
+                ]);
+                if (!empty($result['ok'])) {
+                    SessionManager::flash('success', __('saved_ok'));
+                } else {
+                    $err = (string) ($result['error'] ?? '');
+                    SessionManager::flash(
+                        'error',
+                        $err === 'branch_name_required'
+                            ? __('branch_name')
+                            : ($err === 'branch_code_duplicate'
+                                ? __('branch_code_duplicate')
+                                : ($err === 'branch_last_active'
+                                    ? __('branch_last_active')
+                                    : ($err === 'record_not_found'
+                                        ? __('no_records')
+                                        : $err)))
+                    );
+                }
             }
             Response::redirect($branchUrl);
         }

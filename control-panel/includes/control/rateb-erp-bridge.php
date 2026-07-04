@@ -539,7 +539,7 @@ function control_rateb_erp_company_branches(int $companyId): array
         return [];
     }
     $stmt = $pdo->prepare(
-        'SELECT b.id, b.name, b.code, b.status, b.is_main, b.address, b.phone, b.email, b.company_id,
+        'SELECT b.id, b.name, b.code, b.status, b.is_main, b.address, b.phone, b.email, b.map_url, b.company_id,
                 c.name AS company_name, c.slug AS company_slug
          FROM rateb_branches b
          INNER JOIN rateb_companies c ON c.id = b.company_id
@@ -575,6 +575,15 @@ function control_rateb_erp_branch_create(int $companyId, array $data): array
     }
 
     return $result;
+}
+
+/** @return array{ok:bool, branch?:array<string,mixed>, error?:string} */
+function control_rateb_erp_branch_update(int $companyId, int $branchId, array $data): array
+{
+    control_rateb_erp_load_branch_stack();
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+
+    return \Rateb\App\Services\PlatformCompanyBranchService::updateBranch($companyId, $branchId, $data);
 }
 
 function control_rateb_erp_branch_set_status(int $branchId, string $status): bool

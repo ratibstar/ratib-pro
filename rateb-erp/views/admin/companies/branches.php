@@ -86,6 +86,9 @@ $branchAction = rateb_url($routePrefix . '/' . $companyId . '/branches');
                         </div>
                     </td>
                     <td>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-branch-<?php echo $bid; ?>">
+                            <i class="fas fa-edit"></i> <?php echo __('edit'); ?>
+                        </button>
                         <?php if (!$isMain) { ?>
                         <form method="post" action="<?php echo Rateb\App\Core\View::escape($branchAction); ?>" class="d-inline">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
@@ -101,6 +104,65 @@ $branchAction = rateb_url($routePrefix . '/' . $companyId . '/branches');
                 </tbody>
             </table>
         </div>
+        <?php foreach ($branches as $branch) {
+            $bid = (int) ($branch['id'] ?? 0);
+            $isActive = (string) ($branch['status'] ?? '') === 'active';
+            ?>
+        <div class="modal fade" id="edit-branch-<?php echo $bid; ?>" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form method="post" action="<?php echo Rateb\App\Core\View::escape($branchAction); ?>">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><?php echo __('edit'); ?> <?php echo __('branch_name'); ?></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo __('close'); ?>"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                            <input type="hidden" name="action" value="update_branch">
+                            <input type="hidden" name="branch_id" value="<?php echo $bid; ?>">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small"><?php echo __('branch_name'); ?> *</label>
+                                    <input type="text" name="branch_name" class="form-control form-control-sm" required value="<?php echo Rateb\App\Core\View::escape((string) ($branch['name'] ?? '')); ?>">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small"><?php echo __('branch_code'); ?></label>
+                                    <input type="text" name="branch_code" class="form-control form-control-sm" value="<?php echo Rateb\App\Core\View::escape((string) ($branch['code'] ?? '')); ?>">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small"><?php echo __('status'); ?></label>
+                                    <select name="branch_status" class="form-select form-select-sm">
+                                        <option value="active"<?php echo $isActive ? ' selected' : ''; ?>><?php echo __('active'); ?></option>
+                                        <option value="inactive"<?php echo !$isActive ? ' selected' : ''; ?>><?php echo __('inactive'); ?></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small"><?php echo __('phone'); ?></label>
+                                    <input type="text" name="branch_phone" class="form-control form-control-sm" value="<?php echo Rateb\App\Core\View::escape((string) ($branch['phone'] ?? '')); ?>">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small"><?php echo __('email'); ?></label>
+                                    <input type="email" name="branch_email" class="form-control form-control-sm" value="<?php echo Rateb\App\Core\View::escape((string) ($branch['email'] ?? '')); ?>">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small"><?php echo __('map_url'); ?></label>
+                                    <input type="text" name="branch_map_url" class="form-control form-control-sm" value="<?php echo Rateb\App\Core\View::escape((string) ($branch['map_url'] ?? '')); ?>">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small"><?php echo __('address'); ?></label>
+                                    <input type="text" name="branch_address" class="form-control form-control-sm" value="<?php echo Rateb\App\Core\View::escape((string) ($branch['address'] ?? '')); ?>">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal"><?php echo __('cancel'); ?></button>
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php } ?>
         <?php } else { ?>
         <p class="small text-muted mb-3"><?php echo __('no_records'); ?></p>
         <?php } ?>

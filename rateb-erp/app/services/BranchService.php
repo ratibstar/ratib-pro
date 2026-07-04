@@ -141,6 +141,20 @@ final class BranchService
         return (new Branch())->queryOne($sql, $params) !== null;
     }
 
+    /** @return null|string Error slug (branch_last_active) or null when allowed. */
+    public function validateBranchStatusForSave(int $companyId, string $currentStatus, string $newStatus): ?string
+    {
+        if ($newStatus !== 'inactive' || $currentStatus !== 'active' || $companyId < 1) {
+            return null;
+        }
+        $activeCount = (new Branch())->count(['company_id' => $companyId, 'status' => 'active']);
+        if ($activeCount <= 1) {
+            return 'branch_last_active';
+        }
+
+        return null;
+    }
+
     /** @return null|string Error slug (e.g. branch_code_duplicate) or null when valid. */
     public function validateBranchCodeForSave(int $companyId, string $code, int $excludeBranchId = 0): ?string
     {
