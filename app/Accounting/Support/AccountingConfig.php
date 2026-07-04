@@ -51,4 +51,31 @@ final class AccountingConfig
 
         return array_key_exists('audit_enabled', $config) ? (bool) $config['audit_enabled'] : true;
     }
+
+    public static function projectionsEnabled(): bool
+    {
+        if (defined('ACCOUNTING_PROJECTIONS_ENABLED')) {
+            return (bool) ACCOUNTING_PROJECTIONS_ENABLED;
+        }
+
+        return !empty(self::all()['projections_enabled']);
+    }
+
+    public static function consolidationEnabled(): bool
+    {
+        if (defined('ACCOUNTING_CONSOLIDATION_ENABLED')) {
+            return (bool) ACCOUNTING_CONSOLIDATION_ENABLED;
+        }
+
+        return !empty(self::all()['consolidation_enabled']);
+    }
+
+    public static function driftDetectionEnabled(): bool
+    {
+        if (defined('ACCOUNTING_DRIFT_DETECTION_ENABLED')) {
+            return (bool) ACCOUNTING_DRIFT_DETECTION_ENABLED;
+        }
+
+        return !empty(self::all()['drift_detection_enabled']);
+    }
 }

@@ -8,6 +8,7 @@ use App\Accounting\Core\AccountingGateway;
 use App\Accounting\Core\AccountingIdempotency;
 use App\Accounting\Core\AccountingResult;
 use App\Accounting\EventStore\AccountingEventStore;
+use App\Accounting\Pipeline\AccountingProjectionHook;
 use App\Accounting\Support\AccountingConfig;
 
 /**
@@ -20,6 +21,7 @@ final class AccountingEventPipeline
         private readonly AccountingEventStore $eventStore = new AccountingEventStore(),
         private readonly AccountingIdempotency $idempotency = new AccountingIdempotency(),
         private readonly AccountingAuditService $audit = new AccountingAuditService(),
+        private readonly AccountingProjectionHook $projectionHook = new AccountingProjectionHook(),
     ) {
     }
 
@@ -73,6 +75,7 @@ final class AccountingEventPipeline
                 'result' => $result->data,
                 'message' => $result->message,
             ]);
+            $this->projectionHook->afterEventProcessed($event, $eventUuid, $result->data);
         } else {
             if (self::isEnabled() && $this->eventStore->isAvailable()) {
                 $this->eventStore->markFailed($eventUuid);
