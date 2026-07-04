@@ -8,7 +8,10 @@ use Rateb\App\Models\Company;
 use Rateb\App\Models\Plan;
 use Rateb\App\Models\Subscription;
 
-/** Read-only subscription / plan view for dedicated agency ERP hosts. */
+/**
+ * ARCHIVED — no route references in repository (verified 2026-07-04).
+ * Former read-only subscription / plan view for dedicated agency ERP hosts.
+ */
 final class CompanyPlanController extends Controller
 {
     public function index(): void

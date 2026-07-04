@@ -139,7 +139,6 @@ $moduleRoutes = [
 $branchesMw = rateb_erp_mw('', '', 'branches');
 $router->get($app('branches/setup-check'), [BranchesController::class, 'setupCheck'], $branchesMw);
 $router->post($app('branches/{id}/toggle-status'), [BranchesController::class, 'toggleStatus'], $branchesMw);
-$router->get($app('branches/export'), [BranchesController::class, 'export'], rateb_erp_mw('', 'reports.export', 'branches'));
 
 foreach ($moduleRoutes as $path => [$class, $module]) {
     $mw = rateb_erp_mw($module, '', $path);
@@ -163,13 +162,10 @@ $router->get($app('supplier-evaluations/approvals'), $redirectApprovalsOversight
 $router->get($app('supplier-evaluations/history'), [SupplierEvaluationsController::class, 'supplierHistory'], $seMw);
 $router->post($app('supplier-evaluations/{id}/approve'), $blockCompanyApprovalAction, $seMw);
 $router->post($app('supplier-evaluations/{id}/reject'), $blockCompanyApprovalAction, $seMw);
-$router->get($app('supplier-evaluations/export'), [SupplierEvaluationsController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-evaluations'));
 
 $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'warehouseItemsJson'], rateb_erp_mw('inventory', '', 'inventory'));
 
-$router->get($app('purchase-requests/export'), [PurchaseRequestsController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-requests'));
 $router->get($app('purchase-requests/line-attachment/{itemId}'), [PurchaseRequestsController::class, 'downloadLineAttachment'], rateb_erp_mw('procurement', '', 'purchase-requests'));
-$router->get($app('purchase-orders/export'), [PurchaseOrdersController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-orders'));
 $router->get($app('customs-clearance-costs/export'), [PurchaseOrdersController::class, 'customsExport'], rateb_erp_mw('accounting', 'reports.export', 'customs-clearance-costs'));
 $router->get($app('customs-clearance-costs'), [PurchaseOrdersController::class, 'customsIndex'], rateb_erp_mw('accounting', '', 'customs-clearance-costs'));
 $router->get($app('customs-clearance-costs/{id}/edit'), [PurchaseOrdersController::class, 'customsEdit'], rateb_erp_mw('accounting', 'customs_clearance.manage', 'customs-clearance-costs'));

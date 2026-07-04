@@ -10,7 +10,6 @@ use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\DocumentService;
 use Rateb\App\Services\StockMovementService;
-use Rateb\App\Services\WorkflowService;
 use Rateb\App\Controllers\Shared\ExportController;
 
 final class StockMovementsController extends Controller
@@ -141,61 +140,6 @@ final class DocumentsController extends Controller
             SessionManager::flash('error', $result['error'] ?? __('invalid_request'));
         }
         $this->redirect(rateb_app_url('documents'));
-    }
-}
-
-final class WorkflowsController extends Controller
-{
-    public function index(): void
-    {
-        $companyId = (int) SessionManager::get('rateb_company_id');
-        $svc = new WorkflowService();
-        $db = \Rateb\App\Core\Database::connection();
-        $pending = $db->prepare(
-            'SELECT i.*, w.name AS workflow_name FROM rateb_approval_instances i
-             JOIN rateb_approval_workflows w ON w.id = i.workflow_id
-             WHERE i.company_id = :cid AND i.status = :st ORDER BY i.id DESC LIMIT 50'
-        );
-        $pending->execute(['cid' => $companyId, 'st' => 'pending']);
-        $this->view('company/workflows/index', [
-            'title' => __('workflows'),
-            'workflows' => $svc->listWorkflows($companyId),
-            'pending' => $pending->fetchAll(),
-            'csrf' => Csrf::token(),
-            'canApprove' => rateb_can('workflows.approve'),
-        ], 'main');
-    }
-
-    public function approve(array $params): void
-    {
-        if (!rateb_can('workflows.approve')) {
-            SessionManager::flash('error', __('access_denied'));
-            $this->redirect(rateb_app_url('workflows'));
-        }
-        if (!$this->validateCsrf()) {
-            $this->redirect(rateb_app_url('workflows'));
-        }
-        $id = (int) ($params['id'] ?? 0);
-        (new WorkflowService())->approve($id, trim((string) $this->input('comment', '')));
-        (new AuditService())->log('approve', 'workflow_instance', $id);
-        SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_app_url('workflows'));
-    }
-
-    public function reject(array $params): void
-    {
-        if (!rateb_can('workflows.approve')) {
-            SessionManager::flash('error', __('access_denied'));
-            $this->redirect(rateb_app_url('workflows'));
-        }
-        if (!$this->validateCsrf()) {
-            $this->redirect(rateb_app_url('workflows'));
-        }
-        $id = (int) ($params['id'] ?? 0);
-        (new WorkflowService())->reject($id, trim((string) $this->input('comment', '')));
-        (new AuditService())->log('reject', 'workflow_instance', $id);
-        SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_app_url('workflows'));
     }
 }
 
