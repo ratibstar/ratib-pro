@@ -57,10 +57,12 @@
             C.alertMsg(t('msg.error', 'Export not available for this section'), 'warning');
             return;
         }
-        var q = C.buildQuery(Object.assign({}, C.filters(), { export: fmt, detail: res === 'projections' || res === 'consolidation' ? 1 : undefined }));
+        var query = Object.assign({}, C.filters(), { export: fmt });
+        if (res === 'projections' || res === 'consolidation') query.detail = 1;
         var type = val('.acc-projection-type') || val('.acc-consolidation-type') || '';
-        if (type) q += (q.indexOf('?') >= 0 ? '&' : '?') + 'type=' + encodeURIComponent(type);
-        window.open(C.apiBase + '/' + encodeURIComponent(res) + q, '_blank');
+        if (type) query.type = type;
+        var url = C.buildApiUrl ? C.buildApiUrl(res, query) : (C.apiBase + '/' + encodeURIComponent(res) + C.buildQuery(query));
+        window.open(url, '_blank');
     }
 
     function val(sel) {

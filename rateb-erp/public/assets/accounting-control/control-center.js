@@ -290,15 +290,19 @@
         box.classList.remove('d-none');
     }
 
-    function api(resource, opts) {
-        opts = opts || {};
+    function buildApiUrl(resource, query) {
         var base = String(apiBase || '').replace(/\/+$/, '');
         var qIdx = base.indexOf('?');
         var basePath = qIdx >= 0 ? base.slice(0, qIdx) : base;
         var preset = qIdx >= 0 ? base.slice(qIdx + 1) : '';
-        var extra = buildQuery(opts.query || {}).replace(/^\?/, '');
-        var query = [preset, extra].filter(Boolean).join('&');
-        var url = basePath + '/' + encodeURIComponent(resource) + (query ? '?' + query : '');
+        var extra = buildQuery(query || {}).replace(/^\?/, '');
+        var queryStr = [preset, extra].filter(Boolean).join('&');
+        return basePath + '/' + encodeURIComponent(resource) + (queryStr ? '?' + queryStr : '');
+    }
+
+    function api(resource, opts) {
+        opts = opts || {};
+        var url = buildApiUrl(resource, opts.query || {});
         var init = {
             method: opts.method || 'GET',
             headers: { 'Accept': 'application/json', 'X-CSRF-Token': csrf },
@@ -842,7 +846,7 @@
     }, 60000);
 
     window.AccControl = {
-        root: root, api: api, filters: filters, section: section, apiBase: apiBase, csrf: csrf,
+        root: root, api: api, buildApiUrl: buildApiUrl, filters: filters, section: section, apiBase: apiBase, csrf: csrf,
         t: t, fmtNum: fmtNum, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtValue: fmtValue,
         fmtStatus: fmtStatus, fmtSeverity: fmtSeverity, fmtPeriod: fmtPeriod, escapeHtml: escapeHtml,
         alertMsg: alertMsg, showJson: showJson, confirmAction: confirmAction, buildQuery: buildQuery,

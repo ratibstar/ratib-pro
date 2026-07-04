@@ -62,7 +62,9 @@ $check = [
     'accounting_drift_reports' => ['payload', 'period_from'],
     'accounting_reconciliation_reports' => ['payload', 'risk_level'],
     'accounting_events' => ['payload'],
-    'accounting_trial_balance_snapshots' => ['payload'],
+    'accounting_trial_balance_snapshots' => ['company_id', 'period_from', 'period_to', 'payload'],
+    'accounting_consolidated_trial_balance' => ['company_id', 'period_from', 'period_to', 'payload'],
+    'accounting_period_closures' => ['company_id', 'period_from', 'period_to'],
 ];
 
 foreach ($check as $table => $cols) {
