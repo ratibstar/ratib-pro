@@ -729,6 +729,13 @@
         });
     }
 
+    function tSettingFlag(key) {
+        if (I18N.settingsFlags && I18N.settingsFlags[key]) {
+            return I18N.settingsFlags[key];
+        }
+        return String(key).replace(/^ACCOUNTING_/, '').replace(/_ENABLED$/, '').replace(/_/g, ' ');
+    }
+
     function loadSettings() {
         api('settings').then(function (res) {
             if (!res.ok) return;
@@ -736,8 +743,10 @@
             if (!tbody) return;
             tbody.innerHTML = Object.keys(res.data).map(function (k) {
                 var on = res.data[k];
-                var label = on ? t('on', 'ON') : t('off', 'OFF');
-                return '<tr><td><code>' + escapeHtml(k) + '</code></td><td>' + escapeHtml(label) + '</td></tr>';
+                var statusLabel = on ? t('status.enabled', t('on', 'ON')) : t('status.disabled', t('off', 'OFF'));
+                var name = tSettingFlag(k);
+                var codeHtml = isAr ? '' : ('<div class="text-muted small mt-1"><code>' + escapeHtml(k) + '</code></div>');
+                return '<tr><td>' + escapeHtml(name) + codeHtml + '</td><td>' + escapeHtml(statusLabel) + '</td></tr>';
             }).join('');
         });
     }

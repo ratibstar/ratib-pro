@@ -88,4 +88,18 @@ return [
     'off' => __('accounting_control_off'),
     'periodOpen' => __('accounting_control_period_open'),
     'periodRange' => __('accounting_control_period_range'),
+    'settingsFlags' => [
+        'ACCOUNTING_GATEWAY_ENABLED' => __('accounting_control_flag_gateway'),
+        'ACCOUNTING_EVENT_STORE_ENABLED' => __('accounting_control_flag_event_store'),
+        'ACCOUNTING_REPLAY_ENABLED' => __('accounting_control_flag_replay'),
+        'ACCOUNTING_AUDIT_ENABLED' => __('accounting_control_flag_audit'),
+        'ACCOUNTING_PROJECTIONS_ENABLED' => __('accounting_control_flag_projections'),
+        'ACCOUNTING_CONSOLIDATION_ENABLED' => __('accounting_control_flag_consolidation'),
+        'ACCOUNTING_DRIFT_DETECTION_ENABLED' => __('accounting_control_flag_drift_detection'),
+        'ACCOUNTING_INTEGRITY_ENABLED' => __('accounting_control_flag_integrity'),
+        'ACCOUNTING_LEDGER_LOCK_ENFORCEMENT_ENABLED' => __('accounting_control_flag_ledger_lock'),
+        'ACCOUNTING_CORRECTION_EXECUTOR_ENABLED' => __('accounting_control_flag_correction_executor'),
+        'ACCOUNTING_CORRECTION_AUTO_FIX_ENABLED' => __('accounting_control_flag_correction_auto_fix'),
+        'ACCOUNTING_AUDIT_CERTIFICATION_ENABLED' => __('accounting_control_flag_audit_certification'),
+    ],
 ];
