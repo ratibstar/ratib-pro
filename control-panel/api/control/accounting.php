@@ -1380,6 +1380,38 @@ if ($method === 'POST') {
                 $ctrl->commit();
             }
             control_release_mysql_lock($ctrl, $lockName);
+
+            $gatewayBootstrap = dirname(__DIR__, 3) . '/app/Accounting/Support/post_accounting_event.php';
+            if (is_file($gatewayBootstrap)) {
+                require_once $gatewayBootstrap;
+                if (function_exists('postAccountingEvent')) {
+                    $debitAcct = $lines[0]['account_code'] !== '' ? $lines[0]['account_code'] : $lines[0]['account_name'];
+                    $creditAcct = $lines[count($lines) - 1]['account_code'] !== ''
+                        ? $lines[count($lines) - 1]['account_code']
+                        : $lines[count($lines) - 1]['account_name'];
+                    postAccountingEvent([
+                        'source_system' => 'control-panel',
+                        'event_type' => 'journal',
+                        'company_id' => $countryIdIn,
+                        'branch_id' => null,
+                        'amount' => round($sumD, 2),
+                        'currency' => 'SAR',
+                        'debit_account' => (string) $debitAcct,
+                        'credit_account' => (string) $creditAcct,
+                        'reference_type' => 'control_journal_entry',
+                        'reference_id' => $jid,
+                        'metadata' => [
+                            'legacy_write' => true,
+                            'journal_entry_id' => $jid,
+                            'reference' => $reference,
+                            'country_id' => $countryIdIn,
+                            'description' => $description,
+                            'mysqli' => $ctrl,
+                        ],
+                    ]);
+                }
+            }
+
             jsonOut(['success' => true, 'message' => 'Journal created', 'journal_entry_id' => $jid, 'reference' => $reference]);
         } catch (Exception $e) {
             if ($useTx) {

@@ -10,6 +10,7 @@ return [
     App\Modules\Core\Providers\CoreServiceProvider::class,
     App\Modules\Agency\Providers\AgencyServiceProvider::class,
     App\Modules\Ledger\Providers\LedgerServiceProvider::class,
+    App\Accounting\Providers\AccountingServiceProvider::class,
     App\Modules\Wallet\Providers\WalletServiceProvider::class,
     App\Modules\Commission\Providers\CommissionServiceProvider::class,
     App\Modules\Subscription\Providers\SubscriptionServiceProvider::class,

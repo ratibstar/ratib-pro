@@ -620,6 +620,16 @@ final class AccountingService
             $stmt->execute($params);
         }
 
+        $this->emitAccountingGatewayPostedEvent(
+            (int) $entryId,
+            $companyId,
+            $sourceType,
+            $sourceId,
+            $lines,
+            $description,
+            $entryDate
+        );
+
         return (int) $entryId;
     }
 
@@ -3406,5 +3416,92 @@ final class AccountingService
             }
         }
         return $count;
+    }
+
+    /**
+     * Optional unified accounting gateway hook (non-breaking when disabled).
+     *
+     * @param array<int, array{account_id:int,debit:float,credit:float,memo?:string}> $lines
+     */
+    private function emitAccountingGatewayPostedEvent(
+        int $entryId,
+        ?int $companyId,
+        string $sourceType,
+        ?int $sourceId,
+        array $lines,
+        string $description,
+        string $entryDate
+    ): void {
+        $bootstrap = $this->resolveAccountingGatewayBootstrapPath();
+        if ($bootstrap === null) {
+            return;
+        }
+        require_once $bootstrap;
+        if (!function_exists('postAccountingEvent')) {
+            return;
+        }
+
+        $totalDebit = 0.0;
+        $debitAccountId = 0;
+        $creditAccountId = 0;
+        foreach ($lines as $line) {
+            $dr = (float) ($line['debit'] ?? 0);
+            $cr = (float) ($line['credit'] ?? 0);
+            $totalDebit += $dr;
+            if ($dr > 0 && $debitAccountId === 0) {
+                $debitAccountId = (int) ($line['account_id'] ?? 0);
+            }
+            if ($cr > 0 && $creditAccountId === 0) {
+                $creditAccountId = (int) ($line['account_id'] ?? 0);
+            }
+        }
+
+        postAccountingEvent([
+            'source_system' => 'rateb-erp',
+            'event_type' => $this->mapGatewayEventType($sourceType),
+            'company_id' => (int) ($companyId ?? 0),
+            'branch_id' => null,
+            'amount' => round($totalDebit, 2),
+            'currency' => 'SAR',
+            'debit_account' => $debitAccountId > 0 ? 'id:' . $debitAccountId : 'unknown',
+            'credit_account' => $creditAccountId > 0 ? 'id:' . $creditAccountId : 'unknown',
+            'reference_type' => $sourceType,
+            'reference_id' => $sourceId ?? $entryId,
+            'metadata' => [
+                'legacy_write' => true,
+                'journal_entry_id' => $entryId,
+                'entry_date' => $entryDate,
+                'description' => $description,
+                'lines' => $lines,
+            ],
+        ]);
+    }
+
+    private function resolveAccountingGatewayBootstrapPath(): ?string
+    {
+        $candidates = [];
+        if (defined('RATEB_ROOT')) {
+            $candidates[] = dirname((string) RATEB_ROOT) . '/app/Accounting/Support/post_accounting_event.php';
+        }
+        $candidates[] = dirname(__DIR__, 3) . '/app/Accounting/Support/post_accounting_event.php';
+
+        foreach ($candidates as $path) {
+            if (is_file($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function mapGatewayEventType(string $sourceType): string
+    {
+        return match ($sourceType) {
+            'invoice', 'purchase_invoice' => 'invoice',
+            'payment', 'supplier_payment', 'cash_voucher' => 'payment',
+            'purchase_order', 'expense' => 'expense',
+            'branch_transfer', 'stock_movement' => 'transfer',
+            default => 'journal',
+        };
     }
 }

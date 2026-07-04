@@ -2106,6 +2106,33 @@ try {
                     ob_end_clean(); // Discard any output from logging
                 }
             }
+
+            $gatewayBootstrap = dirname(__DIR__, 2) . '/app/Accounting/Support/post_accounting_event.php';
+            if (is_file($gatewayBootstrap)) {
+                require_once $gatewayBootstrap;
+                if (function_exists('postAccountingEvent')) {
+                    $gwAmount = (float) ($newEntry['total_debit'] ?? $newEntry['total_credit'] ?? 0);
+                    postAccountingEvent([
+                        'source_system' => 'main-site',
+                        'event_type' => 'journal',
+                        'company_id' => (int) ($newEntry['agency_id'] ?? $newEntry['company_id'] ?? 0),
+                        'branch_id' => isset($newEntry['branch_id']) ? (int) $newEntry['branch_id'] : null,
+                        'amount' => round($gwAmount, 2),
+                        'currency' => (string) ($newEntry['currency'] ?? 'SAR'),
+                        'debit_account' => (string) ($newEntry['debit_account_code'] ?? 'pending'),
+                        'credit_account' => (string) ($newEntry['credit_account_code'] ?? 'pending'),
+                        'reference_type' => 'journal_entry',
+                        'reference_id' => $entryId,
+                        'metadata' => [
+                            'legacy_write' => true,
+                            'journal_entry_id' => $entryId,
+                            'entry_date' => $newEntry['entry_date'] ?? date('Y-m-d'),
+                            'description' => $newEntry['description'] ?? null,
+                            'mysqli' => $conn,
+                        ],
+                    ]);
+                }
+            }
             
             // Send JSON response
             http_response_code(200);

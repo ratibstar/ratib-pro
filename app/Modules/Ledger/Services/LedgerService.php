@@ -97,7 +97,10 @@ final class LedgerService
 
             $this->assertJournalBalances($journal);
 
-            return $journal->load('entries');
+            $loaded = $journal->load('entries');
+            $this->emitAccountingGatewayEvent($loaded, $agencyId, $debitAccountId, $creditAccountId, $amount, $currencyCode, $description);
+
+            return $loaded;
         });
     }
 
@@ -174,7 +177,20 @@ final class LedgerService
 
             $this->assertJournalBalances($journal);
 
-            return $journal->load('entries');
+            $loaded = $journal->load('entries');
+            $this->emitAccountingGatewayEvent(
+                $loaded,
+                $agencyId,
+                $debitAccountId,
+                $creditAccountId,
+                $amount,
+                $currencyCode,
+                $description,
+                $referenceType,
+                $referenceId
+            );
+
+            return $loaded;
         });
     }
 
@@ -226,5 +242,47 @@ final class LedgerService
                 sprintf('Journal %d does not balance: debit=%.2f, credit=%.2f', $journal->id, $totalDebit, $totalCredit)
             );
         }
+    }
+
+    private function emitAccountingGatewayEvent(
+        LedgerJournal $journal,
+        int $agencyId,
+        int $debitAccountId,
+        int $creditAccountId,
+        float $amount,
+        string $currencyCode,
+        ?string $description = null,
+        ?string $referenceType = null,
+        int|string|null $referenceId = null
+    ): void {
+        $bootstrap = dirname(__DIR__, 3) . '/Accounting/Support/post_accounting_event.php';
+        if (!is_file($bootstrap)) {
+            return;
+        }
+        require_once $bootstrap;
+        if (!function_exists('postAccountingEvent')) {
+            return;
+        }
+
+        postAccountingEvent([
+            'source_system' => 'ledger',
+            'event_type' => 'payment',
+            'company_id' => $agencyId,
+            'branch_id' => null,
+            'amount' => round($amount, 2),
+            'currency' => strtoupper($currencyCode),
+            'debit_account' => 'id:' . $debitAccountId,
+            'credit_account' => 'id:' . $creditAccountId,
+            'reference_type' => $referenceType ?? 'ledger_journal',
+            'reference_id' => $referenceId ?? (int) $journal->id,
+            'metadata' => [
+                'legacy_write' => true,
+                'ledger_journal_id' => (int) $journal->id,
+                'agency_id' => $agencyId,
+                'debit_account_id' => $debitAccountId,
+                'credit_account_id' => $creditAccountId,
+                'description' => $description,
+            ],
+        ]);
     }
 }
