@@ -510,8 +510,7 @@ def rateb_accounting_control_ui_files() -> list[str]:
         "rateb-erp/public/assets/css/accounting-control/control-center.css",
         "rateb-erp/public/assets/accounting-control/control-center.js",
         "rateb-erp/public/assets/accounting-control/control-center.css",
-        "rateb-erp/public/admin/accounting-control/control-center.js",
-        "rateb-erp/public/admin/accounting-control/control-center.css",
+        "rateb-erp/app/controllers/Admin/AccountingControlController.php",
         "js/accounting-control/control-center.js",
         "css/accounting-control/control-center.css",
     ]

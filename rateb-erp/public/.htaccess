@@ -4,8 +4,7 @@
 
     RewriteRule ^favicon\.ico$ favicon.php [L]
 
-    RewriteCond %{REQUEST_FILENAME} -f [OR]
-    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
     RewriteRule ^ index.php [L,QSA]
