@@ -74,6 +74,22 @@ function postJournalEntryToLedger($conn, $journalEntryId) {
         $entryCheck->close();
         throw new Exception("Journal entry {$journalEntryId} has no entry_date. Cannot post to general ledger.");
     }
+
+    if (!function_exists('accounting_main_site_enforce_ledger_mutable')) {
+        $lockHelper = __DIR__ . '/accounting-ledger-lock.php';
+        if (is_file($lockHelper)) {
+            require_once $lockHelper;
+        }
+    }
+    if (function_exists('accounting_main_site_enforce_ledger_mutable')) {
+        try {
+            accounting_main_site_enforce_ledger_mutable(0, (string) $postingDate);
+        } catch (\Throwable $lockEx) {
+            if ($lockEx instanceof \App\Accounting\Integrity\AccountingLedgerLockedException) {
+                throw new Exception('Ledger period is locked: ' . $lockEx->getMessage());
+            }
+        }
+    }
     
     $entryResult->free();
     $entryCheck->close();

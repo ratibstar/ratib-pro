@@ -5,6 +5,7 @@ namespace App\Accounting\Adapters;
 
 use App\Accounting\Contracts\AccountingAdapterInterface;
 use App\Accounting\Core\AccountingResult;
+use App\Accounting\Support\AccountingReplayGuard;
 
 /**
  * Writes to control_chart_accounts / control_journal_entries / control_journal_entry_lines.
@@ -49,6 +50,18 @@ final class ControlPanelAccountingAdapter implements AccountingAdapterInterface
         $debitCode = (string) $event['debit_account'];
         $creditCode = (string) $event['credit_account'];
 
+        $integrity = dirname(__DIR__, 2) . '/Support/post_accounting_integrity.php';
+        if (is_file($integrity)) {
+            require_once $integrity;
+            if (function_exists('accounting_enforce_ledger_mutable')) {
+                try {
+                    accounting_enforce_ledger_mutable(max(1, $countryId), $entryDate, null, 'create');
+                } catch (\Throwable $lockEx) {
+                    return AccountingResult::fail('Ledger period is locked: ' . $lockEx->getMessage());
+                }
+            }
+        }
+
         $debitLine = $this->resolveChartAccount($ctrl, $debitCode);
         $creditLine = $this->resolveChartAccount($ctrl, $creditCode);
 
@@ -57,6 +70,15 @@ final class ControlPanelAccountingAdapter implements AccountingAdapterInterface
         }
 
         $reference = (string) ($event['metadata']['reference'] ?? ('GL-GW-' . date('YmdHis')));
+
+        if (AccountingReplayGuard::isReplay($event) && $this->journalExistsByReference($ctrl, $reference)) {
+            return AccountingReplayGuard::replayAcknowledged(
+                $event,
+                'control-panel',
+                'Replay idempotent — control journal reference already exists',
+                ['reference' => $reference]
+            );
+        }
 
         $useTx = @$ctrl->begin_transaction();
         try {
@@ -150,5 +172,25 @@ final class ControlPanelAccountingAdapter implements AccountingAdapterInterface
             throw new \RuntimeException('insert journal line failed');
         }
         $st->close();
+    }
+
+    private function journalExistsByReference(\mysqli $ctrl, string $reference): bool
+    {
+        $reference = trim($reference);
+        if ($reference === '') {
+            return false;
+        }
+
+        $st = $ctrl->prepare('SELECT id FROM control_journal_entries WHERE reference = ? LIMIT 1');
+        if ($st === false) {
+            return false;
+        }
+        $st->bind_param('s', $reference);
+        $st->execute();
+        $res = $st->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $st->close();
+
+        return $row !== null;
     }
 }

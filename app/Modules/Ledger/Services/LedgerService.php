@@ -44,6 +44,7 @@ final class LedgerService
         ?string $description = null
     ): LedgerJournal {
         $this->validateRecordEntry($agencyId, $debitAccountId, $creditAccountId, $amount, $currencyCode, null, null);
+        $this->enforceLedgerMutable($agencyId, date('Y-m-d'));
 
         $debitAccount = $this->repository->findAccountById($debitAccountId);
         $creditAccount = $this->repository->findAccountById($creditAccountId);
@@ -118,6 +119,7 @@ final class LedgerService
         ?string $description = null
     ): LedgerJournal {
         $this->validateRecordEntry($agencyId, $debitAccountId, $creditAccountId, $amount, $currencyCode, $referenceType, $referenceId);
+        $this->enforceLedgerMutable($agencyId, date('Y-m-d'));
 
         $debitAccount = $this->repository->findAccountById($debitAccountId);
         $creditAccount = $this->repository->findAccountById($creditAccountId);
@@ -199,6 +201,11 @@ final class LedgerService
         return $this->repository->findAccountByCode($agencyId, $code);
     }
 
+    public function journalExistsForReference(string $referenceType, int $referenceId): bool
+    {
+        return $this->repository->journalExistsForReference($referenceType, $referenceId);
+    }
+
     public function getAccountBalance(int $ledgerAccountId, ?string $asOfDate = null): float
     {
         return $this->repository->getAccountBalance($ledgerAccountId, $asOfDate);
@@ -242,6 +249,20 @@ final class LedgerService
                 sprintf('Journal %d does not balance: debit=%.2f, credit=%.2f', $journal->id, $totalDebit, $totalCredit)
             );
         }
+    }
+
+    private function enforceLedgerMutable(int $agencyId, string $entryDate): void
+    {
+        $integrity = dirname(__DIR__, 3) . '/Accounting/Support/post_accounting_integrity.php';
+        if (!is_file($integrity)) {
+            return;
+        }
+        require_once $integrity;
+        if (!function_exists('accounting_enforce_ledger_mutable')) {
+            return;
+        }
+
+        accounting_enforce_ledger_mutable($agencyId, $entryDate, null, 'create');
     }
 
     private function emitAccountingGatewayEvent(

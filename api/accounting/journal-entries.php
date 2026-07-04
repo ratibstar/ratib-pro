@@ -41,6 +41,7 @@ if (!function_exists('formatDatesInArray')) {
 }
 require_once __DIR__ . '/core/erp-posting-controls.php';
 require_once __DIR__ . '/core/audit-trail-helper.php';
+require_once __DIR__ . '/core/accounting-ledger-lock.php';
 
 header('Content-Type: application/json');
 
@@ -1564,6 +1565,17 @@ try {
         }
         if ($entryDate === null || $entryDate === '') {
             $entryDate = date('Y-m-d');
+        }
+
+        $lockCompanyId = (int) ($data['agency_id'] ?? $data['company_id'] ?? $_SESSION['agency_id'] ?? 0);
+        try {
+            accounting_main_site_enforce_ledger_mutable($lockCompanyId, (string) $entryDate);
+        } catch (\Throwable $lockEx) {
+            if ($lockEx instanceof \App\Accounting\Integrity\AccountingLedgerLockedException) {
+                http_response_code(423);
+                echo json_encode(accounting_main_site_ledger_lock_response($lockEx));
+                exit;
+            }
         }
         $description = $data['description'] ?? '';
         $accountId = intval($data['account_id'] ?? 0);

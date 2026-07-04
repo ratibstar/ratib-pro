@@ -5,6 +5,7 @@ namespace App\Accounting\Adapters;
 
 use App\Accounting\Contracts\AccountingAdapterInterface;
 use App\Accounting\Core\AccountingResult;
+use App\Accounting\Support\AccountingReplayGuard;
 
 /**
  * Writes to rateb_chart_of_accounts / rateb_journal_entries / rateb_journal_lines
@@ -36,14 +37,36 @@ final class RatebErpAccountingAdapter implements AccountingAdapterInterface
             return AccountingResult::fail('AccountingService not loaded (rateb-erp context required for gateway-first write)');
         }
 
+        /** @var \Rateb\App\Services\AccountingService $service */
+        $service = new \Rateb\App\Services\AccountingService();
+
+        if (AccountingReplayGuard::isReplay($event)) {
+            $sourceType = (string) ($event['reference_type'] ?? $event['event_type']);
+            $sourceId = is_numeric($event['reference_id'] ?? null) ? (int) $event['reference_id'] : null;
+            if ($sourceId !== null && $service->journalExistsForSource($sourceType, $sourceId)) {
+                $existingId = $service->journalIdForSource($sourceType, $sourceId);
+
+                return AccountingReplayGuard::replayAcknowledged(
+                    $event,
+                    'rateb-erp',
+                    'Replay idempotent — journal already exists for source',
+                    ['journal_entry_id' => $existingId]
+                );
+            }
+            if (!empty($event['metadata']['journal_entry_id'])) {
+                return AccountingReplayGuard::replayAcknowledged(
+                    $event,
+                    'rateb-erp',
+                    'Replay idempotent — journal_entry_id present in event metadata'
+                );
+            }
+        }
+
         $companyId = (int) $event['company_id'];
         $amount = round((float) $event['amount'], 2);
         if ($amount <= 0) {
             return AccountingResult::fail('amount must be greater than zero for gateway-first ERP post');
         }
-
-        /** @var \Rateb\App\Services\AccountingService $service */
-        $service = new \Rateb\App\Services\AccountingService();
 
         $debitAccountId = $service->accountIdByCode($companyId, (string) $event['debit_account']);
         $creditAccountId = $service->accountIdByCode($companyId, (string) $event['credit_account']);

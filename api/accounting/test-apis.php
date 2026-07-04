@@ -5,11 +5,13 @@
  */
 /**
  * Accounting API Diagnostic - Helps find 500 error causes
- * Access: https://rateb.sa/api/accounting/test-apis.php (while logged in)
- * DELETE this file after debugging for security
+ * Restricted: non-production OR enterprise admin.
  */
+require_once __DIR__ . '/core/accounting-endpoint-guard.php';
+accounting_require_diagnostic_access();
+
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', accounting_endpoint_is_production() ? '0' : '1');
 ini_set('log_errors', 1);
 header('Content-Type: application/json; charset=utf-8');
 

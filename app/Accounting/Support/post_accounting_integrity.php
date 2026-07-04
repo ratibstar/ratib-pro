@@ -8,6 +8,8 @@ declare(strict_types=1);
 use App\Accounting\Integrity\AccountingEventPipelineDecorator;
 use App\Accounting\Integrity\AccountingIntegrityHook;
 use App\Accounting\Integrity\AccountingLedgerLockManager;
+use App\Accounting\Integrity\AccountingLedgerLockedException;
+use App\Accounting\Integrity\AccountingLockVerdict;
 use App\Accounting\Support\AccountingConfig;
 use App\Accounting\Support\AccountingGatewayBootstrap;
 
@@ -50,6 +52,45 @@ if (!function_exists('accounting_can_mutate_ledger')) {
         $verdict = accounting_assert_ledger_mutable($companyId, $entryDate, $branchId, $operation);
 
         return !empty($verdict['allowed']);
+    }
+}
+
+if (!function_exists('accounting_enforce_ledger_mutable')) {
+    /**
+     * Hard-stop ledger writes when ACCOUNTING_LEDGER_LOCK_ENFORCEMENT_ENABLED is on.
+     *
+     * @throws AccountingLedgerLockedException
+     */
+    function accounting_enforce_ledger_mutable(
+        int $companyId,
+        string $entryDate,
+        ?int $branchId = null,
+        string $operation = 'create'
+    ): void {
+        if (!AccountingConfig::ledgerLockEnforcementEnabled() && !AccountingConfig::integrityEnabled()) {
+            return;
+        }
+
+        try {
+            AccountingGatewayBootstrap::registerAutoloader();
+            $verdict = (new AccountingLedgerLockManager())->assertMutable($companyId, $entryDate, $branchId, $operation);
+        } catch (\Throwable $e) {
+            error_log('accounting_enforce_ledger_mutable: ' . $e->getMessage());
+
+            return;
+        }
+
+        if (
+            AccountingConfig::ledgerLockEnforcementEnabled()
+            && $verdict->status === AccountingLockVerdict::HARD_REJECT
+        ) {
+            throw new AccountingLedgerLockedException(
+                $verdict->message,
+                $verdict->status,
+                $verdict->periodFrom,
+                $verdict->periodTo
+            );
+        }
     }
 }
 

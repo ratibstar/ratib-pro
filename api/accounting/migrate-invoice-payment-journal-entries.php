@@ -18,19 +18,10 @@
  */
 
 require_once '../../includes/config.php';
+require_once __DIR__ . '/core/accounting-endpoint-guard.php';
+accounting_require_migration_access();
+
 require_once __DIR__ . '/core/invoice-payment-automation.php';
-
-header('Content-Type: text/html; charset=utf-8');
-
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Set default user_id if not in session (for migration scripts)
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 1;
-}
 
 echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Invoice/Payment Journal Entry Migration</title></head><body>";
 echo "<h1>Invoice/Payment Journal Entry Migration</h1>";

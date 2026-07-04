@@ -5,6 +5,7 @@ namespace App\Accounting\Adapters;
 
 use App\Accounting\Contracts\AccountingAdapterInterface;
 use App\Accounting\Core\AccountingResult;
+use App\Accounting\Support\AccountingReplayGuard;
 
 /**
  * Writes to financial_accounts / journal_entries / journal_entry_lines / general_ledger
@@ -48,6 +49,15 @@ final class MainSiteAccountingAdapter implements AccountingAdapterInterface
         $journalEntryId = isset($event['metadata']['journal_entry_id'])
             ? (int) $event['metadata']['journal_entry_id']
             : 0;
+
+        if (AccountingReplayGuard::isReplay($event) && $journalEntryId > 0) {
+            return AccountingReplayGuard::replayAcknowledged(
+                $event,
+                'main-site',
+                'Replay idempotent — journal_entry_id already recorded; skipping GL re-post',
+                ['journal_entry_id' => $journalEntryId]
+            );
+        }
 
         if ($journalEntryId <= 0) {
             return AccountingResult::fail('metadata.journal_entry_id required for main-site GL post (create journal via legacy API first)');

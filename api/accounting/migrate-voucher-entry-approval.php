@@ -9,15 +9,11 @@
  * Safe to re-run: skips rows where entry_approval.journal_entry_id already exists.
  */
 require_once '../../includes/config.php';
+require_once __DIR__ . '/core/accounting-endpoint-guard.php';
+accounting_require_migration_access();
 require_once __DIR__ . '/../core/api-permission-helper.php';
 
 header('Content-Type: application/json; charset=utf-8');
-
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
 
 try {
     enforceApiPermission('journal-entries', 'update');
@@ -27,7 +23,7 @@ try {
     exit;
 }
 
-$userId = (int)$_SESSION['user_id'];
+$userId = (int) ($_SESSION['user_id'] ?? 0);
 
 function ratebTableExists(mysqli $conn, string $table): bool
 {

@@ -14,15 +14,10 @@
  */
 
 require_once '../../includes/config.php';
+require_once __DIR__ . '/core/accounting-endpoint-guard.php';
+accounting_require_migration_access();
 
 header('Content-Type: application/json');
-
-// Check if user is logged in and has admin permissions
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
 
 // Check if table exists
 $tableCheck = $conn->query("SHOW TABLES LIKE 'journal_entries'");

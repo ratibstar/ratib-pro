@@ -13,6 +13,24 @@
  * Supports cost centers per line
  */
 
+require_once __DIR__ . '/accounting-ledger-lock.php';
+
+/**
+ * @return array{success:false,message:string}|null
+ */
+function accounting_automation_reject_if_locked(string $entryDate, int $companyId = 0): ?array
+{
+    try {
+        accounting_main_site_enforce_ledger_mutable($companyId, $entryDate);
+    } catch (\Throwable $lockEx) {
+        if ($lockEx instanceof \App\Accounting\Integrity\AccountingLedgerLockedException) {
+            return ['success' => false, 'message' => 'Ledger period is locked: ' . $lockEx->getMessage()];
+        }
+    }
+
+    return null;
+}
+
 require_once __DIR__ . '/general-ledger-helper.php';
 
 /**
@@ -35,6 +53,10 @@ function createInvoiceJournalEntry($conn, $invoiceId, $invoiceNumber, $invoiceDa
         // Validate amount
         if ($totalAmount <= 0) {
             return ['success' => false, 'message' => 'Total amount must be greater than 0'];
+        }
+
+        if (($lock = accounting_automation_reject_if_locked((string) $invoiceDate)) !== null) {
+            return $lock;
         }
         
         // Check if period is locked
@@ -362,6 +384,10 @@ function createPaymentJournalEntry($conn, $paymentId, $paymentNumber, $paymentDa
         if ($amount <= 0) {
             return ['success' => false, 'message' => 'Payment amount must be greater than 0'];
         }
+
+        if (($lock = accounting_automation_reject_if_locked((string) $paymentDate)) !== null) {
+            return $lock;
+        }
         
         // Check if period is locked
         $closingsTableCheck = $conn->query("SHOW TABLES LIKE 'financial_closings'");
@@ -608,6 +634,10 @@ function createExpenseJournalEntry($conn, $expenseId, $referenceNumber, $expense
         // Validate amount
         if ($amount <= 0) {
             return ['success' => false, 'message' => 'Expense amount must be greater than 0'];
+        }
+
+        if (($lock = accounting_automation_reject_if_locked((string) $expenseDate)) !== null) {
+            return $lock;
         }
         
         // Check if period is locked
@@ -859,6 +889,10 @@ function createReceiptJournalEntry($conn, $receiptId, $receiptNumber, $receiptDa
         // Validate amount
         if ($amount <= 0) {
             return ['success' => false, 'message' => 'Receipt amount must be greater than 0'];
+        }
+
+        if (($lock = accounting_automation_reject_if_locked((string) $receiptDate)) !== null) {
+            return $lock;
         }
         
         // Check if period is locked

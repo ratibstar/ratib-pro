@@ -6,6 +6,7 @@ namespace App\Accounting\Admin\Services;
 use App\Accounting\Admin\Support\AccountingControlDbTrait;
 use App\Accounting\Support\AccountingConfig;
 use App\Accounting\Support\AccountingGatewayBootstrap;
+use App\Accounting\Support\EnterpriseMigrationStatus;
 
 /**
  * Phase 7 — read-only dashboards, search, timeline, notifications, diagnostics.
@@ -481,6 +482,20 @@ final class AccountingControlPhase7Service
         foreach ($requiredTables as $table) {
             $checks[] = $this->diag('table.' . $table, $this->tableExists($table), "Table {$table}");
         }
+
+        $migrationStatus = EnterpriseMigrationStatus::diagnose();
+        foreach ($migrationStatus['tracks'] as $track) {
+            $checks[] = $this->diag(
+                'migration.' . $track['key'],
+                (bool) $track['applied'],
+                $track['label'] . (empty($track['missing_tables']) ? '' : ' — missing: ' . implode(', ', $track['missing_tables']))
+            );
+        }
+        $checks[] = [
+            'id' => 'migration.runner_hint',
+            'status' => $migrationStatus['any_missing'] ? 'WARN' : 'PASS',
+            'label' => $migrationStatus['runner_hint'],
+        ];
 
         $controller = $erpRoot . '/app/controllers/Admin/AccountingControlController.php';
         $checks[] = $this->diag('controller', is_file($controller), 'AccountingControlController');

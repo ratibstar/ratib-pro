@@ -575,6 +575,17 @@ final class AccountingService
             return null;
         }
 
+        try {
+            $this->enforceLedgerMutableForWrite($companyId, $entryDate);
+        } catch (\Throwable $e) {
+            if ($this->isLedgerLockedException($e)) {
+                error_log('createPostedEntry ledger lock: ' . $e->getMessage());
+
+                return null;
+            }
+            throw $e;
+        }
+
         $this->ensureJournalSourceTypeEnum();
 
         $entryModel = new JournalEntry();
@@ -1711,11 +1722,27 @@ final class AccountingService
 
     private function entryExists(string $sourceType, int $sourceId): bool
     {
+        return $this->journalExistsForSource($sourceType, $sourceId);
+    }
+
+    public function journalExistsForSource(string $sourceType, int $sourceId): bool
+    {
         $row = (new JournalEntry())->queryOne(
             'SELECT id FROM rateb_journal_entries WHERE source_type = :t AND source_id = :sid AND status != :void LIMIT 1',
             ['t' => $sourceType, 'sid' => $sourceId, 'void' => 'void']
         );
+
         return $row !== null;
+    }
+
+    public function journalIdForSource(string $sourceType, int $sourceId): ?int
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_journal_entries WHERE source_type = :t AND source_id = :sid AND status != :void LIMIT 1',
+            ['t' => $sourceType, 'sid' => $sourceId, 'void' => 'void']
+        );
+
+        return $row !== null ? (int) $row['id'] : null;
     }
 
     /** @param array<int, array{debit:float,credit:float}> $lines */
@@ -3501,6 +3528,46 @@ final class AccountingService
         }
 
         return null;
+    }
+
+    private function resolveAccountingIntegrityBootstrapPath(): ?string
+    {
+        $candidates = [];
+        if (defined('RATEB_ROOT')) {
+            $candidates[] = dirname((string) RATEB_ROOT) . '/app/Accounting/Support/post_accounting_integrity.php';
+        }
+        $candidates[] = dirname(__DIR__, 3) . '/app/Accounting/Support/post_accounting_integrity.php';
+
+        foreach ($candidates as $path) {
+            if (is_file($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function enforceLedgerMutableForWrite(?int $companyId, string $entryDate, ?int $branchId = null): void
+    {
+        $path = $this->resolveAccountingIntegrityBootstrapPath();
+        if ($path === null) {
+            return;
+        }
+        require_once $path;
+        if (!function_exists('accounting_enforce_ledger_mutable')) {
+            return;
+        }
+
+        accounting_enforce_ledger_mutable((int) ($companyId ?? 0), $entryDate, $branchId, 'create');
+    }
+
+    private function isLedgerLockedException(\Throwable $e): bool
+    {
+        if ($e instanceof \App\Accounting\Integrity\AccountingLedgerLockedException) {
+            return true;
+        }
+
+        return $e->getPrevious() instanceof \App\Accounting\Integrity\AccountingLedgerLockedException;
     }
 
     private function mapGatewayEventType(string $sourceType): string

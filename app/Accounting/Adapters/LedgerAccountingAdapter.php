@@ -5,6 +5,7 @@ namespace App\Accounting\Adapters;
 
 use App\Accounting\Contracts\AccountingAdapterInterface;
 use App\Accounting\Core\AccountingResult;
+use App\Accounting\Support\AccountingReplayGuard;
 use App\Modules\Ledger\Services\LedgerService;
 
 /**
@@ -52,6 +53,19 @@ final class LedgerAccountingAdapter implements AccountingAdapterInterface
 
         $referenceType = (string) $event['reference_type'];
         $referenceId = is_numeric($event['reference_id']) ? (int) $event['reference_id'] : 0;
+
+        if (
+            AccountingReplayGuard::isReplay($event)
+            && $referenceType !== ''
+            && $referenceId > 0
+            && $ledger->journalExistsForReference($referenceType, $referenceId)
+        ) {
+            return AccountingReplayGuard::replayAcknowledged(
+                $event,
+                'ledger',
+                'Replay idempotent — ledger journal already exists for reference'
+            );
+        }
 
         if ($referenceType !== '' && $referenceId > 0) {
             $journal = $ledger->recordEntryWithReference(

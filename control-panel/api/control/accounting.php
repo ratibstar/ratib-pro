@@ -1270,6 +1270,17 @@ if ($method === 'POST') {
         if ($entryDate === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $entryDate)) {
             jsonOut(['success' => false, 'message' => 'A valid entry date (Y-m-d) is required']);
         }
+        $integrity = dirname(__DIR__, 4) . '/app/Accounting/Support/post_accounting_integrity.php';
+        if (is_file($integrity)) {
+            require_once $integrity;
+            if (function_exists('accounting_enforce_ledger_mutable')) {
+                try {
+                    accounting_enforce_ledger_mutable(max(1, $countryIdIn), $entryDate, null, 'create');
+                } catch (\Throwable $lockEx) {
+                    jsonOut(['success' => false, 'message' => 'Ledger period is locked: ' . $lockEx->getMessage()]);
+                }
+            }
+        }
         $description = trim((string) ($input['description'] ?? ''));
         $linesIn = $input['lines'] ?? null;
         if (!is_array($linesIn)) {
