@@ -5,6 +5,8 @@
 /** @var string $apiBase */
 /** @var list<array{slug:string,label:string,route:string,icon:string,permission:string}> $accNav */
 $accSection = $accSection ?? 'dashboard';
+$accLocale = rateb_locale();
+$accI18n = require RATEB_VIEWS_PATH . '/admin/accounting-control/i18n-payload.php';
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/accounting-control');
 $accAssetVer = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
 $accAssetsBase = rateb_site_origin() . rateb_erp_app_prefix() . '/assets/accounting-control';
@@ -17,7 +19,7 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
      data-api-base="<?php echo Rateb\App\Core\View::escape($apiBase); ?>"
      data-csrf="<?php echo Rateb\App\Core\View::escape($csrf); ?>"
      data-company-id="<?php echo (int) $companyId; ?>"
-     data-lang="<?php echo Rateb\App\Core\View::escape(rateb_locale()); ?>"
+     data-lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>"
      data-dir="<?php echo rateb_is_rtl() ? 'rtl' : 'ltr'; ?>">
     <header class="acc-control-header">
         <div class="acc-control-brand">
@@ -58,19 +60,19 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
         <div class="acc-filters row g-2 mb-3">
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('company'); ?></label>
-                <input type="number" class="form-control form-control-sm acc-filter-company" value="<?php echo (int) $companyId ?: ''; ?>" min="0">
+                <input type="number" class="form-control form-control-sm acc-filter-company" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" value="<?php echo (int) $companyId ?: ''; ?>" min="0">
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('branch'); ?></label>
-                <input type="number" class="form-control form-control-sm acc-filter-branch" min="0">
+                <input type="number" class="form-control form-control-sm acc-filter-branch" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" min="0">
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('from_date'); ?></label>
-                <input type="date" class="form-control form-control-sm acc-filter-from" value="<?php echo date('Y-m-01'); ?>">
+                <input type="date" class="form-control form-control-sm acc-filter-from" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" value="<?php echo date('Y-m-01'); ?>">
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('to_date'); ?></label>
-                <input type="date" class="form-control form-control-sm acc-filter-to" value="<?php echo date('Y-m-d'); ?>">
+                <input type="date" class="form-control form-control-sm acc-filter-to" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" value="<?php echo date('Y-m-d'); ?>">
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="button" class="btn btn-primary btn-sm w-100 acc-btn-apply-filters"><?php echo __('apply'); ?></button>
@@ -90,7 +92,7 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">JSON</h5>
+                    <h5 class="modal-title"><?php echo __('accounting_control_btn_json'); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <pre class="modal-body acc-json-viewer mb-0"></pre>
@@ -113,5 +115,6 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
         </div>
     </div>
 </div>
+<script type="application/json" id="acc-control-i18n"><?php echo json_encode($accI18n, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP); ?></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="<?php echo Rateb\App\Core\View::escape($accJsUrl); ?>"></script>

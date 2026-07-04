@@ -1,15 +1,21 @@
 <div class="acc-section" data-acc-page="drift">
     <div class="d-flex flex-wrap gap-2 mb-3">
-        <button type="button" class="btn btn-sm btn-primary acc-run-drift">Run Detection</button>
+        <button type="button" class="btn btn-sm btn-primary acc-run-drift"><?php echo __('accounting_control_run_detection'); ?></button>
         <select class="form-select form-select-sm w-auto acc-filter-severity">
-            <option value="">All severity</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value=""><?php echo __('accounting_control_all_severity'); ?></option>
+            <option value="high"><?php echo __('accounting_control_severity_high'); ?></option>
+            <option value="medium"><?php echo __('accounting_control_severity_medium'); ?></option>
+            <option value="low"><?php echo __('accounting_control_severity_low'); ?></option>
         </select>
     </div>
     <canvas id="acc-chart-drift-severity" height="120" class="mb-3"></canvas>
     <div class="table-responsive">
-        <table class="table table-sm acc-drift-table"><thead><tr><th>ID</th><th>Period</th><th>Severity</th><th>Summary</th><th></th></tr></thead><tbody></tbody></table>
+        <table class="table table-sm acc-drift-table"><thead><tr>
+            <th><?php echo __('accounting_control_col_id'); ?></th>
+            <th><?php echo __('accounting_control_col_period'); ?></th>
+            <th><?php echo __('accounting_control_col_severity'); ?></th>
+            <th><?php echo __('accounting_control_col_summary'); ?></th>
+            <th></th>
+        </tr></thead><tbody></tbody></table>
     </div>
 </div>

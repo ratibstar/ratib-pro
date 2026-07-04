@@ -4,10 +4,142 @@
     var root = document.getElementById('acc-control-app');
     if (!root) return;
 
+    var i18nEl = document.getElementById('acc-control-i18n');
+    var I18N = {};
+    try {
+        I18N = i18nEl ? JSON.parse(i18nEl.textContent || '{}') : {};
+    } catch (e) {
+        I18N = {};
+    }
+
+    var locale = I18N.locale || root.dataset.lang || 'en';
+    var isAr = locale === 'ar' || String(locale).indexOf('ar') === 0;
+    var numLocale = isAr ? 'ar-SA' : 'en-US';
+    var dateLocale = isAr ? 'ar-SA-u-ca-gregory' : 'en-US';
+
     var apiBase = root.dataset.apiBase || '';
     var csrf = root.dataset.csrf || '';
     var section = root.dataset.section || 'dashboard';
     var charts = {};
+
+    function t(path, fallback, vars) {
+        var parts = String(path).split('.');
+        var cur = I18N;
+        for (var i = 0; i < parts.length; i++) {
+            if (!cur || typeof cur !== 'object') {
+                cur = null;
+                break;
+            }
+            cur = cur[parts[i]];
+        }
+        var out = cur != null && cur !== '' ? String(cur) : (fallback != null ? String(fallback) : path);
+        if (vars) {
+            Object.keys(vars).forEach(function (k) {
+                out = out.replace(':' + k, vars[k]);
+            });
+        }
+        return out;
+    }
+
+    function tCard(key) {
+        return (I18N.cards && I18N.cards[key]) ? I18N.cards[key] : key.replace(/_/g, ' ');
+    }
+
+    function fmtNum(n) {
+        if (n == null || n === '' || isNaN(n)) return t('nullValue', '—');
+        try {
+            return Number(n).toLocaleString(numLocale);
+        } catch (e) {
+            return String(n);
+        }
+    }
+
+    function fmtDate(val) {
+        if (!val) return '';
+        var s = String(val);
+        var d = new Date(s.length === 10 ? s + 'T00:00:00' : s);
+        if (isNaN(d.getTime())) return s;
+        try {
+            return d.toLocaleDateString(dateLocale, { year: 'numeric', month: '2-digit', day: '2-digit' });
+        } catch (e) {
+            return s;
+        }
+    }
+
+    function fmtDateTime(val) {
+        if (!val) return '';
+        var d = new Date(String(val));
+        if (isNaN(d.getTime())) return String(val);
+        try {
+            return d.toLocaleString(dateLocale, {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        } catch (e) {
+            return String(val);
+        }
+    }
+
+    function fmtLabel(val) {
+        if (val == null || val === '') return t('nullValue', '—');
+        var s = String(val);
+        if (/^\d{4}-\d{2}(-\d{2})?$/.test(s)) {
+            var parts = s.split('-');
+            if (parts.length === 2) {
+                return fmtDate(parts[0] + '-' + parts[1] + '-01').replace(/\d{2}$/, '') || s;
+            }
+            return fmtDate(s);
+        }
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return fmtDate(s);
+        if (/^-?\d+(\.\d+)?$/.test(s)) return fmtNum(Number(s));
+        return s;
+    }
+
+    function fmtStatus(val) {
+        if (val == null || val === '' || String(val).toLowerCase() === 'null') {
+            return t('nullValue', '—');
+        }
+        var key = String(val).toLowerCase();
+        return (I18N.status && I18N.status[key]) ? I18N.status[key] : String(val);
+    }
+
+    function fmtSeverity(val) {
+        var key = String(val || 'low').toLowerCase();
+        return (I18N.severity && I18N.severity[key]) ? I18N.severity[key] : String(val || '');
+    }
+
+    function fmtPeriod(from, to) {
+        return t('periodRange', ':from → :to', {
+            from: fmtDate(from) || '—',
+            to: fmtDate(to) || '—'
+        });
+    }
+
+    function fmtValue(val) {
+        if (val == null || val === '' || String(val).toLowerCase() === 'null') {
+            return t('nullValue', '—');
+        }
+        if (typeof val === 'number') return fmtNum(val);
+        var s = String(val);
+        if (I18N.status && I18N.status[s.toLowerCase()]) return I18N.status[s.toLowerCase()];
+        if (/^-?\d+$/.test(s)) return fmtNum(Number(s));
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return fmtDateTime(s);
+        return s;
+    }
+
+    function chartBaseOpts(showLegend) {
+        return {
+            responsive: true,
+            plugins: { legend: { display: !!showLegend } },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function (v) { return fmtNum(v); }
+                    }
+                }
+            }
+        };
+    }
 
     function filters() {
         return {
@@ -32,7 +164,7 @@
         return el ? String(el.value).trim() : '';
     }
 
-    function alert(msg, type) {
+    function alertMsg(msg, type) {
         var box = document.getElementById('acc-alert');
         if (!box) return;
         box.className = 'alert alert-' + (type || 'info');
@@ -110,7 +242,7 @@
 
     function loadDashboard() {
         api('dashboard', { query: filters() }).then(function (res) {
-            if (!res.ok) { alert(res.message || 'Error', 'danger'); return; }
+            if (!res.ok) { alertMsg(res.message || t('msg.error', 'Error'), 'danger'); return; }
             renderDashboardCards(res.data.cards || {});
             renderCharts(res.data.charts || {});
         });
@@ -122,53 +254,85 @@
         var keys = Object.keys(cards);
         wrap.innerHTML = keys.map(function (k) {
             return '<div class="col-6 col-md-4 col-lg-3"><div class="acc-card"><div class="acc-card-value">' +
-                escapeHtml(String(cards[k])) + '</div><div class="acc-card-label">' + escapeHtml(k.replace(/_/g, ' ')) + '</div></div></div>';
+                escapeHtml(fmtValue(cards[k])) + '</div><div class="acc-card-label">' + escapeHtml(tCard(k)) + '</div></div></div>';
         }).join('');
     }
 
     function renderCharts(ch) {
-        barChart('acc-chart-daily-events', (ch.daily_events || []).map(function (x) { return x.date; }), (ch.daily_events || []).map(function (x) { return x.count; }), 'Daily Events');
-        barChart('acc-chart-monthly-posting', (ch.monthly_posting || []).map(function (x) { return x.month; }), (ch.monthly_posting || []).map(function (x) { return x.count; }), 'Monthly Posting');
-        doughnutChart('acc-chart-replay-rate', ['Success', 'Failed'], [ch.replay_success_rate && ch.replay_success_rate.processed || 0, ch.replay_success_rate && ch.replay_success_rate.failed || 0]);
-        lineChart('acc-chart-drift-trend', (ch.drift_trend || []).map(function (x) { return x.date; }), (ch.drift_trend || []).map(function (x) { return x.count; }));
-        barChart('acc-chart-company-activity', (ch.company_activity || []).map(function (x) { return x.key || '—'; }), (ch.company_activity || []).map(function (x) { return x.count; }), 'Companies');
-        barChart('acc-chart-branch-activity', (ch.branch_activity || []).map(function (x) { return x.key || '—'; }), (ch.branch_activity || []).map(function (x) { return x.count; }), 'Branches');
+        barChart('acc-chart-daily-events',
+            (ch.daily_events || []).map(function (x) { return fmtLabel(x.date); }),
+            (ch.daily_events || []).map(function (x) { return x.count; }),
+            t('charts.daily_events', 'Daily events'));
+        barChart('acc-chart-monthly-posting',
+            (ch.monthly_posting || []).map(function (x) { return fmtLabel(x.month); }),
+            (ch.monthly_posting || []).map(function (x) { return x.count; }),
+            t('charts.monthly_posting', 'Monthly posting'));
+        doughnutChart('acc-chart-replay-rate',
+            [t('charts.replay_success', 'Success'), t('charts.replay_failed', 'Failed')],
+            [ch.replay_success_rate && ch.replay_success_rate.processed || 0, ch.replay_success_rate && ch.replay_success_rate.failed || 0]);
+        lineChart('acc-chart-drift-trend',
+            (ch.drift_trend || []).map(function (x) { return fmtLabel(x.date); }),
+            (ch.drift_trend || []).map(function (x) { return x.count; }),
+            t('charts.drift_trend', 'Drift trend'));
+        barChart('acc-chart-company-activity',
+            (ch.company_activity || []).map(function (x) { return fmtLabel(x.key) || t('nullValue', '—'); }),
+            (ch.company_activity || []).map(function (x) { return x.count; }),
+            t('charts.companies', 'Companies'));
+        barChart('acc-chart-branch-activity',
+            (ch.branch_activity || []).map(function (x) { return fmtLabel(x.key) || t('nullValue', '—'); }),
+            (ch.branch_activity || []).map(function (x) { return x.count; }),
+            t('charts.branches', 'Branches'));
     }
 
     function barChart(id, labels, data, label) {
         var el = document.getElementById(id);
         if (!el || !window.Chart) return;
         if (charts[id]) charts[id].destroy();
-        charts[id] = new Chart(el, { type: 'bar', data: { labels: labels, datasets: [{ label: label || '', data: data, backgroundColor: '#3b82f6' }] }, options: { responsive: true, plugins: { legend: { display: !!label } } } });
+        var opts = chartBaseOpts(!!label);
+        charts[id] = new Chart(el, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: label || '', data: data, backgroundColor: '#3b82f6' }] },
+            options: opts
+        });
     }
 
-    function lineChart(id, labels, data) {
+    function lineChart(id, labels, data, label) {
         var el = document.getElementById(id);
         if (!el || !window.Chart) return;
         if (charts[id]) charts[id].destroy();
-        charts[id] = new Chart(el, { type: 'line', data: { labels: labels, datasets: [{ data: data, borderColor: '#f59e0b', fill: false }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+        var opts = chartBaseOpts(false);
+        if (label) opts.plugins.legend.display = true;
+        charts[id] = new Chart(el, {
+            type: 'line',
+            data: { labels: labels, datasets: [{ label: label || '', data: data, borderColor: '#f59e0b', fill: false }] },
+            options: opts
+        });
     }
 
     function doughnutChart(id, labels, data) {
         var el = document.getElementById(id);
         if (!el || !window.Chart) return;
         if (charts[id]) charts[id].destroy();
-        charts[id] = new Chart(el, { type: 'doughnut', data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#22c55e', '#ef4444'] }] }, options: { responsive: true } });
+        charts[id] = new Chart(el, {
+            type: 'doughnut',
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#22c55e', '#ef4444'] }] },
+            options: { responsive: true, plugins: { legend: { display: true } } }
+        });
     }
 
     function loadEvents(page) {
         var q = filters();
         q.page = page || 1;
         api('events', { query: q }).then(function (res) {
-            if (!res.ok) { alert(res.message || 'Error', 'danger'); return; }
+            if (!res.ok) { alertMsg(res.message || t('msg.error', 'Error'), 'danger'); return; }
             var tbody = root.querySelector('.acc-data-table tbody');
             if (!tbody) return;
             tbody.innerHTML = (res.data.rows || []).map(function (row) {
                 return '<tr data-search="' + escapeHtml((row.event_uuid + ' ' + row.source_system + ' ' + row.event_type + ' ' + row.status).toLowerCase()) + '"><td><code class="small">' + escapeHtml(row.event_uuid) + '</code></td><td>' + escapeHtml(row.source_system) +
-                    '</td><td>' + escapeHtml(row.event_type) + '</td><td><span class="badge bg-secondary">' + escapeHtml(row.status) +
-                    '</span></td><td>' + escapeHtml(String(row.company_id || '')) + '</td><td>' + escapeHtml(String(row.branch_id || '')) +
-                    '</td><td>' + escapeHtml(row.created_at || '') + '</td><td><button type="button" class="btn btn-sm btn-link acc-view-json">JSON</button> ' +
-                    '<button type="button" class="btn btn-sm btn-link acc-replay-one" data-uuid="' + escapeHtml(row.event_uuid) + '">Replay</button></td></tr>';
+                    '</td><td>' + escapeHtml(row.event_type) + '</td><td><span class="badge bg-secondary">' + escapeHtml(fmtStatus(row.status)) +
+                    '</span></td><td>' + escapeHtml(fmtValue(row.company_id)) + '</td><td>' + escapeHtml(fmtValue(row.branch_id)) +
+                    '</td><td>' + escapeHtml(fmtDateTime(row.created_at || '')) + '</td><td><button type="button" class="btn btn-sm btn-link acc-view-json">' + escapeHtml(t('btn.json', 'JSON')) + '</button> ' +
+                    '<button type="button" class="btn btn-sm btn-link acc-replay-one" data-uuid="' + escapeHtml(row.event_uuid) + '">' + escapeHtml(t('btn.replay', 'Replay')) + '</button></td></tr>';
             }).join('');
             bindJsonButtons(res.data.rows || []);
             bindEventReplayButtons();
@@ -181,7 +345,7 @@
             btn.addEventListener('click', function () {
                 var uuid = btn.dataset.uuid || '';
                 if (!uuid) return;
-                confirmAction('Replay event ' + uuid + '?', function () {
+                confirmAction(t('confirm.replay', 'Replay event :uuid?', { uuid: uuid }), function () {
                     api('replay', { method: 'POST', body: { event_uuid: uuid, confirm: 1 } }).then(showJson);
                 });
             });
@@ -195,7 +359,7 @@
         if (pages <= 1) { nav.innerHTML = ''; return; }
         var html = '<ul class="pagination pagination-sm mb-0">';
         for (var p = 1; p <= pages && p <= 20; p++) {
-            html += '<li class="page-item' + (p === page ? ' active' : '') + '"><button type="button" class="page-link" data-page="' + p + '">' + p + '</button></li>';
+            html += '<li class="page-item' + (p === page ? ' active' : '') + '"><button type="button" class="page-link" data-page="' + p + '">' + fmtNum(p) + '</button></li>';
         }
         html += '</ul>';
         nav.innerHTML = html;
@@ -217,8 +381,8 @@
             var tbody = root.querySelector('.acc-replay-history tbody');
             if (!tbody) return;
             tbody.innerHTML = rows.map(function (r) {
-                return '<tr><td>' + escapeHtml(r.created_at || '') + '</td><td><code class="small">' + escapeHtml(r.event_uuid || '') +
-                    '</code></td><td>' + escapeHtml(r.action) + '</td><td>' + escapeHtml(r.status) + '</td></tr>';
+                return '<tr><td>' + escapeHtml(fmtDateTime(r.created_at || '')) + '</td><td><code class="small">' + escapeHtml(r.event_uuid || '') +
+                    '</code></td><td>' + escapeHtml(r.action) + '</td><td>' + escapeHtml(fmtStatus(r.status)) + '</td></tr>';
             }).join('');
         });
     }
@@ -227,15 +391,15 @@
         var q = filters();
         if (mode === 'failed') q.status = 'failed';
         if (mode === 'single' && !q.event_uuid) {
-            alert('Enter Event UUID in filters', 'warning');
+            alertMsg(t('msg.enter_uuid', 'Enter event UUID in filters'), 'warning');
             return;
         }
         if (mode === 'company' && !q.company_id) {
-            alert('Enter Company ID in filters', 'warning');
+            alertMsg(t('msg.enter_company', 'Enter company ID in filters'), 'warning');
             return;
         }
         if (mode === 'branch' && !q.branch_id) {
-            alert('Enter Branch ID in filters', 'warning');
+            alertMsg(t('msg.enter_branch', 'Enter branch ID in filters'), 'warning');
             return;
         }
         var pre = root.querySelector('.acc-replay-result');
@@ -252,7 +416,7 @@
             });
         };
         if (dryRun) exec();
-        else confirmAction('Replay events for selected filters. This re-processes through the pipeline.', exec);
+        else confirmAction(t('confirm.replay_filters', 'Replay events for selected filters.'), exec);
     }
 
     function loadAudit() {
@@ -262,9 +426,9 @@
             var tbody = root.querySelector('.acc-data-table tbody');
             if (tbody) {
                 tbody.innerHTML = rows.map(function (r) {
-                    return '<tr><td>' + escapeHtml(r.created_at || '') + '</td><td><code class="small">' + escapeHtml(r.event_uuid || '') +
-                        '</code></td><td>' + escapeHtml(r.action) + '</td><td>' + escapeHtml(r.system) + '</td><td>' + escapeHtml(r.status) +
-                        '</td><td><button type="button" class="btn btn-sm btn-link acc-audit-json">JSON</button></td></tr>';
+                    return '<tr><td>' + escapeHtml(fmtDateTime(r.created_at || '')) + '</td><td><code class="small">' + escapeHtml(r.event_uuid || '') +
+                        '</code></td><td>' + escapeHtml(r.action) + '</td><td>' + escapeHtml(r.system) + '</td><td>' + escapeHtml(fmtStatus(r.status)) +
+                        '</td><td><button type="button" class="btn btn-sm btn-link acc-audit-json">' + escapeHtml(t('btn.json', 'JSON')) + '</button></td></tr>';
                 }).join('');
                 tbody.querySelectorAll('.acc-audit-json').forEach(function (btn, i) {
                     btn.addEventListener('click', function () { showJson(rows[i]); });
@@ -277,9 +441,9 @@
     function renderEvidence(rows) {
         root.querySelectorAll('.acc-evidence-table tbody').forEach(function (tbody) {
             tbody.innerHTML = rows.map(function (r) {
-                return '<tr><td>' + r.id + '</td><td>' + escapeHtml((r.period_from || '') + ' → ' + (r.period_to || '')) +
-                    '</td><td><code class="small">' + escapeHtml(r.certification_hash || '') + '</td><td>' + escapeHtml(r.created_at || '') +
-                    '</td><td><button type="button" class="btn btn-sm btn-link acc-ev-json">View</button></td></tr>';
+                return '<tr><td>' + escapeHtml(fmtValue(r.id)) + '</td><td>' + escapeHtml(fmtPeriod(r.period_from, r.period_to)) +
+                    '</td><td><code class="small">' + escapeHtml(r.certification_hash || '') + '</td><td>' + escapeHtml(fmtDateTime(r.created_at || '')) +
+                    '</td><td><button type="button" class="btn btn-sm btn-link acc-ev-json">' + escapeHtml(t('btn.view', 'View')) + '</button></td></tr>';
             }).join('');
             tbody.querySelectorAll('.acc-ev-json').forEach(function (btn, i) {
                 btn.addEventListener('click', function () { showJson(rows[i]); });
@@ -290,13 +454,17 @@
     function loadProjection() {
         var type = val('.acc-projection-type') || 'trial_balance';
         api('projections', { query: Object.assign({}, filters(), { type: type }) }).then(function (res) {
-            if (!res.ok) { alert(res.message || 'Error', 'danger'); return; }
+            if (!res.ok) { alertMsg(res.message || t('msg.error', 'Error'), 'danger'); return; }
             var closure = root.querySelector('.acc-period-closure');
-            if (closure) closure.textContent = res.data.period_closure ? ('Period: ' + JSON.stringify(res.data.period_closure)) : 'Period open';
+            if (closure) {
+                closure.textContent = res.data.period_closure
+                    ? JSON.stringify(res.data.period_closure)
+                    : t('periodOpen', 'Period open');
+            }
             var tbody = root.querySelector('.acc-projection-table tbody');
             if (tbody) {
                 tbody.innerHTML = (res.data.rows || []).slice(0, 200).map(function (row, i) {
-                    return '<tr><td>' + i + '</td><td><button type="button" class="btn btn-sm btn-link acc-proj-row">View</button></td></tr>';
+                    return '<tr><td>' + fmtNum(i + 1) + '</td><td><button type="button" class="btn btn-sm btn-link acc-proj-row">' + escapeHtml(t('btn.view', 'View')) + '</button></td></tr>';
                 }).join('');
                 var rows = res.data.rows || [];
                 tbody.querySelectorAll('.acc-proj-row').forEach(function (btn, i) {
@@ -307,9 +475,9 @@
     }
 
     function rebuildSnapshot() {
-        confirmAction('Rebuild snapshots for the selected period?', function () {
+        confirmAction(t('confirm.rebuild', 'Rebuild snapshots for the selected period?'), function () {
             api('projections', { method: 'POST', body: Object.assign({}, filters(), { action: 'rebuild', confirm: 1 }) }).then(function (res) {
-                alert(res.ok ? 'Rebuild complete' : (res.message || 'Failed'), res.ok ? 'success' : 'danger');
+                alertMsg(res.ok ? t('msg.rebuild_ok', 'Rebuild complete') : (res.message || t('msg.rebuild_fail', 'Failed')), res.ok ? 'success' : 'danger');
                 loadProjection();
             });
         });
@@ -322,9 +490,9 @@
             var tbody = root.querySelector('.acc-consolidation-table tbody');
             if (!tbody) return;
             var rows = res.data.rows || [];
-            tbody.innerHTML = rows.map(function (r, i) {
-                return '<tr><td>' + escapeHtml(r.consolidation_run_id || '') + '</td><td>' + r.company_id + '</td><td>' +
-                    escapeHtml((r.period_from || '') + ' → ' + (r.period_to || '')) + '</td><td>…</td><td><button type="button" class="btn btn-sm btn-link acc-cons-row">JSON</button></td></tr>';
+            tbody.innerHTML = rows.map(function (r) {
+                return '<tr><td>' + escapeHtml(String(r.consolidation_run_id || '')) + '</td><td>' + escapeHtml(fmtValue(r.company_id)) + '</td><td>' +
+                    escapeHtml(fmtPeriod(r.period_from, r.period_to)) + '</td><td>…</td><td><button type="button" class="btn btn-sm btn-link acc-cons-row">' + escapeHtml(t('btn.json', 'JSON')) + '</button></td></tr>';
             }).join('');
             tbody.querySelectorAll('.acc-cons-row').forEach(function (btn, i) {
                 btn.addEventListener('click', function () { showJson(rows[i]); });
@@ -333,9 +501,9 @@
     }
 
     function runConsolidation() {
-        confirmAction('Run consolidation for selected period?', function () {
+        confirmAction(t('confirm.consolidation', 'Run consolidation for selected period?'), function () {
             api('consolidation', { method: 'POST', body: Object.assign({}, filters(), { confirm: 1 }) }).then(function (res) {
-                alert(res.ok ? 'Consolidation complete' : (res.message || 'Failed'), res.ok ? 'success' : 'danger');
+                alertMsg(res.ok ? t('msg.consolidation_ok', 'Consolidation complete') : (res.message || t('msg.consolidation_fail', 'Failed')), res.ok ? 'success' : 'danger');
                 loadConsolidation();
             });
         });
@@ -352,13 +520,15 @@
                 var s = String(r.severity || 'low').toLowerCase();
                 if (counts[s] != null) counts[s]++;
             });
-            doughnutChart('acc-chart-drift-severity', ['High', 'Medium', 'Low'], [counts.high, counts.medium, counts.low]);
+            doughnutChart('acc-chart-drift-severity',
+                [t('severity.high', 'High'), t('severity.medium', 'Medium'), t('severity.low', 'Low')],
+                [counts.high, counts.medium, counts.low]);
             var tbody = root.querySelector('.acc-drift-table tbody');
             if (tbody) {
                 tbody.innerHTML = rows.map(function (r) {
-                    return '<tr><td>' + r.id + '</td><td>' + escapeHtml((r.period_from || '') + ' → ' + (r.period_to || '')) +
-                        '</td><td><span class="badge bg-warning">' + escapeHtml(r.severity || 'low') + '</span></td><td>…</td>' +
-                        '<td><button type="button" class="btn btn-sm btn-link acc-drift-json">View</button></td></tr>';
+                    return '<tr><td>' + escapeHtml(fmtValue(r.id)) + '</td><td>' + escapeHtml(fmtPeriod(r.period_from, r.period_to)) +
+                        '</td><td><span class="badge bg-warning">' + escapeHtml(fmtSeverity(r.severity || 'low')) + '</span></td><td>…</td>' +
+                        '<td><button type="button" class="btn btn-sm btn-link acc-drift-json">' + escapeHtml(t('btn.view', 'View')) + '</button></td></tr>';
                 }).join('');
                 tbody.querySelectorAll('.acc-drift-json').forEach(function (btn, i) {
                     btn.addEventListener('click', function () { showJson(rows[i]); });
@@ -383,20 +553,20 @@
             tbody.innerHTML = rows.map(function (r) {
                 var payload = r.payload || {};
                 var summary = payload.summary || {};
-                return '<tr><td>' + r.id + '</td><td>' + escapeHtml(r.risk_level || '') + '</td><td>' +
-                    escapeHtml((r.period_from || '') + ' → ' + (r.period_to || '')) + '</td><td>' +
-                    (summary.drift_count || 0) + '</td><td>' + (summary.correction_count || 0) +
-                    '</td><td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-secondary acc-exec-dry" data-id="' + r.id + '">Dry Run</button> ' +
-                    '<button type="button" class="btn btn-sm btn-outline-success acc-exec-live" data-id="' + r.id + '">Execute</button> ' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger acc-reject-row" data-id="' + r.id + '">Reject</button></td></tr>';
+                return '<tr><td>' + escapeHtml(fmtValue(r.id)) + '</td><td>' + escapeHtml(String(r.risk_level || '')) + '</td><td>' +
+                    escapeHtml(fmtPeriod(r.period_from, r.period_to)) + '</td><td>' +
+                    escapeHtml(fmtValue(summary.drift_count || 0)) + '</td><td>' + escapeHtml(fmtValue(summary.correction_count || 0)) +
+                    '</td><td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-secondary acc-exec-dry" data-id="' + r.id + '">' + escapeHtml(t('btn.dry_run', 'Dry run')) + '</button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-success acc-exec-live" data-id="' + r.id + '">' + escapeHtml(t('btn.execute', 'Execute')) + '</button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger acc-reject-row" data-id="' + r.id + '">' + escapeHtml(t('btn.reject', 'Reject')) + '</button></td></tr>';
             }).join('');
             tbody.querySelectorAll('.acc-exec-dry, .acc-exec-live').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     var row = rows.find(function (x) { return String(x.id) === btn.dataset.id; }) || {};
                     var prop = row.payload && row.payload.correction_suggestions && row.payload.correction_suggestions[0];
-                    if (!prop) { alert('No correction proposal', 'warning'); return; }
+                    if (!prop) { alertMsg(t('msg.no_correction', 'No correction proposal'), 'warning'); return; }
                     var live = btn.classList.contains('acc-exec-live');
-                    confirmAction(live ? 'Execute correction LIVE?' : 'Dry-run correction?', function () {
+                    confirmAction(live ? t('confirm.correction_live', 'Execute correction live?') : t('confirm.correction_dry', 'Dry-run correction?'), function () {
                         api('reconciliation', { method: 'POST', body: { action: 'execute', proposal: prop, dry_run: live ? 0 : 1, approved: 1, confirm: 1 } }).then(function (res) {
                             showJson(res);
                             if (res.ok && live) loadReconciliation();
@@ -406,7 +576,7 @@
             });
             tbody.querySelectorAll('.acc-reject-row').forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    alert('Correction rejected (no server write)', 'info');
+                    alertMsg(t('msg.rejected', 'Correction rejected'), 'info');
                 });
             });
         });
@@ -424,15 +594,17 @@
             if (!res.ok) return;
             var ov = res.data.overview || {};
             var scoreEl = root.querySelector('.acc-integrity-score .display-4');
-            if (scoreEl) scoreEl.textContent = String(ov.integrity_score != null ? ov.integrity_score : '—');
+            if (scoreEl) {
+                scoreEl.textContent = ov.integrity_score != null ? fmtValue(ov.integrity_score) : t('nullValue', '—');
+            }
             var sum = root.querySelector('.acc-golden-summary');
             if (sum) sum.textContent = JSON.stringify(ov.golden_ledger && ov.golden_ledger.totals || {}, null, 2);
             var locks = ov.locked_periods || [];
             var ltbody = root.querySelector('.acc-integrity-locks tbody');
             if (ltbody) {
                 ltbody.innerHTML = locks.map(function (l) {
-                    return '<tr><td>' + escapeHtml((l.period_from || '') + ' → ' + (l.period_to || '')) + '</td><td>' +
-                        escapeHtml(l.status || '') + '</td><td>' + escapeHtml(l.created_at || '') + '</td></tr>';
+                    return '<tr><td>' + escapeHtml(fmtPeriod(l.period_from, l.period_to)) + '</td><td>' +
+                        escapeHtml(fmtStatus(l.status || '')) + '</td><td>' + escapeHtml(fmtDateTime(l.created_at || '')) + '</td></tr>';
                 }).join('');
             }
             renderEvidence((res.data.evidence_packs && res.data.evidence_packs.rows) || []);
@@ -445,7 +617,9 @@
             var tbody = root.querySelector('.acc-settings-table tbody');
             if (!tbody) return;
             tbody.innerHTML = Object.keys(res.data).map(function (k) {
-                return '<tr><td><code>' + escapeHtml(k) + '</code></td><td>' + (res.data[k] ? '✓ ON' : '✗ OFF') + '</td></tr>';
+                var on = res.data[k];
+                var label = on ? t('on', 'ON') : t('off', 'OFF');
+                return '<tr><td><code>' + escapeHtml(k) + '</code></td><td>' + escapeHtml(label) + '</td></tr>';
             }).join('');
         });
     }
@@ -459,7 +633,8 @@
                 grid.innerHTML = blocks.map(function (b) {
                     var st = res.data[b];
                     var label = typeof st === 'object' ? JSON.stringify(st) : String(st);
-                    return '<div class="col-md-4"><div class="acc-card"><strong>' + escapeHtml(b) + '</strong><div class="small">' + escapeHtml(label) + '</div></div></div>';
+                    var title = (I18N.health && I18N.health[b]) ? I18N.health[b] : b;
+                    return '<div class="col-md-4"><div class="acc-card"><strong>' + escapeHtml(title) + '</strong><div class="small">' + escapeHtml(fmtStatus(label)) + '</div></div></div>';
                 }).join('');
             }
             var list = root.querySelector('.acc-migration-list');
