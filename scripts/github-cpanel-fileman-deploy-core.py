@@ -502,6 +502,29 @@ def rateb_site_accounting_app_files() -> list[str]:
     return sorted(set(out))
 
 
+def rateb_accounting_control_ui_files() -> list[str]:
+    """Phase 6 Control Center — ERP views + static assets (always ship)."""
+    fixed = [
+        "rateb-erp/views/admin/accounting-control/layout.php",
+        "rateb-erp/public/assets/js/accounting-control/control-center.js",
+        "rateb-erp/public/assets/css/accounting-control/control-center.css",
+        "js/accounting-control/control-center.js",
+        "css/accounting-control/control-center.css",
+    ]
+    out: list[str] = []
+    acc_views = os.path.join(os.getcwd(), "rateb-erp", "views", "admin", "accounting-control")
+    if os.path.isdir(acc_views):
+        for dirpath, _dirnames, filenames in os.walk(acc_views):
+            for name in filenames:
+                rel = os.path.relpath(os.path.join(dirpath, name), os.getcwd()).replace("\\", "/")
+                if is_auto_deploy_path(rel):
+                    out.append(rel)
+    for rel in fixed:
+        if os.path.isfile(rel) and is_auto_deploy_path(rel):
+            out.append(rel)
+    return sorted(set(out))
+
+
 def needs_full_erp_bundle(changed: list[str]) -> bool:
     flag = os.environ.get("CPANEL_ERP_FULL_BUNDLE", "").strip().lower()
     if flag in ("1", "true", "yes", "on"):
@@ -928,6 +951,20 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
         if added_acc:
             print(
                 f"fast deploy: +{added_acc} site app/Accounting file(s) (Control Center baseline)",
+                flush=True,
+            )
+    ui_bundle = rateb_accounting_control_ui_files()
+    if ui_bundle:
+        added_ui = 0
+        for rel in ui_bundle:
+            if rel in seen or rel == marker:
+                continue
+            core.append(rel)
+            seen.add(rel)
+            added_ui += 1
+        if added_ui:
+            print(
+                f"fast deploy: +{added_ui} accounting-control UI asset(s)",
                 flush=True,
             )
     changed_paths = git_changed_paths()

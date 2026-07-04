@@ -6,8 +6,11 @@
 /** @var list<array{slug:string,label:string,route:string,icon:string,permission:string}> $accNav */
 $accSection = $accSection ?? 'dashboard';
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/accounting-control');
+$accAssetVer = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
+$accCssUrl = rateb_public_url('assets/css/accounting-control/control-center.css') . '?v=' . rawurlencode($accAssetVer);
+$accJsUrl = rateb_public_url('assets/js/accounting-control/control-center.js') . '?v=' . rawurlencode($accAssetVer);
 ?>
-<link href="<?php echo rateb_asset('css/accounting-control/control-center.css'); ?>" rel="stylesheet">
+<link href="<?php echo Rateb\App\Core\View::escape($accCssUrl); ?>" rel="stylesheet">
 <div class="acc-control-wrap" id="acc-control-app"
      data-section="<?php echo Rateb\App\Core\View::escape($accSection); ?>"
      data-api-base="<?php echo Rateb\App\Core\View::escape($apiBase); ?>"
@@ -110,4 +113,4 @@ $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_pub
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="<?php echo rateb_asset('js/accounting-control/control-center.js'); ?>"></script>
+<script src="<?php echo Rateb\App\Core\View::escape($accJsUrl); ?>"></script>
