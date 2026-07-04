@@ -5,6 +5,9 @@ use Rateb\App\Core\Database;
 
 /**
  * Realistic staging volumes with deterministic pseudo-random data (not pure random).
+ *
+ * NON-PRODUCTION: CLI/bin seeder only (rateb-erp/bin/enterprise-seed/).
+ * Ledger lock enforcement is intentionally omitted — not a runtime accounting write path.
  */
 final class EnterpriseSeeder
 {

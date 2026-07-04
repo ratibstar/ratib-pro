@@ -12,11 +12,8 @@
  */
 
 require_once '../../../includes/config.php';
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    die(json_encode(['success' => false, 'message' => 'Unauthorized']));
-}
+require_once __DIR__ . '/../../core/accounting-endpoint-guard.php';
+accounting_require_migration_access();
 
 header('Content-Type: application/json');
 
