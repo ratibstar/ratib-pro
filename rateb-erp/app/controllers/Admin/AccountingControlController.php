@@ -20,6 +20,11 @@ final class AccountingControlController extends Controller
 
     public function __construct()
     {
+        if (!class_exists(AccountingControlBootstrap::class)) {
+            throw new \RuntimeException(
+                'Accounting Control Center backend not found. Deploy public_html/app/Accounting/ beside rateb-erp/.'
+            );
+        }
         AccountingControlBootstrap::init();
         $this->service = new AccountingControlService();
     }
