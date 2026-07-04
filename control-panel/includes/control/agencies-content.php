@@ -756,8 +756,11 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                                 : $agT('agencies.provision_erp', 'Provision ERP');
                             $hasErpDb = trim((string) ($r['erp_db_name'] ?? '')) !== '';
                             $branchesManageUrl = ($hasErpDb && function_exists('control_rateb_erp_agency_branch_manage_url'))
-                                ? control_rateb_erp_agency_branch_manage_url($agencyIdRow, $erpCoId)
+                                ? control_rateb_erp_agency_branch_manage_url($agencyIdRow, 0)
                                 : '';
+                            if ($branchesManageUrl !== '' && $countryId > 0) {
+                                $branchesManageUrl .= '&country_id=' . (int) $countryId;
+                            }
                         ?>
                         <div class="ag-actions-wrap">
                         <div class="dropdown ag-actions-dropdown">

@@ -544,23 +544,23 @@
     function openViewFromBtn(viewBtn) {
         var raw = viewBtn.getAttribute('data-row') || viewBtn.dataset.row || '';
         var r = decodeAgencyRowB64(raw);
-        viewModalRowData = r;
-        var cname = (r.country_name || '').trim() || (r.country || '').trim() || '-';
-        function setView(id, val) { var el = document.getElementById(id); if (el) el.textContent = val != null && val !== '' ? String(val) : '-'; }
-        setView('viewCountry', cname);
-        setView('viewName', r.name || r.agency_name);
-        setView('viewSlug', r.slug);
-        setView('viewSiteUrl', r.site_url);
-        setView('viewDbHost', r.db_host || 'localhost');
-        setView('viewDbPort', r.db_port || '3306');
-        setView('viewDbUser', r.db_user);
-        setView('viewDbName', r.db_name);
-        setView('viewCreated', r.created_at ? String(r.created_at).slice(0, 10) : '');
-        setView('viewRenewalDate', r.renewal_date ? String(r.renewal_date).slice(0, 10) : '');
-        var status = (r.is_active === 0 || r.is_active === '0') ? 'Inactive' : (r.is_suspended ? 'Suspended' : 'Active');
-        setView('viewStatus', status);
-        var viewSuspended = document.getElementById('viewSuspended');
-        if (viewSuspended) viewSuspended.textContent = r.is_suspended ? 'Yes (non-payment)' : 'No';
+            viewModalRowData = r;
+            var cname = (r.country_name || '').trim() || (r.country || '').trim() || '-';
+            function setView(id, val) { var el = document.getElementById(id); if (el) el.textContent = val != null && val !== '' ? String(val) : '-'; }
+            setView('viewCountry', cname);
+            setView('viewName', r.name || r.agency_name);
+            setView('viewSlug', r.slug);
+            setView('viewSiteUrl', r.site_url);
+            setView('viewDbHost', r.db_host || 'localhost');
+            setView('viewDbPort', r.db_port || '3306');
+            setView('viewDbUser', r.db_user);
+            setView('viewDbName', r.db_name);
+            setView('viewCreated', r.created_at ? String(r.created_at).slice(0, 10) : '');
+            setView('viewRenewalDate', r.renewal_date ? String(r.renewal_date).slice(0, 10) : '');
+            var status = (r.is_active === 0 || r.is_active === '0') ? 'Inactive' : (r.is_suspended ? 'Suspended' : 'Active');
+            setView('viewStatus', status);
+            var viewSuspended = document.getElementById('viewSuspended');
+            if (viewSuspended) viewSuspended.textContent = r.is_suspended ? 'Yes (non-payment)' : 'No';
         cleanupStaleModalBackdrops();
         window.setTimeout(function() {
             if (viewModal) viewModal.show();
@@ -570,27 +570,27 @@
     function openEditFromBtn(editBtn) {
         var raw = editBtn.getAttribute('data-row') || editBtn.dataset.row || '';
         var r = decodeAgencyRowB64(raw);
-        document.getElementById('editId').value = r.id || '';
-        document.getElementById('editCountryId').value = r.country_id || '';
-        document.getElementById('editName').value = r.name || '';
-        document.getElementById('editSlug').value = r.slug || '';
-        slugManuallyEdited = true;
-        document.getElementById('editSiteUrl').value = r.site_url || '';
-        document.getElementById('editDbHost').value = r.db_host || 'localhost';
-        document.getElementById('editDbPort').value = r.db_port || 3306;
-        document.getElementById('editDbUser').value = r.db_user || '';
-        document.getElementById('editDbPass').value = '';
-        document.getElementById('editDbPass').placeholder = '(leave blank to keep)';
-        document.getElementById('editDbName').value = r.db_name || '';
-        document.getElementById('editIsActive').value = r.is_active !== undefined && r.is_active !== null ? r.is_active : '1';
-        var editRenewalDate = document.getElementById('editRenewalDate');
-        if (editRenewalDate && r.renewal_date) editRenewalDate.value = String(r.renewal_date).slice(0, 10);
-        else if (editRenewalDate) editRenewalDate.value = '';
-        var editIsSuspended = document.getElementById('editIsSuspended');
-        if (editIsSuspended) editIsSuspended.value = (r.is_suspended ? '1' : '0');
+            document.getElementById('editId').value = r.id || '';
+            document.getElementById('editCountryId').value = r.country_id || '';
+            document.getElementById('editName').value = r.name || '';
+            document.getElementById('editSlug').value = r.slug || '';
+            slugManuallyEdited = true;
+            document.getElementById('editSiteUrl').value = r.site_url || '';
+            document.getElementById('editDbHost').value = r.db_host || 'localhost';
+            document.getElementById('editDbPort').value = r.db_port || 3306;
+            document.getElementById('editDbUser').value = r.db_user || '';
+            document.getElementById('editDbPass').value = '';
+            document.getElementById('editDbPass').placeholder = '(leave blank to keep)';
+            document.getElementById('editDbName').value = r.db_name || '';
+            document.getElementById('editIsActive').value = r.is_active !== undefined && r.is_active !== null ? r.is_active : '1';
+            var editRenewalDate = document.getElementById('editRenewalDate');
+            if (editRenewalDate && r.renewal_date) editRenewalDate.value = String(r.renewal_date).slice(0, 10);
+            else if (editRenewalDate) editRenewalDate.value = '';
+            var editIsSuspended = document.getElementById('editIsSuspended');
+            if (editIsSuspended) editIsSuspended.value = (r.is_suspended ? '1' : '0');
         var editErpCompanyId = document.getElementById('editErpCompanyId');
         if (editErpCompanyId) editErpCompanyId.value = r.erp_company_id ? String(r.erp_company_id) : '';
-        document.getElementById('modalTitle').textContent = 'Edit Agency';
+            document.getElementById('modalTitle').textContent = 'Edit Agency';
         cleanupStaleModalBackdrops();
         window.setTimeout(function() {
             if (modal) modal.show();

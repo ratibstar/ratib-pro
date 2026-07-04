@@ -188,24 +188,60 @@ function control_rateb_erp_branches_hub_page_url(): string
         : '/control-panel/pages/control/rateb-erp-branches.php?control=1';
 }
 
+function control_rateb_erp_agency_site_origin(int $agencyId): string
+{
+    if ($agencyId < 1) {
+        return '';
+    }
+    $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+    if (is_file($lookup)) {
+        require_once $lookup;
+    }
+    if (!function_exists('rateb_lookup_agency_by_id')) {
+        return '';
+    }
+    $row = rateb_lookup_agency_by_id($agencyId);
+    if ($row === null) {
+        return '';
+    }
+    $site = rtrim(trim((string) ($row['site_url'] ?? '')), '/');
+    if ($site === '' || !preg_match('#^https?://#i', $site)) {
+        return '';
+    }
+
+    return $site;
+}
+
 function control_rateb_erp_branch_portal_url(int $branchId, ?array $branchRow = null): string
 {
-    if (function_exists('rateb_branch_portal_url')) {
-        control_rateb_erp_ensure_root();
-        require_once RATEB_ROOT . '/config/app.php';
-        return rateb_branch_portal_url($branchId, $branchRow);
-    }
+    $path = '';
     if (is_array($branchRow)) {
         $slug = trim((string) ($branchRow['company_slug'] ?? ''));
         $code = trim((string) ($branchRow['code'] ?? ''));
         if ($slug !== '' && $code !== '') {
-            return control_rateb_erp_public_url('login?company=' . rawurlencode($slug) . '&branch=' . rawurlencode($code));
+            $path = 'login?company=' . rawurlencode($slug) . '&branch=' . rawurlencode($code);
         }
     }
-    if ($branchId < 1) {
-        return control_rateb_erp_public_url('login');
+    if ($path === '') {
+        if ($branchId < 1) {
+            $path = 'login';
+        } else {
+            $path = 'login?branch_id=' . $branchId;
+        }
     }
-    return control_rateb_erp_public_url('login?branch_id=' . $branchId);
+    $agencyId = control_rateb_erp_resolve_agency_id();
+    $agencyOrigin = control_rateb_erp_agency_site_origin($agencyId);
+    if ($agencyOrigin !== '') {
+        return rtrim($agencyOrigin, '/') . '/rateb-erp/public/' . ltrim($path, '/');
+    }
+    if (function_exists('rateb_branch_portal_url')) {
+        control_rateb_erp_ensure_root();
+        require_once RATEB_ROOT . '/config/app.php';
+
+        return rateb_branch_portal_url($branchId, $branchRow);
+    }
+
+    return control_rateb_erp_public_url($path);
 }
 
 function control_rateb_erp_branch_manage_url(int $companyId = 0): string
@@ -272,11 +308,79 @@ function control_rateb_erp_pdo_platform(): ?\PDO
     }
 }
 
+/** First company row inside an agency ERP database (dedicated = one company). */
+function control_rateb_erp_agency_primary_company_id(int $agencyId): int
+{
+    if ($agencyId < 1) {
+        return 0;
+    }
+    $pdo = control_rateb_erp_pdo_for_agency($agencyId);
+    if (!$pdo) {
+        return 0;
+    }
+    try {
+        $stmt = $pdo->query('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+        if ($stmt === false) {
+            return 0;
+        }
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return is_array($row) ? (int) ($row['id'] ?? 0) : 0;
+    } catch (\Throwable $e) {
+        error_log('control_rateb_erp_agency_primary_company_id: ' . $e->getMessage());
+
+        return 0;
+    }
+}
+
+function control_rateb_erp_reapply_agency_db(int $agencyId): void
+{
+    if ($agencyId < 1) {
+        return;
+    }
+    $cfg = control_rateb_erp_agency_db_config($agencyId);
+    if ($cfg === null) {
+        return;
+    }
+    control_rateb_erp_ensure_root();
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+    \Rateb\App\Core\Database::useConnectionOverride($cfg);
+}
+
+function control_rateb_erp_agency_admin_url(int $agencyId): string
+{
+    if ($agencyId < 1) {
+        return control_rateb_erp_public_url('admin');
+    }
+
+    return control_rateb_erp_public_url('admin') . '?agency_id=' . $agencyId;
+}
+
+function control_rateb_erp_agencies_page_url(int $countryId = 0): string
+{
+    $url = function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/agencies.php')
+        : '/control-panel/pages/control/agencies.php?control=1';
+    if ($countryId > 0) {
+        $url .= '&country_id=' . $countryId;
+    }
+
+    return $url;
+}
+
 /** Branches hub scoped to an agency ERP database. */
 function control_rateb_erp_agency_branch_manage_url(int $agencyId, int $companyId = 0): string
 {
     if ($agencyId < 1) {
         return control_rateb_erp_branch_manage_url($companyId);
+    }
+    if ($companyId < 1) {
+        $companyId = control_rateb_erp_agency_primary_company_id($agencyId);
+    } else {
+        $liveId = control_rateb_erp_agency_primary_company_id($agencyId);
+        if ($liveId > 0 && $liveId !== $companyId) {
+            $companyId = $liveId;
+        }
     }
     $url = control_rateb_erp_branches_hub_page_url();
     $url .= (strpos($url, '?') !== false ? '&' : '?') . 'agency_id=' . $agencyId;
@@ -316,10 +420,7 @@ function control_rateb_erp_pdo(): ?\PDO
     }
     $agencyId = control_rateb_erp_resolve_agency_id();
     if ($agencyId > 0) {
-        $pdo = control_rateb_erp_pdo_for_agency($agencyId);
-        if ($pdo instanceof \PDO) {
-            return $pdo;
-        }
+        return control_rateb_erp_pdo_for_agency($agencyId);
     }
     if (!control_rateb_erp_schema_ready()) {
         return null;
@@ -327,6 +428,8 @@ function control_rateb_erp_pdo(): ?\PDO
     control_rateb_erp_ensure_root();
     require_once RATEB_ROOT . '/config/database.php';
     require_once RATEB_ROOT . '/app/Core/Database.php';
+    \Rateb\App\Core\Database::clearConnectionOverride();
+
     return \Rateb\App\Core\Database::connection();
 }
 
@@ -341,6 +444,12 @@ function control_rateb_erp_load_branch_stack(): void
     require_once RATEB_ROOT . '/app/models/Company.php';
     require_once RATEB_ROOT . '/app/models/Entities.php';
     require_once RATEB_ROOT . '/app/services/BranchService.php';
+    $agencyId = control_rateb_erp_resolve_agency_id();
+    if ($agencyId > 0) {
+        control_rateb_erp_reapply_agency_db($agencyId);
+    } elseif (function_exists('control_rateb_erp_is_platform_branch_context') && control_rateb_erp_is_platform_branch_context()) {
+        \Rateb\App\Core\Database::clearConnectionOverride();
+    }
 }
 
 /** @return list<array{id:int,name:string}> */

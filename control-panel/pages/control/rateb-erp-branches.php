@@ -79,8 +79,35 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $companies = $schemaReady ? control_rateb_erp_companies_branch_overview() : [];
-if ($focusCompanyId < 1 && $agencyId > 0 && count($companies) === 1) {
-    $focusCompanyId = (int) ($companies[0]['id'] ?? 0);
+$countryId = (int) ($_GET['country_id'] ?? 0);
+$agencyDbName = $agencyId > 0 ? control_rateb_erp_agency_db_name($agencyId) : '';
+$agencyDbReady = $agencyId < 1 || ($agencyDbName !== '' && $schemaReady);
+
+if ($agencyId > 0 && $focusCompanyId > 0 && $companies !== []) {
+    $focusExists = false;
+    foreach ($companies as $coRow) {
+        if ((int) ($coRow['id'] ?? 0) === $focusCompanyId) {
+            $focusExists = true;
+            break;
+        }
+    }
+    if (!$focusExists && function_exists('control_rateb_erp_agency_primary_company_id')) {
+        $liveCompanyId = control_rateb_erp_agency_primary_company_id($agencyId);
+        if ($liveCompanyId > 0) {
+            $focusCompanyId = $liveCompanyId;
+        }
+    }
+}
+if ($focusCompanyId < 1 && $agencyId > 0) {
+    if (count($companies) === 1) {
+        $focusCompanyId = (int) ($companies[0]['id'] ?? 0);
+    } elseif ($companies === [] && function_exists('control_rateb_erp_agency_primary_company_id')) {
+        $liveCompanyId = control_rateb_erp_agency_primary_company_id($agencyId);
+        if ($liveCompanyId > 0) {
+            $focusCompanyId = $liveCompanyId;
+            $companies = control_rateb_erp_companies_branch_overview();
+        }
+    }
 }
 $focusCompanyKnown = $focusCompanyId < 1;
 $focusCompanyName = '';
@@ -101,11 +128,19 @@ if ($focusCompanyId > 0 && $focusCompanyKnown) {
         static fn (array $row): bool => (int) ($row['id'] ?? 0) === $focusCompanyId
     ));
 }
-$allCompaniesHubUrl = function_exists('control_rateb_erp_branch_manage_url')
-    ? control_rateb_erp_branch_manage_url(0)
-    : (function_exists('control_rateb_erp_branches_hub_page_url')
-        ? control_rateb_erp_branches_hub_page_url() . (strpos(control_rateb_erp_branches_hub_page_url(), '?') !== false ? '&' : '?') . 'platform=1'
-        : '');
+$allCompaniesHubUrl = $agencyId > 0 && function_exists('control_rateb_erp_agency_branch_manage_url')
+    ? control_rateb_erp_agency_branch_manage_url($agencyId, 0)
+    : (function_exists('control_rateb_erp_branch_manage_url')
+        ? control_rateb_erp_branch_manage_url(0)
+        : (function_exists('control_rateb_erp_branches_hub_page_url')
+            ? control_rateb_erp_branches_hub_page_url() . (strpos(control_rateb_erp_branches_hub_page_url(), '?') !== false ? '&' : '?') . 'platform=1'
+            : ''));
+$agenciesBackUrl = function_exists('control_rateb_erp_agencies_page_url')
+    ? control_rateb_erp_agencies_page_url($countryId)
+    : '';
+$agencyErpAdminUrl = ($agencyId > 0 && function_exists('control_rateb_erp_agency_admin_url'))
+    ? control_rateb_erp_agency_admin_url($agencyId)
+    : '';
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('الشركات والفروع — نظام رتب ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
@@ -150,7 +185,15 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
 <div class="alert alert-danger"><?php echo htmlspecialchars($flashErr, ENT_QUOTES, 'UTF-8'); ?></div>
 <?php } ?>
 <?php if ($focusCompanyId > 0 && !$focusCompanyKnown) { ?>
-<div class="alert alert-warning">الشركة رقم <?php echo (int) $focusCompanyId; ?> غير موجودة في قاعدة ERP الحالية — تأكد أنك تدير فروع <strong>منصة rateb.sa</strong> وليس وكالة أخرى.</div>
+<div class="alert alert-warning">
+    <?php if ($agencyId > 0) { ?>
+    الشركة رقم <?php echo (int) $focusCompanyId; ?> غير موجودة في قاعدة ERP للوكالة
+    <?php if ($agencyDbName !== '') { ?>(<code><?php echo htmlspecialchars($agencyDbName, ENT_QUOTES, 'UTF-8'); ?></code>)<?php } ?>.
+    <?php if (!$agencyDbReady) { ?>تأكد من <strong>Provision ERP</strong> للوكالة ثم أعد فتح هذه الصفحة.<?php } else { ?>جرّب <strong>Re-provision ERP</strong> أو ترحيل قاعدة الوكالة.<?php } ?>
+    <?php } else { ?>
+    الشركة رقم <?php echo (int) $focusCompanyId; ?> غير موجودة في قاعدة ERP الحالية — تأكد أنك تدير فروع <strong>منصة rateb.sa</strong> وليس وكالة أخرى.
+    <?php } ?>
+</div>
 <?php } ?>
 <?php if ($newPortalUrl !== '') { ?>
 <div class="alert alert-info">
@@ -164,16 +207,35 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
 <?php } ?>
 
 <div class="d-flex flex-wrap gap-2 mb-4">
+    <?php if ($agencyId > 0) { ?>
+        <?php if ($agenciesBackUrl !== '') { ?>
+    <a href="<?php echo htmlspecialchars($agenciesBackUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right"></i> العودة للوكالات
+    </a>
+        <?php } ?>
+        <?php if ($agencyErpAdminUrl !== '') { ?>
+    <a href="<?php echo htmlspecialchars($agencyErpAdminUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary" target="_blank" rel="noopener">
+        <i class="fas fa-hospital"></i> فتح ERP الوكالة
+    </a>
+        <?php } ?>
+    <?php } else { ?>
     <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/companies'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary" target="_blank" rel="noopener">
         <i class="fas fa-building"></i> إدارة الشركات (ERP)
     </a>
     <a href="<?php echo htmlspecialchars(control_rateb_erp_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">
         <i class="fas fa-hospital"></i> مركز ERP
     </a>
+    <?php } ?>
 </div>
 
 <?php if ($companies === []) { ?>
-<div class="alert alert-info">لا توجد شركات مشتركة بعد. أضف شركة من ERP ثم ارجع هنا لمنحها فروعاً.</div>
+<div class="alert alert-info">
+    <?php if ($agencyId > 0) { ?>
+    لا توجد شركة في قاعدة ERP للوكالة بعد. من صفحة <strong>الوكالات</strong> شغّل <strong>Provision ERP</strong> (أو Re-provision) ثم ارجع هنا لإنشاء الفروع.
+    <?php } else { ?>
+    لا توجد شركات مشتركة بعد. أضف شركة من ERP ثم ارجع هنا لمنحها فروعاً.
+    <?php } ?>
+</div>
 <?php } ?>
 
 <?php foreach ($companies as $company) {
