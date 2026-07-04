@@ -64,7 +64,11 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = (string) ($result['error'] ?? '');
                 $flashErr = $err === 'branch_limit_reached'
                     ? 'وصلت الشركة للحد الأقصى من الفروع — زِد «حد الفروع» أولاً.'
-                    : ($err === 'branch_name_required' ? 'اسم الفرع مطلوب.' : 'تعذّر إنشاء الفرع: ' . $err);
+                    : ($err === 'branch_name_required'
+                        ? 'اسم الفرع مطلوب.'
+                        : ($err === 'branch_code_duplicate'
+                            ? 'كود الفرع مستخدم مسبقاً لهذه الشركة.'
+                            : 'تعذّر إنشاء الفرع: ' . $err));
                 $focusCompanyId = $companyId;
             }
         } elseif ($action === 'toggle_branch') {

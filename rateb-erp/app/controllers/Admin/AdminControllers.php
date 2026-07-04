@@ -476,7 +476,11 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                     $err = (string) ($result['error'] ?? '');
                     SessionManager::flash(
                         'error',
-                        $err === 'branch_limit_reached' ? __('branch_limit_reached') : ($err === 'branch_name_required' ? __('branch_name') : $err)
+                        $err === 'branch_limit_reached'
+                            ? __('branch_limit_reached')
+                            : ($err === 'branch_name_required'
+                                ? __('branch_name')
+                                : ($err === 'branch_code_duplicate' ? __('branch_code_duplicate') : $err))
                     );
                 }
             } elseif ($action === 'toggle_branch') {

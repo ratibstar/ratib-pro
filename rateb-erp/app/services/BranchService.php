@@ -119,6 +119,98 @@ final class BranchService
         return $this->countForCompany($companyId) < $this->branchLimit($companyId);
     }
 
+    public function normalizeBranchCode(string $code): string
+    {
+        return trim($code);
+    }
+
+    public function isBranchCodeTaken(int $companyId, string $code, int $excludeBranchId = 0): bool
+    {
+        $code = $this->normalizeBranchCode($code);
+        if ($companyId < 1 || $code === '') {
+            return false;
+        }
+        $sql = 'SELECT id FROM rateb_branches WHERE company_id = :cid AND code = :code';
+        $params = ['cid' => $companyId, 'code' => $code];
+        if ($excludeBranchId > 0) {
+            $sql .= ' AND id != :exclude';
+            $params['exclude'] = $excludeBranchId;
+        }
+        $sql .= ' LIMIT 1';
+
+        return (new Branch())->queryOne($sql, $params) !== null;
+    }
+
+    /** @return null|string Error slug (e.g. branch_code_duplicate) or null when valid. */
+    public function validateBranchCodeForSave(int $companyId, string $code, int $excludeBranchId = 0): ?string
+    {
+        $code = $this->normalizeBranchCode($code);
+        if ($code === '') {
+            return null;
+        }
+        if ($this->isBranchCodeTaken($companyId, $code, $excludeBranchId)) {
+            return 'branch_code_duplicate';
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve branch code for create: auto-generate when empty, validate manual codes.
+     *
+     * @return array{ok:bool, code?:string, error?:string}
+     */
+    public function resolveBranchCodeForCreate(int $companyId, string $rawCode): array
+    {
+        $code = $this->normalizeBranchCode($rawCode);
+        if ($code === '') {
+            $n = $this->countForCompany($companyId) + 1;
+            $attempts = 0;
+            do {
+                $code = 'BR' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
+                $n++;
+                $attempts++;
+            } while ($this->isBranchCodeTaken($companyId, $code) && $attempts < 1000);
+            if ($this->isBranchCodeTaken($companyId, $code)) {
+                return ['ok' => false, 'error' => 'branch_code_duplicate'];
+            }
+
+            return ['ok' => true, 'code' => $code];
+        }
+        $err = $this->validateBranchCodeForSave($companyId, $code, 0);
+        if ($err !== null) {
+            return ['ok' => false, 'error' => $err];
+        }
+
+        return ['ok' => true, 'code' => $code];
+    }
+
+    /** @return list<array{company_id:int, code:string, branch_ids:array<int>}> */
+    public function findDuplicateBranchCodes(): array
+    {
+        $rows = (new Branch())->query(
+            'SELECT company_id, code, GROUP_CONCAT(id ORDER BY id) AS ids, COUNT(*) AS cnt
+             FROM rateb_branches
+             WHERE code IS NOT NULL AND TRIM(code) <> \'\'
+             GROUP BY company_id, code
+             HAVING cnt > 1'
+        );
+        $out = [];
+        foreach ($rows as $row) {
+            $ids = array_values(array_filter(array_map(
+                'intval',
+                explode(',', (string) ($row['ids'] ?? ''))
+            )));
+            $out[] = [
+                'company_id' => (int) ($row['company_id'] ?? 0),
+                'code' => (string) ($row['code'] ?? ''),
+                'branch_ids' => $ids,
+            ];
+        }
+
+        return $out;
+    }
+
     /** @return array{count:int,limit:int} */
     public function stats(int $companyId): array
     {

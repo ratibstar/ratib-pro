@@ -113,18 +113,11 @@ final class PlatformCompanyBranchService
         if ($name === '') {
             return ['ok' => false, 'error' => 'branch_name_required'];
         }
-        $code = trim((string) ($data['code'] ?? ''));
-        if ($code === '') {
-            $n = $svc->countForCompany($companyId) + 1;
-            do {
-                $code = 'BR' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
-                $exists = (new Branch())->queryOne(
-                    'SELECT id FROM rateb_branches WHERE company_id = :cid AND code = :code LIMIT 1',
-                    ['cid' => $companyId, 'code' => $code]
-                );
-                $n++;
-            } while ($exists);
+        $resolved = $svc->resolveBranchCodeForCreate($companyId, (string) ($data['code'] ?? ''));
+        if (empty($resolved['ok'])) {
+            return ['ok' => false, 'error' => (string) ($resolved['error'] ?? 'branch_code_duplicate')];
         }
+        $code = (string) ($resolved['code'] ?? '');
         try {
             $id = (new Branch())->create([
                 'name' => $name,
@@ -156,6 +149,13 @@ final class PlatformCompanyBranchService
             ];
         } catch (\Throwable $e) {
             error_log('PlatformCompanyBranchService::createBranch: ' . $e->getMessage());
+            $raw = $e->getMessage();
+            if ($e->getPrevious() instanceof \Throwable) {
+                $raw .= ' ' . $e->getPrevious()->getMessage();
+            }
+            if (strpos($raw, '1062') !== false || stripos($raw, 'Duplicate entry') !== false) {
+                return ['ok' => false, 'error' => 'branch_code_duplicate'];
+            }
 
             return ['ok' => false, 'error' => $e->getMessage()];
         }

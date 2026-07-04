@@ -256,6 +256,7 @@ return [
     'branch_limit' => 'حد الفروع',
     'branch_count_limit' => 'عدد الفروع: :count/:limit',
     'branch_limit_reached' => 'وصلت للحد الأقصى من الفروع في باقتك.',
+    'branch_code_duplicate' => 'كود الفرع مستخدم مسبقاً لهذه الشركة.',
     'max_branches' => 'حد الفروع في الباقة',
     'assign_branches' => 'تعيين الفروع',
     'branch_access_all_hint' => 'اترك الكل بدون تحديد للوصول لجميع فروع الشركة.',

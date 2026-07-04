@@ -564,63 +564,17 @@ function control_rateb_erp_company_set_branch_limit(int $companyId, int $limit):
 /** @return array{ok:bool, branch?:array<string,mixed>, portal_url?:string, error?:string} */
 function control_rateb_erp_branch_create(int $companyId, array $data): array
 {
-    if ($companyId < 1) {
-        return ['ok' => false, 'error' => 'invalid_company'];
-    }
     control_rateb_erp_load_branch_stack();
-    \Rateb\App\Core\TenantContext::setSuperAdmin(true);
-    \Rateb\App\Core\TenantContext::setCompanyId($companyId);
-    $svc = new \Rateb\App\Services\BranchService();
-    $svc->ensureMainBranch($companyId);
-    if (!$svc->canAddBranch($companyId)) {
-        return ['ok' => false, 'error' => 'branch_limit_reached'];
-    }
-    $name = trim((string) ($data['name'] ?? ''));
-    if ($name === '') {
-        return ['ok' => false, 'error' => 'branch_name_required'];
-    }
-    $code = trim((string) ($data['code'] ?? ''));
-    if ($code === '') {
-        $n = $svc->countForCompany($companyId) + 1;
-        do {
-            $code = 'BR' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
-            $exists = (new \Rateb\App\Models\Branch())->queryOne(
-                'SELECT id FROM rateb_branches WHERE company_id = :cid AND code = :code LIMIT 1',
-                ['cid' => $companyId, 'code' => $code]
-            );
-            $n++;
-        } while ($exists);
-    }
-    try {
-        $id = (new \Rateb\App\Models\Branch())->create([
-            'name' => $name,
-            'code' => $code,
-            'address' => trim((string) ($data['address'] ?? '')),
-            'phone' => trim((string) ($data['phone'] ?? '')),
-            'email' => trim((string) ($data['email'] ?? '')),
-            'map_url' => trim((string) ($data['map_url'] ?? '')),
-            'status' => 'active',
-            'is_main' => 0,
-        ]);
-        $row = (new \Rateb\App\Models\Branch())->queryOne(
-            'SELECT b.*, c.name AS company_name, c.slug AS company_slug
-             FROM rateb_branches b
-             INNER JOIN rateb_companies c ON c.id = b.company_id
-             WHERE b.id = :id LIMIT 1',
-            ['id' => $id]
-        );
-        if (!$row) {
-            return ['ok' => false, 'error' => 'create_failed'];
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+    $result = \Rateb\App\Services\PlatformCompanyBranchService::createBranch($companyId, $data);
+    if (!empty($result['ok']) && isset($result['branch'])) {
+        $bid = (int) ($result['branch']['id'] ?? 0);
+        if ($bid > 0) {
+            $result['portal_url'] = control_rateb_erp_branch_portal_url($bid, $result['branch']);
         }
-        return [
-            'ok' => true,
-            'branch' => $row,
-            'portal_url' => control_rateb_erp_branch_portal_url($id, $row),
-        ];
-    } catch (\Throwable $e) {
-        error_log('control_rateb_erp_branch_create: ' . $e->getMessage());
-        return ['ok' => false, 'error' => $e->getMessage()];
     }
+
+    return $result;
 }
 
 function control_rateb_erp_branch_set_status(int $branchId, string $status): bool

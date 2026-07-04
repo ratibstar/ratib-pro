@@ -1455,6 +1455,8 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
 
 final class BranchesController extends \Rateb\App\Controllers\CrudController
 {
+    private int $branchCodeExcludeId = 0;
+
     public function __construct()
     {
         $this->model = new \Rateb\App\Models\Branch();
@@ -1551,6 +1553,7 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
     public function update(array $params): void
     {
         $this->guardBranchesCpAdminOnly();
+        $this->branchCodeExcludeId = (int) ($params['id'] ?? 0);
         parent::update($params);
     }
 
@@ -1629,6 +1632,19 @@ final class BranchesController extends \Rateb\App\Controllers\CrudController
         if (!empty($data['map_url'])) {
             $data['map_url'] = rateb_external_url((string) $data['map_url']);
         }
+        $companyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        $code = trim((string) ($data['code'] ?? ''));
+        if ($companyId > 0 && $code !== '') {
+            $err = (new \Rateb\App\Services\BranchService())->validateBranchCodeForSave(
+                $companyId,
+                $code,
+                $this->branchCodeExcludeId
+            );
+            if ($err !== null) {
+                throw new \RuntimeException(__($err));
+            }
+        }
+
         return $data;
     }
 

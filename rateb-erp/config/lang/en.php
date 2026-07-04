@@ -256,6 +256,7 @@ return [
     'branch_limit' => 'Branch limit',
     'branch_count_limit' => 'Branches: :count/:limit',
     'branch_limit_reached' => 'You have reached the maximum number of branches for your plan.',
+    'branch_code_duplicate' => 'This branch code is already used for this company.',
     'max_branches' => 'Max branches',
     'assign_branches' => 'Assign branches',
     'branch_access_all_hint' => 'Leave all unchecked to allow access to every company branch.',
