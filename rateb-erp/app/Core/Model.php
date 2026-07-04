@@ -138,10 +138,28 @@ abstract class Model
         return \Rateb\App\Core\Database::liveTableHasColumn($this->table, $this->branchColumn);
     }
 
+    protected function branchColumnIsSelectable(): bool
+    {
+        if (!$this->tableHasBranchColumn()) {
+            return false;
+        }
+        try {
+            $table = str_replace('`', '', $this->table);
+            $column = preg_replace('/[^a-z_0-9]/', '', $this->branchColumn) ?? 'branch_id';
+            $this->db->query('SELECT `' . $column . '` FROM `' . $table . '` LIMIT 0');
+
+            return true;
+        } catch (\Throwable) {
+            \Rateb\App\Core\Database::clearColumnCache();
+
+            return false;
+        }
+    }
+
     /** @return array{0:string,1:array<string,mixed>} */
     protected function branchFilterClause(string $alias = ''): array
     {
-        if (!$this->branchScoped || !function_exists('rateb_branch_filter_sql') || !$this->tableHasBranchColumn()) {
+        if (!$this->branchScoped || !function_exists('rateb_branch_filter_sql') || !$this->branchColumnIsSelectable()) {
             return ['', []];
         }
         return rateb_branch_filter_sql($alias, $this->branchColumn);
@@ -557,7 +575,7 @@ abstract class Model
      */
     protected function applyBranchScopeToRawSql(string $sql, array $params): array
     {
-        if (!$this->branchScoped || stripos($sql, $this->table) === false) {
+        if (!$this->branchScoped || stripos($sql, $this->table) === false || !$this->branchColumnIsSelectable()) {
             return [$sql, $params];
         }
         $alias = $this->detectSqlAlias($sql);

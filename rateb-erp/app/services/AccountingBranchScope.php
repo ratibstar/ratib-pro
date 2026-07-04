@@ -15,6 +15,38 @@ trait AccountingBranchScope
         return \Rateb\App\Core\Database::liveTableHasColumn($table, $column);
     }
 
+    /** SHOW COLUMNS can disagree with the live connection — probe SELECT before filtering. */
+    protected function operationalTableSupportsBranchFilter(string $table): bool
+    {
+        if (!$this->tableColumnExists($table, 'branch_id')) {
+            return false;
+        }
+        try {
+            $safe = str_replace('`', '', $table);
+            \Rateb\App\Core\Database::connection()->query(
+                'SELECT `branch_id` FROM `' . $safe . '` LIMIT 0'
+            );
+
+            return true;
+        } catch (\Throwable) {
+            \Rateb\App\Core\Database::clearColumnCache();
+
+            return false;
+        }
+    }
+
+    protected function isBranchColumnSqlError(\Throwable $e): bool
+    {
+        $raw = $e->getMessage();
+        if ($e->getPrevious() instanceof \Throwable) {
+            $raw .= ' ' . $e->getPrevious()->getMessage();
+        }
+
+        return str_contains($raw, '1054')
+            || str_contains($raw, '42S22')
+            || stripos($raw, 'branch_id') !== false;
+    }
+
     protected function journalLineBranchColumnExists(): bool
     {
         static $cache = [];
@@ -186,7 +218,7 @@ trait AccountingBranchScope
         if (stripos($sql, $table) === false) {
             return [$sql, $params];
         }
-        if (!$this->tableColumnExists($table, 'branch_id')) {
+        if (!$this->operationalTableSupportsBranchFilter($table)) {
             return [$sql, $params];
         }
         $resolvedAlias = $this->sqlTableAlias($sql, $table);
@@ -246,12 +278,26 @@ trait AccountingBranchScope
     /** @param array<string, mixed> $params @return array<int, array<string, mixed>> */
     protected function executeScopedSql(string $sql, array $params): array
     {
-        return \Rateb\App\Core\Database::fetchAll($sql, $params);
+        try {
+            return \Rateb\App\Core\Database::fetchAll($sql, $params);
+        } catch (\RuntimeException $e) {
+            if ($this->isBranchColumnSqlError($e)) {
+                \Rateb\App\Core\Database::clearColumnCache();
+            }
+            throw $e;
+        }
     }
 
     /** @param array<string, mixed> $params @return array<string, mixed>|null */
     protected function executeScopedSqlOne(string $sql, array $params): ?array
     {
-        return \Rateb\App\Core\Database::fetchOne($sql, $params);
+        try {
+            return \Rateb\App\Core\Database::fetchOne($sql, $params);
+        } catch (\RuntimeException $e) {
+            if ($this->isBranchColumnSqlError($e)) {
+                \Rateb\App\Core\Database::clearColumnCache();
+            }
+            throw $e;
+        }
     }
 }

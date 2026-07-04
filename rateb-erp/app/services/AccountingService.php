@@ -1165,7 +1165,7 @@ final class AccountingService
     }
 
     /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_posted: float} */
-    public function accountsPayable(?int $companyId): array
+    public function accountsPayable(?int $companyId, bool $skipOperationalBranchScope = false): array
     {
         $sql = "SELECT po.id, po.order_no, po.order_date, po.status, po.total_amount, po.supplier_id,
                        s.name AS supplier_name, s.code AS supplier_code,
@@ -1187,10 +1187,19 @@ final class AccountingService
             $sql .= ' AND po.company_id = :cid';
             $params['cid'] = $companyId;
         }
-        [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
-        [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
+        if (!$skipOperationalBranchScope) {
+            [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
+            [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
+        }
         $sql .= ' ORDER BY po.order_date DESC, po.id DESC LIMIT 200';
-        $rows = $this->executeScopedSql($sql, $params);
+        try {
+            $rows = $this->executeScopedSql($sql, $params);
+        } catch (\RuntimeException $e) {
+            if (!$skipOperationalBranchScope && $this->isBranchColumnSqlError($e)) {
+                return $this->accountsPayable($companyId, true);
+            }
+            throw $e;
+        }
         $totalOpen = 0.0;
         $totalPosted = 0.0;
         foreach ($rows as $row) {
@@ -1350,7 +1359,7 @@ final class AccountingService
         $params = ['cid' => $companyId];
         [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
         $branchIds = $this->accountingBranch()->effectiveBranchIds();
-        if ($branchIds !== [] && $this->tableColumnExists('rateb_purchase_orders', 'branch_id')) {
+        if ($branchIds !== [] && $this->operationalTableSupportsBranchFilter('rateb_purchase_orders')) {
             $parts = [];
             foreach ($branchIds as $i => $bid) {
                 $key = '_ar_pob_' . $i;
