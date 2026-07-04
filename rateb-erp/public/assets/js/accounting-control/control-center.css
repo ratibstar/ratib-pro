@@ -146,6 +146,15 @@
     max-height: 60vh;
     overflow: auto;
     font-size: 0.8rem;
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: isolate;
+}
+
+.acc-replay-result {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: isolate;
 }
 
 .acc-pagination {

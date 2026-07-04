@@ -1095,6 +1095,7 @@ return [
     'accounting_control_health_database' => 'قاعدة البيانات',
     'accounting_control_health_queue' => 'الطابور',
     'accounting_control_period_range' => ':from ← :to',
+    'confirm' => 'تأكيد',
     'accounting_dashboard_intro' => 'نظرة شاملة على الوضع المالي: الإيرادات، الذمم، التدفقات النقدية، والتنبيهات.',
     'accounting_select_company_hint' => 'اختر شركة من القائمة أعلاه لعرض لوحة تحكم المحاسبة.',
     'accounting_kpi_list' => 'المؤشرات المالية',

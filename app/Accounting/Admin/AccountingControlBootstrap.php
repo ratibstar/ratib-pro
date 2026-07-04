@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Accounting\Admin;
 
+use App\Accounting\Infrastructure\AccountingSchemaCatchup;
 use App\Accounting\Support\AccountingGatewayBootstrap;
 
 /**
@@ -31,5 +32,6 @@ final class AccountingControlBootstrap
         }
 
         AccountingGatewayBootstrap::registerAutoloader();
+        AccountingSchemaCatchup::ensure();
     }
 }

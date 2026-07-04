@@ -686,6 +686,23 @@
         });
     }
 
+    function fmtHealthBlock(st) {
+        if (st == null) return t('nullValue', '—');
+        if (typeof st !== 'object') return fmtStatus(String(st));
+        return Object.keys(st).map(function (k) {
+            var raw = st[k];
+            var val;
+            if (raw === true || raw === 'true' || raw === 1 || raw === '1') {
+                val = t('on', 'ON');
+            } else if (raw === false || raw === 'false' || raw === 0 || raw === '0') {
+                val = t('off', 'OFF');
+            } else {
+                val = fmtStatus(String(raw));
+            }
+            return k + ': ' + val;
+        }).join(' · ');
+    }
+
     function loadHealth() {
         api('health').then(function (res) {
             if (!res.ok) return;
@@ -694,9 +711,8 @@
                 var blocks = ['gateway', 'pipeline', 'event_store', 'replay', 'projection', 'consolidation', 'integrity', 'drift', 'database', 'queue'];
                 grid.innerHTML = blocks.map(function (b) {
                     var st = res.data[b];
-                    var label = typeof st === 'object' ? JSON.stringify(st) : String(st);
                     var title = (I18N.health && I18N.health[b]) ? I18N.health[b] : b;
-                    return '<div class="col-md-4"><div class="acc-card"><strong>' + escapeHtml(title) + '</strong><div class="small">' + escapeHtml(fmtStatus(label)) + '</div></div></div>';
+                    return '<div class="col-md-4"><div class="acc-card"><strong>' + escapeHtml(title) + '</strong><div class="small">' + escapeHtml(fmtHealthBlock(st)) + '</div></div></div>';
                 }).join('');
             }
             var list = root.querySelector('.acc-migration-list');
