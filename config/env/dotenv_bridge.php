@@ -100,7 +100,12 @@ if (!function_exists('rateb_env_load_bridge_dotenv')) {
             $parts = explode('=', $line, 2);
             $key = trim((string) ($parts[0] ?? ''));
             $val = trim((string) ($parts[1] ?? ''));
-            if ($key === '' || !in_array($key, $allowed, true)) {
+            if ($key === '') {
+                continue;
+            }
+            // Enterprise accounting flags (Control Center) — prefix allowlist
+            $accountingFlag = strncmp($key, 'ACCOUNTING_', 11) === 0;
+            if (!$accountingFlag && !in_array($key, $allowed, true)) {
                 continue;
             }
             $len = strlen($val);
