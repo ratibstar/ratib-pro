@@ -486,10 +486,22 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             } elseif ($action === 'toggle_branch') {
                 $branchId = (int) $this->input('branch_id', 0);
                 $status = (string) $this->input('status', '') === 'active' ? 'active' : 'inactive';
-                if (\Rateb\App\Services\PlatformCompanyBranchService::setBranchStatus($branchId, $status)) {
-                    SessionManager::flash('success', __('save') . ' OK');
+                $result = \Rateb\App\Services\PlatformCompanyBranchService::setBranchStatus($companyId, $branchId, $status);
+                if (!empty($result['ok'])) {
+                    if (empty($result['noop'])) {
+                        SessionManager::flash(
+                            'success',
+                            $status === 'active' ? __('branch_activated') : __('branch_deactivated')
+                        );
+                    }
                 } else {
-                    SessionManager::flash('error', __('invalid_request'));
+                    $err = (string) ($result['error'] ?? '');
+                    SessionManager::flash(
+                        'error',
+                        $err === 'branch_last_active'
+                            ? __('branch_last_active')
+                            : ($err === 'record_not_found' ? __('no_records') : __('invalid_request'))
+                    );
                 }
             } elseif ($action === 'update_branch') {
                 $branchId = (int) $this->input('branch_id', 0);

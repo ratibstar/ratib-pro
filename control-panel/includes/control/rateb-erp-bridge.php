@@ -586,14 +586,13 @@ function control_rateb_erp_branch_update(int $companyId, int $branchId, array $d
     return \Rateb\App\Services\PlatformCompanyBranchService::updateBranch($companyId, $branchId, $data);
 }
 
-function control_rateb_erp_branch_set_status(int $branchId, string $status): bool
+/** @return array{ok:bool, error?:string, noop?:bool} */
+function control_rateb_erp_branch_set_status(int $companyId, int $branchId, string $status): array
 {
-    if ($branchId < 1 || !in_array($status, ['active', 'inactive'], true)) {
-        return false;
-    }
     control_rateb_erp_load_branch_stack();
-    \Rateb\App\Core\TenantContext::setSuperAdmin(true);
-    return (new \Rateb\App\Models\Branch())->update($branchId, ['status' => $status]);
+    require_once RATEB_ROOT . '/app/services/PlatformCompanyBranchService.php';
+
+    return \Rateb\App\Services\PlatformCompanyBranchService::setBranchStatus($companyId, $branchId, $status);
 }
 
 /** @return array<int, array<string, mixed>> */

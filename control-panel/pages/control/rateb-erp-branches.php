@@ -71,14 +71,23 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             : 'تعذّر إنشاء الفرع: ' . $err));
                 $focusCompanyId = $companyId;
             }
-        } elseif ($action === 'toggle_branch') {
+        } elseif ($action === 'toggle_branch' && $companyId > 0) {
             $branchId = (int) ($_POST['branch_id'] ?? 0);
             $status = (string) ($_POST['status'] ?? '') === 'active' ? 'active' : 'inactive';
-            if (control_rateb_erp_branch_set_status($branchId, $status)) {
-                $flashOk = $status === 'active' ? 'تم تفعيل الفرع.' : 'تم إيقاف الفرع.';
+            $result = control_rateb_erp_branch_set_status($companyId, $branchId, $status);
+            if (!empty($result['ok'])) {
+                if (empty($result['noop'])) {
+                    $flashOk = $status === 'active' ? 'تم تفعيل الفرع.' : 'تم إيقاف الفرع.';
+                }
                 $focusCompanyId = $companyId;
             } else {
-                $flashErr = 'تعذّر تحديث حالة الفرع.';
+                $err = (string) ($result['error'] ?? '');
+                $flashErr = $err === 'branch_last_active'
+                    ? 'لا يمكن إيقاف آخر فرع نشط لهذه الشركة.'
+                    : ($err === 'record_not_found'
+                        ? 'الفرع غير موجود أو لا يتبع هذه الشركة.'
+                        : 'تعذّر تحديث حالة الفرع.');
+                $focusCompanyId = $companyId;
             }
         } elseif ($action === 'update_branch' && $companyId > 0) {
             $branchId = (int) ($_POST['branch_id'] ?? 0);

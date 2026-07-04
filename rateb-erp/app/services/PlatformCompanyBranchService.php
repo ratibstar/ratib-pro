@@ -170,14 +170,40 @@ final class PlatformCompanyBranchService
         }
     }
 
-    public static function setBranchStatus(int $branchId, string $status): bool
+    /** @return array{ok:bool, error?:string, noop?:bool} */
+    public static function setBranchStatus(int $companyId, int $branchId, string $status): array
     {
-        if ($branchId < 1 || !in_array($status, ['active', 'inactive'], true)) {
-            return false;
+        if ($companyId < 1 || $branchId < 1 || !in_array($status, ['active', 'inactive'], true)) {
+            return ['ok' => false, 'error' => 'invalid_request'];
         }
         self::bootstrapSuperAdmin();
+        TenantContext::setCompanyId($companyId);
+        $row = (new Branch())->queryOne(
+            'SELECT id, status FROM rateb_branches WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $branchId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return ['ok' => false, 'error' => 'record_not_found'];
+        }
+        $current = (string) ($row['status'] ?? 'active');
+        if ($current === $status) {
+            return ['ok' => true, 'noop' => true];
+        }
+        $statusErr = (new BranchService())->validateBranchStatusForSave($companyId, $current, $status);
+        if ($statusErr !== null) {
+            return ['ok' => false, 'error' => $statusErr];
+        }
+        (new Branch())->update($branchId, ['status' => $status]);
+        (new AuditService())->log('toggle_status', 'branches', $branchId, [
+            'branch_id' => $branchId,
+            'company_id' => $companyId,
+            'previous_status' => $current,
+            'new_status' => $status,
+            'actor_user_id' => $_SESSION['rateb_user_id'] ?? ($_SESSION['control_user_id'] ?? null),
+            'timestamp' => date('c'),
+        ]);
 
-        return (new Branch())->update($branchId, ['status' => $status]);
+        return ['ok' => true];
     }
 
     /** @return array{ok:bool, branch?:array<string,mixed>, error?:string} */
