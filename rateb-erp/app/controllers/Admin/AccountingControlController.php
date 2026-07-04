@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Rateb\App\Controllers\Admin;
 
+require_once dirname(__DIR__, 2) . '/bootstrap/accounting-control-bridge.php';
+
 use App\Accounting\Admin\AccountingControlBootstrap;
 use App\Accounting\Admin\Services\AccountingControlService;
 use Rateb\App\Core\Controller;

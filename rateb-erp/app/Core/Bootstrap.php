@@ -50,6 +50,8 @@ final class Bootstrap
             '/app/controllers/Admin/BusinessControllers.php',
             '/app/controllers/Admin/ExtendedControllers.php',
             '/app/controllers/Admin/AccountingControllers.php',
+            '/app/bootstrap/accounting-control-bridge.php',
+            '/app/controllers/Admin/AccountingControlController.php',
             '/app/controllers/Admin/CmsControllers.php',
             '/app/controllers/Marketing/MarketingController.php',
             '/app/models/CmsModels.php',
