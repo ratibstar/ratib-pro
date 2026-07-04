@@ -39,6 +39,9 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             );
             return false;
         }
+        if (function_exists('rateb_ensure_erp_branch_schema')) {
+            rateb_ensure_erp_branch_schema();
+        }
         if (function_exists('rateb_ensure_agency_schema_once')) {
             rateb_ensure_agency_schema_once();
         }

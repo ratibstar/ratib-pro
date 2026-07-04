@@ -85,8 +85,25 @@ if (!function_exists('rateb_company_access_routes_enabled')) {
     }
 }
 
+if (!function_exists('rateb_ensure_erp_branch_schema')) {
+    /** Idempotent branch_id catchup on every ERP request (main platform + agency hosts). */
+    function rateb_ensure_erp_branch_schema(): void
+    {
+        static $ran = false;
+        if ($ran || !\Rateb\App\Core\Auth::check()) {
+            return;
+        }
+        $ran = true;
+        try {
+            (new \Rateb\App\Services\MigrationService())->repairBranchOpsSchemaIfNeeded();
+        } catch (\Throwable $e) {
+            error_log('rateb_ensure_erp_branch_schema: ' . $e->getMessage());
+        }
+    }
+}
+
 if (!function_exists('rateb_ensure_agency_schema_once')) {
-    /** Run pending migrations + branch column catchup on agency ERP hosts (once per session per day). */
+    /** Run pending migrations on agency ERP hosts (once per session per day). */
     function rateb_ensure_agency_schema_once(): void
     {
         static $ran = false;
@@ -108,7 +125,6 @@ if (!function_exists('rateb_ensure_agency_schema_once')) {
             if ($migration->hasPending()) {
                 $migration->runAll();
             } else {
-                $migration->repairBranchOpsSchemaIfNeeded();
                 $migration->repairMarketingPlansCanonicalIfNeeded();
             }
             \Rateb\App\Core\SessionManager::set('rateb_agency_schema_synced', date('Y-m-d'));

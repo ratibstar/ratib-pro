@@ -11,6 +11,9 @@ final class Database
     private static ?PDO $pdo = null;
     private static string $resolvedDbName = '';
 
+    /** @var array<string, bool> */
+    private static array $columnCache = [];
+
     /** @var array{host:string,port:int,user:string,pass:string,db:string}|null */
     private static ?array $connectionOverride = null;
 
@@ -50,28 +53,44 @@ final class Database
         return defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : '';
     }
 
+    public static function clearColumnCache(): void
+    {
+        self::$columnCache = [];
+    }
+
     /** Cached per database — safe when one PHP-FPM pool serves multiple agency DBs. */
     public static function tableHasColumn(string $table, string $column): bool
     {
-        static $cache = [];
         $pdo = self::connection();
         $db = self::$resolvedDbName !== '' ? self::$resolvedDbName : self::resolvedDatabaseName();
-        $key = $db . '|' . str_replace('`', '', $table) . '.' . $column;
-        if (array_key_exists($key, $cache)) {
-            return $cache[$key];
+        if ($db === '') {
+            try {
+                $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
+                $db = is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+        $safeTable = str_replace('`', '', $table);
+        $key = $db . '|' . $safeTable . '.' . $column;
+        if (array_key_exists($key, self::$columnCache)) {
+            return self::$columnCache[$key];
         }
         try {
-            $stmt = $pdo->query(
-                'SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE ' . $pdo->quote($column)
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = :db AND table_name = :tbl AND column_name = :col LIMIT 1'
             );
-            $cache[$key] = $stmt !== false && $stmt->fetch() !== false;
+            $stmt->execute(['db' => $db, 'tbl' => $safeTable, 'col' => $column]);
+            self::$columnCache[$key] = (bool) $stmt->fetchColumn();
             if ($stmt instanceof \PDOStatement) {
                 $stmt->closeCursor();
             }
         } catch (\Throwable $e) {
-            $cache[$key] = false;
+            self::$columnCache[$key] = false;
         }
-        return $cache[$key];
+
+        return self::$columnCache[$key];
     }
 
     public static function connection(): PDO
@@ -294,6 +313,7 @@ final class Database
     {
         self::$pdo = null;
         self::$resolvedDbName = '';
+        self::$columnCache = [];
     }
 }
 

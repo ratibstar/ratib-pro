@@ -159,17 +159,28 @@ final class MigrationService
             return $localLog;
         }
 
-        $verify = [
+        $required = [
             ['rateb_purchase_orders', 'branch_id'],
             ['rateb_purchase_requests', 'branch_id'],
-            ['rateb_journal_entries', 'branch_id'],
             ['rateb_suppliers', 'branch_id'],
             ['rateb_inventory', 'branch_id'],
+            ['rateb_rfq', 'branch_id'],
+            ['rateb_contracts', 'branch_id'],
+            ['rateb_assets', 'branch_id'],
+            ['rateb_tenders', 'branch_id'],
+            ['rateb_stock_movements', 'branch_id'],
         ];
-        foreach ($verify as [$table, $column]) {
-            $log[] = 'Schema verify: ' . $table . '.' . $column . ' = '
-                . ($this->pdoColumnExists($pdo, $table, $column) ? 'yes' : 'NO');
+        $missing = [];
+        foreach ($required as [$table, $column]) {
+            if (!$this->pdoColumnExists($pdo, $table, $column)) {
+                $missing[] = $table . '.' . $column;
+            }
         }
+        if ($missing === []) {
+            return $localLog;
+        }
+
+        $log[] = 'Branch schema repair: missing ' . implode(', ', $missing);
 
         $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
         $catchup = $root . '/migrations/146_branch_ops_branch_id_catchup.sql';
@@ -205,6 +216,8 @@ final class MigrationService
                 }
             }
         }
+
+        Database::clearColumnCache();
 
         return $localLog;
     }
