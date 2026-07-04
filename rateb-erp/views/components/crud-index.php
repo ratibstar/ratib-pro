@@ -133,8 +133,10 @@ $ratebRowRecordLabel = static function (array $row): string {
                 <tbody>
                 <?php if (empty($items)) { ?>
                 <tr><td colspan="<?php echo $colspan; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
-                <?php } else { foreach ($items as $row) { ?>
-                <tr>
+                <?php } else { foreach ($items as $row) {
+                    $companyRowId = $isCompanies ? (int) ($row['id'] ?? 0) : 0;
+                    ?>
+                <tr<?php echo $companyRowId > 0 ? ' data-company-id="' . $companyRowId . '"' : ''; ?>>
                     <?php foreach ($columns as $col) {
                         $val = $row[$col['name']] ?? '';
                         $colType = (string) ($col['type'] ?? '');
@@ -266,12 +268,12 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php if ($isCompanies) {
                             $companyStatus = (string) ($row['status'] ?? '');
                             if (function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled() && $companyStatus === 'active') {
-                                $branchCompanyId = (int) ($row['id'] ?? 0);
+                                $branchCompanyId = $companyRowId > 0 ? $companyRowId : (int) ($row['id'] ?? 0);
                                 $branchCompanyName = trim((string) ($row['name'] ?? ''));
                                 $branchCpUrl = rateb_control_panel_branch_manage_url($branchCompanyId);
                                 $branchTitle = __('manage_branches_cp') . ($branchCompanyName !== '' ? ' — ' . $branchCompanyName : '') . ' #' . $branchCompanyId;
                                 ?>
-                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" target="_blank" rel="noopener"><i class="fas fa-code-branch"></i></a>
+                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" aria-label="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" target="_blank" rel="noopener"><i class="fas fa-code-branch"></i></a>
                         <?php }
                             if ($companyStatus === 'active') { ?>
                         <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/suspend'); ?>" class="d-inline">

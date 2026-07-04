@@ -224,6 +224,17 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'branch_limit', 'label' => 'branch_limit', 'type' => 'number'],
             ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
         ];
+        $this->indexFields = [
+            ['name' => 'id', 'label' => 'id', 'type' => 'id'],
+            ['name' => 'name', 'label' => 'name', 'type' => 'clip'],
+            ['name' => 'email', 'label' => 'email', 'type' => 'clip'],
+            ['name' => 'phone', 'label' => 'phone', 'type' => 'clip'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+            ['name' => 'plan_id', 'label' => 'plan_id', 'type' => 'number'],
+            ['name' => 'user_limit', 'label' => 'user_limit', 'type' => 'number'],
+            ['name' => 'branch_limit', 'label' => 'branch_limit', 'type' => 'number'],
+            ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
+        ];
     }
 
     public function create(): void
