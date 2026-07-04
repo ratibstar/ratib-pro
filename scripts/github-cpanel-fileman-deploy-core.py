@@ -21,6 +21,7 @@ from threading import Lock
 
 # Paths auto-uploaded when changed in the pushed commit (see build_file_list).
 DEPLOY_ALLOW_PREFIXES = (
+    "app/Accounting/",
     "includes/",
     "pages/",
     "control-panel/",
@@ -48,6 +49,7 @@ DEPLOY_ALLOW_FILES = frozenset({
     "erp-health.php",
     "rateb-profile-fix.php",
     "config/env.php",
+    "config/accounting.php",
     "config/test-control-db.php",
 })
 DEPLOY_DENY_PREFIXES = (

@@ -32,6 +32,7 @@ final class Bootstrap
         date_default_timezone_set('Asia/Riyadh');
 
         self::registerAutoloader($basePath);
+        self::registerSiteAppAutoloader();
         $requestHelper = $basePath . '/app/helpers/Request.php';
         if (is_file($requestHelper)) {
             require_once $requestHelper;
@@ -119,11 +120,47 @@ final class Bootstrap
         }
 
         self::registerAutoloader($basePath);
+        self::registerSiteAppAutoloader();
         $entities = $basePath . '/app/models/Entities.php';
         if (is_file($entities)) {
             require_once $entities;
         }
         self::loadConfig($basePath);
+    }
+
+    /**
+     * Project-root app/ (App\Accounting\, App\Core\) lives beside rateb-erp/ on production.
+     */
+    private static function registerSiteAppAutoloader(): void
+    {
+        static $registered = false;
+        if ($registered) {
+            return;
+        }
+
+        $erpRoot = self::erpRootFromBootstrapFile();
+        $candidates = [
+            dirname($erpRoot) . '/app',
+            $erpRoot . '/../app',
+        ];
+        foreach ($candidates as $candidate) {
+            $resolved = realpath($candidate);
+            if ($resolved === false) {
+                continue;
+            }
+            $autoloader = $resolved . '/Core/Autoloader.php';
+            if (!is_file($autoloader)) {
+                continue;
+            }
+            require_once $autoloader;
+            \App\Core\Autoloader::register($resolved);
+            if (!defined('RATEB_SITE_APP_ROOT')) {
+                define('RATEB_SITE_APP_ROOT', str_replace('\\', '/', $resolved));
+            }
+            $registered = true;
+
+            return;
+        }
     }
 
     private static function registerAutoloader(string $basePath): void
