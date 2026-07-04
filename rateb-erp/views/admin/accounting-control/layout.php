@@ -8,6 +8,10 @@ $accSection = $accSection ?? 'dashboard';
 $accLocale = rateb_locale();
 $accInputLang = $accLocale === 'ar' ? 'ar-SA' : 'en';
 $accDateManaged = $accLocale === 'ar' ? ' data-acc-locale-managed="1"' : '';
+$accFromIso = date('Y-m-01');
+$accToIso = date('Y-m-d');
+$accFromEn = date('m/d/Y', strtotime($accFromIso));
+$accToEn = date('m/d/Y', strtotime($accToIso));
 $accI18n = require RATEB_VIEWS_PATH . '/admin/accounting-control/i18n-payload.php';
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/accounting-control');
 $accAssetVer = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
@@ -70,11 +74,19 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('from_date'); ?></label>
-                <input type="date" class="form-control form-control-sm acc-filter-from acc-locale-date" lang="<?php echo Rateb\App\Core\View::escape($accInputLang); ?>" dir="ltr" translate="no"<?php echo $accDateManaged; ?> autocomplete="off" value="<?php echo date('Y-m-01'); ?>">
+                <?php if ($accLocale === 'ar') { ?>
+                <input type="date" class="form-control form-control-sm acc-filter-from acc-locale-date" lang="ar-SA" dir="ltr" translate="no"<?php echo $accDateManaged; ?> autocomplete="off" value="<?php echo Rateb\App\Core\View::escape($accFromIso); ?>">
+                <?php } else { ?>
+                <input type="text" class="form-control form-control-sm acc-filter-from acc-locale-date acc-date-text rateb-ltr-date" lang="en" dir="ltr" translate="no" autocomplete="off" placeholder="MM/DD/YYYY" data-iso="<?php echo Rateb\App\Core\View::escape($accFromIso); ?>" value="<?php echo Rateb\App\Core\View::escape($accFromEn); ?>">
+                <?php } ?>
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('to_date'); ?></label>
-                <input type="date" class="form-control form-control-sm acc-filter-to acc-locale-date" lang="<?php echo Rateb\App\Core\View::escape($accInputLang); ?>" dir="ltr" translate="no"<?php echo $accDateManaged; ?> autocomplete="off" value="<?php echo date('Y-m-d'); ?>">
+                <?php if ($accLocale === 'ar') { ?>
+                <input type="date" class="form-control form-control-sm acc-filter-to acc-locale-date" lang="ar-SA" dir="ltr" translate="no"<?php echo $accDateManaged; ?> autocomplete="off" value="<?php echo Rateb\App\Core\View::escape($accToIso); ?>">
+                <?php } else { ?>
+                <input type="text" class="form-control form-control-sm acc-filter-to acc-locale-date acc-date-text rateb-ltr-date" lang="en" dir="ltr" translate="no" autocomplete="off" placeholder="MM/DD/YYYY" data-iso="<?php echo Rateb\App\Core\View::escape($accToIso); ?>" value="<?php echo Rateb\App\Core\View::escape($accToEn); ?>">
+                <?php } ?>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="button" class="btn btn-primary btn-sm w-100 acc-btn-apply-filters"><?php echo __('apply'); ?></button>

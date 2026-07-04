@@ -45,6 +45,42 @@
         el.value = w ? (isAr ? toEastern(w) : w) : '';
     }
 
+    function isoToEnDisplay(iso) {
+        if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || '';
+        var p = iso.split('-');
+        return p[1] + '/' + p[2] + '/' + p[0];
+    }
+
+    function parseDateToIso(raw) {
+        var s = toWestern(String(raw || '').trim());
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        var m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+        if (m) {
+            return m[3] + '-' + String(m[1]).padStart(2, '0') + '-' + String(m[2]).padStart(2, '0');
+        }
+        return '';
+    }
+
+    function readDateVal(sel) {
+        var el = root.querySelector(sel);
+        if (!el) return '';
+        if (el.type === 'date') return el.value;
+        var parsed = parseDateToIso(el.value);
+        if (parsed) {
+            el.setAttribute('data-iso', parsed);
+            return parsed;
+        }
+        return el.getAttribute('data-iso') || '';
+    }
+
+    function syncDateTextInput(el) {
+        if (!el || el.type === 'date') return;
+        var iso = parseDateToIso(el.value) || el.getAttribute('data-iso') || '';
+        if (!iso) return;
+        el.setAttribute('data-iso', iso);
+        el.value = isAr ? fmtDate(iso) : isoToEnDisplay(iso);
+    }
+
     function initLocaleInputs() {
         var inputLang = isAr ? 'ar-SA' : 'en';
         root.querySelectorAll('.acc-locale-num').forEach(function (el) {
@@ -57,6 +93,10 @@
         root.querySelectorAll('.acc-locale-date').forEach(function (el) {
             el.setAttribute('dir', 'ltr');
             el.setAttribute('translate', 'no');
+            if (el.classList.contains('acc-date-text')) {
+                syncDateTextInput(el);
+                return;
+            }
             if (isAr) {
                 el.setAttribute('lang', 'ar-SA');
                 el.setAttribute('data-acc-locale-managed', '1');
@@ -65,11 +105,11 @@
                 el.setAttribute('lang', 'en');
                 el.removeAttribute('data-acc-locale-managed');
                 el.classList.add('rateb-ltr-date');
+                if (typeof window.ratebInitDateInputs === 'function') {
+                    window.ratebInitDateInputs(root);
+                }
             }
         });
-        if (!isAr && typeof window.ratebInitDateInputs === 'function') {
-            window.ratebInitDateInputs(root);
-        }
     }
 
     function bindLocaleInputs() {
@@ -86,6 +126,12 @@
             });
             el.addEventListener('blur', function () { syncNumInput(el); });
             el.addEventListener('change', function () { syncNumInput(el); });
+        });
+        root.querySelectorAll('.acc-date-text').forEach(function (el) {
+            if (el.getAttribute('data-acc-date-bound') === '1') return;
+            el.setAttribute('data-acc-date-bound', '1');
+            el.addEventListener('blur', function () { syncDateTextInput(el); });
+            el.addEventListener('change', function () { syncDateTextInput(el); });
         });
     }
 
@@ -212,10 +258,10 @@
         return {
             company_id: val('.acc-filter-company', true) || root.dataset.companyId || '',
             branch_id: val('.acc-filter-branch', true) || '',
-            period_from: val('.acc-filter-from') || '',
-            period_to: val('.acc-filter-to') || '',
-            from_date: val('.acc-filter-from') || '',
-            to_date: val('.acc-filter-to') || '',
+            period_from: readDateVal('.acc-filter-from') || '',
+            period_to: readDateVal('.acc-filter-to') || '',
+            from_date: readDateVal('.acc-filter-from') || '',
+            to_date: readDateVal('.acc-filter-to') || '',
             event_uuid: val('.acc-filter-uuid') || '',
             status: val('.acc-filter-status') || '',
             source_system: val('.acc-filter-system') || '',

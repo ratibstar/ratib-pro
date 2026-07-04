@@ -101,6 +101,7 @@
 
 /* Locale-aware numerals in filters and KPI values */
 .acc-control-wrap[data-lang="en"] .acc-locale-num,
+.acc-control-wrap .acc-date-text,
 .acc-control-wrap[data-lang="en"] .acc-locale-date,
 .acc-control-wrap[data-lang="en"] .acc-card-value,
 .acc-control-wrap[data-lang="en"] .acc-integrity-score .display-4 {
