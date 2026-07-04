@@ -681,6 +681,9 @@ $router->get($app('accounting-control/reconciliation'), [AccountingControlContro
 $router->get($app('accounting-control/integrity'), [AccountingControlController::class, 'integrity'], $accCtrlIntMw);
 $router->get($app('accounting-control/settings'), [AccountingControlController::class, 'settings'], $accCtrlDashMw);
 $router->get($app('accounting-control/health'), [AccountingControlController::class, 'health'], $accCtrlHealthMw);
+$router->get($app('accounting-control/timeline'), [AccountingControlController::class, 'timeline'], $accCtrlDashMw);
+$router->get($app('accounting-control/notifications'), [AccountingControlController::class, 'notifications'], $accCtrlDashMw);
+$router->get($app('accounting-control/diagnostics'), [AccountingControlController::class, 'diagnostics'], $accCtrlHealthMw);
 $router->get($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlApiMw);
 $router->post($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlApiMw);
 

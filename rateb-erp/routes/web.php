@@ -224,6 +224,9 @@ $router->get('/admin/accounting-control/reconciliation', [AccountingControlContr
 $router->get('/admin/accounting-control/integrity', [AccountingControlController::class, 'integrity'], rateb_admin_mw('accounting.integrity'));
 $router->get('/admin/accounting-control/settings', [AccountingControlController::class, 'settings'], rateb_admin_mw('accounting.dashboard'));
 $router->get('/admin/accounting-control/health', [AccountingControlController::class, 'health'], rateb_admin_mw('accounting.system_health'));
+$router->get('/admin/accounting-control/timeline', [AccountingControlController::class, 'timeline'], rateb_admin_mw('accounting.dashboard'));
+$router->get('/admin/accounting-control/notifications', [AccountingControlController::class, 'notifications'], rateb_admin_mw('accounting.dashboard'));
+$router->get('/admin/accounting-control/diagnostics', [AccountingControlController::class, 'diagnostics'], rateb_admin_mw('accounting.system_health'));
 $router->get('/admin/accounting-control/api/{resource}', [AccountingControlController::class, 'api'], rateb_admin_mw());
 $router->post('/admin/accounting-control/api/{resource}', [AccountingControlController::class, 'api'], rateb_admin_mw());
 $router->get('/admin/login-activity', [\Rateb\App\Controllers\Admin\LoginActivityController::class, 'index'], rateb_admin_mw('settings.manage'));

@@ -348,13 +348,16 @@
             case 'events': loadEvents(); break;
             case 'replay': loadReplayHistory(); break;
             case 'audit': loadAudit(); break;
-            case 'projections': break;
-            case 'consolidation': break;
+            case 'projections': if (window.AccPhase7 && window.AccPhase7.loadProjections) window.AccPhase7.loadProjections(); else loadProjection(); break;
+            case 'consolidation': if (window.AccPhase7 && window.AccPhase7.loadConsolidation) window.AccPhase7.loadConsolidation(); else loadConsolidation(); break;
             case 'drift': loadDriftReports(); break;
             case 'reconciliation': loadReconciliation(); break;
             case 'integrity': loadIntegrity(); break;
             case 'settings': loadSettings(); break;
             case 'health': loadHealth(); break;
+            case 'timeline': if (window.AccPhase7) window.AccPhase7.loadTimeline(); break;
+            case 'notifications': if (window.AccPhase7) window.AccPhase7.loadNotifications(); break;
+            case 'diagnostics': if (window.AccPhase7) window.AccPhase7.loadDiagnostics(); break;
         }
     }
 
@@ -644,9 +647,11 @@
             var tbody = root.querySelector('.acc-drift-table tbody');
             if (tbody) {
                 tbody.innerHTML = rows.map(function (r) {
+                    var summary = (r.payload && r.payload.summary) ? r.payload.summary : {};
+                    var sumText = (summary.missing || 0) + ' / ' + (summary.duplicate || 0) + ' / ' + (summary.mismatched || 0);
                     return '<tr><td>' + escapeHtml(fmtValue(r.id)) + '</td><td>' + escapeHtml(fmtPeriod(r.period_from, r.period_to)) +
-                        '</td><td><span class="badge bg-warning">' + escapeHtml(fmtSeverity(r.severity || 'low')) + '</span></td><td>…</td>' +
-                        '<td><button type="button" class="btn btn-sm btn-link acc-drift-json">' + escapeHtml(t('btn.view', 'View')) + '</button></td></tr>';
+                        '</td><td><span class="badge bg-warning">' + escapeHtml(fmtSeverity(r.severity || 'low')) + '</span></td><td>' + escapeHtml(sumText) +
+                        '</td><td><button type="button" class="btn btn-sm btn-link acc-drift-json">' + escapeHtml(t('btn.view', 'View')) + '</button></td></tr>';
                 }).join('');
                 tbody.querySelectorAll('.acc-drift-json').forEach(function (btn, i) {
                     btn.addEventListener('click', function () { showJson(rows[i]); });
@@ -804,9 +809,6 @@
     root.querySelector('.acc-btn-refresh') && root.querySelector('.acc-btn-refresh').addEventListener('click', loadSection);
     root.querySelector('.acc-btn-apply-filters') && root.querySelector('.acc-btn-apply-filters').addEventListener('click', loadSection);
     root.querySelector('.acc-btn-print') && root.querySelector('.acc-btn-print').addEventListener('click', function () { window.print(); });
-    root.querySelector('.acc-btn-export') && root.querySelector('.acc-btn-export').addEventListener('click', function () {
-        if (section === 'events') window.location = apiBase + '/events' + buildQuery(Object.assign(filters(), { export: 'csv' }));
-    });
 
     root.querySelectorAll('.acc-replay-preview').forEach(function (btn) {
         btn.addEventListener('click', function () { runReplay(true, btn.dataset.mode); });
@@ -838,4 +840,13 @@
     setInterval(function () {
         if (section === 'events' || section === 'dashboard') loadSection();
     }, 60000);
+
+    window.AccControl = {
+        root: root, api: api, filters: filters, section: section, apiBase: apiBase, csrf: csrf,
+        t: t, fmtNum: fmtNum, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtValue: fmtValue,
+        fmtStatus: fmtStatus, fmtSeverity: fmtSeverity, fmtPeriod: fmtPeriod, escapeHtml: escapeHtml,
+        alertMsg: alertMsg, showJson: showJson, confirmAction: confirmAction, buildQuery: buildQuery,
+        loadSection: loadSection, renderPagination: renderPagination, doughnutChart: doughnutChart,
+        barChart: barChart, lineChart: lineChart, charts: charts, I18N: I18N
+    };
 })();

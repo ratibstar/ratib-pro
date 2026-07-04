@@ -18,6 +18,7 @@ $accAssetVer = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
 $accAssetsBase = rateb_site_origin() . rateb_erp_app_prefix() . '/assets/accounting-control';
 $accCssUrl = $accAssetsBase . '/control-center.css?v=' . rawurlencode($accAssetVer);
 $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer);
+$accJsPhase7Url = $accAssetsBase . '/control-center-phase7.js?v=' . rawurlencode($accAssetVer);
 ?>
 <link href="<?php echo Rateb\App\Core\View::escape($accCssUrl); ?>" rel="stylesheet">
 <div class="acc-control-wrap" id="acc-control-app"
@@ -36,17 +37,32 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
             </div>
         </div>
         <div class="acc-control-toolbar">
-            <input type="search" class="form-control form-control-sm acc-global-search" placeholder="<?php echo __('search'); ?>…" aria-label="<?php echo __('search'); ?>">
+            <input type="search" class="form-control form-control-sm acc-global-search" placeholder="<?php echo __('accounting_control_search_placeholder'); ?>" aria-label="<?php echo __('search'); ?>">
+            <div class="dropdown">
+                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="<?php echo __('export'); ?>">
+                    <i class="fas fa-download"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end acc-export-menu">
+                    <li><button type="button" class="dropdown-item acc-export-fmt" data-fmt="csv"><?php echo __('accounting_control_export_csv'); ?></button></li>
+                    <li><button type="button" class="dropdown-item acc-export-fmt" data-fmt="excel"><?php echo __('accounting_control_export_excel'); ?></button></li>
+                    <li><button type="button" class="dropdown-item acc-export-fmt" data-fmt="json"><?php echo __('accounting_control_export_json'); ?></button></li>
+                    <li><button type="button" class="dropdown-item acc-export-fmt" data-fmt="pdf"><?php echo __('accounting_control_export_pdf'); ?></button></li>
+                </ul>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary acc-btn-theme" title="<?php echo __('accounting_control_theme_dark'); ?>" aria-pressed="false">
+                <i class="fas fa-moon"></i>
+            </button>
+            <a href="<?php echo rateb_app_url('accounting-control/notifications'); ?>" class="btn btn-sm btn-outline-secondary acc-notif-link" title="<?php echo __('accounting_control_notifications'); ?>">
+                <i class="fas fa-bell"></i><span class="badge bg-danger acc-notif-badge d-none">0</span>
+            </a>
             <button type="button" class="btn btn-sm btn-outline-secondary acc-btn-refresh" title="<?php echo __('refresh'); ?>">
                 <i class="fas fa-sync"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary acc-btn-export" title="CSV">
-                <i class="fas fa-file-csv"></i>
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary acc-btn-print" title="<?php echo __('print'); ?>">
                 <i class="fas fa-print"></i>
             </button>
         </div>
+        <div class="acc-search-results d-none w-100 mt-2"></div>
     </header>
     <nav class="acc-control-nav" aria-label="<?php echo __('accounting_control_center'); ?>">
         <?php foreach ($accNav as $item) {
@@ -132,3 +148,4 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
 <script type="application/json" id="acc-control-i18n"><?php echo json_encode($accI18n, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP); ?></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="<?php echo Rateb\App\Core\View::escape($accJsUrl); ?>"></script>
+<script src="<?php echo Rateb\App\Core\View::escape($accJsPhase7Url); ?>"></script>

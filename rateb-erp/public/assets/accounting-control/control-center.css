@@ -180,7 +180,47 @@
 @media print {
     .acc-control-nav,
     .acc-control-toolbar,
-    .acc-filters {
+    .acc-filters,
+    .acc-export-menu,
+    .acc-btn-theme,
+    .acc-notif-link {
         display: none !important;
     }
+    .acc-control-wrap {
+        padding: 0;
+    }
 }
+
+.acc-timeline-item {
+    position: relative;
+}
+
+.acc-search-results {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid var(--acc-border);
+    border-radius: 0.5rem;
+    background: var(--bs-body-bg);
+}
+
+.acc-section-meta .acc-section-status .badge {
+    font-size: 0.75rem;
+}
+
+.acc-control-wrap:focus-within .acc-nav-item:focus {
+    outline: 2px solid var(--acc-accent);
+    outline-offset: 2px;
+}
+
+.acc-card-value {
+    font-variant-numeric: tabular-nums;
+}
+
+[data-bs-theme="light"] .acc-json-viewer,
+[data-bs-theme="light"] .acc-replay-result,
+[data-bs-theme="light"] .acc-golden-summary,
+[data-bs-theme="light"] .acc-hash-verification {
+    color: inherit;
+    background: #f8f9fa !important;
+}
+
