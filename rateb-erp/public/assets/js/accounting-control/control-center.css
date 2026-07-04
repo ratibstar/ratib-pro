@@ -99,6 +99,49 @@
     text-transform: uppercase;
 }
 
+/* Locale-aware numerals in filters and KPI values */
+.acc-control-wrap[data-lang="en"] .acc-locale-num,
+.acc-control-wrap[data-lang="en"] .acc-locale-date,
+.acc-control-wrap[data-lang="en"] .acc-card-value,
+.acc-control-wrap[data-lang="en"] .acc-integrity-score .display-4 {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+.acc-control-wrap[data-lang="en"] .acc-locale-date::-webkit-datetime-edit,
+.acc-control-wrap[data-lang="en"] .acc-locale-date::-webkit-datetime-edit-fields-wrapper,
+.acc-control-wrap[data-lang="en"] .acc-locale-date::-webkit-datetime-edit-text,
+.acc-control-wrap[data-lang="en"] .acc-locale-date::-webkit-datetime-edit-month-field,
+.acc-control-wrap[data-lang="en"] .acc-locale-date::-webkit-datetime-edit-day-field,
+.acc-control-wrap[data-lang="en"] .acc-locale-date::-webkit-datetime-edit-year-field {
+    direction: ltr !important;
+    unicode-bidi: plaintext !important;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+.acc-control-wrap[data-lang="ar"] .acc-locale-num,
+.acc-control-wrap[data-lang="ar"] .acc-locale-date {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: isolate;
+}
+
+.acc-control-wrap[data-lang="ar"] .acc-locale-date::-webkit-datetime-edit,
+.acc-control-wrap[data-lang="ar"] .acc-locale-date::-webkit-datetime-edit-fields-wrapper,
+.acc-control-wrap[data-lang="ar"] .acc-locale-date::-webkit-datetime-edit-text,
+.acc-control-wrap[data-lang="ar"] .acc-locale-date::-webkit-datetime-edit-month-field,
+.acc-control-wrap[data-lang="ar"] .acc-locale-date::-webkit-datetime-edit-day-field,
+.acc-control-wrap[data-lang="ar"] .acc-locale-date::-webkit-datetime-edit-year-field {
+    direction: ltr !important;
+    unicode-bidi: plaintext !important;
+}
+
+.acc-control-wrap .acc-locale-num,
+.acc-control-wrap .acc-locale-date {
+    unicode-bidi: isolate;
+}
+
 .acc-json-viewer {
     max-height: 60vh;
     overflow: auto;

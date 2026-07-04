@@ -74,6 +74,9 @@
         if (!input || input.getAttribute('type') === 'hidden') {
             return;
         }
+        if (input.getAttribute('data-acc-locale-managed') === '1') {
+            return;
+        }
         var type = (input.getAttribute('type') || '').toLowerCase();
         if (DATE_TYPES.indexOf(type) === -1) {
             return;

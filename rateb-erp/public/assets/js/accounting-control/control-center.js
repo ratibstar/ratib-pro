@@ -21,6 +21,63 @@
     var csrf = root.dataset.csrf || '';
     var section = root.dataset.section || 'dashboard';
     var charts = {};
+    var EASTERN = ['\u0660', '\u0661', '\u0662', '\u0663', '\u0664', '\u0665', '\u0666', '\u0667', '\u0668', '\u0669'];
+    var PERSIAN = ['\u06F0', '\u06F1', '\u06F2', '\u06F3', '\u06F4', '\u06F5', '\u06F6', '\u06F7', '\u06F8', '\u06F9'];
+
+    function toWestern(s) {
+        var str = String(s || '');
+        for (var i = 0; i < 10; i++) {
+            str = str.split(EASTERN[i]).join(String(i));
+            str = str.split(PERSIAN[i]).join(String(i));
+        }
+        return str;
+    }
+
+    function toEastern(s) {
+        return String(s || '').replace(/\d/g, function (ch) {
+            return EASTERN[parseInt(ch, 10)] || ch;
+        });
+    }
+
+    function syncNumInput(el) {
+        if (!el) return;
+        var w = toWestern(el.value).replace(/\D+/g, '');
+        el.value = w ? (isAr ? toEastern(w) : w) : '';
+    }
+
+    function initLocaleInputs() {
+        var inputLang = isAr ? 'ar-SA' : 'en-US';
+        root.querySelectorAll('.acc-locale-num').forEach(function (el) {
+            el.setAttribute('lang', inputLang);
+            el.setAttribute('dir', 'ltr');
+            el.setAttribute('translate', 'no');
+            el.classList.toggle('rateb-ltr-num', !isAr);
+            syncNumInput(el);
+        });
+        root.querySelectorAll('.acc-locale-date').forEach(function (el) {
+            el.setAttribute('lang', inputLang);
+            el.setAttribute('dir', 'ltr');
+            el.setAttribute('translate', 'no');
+            el.classList.toggle('rateb-ltr-date', !isAr);
+        });
+    }
+
+    function bindLocaleInputs() {
+        root.querySelectorAll('.acc-locale-num').forEach(function (el) {
+            if (el.getAttribute('data-acc-num-bound') === '1') return;
+            el.setAttribute('data-acc-num-bound', '1');
+            el.addEventListener('input', function () {
+                var w = toWestern(el.value).replace(/\D+/g, '');
+                if (isAr && w !== toWestern(el.value)) {
+                    el.value = toEastern(w);
+                } else if (!isAr) {
+                    el.value = w;
+                }
+            });
+            el.addEventListener('blur', function () { syncNumInput(el); });
+            el.addEventListener('change', function () { syncNumInput(el); });
+        });
+    }
 
     function t(path, fallback, vars) {
         var parts = String(path).split('.');
@@ -143,8 +200,8 @@
 
     function filters() {
         return {
-            company_id: val('.acc-filter-company') || root.dataset.companyId || '',
-            branch_id: val('.acc-filter-branch') || '',
+            company_id: val('.acc-filter-company', true) || root.dataset.companyId || '',
+            branch_id: val('.acc-filter-branch', true) || '',
             period_from: val('.acc-filter-from') || '',
             period_to: val('.acc-filter-to') || '',
             from_date: val('.acc-filter-from') || '',
@@ -159,9 +216,14 @@
         };
     }
 
-    function val(sel) {
+    function val(sel, numeric) {
         var el = root.querySelector(sel);
-        return el ? String(el.value).trim() : '';
+        if (!el) return '';
+        var v = String(el.value).trim();
+        if (numeric) {
+            return toWestern(v).replace(/\D+/g, '');
+        }
+        return v;
     }
 
     function alertMsg(msg, type) {
@@ -678,6 +740,11 @@
             tr.classList.toggle('d-none', term !== '' && tr.dataset.search.indexOf(term) === -1);
         });
     });
+
+    bindLocaleInputs();
+    initLocaleInputs();
+    setTimeout(initLocaleInputs, 0);
+    setTimeout(initLocaleInputs, 150);
 
     loadSection();
     setInterval(function () {

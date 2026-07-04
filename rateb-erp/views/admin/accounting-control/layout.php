@@ -6,6 +6,7 @@
 /** @var list<array{slug:string,label:string,route:string,icon:string,permission:string}> $accNav */
 $accSection = $accSection ?? 'dashboard';
 $accLocale = rateb_locale();
+$accInputLang = $accLocale === 'ar' ? 'ar-SA' : 'en-US';
 $accI18n = require RATEB_VIEWS_PATH . '/admin/accounting-control/i18n-payload.php';
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/accounting-control');
 $accAssetVer = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
@@ -60,19 +61,19 @@ $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer
         <div class="acc-filters row g-2 mb-3">
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('company'); ?></label>
-                <input type="number" class="form-control form-control-sm acc-filter-company" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" value="<?php echo (int) $companyId ?: ''; ?>" min="0">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm acc-filter-company acc-locale-num" lang="<?php echo Rateb\App\Core\View::escape($accInputLang); ?>" dir="ltr" translate="no" autocomplete="off" value="<?php echo (int) $companyId ?: ''; ?>">
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('branch'); ?></label>
-                <input type="number" class="form-control form-control-sm acc-filter-branch" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" min="0">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control form-control-sm acc-filter-branch acc-locale-num" lang="<?php echo Rateb\App\Core\View::escape($accInputLang); ?>" dir="ltr" translate="no" autocomplete="off">
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('from_date'); ?></label>
-                <input type="date" class="form-control form-control-sm acc-filter-from" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" value="<?php echo date('Y-m-01'); ?>">
+                <input type="date" class="form-control form-control-sm acc-filter-from acc-locale-date" lang="<?php echo Rateb\App\Core\View::escape($accInputLang); ?>" dir="ltr" translate="no" data-acc-locale-managed="1" autocomplete="off" value="<?php echo date('Y-m-01'); ?>">
             </div>
             <div class="col-md-2">
                 <label class="form-label"><?php echo __('to_date'); ?></label>
-                <input type="date" class="form-control form-control-sm acc-filter-to" lang="<?php echo Rateb\App\Core\View::escape($accLocale); ?>" value="<?php echo date('Y-m-d'); ?>">
+                <input type="date" class="form-control form-control-sm acc-filter-to acc-locale-date" lang="<?php echo Rateb\App\Core\View::escape($accInputLang); ?>" dir="ltr" translate="no" data-acc-locale-managed="1" autocomplete="off" value="<?php echo date('Y-m-d'); ?>">
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="button" class="btn btn-primary btn-sm w-100 acc-btn-apply-filters"><?php echo __('apply'); ?></button>
