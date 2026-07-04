@@ -484,6 +484,24 @@ RATEB_ERP_FULL_BUNDLE_PREFIXES = (
 )
 
 
+def rateb_site_accounting_app_files() -> list[str]:
+    """Phase 6 — site app/Accounting beside rateb-erp (not inside rateb-erp/). Always ship on deploy."""
+    out: list[str] = []
+    acc_root = os.path.join(os.getcwd(), "app", "Accounting")
+    if os.path.isdir(acc_root):
+        for dirpath, _dirnames, filenames in os.walk(acc_root):
+            for name in filenames:
+                if not name.endswith(".php"):
+                    continue
+                rel = os.path.relpath(os.path.join(dirpath, name), os.getcwd()).replace("\\", "/")
+                if is_auto_deploy_path(rel):
+                    out.append(rel)
+    for rel in ("app/Core/Autoloader.php", "config/accounting.php"):
+        if os.path.isfile(rel) and is_auto_deploy_path(rel):
+            out.append(rel)
+    return sorted(set(out))
+
+
 def needs_full_erp_bundle(changed: list[str]) -> bool:
     flag = os.environ.get("CPANEL_ERP_FULL_BUNDLE", "").strip().lower()
     if flag in ("1", "true", "yes", "on"):
@@ -898,6 +916,20 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
             continue
         core.append(rel)
         seen.add(rel)
+    acc_bundle = rateb_site_accounting_app_files()
+    if acc_bundle:
+        added_acc = 0
+        for rel in acc_bundle:
+            if rel in seen or rel == marker:
+                continue
+            core.append(rel)
+            seen.add(rel)
+            added_acc += 1
+        if added_acc:
+            print(
+                f"fast deploy: +{added_acc} site app/Accounting file(s) (Control Center baseline)",
+                flush=True,
+            )
     changed_paths = git_changed_paths()
     if should_rebaseline_erp_migrations(changed_paths):
         migration_files = rateb_erp_migration_files()
