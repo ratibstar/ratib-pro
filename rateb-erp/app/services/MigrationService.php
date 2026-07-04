@@ -157,13 +157,30 @@ final class MigrationService
             return $localLog;
         }
 
+        $checked = [];
+        try {
+            $live = Database::connection();
+            $liveDb = (string) ($live->query('SELECT DATABASE()')->fetchColumn() ?: '');
+            if ($liveDb !== '') {
+                $checked[] = $liveDb;
+                $log[] = 'Branch schema check (live ERP connection): ' . $liveDb;
+                $this->repairBranchOpsOnPdo($live, $log);
+            }
+        } catch (\Throwable $e) {
+            $log[] = 'Branch schema live check skipped: ' . $e->getMessage();
+        }
+
         $candidates = function_exists('rateb_erp_database_candidates')
             ? rateb_erp_database_candidates()
             : [defined('RATEB_DB_NAME') ? (string) \RATEB_DB_NAME : 'admin_rateb-erp'];
 
         foreach ($candidates as $dbName) {
+            if (in_array($dbName, $checked, true)) {
+                continue;
+            }
             try {
                 $pdo = $this->openMigrationPdo($dbName);
+                $checked[] = $dbName;
                 $log[] = 'Branch schema check: ' . $dbName;
                 $this->repairBranchOpsOnPdo($pdo, $log);
             } catch (\Throwable $e) {

@@ -58,18 +58,18 @@ final class Database
         self::$columnCache = [];
     }
 
-    /** Cached per database — uses SHOW COLUMNS (same check MySQL uses at query time). */
+    /** Cached per database — uses SHOW COLUMNS on the live PDO database. */
     public static function tableHasColumn(string $table, string $column): bool
     {
         $pdo = self::connection();
-        $db = self::$resolvedDbName !== '' ? self::$resolvedDbName : self::resolvedDatabaseName();
+        try {
+            $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
+            $db = is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
+        } catch (\Throwable $e) {
+            return false;
+        }
         if ($db === '') {
-            try {
-                $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
-                $db = is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
-            } catch (\Throwable $e) {
-                return false;
-            }
+            return false;
         }
         $safeTable = str_replace('`', '', $table);
         $key = $db . '|' . $safeTable . '.' . $column;
