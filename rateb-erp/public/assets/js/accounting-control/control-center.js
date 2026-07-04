@@ -21,6 +21,7 @@
             status: val('.acc-filter-status') || '',
             source_system: val('.acc-filter-system') || '',
             action: val('.acc-filter-action') || '',
+            severity: val('.acc-filter-severity') || '',
             page: 1,
             per_page: 50
         };
@@ -125,6 +126,7 @@
         doughnutChart('acc-chart-replay-rate', ['Success', 'Failed'], [ch.replay_success_rate && ch.replay_success_rate.processed || 0, ch.replay_success_rate && ch.replay_success_rate.failed || 0]);
         lineChart('acc-chart-drift-trend', (ch.drift_trend || []).map(function (x) { return x.date; }), (ch.drift_trend || []).map(function (x) { return x.count; }));
         barChart('acc-chart-company-activity', (ch.company_activity || []).map(function (x) { return x.key || '—'; }), (ch.company_activity || []).map(function (x) { return x.count; }), 'Companies');
+        barChart('acc-chart-branch-activity', (ch.branch_activity || []).map(function (x) { return x.key || '—'; }), (ch.branch_activity || []).map(function (x) { return x.count; }), 'Branches');
     }
 
     function barChart(id, labels, data, label) {
@@ -156,12 +158,43 @@
             var tbody = root.querySelector('.acc-data-table tbody');
             if (!tbody) return;
             tbody.innerHTML = (res.data.rows || []).map(function (row) {
-                return '<tr><td><code class="small">' + escapeHtml(row.event_uuid) + '</code></td><td>' + escapeHtml(row.source_system) +
+                return '<tr data-search="' + escapeHtml((row.event_uuid + ' ' + row.source_system + ' ' + row.event_type + ' ' + row.status).toLowerCase()) + '"><td><code class="small">' + escapeHtml(row.event_uuid) + '</code></td><td>' + escapeHtml(row.source_system) +
                     '</td><td>' + escapeHtml(row.event_type) + '</td><td><span class="badge bg-secondary">' + escapeHtml(row.status) +
                     '</span></td><td>' + escapeHtml(String(row.company_id || '')) + '</td><td>' + escapeHtml(String(row.branch_id || '')) +
-                    '</td><td>' + escapeHtml(row.created_at || '') + '</td><td><button type="button" class="btn btn-sm btn-link acc-view-json">JSON</button></td></tr>';
+                    '</td><td>' + escapeHtml(row.created_at || '') + '</td><td><button type="button" class="btn btn-sm btn-link acc-view-json">JSON</button> ' +
+                    '<button type="button" class="btn btn-sm btn-link acc-replay-one" data-uuid="' + escapeHtml(row.event_uuid) + '">Replay</button></td></tr>';
             }).join('');
             bindJsonButtons(res.data.rows || []);
+            bindEventReplayButtons();
+            renderPagination('.acc-pagination', res.data.page || 1, res.data.total || 0, res.data.per_page || 50, loadEvents);
+        });
+    }
+
+    function bindEventReplayButtons() {
+        root.querySelectorAll('.acc-replay-one').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var uuid = btn.dataset.uuid || '';
+                if (!uuid) return;
+                confirmAction('Replay event ' + uuid + '?', function () {
+                    api('replay', { method: 'POST', body: { event_uuid: uuid, confirm: 1 } }).then(showJson);
+                });
+            });
+        });
+    }
+
+    function renderPagination(sel, page, total, perPage, loader) {
+        var nav = root.querySelector(sel);
+        if (!nav) return;
+        var pages = Math.max(1, Math.ceil(total / perPage));
+        if (pages <= 1) { nav.innerHTML = ''; return; }
+        var html = '<ul class="pagination pagination-sm mb-0">';
+        for (var p = 1; p <= pages && p <= 20; p++) {
+            html += '<li class="page-item' + (p === page ? ' active' : '') + '"><button type="button" class="page-link" data-page="' + p + '">' + p + '</button></li>';
+        }
+        html += '</ul>';
+        nav.innerHTML = html;
+        nav.querySelectorAll('[data-page]').forEach(function (btn) {
+            btn.addEventListener('click', function () { loader(parseInt(btn.dataset.page, 10)); });
         });
     }
 
@@ -187,12 +220,26 @@
     function runReplay(dryRun, mode) {
         var q = filters();
         if (mode === 'failed') q.status = 'failed';
-        q.dry_run = dryRun ? 1 : 0;
+        if (mode === 'single' && !q.event_uuid) {
+            alert('Enter Event UUID in filters', 'warning');
+            return;
+        }
+        if (mode === 'company' && !q.company_id) {
+            alert('Enter Company ID in filters', 'warning');
+            return;
+        }
+        if (mode === 'branch' && !q.branch_id) {
+            alert('Enter Branch ID in filters', 'warning');
+            return;
+        }
         var pre = root.querySelector('.acc-replay-result');
         var prog = root.querySelector('.acc-replay-progress');
         if (prog) prog.classList.toggle('d-none', dryRun);
         var exec = function () {
-            api('replay', { method: 'POST', body: Object.assign({}, q, { confirm: dryRun ? 0 : 1 }) }).then(function (res) {
+            var req = dryRun
+                ? api('replay', { query: q })
+                : api('replay', { method: 'POST', body: Object.assign({}, q, { confirm: 1 }) });
+            req.then(function (res) {
                 if (prog) prog.classList.add('d-none');
                 if (pre) pre.textContent = JSON.stringify(res, null, 2);
                 loadReplayHistory();
@@ -292,6 +339,14 @@
         api('drift', { query: filters() }).then(function (res) {
             if (!res.ok) return;
             var rows = (res.data.reports && res.data.reports.rows) || [];
+            var sev = val('.acc-filter-severity');
+            if (sev) rows = rows.filter(function (r) { return String(r.severity || '').toLowerCase() === sev; });
+            var counts = { high: 0, medium: 0, low: 0 };
+            rows.forEach(function (r) {
+                var s = String(r.severity || 'low').toLowerCase();
+                if (counts[s] != null) counts[s]++;
+            });
+            doughnutChart('acc-chart-drift-severity', ['High', 'Medium', 'Low'], [counts.high, counts.medium, counts.low]);
             var tbody = root.querySelector('.acc-drift-table tbody');
             if (tbody) {
                 tbody.innerHTML = rows.map(function (r) {
@@ -325,16 +380,27 @@
                 return '<tr><td>' + r.id + '</td><td>' + escapeHtml(r.risk_level || '') + '</td><td>' +
                     escapeHtml((r.period_from || '') + ' → ' + (r.period_to || '')) + '</td><td>' +
                     (summary.drift_count || 0) + '</td><td>' + (summary.correction_count || 0) +
-                    '</td><td><button type="button" class="btn btn-sm btn-outline-success acc-exec-correction" data-id="' + r.id + '">Execute (dry)</button></td></tr>';
+                    '</td><td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-secondary acc-exec-dry" data-id="' + r.id + '">Dry Run</button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-success acc-exec-live" data-id="' + r.id + '">Execute</button> ' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger acc-reject-row" data-id="' + r.id + '">Reject</button></td></tr>';
             }).join('');
-            tbody.querySelectorAll('.acc-exec-correction').forEach(function (btn) {
+            tbody.querySelectorAll('.acc-exec-dry, .acc-exec-live').forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    var proposals = (rows.find(function (x) { return String(x.id) === btn.dataset.id; }) || {}).payload;
-                    var prop = proposals && proposals.correction_suggestions && proposals.correction_suggestions[0];
+                    var row = rows.find(function (x) { return String(x.id) === btn.dataset.id; }) || {};
+                    var prop = row.payload && row.payload.correction_suggestions && row.payload.correction_suggestions[0];
                     if (!prop) { alert('No correction proposal', 'warning'); return; }
-                    confirmAction('Dry-run correction?', function () {
-                        api('reconciliation', { method: 'POST', body: { action: 'execute', proposal: prop, dry_run: 1, approved: 1, confirm: 1 } }).then(showJson);
+                    var live = btn.classList.contains('acc-exec-live');
+                    confirmAction(live ? 'Execute correction LIVE?' : 'Dry-run correction?', function () {
+                        api('reconciliation', { method: 'POST', body: { action: 'execute', proposal: prop, dry_run: live ? 0 : 1, approved: 1, confirm: 1 } }).then(function (res) {
+                            showJson(res);
+                            if (res.ok && live) loadReconciliation();
+                        });
                     });
+                });
+            });
+            tbody.querySelectorAll('.acc-reject-row').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    alert('Correction rejected (no server write)', 'info');
                 });
             });
         });
@@ -383,7 +449,7 @@
             if (!res.ok) return;
             var grid = root.querySelector('.acc-health-grid');
             if (grid) {
-                var blocks = ['gateway', 'pipeline', 'event_store', 'replay', 'projection', 'consolidation', 'integrity', 'drift', 'database'];
+                var blocks = ['gateway', 'pipeline', 'event_store', 'replay', 'projection', 'consolidation', 'integrity', 'drift', 'database', 'queue'];
                 grid.innerHTML = blocks.map(function (b) {
                     var st = res.data[b];
                     var label = typeof st === 'object' ? JSON.stringify(st) : String(st);
@@ -423,6 +489,14 @@
     root.querySelector('.acc-run-consolidation') && root.querySelector('.acc-run-consolidation').addEventListener('click', runConsolidation);
     root.querySelector('.acc-run-drift') && root.querySelector('.acc-run-drift').addEventListener('click', runDrift);
     root.querySelector('.acc-run-reconcile') && root.querySelector('.acc-run-reconcile').addEventListener('click', runReconcile);
+
+    root.querySelector('.acc-filter-severity') && root.querySelector('.acc-filter-severity').addEventListener('change', loadDriftReports);
+    root.querySelector('.acc-global-search') && root.querySelector('.acc-global-search').addEventListener('input', function (e) {
+        var term = String(e.target.value || '').toLowerCase();
+        root.querySelectorAll('.acc-data-table tbody tr[data-search]').forEach(function (tr) {
+            tr.classList.toggle('d-none', term !== '' && tr.dataset.search.indexOf(term) === -1);
+        });
+    });
 
     loadSection();
     setInterval(function () {

@@ -658,15 +658,17 @@ $router->get($app('branch-financial/payables'), [BranchFinancialReportsControlle
 
 // Phase 6 — Enterprise Accounting Control Center (UI layer; consumes app/Accounting services)
 $accCtrlDashMw = rateb_erp_mw('accounting', 'accounting.dashboard', 'accounting-control');
-$accCtrlEventsMw = rateb_erp_mw('accounting', 'accounting.events', 'accounting-control');
-$accCtrlReplayMw = rateb_erp_mw('accounting', 'accounting.replay', 'accounting-control');
-$accCtrlAuditMw = rateb_erp_mw('accounting', 'accounting.audit', 'accounting-control');
-$accCtrlProjMw = rateb_erp_mw('accounting', 'accounting.projections', 'accounting-control');
-$accCtrlConsMw = rateb_erp_mw('accounting', 'accounting.consolidation', 'accounting-control');
-$accCtrlDriftMw = rateb_erp_mw('accounting', 'accounting.drift', 'accounting-control');
-$accCtrlReconMw = rateb_erp_mw('accounting', 'accounting.reconciliation', 'accounting-control');
-$accCtrlIntMw = rateb_erp_mw('accounting', 'accounting.integrity', 'accounting-control');
-$accCtrlHealthMw = rateb_erp_mw('accounting', 'accounting.system_health', 'accounting-control');
+$accCtrlEventsMw = rateb_erp_mw('accounting', 'accounting.events');
+$accCtrlReplayMw = rateb_erp_mw('accounting', 'accounting.replay');
+$accCtrlAuditMw = rateb_erp_mw('accounting', 'accounting.audit');
+$accCtrlProjMw = rateb_erp_mw('accounting', 'accounting.projections');
+$accCtrlConsMw = rateb_erp_mw('accounting', 'accounting.consolidation');
+$accCtrlDriftMw = rateb_erp_mw('accounting', 'accounting.drift');
+$accCtrlReconMw = rateb_erp_mw('accounting', 'accounting.reconciliation');
+$accCtrlIntMw = rateb_erp_mw('accounting', 'accounting.integrity');
+$accCtrlHealthMw = rateb_erp_mw('accounting', 'accounting.system_health');
+// API: module gate only — granular permission enforced inside AccountingControlController::api()
+$accCtrlApiMw = rateb_erp_mw('accounting');
 
 $router->get($app('accounting-control'), [AccountingControlController::class, 'dashboard'], $accCtrlDashMw);
 $router->get($app('accounting-control/events'), [AccountingControlController::class, 'events'], $accCtrlEventsMw);
@@ -679,7 +681,7 @@ $router->get($app('accounting-control/reconciliation'), [AccountingControlContro
 $router->get($app('accounting-control/integrity'), [AccountingControlController::class, 'integrity'], $accCtrlIntMw);
 $router->get($app('accounting-control/settings'), [AccountingControlController::class, 'settings'], $accCtrlDashMw);
 $router->get($app('accounting-control/health'), [AccountingControlController::class, 'health'], $accCtrlHealthMw);
-$router->get($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlDashMw);
-$router->post($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlDashMw);
+$router->get($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlApiMw);
+$router->post($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlApiMw);
 
 require RATEB_ROOT . '/routes/company-access.php';

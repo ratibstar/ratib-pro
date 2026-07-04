@@ -224,8 +224,8 @@ $router->get('/admin/accounting-control/reconciliation', [AccountingControlContr
 $router->get('/admin/accounting-control/integrity', [AccountingControlController::class, 'integrity'], rateb_admin_mw('accounting.integrity'));
 $router->get('/admin/accounting-control/settings', [AccountingControlController::class, 'settings'], rateb_admin_mw('accounting.dashboard'));
 $router->get('/admin/accounting-control/health', [AccountingControlController::class, 'health'], rateb_admin_mw('accounting.system_health'));
-$router->get('/admin/accounting-control/api/{resource}', [AccountingControlController::class, 'api'], rateb_admin_mw('accounting.dashboard'));
-$router->post('/admin/accounting-control/api/{resource}', [AccountingControlController::class, 'api'], rateb_admin_mw('accounting.dashboard'));
+$router->get('/admin/accounting-control/api/{resource}', [AccountingControlController::class, 'api'], rateb_admin_mw());
+$router->post('/admin/accounting-control/api/{resource}', [AccountingControlController::class, 'api'], rateb_admin_mw());
 $router->get('/admin/login-activity', [\Rateb\App\Controllers\Admin\LoginActivityController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/queue-monitor', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'index'], rateb_platform_oversight_mw('settings.manage'));
 $router->post('/admin/queue-monitor/retry', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'retry'], rateb_platform_oversight_mw('settings.manage'));

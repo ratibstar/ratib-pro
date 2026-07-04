@@ -93,6 +93,12 @@ final class AccountingControlController extends Controller
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
         try {
+            if ($resource === 'events' && isset($filters['export']) && (string) $filters['export'] === 'csv') {
+                $this->streamEventsCsv($filters);
+
+                return;
+            }
+
             $data = match ($resource) {
                 'dashboard' => $this->service->dashboardSummary(isset($filters['company_id']) ? (int) $filters['company_id'] : null),
                 'events' => $this->handleEventsApi($filters, $method),
@@ -295,5 +301,34 @@ final class AccountingControlController extends Controller
         }
 
         return $this->service->listReconciliationReports($filters);
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function streamEventsCsv(array $filters): void
+    {
+        $this->assertPermission('accounting.events');
+        $data = $this->service->listEvents(array_merge($filters, ['per_page' => 5000]));
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="accounting-events.csv"');
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            throw new \RuntimeException('Unable to open CSV stream');
+        }
+        fputcsv($out, ['event_uuid', 'source_system', 'event_type', 'status', 'company_id', 'branch_id', 'created_at']);
+        foreach ($data['rows'] as $row) {
+            fputcsv($out, [
+                $row['event_uuid'],
+                $row['source_system'],
+                $row['event_type'],
+                $row['status'],
+                $row['company_id'],
+                $row['branch_id'],
+                $row['created_at'],
+            ]);
+        }
+        fclose($out);
+        exit;
     }
 }

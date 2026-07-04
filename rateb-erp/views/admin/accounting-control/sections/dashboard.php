@@ -6,5 +6,6 @@
         <div class="col-lg-4"><canvas id="acc-chart-replay-rate" height="180"></canvas></div>
         <div class="col-lg-4"><canvas id="acc-chart-drift-trend" height="180"></canvas></div>
         <div class="col-lg-4"><canvas id="acc-chart-company-activity" height="180"></canvas></div>
+        <div class="col-lg-4"><canvas id="acc-chart-branch-activity" height="180"></canvas></div>
     </div>
 </div>

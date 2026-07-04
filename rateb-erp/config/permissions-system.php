@@ -214,6 +214,7 @@ return [
         'admin/accounting-control/reconciliation' => 'accounting.reconciliation',
         'admin/accounting-control/integrity' => 'accounting.integrity',
         'admin/accounting-control/health' => 'accounting.system_health',
+        'admin/accounting-control/settings' => 'accounting.dashboard',
         'admin/accounting/sync' => 'accounting.post',
         'admin/chart-of-accounts' => 'accounting.view',
         'admin/coa-tree' => 'accounting.view',

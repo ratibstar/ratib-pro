@@ -1,9 +1,15 @@
 <div class="acc-section" data-acc-page="replay">
     <div class="d-flex flex-wrap gap-2 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-primary acc-replay-preview" data-mode="single">Preview Single (UUID)</button>
+        <button type="button" class="btn btn-sm btn-outline-warning acc-replay-run" data-mode="single">Replay Single</button>
         <button type="button" class="btn btn-sm btn-outline-primary acc-replay-preview" data-mode="failed">Preview Failed</button>
         <button type="button" class="btn btn-sm btn-outline-warning acc-replay-run" data-mode="failed">Replay Failed</button>
         <button type="button" class="btn btn-sm btn-outline-secondary acc-replay-preview" data-mode="period">Preview Period</button>
         <button type="button" class="btn btn-sm btn-warning acc-replay-run" data-mode="period">Replay Period</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary acc-replay-preview" data-mode="company">Preview Company</button>
+        <button type="button" class="btn btn-sm btn-warning acc-replay-run" data-mode="company">Replay Company</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary acc-replay-preview" data-mode="branch">Preview Branch</button>
+        <button type="button" class="btn btn-sm btn-warning acc-replay-run" data-mode="branch">Replay Branch</button>
     </div>
     <div class="acc-replay-progress d-none mb-3">
         <div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%"></div></div>
