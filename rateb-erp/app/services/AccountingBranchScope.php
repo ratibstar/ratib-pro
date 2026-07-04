@@ -127,15 +127,47 @@ trait AccountingBranchScope
     protected function journalScopedQuery(string $sql, array $params, string $entryAlias = 'e', ?int $branchId = null): array
     {
         [$sql, $params] = $this->scopeJournalLineSql($sql, $params, 'l', $entryAlias, $branchId);
-        return (new JournalEntry())->query($sql, $params);
+
+        return $this->executeScopedSql($sql, $params);
     }
 
     /** @param array<string, mixed> $params @return array<string, mixed>|null */
     protected function journalScopedQueryOne(string $sql, array $params, string $entryAlias = 'e', ?int $branchId = null): ?array
     {
         [$sql, $params] = $this->scopeJournalEntrySql($sql, $params, $entryAlias, $branchId);
-        $row = (new JournalEntry())->queryOne($sql, $params);
-        return $row ?: null;
+
+        return $this->executeScopedSqlOne($sql, $params);
+    }
+
+    /**
+     * Resolve SQL alias for a table (FROM or JOIN). Empty when the table has no alias.
+     */
+    protected function sqlTableAlias(string $sql, string $table): string
+    {
+        $t = preg_quote($table, '/');
+        static $keywords = [
+            'where', 'join', 'left', 'right', 'inner', 'outer', 'cross', 'on', 'using',
+            'group', 'order', 'limit', 'having', 'union', 'set', 'values', 'into', 'natural',
+        ];
+        $patterns = [
+            '/\bFROM\s+' . $t . '\s+(?:AS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)/i',
+            '/\b(?:LEFT|RIGHT|INNER|CROSS|NATURAL)\s+(?:OUTER\s+)?JOIN\s+' . $t . '\s+(?:AS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)/i',
+        ];
+        foreach ($patterns as $pattern) {
+            if (!preg_match($pattern, $sql, $m)) {
+                continue;
+            }
+            $alias = strtolower($m[1]);
+            if (in_array($alias, $keywords, true)) {
+                continue;
+            }
+            $clean = preg_replace('/[^a-z_0-9]/', '', $alias) ?? '';
+            if ($clean !== '') {
+                return $clean;
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -151,11 +183,20 @@ trait AccountingBranchScope
             $key = '_ops_bf_single';
             return [$sql . (preg_match('/\bWHERE\b/i', $sql) ? ' AND ' : ' WHERE ') . $col . ' = :' . $key, array_merge($params, [$key => $branchId])];
         }
+        if (stripos($sql, $table) === false) {
+            return [$sql, $params];
+        }
         if (!$this->tableColumnExists($table, 'branch_id')) {
             return [$sql, $params];
         }
-        $safeAlias = preg_replace('/[^a-z_]/', '', $alias);
-        if ($safeAlias !== '' && !preg_match('/\b' . preg_quote($safeAlias, '/') . '\b/i', $sql)) {
+        $resolvedAlias = $this->sqlTableAlias($sql, $table);
+        $safeAlias = preg_replace('/[^a-z_0-9]/', '', $alias);
+        if ($resolvedAlias !== '') {
+            if ($safeAlias !== '' && $safeAlias !== $resolvedAlias) {
+                return [$sql, $params];
+            }
+            $safeAlias = $resolvedAlias;
+        } elseif ($safeAlias !== '' && !preg_match('/\b' . preg_quote($safeAlias, '/') . '\b/i', $sql)) {
             return [$sql, $params];
         }
         return $this->accountingBranch()->appendFilter($sql, $params, $safeAlias, 'branch_id');
@@ -198,6 +239,19 @@ trait AccountingBranchScope
     protected function operationalScopedQuery(string $sql, array $params, string $alias, string $table): array
     {
         [$sql, $params] = $this->scopeOperationalSql($sql, $params, $alias, $table);
-        return (new JournalEntry())->query($sql, $params);
+
+        return $this->executeScopedSql($sql, $params);
+    }
+
+    /** @param array<string, mixed> $params @return array<int, array<string, mixed>> */
+    protected function executeScopedSql(string $sql, array $params): array
+    {
+        return \Rateb\App\Core\Database::fetchAll($sql, $params);
+    }
+
+    /** @param array<string, mixed> $params @return array<string, mixed>|null */
+    protected function executeScopedSqlOne(string $sql, array $params): ?array
+    {
+        return \Rateb\App\Core\Database::fetchOne($sql, $params);
     }
 }

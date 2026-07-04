@@ -562,7 +562,7 @@ abstract class Model
         }
         $alias = $this->detectSqlAlias($sql);
         if ($alias === '') {
-            $alias = preg_replace('/[^a-z_0-9]/', '', $this->table) ?? $this->table;
+            return [$sql, $params];
         }
         [$extra, $extraParams] = $this->branchFilterClause($alias);
         if ($extra === '') {

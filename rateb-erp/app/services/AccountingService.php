@@ -1190,7 +1190,7 @@ final class AccountingService
         [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
         [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
         $sql .= ' ORDER BY po.order_date DESC, po.id DESC LIMIT 200';
-        $rows = (new JournalEntry())->query($sql, $params);
+        $rows = $this->executeScopedSql($sql, $params);
         $totalOpen = 0.0;
         $totalPosted = 0.0;
         foreach ($rows as $row) {
@@ -1224,7 +1224,7 @@ final class AccountingService
         $params = ['cid' => $companyId, 'sid' => $supplierId];
         [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
         [$sql, $params] = $this->scopeJournalEntrySql($sql, $params, 'je');
-        $row = (new JournalEntry())->queryOne($sql, $params);
+        $row = $this->executeScopedSqlOne($sql, $params);
 
         return (float) ($row['due'] ?? 0);
     }
@@ -1245,7 +1245,7 @@ final class AccountingService
         [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
         [$sql, $params] = $this->scopeOptionalJournalEntrySql($sql, $params, 'je');
         $sql .= ' LIMIT 1';
-        $po = (new JournalEntry())->queryOne($sql, $params);
+        $po = $this->executeScopedSqlOne($sql, $params);
         if (!$po || empty($po['journal_id'])) {
             return null;
         }
@@ -1301,7 +1301,7 @@ final class AccountingService
         [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
         [$sql, $params] = $this->scopeJournalEntrySql($sql, $params, 'je');
 
-        return (new JournalEntry())->query($sql, $params);
+        return $this->executeScopedSql($sql, $params);
     }
 
     /** Supplier invoices linked via po_number (open balances). */
@@ -1333,7 +1333,7 @@ final class AccountingService
         $sql .= ' ORDER BY i.due_date ASC, i.id DESC LIMIT 200';
         [$sql, $params] = $this->scopeOperationalSql($sql, $params, 'po', 'rateb_purchase_orders');
 
-        return (new JournalEntry())->query($sql, $params);
+        return $this->executeScopedSql($sql, $params);
     }
 
     /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_paid: float} */
@@ -1364,7 +1364,7 @@ final class AccountingService
             ))';
         }
         $sql .= ' ORDER BY i.issued_at DESC, i.id DESC LIMIT 200';
-        $rows = (new JournalEntry())->query($sql, $params);
+        $rows = $this->executeScopedSql($sql, $params);
         $totalOpen = 0.0;
         $totalPaid = 0.0;
         foreach ($rows as $row) {

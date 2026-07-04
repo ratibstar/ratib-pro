@@ -345,5 +345,33 @@ final class Database
         self::$resolvedDbName = '';
         self::$columnCache = [];
     }
+
+    /** @param array<string, mixed> $params @return array<int, array<string, mixed>> */
+    public static function fetchAll(string $sql, array $params = []): array
+    {
+        $stmt = self::connection()->prepare($sql);
+        try {
+            $stmt->execute($params);
+        } catch (PDOException $e) {
+            throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
+        }
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /** @param array<string, mixed> $params @return array<string, mixed>|null */
+    public static function fetchOne(string $sql, array $params = []): ?array
+    {
+        $stmt = self::connection()->prepare($sql);
+        try {
+            $stmt->execute($params);
+        } catch (PDOException $e) {
+            throw \Rateb\App\Services\DatabaseErrorService::toRuntimeException($e);
+        }
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
 }
 

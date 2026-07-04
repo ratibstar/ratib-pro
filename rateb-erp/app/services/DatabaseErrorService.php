@@ -307,10 +307,6 @@ final class DatabaseErrorService
         if (function_exists('control_rateb_erp_migrate_page_url')) {
             return control_rateb_erp_migrate_page_url();
         }
-        if (function_exists('rateb_url')) {
-            return rateb_url('../control-panel/pages/control/rateb-erp-migrate.php');
-        }
-
-        return '';
+        return '/control-panel/pages/control/rateb-erp-migrate.php?control=1';
     }
 }
