@@ -266,9 +266,12 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php if ($isCompanies) {
                             $companyStatus = (string) ($row['status'] ?? '');
                             if (function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled() && $companyStatus === 'active') {
-                                $branchCpUrl = rateb_control_panel_branch_manage_url((int) ($row['id'] ?? 0));
+                                $branchCompanyId = (int) ($row['id'] ?? 0);
+                                $branchCompanyName = trim((string) ($row['name'] ?? ''));
+                                $branchCpUrl = rateb_control_panel_branch_manage_url($branchCompanyId);
+                                $branchTitle = __('manage_branches_cp') . ($branchCompanyName !== '' ? ' — ' . $branchCompanyName : '') . ' #' . $branchCompanyId;
                                 ?>
-                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape(__('add_branch')); ?>" target="_blank" rel="noopener"><i class="fas fa-code-branch"></i></a>
+                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" target="_blank" rel="noopener"><i class="fas fa-code-branch"></i></a>
                         <?php }
                             if ($companyStatus === 'active') { ?>
                         <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/suspend'); ?>" class="d-inline">

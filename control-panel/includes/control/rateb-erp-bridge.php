@@ -259,7 +259,7 @@ function control_rateb_erp_agency_branch_manage_url(int $agencyId, int $companyI
     $url = control_rateb_erp_branches_hub_page_url();
     $url .= (strpos($url, '?') !== false ? '&' : '?') . 'agency_id=' . $agencyId;
     if ($companyId > 0) {
-        $url .= '&company_id=' . $companyId;
+        $url .= '&company_id=' . $companyId . '#company-branches-' . $companyId;
     }
 
     return $url;
@@ -364,7 +364,7 @@ function control_rateb_erp_companies_branch_overview(): array
              FROM rateb_companies c
              LEFT JOIN rateb_branches b ON b.company_id = c.id
              GROUP BY c.id, c.name, c.slug, c.status, c.branch_limit, c.plan_id
-             ORDER BY c.name ASC'
+             ORDER BY c.id DESC'
         );
         $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
         if (!is_array($rows) || $rows === []) {

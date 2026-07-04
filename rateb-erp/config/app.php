@@ -311,16 +311,11 @@ if (!function_exists('rateb_control_panel_branch_manage_url')) {
     /** Control Panel → الشركات والفروع (optional company / agency focus). */
     function rateb_control_panel_branch_manage_url(int $companyId = 0, int $agencyId = 0): string
     {
-        if ($agencyId > 0 && function_exists('control_rateb_erp_agency_branch_manage_url')) {
-            return control_rateb_erp_agency_branch_manage_url($agencyId, $companyId);
-        }
-        if ($companyId > 0 && function_exists('control_rateb_erp_branch_manage_url')) {
-            return control_rateb_erp_branch_manage_url($companyId);
-        }
         $base = defined('SITE_URL') && trim((string) SITE_URL) !== ''
             ? rtrim((string) SITE_URL, '/')
             : 'https://rateb.sa';
         $url = $base . '/control-panel/pages/control/rateb-erp-branches?control=1';
+
         if ($agencyId > 0) {
             $url .= '&agency_id=' . $agencyId;
         } else {

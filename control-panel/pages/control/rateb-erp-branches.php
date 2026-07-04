@@ -83,14 +83,29 @@ if ($focusCompanyId < 1 && $agencyId > 0 && count($companies) === 1) {
     $focusCompanyId = (int) ($companies[0]['id'] ?? 0);
 }
 $focusCompanyKnown = $focusCompanyId < 1;
+$focusCompanyName = '';
 if ($focusCompanyId > 0) {
     foreach ($companies as $coRow) {
         if ((int) ($coRow['id'] ?? 0) === $focusCompanyId) {
             $focusCompanyKnown = true;
+            $focusCompanyName = trim((string) ($coRow['name'] ?? ''));
             break;
         }
     }
 }
+$isPlatformBranchHub = function_exists('control_rateb_erp_is_platform_branch_context')
+    && control_rateb_erp_is_platform_branch_context();
+if ($focusCompanyId > 0 && $focusCompanyKnown) {
+    $companies = array_values(array_filter(
+        $companies,
+        static fn (array $row): bool => (int) ($row['id'] ?? 0) === $focusCompanyId
+    ));
+}
+$allCompaniesHubUrl = function_exists('control_rateb_erp_branch_manage_url')
+    ? control_rateb_erp_branch_manage_url(0)
+    : (function_exists('control_rateb_erp_branches_hub_page_url')
+        ? control_rateb_erp_branches_hub_page_url() . (strpos(control_rateb_erp_branches_hub_page_url(), '?') !== false ? '&' : '?') . 'platform=1'
+        : '');
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('الشركات والفروع — نظام رتب ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
@@ -107,6 +122,19 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
     <strong>وكالة:</strong> <?php echo htmlspecialchars($agencyLabel !== '' ? $agencyLabel : ('#' . $agencyId), ENT_QUOTES, 'UTF-8'); ?>
     <?php if (control_rateb_erp_agency_db_name($agencyId) !== '') { ?>
     · <code><?php echo htmlspecialchars(control_rateb_erp_agency_db_name($agencyId), ENT_QUOTES, 'UTF-8'); ?></code>
+    <?php } ?>
+</div>
+<?php } elseif ($isPlatformBranchHub) { ?>
+<div class="alert alert-secondary py-2 mb-3">
+    <i class="fas fa-globe me-1"></i>
+    <strong>منصة rateb.sa</strong> — إدارة فروع الشركات المشتركة (ليست وكالات).
+</div>
+<?php } ?>
+<?php if ($focusCompanyId > 0 && $focusCompanyKnown && $focusCompanyName !== '') { ?>
+<div class="alert alert-primary py-2 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span><i class="fas fa-building me-1"></i><strong>الشركة:</strong> <?php echo htmlspecialchars($focusCompanyName, ENT_QUOTES, 'UTF-8'); ?> <span class="text-muted">(#<?php echo (int) $focusCompanyId; ?>)</span></span>
+    <?php if ($allCompaniesHubUrl !== '') { ?>
+    <a href="<?php echo htmlspecialchars($allCompaniesHubUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-list"></i> كل الشركات</a>
     <?php } ?>
 </div>
 <?php } ?>
@@ -285,5 +313,18 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
     كل شركة لها فروع مستقلة وبيانات معزولة عند الدخول من رابط الفرع. لا تستخدم <code>company/login</code> للفروع الفرعية.
 </p>
 <?php } ?>
+
+<script>
+(function () {
+    var id = window.location.hash ? window.location.hash.replace(/^#/, '') : '';
+    if (!id) {
+        return;
+    }
+    var el = document.getElementById(id);
+    if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+})();
+</script>
 
 <?php endControlLayout(); ?>
