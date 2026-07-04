@@ -65,7 +65,7 @@ $ratebRowRecordLabel = static function (array $row): string {
         <span><?php echo Rateb\App\Core\View::escape($title); ?></span>
         <div class="d-flex flex-wrap gap-2">
         <?php if ($isCompanies && function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled()) { ?>
-        <a href="<?php echo Rateb\App\Core\View::escape(rateb_control_panel_branch_manage_url()); ?>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener" title="<?php echo Rateb\App\Core\View::escape(__('manage_branches_cp')); ?>">
+        <a href="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_platform_company_branches_url') ? rateb_platform_company_branches_url() : rateb_control_panel_branch_manage_url()); ?>" class="btn btn-outline-primary btn-sm" title="<?php echo Rateb\App\Core\View::escape(__('manage_branches_cp')); ?>">
             <i class="fas fa-code-branch"></i> <?php echo __('manage_branches_cp'); ?>
         </a>
         <?php } ?>
@@ -270,10 +270,12 @@ $ratebRowRecordLabel = static function (array $row): string {
                             if (function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled() && $companyStatus === 'active') {
                                 $branchCompanyId = $companyRowId > 0 ? $companyRowId : (int) ($row['id'] ?? 0);
                                 $branchCompanyName = trim((string) ($row['name'] ?? ''));
-                                $branchCpUrl = rateb_control_panel_branch_manage_url($branchCompanyId);
+                                $branchCpUrl = function_exists('rateb_platform_company_branches_url')
+                                    ? rateb_platform_company_branches_url($branchCompanyId)
+                                    : rateb_control_panel_branch_manage_url($branchCompanyId);
                                 $branchTitle = __('manage_branches_cp') . ($branchCompanyName !== '' ? ' — ' . $branchCompanyName : '') . ' #' . $branchCompanyId;
                                 ?>
-                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" aria-label="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" target="_blank" rel="noopener"><i class="fas fa-code-branch"></i></a>
+                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" aria-label="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>"><i class="fas fa-code-branch"></i><span class="visually-hidden">#<?php echo $branchCompanyId; ?></span></a>
                         <?php }
                             if ($companyStatus === 'active') { ?>
                         <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/suspend'); ?>" class="d-inline">

@@ -89,6 +89,9 @@ $router->get('/barcode/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::
 $router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class, [RequirePermissionMiddleware::class, 'dashboard.view']]);
 $router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('executive.dashboard.view'));
 
+$router->get('/admin/companies/branches', [CompaniesController::class, 'branchesHub'], rateb_platform_oversight_mw('companies.view'));
+$router->get('/admin/companies/{id}/branches', [CompaniesController::class, 'manageBranches'], rateb_platform_oversight_mw('companies.manage'));
+$router->post('/admin/companies/{id}/branches', [CompaniesController::class, 'manageBranches'], rateb_platform_oversight_mw('companies.manage'));
 $router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_platform_oversight_mw('companies.view'));
 $router->get('/admin/companies/create', [CompaniesController::class, 'create'], rateb_platform_oversight_mw('companies.manage'));
 $router->post('/admin/companies', [CompaniesController::class, 'store'], rateb_platform_oversight_mw('companies.manage'));

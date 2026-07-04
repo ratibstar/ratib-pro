@@ -250,6 +250,28 @@ function control_rateb_erp_resolve_agency_id(): int
     return (int) ($_SESSION['control_agency_id'] ?? 0);
 }
 
+/** Platform ERP database — ignores control-panel agency session. */
+function control_rateb_erp_pdo_platform(): ?\PDO
+{
+    if (!control_rateb_erp_is_installed()) {
+        return null;
+    }
+    try {
+        control_rateb_erp_ensure_root();
+        require_once RATEB_ROOT . '/config/database.php';
+        require_once RATEB_ROOT . '/app/Core/Database.php';
+        \Rateb\App\Core\Database::clearConnectionOverride();
+        return \Rateb\App\Core\Database::connection();
+    } catch (\Throwable $e) {
+        if (class_exists(\Rateb\App\Core\Database::class)) {
+            \Rateb\App\Core\Database::clearConnectionOverride();
+        }
+        error_log('control_rateb_erp_pdo_platform: ' . $e->getMessage());
+
+        return null;
+    }
+}
+
 /** Branches hub scoped to an agency ERP database. */
 function control_rateb_erp_agency_branch_manage_url(int $agencyId, int $companyId = 0): string
 {
@@ -289,6 +311,9 @@ function control_rateb_erp_agency_label(int $agencyId): string
 
 function control_rateb_erp_pdo(): ?\PDO
 {
+    if (function_exists('control_rateb_erp_is_platform_branch_context') && control_rateb_erp_is_platform_branch_context()) {
+        return control_rateb_erp_pdo_platform();
+    }
     $agencyId = control_rateb_erp_resolve_agency_id();
     if ($agencyId > 0) {
         $pdo = control_rateb_erp_pdo_for_agency($agencyId);

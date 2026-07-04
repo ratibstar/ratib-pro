@@ -307,6 +307,18 @@ if (!function_exists('rateb_platform_branch_manage_enabled')) {
     }
 }
 
+if (!function_exists('rateb_platform_company_branches_url')) {
+    /** ERP-native branch management (platform super-admin on rateb.sa). */
+    function rateb_platform_company_branches_url(int $companyId = 0): string
+    {
+        if ($companyId > 0) {
+            return rateb_url('admin/companies/' . $companyId . '/branches');
+        }
+
+        return rateb_url('admin/companies/branches');
+    }
+}
+
 if (!function_exists('rateb_control_panel_branch_manage_url')) {
     /** Control Panel → الشركات والفروع (optional company / agency focus). */
     function rateb_control_panel_branch_manage_url(int $companyId = 0, int $agencyId = 0): string

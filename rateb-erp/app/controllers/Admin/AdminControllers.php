@@ -417,6 +417,92 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         Response::redirect(rateb_url('admin/oversight/companies-approvals'));
     }
 
+    public function branchesHub(): void
+    {
+        if (!function_exists('rateb_platform_branch_manage_enabled') || !rateb_platform_branch_manage_enabled()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url($this->routePrefix));
+        }
+        $companies = \Rateb\App\Services\PlatformCompanyBranchService::listCompanies();
+        $this->view($this->viewPrefix . '/branches-hub', [
+            'title' => __('manage_branches_cp'),
+            'companies' => $companies,
+            'routePrefix' => $this->routePrefix,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function manageBranches(array $params): void
+    {
+        if (!function_exists('rateb_platform_branch_manage_enabled') || !rateb_platform_branch_manage_enabled()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url($this->routePrefix));
+        }
+        $companyId = (int) ($params['id'] ?? 0);
+        $company = \Rateb\App\Services\PlatformCompanyBranchService::companyRow($companyId);
+        if (!$company) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $branchUrl = rateb_url($this->routePrefix . '/' . $companyId . '/branches');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!$this->validateCsrf()) {
+                SessionManager::flash('error', __('invalid_request'));
+                Response::redirect($branchUrl);
+            }
+            $action = (string) $this->input('action', '');
+            if ($action === 'set_branch_limit') {
+                $limit = max(0, (int) $this->input('branch_limit', 0));
+                if (\Rateb\App\Services\PlatformCompanyBranchService::setBranchLimit($companyId, $limit)) {
+                    SessionManager::flash('success', __('save') . ' OK');
+                } else {
+                    SessionManager::flash('error', __('invalid_request'));
+                }
+            } elseif ($action === 'create_branch') {
+                $result = \Rateb\App\Services\PlatformCompanyBranchService::createBranch($companyId, [
+                    'name' => (string) $this->input('branch_name', ''),
+                    'code' => (string) $this->input('branch_code', ''),
+                    'address' => (string) $this->input('branch_address', ''),
+                    'phone' => (string) $this->input('branch_phone', ''),
+                    'email' => (string) $this->input('branch_email', ''),
+                ]);
+                if (!empty($result['ok'])) {
+                    SessionManager::flash('success', __('save') . ' OK');
+                    if (!empty($result['portal_url'])) {
+                        SessionManager::flash('branch_portal_url', (string) $result['portal_url']);
+                    }
+                } else {
+                    $err = (string) ($result['error'] ?? '');
+                    SessionManager::flash(
+                        'error',
+                        $err === 'branch_limit_reached' ? __('branch_limit_reached') : ($err === 'branch_name_required' ? __('branch_name') : $err)
+                    );
+                }
+            } elseif ($action === 'toggle_branch') {
+                $branchId = (int) $this->input('branch_id', 0);
+                $status = (string) $this->input('status', '') === 'active' ? 'active' : 'inactive';
+                if (\Rateb\App\Services\PlatformCompanyBranchService::setBranchStatus($branchId, $status)) {
+                    SessionManager::flash('success', __('save') . ' OK');
+                } else {
+                    SessionManager::flash('error', __('invalid_request'));
+                }
+            }
+            Response::redirect($branchUrl);
+        }
+        $branches = \Rateb\App\Services\PlatformCompanyBranchService::companyBranches($companyId);
+        $newPortalUrl = trim((string) (SessionManager::flash('branch_portal_url') ?? ''));
+        $this->view($this->viewPrefix . '/branches', [
+            'title' => __('manage_branches_cp') . ' — ' . (string) ($company['name'] ?? '') . ' #' . $companyId,
+            'company' => $company,
+            'branches' => $branches,
+            'companyId' => $companyId,
+            'routePrefix' => $this->routePrefix,
+            'csrf' => Csrf::token(),
+            'newPortalUrl' => $newPortalUrl,
+        ], $this->layout());
+    }
+
     public function bulkSuspend(): void
     {
         if (!$this->validateCsrf()) {
