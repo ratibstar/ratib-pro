@@ -138,7 +138,7 @@ final class AccountingControlController extends Controller
             'accSection' => $section,
             'csrf' => Csrf::token(),
             'companyId' => $companyId,
-            'apiBase' => rateb_app_url('accounting-control/api'),
+            'apiBase' => rateb_url(rateb_app_route('accounting-control/api')),
             'accNav' => $this->navItems(),
         ], 'main');
     }

@@ -42,7 +42,13 @@
 
     function api(resource, opts) {
         opts = opts || {};
-        var url = apiBase + '/' + resource + buildQuery(opts.query || {});
+        var base = String(apiBase || '').replace(/\/+$/, '');
+        var qIdx = base.indexOf('?');
+        var basePath = qIdx >= 0 ? base.slice(0, qIdx) : base;
+        var preset = qIdx >= 0 ? base.slice(qIdx + 1) : '';
+        var extra = buildQuery(opts.query || {}).replace(/^\?/, '');
+        var query = [preset, extra].filter(Boolean).join('&');
+        var url = basePath + '/' + encodeURIComponent(resource) + (query ? '?' + query : '');
         var init = {
             method: opts.method || 'GET',
             headers: { 'Accept': 'application/json', 'X-CSRF-Token': csrf },
