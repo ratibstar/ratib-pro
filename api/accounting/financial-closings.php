@@ -425,6 +425,14 @@ try {
                         $entryNumberResult->free();
                         $entryNumberStmt->close();
                         
+                        require_once __DIR__ . '/core/accounting-ledger-lock.php';
+                        try {
+                            accounting_main_site_enforce_ledger_mutable(0, $closingDate, null, 'create');
+                        } catch (\Throwable $lockEx) {
+                            $lock = accounting_main_site_ledger_lock_response($lockEx);
+                            throw new Exception($lock['message']);
+                        }
+
                         // Insert journal entry (totals will be recalculated after lines are added)
                         $insertJeStmt = $conn->prepare("
                             INSERT INTO journal_entries 

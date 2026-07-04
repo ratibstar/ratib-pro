@@ -15,6 +15,7 @@ $accToEn = date('m/d/Y', strtotime($accToIso));
 $accI18n = require RATEB_VIEWS_PATH . '/admin/accounting-control/i18n-payload.php';
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/accounting-control');
 $accAssetVer = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
+// Canonical runtime assets: rateb-erp/public/assets/accounting-control/ (see FAST_FILES mirrors in deploy script).
 $accAssetsBase = rateb_site_origin() . rateb_erp_app_prefix() . '/assets/accounting-control';
 $accCssUrl = $accAssetsBase . '/control-center.css?v=' . rawurlencode($accAssetVer);
 $accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer);

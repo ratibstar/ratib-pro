@@ -516,6 +516,7 @@ final class InterBranchTransferService
         }
 
         $entryNo = $this->nextEntryNo($companyId);
+        $this->enforceInterBranchLedgerMutable($companyId, $entryDate, $branchId);
         $db = Database::connection();
         $entryData = [
             'company_id' => $companyId,
@@ -826,5 +827,26 @@ final class InterBranchTransferService
             $cache[$key] = false;
         }
         return $cache[$key];
+    }
+
+    private function enforceInterBranchLedgerMutable(int $companyId, string $entryDate, int $branchId): void
+    {
+        $candidates = [];
+        if (defined('RATEB_ROOT')) {
+            $candidates[] = dirname((string) RATEB_ROOT) . '/app/Accounting/Support/post_accounting_integrity.php';
+        }
+        $candidates[] = dirname(__DIR__, 3) . '/app/Accounting/Support/post_accounting_integrity.php';
+
+        foreach ($candidates as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+            require_once $path;
+            if (function_exists('accounting_enforce_ledger_mutable')) {
+                accounting_enforce_ledger_mutable($companyId, $entryDate, $branchId, 'create');
+            }
+
+            return;
+        }
     }
 }

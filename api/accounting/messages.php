@@ -23,6 +23,16 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
 $method = $_SERVER['REQUEST_METHOD'];
 $userId = $_SESSION['user_id'];
 
+if ($method === 'GET') {
+    enforceApiPermission('accounts', 'view');
+} elseif ($method === 'POST') {
+    enforceApiPermission('accounts', 'create');
+} elseif ($method === 'PUT' || $method === 'PATCH') {
+    enforceApiPermission('accounts', 'update');
+} elseif ($method === 'DELETE') {
+    enforceApiPermission('accounts', 'delete');
+}
+
 try {
     // Check if table exists
     $tableCheck = $conn->query("SHOW TABLES LIKE 'accounting_messages'");

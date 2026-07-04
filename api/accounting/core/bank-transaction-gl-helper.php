@@ -218,6 +218,15 @@ function createBankTransactionJournalEntry($conn, $bankTransactionId, $bankId, $
             $jeFields[] = 'locked_at';
             $jeValues[] = 'NOW()';
         }
+
+        require_once __DIR__ . '/accounting-ledger-lock.php';
+        try {
+            accounting_main_site_enforce_ledger_mutable(0, $transactionDate, null, 'create');
+        } catch (\Throwable $lockEx) {
+            $lock = accounting_main_site_ledger_lock_response($lockEx);
+
+            return ['success' => false, 'journal_entry_id' => null, 'message' => $lock['message']];
+        }
         
         $insertJE = "INSERT INTO journal_entries (" . implode(', ', $jeFields) . ") VALUES (" . implode(', ', $jeValues) . ")";
         $jeStmt = $conn->prepare($insertJE);

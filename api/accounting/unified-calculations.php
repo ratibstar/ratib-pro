@@ -16,6 +16,7 @@
  */
 
 require_once '../../includes/config.php';
+require_once __DIR__ . '/../core/api-permission-helper.php';
 if (file_exists(__DIR__ . '/core/erp-guardian.php')) {
     require_once __DIR__ . '/core/erp-guardian.php';
 }
@@ -27,6 +28,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
+
+enforceApiPermission('accounts', 'view');
 
 $roleId = $_SESSION['role_id'] ?? 0;
 

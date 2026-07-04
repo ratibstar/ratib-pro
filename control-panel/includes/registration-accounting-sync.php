@@ -189,6 +189,13 @@ if (!function_exists('syncPaidRegistrationToAccounting')) {
             $dupJ = $mysqli->query("SELECT id FROM control_journal_entries WHERE description = '" . $mysqli->real_escape_string($desc) . "' AND total_debit = " . (float) $amount . " LIMIT 1");
             if (!$dupJ || $dupJ->num_rows === 0) {
                 $jeRef = registrationAccountingNextGlReference($mysqli);
+                $integrity = dirname(__DIR__, 2) . '/app/Accounting/Support/post_accounting_integrity.php';
+                if (is_file($integrity)) {
+                    require_once $integrity;
+                    if (function_exists('accounting_enforce_ledger_mutable')) {
+                        accounting_enforce_ledger_mutable(max(1, $countryId), $today, null, 'create');
+                    }
+                }
                 $stmt = $mysqli->prepare('INSERT INTO control_journal_entries (agency_id, country_id, reference, entry_date, description, total_debit, total_credit, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
                 if ($stmt) {
                     $stDraft = 'draft';

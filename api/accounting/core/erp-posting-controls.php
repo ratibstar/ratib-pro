@@ -335,6 +335,16 @@ function createReversalEntry($conn, $originalEntryId, $reversalDate, $descriptio
     } catch (Exception $e) {
         return ['success' => false, 'reversal_entry_id' => null, 'message' => $e->getMessage()];
     }
+
+    require_once __DIR__ . '/accounting-ledger-lock.php';
+    $reversalBranchId = !empty($original['branch_id']) ? (int) $original['branch_id'] : null;
+    try {
+        accounting_main_site_enforce_ledger_mutable(0, $reversalDate, $reversalBranchId, 'create');
+    } catch (\Throwable $lockEx) {
+        $lock = accounting_main_site_ledger_lock_response($lockEx);
+
+        return ['success' => false, 'reversal_entry_id' => null, 'message' => $lock['message']];
+    }
     
     // Get original entry lines
     $linesStmt = $conn->prepare("

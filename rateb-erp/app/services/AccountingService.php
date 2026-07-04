@@ -1143,6 +1143,11 @@ final class AccountingService
             return 'fiscal_period_closed_block';
         }
         try {
+            $this->enforceLedgerMutableForWrite(
+                $companyId,
+                (string) ($entry['entry_date'] ?? date('Y-m-d')),
+                isset($entry['branch_id']) ? (int) $entry['branch_id'] : null
+            );
             (new JournalEntry())->update($entryId, [
                 'status' => 'posted',
                 'posted_at' => date('Y-m-d H:i:s'),

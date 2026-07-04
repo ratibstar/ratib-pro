@@ -137,6 +137,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit;
 }
 
+require_once __DIR__ . '/../core/api-permission-helper.php';
+enforceApiPermission('accounts', 'view');
+
 try {
     $format = isset($_GET['format']) ? trim($_GET['format']) : '';
     if ($format === 'sections') {

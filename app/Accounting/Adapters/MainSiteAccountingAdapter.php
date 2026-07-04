@@ -50,6 +50,11 @@ final class MainSiteAccountingAdapter implements AccountingAdapterInterface
             ? (int) $event['metadata']['journal_entry_id']
             : 0;
 
+        $replayGate = AccountingReplayGuard::gateBeforeJournalWrite($event, 'main-site');
+        if ($replayGate !== null) {
+            return $replayGate;
+        }
+
         if (AccountingReplayGuard::isReplay($event) && $journalEntryId > 0) {
             return AccountingReplayGuard::replayAcknowledged(
                 $event,

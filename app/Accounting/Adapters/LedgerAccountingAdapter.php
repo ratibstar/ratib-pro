@@ -54,17 +54,22 @@ final class LedgerAccountingAdapter implements AccountingAdapterInterface
         $referenceType = (string) $event['reference_type'];
         $referenceId = is_numeric($event['reference_id']) ? (int) $event['reference_id'] : 0;
 
-        if (
-            AccountingReplayGuard::isReplay($event)
-            && $referenceType !== ''
-            && $referenceId > 0
-            && $ledger->journalExistsForReference($referenceType, $referenceId)
-        ) {
-            return AccountingReplayGuard::replayAcknowledged(
-                $event,
-                'ledger',
-                'Replay idempotent — ledger journal already exists for reference'
-            );
+        $replayGate = AccountingReplayGuard::gateBeforeJournalWrite(
+            $event,
+            'ledger',
+            static function (array $ev) use ($ledger, $referenceType, $referenceId): ?int {
+                if ($referenceType === '' || $referenceId <= 0) {
+                    return null;
+                }
+                if (!$ledger->journalExistsForReference($referenceType, $referenceId)) {
+                    return null;
+                }
+
+                return 1;
+            }
+        );
+        if ($replayGate !== null) {
+            return $replayGate;
         }
 
         if ($referenceType !== '' && $referenceId > 0) {

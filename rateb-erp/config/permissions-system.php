@@ -263,4 +263,23 @@ return [
         'admin/sms-templates' => 'settings.manage',
         'admin/support-tickets' => 'settings.manage',
     ],
+
+    /** Company /app routes → permission slug (rateb_erp_mw enforcement). */
+    'company_routes' => [
+        'accounting-control' => 'accounting.dashboard',
+        'accounting-control/events' => 'accounting.events',
+        'accounting-control/replay' => 'accounting.replay',
+        'accounting-control/audit' => 'accounting.audit',
+        'accounting-control/projections' => 'accounting.projections',
+        'accounting-control/consolidation' => 'accounting.consolidation',
+        'accounting-control/drift' => 'accounting.drift',
+        'accounting-control/reconciliation' => 'accounting.reconciliation',
+        'accounting-control/integrity' => 'accounting.integrity',
+        'accounting-control/settings' => 'accounting.dashboard',
+        'accounting-control/health' => 'accounting.system_health',
+        'accounting-control/timeline' => 'accounting.dashboard',
+        'accounting-control/notifications' => 'accounting.dashboard',
+        'accounting-control/diagnostics' => 'accounting.system_health',
+        'accounting-control/api/{resource}' => 'accounting.dashboard',
+    ],
 ];

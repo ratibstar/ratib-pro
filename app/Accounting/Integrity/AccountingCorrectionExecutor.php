@@ -118,6 +118,14 @@ final class AccountingCorrectionExecutor
         $description = 'Integrity correction: ' . (string) ($proposal['type'] ?? 'adjustment');
         $entryNo = 'RECON-' . date('YmdHis') . '-' . substr((string) ($proposal['idempotency_key'] ?? 'x'), 0, 8);
 
+        $integrity = dirname(__DIR__) . '/Support/post_accounting_integrity.php';
+        if (is_file($integrity)) {
+            require_once $integrity;
+            if (function_exists('accounting_enforce_ledger_mutable')) {
+                accounting_enforce_ledger_mutable($companyId, $entryDate, null, 'create');
+            }
+        }
+
         try {
             $pdo->beginTransaction();
 

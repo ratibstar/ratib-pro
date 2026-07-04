@@ -40,26 +40,24 @@ final class RatebErpAccountingAdapter implements AccountingAdapterInterface
         /** @var \Rateb\App\Services\AccountingService $service */
         $service = new \Rateb\App\Services\AccountingService();
 
-        if (AccountingReplayGuard::isReplay($event)) {
-            $sourceType = (string) ($event['reference_type'] ?? $event['event_type']);
-            $sourceId = is_numeric($event['reference_id'] ?? null) ? (int) $event['reference_id'] : null;
-            if ($sourceId !== null && $service->journalExistsForSource($sourceType, $sourceId)) {
-                $existingId = $service->journalIdForSource($sourceType, $sourceId);
+        $replayGate = AccountingReplayGuard::gateBeforeJournalWrite(
+            $event,
+            'rateb-erp',
+            static function (array $ev) use ($service): ?int {
+                $sourceType = (string) ($ev['reference_type'] ?? $ev['event_type'] ?? '');
+                $sourceId = is_numeric($ev['reference_id'] ?? null) ? (int) $ev['reference_id'] : null;
+                if ($sourceType === '' || $sourceId === null || $sourceId <= 0) {
+                    return null;
+                }
+                if (!$service->journalExistsForSource($sourceType, $sourceId)) {
+                    return null;
+                }
 
-                return AccountingReplayGuard::replayAcknowledged(
-                    $event,
-                    'rateb-erp',
-                    'Replay idempotent — journal already exists for source',
-                    ['journal_entry_id' => $existingId]
-                );
+                return $service->journalIdForSource($sourceType, $sourceId);
             }
-            if (!empty($event['metadata']['journal_entry_id'])) {
-                return AccountingReplayGuard::replayAcknowledged(
-                    $event,
-                    'rateb-erp',
-                    'Replay idempotent — journal_entry_id present in event metadata'
-                );
-            }
+        );
+        if ($replayGate !== null) {
+            return $replayGate;
         }
 
         $companyId = (int) $event['company_id'];

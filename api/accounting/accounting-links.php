@@ -15,6 +15,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit;
 }
 
+enforceApiPermission('accounts', 'view');
+
 try {
     $module = $_GET['module'] ?? '';
     $id = isset($_GET['id']) ? intval($_GET['id']) : 0;

@@ -503,7 +503,12 @@ def rateb_site_accounting_app_files() -> list[str]:
 
 
 def rateb_accounting_control_ui_files() -> list[str]:
-    """Phase 6 Control Center — ERP views + static assets (always ship)."""
+    """Phase 6 Control Center — ERP views + static assets (always ship).
+
+    Runtime canonical set: rateb-erp/public/assets/accounting-control/ (layout.php L18–21).
+    js/accounting-control/, css/accounting-control/, and nested public/assets/js|css paths
+    are deployment mirrors only — not loaded by the Control Center UI.
+    """
     fixed = [
         "rateb-erp/views/admin/accounting-control/layout.php",
         "rateb-erp/views/admin/accounting-control/i18n-payload.php",

@@ -4,6 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/accounting/overview.php`.
  */
 require_once '../../includes/config.php';
+require_once __DIR__ . '/../core/api-permission-helper.php';
 
 header('Content-Type: application/json');
 
@@ -13,6 +14,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
+
+enforceApiPermission('accounts', 'view');
 
 try {
     $data = [

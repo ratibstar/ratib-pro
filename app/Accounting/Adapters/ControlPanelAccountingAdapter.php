@@ -71,13 +71,20 @@ final class ControlPanelAccountingAdapter implements AccountingAdapterInterface
 
         $reference = (string) ($event['metadata']['reference'] ?? ('GL-GW-' . date('YmdHis')));
 
-        if (AccountingReplayGuard::isReplay($event) && $this->journalExistsByReference($ctrl, $reference)) {
-            return AccountingReplayGuard::replayAcknowledged(
-                $event,
-                'control-panel',
-                'Replay idempotent — control journal reference already exists',
-                ['reference' => $reference]
-            );
+        $replayGate = AccountingReplayGuard::gateBeforeJournalWrite(
+            $event,
+            'control-panel',
+            function (array $ev) use ($ctrl): ?int {
+                $ref = (string) ($ev['metadata']['reference'] ?? '');
+                if ($ref === '' || !$this->journalExistsByReference($ctrl, $ref)) {
+                    return null;
+                }
+
+                return $this->journalIdByReference($ctrl, $ref);
+            }
+        );
+        if ($replayGate !== null) {
+            return $replayGate;
         }
 
         $useTx = @$ctrl->begin_transaction();
@@ -172,6 +179,26 @@ final class ControlPanelAccountingAdapter implements AccountingAdapterInterface
             throw new \RuntimeException('insert journal line failed');
         }
         $st->close();
+    }
+
+    private function journalIdByReference(\mysqli $ctrl, string $reference): ?int
+    {
+        $reference = trim($reference);
+        if ($reference === '') {
+            return null;
+        }
+
+        $st = $ctrl->prepare('SELECT id FROM control_journal_entries WHERE reference = ? LIMIT 1');
+        if ($st === false) {
+            return null;
+        }
+        $st->bind_param('s', $reference);
+        $st->execute();
+        $res = $st->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $st->close();
+
+        return $row ? (int) $row['id'] : null;
     }
 
     private function journalExistsByReference(\mysqli $ctrl, string $reference): bool

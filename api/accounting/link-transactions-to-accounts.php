@@ -13,6 +13,7 @@
  */
 
 require_once '../../includes/config.php';
+require_once __DIR__ . '/../core/api-permission-helper.php';
 
 header('Content-Type: application/json');
 
@@ -23,8 +24,14 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit;
 }
 
+$method = $_SERVER['REQUEST_METHOD'];
+if ($method === 'GET') {
+    enforceApiPermission('accounts', 'view');
+} else {
+    enforceApiPermission('accounts', 'update');
+}
+
 try {
-    $method = $_SERVER['REQUEST_METHOD'];
     
     // GET: Check status and show examples
     if ($method === 'GET') {

@@ -46,7 +46,6 @@ use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAcc
 use Rateb\App\Controllers\Company\ProductCategoriesController;
 use Rateb\App\Controllers\Company\StockMovementsController;
 use Rateb\App\Controllers\Company\DocumentsController;
-use Rateb\App\Controllers\Company\WorkflowsController;
 use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntriesController;
 use Rateb\App\Controllers\Company\CashVouchersController as CompanyCashVouchersController;
 use Rateb\App\Controllers\Company\FiscalPeriodsController as CompanyFiscalPeriodsController;

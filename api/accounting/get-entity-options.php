@@ -21,6 +21,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit;
 }
 
+enforceApiPermission('accounts', 'view');
+
 try {
     $entityType = isset($_GET['type']) ? trim($_GET['type']) : null;
     $search = isset($_GET['search']) ? trim($_GET['search']) : null;
