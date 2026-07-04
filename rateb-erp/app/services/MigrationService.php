@@ -150,70 +150,24 @@ final class MigrationService
         if ($log === null) {
             $log = &$localLog;
         }
-        try {
-            if ($pdo === null) {
-                [$pdo, ] = $this->migrationConnection();
-            }
-        } catch (\Throwable $e) {
-            $log[] = 'Branch schema repair skipped: ' . $e->getMessage();
+
+        if ($pdo instanceof PDO) {
+            $this->repairBranchOpsOnPdo($pdo, $log);
+            Database::clearColumnCache();
             return $localLog;
         }
 
-        $required = [
-            ['rateb_purchase_orders', 'branch_id'],
-            ['rateb_purchase_requests', 'branch_id'],
-            ['rateb_suppliers', 'branch_id'],
-            ['rateb_inventory', 'branch_id'],
-            ['rateb_rfq', 'branch_id'],
-            ['rateb_contracts', 'branch_id'],
-            ['rateb_assets', 'branch_id'],
-            ['rateb_tenders', 'branch_id'],
-            ['rateb_stock_movements', 'branch_id'],
-        ];
-        $missing = [];
-        foreach ($required as [$table, $column]) {
-            if (!$this->pdoColumnExists($pdo, $table, $column)) {
-                $missing[] = $table . '.' . $column;
-            }
-        }
-        if ($missing === []) {
-            return $localLog;
-        }
+        $candidates = function_exists('rateb_erp_database_candidates')
+            ? rateb_erp_database_candidates()
+            : [defined('RATEB_DB_NAME') ? (string) \RATEB_DB_NAME : 'admin_rateb-erp'];
 
-        $log[] = 'Branch schema repair: missing ' . implode(', ', $missing);
-
-        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
-        $catchup = $root . '/migrations/146_branch_ops_branch_id_catchup.sql';
-        if (is_file($catchup)) {
-            $sql = file_get_contents($catchup);
-            if ($sql !== false && trim($sql) !== '') {
-                $log[] = 'Applying idempotent branch ops catchup (146)…';
-                $this->execSqlFile($pdo, $sql);
-                if (!$this->isApplied($pdo, '146_branch_ops_branch_id_catchup.sql')) {
-                    $this->markApplied($pdo, '146_branch_ops_branch_id_catchup.sql');
-                }
-                $log[] = 'Branch ops catchup: done.';
-            }
-        }
-
-        $stillMissing = [];
-        foreach ([
-            ['rateb_purchase_orders', 'branch_id'],
-            ['rateb_purchase_requests', 'branch_id'],
-        ] as [$table, $column]) {
-            if (!$this->pdoColumnExists($pdo, $table, $column)) {
-                $stillMissing[] = $table . '.' . $column;
-            }
-        }
-        if ($stillMissing !== []) {
-            $log[] = 'Branch schema repair: still missing ' . implode(', ', $stillMissing);
-            $fallback = $root . '/migrations/126_branch_ops_isolation.sql';
-            if (is_file($fallback)) {
-                $sql = file_get_contents($fallback);
-                if ($sql !== false && trim($sql) !== '') {
-                    $log[] = 'Applying fallback 126_branch_ops_isolation.sql…';
-                    $this->execSqlFile($pdo, $sql);
-                }
+        foreach ($candidates as $dbName) {
+            try {
+                $pdo = $this->openMigrationPdo($dbName);
+                $log[] = 'Branch schema check: ' . $dbName;
+                $this->repairBranchOpsOnPdo($pdo, $log);
+            } catch (\Throwable $e) {
+                $log[] = 'Branch schema repair skipped for ' . $dbName . ': ' . $e->getMessage();
             }
         }
 
@@ -222,21 +176,129 @@ final class MigrationService
         return $localLog;
     }
 
+    /** @return array<string, string> */
+    private function branchOpsColumnAlters(): array
+    {
+        return [
+            'rateb_purchase_requests' => 'ALTER TABLE rateb_purchase_requests ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_purchase_orders' => 'ALTER TABLE rateb_purchase_orders ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_suppliers' => 'ALTER TABLE rateb_suppliers ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_inventory' => 'ALTER TABLE rateb_inventory ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_rfq' => 'ALTER TABLE rateb_rfq ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_contracts' => 'ALTER TABLE rateb_contracts ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_assets' => 'ALTER TABLE rateb_assets ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_tenders' => 'ALTER TABLE rateb_tenders ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+            'rateb_stock_movements' => 'ALTER TABLE rateb_stock_movements ADD COLUMN branch_id INT UNSIGNED NULL AFTER company_id',
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function branchOpsIndexAlters(): array
+    {
+        return [
+            'rateb_purchase_requests' => 'ALTER TABLE rateb_purchase_requests ADD INDEX idx_pr_branch (branch_id)',
+            'rateb_purchase_orders' => 'ALTER TABLE rateb_purchase_orders ADD INDEX idx_po_branch (branch_id)',
+            'rateb_suppliers' => 'ALTER TABLE rateb_suppliers ADD INDEX idx_sup_branch (branch_id)',
+            'rateb_inventory' => 'ALTER TABLE rateb_inventory ADD INDEX idx_inv_branch (branch_id)',
+            'rateb_rfq' => 'ALTER TABLE rateb_rfq ADD INDEX idx_rfq_branch (branch_id)',
+            'rateb_contracts' => 'ALTER TABLE rateb_contracts ADD INDEX idx_contract_branch (branch_id)',
+            'rateb_assets' => 'ALTER TABLE rateb_assets ADD INDEX idx_asset_branch (branch_id)',
+            'rateb_tenders' => 'ALTER TABLE rateb_tenders ADD INDEX idx_tender_branch (branch_id)',
+            'rateb_stock_movements' => 'ALTER TABLE rateb_stock_movements ADD INDEX idx_sm_branch (branch_id)',
+        ];
+    }
+
+    /** @param list<string> $log */
+    private function repairBranchOpsOnPdo(PDO $pdo, array &$log): void
+    {
+        $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
+        $dbName = is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
+        if ($dbName === '') {
+            $log[] = 'Branch schema repair skipped: no database selected';
+            return;
+        }
+
+        $missing = [];
+        foreach (array_keys($this->branchOpsColumnAlters()) as $table) {
+            if (!$this->pdoColumnExists($pdo, $table, 'branch_id')) {
+                $missing[] = $table . '.branch_id';
+            }
+        }
+        if ($missing === []) {
+            return;
+        }
+
+        $log[] = 'Branch schema repair on ' . $dbName . ': missing ' . implode(', ', $missing);
+
+        foreach ($this->branchOpsColumnAlters() as $table => $alterSql) {
+            if ($this->pdoColumnExists($pdo, $table, 'branch_id')) {
+                continue;
+            }
+            if ($this->execBenignAlter($pdo, $alterSql)) {
+                $log[] = 'Added ' . $table . '.branch_id on ' . $dbName;
+            }
+        }
+
+        foreach ($this->branchOpsIndexAlters() as $table => $indexSql) {
+            if (!$this->pdoColumnExists($pdo, $table, 'branch_id')) {
+                continue;
+            }
+            $this->execBenignAlter($pdo, $indexSql);
+        }
+
+        $stillMissing = [];
+        foreach (['rateb_purchase_orders', 'rateb_purchase_requests'] as $table) {
+            if (!$this->pdoColumnExists($pdo, $table, 'branch_id')) {
+                $stillMissing[] = $table . '.branch_id';
+            }
+        }
+        if ($stillMissing === []) {
+            $this->ensureMigrationsTable($pdo);
+            if (!$this->isApplied($pdo, '146_branch_ops_branch_id_catchup.sql')) {
+                $this->markApplied($pdo, '146_branch_ops_branch_id_catchup.sql');
+            }
+            return;
+        }
+
+        $log[] = 'Branch schema repair: still missing on ' . $dbName . ' — ' . implode(', ', $stillMissing);
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $catchup = $root . '/migrations/146_branch_ops_branch_id_catchup.sql';
+        if (is_file($catchup)) {
+            $sql = file_get_contents($catchup);
+            if ($sql !== false && trim($sql) !== '') {
+                $log[] = 'Applying SQL catchup 146 on ' . $dbName . '…';
+                $this->execSqlFile($pdo, $sql);
+                if (!$this->isApplied($pdo, '146_branch_ops_branch_id_catchup.sql')) {
+                    $this->markApplied($pdo, '146_branch_ops_branch_id_catchup.sql');
+                }
+            }
+        }
+    }
+
+    private function execBenignAlter(PDO $pdo, string $sql): bool
+    {
+        try {
+            $pdo->exec($sql);
+            return true;
+        } catch (\PDOException $e) {
+            if ($this->isBenignMigrationError($e->getMessage())) {
+                return false;
+            }
+            throw $e;
+        }
+    }
+
     private function pdoColumnExists(PDO $pdo, string $table, string $column): bool
     {
         try {
-            $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
-            $dbName = is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
-            if ($dbName === '') {
-                return false;
-            }
-            $stmt = $pdo->prepare(
-                'SELECT 1 FROM information_schema.columns
-                 WHERE table_schema = :db AND table_name = :tbl AND column_name = :col LIMIT 1'
+            $safeTable = str_replace('`', '', $table);
+            $stmt = $pdo->query(
+                'SHOW COLUMNS FROM `' . $safeTable . '` LIKE ' . $pdo->quote($column)
             );
-            $stmt->execute(['db' => $dbName, 'tbl' => $table, 'col' => $column]);
-            $exists = (bool) $stmt->fetchColumn();
-            $this->drainStatement($stmt);
+            $exists = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
 
             return $exists;
         } catch (\Throwable $e) {

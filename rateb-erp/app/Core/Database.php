@@ -58,7 +58,7 @@ final class Database
         self::$columnCache = [];
     }
 
-    /** Cached per database — safe when one PHP-FPM pool serves multiple agency DBs. */
+    /** Cached per database — uses SHOW COLUMNS (same check MySQL uses at query time). */
     public static function tableHasColumn(string $table, string $column): bool
     {
         $pdo = self::connection();
@@ -77,12 +77,10 @@ final class Database
             return self::$columnCache[$key];
         }
         try {
-            $stmt = $pdo->prepare(
-                'SELECT 1 FROM information_schema.columns
-                 WHERE table_schema = :db AND table_name = :tbl AND column_name = :col LIMIT 1'
+            $stmt = $pdo->query(
+                'SHOW COLUMNS FROM `' . $safeTable . '` LIKE ' . $pdo->quote($column)
             );
-            $stmt->execute(['db' => $db, 'tbl' => $safeTable, 'col' => $column]);
-            self::$columnCache[$key] = (bool) $stmt->fetchColumn();
+            self::$columnCache[$key] = $stmt !== false && $stmt->fetch() !== false;
             if ($stmt instanceof \PDOStatement) {
                 $stmt->closeCursor();
             }
