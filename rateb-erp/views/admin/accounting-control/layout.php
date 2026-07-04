@@ -7,8 +7,9 @@
 $accSection = $accSection ?? 'dashboard';
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/accounting-control');
 $accAssetVer = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
-$accCssUrl = rateb_public_url('assets/css/accounting-control/control-center.css') . '?v=' . rawurlencode($accAssetVer);
-$accJsUrl = rateb_public_url('assets/js/accounting-control/control-center.js') . '?v=' . rawurlencode($accAssetVer);
+$accAssetsBase = rateb_site_origin() . rateb_erp_app_prefix() . '/assets/accounting-control';
+$accCssUrl = $accAssetsBase . '/control-center.css?v=' . rawurlencode($accAssetVer);
+$accJsUrl = $accAssetsBase . '/control-center.js?v=' . rawurlencode($accAssetVer);
 ?>
 <link href="<?php echo Rateb\App\Core\View::escape($accCssUrl); ?>" rel="stylesheet">
 <div class="acc-control-wrap" id="acc-control-app"
