@@ -78,4 +78,49 @@ final class AccountingConfig
 
         return !empty(self::all()['drift_detection_enabled']);
     }
+
+    public static function integrityEnabled(): bool
+    {
+        if (defined('ACCOUNTING_INTEGRITY_ENABLED')) {
+            return (bool) ACCOUNTING_INTEGRITY_ENABLED;
+        }
+
+        return !empty(self::all()['integrity_enabled']);
+    }
+
+    public static function ledgerLockEnforcementEnabled(): bool
+    {
+        if (defined('ACCOUNTING_LEDGER_LOCK_ENFORCEMENT_ENABLED')) {
+            return (bool) ACCOUNTING_LEDGER_LOCK_ENFORCEMENT_ENABLED;
+        }
+
+        return !empty(self::all()['ledger_lock_enforcement_enabled']);
+    }
+
+    public static function correctionExecutorEnabled(): bool
+    {
+        if (defined('ACCOUNTING_CORRECTION_EXECUTOR_ENABLED')) {
+            return (bool) ACCOUNTING_CORRECTION_EXECUTOR_ENABLED;
+        }
+
+        return !empty(self::all()['correction_executor_enabled']);
+    }
+
+    public static function correctionAutoFixEnabled(): bool
+    {
+        if (defined('ACCOUNTING_CORRECTION_AUTO_FIX_ENABLED')) {
+            return (bool) ACCOUNTING_CORRECTION_AUTO_FIX_ENABLED;
+        }
+
+        return !empty(self::all()['correction_auto_fix_enabled']);
+    }
+
+    public static function auditCertificationEnabled(): bool
+    {
+        if (defined('ACCOUNTING_AUDIT_CERTIFICATION_ENABLED')) {
+            return (bool) ACCOUNTING_AUDIT_CERTIFICATION_ENABLED;
+        }
+
+        return !empty(self::all()['audit_certification_enabled']);
+    }
 }

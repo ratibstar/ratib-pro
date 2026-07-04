@@ -7,6 +7,7 @@ declare(strict_types=1);
  */
 
 use App\Accounting\Core\AccountingResult;
+use App\Accounting\Integrity\AccountingEventPipelineDecorator;
 use App\Accounting\Pipeline\AccountingEventPipeline;
 use App\Accounting\Support\AccountingConfig;
 use App\Accounting\Support\AccountingGatewayBootstrap;
@@ -25,7 +26,18 @@ if (!function_exists('postAccountingEvent')) {
             AccountingGatewayBootstrap::registerAutoloader();
 
             if (AccountingEventPipeline::isEnabled()) {
-                $pipeline = new AccountingEventPipeline(AccountingGatewayBootstrap::gateway());
+                $integrityBootstrap = dirname(__DIR__) . '/Support/post_accounting_integrity.php';
+                if (is_file($integrityBootstrap)) {
+                    require_once $integrityBootstrap;
+                }
+
+                if (AccountingEventPipelineDecorator::shouldUse()) {
+                    $pipeline = new AccountingEventPipelineDecorator(
+                        new AccountingEventPipeline(AccountingGatewayBootstrap::gateway())
+                    );
+                } else {
+                    $pipeline = new AccountingEventPipeline(AccountingGatewayBootstrap::gateway());
+                }
 
                 return $pipeline->post($event);
             }

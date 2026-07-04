@@ -11,6 +11,12 @@ return [
     'consolidation_enabled' => filter_var(getenv('ACCOUNTING_CONSOLIDATION_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
     'drift_detection_enabled' => filter_var(getenv('ACCOUNTING_DRIFT_DETECTION_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
 
+    'integrity_enabled' => filter_var(getenv('ACCOUNTING_INTEGRITY_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
+    'ledger_lock_enforcement_enabled' => filter_var(getenv('ACCOUNTING_LEDGER_LOCK_ENFORCEMENT_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
+    'correction_executor_enabled' => filter_var(getenv('ACCOUNTING_CORRECTION_EXECUTOR_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
+    'correction_auto_fix_enabled' => filter_var(getenv('ACCOUNTING_CORRECTION_AUTO_FIX_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
+    'audit_certification_enabled' => filter_var(getenv('ACCOUNTING_AUDIT_CERTIFICATION_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN),
+
     /*
     | Optional PDO DSN overrides for cross-system read-only reporting.
     | When null, AccountingConnectionFactory resolves from Laravel DB or site config.

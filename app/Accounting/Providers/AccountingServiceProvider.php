@@ -16,6 +16,14 @@ use App\Accounting\Core\AccountingIdempotency;
 use App\Accounting\Drift\AccountingDriftDetector;
 use App\Accounting\EventStore\AccountingEventRepository;
 use App\Accounting\EventStore\AccountingEventStore;
+use App\Accounting\Integrity\AccountingAuditCertificationEngine;
+use App\Accounting\Integrity\AccountingCorrectionExecutor;
+use App\Accounting\Integrity\AccountingEventPipelineDecorator;
+use App\Accounting\Integrity\AccountingGoldenLedgerResolver;
+use App\Accounting\Integrity\AccountingIntegrityHook;
+use App\Accounting\Integrity\AccountingLedgerLockManager;
+use App\Accounting\Integrity\AccountingReconciliationEngine;
+use App\Accounting\Integrity\IntegrityRepository;
 use App\Accounting\Normalization\AccountingNormalizer;
 use App\Accounting\Pipeline\AccountingEventPipeline;
 use App\Accounting\Pipeline\AccountingProjectionHook;
@@ -45,6 +53,17 @@ final class AccountingServiceProvider extends ServiceProvider
         $this->app->singleton(AccountingDriftDetector::class);
         $this->app->singleton(AccountingSnapshotRebuilder::class);
 
+        $this->app->singleton(IntegrityRepository::class);
+        $this->app->singleton(AccountingReconciliationEngine::class);
+        $this->app->singleton(AccountingCorrectionExecutor::class);
+        $this->app->singleton(AccountingLedgerLockManager::class);
+        $this->app->singleton(AccountingGoldenLedgerResolver::class);
+        $this->app->singleton(AccountingAuditCertificationEngine::class);
+        $this->app->singleton(AccountingIntegrityHook::class);
+        $this->app->singleton(AccountingEventPipelineDecorator::class, static function ($app): AccountingEventPipelineDecorator {
+            return new AccountingEventPipelineDecorator($app->make(AccountingEventPipeline::class));
+        });
+
         $this->app->singleton(AccountingGateway::class, static function (): AccountingGateway {
             return new AccountingGateway([
                 new RatebErpAccountingAdapter(),
@@ -66,6 +85,11 @@ final class AccountingServiceProvider extends ServiceProvider
         $bootstrap = dirname(__DIR__) . '/Support/post_accounting_event.php';
         if (is_file($bootstrap)) {
             require_once $bootstrap;
+        }
+
+        $integrity = dirname(__DIR__) . '/Support/post_accounting_integrity.php';
+        if (is_file($integrity)) {
+            require_once $integrity;
         }
     }
 }
