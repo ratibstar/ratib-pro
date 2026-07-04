@@ -16,13 +16,15 @@ if (empty($_SESSION['control_logged_in'])) {
 require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD, 'control_system_settings', 'view_control_system_settings');
 
-$schemaReady = control_rateb_erp_schema_ready();
+$agencyId = control_rateb_erp_resolve_agency_id();
+$agencyLabel = $agencyId > 0 ? control_rateb_erp_agency_label($agencyId) : '';
+$agencyDbName = $agencyId > 0 ? control_rateb_erp_agency_db_name($agencyId) : '';
+$agencyPdoOk = $agencyId < 1 || (function_exists('control_rateb_erp_pdo_for_agency') && control_rateb_erp_pdo_for_agency($agencyId) instanceof \PDO);
+$schemaReady = $agencyId > 0 ? $agencyPdoOk : control_rateb_erp_schema_ready();
 $flashOk = '';
 $flashErr = '';
 $newPortalUrl = '';
 $newBranchName = '';
-$agencyId = control_rateb_erp_resolve_agency_id();
-$agencyLabel = $agencyId > 0 ? control_rateb_erp_agency_label($agencyId) : '';
 $focusCompanyId = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
 
 if (empty($_SESSION['rateb_erp_branches_csrf'])) {
@@ -80,7 +82,6 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $companies = $schemaReady ? control_rateb_erp_companies_branch_overview() : [];
 $countryId = (int) ($_GET['country_id'] ?? 0);
-$agencyDbName = $agencyId > 0 ? control_rateb_erp_agency_db_name($agencyId) : '';
 $agencyDbReady = $agencyId < 1 || ($agencyDbName !== '' && $schemaReady);
 
 if ($agencyId > 0 && $focusCompanyId > 0 && $companies !== []) {
@@ -175,7 +176,17 @@ startControlLayout('الشركات والفروع — نظام رتب ERP', ['cs
 <?php } ?>
 
 <?php if (!$schemaReady) { ?>
-<div class="alert alert-warning">شغّل إعداد قاعدة البيانات أولاً من <a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>">هنا</a>.</div>
+<div class="alert alert-warning">
+    <?php if ($agencyId > 0) { ?>
+    تعذّر الاتصال بقاعدة ERP للوكالة<?php if ($agencyDbName !== '') { ?> (<code><?php echo htmlspecialchars($agencyDbName, ENT_QUOTES, 'UTF-8'); ?></code>)<?php } ?>.
+    من صفحة <strong>الوكالات</strong> شغّل <strong>Provision ERP</strong> أو <strong>Re-provision ERP</strong> ثم أعد المحاولة.
+    <?php if ($agenciesBackUrl !== '') { ?>
+    <div class="mt-2"><a href="<?php echo htmlspecialchars($agenciesBackUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-right"></i> العودة للوكالات</a></div>
+    <?php } ?>
+    <?php } else { ?>
+    شغّل إعداد قاعدة البيانات أولاً من <a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>">هنا</a>.
+    <?php } ?>
+</div>
 <?php } else { ?>
 
 <?php if ($flashOk !== '') { ?>

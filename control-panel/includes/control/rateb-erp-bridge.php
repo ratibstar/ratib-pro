@@ -153,6 +153,13 @@ function control_rateb_erp_db_test(): array
         $cfg = $agencyId > 0 ? control_rateb_erp_agency_db_config($agencyId) : null;
         if ($cfg !== null) {
             \Rateb\App\Core\Database::useConnectionOverride($cfg);
+        } elseif ($agencyId > 0) {
+            $result['error'] = 'Agency ERP database not configured.';
+            if (class_exists(\Rateb\App\Core\Database::class)) {
+                \Rateb\App\Core\Database::clearConnectionOverride();
+            }
+
+            return $result;
         } else {
             require_once RATEB_ROOT . '/config/database.php';
         }
@@ -685,6 +692,40 @@ function control_rateb_erp_nav_links(): array
     return $links;
 }
 
+/** @return array{host:string,port:int,user:string,pass:string} */
+function control_rateb_erp_agency_resolve_credentials(array $row): array
+{
+    $host = trim((string) ($row['erp_db_host'] ?? ''));
+    if ($host === '') {
+        $host = trim((string) ($row['db_host'] ?? ''));
+    }
+    if ($host === '') {
+        $host = defined('DB_HOST') ? (string) DB_HOST : 'localhost';
+    }
+    $port = (int) ($row['db_port'] ?? (defined('DB_PORT') ? (int) DB_PORT : 3306));
+    $user = trim((string) ($row['erp_db_user'] ?? ''));
+    if ($user === '') {
+        $user = trim((string) ($row['db_user'] ?? ''));
+    }
+    if ($user === '') {
+        $user = defined('DB_USER') ? (string) DB_USER : '';
+    }
+    $agencyPass = (string) ($row['erp_db_pass'] ?? '');
+    if ($agencyPass === '') {
+        $agencyPass = (string) ($row['db_pass'] ?? '');
+    }
+    $envUser = defined('DB_USER') ? (string) DB_USER : '';
+    $envPass = defined('DB_PASS') ? (string) DB_PASS : '';
+    $pass = ($user !== '' && $user === $envUser) ? $envPass : ($agencyPass !== '' ? $agencyPass : $envPass);
+
+    return [
+        'host' => $host !== '' ? $host : 'localhost',
+        'port' => $port > 0 ? $port : 3306,
+        'user' => $user,
+        'pass' => $pass,
+    ];
+}
+
 function control_rateb_erp_agency_db_name(int $agencyId): string
 {
     if ($agencyId < 1) {
@@ -722,24 +763,13 @@ function control_rateb_erp_agency_db_config(int $agencyId): ?array
     if ($db === '') {
         return null;
     }
-    $host = trim((string) ($row['erp_db_host'] ?? ''));
-    if ($host === '') {
-        $host = trim((string) ($row['db_host'] ?? 'localhost'));
-    }
-    $user = trim((string) ($row['erp_db_user'] ?? ''));
-    if ($user === '') {
-        $user = trim((string) ($row['db_user'] ?? ''));
-    }
-    $pass = (string) ($row['erp_db_pass'] ?? '');
-    if ($pass === '') {
-        $pass = (string) ($row['db_pass'] ?? '');
-    }
+    $cred = control_rateb_erp_agency_resolve_credentials($row);
 
     return [
-        'host' => $host !== '' ? $host : 'localhost',
-        'port' => (int) ($row['db_port'] ?? 3306),
-        'user' => $user,
-        'pass' => $pass,
+        'host' => $cred['host'],
+        'port' => $cred['port'],
+        'user' => $cred['user'],
+        'pass' => $cred['pass'],
         'db' => $db,
     ];
 }
@@ -750,27 +780,33 @@ function control_rateb_erp_pdo_for_agency(int $agencyId): ?\PDO
     if ($cfg === null) {
         return null;
     }
-    try {
-        control_rateb_erp_ensure_root();
-        require_once RATEB_ROOT . '/app/Core/Database.php';
-        \Rateb\App\Core\Database::useConnectionOverride($cfg);
-        $pdo = \Rateb\App\Core\Database::connection();
-        $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
-        if ($stmt === false || $stmt->rowCount() < 1) {
+    control_rateb_erp_ensure_root();
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+    $hosts = array_values(array_unique(array_filter([
+        (string) ($cfg['host'] ?? 'localhost'),
+        '127.0.0.1',
+        'localhost',
+    ])));
+    foreach ($hosts as $host) {
+        $tryCfg = $cfg;
+        $tryCfg['host'] = $host;
+        try {
+            \Rateb\App\Core\Database::useConnectionOverride($tryCfg);
+            $pdo = \Rateb\App\Core\Database::connection();
+            $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
+            if ($stmt !== false && $stmt->rowCount() > 0) {
+                return $pdo;
+            }
             \Rateb\App\Core\Database::clearConnectionOverride();
-
-            return null;
+        } catch (Throwable $e) {
+            if (class_exists(\Rateb\App\Core\Database::class)) {
+                \Rateb\App\Core\Database::clearConnectionOverride();
+            }
         }
-
-        return $pdo;
-    } catch (Throwable $e) {
-        error_log('control_rateb_erp_pdo_for_agency: ' . $e->getMessage());
-        if (class_exists(\Rateb\App\Core\Database::class)) {
-            \Rateb\App\Core\Database::clearConnectionOverride();
-        }
-
-        return null;
     }
+    error_log('control_rateb_erp_pdo_for_agency: could not connect agency #' . $agencyId . ' db=' . ($cfg['db'] ?? ''));
+
+    return null;
 }
 
 function control_rateb_erp_db_name(): string

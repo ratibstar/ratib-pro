@@ -12,6 +12,7 @@ $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 $apiBase = $baseUrl . '/api/control';
 $countryId = isset($_GET['country_id']) && ctype_digit($_GET['country_id']) ? (int)$_GET['country_id'] : 0;
+$agencyIdFilter = isset($_GET['agency_id']) && ctype_digit($_GET['agency_id']) ? (int)$_GET['agency_id'] : 0;
 $isControlSuperAdminUi = strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin';
 $agT = static function (string $key, string $fallback = '') {
     if (function_exists('cp_t')) {
@@ -292,15 +293,19 @@ if (!function_exists('agency_build_pro_open_url')) {
 // EN: Load country scope and list data according to permission constraints and active filters.
 // AR: تحميل نطاق الدول وقائمة الوكالات حسب صلاحيات المستخدم والفلاتر الحالية.
 $allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
+// Country picker hub: show all allowed countries, not session-pinned workspace only.
+$countryListScope = ($countryId === 0 && $agencyIdFilter === 0)
+    ? getAllowedCountryIds($ctrl)
+    : $allowedCountryIds;
 $countries = [];
 $countryMap = [];
 $countrySlugMap = [];
 $chk = $ctrl->query("SHOW TABLES LIKE 'control_countries'");
 if ($chk && $chk->num_rows > 0) {
     $countrySql = "SELECT id, name, slug FROM control_countries WHERE is_active = 1 ORDER BY sort_order, name";
-    if ($allowedCountryIds !== null && !empty($allowedCountryIds)) {
-        $countrySql = "SELECT id, name, slug FROM control_countries WHERE id IN (" . implode(',', array_map('intval', $allowedCountryIds)) . ") AND is_active = 1 ORDER BY sort_order, name";
-    } elseif ($allowedCountryIds === []) {
+    if ($countryListScope !== null && !empty($countryListScope)) {
+        $countrySql = "SELECT id, name, slug FROM control_countries WHERE id IN (" . implode(',', array_map('intval', $countryListScope)) . ") AND is_active = 1 ORDER BY sort_order, name";
+    } elseif ($countryListScope === []) {
         $countrySql = "SELECT id, name FROM control_countries WHERE 1=0";
     }
     $res = $ctrl->query($countrySql);
@@ -314,7 +319,6 @@ if ($chk && $chk->num_rows > 0) {
 $page = max(1, (int)($_GET['page'] ?? 1));
 $limit = max(5, min(100, (int)($_GET['limit'] ?? 5)));
 $search = trim($_GET['search'] ?? '');
-$agencyIdFilter = isset($_GET['agency_id']) && ctype_digit($_GET['agency_id']) ? (int)$_GET['agency_id'] : 0;
 $countryIdGet = isset($_GET['country_id']) && ctype_digit($_GET['country_id']) ? (int)$_GET['country_id'] : $countryId;
 if ($countryIdGet) $countryId = $countryIdGet;
 $offset = ($page - 1) * $limit;
