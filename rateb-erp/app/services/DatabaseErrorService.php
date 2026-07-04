@@ -155,10 +155,12 @@ final class DatabaseErrorService
             echo '<p style="font-size:.85rem;color:#5a6a7e;margin-top:.75rem"><code style="white-space:pre-wrap">'
                 . htmlspecialchars($tech, ENT_QUOTES, 'UTF-8') . '</code></p>';
         }
-        if ($schema && function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()
-            && class_exists(\Rateb\App\Core\Database::class)) {
+        if ($schema && class_exists(\Rateb\App\Core\Database::class)) {
             try {
-                $activeDb = \Rateb\App\Core\Database::resolvedDatabaseName();
+                $activeDb = \Rateb\App\Core\Database::liveDatabaseName();
+                if ($activeDb === '') {
+                    $activeDb = \Rateb\App\Core\Database::resolvedDatabaseName();
+                }
                 if ($activeDb !== '') {
                     echo '<p class="small text-muted mb-0">'
                         . htmlspecialchars(self::t('db_error_active_database') . ': ' . $activeDb, ENT_QUOTES, 'UTF-8')

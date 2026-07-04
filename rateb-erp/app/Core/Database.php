@@ -58,6 +58,38 @@ final class Database
         self::$columnCache = [];
     }
 
+    public static function liveDatabaseName(): string
+    {
+        try {
+            $pdo = self::connection();
+            $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
+
+            return is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
+        } catch (\Throwable $e) {
+            return self::resolvedDatabaseName();
+        }
+    }
+
+    /** Uncached — use before adding branch_id to SQL on the active connection. */
+    public static function liveTableHasColumn(string $table, string $column): bool
+    {
+        try {
+            $pdo = self::connection();
+            $safeTable = str_replace('`', '', $table);
+            $stmt = $pdo->query(
+                'SHOW COLUMNS FROM `' . $safeTable . '` LIKE ' . $pdo->quote($column)
+            );
+            $exists = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+
+            return $exists;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     /** Cached per database — uses SHOW COLUMNS on the live PDO database. */
     public static function tableHasColumn(string $table, string $column): bool
     {

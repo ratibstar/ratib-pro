@@ -12,7 +12,7 @@ trait AccountingBranchScope
 
     protected function tableColumnExists(string $table, string $column): bool
     {
-        return \Rateb\App\Core\Database::tableHasColumn($table, $column);
+        return \Rateb\App\Core\Database::liveTableHasColumn($table, $column);
     }
 
     protected function journalLineBranchColumnExists(): bool

@@ -134,7 +134,8 @@ abstract class Model
         if (!$this->branchScoped) {
             return false;
         }
-        return \Rateb\App\Core\Database::tableHasColumn($this->table, $this->branchColumn);
+
+        return \Rateb\App\Core\Database::liveTableHasColumn($this->table, $this->branchColumn);
     }
 
     /** @return array{0:string,1:array<string,mixed>} */
