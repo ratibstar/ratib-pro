@@ -7,7 +7,9 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Pos\Services\PosCashDrawerService;
 use Rateb\App\Pos\Services\PosFormLookupService;
+use Rateb\App\Pos\Services\PosSessionService;
 use Rateb\App\Pos\Services\PosShiftService;
+use Rateb\App\Pos\Support\PosFkValidator;
 
 final class PosShiftsController extends PosBaseController
 {
@@ -34,7 +36,7 @@ final class PosShiftsController extends PosBaseController
             'csrf' => Csrf::token(),
             'permissionResource' => self::RESOURCE,
             'createEnabled' => $canOpen,
-            'actionsEnabled' => true,
+            'actionsEnabled' => false,
             'viewEnabled' => true,
             'bulkEnabled' => false,
             'exportEnabled' => false,
@@ -62,6 +64,15 @@ final class PosShiftsController extends PosBaseController
         ]);
     }
 
+    /** Legacy crud links — shifts are view/close only. */
+    public function editRedirect(array $params): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView(self::RESOURCE);
+        $id = (int) ($params['id'] ?? 0);
+        $this->redirect(rateb_app_url(self::RESOURCE . '/' . $id));
+    }
+
     public function openForm(): void
     {
         $this->bootstrapPos();
@@ -83,12 +94,30 @@ final class PosShiftsController extends PosBaseController
             $this->redirect(rateb_app_url('pos/shifts/open'));
         }
         try {
+            $companyId = $this->companyId();
+            $terminalId = (int) $this->input('terminal_id', 0);
+            $userId = $this->userId();
             $shiftId = $this->shifts->openShift(
-                $this->companyId(),
-                (int) $this->input('terminal_id', 0),
-                $this->userId(),
+                $companyId,
+                $terminalId,
+                $userId,
                 (float) $this->input('opening_float', 0)
             );
+            try {
+                $terminal = PosFkValidator::assertTerminal($terminalId, $companyId);
+                $branchId = (int) ($terminal['branch_id'] ?? 0);
+                $warehouseId = (int) ($terminal['warehouse_id'] ?? 0);
+                (new PosSessionService())->bindRegisterContext(
+                    $companyId,
+                    $userId,
+                    $terminalId,
+                    $shiftId,
+                    $branchId,
+                    $warehouseId > 0 ? $warehouseId : null
+                );
+            } catch (\Throwable $e) {
+                // Shift opened; register context syncs on next POS visit.
+            }
             SessionManager::flash('success', __('pos_shift_opened'));
             $this->redirect(rateb_app_url('pos/shifts/' . $shiftId));
         } catch (\Throwable $e) {

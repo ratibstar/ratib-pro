@@ -70,9 +70,12 @@ final class PosInventoryBridgeService
             $filters['warehouse_id'] = $warehouseId;
         }
         $rows = (new Inventory())->all($safeLimit, 0, $filters, $term);
+        if ($rows === [] && $warehouseId !== null && $warehouseId > 0) {
+            $rows = (new Inventory())->all($safeLimit, 0, [], $term);
+        }
         $out = [];
         foreach ($rows as $row) {
-            if ($branchId !== null && $branchId > 0 && !$this->itemMatchesBranch($row, $branchId)) {
+            if (!$this->itemMatchesScope($row, $warehouseId, $branchId)) {
                 continue;
             }
             $out[] = $this->enrichProduct($row, $companyId, $warehouseId, $sessionId, null, $branchId);
@@ -1146,8 +1149,11 @@ final class PosInventoryBridgeService
     /** @param array<string, mixed> $row */
     private function itemMatchesScope(array $row, ?int $warehouseId, ?int $branchId): bool
     {
-        if ($warehouseId !== null && $warehouseId > 0 && (int) ($row['warehouse_id'] ?? 0) !== $warehouseId) {
-            return false;
+        if ($warehouseId !== null && $warehouseId > 0) {
+            $rowWh = (int) ($row['warehouse_id'] ?? 0);
+            if ($rowWh > 0 && $rowWh !== $warehouseId) {
+                return false;
+            }
         }
         if ($branchId !== null && $branchId > 0 && !$this->itemMatchesBranch($row, $branchId)) {
             return false;

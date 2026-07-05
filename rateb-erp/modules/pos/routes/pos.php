@@ -40,6 +40,7 @@ $router->get($posApp('shifts'), [PosShiftsController::class, 'index'], $shiftMw)
 $router->get($posApp('shifts/open'), [PosShiftsController::class, 'openForm'], $shiftMw);
 $router->post($posApp('shifts/open'), [PosShiftsController::class, 'openStore'], $shiftMw);
 $router->get($posApp('shifts/{id}'), [PosShiftsController::class, 'show'], $shiftMw);
+$router->get($posApp('shifts/{id}/edit'), [PosShiftsController::class, 'editRedirect'], $shiftMw);
 $router->get($posApp('shifts/{id}/close'), [PosShiftsController::class, 'closeForm'], $shiftMw);
 $router->post($posApp('shifts/{id}/close'), [PosShiftsController::class, 'closeStore'], $shiftMw);
 

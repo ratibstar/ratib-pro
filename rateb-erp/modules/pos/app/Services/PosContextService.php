@@ -102,12 +102,13 @@ final class PosContextService
         if ($companyId > 0 && $terminalId > 0) {
             try {
                 $termRow = PosFkValidator::assertTerminal($terminalId, $companyId);
+                $whId = (int) ($termRow['warehouse_id'] ?? 0);
                 $terminal = [
                     'id' => $terminalId,
                     'code' => (string) ($termRow['code'] ?? ''),
                     'name' => (string) ($termRow['name'] ?? ''),
+                    'warehouse_id' => $whId,
                 ];
-                $whId = (int) ($termRow['warehouse_id'] ?? 0);
                 if ($whId > 0) {
                     $warehouse = $this->warehouse->label($whId);
                 }
