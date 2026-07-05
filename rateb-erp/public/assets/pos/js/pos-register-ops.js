@@ -34,12 +34,24 @@
         return window.RatebPosRegisterState || { lines: [], customer: null, totals: { total: 0 } };
     }
 
+    function notify(msg, isError) {
+        if (window.RatebPosNotify) {
+            window.RatebPosNotify(msg, isError);
+        }
+    }
+
     function money(n) {
         var v = Number(n);
         if (!isFinite(v)) {
             v = 0;
         }
         return v.toFixed(2);
+    }
+
+    function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
     }
 
     function fetchJson(url, opts) {
@@ -114,7 +126,7 @@
         setOpsMode('exchange');
         var st = state();
         if (!st.lines.length) {
-            alert(t('pos_exchange_cart_hint', 'Add new items to the cart for the exchange sale leg.'));
+            notify(t('pos_exchange_cart_hint', 'Add new items to the cart for the exchange sale leg.'), true);
         }
     }
 
@@ -193,20 +205,34 @@
         }
         wrap.hidden = false;
         lines.forEach(function (line) {
-            var tr = document.createElement('tr');
-            tr.setAttribute('data-pos-return-line', String(line.id));
-            tr.setAttribute('data-pos-unit-price', String(line.unit_price || 0));
-            tr.innerHTML =
-                '<td><label><input type="checkbox" data-pos-return-select checked /> ' +
-                (line.description || line.id) + '</label></td>' +
-                '<td>' + money(line.returnable_qty) + '</td>' +
-                '<td><input type="number" class="form-control form-control-sm rateb-pos-input" data-pos-return-qty ' +
-                'min="0.001" max="' + String(line.returnable_qty) + '" step="0.001" value="' + String(line.returnable_qty) + '" /></td>';
-            body.appendChild(tr);
-        });
-        body.querySelectorAll('[data-pos-return-select], [data-pos-return-qty]').forEach(function (el) {
-            el.addEventListener('change', updateNetSummary);
-            el.addEventListener('input', updateNetSummary);
+            var card = document.createElement('article');
+            card.className = 'rateb-pos__return-card';
+            card.setAttribute('data-pos-return-line', String(line.id));
+            card.setAttribute('data-pos-unit-price', String(line.unit_price || 0));
+            card.setAttribute('role', 'listitem');
+            card.innerHTML =
+                '<label class="rateb-pos__return-card-main">' +
+                '<input type="checkbox" class="rateb-pos__return-check" data-pos-return-select checked />' +
+                '<span class="rateb-pos__return-card-name">' + escapeHtml(line.description || String(line.id)) + '</span>' +
+                '<span class="rateb-pos__return-card-meta">' + escapeHtml(t('pos_returnable_qty', 'Returnable')) + ': ' + money(line.returnable_qty) + '</span>' +
+                '</label>' +
+                '<div class="rateb-pos__return-card-qty">' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-return-qty-down aria-label="-">−</button>' +
+                '<input type="number" class="rateb-pos__return-qty-input" data-pos-return-qty min="0.001" max="' + String(line.returnable_qty) + '" step="0.001" value="' + String(line.returnable_qty) + '" inputmode="decimal" />' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-return-qty-up aria-label="+">+</button>' +
+                '</div>';
+            var qtyInput = card.querySelector('[data-pos-return-qty]');
+            card.querySelector('[data-pos-return-qty-down]').addEventListener('click', function () {
+                qtyInput.value = String(Math.max(0, Number(qtyInput.value || 0) - 1));
+                updateNetSummary();
+            });
+            card.querySelector('[data-pos-return-qty-up]').addEventListener('click', function () {
+                qtyInput.value = String(Math.min(Number(line.returnable_qty), Number(qtyInput.value || 0) + 1));
+                updateNetSummary();
+            });
+            card.querySelector('[data-pos-return-select]').addEventListener('change', updateNetSummary);
+            qtyInput.addEventListener('input', updateNetSummary);
+            body.appendChild(card);
         });
         updateNetSummary();
     }
@@ -268,7 +294,7 @@
                                 display.textContent = (order.order_no || '') + ' · ' + money(order.total);
                             }
                             loadReturnableLines(Number(order.id)).catch(function (err) {
-                                alert(err.message);
+                                notify(err.message, true);
                             });
                         });
                         li.appendChild(btn);
@@ -332,12 +358,12 @@
 
     function processReturn() {
         if (!api.processReturn || !canReturns || !selectedOrder) {
-            alert(t('pos_search_order', 'Search order'));
+            notify(t('pos_search_order', 'Search order'), true);
             return;
         }
         var returnLines = collectReturnLines();
         if (!returnLines.length) {
-            alert(t('pos_return_lines', 'Return lines'));
+            notify(t('pos_return_lines', 'Return lines'), true);
             return;
         }
         var method = (panelEl('[data-pos-return-refund-method]') || {}).value || 'cash';
@@ -347,7 +373,7 @@
         body.set('return_lines', JSON.stringify(returnLines));
         body.set('refunds', JSON.stringify([{ method: method, amount: 0 }]));
         fetchJson(api.processReturn, { method: 'POST', body: body }).then(function (data) {
-            alert(t('pos_return_complete', 'Return complete') + ': ' + (data.order_no || ''));
+            notify(t('pos_return_complete', 'Return complete') + ': ' + (data.order_no || ''));
             selectedOrder = null;
             renderReturnLines([]);
             var display = panelEl('[data-pos-selected-order]');
@@ -355,7 +381,7 @@
                 display.textContent = '';
             }
         }).catch(function (err) {
-            alert(err.message);
+            notify(err.message, true);
         });
     }
 
@@ -365,12 +391,12 @@
         }
         var st = state();
         if (!st.lines.length) {
-            alert(t('pos_exchange_cart_hint', 'Add new items to the cart.'));
+            notify(t('pos_exchange_cart_hint', 'Add new items to the cart.'), true);
             return;
         }
         var returnLines = collectReturnLines();
         if (!returnLines.length) {
-            alert(t('pos_return_lines', 'Select return lines'));
+            notify(t('pos_return_lines', 'Select return lines'), true);
             return;
         }
         var cartTotal = Number((st.totals && st.totals.total) || 0);
@@ -404,7 +430,7 @@
             body.set('points_redeem', String(Number(pointsEl.value)));
         }
         fetchJson(api.processExchange, { method: 'POST', body: body }).then(function (data) {
-            alert(t('pos_exchange_complete', 'Exchange complete') + ': ' + (data.order_no || ''));
+            notify(t('pos_exchange_complete', 'Exchange complete') + ': ' + (data.order_no || ''));
             if (window.RatebPosRegisterReset) {
                 window.RatebPosRegisterReset();
             }
@@ -412,7 +438,7 @@
             renderReturnLines([]);
             panelEl('[data-pos-return-panel]').hidden = true;
         }).catch(function (err) {
-            alert(err.message);
+            notify(err.message, true);
         });
     }
 
@@ -422,7 +448,7 @@
         }
         var st = state();
         if (!st.lines.length) {
-            alert(t('pos_cart_empty', 'Cart empty'));
+            notify(t('pos_cart_empty', 'Cart empty'), true);
             return;
         }
         var body = new URLSearchParams();
@@ -434,9 +460,9 @@
                 window.RatebPosRegisterReset();
             }
             loadSuspended();
-            alert(t('pos_suspend_saved', 'Sale suspended'));
+            notify(t('pos_suspend_saved', 'Sale suspended'));
         }).catch(function (err) {
-            alert(err.message);
+            notify(err.message, true);
         });
     }
 
@@ -453,9 +479,9 @@
         body.set('lines', JSON.stringify(st.lines));
         body.set('customer', JSON.stringify(st.customer));
         fetchJson(api.quoteSave, { method: 'POST', body: body }).then(function (data) {
-            alert(t('pos_quote_saved', 'Quote saved') + ': ' + (data.order_no || ''));
+            notify(t('pos_quote_saved', 'Quote saved') + ': ' + (data.order_no || ''));
         }).catch(function (err) {
-            alert(err.message);
+            notify(err.message, true);
         });
     }
 
@@ -469,7 +495,7 @@
             (data.items || []).forEach(function (item) {
                 var btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'btn btn-sm btn-outline-secondary';
+                btn.className = 'rateb-pos__customer-chip';
                 btn.textContent = (item.order_no || '') + ' — ' + Number(item.total || 0).toFixed(2);
                 btn.addEventListener('click', function () {
                     resumeSuspended(item.id);
@@ -489,7 +515,42 @@
         fetchJson(url, { method: 'POST', body: body }).then(function () {
             location.reload();
         }).catch(function (err) {
-            alert(err.message);
+            notify(err.message, true);
+        });
+    }
+
+    function bindRefundPicker() {
+        root.querySelectorAll('[data-pos-refund-pick]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var method = btn.getAttribute('data-pos-refund-pick') || 'cash';
+                var sel = panelEl('[data-pos-return-refund-method]');
+                if (sel) {
+                    sel.value = method;
+                }
+                root.querySelectorAll('[data-pos-refund-pick]').forEach(function (b) {
+                    b.classList.toggle('is-active', b === btn);
+                });
+            });
+        });
+    }
+
+    function bindReturnBarcode() {
+        var input = root.querySelector('[data-pos-return-barcode]');
+        var orderSearch = panelEl('[data-pos-order-search]');
+        if (!input || !orderSearch) {
+            return;
+        }
+        input.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') {
+                return;
+            }
+            e.preventDefault();
+            var code = input.value.trim();
+            if (!code) {
+                return;
+            }
+            orderSearch.value = code;
+            orderSearch.dispatchEvent(new Event('input', { bubbles: true }));
         });
     }
 
@@ -511,6 +572,8 @@
     }
 
     bindOrderSearch();
+    bindRefundPicker();
+    bindReturnBarcode();
     loadSuspended();
 
     window.RatebPosOpsUpdateNet = updateNetSummary;

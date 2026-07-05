@@ -75,17 +75,25 @@
         return v.toFixed(2);
     }
 
-    function showStatus(msg) {
+    function showStatus(msg, isError) {
         if (!els.status || !msg) {
             return;
         }
         els.status.textContent = msg;
         els.status.classList.add('is-visible');
+        if (isError) {
+            els.status.classList.add('is-error');
+        } else {
+            els.status.classList.remove('is-error');
+        }
         clearTimeout(statusTimer);
         statusTimer = setTimeout(function () {
             els.status.classList.remove('is-visible');
+            els.status.classList.remove('is-error');
         }, 2200);
     }
+
+    window.RatebPosNotify = showStatus;
 
     function fetchJson(url, options) {
         options = options || {};
@@ -197,6 +205,10 @@
         if (els.toolbarTotal) {
             els.toolbarTotal.textContent = money(state.totals.total);
         }
+        var discWrap = root.querySelector('[data-pos-totals-discount-wrap]');
+        if (discWrap) {
+            discWrap.hidden = !(Number(state.totals.discount_total || 0) > 0.009);
+        }
         var totalNum = Number(state.totals.total || 0);
         if (lastRenderedTotal !== null && lastRenderedTotal !== totalNum &&
             window.RatebPosMotion && typeof window.RatebPosMotion.pulseTotal === 'function') {
@@ -228,6 +240,15 @@
         return 'fa-box-open';
     }
 
+    function lineThumbHtml(line) {
+        var images = window.RatebPosProductImages || {};
+        var src = images[String(line.product_id || '')] || '';
+        if (src) {
+            return '<img src="' + escapeAttr(src) + '" alt="" class="rateb-pos__line-photo" loading="lazy" decoding="async" />';
+        }
+        return '<span class="rateb-pos__line-photo rateb-pos__line-photo--empty" aria-hidden="true"></span>';
+    }
+
     function renderPremiumCartLine(line) {
         var commercial = root.classList.contains('rateb-pos');
         var v3 = !commercial && root.classList.contains('rateb-pos-v3');
@@ -257,28 +278,35 @@
             : (line.has_batches ? '<span class="' + tagCls + '">FEFO</span>' : '');
 
         if (commercial) {
+            var modLines = '';
+            if (line.notes) {
+                modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.notes) + '</p>';
+            }
+            if (line.requires_serial && !line.serial_no) {
+                modLines += '<button type="button" class="rateb-pos__line-mod rateb-pos__line-mod--action" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>';
+            } else if (line.serial_no) {
+                modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.serial_no) + '</p>';
+            }
+            var disc = Number(line.discount_amount || line.line_discount || 0);
+            if (disc > 0) {
+                modLines += '<p class="rateb-pos__line-mod rateb-pos__line-mod--discount">-' + money(disc) + '</p>';
+            }
             card.innerHTML =
-                '<div class="rateb-pos__line-thumb" aria-hidden="true">' +
-                '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
-                '<div class="rateb-pos__line-main">' +
+                '<div class="rateb-pos__line-media">' + lineThumbHtml(line) + '</div>' +
+                '<div class="rateb-pos__line-body">' +
                 '<p class="rateb-pos__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
-                '<p class="rateb-pos__line-meta">' + escapeHtml(line.item_code || '') + '</p>' +
-                (line.notes ? '<p class="rateb-pos__line-note">' + escapeHtml(line.notes) + '</p>' : '') +
-                '<div class="rateb-pos__line-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
+                modLines +
                 '<p class="rateb-pos__line-price">' + money(line.line_total) + '</p>' +
                 '</div>' +
-                '<div class="rateb-pos__line-actions">' +
+                '<div class="rateb-pos__line-side">' +
                 '<div class="rateb-pos__line-qty">' +
                 '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
                 '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
                 '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
                 '</div>' +
-                '<div class="rateb-pos__line-tools">' +
-                '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
-                '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
-                '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
-                '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
-                '</div></div>';
+                '<button type="button" class="rateb-pos__line-remove" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
+                '</div>';
         } else if (v3) {
             card.innerHTML =
                 '<div class="rateb-pos-v3__item-thumb" aria-hidden="true">' +
@@ -752,6 +780,12 @@
                         els.customerInput.value = '';
                     }
                     scheduleSave();
+                    if (window.RatebPosPushRecentCustomer) {
+                        window.RatebPosPushRecentCustomer(item);
+                    }
+                    if (window.RatebPosRefreshCustomerLoyalty) {
+                        window.RatebPosRefreshCustomerLoyalty();
+                    }
                 });
             } else {
                 var avail = item.availability || {};
@@ -1105,19 +1139,104 @@
                 }
             });
         });
+        var customerSheet = root.querySelector('[data-pos-customer-sheet]');
+        var recentWrap = root.querySelector('[data-pos-customer-recent-wrap]');
+        var recentList = root.querySelector('[data-pos-customer-recent]');
+        var loyaltyHint = root.querySelector('[data-pos-customer-loyalty-hint]');
+        var recentKey = 'rateb_pos_recent_customers_' + (config.companyId || 0);
+
+        function readRecentCustomers() {
+            try {
+                return JSON.parse(localStorage.getItem(recentKey) || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function pushRecentCustomer(c) {
+            if (!c || !c.id) {
+                return;
+            }
+            var list = readRecentCustomers().filter(function (x) { return x.id !== c.id; });
+            list.unshift({ id: c.id, name: c.name || '', phone: c.phone || '' });
+            try {
+                localStorage.setItem(recentKey, JSON.stringify(list.slice(0, 8)));
+            } catch (e2) { /* ignore */ }
+            renderRecentCustomers();
+        }
+
+        function renderRecentCustomers() {
+            if (!recentList || !recentWrap) {
+                return;
+            }
+            var items = readRecentCustomers();
+            recentList.innerHTML = '';
+            if (!items.length) {
+                recentWrap.hidden = true;
+                return;
+            }
+            recentWrap.hidden = false;
+            items.forEach(function (c) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'rateb-pos__customer-chip';
+                btn.textContent = c.name || c.phone || ('#' + c.id);
+                btn.addEventListener('click', function () {
+                    state.customer = { id: c.id, name: c.name, phone: c.phone };
+                    renderCustomer();
+                    scheduleSave();
+                    refreshCustomerLoyalty();
+                });
+                recentList.appendChild(btn);
+            });
+        }
+
+        function refreshCustomerLoyalty() {
+            if (!loyaltyHint || !api.loyaltyBalance) {
+                return;
+            }
+            if (!state.customer || !state.customer.id) {
+                loyaltyHint.hidden = true;
+                return;
+            }
+            fetchJson(api.loyaltyBalance + '?customer_id=' + encodeURIComponent(state.customer.id))
+                .then(function (data) {
+                    var bal = data.balance != null ? data.balance : (data.points != null ? data.points : 0);
+                    loyaltyHint.hidden = false;
+                    loyaltyHint.textContent = t('pos_loyalty_balance', 'Loyalty balance') + ': ' + money(bal);
+                })
+                .catch(function () {
+                    loyaltyHint.hidden = true;
+                });
+        }
+
+        var walkInBtn = root.querySelector('[data-pos-customer-walkin]');
+        if (walkInBtn) {
+            walkInBtn.addEventListener('click', function () {
+                state.customer = null;
+                renderCustomer();
+                scheduleSave();
+                if (loyaltyHint) {
+                    loyaltyHint.hidden = true;
+                }
+            });
+        }
+
+        renderRecentCustomers();
+
         document.querySelectorAll('[data-pos-focus-customer]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var sheet = root.querySelector('[data-pos-customer-sheet]');
-                if (sheet) {
-                    sheet.hidden = false;
+                if (customerSheet) {
+                    customerSheet.hidden = false;
                 }
+                renderRecentCustomers();
+                refreshCustomerLoyalty();
                 if (els.customerInput) {
                     els.customerInput.focus();
                 }
             });
         });
 
-        var customerSheet = root.querySelector('[data-pos-customer-sheet]');
         if (customerSheet) {
             customerSheet.querySelectorAll('[data-pos-customer-sheet-close]').forEach(function (btn) {
                 btn.addEventListener('click', function () {
@@ -1126,6 +1245,9 @@
                 });
             });
         }
+
+        window.RatebPosPushRecentCustomer = pushRecentCustomer;
+        window.RatebPosRefreshCustomerLoyalty = refreshCustomerLoyalty;
     }
 
     bindShortcutsHelp();

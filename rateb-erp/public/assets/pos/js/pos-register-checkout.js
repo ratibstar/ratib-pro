@@ -31,12 +31,27 @@
     var couponMsg = root.querySelector('[data-pos-coupon-msg]');
     var pointsInput = root.querySelector('[data-pos-points-redeem]');
     var loyaltyBalanceEl = root.querySelector('[data-pos-loyalty-balance]');
+    var activeAmountEl = root.querySelector('[data-pos-active-pay-amount]');
+    var payDueEl = root.querySelector('[data-pos-pay-due]');
+    var payHeadTotal = root.querySelector('[data-pos-pay-sheet-total]');
+    var changeWrap = root.querySelector('[data-pos-change-wrap]');
+    var changeDueEl = root.querySelector('[data-pos-change-due]');
+    var keypad = root.querySelector('[data-pos-keypad]');
 
     var rewardsState = { couponCode: '', couponDiscount: 0, pointsRedeem: 0 };
     var checkoutIdempotencyKey = null;
+    var activeMethod = 'cash';
+    var pricingTotal = 0;
+    var keypadBuffer = '';
 
     function t(key, fallback) {
         return i18n[key] || fallback || key;
+    }
+
+    function notify(msg, isError) {
+        if (window.RatebPosNotify) {
+            window.RatebPosNotify(msg, isError);
+        }
     }
 
     function csrfToken() {
@@ -85,6 +100,40 @@
         return v.toFixed(2);
     }
 
+    function setActiveAmount(val) {
+        keypadBuffer = money(val);
+        if (activeAmountEl) {
+            activeAmountEl.value = keypadBuffer;
+        }
+        updateChangeDue();
+    }
+
+    function updateChangeDue() {
+        if (!changeWrap || !changeDueEl) {
+            return;
+        }
+        var paid = splitPaidTotal() + Number(keypadBuffer || 0);
+        var change = paid - pricingTotal;
+        if (activeMethod === 'cash' && change > 0.009) {
+            changeWrap.hidden = false;
+            changeDueEl.textContent = money(change);
+        } else {
+            changeWrap.hidden = true;
+            changeDueEl.textContent = '0.00';
+        }
+    }
+
+    function splitPaidTotal() {
+        var sum = 0;
+        if (!paymentList) {
+            return sum;
+        }
+        paymentList.querySelectorAll('[data-pos-pay-amount]').forEach(function (inp) {
+            sum += Number(inp.value || 0);
+        });
+        return sum;
+    }
+
     function refreshLoyaltyBalance() {
         if (!api.loyaltyBalance || !loyaltyBalanceEl) {
             return Promise.resolve();
@@ -121,16 +170,19 @@
         }));
         return fetchJson(api.pricing, { method: 'POST', body: body }).then(function (data) {
             var p = data.pricing || data.totals || {};
+            pricingTotal = Number(p.total || 0);
+            if (payDueEl) {
+                payDueEl.textContent = money(pricingTotal);
+            }
+            if (payHeadTotal) {
+                payHeadTotal.textContent = money(pricingTotal);
+            }
             if (checkoutSummary) {
                 checkoutSummary.innerHTML =
-                    '<div><dt>' + t('pos_subtotal', 'Subtotal') + '</dt><dd>' + money(p.subtotal) + '</dd></div>' +
-                    '<div><dt>' + t('pos_discount_total', 'Discount') + '</dt><dd>' + money(p.discount_total) + '</dd></div>' +
-                    (rewardsState.couponDiscount > 0
-                        ? '<div><dt>' + t('pos_coupon_code', 'Coupon') + '</dt><dd>-' + money(rewardsState.couponDiscount) + '</dd></div>'
-                        : '') +
-                    '<div><dt>' + t('pos_tax', 'Tax') + '</dt><dd>' + money(p.tax) + '</dd></div>' +
-                    '<div><dt>' + t('pos_total', 'Total') + '</dt><dd><strong>' + money(p.total) + '</strong></dd></div>';
+                    '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_subtotal', 'Subtotal') + '</dt><dd>' + money(p.subtotal) + '</dd></div>' +
+                    '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_tax', 'Tax') + '</dt><dd>' + money(p.tax) + '</dd></div>';
             }
+            updateChangeDue();
             return p;
         });
     }
@@ -140,51 +192,82 @@
             return;
         }
         var row = document.createElement('div');
-        row.className = 'rateb-pos-payment-row';
+        row.className = 'rateb-pos__pay-row rateb-pos-payment-row';
         row.innerHTML =
-            '<div><label class="rateb-pos-label">' + t('pos_payment_method', 'Method') + '</label>' +
-            '<select class="form-control rateb-pos-input" data-pos-pay-method>' +
-            '<option value="cash">' + t('pos_refund_cash', 'Cash') + '</option>' +
-            '<option value="card">' + t('pos_refund_card', 'Card') + '</option>' +
-            '<option value="bank">' + t('pos_refund_bank', 'Bank') + '</option>' +
-            '<option value="wallet">' + t('pos_refund_wallet', 'Wallet') + '</option>' +
-            '<option value="gift_card">' + t('pos_refund_gift_card', 'Gift card') + '</option></select></div>' +
-            '<div><label class="rateb-pos-label">' + t('pos_payment_amount', 'Amount') + '</label>' +
-            '<input type="number" min="0" step="0.01" class="form-control rateb-pos-input" data-pos-pay-amount value="' + money(amount || 0) + '" /></div>' +
-            '<div><label class="rateb-pos-label">' + t('pos_payment_reference', 'Ref') + '</label>' +
-            '<input type="text" class="form-control rateb-pos-input" data-pos-pay-ref value="' + (ref || '') + '" placeholder="' + t('pos_gift_card_code', 'Gift card code') + '" /></div>';
+            '<span class="rateb-pos__pay-row-method">' + escapeHtml(methodLabel(method)) + '</span>' +
+            '<input type="text" inputmode="decimal" class="rateb-pos__pay-row-amt" data-pos-pay-amount value="' + money(amount || 0) + '" readonly />' +
+            '<select class="visually-hidden" data-pos-pay-method tabindex="-1" aria-hidden="true">' +
+            tenderOptions(method) + '</select>' +
+            '<input type="hidden" data-pos-pay-ref value="' + escapeAttr(ref || '') + '" />' +
+            '<button type="button" class="rateb-pos__pay-row-remove" data-pos-pay-row-remove aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">×</button>';
         var sel = row.querySelector('[data-pos-pay-method]');
         if (sel && method) {
             sel.value = method;
         }
+        row.querySelector('[data-pos-pay-row-remove]').addEventListener('click', function () {
+            row.remove();
+            updateChangeDue();
+        });
         paymentList.appendChild(row);
+        updateChangeDue();
+    }
+
+    function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function escapeAttr(s) {
+        return String(s).replace(/"/g, '&quot;');
+    }
+
+    function methodLabel(m) {
+        var map = {
+            cash: t('pos_refund_cash', 'Cash'),
+            card: t('pos_refund_card', 'Card'),
+            bank: t('pos_refund_bank', 'Bank'),
+            wallet: t('pos_refund_wallet', 'Wallet'),
+            gift_card: t('pos_refund_gift_card', 'Gift card')
+        };
+        return map[m] || m;
+    }
+
+    function tenderOptions(selected) {
+        var methods = ['cash', 'card', 'bank', 'wallet', 'gift_card'];
+        return methods.map(function (m) {
+            return '<option value="' + m + '"' + (m === selected ? ' selected' : '') + '>' + escapeHtml(methodLabel(m)) + '</option>';
+        }).join('');
     }
 
     function collectPayments() {
         var out = [];
-        if (!paymentList) {
-            return out;
+        if (paymentList) {
+            paymentList.querySelectorAll('.rateb-pos-payment-row').forEach(function (row) {
+                var method = row.querySelector('[data-pos-pay-method]');
+                var amount = row.querySelector('[data-pos-pay-amount]');
+                var ref = row.querySelector('[data-pos-pay-ref]');
+                var amt = Number(amount && amount.value ? amount.value : 0);
+                if (amt > 0) {
+                    out.push({
+                        method: method ? method.value : 'cash',
+                        amount: amt,
+                        reference_no: ref ? ref.value : ''
+                    });
+                }
+            });
         }
-        paymentList.querySelectorAll('.rateb-pos-payment-row').forEach(function (row) {
-            var method = row.querySelector('[data-pos-pay-method]');
-            var amount = row.querySelector('[data-pos-pay-amount]');
-            var ref = row.querySelector('[data-pos-pay-ref]');
-            var amt = Number(amount && amount.value ? amount.value : 0);
-            if (amt > 0) {
-                out.push({
-                    method: method ? method.value : 'cash',
-                    amount: amt,
-                    reference_no: ref ? ref.value : ''
-                });
-            }
-        });
+        var activeAmt = Number(keypadBuffer || 0);
+        if (activeAmt > 0) {
+            out.push({ method: activeMethod, amount: activeAmt, reference_no: '' });
+        }
         return out;
     }
 
     function openCheckout() {
         var state = getState();
         if (!state.lines.length) {
-            alert(t('pos_cart_empty', 'Cart is empty'));
+            notify(t('pos_cart_empty', 'Cart is empty'), true);
             return;
         }
         if (panel) {
@@ -195,6 +278,11 @@
         }
         rewardsState = { couponCode: '', couponDiscount: 0, pointsRedeem: 0 };
         checkoutIdempotencyKey = newIdempotencyKey();
+        activeMethod = 'cash';
+        keypadBuffer = '';
+        root.querySelectorAll('[data-pos-tender-pick]').forEach(function (btn) {
+            btn.classList.toggle('is-active', btn.getAttribute('data-pos-tender-pick') === 'cash');
+        });
         if (couponInput) {
             couponInput.value = '';
         }
@@ -207,7 +295,7 @@
         }
         refreshLoyaltyBalance();
         refreshPricing().then(function (p) {
-            addPaymentRow('cash', p ? p.total : 0, '');
+            setActiveAmount(p ? p.total : (state.totals && state.totals.total) || 0);
         });
     }
 
@@ -226,16 +314,13 @@
             return;
         }
         var linesHtml = (receipt.lines || []).map(function (line) {
-            return '<tr><td>' + (line.description || '') + '</td><td>' + line.quantity + '</td><td>' + money(line.line_total) + '</td></tr>';
+            return '<div class="rateb-pos__receipt-line"><span>' + escapeHtml(line.description || '') + '</span><span>×' + line.quantity + '</span><span>' + money(line.line_total) + '</span></div>';
         }).join('');
         body.innerHTML =
-            '<p><strong>' + (receipt.order_no || '') + '</strong></p>' +
-            '<table class="rateb-pos-receipt-lines"><thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead><tbody>' +
-            linesHtml + '</tbody></table>' +
-            '<p>' + t('pos_total', 'Total') + ': <strong>' + money(receipt.totals && receipt.totals.total) + '</strong></p>';
-        if (typeof receiptModal.showModal === 'function') {
-            receiptModal.showModal();
-        }
+            '<p class="rateb-pos__receipt-no"><strong>' + escapeHtml(receipt.order_no || '') + '</strong></p>' +
+            '<div class="rateb-pos__receipt-lines">' + linesHtml + '</div>' +
+            '<p class="rateb-pos__receipt-total">' + t('pos_total', 'Total') + ': <strong>' + money(receipt.totals && receipt.totals.total) + '</strong></p>';
+        receiptModal.hidden = false;
     }
 
     function applyCoupon() {
@@ -254,19 +339,13 @@
             .then(function (data) {
                 rewardsState.couponCode = code;
                 rewardsState.couponDiscount = Number(data.discount || 0);
-                if (couponMsg) {
-                    couponMsg.hidden = false;
-                    couponMsg.textContent = t('pos_apply_coupon', 'Apply') + ': -' + money(rewardsState.couponDiscount);
-                }
+                notify(t('pos_apply_coupon', 'Coupon applied') + ': -' + money(rewardsState.couponDiscount));
                 refreshPricing();
             })
             .catch(function (err) {
                 rewardsState.couponCode = '';
                 rewardsState.couponDiscount = 0;
-                if (couponMsg) {
-                    couponMsg.hidden = false;
-                    couponMsg.textContent = err.message || t('pos_coupon_invalid', 'Invalid coupon');
-                }
+                notify(err.message || t('pos_coupon_invalid', 'Invalid coupon'), true);
             });
     }
 
@@ -275,11 +354,16 @@
         if (!api.checkout) {
             return;
         }
+        var payments = collectPayments();
+        if (!payments.length) {
+            notify(t('pos_payment_invalid_amount', 'Invalid payment amount'), true);
+            return;
+        }
         var body = new URLSearchParams();
         body.set('_csrf', csrfToken());
         body.set('lines', JSON.stringify(state.lines));
         body.set('customer', JSON.stringify(state.customer));
-        body.set('payments', JSON.stringify(collectPayments()));
+        body.set('payments', JSON.stringify(payments));
         body.set('invoice_discount', JSON.stringify({
             type: invoiceDiscType ? invoiceDiscType.value : 'amount',
             value: invoiceDiscValue ? Number(invoiceDiscValue.value || 0) : 0
@@ -301,6 +385,7 @@
             .then(function (data) {
                 closeCheckout();
                 checkoutIdempotencyKey = null;
+                notify(t('pos_complete_sale', 'Sale complete'));
                 if (data.receipt) {
                     showReceipt(data.receipt);
                 }
@@ -309,13 +394,86 @@
                 }
             })
             .catch(function (err) {
-                alert(err.message || t('pos_checkout_failed', 'Checkout failed'));
+                notify(err.message || t('pos_checkout_failed', 'Checkout failed'), true);
             })
             .finally(function () {
                 if (completeBtn) {
                     completeBtn.disabled = false;
                 }
             });
+    }
+
+    function bindTenders() {
+        root.querySelectorAll('[data-pos-tender-pick]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                activeMethod = btn.getAttribute('data-pos-tender-pick') || 'cash';
+                root.querySelectorAll('[data-pos-tender-pick]').forEach(function (b) {
+                    b.classList.toggle('is-active', b === btn);
+                });
+                updateChangeDue();
+            });
+        });
+    }
+
+    function bindCashShortcuts() {
+        root.querySelectorAll('[data-pos-cash-amt]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                activeMethod = 'cash';
+                setActiveAmount(Number(btn.getAttribute('data-pos-cash-amt') || 0));
+            });
+        });
+        var exact = root.querySelector('[data-pos-cash-exact]');
+        if (exact) {
+            exact.addEventListener('click', function () {
+                setActiveAmount(pricingTotal);
+            });
+        }
+    }
+
+    function bindKeypad() {
+        if (!keypad) {
+            return;
+        }
+        keypad.addEventListener('click', function (e) {
+            var keyBtn = e.target.closest('[data-pos-key]');
+            if (!keyBtn) {
+                return;
+            }
+            var key = keyBtn.getAttribute('data-pos-key');
+            if (key === 'back') {
+                keypadBuffer = keypadBuffer.slice(0, -1);
+                if (!keypadBuffer || keypadBuffer === '.') {
+                    keypadBuffer = '0';
+                }
+            } else if (key === '.') {
+                if (keypadBuffer.indexOf('.') < 0) {
+                    keypadBuffer += '.';
+                }
+            } else {
+                if (keypadBuffer === '0' || keypadBuffer === '0.00') {
+                    keypadBuffer = key;
+                } else {
+                    keypadBuffer += key;
+                }
+            }
+            if (activeAmountEl) {
+                activeAmountEl.value = keypadBuffer;
+            }
+            updateChangeDue();
+        });
+    }
+
+    function commitSplitPayment() {
+        var amt = Number(keypadBuffer || 0);
+        if (amt <= 0) {
+            return;
+        }
+        addPaymentRow(activeMethod, amt, '');
+        keypadBuffer = '0';
+        if (activeAmountEl) {
+            activeAmountEl.value = '0.00';
+        }
+        updateChangeDue();
     }
 
     if (openBtn) {
@@ -325,9 +483,7 @@
         closeBtn.addEventListener('click', closeCheckout);
     }
     if (addPaymentBtn) {
-        addPaymentBtn.addEventListener('click', function () {
-            addPaymentRow('cash', 0, '');
-        });
+        addPaymentBtn.addEventListener('click', commitSplitPayment);
     }
     if (completeBtn) {
         completeBtn.addEventListener('click', completeCheckout);
@@ -347,9 +503,13 @@
 
     document.querySelectorAll('[data-pos-receipt-close]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            if (receiptModal && typeof receiptModal.close === 'function') {
-                receiptModal.close();
+            if (receiptModal) {
+                receiptModal.hidden = true;
             }
         });
     });
+
+    bindTenders();
+    bindCashShortcuts();
+    bindKeypad();
 })();
