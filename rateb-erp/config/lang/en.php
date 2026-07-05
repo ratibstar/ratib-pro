@@ -623,6 +623,7 @@ return [
     'login_user_inactive' => 'This account is not active. Contact your administrator.',
     'login_no_company' => 'This account is not linked to a company. Edit the user and select a company.',
     'login_company_inactive' => 'This user\'s company is not active.',
+    'company_pending_approval_access' => 'Your company is pending platform approval. ERP access opens after approval in Admin oversight.',
     'login_session_expired' => 'Your session ended. Please sign in again.',
     'unified_login_hint' => 'Sign in once — you will land on the unified dashboard (/admin); menus and modules depend on your permissions.',
     'company_login_admin_blocked' => 'Use the same login page — you will be routed automatically.',

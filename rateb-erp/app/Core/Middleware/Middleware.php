@@ -57,7 +57,43 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             return false;
         }
 
-        return true;
+        return self::enforceActiveCompanyTenant();
+    }
+
+    /** Block company operators until the tenant is active and entitled (incl. after profile edits). */
+    private static function enforceActiveCompanyTenant(): bool
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        if ($companyId < 1) {
+            Response::redirect(
+                function_exists('rateb_list_url')
+                    ? rateb_list_url('login', ['err' => 'session'])
+                    : (function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'))
+            );
+            return false;
+        }
+
+        $planSvc = new \Rateb\App\Services\PlanLimitService();
+        if ($planSvc->companyAccessAllowed($companyId)) {
+            \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+            return true;
+        }
+
+        $company = $planSvc->getCompanyRow($companyId);
+        $status = (string) ($company['status'] ?? '');
+        $err = $status === 'pending' ? 'pending' : 'access';
+        SessionManager::flash(
+            'error',
+            $status === 'pending' ? __('company_pending_approval_access') : __('company_access_denied')
+        );
+        Auth::logout();
+        Response::redirect(
+            function_exists('rateb_list_url')
+                ? rateb_list_url('login', ['err' => $err])
+                : (function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'))
+        );
+
+        return false;
     }
 }
 
@@ -346,7 +382,12 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
 
         $limits = new \Rateb\App\Services\PlanLimitService();
         if (!$limits->companyAccessAllowed($companyId)) {
-            SessionManager::flash('error', __('company_access_denied'));
+            $company = $limits->getCompanyRow($companyId);
+            $status = (string) ($company['status'] ?? '');
+            SessionManager::flash(
+                'error',
+                $status === 'pending' ? __('company_pending_approval_access') : __('company_access_denied')
+            );
             Auth::logout();
             Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
