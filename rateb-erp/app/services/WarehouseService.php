@@ -127,6 +127,9 @@ final class WarehouseService
         if (function_exists('rateb_bootstrap_branch_context')) {
             rateb_bootstrap_branch_context($companyId);
         }
+        if (!BranchContext::accessAll() && BranchContext::allowedIds() === []) {
+            return [];
+        }
         $branchIds = BranchContext::effectiveFilterIds();
         if ($branchIds !== []) {
             $parts = ['branch_id IS NULL'];

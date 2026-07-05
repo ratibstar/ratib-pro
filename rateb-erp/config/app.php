@@ -1824,6 +1824,22 @@ if (!function_exists('rateb_bootstrap_portal_branch_from_request')) {
     }
 }
 
+if (!function_exists('rateb_branch_strict_assignment')) {
+    /**
+     * P7-1: enforce branch assignment for branch-restricted roles (branch_manager, branch_user).
+     * Reads RATEB_BRANCH_STRICT_ASSIGNMENT only here. Default false = legacy behavior.
+     */
+    function rateb_branch_strict_assignment(): bool
+    {
+        $v = getenv('RATEB_BRANCH_STRICT_ASSIGNMENT');
+        if ($v === false || trim((string) $v) === '') {
+            return false;
+        }
+
+        return !in_array(strtolower(trim((string) $v)), ['0', 'false', 'off', 'no'], true);
+    }
+}
+
 if (!function_exists('rateb_bootstrap_branch_context')) {
     function rateb_bootstrap_branch_context(?int $companyId = null): void
     {

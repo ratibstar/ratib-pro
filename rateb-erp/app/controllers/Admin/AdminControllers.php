@@ -1071,6 +1071,14 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'badgeScanQrUrl' => $badgeScanQrUrl,
             'badgeLoginUrl' => $badgeLoginUrl,
             'badgeRegenerateAction' => $userId > 0 ? rateb_url($this->routePrefix . '/' . $userId . '/regenerate-barcode') : '',
+            'branchRestrictedRoleIds' => array_values(array_map(
+                static fn (array $role): int => (int) $role['id'],
+                array_filter(
+                    $authz->allRoles(),
+                    static fn (array $role): bool => (new \Rateb\App\Services\BranchAccessService())
+                        ->slugRequiresBranchAssignment((string) ($role['slug'] ?? ''))
+                )
+            )),
         ];
     }
 
@@ -1092,6 +1100,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', __('user_limit_reached'));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
+        $this->assertBranchAssignmentForRoles($data, $roleIds, rateb_url($this->routePrefix . '/create'));
         $id = $this->model->create($data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
         $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
@@ -1132,6 +1141,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                 }
             }
         }
+        $this->assertBranchAssignmentForRoles($data, $roleIds, rateb_url($this->routePrefix . '/' . $id . '/edit'));
         $this->model->update($id, $data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
         $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
@@ -1205,6 +1215,26 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $data['company_id'] = $company ? $companyId : null;
         }
         return $data;
+    }
+
+    /** @param array<string, mixed> $data @param array<int, int> $roleIds */
+    private function assertBranchAssignmentForRoles(array $data, array $roleIds, string $redirectUrl): void
+    {
+        if (!empty($data['is_super_admin'])) {
+            return;
+        }
+        if (!(new \Rateb\App\Services\BranchAccessService())->roleIdsRequireBranchAssignment($roleIds)) {
+            return;
+        }
+        $branchIds = array_values(array_filter(
+            array_map('intval', (array) $this->input('branch_ids', [])),
+            static fn (int $id): bool => $id > 0
+        ));
+        if ($branchIds !== []) {
+            return;
+        }
+        SessionManager::flash('error', __('branch_assignment_required'));
+        $this->redirect($redirectUrl);
     }
 
     /** @param array<string, mixed> $data @param array<int, int> $roleIds */

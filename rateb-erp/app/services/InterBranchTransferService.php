@@ -772,12 +772,22 @@ final class InterBranchTransferService
         $db = Database::connection();
         $sql = "SELECT DISTINCT u.id
                 FROM rateb_users u
-                INNER JOIN rateb_user_roles ur ON ur.user_id = u.id
-                INNER JOIN rateb_roles r ON r.id = ur.role_id
-                LEFT JOIN rateb_user_branches ub ON ub.user_id = u.id
                 WHERE u.company_id = :cid AND u.status = 'active'
-                  AND r.slug IN ('hq_manager','hq_admin','company-full-access')
-                  AND ub.user_id IS NULL";
+                  AND (
+                    EXISTS (
+                        SELECT 1 FROM rateb_user_roles ur
+                        INNER JOIN rateb_roles r ON r.id = ur.role_id
+                        WHERE ur.user_id = u.id
+                          AND (r.company_id IS NULL OR r.company_id = 0 OR r.company_id = :cid)
+                          AND r.slug IN ('hq_manager', 'hq_admin', 'company-full-access')
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM rateb_permissions p
+                        INNER JOIN rateb_role_permissions rp ON rp.permission_id = p.id
+                        INNER JOIN rateb_user_roles ur ON ur.role_id = rp.role_id
+                        WHERE ur.user_id = u.id AND p.slug = 'branches.access_all'
+                    )
+                  )";
         $stmt = $db->prepare($sql);
         $stmt->execute(['cid' => $companyId]);
         return array_map('intval', array_column($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [], 'id'));

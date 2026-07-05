@@ -381,11 +381,42 @@ final class BranchService
         if ($companyId < 1 || (int) ($branch['company_id'] ?? 0) !== $companyId) {
             return false;
         }
+        $authz = new AuthorizationService();
+        if ($authz->userHasPermission($userId, 'branches.access_all')) {
+            return true;
+        }
+        if ($this->userHasHeadOfficeRole($userId, $companyId)) {
+            return true;
+        }
         $assigned = $this->getUserBranchIds($userId);
+        $accessSvc = new BranchAccessService();
+        if ($assigned === [] && $accessSvc->userHasBranchRestrictedRole($userId, $companyId)) {
+            if (function_exists('rateb_branch_strict_assignment') && rateb_branch_strict_assignment()) {
+                return false;
+            }
+
+            return true;
+        }
         if ($assigned === []) {
             return true;
         }
+
         return in_array($branchId, $assigned, true);
+    }
+
+    private function userHasHeadOfficeRole(int $userId, int $companyId): bool
+    {
+        $row = (new \Rateb\App\Models\User())->queryOne(
+            'SELECT r.slug FROM rateb_user_roles ur
+             INNER JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid
+               AND (r.company_id IS NULL OR r.company_id = 0 OR r.company_id = :cid)
+               AND r.slug IN (\'hq_admin\', \'hq_manager\', \'company-full-access\')
+             LIMIT 1',
+            ['uid' => $userId, 'cid' => $companyId]
+        );
+
+        return $row !== null;
     }
 
     public function ensureMainBranch(int $companyId): int

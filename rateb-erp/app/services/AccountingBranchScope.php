@@ -254,6 +254,9 @@ trait AccountingBranchScope
             return [$sql . ' AND (' . $safe . '.id IS NULL OR ' . $safe . '.branch_id = :' . $key . ')', array_merge($params, [$key => $branchId])];
         }
         $ids = $this->accountingBranch()->effectiveBranchIds();
+        if (!\Rateb\App\Core\BranchContext::accessAll() && \Rateb\App\Core\BranchContext::allowedIds() === []) {
+            return [$sql . ' AND 1=0', $params];
+        }
         if ($ids === []) {
             return [$sql, $params];
         }

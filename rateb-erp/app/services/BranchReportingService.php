@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\BranchContext;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\Branch;
 use Rateb\App\Models\Employee;
@@ -27,6 +28,10 @@ final class BranchReportingService
         TenantContext::setCompanyId($companyId);
         if (function_exists('rateb_bootstrap_branch_context')) {
             rateb_bootstrap_branch_context($companyId);
+        }
+
+        if (!BranchContext::accessAll() && BranchContext::allowedIds() === []) {
+            return [];
         }
 
         $branches = (new Branch())->query(

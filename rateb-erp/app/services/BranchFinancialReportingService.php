@@ -198,6 +198,9 @@ final class BranchFinancialReportingService
         if ($ids !== []) {
             return $ids;
         }
+        if (!\Rateb\App\Core\BranchContext::accessAll() && \Rateb\App\Core\BranchContext::allowedIds() === []) {
+            return [];
+        }
         return array_map('intval', array_column((new Branch())->query(
             'SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st',
             ['cid' => $companyId, 'st' => 'active']

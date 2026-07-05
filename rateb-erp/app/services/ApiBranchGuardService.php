@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\BranchContext;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\TenantContext;
 
@@ -30,6 +31,10 @@ final class ApiBranchGuardService
             return true;
         }
         $allowed = (new BranchIsolationService())->effectiveBranchIds();
+        if (!BranchContext::accessAll() && BranchContext::allowedIds() === []) {
+            Response::json(['success' => false, 'message' => 'Branch access denied'], 403);
+            return false;
+        }
         if ($allowed === []) {
             return true;
         }

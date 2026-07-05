@@ -85,7 +85,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
             </div>
             <div class="mt-4" id="user-branches-section" style="display:none">
                 <h3 class="h6 mb-2"><?php echo __('assign_branches'); ?></h3>
-                <p class="small text-muted mb-2"><?php echo __('branch_access_all_hint'); ?></p>
+                <p class="small text-muted mb-2" id="user-branches-hint"><?php echo __('branch_access_all_hint'); ?></p>
                 <div class="row g-2" id="user-branches-list"></div>
             </div>
             <div class="mt-4">
@@ -116,11 +116,34 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
 (function () {
     var byCompany = <?php echo json_encode($branchesByCompany ?? [], JSON_UNESCAPED_UNICODE); ?>;
     var selected = <?php echo json_encode(array_values($selectedBranches ?? []), JSON_UNESCAPED_UNICODE); ?>;
+    var branchRestrictedRoleIds = <?php echo json_encode(array_values($branchRestrictedRoleIds ?? []), JSON_UNESCAPED_UNICODE); ?>;
+    var hintDefault = <?php echo json_encode(__('branch_access_all_hint'), JSON_UNESCAPED_UNICODE); ?>;
+    var hintRestricted = <?php echo json_encode(__('branch_assignment_form_hint'), JSON_UNESCAPED_UNICODE); ?>;
     var companySelect = document.querySelector('select[name="company_id"]');
     var section = document.getElementById('user-branches-section');
     var list = document.getElementById('user-branches-list');
+    var hint = document.getElementById('user-branches-hint');
     if (!companySelect || !section || !list) {
         return;
+    }
+    function hasBranchRestrictedRoleSelected() {
+        if (!branchRestrictedRoleIds.length) {
+            return false;
+        }
+        var checked = document.querySelectorAll('input[name="role_ids[]"]:checked');
+        for (var i = 0; i < checked.length; i++) {
+            var roleId = parseInt(checked[i].value, 10) || 0;
+            if (branchRestrictedRoleIds.indexOf(roleId) !== -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+    function updateBranchHint() {
+        if (!hint) {
+            return;
+        }
+        hint.textContent = hasBranchRestrictedRoleSelected() ? hintRestricted : hintDefault;
     }
     function renderBranches() {
         var cid = parseInt(companySelect.value, 10) || 0;
@@ -140,11 +163,16 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                 + '</div>';
             list.appendChild(col);
         });
+        updateBranchHint();
     }
     companySelect.addEventListener('change', function () {
         selected = [];
         renderBranches();
     });
+    document.querySelectorAll('input[name="role_ids[]"]').forEach(function (el) {
+        el.addEventListener('change', updateBranchHint);
+    });
     renderBranches();
+    updateBranchHint();
 })();
 </script>

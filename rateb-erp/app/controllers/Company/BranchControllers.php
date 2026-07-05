@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Controllers\Company;
 
+use Rateb\App\Core\BranchContext;
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
 use Rateb\App\Core\SessionManager;
@@ -127,6 +128,12 @@ final class BranchDashboardController extends Controller
     /** @return array<int, array<string, mixed>> */
     private function branchOptions(int $companyId, array $allowedIds): array
     {
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
+        if (!BranchContext::accessAll() && $allowedIds === []) {
+            return [];
+        }
         $all = (new BranchService())->listForCompany($companyId);
         if ($allowedIds === []) {
             return $all;
