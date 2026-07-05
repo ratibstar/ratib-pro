@@ -4,6 +4,8 @@ declare(strict_types=1);
 $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$fontLatin = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
+$fontArabic = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap';
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo \Rateb\App\Pos\Support\PosView::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
@@ -13,25 +15,17 @@ $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_H
     <meta name="color-scheme" content="dark light">
     <meta name="rateb-csrf" content="<?php echo \Rateb\App\Pos\Support\PosView::escape(\Rateb\App\Core\Csrf::token()); ?>">
     <title><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_register')); ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="<?php echo $fontLatin; ?>" rel="stylesheet">
+    <link href="<?php echo $fontArabic; ?>" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/dark.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/light.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_pos_asset('css/pos-module.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_pos_asset('css/pos-register.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_pos_asset('css/pos-touch.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_pos_asset('css/pos-register-checkout.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_pos_asset('css/pos-register-ops.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_pos_asset('css/pos-register-premium.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_pos_asset('css/pos-register-commercial.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_pos_asset('css/pos-register-motion.css'); ?>" rel="stylesheet">
 </head>
-<body class="rateb-pos-shell rateb-pos-premium">
-<a class="rateb-pos-skip-link" href="#rateb-pos-register-main"><?php echo __('pos_skip_to_register'); ?></a>
-<?php \Rateb\App\Pos\Support\PosView::partial('pos-premium-toolbar', ['context' => $context ?? [], 'locale' => $locale]); ?>
-<main class="rateb-pos-main" id="rateb-pos-app">
+<body class="rateb-pos-shell rateb-pos-v2-shell">
+<a class="rateb-pos-v2__skip" href="#rateb-pos-register-main"><?php echo __('pos_skip_to_register'); ?></a>
+<main class="rateb-pos-v2-main" id="rateb-pos-app">
     <?php echo $pageContent; ?>
 </main>
 <script type="application/json" id="rateb-pos-register-config"><?php echo $configJson ?: '{}'; ?></script>

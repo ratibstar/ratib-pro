@@ -36,7 +36,6 @@
         toolbarTotal: document.querySelector('[data-pos-toolbar-total]'),
         payAmount: root.querySelector('[data-pos-pay-amount]'),
         toolbarCustomer: document.querySelector('[data-pos-toolbar-customer]'),
-        customerPopover: root.querySelector('[data-pos-customer-popover]'),
         status: root.querySelector('[data-pos-status]'),
         customerInput: root.querySelector('[data-pos-customer-input]'),
         customerList: root.querySelector('[data-pos-customer-list]'),
@@ -195,6 +194,9 @@
         if (els.payAmount) {
             els.payAmount.textContent = money(state.totals.total);
         }
+        if (els.toolbarTotal) {
+            els.toolbarTotal.textContent = money(state.totals.total);
+        }
         var totalNum = Number(state.totals.total || 0);
         if (lastRenderedTotal !== null && lastRenderedTotal !== totalNum &&
             window.RatebPosMotion && typeof window.RatebPosMotion.pulseTotal === 'function') {
@@ -228,7 +230,7 @@
 
     function renderPremiumCartLine(line) {
         var card = document.createElement('article');
-        card.className = 'rateb-pos-cart-line';
+        card.className = 'rateb-pos-v2__line';
         card.setAttribute('role', 'listitem');
         card.setAttribute('data-line-id', line.id || '');
         card.tabIndex = 0;
@@ -239,34 +241,34 @@
         var discountBadge = '';
         var disc = Number(line.discount_amount || line.line_discount || 0);
         if (disc > 0) {
-            discountBadge = '<span class="rateb-pos-cart-line__discount">-' + money(disc) + '</span>';
+            discountBadge = '<span class="rateb-pos-v2__line-tag">-' + money(disc) + '</span>';
         }
         var serialBadge = line.serial_no
-            ? '<span class="rateb-pos-cart-line__tag">SN: ' + escapeHtml(line.serial_no) + '</span>'
+            ? '<span class="rateb-pos-v2__line-tag">SN: ' + escapeHtml(line.serial_no) + '</span>'
             : (line.requires_serial && !line.serial_no
-                ? '<button type="button" class="rateb-pos-cart-line__tag rateb-pos-cart-line__tag--action" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>'
+                ? '<button type="button" class="rateb-pos-v2__line-tag" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>'
                 : '');
         var batchBadge = (line.batch_preview && line.batch_preview.allocations && line.batch_preview.allocations.length)
-            ? '<span class="rateb-pos-cart-line__tag">FEFO</span>' + batchPreviewHtml(line)
-            : (line.has_batches ? '<span class="rateb-pos-cart-line__tag">FEFO</span>' : '');
+            ? '<span class="rateb-pos-v2__line-tag">FEFO</span>' + batchPreviewHtml(line)
+            : (line.has_batches ? '<span class="rateb-pos-v2__line-tag">FEFO</span>' : '');
 
         card.innerHTML =
-            '<div class="rateb-pos-cart-line__thumb" aria-hidden="true">' +
+            '<div class="rateb-pos-v2__line-thumb" aria-hidden="true">' +
             '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
-            '<div class="rateb-pos-cart-line__main">' +
-            '<p class="rateb-pos-cart-line__name">' + escapeHtml(line.item_name || '') + '</p>' +
-            '<p class="rateb-pos-cart-line__meta">' + escapeHtml(line.item_code || '') + '</p>' +
-            '<div class="rateb-pos-cart-line__tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
-            '<p class="rateb-pos-cart-line__price">' + money(line.line_total) + '</p>' +
+            '<div class="rateb-pos-v2__line-main">' +
+            '<p class="rateb-pos-v2__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
+            '<p class="rateb-pos-v2__line-meta">' + escapeHtml(line.item_code || '') + '</p>' +
+            '<div class="rateb-pos-v2__line-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
+            '<p class="rateb-pos-v2__line-price">' + money(line.line_total) + '</p>' +
             '</div>' +
-            '<div class="rateb-pos-cart-line__actions">' +
-            '<div class="rateb-pos-cart-line__qty">' +
+            '<div class="rateb-pos-v2__line-actions">' +
+            '<div class="rateb-pos-v2__line-qty">' +
             '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
             '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
             '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
             '</div>' +
-            '<div class="rateb-pos-cart-line__tools">' +
-            '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_select_line', 'Select line')) + '" title="' + escapeAttr(t('notes', 'Notes')) + '">' +
+            '<div class="rateb-pos-v2__line-tools">' +
+            '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
             '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
             '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
             '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
@@ -1047,21 +1049,11 @@
         });
         document.querySelectorAll('[data-pos-focus-customer]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                if (els.customerPopover) {
-                    var open = els.customerPopover.hidden;
-                    els.customerPopover.hidden = !open;
-                }
                 if (els.customerInput) {
                     els.customerInput.focus();
+                    els.customerInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             });
-        });
-        document.addEventListener('click', function (e) {
-            if (els.customerPopover && !els.customerPopover.hidden &&
-                !e.target.closest('[data-pos-customer-popover]') &&
-                !e.target.closest('[data-pos-focus-customer]')) {
-                els.customerPopover.hidden = true;
-            }
         });
     }
 
