@@ -2046,6 +2046,22 @@ if (!function_exists('rateb_adopt_ops_company_id')) {
             rateb_clear_ops_company_session();
             return 0;
         }
+        $prevCtx = \Rateb\App\Core\TenantContext::companyId();
+        $prevId = $prevCtx !== null ? (int) $prevCtx : 0;
+        if ($prevId > 0 && $prevId !== $companyId) {
+            (new \Rateb\App\Services\BranchAccessService())->clearActiveBranchFilter();
+            $portalBranch = (int) (\Rateb\App\Core\SessionManager::get('rateb_portal_branch_id', 0) ?? 0);
+            if ($portalBranch > 0) {
+                $row = (new \Rateb\App\Models\Branch())->queryOne(
+                    'SELECT id FROM rateb_branches WHERE id = :id AND company_id = :cid LIMIT 1',
+                    ['id' => $portalBranch, 'cid' => $companyId]
+                );
+                if (!$row) {
+                    \Rateb\App\Core\SessionManager::forget('rateb_portal_branch_id');
+                    \Rateb\App\Core\BranchContext::reset();
+                }
+            }
+        }
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
         return $companyId;
     }

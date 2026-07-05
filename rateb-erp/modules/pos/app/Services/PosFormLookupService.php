@@ -28,7 +28,7 @@ final class PosFormLookupService
             return [];
         }
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
-        $sql = 'SELECT id, code, name FROM rateb_pos_terminals WHERE company_id = :cid';
+        $sql = 'SELECT id, code, name, branch_id FROM rateb_pos_terminals WHERE company_id = :cid';
         $params = ['cid' => $companyId];
         if ($activeOnly) {
             $sql .= ' AND status = :st';
@@ -36,8 +36,21 @@ final class PosFormLookupService
         }
         $sql .= ' ORDER BY name';
         $rows = (new \Rateb\App\Pos\Models\PosTerminal())->query($sql, $params);
+
+        if (function_exists('rateb_bootstrap_branch_context')) {
+            rateb_bootstrap_branch_context($companyId);
+        }
+        $scopeBranchIds = \Rateb\App\Core\BranchContext::effectiveFilterIds();
+        if ($scopeBranchIds === [] && !\Rateb\App\Core\BranchContext::accessAll()) {
+            $scopeBranchIds = \Rateb\App\Core\BranchContext::allowedIds();
+        }
+
         $out = [];
         foreach ($rows as $row) {
+            $termBranch = (int) ($row['branch_id'] ?? 0);
+            if ($scopeBranchIds !== [] && $termBranch > 0 && !in_array($termBranch, $scopeBranchIds, true)) {
+                continue;
+            }
             $label = trim((string) ($row['code'] ?? '') . ' — ' . (string) ($row['name'] ?? ''));
             $out[] = ['value' => (int) $row['id'], 'label' => $label];
         }

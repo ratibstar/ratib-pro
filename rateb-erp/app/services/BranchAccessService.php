@@ -87,7 +87,7 @@ final class BranchAccessService
         }
 
         $portalBranch = (int) SessionManager::get('rateb_portal_branch_id', 0);
-        if ($portalBranch > 0) {
+        if ($portalBranch > 0 && !$this->shouldBypassPortalBranchLock($companyId)) {
             $row = (new Branch())->queryOne(
                 'SELECT id FROM rateb_branches WHERE id = :id AND company_id = :cid AND status = :st LIMIT 1',
                 ['id' => $portalBranch, 'cid' => $companyId, 'st' => 'active']
@@ -186,6 +186,23 @@ final class BranchAccessService
             ['uid' => $userId, 'cid' => $companyId]
         );
         return $row !== null;
+    }
+
+    /** Portal branch deep-links must not override HQ / platform-wide ops access. */
+    private function shouldBypassPortalBranchLock(int $companyId): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        if ($userId < 1 || $companyId < 1) {
+            return false;
+        }
+        if ((new AuthorizationService())->userHasPermission($userId, 'branches.access_all')) {
+            return true;
+        }
+
+        return $this->userHasHeadOfficeRoleForUser($userId, $companyId);
     }
 
     /**
