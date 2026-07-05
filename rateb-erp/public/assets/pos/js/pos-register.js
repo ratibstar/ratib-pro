@@ -229,8 +229,9 @@
     }
 
     function renderPremiumCartLine(line) {
+        var v3 = root.classList.contains('rateb-pos-v3');
         var card = document.createElement('article');
-        card.className = 'rateb-pos-v2__line';
+        card.className = v3 ? 'rateb-pos-v3__item' : 'rateb-pos-v2__line';
         card.setAttribute('role', 'listitem');
         card.setAttribute('data-line-id', line.id || '');
         card.tabIndex = 0;
@@ -240,40 +241,67 @@
 
         var discountBadge = '';
         var disc = Number(line.discount_amount || line.line_discount || 0);
+        var tagCls = v3 ? 'rateb-pos-v3__item-tag' : 'rateb-pos-v2__line-tag';
+        var tagDiscCls = v3 ? 'rateb-pos-v3__item-tag rateb-pos-v3__item-tag--discount' : 'rateb-pos-v2__line-tag rateb-pos-v2__line-tag--discount';
         if (disc > 0) {
-            discountBadge = '<span class="rateb-pos-v2__line-tag rateb-pos-v2__line-tag--discount">-' + money(disc) + '</span>';
+            discountBadge = '<span class="' + tagDiscCls + '">-' + money(disc) + '</span>';
         }
         var serialBadge = line.serial_no
-            ? '<span class="rateb-pos-v2__line-tag">SN: ' + escapeHtml(line.serial_no) + '</span>'
+            ? '<span class="' + tagCls + '">SN: ' + escapeHtml(line.serial_no) + '</span>'
             : (line.requires_serial && !line.serial_no
-                ? '<button type="button" class="rateb-pos-v2__line-tag" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>'
+                ? '<button type="button" class="' + tagCls + '" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>'
                 : '');
         var batchBadge = (line.batch_preview && line.batch_preview.allocations && line.batch_preview.allocations.length)
-            ? '<span class="rateb-pos-v2__line-tag">FEFO</span>' + batchPreviewHtml(line)
-            : (line.has_batches ? '<span class="rateb-pos-v2__line-tag">FEFO</span>' : '');
+            ? '<span class="' + tagCls + '">FEFO</span>' + batchPreviewHtml(line)
+            : (line.has_batches ? '<span class="' + tagCls + '">FEFO</span>' : '');
 
-        card.innerHTML =
-            '<div class="rateb-pos-v2__line-thumb" aria-hidden="true">' +
-            '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
-            '<div class="rateb-pos-v2__line-main">' +
-            '<p class="rateb-pos-v2__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
-            '<p class="rateb-pos-v2__line-meta">' + escapeHtml(line.item_code || '') + '</p>' +
-            (line.notes ? '<p class="rateb-pos-v2__line-note">' + escapeHtml(line.notes) + '</p>' : '') +
-            '<div class="rateb-pos-v2__line-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
-            '<p class="rateb-pos-v2__line-price">' + money(line.line_total) + '</p>' +
-            '</div>' +
-            '<div class="rateb-pos-v2__line-actions">' +
-            '<div class="rateb-pos-v2__line-qty">' +
-            '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
-            '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
-            '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
-            '</div>' +
-            '<div class="rateb-pos-v2__line-tools">' +
-            '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
-            '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
-            '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
-            '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
-            '</div></div>';
+        if (v3) {
+            card.innerHTML =
+                '<div class="rateb-pos-v3__item-thumb" aria-hidden="true">' +
+                '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
+                '<div class="rateb-pos-v3__item-main">' +
+                '<p class="rateb-pos-v3__item-name">' + escapeHtml(line.item_name || '') + '</p>' +
+                '<p class="rateb-pos-v3__item-meta">' + escapeHtml(line.item_code || '') + '</p>' +
+                (line.notes ? '<p class="rateb-pos-v3__item-note">' + escapeHtml(line.notes) + '</p>' : '') +
+                '<div class="rateb-pos-v3__item-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
+                '<p class="rateb-pos-v3__item-price">' + money(line.line_total) + '</p>' +
+                '</div>' +
+                '<div class="rateb-pos-v3__item-actions">' +
+                '<div class="rateb-pos-v3__item-qty">' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
+                '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
+                '</div>' +
+                '<div class="rateb-pos-v3__item-tools">' +
+                '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
+                '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
+                '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
+                '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
+                '</div></div>';
+        } else {
+            card.innerHTML =
+                '<div class="rateb-pos-v2__line-thumb" aria-hidden="true">' +
+                '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
+                '<div class="rateb-pos-v2__line-main">' +
+                '<p class="rateb-pos-v2__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
+                '<p class="rateb-pos-v2__line-meta">' + escapeHtml(line.item_code || '') + '</p>' +
+                (line.notes ? '<p class="rateb-pos-v2__line-note">' + escapeHtml(line.notes) + '</p>' : '') +
+                '<div class="rateb-pos-v2__line-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
+                '<p class="rateb-pos-v2__line-price">' + money(line.line_total) + '</p>' +
+                '</div>' +
+                '<div class="rateb-pos-v2__line-actions">' +
+                '<div class="rateb-pos-v2__line-qty">' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
+                '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
+                '</div>' +
+                '<div class="rateb-pos-v2__line-tools">' +
+                '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
+                '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
+                '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
+                '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
+                '</div></div>';
+        }
 
         card.addEventListener('click', function (e) {
             if (e.target.closest('[data-pos-remove]') || e.target.closest('[data-pos-pick-serial]') ||

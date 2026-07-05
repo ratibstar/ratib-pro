@@ -9,10 +9,10 @@
     function ripple(el, clientX, clientY) {
         if (reduced || !el) { return; }
         var rect = el.getBoundingClientRect();
-        var container = el.querySelector('.rateb-pos-v2__tile-ripple, .rateb-pos-product-card__ripple');
+        var container = el.querySelector('.rateb-pos-v3__card-ripple, .rateb-pos-v2__tile-ripple, .rateb-pos-product-card__ripple');
         if (!container) {
             container = document.createElement('span');
-            container.className = 'rateb-pos-v2__tile-ripple';
+            container.className = el.classList.contains('rateb-pos-v3__card') ? 'rateb-pos-v3__card-ripple' : 'rateb-pos-v2__tile-ripple';
             container.setAttribute('aria-hidden', 'true');
             el.insertBefore(container, el.firstChild);
         }
@@ -44,7 +44,7 @@
         dot.style.top = sy + 'px';
         dot.style.setProperty('--fly-tx', (tx - sx) + 'px');
         dot.style.setProperty('--fly-ty', (ty - sy) + 'px');
-        dot.style.animation = 'pos-fly-to-cart 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+        dot.style.animation = 'pos-fly-to-cart 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards';
         layer.appendChild(dot);
         dot.addEventListener('animationend', function () {
             if (dot.parentNode) { dot.parentNode.removeChild(dot); }
@@ -64,12 +64,20 @@
 
     function pulseTotal() {
         if (reduced) { return; }
-        document.querySelectorAll('.rateb-pos-v2__total-row--grand, .rateb-pos-v2__pay, [data-pos-toolbar-total]').forEach(function (el) {
+        document.querySelectorAll(
+            '.rateb-pos-v3__total-line--grand, .rateb-pos-v3__pay, .rateb-pos-v3__running-total-value, ' +
+            '.rateb-pos-v2__total-row--grand, .rateb-pos-v2__pay, [data-pos-toolbar-total]'
+        ).forEach(function (el) {
             el.classList.remove('is-pulse');
             void el.offsetWidth;
             el.classList.add('is-pulse');
             setTimeout(function () { el.classList.remove('is-pulse'); }, 350);
         });
+        var pay = document.querySelector('[data-pos-checkout-open]');
+        if (pay) {
+            pay.classList.add('is-glow');
+            setTimeout(function () { pay.classList.remove('is-glow'); }, 400);
+        }
     }
 
     function updateCategoryIndicator(scrollEl, btn) {
