@@ -63,7 +63,7 @@ return [
     'pos_customer_clear' => 'إزالة العميل',
     'pos_product_search' => 'بحث المنتجات',
     'pos_barcode_scan' => 'مسح الباركود',
-    'pos_barcode_placeholder' => 'امسح أو اكتب الباركود ثم Enter',
+    'pos_barcode_placeholder' => 'امسح الباركود',
     'pos_search_placeholder' => 'بحث بالاسم أو SKU أو الكود',
     'pos_qty' => 'الكمية',
     'pos_unit_price' => 'سعر الوحدة',

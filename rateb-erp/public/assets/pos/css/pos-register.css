@@ -435,7 +435,8 @@ html, body.rateb-pos-shell {
     position: relative;
     display: flex;
     align-items: center;
-    width: min(240px, 34%);
+    width: min(280px, 38%);
+    min-width: 140px;
     min-height: 52px;
     background: transparent;
     border: none;

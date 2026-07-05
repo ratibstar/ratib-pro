@@ -73,6 +73,7 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
                            autocomplete="off"
                            inputmode="numeric"
                            placeholder="<?php echo __('pos_barcode_placeholder'); ?>"
+                           title="<?php echo __('pos_barcode_scan'); ?>"
                            data-pos-barcode-input
                            aria-label="<?php echo __('pos_barcode_scan'); ?>" />
                 </div>

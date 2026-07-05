@@ -8,6 +8,7 @@ $posBootstrap = [
     'categories' => [],
     'productIndex' => [],
     'productImages' => [],
+    'catalogSeed' => [],
     'shiftTerminals' => [],
     'shiftOpenUrl' => rateb_app_url('pos/shifts/open'),
     'registerUrl' => rateb_app_url('pos/register'),
@@ -43,12 +44,19 @@ try {
 
         $invModel = new \Rateb\App\Models\Inventory();
         $invRows = $invModel->all(500, 0, [], '');
+        $sellPrices = null;
+        try {
+            $sellPrices = new \Rateb\App\Pos\Services\PosSellPriceService();
+        } catch (\Throwable $e) {
+            $sellPrices = null;
+        }
         foreach ($invRows as $row) {
             $id = (int) ($row['id'] ?? 0);
             if ($id < 1) {
                 continue;
             }
-            $posBootstrap['productIndex'][(string) $id] = (int) ($row['category_id'] ?? 0);
+            $categoryId = (int) ($row['category_id'] ?? 0);
+            $posBootstrap['productIndex'][(string) $id] = $categoryId;
             $doc = trim((string) ($row['document_path'] ?? ''));
             if ($doc !== '') {
                 if (preg_match('#^https?://#i', $doc)) {
@@ -59,6 +67,36 @@ try {
                     $posBootstrap['productImages'][(string) $id] = rateb_asset(ltrim($doc, '/'));
                 }
             }
+
+            $onHand = (float) ($row['quantity'] ?? 0);
+            $unitPrice = 0.0;
+            if ($sellPrices !== null) {
+                try {
+                    $branchId = (int) ($row['branch_id'] ?? 0);
+                    $resolved = $sellPrices->resolveLine(
+                        ['product_id' => $id, 'quantity' => 1],
+                        $companyId,
+                        $branchId > 0 ? $branchId : 0,
+                        null
+                    );
+                    $unitPrice = (float) ($resolved['unit_price'] ?? 0);
+                } catch (\Throwable $e) {
+                    $unitPrice = 0.0;
+                }
+            }
+
+            $posBootstrap['catalogSeed'][] = [
+                'id' => $id,
+                'item_code' => (string) ($row['item_code'] ?? ''),
+                'item_name' => (string) ($row['item_name'] ?? ''),
+                'unit_price' => $unitPrice,
+                'category_id' => $categoryId,
+                'availability' => [
+                    'on_hand' => $onHand,
+                    'available' => max(0, $onHand),
+                    'can_add' => $onHand > 0,
+                ],
+            ];
         }
 
         $posBootstrap['shiftTerminals'] = (new \Rateb\App\Pos\Services\PosFormLookupService())
@@ -74,6 +112,7 @@ echo json_encode([
     'categories' => $posBootstrap['categories'],
     'productIndex' => $posBootstrap['productIndex'],
     'productImages' => $posBootstrap['productImages'],
+    'catalogSeed' => $posBootstrap['catalogSeed'],
     'shiftTerminals' => $posBootstrap['shiftTerminals'],
     'shiftOpenUrl' => $posBootstrap['shiftOpenUrl'],
     'registerUrl' => $posBootstrap['registerUrl'],
