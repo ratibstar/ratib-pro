@@ -25,12 +25,16 @@
 
     var els = {
         cartBody: root.querySelector('[data-pos-cart-body]'),
+        cartLines: root.querySelector('[data-pos-cart-lines]'),
         cartEmpty: root.querySelector('[data-pos-cart-empty]'),
         cartTable: root.querySelector('[data-pos-cart-table]'),
         cartCount: root.querySelector('[data-pos-cart-count]'),
         subtotal: root.querySelector('[data-pos-subtotal]'),
+        discountTotal: root.querySelector('[data-pos-discount-total]'),
         tax: root.querySelector('[data-pos-tax]'),
         total: root.querySelector('[data-pos-total]'),
+        toolbarTotal: document.querySelector('[data-pos-toolbar-total]'),
+        toolbarCount: document.querySelector('[data-pos-toolbar-count]'),
         status: root.querySelector('[data-pos-status]'),
         customerInput: root.querySelector('[data-pos-customer-input]'),
         customerList: root.querySelector('[data-pos-customer-list]'),
@@ -176,12 +180,161 @@
         if (els.subtotal) {
             els.subtotal.textContent = money(state.totals.subtotal);
         }
+        if (els.discountTotal) {
+            els.discountTotal.textContent = money(state.totals.discount_total || 0);
+        }
         if (els.tax) {
             els.tax.textContent = money(state.totals.tax);
         }
         if (els.total) {
             els.total.textContent = money(state.totals.total);
         }
+        if (els.toolbarTotal) {
+            els.toolbarTotal.textContent = money(state.totals.total);
+        }
+        if (els.toolbarCount) {
+            var units = state.lines.reduce(function (sum, line) {
+                return sum + Number(line.quantity || 0);
+            }, 0);
+            els.toolbarCount.textContent = units + ' ' + t('pos_cart_lines', 'items');
+        }
+    }
+
+    function cartLineIcon(line) {
+        var name = ((line.item_name || '') + ' ' + (line.item_code || '')).toLowerCase();
+        if (name.indexOf('coffee') >= 0 || name.indexOf('latte') >= 0) {
+            return 'fa-mug-hot';
+        }
+        if (name.indexOf('pizza') >= 0) {
+            return 'fa-pizza-slice';
+        }
+        if (name.indexOf('burger') >= 0) {
+            return 'fa-burger';
+        }
+        if (name.indexOf('cake') >= 0 || name.indexOf('dessert') >= 0) {
+            return 'fa-cookie';
+        }
+        if (name.indexOf('drink') >= 0 || name.indexOf('juice') >= 0) {
+            return 'fa-glass-water';
+        }
+        if (name.indexOf('bread') >= 0) {
+            return 'fa-bread-slice';
+        }
+        return 'fa-box-open';
+    }
+
+    function renderPremiumCartLine(line) {
+        var card = document.createElement('article');
+        card.className = 'rateb-pos-cart-line';
+        card.setAttribute('role', 'listitem');
+        card.setAttribute('data-line-id', line.id || '');
+        card.tabIndex = 0;
+        if (state.selectedLineId === line.id) {
+            card.classList.add('is-selected');
+        }
+
+        var discountBadge = '';
+        var disc = Number(line.discount_amount || line.line_discount || 0);
+        if (disc > 0) {
+            discountBadge = '<span class="rateb-pos-cart-line__discount">-' + money(disc) + '</span>';
+        }
+        var serialBadge = line.serial_no
+            ? '<span class="rateb-pos-cart-line__tag">SN: ' + escapeHtml(line.serial_no) + '</span>'
+            : (line.requires_serial && !line.serial_no
+                ? '<button type="button" class="rateb-pos-cart-line__tag rateb-pos-cart-line__tag--action" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>'
+                : '');
+        var batchBadge = (line.batch_preview && line.batch_preview.allocations && line.batch_preview.allocations.length)
+            ? '<span class="rateb-pos-cart-line__tag">FEFO</span>' + batchPreviewHtml(line)
+            : (line.has_batches ? '<span class="rateb-pos-cart-line__tag">FEFO</span>' : '');
+
+        card.innerHTML =
+            '<div class="rateb-pos-cart-line__thumb" aria-hidden="true">' +
+            '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
+            '<div class="rateb-pos-cart-line__main">' +
+            '<p class="rateb-pos-cart-line__name">' + escapeHtml(line.item_name || '') + '</p>' +
+            '<p class="rateb-pos-cart-line__meta">' + escapeHtml(line.item_code || '') + '</p>' +
+            '<div class="rateb-pos-cart-line__tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
+            '<p class="rateb-pos-cart-line__price">' + money(line.line_total) + '</p>' +
+            '</div>' +
+            '<div class="rateb-pos-cart-line__actions">' +
+            '<div class="rateb-pos-cart-line__qty">' +
+            '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
+            '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
+            '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
+            '</div>' +
+            '<div class="rateb-pos-cart-line__tools">' +
+            '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_select_line', 'Select line')) + '" title="' + escapeAttr(t('notes', 'Notes')) + '">' +
+            '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
+            '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
+            '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
+            '</div></div>';
+
+        card.addEventListener('click', function (e) {
+            if (e.target.closest('[data-pos-remove]') || e.target.closest('[data-pos-pick-serial]') ||
+                e.target.closest('[data-pos-qty-up]') || e.target.closest('[data-pos-qty-down]')) {
+                return;
+            }
+            selectLine(line.id);
+        });
+        card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectLine(line.id);
+            }
+        });
+        return card;
+    }
+
+    function bindPremiumCartControls(container) {
+        if (!container) {
+            return;
+        }
+        container.querySelectorAll('[data-pos-pick-serial]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var pid = Number(btn.getAttribute('data-pos-pick-serial'));
+                var lid = btn.getAttribute('data-line-id');
+                var line = findLine(lid);
+                if (line) {
+                    openSerialPicker({ id: pid, item_name: line.item_name }, Number(line.quantity || 1), lid);
+                }
+            });
+        });
+        container.querySelectorAll('[data-pos-remove]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                removeLine(btn.getAttribute('data-pos-remove'));
+            });
+        });
+        container.querySelectorAll('[data-pos-qty-up]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                adjustLineQty(btn.getAttribute('data-pos-qty-up'), 1);
+            });
+        });
+        container.querySelectorAll('[data-pos-qty-down]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                adjustLineQty(btn.getAttribute('data-pos-qty-down'), -1);
+            });
+        });
+        container.querySelectorAll('[data-pos-line-select]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                selectLine(btn.getAttribute('data-pos-line-select'));
+            });
+        });
+    }
+
+    function renderPremiumCart() {
+        if (!els.cartLines) {
+            return;
+        }
+        els.cartLines.innerHTML = '';
+        state.lines.forEach(function (line) {
+            els.cartLines.appendChild(renderPremiumCartLine(line));
+        });
+        bindPremiumCartControls(els.cartLines);
     }
 
     function renderCustomer() {
@@ -317,42 +470,60 @@
     }
 
     function renderCartWithoutSave() {
-        if (!els.cartBody) {
-            return;
-        }
-        els.cartBody.innerHTML = '';
-        state.lines.forEach(function (line) {
-            var tr = document.createElement('tr');
-            tr.setAttribute('data-line-id', line.id || '');
-            tr.tabIndex = 0;
-            tr.setAttribute('role', 'button');
-            tr.setAttribute('aria-label', (line.item_name || '') + ', ' + t('pos_qty', 'Qty') + ' ' + line.quantity);
-            if (state.selectedLineId === line.id) {
-                tr.classList.add('is-selected');
-            }
-            tr.innerHTML =
-                '<td><span class="rateb-pos-item-code">' + escapeHtml(line.item_code || '') + '</span><br>' +
-                '<strong>' + escapeHtml(line.item_name || '') + '</strong>' +
-                batchPreviewHtml(line) + '</td>' +
-                '<td class="rateb-pos-stock-cell">' + lineStockCell(line) + '</td>' +
-                '<td>' + escapeHtml(String(line.quantity)) + '</td>' +
-                '<td>' + money(line.unit_price) + '</td>' +
-                '<td>' + money(line.line_total) + '</td>' +
-                '<td><button type="button" class="btn btn-sm btn-outline-danger rateb-pos-line-btn" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">×</button></td>';
-            tr.addEventListener('click', function (e) {
-                if (e.target.closest('[data-pos-remove]') || e.target.closest('[data-pos-pick-serial]')) {
-                    return;
+        if (els.cartLines) {
+            renderPremiumCart();
+        } else if (els.cartBody) {
+            els.cartBody.innerHTML = '';
+            state.lines.forEach(function (line) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-line-id', line.id || '');
+                tr.tabIndex = 0;
+                tr.setAttribute('role', 'button');
+                tr.setAttribute('aria-label', (line.item_name || '') + ', ' + t('pos_qty', 'Qty') + ' ' + line.quantity);
+                if (state.selectedLineId === line.id) {
+                    tr.classList.add('is-selected');
                 }
-                selectLine(line.id);
-            });
-            tr.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+                tr.innerHTML =
+                    '<td><span class="rateb-pos-item-code">' + escapeHtml(line.item_code || '') + '</span><br>' +
+                    '<strong>' + escapeHtml(line.item_name || '') + '</strong>' +
+                    batchPreviewHtml(line) + '</td>' +
+                    '<td class="rateb-pos-stock-cell">' + lineStockCell(line) + '</td>' +
+                    '<td>' + escapeHtml(String(line.quantity)) + '</td>' +
+                    '<td>' + money(line.unit_price) + '</td>' +
+                    '<td>' + money(line.line_total) + '</td>' +
+                    '<td><button type="button" class="btn btn-sm btn-outline-danger rateb-pos-line-btn" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">×</button></td>';
+                tr.addEventListener('click', function (e) {
+                    if (e.target.closest('[data-pos-remove]') || e.target.closest('[data-pos-pick-serial]')) {
+                        return;
+                    }
                     selectLine(line.id);
-                }
+                });
+                tr.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectLine(line.id);
+                    }
+                });
+                els.cartBody.appendChild(tr);
             });
-            els.cartBody.appendChild(tr);
-        });
+            els.cartBody.querySelectorAll('[data-pos-pick-serial]').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var pid = Number(btn.getAttribute('data-pos-pick-serial'));
+                    var lid = btn.getAttribute('data-line-id');
+                    var line = findLine(lid);
+                    if (line) {
+                        openSerialPicker({ id: pid, item_name: line.item_name }, Number(line.quantity || 1), lid);
+                    }
+                });
+            });
+            els.cartBody.querySelectorAll('[data-pos-remove]').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    removeLine(btn.getAttribute('data-pos-remove'));
+                });
+            });
+        }
         var count = state.lines.length;
         if (els.cartCount) {
             els.cartCount.textContent = String(count);
@@ -363,23 +534,6 @@
         if (els.cartEmpty) {
             els.cartEmpty.classList.toggle('is-hidden', count > 0);
         }
-        els.cartBody.querySelectorAll('[data-pos-pick-serial]').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                var pid = Number(btn.getAttribute('data-pos-pick-serial'));
-                var lid = btn.getAttribute('data-line-id');
-                var line = findLine(lid);
-                if (line) {
-                    openSerialPicker({ id: pid, item_name: line.item_name }, Number(line.quantity || 1), lid);
-                }
-            });
-        });
-        els.cartBody.querySelectorAll('[data-pos-remove]').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                removeLine(btn.getAttribute('data-pos-remove'));
-            });
-        });
         renderSelectedLineHint();
         refreshPricing();
     }
@@ -424,22 +578,23 @@
             });
     }
 
-    function adjustSelectedQty(delta) {
-        if (!state.selectedLineId || !api.cartUpdate) {
+    function adjustLineQty(lineId, delta) {
+        if (!lineId || !api.cartUpdate) {
             return;
         }
-        var line = findLine(state.selectedLineId);
+        var line = findLine(lineId);
         if (!line) {
             return;
         }
+        state.selectedLineId = lineId;
         var q = Math.max(0, Number(line.quantity || 0) + delta);
         if (q <= 0) {
-            removeLine(state.selectedLineId);
+            removeLine(lineId);
             return;
         }
         var body = new URLSearchParams();
         body.set('_csrf', csrfToken());
-        body.set('line_id', state.selectedLineId);
+        body.set('line_id', lineId);
         body.set('quantity', String(q));
         fetchJson(api.cartUpdate, { method: 'POST', body: body })
             .then(function (data) {
@@ -454,6 +609,13 @@
             .catch(function (err) {
                 showStatus(err.message || t('pos_insufficient_stock', 'Insufficient stock'));
             });
+    }
+
+    function adjustSelectedQty(delta) {
+        if (!state.selectedLineId) {
+            return;
+        }
+        adjustLineQty(state.selectedLineId, delta);
     }
 
     function clearCart() {
@@ -864,6 +1026,28 @@
                 closeList();
             }
         });
+
+        document.querySelectorAll('[data-pos-focus-search]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (els.productSearch) {
+                    els.productSearch.focus();
+                }
+            });
+        });
+        document.querySelectorAll('[data-pos-focus-barcode]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (els.barcodeInput) {
+                    els.barcodeInput.focus();
+                }
+            });
+        });
+        document.querySelectorAll('[data-pos-focus-customer]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (els.customerInput) {
+                    els.customerInput.focus();
+                }
+            });
+        });
     }
 
     bindShortcutsHelp();
@@ -878,6 +1062,11 @@
         renderCustomer();
         renderCartWithoutSave();
         scheduleSave();
+    };
+    window.RatebPosRegister = {
+        addProduct: addProduct,
+        adjustLineQty: adjustLineQty,
+        getState: function () { return state; }
     };
     Object.defineProperty(window, 'RatebPosRegisterState', {
         configurable: true,
