@@ -17,6 +17,8 @@
     var api = config.api || {};
     var i18n = config.i18n || {};
     var grid = root.querySelector('[data-pos-product-grid]');
+    var gridWrap = root.querySelector('.rateb-pos__grid-wrap');
+    var catalogEmpty = root.querySelector('[data-pos-catalog-empty]');
     var virtualWindow = root.querySelector('[data-pos-virtual-window]');
     var virtualSpacer = root.querySelector('[data-pos-virtual-spacer]');
     var categoriesEl = root.querySelector('[data-pos-categories]');
@@ -281,6 +283,7 @@
     }
 
     function showSkeleton() {
+        hideEmpty();
         if (!grid || !virtualWindow) { return; }
         virtualWindow.innerHTML = '';
         if (virtualSpacer) { virtualSpacer.style.height = '480px'; }
@@ -297,12 +300,27 @@
     }
 
     function showEmpty() {
-        if (!virtualWindow) { return; }
-        virtualWindow.innerHTML =
-            '<div class="rateb-pos__empty" role="status">' +
-            '<p class="rateb-pos__empty-title">' + escapeHtml(t('pos_search_no_results', 'No products found')) + '</p>' +
-            '<p class="rateb-pos__empty-hint">' + escapeHtml(t('pos_search_placeholder', 'Try another category')) + '</p></div>';
-        if (virtualSpacer) { virtualSpacer.style.height = '100%'; }
+        if (virtualWindow) {
+            virtualWindow.innerHTML = '';
+        }
+        if (virtualSpacer) {
+            virtualSpacer.style.height = '0';
+        }
+        if (gridWrap) {
+            gridWrap.classList.add('is-empty');
+        }
+        if (catalogEmpty) {
+            catalogEmpty.hidden = false;
+        }
+    }
+
+    function hideEmpty() {
+        if (gridWrap) {
+            gridWrap.classList.remove('is-empty');
+        }
+        if (catalogEmpty) {
+            catalogEmpty.hidden = true;
+        }
     }
 
     function setProducts(items) {
@@ -316,6 +334,7 @@
             showEmpty();
             return;
         }
+        hideEmpty();
         if (grid) { grid.scrollTop = 0; }
         renderVisible();
     }

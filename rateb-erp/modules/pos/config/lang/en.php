@@ -81,6 +81,8 @@ return [
     'pos_open_shift_link' => 'Open shift',
     'pos_product_not_found' => 'Product not found.',
     'pos_search_no_results' => 'No results',
+    'pos_catalog_empty' => 'No products',
+    'pos_catalog_empty_hint' => 'Try another category, search by name, or scan a barcode',
     'pos_checkout_disabled' => 'Checkout (Phase 4)',
     'pos_session_saved' => 'Session saved',
     'pos_theme_dark' => 'Dark',

@@ -81,6 +81,8 @@ return [
     'pos_open_shift_link' => 'فتح وردية',
     'pos_product_not_found' => 'المنتج غير موجود.',
     'pos_search_no_results' => 'لا نتائج',
+    'pos_catalog_empty' => 'لا توجد منتجات',
+    'pos_catalog_empty_hint' => 'جرّب تصنيفاً آخر، أو ابحث بالاسم، أو امسح الباركود',
     'pos_checkout_disabled' => 'الدفع (المرحلة 4)',
     'pos_session_saved' => 'تم حفظ الجلسة',
     'pos_theme_dark' => 'داكن',

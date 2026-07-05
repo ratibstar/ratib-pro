@@ -48,7 +48,7 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
         </aside>
 
         <main class="rateb-pos__catalog" aria-label="<?php echo __('pos_products'); ?>">
-            <div class="rateb-pos__search">
+            <div class="rateb-pos__search-unified">
                 <div class="rateb-pos__search-product" data-pos-product-combobox>
                     <span class="rateb-pos__search-icon" aria-hidden="true">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
@@ -79,6 +79,13 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
             </div>
 
             <div class="rateb-pos__grid-wrap">
+                <div class="rateb-pos__catalog-empty" data-pos-catalog-empty hidden role="status">
+                    <div class="rateb-pos__catalog-empty-icon" aria-hidden="true">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7.7L12 12.5l8.7-4.8M12 22V12.5"/></svg>
+                    </div>
+                    <p class="rateb-pos__catalog-empty-title"><?php echo __('pos_catalog_empty'); ?></p>
+                    <p class="rateb-pos__catalog-empty-hint"><?php echo __('pos_catalog_empty_hint'); ?></p>
+                </div>
                 <div class="rateb-pos__grid" data-pos-product-grid role="list">
                     <div class="rateb-pos__grid-spacer" data-pos-virtual-spacer aria-hidden="true"></div>
                     <div class="rateb-pos__grid-window" data-pos-virtual-window></div>
@@ -92,8 +99,13 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
                 <span class="rateb-pos__ticket-count" data-pos-cart-count>0</span>
             </header>
 
-            <div class="rateb-pos__ticket-lines" data-pos-cart-lines role="list"></div>
-            <p class="rateb-pos__ticket-empty" data-pos-cart-empty><?php echo __('pos_cart_empty'); ?></p>
+            <div class="rateb-pos__ticket-body">
+                <div class="rateb-pos__ticket-lines" data-pos-cart-lines role="list"></div>
+                <div class="rateb-pos__ticket-empty" data-pos-cart-empty>
+                    <svg class="rateb-pos__ticket-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <p><?php echo __('pos_cart_empty'); ?></p>
+                </div>
+            </div>
 
             <footer class="rateb-pos__ticket-foot">
                 <dl class="rateb-pos__totals">

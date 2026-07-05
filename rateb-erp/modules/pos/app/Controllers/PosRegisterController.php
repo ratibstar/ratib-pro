@@ -88,7 +88,7 @@ final class PosRegisterController extends PosBaseController
             'pos_qty', 'pos_unit_price', 'pos_line_total', 'pos_subtotal', 'pos_tax', 'pos_total',
             'pos_clear_cart', 'pos_new_sale', 'pos_remove_line', 'pos_increase_qty', 'pos_decrease_qty',
             'pos_select_line', 'pos_no_shift_warning', 'pos_open_shift_link', 'pos_product_not_found',
-            'pos_search_no_results', 'pos_checkout_disabled', 'pos_session_saved', 'pos_theme_dark',
+            'pos_search_no_results', 'pos_catalog_empty', 'pos_catalog_empty_hint', 'pos_cat_all', 'pos_checkout_disabled', 'pos_session_saved', 'pos_theme_dark',
             'pos_theme_light', 'pos_keyboard_shortcuts', 'pos_shortcut_search', 'pos_shortcut_barcode',
             'pos_shortcut_customer', 'pos_shortcut_clear', 'pos_shortcut_qty_up', 'pos_shortcut_qty_down',
             'pos_item_code', 'pos_item_name', 'pos_actions', 'pos_register_ready', 'pos_register_loading',
