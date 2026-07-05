@@ -99,7 +99,7 @@ final class CustomerPortalController extends Controller
     private function renderPortal(string $view, string $title, string $section, array $extra = []): void
     {
         $user = Auth::user();
-        if (is_array($user) && Auth::shouldUseErpDashboard($user)) {
+        if (is_array($user) && Auth::shouldLandOnErpShell($user)) {
             Response::redirect(rateb_url('admin'));
 
             return;

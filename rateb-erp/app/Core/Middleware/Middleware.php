@@ -252,7 +252,7 @@ final class ErpOperatorPortalRedirectMiddleware implements MiddlewareInterface
             return true;
         }
         $user = Auth::user();
-        if (is_array($user) && Auth::shouldUseErpDashboard($user)) {
+        if (is_array($user) && Auth::shouldLandOnErpShell($user)) {
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
 
             return false;

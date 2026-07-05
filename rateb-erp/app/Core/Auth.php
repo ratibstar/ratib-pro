@@ -150,7 +150,8 @@ final class Auth
     }
 
     /**
-     * Post-login redirect: ERP operators never land on marketing customer portal.
+     * Post-login redirect: unified /login opens ERP shell (/admin) for company tenants.
+     * Marketing customer portal is opt-in navigation only, not the default landing page.
      *
      * @param array<string, mixed> $user
      */
@@ -158,16 +159,26 @@ final class Auth
     {
         $erpHome = function_exists('rateb_url') ? rateb_url('admin') : '/admin';
 
-        if (self::shouldUseErpDashboard($user)) {
-            return $erpHome;
-        }
-
         $next = trim($next);
-        if ($next !== '') {
+        if ($next !== '' && !(self::shouldLandOnErpShell($user) && self::urlIsCustomerPortal($next))) {
             return $next;
         }
 
+        if (self::shouldLandOnErpShell($user)) {
+            return $erpHome;
+        }
+
         return function_exists('rateb_url') ? rateb_url('site/portal') : '/site/portal';
+    }
+
+    /** @param array<string, mixed> $user */
+    public static function shouldLandOnErpShell(array $user): bool
+    {
+        if (self::shouldUseErpDashboard($user)) {
+            return true;
+        }
+
+        return (int) ($user['company_id'] ?? 0) > 0;
     }
 
     public static function urlIsCustomerPortal(string $url): bool
