@@ -105,10 +105,6 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
 
         <main class="rateb-pos__catalog" aria-label="<?php echo __('pos_products'); ?>">
             <div class="rateb-pos__catalog-top">
-                <div class="rateb-pos__cat-bar" data-pos-cat-bar>
-                    <nav class="rateb-pos__cat-nav" data-pos-categories role="tablist"></nav>
-                    <span class="rateb-pos__cat-indicator" data-pos-cat-indicator hidden aria-hidden="true"></span>
-                </div>
                 <div class="rateb-pos__search-unified">
                     <div class="rateb-pos__search-product" data-pos-product-combobox>
                         <span class="rateb-pos__search-icon" aria-hidden="true">
@@ -138,6 +134,10 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
                                data-pos-barcode-input
                                aria-label="<?php echo __('pos_barcode_scan'); ?>" />
                     </div>
+                </div>
+                <div class="rateb-pos__cat-bar" data-pos-cat-bar>
+                    <nav class="rateb-pos__cat-nav" data-pos-categories role="tablist"></nav>
+                    <span class="rateb-pos__cat-indicator" data-pos-cat-indicator hidden aria-hidden="true"></span>
                 </div>
             </div>
 

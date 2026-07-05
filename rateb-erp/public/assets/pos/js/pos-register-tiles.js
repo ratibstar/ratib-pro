@@ -27,10 +27,10 @@
     var modesToggle = root.querySelector('[data-pos-modes-toggle]');
     var modesMenu = root.querySelector('[data-pos-modes-menu]');
 
-    var TILE_MIN = 148;
+    var TILE_MIN = 158;
     var TILE_GAP = 10;
-    var TILE_PAD = 10;
-    var TILE_H = 132;
+    var TILE_PAD = 12;
+    var TILE_H = 148;
     var ROW_BUFFER = 2;
 
     var CAT_PALETTE = [
@@ -466,7 +466,10 @@
             btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
             btn.setAttribute('data-cat-id', cat.id);
             btn.style.setProperty('--cat-color', categoryChipColor(cat.id));
-            btn.innerHTML = '<span class="rateb-pos__cat-label">' + escapeHtml(cat.name) + '</span>';
+            var iconLetter = (cat.name || '?').trim().charAt(0) || '?';
+            btn.innerHTML =
+                '<span class="rateb-pos__cat-icon">' + escapeHtml(iconLetter) + '</span>' +
+                '<span class="rateb-pos__cat-label">' + escapeHtml(cat.name) + '</span>';
             btn.addEventListener('click', function () {
                 setActiveCategory(btn, cat);
                 loadCategory(cat);

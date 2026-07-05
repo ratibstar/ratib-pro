@@ -17,7 +17,11 @@
         root.setAttribute('data-bs-theme', resolveBsTheme(chosen));
         localStorage.setItem(STORAGE_KEY, chosen);
         document.querySelectorAll('[data-theme-choice]').forEach(function (btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-theme-choice') === chosen);
+            var pick = btn.getAttribute('data-theme-choice');
+            var on = pick === chosen;
+            btn.classList.toggle('active', on);
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
     }
 

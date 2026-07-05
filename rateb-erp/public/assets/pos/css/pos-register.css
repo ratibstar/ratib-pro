@@ -6,11 +6,26 @@
     --pos-primary: #2563eb;
     --pos-primary-hover: #1d4ed8;
     --pos-primary-soft: rgba(37, 99, 235, 0.14);
-    --pos-accent: #16a34a;
-    --pos-accent-hover: #15803d;
-    --pos-accent-pressed: #166534;
-    --pos-accent-soft: rgba(22, 163, 74, 0.16);
-    --pos-bg: #eef2f7;
+    --pos-accent: #22c55e;
+    --pos-accent-hover: #16a34a;
+    --pos-accent-pressed: #15803d;
+    --pos-accent-soft: rgba(34, 197, 94, 0.18);
+    --pos-danger: #ef4444;
+    --pos-warn: #eab308;
+    --pos-info: #0ea5e9;
+    --pos-radius: 10px;
+    --pos-radius-sm: 6px;
+    --pos-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --pos-shadow-tile: 0 2px 6px rgba(15, 23, 42, 0.14);
+    --pos-font: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    --pos-header-h: 52px;
+    --pos-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --pos-dur: 160ms;
+}
+
+/* Light — commercial POS (reference) */
+[data-theme="light"] {
+    --pos-bg: #e8edf4;
     --pos-surface: #ffffff;
     --pos-surface-2: #f8fafc;
     --pos-surface-3: #e2e8f0;
@@ -21,31 +36,25 @@
     --pos-ticket-bg: #ffffff;
     --pos-ticket-text: #0f172a;
     --pos-ticket-muted: #64748b;
-    --pos-catalog-bg: #f1f5f9;
-    --pos-danger: #dc2626;
-    --pos-warn: #eab308;
-    --pos-info: #0ea5e9;
-    --pos-radius: 12px;
-    --pos-radius-sm: 8px;
-    --pos-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.08);
-    --pos-shadow-tile: 0 2px 8px rgba(15, 23, 42, 0.12);
-    --pos-font: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
-    --pos-header-h: 56px;
-    --pos-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --pos-dur: 160ms;
+    --pos-catalog-bg: #eef2f7;
 }
 
-[data-theme="light"] {
-    --pos-bg: #f8f8f9;
-    --pos-surface: #ffffff;
-    --pos-surface-2: #f4f4f5;
-    --pos-surface-3: #e4e4e7;
-    --pos-border: rgba(0, 0, 0, 0.08);
-    --pos-text: #18181b;
-    --pos-text-muted: #52525b;
-    --pos-text-faint: #71717a;
-    --pos-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
-    --pos-shadow-tile: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
+/* Dark */
+[data-theme="dark"] {
+    --pos-bg: #0c1220;
+    --pos-surface: #151d2e;
+    --pos-surface-2: #1a2640;
+    --pos-surface-3: #243352;
+    --pos-border: rgba(148, 163, 184, 0.14);
+    --pos-text: #f1f5f9;
+    --pos-text-muted: #94a3b8;
+    --pos-text-faint: #64748b;
+    --pos-ticket-bg: #151d2e;
+    --pos-ticket-text: #f1f5f9;
+    --pos-ticket-muted: #94a3b8;
+    --pos-catalog-bg: #0c1220;
+    --pos-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+    --pos-shadow-tile: 0 2px 10px rgba(0, 0, 0, 0.32);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -183,6 +192,7 @@ html, body.rateb-pos-shell {
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 2px 12px rgba(15, 23, 42, 0.2);
     z-index: 10;
+    direction: ltr;
 }
 
 .rateb-pos__header-start,
@@ -309,28 +319,69 @@ html, body.rateb-pos-shell {
     color: var(--pos-header-bg);
 }
 
+.rateb-pos__theme {
+    display: inline-flex;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.rateb-pos__theme-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: rgba(248, 250, 252, 0.85);
+    cursor: pointer;
+    transition: background var(--pos-dur) var(--pos-ease);
+}
+
+.rateb-pos__theme-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.rateb-pos__theme-btn.is-active,
+.rateb-pos__theme-btn.active {
+    background: #fff;
+    color: var(--pos-header-bg);
+}
+
 .rateb-pos__modes-trigger {
     display: none;
 }
 
-/* ── Stage layout (cart | catalog) ── */
+/* ── Stage: cart LEFT, catalog RIGHT (fixed like reference) ── */
 .rateb-pos__stage {
     display: grid;
-    grid-template-columns: minmax(340px, 42%) minmax(0, 1fr);
+    grid-template-columns: minmax(360px, 40%) minmax(0, 1fr);
     min-height: 0;
     overflow: hidden;
     background: var(--pos-bg);
+    direction: ltr;
 }
 
-.rateb-pos__ticket { grid-column: 1; grid-row: 1; }
-.rateb-pos__catalog { grid-column: 2; grid-row: 1; }
-
-[dir="rtl"] .rateb-pos__stage {
-    grid-template-columns: minmax(0, 1fr) minmax(340px, 42%);
+.rateb-pos__ticket {
+    grid-column: 1;
+    grid-row: 1;
+    direction: inherit;
 }
 
-[dir="rtl"] .rateb-pos__ticket { grid-column: 2; }
-[dir="rtl"] .rateb-pos__catalog { grid-column: 1; }
+.rateb-pos__catalog {
+    grid-column: 2;
+    grid-row: 1;
+    direction: inherit;
+}
+
+html[dir="rtl"] .rateb-pos__ticket,
+html[dir="rtl"] .rateb-pos__catalog {
+    direction: rtl;
+}
 
 /* ── Horizontal category bar ── */
 .rateb-pos__catalog-top {
@@ -372,21 +423,39 @@ html, body.rateb-pos-shell {
 
 .rateb-pos__cat-btn {
     flex: 0 0 auto;
-    min-width: 88px;
-    min-height: 72px;
-    padding: 10px 14px;
+    min-width: 96px;
+    min-height: 88px;
+    padding: 10px 12px 8px;
     border: none;
-    border-radius: var(--pos-radius-sm);
+    border-radius: var(--pos-radius);
     background: var(--cat-color, var(--pos-primary));
     color: #fff;
     font: inherit;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     line-height: 1.2;
     text-align: center;
     cursor: pointer;
     box-shadow: var(--pos-shadow-tile);
     transition: transform var(--pos-dur) var(--pos-ease), filter var(--pos-dur) var(--pos-ease), box-shadow var(--pos-dur) var(--pos-ease);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.rateb-pos__cat-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
 }
 
 .rateb-pos__cat-btn:hover {
@@ -414,6 +483,7 @@ html, body.rateb-pos-shell {
     min-height: 0;
     min-width: 0;
     background: var(--pos-catalog-bg);
+    border-left: 1px solid var(--pos-border);
 }
 
 .rateb-pos__search-unified {
@@ -648,13 +718,21 @@ html, body.rateb-pos-shell {
     color: #fff;
 }
 
+.rateb-pos__tile-surface.has-photo {
+    background: #fff;
+}
+
+.rateb-pos__tile-surface.has-photo img.is-loaded {
+    opacity: 1;
+}
+
 .rateb-pos__tile-surface.has-photo .rateb-pos__tile-label {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 18px 8px 8px;
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 100%);
+    padding: 20px 8px 8px;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
 }
 
 .rateb-pos__tile-name {
@@ -906,14 +984,7 @@ html, body.rateb-pos-shell {
     min-height: 0;
     background: var(--pos-ticket-bg);
     color: var(--pos-ticket-text);
-    border-inline-end: 1px solid var(--pos-border);
-    box-shadow: 2px 0 16px rgba(15, 23, 42, 0.06);
-}
-
-[dir="rtl"] .rateb-pos__ticket {
-    border-inline-end: none;
-    border-inline-start: 1px solid var(--pos-border);
-    box-shadow: -2px 0 16px rgba(15, 23, 42, 0.06);
+    box-shadow: 2px 0 12px rgba(15, 23, 42, 0.05);
 }
 
 .rateb-pos__order-bar {
@@ -1739,10 +1810,6 @@ html, body.rateb-pos-shell {
         grid-template-columns: minmax(300px, 44%) minmax(0, 1fr);
     }
 
-    [dir="rtl"] .rateb-pos__stage {
-        grid-template-columns: minmax(0, 1fr) minmax(300px, 44%);
-    }
-
     .rateb-pos__search-barcode {
         width: min(180px, 30%);
     }
@@ -1756,13 +1823,6 @@ html, body.rateb-pos-shell {
 
     .rateb-pos__ticket { grid-column: 1; grid-row: 1; }
     .rateb-pos__catalog { grid-column: 1; grid-row: 2; }
-
-    [dir="rtl"] .rateb-pos__stage {
-        grid-template-columns: 1fr;
-    }
-
-    [dir="rtl"] .rateb-pos__ticket { grid-column: 1; grid-row: 1; }
-    [dir="rtl"] .rateb-pos__catalog { grid-column: 1; grid-row: 2; }
 
     .rateb-pos__search-unified {
         flex-direction: column;
