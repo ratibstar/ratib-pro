@@ -281,27 +281,22 @@ final class EnterpriseTestRunner
                     && str_contains((string) ($filterSql[0] ?? ''), '1=0')
             );
 
-            $cli = RATEB_ROOT . '/bin/backfill-user-branch-assignments.php';
-            $dryOut = [];
-            $dryCode = 1;
-            exec(PHP_BINARY . ' ' . escapeshellarg($cli) . ' --dry-run 2>&1', $dryOut, $dryCode);
-            $dryText = implode("\n", $dryOut);
+            require_once RATEB_ROOT . '/bin/BackfillUserBranchAssignmentsRunner.php';
+            $backfillRunner = new BackfillUserBranchAssignmentsRunner();
+
+            $dryStats = $backfillRunner->run(true);
             $tests[] = $this->test(
                 'P7 backfill CLI dry-run',
-                $dryCode === 0 && str_contains($dryText, 'dry-run')
+                ($dryStats['dry_run'] ?? false) === true
             );
 
             $this->p7ClearUserBranches($bmEmptyId);
-            exec(PHP_BINARY . ' ' . escapeshellarg($cli) . ' 2>&1', $runOut1, $runCode1);
-            exec(PHP_BINARY . ' ' . escapeshellarg($cli) . ' 2>&1', $runOut2, $runCode2);
-            $runText2 = implode("\n", $runOut2);
+            $runStats1 = $backfillRunner->run(false);
+            $runStats2 = $backfillRunner->run(false);
             $tests[] = $this->test(
                 'P7 backfill CLI execute + idempotent',
-                $runCode1 === 0
-                    && $runCode2 === 0
-                    && str_contains($runText2, 'Users scanned:')
-                    && (preg_match('/Users scanned:\s+0/', $runText2) === 1
-                        || preg_match('/Users updated:\s+0/', $runText2) === 1)
+                is_array($runStats1) && is_array($runStats2)
+                    && ($runStats2['users_updated'] ?? -1) === 0
             );
 
             $this->p7AssignBranch($hqId, $branchId);

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /** @var array<string, mixed>|null $item */
 /** @var array<int, array<string, mixed>> $roles */
 /** @var array<int, array<string, mixed>> $companies */
