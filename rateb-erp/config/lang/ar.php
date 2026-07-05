@@ -503,6 +503,7 @@ return [
     'companies_approvals_oversight' => 'اعتماد الشركات',
     'approval_category_companies' => 'اعتماد الشركات',
     'company_status_oversight_hint' => 'تفعيل الشركة أو اعتماد التعديلات يتم من مراقبة الإدارة → اعتماد الشركات.',
+    'company_plan_modules_sync_hint' => 'عند تغيير الباقة تُحدَّث الوحدات المفعّلة والحدود تلقائياً. يمكنك تعديل الوحدات يدوياً بعد ذلك.',
     'company_saved_pending_oversight' => 'تم حفظ الشركة — بانتظار الاعتماد في مراقبة الإدارة.',
     'company_edit_pending_oversight' => 'تم حفظ التعديلات — بانتظار اعتماد الإدارة.',
     'company_approve_in_oversight' => 'اعتماد الشركات (إضافة/تعديل) يتم من مراقبة الإدارة → اعتماد الشركات.',

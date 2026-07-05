@@ -503,6 +503,7 @@ return [
     'companies_approvals_oversight' => 'Company approvals',
     'approval_category_companies' => 'Company approvals',
     'company_status_oversight_hint' => 'Activation and profile changes are approved under Admin oversight → Company approvals.',
+    'company_plan_modules_sync_hint' => 'Changing the plan updates enabled modules and limits automatically. Adjust modules manually if needed.',
     'company_saved_pending_oversight' => 'Company saved — pending approval in admin oversight.',
     'company_edit_pending_oversight' => 'Changes saved — pending management approval.',
     'company_approve_in_oversight' => 'Company add/edit approval is handled under Admin oversight → Company approvals.',

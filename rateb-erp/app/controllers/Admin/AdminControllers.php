@@ -266,13 +266,33 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             $selectedModules = (new \Rateb\App\Services\PlanLimitService())->getLimits((int) $item['id'])['modules'];
         }
 
+        $plans = (new \Rateb\App\Models\Plan())->all(100, 0);
+        $planPresets = [];
+        foreach ($plans as $plan) {
+            $planId = (int) ($plan['id'] ?? 0);
+            if ($planId < 1) {
+                continue;
+            }
+            $decoded = json_decode((string) ($plan['modules'] ?? '[]'), true);
+            $planPresets[$planId] = [
+                'modules' => is_array($decoded) && $decoded !== []
+                    ? array_values(array_filter(array_map('strval', $decoded)))
+                    : \Rateb\App\Services\PlanLimitService::defaultModules(),
+                'max_users' => max(1, (int) ($plan['max_users'] ?? 10)),
+                'max_storage_mb' => max(128, (int) ($plan['max_storage_mb'] ?? 1024)),
+                'max_branches' => max(1, (int) ($plan['max_branches'] ?? 10)),
+                'name' => \Rateb\App\Models\Plan::marketingName($plan),
+            ];
+        }
+
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('companies'),
             'item' => $item,
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-            'plans' => (new \Rateb\App\Models\Plan())->all(100, 0),
+            'plans' => $plans,
+            'planPresets' => $planPresets,
             'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
             'selectedModules' => $selectedModules,
             'limits' => $item ? (new \Rateb\App\Services\PlanLimitService())->getLimits((int) $item['id']) : null,
@@ -286,23 +306,24 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         if (is_array($modules)) {
             $data['modules'] = json_encode(array_values(array_filter(array_map('strval', $modules))), JSON_UNESCAPED_UNICODE);
         }
+        $syncFromPlan = $this->input('sync_from_plan') === '1';
         if (!empty($data['plan_id']) && (int) $data['plan_id'] > 0) {
             $plan = (new \Rateb\App\Models\Plan())->find((int) $data['plan_id']);
             if ($plan) {
-                if (empty($data['user_limit'])) {
-                    $data['user_limit'] = (int) ($plan['max_users'] ?? 10);
-                }
-                if (empty($data['branch_limit'])) {
-                    $data['branch_limit'] = (int) ($plan['max_branches'] ?? 10);
-                }
-                if (empty($data['storage_limit_mb'])) {
-                    $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
-                }
-                if (empty($data['modules']) || $data['modules'] === '[]') {
+                if ($syncFromPlan || empty($data['modules']) || $data['modules'] === '[]') {
                     $data['modules'] = $plan['modules'] ?? json_encode(
                         \Rateb\App\Services\PlanLimitService::defaultModules(),
                         JSON_UNESCAPED_UNICODE
                     );
+                }
+                if ($syncFromPlan || empty($data['user_limit']) || (int) $data['user_limit'] < 1) {
+                    $data['user_limit'] = (int) ($plan['max_users'] ?? 10);
+                }
+                if ($syncFromPlan || empty($data['branch_limit']) || (int) $data['branch_limit'] < 1) {
+                    $data['branch_limit'] = (int) ($plan['max_branches'] ?? 10);
+                }
+                if ($syncFromPlan || empty($data['storage_limit_mb']) || (int) $data['storage_limit_mb'] < 1) {
+                    $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
                 }
             }
         }

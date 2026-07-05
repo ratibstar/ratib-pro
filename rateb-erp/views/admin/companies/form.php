@@ -1,17 +1,27 @@
 ﻿<?php
 /** @var array<string, mixed>|null $item */
 /** @var array<int, array<string, mixed>> $plans */
+/** @var array<int, array<string, mixed>> $planPresets */
 /** @var array<string, string> $moduleCatalog */
 /** @var array<int, string> $selectedModules */
 /** @var array<string, mixed>|null $limits */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
+$userLimitVal = (int) ($item['user_limit'] ?? 0);
+if ($userLimitVal < 1) {
+    $userLimitVal = (int) ($limits['user_limit'] ?? 10);
+}
+$storageLimitVal = (int) ($item['storage_limit_mb'] ?? 0);
+if ($storageLimitVal < 1) {
+    $storageLimitVal = (int) ($limits['storage_limit_mb'] ?? 1024);
+}
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo $action; ?>">
+        <form method="post" action="<?php echo $action; ?>" id="rateb-company-form">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <input type="hidden" name="sync_from_plan" id="rateb-sync-from-plan" value="0">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('name'); ?></label>
@@ -54,18 +64,19 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                         </option>
                         <?php } ?>
                     </select>
+                    <p class="form-text mb-0"><?php echo __('company_plan_modules_sync_hint'); ?></p>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('user_limit'); ?></label>
-                    <input class="form-control" type="number" name="user_limit" min="1" value="<?php echo Rateb\App\Core\View::escape((string) ($item['user_limit'] ?? ($limits['user_limit'] ?? 10))); ?>">
+                    <input class="form-control" type="number" name="user_limit" min="1" value="<?php echo Rateb\App\Core\View::escape((string) $userLimitVal); ?>">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('storage_limit_mb'); ?></label>
-                    <input class="form-control" type="number" name="storage_limit_mb" min="128" value="<?php echo Rateb\App\Core\View::escape((string) ($item['storage_limit_mb'] ?? ($limits['storage_limit_mb'] ?? 1024))); ?>">
+                    <input class="form-control" type="number" name="storage_limit_mb" min="128" value="<?php echo Rateb\App\Core\View::escape((string) $storageLimitVal); ?>">
                 </div>
             </div>
 
-            <div class="mt-4">
+            <div class="mt-4" id="rateb-company-modules">
                 <h3 class="h6 mb-2"><?php echo __('plan_modules'); ?></h3>
                 <div class="row g-2">
                     <?php foreach ($moduleCatalog as $modKey => $modLabel) { ?>
@@ -98,3 +109,5 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
         </form>
     </div>
 </div>
+<script type="application/json" id="rateb-company-plan-presets"><?php echo Rateb\App\Core\View::escape(json_encode($planPresets ?? [], JSON_UNESCAPED_UNICODE)); ?></script>
+<script src="<?php echo rateb_asset('js/company-plan-form.js'); ?>"></script>
