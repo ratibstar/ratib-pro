@@ -1079,7 +1079,38 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                         ->slugRequiresBranchAssignment((string) ($role['slug'] ?? ''))
                 )
             )),
+            'rolesGrouped' => $this->groupRolesForUserForm($authz->allRoles()),
         ];
+    }
+
+    /** @param array<int, array<string, mixed>> $roles
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private function groupRolesForUserForm(array $roles): array
+    {
+        $groups = [
+            'branch' => [],
+            'hq' => [],
+            'operations' => [],
+            'admin' => [],
+            'other' => [],
+        ];
+        foreach ($roles as $role) {
+            $slug = (string) ($role['slug'] ?? '');
+            if (in_array($slug, ['branch_manager', 'branch_user'], true)) {
+                $groups['branch'][] = $role;
+            } elseif (in_array($slug, ['hq_admin', 'hq_manager'], true)) {
+                $groups['hq'][] = $role;
+            } elseif (in_array($slug, ['procurement-manager', 'inventory-manager', 'accountant', 'accounting-approver', 'hr-manager'], true)) {
+                $groups['operations'][] = $role;
+            } elseif (in_array($slug, ['access-manager', 'company-full-access', 'super-admin'], true)) {
+                $groups['admin'][] = $role;
+            } else {
+                $groups['other'][] = $role;
+            }
+        }
+
+        return $groups;
     }
 
     public function store(): void

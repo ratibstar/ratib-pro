@@ -282,8 +282,8 @@ final class AuthorizationService
             ['slug' => 'company-full-access', 'name' => 'Company Full Access', 'description' => 'Default ERP access for company portal users', 'is_system' => true, 'permissions' => ['__company_full_access__']],
             ['slug' => 'hq_admin', 'name' => 'HQ Admin', 'description' => 'Head office — all branches', 'is_system' => true, 'permissions' => ['branches.access_all', 'branch.dashboard.view', 'branch.dashboard.compare', 'branch.reports.view', 'branch.transfers.view', 'branch.transfers.manage', 'branches.view', 'branches.manage', 'dashboard.view']],
             ['slug' => 'hq_manager', 'name' => 'HQ Manager', 'description' => 'Head office manager — all branches read/compare', 'is_system' => true, 'permissions' => ['branches.access_all', 'branch.dashboard.view', 'branch.dashboard.compare', 'branch.reports.view', 'branch.transfers.view', 'dashboard.view']],
-            ['slug' => 'branch_manager', 'name' => 'Branch Manager', 'description' => 'Single-branch manager', 'is_system' => true, 'permissions' => ['branch.dashboard.view', 'branch.reports.view', 'branch.transfers.view', 'branch.transfers.manage', 'branches.view', 'dashboard.view']],
-            ['slug' => 'branch_user', 'name' => 'Branch User', 'description' => 'Single-branch operational user', 'is_system' => true, 'permissions' => ['branch.dashboard.view', 'branch.reports.view', 'dashboard.view']],
+            ['slug' => 'branch_manager', 'name' => 'Branch Manager', 'description' => 'Single-branch manager — inventory, procurement, branch KPIs', 'is_system' => true, 'permissions' => BranchAccessService::branchRolePermissionSlugs('branch_manager')],
+            ['slug' => 'branch_user', 'name' => 'Branch User', 'description' => 'Single-branch read-only operator — branch dashboard and reports', 'is_system' => true, 'permissions' => BranchAccessService::branchRolePermissionSlugs('branch_user')],
             ['slug' => 'procurement-manager', 'name' => 'Procurement Manager', 'description' => 'Manage purchase requests, orders, and RFQ', 'is_system' => true, 'permissions' => ['procurement.manage', 'dashboard.view', 'reports.view']],
             ['slug' => 'inventory-manager', 'name' => 'Inventory Manager', 'description' => 'Manage inventory, warehouses, and stock', 'is_system' => true, 'permissions' => ['inventory.manage', 'dashboard.view', 'reports.view']],
             ['slug' => 'hr-manager', 'name' => 'HR Manager', 'description' => 'Manage employees, attendance, and payroll', 'is_system' => true, 'permissions' => ['hr.view', 'hr.manage', 'dashboard.view', 'reports.view']],
@@ -318,6 +318,26 @@ final class AuthorizationService
                 continue;
             }
             $this->grantRolePermissionsBySlugs($roleId, $permSlugs);
+        }
+        $this->syncBranchRolePermissionCatalog();
+    }
+
+    /** Idempotently grant branch role permission bundles to every branch_manager / branch_user role row. */
+    public function syncBranchRolePermissionCatalog(): void
+    {
+        $roleModel = new Role();
+        foreach (BranchAccessService::branchRoleSlugs() as $slug) {
+            $permSlugs = BranchAccessService::branchRolePermissionSlugs($slug);
+            if ($permSlugs === []) {
+                continue;
+            }
+            $rows = $roleModel->query('SELECT id FROM rateb_roles WHERE slug = :slug', ['slug' => $slug]);
+            foreach ($rows as $row) {
+                $roleId = (int) ($row['id'] ?? 0);
+                if ($roleId > 0) {
+                    $this->grantRolePermissionsBySlugs($roleId, $permSlugs);
+                }
+            }
         }
     }
 

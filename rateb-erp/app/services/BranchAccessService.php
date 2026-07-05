@@ -20,6 +20,41 @@ final class BranchAccessService
     /** @var array<int, string> */
     public const BRANCH_RESTRICTED_ROLE_SLUGS = ['branch_manager', 'branch_user'];
 
+    /** @var array<string, list<string>> Default permission bundles for branch-scoped roles. */
+    public const BRANCH_ROLE_PERMISSIONS = [
+        'branch_manager' => [
+            'dashboard.view',
+            'branches.view',
+            'branch.dashboard.view',
+            'branch.reports.view',
+            'branch.transfers.view',
+            'branch.transfers.manage',
+            'inventory.manage',
+            'procurement.manage',
+            'suppliers.manage',
+            'reports.view',
+        ],
+        'branch_user' => [
+            'dashboard.view',
+            'branches.view',
+            'branch.dashboard.view',
+            'branch.reports.view',
+            'reports.view',
+        ],
+    ];
+
+    /** @return list<string> */
+    public static function branchRolePermissionSlugs(string $roleSlug): array
+    {
+        return self::BRANCH_ROLE_PERMISSIONS[$roleSlug] ?? [];
+    }
+
+    /** @return list<string> */
+    public static function branchRoleSlugs(): array
+    {
+        return array_keys(self::BRANCH_ROLE_PERMISSIONS);
+    }
+
     private static bool $bootstrapping = false;
 
     public function bootstrap(?int $companyId = null): void

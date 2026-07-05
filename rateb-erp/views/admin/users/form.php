@@ -90,20 +90,41 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
             </div>
             <div class="mt-4">
                 <h3 class="h6 mb-2"><?php echo __('assign_roles'); ?></h3>
-                <div class="row g-2">
-                    <?php foreach ($roles as $role) { ?>
-                    <div class="col-md-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="role_ids[]" value="<?php echo (int) $role['id']; ?>" id="role_<?php echo (int) $role['id']; ?>"
-                                <?php echo in_array((int) $role['id'], $selectedRoles, true) ? ' checked' : ''; ?>>
-                            <label class="form-check-label" for="role_<?php echo (int) $role['id']; ?>">
-                                <?php echo Rateb\App\Core\View::escape(function_exists('rateb_role_label') ? rateb_role_label($role) : (string) ($role['name'] ?? '')); ?>
-                                <small class="text-muted">(<?php echo Rateb\App\Core\View::escape($role['slug']); ?>)</small>
-                            </label>
+                <p class="small text-muted mb-3"><?php echo __('branch_roles_form_intro'); ?></p>
+                <?php
+                $rolesGrouped = $rolesGrouped ?? [];
+                $roleGroupMeta = [
+                    'branch' => ['label' => __('role_group_branch'), 'icon' => 'fa-code-branch'],
+                    'hq' => ['label' => __('role_group_hq'), 'icon' => 'fa-building'],
+                    'operations' => ['label' => __('role_group_operations'), 'icon' => 'fa-boxes-stacked'],
+                    'admin' => ['label' => __('role_group_admin'), 'icon' => 'fa-shield-halved'],
+                    'other' => ['label' => __('role_group_other'), 'icon' => 'fa-user-tag'],
+                ];
+                foreach ($roleGroupMeta as $groupKey => $meta) {
+                    $groupRoles = $rolesGrouped[$groupKey] ?? [];
+                    if ($groupRoles === []) {
+                        continue;
+                    }
+                    ?>
+                <div class="mb-3">
+                    <h4 class="h6 text-muted mb-2"><i class="fas <?php echo Rateb\App\Core\View::escape($meta['icon']); ?> me-1"></i><?php echo Rateb\App\Core\View::escape($meta['label']); ?></h4>
+                    <div class="row g-2">
+                        <?php foreach ($groupRoles as $role) { ?>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input user-role-checkbox" type="checkbox" name="role_ids[]" value="<?php echo (int) $role['id']; ?>" id="role_<?php echo (int) $role['id']; ?>"
+                                    data-role-slug="<?php echo Rateb\App\Core\View::escape((string) ($role['slug'] ?? '')); ?>"
+                                    <?php echo in_array((int) $role['id'], $selectedRoles, true) ? ' checked' : ''; ?>>
+                                <label class="form-check-label" for="role_<?php echo (int) $role['id']; ?>">
+                                    <?php echo Rateb\App\Core\View::escape(function_exists('rateb_role_label') ? rateb_role_label($role) : (string) ($role['name'] ?? '')); ?>
+                                    <small class="text-muted">(<?php echo Rateb\App\Core\View::escape($role['slug']); ?>)</small>
+                                </label>
+                            </div>
                         </div>
+                        <?php } ?>
                     </div>
-                    <?php } ?>
                 </div>
+                <?php } ?>
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
@@ -119,6 +140,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
     var branchRestrictedRoleIds = <?php echo json_encode(array_values($branchRestrictedRoleIds ?? []), JSON_UNESCAPED_UNICODE); ?>;
     var hintDefault = <?php echo json_encode(__('branch_access_all_hint'), JSON_UNESCAPED_UNICODE); ?>;
     var hintRestricted = <?php echo json_encode(__('branch_assignment_form_hint'), JSON_UNESCAPED_UNICODE); ?>;
+    var hintBranchManager = <?php echo json_encode(__('branch_manager_single_branch_hint'), JSON_UNESCAPED_UNICODE); ?>;
     var companySelect = document.querySelector('select[name="company_id"]');
     var section = document.getElementById('user-branches-section');
     var list = document.getElementById('user-branches-list');
@@ -139,11 +161,46 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
         }
         return false;
     }
+    function isBranchManagerSelected() {
+        var checked = document.querySelectorAll('input.user-role-checkbox:checked');
+        for (var i = 0; i < checked.length; i++) {
+            if ((checked[i].getAttribute('data-role-slug') || '') === 'branch_manager') {
+                return true;
+            }
+        }
+        return false;
+    }
+    function applyBranchRoleExclusivity(changed) {
+        if (!changed || changed.type !== 'checkbox') {
+            return;
+        }
+        var slug = changed.getAttribute('data-role-slug') || '';
+        if (slug !== 'branch_manager' && slug !== 'branch_user') {
+            return;
+        }
+        if (!changed.checked) {
+            return;
+        }
+        document.querySelectorAll('input.user-role-checkbox').forEach(function (el) {
+            var otherSlug = el.getAttribute('data-role-slug') || '';
+            if (otherSlug === 'branch_manager' || otherSlug === 'branch_user') {
+                if (el !== changed) {
+                    el.checked = false;
+                }
+            }
+        });
+    }
     function updateBranchHint() {
         if (!hint) {
             return;
         }
-        hint.textContent = hasBranchRestrictedRoleSelected() ? hintRestricted : hintDefault;
+        if (isBranchManagerSelected()) {
+            hint.textContent = hintBranchManager;
+        } else if (hasBranchRestrictedRoleSelected()) {
+            hint.textContent = hintRestricted;
+        } else {
+            hint.textContent = hintDefault;
+        }
     }
     function renderBranches() {
         var cid = parseInt(companySelect.value, 10) || 0;
@@ -169,8 +226,11 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
         selected = [];
         renderBranches();
     });
-    document.querySelectorAll('input[name="role_ids[]"]').forEach(function (el) {
-        el.addEventListener('change', updateBranchHint);
+    document.querySelectorAll('input.user-role-checkbox').forEach(function (el) {
+        el.addEventListener('change', function () {
+            applyBranchRoleExclusivity(el);
+            updateBranchHint();
+        });
     });
     renderBranches();
     updateBranchHint();
