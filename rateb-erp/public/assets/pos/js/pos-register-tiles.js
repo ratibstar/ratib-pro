@@ -22,24 +22,27 @@
     var connectionEl = document.querySelector('[data-pos-connection-status]');
 
     var CATEGORIES = [
-        { id: 'all', icon: 'fa-border-all', labelKey: 'pos_cat_all', accent: '#38bdf8', query: 'aa' },
-        { id: 'coffee', icon: 'fa-mug-hot', labelKey: 'pos_cat_coffee', accent: '#0891b2', query: 'coffee' },
-        { id: 'food', icon: 'fa-burger', labelKey: 'pos_cat_food', accent: '#ea580c', query: 'food' },
-        { id: 'desserts', icon: 'fa-cookie', labelKey: 'pos_cat_desserts', accent: '#c026d3', query: 'cake' },
-        { id: 'drinks', icon: 'fa-glass-water', labelKey: 'pos_cat_drinks', accent: '#0ea5e9', query: 'drink' },
-        { id: 'bakery', icon: 'fa-bread-slice', labelKey: 'pos_cat_bakery', accent: '#d97706', query: 'bread' },
-        { id: 'pizza', icon: 'fa-pizza-slice', labelKey: 'pos_cat_pizza', accent: '#dc2626', query: 'pizza' },
-        { id: 'burger', icon: 'fa-burger', labelKey: 'pos_cat_burger', accent: '#f97316', query: 'burger' },
-        { id: 'offers', icon: 'fa-tags', labelKey: 'pos_cat_offers', accent: '#ec4899', query: 'offer' },
-        { id: 'favorites', icon: 'fa-heart', labelKey: 'pos_cat_favorites', accent: '#f43f5e', query: '' },
-        { id: 'recent', icon: 'fa-clock-rotate-left', labelKey: 'pos_cat_recent', accent: '#6366f1', query: '' },
-        { id: 'popular', icon: 'fa-fire', labelKey: 'pos_cat_popular', accent: '#ef4444', query: 'a' }
+        { id: 'all', icon: 'fa-border-all', labelKey: 'pos_cat_all', query: 'aa' },
+        { id: 'coffee', icon: 'fa-mug-hot', labelKey: 'pos_cat_coffee', query: 'coffee' },
+        { id: 'food', icon: 'fa-burger', labelKey: 'pos_cat_food', query: 'food' },
+        { id: 'desserts', icon: 'fa-cookie', labelKey: 'pos_cat_desserts', query: 'cake' },
+        { id: 'drinks', icon: 'fa-glass-water', labelKey: 'pos_cat_drinks', query: 'drink' },
+        { id: 'bakery', icon: 'fa-bread-slice', labelKey: 'pos_cat_bakery', query: 'bread' },
+        { id: 'pizza', icon: 'fa-pizza-slice', labelKey: 'pos_cat_pizza', query: 'pizza' },
+        { id: 'burger', icon: 'fa-burger', labelKey: 'pos_cat_burger', query: 'burger' },
+        { id: 'offers', icon: 'fa-tags', labelKey: 'pos_cat_offers', query: 'offer' },
+        { id: 'favorites', icon: 'fa-heart', labelKey: 'pos_cat_favorites', query: '' },
+        { id: 'recent', icon: 'fa-clock-rotate-left', labelKey: 'pos_cat_recent', query: '' },
+        { id: 'popular', icon: 'fa-fire', labelKey: 'pos_cat_popular', query: 'a' }
     ];
 
     var ICONS = {
         coffee: 'fa-mug-hot', food: 'fa-burger', dessert: 'fa-cookie', drink: 'fa-glass-water',
         bakery: 'fa-bread-slice', pizza: 'fa-pizza-slice', default: 'fa-box-open'
     };
+
+    var categoryCounts = {};
+    var activeCategoryId = 'all';
 
     function t(key, fb) { return uiLabels[key] || i18n[key] || fb || key; }
     function money(n) { var v = Number(n); return (isFinite(v) ? v : 0).toFixed(2); }
@@ -86,10 +89,50 @@
         }).then(function (r) { return r.json(); }).then(function (d) { return d.items || []; }).catch(function () { return []; });
     }
 
+    function showSkeleton(count) {
+        if (!grid) { return; }
+        grid.innerHTML = '';
+        grid.classList.add('is-loading');
+        var n = count || 12;
+        for (var i = 0; i < n; i++) {
+            var sk = document.createElement('div');
+            sk.className = 'rateb-pos-v2__tile rateb-pos-v2__tile--skeleton';
+            sk.setAttribute('aria-hidden', 'true');
+            sk.innerHTML =
+                '<div class="rateb-pos-v2__tile-media"></div>' +
+                '<div class="rateb-pos-v2__tile-body">' +
+                '<div class="rateb-pos-v2__tile-name">&nbsp;</div>' +
+                '<div class="rateb-pos-v2__tile-price">&nbsp;</div></div>';
+            grid.appendChild(sk);
+        }
+    }
+
+    function updateCategoryCount(catId, count) {
+        categoryCounts[catId] = count;
+        if (!categoriesEl) { return; }
+        var badge = categoriesEl.querySelector('[data-cat-count="' + catId + '"]');
+        if (badge) {
+            badge.textContent = String(count);
+        }
+    }
+
+    function setActiveCategory(btn, cat) {
+        if (!categoriesEl || !btn) { return; }
+        categoriesEl.querySelectorAll('.rateb-pos-v2__cat').forEach(function (c) {
+            c.classList.remove('is-active');
+            c.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('is-active');
+        btn.setAttribute('aria-selected', 'true');
+        activeCategoryId = cat.id;
+        if (motion.updateCategoryIndicator) {
+            motion.updateCategoryIndicator(categoriesEl, btn);
+        }
+    }
+
     function loadCategory(cat) {
         if (!grid) { return; }
-        grid.classList.add('is-loading');
-        grid.innerHTML = '';
+        showSkeleton(12);
         var promise;
         if (cat.id === 'favorites') {
             var favIds = getFavorites();
@@ -105,17 +148,29 @@
         } else {
             promise = fetchProducts(cat.query || 'aa');
         }
-        promise.then(renderProducts).finally(function () { grid.classList.remove('is-loading'); });
+        promise.then(function (items) {
+            updateCategoryCount(cat.id, items.length);
+            renderProducts(items);
+        }).finally(function () { grid.classList.remove('is-loading'); });
+    }
+
+    function renderEmptyState() {
+        var wrap = document.createElement('div');
+        wrap.className = 'rateb-pos-v2__grid-empty';
+        wrap.setAttribute('role', 'status');
+        wrap.innerHTML =
+            '<div class="rateb-pos-v2__grid-empty-icon" aria-hidden="true">' +
+            '<i class="fa-solid fa-box-open"></i></div>' +
+            '<p class="rateb-pos-v2__grid-empty-title">' + escapeHtml(t('pos_search_no_results', 'No products found')) + '</p>' +
+            '<p class="rateb-pos-v2__grid-empty-hint">' + escapeHtml(t('pos_search_placeholder', 'Try another category or search term')) + '</p>';
+        return wrap;
     }
 
     function renderProducts(items) {
         if (!grid) { return; }
         grid.innerHTML = '';
         if (!items.length) {
-            var empty = document.createElement('p');
-            empty.className = 'rateb-pos-v2__grid-empty';
-            empty.textContent = t('pos_search_no_results', 'No products found');
-            grid.appendChild(empty);
+            grid.appendChild(renderEmptyState());
             return;
         }
         items.forEach(function (product, idx) {
@@ -125,11 +180,17 @@
         });
     }
 
+    function hasPromo(product) {
+        return !!(product.has_promotion || product.promotion_label || product.is_promo ||
+            (product.discount_percent && Number(product.discount_percent) > 0));
+    }
+
     function buildTile(product) {
         var avail = product.availability || {};
         var canAdd = avail.can_add !== false;
         var available = Number(avail.available != null ? avail.available : 0);
         var fav = isFavorite(product.id);
+        var promo = hasPromo(product);
         var tile = document.createElement('div');
         tile.className = 'rateb-pos-v2__tile';
         tile.setAttribute('data-product-id', String(product.id));
@@ -140,8 +201,13 @@
         if (!canAdd) { tile.classList.add('is-disabled'); tile.setAttribute('aria-disabled', 'true'); }
         if (canAdd && available > 0 && available <= 5) { tile.classList.add('is-low-stock'); }
         if (fav) { tile.classList.add('is-favorite'); }
+        if (promo) { tile.classList.add('is-promo'); }
 
         var badges = '';
+        if (promo) {
+            badges += '<span class="rateb-pos-v2__badge rateb-pos-v2__badge--promo">' +
+                escapeHtml(product.promotion_label || t('pos_promo', 'Promo')) + '</span>';
+        }
         if (fav) { badges += '<span class="rateb-pos-v2__badge rateb-pos-v2__badge--fav">' + escapeHtml(t('pos_favorite', 'Fav')) + '</span>'; }
         if (canAdd && available > 0 && available <= 5) {
             badges += '<span class="rateb-pos-v2__badge rateb-pos-v2__badge--low">' + escapeHtml(t('pos_low_stock', 'Low')) + '</span>';
@@ -175,6 +241,9 @@
                 favBtn.setAttribute('aria-pressed', now ? 'true' : 'false');
                 favBtn.querySelector('i').className = 'fa-' + (now ? 'solid' : 'regular') + ' fa-heart';
                 tile.classList.toggle('is-favorite', now);
+                if (activeCategoryId === 'favorites') {
+                    loadCategory(CATEGORIES.filter(function (c) { return c.id === 'favorites'; })[0]);
+                }
             });
         }
 
@@ -186,7 +255,7 @@
                 window.RatebPosRegister.addProduct(product, 1);
                 pushRecent(product);
                 tile.classList.add('is-added');
-                setTimeout(function () { tile.classList.remove('is-added'); }, 400);
+                setTimeout(function () { tile.classList.remove('is-added'); }, 350);
                 if (motion.flyToCart) { motion.flyToCart(tile); }
             }
         }
@@ -209,18 +278,38 @@
             btn.className = 'rateb-pos-v2__cat' + (idx === 0 ? ' is-active' : '');
             btn.setAttribute('role', 'tab');
             btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
-            btn.style.setProperty('--pos-cat-accent', cat.accent);
-            btn.innerHTML = '<i class="fa-solid ' + cat.icon + '" aria-hidden="true"></i><span class="rateb-pos-v2__cat-label">' + escapeHtml(t(cat.labelKey, cat.id)) + '</span>';
+            btn.setAttribute('data-cat-id', cat.id);
+            btn.innerHTML =
+                '<span class="rateb-pos-v2__cat-icon-wrap"><i class="fa-solid ' + cat.icon + '" aria-hidden="true"></i></span>' +
+                '<span class="rateb-pos-v2__cat-text">' +
+                '<span class="rateb-pos-v2__cat-label">' + escapeHtml(t(cat.labelKey, cat.id)) + '</span>' +
+                '<span class="rateb-pos-v2__cat-count" data-cat-count="' + cat.id + '">—</span>' +
+                '</span>';
             btn.addEventListener('click', function () {
-                categoriesEl.querySelectorAll('.rateb-pos-v2__cat').forEach(function (c) {
-                    c.classList.remove('is-active');
-                    c.setAttribute('aria-selected', 'false');
-                });
-                btn.classList.add('is-active');
-                btn.setAttribute('aria-selected', 'true');
+                setActiveCategory(btn, cat);
                 loadCategory(cat);
             });
             categoriesEl.appendChild(btn);
+        });
+
+        requestAnimationFrame(function () {
+            var first = categoriesEl.querySelector('.rateb-pos-v2__cat.is-active');
+            if (first && motion.updateCategoryIndicator) {
+                motion.updateCategoryIndicator(categoriesEl, first);
+            }
+        });
+
+        categoriesEl.addEventListener('scroll', function () {
+            var active = categoriesEl.querySelector('.rateb-pos-v2__cat.is-active');
+            if (active && motion.updateCategoryIndicator) {
+                motion.updateCategoryIndicator(categoriesEl, active);
+            }
+        }, { passive: true });
+    }
+
+    function preloadCounts() {
+        fetchProducts('aa').then(function (items) {
+            updateCategoryCount('all', items.length);
         });
     }
 
@@ -246,7 +335,15 @@
 
     renderCategories();
     loadCategory(CATEGORIES[0]);
+    preloadCounts();
     tickClock();
     setInterval(tickClock, 30000);
     bindConnection();
+
+    window.addEventListener('resize', function () {
+        var active = categoriesEl && categoriesEl.querySelector('.rateb-pos-v2__cat.is-active');
+        if (active && motion.updateCategoryIndicator) {
+            motion.updateCategoryIndicator(categoriesEl, active);
+        }
+    }, { passive: true });
 })();

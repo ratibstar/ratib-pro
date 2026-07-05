@@ -241,7 +241,7 @@
         var discountBadge = '';
         var disc = Number(line.discount_amount || line.line_discount || 0);
         if (disc > 0) {
-            discountBadge = '<span class="rateb-pos-v2__line-tag">-' + money(disc) + '</span>';
+            discountBadge = '<span class="rateb-pos-v2__line-tag rateb-pos-v2__line-tag--discount">-' + money(disc) + '</span>';
         }
         var serialBadge = line.serial_no
             ? '<span class="rateb-pos-v2__line-tag">SN: ' + escapeHtml(line.serial_no) + '</span>'
@@ -258,6 +258,7 @@
             '<div class="rateb-pos-v2__line-main">' +
             '<p class="rateb-pos-v2__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
             '<p class="rateb-pos-v2__line-meta">' + escapeHtml(line.item_code || '') + '</p>' +
+            (line.notes ? '<p class="rateb-pos-v2__line-note">' + escapeHtml(line.notes) + '</p>' : '') +
             '<div class="rateb-pos-v2__line-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
             '<p class="rateb-pos-v2__line-price">' + money(line.line_total) + '</p>' +
             '</div>' +
@@ -531,8 +532,13 @@
             });
         }
         var count = state.lines.length;
+        var prevCount = els.cartCount ? Number(els.cartCount.getAttribute('data-prev-count') || '0') : 0;
         if (els.cartCount) {
             els.cartCount.textContent = String(count);
+            els.cartCount.setAttribute('data-prev-count', String(count));
+            if (count > prevCount && window.RatebPosMotion && typeof window.RatebPosMotion.bumpCartCount === 'function') {
+                window.RatebPosMotion.bumpCartCount();
+            }
         }
         if (els.cartTable) {
             els.cartTable.classList.toggle('is-empty', count === 0);

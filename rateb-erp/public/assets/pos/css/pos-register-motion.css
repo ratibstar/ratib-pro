@@ -181,7 +181,9 @@
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
     .rateb-pos-product-card,
+    .rateb-pos-v2__tile,
     .rateb-pos-cart-line,
+    .rateb-pos-v2__line,
     .rateb-pos-overflow:not([hidden]),
     .rateb-pos-more-menu:not([hidden]),
     .rateb-pos-status.is-visible {
@@ -189,12 +191,15 @@
     }
 
     .rateb-pos-product-card:hover:not(.is-disabled),
+    .rateb-pos-v2__tile:hover:not(.is-disabled),
     .rateb-pos-pay-btn:hover,
+    .rateb-pos-v2__pay:hover,
     .rateb-pos-search-hero__field:focus-within {
         transform: none !important;
     }
 
-    .rateb-pos-pay-btn:hover {
+    .rateb-pos-pay-btn:hover,
+    .rateb-pos-v2__pay:hover {
         animation: none !important;
     }
 

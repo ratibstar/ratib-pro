@@ -44,13 +44,22 @@
         dot.style.top = sy + 'px';
         dot.style.setProperty('--fly-tx', (tx - sx) + 'px');
         dot.style.setProperty('--fly-ty', (ty - sy) + 'px');
-        dot.style.animation = 'pos-fly-to-cart 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+        dot.style.animation = 'pos-fly-to-cart 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards';
         layer.appendChild(dot);
         dot.addEventListener('animationend', function () {
             if (dot.parentNode) { dot.parentNode.removeChild(dot); }
-            cart.classList.add('is-bump');
-            setTimeout(function () { cart.classList.remove('is-bump'); }, 320);
+            bumpCartCount();
         });
+    }
+
+    function bumpCartCount() {
+        if (reduced) { return; }
+        var cart = document.querySelector('[data-pos-cart-count]');
+        if (!cart) { return; }
+        cart.classList.remove('is-bump');
+        void cart.offsetWidth;
+        cart.classList.add('is-bump');
+        setTimeout(function () { cart.classList.remove('is-bump'); }, 280);
     }
 
     function pulseTotal() {
@@ -59,8 +68,20 @@
             el.classList.remove('is-pulse');
             void el.offsetWidth;
             el.classList.add('is-pulse');
-            setTimeout(function () { el.classList.remove('is-pulse'); }, 450);
+            setTimeout(function () { el.classList.remove('is-pulse'); }, 350);
         });
+    }
+
+    function updateCategoryIndicator(scrollEl, btn) {
+        if (!scrollEl || !btn) { return; }
+        var indicator = document.querySelector('[data-pos-cat-indicator]');
+        if (!indicator) { return; }
+        var scrollRect = scrollEl.getBoundingClientRect();
+        var btnRect = btn.getBoundingClientRect();
+        var top = btnRect.top - scrollRect.top + scrollEl.scrollTop;
+        indicator.style.height = btnRect.height + 'px';
+        indicator.style.transform = 'translate3d(0,' + top + 'px,0)';
+        indicator.style.opacity = '1';
     }
 
     function bindSettings() {
@@ -87,7 +108,12 @@
         if (!input || !clearBtn) { return; }
         function sync() { clearBtn.hidden = input.value.trim() === ''; }
         input.addEventListener('input', sync);
-        clearBtn.addEventListener('click', function () { input.value = ''; sync(); input.focus(); });
+        clearBtn.addEventListener('click', function () {
+            input.value = '';
+            sync();
+            input.focus();
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
         sync();
     }
 
@@ -97,7 +123,9 @@
     global.RatebPosMotion = {
         ripple: ripple,
         flyToCart: flyToCart,
+        bumpCartCount: bumpCartCount,
         pulseTotal: pulseTotal,
+        updateCategoryIndicator: updateCategoryIndicator,
         prefersReducedMotion: reduced
     };
 })(window);

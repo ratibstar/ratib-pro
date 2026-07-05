@@ -43,17 +43,19 @@ $uiLabels = json_encode([
 
     <div class="rateb-pos-v2__workspace">
         <nav class="rateb-pos-v2__sidebar" aria-label="<?php echo __('pos_categories'); ?>">
-            <div class="rateb-pos-v2__sidebar-scroll" data-pos-categories role="tablist"></div>
+            <div class="rateb-pos-v2__sidebar-inner">
+                <div class="rateb-pos-v2__sidebar-scroll" data-pos-categories role="tablist"></div>
+                <div class="rateb-pos-v2__cat-indicator" data-pos-cat-indicator aria-hidden="true"></div>
+            </div>
         </nav>
 
         <section class="rateb-pos-v2__catalog" aria-label="<?php echo __('pos_product_search'); ?>">
-            <div class="rateb-pos-v2__search" role="search">
-                <div class="rateb-pos-v2__search-row">
-                    <label class="rateb-pos-v2__search-field rateb-pos-v2__search-field--grow">
+            <div class="rateb-pos-v2__search-unified" role="search" aria-label="<?php echo __('pos_product_search'); ?>">
+                <div class="rateb-pos-v2__search-unified-inner">
+                    <div class="rateb-pos-v2__seg rateb-pos-v2__seg--product">
                         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                        <span class="visually-hidden"><?php echo __('pos_product_search'); ?></span>
                         <div class="rateb-pos-v2__combobox" data-pos-product-combobox>
-                            <input type="search" id="rateb-pos-search-input" class="rateb-pos-v2__input"
+                            <input type="search" id="rateb-pos-search-input" class="rateb-pos-v2__input rateb-pos-v2__input--inline"
                                    autocomplete="off" role="combobox" aria-expanded="false"
                                    aria-controls="rateb-pos-product-list" aria-autocomplete="list"
                                    placeholder="<?php echo __('pos_search_placeholder'); ?>"
@@ -63,22 +65,20 @@ $uiLabels = json_encode([
                             </button>
                             <ul id="rateb-pos-product-list" class="rateb-pos-v2__dropdown rateb-pos-combobox-list" role="listbox" hidden data-pos-product-list></ul>
                         </div>
-                    </label>
-                </div>
-                <div class="rateb-pos-v2__search-row rateb-pos-v2__search-row--secondary">
-                    <label class="rateb-pos-v2__search-field">
+                    </div>
+                    <span class="rateb-pos-v2__seg-divider" aria-hidden="true"></span>
+                    <div class="rateb-pos-v2__seg rateb-pos-v2__seg--barcode">
                         <i class="fa-solid fa-barcode" aria-hidden="true"></i>
-                        <span class="visually-hidden"><?php echo __('pos_barcode_scan'); ?></span>
-                        <input type="text" id="rateb-pos-barcode-input" class="rateb-pos-v2__input"
+                        <input type="text" id="rateb-pos-barcode-input" class="rateb-pos-v2__input rateb-pos-v2__input--inline"
                                inputmode="numeric" autocomplete="off"
-                               placeholder="<?php echo __('pos_barcode_placeholder'); ?>"
-                               data-pos-barcode-input />
-                    </label>
-                    <label class="rateb-pos-v2__search-field rateb-pos-v2__search-field--grow">
+                               placeholder="<?php echo __('pos_barcode_scan'); ?>"
+                               data-pos-barcode-input aria-label="<?php echo __('pos_barcode_scan'); ?>" />
+                    </div>
+                    <span class="rateb-pos-v2__seg-divider" aria-hidden="true"></span>
+                    <div class="rateb-pos-v2__seg rateb-pos-v2__seg--customer">
                         <i class="fa-solid fa-user" aria-hidden="true"></i>
-                        <span class="visually-hidden"><?php echo __('pos_customer'); ?></span>
                         <div class="rateb-pos-v2__combobox" data-pos-customer-combobox>
-                            <input type="search" id="rateb-pos-customer-input" class="rateb-pos-v2__input"
+                            <input type="search" id="rateb-pos-customer-input" class="rateb-pos-v2__input rateb-pos-v2__input--inline"
                                    autocomplete="off" role="combobox" aria-expanded="false"
                                    aria-controls="rateb-pos-customer-list" aria-autocomplete="list"
                                    placeholder="<?php echo __('pos_customer_search'); ?>"
@@ -88,8 +88,8 @@ $uiLabels = json_encode([
                             </button>
                             <ul id="rateb-pos-customer-list" class="rateb-pos-v2__dropdown rateb-pos-combobox-list" role="listbox" hidden data-pos-customer-list></ul>
                         </div>
-                    </label>
-                    <button type="button" class="rateb-pos-v2__voice-btn" data-pos-voice-search disabled aria-label="<?php echo __('pos_voice_search'); ?>">
+                    </div>
+                    <button type="button" class="rateb-pos-v2__seg-btn" data-pos-voice-search disabled aria-label="<?php echo __('pos_voice_search'); ?>">
                         <i class="fa-solid fa-microphone" aria-hidden="true"></i>
                     </button>
                 </div>
@@ -110,10 +110,13 @@ $uiLabels = json_encode([
 
             <div class="rateb-pos-v2__cart-scroll">
                 <div class="rateb-pos-v2__cart-lines" data-pos-cart-lines role="list"></div>
-                <p class="rateb-pos-v2__cart-empty" data-pos-cart-empty><?php echo __('pos_cart_empty'); ?></p>
+                <div class="rateb-pos-v2__cart-empty" data-pos-cart-empty>
+                    <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
+                    <p><?php echo __('pos_cart_empty'); ?></p>
+                </div>
             </div>
 
-            <div class="rateb-pos-v2__totals" aria-live="polite">
+            <div class="rateb-pos-v2__totals rateb-pos-v2__totals--card" aria-live="polite">
                 <div class="rateb-pos-v2__total-row"><span><?php echo __('pos_subtotal'); ?></span><span data-pos-subtotal>0.00</span></div>
                 <div class="rateb-pos-v2__total-row"><span><?php echo __('pos_discount_total'); ?></span><span data-pos-discount-total>0.00</span></div>
                 <div class="rateb-pos-v2__total-row"><span><?php echo __('pos_tax'); ?></span><span data-pos-tax>0.00</span></div>

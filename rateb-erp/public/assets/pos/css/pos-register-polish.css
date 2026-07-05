@@ -1,0 +1,581 @@
+/* RATEB POS v2 — Final UI/UX Polish (commercial grade) */
+
+.rateb-pos-v2-shell {
+    --pos-space-1: 8px;
+    --pos-space-2: 12px;
+    --pos-space-3: 16px;
+    --pos-space-4: 24px;
+    --pos-space-5: 32px;
+    --pos-space-6: 48px;
+    --pos-sidebar-w: 14%;
+    --pos-cart-w: 26%;
+    --pos-catalog-w: 1fr;
+    --pos-touch: 64px;
+    --pos-search-h: 52px;
+    --pos-tile-min: 160px;
+    --pos-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.18);
+    --pos-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.28);
+    --pos-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.35);
+    --pos-glow-accent: 0 0 0 1px rgba(34, 197, 94, 0.35), 0 0 24px rgba(34, 197, 94, 0.18);
+    --pos-purple: var(--pos-info);
+    --pos-indigo: var(--pos-info);
+    --pos-pink: var(--pos-danger);
+}
+
+.rateb-pos-v2__workspace {
+    grid-template-columns: var(--pos-sidebar-w) minmax(0, 1fr) var(--pos-cart-w);
+}
+
+/* ── Unified search bar (~40% shorter than dual-row) ── */
+.rateb-pos-v2__search-unified {
+    padding: var(--pos-space-2) var(--pos-space-3);
+    border-bottom: 1px solid var(--pos-border);
+    background: var(--pos-surface);
+}
+
+.rateb-pos-v2__search-unified-inner {
+    display: flex;
+    align-items: stretch;
+    min-height: var(--pos-search-h);
+    border-radius: var(--pos-radius);
+    border: 1px solid var(--pos-border);
+    background: var(--pos-surface-2);
+    overflow: hidden;
+    transition: border-color 0.15s var(--pos-ease), box-shadow 0.15s var(--pos-ease);
+}
+
+.rateb-pos-v2__search-unified-inner:focus-within {
+    border-color: var(--pos-accent);
+    box-shadow: 0 0 0 3px var(--pos-accent-soft);
+}
+
+.rateb-pos-v2__seg {
+    display: flex;
+    align-items: center;
+    gap: var(--pos-space-1);
+    flex: 1;
+    min-width: 0;
+    padding: 0 var(--pos-space-2);
+}
+
+.rateb-pos-v2__seg > i {
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+    color: var(--pos-muted);
+    font-size: 0.875rem;
+}
+
+.rateb-pos-v2__seg--product { flex: 1.4; }
+.rateb-pos-v2__seg--barcode { flex: 0.85; max-width: 11rem; }
+.rateb-pos-v2__seg--customer { flex: 1; }
+
+.rateb-pos-v2__seg-divider {
+    width: 1px;
+    align-self: stretch;
+    background: var(--pos-border);
+    flex-shrink: 0;
+}
+
+.rateb-pos-v2__input--inline {
+    min-height: calc(var(--pos-search-h) - 4px);
+    font-size: 0.875rem;
+}
+
+.rateb-pos-v2__seg .rateb-pos-v2__combobox {
+    flex: 1;
+    min-width: 0;
+}
+
+.rateb-pos-v2__seg-btn {
+    flex-shrink: 0;
+    width: var(--pos-search-h);
+    min-width: var(--pos-search-h);
+    border: none;
+    border-inline-start: 1px solid var(--pos-border);
+    background: transparent;
+    color: var(--pos-muted);
+    cursor: not-allowed;
+    opacity: 0.45;
+    transition: background 0.15s var(--pos-ease), color 0.15s var(--pos-ease);
+}
+
+.rateb-pos-v2__seg-btn:not(:disabled) {
+    cursor: pointer;
+    opacity: 1;
+}
+
+.rateb-pos-v2__seg-btn:not(:disabled):hover {
+    background: var(--pos-surface);
+    color: var(--pos-accent);
+}
+
+/* ── Category sidebar — premium nav ── */
+.rateb-pos-v2__sidebar-inner {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+}
+
+.rateb-pos-v2__sidebar-scroll {
+    gap: var(--pos-space-1);
+    padding: var(--pos-space-2);
+}
+
+.rateb-pos-v2__cat-indicator {
+    position: absolute;
+    inset-inline-start: var(--pos-space-2);
+    width: 3px;
+    border-radius: 999px;
+    background: var(--pos-accent);
+    pointer-events: none;
+    z-index: 2;
+    transition: transform 0.16s var(--pos-ease), height 0.16s var(--pos-ease), opacity 0.16s var(--pos-ease);
+    will-change: transform;
+}
+
+[dir="rtl"] .rateb-pos-v2__cat-indicator {
+    inset-inline-start: auto;
+    inset-inline-end: var(--pos-space-2);
+}
+
+.rateb-pos-v2__cat {
+    min-height: 72px;
+    padding: var(--pos-space-2) var(--pos-space-3);
+    gap: var(--pos-space-2);
+    border-radius: var(--pos-radius);
+    transition: transform 0.14s var(--pos-ease), background 0.14s var(--pos-ease), box-shadow 0.14s var(--pos-ease);
+}
+
+.rateb-pos-v2__cat:active:not(.is-active) {
+    transform: scale3d(0.98, 0.98, 1);
+}
+
+.rateb-pos-v2__cat-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--pos-space-2);
+    background: var(--pos-surface-2);
+    flex-shrink: 0;
+    transition: background 0.14s var(--pos-ease), transform 0.14s var(--pos-ease);
+}
+
+.rateb-pos-v2__cat-icon-wrap i {
+    font-size: 1.125rem;
+    width: auto;
+    color: var(--pos-muted);
+    transition: color 0.14s var(--pos-ease), transform 0.14s var(--pos-ease);
+}
+
+.rateb-pos-v2__cat-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.rateb-pos-v2__cat-label {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.rateb-pos-v2__cat-count {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--pos-muted);
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--pos-surface-2);
+}
+
+.rateb-pos-v2__cat.is-active {
+    background: var(--pos-surface-2);
+    border-color: transparent;
+    box-shadow: var(--pos-glow-accent);
+    color: var(--pos-text);
+}
+
+.rateb-pos-v2__cat.is-active .rateb-pos-v2__cat-icon-wrap {
+    background: var(--pos-accent-soft);
+    transform: scale3d(1.04, 1.04, 1);
+}
+
+.rateb-pos-v2__cat.is-active .rateb-pos-v2__cat-icon-wrap i {
+    color: var(--pos-accent);
+}
+
+.rateb-pos-v2__cat.is-active .rateb-pos-v2__cat-count {
+    background: var(--pos-accent-soft);
+    color: var(--pos-accent);
+}
+
+.rateb-pos-v2__cat:hover:not(.is-active) {
+    background: var(--pos-surface-2);
+}
+
+.rateb-pos-v2__cat:hover:not(.is-active) .rateb-pos-v2__cat-icon-wrap {
+    transform: scale3d(1.03, 1.03, 1);
+}
+
+/* ── Product grid hero ── */
+.rateb-pos-v2__grid-wrap {
+    padding: var(--pos-space-2) var(--pos-space-3) var(--pos-space-3);
+}
+
+.rateb-pos-v2__grid,
+[data-pos-product-grid] {
+    grid-template-columns: repeat(auto-fill, minmax(var(--pos-tile-min), 1fr));
+    gap: var(--pos-space-2);
+}
+
+.rateb-pos-v2__tile,
+.rateb-pos-product-card {
+    min-height: var(--pos-tile-min);
+    border-radius: var(--pos-radius);
+    box-shadow: var(--pos-shadow-sm);
+}
+
+.rateb-pos-v2__tile-media,
+.rateb-pos-product-card__media {
+    height: 96px;
+}
+
+.rateb-pos-v2__tile-name,
+.rateb-pos-product-card__name {
+    font-size: 0.875rem;
+}
+
+.rateb-pos-v2__tile-price,
+.rateb-pos-product-card__price {
+    font-size: 1.0625rem;
+}
+
+.rateb-pos-v2__tile-fav,
+.rateb-pos-product-card__fav {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+}
+
+.rateb-pos-v2__tile.is-added {
+    box-shadow: var(--pos-glow-accent);
+}
+
+/* Skeleton loading */
+.rateb-pos-v2__tile--skeleton {
+    pointer-events: none;
+    border-color: transparent;
+    overflow: hidden;
+}
+
+.rateb-pos-v2__tile--skeleton .rateb-pos-v2__tile-media,
+.rateb-pos-v2__tile--skeleton .rateb-pos-v2__tile-body > * {
+    background: linear-gradient(90deg, var(--pos-surface-2) 0%, rgba(255, 255, 255, 0.06) 50%, var(--pos-surface-2) 100%);
+    background-size: 200% 100%;
+    animation: pos-shimmer 1.2s linear infinite;
+    border-radius: 8px;
+    color: transparent;
+}
+
+.rateb-pos-v2__tile--skeleton .rateb-pos-v2__tile-media { height: 96px; }
+.rateb-pos-v2__tile--skeleton .rateb-pos-v2__tile-name { height: 14px; width: 80%; margin-bottom: 8px; }
+.rateb-pos-v2__tile--skeleton .rateb-pos-v2__tile-price { height: 16px; width: 45%; }
+
+.rateb-pos-v2__grid.is-loading:not(:has(.rateb-pos-v2__tile--skeleton)) {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+/* Empty state */
+.rateb-pos-v2__grid-empty {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pos-space-3);
+    padding: var(--pos-space-6) var(--pos-space-4);
+    color: var(--pos-muted);
+    text-align: center;
+}
+
+.rateb-pos-v2__grid-empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pos-surface-2);
+    border: 1px solid var(--pos-border);
+    font-size: 1.75rem;
+    color: var(--pos-muted);
+}
+
+.rateb-pos-v2__grid-empty-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--pos-text);
+}
+
+.rateb-pos-v2__grid-empty-hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    max-width: 280px;
+}
+
+/* Unified badge palette */
+.rateb-pos-v2__badge--fav,
+.rateb-pos-product-badge--fav { background: rgba(239, 68, 68, 0.14); color: var(--pos-danger); }
+.rateb-pos-v2__badge--serial,
+.rateb-pos-product-badge--serial { background: rgba(59, 130, 246, 0.14); color: var(--pos-info); }
+.rateb-pos-v2__badge--batch,
+.rateb-pos-product-badge--batch { background: rgba(59, 130, 246, 0.14); color: var(--pos-info); }
+
+/* ── Cart premium cards ── */
+.rateb-pos-v2__cart-scroll {
+    padding: var(--pos-space-2);
+}
+
+.rateb-pos-v2__cart-lines,
+[data-pos-cart-lines] {
+    gap: var(--pos-space-2);
+}
+
+.rateb-pos-v2__line {
+    grid-template-columns: 56px 1fr;
+    gap: var(--pos-space-2);
+    padding: var(--pos-space-2);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface-2);
+    box-shadow: var(--pos-shadow-sm);
+    transition: transform 0.14s var(--pos-ease), box-shadow 0.14s var(--pos-ease), border-color 0.14s var(--pos-ease);
+    animation: pos-slide-in-cart 0.16s var(--pos-ease) both;
+}
+
+.rateb-pos-v2__line.is-selected {
+    border-color: var(--pos-accent);
+    box-shadow: var(--pos-glow-accent);
+}
+
+.rateb-pos-v2__line-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--pos-space-2);
+    font-size: 1.25rem;
+}
+
+.rateb-pos-v2__line-name {
+    font-size: 0.875rem;
+    line-height: 1.3;
+}
+
+.rateb-pos-v2__line-price {
+    font-size: 1rem;
+}
+
+.rateb-pos-v2__line-note {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: var(--pos-muted);
+    font-style: italic;
+}
+
+.rateb-pos-v2__line-tag {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--pos-info);
+}
+
+.rateb-pos-v2__line-tag--discount {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--pos-accent);
+}
+
+.rateb-pos-qty-btn {
+    width: var(--pos-touch);
+    height: var(--pos-touch);
+    max-width: 64px;
+    max-height: 64px;
+    border-radius: var(--pos-space-2);
+}
+
+.rateb-pos-qty-value {
+    min-width: 2.5rem;
+    font-size: 1.0625rem;
+}
+
+.rateb-pos-icon-action {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
+}
+
+.rateb-pos-v2__cart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pos-space-2);
+    padding: var(--pos-space-5) var(--pos-space-3);
+    color: var(--pos-muted);
+}
+
+.rateb-pos-v2__cart-empty i {
+    font-size: 2rem;
+    opacity: 0.45;
+}
+
+.rateb-pos-v2__cart-empty p {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.rateb-pos-v2__cart-empty.is-hidden {
+    display: none;
+}
+
+/* Totals + Pay dominance */
+.rateb-pos-v2__totals--card {
+    margin: 0 var(--pos-space-2);
+    padding: var(--pos-space-3);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface-2);
+    border: 1px solid var(--pos-border);
+    gap: var(--pos-space-1);
+}
+
+.rateb-pos-v2__total-row--grand {
+    padding-top: var(--pos-space-2);
+    margin-top: var(--pos-space-1);
+}
+
+.rateb-pos-v2__total-row--grand span:last-child {
+    font-size: 1.5rem;
+}
+
+.rateb-pos-v2__cart-actions {
+    padding: var(--pos-space-2) var(--pos-space-3) var(--pos-space-3);
+}
+
+.rateb-pos-v2__pay {
+    min-height: 72px;
+    padding: var(--pos-space-3);
+    font-size: 1.0625rem;
+    border-radius: var(--pos-radius);
+}
+
+.rateb-pos-v2__pay strong {
+    font-size: 1.375rem;
+}
+
+.rateb-pos-v2__pay.is-pulse {
+    animation: pos-total-pulse 0.35s var(--pos-ease);
+}
+
+.rateb-pos-v2__cart-count {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8125rem;
+}
+
+/* Header — quieter hierarchy */
+.rateb-pos-v2__header {
+    padding: 0 var(--pos-space-3);
+    gap: var(--pos-space-2);
+}
+
+.rateb-pos-v2__chip {
+    max-width: 7.5rem;
+    font-size: 0.6875rem;
+}
+
+/* Focus rings (a11y) */
+.rateb-pos-v2-shell :focus-visible {
+    outline: 2px solid var(--pos-accent);
+    outline-offset: 2px;
+}
+
+.rateb-pos-v2__cat:focus-visible,
+.rateb-pos-v2__tile:focus-visible,
+.rateb-pos-v2__pay:focus-visible,
+.rateb-pos-qty-btn:focus-visible,
+.rateb-pos-icon-action:focus-visible {
+    outline: 2px solid var(--pos-accent);
+    outline-offset: 2px;
+}
+
+/* v2 tile motion */
+.rateb-pos-v2__tile {
+    animation: pos-fade-up 0.16s var(--pos-ease) both;
+    animation-delay: calc(var(--pos-stagger, 0) * 24ms);
+}
+
+.rateb-pos-v2__tile:hover:not(.is-disabled) {
+    transform: translate3d(0, -4px, 0);
+    box-shadow: var(--pos-shadow-md);
+}
+
+.rateb-pos-v2__tile:active:not(.is-disabled) {
+    transform: scale3d(0.97, 0.97, 1);
+}
+
+.rateb-pos-v2__tile-ripple {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+}
+
+/* Responsive touch monitors */
+@media (min-width: 1600px) {
+    .rateb-pos-v2-shell {
+        --pos-tile-min: 168px;
+        --pos-sidebar-w: 13%;
+    }
+}
+
+@media (max-width: 1280px) {
+    .rateb-pos-v2-shell {
+        --pos-sidebar-w: 16%;
+        --pos-cart-w: 28%;
+    }
+
+    .rateb-pos-v2__seg--barcode {
+        max-width: 9rem;
+    }
+}
+
+[dir="rtl"] .rateb-pos-v2__line {
+    animation-name: pos-slide-in-cart-rtl;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rateb-pos-v2__tile,
+    .rateb-pos-v2__line,
+    .rateb-pos-v2__cat-indicator {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .rateb-pos-v2__tile--skeleton .rateb-pos-v2__tile-media,
+    .rateb-pos-v2__tile--skeleton .rateb-pos-v2__tile-body > * {
+        animation: none !important;
+    }
+}
