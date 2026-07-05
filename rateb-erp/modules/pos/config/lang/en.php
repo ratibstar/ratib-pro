@@ -240,4 +240,8 @@ return [
     'pos_cat_favorites' => 'Favorites',
     'pos_cat_recent' => 'Recent',
     'pos_cat_popular' => 'Most sold',
+    'pos_settings' => 'Settings',
+    'pos_more_actions' => 'More',
+    'pos_voice_search' => 'Voice search (coming soon)',
+    'pos_favorite' => 'Favorite',
 ];

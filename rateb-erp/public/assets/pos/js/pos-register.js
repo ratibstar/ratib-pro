@@ -34,7 +34,9 @@
         tax: root.querySelector('[data-pos-tax]'),
         total: root.querySelector('[data-pos-total]'),
         toolbarTotal: document.querySelector('[data-pos-toolbar-total]'),
-        toolbarCount: document.querySelector('[data-pos-toolbar-count]'),
+        payAmount: root.querySelector('[data-pos-pay-amount]'),
+        toolbarCustomer: document.querySelector('[data-pos-toolbar-customer]'),
+        customerPopover: root.querySelector('[data-pos-customer-popover]'),
         status: root.querySelector('[data-pos-status]'),
         customerInput: root.querySelector('[data-pos-customer-input]'),
         customerList: root.querySelector('[data-pos-customer-list]'),
@@ -55,6 +57,7 @@
     var listActiveIndex = -1;
     var activeListType = null;
     var storageKey = 'rateb_pos_cart_' + (config.companyId || 0) + '_' + (config.userId || 0);
+    var lastRenderedTotal = null;
 
     function t(key, fallback) {
         return i18n[key] || fallback || key;
@@ -189,15 +192,15 @@
         if (els.total) {
             els.total.textContent = money(state.totals.total);
         }
-        if (els.toolbarTotal) {
-            els.toolbarTotal.textContent = money(state.totals.total);
+        if (els.payAmount) {
+            els.payAmount.textContent = money(state.totals.total);
         }
-        if (els.toolbarCount) {
-            var units = state.lines.reduce(function (sum, line) {
-                return sum + Number(line.quantity || 0);
-            }, 0);
-            els.toolbarCount.textContent = units + ' ' + t('pos_cart_lines', 'items');
+        var totalNum = Number(state.totals.total || 0);
+        if (lastRenderedTotal !== null && lastRenderedTotal !== totalNum &&
+            window.RatebPosMotion && typeof window.RatebPosMotion.pulseTotal === 'function') {
+            window.RatebPosMotion.pulseTotal();
         }
+        lastRenderedTotal = totalNum;
     }
 
     function cartLineIcon(line) {
@@ -338,17 +341,18 @@
     }
 
     function renderCustomer() {
-        if (!els.customerDisplay) {
-            return;
-        }
+        var label = t('pos_walk_in_customer', 'Walk-in customer');
         if (state.customer && state.customer.name) {
-            var label = state.customer.name;
+            label = state.customer.name;
             if (state.customer.phone) {
                 label += ' · ' + state.customer.phone;
             }
+        }
+        if (els.customerDisplay) {
             els.customerDisplay.textContent = label;
-        } else {
-            els.customerDisplay.textContent = t('pos_walk_in_customer', 'Walk-in customer');
+        }
+        if (els.toolbarCustomer) {
+            els.toolbarCustomer.textContent = label;
         }
     }
 
@@ -1043,10 +1047,21 @@
         });
         document.querySelectorAll('[data-pos-focus-customer]').forEach(function (btn) {
             btn.addEventListener('click', function () {
+                if (els.customerPopover) {
+                    var open = els.customerPopover.hidden;
+                    els.customerPopover.hidden = !open;
+                }
                 if (els.customerInput) {
                     els.customerInput.focus();
                 }
             });
+        });
+        document.addEventListener('click', function (e) {
+            if (els.customerPopover && !els.customerPopover.hidden &&
+                !e.target.closest('[data-pos-customer-popover]') &&
+                !e.target.closest('[data-pos-focus-customer]')) {
+                els.customerPopover.hidden = true;
+            }
         });
     }
 

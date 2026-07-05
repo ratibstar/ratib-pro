@@ -1,0 +1,213 @@
+/* RATEB POS Pro — Motion (GPU transforms only) */
+
+@keyframes pos-fade-up {
+    from { opacity: 0; transform: translate3d(0, 12px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes pos-scale-in {
+    from { opacity: 0; transform: scale3d(0.92, 0.92, 1); }
+    to { opacity: 1; transform: scale3d(1, 1, 1); }
+}
+
+@keyframes pos-slide-in-cart {
+    from { opacity: 0; transform: translate3d(24px, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes pos-total-pulse {
+    0% { transform: scale3d(1, 1, 1); }
+    40% { transform: scale3d(1.06, 1.06, 1); }
+    100% { transform: scale3d(1, 1, 1); }
+}
+
+@keyframes pos-glow-pulse {
+    0%, 100% { box-shadow: var(--pos-shadow-glow), var(--pos-shadow-md); }
+    50% { box-shadow: 0 0 48px var(--pos-accent-glow), var(--pos-shadow-md); }
+}
+
+@keyframes pos-ripple {
+    to { transform: scale3d(2.5, 2.5, 1); opacity: 0; }
+}
+
+@keyframes pos-shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+}
+
+@keyframes pos-bounce-select {
+    0% { transform: scale3d(1, 1, 1); }
+    50% { transform: scale3d(1.04, 1.04, 1); }
+    100% { transform: scale3d(1.02, 1.02, 1); }
+}
+
+@keyframes pos-fly-to-cart {
+    0% { transform: translate3d(var(--fly-x, 0), var(--fly-y, 0), 0) scale3d(1, 1, 1); opacity: 1; }
+    100% { transform: translate3d(var(--fly-tx, 0), var(--fly-ty, 0), 0) scale3d(0.2, 0.2, 1); opacity: 0; }
+}
+
+/* Product cards — staggered entrance */
+.rateb-pos-product-card {
+    animation: pos-fade-up 0.4s var(--pos-ease-out) both;
+    animation-delay: calc(var(--pos-stagger, 0) * 35ms);
+}
+
+.rateb-pos-product-card:hover:not(.is-disabled) {
+    transform: translate3d(0, -4px, 0);
+    box-shadow: var(--pos-shadow-md);
+    transition: transform 0.25s var(--pos-ease-out), box-shadow 0.25s var(--pos-ease-out);
+}
+
+.rateb-pos-product-card:active:not(.is-disabled) {
+    transform: scale3d(0.97, 0.97, 1);
+    transition: transform 0.1s var(--pos-ease-out);
+}
+
+.rateb-pos-product-card.is-selected {
+    animation: pos-bounce-select 0.35s var(--pos-ease-spring);
+}
+
+.rateb-pos-product-card.is-added {
+    animation: pos-glow-pulse 0.5s var(--pos-ease-out);
+}
+
+.rateb-pos-product-card .rateb-pos-product-card__icon {
+    transition: transform 0.3s var(--pos-ease-spring);
+}
+
+.rateb-pos-product-card:hover:not(.is-disabled) .rateb-pos-product-card__icon {
+    transform: scale3d(1.08, 1.08, 1);
+}
+
+/* Ripple container */
+.rateb-pos-product-card__ripple {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+}
+
+.rateb-pos-ripple-circle {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    margin: -40px 0 0 -40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    animation: pos-ripple 0.55s var(--pos-ease-out) forwards;
+    will-change: transform, opacity;
+}
+
+/* Cart lines */
+.rateb-pos-cart-line {
+    animation: pos-slide-in-cart 0.35s var(--pos-ease-out) both;
+}
+
+.rateb-pos-cart-line.is-removing {
+    animation: pos-fade-up 0.25s var(--pos-ease-out) reverse both;
+}
+
+/* Pay button */
+.rateb-pos-pay-btn {
+    transition: transform 0.2s var(--pos-ease-spring), box-shadow 0.2s var(--pos-ease-out);
+}
+
+.rateb-pos-pay-btn:hover {
+    transform: translate3d(0, -2px, 0);
+    animation: pos-glow-pulse 2s ease-in-out infinite;
+}
+
+.rateb-pos-pay-btn:active {
+    transform: scale3d(0.98, 0.98, 1);
+}
+
+/* Category chips */
+.rateb-pos-category-chip {
+    transition: transform 0.2s var(--pos-ease-spring), border-color 0.2s, box-shadow 0.2s;
+}
+
+.rateb-pos-category-chip:active {
+    transform: scale3d(0.96, 0.96, 1);
+}
+
+/* Search focus glow */
+.rateb-pos-search-hero__field {
+    transition: border-color 0.25s var(--pos-ease-out), box-shadow 0.25s var(--pos-ease-out), transform 0.25s var(--pos-ease-out);
+}
+
+.rateb-pos-search-hero__field:focus-within {
+    transform: translate3d(0, -1px, 0);
+}
+
+/* Overflow menu */
+.rateb-pos-overflow:not([hidden]) {
+    animation: pos-scale-in 0.25s var(--pos-ease-spring) both;
+}
+
+.rateb-pos-more-menu:not([hidden]) {
+    animation: pos-fade-up 0.2s var(--pos-ease-out) both;
+}
+
+/* Loading shimmer on grid */
+.rateb-pos-product-grid.is-loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+    background-size: 200% 100%;
+    animation: pos-shimmer 1.2s linear infinite;
+    pointer-events: none;
+}
+
+.rateb-pos-product-grid { position: relative; }
+
+/* Status toast */
+.rateb-pos-status.is-visible {
+    animation: pos-fade-up 0.3s var(--pos-ease-out) both;
+}
+
+/* Qty button press */
+.rateb-pos-qty-btn {
+    transition: transform 0.15s var(--pos-ease-spring), background 0.15s;
+}
+
+.rateb-pos-qty-btn:active {
+    transform: scale3d(0.92, 0.92, 1);
+    background: var(--pos-surface-active);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rateb-pos-product-card,
+    .rateb-pos-cart-line,
+    .rateb-pos-overflow:not([hidden]),
+    .rateb-pos-more-menu:not([hidden]),
+    .rateb-pos-status.is-visible {
+        animation: none !important;
+    }
+
+    .rateb-pos-product-card:hover:not(.is-disabled),
+    .rateb-pos-pay-btn:hover,
+    .rateb-pos-search-hero__field:focus-within {
+        transform: none !important;
+    }
+
+    .rateb-pos-pay-btn:hover {
+        animation: none !important;
+    }
+
+    .rateb-pos-product-grid.is-loading::after {
+        animation: none !important;
+    }
+}
+
+[dir="rtl"] .rateb-pos-cart-line {
+    animation-name: pos-slide-in-cart-rtl;
+}
+
+@keyframes pos-slide-in-cart-rtl {
+    from { opacity: 0; transform: translate3d(-24px, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}

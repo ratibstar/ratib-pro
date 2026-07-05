@@ -26,6 +26,7 @@ $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_H
     <link href="<?php echo rateb_pos_asset('css/pos-register-checkout.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_pos_asset('css/pos-register-ops.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_pos_asset('css/pos-register-premium.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_pos_asset('css/pos-register-motion.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-pos-shell rateb-pos-premium">
 <a class="rateb-pos-skip-link" href="#rateb-pos-register-main"><?php echo __('pos_skip_to_register'); ?></a>
@@ -38,6 +39,7 @@ $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_H
 <script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register.js'); ?>"></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register-motion.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-tiles.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-checkout.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-ops.js'); ?>"></script>

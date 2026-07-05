@@ -239,4 +239,8 @@ return [
     'pos_cat_favorites' => 'المفضلة',
     'pos_cat_recent' => 'الأحدث',
     'pos_cat_popular' => 'الأكثر مبيعاً',
+    'pos_settings' => 'الإعدادات',
+    'pos_more_actions' => 'المزيد',
+    'pos_voice_search' => 'البحث الصوتي (قريباً)',
+    'pos_favorite' => 'مفضلة',
 ];
