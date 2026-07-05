@@ -24,10 +24,8 @@
     };
 
     var els = {
-        cartBody: root.querySelector('[data-pos-cart-body]'),
         cartLines: root.querySelector('[data-pos-cart-lines]'),
         cartEmpty: root.querySelector('[data-pos-cart-empty]'),
-        cartTable: root.querySelector('[data-pos-cart-table]'),
         cartCount: root.querySelector('[data-pos-cart-count]'),
         subtotal: root.querySelector('[data-pos-subtotal]'),
         discountTotal: root.querySelector('[data-pos-discount-total]'),
@@ -44,7 +42,6 @@
         productSearch: root.querySelector('[data-pos-product-search]'),
         productList: root.querySelector('[data-pos-product-list]'),
         barcodeInput: root.querySelector('[data-pos-barcode-input]'),
-        selectedLine: root.querySelector('[data-pos-selected-line]'),
         shortcutsList: root.querySelector('[data-pos-shortcuts-list]'),
         clearCart: root.querySelector('[data-pos-clear-cart]'),
         newSale: root.querySelector('[data-pos-new-sale]')
@@ -217,29 +214,6 @@
         lastRenderedTotal = totalNum;
     }
 
-    function cartLineIcon(line) {
-        var name = ((line.item_name || '') + ' ' + (line.item_code || '')).toLowerCase();
-        if (name.indexOf('coffee') >= 0 || name.indexOf('latte') >= 0) {
-            return 'fa-mug-hot';
-        }
-        if (name.indexOf('pizza') >= 0) {
-            return 'fa-pizza-slice';
-        }
-        if (name.indexOf('burger') >= 0) {
-            return 'fa-burger';
-        }
-        if (name.indexOf('cake') >= 0 || name.indexOf('dessert') >= 0) {
-            return 'fa-cookie';
-        }
-        if (name.indexOf('drink') >= 0 || name.indexOf('juice') >= 0) {
-            return 'fa-glass-water';
-        }
-        if (name.indexOf('bread') >= 0) {
-            return 'fa-bread-slice';
-        }
-        return 'fa-box-open';
-    }
-
     function lineThumbHtml(line) {
         var images = window.RatebPosProductImages || {};
         var src = images[String(line.product_id || '')] || '';
@@ -249,11 +223,9 @@
         return '<span class="rateb-pos__line-photo rateb-pos__line-photo--empty" aria-hidden="true"></span>';
     }
 
-    function renderPremiumCartLine(line) {
-        var commercial = root.classList.contains('rateb-pos');
-        var v3 = !commercial && root.classList.contains('rateb-pos-v3');
+    function renderCartLine(line) {
         var card = document.createElement('article');
-        card.className = commercial ? 'rateb-pos__line' : (v3 ? 'rateb-pos-v3__item' : 'rateb-pos-v2__line');
+        card.className = 'rateb-pos__line';
         card.setAttribute('role', 'listitem');
         card.setAttribute('data-line-id', line.id || '');
         card.tabIndex = 0;
@@ -261,99 +233,35 @@
             card.classList.add('is-selected');
         }
 
-        var discountBadge = '';
+        var modLines = '';
+        if (line.notes) {
+            modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.notes) + '</p>';
+        }
+        if (line.requires_serial && !line.serial_no) {
+            modLines += '<button type="button" class="rateb-pos__line-mod rateb-pos__line-mod--action" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>';
+        } else if (line.serial_no) {
+            modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.serial_no) + '</p>';
+        }
         var disc = Number(line.discount_amount || line.line_discount || 0);
-        var tagCls = commercial ? 'rateb-pos__line-tag' : (v3 ? 'rateb-pos-v3__item-tag' : 'rateb-pos-v2__line-tag');
-        var tagDiscCls = commercial ? 'rateb-pos__line-tag rateb-pos__line-tag--discount' : (v3 ? 'rateb-pos-v3__item-tag rateb-pos-v3__item-tag--discount' : 'rateb-pos-v2__line-tag rateb-pos-v2__line-tag--discount');
         if (disc > 0) {
-            discountBadge = '<span class="' + tagDiscCls + '">-' + money(disc) + '</span>';
+            modLines += '<p class="rateb-pos__line-mod rateb-pos__line-mod--discount">-' + money(disc) + '</p>';
         }
-        var serialBadge = line.serial_no
-            ? '<span class="' + tagCls + '">SN: ' + escapeHtml(line.serial_no) + '</span>'
-            : (line.requires_serial && !line.serial_no
-                ? '<button type="button" class="' + tagCls + '" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>'
-                : '');
-        var batchBadge = (line.batch_preview && line.batch_preview.allocations && line.batch_preview.allocations.length)
-            ? '<span class="' + tagCls + '">FEFO</span>' + batchPreviewHtml(line)
-            : (line.has_batches ? '<span class="' + tagCls + '">FEFO</span>' : '');
-
-        if (commercial) {
-            var modLines = '';
-            if (line.notes) {
-                modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.notes) + '</p>';
-            }
-            if (line.requires_serial && !line.serial_no) {
-                modLines += '<button type="button" class="rateb-pos__line-mod rateb-pos__line-mod--action" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>';
-            } else if (line.serial_no) {
-                modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.serial_no) + '</p>';
-            }
-            var disc = Number(line.discount_amount || line.line_discount || 0);
-            if (disc > 0) {
-                modLines += '<p class="rateb-pos__line-mod rateb-pos__line-mod--discount">-' + money(disc) + '</p>';
-            }
-            card.innerHTML =
-                '<div class="rateb-pos__line-media">' + lineThumbHtml(line) + '</div>' +
-                '<div class="rateb-pos__line-body">' +
-                '<p class="rateb-pos__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
-                modLines +
-                '<p class="rateb-pos__line-price">' + money(line.line_total) + '</p>' +
-                '</div>' +
-                '<div class="rateb-pos__line-side">' +
-                '<div class="rateb-pos__line-qty">' +
-                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
-                '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
-                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
-                '</div>' +
-                '<button type="button" class="rateb-pos__line-remove" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
-                '</div>';
-        } else if (v3) {
-            card.innerHTML =
-                '<div class="rateb-pos-v3__item-thumb" aria-hidden="true">' +
-                '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
-                '<div class="rateb-pos-v3__item-main">' +
-                '<p class="rateb-pos-v3__item-name">' + escapeHtml(line.item_name || '') + '</p>' +
-                '<p class="rateb-pos-v3__item-meta">' + escapeHtml(line.item_code || '') + '</p>' +
-                (line.notes ? '<p class="rateb-pos-v3__item-note">' + escapeHtml(line.notes) + '</p>' : '') +
-                '<div class="rateb-pos-v3__item-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
-                '<p class="rateb-pos-v3__item-price">' + money(line.line_total) + '</p>' +
-                '</div>' +
-                '<div class="rateb-pos-v3__item-actions">' +
-                '<div class="rateb-pos-v3__item-qty">' +
-                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
-                '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
-                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
-                '</div>' +
-                '<div class="rateb-pos-v3__item-tools">' +
-                '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
-                '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
-                '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
-                '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
-                '</div></div>';
-        } else {
-            card.innerHTML =
-                '<div class="rateb-pos-v2__line-thumb" aria-hidden="true">' +
-                '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
-                '<div class="rateb-pos-v2__line-main">' +
-                '<p class="rateb-pos-v2__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
-                '<p class="rateb-pos-v2__line-meta">' + escapeHtml(line.item_code || '') + '</p>' +
-                (line.notes ? '<p class="rateb-pos-v2__line-note">' + escapeHtml(line.notes) + '</p>' : '') +
-                '<div class="rateb-pos-v2__line-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
-                '<p class="rateb-pos-v2__line-price">' + money(line.line_total) + '</p>' +
-                '</div>' +
-                '<div class="rateb-pos-v2__line-actions">' +
-                '<div class="rateb-pos-v2__line-qty">' +
-                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
-                '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
-                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
-                '</div>' +
-                '<div class="rateb-pos-v2__line-tools">' +
-                '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
-                '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
-                '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
-                '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
-                '</div></div>';
-        }
+        card.innerHTML =
+            '<div class="rateb-pos__line-media">' + lineThumbHtml(line) + '</div>' +
+            '<div class="rateb-pos__line-body">' +
+            '<p class="rateb-pos__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
+            modLines +
+            '<p class="rateb-pos__line-price">' + money(line.line_total) + '</p>' +
+            '</div>' +
+            '<div class="rateb-pos__line-side">' +
+            '<div class="rateb-pos__line-qty">' +
+            '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
+            '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
+            '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
+            '</div>' +
+            '<button type="button" class="rateb-pos__line-remove" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
+            '</div>';
 
         card.addEventListener('click', function (e) {
             if (e.target.closest('[data-pos-remove]') || e.target.closest('[data-pos-pick-serial]') ||
@@ -371,7 +279,7 @@
         return card;
     }
 
-    function bindPremiumCartControls(container) {
+    function bindCartLineControls(container) {
         if (!container) {
             return;
         }
@@ -404,23 +312,17 @@
                 adjustLineQty(btn.getAttribute('data-pos-qty-down'), -1);
             });
         });
-        container.querySelectorAll('[data-pos-line-select]').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                selectLine(btn.getAttribute('data-pos-line-select'));
-            });
-        });
     }
 
-    function renderPremiumCart() {
+    function renderCartLines() {
         if (!els.cartLines) {
             return;
         }
         els.cartLines.innerHTML = '';
         state.lines.forEach(function (line) {
-            els.cartLines.appendChild(renderPremiumCartLine(line));
+            els.cartLines.appendChild(renderCartLine(line));
         });
-        bindPremiumCartControls(els.cartLines);
+        bindCartLineControls(els.cartLines);
     }
 
     function renderCustomer() {
@@ -448,45 +350,6 @@
         var cls = n > 0 ? 'rateb-pos-stock-ok' : 'rateb-pos-stock-out';
         var label = n > 0 ? (t('pos_stock_available', 'Available') + ': ' + n) : t('pos_out_of_stock', 'Out of stock');
         return '<span class="rateb-pos-stock-badge ' + cls + '">' + escapeHtml(label) + '</span>';
-    }
-
-    function batchPreviewHtml(line) {
-        var preview = line.batch_preview;
-        if (!preview || !preview.allocations || !preview.allocations.length) {
-            return '';
-        }
-        var rows = preview.allocations.map(function (a) {
-            return '<li><span class="rateb-pos-batch-no">' + escapeHtml(a.batch_no || '') + '</span> · ' +
-                escapeHtml(String(a.quantity)) + ' · ' + escapeHtml(a.expiry_date || '—') + '</li>';
-        }).join('');
-        return '<details class="rateb-pos-batch-preview"><summary>' + escapeHtml(t('pos_fefo_preview', 'FEFO preview')) +
-            '</summary><ul>' + rows + '</ul></details>';
-    }
-
-    function lineStockCell(line) {
-        var avail = line.available_qty != null ? line.available_qty : '—';
-        var serial = line.serial_no ? ('<br><small>' + escapeHtml(line.serial_no) + '</small>') : '';
-        var serialBtn = line.requires_serial && !line.serial_no
-            ? '<br><button type="button" class="btn btn-sm btn-outline-primary rateb-pos-serial-btn" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>'
-            : '';
-        return escapeHtml(String(avail)) + serial + serialBtn;
-    }
-
-    function renderSelectedLineHint() {
-        if (!els.selectedLine) {
-            return;
-        }
-        if (!state.selectedLineId) {
-            els.selectedLine.textContent = '';
-            return;
-        }
-        var line = findLine(state.selectedLineId);
-        if (!line) {
-            els.selectedLine.textContent = '';
-            return;
-        }
-        els.selectedLine.textContent = t('pos_selected_line', 'Selected') + ': ' + (line.item_name || '') +
-            ' (' + t('pos_shortcut_qty_up', '+/- qty') + ')';
     }
 
     function escapeHtml(s) {
@@ -557,60 +420,7 @@
     }
 
     function renderCartWithoutSave() {
-        if (els.cartLines) {
-            renderPremiumCart();
-        } else if (els.cartBody) {
-            els.cartBody.innerHTML = '';
-            state.lines.forEach(function (line) {
-                var tr = document.createElement('tr');
-                tr.setAttribute('data-line-id', line.id || '');
-                tr.tabIndex = 0;
-                tr.setAttribute('role', 'button');
-                tr.setAttribute('aria-label', (line.item_name || '') + ', ' + t('pos_qty', 'Qty') + ' ' + line.quantity);
-                if (state.selectedLineId === line.id) {
-                    tr.classList.add('is-selected');
-                }
-                tr.innerHTML =
-                    '<td><span class="rateb-pos-item-code">' + escapeHtml(line.item_code || '') + '</span><br>' +
-                    '<strong>' + escapeHtml(line.item_name || '') + '</strong>' +
-                    batchPreviewHtml(line) + '</td>' +
-                    '<td class="rateb-pos-stock-cell">' + lineStockCell(line) + '</td>' +
-                    '<td>' + escapeHtml(String(line.quantity)) + '</td>' +
-                    '<td>' + money(line.unit_price) + '</td>' +
-                    '<td>' + money(line.line_total) + '</td>' +
-                    '<td><button type="button" class="btn btn-sm btn-outline-danger rateb-pos-line-btn" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">×</button></td>';
-                tr.addEventListener('click', function (e) {
-                    if (e.target.closest('[data-pos-remove]') || e.target.closest('[data-pos-pick-serial]')) {
-                        return;
-                    }
-                    selectLine(line.id);
-                });
-                tr.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        selectLine(line.id);
-                    }
-                });
-                els.cartBody.appendChild(tr);
-            });
-            els.cartBody.querySelectorAll('[data-pos-pick-serial]').forEach(function (btn) {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    var pid = Number(btn.getAttribute('data-pos-pick-serial'));
-                    var lid = btn.getAttribute('data-line-id');
-                    var line = findLine(lid);
-                    if (line) {
-                        openSerialPicker({ id: pid, item_name: line.item_name }, Number(line.quantity || 1), lid);
-                    }
-                });
-            });
-            els.cartBody.querySelectorAll('[data-pos-remove]').forEach(function (btn) {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    removeLine(btn.getAttribute('data-pos-remove'));
-                });
-            });
-        }
+        renderCartLines();
         var count = state.lines.length;
         var prevCount = els.cartCount ? Number(els.cartCount.getAttribute('data-prev-count') || '0') : 0;
         if (els.cartCount) {
@@ -620,13 +430,9 @@
                 window.RatebPosMotion.bumpCartCount();
             }
         }
-        if (els.cartTable) {
-            els.cartTable.classList.toggle('is-empty', count === 0);
-        }
         if (els.cartEmpty) {
             els.cartEmpty.classList.toggle('is-hidden', count > 0);
         }
-        renderSelectedLineHint();
         refreshPricing();
     }
 
@@ -980,9 +786,9 @@
     var pendingLineId = null;
 
     function closeSerialModal() {
-        var modal = document.getElementById('rateb-pos-serial-modal');
-        if (modal && typeof modal.close === 'function') {
-            modal.close();
+        var modal = root.querySelector('[data-pos-serial-modal]');
+        if (modal) {
+            modal.hidden = true;
         }
         pendingSerialProduct = null;
         pendingLineId = null;
@@ -992,32 +798,27 @@
         pendingSerialProduct = product;
         pendingSerialQty = qty || 1;
         pendingLineId = lineId || null;
-        var modal = document.getElementById('rateb-pos-serial-modal');
+        var modal = root.querySelector('[data-pos-serial-modal]');
         if (!modal || !api.productSerials) {
             return;
         }
-        var list = modal.querySelector('[data-pos-serial-list]');
-        var productLabel = modal.querySelector('[data-pos-serial-product]');
-        if (productLabel) {
-            productLabel.textContent = product.item_name || '';
-        }
-        if (list) {
-            list.innerHTML = '';
+        var bodyEl = modal.querySelector('[data-pos-serial-body]');
+        if (bodyEl) {
+            bodyEl.innerHTML = '';
         }
         fetchJson(api.productSerials + '?id=' + encodeURIComponent(product.id))
             .then(function (data) {
                 var items = data.items || [];
-                if (!list) {
+                if (!bodyEl) {
                     return;
                 }
                 if (!items.length) {
-                    var empty = document.createElement('li');
+                    var empty = document.createElement('p');
                     empty.className = 'rateb-pos-serial-empty';
                     empty.textContent = t('pos_search_no_results', 'No results');
-                    list.appendChild(empty);
+                    bodyEl.appendChild(empty);
                 }
                 items.forEach(function (serial) {
-                    var li = document.createElement('li');
                     var btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'rateb-pos-combobox-option rateb-pos-serial-option';
@@ -1045,12 +846,9 @@
                             addProduct(pendingSerialProduct, pendingSerialQty, serialNo);
                         }
                     });
-                    li.appendChild(btn);
-                    list.appendChild(li);
+                    bodyEl.appendChild(btn);
                 });
-                if (typeof modal.showModal === 'function') {
-                    modal.showModal();
-                }
+                modal.hidden = false;
             })
             .catch(function (err) {
                 showStatus(err.message);
@@ -1102,8 +900,14 @@
                 els.productSearch.focus();
             } else if (action === 'pos-focus-barcode' && els.barcodeInput) {
                 els.barcodeInput.focus();
-            } else if (action === 'pos-focus-customer' && els.customerInput) {
-                els.customerInput.focus();
+            } else if (action === 'pos-focus-customer') {
+                var customerSheetEl = root.querySelector('[data-pos-customer-sheet]');
+                if (customerSheetEl) {
+                    customerSheetEl.hidden = false;
+                }
+                if (els.customerInput) {
+                    els.customerInput.focus();
+                }
             } else if (action === 'pos-clear-cart') {
                 clearCart();
             } else if (action === 'pos-qty-up') {

@@ -15,7 +15,7 @@
     };
 
     document.addEventListener('keydown', function (e) {
-        if (!document.getElementById('rateb-pos-register-main')) {
+        if (!document.querySelector('[data-pos-register]')) {
             return;
         }
         var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';

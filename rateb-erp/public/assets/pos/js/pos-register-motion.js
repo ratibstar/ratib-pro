@@ -9,16 +9,10 @@
     function ripple(el, clientX, clientY) {
         if (reduced || !el) { return; }
         var rect = el.getBoundingClientRect();
-        var container = el.querySelector('.rateb-pos__tile-ripple, .rateb-pos-v3__card-ripple, .rateb-pos-v2__tile-ripple, .rateb-pos-product-card__ripple');
+        var container = el.querySelector('.rateb-pos__tile-ripple');
         if (!container) {
             container = document.createElement('span');
-            if (el.classList.contains('rateb-pos__tile')) {
-                container.className = 'rateb-pos__tile-ripple';
-            } else if (el.classList.contains('rateb-pos-v3__card')) {
-                container.className = 'rateb-pos-v3__card-ripple';
-            } else {
-                container.className = 'rateb-pos-v2__tile-ripple';
-            }
+            container.className = 'rateb-pos__tile-ripple';
             container.setAttribute('aria-hidden', 'true');
             el.insertBefore(container, el.firstChild);
         }
@@ -41,7 +35,7 @@
         var to = cart.getBoundingClientRect();
         var dot = document.createElement('div');
         dot.className = 'rateb-pos-fly-dot';
-        dot.innerHTML = '<i class="fa-solid fa-plus"></i>';
+        dot.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
         var sx = from.left + from.width / 2;
         var sy = from.top + from.height / 2;
         var tx = to.left + to.width / 2;
@@ -71,9 +65,7 @@
     function pulseTotal() {
         if (reduced) { return; }
         document.querySelectorAll(
-            '.rateb-pos__totals-row--total dd, .rateb-pos__charge, [data-pos-pay-amount], ' +
-            '.rateb-pos-v3__total-line--grand, .rateb-pos-v3__pay, .rateb-pos-v3__running-total-value, ' +
-            '.rateb-pos-v2__total-row--grand, .rateb-pos-v2__pay, [data-pos-toolbar-total]'
+            '.rateb-pos__totals-row--grand dd, .rateb-pos__charge, [data-pos-pay-amount], [data-pos-toolbar-total]'
         ).forEach(function (el) {
             el.classList.remove('is-pulse');
             void el.offsetWidth;
@@ -94,24 +86,6 @@
         indicator.style.opacity = '1';
     }
 
-    function bindSettings() {
-        var toggle = document.querySelector('[data-pos-settings-toggle]');
-        var menu = document.querySelector('[data-pos-settings]');
-        if (!toggle || !menu) { return; }
-        toggle.addEventListener('click', function (e) {
-            e.stopPropagation();
-            var open = menu.hidden;
-            menu.hidden = !open;
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('[data-pos-settings]') && !e.target.closest('[data-pos-settings-toggle]')) {
-                menu.hidden = true;
-                toggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-
     function bindSearchClear() {
         var input = document.querySelector('[data-pos-product-search]');
         var clearBtn = document.querySelector('[data-pos-search-clear]');
@@ -127,7 +101,6 @@
         sync();
     }
 
-    bindSettings();
     bindSearchClear();
 
     global.RatebPosMotion = {

@@ -19,7 +19,6 @@ $fontArabic = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wgh
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="<?php echo $fontLatin; ?>" rel="stylesheet">
     <link href="<?php echo $fontArabic; ?>" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="<?php echo rateb_pos_asset('css/pos-register.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-pos-shell">

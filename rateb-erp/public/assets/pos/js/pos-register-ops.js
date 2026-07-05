@@ -314,19 +314,19 @@
             return;
         }
         var row = document.createElement('div');
-        row.className = 'rateb-pos-payment-row';
+        row.className = 'rateb-pos__exchange-pay-row';
         row.innerHTML =
-            '<div><label class="rateb-pos-label">' + t('pos_payment_method', 'Method') + '</label>' +
-            '<select class="form-control rateb-pos-input" data-pos-ex-pay-method>' +
+            '<div class="rateb-pos__field"><label class="rateb-pos__field-label">' + t('pos_payment_method', 'Method') + '</label>' +
+            '<select class="rateb-pos__input rateb-pos__input--block" data-pos-ex-pay-method>' +
             '<option value="cash">' + t('pos_refund_cash', 'Cash') + '</option>' +
             '<option value="card">' + t('pos_refund_card', 'Card') + '</option>' +
             '<option value="bank">' + t('pos_refund_bank', 'Bank') + '</option>' +
             '<option value="wallet">' + t('pos_refund_wallet', 'Wallet') + '</option>' +
             '<option value="gift_card">' + t('pos_refund_gift_card', 'Gift card') + '</option></select></div>' +
-            '<div><label class="rateb-pos-label">' + t('pos_payment_amount', 'Amount') + '</label>' +
-            '<input type="number" min="0" step="0.01" class="form-control rateb-pos-input" data-pos-ex-pay-amount value="' + money(amount || 0) + '" /></div>' +
-            '<div><label class="rateb-pos-label">' + t('pos_payment_reference', 'Ref') + '</label>' +
-            '<input type="text" class="form-control rateb-pos-input" data-pos-ex-pay-ref value="' + (ref || '') + '" /></div>';
+            '<div class="rateb-pos__field"><label class="rateb-pos__field-label">' + t('pos_payment_amount', 'Amount') + '</label>' +
+            '<input type="number" min="0" step="0.01" class="rateb-pos__input rateb-pos__input--block" data-pos-ex-pay-amount value="' + money(amount || 0) + '" /></div>' +
+            '<div class="rateb-pos__field"><label class="rateb-pos__field-label">' + t('pos_payment_reference', 'Ref') + '</label>' +
+            '<input type="text" class="rateb-pos__input rateb-pos__input--block" data-pos-ex-pay-ref value="' + (ref || '') + '" /></div>';
         var sel = row.querySelector('[data-pos-ex-pay-method]');
         if (sel && method) {
             sel.value = method;
@@ -340,7 +340,7 @@
         if (!container) {
             return out;
         }
-        container.querySelectorAll('.rateb-pos-payment-row').forEach(function (row) {
+        container.querySelectorAll('.rateb-pos__exchange-pay-row').forEach(function (row) {
             var method = row.querySelector('[data-pos-ex-pay-method]');
             var amount = row.querySelector('[data-pos-ex-pay-amount]');
             var ref = row.querySelector('[data-pos-ex-pay-ref]');
