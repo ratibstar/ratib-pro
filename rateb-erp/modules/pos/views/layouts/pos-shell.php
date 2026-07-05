@@ -32,6 +32,10 @@ $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_H
     <div class="rateb-pos-shell-toolbar">
         <h1 class="rateb-pos-shell-title"><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_register')); ?></h1>
         <div class="rateb-pos-shell-actions">
+            <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">
+                <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>" data-locale="en">EN</a>
+                <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>" data-locale="ar">عربي</a>
+            </div>
             <div class="rateb-pos-theme-toggle" role="group" aria-label="<?php echo __('pos_theme_dark'); ?>">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-theme-choice="dark" aria-pressed="true"><?php echo __('pos_theme_dark'); ?></button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-theme-choice="light" aria-pressed="false"><?php echo __('pos_theme_light'); ?></button>

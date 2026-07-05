@@ -25,6 +25,10 @@ final class PosModule
             return;
         }
         self::$booted = true;
+        $modelsBarrel = self::rootPath() . '/app/Models/PosModels.php';
+        if (is_file($modelsBarrel)) {
+            require_once $modelsBarrel;
+        }
         self::registerAutoload();
     }
 
@@ -80,6 +84,13 @@ final class PosModule
             $path = $root . '/app/' . $relative;
             if (is_file($path)) {
                 require_once $path;
+                return;
+            }
+            if (str_starts_with($relative, 'Models/')) {
+                $barrel = $root . '/app/Models/PosModels.php';
+                if (is_file($barrel)) {
+                    require_once $barrel;
+                }
             }
         });
     }
