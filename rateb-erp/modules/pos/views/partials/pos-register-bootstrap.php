@@ -93,7 +93,13 @@ try {
         };
 
         $invModel = new \Rateb\App\Models\Inventory();
-        $invRows = $invModel->all(500, 0, [], '');
+        $scopeWarehouseId = (int) ($context['session']['warehouse_id'] ?? 0);
+        $scopeBranchId = (int) ($context['session']['branch_id'] ?? 0);
+        $invFilters = [];
+        if ($scopeWarehouseId > 0) {
+            $invFilters['warehouse_id'] = $scopeWarehouseId;
+        }
+        $invRows = $invModel->all(500, 0, $invFilters, '');
         $sellPrices = null;
         try {
             $sellPrices = new \Rateb\App\Pos\Services\PosSellPriceService();
@@ -104,6 +110,12 @@ try {
             $id = (int) ($row['id'] ?? 0);
             if ($id < 1) {
                 continue;
+            }
+            if ($scopeBranchId > 0) {
+                $rowBranch = (int) ($row['branch_id'] ?? 0);
+                if ($rowBranch > 0 && $rowBranch !== $scopeBranchId) {
+                    continue;
+                }
             }
             $categoryId = (int) ($row['category_id'] ?? 0);
             $posBootstrap['productIndex'][(string) $id] = $categoryId;

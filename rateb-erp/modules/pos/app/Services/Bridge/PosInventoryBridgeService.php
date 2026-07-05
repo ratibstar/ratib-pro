@@ -149,7 +149,11 @@ final class PosInventoryBridgeService
             return null;
         }
         if (!$this->itemMatchesScope($row, $warehouseId, $branchId)) {
-            return null;
+            $resolved = $this->resolveInventoryInScope($row, $companyId, $warehouseId, $branchId);
+            if ($resolved === null) {
+                return null;
+            }
+            $row = $resolved;
         }
         return $this->enrichProduct($row, $companyId, $warehouseId, $sessionId, null, $branchId);
     }
@@ -1092,6 +1096,51 @@ final class PosInventoryBridgeService
             }
         }
         return $total;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function resolveInventoryInScope(
+        array $row,
+        int $companyId,
+        ?int $warehouseId,
+        ?int $branchId
+    ): ?array {
+        if ($this->itemMatchesScope($row, $warehouseId, $branchId)) {
+            return $row;
+        }
+
+        $itemCode = trim((string) ($row['item_code'] ?? ''));
+        $sku = trim((string) ($row['sku'] ?? ''));
+        $barcode = trim((string) ($row['barcode'] ?? ''));
+
+        $filters = [];
+        if ($warehouseId !== null && $warehouseId > 0) {
+            $filters['warehouse_id'] = $warehouseId;
+        }
+
+        $terms = array_values(array_unique(array_filter([$itemCode, $sku, $barcode])));
+        foreach ($terms as $term) {
+            $candidates = (new Inventory())->all(12, 0, $filters, $term);
+            foreach ($candidates as $candidate) {
+                if (!$this->itemMatchesScope($candidate, $warehouseId, $branchId)) {
+                    continue;
+                }
+                $cCode = trim((string) ($candidate['item_code'] ?? ''));
+                $cSku = trim((string) ($candidate['sku'] ?? ''));
+                $cBarcode = trim((string) ($candidate['barcode'] ?? ''));
+                if ($itemCode !== '' && $cCode === $itemCode) {
+                    return $candidate;
+                }
+                if ($sku !== '' && $cSku === $sku) {
+                    return $candidate;
+                }
+                if ($barcode !== '' && $cBarcode === $barcode) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $row */
