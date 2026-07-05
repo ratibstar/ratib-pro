@@ -31,6 +31,9 @@ try {
 
     Rateb\App\Core\Bootstrap::init($ratebRootHint);
 
+    require_once dirname(__FILE__, 2) . '/modules/pos/PosModule.php';
+    \Rateb\App\Pos\PosModule::init();
+
     Rateb\App\Core\Auth::bootstrapFromSession();
 
     $router = new Rateb\App\Core\Router();
@@ -40,6 +43,7 @@ try {
     require RATEB_ROOT . '/routes/cms.php';
     require RATEB_ROOT . '/routes/company.php';
     require RATEB_ROOT . '/routes/api.php';
+    require RATEB_ROOT . '/modules/pos/routes/pos.php';
 
     require_once RATEB_ROOT . '/app/helpers/Request.php';
 

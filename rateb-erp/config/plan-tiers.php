@@ -63,6 +63,7 @@ return [
             'documents',
             'workflows',
             'hr',
+            'pos',
         ],
     ],
 ];

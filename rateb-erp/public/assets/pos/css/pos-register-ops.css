@@ -1,0 +1,43 @@
+/* RATIB POS — register post-sale ops (Phase 6) */
+.rateb-pos-ops-panel {
+    border: 1px solid var(--rateb-border, rgba(255,255,255,0.12));
+    border-radius: var(--rateb-radius, 0.5rem);
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+}
+.rateb-pos-ops-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.rateb-pos-ops-list {
+    max-height: 12rem;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+.rateb-pos-ops-list button {
+    display: block;
+    width: 100%;
+    text-align: start;
+    margin-bottom: 0.25rem;
+}
+.rateb-pos-return-panel {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--rateb-border, rgba(255,255,255,0.12));
+    border-radius: var(--rateb-radius, 0.5rem);
+}
+.rateb-pos-return-panel[hidden] { display: none !important; }
+.rateb-pos-return-lines-wrap {
+    margin-top: 0.5rem;
+    max-height: 14rem;
+    overflow-y: auto;
+}
+.rateb-pos-return-lines-table {
+    width: 100%;
+    font-size: 0.875rem;
+}
+.rateb-pos-return-lines-table input[type="number"] {
+    max-width: 5rem;
+}

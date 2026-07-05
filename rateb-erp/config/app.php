@@ -590,6 +590,13 @@ if (!function_exists('rateb_asset')) {
     }
 }
 
+if (!function_exists('rateb_pos_asset')) {
+    function rateb_pos_asset(string $path): string
+    {
+        return rateb_asset('pos/' . ltrim($path, '/'));
+    }
+}
+
 if (!function_exists('rateb_url')) {
     function rateb_url(string $path = ''): string
     {
@@ -713,7 +720,7 @@ if (!function_exists('rateb_is_ops_route')) {
             'medical-devices', 'device-maintenance', 'device-spare-parts', 'device-warranty',
             'accounting', 'chart-of-accounts', 'journal-entries', 'cash-vouchers', 'fiscal-periods',
             'cost-centers', 'bank-accounts', 'documents', 'workflows', 'notifications', 'profile', 'reports',
-            'hr',
+            'hr', 'pos',
         ];
         return $roots;
     }
@@ -2223,7 +2230,7 @@ if (!function_exists('rateb_app_route')) {
             'supplier-comms', 'supplier-classifications', 'supplier-kpi',
             'contract-renewals', 'tenders', 'asset-maintenance', 'asset-assignments',
             'asset-depreciation', 'device-maintenance', 'device-spare-parts', 'device-warranty',
-            'documents', 'profile',
+            'documents', 'profile', 'pos',
         ];
         if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
             $conflictRoots = array_merge($conflictRoots, [
@@ -2412,6 +2419,9 @@ if (!function_exists('rateb_entity_perms')) {
         if ($map === null) {
             $file = RATEB_ROOT . '/config/entity-permissions.php';
             $map = is_file($file) ? require $file : [];
+            if (class_exists(\Rateb\App\Pos\PosModule::class)) {
+                $map = array_merge($map, \Rateb\App\Pos\PosModule::entityPermissions());
+            }
         }
         $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
         $row = $map[$resource] ?? null;
@@ -2592,6 +2602,12 @@ if (!function_exists('__')) {
             $cache[$locale] = array_merge($fields, $main);
         }
         $text = $cache[$locale][$key] ?? $key;
+        if ($text === $key && class_exists(\Rateb\App\Pos\PosModule::class)) {
+            $posText = \Rateb\App\Pos\PosModule::translate($key, $replace);
+            if ($posText !== null) {
+                return $posText;
+            }
+        }
         foreach ($replace as $k => $v) {
             $text = str_replace(':' . $k, (string) $v, $text);
         }

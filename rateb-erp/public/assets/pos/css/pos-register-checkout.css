@@ -1,0 +1,48 @@
+/* RATIB POS — checkout panel */
+.rateb-pos-checkout-panel {
+    border: 1px solid var(--rateb-border, rgba(255,255,255,0.12));
+    border-radius: var(--rateb-radius, 0.5rem);
+    padding: 1rem;
+    margin-top: 1rem;
+    background: var(--rateb-surface-elevated, #243044);
+}
+.rateb-pos-checkout-panel[hidden] { display: none !important; }
+.rateb-pos-checkout-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+    .rateb-pos-checkout-grid { grid-template-columns: 1fr 1fr; }
+}
+.rateb-pos-payment-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+    margin-bottom: 0.5rem;
+}
+.rateb-pos-checkout-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+.rateb-pos-checkout-summary {
+    font-size: 0.9375rem;
+    margin: 0.75rem 0 0;
+}
+.rateb-pos-checkout-summary dt { font-weight: 600; }
+.rateb-pos-checkout-summary dd { margin: 0 0 0.35rem; font-variant-numeric: tabular-nums; }
+.rateb-pos-receipt-modal .rateb-pos-receipt-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    font-size: 0.875rem;
+}
+.rateb-pos-receipt-lines { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+.rateb-pos-receipt-lines th,
+.rateb-pos-receipt-lines td {
+    padding: 0.35rem 0.25rem;
+    border-bottom: 1px solid var(--rateb-border, rgba(255,255,255,0.08));
+    text-align: start;
+}

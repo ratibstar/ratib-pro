@@ -35,3 +35,7 @@ $router->get('/api/v1/purchase-orders', [ApiController::class, 'listPurchaseOrde
 $router->post('/api/v1/purchase-orders', [ApiController::class, 'createPurchaseOrder'], rateb_api_mw('procurement'));
 $router->get('/api/v1/inventory', [ApiController::class, 'listInventory'], rateb_api_mw('inventory'));
 $router->post('/api/v1/inventory', [ApiController::class, 'createInventory'], rateb_api_mw('inventory'));
+
+if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-api.php')) {
+    require RATEB_ROOT . '/modules/pos/routes/pos-api.php';
+}

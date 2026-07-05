@@ -1,0 +1,32 @@
+/* RATIB POS — module shell */
+.rateb-pos-page { padding: 0.25rem 0 1.5rem; }
+.rateb-pos-card-link {
+    display: block;
+    padding: 1rem 1.25rem;
+    border-radius: var(--rateb-radius, 0.5rem);
+    background: var(--rateb-surface, #1a2332);
+    border: 1px solid var(--rateb-border, rgba(255,255,255,0.08));
+    color: var(--rateb-text, #e8eef7);
+    text-decoration: none;
+    min-height: 3rem;
+}
+.rateb-pos-card-link:hover { border-color: var(--rateb-primary, #3584e4); color: var(--rateb-text); }
+.rateb-pos-card-link--muted { opacity: 0.75; cursor: default; }
+.rateb-pos-json-preview {
+    font-size: 0.85rem;
+    padding: 1rem;
+    border-radius: var(--rateb-radius, 0.5rem);
+    background: var(--rateb-surface, #1a2332);
+    overflow-x: auto;
+}
+.rateb-pos-context-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    background: var(--rateb-surface-elevated, #243044);
+    border-bottom: 1px solid var(--rateb-border, rgba(255,255,255,0.08));
+}
+.rateb-pos-dl dt { font-weight: 600; }
+.rateb-pos-dl dd { margin-bottom: 0.5rem; }

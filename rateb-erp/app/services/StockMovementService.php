@@ -15,6 +15,62 @@ final class StockMovementService
     /** @param array<string, mixed> $data */
     public function record(array $data): int
     {
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $movementId = $this->recordWithinTransaction($data);
+            $invModel = new Inventory();
+            $item = $invModel->find((int) ($data['inventory_id'] ?? 0));
+            $newQty = $item ? (float) ($item['quantity'] ?? 0) : 0.0;
+            $db->commit();
+
+            if ($item !== null) {
+                $reorder = (float) ($item['reorder_level'] ?? 0);
+                $companyId = (int) ($item['company_id'] ?? TenantContext::companyId() ?? 0);
+                if ($newQty <= $reorder && $reorder > 0 && $companyId > 0) {
+                    try {
+                        (new NotificationService())->triggerLowStock(
+                            $companyId,
+                            (string) ($item['item_name'] ?? ''),
+                            $newQty
+                        );
+                    } catch (\Throwable $e) {
+                        error_log('Low stock notification failed: ' . $e->getMessage());
+                    }
+                }
+            }
+
+            $movementType = (string) ($data['movement_type'] ?? 'adjustment');
+            if (in_array($movementType, ['in', 'out'], true)) {
+                try {
+                    (new AccountingService())->autoPostStockMovement($movementId);
+                } catch (\Throwable $e) {
+                    // Accounting post is best-effort; stock movement already saved.
+                }
+            }
+            return $movementId;
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Record stock movement inside caller's open transaction (no nested commit).
+     * Optional batch_allocations from prior FEFO lock — skips re-locking batches.
+     *
+     * @param array<string, mixed> $data
+     * @param array<int, array<string, mixed>>|null $batchAllocations
+     */
+    public function recordWithinTransaction(array $data, ?array $batchAllocations = null): int
+    {
+        $db = Database::connection();
+        if (!$db->inTransaction()) {
+            throw new \RuntimeException('Stock movement requires an active database transaction.');
+        }
+
         $inventoryId = (int) ($data['inventory_id'] ?? 0);
         $movementType = (string) ($data['movement_type'] ?? 'adjustment');
         $quantity = (float) ($data['quantity'] ?? 0);
@@ -28,7 +84,11 @@ final class StockMovementService
         }
 
         $invModel = new Inventory();
-        $item = $invModel->find($inventoryId);
+        $stmt = $db->prepare(
+            'SELECT * FROM rateb_inventory WHERE id = :id LIMIT 1 FOR UPDATE'
+        );
+        $stmt->execute(['id' => $inventoryId]);
+        $item = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$item) {
             throw new \RuntimeException('Inventory item not found');
         }
@@ -46,60 +106,46 @@ final class StockMovementService
             throw new \InvalidArgumentException(__('max_stock_exceeded'));
         }
 
-        $db = Database::connection();
-        $db->beginTransaction();
-        try {
-            $movementModel = new StockMovement();
-            $movementNo = trim((string) ($data['movement_no'] ?? ''));
-            if ($movementNo === '') {
-                $movementNo = $movementModel->generateDocumentCode(
-                    DocumentCodeService::PREFIX_MOVEMENT,
-                    'movement_no'
-                );
-            }
-            $movementId = $movementModel->create([
-                'company_id' => $this->resolveCompanyId($item),
-                'movement_no' => $movementNo,
-                'inventory_id' => $inventoryId,
-                'warehouse_id' => $warehouseId,
-                'movement_type' => $movementType,
-                'quantity' => abs($quantity),
-                'reference_type' => $data['reference_type'] ?? null,
-                'reference_id' => isset($data['reference_id']) ? (int) $data['reference_id'] : null,
-                'notes' => $data['notes'] ?? null,
-                'created_by' => SessionManager::get('rateb_user_id'),
-            ]);
-
-            $invModel->update($inventoryId, ['quantity' => $newQty]);
-
-            if (in_array($movementType, ['out', 'transfer'], true)) {
-                (new InventoryWorkflowService())->consumeBatches($inventoryId, abs($quantity), 'fefo');
-            }
-
-            $reorder = (float) ($item['reorder_level'] ?? 0);
-            $companyId = (int) ($item['company_id'] ?? TenantContext::companyId() ?? 0);
-            if ($newQty <= $reorder && $reorder > 0 && $companyId > 0) {
-                try {
-                    (new NotificationService())->triggerLowStock($companyId, (string) ($item['item_name'] ?? ''), $newQty);
-                } catch (\Throwable $e) {
-                    // Low-stock alerts must not roll back a valid stock movement.
-                    error_log('Low stock notification failed: ' . $e->getMessage());
-                }
-            }
-
-            $db->commit();
-            if (in_array($movementType, ['in', 'out'], true)) {
-                try {
-                    (new AccountingService())->autoPostStockMovement($movementId);
-                } catch (\Throwable $e) {
-                    // Accounting post is best-effort; stock movement already saved.
-                }
-            }
-            return $movementId;
-        } catch (\Throwable $e) {
-            $db->rollBack();
-            throw $e;
+        $movementModel = new StockMovement();
+        $movementNo = trim((string) ($data['movement_no'] ?? ''));
+        if ($movementNo === '') {
+            $movementNo = $movementModel->generateDocumentCode(
+                DocumentCodeService::PREFIX_MOVEMENT,
+                'movement_no'
+            );
         }
+        $movementId = $movementModel->create([
+            'company_id' => $this->resolveCompanyId($item),
+            'movement_no' => $movementNo,
+            'inventory_id' => $inventoryId,
+            'warehouse_id' => $warehouseId,
+            'movement_type' => $movementType,
+            'quantity' => abs($quantity),
+            'reference_type' => $data['reference_type'] ?? null,
+            'reference_id' => isset($data['reference_id']) ? (int) $data['reference_id'] : null,
+            'notes' => $data['notes'] ?? null,
+            'created_by' => SessionManager::get('rateb_user_id'),
+        ]);
+
+        $invModel->update($inventoryId, ['quantity' => $newQty]);
+
+        $workflow = new InventoryWorkflowService();
+        if (in_array($movementType, ['out', 'transfer'], true)) {
+            if (is_array($batchAllocations) && $batchAllocations !== []) {
+                $workflow->applyLockedBatchAllocations($batchAllocations);
+            } else {
+                $workflow->consumeBatchesInTransaction($inventoryId, abs($quantity), 'fefo');
+            }
+        } elseif ($movementType === 'in') {
+            $batchRestorations = is_array($data['batch_restorations'] ?? null)
+                ? $data['batch_restorations']
+                : null;
+            if (is_array($batchRestorations) && $batchRestorations !== []) {
+                $workflow->restoreLockedBatchAllocations($batchRestorations);
+            }
+        }
+
+        return $movementId;
     }
 
     /** @return array<int, array<string, mixed>> */

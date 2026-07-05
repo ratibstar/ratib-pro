@@ -518,7 +518,8 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
     {
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
         return preg_match('#/(close|reopen)(/|$)#', $path) === 1
-            || preg_match('#/accounting/sync$#', $path) === 1;
+            || preg_match('#/accounting/sync$#', $path) === 1
+            || preg_match('#/shifts/open$#', $path) === 1;
     }
 }
 

@@ -33,6 +33,9 @@ $opsSection(__('inventory'), [
     ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
     ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
 ], 'fa-boxes-stacked');
+if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
+    require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
+}
 $opsSection(__('suppliers'), [
     ['suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
     ['supplier-comms', 'supplier_comms', 'fa-comments', 'suppliers'],

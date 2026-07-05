@@ -2887,7 +2887,10 @@ final class AccountingService
                 "ALTER TABLE rateb_journal_entries MODIFY source_type ENUM(
                     'manual','invoice','payment','purchase_order','subscription',
                     'cash_voucher','stock_movement','purchase_invoice',
-                    'supplier_payment','year_end_close','branch_transfer'
+                    'supplier_payment','year_end_close','branch_transfer',
+                    'pos_sale_revenue','pos_sale_cogs',
+                    'pos_return_revenue','pos_return_cogs',
+                    'pos_exchange_revenue','pos_exchange_cogs'
                 ) NOT NULL DEFAULT 'manual'"
             );
         } catch (\Throwable $e) {

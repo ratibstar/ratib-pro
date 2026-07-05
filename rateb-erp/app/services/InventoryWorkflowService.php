@@ -399,6 +399,190 @@ final class InventoryWorkflowService
         return $quantity - $remaining;
     }
 
+    /**
+     * Lock FEFO batches (SELECT … FOR UPDATE) and compute allocations within caller transaction.
+     *
+     * @return array{has_batches: bool, allocations: array<int, array<string, mixed>>, unallocated: float}
+     */
+    public function lockFefoBatchAllocations(int $inventoryId, float $quantity, int $companyId): array
+    {
+        if ($inventoryId < 1 || $quantity <= 0) {
+            return ['has_batches' => false, 'allocations' => [], 'unallocated' => max(0, $quantity)];
+        }
+        $db = Database::connection();
+        if (!$db->inTransaction()) {
+            throw new \RuntimeException('FEFO batch lock requires an active database transaction.');
+        }
+
+        $stmt = $db->prepare(
+            'SELECT id, batch_no, quantity, expiry_date, production_date, warehouse_id
+             FROM rateb_inventory_batches
+             WHERE inventory_id = :iid AND company_id = :cid AND quantity > 0
+               AND (expiry_date IS NULL OR expiry_date >= CURDATE())
+             ORDER BY expiry_date ASC, id ASC
+             FOR UPDATE'
+        );
+        $stmt->execute(['iid' => $inventoryId, 'cid' => $companyId]);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        if ($rows === []) {
+            return ['has_batches' => false, 'allocations' => [], 'unallocated' => round(max(0, $quantity), 3)];
+        }
+
+        $remaining = $quantity;
+        $allocations = [];
+        foreach ($rows as $batch) {
+            if ($remaining <= 0) {
+                break;
+            }
+            $batchQty = (float) ($batch['quantity'] ?? 0);
+            $take = min($batchQty, $remaining);
+            if ($take <= 0) {
+                continue;
+            }
+            $allocations[] = [
+                'batch_id' => (int) ($batch['id'] ?? 0),
+                'batch_no' => (string) ($batch['batch_no'] ?? ''),
+                'quantity' => round($take, 3),
+                'expiry_date' => (string) ($batch['expiry_date'] ?? ''),
+            ];
+            $remaining -= $take;
+        }
+
+        return [
+            'has_batches' => true,
+            'allocations' => $allocations,
+            'unallocated' => round(max(0, $remaining), 3),
+        ];
+    }
+
+    /**
+     * Decrement batch quantities from prior lockFefoBatchAllocations (same transaction).
+     *
+     * @param array<int, array<string, mixed>> $allocations
+     */
+    public function applyLockedBatchAllocations(array $allocations): void
+    {
+        if ($allocations === []) {
+            return;
+        }
+        $db = Database::connection();
+        if (!$db->inTransaction()) {
+            throw new \RuntimeException('Batch consumption requires an active database transaction.');
+        }
+        foreach ($allocations as $alloc) {
+            $batchId = (int) ($alloc['batch_id'] ?? 0);
+            $take = (float) ($alloc['quantity'] ?? 0);
+            if ($batchId < 1 || $take <= 0) {
+                continue;
+            }
+            $stmt = $db->prepare(
+                'UPDATE rateb_inventory_batches SET quantity = quantity - :q
+                 WHERE id = :id AND quantity >= :q'
+            );
+            $stmt->execute(['q' => $take, 'id' => $batchId]);
+            if ($stmt->rowCount() < 1) {
+                throw new \RuntimeException(__('pos_insufficient_stock'));
+            }
+        }
+    }
+
+    /**
+     * Lock batch rows by id (SELECT … FOR UPDATE) before restore.
+     *
+     * @param array<int, array<string, mixed>> $allocations
+     */
+    public function lockBatchIdsForUpdate(array $allocations): void
+    {
+        if ($allocations === []) {
+            return;
+        }
+        $db = Database::connection();
+        if (!$db->inTransaction()) {
+            throw new \RuntimeException('Batch lock requires an active database transaction.');
+        }
+        $seen = [];
+        foreach ($allocations as $alloc) {
+            $batchId = (int) ($alloc['batch_id'] ?? 0);
+            if ($batchId < 1 || isset($seen[$batchId])) {
+                continue;
+            }
+            $seen[$batchId] = true;
+            $stmt = $db->prepare(
+                'SELECT id FROM rateb_inventory_batches WHERE id = :id LIMIT 1 FOR UPDATE'
+            );
+            $stmt->execute(['id' => $batchId]);
+            if (!$stmt->fetchColumn()) {
+                throw new \RuntimeException(__('pos_batch_not_found'));
+            }
+        }
+    }
+
+    /**
+     * Restore quantity to specific batches (inverse of applyLockedBatchAllocations).
+     *
+     * @param array<int, array<string, mixed>> $allocations
+     */
+    public function restoreLockedBatchAllocations(array $allocations): void
+    {
+        if ($allocations === []) {
+            return;
+        }
+        $db = Database::connection();
+        if (!$db->inTransaction()) {
+            throw new \RuntimeException('Batch restore requires an active database transaction.');
+        }
+        $this->lockBatchIdsForUpdate($allocations);
+        foreach ($allocations as $alloc) {
+            $batchId = (int) ($alloc['batch_id'] ?? 0);
+            $qty = (float) ($alloc['quantity'] ?? 0);
+            if ($batchId < 1 || $qty <= 0) {
+                continue;
+            }
+            $db->prepare(
+                'UPDATE rateb_inventory_batches SET quantity = quantity + :q WHERE id = :id'
+            )->execute(['q' => $qty, 'id' => $batchId]);
+        }
+    }
+
+    /**
+     * Reject allocations that include expired batches (checkout / exchange sale).
+     *
+     * @param array<int, array<string, mixed>> $allocations
+     */
+    public function assertBatchAllocationsNotExpired(array $allocations): void
+    {
+        if ($allocations === []) {
+            return;
+        }
+        $today = date('Y-m-d');
+        foreach ($allocations as $alloc) {
+            $expiry = trim((string) ($alloc['expiry_date'] ?? ''));
+            if ($expiry !== '' && $expiry < $today) {
+                throw new \RuntimeException(__('pos_batch_expired'));
+            }
+        }
+    }
+
+    /** FEFO batch consumption with row locks — for use inside caller transaction. */
+    public function consumeBatchesInTransaction(int $inventoryId, float $quantity, string $method = 'fefo'): float
+    {
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+        if ($companyId < 1) {
+            $inv = (new Inventory())->find($inventoryId);
+            $companyId = (int) ($inv['company_id'] ?? 0);
+        }
+        $locked = $this->lockFefoBatchAllocations($inventoryId, $quantity, $companyId);
+        if (!$locked['has_batches']) {
+            return 0.0;
+        }
+        if ((float) ($locked['unallocated'] ?? 0) > 0.0001) {
+            throw new \RuntimeException(__('pos_insufficient_stock'));
+        }
+        $this->applyLockedBatchAllocations($locked['allocations']);
+        return $quantity - (float) ($locked['unallocated'] ?? 0);
+    }
+
     /** @param array<string, mixed> $data */
     public function createTransfer(array $data): int
     {

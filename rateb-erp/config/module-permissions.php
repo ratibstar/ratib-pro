@@ -17,4 +17,5 @@ return [
     'workflows' => 'workflows.view',
     'hr' => 'hr.view',
     'branches' => 'branches.view',
+    'pos' => 'pos.view',
 ];

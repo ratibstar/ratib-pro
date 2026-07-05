@@ -78,6 +78,17 @@ final class FormLookupService
             case 'warehouses':
                 $options = $this->warehouseOptions();
                 break;
+            case 'pos_terminals':
+                if (class_exists(\Rateb\App\Pos\Services\PosFormLookupService::class)) {
+                    $cid = \Rateb\App\Core\TenantContext::companyId() ?? 0;
+                    if ($cid < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                        $cid = rateb_resolve_ops_company_id();
+                    }
+                    $options = (new \Rateb\App\Pos\Services\PosFormLookupService())->terminalOptions(false);
+                } else {
+                    $options = [];
+                }
+                break;
             case 'branches':
                 $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
                 if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {

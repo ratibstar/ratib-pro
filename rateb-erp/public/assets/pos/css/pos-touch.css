@@ -1,0 +1,20 @@
+/* RATIB POS — touch targets and coarse pointer */
+.rateb-pos-panel button,
+.rateb-pos-keypad button,
+.rateb-pos-register .btn,
+.rateb-pos-combobox-option,
+.rateb-pos-line-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+}
+.rateb-pos-barcode-input { letter-spacing: 0.05em; font-family: ui-monospace, monospace; }
+@media (pointer: coarse) {
+    .rateb-pos-panel { padding: 1.25rem; }
+    .rateb-pos-cart-table td,
+    .rateb-pos-cart-table th { padding: 0.85rem 0.5rem; }
+    .rateb-pos-action-btn { min-height: 52px; font-size: 1.0625rem; }
+}
+@media (max-width: 767px) {
+    .rateb-pos-shell-toolbar { flex-direction: column; align-items: stretch; }
+    .rateb-pos-shell-actions { justify-content: space-between; }
+}
