@@ -1,25 +1,29 @@
 /* RATEB POS — Phase A commercial register (single source) */
 
 :root {
-    --pos-accent: #059669;
-    --pos-accent-hover: #047857;
-    --pos-accent-pressed: #065f46;
-    --pos-accent-soft: rgba(5, 150, 105, 0.12);
-    --pos-bg: #0c0c0e;
-    --pos-surface: #141416;
-    --pos-surface-2: #1a1a1e;
-    --pos-surface-3: #222228;
-    --pos-border: rgba(255, 255, 255, 0.08);
-    --pos-text: #f4f4f5;
-    --pos-text-muted: #a1a1aa;
-    --pos-text-faint: #71717a;
-    --pos-danger: #ef4444;
+    --pos-primary: #3b82f6;
+    --pos-primary-hover: #2563eb;
+    --pos-primary-soft: rgba(59, 130, 246, 0.16);
+    --pos-accent: #22c55e;
+    --pos-accent-hover: #16a34a;
+    --pos-accent-pressed: #15803d;
+    --pos-accent-soft: rgba(34, 197, 94, 0.16);
+    --pos-bg: #0b1120;
+    --pos-surface: #131c31;
+    --pos-surface-2: #1a2640;
+    --pos-surface-3: #243352;
+    --pos-border: rgba(148, 163, 184, 0.14);
+    --pos-text: #f1f5f9;
+    --pos-text-muted: #94a3b8;
+    --pos-text-faint: #64748b;
+    --pos-danger: #f87171;
+    --pos-info: #38bdf8;
     --pos-radius: 12px;
     --pos-radius-sm: 8px;
-    --pos-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 24px rgba(0, 0, 0, 0.32);
-    --pos-shadow-tile: 0 1px 2px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.24);
+    --pos-shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 10px 28px rgba(0, 0, 0, 0.36);
+    --pos-shadow-tile: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 18px rgba(0, 0, 0, 0.28);
     --pos-font: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
-    --pos-header-h: 48px;
+    --pos-header-h: 52px;
     --pos-rail-w: 120px;
     --pos-ease: cubic-bezier(0.16, 1, 0.3, 1);
     --pos-dur: 160ms;
@@ -168,8 +172,9 @@ html, body.rateb-pos-shell {
     gap: 16px;
     height: var(--pos-header-h);
     padding: 0 16px;
-    background: var(--pos-surface);
+    background: linear-gradient(180deg, var(--pos-surface) 0%, var(--pos-surface-2) 100%);
     border-bottom: 1px solid var(--pos-border);
+    box-shadow: 0 1px 0 rgba(59, 130, 246, 0.06);
     z-index: 10;
 }
 
@@ -238,7 +243,7 @@ html, body.rateb-pos-shell {
 
 .rateb-pos__customer-pill:hover {
     background: var(--pos-surface-3);
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(59, 130, 246, 0.35);
 }
 
 .rateb-pos__header-end {
@@ -379,8 +384,9 @@ html, body.rateb-pos-shell {
 }
 
 .rateb-pos__rail-btn.is-active {
-    color: var(--pos-accent);
-    background: var(--pos-accent-soft);
+    color: #fff;
+    background: linear-gradient(135deg, var(--pos-primary) 0%, var(--pos-primary-hover) 100%);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.28);
 }
 
 .rateb-pos__rail-btn.is-active i {
@@ -412,11 +418,11 @@ html, body.rateb-pos-shell {
     align-items: stretch;
     flex-shrink: 0;
     margin: 12px 16px 0;
-    background: var(--pos-surface-2);
+    background: var(--pos-surface);
     border: 1px solid var(--pos-border);
     border-radius: var(--pos-radius);
     overflow: hidden;
-    box-shadow: var(--pos-shadow-tile);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .rateb-pos__search-product {
@@ -596,8 +602,8 @@ html, body.rateb-pos-shell {
 }
 
 .rateb-pos__tile.is-added {
-    border-color: var(--pos-accent);
-    box-shadow: 0 0 0 2px var(--pos-accent-soft);
+    border-color: var(--pos-primary);
+    box-shadow: 0 0 0 2px var(--pos-primary-soft);
 }
 
 .rateb-pos__tile.is-disabled {
@@ -639,12 +645,33 @@ html, body.rateb-pos-shell {
     overflow: hidden;
 }
 
+.rateb-pos__tile-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: linear-gradient(
+        145deg,
+        hsl(var(--tile-hue, 210) 42% 32%) 0%,
+        hsl(var(--tile-hue, 210) 38% 22%) 100%
+    );
+    color: hsl(var(--tile-hue, 210) 55% 92%);
+    letter-spacing: 0.02em;
+}
+
 .rateb-pos__tile-media img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 180ms var(--pos-ease);
+    transition: opacity 200ms var(--pos-ease);
+    z-index: 1;
 }
 
 .rateb-pos__tile-media img.is-loaded {
@@ -715,6 +742,8 @@ html, body.rateb-pos-shell {
 .rateb-pos__tile-body {
     padding: 12px;
     flex-shrink: 0;
+    background: var(--pos-surface);
+    border-top: 1px solid var(--pos-border);
 }
 
 .rateb-pos__tile-name {
@@ -732,7 +761,7 @@ html, body.rateb-pos-shell {
     font-size: 16px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: var(--pos-text);
+    color: var(--pos-accent);
 }
 
 .rateb-pos__tile.is-favorite .rateb-pos__tile-fav {
@@ -811,8 +840,9 @@ html, body.rateb-pos-shell {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    background: var(--pos-surface);
+    background: linear-gradient(180deg, var(--pos-surface) 0%, var(--pos-surface-2) 100%);
     border-inline-start: 1px solid var(--pos-border);
+    box-shadow: inset 1px 0 0 rgba(59, 130, 246, 0.06);
 }
 
 .rateb-pos__ticket-head {
@@ -837,7 +867,8 @@ html, body.rateb-pos-shell {
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    background: var(--pos-surface-2);
+    background: var(--pos-primary-soft);
+    color: var(--pos-primary);
     font-size: 13px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -968,17 +999,19 @@ html, body.rateb-pos-shell {
     padding: 0 24px;
     border: none;
     border-radius: var(--pos-radius);
-    background: var(--pos-accent);
+    background: linear-gradient(135deg, var(--pos-accent) 0%, var(--pos-accent-hover) 100%);
     color: #fff;
+    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.28);
     font: inherit;
     font-size: 17px;
     font-weight: 700;
     cursor: pointer;
-    transition: background var(--pos-dur) var(--pos-ease), transform var(--pos-dur) var(--pos-ease), opacity var(--pos-dur) var(--pos-ease);
+    transition: background var(--pos-dur) var(--pos-ease), transform var(--pos-dur) var(--pos-ease), opacity var(--pos-dur) var(--pos-ease), box-shadow var(--pos-dur) var(--pos-ease);
 }
 
 .rateb-pos__charge:hover:not(:disabled) {
-    background: var(--pos-accent-hover);
+    background: linear-gradient(135deg, var(--pos-accent-hover) 0%, var(--pos-accent-pressed) 100%);
+    box-shadow: 0 10px 28px rgba(34, 197, 94, 0.34);
 }
 
 .rateb-pos__charge:active:not(:disabled) {

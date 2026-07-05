@@ -63,6 +63,29 @@
         return p.image_url || p.thumbnail_url || p.image || bootstrap.productImages[id] || '';
     }
 
+    function tileHue(id) {
+        var n = String(id || '0').split('').reduce(function (acc, ch) {
+            return acc + ch.charCodeAt(0);
+        }, 0);
+        return n % 360;
+    }
+
+    function tileFallbackHtml(product) {
+        var name = (product.item_name || product.item_code || '?').trim();
+        var letter = name.charAt(0) || '?';
+        return '<span class="rateb-pos__tile-fallback" style="--tile-hue:' + tileHue(product.id) + '">' +
+            escapeHtml(letter) + '</span>';
+    }
+
+    function mergeProduct(prev, next) {
+        var merged = Object.assign({}, prev || {}, next || {});
+        merged.image_url = (next && (next.image_url || next.thumbnail_url || next.image))
+            || (prev && (prev.image_url || prev.thumbnail_url || prev.image))
+            || bootstrap.productImages[String(merged.id || '')]
+            || '';
+        return merged;
+    }
+
     function fetchProducts(query) {
         if (!api.products) { return Promise.resolve([]); }
         var q = (query || '').trim();
@@ -71,7 +94,9 @@
             credentials: 'same-origin', headers: { Accept: 'application/json' }
         }).then(function (r) { return r.json(); }).then(function (d) {
             var items = d.items || [];
-            items.forEach(function (p) { productCache[p.id] = p; });
+            items.forEach(function (p) {
+                productCache[p.id] = mergeProduct(productCache[p.id], p);
+            });
             return items;
         }).catch(function () { return []; });
     }
@@ -81,7 +106,7 @@
         if (!seed.length) { return []; }
         seed.forEach(function (p) {
             if (p && p.id) {
-                productCache[p.id] = p;
+                productCache[p.id] = mergeProduct(productCache[p.id], p);
             }
         });
         return seed.slice();
@@ -93,7 +118,7 @@
             groups.forEach(function (items) {
                 items.forEach(function (p) {
                     if (p && p.id) {
-                        productCache[p.id] = p;
+                        productCache[p.id] = mergeProduct(productCache[p.id], p);
                     }
                 });
             });
@@ -186,19 +211,16 @@
         var src = img.dataset.src;
         if (!src) { return; }
         img.dataset.loaded = '1';
+        var media = img.closest('.rateb-pos__tile-media');
         var loader = new Image();
         loader.onload = function () {
             img.src = src;
             img.classList.add('is-loaded');
-            var media = img.closest('.rateb-pos__tile-media');
             if (media) { media.classList.add('has-photo'); }
         };
         loader.onerror = function () {
-            img.classList.remove('is-loaded');
-            var media = img.closest('.rateb-pos__tile-media');
-            if (media) {
-                media.classList.remove('has-photo');
-            }
+            img.remove();
+            if (media) { media.classList.remove('has-photo'); }
         };
         loader.src = src;
     }
@@ -246,9 +268,10 @@
             ? '<div class="rateb-pos__tile-overlay">' + escapeHtml(t('pos_out_of_stock', 'Out of stock')) + '</div>'
             : '';
 
-        var mediaInner = imgUrl
-            ? '<img data-src="' + escapeHtml(imgUrl) + '" alt="" loading="lazy" decoding="async" />'
-            : FALLBACK_ART;
+        var mediaInner = tileFallbackHtml(product);
+        if (imgUrl) {
+            mediaInner += '<img data-src="' + escapeHtml(imgUrl) + '" alt="" decoding="async" />';
+        }
 
         var modDot = modHint
             ? '<span class="rateb-pos__tile-mod" aria-hidden="true"></span>'
@@ -257,7 +280,7 @@
         tile.innerHTML =
             overlay +
             '<span class="rateb-pos__tile-ripple" aria-hidden="true"></span>' +
-            '<div class="rateb-pos__tile-media' + (imgUrl ? ' has-photo' : '') + '">' + mediaInner + modDot + '</div>' +
+            '<div class="rateb-pos__tile-media">' + mediaInner + modDot + '</div>' +
             '<div class="rateb-pos__tile-body">' +
             '<div class="rateb-pos__tile-name">' + escapeHtml(product.item_name || '') + '</div>' +
             '<div class="rateb-pos__tile-price">' + money(product.unit_price || 0) + '</div></div>';

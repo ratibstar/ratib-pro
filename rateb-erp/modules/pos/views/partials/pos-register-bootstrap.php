@@ -42,6 +42,56 @@ try {
             return $cmp !== 0 ? $cmp : strcasecmp($a['name'], $b['name']);
         });
 
+        $inventoryImageUrls = [];
+        $pathToDocView = [];
+        try {
+            $db = \Rateb\App\Core\Database::connection();
+            $stmt = $db->prepare(
+                'SELECT entity_id, id, file_path FROM rateb_documents
+                 WHERE company_id = :cid AND entity_type = :et
+                 AND mime_type LIKE :mime
+                 ORDER BY id DESC'
+            );
+            $stmt->execute(['cid' => $companyId, 'et' => 'inventory', 'mime' => 'image/%']);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $docRow) {
+                $eid = (int) ($docRow['entity_id'] ?? 0);
+                $docId = (int) ($docRow['id'] ?? 0);
+                $filePath = (string) ($docRow['file_path'] ?? '');
+                if ($docId > 0 && $filePath !== '') {
+                    $pathToDocView[$filePath] = rateb_url('documents/view/' . $docId);
+                }
+                if ($eid > 0 && !isset($inventoryImageUrls[(string) $eid])) {
+                    $inventoryImageUrls[(string) $eid] = rateb_url('documents/view/' . $docId);
+                }
+            }
+        } catch (\Throwable $e) {
+            $inventoryImageUrls = [];
+            $pathToDocView = [];
+        }
+
+        $resolveImageUrl = static function (int $id, string $doc) use ($inventoryImageUrls, $pathToDocView): string {
+            $key = (string) $id;
+            if (isset($inventoryImageUrls[$key])) {
+                return $inventoryImageUrls[$key];
+            }
+            if ($doc === '') {
+                return '';
+            }
+            if (preg_match('#^https?://#i', $doc)) {
+                return $doc;
+            }
+            if (str_starts_with($doc, '/')) {
+                return $doc;
+            }
+            if (isset($pathToDocView[$doc])) {
+                return $pathToDocView[$doc];
+            }
+            if (str_starts_with($doc, 'uploads/')) {
+                return '';
+            }
+            return rateb_asset(ltrim($doc, '/'));
+        };
+
         $invModel = new \Rateb\App\Models\Inventory();
         $invRows = $invModel->all(500, 0, [], '');
         $sellPrices = null;
@@ -58,14 +108,9 @@ try {
             $categoryId = (int) ($row['category_id'] ?? 0);
             $posBootstrap['productIndex'][(string) $id] = $categoryId;
             $doc = trim((string) ($row['document_path'] ?? ''));
-            if ($doc !== '') {
-                if (preg_match('#^https?://#i', $doc)) {
-                    $posBootstrap['productImages'][(string) $id] = $doc;
-                } elseif (str_starts_with($doc, '/')) {
-                    $posBootstrap['productImages'][(string) $id] = $doc;
-                } else {
-                    $posBootstrap['productImages'][(string) $id] = rateb_asset(ltrim($doc, '/'));
-                }
+            $imgUrl = $resolveImageUrl($id, $doc);
+            if ($imgUrl !== '') {
+                $posBootstrap['productImages'][(string) $id] = $imgUrl;
             }
 
             $onHand = (float) ($row['quantity'] ?? 0);
@@ -91,6 +136,7 @@ try {
                 'item_name' => (string) ($row['item_name'] ?? ''),
                 'unit_price' => $unitPrice,
                 'category_id' => $categoryId,
+                'image_url' => $imgUrl,
                 'availability' => [
                     'on_hand' => $onHand,
                     'available' => max(0, $onHand),
