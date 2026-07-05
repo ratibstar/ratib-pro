@@ -155,7 +155,10 @@
     }
 
     function tCard(key) {
-        return (I18N.cards && I18N.cards[key]) ? I18N.cards[key] : key.replace(/_/g, ' ');
+        if (I18N.cards && I18N.cards[key]) return I18N.cards[key];
+        if (I18N.severity && I18N.severity[key]) return I18N.severity[key];
+        if (I18N.status && I18N.status[key]) return I18N.status[key];
+        return key.replace(/_/g, ' ');
     }
 
     function fmtNum(n) {
@@ -847,7 +850,7 @@
 
     window.AccControl = {
         root: root, api: api, buildApiUrl: buildApiUrl, filters: filters, section: section, apiBase: apiBase, csrf: csrf,
-        t: t, fmtNum: fmtNum, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtValue: fmtValue,
+        t: t, tCard: tCard, fmtNum: fmtNum, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtValue: fmtValue,
         fmtStatus: fmtStatus, fmtSeverity: fmtSeverity, fmtPeriod: fmtPeriod, escapeHtml: escapeHtml,
         alertMsg: alertMsg, showJson: showJson, confirmAction: confirmAction, buildQuery: buildQuery,
         loadSection: loadSection, renderPagination: renderPagination, doughnutChart: doughnutChart,

@@ -32,12 +32,16 @@
         });
     }
 
+    function tCard(key) {
+        return C.tCard ? C.tCard(key) : key.replace(/_/g, ' ');
+    }
+
     function renderKpis(cards) {
         if (!cards) return;
         root.querySelectorAll('.acc-section-kpis').forEach(function (wrap) {
             wrap.innerHTML = Object.keys(cards).map(function (k) {
                 return '<div class="col-6 col-md-4 col-lg-3"><div class="acc-card"><div class="acc-card-value">' +
-                    C.escapeHtml(C.fmtValue(cards[k])) + '</div><div class="acc-card-label">' + C.escapeHtml(k.replace(/_/g, ' ')) + '</div></div></div>';
+                    C.escapeHtml(C.fmtValue(cards[k])) + '</div><div class="acc-card-label">' + C.escapeHtml(tCard(k)) + '</div></div></div>';
             }).join('');
         });
     }
@@ -94,7 +98,7 @@
             if (hist) {
                 hist.innerHTML = (data.history || []).map(function (h) {
                     return '<li class="list-group-item">' + C.escapeHtml(C.fmtPeriod(h.period_from, h.period_to)) + ' · ' + C.escapeHtml(C.fmtDateTime(h.created_at)) + '</li>';
-                }).join('') || '<li class="list-group-item text-muted">' + t('empty', 'No history') + '</li>';
+                }).join('') || '<li class="list-group-item text-muted">' + t('noHistory', 'No history') + '</li>';
             }
             var rows = data.parsed_rows || [];
             var tbody = root.querySelector('.acc-projection-table tbody');
