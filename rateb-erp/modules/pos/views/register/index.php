@@ -39,43 +39,105 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
 
     <?php include __DIR__ . '/../partials/pos-register-header.php'; ?>
 
+    <?php
+    $sessionSnap = is_array($session ?? null) ? $session : [];
+    $orderRef = str_pad((string) ((int) ($sessionSnap['db_session_id'] ?? 0)), 6, '0', STR_PAD_LEFT);
+    ?>
+
     <div class="rateb-pos__stage">
-        <aside class="rateb-pos__rail" aria-label="<?php echo __('pos_categories'); ?>">
-            <div class="rateb-pos__rail-scroll">
-                <nav class="rateb-pos__rail-nav" data-pos-categories role="tablist"></nav>
-                <span class="rateb-pos__rail-indicator" data-pos-cat-indicator hidden aria-hidden="true"></span>
+        <aside class="rateb-pos__ticket" aria-label="<?php echo __('pos_cart'); ?>">
+            <header class="rateb-pos__order-bar">
+                <span class="rateb-pos__order-no">#<?php echo \Rateb\App\Pos\Support\PosView::escape($orderRef); ?></span>
+                <div class="rateb-pos__order-actions">
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--hold" data-pos-suspend><?php echo __('pos_hold'); ?></button>
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--cancel" data-pos-clear-cart><?php echo __('pos_cancel_order'); ?></button>
+                </div>
+            </header>
+
+            <button type="button" class="rateb-pos__ticket-customer" data-pos-focus-customer aria-label="<?php echo __('pos_customer'); ?>">
+                <svg class="rateb-pos__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span data-pos-toolbar-customer><?php echo __('pos_walk_in_customer'); ?></span>
+                <svg class="rateb-pos__icon rateb-pos__ticket-customer-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+
+            <div class="rateb-pos__ticket-body">
+                <div class="rateb-pos__ticket-lines" data-pos-cart-lines role="list"></div>
+                <div class="rateb-pos__ticket-empty" data-pos-cart-empty>
+                    <svg class="rateb-pos__ticket-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <p><?php echo __('pos_cart_empty'); ?></p>
+                </div>
             </div>
+
+            <footer class="rateb-pos__ticket-foot">
+                <dl class="rateb-pos__totals">
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
+                        <dt><?php echo __('pos_subtotal'); ?></dt>
+                        <dd data-pos-subtotal>0.00</dd>
+                    </div>
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted" data-pos-totals-discount-wrap hidden>
+                        <dt><?php echo __('pos_discount_total'); ?></dt>
+                        <dd data-pos-discount-total>0.00</dd>
+                    </div>
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
+                        <dt><?php echo __('pos_tax'); ?></dt>
+                        <dd data-pos-tax>0.00</dd>
+                    </div>
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--grand">
+                        <dt><?php echo __('pos_total'); ?></dt>
+                        <dd data-pos-total>0.00</dd>
+                    </div>
+                </dl>
+                <button type="button" class="rateb-pos__charge" data-pos-checkout-open disabled>
+                    <span class="rateb-pos__charge-label"><?php echo __('pos_checkout'); ?></span>
+                    <span class="rateb-pos__charge-amount" data-pos-pay-amount>0.00</span>
+                </button>
+                <div class="rateb-pos__ticket-utils">
+                    <button type="button" class="rateb-pos__util-btn" data-pos-new-sale><?php echo __('pos_new_sale'); ?></button>
+                    <button type="button" class="rateb-pos__util-btn" data-pos-save-quote><?php echo __('pos_save_quote'); ?></button>
+                    <?php if ($canReturns): ?>
+                    <button type="button" class="rateb-pos__util-btn" data-pos-return-open><?php echo __('pos_return'); ?></button>
+                    <button type="button" class="rateb-pos__util-btn" data-pos-exchange-open><?php echo __('pos_exchange'); ?></button>
+                    <?php endif; ?>
+                </div>
+                <span class="rateb-pos__ticket-count rateb-pos__ticket-count--sr" data-pos-cart-count>0</span>
+            </footer>
         </aside>
 
         <main class="rateb-pos__catalog" aria-label="<?php echo __('pos_products'); ?>">
-            <div class="rateb-pos__search-unified">
-                <div class="rateb-pos__search-product" data-pos-product-combobox>
-                    <span class="rateb-pos__search-icon" aria-hidden="true">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
-                    </span>
-                    <input type="search"
-                           class="rateb-pos__search-input"
-                           autocomplete="off"
-                           placeholder="<?php echo __('pos_search_placeholder'); ?>"
-                           data-pos-product-search
-                           aria-label="<?php echo __('pos_search_placeholder'); ?>" />
-                    <button type="button" class="rateb-pos__search-clear" data-pos-search-clear hidden aria-label="<?php echo __('clear'); ?>">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                    <ul class="rateb-pos__dropdown rateb-pos-combobox-list" role="listbox" hidden data-pos-product-list></ul>
+            <div class="rateb-pos__catalog-top">
+                <div class="rateb-pos__cat-bar" data-pos-cat-bar>
+                    <nav class="rateb-pos__cat-nav" data-pos-categories role="tablist"></nav>
+                    <span class="rateb-pos__cat-indicator" data-pos-cat-indicator hidden aria-hidden="true"></span>
                 </div>
-                <div class="rateb-pos__search-barcode">
-                    <span class="rateb-pos__search-icon" aria-hidden="true">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M7 4h2v16H7zM15 4h2v16h-2z"/></svg>
-                    </span>
-                    <input type="text"
-                           class="rateb-pos__search-input rateb-pos__search-input--barcode"
-                           autocomplete="off"
-                           inputmode="numeric"
-                           placeholder="<?php echo __('pos_barcode_placeholder'); ?>"
-                           title="<?php echo __('pos_barcode_scan'); ?>"
-                           data-pos-barcode-input
-                           aria-label="<?php echo __('pos_barcode_scan'); ?>" />
+                <div class="rateb-pos__search-unified">
+                    <div class="rateb-pos__search-product" data-pos-product-combobox>
+                        <span class="rateb-pos__search-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+                        </span>
+                        <input type="search"
+                               class="rateb-pos__search-input"
+                               autocomplete="off"
+                               placeholder="<?php echo __('pos_search_placeholder'); ?>"
+                               data-pos-product-search
+                               aria-label="<?php echo __('pos_search_placeholder'); ?>" />
+                        <button type="button" class="rateb-pos__search-clear" data-pos-search-clear hidden aria-label="<?php echo __('clear'); ?>">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                        <ul class="rateb-pos__dropdown rateb-pos-combobox-list" role="listbox" hidden data-pos-product-list></ul>
+                    </div>
+                    <div class="rateb-pos__search-barcode">
+                        <span class="rateb-pos__search-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M7 4h2v16H7zM15 4h2v16h-2z"/></svg>
+                        </span>
+                        <input type="text"
+                               class="rateb-pos__search-input rateb-pos__search-input--barcode"
+                               autocomplete="off"
+                               inputmode="numeric"
+                               placeholder="<?php echo __('pos_barcode_placeholder'); ?>"
+                               title="<?php echo __('pos_barcode_scan'); ?>"
+                               data-pos-barcode-input
+                               aria-label="<?php echo __('pos_barcode_scan'); ?>" />
+                    </div>
                 </div>
             </div>
 
@@ -93,43 +155,6 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
                 </div>
             </div>
         </main>
-
-        <aside class="rateb-pos__ticket" aria-label="<?php echo __('pos_cart'); ?>">
-            <header class="rateb-pos__ticket-head">
-                <h2 class="rateb-pos__ticket-title"><?php echo __('pos_cart'); ?></h2>
-                <span class="rateb-pos__ticket-count" data-pos-cart-count>0</span>
-            </header>
-
-            <div class="rateb-pos__ticket-body">
-                <div class="rateb-pos__ticket-lines" data-pos-cart-lines role="list"></div>
-                <div class="rateb-pos__ticket-empty" data-pos-cart-empty>
-                    <svg class="rateb-pos__ticket-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                    <p><?php echo __('pos_cart_empty'); ?></p>
-                </div>
-            </div>
-
-            <footer class="rateb-pos__ticket-foot">
-                <dl class="rateb-pos__totals">
-                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted" data-pos-totals-discount-wrap hidden>
-                        <dt><?php echo __('pos_discount_total'); ?></dt>
-                        <dd data-pos-discount-total>0.00</dd>
-                    </div>
-                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
-                        <dt><?php echo __('pos_tax'); ?></dt>
-                        <dd data-pos-tax>0.00</dd>
-                    </div>
-                    <div class="rateb-pos__totals-row rateb-pos__totals-row--grand">
-                        <dt><?php echo __('pos_total'); ?></dt>
-                        <dd data-pos-total>0.00</dd>
-                    </div>
-                </dl>
-                <span class="visually-hidden" data-pos-subtotal>0.00</span>
-                <button type="button" class="rateb-pos__charge" data-pos-checkout-open disabled>
-                    <span class="rateb-pos__charge-label"><?php echo __('pos_checkout'); ?></span>
-                    <span class="rateb-pos__charge-amount" data-pos-pay-amount>0.00</span>
-                </button>
-            </footer>
-        </aside>
     </div>
 
     <div class="rateb-pos__customer-panel" data-pos-customer-sheet hidden>

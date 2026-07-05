@@ -554,10 +554,18 @@
         });
     }
 
-    root.querySelector('[data-pos-suspend]') && root.querySelector('[data-pos-suspend]').addEventListener('click', suspendSale);
-    root.querySelector('[data-pos-save-quote]') && root.querySelector('[data-pos-save-quote]').addEventListener('click', saveQuote);
-    root.querySelector('[data-pos-return-open]') && root.querySelector('[data-pos-return-open]').addEventListener('click', openReturnPanel);
-    root.querySelector('[data-pos-exchange-open]') && root.querySelector('[data-pos-exchange-open]').addEventListener('click', openExchangePanel);
+    root.querySelectorAll('[data-pos-suspend]').forEach(function (btn) {
+        btn.addEventListener('click', suspendSale);
+    });
+    root.querySelectorAll('[data-pos-save-quote]').forEach(function (btn) {
+        btn.addEventListener('click', saveQuote);
+    });
+    root.querySelectorAll('[data-pos-return-open]').forEach(function (btn) {
+        btn.addEventListener('click', openReturnPanel);
+    });
+    root.querySelectorAll('[data-pos-exchange-open]').forEach(function (btn) {
+        btn.addEventListener('click', openExchangePanel);
+    });
     root.querySelector('[data-pos-return-submit]') && root.querySelector('[data-pos-return-submit]').addEventListener('click', processReturn);
     root.querySelector('[data-pos-exchange-submit]') && root.querySelector('[data-pos-exchange-submit]').addEventListener('click', processExchange);
     root.querySelector('[data-pos-exchange-add-payment]') && root.querySelector('[data-pos-exchange-add-payment]').addEventListener('click', function () {

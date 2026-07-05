@@ -27,11 +27,16 @@
     var modesToggle = root.querySelector('[data-pos-modes-toggle]');
     var modesMenu = root.querySelector('[data-pos-modes-menu]');
 
-    var TILE_MIN = 152;
-    var TILE_GAP = 12;
-    var TILE_PAD = 12;
-    var TILE_H = 200;
+    var TILE_MIN = 148;
+    var TILE_GAP = 10;
+    var TILE_PAD = 10;
+    var TILE_H = 132;
     var ROW_BUFFER = 2;
+
+    var CAT_PALETTE = [
+        '#7c3aed', '#0d9488', '#ea580c', '#2563eb', '#db2777',
+        '#ca8a04', '#059669', '#dc2626', '#0891b2', '#9333ea'
+    ];
 
     var products = [];
     var productCache = {};
@@ -63,18 +68,17 @@
         return p.image_url || p.thumbnail_url || p.image || bootstrap.productImages[id] || '';
     }
 
-    function tileHue(id) {
-        var n = String(id || '0').split('').reduce(function (acc, ch) {
-            return acc + ch.charCodeAt(0);
-        }, 0);
-        return n % 360;
+    function categoryTileColor(product) {
+        var catId = Number(bootstrap.productIndex[String(product.id)] || product.category_id || 0);
+        var seed = catId > 0 ? catId : Number(product.id || 0);
+        return CAT_PALETTE[Math.abs(seed) % CAT_PALETTE.length];
     }
 
-    function tileFallbackHtml(product) {
-        var name = (product.item_name || product.item_code || '?').trim();
-        var letter = name.charAt(0) || '?';
-        return '<span class="rateb-pos__tile-fallback" style="--tile-hue:' + tileHue(product.id) + '">' +
-            escapeHtml(letter) + '</span>';
+    function categoryChipColor(catId) {
+        if (catId === 'all') {
+            return CAT_PALETTE[0];
+        }
+        return CAT_PALETTE[Math.abs(Number(catId) || 0) % CAT_PALETTE.length];
     }
 
     function mergeProduct(prev, next) {
@@ -211,16 +215,18 @@
         var src = img.dataset.src;
         if (!src) { return; }
         img.dataset.loaded = '1';
-        var media = img.closest('.rateb-pos__tile-media');
+        var media = img.closest('.rateb-pos__tile-surface') || img.closest('.rateb-pos__tile-media');
         var loader = new Image();
         loader.onload = function () {
             img.src = src;
             img.classList.add('is-loaded');
-            if (media) { media.classList.add('has-photo'); }
+            var surface = img.closest('.rateb-pos__tile-surface');
+            if (surface) { surface.classList.add('has-photo'); }
         };
         loader.onerror = function () {
+            var surface = img.closest('.rateb-pos__tile-surface') || img.closest('.rateb-pos__tile-media');
             img.remove();
-            if (media) { media.classList.remove('has-photo'); }
+            if (surface) { surface.classList.remove('has-photo'); }
         };
         loader.src = src;
     }
@@ -252,8 +258,10 @@
         var canAdd = avail.can_add !== false;
         var imgUrl = productImageUrl(product);
         var modHint = !!(product.has_modifiers || product.requires_modifiers);
+        var tileColor = categoryTileColor(product);
 
         tile.className = 'rateb-pos__tile';
+        tile.style.setProperty('--tile-bg', tileColor);
         tile.setAttribute('data-product-id', String(product.id));
         tile.setAttribute('aria-label', (product.item_name || '') + ' ' + money(product.unit_price || 0));
         if (!canAdd) {
@@ -268,10 +276,9 @@
             ? '<div class="rateb-pos__tile-overlay">' + escapeHtml(t('pos_out_of_stock', 'Out of stock')) + '</div>'
             : '';
 
-        var mediaInner = tileFallbackHtml(product);
-        if (imgUrl) {
-            mediaInner += '<img data-src="' + escapeHtml(imgUrl) + '" alt="" decoding="async" />';
-        }
+        var photoHtml = imgUrl
+            ? '<img data-src="' + escapeHtml(imgUrl) + '" alt="" decoding="async" />'
+            : '';
 
         var modDot = modHint
             ? '<span class="rateb-pos__tile-mod" aria-hidden="true"></span>'
@@ -280,10 +287,12 @@
         tile.innerHTML =
             overlay +
             '<span class="rateb-pos__tile-ripple" aria-hidden="true"></span>' +
-            '<div class="rateb-pos__tile-media">' + mediaInner + modDot + '</div>' +
-            '<div class="rateb-pos__tile-body">' +
-            '<div class="rateb-pos__tile-name">' + escapeHtml(product.item_name || '') + '</div>' +
-            '<div class="rateb-pos__tile-price">' + money(product.unit_price || 0) + '</div></div>';
+            '<div class="rateb-pos__tile-surface' + (imgUrl ? ' has-photo' : '') + '">' +
+            photoHtml +
+            '<div class="rateb-pos__tile-label">' +
+            '<span class="rateb-pos__tile-name">' + escapeHtml(product.item_name || '') + '</span>' +
+            '<span class="rateb-pos__tile-price">' + money(product.unit_price || 0) + '</span>' +
+            '</div>' + modDot + '</div>';
 
         var img = tile.querySelector('img[data-src]');
         if (img) { lazyLoadImg(img); }
@@ -358,7 +367,7 @@
             var sk = document.createElement('article');
             sk.className = 'rateb-pos__tile rateb-pos__tile--skel';
             sk.setAttribute('aria-hidden', 'true');
-            sk.innerHTML = '<div class="rateb-pos__tile-media"></div><div class="rateb-pos__tile-body"><div class="rateb-pos__tile-name">&nbsp;</div><div class="rateb-pos__tile-price">&nbsp;</div></div>';
+            sk.innerHTML = '<div class="rateb-pos__tile-surface"><div class="rateb-pos__tile-label"><div class="rateb-pos__tile-name">&nbsp;</div></div></div>';
             positionTile(sk, i);
             virtualWindow.appendChild(sk);
         }
@@ -406,7 +415,7 @@
 
     function setActiveCategory(btn, cat) {
         if (!categoriesEl || !btn) { return; }
-        categoriesEl.querySelectorAll('.rateb-pos__rail-btn').forEach(function (c) {
+        categoriesEl.querySelectorAll('.rateb-pos__cat-btn').forEach(function (c) {
             c.classList.remove('is-active');
             c.setAttribute('aria-selected', 'false');
         });
@@ -414,7 +423,7 @@
         btn.setAttribute('aria-selected', 'true');
         activeCategoryId = cat.id;
         if (motion.updateCategoryIndicator) {
-            motion.updateCategoryIndicator(categoriesEl.closest('.rateb-pos__rail-scroll') || categoriesEl, btn);
+            motion.updateCategoryIndicator(categoriesEl.closest('.rateb-pos__cat-bar') || categoriesEl, btn);
         }
     }
 
@@ -452,11 +461,12 @@
         CATEGORIES.forEach(function (cat, idx) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'rateb-pos__rail-btn' + (idx === 0 ? ' is-active' : '');
+            btn.className = 'rateb-pos__cat-btn' + (idx === 0 ? ' is-active' : '');
             btn.setAttribute('role', 'tab');
             btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
             btn.setAttribute('data-cat-id', cat.id);
-            btn.innerHTML = '<span class="rateb-pos__rail-label">' + escapeHtml(cat.name) + '</span>';
+            btn.style.setProperty('--cat-color', categoryChipColor(cat.id));
+            btn.innerHTML = '<span class="rateb-pos__cat-label">' + escapeHtml(cat.name) + '</span>';
             btn.addEventListener('click', function () {
                 setActiveCategory(btn, cat);
                 loadCategory(cat);
@@ -464,19 +474,19 @@
             categoriesEl.appendChild(btn);
         });
 
-        var railScroll = categoriesEl.closest('.rateb-pos__rail-scroll');
+        var catBar = categoriesEl.closest('.rateb-pos__cat-bar');
         requestAnimationFrame(function () {
-            var first = categoriesEl.querySelector('.rateb-pos__rail-btn.is-active');
+            var first = categoriesEl.querySelector('.rateb-pos__cat-btn.is-active');
             if (first && motion.updateCategoryIndicator) {
-                motion.updateCategoryIndicator(railScroll || categoriesEl, first);
+                motion.updateCategoryIndicator(catBar || categoriesEl, first);
             }
         });
 
-        if (railScroll) {
-            railScroll.addEventListener('scroll', function () {
-                var active = categoriesEl.querySelector('.rateb-pos__rail-btn.is-active');
+        if (catBar) {
+            catBar.addEventListener('scroll', function () {
+                var active = categoriesEl.querySelector('.rateb-pos__cat-btn.is-active');
                 if (active && motion.updateCategoryIndicator) {
-                    motion.updateCategoryIndicator(railScroll, active);
+                    motion.updateCategoryIndicator(catBar, active);
                 }
             }, { passive: true });
         }
@@ -566,10 +576,10 @@
     bindConnection();
 
     window.addEventListener('resize', function () {
-        var railScroll = categoriesEl && categoriesEl.closest('.rateb-pos__rail-scroll');
-        var active = categoriesEl && categoriesEl.querySelector('.rateb-pos__rail-btn.is-active');
+        var catBar = categoriesEl && categoriesEl.closest('.rateb-pos__cat-bar');
+        var active = categoriesEl && categoriesEl.querySelector('.rateb-pos__cat-btn.is-active');
         if (active && motion.updateCategoryIndicator) {
-            motion.updateCategoryIndicator(railScroll || categoriesEl, active);
+            motion.updateCategoryIndicator(catBar || categoriesEl, active);
         }
         scheduleRender();
     }, { passive: true });

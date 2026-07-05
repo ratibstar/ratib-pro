@@ -76,11 +76,20 @@
 
     function updateCategoryIndicator(scrollEl, btn) {
         if (!scrollEl || !btn) { return; }
-        var indicator = document.querySelector('[data-pos-cat-indicator]');
+        var indicator = scrollEl.querySelector('[data-pos-cat-indicator]') || document.querySelector('[data-pos-cat-indicator]');
         if (!indicator) { return; }
         var scrollRect = scrollEl.getBoundingClientRect();
         var btnRect = btn.getBoundingClientRect();
+        if (scrollEl.classList.contains('rateb-pos__cat-bar')) {
+            var left = btnRect.left - scrollRect.left + scrollEl.scrollLeft;
+            indicator.style.width = btnRect.width + 'px';
+            indicator.style.height = '3px';
+            indicator.style.transform = 'translate3d(' + left + 'px,0,0)';
+            indicator.style.opacity = '1';
+            return;
+        }
         var top = btnRect.top - scrollRect.top + scrollEl.scrollTop;
+        indicator.style.width = '';
         indicator.style.height = btnRect.height + 'px';
         indicator.style.transform = 'translate3d(0,' + top + 'px,0)';
         indicator.style.opacity = '1';

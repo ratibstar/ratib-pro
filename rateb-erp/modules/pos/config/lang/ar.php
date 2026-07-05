@@ -71,6 +71,8 @@ return [
     'pos_subtotal' => 'المجموع الفرعي',
     'pos_tax' => 'الضريبة',
     'pos_total' => 'الإجمالي',
+    'pos_hold' => 'تعليق',
+    'pos_cancel_order' => 'إلغاء',
     'pos_clear_cart' => 'تفريغ السلة',
     'pos_new_sale' => 'بيع جديد',
     'pos_remove_line' => 'حذف السطر',

@@ -71,6 +71,8 @@ return [
     'pos_subtotal' => 'Subtotal',
     'pos_tax' => 'Tax',
     'pos_total' => 'Total',
+    'pos_hold' => 'Hold',
+    'pos_cancel_order' => 'Cancel',
     'pos_clear_cart' => 'Clear cart',
     'pos_new_sale' => 'New sale',
     'pos_remove_line' => 'Remove line',

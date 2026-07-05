@@ -881,10 +881,14 @@
         }
 
         if (els.clearCart) {
-            els.clearCart.addEventListener('click', clearCart);
+            root.querySelectorAll('[data-pos-clear-cart]').forEach(function (btn) {
+                btn.addEventListener('click', clearCart);
+            });
         }
         if (els.newSale) {
-            els.newSale.addEventListener('click', newSale);
+            root.querySelectorAll('[data-pos-new-sale]').forEach(function (btn) {
+                btn.addEventListener('click', newSale);
+            });
         }
 
         document.querySelectorAll('[data-pos-serial-close]').forEach(function (btn) {
