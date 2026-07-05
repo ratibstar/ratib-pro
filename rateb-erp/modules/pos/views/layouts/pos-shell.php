@@ -20,11 +20,10 @@ $fontArabic = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wgh
     <link href="<?php echo $fontLatin; ?>" rel="stylesheet">
     <link href="<?php echo $fontArabic; ?>" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="<?php echo rateb_pos_asset('css/pos-register-v3.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_pos_asset('css/pos-register.css'); ?>" rel="stylesheet">
 </head>
-<body class="rateb-pos-shell rateb-pos-v3-shell">
-<a class="rateb-pos-v3__skip" href="#rateb-pos-register-main"><?php echo __('pos_skip_to_register'); ?></a>
-<main class="rateb-pos-v3-main" id="rateb-pos-app">
+<body class="rateb-pos-shell">
+<main class="rateb-pos-main" id="rateb-pos-app">
     <?php echo $pageContent; ?>
 </main>
 <script type="application/json" id="rateb-pos-register-config"><?php echo $configJson ?: '{}'; ?></script>

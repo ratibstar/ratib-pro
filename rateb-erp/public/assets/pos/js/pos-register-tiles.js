@@ -2,16 +2,13 @@
     'use strict';
 
     var root = document.querySelector('[data-pos-register]');
-    if (!root || !root.classList.contains('rateb-pos-v3')) {
+    if (!root || !root.classList.contains('rateb-pos')) {
         return;
     }
 
     var configEl = document.getElementById('rateb-pos-register-config');
-    var labelsEl = document.getElementById('rateb-pos-ui-labels');
     var config = {};
-    var uiLabels = {};
     try { config = JSON.parse((configEl && configEl.textContent) || '{}'); } catch (e) { config = {}; }
-    try { uiLabels = JSON.parse((labelsEl && labelsEl.textContent) || '{}'); } catch (e2) { uiLabels = {}; }
 
     var motion = window.RatebPosMotion || {};
     var api = config.api || {};
@@ -22,8 +19,8 @@
     var categoriesEl = root.querySelector('[data-pos-categories]');
     var clockEl = document.querySelector('[data-pos-clock]');
     var connectionEl = document.querySelector('[data-pos-connection-status]');
-    var moreToggle = root.querySelector('[data-pos-more-toggle]');
-    var moreMenu = root.querySelector('[data-pos-more-menu]');
+    var modesToggle = root.querySelector('[data-pos-modes-toggle]');
+    var modesMenu = root.querySelector('[data-pos-modes-menu]');
 
     var CATEGORIES = [
         { id: 'all', icon: 'fa-border-all', labelKey: 'pos_cat_all', query: 'aa' },
@@ -40,17 +37,11 @@
         { id: 'popular', icon: 'fa-fire', labelKey: 'pos_cat_popular', query: 'a' }
     ];
 
-    var ICONS = {
-        coffee: 'fa-mug-hot', food: 'fa-burger', dessert: 'fa-cookie', drink: 'fa-glass-water',
-        bakery: 'fa-bread-slice', pizza: 'fa-pizza-slice', default: 'fa-box-open'
-    };
-
-    var TILE_MIN = 176;
+    var TILE_MIN = 148;
     var TILE_GAP = 12;
     var TILE_PAD = 12;
-    var TILE_H = 220;
+    var TILE_H = 196;
     var ROW_BUFFER = 2;
-    var COL_BUFFER = 1;
 
     var products = [];
     var activeCategoryId = 'all';
@@ -60,7 +51,7 @@
     var tilePool = [];
     var boundTiles = {};
 
-    function t(key, fb) { return uiLabels[key] || i18n[key] || fb || key; }
+    function t(key, fb) { return i18n[key] || fb || key; }
     function money(n) { var v = Number(n); return (isFinite(v) ? v : 0).toFixed(2); }
     function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function favKey() { return 'rateb_pos_fav_' + (config.companyId || 0); }
@@ -86,18 +77,12 @@
         list.unshift(p.id);
         try { localStorage.setItem(recentKey(), JSON.stringify(list.slice(0, 24))); } catch (e) { /* ignore */ }
     }
-    function productIcon(p) {
-        var n = ((p.item_name || '') + ' ' + (p.item_code || '')).toLowerCase();
-        if (n.indexOf('coffee') >= 0 || n.indexOf('latte') >= 0) { return ICONS.coffee; }
-        if (n.indexOf('pizza') >= 0) { return ICONS.pizza; }
-        if (n.indexOf('burger') >= 0) { return ICONS.food; }
-        if (n.indexOf('cake') >= 0 || n.indexOf('dessert') >= 0) { return ICONS.dessert; }
-        if (n.indexOf('drink') >= 0 || n.indexOf('juice') >= 0) { return ICONS.drink; }
-        if (n.indexOf('bread') >= 0) { return ICONS.bakery; }
-        return ICONS.default;
-    }
     function productImageUrl(p) {
         return p.image_url || p.thumbnail_url || p.image || '';
+    }
+    function productInitial(p) {
+        var name = (p.item_name || p.item_code || '?').trim();
+        return name.charAt(0) || '?';
     }
     function hasPromo(product) {
         return !!(product.has_promotion || product.promotion_label || product.is_promo ||
@@ -131,14 +116,14 @@
     function getTileFromPool() {
         if (tilePool.length) { return tilePool.pop(); }
         var el = document.createElement('article');
-        el.className = 'rateb-pos-v3__card';
-        el.setAttribute('role', 'gridcell');
+        el.className = 'rateb-pos__tile';
+        el.setAttribute('role', 'listitem');
         el.tabIndex = 0;
         return el;
     }
 
     function releaseTile(el) {
-        el.className = 'rateb-pos-v3__card';
+        el.className = 'rateb-pos__tile';
         el.removeAttribute('data-product-id');
         el.removeAttribute('aria-label');
         el.removeAttribute('aria-disabled');
@@ -175,6 +160,7 @@
                 favBtn.classList.toggle('is-favorite', now);
                 favBtn.setAttribute('aria-pressed', now ? 'true' : 'false');
                 favBtn.querySelector('i').className = 'fa-' + (now ? 'solid' : 'regular') + ' fa-heart';
+                tile.classList.toggle('is-favorite', now);
                 if (activeCategoryId === 'favorites') {
                     loadCategory(CATEGORIES.filter(function (c) { return c.id === 'favorites'; })[0]);
                 }
@@ -207,46 +193,50 @@
         var fav = isFavorite(product.id);
         var promo = hasPromo(product);
         var imgUrl = productImageUrl(product);
+        var needsSerial = !!product.requires_serial;
 
-        tile.className = 'rateb-pos-v3__card';
+        tile.className = 'rateb-pos__tile' + (fav ? ' is-favorite' : '');
         tile.setAttribute('data-product-id', String(product.id));
         tile.setAttribute('aria-label', (product.item_name || '') + ' ' + money(product.unit_price || 0));
-        if (!canAdd) { tile.classList.add('is-disabled'); tile.setAttribute('aria-disabled', 'true'); }
-        else { tile.removeAttribute('aria-disabled'); }
+        if (!canAdd) {
+            tile.classList.add('is-disabled');
+            tile.setAttribute('aria-disabled', 'true');
+        } else {
+            tile.classList.remove('is-disabled');
+            tile.removeAttribute('aria-disabled');
+        }
 
         var badges = '';
         if (promo) {
-            badges += '<span class="rateb-pos-v3__badge rateb-pos-v3__badge--promo">' +
+            badges += '<span class="rateb-pos__tile-badge rateb-pos__tile-badge--promo">' +
                 escapeHtml(product.promotion_label || t('pos_promo', 'Promo')) + '</span>';
         }
         if (canAdd && available > 0 && available <= 5) {
-            badges += '<span class="rateb-pos-v3__badge rateb-pos-v3__badge--low">' + escapeHtml(t('pos_low_stock', 'Low')) + '</span>';
-        } else if (canAdd) {
-            badges += '<span class="rateb-pos-v3__badge rateb-pos-v3__badge--stock">' + escapeHtml(String(available)) + '</span>';
+            badges += '<span class="rateb-pos__tile-badge rateb-pos__tile-badge--low">' + escapeHtml(t('pos_low_stock', 'Low')) + '</span>';
         }
-        if (product.requires_serial) { badges += '<span class="rateb-pos-v3__badge rateb-pos-v3__badge--serial">SN</span>'; }
-        if (product.has_batches) { badges += '<span class="rateb-pos-v3__badge rateb-pos-v3__badge--batch">FEFO</span>'; }
+        if (needsSerial) {
+            badges += '<span class="rateb-pos__tile-badge rateb-pos__tile-badge--mod">' + escapeHtml(t('pos_serial_select', 'Serial')) + '</span>';
+        }
 
         var overlay = !canAdd
-            ? '<div class="rateb-pos-v3__card-overlay">' + escapeHtml(t('pos_out_of_stock', 'Out of stock')) + '</div>'
+            ? '<div class="rateb-pos__tile-overlay">' + escapeHtml(t('pos_out_of_stock', 'Out of stock')) + '</div>'
             : '';
 
-        var imgHtml = imgUrl
+        var mediaInner = imgUrl
             ? '<img data-src="' + escapeHtml(imgUrl) + '" alt="" loading="lazy" decoding="async" />'
-            : '';
-        var iconHtml = imgUrl ? '' : '<i class="fa-solid ' + productIcon(product) + ' rateb-pos-v3__card-icon"></i>';
+            : '<span class="rateb-pos__tile-fallback">' + escapeHtml(productInitial(product)) + '</span>';
 
         tile.innerHTML =
             overlay +
-            '<span class="rateb-pos-v3__card-ripple" aria-hidden="true"></span>' +
-            '<button type="button" class="rateb-pos-v3__card-fav' + (fav ? ' is-favorite' : '') + '" data-pos-fav="' + product.id + '" aria-label="' + escapeHtml(t('pos_favorite', 'Favorite')) + '" aria-pressed="' + (fav ? 'true' : 'false') + '">' +
+            '<span class="rateb-pos__tile-ripple" aria-hidden="true"></span>' +
+            '<button type="button" class="rateb-pos__tile-fav' + (fav ? ' is-favorite' : '') + '" data-pos-fav="' + product.id + '" aria-label="' + escapeHtml(t('pos_favorite', 'Favorite')) + '" aria-pressed="' + (fav ? 'true' : 'false') + '">' +
             '<i class="fa-' + (fav ? 'solid' : 'regular') + ' fa-heart"></i></button>' +
-            '<div class="rateb-pos-v3__card-visual">' + imgHtml + iconHtml +
-            (badges ? '<div class="rateb-pos-v3__card-badges-top">' + badges + '</div>' : '') +
+            '<div class="rateb-pos__tile-media">' + mediaInner +
+            (badges ? '<div class="rateb-pos__tile-badges">' + badges + '</div>' : '') +
             '</div>' +
-            '<div class="rateb-pos-v3__card-body">' +
-            '<div class="rateb-pos-v3__card-name">' + escapeHtml(product.item_name || '') + '</div>' +
-            '<div class="rateb-pos-v3__card-price">' + money(product.unit_price || 0) + '</div></div>';
+            '<div class="rateb-pos__tile-body">' +
+            '<div class="rateb-pos__tile-name">' + escapeHtml(product.item_name || '') + '</div>' +
+            '<div class="rateb-pos__tile-price">' + money(product.unit_price || 0) + '</div></div>';
 
         var img = tile.querySelector('img[data-src]');
         if (img) { lazyLoadImg(img); }
@@ -282,7 +272,7 @@
         var i;
         for (i = startIdx; i < endIdx; i++) { needed[i] = true; }
 
-        virtualWindow.querySelectorAll('.rateb-pos-v3__card[data-vi]').forEach(function (tile) {
+        virtualWindow.querySelectorAll('.rateb-pos__tile[data-vi]').forEach(function (tile) {
             var vi = Number(tile.getAttribute('data-vi'));
             if (!needed[vi]) {
                 tile.remove();
@@ -291,7 +281,7 @@
         });
 
         for (i = startIdx; i < endIdx; i++) {
-            var existing = virtualWindow.querySelector('.rateb-pos-v3__card[data-vi="' + i + '"]');
+            var existing = virtualWindow.querySelector('.rateb-pos__tile[data-vi="' + i + '"]');
             var tile = existing || getTileFromPool();
             tile.setAttribute('data-vi', String(i));
             if (tile.getAttribute('data-product-id') !== String(products[i].id)) {
@@ -319,9 +309,9 @@
         var count = layout.cols * 3;
         for (var i = 0; i < count; i++) {
             var sk = document.createElement('article');
-            sk.className = 'rateb-pos-v3__card rateb-pos-v3__card--skel';
+            sk.className = 'rateb-pos__tile rateb-pos__tile--skel';
             sk.setAttribute('aria-hidden', 'true');
-            sk.innerHTML = '<div class="rateb-pos-v3__card-visual"></div><div class="rateb-pos-v3__card-body"><div class="rateb-pos-v3__card-name">&nbsp;</div><div class="rateb-pos-v3__card-price">&nbsp;</div></div>';
+            sk.innerHTML = '<div class="rateb-pos__tile-media"></div><div class="rateb-pos__tile-body"><div class="rateb-pos__tile-name">&nbsp;</div><div class="rateb-pos__tile-price">&nbsp;</div></div>';
             positionTile(sk, i);
             virtualWindow.appendChild(sk);
         }
@@ -330,10 +320,10 @@
     function showEmpty() {
         if (!virtualWindow) { return; }
         virtualWindow.innerHTML =
-            '<div class="rateb-pos-v3__empty" role="status">' +
-            '<div class="rateb-pos-v3__empty-icon"><i class="fa-solid fa-box-open"></i></div>' +
-            '<p class="rateb-pos-v3__empty-title">' + escapeHtml(t('pos_search_no_results', 'No products found')) + '</p>' +
-            '<p class="rateb-pos-v3__empty-hint">' + escapeHtml(t('pos_search_placeholder', 'Try another category')) + '</p></div>';
+            '<div class="rateb-pos__empty" role="status">' +
+            '<div class="rateb-pos__empty-icon"><i class="fa-solid fa-box-open"></i></div>' +
+            '<p class="rateb-pos__empty-title">' + escapeHtml(t('pos_search_no_results', 'No products found')) + '</p>' +
+            '<p class="rateb-pos__empty-hint">' + escapeHtml(t('pos_search_placeholder', 'Try another category')) + '</p></div>';
         if (virtualSpacer) { virtualSpacer.style.height = '100%'; }
     }
 
@@ -354,7 +344,7 @@
 
     function setActiveCategory(btn, cat) {
         if (!categoriesEl || !btn) { return; }
-        categoriesEl.querySelectorAll('.rateb-pos-v3__dock-btn').forEach(function (c) {
+        categoriesEl.querySelectorAll('.rateb-pos__rail-btn').forEach(function (c) {
             c.classList.remove('is-active');
             c.setAttribute('aria-selected', 'false');
         });
@@ -390,18 +380,16 @@
     function renderCategories() {
         if (!categoriesEl) { return; }
         categoriesEl.innerHTML = '';
-        categoriesEl.setAttribute('role', 'tablist');
         CATEGORIES.forEach(function (cat, idx) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'rateb-pos-v3__dock-btn' + (idx === 0 ? ' is-active' : '');
+            btn.className = 'rateb-pos__rail-btn' + (idx === 0 ? ' is-active' : '');
             btn.setAttribute('role', 'tab');
             btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
             btn.setAttribute('data-cat-id', cat.id);
-            btn.setAttribute('aria-label', t(cat.labelKey, cat.id));
             btn.innerHTML =
                 '<i class="fa-solid ' + cat.icon + '" aria-hidden="true"></i>' +
-                '<span class="rateb-pos-v3__dock-tip">' + escapeHtml(t(cat.labelKey, cat.id)) + '</span>';
+                '<span class="rateb-pos__rail-label">' + escapeHtml(t(cat.labelKey, cat.id)) + '</span>';
             btn.addEventListener('click', function () {
                 setActiveCategory(btn, cat);
                 loadCategory(cat);
@@ -409,19 +397,23 @@
             categoriesEl.appendChild(btn);
         });
 
+        var railScroll = categoriesEl.closest('.rateb-pos__rail-scroll') || categoriesEl.parentElement;
         requestAnimationFrame(function () {
-            var first = categoriesEl.querySelector('.rateb-pos-v3__dock-btn.is-active');
+            var first = categoriesEl.querySelector('.rateb-pos__rail-btn.is-active');
             if (first && motion.updateCategoryIndicator) {
-                motion.updateCategoryIndicator(categoriesEl, first);
+                motion.updateCategoryIndicator(railScroll || categoriesEl, first);
             }
         });
 
-        categoriesEl.addEventListener('scroll', function () {
-            var active = categoriesEl.querySelector('.rateb-pos-v3__dock-btn.is-active');
-            if (active && motion.updateCategoryIndicator) {
-                motion.updateCategoryIndicator(categoriesEl, active);
-            }
-        }, { passive: true });
+        var scrollHost = categoriesEl.closest('.rateb-pos__rail-scroll');
+        if (scrollHost) {
+            scrollHost.addEventListener('scroll', function () {
+                var active = categoriesEl.querySelector('.rateb-pos__rail-btn.is-active');
+                if (active && motion.updateCategoryIndicator) {
+                    motion.updateCategoryIndicator(scrollHost, active);
+                }
+            }, { passive: true });
+        }
     }
 
     function bindGridScroll() {
@@ -438,20 +430,30 @@
         resizeObs.observe(grid);
     }
 
-    function bindMoreMenu() {
-        if (!moreToggle || !moreMenu) { return; }
-        moreToggle.addEventListener('click', function (e) {
+    function bindModesMenu() {
+        if (!modesToggle || !modesMenu) { return; }
+        modesToggle.addEventListener('click', function (e) {
             e.stopPropagation();
-            var open = moreMenu.hidden;
-            moreMenu.hidden = !open;
-            moreToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            var open = modesMenu.hidden;
+            modesMenu.hidden = !open;
+            modesToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
         document.addEventListener('click', function (e) {
-            if (!e.target.closest('[data-pos-more-menu]') && !e.target.closest('[data-pos-more-toggle]')) {
-                moreMenu.hidden = true;
-                moreToggle.setAttribute('aria-expanded', 'false');
+            if (!e.target.closest('[data-pos-modes-menu]') && !e.target.closest('[data-pos-modes-toggle]')) {
+                modesMenu.hidden = true;
+                modesToggle.setAttribute('aria-expanded', 'false');
             }
         });
+    }
+
+    function bindReturnClose() {
+        var closeBtn = root.querySelector('[data-pos-return-close]');
+        var panel = root.querySelector('[data-pos-return-panel]');
+        if (closeBtn && panel) {
+            closeBtn.addEventListener('click', function () {
+                panel.hidden = true;
+            });
+        }
     }
 
     function tickClock() {
@@ -477,16 +479,18 @@
     renderCategories();
     bindGridScroll();
     bindResize();
-    bindMoreMenu();
+    bindModesMenu();
+    bindReturnClose();
     loadCategory(CATEGORIES[0]);
     tickClock();
     setInterval(tickClock, 30000);
     bindConnection();
 
     window.addEventListener('resize', function () {
-        var active = categoriesEl && categoriesEl.querySelector('.rateb-pos-v3__dock-btn.is-active');
+        var railScroll = categoriesEl && categoriesEl.closest('.rateb-pos__rail-scroll');
+        var active = categoriesEl && categoriesEl.querySelector('.rateb-pos__rail-btn.is-active');
         if (active && motion.updateCategoryIndicator) {
-            motion.updateCategoryIndicator(categoriesEl, active);
+            motion.updateCategoryIndicator(railScroll || categoriesEl, active);
         }
         scheduleRender();
     }, { passive: true });

@@ -9,10 +9,16 @@
     function ripple(el, clientX, clientY) {
         if (reduced || !el) { return; }
         var rect = el.getBoundingClientRect();
-        var container = el.querySelector('.rateb-pos-v3__card-ripple, .rateb-pos-v2__tile-ripple, .rateb-pos-product-card__ripple');
+        var container = el.querySelector('.rateb-pos__tile-ripple, .rateb-pos-v3__card-ripple, .rateb-pos-v2__tile-ripple, .rateb-pos-product-card__ripple');
         if (!container) {
             container = document.createElement('span');
-            container.className = el.classList.contains('rateb-pos-v3__card') ? 'rateb-pos-v3__card-ripple' : 'rateb-pos-v2__tile-ripple';
+            if (el.classList.contains('rateb-pos__tile')) {
+                container.className = 'rateb-pos__tile-ripple';
+            } else if (el.classList.contains('rateb-pos-v3__card')) {
+                container.className = 'rateb-pos-v3__card-ripple';
+            } else {
+                container.className = 'rateb-pos-v2__tile-ripple';
+            }
             container.setAttribute('aria-hidden', 'true');
             el.insertBefore(container, el.firstChild);
         }
@@ -65,6 +71,7 @@
     function pulseTotal() {
         if (reduced) { return; }
         document.querySelectorAll(
+            '.rateb-pos__totals-row--total dd, .rateb-pos__charge, [data-pos-pay-amount], ' +
             '.rateb-pos-v3__total-line--grand, .rateb-pos-v3__pay, .rateb-pos-v3__running-total-value, ' +
             '.rateb-pos-v2__total-row--grand, .rateb-pos-v2__pay, [data-pos-toolbar-total]'
         ).forEach(function (el) {
@@ -73,11 +80,6 @@
             el.classList.add('is-pulse');
             setTimeout(function () { el.classList.remove('is-pulse'); }, 350);
         });
-        var pay = document.querySelector('[data-pos-checkout-open]');
-        if (pay) {
-            pay.classList.add('is-glow');
-            setTimeout(function () { pay.classList.remove('is-glow'); }, 400);
-        }
     }
 
     function updateCategoryIndicator(scrollEl, btn) {

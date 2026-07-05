@@ -229,9 +229,10 @@
     }
 
     function renderPremiumCartLine(line) {
-        var v3 = root.classList.contains('rateb-pos-v3');
+        var commercial = root.classList.contains('rateb-pos');
+        var v3 = !commercial && root.classList.contains('rateb-pos-v3');
         var card = document.createElement('article');
-        card.className = v3 ? 'rateb-pos-v3__item' : 'rateb-pos-v2__line';
+        card.className = commercial ? 'rateb-pos__line' : (v3 ? 'rateb-pos-v3__item' : 'rateb-pos-v2__line');
         card.setAttribute('role', 'listitem');
         card.setAttribute('data-line-id', line.id || '');
         card.tabIndex = 0;
@@ -241,8 +242,8 @@
 
         var discountBadge = '';
         var disc = Number(line.discount_amount || line.line_discount || 0);
-        var tagCls = v3 ? 'rateb-pos-v3__item-tag' : 'rateb-pos-v2__line-tag';
-        var tagDiscCls = v3 ? 'rateb-pos-v3__item-tag rateb-pos-v3__item-tag--discount' : 'rateb-pos-v2__line-tag rateb-pos-v2__line-tag--discount';
+        var tagCls = commercial ? 'rateb-pos__line-tag' : (v3 ? 'rateb-pos-v3__item-tag' : 'rateb-pos-v2__line-tag');
+        var tagDiscCls = commercial ? 'rateb-pos__line-tag rateb-pos__line-tag--discount' : (v3 ? 'rateb-pos-v3__item-tag rateb-pos-v3__item-tag--discount' : 'rateb-pos-v2__line-tag rateb-pos-v2__line-tag--discount');
         if (disc > 0) {
             discountBadge = '<span class="' + tagDiscCls + '">-' + money(disc) + '</span>';
         }
@@ -255,7 +256,30 @@
             ? '<span class="' + tagCls + '">FEFO</span>' + batchPreviewHtml(line)
             : (line.has_batches ? '<span class="' + tagCls + '">FEFO</span>' : '');
 
-        if (v3) {
+        if (commercial) {
+            card.innerHTML =
+                '<div class="rateb-pos__line-thumb" aria-hidden="true">' +
+                '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
+                '<div class="rateb-pos__line-main">' +
+                '<p class="rateb-pos__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
+                '<p class="rateb-pos__line-meta">' + escapeHtml(line.item_code || '') + '</p>' +
+                (line.notes ? '<p class="rateb-pos__line-note">' + escapeHtml(line.notes) + '</p>' : '') +
+                '<div class="rateb-pos__line-tags">' + serialBadge + batchBadge + discountBadge + '</div>' +
+                '<p class="rateb-pos__line-price">' + money(line.line_total) + '</p>' +
+                '</div>' +
+                '<div class="rateb-pos__line-actions">' +
+                '<div class="rateb-pos__line-qty">' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
+                '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
+                '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
+                '</div>' +
+                '<div class="rateb-pos__line-tools">' +
+                '<button type="button" class="rateb-pos-icon-action" data-pos-line-select="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('notes', 'Notes')) + '">' +
+                '<i class="fa-solid fa-note-sticky" aria-hidden="true"></i></button>' +
+                '<button type="button" class="rateb-pos-icon-action rateb-pos-icon-action--danger" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
+                '<i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>' +
+                '</div></div>';
+        } else if (v3) {
             card.innerHTML =
                 '<div class="rateb-pos-v3__item-thumb" aria-hidden="true">' +
                 '<i class="fa-solid ' + cartLineIcon(line) + '"></i></div>' +
@@ -1083,12 +1107,25 @@
         });
         document.querySelectorAll('[data-pos-focus-customer]').forEach(function (btn) {
             btn.addEventListener('click', function () {
+                var sheet = root.querySelector('[data-pos-customer-sheet]');
+                if (sheet) {
+                    sheet.hidden = false;
+                }
                 if (els.customerInput) {
                     els.customerInput.focus();
-                    els.customerInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             });
         });
+
+        var customerSheet = root.querySelector('[data-pos-customer-sheet]');
+        if (customerSheet) {
+            customerSheet.querySelectorAll('[data-pos-customer-sheet-close]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    customerSheet.hidden = true;
+                    closeList();
+                });
+            });
+        }
     }
 
     bindShortcutsHelp();
