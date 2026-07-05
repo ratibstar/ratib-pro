@@ -157,6 +157,7 @@ final class EnterpriseTestRunner
             $this->p7SyncRole($bmAssignedId, $bmRoleId);
             $this->p7SyncRole($hqId, $hqRoleId);
             $this->p7SyncRole($cfaId, $cfaRoleId);
+            $this->p7EnsureRolePermission($hqRoleId, 'branches.access_all');
             if ($acctRoleId > 0) {
                 $this->p7SyncRole($acctId, $acctRoleId);
             }
@@ -494,6 +495,22 @@ final class EnterpriseTestRunner
         }
         $this->db->prepare('INSERT IGNORE INTO rateb_user_branches (user_id, branch_id) VALUES (:uid, :bid)')
             ->execute(['uid' => $userId, 'bid' => $branchId]);
+    }
+
+    private function p7EnsureRolePermission(int $roleId, string $permissionSlug): void
+    {
+        if (!$this->dbReady() || $roleId < 1 || $permissionSlug === '') {
+            return;
+        }
+        $perm = $this->db->prepare('SELECT id FROM rateb_permissions WHERE slug = :slug LIMIT 1');
+        $perm->execute(['slug' => $permissionSlug]);
+        $permId = (int) ($perm->fetchColumn() ?: 0);
+        if ($permId < 1) {
+            return;
+        }
+        $this->db->prepare(
+            'INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id) VALUES (:rid, :pid)'
+        )->execute(['rid' => $roleId, 'pid' => $permId]);
     }
 
     private function p7CleanupFixtureUsers(): void

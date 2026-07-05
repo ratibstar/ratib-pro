@@ -778,7 +778,7 @@ final class InterBranchTransferService
                         SELECT 1 FROM rateb_user_roles ur
                         INNER JOIN rateb_roles r ON r.id = ur.role_id
                         WHERE ur.user_id = u.id
-                          AND (r.company_id IS NULL OR r.company_id = 0 OR r.company_id = :cid)
+                          AND (r.company_id IS NULL OR r.company_id = 0 OR r.company_id = :rcid)
                           AND r.slug IN ('hq_manager', 'hq_admin', 'company-full-access')
                     )
                     OR EXISTS (
@@ -789,7 +789,7 @@ final class InterBranchTransferService
                     )
                   )";
         $stmt = $db->prepare($sql);
-        $stmt->execute(['cid' => $companyId]);
+        $stmt->execute(['cid' => $companyId, 'rcid' => $companyId]);
         return array_map('intval', array_column($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [], 'id'));
     }
 
