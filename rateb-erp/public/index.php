@@ -44,6 +44,9 @@ try {
     require RATEB_ROOT . '/routes/company.php';
     require RATEB_ROOT . '/routes/api.php';
     require RATEB_ROOT . '/modules/pos/routes/pos.php';
+    if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-v2.php')) {
+        require RATEB_ROOT . '/modules/pos/routes/pos-v2.php';
+    }
 
     require_once RATEB_ROOT . '/app/helpers/Request.php';
 

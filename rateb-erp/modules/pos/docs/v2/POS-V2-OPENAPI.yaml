@@ -1,0 +1,2021 @@
+openapi: 3.1.0
+info:
+  title: RATEB POS V2 API
+  version: 2.0.0
+  description: |
+    Additive POS V2 REST API. V1 endpoints under `/pos/api/` remain unchanged.
+    All V2 routes require authentication and company context.
+  contact:
+    name: RATEB ERP Platform
+    url: https://rateb.sa
+
+servers:
+  - url: https://{host}/pos/api/v2
+    variables:
+      host:
+        default: app.rateb.sa
+
+tags:
+  - name: Register
+  - name: Catalog
+  - name: Cart
+  - name: Customer
+  - name: Discount
+  - name: Payment
+  - name: Orders
+  - name: Returns
+  - name: Suspend
+  - name: Shift
+  - name: Receipt
+  - name: Approval
+  - name: Hardware
+  - name: Session
+  - name: Restaurant
+  - name: Pharmacy
+  - name: Sync
+  - name: Audit
+  - name: Settings
+  - name: Extensions
+
+security:
+  - sessionAuth: []
+  - csrfToken: []
+
+paths:
+  /register/bootstrap:
+    get:
+      tags: [Register]
+      summary: Load register bootstrap context
+      operationId: getRegisterBootstrap
+      parameters:
+        - $ref: '#/components/parameters/TerminalId'
+        - $ref: '#/components/parameters/PosVersion'
+      responses:
+        '200':
+          description: Bootstrap payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterBootstrapResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Shift not open
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /catalog/search:
+    get:
+      tags: [Catalog]
+      summary: Search product catalog
+      operationId: searchCatalog
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/TerminalId'
+      responses:
+        '200':
+          description: Catalog results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogSearchResponse'
+
+  /catalog/product/{productId}:
+    get:
+      tags: [Catalog]
+      summary: Get product detail for POS
+      operationId: getCatalogProduct
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/TerminalId'
+      responses:
+        '200':
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogProduct'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cart/lines:
+    post:
+      tags: [Cart]
+      summary: Add line to cart
+      operationId: addCartLine
+      parameters:
+        - $ref: '#/components/parameters/TerminalId'
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLineRequest'
+      responses:
+        '200':
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /cart/lines/{lineId}:
+    patch:
+      tags: [Cart]
+      summary: Update cart line
+      operationId: updateCartLine
+      parameters:
+        - name: lineId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLineRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+    delete:
+      tags: [Cart]
+      summary: Remove cart line
+      operationId: removeCartLine
+      parameters:
+        - name: lineId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /cart/clear:
+    post:
+      tags: [Cart]
+      summary: Clear cart
+      operationId: clearCart
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /cart/price-override:
+    post:
+      tags: [Cart]
+      summary: Override line price
+      operationId: overridePrice
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/ApprovalToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverridePriceRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '403':
+          $ref: '#/components/responses/ApprovalRequired'
+
+  /customer/search:
+    get:
+      tags: [Customer]
+      summary: Search customers
+      operationId: searchCustomer
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            maximum: 20
+            default: 10
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSearchResponse'
+
+  /customer/attach:
+    post:
+      tags: [Customer]
+      summary: Attach customer to cart
+      operationId: attachCustomer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachCustomerRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /customer/detach:
+    post:
+      tags: [Customer]
+      summary: Detach customer from cart
+      operationId: detachCustomer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /discount/apply:
+    post:
+      tags: [Discount]
+      summary: Apply discount
+      operationId: applyDiscount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyDiscountRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '403':
+          $ref: '#/components/responses/ApprovalRequired'
+
+  /discount/remove:
+    post:
+      tags: [Discount]
+      summary: Remove discount
+      operationId: removeDiscount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveDiscountRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /charge/initiate:
+    post:
+      tags: [Payment]
+      summary: Initiate charge (open payment sheet)
+      operationId: initiateCharge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateChargeRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSheetResponse'
+        '422':
+          description: Empty cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /payment/record:
+    post:
+      tags: [Payment]
+      summary: Record payment line
+      operationId: recordPayment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordPaymentRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentBalanceResponse'
+
+  /payment/complete:
+    post:
+      tags: [Payment]
+      summary: Complete sale
+      operationId: completeSale
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteSaleRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteSaleResponse'
+        '409':
+          description: Duplicate idempotency key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteSaleResponse'
+
+  /payment/terminal:
+    post:
+      tags: [Payment]
+      summary: Initiate card terminal payment
+      operationId: processTerminalPayment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminalPaymentRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalPaymentResponse'
+        '502':
+          description: Terminal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /orders/search:
+    get:
+      tags: [Orders]
+      summary: Search orders for return
+      operationId: searchOrders
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnOrderResponse'
+
+  /returns/process:
+    post:
+      tags: [Returns]
+      summary: Process return
+      operationId: processReturn
+      parameters:
+        - $ref: '#/components/parameters/ApprovalToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessReturnRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnCompleteResponse'
+
+  /returns/exchange:
+    post:
+      tags: [Returns]
+      summary: Process exchange
+      operationId: processExchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessExchangeRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeCompleteResponse'
+
+  /suspend:
+    post:
+      tags: [Suspend]
+      summary: Suspend current sale
+      operationId: suspendSale
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuspendSaleRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuspendedSaleResponse'
+
+  /suspend/list:
+    get:
+      tags: [Suspend]
+      summary: List suspended sales
+      operationId: listSuspendedSales
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuspendedListResponse'
+
+  /suspend/{suspendedId}/resume:
+    post:
+      tags: [Suspend]
+      summary: Resume suspended sale
+      operationId: resumeSale
+      parameters:
+        - name: suspendedId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /shift/open:
+    post:
+      tags: [Shift]
+      summary: Open shift
+      operationId: openShift
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenShiftRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftResponse'
+
+  /shift/close:
+    post:
+      tags: [Shift]
+      summary: Close shift
+      operationId: closeShift
+      parameters:
+        - $ref: '#/components/parameters/ApprovalToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseShiftRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloseShiftResponse'
+
+  /receipt/print:
+    post:
+      tags: [Receipt]
+      summary: Queue receipt print
+      operationId: printReceipt
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrintReceiptRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrintJobResponse'
+
+  /receipt/reprint:
+    post:
+      tags: [Receipt]
+      summary: Reprint receipt
+      operationId: reprintReceipt
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReprintReceiptRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrintJobResponse'
+
+  /receipt/digital:
+    post:
+      tags: [Receipt]
+      summary: Send digital receipt
+      operationId: sendDigitalReceipt
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DigitalReceiptRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalReceiptResponse'
+
+  /approval/request:
+    post:
+      tags: [Approval]
+      summary: Request manager approval
+      operationId: requestApproval
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestApprovalRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalPendingResponse'
+
+  /approval/grant:
+    post:
+      tags: [Approval]
+      summary: Grant approval
+      operationId: grantApproval
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveActionRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalTokenResponse'
+
+  /approval/deny:
+    post:
+      tags: [Approval]
+      summary: Deny approval
+      operationId: denyApproval
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DenyActionRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalDeniedResponse'
+
+  /hardware/drawer/open:
+    post:
+      tags: [Hardware]
+      summary: Open cash drawer
+      operationId: openCashDrawer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenDrawerRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrawerResponse'
+
+  /hardware/status:
+    get:
+      tags: [Hardware]
+      summary: Get device status
+      operationId: getDeviceStatus
+      parameters:
+        - $ref: '#/components/parameters/TerminalId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceStatusResponse'
+
+  /hardware/test-print:
+    post:
+      tags: [Hardware]
+      summary: Test print
+      operationId: testPrint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestPrintRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrintJobResponse'
+
+  /session/recover:
+    post:
+      tags: [Session]
+      summary: Recover session after crash
+      operationId: recoverSession
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoverSessionRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterBootstrapResponse'
+
+  /session/snapshot:
+    post:
+      tags: [Session]
+      summary: Save cart snapshot
+      operationId: saveCartSnapshot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartSnapshotRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+
+  /restaurant/tables:
+    get:
+      tags: [Restaurant]
+      summary: Get table map
+      operationId: getTableMap
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableMapResponse'
+
+  /restaurant/tables/{tableId}/open:
+    post:
+      tags: [Restaurant]
+      summary: Open table tab
+      operationId: openTable
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenTableRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableSessionResponse'
+
+  /restaurant/split:
+    post:
+      tags: [Restaurant]
+      summary: Split bill
+      operationId: splitBill
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SplitBillRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitBillResponse'
+
+  /restaurant/merge:
+    post:
+      tags: [Restaurant]
+      summary: Merge tables
+      operationId: mergeTables
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeTablesRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableSessionResponse'
+
+  /restaurant/kitchen/send:
+    post:
+      tags: [Restaurant]
+      summary: Send kitchen ticket
+      operationId: sendKitchenTicket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KitchenTicketRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitchenTicketResponse'
+
+  /pharmacy/prescription/validate:
+    post:
+      tags: [Pharmacy]
+      summary: Validate prescription
+      operationId: validatePrescription
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidatePrescriptionRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrescriptionValidationResponse'
+
+  /pharmacy/batch/select:
+    post:
+      tags: [Pharmacy]
+      summary: Select batch for line
+      operationId: selectBatch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectBatchRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /sync/batch:
+    post:
+      tags: [Sync]
+      summary: Process offline sync batch
+      operationId: syncOfflineBatch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncBatchRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncBatchResponse'
+
+  /sync/conflicts/{conflictId}/resolve:
+    post:
+      tags: [Sync]
+      summary: Resolve sync conflict
+      operationId: resolveSyncConflict
+      parameters:
+        - name: conflictId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveConflictRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResolutionResponse'
+
+  /audit/timeline:
+    get:
+      tags: [Audit]
+      summary: List audit timeline
+      operationId: listAuditTimeline
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditTimelineResponse'
+
+  /settings:
+    get:
+      tags: [Settings]
+      summary: Get V2 POS settings for terminal
+      operationId: getPosSettings
+      parameters:
+        - $ref: '#/components/parameters/TerminalId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PosSettingsResponse'
+
+  /license/validate:
+    post:
+      tags: [Settings]
+      summary: Validate terminal license
+      operationId: validateLicense
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateLicenseRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseStatusResponse'
+
+  /ext/{extensionId}/{path}:
+    get:
+      tags: [Extensions]
+      summary: Extension API proxy (GET)
+      operationId: extensionApiGet
+      parameters:
+        - $ref: '#/components/parameters/ExtensionId'
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Extension-defined response
+    post:
+      tags: [Extensions]
+      summary: Extension API proxy (POST)
+      operationId: extensionApiPost
+      parameters:
+        - $ref: '#/components/parameters/ExtensionId'
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Extension-defined response
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: RATEB_SESSION
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-TOKEN
+
+  parameters:
+    TerminalId:
+      name: X-Rateb-Terminal-Id
+      in: header
+      required: true
+      schema:
+        type: integer
+    SessionId:
+      name: X-Rateb-Session-Id
+      in: header
+      required: true
+      schema:
+        type: integer
+    PosVersion:
+      name: X-Rateb-Pos-Version
+      in: header
+      schema:
+        type: string
+        enum: ['2']
+        default: '2'
+    ApprovalToken:
+      name: X-Rateb-Approval-Token
+      in: header
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 48
+        default: 24
+    ExtensionId:
+      name: extensionId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Forbidden:
+      description: Permission denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: POS_FORBIDDEN
+              message: Permission denied
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorEnvelope'
+    ApprovalRequired:
+      description: Manager approval required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApprovalRequiredResponse'
+
+  schemas:
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          example: '125.50'
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: SAR
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        last_page:
+          type: integer
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            field:
+              type: string
+              nullable: true
+            details:
+              type: object
+              additionalProperties: true
+
+    ValidationErrorEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ErrorEnvelope'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                fields:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: string
+
+    RegisterContext:
+      type: object
+      properties:
+        terminal_id:
+          type: integer
+        branch_id:
+          type: integer
+        warehouse_id:
+          type: integer
+        shift_id:
+          type: integer
+        session_id:
+          type: integer
+        profile:
+          type: string
+          enum: [retail, restaurant, pharmacy, fashion, enterprise]
+        locale:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+
+    CartLine:
+      type: object
+      properties:
+        line_id:
+          type: string
+          format: uuid
+        product_id:
+          type: integer
+        name:
+          type: string
+        qty:
+          type: string
+        unit_price:
+          $ref: '#/components/schemas/Money'
+        line_total:
+          $ref: '#/components/schemas/Money'
+        modifiers:
+          type: array
+          items:
+            type: object
+        note:
+          type: string
+          nullable: true
+
+    CartTotals:
+      type: object
+      properties:
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        discount:
+          $ref: '#/components/schemas/Money'
+        tax:
+          $ref: '#/components/schemas/Money'
+        total:
+          $ref: '#/components/schemas/Money'
+
+    CartResponse:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartLine'
+        totals:
+          $ref: '#/components/schemas/CartTotals'
+        customer:
+          $ref: '#/components/schemas/CustomerSummary'
+          nullable: true
+        item_count:
+          type: integer
+
+    CustomerSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+
+    RegisterBootstrapResponse:
+      type: object
+      properties:
+        context:
+          $ref: '#/components/schemas/RegisterContext'
+        cart:
+          $ref: '#/components/schemas/CartResponse'
+        settings:
+          $ref: '#/components/schemas/PosSettingsSummary'
+        catalog:
+          type: object
+          properties:
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+
+    CatalogProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        sku:
+          type: string
+        name:
+          type: string
+        price:
+          $ref: '#/components/schemas/Money'
+        image_url:
+          type: string
+          nullable: true
+        in_stock:
+          type: boolean
+        requires_weight:
+          type: boolean
+
+    CatalogSearchResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProduct'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    AddLineRequest:
+      type: object
+      required: [product_id, qty]
+      properties:
+        product_id:
+          type: integer
+        qty:
+          type: string
+        modifiers:
+          type: array
+          items:
+            type: object
+        note:
+          type: string
+        prescription_token:
+          type: string
+
+    UpdateLineRequest:
+      type: object
+      properties:
+        qty:
+          type: string
+        note:
+          type: string
+        modifiers:
+          type: array
+          items:
+            type: object
+
+    OverridePriceRequest:
+      type: object
+      required: [line_id, new_unit_price, reason]
+      properties:
+        line_id:
+          type: string
+          format: uuid
+        new_unit_price:
+          $ref: '#/components/schemas/Money'
+        reason:
+          type: string
+
+    CustomerSearchResponse:
+      type: object
+      properties:
+        customers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerSummary'
+
+    AttachCustomerRequest:
+      type: object
+      required: [customer_id]
+      properties:
+        customer_id:
+          type: integer
+
+    ApplyDiscountRequest:
+      type: object
+      required: [scope, type, value]
+      properties:
+        scope:
+          type: string
+          enum: [line, cart]
+        line_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [percent, fixed, coupon]
+        value:
+          type: string
+        coupon_code:
+          type: string
+        reason:
+          type: string
+
+    RemoveDiscountRequest:
+      type: object
+      properties:
+        discount_id:
+          type: string
+
+    InitiateChargeRequest:
+      type: object
+      required: [session_id]
+      properties:
+        session_id:
+          type: integer
+
+    PaymentMethod:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
+
+    PaymentSheetResponse:
+      type: object
+      properties:
+        totals:
+          $ref: '#/components/schemas/CartTotals'
+        allowed_methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethod'
+        balance_due:
+          $ref: '#/components/schemas/Money'
+
+    RecordPaymentRequest:
+      type: object
+      required: [method, amount]
+      properties:
+        method:
+          type: string
+        amount:
+          $ref: '#/components/schemas/Money'
+        reference:
+          type: string
+
+    PaymentLine:
+      type: object
+      properties:
+        method:
+          type: string
+        amount:
+          $ref: '#/components/schemas/Money'
+        reference:
+          type: string
+
+    PaymentBalanceResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLine'
+        balance_due:
+          $ref: '#/components/schemas/Money'
+        change_due:
+          $ref: '#/components/schemas/Money'
+
+    CompleteSaleRequest:
+      type: object
+      required: [session_id, payments]
+      properties:
+        session_id:
+          type: integer
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLine'
+        send_receipt:
+          type: object
+          properties:
+            channel:
+              type: string
+              enum: [email, sms, whatsapp]
+            destination:
+              type: string
+
+    CompleteSaleResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        order_no:
+          type: string
+        totals:
+          $ref: '#/components/schemas/CartTotals'
+        receipt:
+          type: object
+          properties:
+            preview_url:
+              type: string
+            print_job_id:
+              type: string
+              format: uuid
+        change_due:
+          $ref: '#/components/schemas/Money'
+
+    TerminalPaymentRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+        order_reference:
+          type: string
+
+    TerminalPaymentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, declined, cancelled, timeout]
+        auth_code:
+          type: string
+        reference:
+          type: string
+        masked_pan:
+          type: string
+
+    ReturnOrderResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        order_no:
+          type: string
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              line_id:
+                type: integer
+              product_name:
+                type: string
+              returnable_qty:
+                type: string
+
+    ProcessReturnRequest:
+      type: object
+      required: [order_id, lines, refund_method, reason]
+      properties:
+        order_id:
+          type: integer
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              line_id:
+                type: integer
+              qty:
+                type: string
+        refund_method:
+          type: string
+        reason:
+          type: string
+
+    ReturnCompleteResponse:
+      type: object
+      properties:
+        return_id:
+          type: integer
+        refund_amount:
+          $ref: '#/components/schemas/Money'
+        receipt:
+          type: object
+
+    ProcessExchangeRequest:
+      allOf:
+        - $ref: '#/components/schemas/ProcessReturnRequest'
+        - type: object
+          properties:
+            exchange_lines:
+              type: array
+              items:
+                $ref: '#/components/schemas/AddLineRequest'
+
+    ExchangeCompleteResponse:
+      type: object
+      properties:
+        return_id:
+          type: integer
+        new_order_id:
+          type: integer
+        balance:
+          $ref: '#/components/schemas/Money'
+
+    SuspendSaleRequest:
+      type: object
+      properties:
+        label:
+          type: string
+        session_id:
+          type: integer
+
+    SuspendedSaleResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        item_count:
+          type: integer
+        total:
+          $ref: '#/components/schemas/Money'
+        suspended_at:
+          type: string
+          format: date-time
+
+    SuspendedListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuspendedSaleResponse'
+
+    OpenShiftRequest:
+      type: object
+      required: [terminal_id]
+      properties:
+        terminal_id:
+          type: integer
+        opening_cash:
+          $ref: '#/components/schemas/Money'
+        notes:
+          type: string
+
+    ShiftResponse:
+      type: object
+      properties:
+        shift_id:
+          type: integer
+        status:
+          type: string
+          enum: [open, closed]
+        opened_at:
+          type: string
+          format: date-time
+        opening_cash:
+          $ref: '#/components/schemas/Money'
+
+    CloseShiftRequest:
+      type: object
+      required: [shift_id, counted_cash]
+      properties:
+        shift_id:
+          type: integer
+        counted_cash:
+          $ref: '#/components/schemas/Money'
+        notes:
+          type: string
+
+    CloseShiftResponse:
+      type: object
+      properties:
+        shift_id:
+          type: integer
+        variance:
+          $ref: '#/components/schemas/Money'
+        closed_at:
+          type: string
+          format: date-time
+
+    PrintReceiptRequest:
+      type: object
+      required: [order_id]
+      properties:
+        order_id:
+          type: integer
+        copies:
+          type: integer
+          minimum: 1
+          maximum: 3
+
+    ReprintReceiptRequest:
+      type: object
+      required: [order_id, reason]
+      properties:
+        order_id:
+          type: integer
+        reason:
+          type: string
+
+    PrintJobResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, printing, completed, failed]
+
+    DigitalReceiptRequest:
+      type: object
+      required: [order_id, channel, destination]
+      properties:
+        order_id:
+          type: integer
+        channel:
+          type: string
+          enum: [email, sms, whatsapp]
+        destination:
+          type: string
+
+    DigitalReceiptResponse:
+      type: object
+      properties:
+        queued:
+          type: boolean
+        job_id:
+          type: string
+
+    RequestApprovalRequest:
+      type: object
+      required: [action, payload]
+      properties:
+        action:
+          type: string
+        payload:
+          type: object
+
+    ApprovalPendingResponse:
+      type: object
+      properties:
+        request_id:
+          type: integer
+        status:
+          type: string
+          enum: [pending]
+
+    ApproveActionRequest:
+      type: object
+      required: [request_id]
+      properties:
+        request_id:
+          type: integer
+        pin:
+          type: string
+        badge_token:
+          type: string
+
+    ApprovalTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          format: uuid
+        expires_at:
+          type: string
+          format: date-time
+        action:
+          type: string
+
+    ApprovalDeniedResponse:
+      type: object
+      properties:
+        request_id:
+          type: integer
+        status:
+          type: string
+          enum: [denied]
+
+    ApprovalRequiredResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: POS_APPROVAL_REQUIRED
+            approval_request_id:
+              type: integer
+
+    OpenDrawerRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum: [sale, no_sale, return]
+
+    DrawerResponse:
+      type: object
+      properties:
+        opened:
+          type: boolean
+
+    DeviceStatusResponse:
+      type: object
+      properties:
+        devices:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              driver_id:
+                type: string
+              status:
+                type: string
+                enum: [online, degraded, offline]
+
+    TestPrintRequest:
+      type: object
+      properties:
+        device_type:
+          type: string
+          default: receipt_printer
+
+    RecoverSessionRequest:
+      type: object
+      properties:
+        session_token:
+          type: string
+
+    CartSnapshotRequest:
+      type: object
+      required: [session_id]
+      properties:
+        session_id:
+          type: integer
+
+    SnapshotResponse:
+      type: object
+      properties:
+        snapshot_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+
+    TableMapResponse:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              tables:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    number:
+                      type: string
+                    status:
+                      type: string
+                      enum: [available, occupied, reserved]
+
+    OpenTableRequest:
+      type: object
+      properties:
+        guest_count:
+          type: integer
+
+    TableSessionResponse:
+      type: object
+      properties:
+        table_session_id:
+          type: integer
+        table_id:
+          type: integer
+        order_ids:
+          type: array
+          items:
+            type: integer
+
+    SplitBillRequest:
+      type: object
+      required: [order_id, mode]
+      properties:
+        order_id:
+          type: integer
+        mode:
+          type: string
+          enum: [equal, by_item, custom]
+        splits:
+          type: array
+          items:
+            type: object
+
+    SplitBillResponse:
+      type: object
+      properties:
+        child_order_ids:
+          type: array
+          items:
+            type: integer
+
+    MergeTablesRequest:
+      type: object
+      required: [source_table_ids, target_table_id]
+      properties:
+        source_table_ids:
+          type: array
+          items:
+            type: integer
+        target_table_id:
+          type: integer
+
+    KitchenTicketRequest:
+      type: object
+      required: [order_id]
+      properties:
+        order_id:
+          type: integer
+        station:
+          type: string
+
+    KitchenTicketResponse:
+      type: object
+      properties:
+        ticket_id:
+          type: integer
+        job_id:
+          type: string
+
+    ValidatePrescriptionRequest:
+      type: object
+      required: [rx_number]
+      properties:
+        rx_number:
+          type: string
+        patient_ref:
+          type: string
+
+    PrescriptionValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    SelectBatchRequest:
+      type: object
+      required: [line_id, batch_id]
+      properties:
+        line_id:
+          type: string
+          format: uuid
+        batch_id:
+          type: integer
+
+    SyncBatchRequest:
+      type: object
+      required: [terminal_id, items]
+      properties:
+        terminal_id:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              client_id:
+                type: string
+              action:
+                type: string
+              payload:
+                type: object
+              occurred_at:
+                type: string
+                format: date-time
+
+    SyncBatchResponse:
+      type: object
+      properties:
+        processed:
+          type: integer
+        conflicts:
+          type: array
+          items:
+            type: object
+            properties:
+              conflict_id:
+                type: string
+                format: uuid
+              client_id:
+                type: string
+              reason:
+                type: string
+
+    ResolveConflictRequest:
+      type: object
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+          enum: [accept_server, accept_client, merge]
+
+    ConflictResolutionResponse:
+      type: object
+      properties:
+        conflict_id:
+          type: string
+        resolved:
+          type: boolean
+
+    AuditTimelineResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              action:
+                type: string
+              actor:
+                type: object
+              occurred_at:
+                type: string
+                format: date-time
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    PosSettingsSummary:
+      type: object
+      properties:
+        profile:
+          type: string
+        ui:
+          type: object
+        offline_mode:
+          type: string
+
+    PosSettingsResponse:
+      type: object
+      properties:
+        schema_version:
+          type: integer
+        v2:
+          type: object
+
+    ValidateLicenseRequest:
+      type: object
+      required: [terminal_id]
+      properties:
+        terminal_id:
+          type: integer
+
+    LicenseStatusResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        grace:
+          type: boolean
+
+    DenyActionRequest:
+      type: object
+      required: [request_id]
+      properties:
+        request_id:
+          type: integer
+        reason:
+          type: string
