@@ -109,5 +109,5 @@ if ($storageLimitVal < 1) {
         </form>
     </div>
 </div>
-<script type="application/json" id="rateb-company-plan-presets"><?php echo Rateb\App\Core\View::escape(json_encode($planPresets ?? [], JSON_UNESCAPED_UNICODE)); ?></script>
+<script type="application/json" id="rateb-company-plan-presets"><?php echo json_encode($planPresets ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP); ?></script>
 <script src="<?php echo rateb_asset('js/company-plan-form.js'); ?>"></script>

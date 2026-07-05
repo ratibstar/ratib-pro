@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function initCompanyPlanForm() {
         var planSelect = document.getElementById('rateb-company-plan');
         var presetsEl = document.getElementById('rateb-company-plan-presets');
         if (!planSelect || !presetsEl) {
@@ -16,9 +16,9 @@
         }
 
         var syncInput = document.getElementById('rateb-sync-from-plan');
-        var moduleInputs = document.querySelectorAll('input[name="modules[]"]');
-        var userLimit = document.querySelector('input[name="user_limit"]');
-        var storageLimit = document.querySelector('input[name="storage_limit_mb"]');
+        var moduleInputs = document.querySelectorAll('#rateb-company-form input[name="modules[]"]');
+        var userLimit = document.querySelector('#rateb-company-form input[name="user_limit"]');
+        var storageLimit = document.querySelector('#rateb-company-form input[name="storage_limit_mb"]');
 
         function clearCustomSync() {
             if (syncInput) {
@@ -61,5 +61,15 @@
         if (storageLimit) {
             storageLimit.addEventListener('input', clearCustomSync);
         }
-    });
+
+        if (planSelect.value) {
+            applyPlan(planSelect.value, false);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCompanyPlanForm);
+    } else {
+        initCompanyPlanForm();
+    }
 })();

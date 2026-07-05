@@ -306,28 +306,51 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         if (is_array($modules)) {
             $data['modules'] = json_encode(array_values(array_filter(array_map('strval', $modules))), JSON_UNESCAPED_UNICODE);
         }
-        $syncFromPlan = $this->input('sync_from_plan') === '1';
-        if (!empty($data['plan_id']) && (int) $data['plan_id'] > 0) {
-            $plan = (new \Rateb\App\Models\Plan())->find((int) $data['plan_id']);
-            if ($plan) {
-                if ($syncFromPlan || empty($data['modules']) || $data['modules'] === '[]') {
-                    $data['modules'] = $plan['modules'] ?? json_encode(
-                        \Rateb\App\Services\PlanLimitService::defaultModules(),
-                        JSON_UNESCAPED_UNICODE
-                    );
-                }
-                if ($syncFromPlan || empty($data['user_limit']) || (int) $data['user_limit'] < 1) {
-                    $data['user_limit'] = (int) ($plan['max_users'] ?? 10);
-                }
-                if ($syncFromPlan || empty($data['branch_limit']) || (int) $data['branch_limit'] < 1) {
-                    $data['branch_limit'] = (int) ($plan['max_branches'] ?? 10);
-                }
-                if ($syncFromPlan || empty($data['storage_limit_mb']) || (int) $data['storage_limit_mb'] < 1) {
-                    $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
-                }
-            }
-        }
+
         return $data;
+    }
+
+    /** @param array<string, mixed> $data @param array<string, mixed>|null $before */
+    private function applyCompanyPlanFields(array &$data, ?array $before): void
+    {
+        $planId = (int) ($data['plan_id'] ?? 0);
+        if ($planId < 1) {
+            return;
+        }
+        $plan = (new \Rateb\App\Models\Plan())->find($planId);
+        if (!$plan) {
+            return;
+        }
+
+        $syncFromPlan = $this->input('sync_from_plan') === '1';
+        $planChanged = $before !== null && $planId !== (int) ($before['plan_id'] ?? 0);
+        $forceFromPlan = $syncFromPlan || $planChanged;
+        $defaultModules = $plan['modules'] ?? json_encode(
+            \Rateb\App\Services\PlanLimitService::defaultModules(),
+            JSON_UNESCAPED_UNICODE
+        );
+
+        if ($forceFromPlan) {
+            $data['modules'] = $defaultModules;
+            $data['user_limit'] = (int) ($plan['max_users'] ?? 10);
+            $data['branch_limit'] = (int) ($plan['max_branches'] ?? 10);
+            $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
+
+            return;
+        }
+
+        if (empty($data['modules']) || $data['modules'] === '[]') {
+            $data['modules'] = $defaultModules;
+        }
+        if (empty($data['user_limit']) || (int) $data['user_limit'] < 1) {
+            $data['user_limit'] = (int) ($plan['max_users'] ?? 10);
+        }
+        if (empty($data['branch_limit']) || (int) $data['branch_limit'] < 1) {
+            $data['branch_limit'] = (int) ($plan['max_branches'] ?? 10);
+        }
+        if (empty($data['storage_limit_mb']) || (int) $data['storage_limit_mb'] < 1) {
+            $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
+        }
     }
 
     public function store(): void
@@ -344,6 +367,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $this->collectData();
+        $this->applyCompanyPlanFields($data, null);
         $data['status'] = 'pending';
         try {
             $id = $this->model->create($data);
@@ -377,6 +401,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $this->collectData();
+        $this->applyCompanyPlanFields($data, $old);
         unset($data['status']);
         $oldStatus = (string) ($old['status'] ?? 'pending');
         if ($oldStatus === 'suspended') {
