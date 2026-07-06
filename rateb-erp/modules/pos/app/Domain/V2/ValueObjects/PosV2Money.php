@@ -56,6 +56,31 @@ final readonly class PosV2Money
         );
     }
 
+    public function subtract(self $other): self
+    {
+        $this->assertSameCurrency($other);
+
+        if (function_exists('bcsub')) {
+            return new self(bcsub($this->amount, $other->amount, 2), $this->currency);
+        }
+
+        return self::fromDecimalString(
+            (string) round((float) $this->amount - (float) $other->amount, 2),
+            $this->currency,
+        );
+    }
+
+    public function isGreaterThan(self $other): bool
+    {
+        $this->assertSameCurrency($other);
+
+        if (function_exists('bccomp')) {
+            return bccomp($this->amount, $other->amount, 2) === 1;
+        }
+
+        return (float) $this->amount > (float) $other->amount;
+    }
+
     private static function normalizeAmount(string $amount): string
     {
         $trimmed = trim($amount);

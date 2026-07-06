@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Rateb\App\Pos\DTO\V2\Cart;
 
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
+use Rateb\App\Pos\DTO\V2\Discount\CartDiscountSummary;
+use Rateb\App\Pos\DTO\V2\Discount\PosV2LineDiscountDto;
 
 final readonly class PosV2CartLineDto
 {
@@ -16,6 +19,7 @@ final readonly class PosV2CartLineDto
         public PosV2MoneyDto $unitPrice,
         public PosV2MoneyDto $lineTotal,
         public ?string $note = null,
+        public ?PosV2LineDiscountDto $discount = null,
     ) {
     }
 
@@ -31,6 +35,7 @@ final readonly class PosV2CartLineDto
             'line_total' => $this->lineTotal->toArray(),
             'modifiers' => [],
             'note' => $this->note,
+            'discount' => $this->discount?->toArray(),
         ];
     }
 }

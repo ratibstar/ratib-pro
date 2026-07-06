@@ -28,6 +28,7 @@ use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
 use Rateb\App\Pos\DTO\V2\Cart\PosV2CartTotalsDto;
 use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchRequest;
 use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchResponse;
+use Rateb\App\Pos\DTO\V2\Discount\DiscountRequest;
 use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogProductDto;
@@ -50,6 +51,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogProductPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CustomerPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2DiscountPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
 use Rateb\App\Pos\Repositories\V2\InMemoryCatalogCategoryCache;
@@ -172,6 +174,7 @@ final class PosV2BlockingFixesTest
                 new StubCatalogProductPort(),
                 new StubCartPort(),
                 new StubCustomerPort(),
+                new StubDiscountPort(new StubCartPort()),
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,
@@ -473,5 +476,43 @@ final class StubCustomerPort implements PosV2CustomerPortInterface
 
     public function detach(): void
     {
+    }
+}
+
+final class StubDiscountPort implements PosV2DiscountPortInterface
+{
+    public function __construct(
+        private readonly StubCartPort $cart,
+    ) {
+    }
+
+    public function applyLineDiscount(PosV2CartScope $scope, string $lineId, DiscountRequest $request): CartResponse
+    {
+        return $this->cart->load($scope);
+    }
+
+    public function removeLineDiscount(PosV2CartScope $scope, string $lineId): CartResponse
+    {
+        return $this->cart->load($scope);
+    }
+
+    public function applyCartDiscount(PosV2CartScope $scope, DiscountRequest $request): CartResponse
+    {
+        return $this->cart->load($scope);
+    }
+
+    public function removeCartDiscount(PosV2CartScope $scope): CartResponse
+    {
+        return $this->cart->load($scope);
+    }
+
+    public function readLines(): array
+    {
+        return [];
+    }
+
+    public function readCartDiscount(): array
+    {
+        return [];
     }
 }

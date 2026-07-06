@@ -14,9 +14,10 @@ use Rateb\App\Pos\Services\Bridge\PosInventoryBridgeService;
 use Rateb\App\Pos\Services\PosRegisterCartService;
 use Rateb\App\Pos\Services\PosSessionService;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartAssembler;
+use Rateb\App\Pos\Services\V2\Cart\PosV2CartDiscountPreserver;
 use Rateb\App\Pos\Services\V2\Customer\PosV2CustomerMapper;
 
-/** V1 session cart adapter (no V1 modifications, T09). */
+/** V1 session cart adapter (no V1 modifications, T09 + T11 discounts). */
 final class V1CartAdapter implements PosV2CartPortInterface
 {
     public function __construct(
@@ -25,15 +26,16 @@ final class V1CartAdapter implements PosV2CartPortInterface
         private readonly PosInventoryBridgeService $inventory = new PosInventoryBridgeService(),
         private readonly PosV2CartAssembler $assembler = new PosV2CartAssembler(),
         private readonly PosV2CustomerMapper $customerMapper = new PosV2CustomerMapper(),
+        private readonly PosV2CartDiscountPreserver $discountPreserver = new PosV2CartDiscountPreserver(),
     ) {
     }
 
     public function load(PosV2CartScope $scope): CartResponse
     {
-        $lines = $this->cart->normalizeLines($this->session->getCartLines());
-        $customer = $this->resolveAttachedCustomer();
+        $rawLines = $this->session->getCartLines();
+        $lines = $this->discountPreserver->normalizePreservingDiscounts($rawLines);
 
-        return $this->assembler->assemble($scope, $lines, $customer);
+        return $this->assembleResponse($scope, $lines);
     }
 
     public function addLine(PosV2CartScope $scope, int $productId, string $qty): CartResponse
@@ -74,7 +76,7 @@ final class V1CartAdapter implements PosV2CartPortInterface
         $lines = $result['lines'] ?? [];
         $this->persistLines($scope, $lines);
 
-        return $this->assembler->assemble($scope, $lines, $this->resolveAttachedCustomer());
+        return $this->assembleResponse($scope, $this->discountPreserver->normalizePreservingDiscounts($lines));
     }
 
     public function updateLine(PosV2CartScope $scope, string $lineId, string $qty): CartResponse
@@ -127,10 +129,10 @@ final class V1CartAdapter implements PosV2CartPortInterface
             throw new PosV2CartLineNotFoundException($trimmedLineId);
         }
 
-        $normalized = $this->cart->normalizeLines($newLines);
+        $normalized = $this->discountPreserver->normalizePreservingDiscounts($newLines);
         $this->persistLines($scope, $normalized);
 
-        return $this->assembler->assemble($scope, $normalized, $this->resolveAttachedCustomer());
+        return $this->assembleResponse($scope, $normalized);
     }
 
     public function removeLine(PosV2CartScope $scope, string $lineId): CartResponse
@@ -156,17 +158,18 @@ final class V1CartAdapter implements PosV2CartPortInterface
             throw new PosV2CartLineNotFoundException($trimmedLineId);
         }
 
-        $normalized = $this->cart->normalizeLines($remaining);
+        $normalized = $this->discountPreserver->normalizePreservingDiscounts($remaining);
         $this->persistLines($scope, $normalized);
 
-        return $this->assembler->assemble($scope, $normalized, $this->resolveAttachedCustomer());
+        return $this->assembleResponse($scope, $normalized);
     }
 
     public function clear(PosV2CartScope $scope): CartResponse
     {
         $this->session->setCartLines($this->cart->clear());
+        $this->session->patch(['invoice_discount' => null]);
 
-        return $this->assembler->assemble($scope, [], $this->resolveAttachedCustomer());
+        return $this->assembleResponse($scope, []);
     }
 
     /**
@@ -174,14 +177,36 @@ final class V1CartAdapter implements PosV2CartPortInterface
      */
     private function persistLines(PosV2CartScope $scope, array $lines): void
     {
+        $normalized = $this->discountPreserver->normalizePreservingDiscounts($lines);
         $this->inventory->validateAndSyncCart(
-            $lines,
+            $normalized,
             $scope->companyId,
             $scope->branchId,
             $scope->warehouseId > 0 ? $scope->warehouseId : null,
             $scope->sessionId > 0 ? $scope->sessionId : null,
         );
-        $this->session->setCartLines($lines);
+        $this->session->setCartLines($normalized);
+    }
+
+  /**
+   * @param array<int, array<string, mixed>> $lines
+   */
+    private function assembleResponse(PosV2CartScope $scope, array $lines): CartResponse
+    {
+        return $this->assembler->assemble(
+            $scope,
+            $lines,
+            $this->resolveAttachedCustomer(),
+            $this->readInvoiceDiscount(),
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private function readInvoiceDiscount(): array
+    {
+        $raw = $this->session->current()['invoice_discount'] ?? null;
+
+        return is_array($raw) ? $raw : [];
     }
 
     private function resolveAttachedCustomer(): ?PosV2CustomerSummaryDto

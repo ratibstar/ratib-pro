@@ -8,6 +8,7 @@ use Rateb\App\Pos\Controllers\V2\PosV2BootstrapApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2CartApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2CatalogApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2CustomerApiController;
+use Rateb\App\Pos\Controllers\V2\PosV2DiscountApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2RegisterApiController;
 use Rateb\App\Pos\Middleware\V2\PosV2FeatureGateMiddleware;
 
@@ -52,3 +53,7 @@ $router->get('/api/v2/pos/customers/search', [PosV2CustomerApiController::class,
 $router->get('/api/v2/pos/customers/{customerId}', [PosV2CustomerApiController::class, 'get'], $posV2ApiMw);
 $router->post('/api/v2/pos/cart/customer', [PosV2CustomerApiController::class, 'attachToCart'], $posV2ApiMw);
 $router->delete('/api/v2/pos/cart/customer', [PosV2CustomerApiController::class, 'removeFromCart'], $posV2ApiMw);
+$router->post('/api/v2/pos/cart/discounts/line', [PosV2DiscountApiController::class, 'applyLineDiscount'], $posV2ApiMw);
+$router->delete('/api/v2/pos/cart/discounts/line/{lineId}', [PosV2DiscountApiController::class, 'removeLineDiscount'], $posV2ApiMw);
+$router->post('/api/v2/pos/cart/discounts/cart', [PosV2DiscountApiController::class, 'applyCartDiscount'], $posV2ApiMw);
+$router->delete('/api/v2/pos/cart/discounts/cart', [PosV2DiscountApiController::class, 'removeCartDiscount'], $posV2ApiMw);

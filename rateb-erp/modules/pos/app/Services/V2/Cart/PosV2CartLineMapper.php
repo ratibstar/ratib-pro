@@ -6,10 +6,16 @@ namespace Rateb\App\Pos\Services\V2\Cart;
 
 use Rateb\App\Pos\DTO\V2\Cart\PosV2CartLineDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
+use Rateb\App\Pos\Services\V2\Discount\DiscountAssembler;
 
 /** Maps V1 session cart lines to V2 DTOs. */
 final class PosV2CartLineMapper
 {
+    public function __construct(
+        private readonly DiscountAssembler $discountAssembler = new DiscountAssembler(),
+    ) {
+    }
+
     /**
      * @param array<int, array<string, mixed>> $lines
      * @return list<PosV2CartLineDto>
@@ -40,6 +46,7 @@ final class PosV2CartLineMapper
                 qty: $this->formatQty($qty),
                 unitPrice: new PosV2MoneyDto($unitAmount, $currency),
                 lineTotal: new PosV2MoneyDto($lineAmount, $currency),
+                discount: $this->discountAssembler->buildLineDiscountDto($line, $currency),
             );
         }
 

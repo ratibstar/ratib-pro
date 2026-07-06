@@ -151,4 +151,18 @@ final class PosV2ResponseFactory
             ],
         ]);
     }
+
+    public function discountError(
+        string $code,
+        string $message,
+        int $statusCode = 422,
+    ): PosV2JsonResponse {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => false,
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+            ],
+        ]);
+    }
 }
