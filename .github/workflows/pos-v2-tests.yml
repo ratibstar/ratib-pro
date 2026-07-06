@@ -25,7 +25,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: rateb_test
+          MYSQL_DATABASE: rateb_erp_test
         ports:
           - 3306:3306
         options: >-
@@ -35,7 +35,7 @@ jobs:
           --health-retries=10
 
     env:
-      RATEB_ERP_DB_NAME: rateb_test
+      RATEB_ERP_DB_NAME: rateb_erp_test
       DB_HOST: 127.0.0.1
       DB_USER: root
       DB_PASS: root
