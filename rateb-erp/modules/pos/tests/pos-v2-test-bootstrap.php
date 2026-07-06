@@ -10,6 +10,16 @@ if (!defined('RATEB_ROOT')) {
     define('RATEB_ROOT', dirname(__DIR__, 3));
 }
 
+// CI: pin ERP DB credentials before Bootstrap loads config/env/default.php (empty DB_PASS).
+foreach (['RATEB_ERP_DB_HOST', 'RATEB_ERP_DB_USER', 'RATEB_ERP_DB_PASS', 'RATEB_ERP_DB_NAME'] as $const) {
+    if (!defined($const)) {
+        $fromEnv = getenv($const);
+        if ($fromEnv !== false && $fromEnv !== '') {
+            define($const, (string) $fromEnv);
+        }
+    }
+}
+
 require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
 
 Rateb\App\Core\Bootstrap::init(RATEB_ROOT);

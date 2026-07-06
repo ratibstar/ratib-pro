@@ -36,6 +36,9 @@ jobs:
 
     env:
       RATEB_ERP_DB_NAME: rateb_erp_test
+      RATEB_ERP_DB_HOST: 127.0.0.1
+      RATEB_ERP_DB_USER: root
+      RATEB_ERP_DB_PASS: root
       DB_HOST: 127.0.0.1
       DB_USER: root
       DB_PASS: root
@@ -65,7 +68,8 @@ jobs:
 
       - name: Run ERP migrations
         working-directory: rateb-erp
-        run: php migrations/run.php
+        run: |
+          php -r "if (!defined('RATEB_ERP_DB_HOST')) define('RATEB_ERP_DB_HOST', getenv('RATEB_ERP_DB_HOST') ?: '127.0.0.1'); if (!defined('RATEB_ERP_DB_USER')) define('RATEB_ERP_DB_USER', getenv('RATEB_ERP_DB_USER') ?: 'root'); if (!defined('RATEB_ERP_DB_PASS')) define('RATEB_ERP_DB_PASS', getenv('RATEB_ERP_DB_PASS') ?: 'root'); require 'migrations/run.php';"
 
       - name: Run all POS V2 test runners
         working-directory: rateb-erp
