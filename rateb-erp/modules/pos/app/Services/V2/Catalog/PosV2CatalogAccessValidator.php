@@ -12,6 +12,15 @@ final class PosV2CatalogAccessValidator
     public function assertCanView(PosV2RequestContext $context): void
     {
         $permissions = $context->register->permissions;
+
+        if (in_array('pos.register', $permissions, true)) {
+            return;
+        }
+
+        if (in_array('pos.view', $permissions, true)) {
+            return;
+        }
+
         if (in_array('pos.catalog.view', $permissions, true)) {
             return;
         }
