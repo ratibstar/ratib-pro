@@ -1,0 +1,59 @@
+{
+    "generated_at": "2026-07-06T14:57:46+00:00",
+    "php_version": "8.4.19",
+    "scales": [
+        1000,
+        10000,
+        100000
+    ],
+    "bootstrap": {
+        "execution_ms": 0.062,
+        "memory_mb": 8,
+        "memory_delta_mb": 0,
+        "query_count": 0
+    },
+    "catalog": {
+        "1000": {
+            "execution_ms": 4.283,
+            "memory_mb": 10,
+            "memory_delta_mb": 0,
+            "query_count": 3,
+            "items_returned": 24,
+            "total_reported": 1000
+        },
+        "10000": {
+            "execution_ms": 0.12,
+            "memory_mb": 10,
+            "memory_delta_mb": 0,
+            "query_count": 3,
+            "items_returned": 24,
+            "total_reported": 10000
+        },
+        "100000": {
+            "execution_ms": 0.086,
+            "memory_mb": 10,
+            "memory_delta_mb": 0,
+            "query_count": 3,
+            "items_returned": 24,
+            "total_reported": 100000
+        }
+    },
+    "cart": {
+        "execution_ms": 0.241,
+        "memory_mb": 10,
+        "memory_delta_mb": 0,
+        "query_count": 50,
+        "lines_in_session": 50,
+        "scope_company_id": 1
+    },
+    "checkout": {
+        "execution_ms": 10.339,
+        "execution_ms_per_iteration": 0.1034,
+        "memory_mb": 10,
+        "memory_delta_mb": 0,
+        "query_count": 0,
+        "iterations": 100,
+        "lines_per_iteration": 20,
+        "mode": "pricing-service-offline"
+    }
+}

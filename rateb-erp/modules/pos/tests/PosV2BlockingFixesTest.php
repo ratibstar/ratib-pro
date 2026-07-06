@@ -31,7 +31,14 @@ use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchResponse;
 use Rateb\App\Pos\DTO\V2\Discount\DiscountRequest;
 use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 use Rateb\App\Pos\DTO\V2\Payment\CashPaymentRequest;
+use Rateb\App\Pos\DTO\V2\Payment\CompleteSaleRequest;
+use Rateb\App\Pos\DTO\V2\Payment\CompleteSaleResponse;
+use Rateb\App\Pos\DTO\V2\Payment\InitiateChargeRequest;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentSheetResponse;
+use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\DTO\V2\Payment\PaymentSummaryDto;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentBalanceResponse;
+use Rateb\App\Pos\DTO\V2\Payment\RecordPaymentRequest;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogProductDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2PaginationDto;
@@ -54,6 +61,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CustomerPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2DiscountPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CheckoutPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PaymentPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
@@ -179,6 +187,7 @@ final class PosV2BlockingFixesTest
                 new StubCustomerPort(),
                 new StubDiscountPort(new StubCartPort()),
                 new StubPaymentPort(new StubCartPort()),
+                new StubCheckoutPort(),
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,
@@ -511,6 +520,18 @@ final class StubPaymentPort implements PosV2PaymentPortInterface
     {
         return [];
     }
+
+    public function record(PosV2CartScope $scope, RecordPaymentRequest $request): PaymentBalanceResponse
+    {
+        $summary = $this->getSummary($scope);
+
+        return new PaymentBalanceResponse(
+            payments: $summary->payments,
+            balanceDue: $summary->remaining,
+            changeDue: $summary->changeDue,
+            paid: $summary->paid,
+        );
+    }
 }
 
 final class StubDiscountPort implements PosV2DiscountPortInterface
@@ -548,5 +569,36 @@ final class StubDiscountPort implements PosV2DiscountPortInterface
     public function readCartDiscount(): array
     {
         return [];
+    }
+}
+
+final class StubCheckoutPort implements PosV2CheckoutPortInterface
+{
+    public function initiateCharge(PosV2CartScope $scope, InitiateChargeRequest $request): PaymentSheetResponse
+    {
+        $zero = new PosV2MoneyDto('0.00', $scope->currency);
+
+        return new PaymentSheetResponse(
+            totals: new PosV2CartTotalsDto($zero, $zero, $zero, $zero),
+            allowedMethods: [],
+            balanceDue: $zero,
+        );
+    }
+
+    public function completeSale(
+        PosV2CartScope $scope,
+        PosV2RequestContext $context,
+        CompleteSaleRequest $request,
+        string $idempotencyKey,
+    ): CompleteSaleResponse {
+        $zero = new PosV2MoneyDto('0.00', $scope->currency);
+
+        return new CompleteSaleResponse(
+            orderId: 0,
+            orderNo: '',
+            totals: new PosV2CartTotalsDto($zero, $zero, $zero, $zero),
+            receipt: [],
+            changeDue: $zero,
+        );
     }
 }

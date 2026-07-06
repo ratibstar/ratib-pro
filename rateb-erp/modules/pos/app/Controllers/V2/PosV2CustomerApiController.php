@@ -52,6 +52,7 @@ final class PosV2CustomerApiController extends PosBaseController
 
     public function attachToCart(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -66,6 +67,7 @@ final class PosV2CustomerApiController extends PosBaseController
 
     public function removeFromCart(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');

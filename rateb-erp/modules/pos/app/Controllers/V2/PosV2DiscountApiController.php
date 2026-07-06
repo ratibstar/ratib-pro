@@ -26,6 +26,7 @@ final class PosV2DiscountApiController extends PosBaseController
 
     public function applyLineDiscount(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -46,6 +47,7 @@ final class PosV2DiscountApiController extends PosBaseController
 
     public function removeLineDiscount(string $lineId): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -58,6 +60,7 @@ final class PosV2DiscountApiController extends PosBaseController
 
     public function applyCartDiscount(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -72,6 +75,7 @@ final class PosV2DiscountApiController extends PosBaseController
 
     public function removeCartDiscount(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');

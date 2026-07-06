@@ -189,6 +189,7 @@ final class ApiAuthMiddleware implements MiddlewareInterface
             $tokenBranchId = null;
         }
         \Rateb\App\Core\BranchContext::reset();
+        \Rateb\App\Core\TenantContext::setApiUserId($userId > 0 ? $userId : null);
         (new \Rateb\App\Services\BranchAccessService())->bootstrapForApi($companyId, $userId, $tokenBranchId);
         return true;
     }

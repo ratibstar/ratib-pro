@@ -40,6 +40,7 @@ final class PosV2PaymentApiController extends PosBaseController
 
     public function addCash(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -53,6 +54,7 @@ final class PosV2PaymentApiController extends PosBaseController
 
     public function remove(string $paymentId): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -65,6 +67,7 @@ final class PosV2PaymentApiController extends PosBaseController
 
     public function initiateCharge(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -78,6 +81,7 @@ final class PosV2PaymentApiController extends PosBaseController
 
     public function recordPayment(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -91,6 +95,7 @@ final class PosV2PaymentApiController extends PosBaseController
 
     public function completeSale(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');

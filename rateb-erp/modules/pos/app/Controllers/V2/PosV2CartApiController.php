@@ -27,6 +27,7 @@ final class PosV2CartApiController extends PosBaseController
 
     public function addLine(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -41,6 +42,7 @@ final class PosV2CartApiController extends PosBaseController
 
     public function updateLine(string $lineId): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -55,6 +57,7 @@ final class PosV2CartApiController extends PosBaseController
 
     public function removeLine(string $lineId): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');
@@ -67,6 +70,7 @@ final class PosV2CartApiController extends PosBaseController
 
     public function clear(): void
     {
+        $this->requireSessionCsrfOrAbort();
         try {
             $application = $this->applicationFactory->create();
             $context = $application->bootstrapRegister('api');

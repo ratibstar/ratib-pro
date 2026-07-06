@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Rateb\App\Pos\Controllers;
 
 use Rateb\App\Core\Controller;
+use Rateb\App\Core\Csrf;
+use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Support\PosView;
@@ -75,5 +77,33 @@ abstract class PosBaseController extends Controller
     protected function inputData(): array
     {
         return array_merge($_GET, $_POST);
+    }
+
+    /** Session JSON routes only — Bearer /api/v2/pos/* requests skip CSRF. */
+    protected function requireSessionCsrfOrAbort(): void
+    {
+        if ($this->isBearerApiRequest()) {
+            return;
+        }
+
+        if (!Csrf::validate($_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+            Response::json([
+                'success' => false,
+                'error' => [
+                    'code' => 'CSRF_INVALID',
+                    'message' => __('invalid_request'),
+                    'field' => null,
+                    'details' => null,
+                ],
+            ], 419);
+            exit;
+        }
+    }
+
+    protected function isBearerApiRequest(): bool
+    {
+        $header = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
+
+        return (bool) preg_match('/Bearer\s+\S+/i', $header);
     }
 }

@@ -9,6 +9,7 @@ final class TenantContext
     private static bool $superAdmin = false;
     /** @var array<int, string>|null */
     private static ?array $apiModules = null;
+    private static ?int $apiUserId = null;
 
     public static function setCompanyId(?int $companyId): void
     {
@@ -40,5 +41,15 @@ final class TenantContext
     public static function apiModules(): ?array
     {
         return self::$apiModules;
+    }
+
+    public static function setApiUserId(?int $userId): void
+    {
+        self::$apiUserId = ($userId !== null && $userId > 0) ? $userId : null;
+    }
+
+    public static function apiUserId(): ?int
+    {
+        return self::$apiUserId;
     }
 }
