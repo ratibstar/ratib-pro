@@ -67,9 +67,24 @@ jobs:
           exit 1
 
       - name: Run ERP migrations
+        id: migrations
+        continue-on-error: true
         working-directory: rateb-erp
         run: |
-          php -r "if (!defined('RATEB_ERP_DB_HOST')) define('RATEB_ERP_DB_HOST', getenv('RATEB_ERP_DB_HOST') ?: '127.0.0.1'); if (!defined('RATEB_ERP_DB_USER')) define('RATEB_ERP_DB_USER', getenv('RATEB_ERP_DB_USER') ?: 'root'); if (!defined('RATEB_ERP_DB_PASS')) define('RATEB_ERP_DB_PASS', getenv('RATEB_ERP_DB_PASS') ?: 'root'); require 'migrations/run.php';"
+          set -o pipefail
+          php -r "if (!defined('RATEB_ERP_DB_HOST')) define('RATEB_ERP_DB_HOST', getenv('RATEB_ERP_DB_HOST') ?: '127.0.0.1'); if (!defined('RATEB_ERP_DB_USER')) define('RATEB_ERP_DB_USER', getenv('RATEB_ERP_DB_USER') ?: 'root'); if (!defined('RATEB_ERP_DB_PASS')) define('RATEB_ERP_DB_PASS', getenv('RATEB_ERP_DB_PASS') ?: 'root'); require 'migrations/run.php';" 2>&1 | tee "$GITHUB_WORKSPACE/migration-ci.log"
+
+      - name: Upload migration log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pos-v2-migration-log
+          path: migration-ci.log
+          if-no-files-found: ignore
+
+      - name: Require migrations success
+        if: steps.migrations.outcome != 'success'
+        run: exit 1
 
       - name: Run all POS V2 test runners
         working-directory: rateb-erp
