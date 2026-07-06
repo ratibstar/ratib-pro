@@ -23,6 +23,7 @@ use Rateb\App\Pos\DTO\V2\Context\PosV2FeatureFlagsContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RegisterContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\Domain\V2\Exceptions\PosV2CatalogValidationException;
+use Rateb\App\Pos\Repositories\V2\Adapters\V1CatalogProductAdapter;
 use Rateb\App\Pos\Services\V2\Catalog\PosV2CatalogProductMapper;
 
 final class PosV2CatalogTest
@@ -39,6 +40,7 @@ final class PosV2CatalogTest
         $this->testCatalogSearchSuccessEnvelope();
         $this->testCatalogScopeFromRequestContext();
         $this->testCatalogPaginationMath();
+        $this->testCatalogListRowFallbackWhenEnrichmentFails();
 
         return $this->results;
     }
@@ -157,6 +159,44 @@ final class PosV2CatalogTest
             && $array['last_page'] === 3;
 
         $this->record('catalog pagination dto', $ok, 'expected pagination fields');
+    }
+
+    private function testCatalogListRowFallbackWhenEnrichmentFails(): void
+    {
+        $adapter = new V1CatalogProductAdapter(
+            listEnrichProduct: static fn (): ?array => null,
+        );
+        $method = new ReflectionMethod(V1CatalogProductAdapter::class, 'resolveCatalogProductFromListRow');
+        $method->setAccessible(true);
+
+        $scope = new PosV2CatalogScope(
+            companyId: 7,
+            warehouseId: 11,
+            branchId: 4,
+            sessionId: 99,
+            currency: 'SAR',
+            rtl: false,
+        );
+
+        $row = [
+            'id' => 42,
+            'item_code' => 'IC-42',
+            'item_name' => 'Fallback Item',
+            'sku' => 'SKU-42',
+            'quantity' => 3,
+            'unit' => 'ea',
+            'branch_id' => 4,
+        ];
+
+        $dto = $method->invoke($adapter, $row, $scope, 11, 4, 99);
+
+        $ok = $dto instanceof PosV2CatalogProductDto
+            && $dto->id === 42
+            && $dto->name === 'Fallback Item'
+            && $dto->sku === 'SKU-42'
+            && $dto->inStock === true;
+
+        $this->record('catalog list row fallback when enrichment fails', $ok, 'expected mapped product dto');
     }
 
     private function requestContext(): PosV2RequestContext

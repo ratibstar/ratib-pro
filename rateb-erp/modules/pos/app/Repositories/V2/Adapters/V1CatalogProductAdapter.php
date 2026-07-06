@@ -14,15 +14,23 @@ use Rateb\App\Pos\DTO\V2\Catalog\PosV2PaginationDto;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogProductPortInterface;
 use Rateb\App\Pos\Services\Bridge\PosBarcodeLookupBridgeService;
 use Rateb\App\Pos\Services\Bridge\PosInventoryBridgeService;
+use Rateb\App\Pos\Services\PosSellPriceService;
 use Rateb\App\Pos\Services\V2\Catalog\PosV2CatalogProductMapper;
 
 /** V1 inventory bridge adapter for catalog product reads. */
 final class V1CatalogProductAdapter implements PosV2CatalogProductPortInterface
 {
+    private const LIST_FETCH_LIMIT = 500;
+
+    /**
+     * @param (callable(int, int, ?int, ?int, ?int): ?array)|null $listEnrichProduct
+     *                                                                 Test seam for catalog list enrichment (defaults to bridge).
+     */
     public function __construct(
         private readonly PosInventoryBridgeService $inventoryBridge = new PosInventoryBridgeService(),
         private readonly PosBarcodeLookupBridgeService $barcodeBridge = new PosBarcodeLookupBridgeService(),
         private readonly PosV2CatalogProductMapper $mapper = new PosV2CatalogProductMapper(),
+        private readonly ?\Closure $listEnrichProduct = null,
     ) {
     }
 
@@ -130,41 +138,156 @@ final class V1CatalogProductAdapter implements PosV2CatalogProductPortInterface
             $filters['category_id'] = $request->categoryId;
         }
 
-        $offset = ($request->page - 1) * $request->perPage;
         $inventory = new Inventory();
-        $total = $inventory->count($filters, '');
-        $rows = $inventory->all($request->perPage, $offset, $filters, '');
+        $rows = $inventory->all(self::LIST_FETCH_LIMIT, 0, $filters, '');
         $usedWarehouseFallback = false;
 
         if ($rows === [] && $warehouseId !== null && $warehouseId > 0) {
             unset($filters['warehouse_id']);
-            $total = $inventory->count($filters, '');
-            $rows = $inventory->all($request->perPage, $offset, $filters, '');
+            $rows = $inventory->all(self::LIST_FETCH_LIMIT, 0, $filters, '');
             $usedWarehouseFallback = true;
         }
 
-        $products = [];
+        $mapped = [];
         foreach ($rows as $row) {
             if (!$this->rowMatchesScope($row, $warehouseId, $branchId, $usedWarehouseFallback)) {
                 continue;
             }
 
-            $enriched = $this->inventoryBridge->getProduct(
-                (int) ($row['id'] ?? 0),
-                $scope->companyId,
+            $product = $this->resolveCatalogProductFromListRow(
+                $row,
+                $scope,
                 $usedWarehouseFallback ? null : $warehouseId,
                 $branchId,
                 $sessionId,
             );
-            if ($enriched !== null) {
-                $products[] = $this->mapper->fromV1Product($enriched, $scope->currency);
+            if ($product !== null) {
+                $mapped[] = $product;
             }
         }
+
+        $total = count($mapped);
+        $offset = ($request->page - 1) * $request->perPage;
+        $products = array_slice($mapped, $offset, $request->perPage);
 
         return new CatalogSearchResponse(
             products: $products,
             pagination: $this->buildPagination($request->page, $request->perPage, $total),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function resolveCatalogProductFromListRow(
+        array $row,
+        PosV2CatalogScope $scope,
+        ?int $warehouseId,
+        ?int $branchId,
+        ?int $sessionId,
+    ): ?PosV2CatalogProductDto {
+        $inventoryId = (int) ($row['id'] ?? 0);
+        if ($inventoryId < 1) {
+            return null;
+        }
+
+        $enriched = $this->enrichListRow(
+            $inventoryId,
+            $scope->companyId,
+            $warehouseId,
+            $branchId,
+            $sessionId,
+        );
+
+        if ($enriched !== null) {
+            return $this->mapper->fromV1Product($enriched, $scope->currency);
+        }
+
+        $this->logEnrichmentFallback($inventoryId, $scope->companyId);
+
+        return $this->mapFromInventoryRow($row, $scope);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function enrichListRow(
+        int $inventoryId,
+        int $companyId,
+        ?int $warehouseId,
+        ?int $branchId,
+        ?int $sessionId,
+    ): ?array {
+        if ($this->listEnrichProduct !== null) {
+            return ($this->listEnrichProduct)($inventoryId, $companyId, $warehouseId, $branchId, $sessionId);
+        }
+
+        return $this->inventoryBridge->getProduct(
+            $inventoryId,
+            $companyId,
+            $warehouseId,
+            $branchId,
+            $sessionId,
+        );
+    }
+
+    /**
+     * Mirrors V1 register bootstrap catalogSeed mapping when bridge enrichment is unavailable.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function mapFromInventoryRow(array $row, PosV2CatalogScope $scope): PosV2CatalogProductDto
+    {
+        $onHand = (float) ($row['quantity'] ?? 0);
+        $unitPrice = $this->resolveUnitPriceFromRow($row, $scope->companyId);
+
+        return $this->mapper->fromV1Product([
+            'id' => (int) ($row['id'] ?? 0),
+            'item_code' => (string) ($row['item_code'] ?? ''),
+            'sku' => (string) ($row['sku'] ?? ''),
+            'item_name' => (string) ($row['item_name'] ?? ''),
+            'unit' => (string) ($row['unit'] ?? ''),
+            'unit_price' => $unitPrice,
+            'availability' => [
+                'on_hand' => $onHand,
+                'available' => max(0, $onHand),
+                'can_add' => $onHand > 0,
+            ],
+        ], $scope->currency);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function resolveUnitPriceFromRow(array $row, int $companyId): float
+    {
+        $inventoryId = (int) ($row['id'] ?? 0);
+        if ($inventoryId < 1 || $companyId < 1) {
+            return 0.0;
+        }
+
+        try {
+            $branchId = (int) ($row['branch_id'] ?? 0);
+            $resolved = (new PosSellPriceService())->resolveLine(
+                ['product_id' => $inventoryId, 'quantity' => 1],
+                $companyId,
+                $branchId > 0 ? $branchId : 0,
+                null,
+            );
+
+            return (float) ($resolved['unit_price'] ?? 0);
+        } catch (\Throwable) {
+            return 0.0;
+        }
+    }
+
+    private function logEnrichmentFallback(int $inventoryId, int $companyId): void
+    {
+        error_log(sprintf(
+            '[POS V2 catalog] enrichment unavailable for inventory_id=%d company_id=%d; using inventory row fallback',
+            $inventoryId,
+            $companyId,
+        ));
     }
 
     /**
