@@ -40,7 +40,8 @@ final class PosV2CatalogTest
         $this->testCatalogSearchSuccessEnvelope();
         $this->testCatalogScopeFromRequestContext();
         $this->testCatalogPaginationMath();
-        $this->testCatalogListRowFallbackWhenEnrichmentFails();
+        $this->testCatalogCategoryListingUsesDatabasePagination();
+        $this->testCatalogCategoryListingDoesNotRequirePerRowEnrichment();
 
         return $this->results;
     }
@@ -161,42 +162,67 @@ final class PosV2CatalogTest
         $this->record('catalog pagination dto', $ok, 'expected pagination fields');
     }
 
-    private function testCatalogListRowFallbackWhenEnrichmentFails(): void
+    private function testCatalogCategoryListingUsesDatabasePagination(): void
+    {
+        $rowsSeen = [];
+        $adapter = new V1CatalogProductAdapter(
+            listRows: static function (int $limit, int $offset, array $filters, string $search) use (&$rowsSeen): array {
+                $rowsSeen[] = ['limit' => $limit, 'offset' => $offset, 'filters' => $filters, 'search' => $search];
+
+                return [
+                    [
+                        'id' => 501,
+                        'sku' => 'SKU-501',
+                        'item_code' => 'IC-501',
+                        'item_name' => 'Page Two Item',
+                        'unit_price' => 3.5,
+                        'quantity' => 2,
+                        'unit' => 'ea',
+                    ],
+                ];
+            },
+            countRows: static fn (array $filters, string $search): int => 1200,
+        );
+        $scope = PosV2CatalogScope::fromRequestContext($this->requestContext());
+        $request = new CatalogSearchRequest(query: '', categoryId: 9, page: 2, perPage: 24);
+
+        $response = $adapter->search($scope, $request);
+
+        $ok = count($response->products) === 1
+            && $response->products[0]->id === 501
+            && $response->pagination->total === 1200
+            && $response->pagination->lastPage === 50
+            && (($rowsSeen[0]['offset'] ?? -1) === 24);
+        $this->record('catalog category listing uses database pagination', $ok, 'expected offset query + full total count');
+    }
+
+    private function testCatalogCategoryListingDoesNotRequirePerRowEnrichment(): void
     {
         $adapter = new V1CatalogProductAdapter(
-            listEnrichProduct: static fn (): ?array => null,
+            listEnrichProduct: static function (): ?array {
+                throw new RuntimeException('enrichment should not be called');
+            },
+            listRows: static fn (int $limit, int $offset, array $filters, string $search): array => [[
+                'id' => 11,
+                'sku' => 'SKU-11',
+                'item_code' => 'IC-11',
+                'item_name' => 'Direct Row',
+                'unit_price' => 4.2,
+                'quantity' => 8,
+                'unit' => 'ea',
+            ]],
+            countRows: static fn (array $filters, string $search): int => 1,
         );
-        $method = new ReflectionMethod(V1CatalogProductAdapter::class, 'resolveCatalogProductFromListRow');
-        $method->setAccessible(true);
 
-        $scope = new PosV2CatalogScope(
-            companyId: 7,
-            warehouseId: 11,
-            branchId: 4,
-            sessionId: 99,
-            currency: 'SAR',
-            rtl: false,
+        $response = $adapter->search(
+            PosV2CatalogScope::fromRequestContext($this->requestContext()),
+            new CatalogSearchRequest(query: '', categoryId: null, page: 1, perPage: 24),
         );
 
-        $row = [
-            'id' => 42,
-            'item_code' => 'IC-42',
-            'item_name' => 'Fallback Item',
-            'sku' => 'SKU-42',
-            'quantity' => 3,
-            'unit' => 'ea',
-            'branch_id' => 4,
-        ];
-
-        $dto = $method->invoke($adapter, $row, $scope, 11, 4, 99);
-
-        $ok = $dto instanceof PosV2CatalogProductDto
-            && $dto->id === 42
-            && $dto->name === 'Fallback Item'
-            && $dto->sku === 'SKU-42'
-            && $dto->inStock === true;
-
-        $this->record('catalog list row fallback when enrichment fails', $ok, 'expected mapped product dto');
+        $ok = count($response->products) === 1
+            && $response->products[0]->id === 11
+            && $response->pagination->total === 1;
+        $this->record('catalog category listing bypasses per-row enrichment', $ok, 'expected mapped rows without getProduct enrichment');
     }
 
     private function requestContext(): PosV2RequestContext

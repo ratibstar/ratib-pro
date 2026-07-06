@@ -101,7 +101,7 @@ final class PosV2PaymentTest
         ))->execute($this->requestContext(['pos.payment.record']), new CashPaymentRequest('5.00'));
 
         $ok = $result->payments?->paid->amount === '5.00'
-            && $result->payments->remaining->amount === '5.00';
+            && $result->payments->remaining->amount === '6.50';
 
         $this->record('cash payment use case', $ok, 'expected partial payment');
     }
@@ -136,7 +136,7 @@ final class PosV2PaymentTest
             $paymentPort,
         ))->execute($this->requestContext(['pos.payment.record']));
 
-        $ok = $summary->paid->amount === '3.00' && $summary->totalDue->amount === '10.00';
+        $ok = $summary->paid->amount === '3.00' && $summary->totalDue->amount === '11.50';
 
         $this->record('get payments use case', $ok, 'expected summary totals');
     }
@@ -152,7 +152,7 @@ final class PosV2PaymentTest
                 new PaymentValidator(),
                 $paymentPort,
                 $cartPort,
-            ))->execute($this->requestContext(['pos.register.access']), new CashPaymentRequest('1'));
+            ))->execute($this->requestContext(['pos.view']), new CashPaymentRequest('1'));
             $this->record('permission denied for payment', false, 'expected exception');
         } catch (PosV2ForbiddenException) {
             $this->record('permission denied for payment', true, '');
@@ -221,7 +221,7 @@ final class PosV2PaymentTest
         $array = $response->toArray();
         $ok = is_array($array['payments'] ?? null)
             && ($array['payments']['paid']['amount'] ?? '') === '4.00'
-            && ($array['payments']['remaining']['amount'] ?? '') === '6.00';
+            && ($array['payments']['remaining']['amount'] ?? '') === '7.50';
 
         $this->record('bootstrap payment snapshot', $ok, 'expected payments on cart');
     }

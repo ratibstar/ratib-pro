@@ -29,6 +29,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartAssembler;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartLineMapper;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartTotalsCalculator;
+use Rateb\App\Pos\Services\PosPricingService;
 use Rateb\App\Pos\UseCases\V2\Cart\AddCartLineUseCase;
 use Rateb\App\Pos\UseCases\V2\Cart\ClearCartUseCase;
 use Rateb\App\Pos\UseCases\V2\Cart\GetCartUseCase;
@@ -111,36 +112,38 @@ final class PosV2CartTest
 
     private function testCartTotalsCalculator(): void
     {
+        $v1Lines = [
+            [
+                'id' => 'a',
+                'product_id' => 1,
+                'item_name' => 'A',
+                'quantity' => 2,
+                'unit_price' => 4,
+                'line_total' => 8,
+            ],
+            [
+                'id' => 'b',
+                'product_id' => 2,
+                'item_name' => 'B',
+                'quantity' => 1,
+                'unit_price' => 3.5,
+                'line_total' => 3.5,
+            ],
+        ];
         $assembler = new PosV2CartAssembler();
         $response = $assembler->assemble(
             new PosV2CartScope(1, 2, 3, 4, 'SAR'),
-            [
-                [
-                    'id' => 'a',
-                    'product_id' => 1,
-                    'item_name' => 'A',
-                    'quantity' => 2,
-                    'unit_price' => 4,
-                    'line_total' => 8,
-                ],
-                [
-                    'id' => 'b',
-                    'product_id' => 2,
-                    'item_name' => 'B',
-                    'quantity' => 1,
-                    'unit_price' => 3.5,
-                    'line_total' => 3.5,
-                ],
-            ],
+            $v1Lines,
         );
+        $expected = (new PosPricingService())->calculate($v1Lines, [], 0.15);
 
-        $ok = $response->totals->subtotal->amount === '11.50'
-            && $response->totals->discount->amount === '0.00'
-            && $response->totals->tax->amount === '0.00'
-            && $response->totals->total->amount === '11.50'
+        $ok = $response->totals->subtotal->amount === number_format((float) $expected['subtotal'], 2, '.', '')
+            && $response->totals->discount->amount === number_format((float) $expected['discount_total'], 2, '.', '')
+            && $response->totals->tax->amount === number_format((float) $expected['tax'], 2, '.', '')
+            && $response->totals->total->amount === number_format((float) $expected['total'], 2, '.', '')
             && $response->itemCount === 3;
 
-        $this->record('cart totals calculator placeholders', $ok, 'expected subtotal and zero tax/discount');
+        $this->record('cart totals calculator uses v1 pricing pipeline', $ok, 'expected V1 VAT-inclusive totals');
     }
 
     private function testAddLineRequestValidation(): void
@@ -263,7 +266,7 @@ final class PosV2CartTest
                 currency: 'SAR',
                 rtl: true,
                 featureFlags: new PosV2FeatureFlagsContext(true, 'retail', false, false, false),
-                permissions: ['pos.register.access'],
+                permissions: ['pos.register'],
                 registerReady: true,
             ),
         );

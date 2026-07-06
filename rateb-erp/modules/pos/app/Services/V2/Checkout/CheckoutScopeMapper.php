@@ -26,7 +26,7 @@ final class CheckoutScopeMapper
 
         return [
             'company_id' => $register->companyId,
-            'user_id' => $register->cashier->id,
+            'user_id' => $register->cashier->userId,
             'branch_id' => $register->branchId,
             'warehouse_id' => $register->warehouseId > 0 ? $register->warehouseId : null,
             'session_id' => $register->sessionId > 0 ? $register->sessionId : null,

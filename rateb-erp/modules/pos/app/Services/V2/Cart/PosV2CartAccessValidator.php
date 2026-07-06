@@ -17,7 +17,15 @@ final class PosV2CartAccessValidator
             return;
         }
 
+        if (in_array('pos.register', $permissions, true)) {
+            return;
+        }
+
         if (in_array('pos.register.access', $permissions, true)) {
+            return;
+        }
+
+        if (in_array('pos.*', $permissions, true)) {
             return;
         }
 

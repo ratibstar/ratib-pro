@@ -276,7 +276,7 @@ final class PosV2CustomerTest
                 currency: 'SAR',
                 rtl: true,
                 featureFlags: new PosV2FeatureFlagsContext(true, 'retail', false, false, false),
-                permissions: ['pos.register.access'],
+                permissions: ['pos.register'],
                 registerReady: true,
             ),
         );

@@ -71,7 +71,7 @@ final class PosV2DiscountTest
 
         $ok = $result->discounts?->lineDiscountTotal->amount === '1.00'
             && $result->totals->discount->amount === '1.00'
-            && $result->totals->total->amount === '9.00';
+            && $result->totals->total->amount === '10.35';
 
         $this->record('percentage line discount', $ok, 'expected 10% off line gross');
     }
@@ -92,7 +92,7 @@ final class PosV2DiscountTest
         );
 
         $ok = $result->discounts?->lineDiscountTotal->amount === '2.50'
-            && $result->totals->total->amount === '7.50';
+            && $result->totals->total->amount === '8.63';
 
         $this->record('fixed line discount', $ok, 'expected fixed amount off line');
     }
@@ -112,7 +112,7 @@ final class PosV2DiscountTest
         );
 
         $ok = $result->discounts?->cartDiscountTotal->amount === '2.00'
-            && $result->totals->total->amount === '8.00';
+            && $result->totals->total->amount === '9.20';
 
         $this->record('percentage cart discount', $ok, 'expected 20% cart discount');
     }

@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\Services\V2\Cart;
 
+use Rateb\App\Pos\Services\PosPricingService;
 use Rateb\App\Pos\DTO\V2\Cart\PosV2CartLineDto;
 use Rateb\App\Pos\DTO\V2\Cart\PosV2CartTotalsDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
 use Rateb\App\Pos\DTO\V2\Discount\CartDiscountSummary;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2Money;
-use Rateb\App\Pos\Services\V2\Discount\DiscountCalculator;
 
-/** Computes cart totals including discounts (tax placeholder, T11). */
+/** Computes cart totals via the same V1 pricing pipeline used at checkout. */
 final class PosV2CartTotalsCalculator
 {
+    private const DEFAULT_TAX_RATE = 0.15;
+
     public function __construct(
-        private readonly DiscountCalculator $discountCalculator = new DiscountCalculator(),
+        private readonly PosPricingService $pricing = new PosPricingService(),
     ) {
     }
 
@@ -31,20 +33,16 @@ final class PosV2CartTotalsCalculator
         array $invoiceDiscount = [],
         ?CartDiscountSummary $discountSummary = null,
     ): PosV2CartTotalsDto {
-        if ($discountSummary !== null) {
-            $gross = $this->discountCalculator->grossSubtotal($v1Lines, $currency);
-            $totalDiscount = PosV2Money::fromDecimalString(
-                $discountSummary->totalDiscount->amount,
-                $currency,
-            );
-            $tax = PosV2Money::zero($currency);
-            $total = $gross->subtract($totalDiscount);
+        unset($discountSummary);
+
+        if ($v1Lines !== []) {
+            $pricing = $this->pricing->calculate($v1Lines, $invoiceDiscount, self::DEFAULT_TAX_RATE);
 
             return new PosV2CartTotalsDto(
-                subtotal: $this->toDto($gross),
-                discount: $this->toDto($totalDiscount),
-                tax: $this->toDto($tax),
-                total: $this->toDto($total),
+                subtotal: $this->toDto(PosV2Money::fromDecimalString($this->money($pricing['subtotal'] ?? 0), $currency)),
+                discount: $this->toDto(PosV2Money::fromDecimalString($this->money($pricing['discount_total'] ?? 0), $currency)),
+                tax: $this->toDto(PosV2Money::fromDecimalString($this->money($pricing['tax'] ?? 0), $currency)),
+                total: $this->toDto(PosV2Money::fromDecimalString($this->money($pricing['total'] ?? 0), $currency)),
             );
         }
 
@@ -70,5 +68,10 @@ final class PosV2CartTotalsCalculator
     private function toDto(PosV2Money $money): PosV2MoneyDto
     {
         return new PosV2MoneyDto($money->amount, $money->currency);
+    }
+
+    private function money(mixed $value): string
+    {
+        return number_format((float) $value, 2, '.', '');
     }
 }

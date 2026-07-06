@@ -26,6 +26,7 @@ use Rateb\App\Pos\DTO\V2\Payment\InitiateChargeRequest;
 use Rateb\App\Pos\DTO\V2\Payment\RecordPaymentRequest;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CheckoutPortInterface;
 use Rateb\App\Pos\Services\V2\Checkout\CheckoutPaymentNormalizer;
+use Rateb\App\Pos\Services\V2\Checkout\CheckoutScopeMapper;
 use Rateb\App\Pos\Services\V2\Checkout\PosV2CheckoutAccessValidator;
 use Rateb\App\Pos\Services\V2\Payment\PaymentValidator;
 use Rateb\App\Pos\UseCases\V2\Payment\CompleteSaleUseCase;
@@ -49,6 +50,7 @@ final class PosV2CheckoutTest
         $this->testCompleteSaleSuccess();
         $this->testCompleteSaleIdempotentResponse();
         $this->testCompleteSaleEnvelope();
+        $this->testCheckoutScopeMapperUsesCashierUserId();
 
         return $this->results;
     }
@@ -213,6 +215,19 @@ final class PosV2CheckoutTest
             && is_array($body['data']['receipt'] ?? null);
 
         $this->record('complete sale envelope', $ok, 'expected success/data envelope');
+    }
+
+    private function testCheckoutScopeMapperUsesCashierUserId(): void
+    {
+        $mapped = (new CheckoutScopeMapper())->map(
+            $this->requestContext(['pos.sale.complete']),
+            'abc-idempotency',
+        );
+
+        $ok = (int) ($mapped['user_id'] ?? 0) === 7
+            && (string) ($mapped['idempotency_key'] ?? '') === 'abc-idempotency';
+
+        $this->record('checkout scope mapper uses cashier userId', $ok, 'expected user_id from context cashier');
     }
 
     /**
