@@ -20,13 +20,15 @@ use Rateb\App\Pos\DTO\V2\Context\PosV2FeatureFlagsContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RegisterContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\DTO\V2\Payment\CashPaymentRequest;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentBalanceResponse;
 use Rateb\App\Pos\DTO\V2\Payment\PaymentSummaryDto;
+use Rateb\App\Pos\DTO\V2\Payment\RecordPaymentRequest;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PaymentPortInterface;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartAssembler;
 use Rateb\App\Pos\Services\V2\Payment\PaymentCalculator;
 use Rateb\App\Pos\Services\V2\Payment\PaymentValidator;
-use Rateb\App\Pos\Services\V2\Payment\PosV2PaymentAccessValidator;
+use Rateb\App\Pos\Services\V2\Checkout\PosV2CheckoutAccessValidator;
 use Rateb\App\Pos\UseCases\V2\Payment\CashPaymentUseCase;
 use Rateb\App\Pos\UseCases\V2\Payment\GetPaymentsUseCase;
 use Rateb\App\Pos\UseCases\V2\Payment\RemovePaymentUseCase;
@@ -92,7 +94,7 @@ final class PosV2PaymentTest
         $paymentPort = new InMemoryPaymentPort($cartPort);
 
         $result = (new CashPaymentUseCase(
-            new PosV2PaymentAccessValidator(),
+            new PosV2CheckoutAccessValidator(),
             new PaymentValidator(),
             $paymentPort,
             $cartPort,
@@ -112,7 +114,7 @@ final class PosV2PaymentTest
         $id = $paymentPort->readPayments()[0]['id'];
 
         $result = (new RemovePaymentUseCase(
-            new PosV2PaymentAccessValidator(),
+            new PosV2CheckoutAccessValidator(),
             new PaymentValidator(),
             $paymentPort,
         ))->execute($this->requestContext(['pos.payment.record']), (string) $id);
@@ -129,7 +131,7 @@ final class PosV2PaymentTest
         $paymentPort->addCash(new PosV2CartScope(1, 2, 3, 4, 'SAR'), new CashPaymentRequest('3'));
 
         $summary = (new GetPaymentsUseCase(
-            new PosV2PaymentAccessValidator(),
+            new PosV2CheckoutAccessValidator(),
             new PaymentValidator(),
             $paymentPort,
         ))->execute($this->requestContext(['pos.payment.record']));
@@ -146,7 +148,7 @@ final class PosV2PaymentTest
 
         try {
             (new CashPaymentUseCase(
-                new PosV2PaymentAccessValidator(),
+                new PosV2CheckoutAccessValidator(),
                 new PaymentValidator(),
                 $paymentPort,
                 $cartPort,
@@ -174,7 +176,7 @@ final class PosV2PaymentTest
 
         try {
             (new CashPaymentUseCase(
-                new PosV2PaymentAccessValidator(),
+                new PosV2CheckoutAccessValidator(),
                 new PaymentValidator(),
                 $paymentPort,
                 $cartPort,
@@ -194,7 +196,7 @@ final class PosV2PaymentTest
 
         try {
             (new CashPaymentUseCase(
-                new PosV2PaymentAccessValidator(),
+                new PosV2CheckoutAccessValidator(),
                 new PaymentValidator(),
                 $paymentPort,
                 $cartPort,
@@ -382,6 +384,25 @@ final class InMemoryPaymentPort implements PosV2PaymentPortInterface
         $this->cart->setPayments($this->payments);
 
         return $this->cart->load($scope);
+    }
+
+    public function record(PosV2CartScope $scope, RecordPaymentRequest $request): PaymentBalanceResponse
+    {
+        $this->payments[] = [
+            'id' => 'pay-' . (count($this->payments) + 1),
+            'method' => $request->method->value,
+            'amount' => (float) $request->amount,
+            'reference_no' => $request->reference ?? '',
+        ];
+        $this->cart->setPayments($this->payments);
+        $summary = $this->getSummary($scope);
+
+        return new PaymentBalanceResponse(
+            payments: $summary->payments,
+            balanceDue: $summary->remaining,
+            changeDue: $summary->changeDue,
+            paid: $summary->paid,
+        );
     }
 
     public function readPayments(): array

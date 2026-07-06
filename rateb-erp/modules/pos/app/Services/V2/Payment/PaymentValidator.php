@@ -7,6 +7,7 @@ namespace Rateb\App\Pos\Services\V2\Payment;
 use Rateb\App\Pos\Domain\V2\Payment\Exceptions\PosV2PaymentValidationException;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\DTO\V2\Payment\CashPaymentRequest;
+use Rateb\App\Pos\DTO\V2\Payment\RecordPaymentRequest;
 
 /** Validates cash payment business rules (T12). */
 final class PaymentValidator
@@ -39,6 +40,30 @@ final class PaymentValidator
             throw new PosV2PaymentValidationException(
                 'AMOUNT_OVERFLOW',
                 'Cash amount exceeds the allowed limit.',
+            );
+        }
+    }
+
+    public function assertCanRecordPayment(
+        PosV2RequestContext $context,
+        int $itemCount,
+        RecordPaymentRequest $request,
+    ): void {
+        $this->assertRegisterReady($context);
+
+        if ($itemCount < 1) {
+            throw new PosV2PaymentValidationException(
+                'CART_EMPTY',
+                'Cart must contain at least one line before recording payment.',
+            );
+        }
+
+        try {
+            $this->calculator->assertAmountWithinLimit($request->amount);
+        } catch (\InvalidArgumentException) {
+            throw new PosV2PaymentValidationException(
+                'AMOUNT_OVERFLOW',
+                'Payment amount exceeds the allowed limit.',
             );
         }
     }

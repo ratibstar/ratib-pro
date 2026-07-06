@@ -264,3 +264,91 @@ export async function applyCartDiscount(body) {
     });
     return res?.data ?? res;
 }
+
+export async function fetchPayments() {
+    const res = await request(apiUrl('payments'));
+    return res?.data ?? res;
+}
+
+export async function addCashPayment(amount) {
+    const res = await request(apiUrl('paymentsCash'), {
+        method: 'POST',
+        body: JSON.stringify({ amount }),
+    });
+    return res?.data ?? res;
+}
+
+export async function removePayment(paymentId) {
+    const res = await request(apiUrl('paymentRemove', `/${paymentId}`), {
+        method: 'DELETE',
+    });
+    return res?.data ?? res;
+}
+
+export async function initiateCharge(sessionId = 0) {
+    const res = await request(apiUrl('chargeInitiate'), {
+        method: 'POST',
+        body: JSON.stringify({ session_id: sessionId }),
+    });
+    return res?.data ?? res;
+}
+
+/**
+ * @param {{ method: string, amount: string|{amount: string, currency?: string}, reference?: string }} body
+ */
+export async function recordPayment(body) {
+    const res = await request(apiUrl('paymentRecord'), {
+        method: 'POST',
+        body: JSON.stringify(body),
+    });
+    return res?.data ?? res;
+}
+
+/**
+ * @param {{ session_id?: number, payments?: unknown[], gift_receipt?: boolean }} body
+ * @param {string} idempotencyKey
+ */
+export async function completeSale(body, idempotencyKey) {
+    const url = apiUrl('paymentComplete');
+    const headers = new Headers();
+    headers.set('Accept', 'application/json');
+    headers.set('Content-Type', 'application/json');
+    headers.set('X-CSRF-Token', csrfToken());
+    headers.set('X-Requested-With', 'XMLHttpRequest');
+    headers.set('Idempotency-Key', idempotencyKey);
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+    });
+
+    const text = await response.text();
+    let payload = null;
+    if (text) {
+        try {
+            payload = JSON.parse(text);
+        } catch {
+            payload = { success: false, message: text };
+        }
+    }
+
+    const apiMessage = payload?.message
+        || payload?.error?.message
+        || (typeof payload?.error === 'string' ? payload.error : null);
+
+    if (response.status === 409 && payload?.data) {
+        return { data: payload.data, status: 409, idempotent: true };
+    }
+
+    if (!response.ok || payload?.success === false) {
+        throw new Error(apiMessage || `HTTP ${response.status}`);
+    }
+
+    return {
+        data: payload?.data ?? payload,
+        status: response.status,
+        idempotent: Boolean(payload?.data?.idempotent),
+    };
+}

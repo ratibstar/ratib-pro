@@ -33,11 +33,13 @@ final class PaymentCalculator
             if ($amount <= 0) {
                 continue;
             }
+            $method = PosV2PaymentMethod::fromString(strtolower(trim((string) ($row['method'] ?? 'cash'))))
+                ?? PosV2PaymentMethod::Cash;
             $money = PosV2Money::fromDecimalString(number_format($amount, 2, '.', ''), $currency);
             $paid = $paid->add($money);
             $lines[] = new PosV2PaymentLineDto(
                 id: (string) ($row['id'] ?? ''),
-                method: PosV2PaymentMethod::Cash,
+                method: $method,
                 amount: $this->toDto($money),
             );
         }

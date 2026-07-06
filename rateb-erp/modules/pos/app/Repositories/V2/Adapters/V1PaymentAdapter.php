@@ -8,7 +8,9 @@ use Rateb\App\Pos\Domain\V2\Cart\PosV2CartScope;
 use Rateb\App\Pos\Domain\V2\Payment\Exceptions\PosV2PaymentValidationException;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
 use Rateb\App\Pos\DTO\V2\Payment\CashPaymentRequest;
-use Rateb\App\Pos\DTO\V2\Payment\PaymentSummaryDto;
+use Rateb\App\Pos\Domain\V2\Payment\PosV2PaymentMethod;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentBalanceResponse;
+use Rateb\App\Pos\DTO\V2\Payment\RecordPaymentRequest;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PaymentPortInterface;
 use Rateb\App\Pos\Services\PosSessionService;
@@ -47,6 +49,33 @@ final class V1PaymentAdapter implements PosV2PaymentPortInterface
         $this->session->patch(['payments' => $payments]);
 
         return $this->cartPort->load($scope);
+    }
+
+    public function record(PosV2CartScope $scope, RecordPaymentRequest $request): PaymentBalanceResponse
+    {
+        $payments = $this->readPayments();
+        $payments[] = [
+            'id' => bin2hex(random_bytes(8)),
+            'method' => $request->method->value,
+            'amount' => round((float) $request->amount, 2),
+            'reference_no' => $request->reference ?? '',
+            'created_at' => date('c'),
+        ];
+        $this->session->patch(['payments' => $payments]);
+
+        $cart = $this->cartPort->load($scope);
+        $summary = $this->assembler->buildSummary(
+            $payments,
+            $cart->totals->total->amount,
+            $scope->currency,
+        );
+
+        return new PaymentBalanceResponse(
+            payments: $summary->payments,
+            balanceDue: $summary->remaining,
+            changeDue: $summary->changeDue,
+            paid: $summary->paid,
+        );
     }
 
     public function remove(PosV2CartScope $scope, string $paymentId): CartResponse

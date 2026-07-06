@@ -12,6 +12,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogProductPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CustomerPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2DiscountPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CheckoutPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PaymentPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsCacheInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
@@ -31,6 +32,7 @@ final class PosV2SharedRepositories
         public readonly PosV2CustomerPortInterface $customers,
         public readonly PosV2DiscountPortInterface $discounts,
         public readonly PosV2PaymentPortInterface $payments,
+        public readonly PosV2CheckoutPortInterface $checkout,
     ) {
     }
 }

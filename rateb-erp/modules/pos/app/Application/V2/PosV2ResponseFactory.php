@@ -11,6 +11,9 @@ use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchResponse;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
 use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchResponse;
 use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
+use Rateb\App\Pos\DTO\V2\Payment\CompleteSaleResponse;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentBalanceResponse;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentSheetResponse;
 use Rateb\App\Pos\DTO\V2\Payment\PaymentSummaryDto;
 use Rateb\App\Pos\DTO\V2\Register\RegisterBootstrapResponse;
 
@@ -168,6 +171,30 @@ final class PosV2ResponseFactory
     }
 
     public function paymentSummarySuccess(PaymentSummaryDto $data, int $statusCode = 200): PosV2JsonResponse
+    {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => true,
+            'data' => $data->toArray(),
+        ]);
+    }
+
+    public function paymentSheetSuccess(PaymentSheetResponse $data, int $statusCode = 200): PosV2JsonResponse
+    {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => true,
+            'data' => $data->toArray(),
+        ]);
+    }
+
+    public function paymentBalanceSuccess(PaymentBalanceResponse $data, int $statusCode = 200): PosV2JsonResponse
+    {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => true,
+            'data' => $data->toArray(),
+        ]);
+    }
+
+    public function completeSaleSuccess(CompleteSaleResponse $data, int $statusCode = 200): PosV2JsonResponse
     {
         return new PosV2JsonResponse($statusCode, [
             'success' => true,

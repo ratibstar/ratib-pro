@@ -35,7 +35,8 @@ final class PaymentAssembler
 
         return new PosV2PaymentLineDto(
             id: $id,
-            method: PosV2PaymentMethod::Cash,
+            method: PosV2PaymentMethod::fromString(strtolower(trim((string) ($row['method'] ?? 'cash'))))
+                ?? PosV2PaymentMethod::Cash,
             amount: new \Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto(
                 number_format($amount, 2, '.', ''),
                 strtoupper($currency),

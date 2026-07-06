@@ -70,3 +70,6 @@ $router->delete($posApp('api/v2/cart/discounts/cart'), [PosV2DiscountApiControll
 $router->get($posApp('api/v2/payments'), [PosV2PaymentApiController::class, 'index'], $posV2Mw);
 $router->post($posApp('api/v2/payments/cash'), [PosV2PaymentApiController::class, 'addCash'], $posV2Mw);
 $router->delete($posApp('api/v2/payments/{paymentId}'), [PosV2PaymentApiController::class, 'remove'], $posV2Mw);
+$router->post($posApp('api/v2/charge/initiate'), [PosV2PaymentApiController::class, 'initiateCharge'], $posV2Mw);
+$router->post($posApp('api/v2/payment/record'), [PosV2PaymentApiController::class, 'recordPayment'], $posV2Mw);
+$router->post($posApp('api/v2/payment/complete'), [PosV2PaymentApiController::class, 'completeSale'], $posV2Mw);

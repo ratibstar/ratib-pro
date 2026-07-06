@@ -9,12 +9,12 @@ use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\DTO\V2\Payment\PaymentSummaryDto;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PaymentPortInterface;
 use Rateb\App\Pos\Services\V2\Payment\PaymentValidator;
-use Rateb\App\Pos\Services\V2\Payment\PosV2PaymentAccessValidator;
+use Rateb\App\Pos\Services\V2\Checkout\PosV2CheckoutAccessValidator;
 
 final class GetPaymentsUseCase
 {
     public function __construct(
-        private readonly PosV2PaymentAccessValidator $access,
+        private readonly PosV2CheckoutAccessValidator $access,
         private readonly PaymentValidator $validator,
         private readonly PosV2PaymentPortInterface $payments,
     ) {

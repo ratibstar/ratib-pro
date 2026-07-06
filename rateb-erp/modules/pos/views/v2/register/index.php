@@ -101,7 +101,20 @@ $t = static fn (string $key, string $fallback = ''): string => (string) ($i18n[$
                             <dd class="col-6 text-end mb-0" data-pos-total-discount>—</dd>
                             <dt class="col-6 fw-semibold"><?php echo PosView::escape($t('total', 'Total')); ?></dt>
                             <dd class="col-6 text-end fw-semibold mb-0" data-pos-total-grand>—</dd>
+                            <dt class="col-6 text-muted d-none" data-pos-pay-paid-label><?php echo PosView::escape($t('paid', 'Paid')); ?></dt>
+                            <dd class="col-6 text-end mb-0 d-none" data-pos-pay-paid>—</dd>
+                            <dt class="col-6 text-muted d-none" data-pos-pay-balance-label><?php echo PosView::escape($t('balance_due', 'Balance due')); ?></dt>
+                            <dd class="col-6 text-end mb-0 d-none" data-pos-pay-balance>—</dd>
+                            <dt class="col-6 text-success d-none" data-pos-pay-change-label><?php echo PosView::escape($t('change_due', 'Change due')); ?></dt>
+                            <dd class="col-6 text-end mb-0 text-success d-none" data-pos-pay-change>—</dd>
                         </dl>
+                        <div class="d-none mb-2" data-pos-payment-lines-wrap>
+                            <div class="small text-muted mb-1"><?php echo PosView::escape($t('payments_recorded', 'Recorded payments')); ?></div>
+                            <ul class="list-group list-group-flush small mb-0" data-pos-payment-lines></ul>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100" data-pos-checkout-open disabled>
+                            <?php echo PosView::escape($t('checkout', 'Checkout')); ?>
+                        </button>
                     </footer>
                 </div>
                 <div class="tab-pane fade h-100 overflow-auto p-3" id="pos-pane-customer" role="tabpanel" aria-labelledby="pos-tab-customer" tabindex="0" data-pos-customer-panel>
@@ -190,5 +203,64 @@ $t = static fn (string $key, string $fallback = ''): string => (string) ($i18n[$
                 </div>
             </div>
         </aside>
+    </div>
+
+    <div class="modal fade" id="pos-v2-checkout-modal" tabindex="-1" aria-labelledby="pos-v2-checkout-title" aria-hidden="true" data-pos-checkout-modal>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h2 class="modal-title h6" id="pos-v2-checkout-title"><?php echo PosView::escape($t('checkout', 'Checkout')); ?></h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo PosView::escape($t('close', 'Close')); ?>"></button>
+                </div>
+                <div class="modal-body">
+                    <form data-pos-payment-form>
+                        <div class="mb-2">
+                            <label class="form-label small" for="pos-v2-pay-method"><?php echo PosView::escape($t('payment_method', 'Payment method')); ?></label>
+                            <select class="form-select form-select-sm" id="pos-v2-pay-method" data-pos-pay-method>
+                                <option value="cash"><?php echo PosView::escape($t('cash', 'Cash')); ?></option>
+                                <option value="card">Card</option>
+                                <option value="bank">Bank</option>
+                                <option value="wallet">Wallet</option>
+                                <option value="gift_card">Gift card</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small" for="pos-v2-pay-amount"><?php echo PosView::escape($t('payment_amount', 'Payment amount')); ?></label>
+                            <input type="number" min="0" step="any" class="form-control form-control-sm" id="pos-v2-pay-amount" data-pos-pay-amount required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small" for="pos-v2-pay-reference">Reference</label>
+                            <input type="text" class="form-control form-control-sm" id="pos-v2-pay-reference" data-pos-pay-reference maxlength="120">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary w-100 mb-2" data-pos-pay-add><?php echo PosView::escape($t('add_payment', 'Add payment')); ?></button>
+                    </form>
+                    <button type="button" class="btn btn-success w-100" data-pos-complete-sale disabled>
+                        <?php echo PosView::escape($t('complete_sale', 'Complete sale')); ?>
+                    </button>
+                    <div class="text-center py-3 d-none" data-pos-checkout-loading>
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="visually-hidden"><?php echo PosView::escape($t('processing', 'Processing…')); ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="pos-v2-receipt-modal" tabindex="-1" aria-labelledby="pos-v2-receipt-title" aria-hidden="true" data-pos-receipt-modal>
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h2 class="modal-title h6" id="pos-v2-receipt-title"><?php echo PosView::escape($t('receipt', 'Receipt')); ?></h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo PosView::escape($t('close', 'Close')); ?>"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2 fw-semibold" data-pos-receipt-order></p>
+                    <pre class="pos-v2-receipt-preview small bg-body-secondary p-2 rounded mb-0" data-pos-receipt-body></pre>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal"><?php echo PosView::escape($t('close', 'Close')); ?></button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

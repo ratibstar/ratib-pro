@@ -9,6 +9,9 @@ use Rateb\App\Pos\Application\V2\PosV2PaymentExceptionHandler;
 use Rateb\App\Pos\Application\V2\PosV2ResponseFactory;
 use Rateb\App\Pos\Controllers\PosBaseController;
 use Rateb\App\Pos\DTO\V2\Payment\CashPaymentRequest;
+use Rateb\App\Pos\DTO\V2\Payment\CompleteSaleRequest;
+use Rateb\App\Pos\DTO\V2\Payment\InitiateChargeRequest;
+use Rateb\App\Pos\DTO\V2\Payment\RecordPaymentRequest;
 use Rateb\App\Pos\UseCases\V2\Payment\PaymentUseCaseFactory;
 use Throwable;
 
@@ -55,6 +58,47 @@ final class PosV2PaymentApiController extends PosBaseController
             $context = $application->bootstrapRegister('api');
             $result = $this->useCaseFactory->createRemove()->execute($context, $paymentId);
             $application->responses()->cartSuccess($result)->send();
+        } catch (Throwable $throwable) {
+            $this->exceptionHandler->handle($throwable)->send();
+        }
+    }
+
+    public function initiateCharge(): void
+    {
+        try {
+            $application = $this->applicationFactory->create();
+            $context = $application->bootstrapRegister('api');
+            $request = InitiateChargeRequest::fromPayload($this->decodeJsonBody());
+            $result = $this->useCaseFactory->createInitiate()->execute($context, $request);
+            $application->responses()->paymentSheetSuccess($result)->send();
+        } catch (Throwable $throwable) {
+            $this->exceptionHandler->handle($throwable)->send();
+        }
+    }
+
+    public function recordPayment(): void
+    {
+        try {
+            $application = $this->applicationFactory->create();
+            $context = $application->bootstrapRegister('api');
+            $request = RecordPaymentRequest::fromPayload($this->decodeJsonBody());
+            $result = $this->useCaseFactory->createRecord()->execute($context, $request);
+            $application->responses()->paymentBalanceSuccess($result)->send();
+        } catch (Throwable $throwable) {
+            $this->exceptionHandler->handle($throwable)->send();
+        }
+    }
+
+    public function completeSale(): void
+    {
+        try {
+            $application = $this->applicationFactory->create();
+            $context = $application->bootstrapRegister('api');
+            $request = CompleteSaleRequest::fromPayload($this->decodeJsonBody());
+            $idempotencyKey = trim((string) ($_SERVER['HTTP_IDEMPOTENCY_KEY'] ?? ''));
+            $result = $this->useCaseFactory->createComplete()->execute($context, $request, $idempotencyKey);
+            $status = $result->idempotent ? 409 : 200;
+            $application->responses()->completeSaleSuccess($result, $status)->send();
         } catch (Throwable $throwable) {
             $this->exceptionHandler->handle($throwable)->send();
         }

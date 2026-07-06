@@ -3,7 +3,7 @@ import { getConfig } from './api.js';
 import { initCatalog, loadCatalog, renderCategories } from './catalog.js';
 import { initCart, renderCart } from './cart.js';
 import { initCustomer } from './customer.js';
-import { initDiscount } from './discount.js';
+import { initPayment } from './payment.js';
 import { patchCatalog, patchState, setCart } from './state.js';
 import { initI18n, initLocaleSwitcher, renderRegisterName, showAlert, t } from './ui.js';
 
@@ -22,6 +22,7 @@ async function bootstrap() {
     initCart();
     initCustomer();
     initDiscount();
+    initPayment();
 
     try {
         const data = await fetchBootstrap();

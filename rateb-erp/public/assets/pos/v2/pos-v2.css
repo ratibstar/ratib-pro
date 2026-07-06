@@ -249,6 +249,13 @@ html[dir='rtl'] .pos-v2-body {
     }
 }
 
+.pos-v2-receipt-preview {
+    max-height: 50vh;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 @media (min-width: 1400px) {
     .pos-v2-product-grid > [class*='col-'] {
         flex: 0 0 20%;
