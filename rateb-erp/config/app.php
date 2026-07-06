@@ -1838,8 +1838,12 @@ if (!function_exists('rateb_branch_strict_assignment')) {
      */
     function rateb_branch_strict_assignment(): bool
     {
-        $v = getenv('RATEB_BRANCH_STRICT_ASSIGNMENT');
-        if ($v === false || trim((string) $v) === '') {
+        if (array_key_exists('RATEB_BRANCH_STRICT_ASSIGNMENT', $_ENV)) {
+            $v = $_ENV['RATEB_BRANCH_STRICT_ASSIGNMENT'];
+        } else {
+            $v = getenv('RATEB_BRANCH_STRICT_ASSIGNMENT');
+        }
+        if ($v === false || $v === null || trim((string) $v) === '') {
             return false;
         }
 

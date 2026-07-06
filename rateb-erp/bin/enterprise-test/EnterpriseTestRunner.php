@@ -15,6 +15,9 @@ final class EnterpriseTestRunner
 {
     private ?\PDO $db = null;
 
+    /** @var array<string, bool> roleId:permissionSlug => was granted before revoke */
+    private array $p7RevokedRolePermissions = [];
+
     public function __construct()
     {
         try {
@@ -152,6 +155,8 @@ final class EnterpriseTestRunner
                 $tests[] = $this->test('P7 system roles present', false, 'missing role slugs');
                 return $this->suiteResult($tests);
             }
+
+            $this->p7RevokeRestrictedRoleAccessAll($bmRoleId);
 
             $this->p7SyncRole($bmEmptyId, $bmRoleId);
             $this->p7SyncRole($bmAssignedId, $bmRoleId);
@@ -327,6 +332,7 @@ final class EnterpriseTestRunner
             $tests[] = $this->test('P7 behavioral tests', false, $e->getMessage());
         } finally {
             $this->p7CleanupFixtureUsers();
+            $this->p7RestoreRevokedRolePermissions();
             BranchContext::reset();
             $this->withStrictFlag(null, static fn (): bool => true);
         }
@@ -375,19 +381,27 @@ final class EnterpriseTestRunner
     private function withStrictFlag(?string $value, callable $fn): mixed
     {
         $key = 'RATEB_BRANCH_STRICT_ASSIGNMENT';
-        $prev = getenv($key);
+        $prevEnv = array_key_exists($key, $_ENV) ? $_ENV[$key] : null;
+        $prevGetenv = getenv($key);
         if ($value === null) {
+            unset($_ENV[$key]);
             putenv($key);
         } else {
+            $_ENV[$key] = $value;
             putenv($key . '=' . $value);
         }
         try {
             return $fn();
         } finally {
-            if ($prev === false) {
+            if ($prevEnv === null) {
+                unset($_ENV[$key]);
+            } else {
+                $_ENV[$key] = $prevEnv;
+            }
+            if ($prevGetenv === false) {
                 putenv($key);
             } else {
-                putenv($key . '=' . $prev);
+                putenv($key . '=' . $prevGetenv);
             }
         }
     }
@@ -511,6 +525,53 @@ final class EnterpriseTestRunner
         $this->db->prepare(
             'INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id) VALUES (:rid, :pid)'
         )->execute(['rid' => $roleId, 'pid' => $permId]);
+    }
+
+    private function p7RevokeRestrictedRoleAccessAll(int $branchManagerRoleId): void
+    {
+        $branchUserRoleId = $this->roleIdBySlug('branch_user');
+        foreach (array_values(array_filter([$branchManagerRoleId, $branchUserRoleId])) as $roleId) {
+            $this->p7RevokeRolePermission($roleId, 'branches.access_all');
+        }
+    }
+
+    private function p7RevokeRolePermission(int $roleId, string $permissionSlug): void
+    {
+        if (!$this->dbReady() || $roleId < 1 || $permissionSlug === '') {
+            return;
+        }
+        $perm = $this->db->prepare('SELECT id FROM rateb_permissions WHERE slug = :slug LIMIT 1');
+        $perm->execute(['slug' => $permissionSlug]);
+        $permId = (int) ($perm->fetchColumn() ?: 0);
+        if ($permId < 1) {
+            return;
+        }
+        $key = $roleId . ':' . $permissionSlug;
+        if (!array_key_exists($key, $this->p7RevokedRolePermissions)) {
+            $check = $this->db->prepare(
+                'SELECT 1 FROM rateb_role_permissions WHERE role_id = :rid AND permission_id = :pid LIMIT 1'
+            );
+            $check->execute(['rid' => $roleId, 'pid' => $permId]);
+            $this->p7RevokedRolePermissions[$key] = $check->fetch() !== false;
+        }
+        $this->db->prepare(
+            'DELETE FROM rateb_role_permissions WHERE role_id = :rid AND permission_id = :pid'
+        )->execute(['rid' => $roleId, 'pid' => $permId]);
+    }
+
+    private function p7RestoreRevokedRolePermissions(): void
+    {
+        foreach ($this->p7RevokedRolePermissions as $key => $wasGranted) {
+            if (!$wasGranted) {
+                continue;
+            }
+            $parts = explode(':', $key, 2);
+            if (count($parts) !== 2) {
+                continue;
+            }
+            $this->p7EnsureRolePermission((int) $parts[0], $parts[1]);
+        }
+        $this->p7RevokedRolePermissions = [];
     }
 
     private function p7CleanupFixtureUsers(): void
