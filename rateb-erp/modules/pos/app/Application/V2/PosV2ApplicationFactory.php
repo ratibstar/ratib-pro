@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\Application\V2;
 
-use Rateb\App\Pos\Repositories\V2\Adapters\ErpCashierAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\ErpLocaleAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\ErpPosPermissionsAdapter;
-use Rateb\App\Pos\Repositories\V2\Adapters\V1PosContextAdapter;
-use Rateb\App\Pos\Services\PosContextService;
-use Rateb\App\Pos\Services\V2\PosV2FeatureFlagContextResolver;
 
 /** Wires PosV2Application and its dependency graph (T04). */
 final class PosV2ApplicationFactory
@@ -19,11 +15,10 @@ final class PosV2ApplicationFactory
         $root = PosV2RequestScope::ensure();
 
         $resolver = new PosV2ContextResolver(
-            new V1PosContextAdapter(new PosContextService()),
-            new ErpCashierAdapter(),
+            $root->posContext,
+            $root->cashier,
             new ErpLocaleAdapter(),
             new ErpPosPermissionsAdapter(),
-            new PosV2FeatureFlagContextResolver(),
             $root->services->featureFlags,
         );
 

@@ -11,12 +11,10 @@ use Rateb\App\Pos\DTO\V2\Context\PosV2RegisterContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2ShiftContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2TerminalContext;
-use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagContext;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2LocalePortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PermissionsPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
-use Rateb\App\Pos\Services\V2\PosV2FeatureFlagContextResolver;
 use Rateb\App\Pos\Services\V2\PosV2FeatureFlagService;
 use RuntimeException;
 
@@ -30,7 +28,6 @@ final class PosV2ContextResolver
         private readonly PosV2CashierPortInterface $cashier,
         private readonly PosV2LocalePortInterface $locale,
         private readonly PosV2PermissionsPortInterface $permissions,
-        private readonly PosV2FeatureFlagContextResolver $featureFlagContextResolver,
         private readonly PosV2FeatureFlagService $featureFlags,
     ) {
     }
@@ -52,12 +49,10 @@ final class PosV2ContextResolver
             throw new RuntimeException('POS V2 register context requires a valid company scope.');
         }
 
-        $featureFlagContext = $this->featureFlagContextResolver->resolve()
-            ?? new PosV2FeatureFlagContext(
-                companyId: $companyId,
-                branchId: (int) ($metadata['branch_id'] ?? 0),
-                terminalId: (int) ($metadata['terminal']['id'] ?? 0),
-            );
+        $featureFlagContext = PosV2RequestScope::ensure()->resolveFeatureFlagContext();
+        if ($featureFlagContext === null) {
+            throw new RuntimeException('POS V2 feature flag context could not be resolved.');
+        }
 
         $resolvedFlags = $this->featureFlags->resolve($featureFlagContext);
 

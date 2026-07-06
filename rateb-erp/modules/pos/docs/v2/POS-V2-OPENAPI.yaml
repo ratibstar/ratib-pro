@@ -10,7 +10,13 @@ info:
     url: https://rateb.sa
 
 servers:
-  - url: https://{host}/pos/api/v2
+  - url: https://{host}/api/v2/pos
+    description: Bearer-token REST API (implemented)
+    variables:
+      host:
+        default: app.rateb.sa
+  - url: https://{host}/admin/ops/pos/api/v2
+    description: Session-authenticated JSON API (implemented)
     variables:
       host:
         default: app.rateb.sa
@@ -38,14 +44,19 @@ tags:
   - name: Extensions
 
 security:
+  - bearerAuth: []
   - sessionAuth: []
   - csrfToken: []
 
 paths:
-  /register/bootstrap:
+  /bootstrap:
     get:
       tags: [Register]
       summary: Load register bootstrap context
+      description: |
+        Implemented endpoint. Bearer API uses `/api/v2/pos/bootstrap`.
+        Web session API uses `/admin/ops/pos/api/v2/bootstrap`.
+        Unimplemented routes in this document return HTTP 501 with `NOT_IMPLEMENTED`.
       operationId: getRegisterBootstrap
       parameters:
         - $ref: '#/components/parameters/TerminalId'
@@ -56,15 +67,40 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegisterBootstrapResponse'
+                $ref: '#/components/schemas/BootstrapSuccessEnvelope'
+        '404':
+          description: POS V2 disabled for scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PosV2DisabledEnvelope'
+        '422':
+          description: Bootstrap validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapErrorEnvelope'
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
-          description: Shift not open
+          description: Shift not open (planned)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+
+  /register:
+    get:
+      tags: [Register]
+      summary: Register session entry (not implemented)
+      operationId: getRegisterIndex
+      responses:
+        '501':
+          description: Not implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotImplementedEnvelope'
 
   /catalog/search:
     get:
@@ -965,6 +1001,9 @@ paths:
 
 components:
   securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
     sessionAuth:
       type: apiKey
       in: cookie
@@ -1105,6 +1144,85 @@ components:
               type: object
               additionalProperties: true
 
+    BootstrapSuccessEnvelope:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/RegisterBootstrapData'
+        meta:
+          type: object
+          required: [version, profile]
+          properties:
+            version:
+              type: string
+              example: '2'
+            profile:
+              type: string
+              example: retail
+
+    BootstrapErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    PosV2DisabledEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              const: POS_V2_DISABLED
+            message:
+              type: string
+            field:
+              type: string
+              nullable: true
+            details:
+              type: object
+              additionalProperties: true
+
+    NotImplementedEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              const: NOT_IMPLEMENTED
+
+    RegisterBootstrapData:
+      type: object
+      description: Live bootstrap payload (`RegisterBootstrapResponse::toArray()`).
+      additionalProperties: true
+
     ValidationErrorEnvelope:
       allOf:
         - $ref: '#/components/schemas/ErrorEnvelope'
@@ -1205,6 +1323,8 @@ components:
           type: string
 
     RegisterBootstrapResponse:
+      deprecated: true
+      description: Legacy aspirational shape. Implemented API uses BootstrapSuccessEnvelope.
       type: object
       properties:
         context:

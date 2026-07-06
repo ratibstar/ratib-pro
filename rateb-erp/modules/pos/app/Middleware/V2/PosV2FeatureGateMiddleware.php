@@ -7,7 +7,6 @@ namespace Rateb\App\Pos\Middleware\V2;
 use Rateb\App\Core\Middleware\MiddlewareInterface;
 use Rateb\App\Core\Response;
 use Rateb\App\Pos\Application\V2\PosV2RequestScope;
-use Rateb\App\Pos\Services\V2\PosV2FeatureFlagContextResolver;
 
 /**
  * Blocks V2 routes when POS_V2_ENABLED resolves to false.
@@ -27,7 +26,7 @@ final class PosV2FeatureGateMiddleware implements MiddlewareInterface
     public function handle(): bool
     {
         $root = PosV2RequestScope::ensure();
-        $context = (new PosV2FeatureFlagContextResolver())->resolve();
+        $context = $root->resolveFeatureFlagContext();
         $enabled = false;
 
         if ($context !== null) {
@@ -40,6 +39,7 @@ final class PosV2FeatureGateMiddleware implements MiddlewareInterface
 
         if ($this->mode === 'api') {
             Response::json([
+                'success' => false,
                 'error' => [
                     'code' => 'POS_V2_DISABLED',
                     'message' => 'POS V2 is not enabled for this company, branch, or terminal.',
