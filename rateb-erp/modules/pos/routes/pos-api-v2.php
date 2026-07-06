@@ -7,6 +7,7 @@ use Rateb\App\Core\Middleware\ApiModuleMiddleware;
 use Rateb\App\Pos\Controllers\V2\PosV2BootstrapApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2CartApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2CatalogApiController;
+use Rateb\App\Pos\Controllers\V2\PosV2CustomerApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2RegisterApiController;
 use Rateb\App\Pos\Middleware\V2\PosV2FeatureGateMiddleware;
 
@@ -47,3 +48,7 @@ $router->post('/api/v2/pos/cart/lines', [PosV2CartApiController::class, 'addLine
 $router->patch('/api/v2/pos/cart/lines/{lineId}', [PosV2CartApiController::class, 'updateLine'], $posV2ApiMw);
 $router->delete('/api/v2/pos/cart/lines/{lineId}', [PosV2CartApiController::class, 'removeLine'], $posV2ApiMw);
 $router->post('/api/v2/pos/cart/clear', [PosV2CartApiController::class, 'clear'], $posV2ApiMw);
+$router->get('/api/v2/pos/customers/search', [PosV2CustomerApiController::class, 'search'], $posV2ApiMw);
+$router->get('/api/v2/pos/customers/{customerId}', [PosV2CustomerApiController::class, 'get'], $posV2ApiMw);
+$router->post('/api/v2/pos/cart/customer', [PosV2CustomerApiController::class, 'attachToCart'], $posV2ApiMw);
+$router->delete('/api/v2/pos/cart/customer', [PosV2CustomerApiController::class, 'removeFromCart'], $posV2ApiMw);

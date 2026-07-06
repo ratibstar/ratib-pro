@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\DTO\V2\Cart;
 
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
+
 final readonly class CartResponse
 {
     /**
@@ -13,6 +15,7 @@ final readonly class CartResponse
         public array $lines,
         public PosV2CartTotalsDto $totals,
         public int $itemCount,
+        public ?PosV2CustomerSummaryDto $customer = null,
     ) {
     }
 
@@ -22,7 +25,7 @@ final readonly class CartResponse
         return [
             'lines' => array_map(static fn (PosV2CartLineDto $line): array => $line->toArray(), $this->lines),
             'totals' => $this->totals->toArray(),
-            'customer' => null,
+            'customer' => $this->customer?->toArray(),
             'item_count' => $this->itemCount,
         ];
     }

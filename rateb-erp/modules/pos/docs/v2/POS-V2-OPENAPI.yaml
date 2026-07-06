@@ -349,7 +349,85 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSearchResponse'
+                $ref: '#/components/schemas/CustomerSearchSuccessEnvelope'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /customers/search:
+    get:
+      tags: [Customer]
+      summary: Search customers (implemented)
+      operationId: searchCustomersV2
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            maximum: 20
+            default: 10
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSearchSuccessEnvelope'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /customers/{customerId}:
+    get:
+      tags: [Customer]
+      summary: Get customer by ID (implemented)
+      operationId: getCustomerById
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerDetailSuccessEnvelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cart/customer:
+    post:
+      tags: [Customer]
+      summary: Attach or replace customer on cart (implemented)
+      operationId: attachCartCustomer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachCustomerRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessEnvelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Customer]
+      summary: Remove customer from cart (implemented)
+      operationId: removeCartCustomer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessEnvelope'
 
   /customer/attach:
     post:
@@ -1300,6 +1378,9 @@ components:
           $ref: '#/components/schemas/CatalogBootstrap'
         cart:
           $ref: '#/components/schemas/CartResponse'
+        customer:
+          $ref: '#/components/schemas/CustomerSummary'
+          nullable: true
 
     CatalogBootstrap:
       type: object
@@ -1581,6 +1662,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CustomerSummary'
+
+    CustomerSearchSuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CustomerSearchResponse'
+
+    CustomerDetailSuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CustomerSummary'
 
     AttachCustomerRequest:
       type: object

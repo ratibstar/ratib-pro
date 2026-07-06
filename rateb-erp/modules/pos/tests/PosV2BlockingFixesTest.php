@@ -15,6 +15,7 @@ use Rateb\App\Pos\Application\V2\PosV2ResponseFactory;
 use Rateb\App\Pos\Application\V2\PosV2SharedRepositories;
 use Rateb\App\Pos\Application\V2\PosV2SharedServices;
 use Rateb\App\Pos\Domain\V2\Cart\PosV2CartScope;
+use Rateb\App\Pos\Domain\V2\Customer\PosV2CustomerScope;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2CatalogScope;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagContext;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagLayers;
@@ -25,6 +26,9 @@ use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchResponse;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogBootstrapDto;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
 use Rateb\App\Pos\DTO\V2\Cart\PosV2CartTotalsDto;
+use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchRequest;
+use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchResponse;
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogProductDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2PaginationDto;
@@ -45,6 +49,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogCategoryPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogProductPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CustomerPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
 use Rateb\App\Pos\Repositories\V2\InMemoryCatalogCategoryCache;
@@ -166,6 +171,7 @@ final class PosV2BlockingFixesTest
                 new StubCatalogCategoryPort(),
                 new StubCatalogProductPort(),
                 new StubCartPort(),
+                new StubCustomerPort(),
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,
@@ -284,6 +290,7 @@ final class PosV2BlockingFixesTest
                 ),
                 0,
             ),
+            customer: null,
             metadata: new PosV2RegisterBootstrapMetadata('2', 'api', 'GET', '/api/v2/pos/bootstrap'),
         );
     }
@@ -440,5 +447,31 @@ final class StubCartPort implements PosV2CartPortInterface
             new PosV2CartTotalsDto($zero, $zero, $zero, $zero),
             0,
         );
+    }
+}
+
+final class StubCustomerPort implements PosV2CustomerPortInterface
+{
+    public function search(PosV2CustomerScope $scope, CustomerSearchRequest $request): CustomerSearchResponse
+    {
+        return new CustomerSearchResponse([]);
+    }
+
+    public function findById(PosV2CustomerScope $scope, int $customerId): ?PosV2CustomerSummaryDto
+    {
+        return null;
+    }
+
+    public function getAttached(): ?PosV2CustomerSummaryDto
+    {
+        return null;
+    }
+
+    public function attach(PosV2CustomerScope $scope, int $customerId): void
+    {
+    }
+
+    public function detach(): void
+    {
     }
 }

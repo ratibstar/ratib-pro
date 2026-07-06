@@ -8,11 +8,13 @@ use Rateb\App\Pos\Domain\V2\Cart\Exceptions\PosV2CartLineNotFoundException;
 use Rateb\App\Pos\Domain\V2\Cart\Exceptions\PosV2CartOperationFailedException;
 use Rateb\App\Pos\Domain\V2\Cart\PosV2CartScope;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Services\Bridge\PosInventoryBridgeService;
 use Rateb\App\Pos\Services\PosRegisterCartService;
 use Rateb\App\Pos\Services\PosSessionService;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartAssembler;
+use Rateb\App\Pos\Services\V2\Customer\PosV2CustomerMapper;
 
 /** V1 session cart adapter (no V1 modifications, T09). */
 final class V1CartAdapter implements PosV2CartPortInterface
@@ -22,14 +24,16 @@ final class V1CartAdapter implements PosV2CartPortInterface
         private readonly PosRegisterCartService $cart = new PosRegisterCartService(),
         private readonly PosInventoryBridgeService $inventory = new PosInventoryBridgeService(),
         private readonly PosV2CartAssembler $assembler = new PosV2CartAssembler(),
+        private readonly PosV2CustomerMapper $customerMapper = new PosV2CustomerMapper(),
     ) {
     }
 
     public function load(PosV2CartScope $scope): CartResponse
     {
         $lines = $this->cart->normalizeLines($this->session->getCartLines());
+        $customer = $this->resolveAttachedCustomer();
 
-        return $this->assembler->assemble($scope, $lines);
+        return $this->assembler->assemble($scope, $lines, $customer);
     }
 
     public function addLine(PosV2CartScope $scope, int $productId, string $qty): CartResponse
@@ -70,7 +74,7 @@ final class V1CartAdapter implements PosV2CartPortInterface
         $lines = $result['lines'] ?? [];
         $this->persistLines($scope, $lines);
 
-        return $this->assembler->assemble($scope, $lines);
+        return $this->assembler->assemble($scope, $lines, $this->resolveAttachedCustomer());
     }
 
     public function updateLine(PosV2CartScope $scope, string $lineId, string $qty): CartResponse
@@ -126,7 +130,7 @@ final class V1CartAdapter implements PosV2CartPortInterface
         $normalized = $this->cart->normalizeLines($newLines);
         $this->persistLines($scope, $normalized);
 
-        return $this->assembler->assemble($scope, $normalized);
+        return $this->assembler->assemble($scope, $normalized, $this->resolveAttachedCustomer());
     }
 
     public function removeLine(PosV2CartScope $scope, string $lineId): CartResponse
@@ -155,14 +159,14 @@ final class V1CartAdapter implements PosV2CartPortInterface
         $normalized = $this->cart->normalizeLines($remaining);
         $this->persistLines($scope, $normalized);
 
-        return $this->assembler->assemble($scope, $normalized);
+        return $this->assembler->assemble($scope, $normalized, $this->resolveAttachedCustomer());
     }
 
     public function clear(PosV2CartScope $scope): CartResponse
     {
         $this->session->setCartLines($this->cart->clear());
 
-        return $this->assembler->assemble($scope, []);
+        return $this->assembler->assemble($scope, [], $this->resolveAttachedCustomer());
     }
 
     /**
@@ -178,5 +182,12 @@ final class V1CartAdapter implements PosV2CartPortInterface
             $scope->sessionId > 0 ? $scope->sessionId : null,
         );
         $this->session->setCartLines($lines);
+    }
+
+    private function resolveAttachedCustomer(): ?PosV2CustomerSummaryDto
+    {
+        $customer = $this->session->getCustomer();
+
+        return $customer !== null ? $this->customerMapper->fromV1Customer($customer) : null;
     }
 }

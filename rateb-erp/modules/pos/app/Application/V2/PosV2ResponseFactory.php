@@ -9,6 +9,8 @@ use Rateb\App\Pos\DTO\V2\Bootstrap\PosV2BootstrapMeta;
 use Rateb\App\Pos\DTO\V2\Catalog\CatalogProductResponse;
 use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchResponse;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
+use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchResponse;
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 use Rateb\App\Pos\DTO\V2\Register\RegisterBootstrapResponse;
 
 /** Factory for OpenAPI-aligned JSON responses. */
@@ -107,6 +109,36 @@ final class PosV2ResponseFactory
     }
 
     public function cartError(
+        string $code,
+        string $message,
+        int $statusCode = 422,
+    ): PosV2JsonResponse {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => false,
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+            ],
+        ]);
+    }
+
+    public function customerSearchSuccess(CustomerSearchResponse $data, int $statusCode = 200): PosV2JsonResponse
+    {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => true,
+            'data' => $data->toArray(),
+        ]);
+    }
+
+    public function customerDetailSuccess(PosV2CustomerSummaryDto $data, int $statusCode = 200): PosV2JsonResponse
+    {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => true,
+            'data' => $data->toArray(),
+        ]);
+    }
+
+    public function customerError(
         string $code,
         string $message,
         int $statusCode = 422,

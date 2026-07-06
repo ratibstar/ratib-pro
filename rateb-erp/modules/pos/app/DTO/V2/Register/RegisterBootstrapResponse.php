@@ -6,6 +6,7 @@ namespace Rateb\App\Pos\DTO\V2\Register;
 
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogBootstrapDto;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 use Rateb\App\Pos\DTO\V2\Context\PosV2BranchContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2CashierContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2FeatureFlagsContext;
@@ -36,6 +37,7 @@ final readonly class RegisterBootstrapResponse
         public PosV2RegisterCapabilities $capabilities,
         public PosV2CatalogBootstrapDto $catalog,
         public CartResponse $cart,
+        public ?PosV2CustomerSummaryDto $customer,
         public PosV2RegisterBootstrapMetadata $metadata,
     ) {
     }
@@ -64,6 +66,7 @@ final readonly class RegisterBootstrapResponse
             'capabilities' => $this->capabilities->toArray(),
             'catalog' => $this->catalog->toArray(),
             'cart' => $this->cart->toArray(),
+            'customer' => $this->customer?->toArray(),
             'metadata' => $this->metadata->toArray(),
         ];
     }

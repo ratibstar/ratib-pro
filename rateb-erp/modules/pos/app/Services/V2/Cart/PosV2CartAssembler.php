@@ -7,6 +7,7 @@ namespace Rateb\App\Pos\Services\V2\Cart;
 use Rateb\App\Pos\Domain\V2\Cart\PosV2CartScope;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
 use Rateb\App\Pos\DTO\V2\Cart\PosV2CartLineDto;
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 
 /** Assembles CartResponse from normalized V1 lines. */
 final class PosV2CartAssembler
@@ -20,7 +21,11 @@ final class PosV2CartAssembler
     /**
      * @param array<int, array<string, mixed>> $v1Lines
      */
-    public function assemble(PosV2CartScope $scope, array $v1Lines): CartResponse
+    public function assemble(
+        PosV2CartScope $scope,
+        array $v1Lines,
+        ?PosV2CustomerSummaryDto $customer = null,
+    ): CartResponse
     {
         $lines = $this->lineMapper->fromV1Lines($v1Lines, $scope->currency);
         $totals = $this->totalsCalculator->calculate($lines, $scope->currency);
@@ -29,6 +34,7 @@ final class PosV2CartAssembler
             lines: $lines,
             totals: $totals,
             itemCount: $this->countItems($lines),
+            customer: $customer,
         );
     }
 

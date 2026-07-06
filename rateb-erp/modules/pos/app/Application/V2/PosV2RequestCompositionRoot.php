@@ -11,6 +11,7 @@ use Rateb\App\Pos\Repositories\V2\Adapters\ErpCashierAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1CatalogCategoryAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1CatalogProductAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1CartAdapter;
+use Rateb\App\Pos\Repositories\V2\Adapters\V1CustomerAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1PosContextAdapter;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
@@ -74,6 +75,7 @@ final class PosV2RequestCompositionRoot
         $catalogCategories = new V1CatalogCategoryAdapter($catalogCategoryCache);
         $catalogProducts = new V1CatalogProductAdapter();
         $cart = new V1CartAdapter();
+        $customers = new V1CustomerAdapter();
 
         $featureFlagService = new PosV2FeatureFlagService(
             $featureFlagRepository,
@@ -93,6 +95,7 @@ final class PosV2RequestCompositionRoot
                 $catalogCategories,
                 $catalogProducts,
                 $cart,
+                $customers,
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,

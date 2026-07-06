@@ -9,6 +9,7 @@ use Rateb\App\Pos\DTO\V2\Register\RegisterBootstrapProviderBundle;
 use Rateb\App\Pos\Services\V2\Register\Providers\CapabilitiesProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CartBootstrapProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CatalogBootstrapProvider;
+use Rateb\App\Pos\Services\V2\Register\Providers\CustomerBootstrapProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CurrencyProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\LocaleProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\ProfilesProvider;
@@ -33,6 +34,7 @@ final class RegisterBootstrapProvidersOrchestrator
         private readonly CapabilitiesProvider $capabilities,
         private readonly CatalogBootstrapProvider $catalog,
         private readonly CartBootstrapProvider $cart,
+        private readonly CustomerBootstrapProvider $customer,
     ) {
     }
 
@@ -50,6 +52,7 @@ final class RegisterBootstrapProvidersOrchestrator
             capabilities: $this->capabilities->provide($context),
             catalog: $this->catalog->provide($context),
             cart: $this->cart->provide($context),
+            customer: $this->customer->provide($context),
         );
     }
 }

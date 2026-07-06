@@ -6,6 +6,7 @@ namespace Rateb\App\Pos\DTO\V2\Register;
 
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogBootstrapDto;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
+use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 
 /** Aggregated provider output for register bootstrap assembly (T07). */
 final readonly class RegisterBootstrapProviderBundle
@@ -22,6 +23,7 @@ final readonly class RegisterBootstrapProviderBundle
         public PosV2RegisterCapabilities $capabilities,
         public PosV2CatalogBootstrapDto $catalog,
         public CartResponse $cart,
+        public ?PosV2CustomerSummaryDto $customer,
     ) {
     }
 }
