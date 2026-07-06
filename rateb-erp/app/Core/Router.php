@@ -27,6 +27,12 @@ final class Router
     }
 
     /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
+    public function patch(string $pattern, $handler, array $middleware = []): void
+    {
+        $this->add('PATCH', $pattern, $handler, $middleware);
+    }
+
+    /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
     public function delete(string $pattern, $handler, array $middleware = []): void
     {
         $this->add('DELETE', $pattern, $handler, $middleware);
