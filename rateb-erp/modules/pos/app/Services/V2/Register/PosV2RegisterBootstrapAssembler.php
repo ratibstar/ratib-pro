@@ -47,6 +47,7 @@ final class PosV2RegisterBootstrapAssembler
             taxSettings: $bundle->taxSettings,
             profiles: $bundle->profiles,
             capabilities: $bundle->capabilities,
+            catalog: $bundle->catalog,
             metadata: new PosV2RegisterBootstrapMetadata(
                 version: '2',
                 channel: $context->channel,

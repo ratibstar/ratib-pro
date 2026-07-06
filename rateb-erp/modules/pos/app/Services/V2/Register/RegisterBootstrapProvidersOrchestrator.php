@@ -7,6 +7,7 @@ namespace Rateb\App\Pos\Services\V2\Register;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\DTO\V2\Register\RegisterBootstrapProviderBundle;
 use Rateb\App\Pos\Services\V2\Register\Providers\CapabilitiesProvider;
+use Rateb\App\Pos\Services\V2\Register\Providers\CatalogBootstrapProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CurrencyProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\LocaleProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\ProfilesProvider;
@@ -29,6 +30,7 @@ final class RegisterBootstrapProvidersOrchestrator
         private readonly TaxSettingsProvider $taxSettings,
         private readonly ProfilesProvider $profiles,
         private readonly CapabilitiesProvider $capabilities,
+        private readonly CatalogBootstrapProvider $catalog,
     ) {
     }
 
@@ -44,6 +46,7 @@ final class RegisterBootstrapProvidersOrchestrator
             taxSettings: $this->taxSettings->provide($context),
             profiles: $this->profiles->provide($context),
             capabilities: $this->capabilities->provide($context),
+            catalog: $this->catalog->provide($context),
         );
     }
 }

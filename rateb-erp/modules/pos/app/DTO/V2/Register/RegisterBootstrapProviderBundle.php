@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\DTO\V2\Register;
 
+use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogBootstrapDto;
+
 /** Aggregated provider output for register bootstrap assembly (T07). */
 final readonly class RegisterBootstrapProviderBundle
 {
@@ -17,6 +19,7 @@ final readonly class RegisterBootstrapProviderBundle
         public ?PosV2TaxSettingsContext $taxSettings,
         public PosV2ProfilesContext $profiles,
         public PosV2RegisterCapabilities $capabilities,
+        public PosV2CatalogBootstrapDto $catalog,
     ) {
     }
 }

@@ -14,10 +14,16 @@ use Rateb\App\Pos\Application\V2\PosV2RequestScope;
 use Rateb\App\Pos\Application\V2\PosV2ResponseFactory;
 use Rateb\App\Pos\Application\V2\PosV2SharedRepositories;
 use Rateb\App\Pos\Application\V2\PosV2SharedServices;
+use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2CatalogScope;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagContext;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagLayers;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2MergedPosSettings;
 use Rateb\App\Pos\DTO\V2\Bootstrap\PosV2BootstrapMeta;
+use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchRequest;
+use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchResponse;
+use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogBootstrapDto;
+use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogProductDto;
+use Rateb\App\Pos\DTO\V2\Catalog\PosV2PaginationDto;
 use Rateb\App\Pos\DTO\V2\Context\PosV2CashierContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2FeatureFlagsContext;
 use Rateb\App\Pos\DTO\V2\Register\PosV2CompanyContext;
@@ -30,9 +36,13 @@ use Rateb\App\Pos\DTO\V2\Register\PosV2RegisterBootstrapRegister;
 use Rateb\App\Pos\DTO\V2\Register\PosV2RegisterCapabilities;
 use Rateb\App\Pos\DTO\V2\Register\RegisterBootstrapResponse;
 use Rateb\App\Pos\Repositories\V2\Contracts\FeatureFlagRepositoryInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogCategoryCacheInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogCategoryPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogProductPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
+use Rateb\App\Pos\Repositories\V2\InMemoryCatalogCategoryCache;
 use Rateb\App\Pos\Repositories\V2\InMemoryFeatureFlagCache;
 use Rateb\App\Pos\Repositories\V2\InMemoryPosSettingsCache;
 use Rateb\App\Pos\Services\V2\Contracts\PosV2EnvironmentFlagReaderInterface;
@@ -147,6 +157,9 @@ final class PosV2BlockingFixesTest
                 new StubFeatureFlagRepository(),
                 $posSettingsCache,
                 new StubPosSettingsPort(),
+                new InMemoryCatalogCategoryCache(),
+                new StubCatalogCategoryPort(),
+                new StubCatalogProductPort(),
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,
@@ -254,6 +267,7 @@ final class PosV2BlockingFixesTest
                 returns: false,
                 discounts: false,
             ),
+            catalog: new PosV2CatalogBootstrapDto([]),
             metadata: new PosV2RegisterBootstrapMetadata('2', 'api', 'GET', '/api/v2/pos/bootstrap'),
         );
     }
@@ -345,5 +359,31 @@ final class StubPosSettingsPort implements PosV2PosSettingsPortInterface
     public function loadMerged(int $companyId, int $branchId): PosV2MergedPosSettings
     {
         return new PosV2MergedPosSettings($companyId, $branchId, false, [], null);
+    }
+}
+
+final class StubCatalogCategoryPort implements PosV2CatalogCategoryPortInterface
+{
+    public function listActive(int $companyId, bool $rtl): array
+    {
+        return [];
+    }
+}
+
+final class StubCatalogProductPort implements PosV2CatalogProductPortInterface
+{
+    public function search(PosV2CatalogScope $scope, CatalogSearchRequest $request): CatalogSearchResponse
+    {
+        return new CatalogSearchResponse([], new PosV2PaginationDto(1, 24, 0, 1));
+    }
+
+    public function findById(PosV2CatalogScope $scope, int $productId): ?PosV2CatalogProductDto
+    {
+        return null;
+    }
+
+    public function lookupBarcode(PosV2CatalogScope $scope, string $code): ?PosV2CatalogProductDto
+    {
+        return null;
     }
 }

@@ -126,7 +126,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalogSearchResponse'
+                $ref: '#/components/schemas/CatalogSearchSuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogErrorEnvelope'
 
   /catalog/product/{productId}:
     get:
@@ -146,9 +154,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalogProduct'
+                $ref: '#/components/schemas/CatalogProductSuccessEnvelope'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogErrorEnvelope'
+
+  /catalog/barcode:
+    get:
+      tags: [Catalog]
+      summary: Lookup product by barcode, SKU, or serial
+      operationId: lookupCatalogBarcode
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: barcode
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TerminalId'
+      responses:
+        '200':
+          description: Matched product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogProductSuccessEnvelope'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogErrorEnvelope'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogErrorEnvelope'
 
   /cart/lines:
     post:
@@ -1222,6 +1270,63 @@ components:
       type: object
       description: Live bootstrap payload (`RegisterBootstrapResponse::toArray()`).
       additionalProperties: true
+      properties:
+        catalog:
+          $ref: '#/components/schemas/CatalogBootstrap'
+
+    CatalogBootstrap:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogCategory'
+
+    CatalogCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sort_order:
+          type: integer
+
+    CatalogSearchSuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CatalogSearchResponse'
+
+    CatalogProductSuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CatalogProduct'
+
+    CatalogErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
 
     ValidationErrorEnvelope:
       allOf:

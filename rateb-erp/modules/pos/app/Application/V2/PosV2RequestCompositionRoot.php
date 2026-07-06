@@ -8,10 +8,13 @@ use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagContext;
 use Rateb\App\Pos\Models\PosSetting;
 use Rateb\App\Pos\Models\PosTerminal;
 use Rateb\App\Pos\Repositories\V2\Adapters\ErpCashierAdapter;
+use Rateb\App\Pos\Repositories\V2\Adapters\V1CatalogCategoryAdapter;
+use Rateb\App\Pos\Repositories\V2\Adapters\V1CatalogProductAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1PosContextAdapter;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
 use Rateb\App\Pos\Repositories\V2\FeatureFlagRepository;
+use Rateb\App\Pos\Repositories\V2\InMemoryCatalogCategoryCache;
 use Rateb\App\Pos\Repositories\V2\InMemoryFeatureFlagCache;
 use Rateb\App\Pos\Repositories\V2\InMemoryPosSettingsCache;
 use Rateb\App\Pos\Repositories\V2\PosSettingsRepository;
@@ -66,6 +69,10 @@ final class PosV2RequestCompositionRoot
             $posSettingsCache,
         );
 
+        $catalogCategoryCache = new InMemoryCatalogCategoryCache();
+        $catalogCategories = new V1CatalogCategoryAdapter($catalogCategoryCache);
+        $catalogProducts = new V1CatalogProductAdapter();
+
         $featureFlagService = new PosV2FeatureFlagService(
             $featureFlagRepository,
             new PosV2FeatureFlagResolver(
@@ -80,6 +87,9 @@ final class PosV2RequestCompositionRoot
                 $featureFlagRepository,
                 $posSettingsCache,
                 $posSettingsRepository,
+                $catalogCategoryCache,
+                $catalogCategories,
+                $catalogProducts,
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,

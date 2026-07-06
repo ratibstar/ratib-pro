@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Rateb\App\Core\Middleware\ApiAuthMiddleware;
 use Rateb\App\Core\Middleware\ApiModuleMiddleware;
 use Rateb\App\Pos\Controllers\V2\PosV2BootstrapApiController;
+use Rateb\App\Pos\Controllers\V2\PosV2CatalogApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2RegisterApiController;
 use Rateb\App\Pos\Middleware\V2\PosV2FeatureGateMiddleware;
 
@@ -38,3 +39,6 @@ $posV2ApiMw = rateb_pos_v2_api_mw();
 
 $router->get('/api/v2/pos/bootstrap', [PosV2BootstrapApiController::class, 'bootstrap'], $posV2ApiMw);
 $router->get('/api/v2/pos/register', [PosV2RegisterApiController::class, 'index'], $posV2ApiMw);
+$router->get('/api/v2/pos/catalog/search', [PosV2CatalogApiController::class, 'search'], $posV2ApiMw);
+$router->get('/api/v2/pos/catalog/product/{productId}', [PosV2CatalogApiController::class, 'product'], $posV2ApiMw);
+$router->get('/api/v2/pos/catalog/barcode', [PosV2CatalogApiController::class, 'barcode'], $posV2ApiMw);

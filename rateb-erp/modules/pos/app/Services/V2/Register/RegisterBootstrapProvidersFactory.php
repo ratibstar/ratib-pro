@@ -7,6 +7,7 @@ namespace Rateb\App\Pos\Services\V2\Register;
 use Rateb\App\Pos\Application\V2\PosV2RequestScope;
 use Rateb\App\Pos\Repositories\V2\Adapters\ErpCompanyAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1WarehouseAdapter;
+use Rateb\App\Pos\Services\V2\Register\Providers\CatalogBootstrapProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CapabilitiesProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CurrencyProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\LocaleProvider;
@@ -23,6 +24,7 @@ final class RegisterBootstrapProvidersFactory
     public function createOrchestrator(): RegisterBootstrapProvidersOrchestrator
     {
         $settingsPort = PosV2RequestScope::ensure()->repositories->posSettingsRepository;
+        $catalogCategories = PosV2RequestScope::ensure()->repositories->catalogCategories;
 
         return new RegisterBootstrapProvidersOrchestrator(
             new RegisterCompanyProvider(new ErpCompanyAdapter()),
@@ -34,6 +36,7 @@ final class RegisterBootstrapProvidersFactory
             new TaxSettingsProvider($settingsPort),
             new ProfilesProvider(),
             new CapabilitiesProvider(new PosV2RegisterCapabilitiesResolver()),
+            new CatalogBootstrapProvider($catalogCategories),
         );
     }
 }

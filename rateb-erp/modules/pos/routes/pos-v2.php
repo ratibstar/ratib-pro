@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Rateb\App\Pos\Controllers\V2\PosV2BootstrapApiController;
+use Rateb\App\Pos\Controllers\V2\PosV2CatalogApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2RegisterApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2RegisterController;
 use Rateb\App\Pos\Middleware\V2\PosV2FeatureGateMiddleware;
@@ -47,3 +48,6 @@ $router->get($posApp('v2/register'), [PosV2RegisterController::class, 'index'], 
 
 $router->get($posApp('api/v2/bootstrap'), [PosV2BootstrapApiController::class, 'bootstrap'], $posV2Mw);
 $router->get($posApp('api/v2/register'), [PosV2RegisterApiController::class, 'index'], $posV2Mw);
+$router->get($posApp('api/v2/catalog/search'), [PosV2CatalogApiController::class, 'search'], $posV2Mw);
+$router->get($posApp('api/v2/catalog/product/{productId}'), [PosV2CatalogApiController::class, 'product'], $posV2Mw);
+$router->get($posApp('api/v2/catalog/barcode'), [PosV2CatalogApiController::class, 'barcode'], $posV2Mw);

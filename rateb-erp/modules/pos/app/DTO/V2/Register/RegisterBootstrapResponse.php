@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\DTO\V2\Register;
 
+use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogBootstrapDto;
 use Rateb\App\Pos\DTO\V2\Context\PosV2BranchContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2CashierContext;
 use Rateb\App\Pos\DTO\V2\Context\PosV2FeatureFlagsContext;
@@ -32,6 +33,7 @@ final readonly class RegisterBootstrapResponse
         public ?PosV2TaxSettingsContext $taxSettings,
         public PosV2ProfilesContext $profiles,
         public PosV2RegisterCapabilities $capabilities,
+        public PosV2CatalogBootstrapDto $catalog,
         public PosV2RegisterBootstrapMetadata $metadata,
     ) {
     }
@@ -58,6 +60,7 @@ final readonly class RegisterBootstrapResponse
             'tax_settings' => $this->taxSettings?->toArray(),
             'profiles' => $this->profiles->toArray(),
             'capabilities' => $this->capabilities->toArray(),
+            'catalog' => $this->catalog->toArray(),
             'metadata' => $this->metadata->toArray(),
         ];
     }

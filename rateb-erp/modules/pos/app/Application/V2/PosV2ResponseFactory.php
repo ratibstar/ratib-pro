@@ -6,6 +6,8 @@ namespace Rateb\App\Pos\Application\V2;
 
 use Rateb\App\Pos\Application\V2\Http\PosV2JsonResponse;
 use Rateb\App\Pos\DTO\V2\Bootstrap\PosV2BootstrapMeta;
+use Rateb\App\Pos\DTO\V2\Catalog\CatalogProductResponse;
+use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchResponse;
 use Rateb\App\Pos\DTO\V2\Register\RegisterBootstrapResponse;
 
 /** Factory for OpenAPI-aligned JSON responses. */
@@ -63,5 +65,35 @@ final class PosV2ResponseFactory
         ];
 
         return new PosV2JsonResponse($statusCode, ['error' => $error]);
+    }
+
+    public function catalogSuccess(CatalogSearchResponse $data, int $statusCode = 200): PosV2JsonResponse
+    {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => true,
+            'data' => $data->toArray(),
+        ]);
+    }
+
+    public function catalogProductSuccess(CatalogProductResponse $data, int $statusCode = 200): PosV2JsonResponse
+    {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => true,
+            'data' => $data->toArray(),
+        ]);
+    }
+
+    public function catalogError(
+        string $code,
+        string $message,
+        int $statusCode = 422,
+    ): PosV2JsonResponse {
+        return new PosV2JsonResponse($statusCode, [
+            'success' => false,
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+            ],
+        ]);
     }
 }
