@@ -53,6 +53,7 @@ if (!function_exists('rateb_env_load_bridge_dotenv')) {
             'RATEB_INFRA_CLOUDFLARE_API_TOKEN',
             'RATEB_INFRA_MARKETPLACE_ENABLED',
             'MOBILE_AUTH_SECRET',
+            'RATEB_ERP_LOGIN_BYPASS',
             'RATEB_ERP_MIGRATE_TOKEN',
             'CPANEL_API_TOKEN',
             'RATIB_CC_DB_NAME',

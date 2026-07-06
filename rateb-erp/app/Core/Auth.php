@@ -249,6 +249,27 @@ final class Auth
         \Rateb\App\Core\BranchContext::reset();
     }
 
+    /** Auto-login first active super admin when RATEB_ERP_LOGIN_BYPASS is enabled. */
+    public static function applyLoginBypassIfEnabled(): void
+    {
+        if (!function_exists('rateb_erp_login_bypass_enabled') || !rateb_erp_login_bypass_enabled()) {
+            return;
+        }
+        if (SessionManager::get('rateb_user_id')) {
+            return;
+        }
+        try {
+            $user = (new User())->queryOne(
+                "SELECT * FROM rateb_users WHERE is_super_admin = 1 AND status = 'active' ORDER BY id ASC LIMIT 1"
+            );
+            if ($user && self::loginUser($user)) {
+                (new User())->updateLastLogin((int) $user['id']);
+            }
+        } catch (\Throwable $e) {
+            error_log('RATEB login bypass: ' . $e->getMessage());
+        }
+    }
+
     public static function bootstrapFromSession(): void
     {
         try {
@@ -262,6 +283,8 @@ final class Auth
             error_log('RATEB remember-me bootstrap: ' . $e->getMessage());
             self::clearSessionIdentity();
         }
+
+        self::applyLoginBypassIfEnabled();
 
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId > 0) {

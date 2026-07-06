@@ -312,6 +312,33 @@ if (!function_exists('rateb_platform_oversight_public_url')) {
     }
 }
 
+if (!function_exists('rateb_erp_login_bypass_enabled')) {
+    /**
+     * Temporary open access — auto-login on rateb.sa ERP (no login page).
+     * Enable: define('RATEB_ERP_LOGIN_BYPASS', true) in config/env/rateb_sa.php
+     * or RATEB_ERP_LOGIN_BYPASS=1 in project-root .env. Disable when restoring login.
+     */
+    function rateb_erp_login_bypass_enabled(): bool
+    {
+        if (PHP_SAPI === 'cli') {
+            return false;
+        }
+        $on = false;
+        if (defined('RATEB_ERP_LOGIN_BYPASS')) {
+            $on = (bool) RATEB_ERP_LOGIN_BYPASS;
+        } else {
+            $env = getenv('RATEB_ERP_LOGIN_BYPASS');
+            $on = $env !== false
+                && in_array(strtolower(trim((string) $env)), ['1', 'true', 'yes', 'on'], true);
+        }
+        if (!$on) {
+            return false;
+        }
+
+        return function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+    }
+}
+
 if (!function_exists('rateb_platform_branch_manage_enabled')) {
     /** Platform super-admin on rateb.sa — branch CRUD via Control Panel. */
     function rateb_platform_branch_manage_enabled(): bool
