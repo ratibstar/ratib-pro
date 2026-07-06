@@ -296,6 +296,8 @@ final class PosCheckoutService
 
             $paymentRows = $this->persistPayments($orderId, $companyId, $payments);
 
+            $customerId = !empty($customer['id']) ? (int) $customer['id'] : 0;
+
             $shiftId = (int) ($scope['shift_id'] ?? 0);
             if ($shiftId > 0) {
                 $cashIn = PosCashDrawerService::sumCashAmount($paymentRows);

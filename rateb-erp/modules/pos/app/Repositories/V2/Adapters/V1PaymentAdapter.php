@@ -10,6 +10,7 @@ use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
 use Rateb\App\Pos\DTO\V2\Payment\CashPaymentRequest;
 use Rateb\App\Pos\Domain\V2\Payment\PosV2PaymentMethod;
 use Rateb\App\Pos\DTO\V2\Payment\PaymentBalanceResponse;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentSummaryDto;
 use Rateb\App\Pos\DTO\V2\Payment\RecordPaymentRequest;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PaymentPortInterface;
@@ -20,8 +21,8 @@ use Rateb\App\Pos\Services\V2\Payment\PaymentAssembler;
 final class V1PaymentAdapter implements PosV2PaymentPortInterface
 {
     public function __construct(
-        private readonly PosSessionService $session = new PosSessionService(),
         private readonly PosV2CartPortInterface $cartPort,
+        private readonly PosSessionService $session = new PosSessionService(),
         private readonly PaymentAssembler $assembler = new PaymentAssembler(),
     ) {
     }

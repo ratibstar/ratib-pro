@@ -275,6 +275,50 @@ final class PosV2IntegrationFixture
             )->fetchColumn();
         }
 
+        self::ensurePosSupervisorRole($db, $companyId, $userId);
+
         return new self($companyId, $branchId, $warehouseId, $userId, $terminalId, $shiftId, $sessionId, $inventoryId);
+    }
+
+    private static function ensurePosSupervisorRole(\PDO $db, int $companyId, int $userId): void
+    {
+        $db->prepare(
+            'INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+             VALUES (:cid, :name, :slug, :desc, 1)
+             ON DUPLICATE KEY UPDATE name = VALUES(name)'
+        )->execute([
+            'cid' => $companyId,
+            'name' => 'POS Supervisor',
+            'slug' => 'pos_supervisor',
+            'desc' => 'POS supervisor for integration tests',
+        ]);
+        $roleId = (int) $db->query(
+            'SELECT id FROM rateb_roles WHERE company_id = ' . $companyId . " AND slug = 'pos_supervisor' LIMIT 1"
+        )->fetchColumn();
+        if ($roleId < 1) {
+            return;
+        }
+
+        $permissionSlugs = [
+            'pos.view',
+            'pos.register',
+            'pos.shift.open',
+            'pos.shift.close',
+            'pos.discount.manage',
+            'pos.returns.manage',
+            'pos.reports.view',
+            'pos.cash_drawer.manage',
+            'pos.orders.view',
+        ];
+        foreach ($permissionSlugs as $slug) {
+            $db->prepare(
+                'INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id)
+                 SELECT :rid, p.id FROM rateb_permissions p WHERE p.slug = :slug LIMIT 1'
+            )->execute(['rid' => $roleId, 'slug' => $slug]);
+        }
+
+        $db->prepare(
+            'INSERT IGNORE INTO rateb_user_roles (user_id, role_id) VALUES (:uid, :rid)'
+        )->execute(['uid' => $userId, 'rid' => $roleId]);
     }
 }

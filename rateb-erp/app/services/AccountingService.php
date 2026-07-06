@@ -2883,7 +2883,20 @@ final class AccountingService
         }
         $done = true;
         try {
-            Database::connection()->exec(
+            $pdo = Database::connection();
+            if ($pdo->inTransaction()) {
+                return;
+            }
+            $stmt = $pdo->query("SHOW COLUMNS FROM rateb_journal_entries LIKE 'source_type'");
+            $row = $stmt !== false ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+            $columnType = is_array($row) ? strtolower((string) ($row['Type'] ?? '')) : '';
+            if ($columnType !== '' && str_contains($columnType, 'pos_sale_revenue')) {
+                return;
+            }
+            $pdo->exec(
                 "ALTER TABLE rateb_journal_entries MODIFY source_type ENUM(
                     'manual','invoice','payment','purchase_order','subscription',
                     'cash_voucher','stock_movement','purchase_invoice',

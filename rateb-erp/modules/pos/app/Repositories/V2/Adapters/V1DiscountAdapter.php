@@ -18,8 +18,8 @@ use Rateb\App\Pos\Services\V2\Cart\PosV2CartDiscountPreserver;
 final class V1DiscountAdapter implements PosV2DiscountPortInterface
 {
     public function __construct(
-        private readonly PosSessionService $session = new PosSessionService(),
         private readonly PosV2CartPortInterface $cartPort,
+        private readonly PosSessionService $session = new PosSessionService(),
         private readonly PosV2CartDiscountPreserver $discountPreserver = new PosV2CartDiscountPreserver(),
     ) {
     }

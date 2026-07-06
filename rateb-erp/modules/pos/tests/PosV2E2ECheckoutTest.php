@@ -117,7 +117,13 @@ final class PosV2E2ECheckoutTest
         $idempotency = 'e2e-' . uniqid();
         $response = $useCase->execute(
             $context,
-            new CompleteSaleRequest(),
+            new CompleteSaleRequest(
+                sessionId: $fixture->sessionId,
+                payments: [],
+                sendReceipt: null,
+                giftReceipt: false,
+                taxRate: 0.15,
+            ),
             $idempotency,
         );
 
@@ -155,7 +161,7 @@ final class PosV2E2ECheckoutTest
                 currency: 'SAR',
                 rtl: false,
                 featureFlags: new PosV2FeatureFlagsContext(true, 'retail', false, false, false),
-                permissions: ['pos.register', 'pos.payment.record'],
+                permissions: ['pos.register', 'pos.payment.record', 'pos.discount.manage'],
                 registerReady: true,
             ),
         );
