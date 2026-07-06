@@ -10,25 +10,21 @@ use Rateb\App\Pos\Repositories\V2\Adapters\ErpPosPermissionsAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1PosContextAdapter;
 use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Services\V2\PosV2FeatureFlagContextResolver;
-use Rateb\App\Pos\Services\V2\PosV2FeatureFlagServiceFactory;
 
 /** Wires PosV2Application and its dependency graph (T04). */
 final class PosV2ApplicationFactory
 {
-    public function __construct(
-        private readonly PosV2FeatureFlagServiceFactory $featureFlagServiceFactory = new PosV2FeatureFlagServiceFactory(),
-    ) {
-    }
-
     public function create(): PosV2Application
     {
+        $root = PosV2RequestScope::ensure();
+
         $resolver = new PosV2ContextResolver(
             new V1PosContextAdapter(new PosContextService()),
             new ErpCashierAdapter(),
             new ErpLocaleAdapter(),
             new ErpPosPermissionsAdapter(),
             new PosV2FeatureFlagContextResolver(),
-            $this->featureFlagServiceFactory->create(),
+            $root->services->featureFlags,
         );
 
         $contextFactory = new PosV2ContextFactory($resolver);

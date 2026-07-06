@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\Services\V2\Register;
 
-use Rateb\App\Pos\Models\PosSetting;
+use Rateb\App\Pos\Application\V2\PosV2RequestScope;
 use Rateb\App\Pos\Repositories\V2\Adapters\ErpCompanyAdapter;
 use Rateb\App\Pos\Repositories\V2\Adapters\V1WarehouseAdapter;
-use Rateb\App\Pos\Repositories\V2\InMemoryPosSettingsCache;
-use Rateb\App\Pos\Repositories\V2\PosSettingsRepository;
 use Rateb\App\Pos\Services\V2\Register\Providers\CapabilitiesProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CurrencyProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\LocaleProvider;
@@ -24,10 +22,7 @@ final class RegisterBootstrapProvidersFactory
 {
     public function createOrchestrator(): RegisterBootstrapProvidersOrchestrator
     {
-        $settingsPort = new PosSettingsRepository(
-            new PosSetting(),
-            new InMemoryPosSettingsCache(),
-        );
+        $settingsPort = PosV2RequestScope::ensure()->repositories->posSettingsRepository;
 
         return new RegisterBootstrapProvidersOrchestrator(
             new RegisterCompanyProvider(new ErpCompanyAdapter()),
