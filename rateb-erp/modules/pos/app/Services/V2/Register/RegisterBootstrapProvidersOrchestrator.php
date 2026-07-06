@@ -7,6 +7,7 @@ namespace Rateb\App\Pos\Services\V2\Register;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 use Rateb\App\Pos\DTO\V2\Register\RegisterBootstrapProviderBundle;
 use Rateb\App\Pos\Services\V2\Register\Providers\CapabilitiesProvider;
+use Rateb\App\Pos\Services\V2\Register\Providers\CartBootstrapProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CatalogBootstrapProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\CurrencyProvider;
 use Rateb\App\Pos\Services\V2\Register\Providers\LocaleProvider;
@@ -31,6 +32,7 @@ final class RegisterBootstrapProvidersOrchestrator
         private readonly ProfilesProvider $profiles,
         private readonly CapabilitiesProvider $capabilities,
         private readonly CatalogBootstrapProvider $catalog,
+        private readonly CartBootstrapProvider $cart,
     ) {
     }
 
@@ -47,6 +49,7 @@ final class RegisterBootstrapProvidersOrchestrator
             profiles: $this->profiles->provide($context),
             capabilities: $this->capabilities->provide($context),
             catalog: $this->catalog->provide($context),
+            cart: $this->cart->provide($context),
         );
     }
 }

@@ -9,10 +9,11 @@ use Rateb\App\Pos\Repositories\V2\Contracts\FeatureFlagRepositoryInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogCategoryCacheInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogCategoryPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogProductPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsCacheInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
 
-/** Request-scoped repository and cache instances shared across POS V2 (T07.5 + T08). */
+/** Request-scoped repository and cache instances shared across POS V2 (T07.5 + T08 + T09). */
 final class PosV2SharedRepositories
 {
     public function __construct(
@@ -23,6 +24,7 @@ final class PosV2SharedRepositories
         public readonly PosV2CatalogCategoryCacheInterface $catalogCategoryCache,
         public readonly PosV2CatalogCategoryPortInterface $catalogCategories,
         public readonly PosV2CatalogProductPortInterface $catalogProducts,
+        public readonly PosV2CartPortInterface $cart,
     ) {
     }
 }

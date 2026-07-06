@@ -48,6 +48,7 @@ final class PosV2RegisterBootstrapAssembler
             profiles: $bundle->profiles,
             capabilities: $bundle->capabilities,
             catalog: $bundle->catalog,
+            cart: $bundle->cart,
             metadata: new PosV2RegisterBootstrapMetadata(
                 version: '2',
                 channel: $context->channel,

@@ -14,6 +14,7 @@ use Rateb\App\Pos\Application\V2\PosV2RequestScope;
 use Rateb\App\Pos\Application\V2\PosV2ResponseFactory;
 use Rateb\App\Pos\Application\V2\PosV2SharedRepositories;
 use Rateb\App\Pos\Application\V2\PosV2SharedServices;
+use Rateb\App\Pos\Domain\V2\Cart\PosV2CartScope;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2CatalogScope;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagContext;
 use Rateb\App\Pos\Domain\V2\ValueObjects\PosV2FeatureFlagLayers;
@@ -22,6 +23,9 @@ use Rateb\App\Pos\DTO\V2\Bootstrap\PosV2BootstrapMeta;
 use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchRequest;
 use Rateb\App\Pos\DTO\V2\Catalog\CatalogSearchResponse;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogBootstrapDto;
+use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
+use Rateb\App\Pos\DTO\V2\Cart\PosV2CartTotalsDto;
+use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogProductDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2PaginationDto;
 use Rateb\App\Pos\DTO\V2\Context\PosV2CashierContext;
@@ -39,6 +43,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\FeatureFlagRepositoryInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogCategoryCacheInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogCategoryPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CatalogProductPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
@@ -160,6 +165,7 @@ final class PosV2BlockingFixesTest
                 new InMemoryCatalogCategoryCache(),
                 new StubCatalogCategoryPort(),
                 new StubCatalogProductPort(),
+                new StubCartPort(),
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,
@@ -268,6 +274,16 @@ final class PosV2BlockingFixesTest
                 discounts: false,
             ),
             catalog: new PosV2CatalogBootstrapDto([]),
+            cart: new CartResponse(
+                [],
+                new PosV2CartTotalsDto(
+                    new PosV2MoneyDto('0.00', 'SAR'),
+                    new PosV2MoneyDto('0.00', 'SAR'),
+                    new PosV2MoneyDto('0.00', 'SAR'),
+                    new PosV2MoneyDto('0.00', 'SAR'),
+                ),
+                0,
+            ),
             metadata: new PosV2RegisterBootstrapMetadata('2', 'api', 'GET', '/api/v2/pos/bootstrap'),
         );
     }
@@ -385,5 +401,44 @@ final class StubCatalogProductPort implements PosV2CatalogProductPortInterface
     public function lookupBarcode(PosV2CatalogScope $scope, string $code): ?PosV2CatalogProductDto
     {
         return null;
+    }
+}
+
+final class StubCartPort implements PosV2CartPortInterface
+{
+    public function load(PosV2CartScope $scope): CartResponse
+    {
+        return $this->emptyCart($scope->currency);
+    }
+
+    public function addLine(PosV2CartScope $scope, int $productId, string $qty): CartResponse
+    {
+        return $this->emptyCart($scope->currency);
+    }
+
+    public function updateLine(PosV2CartScope $scope, string $lineId, string $qty): CartResponse
+    {
+        return $this->emptyCart($scope->currency);
+    }
+
+    public function removeLine(PosV2CartScope $scope, string $lineId): CartResponse
+    {
+        return $this->emptyCart($scope->currency);
+    }
+
+    public function clear(PosV2CartScope $scope): CartResponse
+    {
+        return $this->emptyCart($scope->currency);
+    }
+
+    private function emptyCart(string $currency): CartResponse
+    {
+        $zero = new PosV2MoneyDto('0.00', $currency);
+
+        return new CartResponse(
+            [],
+            new PosV2CartTotalsDto($zero, $zero, $zero, $zero),
+            0,
+        );
     }
 }

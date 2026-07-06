@@ -218,9 +218,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CartResponse'
+                $ref: '#/components/schemas/CartSuccessEnvelope'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartErrorEnvelope'
         '422':
-          $ref: '#/components/responses/ValidationError'
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartErrorEnvelope'
 
   /cart/lines/{lineId}:
     patch:
@@ -245,7 +255,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CartResponse'
+                $ref: '#/components/schemas/CartSuccessEnvelope'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartErrorEnvelope'
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartErrorEnvelope'
     delete:
       tags: [Cart]
       summary: Remove cart line
@@ -263,7 +283,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CartResponse'
+                $ref: '#/components/schemas/CartSuccessEnvelope'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartErrorEnvelope'
 
   /cart/clear:
     post:
@@ -277,7 +302,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CartResponse'
+                $ref: '#/components/schemas/CartSuccessEnvelope'
 
   /cart/price-override:
     post:
@@ -1273,6 +1298,8 @@ components:
       properties:
         catalog:
           $ref: '#/components/schemas/CatalogBootstrap'
+        cart:
+          $ref: '#/components/schemas/CartResponse'
 
     CatalogBootstrap:
       type: object
@@ -1313,6 +1340,32 @@ components:
           $ref: '#/components/schemas/CatalogProduct'
 
     CatalogErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    CartSuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CartResponse'
+
+    CartErrorEnvelope:
       type: object
       required: [success, error]
       properties:
