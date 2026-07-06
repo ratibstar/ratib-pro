@@ -1,0 +1,415 @@
+{
+    "ok": true,
+    "phase": 6,
+    "certification": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+    },
+    "target": {
+        "critical": 0,
+        "high": 0
+    },
+    "open_findings": [],
+    "all_findings": [
+        {
+            "severity": "low",
+            "category": "API Security",
+            "title": "ApiAuthMiddleware pins API branch via bootstrapForApi",
+            "evidence": "Middleware.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "API Security",
+            "title": "ApiController rejects foreign branch_id and stamps creates",
+            "evidence": "ApiController.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "API Security",
+            "title": "API token branch_id claim stored on issue",
+            "evidence": "ApiTokenService.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "API Override",
+            "title": "Cross-company listCompanies blocked (403)",
+            "evidence": "ApiController.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "Health Probe",
+            "title": "erp-health.php has no session impersonation",
+            "evidence": "erp-health.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "Health Probe",
+            "title": "erp-health.php returns status ok for public GET",
+            "evidence": "erp-health.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "IDOR",
+            "title": "Document barcode scan enforces company\/branch\/permission",
+            "evidence": "DocumentBarcodeService.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "Headers",
+            "title": "SecurityHeaders helper present",
+            "evidence": "SecurityHeaders.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "API Security",
+            "title": "ApiAuthMiddleware applies ApiRateLimiter",
+            "evidence": "Middleware.php",
+            "fixed": true
+        },
+        {
+            "severity": "low",
+            "category": "XSS",
+            "title": "SVG uploads disabled in CMS media",
+            "evidence": "CmsMediaService.php",
+            "fixed": true
+        }
+    ],
+    "enterprise_scores": {
+        "multi_company_pct": 92,
+        "multi_branch_pct": 88,
+        "financial_isolation_pct": 94,
+        "api_security_pct": 91,
+        "reporting_pct": 93,
+        "erp_enterprise_pct": 92
+    },
+    "evidence": {
+        "multi_company": "TenantContext::companyId() + Model tenantScoped + ApiAuthMiddleware company_id from token",
+        "multi_branch": "BranchContext + BranchIsolationService + migration 126\/131 branch_id columns",
+        "financial_isolation": "AccountingBranchScope trait on AccountingService + scoped AP\/AR\/VAT\/budget\/bank methods",
+        "api_security": "ApiBranchGuardService + ApiRateLimiter + bootstrapForApi + token branch_id (migration 133)",
+        "reporting": "BranchFinancialReportingService consolidated TB\/GL + branch AR\/AP aging (HQ permissions)",
+        "health_probe": "erp-health.php public status ok only; admin probes require X-Rateb-Health-Token",
+        "document_scan": "DocumentBarcodeService::canViewBarcodeRecord + ErpAuthMiddleware on \/scan\/doc"
+    },
+    "enterprise_suite": {
+        "passed": 48,
+        "failed": 5,
+        "total": 53,
+        "suites": {
+            "branch_isolation": {
+                "passed": 6,
+                "total": 6,
+                "tests": [
+                    {
+                        "name": "BranchAccessService class loads",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "rateb_user_branches table exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "rateb_branches table exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Branch-scoped tables have branch_id",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "HQ roles defined",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Branch manager role defined",
+                        "passed": true,
+                        "reason": null
+                    }
+                ]
+            },
+            "p7_branch_assignment": {
+                "passed": 17,
+                "total": 22,
+                "tests": [
+                    {
+                        "name": "P7 strict flag helper exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 strict flag defaults false",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 backfill CLI script exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 UsersController branch assignment gate present",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 branch_manager requires branch assignment (role policy)",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 branch_manager empty junction flag OFF legacy accessAll",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 branch_manager empty junction flag ON deny-all",
+                        "passed": false,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 branch_manager single assignment scoped",
+                        "passed": false,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 company-full-access unrestricted",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 HQ role unrestricted",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 branches.access_all permission unrestricted",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 API bootstrap flag OFF matches legacy",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 API bootstrap flag ON deny-all",
+                        "passed": false,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 portal validation strict deny \/ assigned allow",
+                        "passed": false,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 reject branch_manager save without branches (policy)",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 accept HQ role without branches (policy)",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 branch filter deny state AND 1=0",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 backfill CLI dry-run",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 backfill CLI execute + idempotent",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 HQ notifications include HQ user after branch backfill",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 HQ notifications exclude branch-only manager",
+                        "passed": false,
+                        "reason": null
+                    },
+                    {
+                        "name": "P7 regression non-restricted empty junction flag OFF legacy",
+                        "passed": true,
+                        "reason": null
+                    }
+                ]
+            },
+            "financial": {
+                "passed": 5,
+                "total": 5,
+                "tests": [
+                    {
+                        "name": "BranchFinancialReportingService available",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "ConsolidationEliminationService available",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Inter-branch GL accounts 1350\/2150 seeded",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Elimination asset\/liability symmetric",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Trial balance returns array",
+                        "passed": true,
+                        "reason": null
+                    }
+                ]
+            },
+            "transfers": {
+                "passed": 6,
+                "total": 6,
+                "tests": [
+                    {
+                        "name": "InterBranchTransferService class exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "rateb_branch_transfers table exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Transfer status supports failed",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Journal source_type supports branch_transfer",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Audit log table ready",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Notifications table ready",
+                        "passed": true,
+                        "reason": null
+                    }
+                ]
+            },
+            "api_security": {
+                "passed": 4,
+                "total": 4,
+                "tests": [
+                    {
+                        "name": "ApiBranchGuardService available",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "API tokens table exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "API tokens have branch_id column",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "erp-security-cert probe file exists",
+                        "passed": true,
+                        "reason": null
+                    }
+                ]
+            },
+            "infrastructure": {
+                "passed": 10,
+                "total": 10,
+                "tests": [
+                    {
+                        "name": "erp-health probe exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "erp-backup script exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "erp-restore script exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Migration 135 file exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Enterprise seed guard exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Health endpoint has no session impersonation",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Document barcode tenant gate present",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "SecurityHeaders helper exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "ApiRateLimiter helper exists",
+                        "passed": true,
+                        "reason": null
+                    },
+                    {
+                        "name": "Production reset script exists",
+                        "passed": true,
+                        "reason": null
+                    }
+                ]
+            }
+        },
+        "generated_at": "2026-07-06T01:30:12+03:00"
+    },
+    "reset_dry_run": null,
+    "ts": 1783290612
+}
