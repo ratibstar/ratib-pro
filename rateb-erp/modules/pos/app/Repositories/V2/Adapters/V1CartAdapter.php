@@ -167,7 +167,7 @@ final class V1CartAdapter implements PosV2CartPortInterface
     public function clear(PosV2CartScope $scope): CartResponse
     {
         $this->session->setCartLines($this->cart->clear());
-        $this->session->patch(['invoice_discount' => null]);
+        $this->session->patch(['invoice_discount' => null, 'payments' => []]);
 
         return $this->assembleResponse($scope, []);
     }
@@ -198,6 +198,7 @@ final class V1CartAdapter implements PosV2CartPortInterface
             $lines,
             $this->resolveAttachedCustomer(),
             $this->readInvoiceDiscount(),
+            $this->readSessionPayments(),
         );
     }
 
@@ -207,6 +208,14 @@ final class V1CartAdapter implements PosV2CartPortInterface
         $raw = $this->session->current()['invoice_discount'] ?? null;
 
         return is_array($raw) ? $raw : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function readSessionPayments(): array
+    {
+        $raw = $this->session->current()['payments'] ?? [];
+
+        return is_array($raw) ? array_values(array_filter($raw, 'is_array')) : [];
     }
 
     private function resolveAttachedCustomer(): ?PosV2CustomerSummaryDto

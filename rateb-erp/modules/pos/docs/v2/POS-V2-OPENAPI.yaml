@@ -566,6 +566,61 @@ paths:
               schema:
                 $ref: '#/components/schemas/CartResponse'
 
+  /payments:
+    get:
+      tags: [Payment]
+      summary: List session cash payments (implemented)
+      operationId: listPaymentsV2
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSummarySuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /payments/cash:
+    post:
+      tags: [Payment]
+      summary: Record cash payment (implemented)
+      operationId: recordCashPaymentV2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashPaymentRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /payments/{paymentId}:
+    delete:
+      tags: [Payment]
+      summary: Remove cash payment (implemented)
+      operationId: removePaymentV2
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessEnvelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /charge/initiate:
     post:
       tags: [Payment]
@@ -1661,8 +1716,57 @@ components:
         discounts:
           $ref: '#/components/schemas/CartDiscountSummary'
           nullable: true
+        payments:
+          $ref: '#/components/schemas/PaymentSummary'
+          nullable: true
         item_count:
           type: integer
+
+    PaymentSummary:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLineV2'
+        total_due:
+          $ref: '#/components/schemas/Money'
+        paid:
+          $ref: '#/components/schemas/Money'
+        remaining:
+          $ref: '#/components/schemas/Money'
+        change_due:
+          $ref: '#/components/schemas/Money'
+
+    PaymentLineV2:
+      type: object
+      properties:
+        id:
+          type: string
+        method:
+          type: string
+          enum: [cash]
+        amount:
+          $ref: '#/components/schemas/Money'
+
+    PaymentSummarySuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/PaymentSummary'
+
+    CashPaymentRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/Money'
 
     CustomerSummary:
       type: object

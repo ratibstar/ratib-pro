@@ -9,6 +9,7 @@ use Rateb\App\Pos\Controllers\V2\PosV2CartApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2CatalogApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2CustomerApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2DiscountApiController;
+use Rateb\App\Pos\Controllers\V2\PosV2PaymentApiController;
 use Rateb\App\Pos\Controllers\V2\PosV2RegisterApiController;
 use Rateb\App\Pos\Middleware\V2\PosV2FeatureGateMiddleware;
 
@@ -57,3 +58,6 @@ $router->post('/api/v2/pos/cart/discounts/line', [PosV2DiscountApiController::cl
 $router->delete('/api/v2/pos/cart/discounts/line/{lineId}', [PosV2DiscountApiController::class, 'removeLineDiscount'], $posV2ApiMw);
 $router->post('/api/v2/pos/cart/discounts/cart', [PosV2DiscountApiController::class, 'applyCartDiscount'], $posV2ApiMw);
 $router->delete('/api/v2/pos/cart/discounts/cart', [PosV2DiscountApiController::class, 'removeCartDiscount'], $posV2ApiMw);
+$router->get('/api/v2/pos/payments', [PosV2PaymentApiController::class, 'index'], $posV2ApiMw);
+$router->post('/api/v2/pos/payments/cash', [PosV2PaymentApiController::class, 'addCash'], $posV2ApiMw);
+$router->delete('/api/v2/pos/payments/{paymentId}', [PosV2PaymentApiController::class, 'remove'], $posV2ApiMw);

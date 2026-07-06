@@ -30,6 +30,8 @@ use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchRequest;
 use Rateb\App\Pos\DTO\V2\Customer\CustomerSearchResponse;
 use Rateb\App\Pos\DTO\V2\Discount\DiscountRequest;
 use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
+use Rateb\App\Pos\DTO\V2\Payment\CashPaymentRequest;
+use Rateb\App\Pos\DTO\V2\Payment\PaymentSummaryDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2MoneyDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2CatalogProductDto;
 use Rateb\App\Pos\DTO\V2\Catalog\PosV2PaginationDto;
@@ -52,6 +54,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CashierPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CustomerPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2DiscountPortInterface;
+use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PaymentPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosContextPortInterface;
 use Rateb\App\Pos\Repositories\V2\Contracts\PosV2PosSettingsPortInterface;
 use Rateb\App\Pos\Repositories\V2\InMemoryCatalogCategoryCache;
@@ -175,6 +178,7 @@ final class PosV2BlockingFixesTest
                 new StubCartPort(),
                 new StubCustomerPort(),
                 new StubDiscountPort(new StubCartPort()),
+                new StubPaymentPort(new StubCartPort()),
             ),
             new PosV2SharedServices($featureFlagService),
             $posContext,
@@ -476,6 +480,36 @@ final class StubCustomerPort implements PosV2CustomerPortInterface
 
     public function detach(): void
     {
+    }
+}
+
+final class StubPaymentPort implements PosV2PaymentPortInterface
+{
+    public function __construct(
+        private readonly StubCartPort $cart,
+    ) {
+    }
+
+    public function getSummary(PosV2CartScope $scope): PaymentSummaryDto
+    {
+        $zero = new PosV2MoneyDto('0.00', $scope->currency);
+
+        return new PaymentSummaryDto([], $zero, $zero, $zero, $zero);
+    }
+
+    public function addCash(PosV2CartScope $scope, CashPaymentRequest $request): CartResponse
+    {
+        return $this->cart->load($scope);
+    }
+
+    public function remove(PosV2CartScope $scope, string $paymentId): CartResponse
+    {
+        return $this->cart->load($scope);
+    }
+
+    public function readPayments(): array
+    {
+        return [];
     }
 }
 

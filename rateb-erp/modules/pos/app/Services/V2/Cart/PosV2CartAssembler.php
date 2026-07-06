@@ -9,6 +9,7 @@ use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
 use Rateb\App\Pos\DTO\V2\Cart\PosV2CartLineDto;
 use Rateb\App\Pos\DTO\V2\Customer\PosV2CustomerSummaryDto;
 use Rateb\App\Pos\Services\V2\Discount\DiscountAssembler;
+use Rateb\App\Pos\Services\V2\Payment\PaymentAssembler;
 
 /** Assembles CartResponse from normalized V1 lines. */
 final class PosV2CartAssembler
@@ -17,18 +18,21 @@ final class PosV2CartAssembler
         private readonly PosV2CartLineMapper $lineMapper = new PosV2CartLineMapper(),
         private readonly PosV2CartTotalsCalculator $totalsCalculator = new PosV2CartTotalsCalculator(),
         private readonly DiscountAssembler $discountAssembler = new DiscountAssembler(),
+        private readonly PaymentAssembler $paymentAssembler = new PaymentAssembler(),
     ) {
     }
 
     /**
      * @param array<int, array<string, mixed>> $v1Lines
      * @param array<string, mixed> $invoiceDiscount
+     * @param array<int, array<string, mixed>> $sessionPayments
      */
     public function assemble(
         PosV2CartScope $scope,
         array $v1Lines,
         ?PosV2CustomerSummaryDto $customer = null,
         array $invoiceDiscount = [],
+        array $sessionPayments = [],
     ): CartResponse {
         $lines = $this->lineMapper->fromV1Lines($v1Lines, $scope->currency);
         $discounts = $this->discountAssembler->buildSummary($v1Lines, $invoiceDiscount, $scope->currency);
@@ -39,6 +43,11 @@ final class PosV2CartAssembler
             $invoiceDiscount,
             $discounts,
         );
+        $payments = $this->paymentAssembler->buildSummary(
+            $sessionPayments,
+            $totals->total->amount,
+            $scope->currency,
+        );
 
         return new CartResponse(
             lines: $lines,
@@ -46,6 +55,7 @@ final class PosV2CartAssembler
             itemCount: $this->countItems($lines),
             customer: $customer,
             discounts: $discounts,
+            payments: $payments,
         );
     }
 
