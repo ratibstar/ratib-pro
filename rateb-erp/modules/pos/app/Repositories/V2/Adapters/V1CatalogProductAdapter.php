@@ -134,23 +134,25 @@ final class V1CatalogProductAdapter implements PosV2CatalogProductPortInterface
         $inventory = new Inventory();
         $total = $inventory->count($filters, '');
         $rows = $inventory->all($request->perPage, $offset, $filters, '');
+        $usedWarehouseFallback = false;
 
         if ($rows === [] && $warehouseId !== null && $warehouseId > 0) {
             unset($filters['warehouse_id']);
             $total = $inventory->count($filters, '');
             $rows = $inventory->all($request->perPage, $offset, $filters, '');
+            $usedWarehouseFallback = true;
         }
 
         $products = [];
         foreach ($rows as $row) {
-            if (!$this->rowMatchesScope($row, $warehouseId, $branchId)) {
+            if (!$this->rowMatchesScope($row, $warehouseId, $branchId, $usedWarehouseFallback)) {
                 continue;
             }
 
             $enriched = $this->inventoryBridge->getProduct(
                 (int) ($row['id'] ?? 0),
                 $scope->companyId,
-                $warehouseId,
+                $usedWarehouseFallback ? null : $warehouseId,
                 $branchId,
                 $sessionId,
             );
@@ -196,8 +198,12 @@ final class V1CatalogProductAdapter implements PosV2CatalogProductPortInterface
     /**
      * @param array<string, mixed> $row
      */
-    private function rowMatchesScope(array $row, ?int $warehouseId, ?int $branchId): bool
-    {
+    private function rowMatchesScope(
+        array $row,
+        ?int $warehouseId,
+        ?int $branchId,
+        bool $usedWarehouseFallback = false,
+    ): bool {
         if ($branchId !== null && $branchId > 0) {
             $rowBranch = (int) ($row['branch_id'] ?? 0);
             if ($rowBranch > 0 && $rowBranch !== $branchId) {
@@ -205,7 +211,7 @@ final class V1CatalogProductAdapter implements PosV2CatalogProductPortInterface
             }
         }
 
-        if ($warehouseId !== null && $warehouseId > 0) {
+        if (!$usedWarehouseFallback && $warehouseId !== null && $warehouseId > 0) {
             $rowWarehouse = (int) ($row['warehouse_id'] ?? 0);
             if ($rowWarehouse > 0 && $rowWarehouse !== $warehouseId) {
                 return false;
