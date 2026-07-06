@@ -11,6 +11,10 @@ use Rateb\App\Services\BranchService;
 use Rateb\App\Services\ConsolidationEliminationService;
 use Rateb\App\Services\InterBranchTransferService;
 
+/**
+ * Enterprise certification suite (GA gate).
+ * P7 fixtures temporarily revoke branches.access_all on restricted roles — see p7RevokeRestrictedRoleAccessAll().
+ */
 final class EnterpriseTestRunner
 {
     private ?\PDO $db = null;

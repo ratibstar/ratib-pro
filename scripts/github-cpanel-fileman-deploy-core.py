@@ -264,6 +264,7 @@ FAST_FILES = [
     "rateb-erp/public/assets/css/components.css",
     "rateb-erp/public/assets/css/variables.css",
     "rateb-erp/config/app.php",
+    "rateb-erp/bin/enterprise-test/EnterpriseTestRunner.php",
     "rateb-erp/public/dashboard-skin.txt",
     "rateb-erp/public/ratib-erp-build.txt",
     "api/create-order.php",
