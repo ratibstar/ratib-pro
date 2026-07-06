@@ -199,7 +199,21 @@ final class V1CartAdapter implements PosV2CartPortInterface
             $this->resolveAttachedCustomer(),
             $this->readInvoiceDiscount(),
             $this->readSessionPayments(),
+            $this->readPricingSession(),
         );
+    }
+
+    /** @return array<string, mixed> */
+    private function readPricingSession(): array
+    {
+        $session = $this->session->current();
+
+        return [
+            'tax_rate' => (float) ($session['tax_rate'] ?? 0.15),
+            'coupon_code' => trim((string) ($session['coupon_code'] ?? '')),
+            'points_redeem' => (float) ($session['points_redeem'] ?? 0),
+            'customer' => $this->session->getCustomer(),
+        ];
     }
 
     /** @return array<string, mixed> */

@@ -236,7 +236,7 @@ final class PosV2DiscountTest
         $lines = $this->sampleLines();
         $lines[0]['discount_percent'] = 10.0;
 
-        $response = (new PosV2CartAssembler())->assemble(
+        $response = PosV2TestPricingSupport::cartAssembler()->assemble(
             new PosV2CartScope(1, 2, 3, 4, 'SAR'),
             $lines,
             null,
@@ -277,6 +277,7 @@ final class PosV2DiscountTest
                 'item_name' => 'Coffee',
                 'quantity' => 2,
                 'unit_price' => 5.0,
+                'price_source' => 'manual',
                 'line_total' => 10.0,
             ],
         ];
@@ -395,7 +396,7 @@ final class InMemoryDiscountPort implements PosV2DiscountPortInterface
 
     private function load(PosV2CartScope $scope): CartResponse
     {
-        return (new PosV2CartAssembler())->assemble(
+        return PosV2TestPricingSupport::cartAssembler()->assemble(
             $scope,
             $this->lines,
             null,

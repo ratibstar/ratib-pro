@@ -26,6 +26,7 @@ final class PosV2CartAssembler
      * @param array<int, array<string, mixed>> $v1Lines
      * @param array<string, mixed> $invoiceDiscount
      * @param array<int, array<string, mixed>> $sessionPayments
+     * @param array<string, mixed> $pricingSession
      */
     public function assemble(
         PosV2CartScope $scope,
@@ -33,15 +34,17 @@ final class PosV2CartAssembler
         ?PosV2CustomerSummaryDto $customer = null,
         array $invoiceDiscount = [],
         array $sessionPayments = [],
+        array $pricingSession = [],
     ): CartResponse {
         $lines = $this->lineMapper->fromV1Lines($v1Lines, $scope->currency);
         $discounts = $this->discountAssembler->buildSummary($v1Lines, $invoiceDiscount, $scope->currency);
         $totals = $this->totalsCalculator->calculate(
+            $scope,
             $lines,
-            $scope->currency,
             $v1Lines,
             $invoiceDiscount,
             $discounts,
+            $pricingSession,
         );
         $payments = $this->paymentAssembler->buildSummary(
             $sessionPayments,

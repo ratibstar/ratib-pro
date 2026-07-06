@@ -210,7 +210,7 @@ final class PosV2PaymentTest
 
     private function testBootstrapPaymentSnapshot(): void
     {
-        $response = (new PosV2CartAssembler())->assemble(
+        $response = PosV2TestPricingSupport::cartAssembler()->assemble(
             new PosV2CartScope(1, 2, 3, 4, 'SAR'),
             $this->sampleLines(),
             null,
@@ -252,6 +252,7 @@ final class PosV2PaymentTest
                 'item_name' => 'Coffee',
                 'quantity' => 2,
                 'unit_price' => 5.0,
+                'price_source' => 'manual',
                 'line_total' => 10.0,
             ],
         ];
@@ -313,7 +314,7 @@ final class InMemoryPaymentCartPort implements PosV2CartPortInterface
 
     public function load(PosV2CartScope $scope): CartResponse
     {
-        return (new PosV2CartAssembler())->assemble($scope, $this->lines, null, [], $this->payments);
+        return PosV2TestPricingSupport::cartAssembler()->assemble($scope, $this->lines, null, [], $this->payments);
     }
 
     public function addLine(PosV2CartScope $scope, int $productId, string $qty): CartResponse

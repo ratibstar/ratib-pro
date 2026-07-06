@@ -17,6 +17,7 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
+require_once __DIR__ . '/PosV2TestPricingSupport.php';
 require_once __DIR__ . '/PosV2DiscountTest.php';
 
 $runner = new PosV2DiscountTest();

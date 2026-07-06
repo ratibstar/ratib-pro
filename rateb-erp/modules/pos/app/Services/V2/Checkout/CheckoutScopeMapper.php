@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\Services\V2\Checkout;
 
-use Rateb\App\Pos\Domain\V2\Payment\Exceptions\PosV2PaymentValidationException;
 use Rateb\App\Pos\DTO\V2\Context\PosV2RequestContext;
 
 /** Maps V2 register context to V1 checkout scope arrays. */

@@ -83,6 +83,73 @@ final class PosInventoryBridgeService
         return $out;
     }
 
+    /**
+     * Batch catalog enrichment — sell price and availability without per-row getProduct().
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public function enrichCatalogRows(
+        array $rows,
+        int $companyId,
+        ?int $warehouseId = null,
+        ?int $branchId = null,
+        ?int $sessionId = null,
+    ): array {
+        if ($rows === [] || $companyId < 1) {
+            return $rows;
+        }
+
+        TenantContext::setCompanyId($companyId);
+        $inventoryIds = [];
+        foreach ($rows as $row) {
+            $inventoryId = (int) ($row['id'] ?? 0);
+            if ($inventoryId > 0) {
+                $inventoryIds[] = $inventoryId;
+            }
+        }
+        if ($inventoryIds === []) {
+            return $rows;
+        }
+
+        $reservedMap = $this->reservations->reservedQuantitiesForIds($companyId, $inventoryIds, $sessionId);
+        $out = [];
+        foreach ($rows as $row) {
+            if (!$this->itemMatchesScope($row, $warehouseId, $branchId)) {
+                continue;
+            }
+
+            $inventoryId = (int) ($row['id'] ?? 0);
+            if ($inventoryId < 1) {
+                continue;
+            }
+
+            $onHand = (float) ($row['quantity'] ?? 0);
+            $reservedOther = (float) ($reservedMap[$inventoryId] ?? 0);
+            $available = max(0, round($onHand - $reservedOther, 3));
+            $priceBranch = $branchId ?? (int) ($row['branch_id'] ?? 0);
+            $resolved = $this->sellPrices->resolveLine(
+                ['product_id' => $inventoryId, 'quantity' => 1],
+                $companyId,
+                $priceBranch > 0 ? $priceBranch : 0,
+                null,
+            );
+
+            $out[] = array_merge($row, [
+                'unit_price' => (float) ($resolved['unit_price'] ?? 0),
+                'price_source' => (string) ($resolved['price_source'] ?? 'default'),
+                'availability' => [
+                    'on_hand' => $onHand,
+                    'reserved_other' => $reservedOther,
+                    'available' => $available,
+                    'can_add' => $available > 0,
+                ],
+            ]);
+        }
+
+        return $out;
+    }
+
     /** @return array<string, mixed>|null */
     public function lookupByBarcode(
         string $code,

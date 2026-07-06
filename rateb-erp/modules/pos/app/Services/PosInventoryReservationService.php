@@ -30,6 +30,51 @@ final class PosInventoryReservationService
         return (float) $stmt->fetchColumn();
     }
 
+    /**
+     * @param list<int> $inventoryIds
+     * @return array<int, float>
+     */
+    public function reservedQuantitiesForIds(int $companyId, array $inventoryIds, ?int $excludeSessionId = null): array
+    {
+        if ($companyId < 1 || $inventoryIds === [] || !$this->tableExists('rateb_pos_inventory_reservations')) {
+            return [];
+        }
+
+        $ids = array_values(array_unique(array_filter(
+            array_map(static fn (mixed $id): int => (int) $id, $inventoryIds),
+            static fn (int $id): bool => $id > 0,
+        )));
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT inventory_id, COALESCE(SUM(quantity), 0) AS qty
+                FROM rateb_pos_inventory_reservations
+                WHERE company_id = ? AND inventory_id IN (' . $placeholders . ')
+                  AND status = ? AND expires_at > NOW()';
+        $params = array_merge([$companyId], $ids, ['active']);
+        if ($excludeSessionId !== null && $excludeSessionId > 0) {
+            $sql .= ' AND (session_id IS NULL OR session_id != ?)';
+            $params[] = $excludeSessionId;
+        }
+        $sql .= ' GROUP BY inventory_id';
+
+        $db = Database::connection();
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $map = [];
+        foreach ($rows as $row) {
+            $inventoryId = (int) ($row['inventory_id'] ?? 0);
+            if ($inventoryId > 0) {
+                $map[$inventoryId] = (float) ($row['qty'] ?? 0);
+            }
+        }
+
+        return $map;
+    }
+
     /** @param array<int, array<string, mixed>> $lines */
     public function syncSessionCart(
         int $companyId,

@@ -17,10 +17,9 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
-require_once __DIR__ . '/PosV2TestPricingSupport.php';
-require_once __DIR__ . '/PosV2CartTest.php';
+require_once __DIR__ . '/PosV2PricingConsistencyTest.php';
 
-$runner = new PosV2CartTest();
+$runner = new PosV2PricingConsistencyTest();
 $results = $runner->run();
 
 $failed = 0;

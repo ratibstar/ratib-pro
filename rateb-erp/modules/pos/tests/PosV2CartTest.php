@@ -29,7 +29,7 @@ use Rateb\App\Pos\Repositories\V2\Contracts\PosV2CartPortInterface;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartAssembler;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartLineMapper;
 use Rateb\App\Pos\Services\V2\Cart\PosV2CartTotalsCalculator;
-use Rateb\App\Pos\Services\PosPricingService;
+use Rateb\App\Pos\Services\PosCheckoutPricingResolver;
 use Rateb\App\Pos\UseCases\V2\Cart\AddCartLineUseCase;
 use Rateb\App\Pos\UseCases\V2\Cart\ClearCartUseCase;
 use Rateb\App\Pos\UseCases\V2\Cart\GetCartUseCase;
@@ -119,6 +119,7 @@ final class PosV2CartTest
                 'item_name' => 'A',
                 'quantity' => 2,
                 'unit_price' => 4,
+                'price_source' => 'manual',
                 'line_total' => 8,
             ],
             [
@@ -127,15 +128,22 @@ final class PosV2CartTest
                 'item_name' => 'B',
                 'quantity' => 1,
                 'unit_price' => 3.5,
+                'price_source' => 'manual',
                 'line_total' => 3.5,
             ],
         ];
-        $assembler = new PosV2CartAssembler();
+        $assembler = PosV2TestPricingSupport::cartAssembler();
         $response = $assembler->assemble(
             new PosV2CartScope(1, 2, 3, 4, 'SAR'),
             $v1Lines,
         );
-        $expected = (new PosPricingService())->calculate($v1Lines, [], 0.15);
+        $expected = PosV2TestPricingSupport::passThroughResolver()->resolve(
+            $v1Lines,
+            [],
+            ['company_id' => 1, 'branch_id' => 2, 'coupon_code' => '', 'points_redeem' => 0.0],
+            null,
+            0.15,
+        )['pricing'];
 
         $ok = $response->totals->subtotal->amount === number_format((float) $expected['subtotal'], 2, '.', '')
             && $response->totals->discount->amount === number_format((float) $expected['discount_total'], 2, '.', '')
@@ -316,7 +324,7 @@ final class InMemoryCartPort implements PosV2CartPortInterface
 
     public function load(PosV2CartScope $scope): CartResponse
     {
-        return (new PosV2CartAssembler())->assemble($scope, $this->lines);
+        return PosV2TestPricingSupport::cartAssembler()->assemble($scope, $this->lines);
     }
 
     public function addLine(PosV2CartScope $scope, int $productId, string $qty): CartResponse

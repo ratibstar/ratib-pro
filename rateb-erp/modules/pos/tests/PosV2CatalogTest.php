@@ -41,7 +41,7 @@ final class PosV2CatalogTest
         $this->testCatalogScopeFromRequestContext();
         $this->testCatalogPaginationMath();
         $this->testCatalogCategoryListingUsesDatabasePagination();
-        $this->testCatalogCategoryListingDoesNotRequirePerRowEnrichment();
+        $this->testCatalogCategoryListingUsesBatchEnrichment();
 
         return $this->results;
     }
@@ -166,6 +166,7 @@ final class PosV2CatalogTest
     {
         $rowsSeen = [];
         $adapter = new V1CatalogProductAdapter(
+            enrichCatalogRows: static fn (array $rows): array => $rows,
             listRows: static function (int $limit, int $offset, array $filters, string $search) use (&$rowsSeen): array {
                 $rowsSeen[] = ['limit' => $limit, 'offset' => $offset, 'filters' => $filters, 'search' => $search];
 
@@ -196,13 +197,19 @@ final class PosV2CatalogTest
         $this->record('catalog category listing uses database pagination', $ok, 'expected offset query + full total count');
     }
 
-    private function testCatalogCategoryListingDoesNotRequirePerRowEnrichment(): void
+    private function testCatalogCategoryListingUsesBatchEnrichment(): void
     {
+        $enrichCalls = 0;
         $adapter = new V1CatalogProductAdapter(
-            listEnrichProduct: static function (): ?array {
-                throw new RuntimeException('enrichment should not be called');
+            enrichCatalogRows: static function (array $rows) use (&$enrichCalls): array {
+                $enrichCalls++;
+
+                return array_map(static fn (array $row): array => array_merge($row, [
+                    'unit_price' => 6.25,
+                    'availability' => ['can_add' => true, 'available' => (float) ($row['quantity'] ?? 0)],
+                ]), $rows);
             },
-            listRows: static fn (int $limit, int $offset, array $filters, string $search): array => [[
+            listRows: static fn (): array => [[
                 'id' => 11,
                 'sku' => 'SKU-11',
                 'item_code' => 'IC-11',
@@ -211,7 +218,7 @@ final class PosV2CatalogTest
                 'quantity' => 8,
                 'unit' => 'ea',
             ]],
-            countRows: static fn (array $filters, string $search): int => 1,
+            countRows: static fn (): int => 1,
         );
 
         $response = $adapter->search(
@@ -219,10 +226,13 @@ final class PosV2CatalogTest
             new CatalogSearchRequest(query: '', categoryId: null, page: 1, perPage: 24),
         );
 
-        $ok = count($response->products) === 1
+        $ok = $enrichCalls === 1
+            && count($response->products) === 1
             && $response->products[0]->id === 11
+            && $response->products[0]->price->amount === '6.25'
+            && $response->products[0]->inStock === true
             && $response->pagination->total === 1;
-        $this->record('catalog category listing bypasses per-row enrichment', $ok, 'expected mapped rows without getProduct enrichment');
+        $this->record('catalog category listing uses batch enrichment', $ok, 'expected single batch enrich with sell price + stock');
     }
 
     private function requestContext(): PosV2RequestContext

@@ -9,7 +9,7 @@ use Rateb\App\Pos\Services\Bridge\PosPricingBridgeService;
  * POS sell price resolution — manual override, group, branch, default.
  * Promotion slot reserved for future engine (via PosPricingBridgeService).
  */
-final class PosSellPriceService
+class PosSellPriceService
 {
     public function __construct(
         private PosPricingBridgeService $bridge = new PosPricingBridgeService(),

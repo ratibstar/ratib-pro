@@ -12,7 +12,7 @@ use Rateb\App\Pos\Services\Bridge\PosPromotionBridgeService;
 use Rateb\App\Pos\Services\Bridge\PosRewardPolicyBridgeService;
 
 /** Checkout rewards — coupons, loyalty, gift cards, promotion audit. */
-final class PosRewardService
+class PosRewardService
 {
     public function __construct(
         private PosCouponBridgeService $coupons = new PosCouponBridgeService(),

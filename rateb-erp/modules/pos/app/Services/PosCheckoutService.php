@@ -57,6 +57,7 @@ final class PosCheckoutService
         private PosRewardService $rewards = new PosRewardService(),
         private PosDiscountGuardService $discountGuard = new PosDiscountGuardService(),
         private PosCashDrawerService $drawers = new PosCashDrawerService(),
+        private PosCheckoutPricingResolver $pricingResolver = new PosCheckoutPricingResolver(),
     ) {
 
     }
@@ -164,20 +165,10 @@ final class PosCheckoutService
 
 
 
-            $lines = $this->sellPrices->applyToLines($lines, $companyId, $branchId, $customer);
-
-            $prePricing = $this->pricing->calculate($lines, $invoiceDiscount, $taxRate);
-            $customerId = !empty($customer['id']) ? (int) $customer['id'] : 0;
-            $rewardBundle = $this->rewards->buildRewardDiscounts(
-                $invoiceDiscount,
-                isset($scope['coupon_code']) ? (string) $scope['coupon_code'] : null,
-                (float) ($scope['points_redeem'] ?? 0),
-                $companyId,
-                $customerId,
-                (float) ($prePricing['net_subtotal'] ?? $prePricing['subtotal'] ?? 0)
-            );
-            $invoiceDiscount = $rewardBundle['invoice_discount'];
-            $pricing = $this->pricing->calculate($lines, $invoiceDiscount, $taxRate);
+            $priced = $this->pricingResolver->resolve($lines, $invoiceDiscount, $scope, $customer, $taxRate);
+            $lines = $priced['lines'];
+            $pricing = $priced['pricing'];
+            $rewardBundle = $priced['reward_bundle'];
 
             $this->assertPayments($pricing['total'], $payments, $companyId);
 
@@ -447,6 +438,24 @@ final class PosCheckoutService
 
         }
 
+    }
+
+
+
+    /**
+     * @param array<int, array<string, mixed>> $cartLines
+     * @param array<string, mixed> $invoiceDiscount
+     * @param array<string, mixed> $scope company_id, branch_id, coupon_code?, points_redeem?
+     * @return array{pricing: array<string, mixed>, lines: array<int, array<string, mixed>>, reward_bundle: array<string, mixed>}
+     */
+    public function resolvePricing(
+        array $cartLines,
+        array $invoiceDiscount,
+        array $scope,
+        ?array $customer = null,
+        float $taxRate = 0.15,
+    ): array {
+        return $this->pricingResolver->resolve($cartLines, $invoiceDiscount, $scope, $customer, $taxRate);
     }
 
 
