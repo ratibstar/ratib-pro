@@ -42,6 +42,7 @@
         productSearch: root.querySelector('[data-pos-product-search]'),
         productList: root.querySelector('[data-pos-product-list]'),
         barcodeInput: root.querySelector('[data-pos-barcode-input]'),
+        checkoutOpen: root.querySelector('[data-pos-checkout-open]'),
         shortcutsList: root.querySelector('[data-pos-shortcuts-list]'),
         clearCart: root.querySelector('[data-pos-clear-cart]'),
         newSale: root.querySelector('[data-pos-new-sale]')
@@ -432,6 +433,9 @@
         }
         if (els.cartEmpty) {
             els.cartEmpty.classList.toggle('is-hidden', count > 0);
+        }
+        if (els.checkoutOpen) {
+            els.checkoutOpen.disabled = count < 1;
         }
         refreshPricing();
     }
