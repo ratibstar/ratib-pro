@@ -346,6 +346,7 @@ if ($isInventoryList) { ?>
             </div>
             <div class="modal-body">
                 <div class="mb-2 text-muted small" id="ratebPosTransferItem"></div>
+                <div class="alert d-none" id="ratebPosTransferInlineMsg" role="alert"></div>
                 <div class="mb-3">
                     <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('quantity')); ?></label>
                     <input type="number" min="0.001" step="0.001" class="form-control form-control-lg" id="ratebPosTransferQty" value="1">
@@ -387,6 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var shiftSelect = document.getElementById('ratebPosTransferShift');
     var submitBtn = document.getElementById('ratebPosTransferSubmit');
     var itemLabel = document.getElementById('ratebPosTransferItem');
+    var inlineMsg = document.getElementById('ratebPosTransferInlineMsg');
     var toastEl = document.getElementById('ratebPosTransferToast');
     var toastBody = document.getElementById('ratebPosTransferToastBody');
     var currentForm = null;
@@ -404,6 +406,17 @@ document.addEventListener('DOMContentLoaded', function () {
             toast.show();
         }
     }
+    function showInline(msg, ok) {
+        if (!inlineMsg) { return; }
+        inlineMsg.textContent = msg || '';
+        inlineMsg.classList.remove('d-none', 'alert-success', 'alert-danger');
+        inlineMsg.classList.add(ok ? 'alert-success' : 'alert-danger');
+    }
+    function clearInline() {
+        if (!inlineMsg) { return; }
+        inlineMsg.classList.add('d-none');
+        inlineMsg.textContent = '';
+    }
 
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest ? e.target.closest('.js-pos-transfer-open') : null;
@@ -418,6 +431,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (itemLabel) {
             itemLabel.textContent = form.getAttribute('data-item-name') || '';
         }
+        clearInline();
         if (qtyInput) {
             qtyInput.value = '1';
         }
@@ -439,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function () {
         submitBtn.disabled = true;
         var qty = parseFloat(String((qtyInput && qtyInput.value) || '').replace(',', '.'));
         if (!isFinite(qty) || qty <= 0) {
-            window.alert('<?php echo Rateb\App\Core\View::escape(__('quantity_required')); ?>');
+            showInline('<?php echo Rateb\App\Core\View::escape(__('quantity_required')); ?>', false);
             submitBtn.disabled = false;
             return;
         }
@@ -470,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }).then(function (data) {
             var ok = !!(data && data.ok);
             var msg = (data && data.message) ? String(data.message) : (ok ? '<?php echo Rateb\App\Core\View::escape(__('pos_transfer_done')); ?>' : '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>');
+            showInline(msg, ok);
             showToast(msg, ok);
             if (ok) {
                 try {
@@ -485,7 +500,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         }).catch(function () {
+            showInline('<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>', false);
             showToast('<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>', false);
+            // Hard fallback: submit regular form if AJAX path fails.
+            setTimeout(function () { currentForm.submit(); }, 150);
         }).finally(function () {
             submitBtn.disabled = false;
         });

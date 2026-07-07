@@ -637,6 +637,20 @@
             // ignore channel errors and rely on storage event
         }
     }
+    // Safety net for browsers/tabs that miss storage/channel events.
+    setInterval(function () {
+        try {
+            var marker = localStorage.getItem('rateb_pos_catalog_refresh') || '';
+            if (!marker) { return; }
+            if (window.__ratebPosCatalogMarker === marker) { return; }
+            window.__ratebPosCatalogMarker = marker;
+            catalogLoaded = false;
+            productCache = {};
+            loadCategory({ id: activeCategoryId || 'all', name: '' });
+        } catch (err) {
+            // no-op
+        }
+    }, 7000);
 
     window.addEventListener('resize', function () {
         var catBar = categoriesEl && categoriesEl.closest('.rateb-pos__cat-bar');
