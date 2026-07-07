@@ -231,7 +231,8 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <form method="post"
                               action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/transfer-to-pos-warehouse'); ?>"
                               class="d-inline js-pos-transfer-form"
-                              data-item-name="<?php echo Rateb\App\Core\View::escape((string) ($row['item_name'] ?? $row['item_code'] ?? ('#' . (int) ($row['id'] ?? 0)))); ?>">
+                              data-item-name="<?php echo Rateb\App\Core\View::escape((string) ($row['item_name'] ?? $row['item_code'] ?? ('#' . (int) ($row['id'] ?? 0)))); ?>"
+                              data-source-branch-id="<?php echo (int) ($row['branch_id'] ?? 0); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <input type="hidden" name="transfer_qty" value="1" class="js-pos-transfer-qty">
                             <input type="hidden" name="shift_id" value="" class="js-pos-transfer-shift-id">
@@ -444,6 +445,23 @@ document.addEventListener('DOMContentLoaded', function () {
         inlineMsg.classList.add('d-none');
         inlineMsg.textContent = '';
     }
+    function filterShiftOptionsByBranch(sourceBranchId) {
+        if (!shiftSelect) { return 0; }
+        var available = 0;
+        for (var i = 0; i < shiftSelect.options.length; i++) {
+            var opt = shiftSelect.options[i];
+            if (i === 0) {
+                opt.hidden = false;
+                continue;
+            }
+            var optBranch = parseInt(opt.getAttribute('data-branch-id') || '0', 10) || 0;
+            var match = (sourceBranchId < 1 || optBranch < 1 || sourceBranchId === optBranch);
+            opt.hidden = !match;
+            opt.disabled = !match;
+            if (match) { available++; }
+        }
+        return available;
+    }
     function normalizeDigits(v) {
         var s = String(v || '');
         var ar = '٠١٢٣٤٥٦٧٨٩';
@@ -467,13 +485,27 @@ document.addEventListener('DOMContentLoaded', function () {
             itemLabel.textContent = form.getAttribute('data-item-name') || '';
         }
         clearInline();
+        var sourceBranchId = parseInt(form.getAttribute('data-source-branch-id') || '0', 10) || 0;
+        var matches = filterShiftOptionsByBranch(sourceBranchId);
         if (qtyInput) {
             qtyInput.value = '1';
             qtyInput.focus();
             qtyInput.select();
         }
         if (shiftSelect) {
-            shiftSelect.selectedIndex = (shiftSelect.options.length > 1) ? 1 : 0;
+            shiftSelect.value = '';
+            for (var si = 1; si < shiftSelect.options.length; si++) {
+                if (!shiftSelect.options[si].disabled && !shiftSelect.options[si].hidden) {
+                    shiftSelect.selectedIndex = si;
+                    break;
+                }
+            }
+        }
+        if (submitBtn) {
+            submitBtn.disabled = matches < 1;
+        }
+        if (matches < 1) {
+            showInline('<?php echo Rateb\App\Core\View::escape(__('pos_transfer_branch_mismatch')); ?>', false);
         }
         if (modal) {
             modal.show();
@@ -485,6 +517,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     submitBtn.addEventListener('click', function () {
         if (!currentForm) {
+            return;
+        }
+        if (shiftSelect && shiftSelect.selectedIndex < 1) {
+            showInline('<?php echo Rateb\App\Core\View::escape(__('pos_transfer_shift_required')); ?>', false);
             return;
         }
         submitBtn.disabled = true;
