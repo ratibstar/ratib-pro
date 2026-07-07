@@ -12,9 +12,12 @@ final class PosSyncController extends PosBaseController
     {
         $this->bootstrapPos();
         $this->guardPosView('pos/sync');
+        $companyId = $this->companyId();
+        $service = new PosOfflineSyncService();
         $this->posView('sync/index', [
             'title' => __('pos_sync'),
-            'status' => (new PosOfflineSyncService())->status(),
+            'status' => $service->status($companyId > 0 ? $companyId : null),
+            'items' => $service->recentQueue(50, $companyId > 0 ? $companyId : null),
             'csrf' => Csrf::token(),
         ]);
     }

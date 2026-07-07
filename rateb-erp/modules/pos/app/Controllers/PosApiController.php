@@ -23,13 +23,36 @@ final class PosApiController extends PosBaseController
     public function syncStatus(): void
     {
         $this->bootstrapPos();
-        $this->json(['ok' => true, 'status' => (new PosOfflineSyncService())->status()]);
+        $companyId = $this->companyId();
+        $service = new PosOfflineSyncService();
+        $this->json([
+            'ok' => true,
+            'status' => $service->status($companyId > 0 ? $companyId : null),
+        ]);
     }
 
     public function syncPush(): void
     {
         $this->bootstrapPos();
-        $this->json(['ok' => true, 'result' => (new PosOfflineSyncService())->pushQueue([])]);
+        $this->requireSessionCsrfOrAbort();
+        $body = $this->jsonBody();
+        $items = $body['items'] ?? $body;
+        if (!is_array($items)) {
+            $items = [];
+        }
+        if ($items !== [] && !array_is_list($items)) {
+            $items = [$items];
+        }
+        $companyId = $this->companyId();
+        $service = new PosOfflineSyncService();
+        $this->json([
+            'ok' => true,
+            'result' => $service->pushQueue($items, [
+                'company_id' => $companyId,
+                'terminal_id' => (int) ($body['terminal_id'] ?? 0),
+                'branch_id' => (int) ($body['branch_id'] ?? 0),
+            ]),
+        ]);
     }
 
     public function pricingPreview(): void

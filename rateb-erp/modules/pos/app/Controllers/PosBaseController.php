@@ -79,6 +79,18 @@ abstract class PosBaseController extends Controller
         return array_merge($_GET, $_POST);
     }
 
+    /** @return array<string, mixed> */
+    protected function jsonBody(): array
+    {
+        $raw = file_get_contents('php://input');
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
     /** Session JSON routes only — Bearer /api/v2/pos/* requests skip CSRF. */
     protected function requireSessionCsrfOrAbort(): void
     {
