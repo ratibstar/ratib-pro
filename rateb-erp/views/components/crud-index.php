@@ -143,7 +143,11 @@ $ratebRowRecordLabel = static function (array $row): string {
                         $val = $row[$col['name']] ?? '';
                         $colType = (string) ($col['type'] ?? '');
                         $colName = (string) ($col['name'] ?? '');
-                        if ($colType === 'image') {
+                        if ($colName === 'quantity') {
+                            $qtyValue = is_numeric($val) ? number_format((float) $val, 3, '.', '') : (string) $val;
+                            ?>
+                    <td data-col-name="quantity" data-qty-value="<?php echo Rateb\App\Core\View::escape((string) $qtyValue); ?>"><?php echo Rateb\App\Core\View::escape((string) $qtyValue); ?></td>
+                        <?php } elseif ($colType === 'image') {
                             $imgUrl = trim((string) $val);
                             ?>
                     <td class="rateb-cell-image">
@@ -571,6 +575,15 @@ document.addEventListener('DOMContentLoaded', function () {
             showInline(msg, ok);
             showToast(msg, ok);
             if (ok) {
+                if (typeof payload.source_quantity !== 'undefined') {
+                    var row = currentForm.closest('tr');
+                    var qtyCell = row ? row.querySelector('td[data-col-name="quantity"]') : null;
+                    var q = Number(payload.source_quantity);
+                    if (qtyCell && isFinite(q)) {
+                        qtyCell.textContent = q.toFixed(3);
+                        qtyCell.setAttribute('data-qty-value', q.toFixed(3));
+                    }
+                }
                 try {
                     localStorage.setItem('rateb_pos_catalog_refresh', String(Date.now()));
                     if (window.BroadcastChannel) {

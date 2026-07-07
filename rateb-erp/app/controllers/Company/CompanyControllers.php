@@ -1571,7 +1571,9 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                 'warehouse_id' => $targetWarehouseId,
                 'quantity' => $qty,
             ]);
-            $this->respondTransfer(true, (string) __('pos_transfer_topup_done'));
+            $this->respondTransfer(true, (string) __('pos_transfer_topup_done'), 200, [
+                'source_quantity' => $this->currentInventoryQty($id),
+            ]);
             return;
         }
         if ($targetInventoryId < 1) {
@@ -1616,16 +1618,19 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             'target_warehouse_id' => $targetWarehouseId,
             'quantity' => $qty,
         ]);
-        $this->respondTransfer(true, (string) __('pos_transfer_done'));
+        $this->respondTransfer(true, (string) __('pos_transfer_done'), 200, [
+            'source_quantity' => $this->currentInventoryQty($id),
+        ]);
     }
 
-    private function respondTransfer(bool $ok, string $message, int $status = 200): void
+    /** @param array<string, mixed> $extra */
+    private function respondTransfer(bool $ok, string $message, int $status = 200, array $extra = []): void
     {
         if ($this->isAjaxRequest()) {
-            \Rateb\App\Core\Response::json([
+            \Rateb\App\Core\Response::json(array_merge([
                 'ok' => $ok,
                 'message' => $message,
-            ], $status);
+            ], $extra), $status);
             return;
         }
 
@@ -1637,6 +1642,15 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     {
         $hdr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
         return $hdr === 'xmlhttprequest';
+    }
+
+    private function currentInventoryQty(int $inventoryId): float
+    {
+        if ($inventoryId < 1) {
+            return 0.0;
+        }
+        $row = $this->model->find($inventoryId);
+        return round((float) ($row['quantity'] ?? 0), 3);
     }
 
     private function isTrustedSameOriginRequest(): bool
