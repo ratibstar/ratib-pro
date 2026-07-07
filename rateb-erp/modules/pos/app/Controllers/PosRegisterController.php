@@ -24,19 +24,20 @@ final class PosRegisterController extends PosBaseController
         $cart = new PosRegisterCartService();
         $lines = $cart->normalizeLines($session->getCartLines());
         $context = $contextService->snapshot();
+        $totals = $cart->totals($lines);
 
         $this->posView('register/index', [
             'title' => __('pos_register'),
             'context' => $context,
             'session' => $session->snapshot(),
-            'totals' => $cart->totals($lines),
+            'totals' => $totals,
             'csrf' => Csrf::token(),
-            'registerConfig' => $this->registerConfig($context, $session->snapshot(), $lines),
+            'registerConfig' => $this->registerConfig($context, $session->snapshot(), $lines, $totals),
         ], 'pos-shell');
     }
 
-    /** @param array<string, mixed> $context @param array<string, mixed> $session @param array<int, array<string, mixed>> $lines */
-    private function registerConfig(array $context, array $session, array $lines): array
+    /** @param array<string, mixed> $context @param array<string, mixed> $session @param array<int, array<string, mixed>> $lines @param array<string, mixed> $totals */
+    private function registerConfig(array $context, array $session, array $lines, array $totals): array
     {
         $shift = is_array($context['shift'] ?? null) ? $context['shift'] : [];
         $shiftId = (int) ($shift['id'] ?? 0);
@@ -97,7 +98,7 @@ final class PosRegisterController extends PosBaseController
             'context' => $context,
             'session' => $session,
             'initialLines' => $lines,
-            'initialTotals' => $cart->totals($lines),
+            'initialTotals' => $totals,
             'i18n' => $this->registerI18n(),
         ];
     }
