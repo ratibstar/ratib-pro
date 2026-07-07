@@ -9,6 +9,7 @@ declare(strict_types=1);
         <table class="table table-sm table-hover">
             <thead>
                 <tr>
+                    <th><?php echo __('pos_display_no'); ?></th>
                     <th><?php echo __('pos_order_no'); ?></th>
                     <th><?php echo __('pos_order_type'); ?></th>
                     <th><?php echo __('status'); ?></th>
@@ -19,10 +20,11 @@ declare(strict_types=1);
             </thead>
             <tbody>
                 <?php if ($items === []): ?>
-                    <tr><td colspan="6"><?php echo __('no_records'); ?></td></tr>
+                    <tr><td colspan="7"><?php echo __('no_records'); ?></td></tr>
                 <?php else: ?>
                     <?php foreach ($items as $item): ?>
                         <tr>
+                            <td>#<?php echo (int) ($item['display_no'] ?? 0); ?></td>
                             <td><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($item['order_no'] ?? '')); ?></td>
                             <td><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($item['order_type'] ?? '')); ?></td>
                             <td><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($item['status'] ?? '')); ?></td>

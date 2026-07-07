@@ -4,6 +4,7 @@ declare(strict_types=1);
 /** @var array<int, array<string, mixed>> $refunds */
 /** @var array<string, mixed>|null $receipt */
 /** @var array<string, mixed> $order */
+/** @var int $display_no */
 /** @var array<int, array<string, mixed>> $lines */
 /** @var array<int, array<string, mixed>> $payments */
 ?>
@@ -16,6 +17,8 @@ declare(strict_types=1);
     <div class="card mb-3">
         <div class="card-body">
             <dl class="row mb-0">
+                <dt class="col-sm-3"><?php echo __('pos_display_no'); ?></dt>
+                <dd class="col-sm-9">#<?php echo (int) ($display_no ?? 0); ?></dd>
                 <dt class="col-sm-3"><?php echo __('pos_order_no'); ?></dt>
                 <dd class="col-sm-9"><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($order['order_no'] ?? '')); ?></dd>
                 <dt class="col-sm-3"><?php echo __('status'); ?></dt>

@@ -10,6 +10,7 @@ return [
     'pos_cash_drawers' => 'Cash Drawers',
     'pos_orders' => 'POS Orders',
     'pos_order_no' => 'Order #',
+    'pos_display_no' => 'Display #',
     'pos_cart_lines' => 'Lines',
     'pos_settings' => 'POS Settings',
     'pos_sync' => 'Offline Sync',

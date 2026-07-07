@@ -27,6 +27,16 @@ final class PosOrdersController extends PosBaseController
         );
         $stmt->execute(array_merge(['cid' => $companyId, 'st' => 'completed'], $branchParams));
         $items = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        $countStmt = $db->prepare(
+            'SELECT COUNT(*) FROM rateb_pos_orders o
+             WHERE o.company_id = :cid AND o.status = :st' . $branchSql
+        );
+        $countStmt->execute(array_merge(['cid' => $companyId, 'st' => 'completed'], $branchParams));
+        $totalCompleted = (int) $countStmt->fetchColumn();
+        foreach ($items as $i => $row) {
+            $items[$i]['display_no'] = max(1, $totalCompleted - $i);
+        }
         $this->posView('orders/index', [
             'title' => __('pos_orders'),
             'items' => $items,
@@ -68,11 +78,33 @@ final class PosOrdersController extends PosBaseController
         $this->posView('orders/show', [
             'title' => __('pos_orders') . ' — ' . ($order['order_no'] ?? ''),
             'order' => $order,
+            'display_no' => $this->displaySequenceNo($order, $companyId),
             'lines' => $lines->fetchAll(\PDO::FETCH_ASSOC) ?: [],
             'payments' => $payments->fetchAll(\PDO::FETCH_ASSOC) ?: [],
             'refunds' => $refunds->fetchAll(\PDO::FETCH_ASSOC) ?: [],
             'receipt' => $receipt,
             'csrf' => Csrf::token(),
         ]);
+    }
+
+    private function displaySequenceNo(array $order, int $companyId): int
+    {
+        $orderId = (int) ($order['id'] ?? 0);
+        if ($companyId < 1 || $orderId < 1) {
+            return 0;
+        }
+        $db = Database::connection();
+        [$branchSql, $branchParams] = PosBranchScope::readFilterSql('o');
+        $stmt = $db->prepare(
+            'SELECT COUNT(*) FROM rateb_pos_orders o
+             WHERE o.company_id = :cid AND o.status = :st AND o.id <= :oid' . $branchSql
+        );
+        $stmt->execute(array_merge([
+            'cid' => $companyId,
+            'st' => 'completed',
+            'oid' => $orderId,
+        ], $branchParams));
+
+        return (int) $stmt->fetchColumn();
     }
 }

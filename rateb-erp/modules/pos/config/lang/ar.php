@@ -10,6 +10,7 @@ return [
     'pos_cash_drawers' => 'درج النقد',
     'pos_orders' => 'طلبات نقطة البيع',
     'pos_order_no' => 'رقم الطلب',
+    'pos_display_no' => 'رقم العرض',
     'pos_cart_lines' => 'البنود',
     'pos_settings' => 'إعدادات نقطة البيع',
     'pos_sync' => 'المزامنة دون اتصال',
