@@ -7,7 +7,7 @@ use Rateb\App\Core\TenantContext;
 use Rateb\App\Pos\Models\PosSyncQueueItem;
 use Rateb\App\Pos\Services\Bridge\PosAuditBridgeService;
 
-/** Processes pending rows in rateb_pos_sync_queue (Phase 3 batch worker). */
+/** Processes pending rows in rateb_pos_sync_queue (Phase 3–4 batch worker). */
 final class PosSyncBatchProcessorService
 {
     private const MAX_RETRIES = 5;
@@ -81,11 +81,8 @@ final class PosSyncBatchProcessorService
 
         return match ($action) {
             'checkout', 'complete_sale' => $this->processCheckout($row, $decoded),
-            'process_return', 'process_exchange' => $this->markFailed(
-                $queueId,
-                (int) ($row['retry_count'] ?? 0),
-                'batch_action_not_implemented'
-            ),
+            'process_return' => $this->processReturn($row, $decoded),
+            'process_exchange' => $this->processExchange($row, $decoded),
             default => $this->markSynced($queueId),
         };
     }
@@ -96,21 +93,7 @@ final class PosSyncBatchProcessorService
         $queueId = (int) ($row['id'] ?? 0);
         $retryCount = (int) ($row['retry_count'] ?? 0);
         $inner = is_array($decoded['payload'] ?? null) ? $decoded['payload'] : [];
-        $scopeMeta = is_array($inner['scope'] ?? null) ? $inner['scope'] : [];
-
-        $scope = [
-            'company_id' => (int) ($row['company_id'] ?? 0),
-            'branch_id' => (int) ($row['branch_id'] ?? $scopeMeta['branch_id'] ?? 0),
-            'terminal_id' => (int) ($row['terminal_id'] ?? $scopeMeta['terminal_id'] ?? 0) ?: null,
-            'shift_id' => (int) ($scopeMeta['shift_id'] ?? 0) ?: null,
-            'warehouse_id' => isset($scopeMeta['warehouse_id']) ? (int) $scopeMeta['warehouse_id'] : null,
-            'session_id' => isset($scopeMeta['session_id']) ? (int) $scopeMeta['session_id'] : null,
-            'user_id' => (int) ($scopeMeta['user_id'] ?? 0),
-            'idempotency_key' => (string) ($row['idempotency_key'] ?? ''),
-            'coupon_code' => trim((string) ($inner['coupon_code'] ?? '')),
-            'points_redeem' => (float) ($inner['points_redeem'] ?? 0),
-            'gift_receipt' => !empty($inner['gift_receipt']),
-        ];
+        $scope = $this->buildScope($row, $inner);
 
         if ($scope['company_id'] < 1 || $scope['branch_id'] < 1 || $scope['user_id'] < 1) {
             return $this->markFailed($queueId, $retryCount, 'missing_register_scope');
@@ -143,6 +126,109 @@ final class PosSyncBatchProcessorService
         } catch (\Throwable $e) {
             return $this->markFailed($queueId, $retryCount, $e->getMessage());
         }
+    }
+
+    /** @param array<string, mixed> $row @param array<string, mixed> $decoded */
+    private function processReturn(array $row, array $decoded): array
+    {
+        $queueId = (int) ($row['id'] ?? 0);
+        $retryCount = (int) ($row['retry_count'] ?? 0);
+        $inner = is_array($decoded['payload'] ?? null) ? $decoded['payload'] : [];
+        $scope = $this->buildScope($row, $inner);
+
+        if ($scope['company_id'] < 1 || $scope['branch_id'] < 1 || $scope['user_id'] < 1) {
+            return $this->markFailed($queueId, $retryCount, 'missing_register_scope');
+        }
+
+        $returnLines = is_array($inner['return_lines'] ?? null) ? $inner['return_lines'] : [];
+        $refunds = is_array($inner['refunds'] ?? null) ? $inner['refunds'] : [];
+        $originalOrderId = (int) ($inner['original_order_id'] ?? 0);
+        $customer = is_array($inner['customer'] ?? null) ? $inner['customer'] : null;
+
+        if ($originalOrderId < 1 || $returnLines === []) {
+            return $this->markFailed($queueId, $retryCount, 'empty_return_payload');
+        }
+
+        try {
+            TenantContext::setCompanyId($scope['company_id']);
+            (new PosReturnService())->process($originalOrderId, $returnLines, $refunds, $scope, $customer);
+            $this->markSynced($queueId);
+
+            return ['status' => 'synced'];
+        } catch (\Throwable $e) {
+            return $this->markFailed($queueId, $retryCount, $e->getMessage());
+        }
+    }
+
+    /** @param array<string, mixed> $row @param array<string, mixed> $decoded */
+    private function processExchange(array $row, array $decoded): array
+    {
+        $queueId = (int) ($row['id'] ?? 0);
+        $retryCount = (int) ($row['retry_count'] ?? 0);
+        $inner = is_array($decoded['payload'] ?? null) ? $decoded['payload'] : [];
+        $scope = $this->buildScope($row, $inner);
+
+        if ($scope['company_id'] < 1 || $scope['branch_id'] < 1 || $scope['user_id'] < 1) {
+            return $this->markFailed($queueId, $retryCount, 'missing_register_scope');
+        }
+
+        $returnLines = is_array($inner['return_lines'] ?? null) ? $inner['return_lines'] : [];
+        $saleLines = is_array($inner['sale_lines'] ?? null) ? $inner['sale_lines'] : [];
+        $payments = is_array($inner['payments'] ?? null) ? $inner['payments'] : [];
+        $refunds = is_array($inner['refunds'] ?? null) ? $inner['refunds'] : [];
+        $invoiceDiscount = is_array($inner['invoice_discount'] ?? null) ? $inner['invoice_discount'] : [];
+        $customer = is_array($inner['customer'] ?? null) ? $inner['customer'] : null;
+        $originalOrderId = (int) ($inner['original_order_id'] ?? 0);
+
+        if ($originalOrderId < 1 || $returnLines === [] || $saleLines === []) {
+            return $this->markFailed($queueId, $retryCount, 'empty_exchange_payload');
+        }
+
+        $scope['coupon_code'] = trim((string) ($inner['coupon_code'] ?? ''));
+        $scope['points_redeem'] = (float) ($inner['points_redeem'] ?? 0);
+
+        try {
+            TenantContext::setCompanyId($scope['company_id']);
+            (new PosExchangeService())->processExchange(
+                $originalOrderId,
+                $returnLines,
+                $saleLines,
+                $payments,
+                $refunds,
+                $scope,
+                $customer,
+                $invoiceDiscount
+            );
+            $this->markSynced($queueId);
+
+            return ['status' => 'synced'];
+        } catch (\Throwable $e) {
+            return $this->markFailed($queueId, $retryCount, $e->getMessage());
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @param array<string, mixed> $inner
+     * @return array<string, mixed>
+     */
+    private function buildScope(array $row, array $inner): array
+    {
+        $scopeMeta = is_array($inner['scope'] ?? null) ? $inner['scope'] : [];
+
+        return [
+            'company_id' => (int) ($row['company_id'] ?? 0),
+            'branch_id' => (int) ($row['branch_id'] ?? $scopeMeta['branch_id'] ?? 0),
+            'terminal_id' => (int) ($row['terminal_id'] ?? $scopeMeta['terminal_id'] ?? 0) ?: null,
+            'shift_id' => (int) ($scopeMeta['shift_id'] ?? 0) ?: null,
+            'warehouse_id' => isset($scopeMeta['warehouse_id']) ? (int) $scopeMeta['warehouse_id'] : null,
+            'session_id' => isset($scopeMeta['session_id']) ? (int) $scopeMeta['session_id'] : null,
+            'user_id' => (int) ($scopeMeta['user_id'] ?? 0),
+            'idempotency_key' => (string) ($row['idempotency_key'] ?? ''),
+            'coupon_code' => trim((string) ($inner['coupon_code'] ?? '')),
+            'points_redeem' => (float) ($inner['points_redeem'] ?? 0),
+            'gift_receipt' => !empty($inner['gift_receipt']),
+        ];
     }
 
     /** @return array{status: string, error?: string} */

@@ -44,9 +44,9 @@ $conflictsUnavailable = !empty($status['conflicts_migration_required']);
         <div class="alert alert-warning"><?php echo __('pos_sync_migration_required'); ?></div>
     <?php elseif ($conflictsUnavailable): ?>
         <div class="alert alert-warning"><?php echo __('pos_sync_conflicts_migration_required'); ?></div>
-        <div class="alert alert-info"><?php echo __('pos_sync_phase3_notice'); ?></div>
+        <div class="alert alert-info"><?php echo __('pos_sync_phase4_notice'); ?></div>
     <?php else: ?>
-        <div class="alert alert-info"><?php echo __('pos_sync_phase3_notice'); ?></div>
+        <div class="alert alert-info"><?php echo __('pos_sync_phase4_notice'); ?></div>
     <?php endif; ?>
 
     <div class="row g-3 mb-4">

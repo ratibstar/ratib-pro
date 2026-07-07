@@ -287,6 +287,22 @@ html, body.rateb-pos-shell {
     color: #fca5a5;
 }
 
+.rateb-pos-offline-banner {
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(234, 88, 12, 0.18);
+    border: 1px solid rgba(251, 146, 60, 0.45);
+    color: #fdba74;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.rateb-pos--offline .rateb-pos__charge:not([disabled]) {
+    box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.35);
+}
+
 .rateb-pos__lang {
     display: inline-flex;
     border-radius: 999px;

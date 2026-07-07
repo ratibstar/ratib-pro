@@ -14,6 +14,7 @@ $fontArabic = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wgh
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="color-scheme" content="dark light">
     <meta name="rateb-csrf" content="<?php echo \Rateb\App\Pos\Support\PosView::escape(\Rateb\App\Core\Csrf::token()); ?>">
+    <link rel="manifest" href="<?php echo rateb_public_url('pos-manifest.webmanifest'); ?>">
     <title><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_register')); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +30,7 @@ $fontArabic = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wgh
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>"></script>
+<script src="<?php echo rateb_pos_asset('js/pos-offline-bootstrap.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-motion.js'); ?>"></script>

@@ -640,25 +640,73 @@
             closeList();
             return;
         }
+        if (!navigator.onLine && window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
+            window.RatebPosOffline.catalogSearch(q, 40).then(function (items) {
+                renderListItems(els.productList, items || [], 'product');
+            }).catch(function () { closeList(); });
+            return;
+        }
         fetchJson(api.products + '?q=' + encodeURIComponent(q))
             .then(function (data) {
-                renderListItems(els.productList, data.items || [], 'product');
+                var items = data.items || [];
+                if (window.RatebPosOffline && window.RatebPosOffline.catalogPutMany) {
+                    window.RatebPosOffline.catalogPutMany(items);
+                }
+                renderListItems(els.productList, items, 'product');
             })
-            .catch(function () { closeList(); });
+            .catch(function () {
+                if (window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
+                    window.RatebPosOffline.catalogSearch(q, 40).then(function (items) {
+                        renderListItems(els.productList, items || [], 'product');
+                    }).catch(function () { closeList(); });
+                    return;
+                }
+                closeList();
+            });
     }
 
     function lookupBarcode(code) {
-        if (!api.barcode || !code) {
+        if (!code) {
+            return;
+        }
+        function onFound(item) {
+            if (item) {
+                addProduct(item, 1);
+                showStatus(t('pos_add_to_cart', 'Added to cart'));
+            } else {
+                showStatus(t('pos_product_not_found', 'Product not found'));
+            }
+        }
+        if (!navigator.onLine && window.RatebPosOffline && window.RatebPosOffline.catalogLookupBarcode) {
+            window.RatebPosOffline.catalogLookupBarcode(code).then(onFound).finally(function () {
+                if (els.barcodeInput) {
+                    els.barcodeInput.value = '';
+                    els.barcodeInput.focus();
+                }
+            });
+            return;
+        }
+        if (!api.barcode) {
             return;
         }
         fetchJson(api.barcode + '?code=' + encodeURIComponent(code))
             .then(function (data) {
                 if (data.item) {
-                    addProduct(data.item, 1);
-                    showStatus(t('pos_add_to_cart', 'Added to cart'));
+                    if (window.RatebPosOffline && window.RatebPosOffline.catalogPutMany) {
+                        window.RatebPosOffline.catalogPutMany([data.item]);
+                    }
+                    onFound(data.item);
+                } else {
+                    onFound(null);
                 }
             })
             .catch(function (err) {
+                if (window.RatebPosOffline && window.RatebPosOffline.catalogLookupBarcode) {
+                    window.RatebPosOffline.catalogLookupBarcode(code).then(onFound).catch(function () {
+                        showStatus(err.message || t('pos_product_not_found', 'Product not found'));
+                    });
+                    return;
+                }
                 showStatus(err.message || t('pos_product_not_found', 'Product not found'));
             })
             .finally(function () {

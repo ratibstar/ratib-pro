@@ -20,6 +20,8 @@ return [
     'pos_scaffold_notice' => 'Phase 1 scaffold — business logic not yet implemented.',
     'pos_sync_phase2_notice' => 'Phase 2 — sync queue is live. Heavy sale actions stay pending until the batch worker runs.',
     'pos_sync_phase3_notice' => 'Phase 3 — batch processor and conflict resolution are live. Use Process pending to replay queued sales.',
+    'pos_sync_phase4_notice' => 'Phase 4 — register works offline after one online visit. Sales queue locally and sync automatically.',
+    'pos_offline_mode_banner' => 'Offline mode — sales are saved locally and sync when back online',
     'pos_sync_migration_required' => 'Table rateb_pos_sync_queue is missing — run migration 157_pos_sync_reports.sql.',
     'pos_sync_process_pending' => 'Process pending',
     'pos_sync_process_done' => 'Batch complete — synced :synced, failed :failed.',

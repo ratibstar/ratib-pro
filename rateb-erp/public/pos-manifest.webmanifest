@@ -1,0 +1,12 @@
+{
+  "name": "Rateb POS",
+  "short_name": "POS",
+  "description": "Rateb ERP Point of Sale — offline-capable register",
+  "start_url": "./admin/ops/pos",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": []
+}
