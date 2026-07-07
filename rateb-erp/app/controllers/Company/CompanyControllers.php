@@ -1480,87 +1480,31 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
 
         $db = \Rateb\App\Core\Database::connection();
-        $targetWarehouseId = (int) $this->input('target_warehouse_id', 0);
-        $targetBranchId = (int) $this->input('target_branch_id', 0);
-        if ($targetWarehouseId < 1 || $targetBranchId < 1) {
-            $shiftId = (int) $this->input('shift_id', 0);
-            $shiftSql = 'SELECT s.id AS shift_id, s.branch_id, t.id AS terminal_id, t.warehouse_id
-                         FROM rateb_pos_shifts s
-                         INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
-                         WHERE s.company_id = :cid AND s.status = :st';
-            $shiftParams = ['cid' => $companyId, 'st' => 'open'];
-            if ($shiftId > 0) {
-                $shiftSql .= ' AND s.id = :sid';
-                $shiftParams['sid'] = $shiftId;
-            } else {
-                $shiftSql .= ' AND s.user_id = :uid';
-                $shiftParams['uid'] = $userId;
-            }
-            $shiftSql .= ' ORDER BY s.id DESC LIMIT 1';
-            $shiftStmt = $db->prepare($shiftSql);
-            $shiftStmt->execute($shiftParams);
-            $shift = $shiftStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-            if (!$shift) {
-                $this->respondTransfer(false, (string) __('pos_transfer_shift_not_found'), 422);
-                return;
-            }
-            $targetWarehouseId = (int) ($shift['warehouse_id'] ?? 0);
-            $targetBranchId = (int) ($shift['branch_id'] ?? 0);
+        $shiftId = (int) $this->input('shift_id', 0);
+        if ($shiftId < 1) {
+            $this->respondTransfer(false, (string) __('pos_transfer_shift_required'), 422);
+            return;
         }
-        if ($targetBranchId < 1) {
-            $targetBranchId = $sourceBranchId > 0 ? $sourceBranchId : 0;
+        $shiftStmt = $db->prepare(
+            'SELECT s.id AS shift_id, s.branch_id, t.id AS terminal_id, t.warehouse_id
+             FROM rateb_pos_shifts s
+             INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
+             WHERE s.company_id = :cid AND s.status = :st AND s.id = :sid
+             LIMIT 1'
+        );
+        $shiftStmt->execute(['cid' => $companyId, 'st' => 'open', 'sid' => $shiftId]);
+        $shift = $shiftStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        if (!$shift) {
+            $this->respondTransfer(false, (string) __('pos_transfer_shift_not_found'), 422);
+            return;
         }
+
+        $targetWarehouseId = (int) ($shift['warehouse_id'] ?? 0);
+        $targetBranchId = (int) ($shift['branch_id'] ?? 0);
         if ($targetWarehouseId < 1) {
-            if ($targetBranchId > 0) {
-                $whStmt = $db->prepare(
-                    'SELECT id FROM rateb_warehouses
-                     WHERE company_id = :cid AND branch_id = :bid
-                     ORDER BY id ASC LIMIT 1'
-                );
-                $whStmt->execute(['cid' => $companyId, 'bid' => $targetBranchId]);
-                $targetWarehouseId = (int) ($whStmt->fetchColumn() ?: 0);
-            }
-            if ($targetWarehouseId < 1) {
-                $whStmt = $db->prepare(
-                    'SELECT id, branch_id FROM rateb_warehouses
-                     WHERE company_id = :cid
-                     ORDER BY id ASC LIMIT 1'
-                );
-                $whStmt->execute(['cid' => $companyId]);
-                $wh = $whStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-                if ($wh) {
-                    $targetWarehouseId = (int) ($wh['id'] ?? 0);
-                    if ($targetBranchId < 1) {
-                        $targetBranchId = (int) ($wh['branch_id'] ?? 0);
-                    }
-                }
-            }
+            $this->respondTransfer(false, (string) __('pos_transfer_terminal_warehouse_missing'), 422);
+            return;
         }
-        if ($targetWarehouseId < 1) {
-            if ($targetBranchId < 1) {
-                $this->respondTransfer(false, (string) __('pos_transfer_no_open_shift'), 422);
-                return;
-            }
-            try {
-                $whCode = 'POS-AUTO-' . $targetBranchId;
-                $targetWarehouseId = (new \Rateb\App\Models\Warehouse())->create([
-                    'name' => 'POS Auto Warehouse',
-                    'code' => $whCode,
-                    'location' => 'Auto-created for POS transfer',
-                    'manager_name' => 'System',
-                    'status' => 'active',
-                    'branch_id' => $targetBranchId,
-                ]);
-            } catch (\Throwable $e) {
-                $this->respondTransfer(false, \Rateb\App\Services\DatabaseErrorService::userMessage($e), 422);
-                return;
-            }
-            if ($targetWarehouseId < 1) {
-                $this->respondTransfer(false, (string) __('pos_transfer_no_open_shift'), 422);
-                return;
-            }
-        }
-        // Selected open shift is the source of truth for target POS warehouse.
 
         $targetInventoryId = 0;
         try {

@@ -2546,6 +2546,7 @@ return [
     'pos_transfer_no_open_shift' => 'لا توجد وردية POS مفتوحة للمستخدم الحالي.',
     'pos_transfer_shift_not_found' => 'الوردية المختارة غير نشطة أو غير موجودة.',
     'pos_transfer_shift_required' => 'اختر وردية فعالة أولاً.',
+    'pos_transfer_terminal_warehouse_missing' => 'الجهاز المرتبط بالوردية المختارة غير مربوط بمستودع. اربط مستودعًا للجهاز أولاً.',
     'pos_transfer_branch_mismatch' => 'تم منع التحويل: فرع الصنف يختلف عن فرع وردية POS المفتوحة.',
     'pos_transfer_qty_exceeds_stock' => 'الكمية المطلوبة للتحويل أكبر من المخزون المتاح.',
     'pos_transfer_already_in_target' => 'الصنف موجود مسبقاً في مستودع POS المختار.',
