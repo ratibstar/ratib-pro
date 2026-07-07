@@ -536,20 +536,29 @@ document.addEventListener('DOMContentLoaded', function () {
         var body = new URLSearchParams();
         fd.forEach(function (v, k) { body.append(k, String(v)); });
 
+        var csrfField = currentForm.querySelector('input[name="_csrf"]');
+        var csrfToken = csrfField ? String(csrfField.value || '') : '';
         fetch(currentForm.action, {
             method: 'POST',
             credentials: 'same-origin',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfToken,
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'Accept': 'application/json'
             },
             body: body.toString()
         }).then(function (r) {
-            return r.json().catch(function () { return { ok: false, message: '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>' }; });
+            return r.json().catch(function () {
+                return { ok: false, message: '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>' };
+            }).then(function (data) {
+                return { status: r.status, data: data };
+            });
         }).then(function (data) {
-            var ok = !!(data && data.ok);
-            var msg = (data && data.message) ? String(data.message) : (ok ? '<?php echo Rateb\App\Core\View::escape(__('pos_transfer_done')); ?>' : '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>');
+            var payload = (data && data.data) ? data.data : {};
+            var status = Number((data && data.status) || 0);
+            var ok = !!payload.ok;
+            var msg = payload.message ? String(payload.message) : (ok ? '<?php echo Rateb\App\Core\View::escape(__('pos_transfer_done')); ?>' : '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>');
             showInline(msg, ok);
             showToast(msg, ok);
             if (ok) {
@@ -564,6 +573,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (modal) {
                     modal.hide();
                 }
+            } else if (status === 419 || msg.indexOf('<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>') !== -1) {
+                // Fallback for occasional AJAX CSRF/session mismatch: submit regular form path.
+                setTimeout(function () { currentForm.submit(); }, 100);
             }
         }).catch(function () {
             showInline('<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>', false);
