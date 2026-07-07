@@ -9,6 +9,28 @@ final class MailDnsCheckService
     /** @var list<string> */
     private const DKIM_SELECTORS = ['x', 'default', 'mail', 'da', 'selector1', 'k1', 'dkim'];
 
+    /** @var array<string, list<array<string, mixed>>> */
+    private array $dnsAnswerCache = [];
+
+    /** @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},port25:array{ok:bool,detail:string,skipped:bool},warnings:list<string>,ready_for_external:bool,recommendations:array<string,mixed>} */
+    public function checkCached(string $domain = 'rateb.sa', bool $refresh = false): array
+    {
+        $domain = strtolower(trim($domain));
+        if ($domain === '') {
+            $domain = 'rateb.sa';
+        }
+        $sessionKey = 'rateb_mail_dns_' . md5($domain);
+        if (!$refresh) {
+            $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
+            if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
+                return $raw['data'];
+            }
+        }
+        $data = $this->check($domain);
+        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 600, 'data' => $data]);
+        return $data;
+    }
+
     /** @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},port25:array{ok:bool,detail:string,skipped:bool},warnings:list<string>,ready_for_external:bool,recommendations:array<string,mixed>} */
     public function check(string $domain = 'rateb.sa'): array
     {
@@ -19,14 +41,15 @@ final class MailDnsCheckService
         $mailCfg = new MailConfigService();
         $smtpHost = trim((string) ($mailCfg->resolve()['host'] ?? ''));
         $usesRelay = $mailCfg->isSmtpRelayHost($smtpHost);
+        $usesLocalMail = $mailCfg->isLocalRelayHost($smtpHost);
 
         $spf = $this->checkSpf($domain);
         $dkim = $this->checkDkim($domain);
         $dmarc = $this->checkDmarc($domain);
         $mx = $this->checkMx($domain);
         $ptr = $this->checkPtr($domain, $mx['detail'] ?? '');
-        $port25 = $usesRelay
-            ? ['ok' => true, 'detail' => __('mail_port25_relay_skip', ['host' => $smtpHost]), 'skipped' => true]
+        $port25 = ($usesRelay || !$usesLocalMail)
+            ? ['ok' => true, 'detail' => __('mail_port25_relay_skip', ['host' => $smtpHost !== '' ? $smtpHost : $domain]), 'skipped' => true]
             : array_merge($this->checkPort25Outbound(), ['skipped' => false]);
 
         $warnings = [];
@@ -160,7 +183,7 @@ final class MailDnsCheckService
     private function checkPort25Outbound(): array
     {
         foreach (['gmail-smtp-in.l.google.com', 'alt1.gmail-smtp-in.l.google.com'] as $host) {
-            $fp = @stream_socket_client('tcp://' . $host . ':25', $errno, $errstr, 8);
+            $fp = @stream_socket_client('tcp://' . $host . ':25', $errno, $errstr, 2);
             if (is_resource($fp)) {
                 fclose($fp);
                 return ['ok' => true, 'detail' => $host . ':25'];
@@ -283,18 +306,25 @@ final class MailDnsCheckService
     /** @return list<array<string, mixed>> */
     private function dnsAnswers(string $name, int $type): array
     {
+        $cacheKey = strtolower($name) . '|' . $type;
+        if (isset($this->dnsAnswerCache[$cacheKey])) {
+            return $this->dnsAnswerCache[$cacheKey];
+        }
         $url = 'https://dns.google/resolve?name=' . rawurlencode($name) . '&type=' . $type;
-        $ctx = stream_context_create(['http' => ['timeout' => 6, 'header' => "Accept: application/dns-json\r\n"]]);
+        $ctx = stream_context_create(['http' => ['timeout' => 2.5, 'header' => "Accept: application/dns-json\r\n"]]);
         $raw = @file_get_contents($url, false, $ctx);
         if (!is_string($raw) || $raw === '') {
+            $this->dnsAnswerCache[$cacheKey] = [];
             return [];
         }
         $data = json_decode($raw, true);
         if (!is_array($data) || (int) ($data['Status'] ?? 1) !== 0) {
+            $this->dnsAnswerCache[$cacheKey] = [];
             return [];
         }
         $answers = $data['Answer'] ?? [];
-        return is_array($answers) ? $answers : [];
+        $this->dnsAnswerCache[$cacheKey] = is_array($answers) ? $answers : [];
+        return $this->dnsAnswerCache[$cacheKey];
     }
 
     private function decodeTxt(string $data): string

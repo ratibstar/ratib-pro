@@ -1,6 +1,34 @@
 <?php
 /** @var array<string, mixed>|null $mailDns */
+/** @var bool $mailDnsAsync */
+/** @var string $mailDnsUrl */
+/** @var string $mailDnsDomain */
 $mailDns = $mailDns ?? null;
+$mailDnsAsync = !empty($mailDnsAsync);
+$mailDnsUrl = (string) ($mailDnsUrl ?? '');
+$mailDnsDomain = (string) ($mailDnsDomain ?? 'rateb.sa');
+
+if ($mailDnsAsync && !is_array($mailDns)) {
+    ?>
+<div class="border rounded p-2 mb-3 small rateb-mail-dns-panel"
+     data-mail-dns-async="1"
+     data-mail-dns-url="<?php echo Rateb\App\Core\View::escape($mailDnsUrl); ?>"
+     data-mail-dns-fail="<?php echo Rateb\App\Core\View::escape(__('mail_dns_check_failed')); ?>">
+    <div class="fw-semibold mb-2">
+        <i class="fas fa-globe"></i> <?php echo __('mail_dns_check_title'); ?> — <?php echo Rateb\App\Core\View::escape($mailDnsDomain); ?>
+    </div>
+    <div class="placeholder-glow">
+        <span class="placeholder col-7 mb-2 d-block"></span>
+        <span class="placeholder col-10 mb-2 d-block"></span>
+        <span class="placeholder col-8 mb-2 d-block"></span>
+        <span class="placeholder col-9 d-block"></span>
+    </div>
+    <p class="text-muted mb-0 mt-2"><i class="fas fa-spinner fa-spin"></i> <?php echo __('mail_dns_checking'); ?></p>
+</div>
+    <?php
+    return;
+}
+
 if (!is_array($mailDns)) {
     return;
 }
@@ -76,23 +104,6 @@ $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendation
     <p class="text-muted mb-0"><?php echo __('mail_dns_hawsabah_hint'); ?></p>
     <?php } else { ?>
     <p class="text-success mb-1"><?php echo __('mail_dns_ready'); ?></p>
-  <p class="text-muted mb-0"><?php echo __('mail_check_spam_hint'); ?></p>
+    <p class="text-muted mb-0"><?php echo __('mail_check_spam_hint'); ?></p>
     <?php } ?>
 </div>
-<script>
-(function () {
-    document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var id = btn.getAttribute('data-copy-target');
-            var el = id ? document.getElementById(id) : null;
-            if (!el) return;
-            var text = typeof el.value === 'string' ? el.value : (el.textContent || '');
-            if (el.select) {
-                el.select();
-                if (el.setSelectionRange) el.setSelectionRange(0, 99999);
-            }
-            try { navigator.clipboard.writeText(text); } catch (e) { document.execCommand('copy'); }
-        });
-    });
-})();
-</script>

@@ -2347,7 +2347,7 @@ final class SettingsController extends Controller
         $mailSvc = new \Rateb\App\Services\MailConfigService();
         $mailCfg = $mailSvc->resolve();
         $fromDomain = \Rateb\App\Helpers\Str::emailDomain((string) ($mailCfg['from_email'] ?? 'info@rateb.sa'));
-        $mailDns = (new \Rateb\App\Services\MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
+        $mailDomain = $fromDomain !== '' ? $fromDomain : 'rateb.sa';
         $user = \Rateb\App\Core\Auth::user();
         $this->view('admin/settings/index', [
             'title' => __('settings'),
@@ -2358,9 +2358,26 @@ final class SettingsController extends Controller
             'mailReady' => $mailSvc->isReady(),
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
             'mailRelay' => $mailSvc->isSmtpRelayHost((string) ($mailCfg['host'] ?? '')),
-            'mailDns' => $mailDns,
+            'mailDnsAsync' => true,
+            'mailDnsDomain' => $mailDomain,
+            'mailDnsUrl' => rateb_url('admin/api/mail-dns-check') . '?domain=' . rawurlencode($mailDomain),
             'testEmailDefault' => trim((string) ($user['email'] ?? 'info@rateb.sa')) ?: 'info@rateb.sa',
         ], 'main');
+    }
+
+    public function mailDnsCheck(): void
+    {
+        if (!\Rateb\App\Core\Auth::check()) {
+            \Rateb\App\Core\Response::json(['ok' => false, 'error' => 'unauthorized'], 401);
+            return;
+        }
+        $domain = trim((string) ($_GET['domain'] ?? 'rateb.sa'));
+        $refresh = isset($_GET['refresh']) && (string) $_GET['refresh'] !== '0';
+        $mailDns = (new \Rateb\App\Services\MailDnsCheckService())->checkCached($domain, $refresh);
+        ob_start();
+        \Rateb\App\Core\View::partial('admin/mail-dns-panel', ['mailDns' => $mailDns]);
+        $html = (string) ob_get_clean();
+        \Rateb\App\Core\Response::json(['ok' => true, 'html' => $html]);
     }
 
     public function save(): void

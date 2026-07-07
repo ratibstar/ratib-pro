@@ -855,6 +855,8 @@ return [
     'mail_external_dns_hint' => 'وصل لـ info@rateb.sa ولم يصل للمستلم الخارجي؟ فعّل SPF وDKIM في DirectAdmin → E-mail Manager → rateb.sa → DNS.',
     'mail_localhost_warning' => 'localhost صحيح لـ DirectAdmin على نفس السيرفر. للوصول إلى Gmail فعّل SPF وDKIM — لا تغيّر إلى mail.rateb.sa إلا إذا فشل localhost.',
     'mail_dns_check_title' => 'فحص DNS للبريد الخارجي',
+    'mail_dns_checking' => 'جاري فحص سجلات DNS…',
+    'mail_dns_check_failed' => 'تعذّر إكمال فحص DNS.',
     'mail_dns_spf_missing' => 'لا يوجد سجل SPF — Gmail يرفض أو يحجب الرسالة',
     'mail_dns_spf_duplicate' => 'يوجد :count سجلات SPF — احذف الزائد واترك سجلاً واحداً فقط',
     'mail_dns_ptr_missing' => 'لا يوجد PTR (rDNS) للسيرفر',

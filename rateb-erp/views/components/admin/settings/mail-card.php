@@ -67,7 +67,12 @@ $mailRelay = !empty($mailRelay);
         <p class="text-muted small mb-2"><?php echo __('mail_localhost_warning'); ?></p>
         <div class="alert alert-warning small py-2 mb-2"><?php echo __('mail_relay_steps'); ?></div>
         <?php } ?>
-        <?php Rateb\App\Core\View::partial('admin/mail-dns-panel', ['mailDns' => $mailDns ?? null]); ?>
+        <?php Rateb\App\Core\View::partial('admin/mail-dns-panel', [
+            'mailDns' => $mailDns ?? null,
+            'mailDnsAsync' => !empty($mailDnsAsync),
+            'mailDnsUrl' => $mailDnsUrl ?? '',
+            'mailDnsDomain' => $mailDnsDomain ?? 'rateb.sa',
+        ]); ?>
         <form method="post" action="<?php echo rateb_url('admin/settings/test-mail'); ?>" class="row g-2 align-items-end border-top pt-3">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-6">

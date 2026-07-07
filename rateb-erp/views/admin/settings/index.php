@@ -6,10 +6,13 @@ Rateb\App\Core\View::partial('admin/settings/mail-card', [
     'mailReady' => !empty($mailReady),
     'mailLocalhost' => !empty($mailLocalhost),
     'mailRelay' => !empty($mailRelay),
-    'mailDns' => $mailDns ?? null,
+    'mailDnsAsync' => !empty($mailDnsAsync),
+    'mailDnsUrl' => $mailDnsUrl ?? '',
+    'mailDnsDomain' => $mailDnsDomain ?? 'rateb.sa',
     'csrf' => $csrf ?? '',
     'testEmailDefault' => $testEmailDefault ?? 'info@rateb.sa',
 ]); ?>
+<script src="<?php echo rateb_asset('js/settings-mail-dns.js'); ?>" defer></script>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('settings'); ?> — <?php echo __('all'); ?></div>
     <div class="rateb-card-body">

@@ -855,6 +855,8 @@ return [
     'mail_external_dns_hint' => 'Arrived at info@rateb.sa but not the external recipient? Enable SPF and DKIM in DirectAdmin → E-mail Manager → rateb.sa → DNS.',
     'mail_localhost_warning' => 'localhost is correct for DirectAdmin on the same server. For Gmail delivery enable SPF and DKIM — only switch to mail.rateb.sa if localhost fails.',
     'mail_dns_check_title' => 'External mail DNS check',
+    'mail_dns_checking' => 'Checking DNS records…',
+    'mail_dns_check_failed' => 'DNS check could not be completed.',
     'mail_dns_spf_missing' => 'No SPF record — Gmail often blocks or spams mail',
     'mail_dns_spf_duplicate' => ':count SPF records found — delete extras and keep only one',
     'mail_dns_ptr_missing' => 'No PTR (reverse DNS) for the mail server',
