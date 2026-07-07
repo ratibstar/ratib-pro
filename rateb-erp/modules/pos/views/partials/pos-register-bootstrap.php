@@ -171,6 +171,45 @@ try {
             ];
         }
 
+        // Fallback demo catalog for local testing when no inventory rows are visible.
+        if ($posBootstrap['catalogSeed'] === []) {
+            $demoCategoryIds = [];
+            foreach ($posBootstrap['categories'] as $cat) {
+                $cid = (int) ($cat['id'] ?? 0);
+                if ($cid > 0) {
+                    $demoCategoryIds[] = $cid;
+                }
+            }
+            $defaultCategoryId = $demoCategoryIds[0] ?? 0;
+
+            $demoProducts = [
+                ['id' => 900001, 'item_code' => 'DEMO-ESP', 'item_name' => 'Espresso (Demo)', 'unit_price' => 12.00],
+                ['id' => 900002, 'item_code' => 'DEMO-LAT', 'item_name' => 'Latte (Demo)', 'unit_price' => 16.00],
+                ['id' => 900003, 'item_code' => 'DEMO-CRO', 'item_name' => 'Croissant (Demo)', 'unit_price' => 9.50],
+                ['id' => 900004, 'item_code' => 'DEMO-SAN', 'item_name' => 'Chicken Sandwich (Demo)', 'unit_price' => 22.00],
+                ['id' => 900005, 'item_code' => 'DEMO-WAT', 'item_name' => 'Water 330ml (Demo)', 'unit_price' => 3.00],
+            ];
+
+            foreach ($demoProducts as $idx => $demo) {
+                $catId = $demoCategoryIds[$idx % max(1, count($demoCategoryIds))] ?? $defaultCategoryId;
+                $pid = (int) $demo['id'];
+                $posBootstrap['productIndex'][(string) $pid] = (int) $catId;
+                $posBootstrap['catalogSeed'][] = [
+                    'id' => $pid,
+                    'item_code' => (string) $demo['item_code'],
+                    'item_name' => (string) $demo['item_name'],
+                    'unit_price' => (float) $demo['unit_price'],
+                    'category_id' => (int) $catId,
+                    'image_url' => '',
+                    'availability' => [
+                        'on_hand' => 999.0,
+                        'available' => 999.0,
+                        'can_add' => true,
+                    ],
+                ];
+            }
+        }
+
         $posBootstrap['shiftTerminals'] = (new \Rateb\App\Pos\Services\PosFormLookupService())
             ->activeTerminals($companyId);
     }
