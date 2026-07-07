@@ -367,6 +367,14 @@ if ($isInventoryList) { ?>
         </div>
     </div>
 </div>
+<div class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index:1080">
+    <div id="ratebPosTransferToast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="ratebPosTransferToastBody"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="<?php echo Rateb\App\Core\View::escape(__('close')); ?>"></button>
+        </div>
+    </div>
+</div>
 <style>
 .rateb-pos-transfer-modal .modal-body{padding-top:1rem}
 .rateb-pos-transfer-modal .form-control,
@@ -379,8 +387,23 @@ document.addEventListener('DOMContentLoaded', function () {
     var shiftSelect = document.getElementById('ratebPosTransferShift');
     var submitBtn = document.getElementById('ratebPosTransferSubmit');
     var itemLabel = document.getElementById('ratebPosTransferItem');
+    var toastEl = document.getElementById('ratebPosTransferToast');
+    var toastBody = document.getElementById('ratebPosTransferToastBody');
     var currentForm = null;
     var modal = (window.bootstrap && modalEl) ? new window.bootstrap.Modal(modalEl) : null;
+    var toast = (window.bootstrap && toastEl) ? new window.bootstrap.Toast(toastEl, { delay: 2600 }) : null;
+
+    function showToast(msg, ok) {
+        if (!toastEl || !toastBody) {
+            return;
+        }
+        toastBody.textContent = msg || '';
+        toastEl.classList.remove('text-bg-dark', 'text-bg-success', 'text-bg-danger');
+        toastEl.classList.add(ok ? 'text-bg-success' : 'text-bg-danger');
+        if (toast) {
+            toast.show();
+        }
+    }
 
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest ? e.target.closest('.js-pos-transfer-open') : null;
@@ -413,9 +436,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!currentForm) {
             return;
         }
+        submitBtn.disabled = true;
         var qty = parseFloat(String((qtyInput && qtyInput.value) || '').replace(',', '.'));
         if (!isFinite(qty) || qty <= 0) {
             window.alert('<?php echo Rateb\App\Core\View::escape(__('quantity_required')); ?>');
+            submitBtn.disabled = false;
             return;
         }
         var shiftId = (shiftSelect && shiftSelect.value) ? String(shiftSelect.value) : '';
@@ -427,18 +452,43 @@ document.addEventListener('DOMContentLoaded', function () {
         if (shiftField) {
             shiftField.value = shiftId;
         }
-        try {
-            localStorage.setItem('rateb_pos_catalog_refresh', String(Date.now()));
-            if (window.BroadcastChannel) {
-                var ch = new BroadcastChannel('rateb_pos_catalog_channel');
-                ch.postMessage({ type: 'refresh', ts: Date.now() });
-                ch.close();
+        var fd = new FormData(currentForm);
+        var body = new URLSearchParams();
+        fd.forEach(function (v, k) { body.append(k, String(v)); });
+
+        fetch(currentForm.action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': 'application/json'
+            },
+            body: body.toString()
+        }).then(function (r) {
+            return r.json().catch(function () { return { ok: false, message: '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>' }; });
+        }).then(function (data) {
+            var ok = !!(data && data.ok);
+            var msg = (data && data.message) ? String(data.message) : (ok ? '<?php echo Rateb\App\Core\View::escape(__('pos_transfer_done')); ?>' : '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>');
+            showToast(msg, ok);
+            if (ok) {
+                try {
+                    localStorage.setItem('rateb_pos_catalog_refresh', String(Date.now()));
+                    if (window.BroadcastChannel) {
+                        var ch = new BroadcastChannel('rateb_pos_catalog_channel');
+                        ch.postMessage({ type: 'refresh', ts: Date.now() });
+                        ch.close();
+                    }
+                } catch (err) {}
+                if (modal) {
+                    modal.hide();
+                }
             }
-        } catch (err) {}
-        if (modal) {
-            modal.hide();
-        }
-        currentForm.submit();
+        }).catch(function () {
+            showToast('<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>', false);
+        }).finally(function () {
+            submitBtn.disabled = false;
+        });
     });
 });
 </script>

@@ -1448,23 +1448,20 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             rateb_bootstrap_ops_tenant();
         }
         if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('invalid_request'), 419);
             return;
         }
 
         $id = (int) ($params['id'] ?? 0);
         $qty = (float) str_replace(',', '.', (string) $this->input('transfer_qty', '0'));
         if ($id < 1 || $qty <= 0) {
-            SessionManager::flash('error', __('quantity_required'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('quantity_required'), 422);
             return;
         }
 
         $source = $this->loadRecordForWrite($id);
         if (!$source) {
-            SessionManager::flash('error', __('record_not_found'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('record_not_found'), 404);
             return;
         }
 
@@ -1472,15 +1469,13 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $sourceBranchId = (int) ($source['branch_id'] ?? 0);
         $sourceQty = (float) ($source['quantity'] ?? 0);
         if ($qty > $sourceQty) {
-            SessionManager::flash('error', __('pos_transfer_qty_exceeds_stock'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('pos_transfer_qty_exceeds_stock'), 422);
             return;
         }
 
         $userId = (int) (SessionManager::get('rateb_user_id') ?? 0);
         if ($companyId < 1 || $userId < 1) {
-            SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('invalid_request'), 400);
             return;
         }
 
@@ -1503,21 +1498,18 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $shiftStmt->execute($shiftParams);
         $shift = $shiftStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
         if (!$shift) {
-            SessionManager::flash('error', __('pos_transfer_shift_not_found'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('pos_transfer_shift_not_found'), 422);
             return;
         }
 
         $targetWarehouseId = (int) ($shift['warehouse_id'] ?? 0);
         $targetBranchId = (int) ($shift['branch_id'] ?? 0);
         if ($targetWarehouseId < 1 || $targetBranchId < 1) {
-            SessionManager::flash('error', __('pos_transfer_no_open_shift'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('pos_transfer_no_open_shift'), 422);
             return;
         }
         if ($sourceBranchId > 0 && $sourceBranchId !== $targetBranchId) {
-            SessionManager::flash('error', __('pos_transfer_branch_mismatch'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('pos_transfer_branch_mismatch'), 422);
             return;
         }
 
@@ -1556,14 +1548,12 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                 ]);
             }
         } catch (\Throwable $e) {
-            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, \Rateb\App\Services\DatabaseErrorService::userMessage($e), 422);
             return;
         }
 
         if ($targetInventoryId < 1 || $targetInventoryId === $id) {
-            SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, (string) __('invalid_request'), 400);
             return;
         }
 
@@ -1594,8 +1584,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
-            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->respondTransfer(false, \Rateb\App\Services\DatabaseErrorService::userMessage($e), 422);
             return;
         }
 
@@ -1605,8 +1594,27 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             'target_warehouse_id' => $targetWarehouseId,
             'quantity' => $qty,
         ]);
-        SessionManager::flash('success', __('pos_transfer_done'));
+        $this->respondTransfer(true, (string) __('pos_transfer_done'));
+    }
+
+    private function respondTransfer(bool $ok, string $message, int $status = 200): void
+    {
+        if ($this->isAjaxRequest()) {
+            \Rateb\App\Core\Response::json([
+                'ok' => $ok,
+                'message' => $message,
+            ], $status);
+            return;
+        }
+
+        SessionManager::flash($ok ? 'success' : 'error', $message);
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    private function isAjaxRequest(): bool
+    {
+        $hdr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+        return $hdr === 'xmlhttprequest';
     }
 }
 
