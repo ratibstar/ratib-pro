@@ -1390,6 +1390,166 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
         return true;
     }
+
+    public function transferToPosWarehouse(array $params): void
+    {
+        $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $qty = (float) str_replace(',', '.', (string) $this->input('transfer_qty', '0'));
+        if ($id < 1 || $qty <= 0) {
+            SessionManager::flash('error', __('quantity_required'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $source = $this->loadRecordForWrite($id);
+        if (!$source) {
+            SessionManager::flash('error', __('record_not_found'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $companyId = (int) ($source['company_id'] ?? 0);
+        $sourceBranchId = (int) ($source['branch_id'] ?? 0);
+        $sourceQty = (float) ($source['quantity'] ?? 0);
+        if ($qty > $sourceQty) {
+            SessionManager::flash('error', __('pos_transfer_qty_exceeds_stock'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $userId = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        if ($companyId < 1 || $userId < 1) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $db = \Rateb\App\Core\Database::connection();
+        $shiftStmt = $db->prepare(
+            'SELECT s.id AS shift_id, s.branch_id, t.id AS terminal_id, t.warehouse_id
+             FROM rateb_pos_shifts s
+             INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
+             WHERE s.company_id = :cid AND s.user_id = :uid AND s.status = :st
+             ORDER BY s.id DESC LIMIT 1'
+        );
+        $shiftStmt->execute(['cid' => $companyId, 'uid' => $userId, 'st' => 'open']);
+        $shift = $shiftStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        if (!$shift) {
+            SessionManager::flash('error', __('pos_transfer_no_open_shift'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $targetWarehouseId = (int) ($shift['warehouse_id'] ?? 0);
+        $targetBranchId = (int) ($shift['branch_id'] ?? 0);
+        if ($targetWarehouseId < 1 || $targetBranchId < 1) {
+            SessionManager::flash('error', __('pos_transfer_no_open_shift'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+        if ($sourceBranchId > 0 && $sourceBranchId !== $targetBranchId) {
+            SessionManager::flash('error', __('pos_transfer_branch_mismatch'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $targetInventoryId = 0;
+        try {
+            $lookup = $db->prepare(
+                'SELECT id FROM rateb_inventory
+                 WHERE company_id = :cid AND warehouse_id = :wid AND item_code = :code
+                 LIMIT 1'
+            );
+            $lookup->execute([
+                'cid' => $companyId,
+                'wid' => $targetWarehouseId,
+                'code' => (string) ($source['item_code'] ?? ''),
+            ]);
+            $existing = $lookup->fetch(\PDO::FETCH_ASSOC) ?: null;
+            if ($existing) {
+                $targetInventoryId = (int) ($existing['id'] ?? 0);
+            } else {
+                $targetInventoryId = $this->model->create([
+                    'company_id' => $companyId,
+                    'warehouse_id' => $targetWarehouseId,
+                    'branch_id' => $targetBranchId,
+                    'item_code' => (string) ($source['item_code'] ?? ''),
+                    'item_name' => (string) ($source['item_name'] ?? ''),
+                    'sku' => (string) ($source['sku'] ?? ''),
+                    'barcode' => (string) ($source['barcode'] ?? ''),
+                    'category_id' => (int) ($source['category_id'] ?? 0) ?: null,
+                    'quantity' => 0,
+                    'unit' => (string) ($source['unit'] ?? 'pcs'),
+                    'unit_cost' => (float) ($source['unit_cost'] ?? 0),
+                    'reorder_level' => (float) ($source['reorder_level'] ?? 0),
+                    'max_stock' => (float) ($source['max_stock'] ?? 0),
+                    'status' => (string) ($source['status'] ?? 'active'),
+                    'notes' => 'Auto-created for POS warehouse transfer',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        if ($targetInventoryId < 1 || $targetInventoryId === $id) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        $notes = 'POS warehouse transfer (same branch)';
+        $svc = new \Rateb\App\Services\StockMovementService();
+        try {
+            $db->beginTransaction();
+            $svc->recordWithinTransaction([
+                'inventory_id' => $id,
+                'warehouse_id' => (int) ($source['warehouse_id'] ?? 0) ?: null,
+                'movement_type' => 'out',
+                'quantity' => $qty,
+                'notes' => $notes,
+                'reference_type' => 'pos_transfer',
+                'reference_id' => $targetInventoryId,
+            ]);
+            $svc->recordWithinTransaction([
+                'inventory_id' => $targetInventoryId,
+                'warehouse_id' => $targetWarehouseId,
+                'movement_type' => 'in',
+                'quantity' => $qty,
+                'notes' => $notes,
+                'reference_type' => 'pos_transfer',
+                'reference_id' => $id,
+            ]);
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+
+        (new AuditService())->log('pos_transfer', $this->entityName, $id, [
+            'source_inventory_id' => $id,
+            'target_inventory_id' => $targetInventoryId,
+            'target_warehouse_id' => $targetWarehouseId,
+            'quantity' => $qty,
+        ]);
+        SessionManager::flash('success', __('pos_transfer_done'));
+        $this->redirect(rateb_url($this->routePrefix));
+    }
 }
 
 final class WarehousesController extends \Rateb\App\Controllers\CrudController

@@ -164,6 +164,7 @@ $router->post($app('supplier-evaluations/{id}/approve'), $blockCompanyApprovalAc
 $router->post($app('supplier-evaluations/{id}/reject'), $blockCompanyApprovalAction, $seMw);
 
 $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'warehouseItemsJson'], rateb_erp_mw('inventory', '', 'inventory'));
+$router->post($app('inventory/{id}/transfer-to-pos-warehouse'), [InventoryController::class, 'transferToPosWarehouse'], rateb_erp_mw('inventory', '', 'inventory'));
 
 $router->get($app('purchase-requests/line-attachment/{itemId}'), [PurchaseRequestsController::class, 'downloadLineAttachment'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->get($app('customs-clearance-costs/export'), [PurchaseOrdersController::class, 'customsExport'], rateb_erp_mw('accounting', 'reports.export', 'customs-clearance-costs'));

@@ -2541,4 +2541,10 @@ return [
     'cms_partner_login' => 'Partner Login',
     'cms_billing_cycle' => 'Billing cycle',
     'cms_footer_quick_links' => 'Quick links',
+    'pos_transfer_to_terminal_wh' => 'Transfer to POS warehouse',
+    'pos_transfer_qty_prompt' => 'Quantity to transfer to active POS terminal warehouse',
+    'pos_transfer_done' => 'Transferred successfully to POS terminal warehouse.',
+    'pos_transfer_no_open_shift' => 'No open POS shift found for your user.',
+    'pos_transfer_branch_mismatch' => 'Transfer blocked: source item branch differs from your active POS shift branch.',
+    'pos_transfer_qty_exceeds_stock' => 'Transfer quantity exceeds available stock.',
 ];

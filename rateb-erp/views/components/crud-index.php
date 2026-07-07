@@ -50,6 +50,7 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
 $tableToolsEnabled = $tableToolsEnabled ?? true;
 $exportRoute = trim((string) ($exportRoute ?? rateb_url(($routePrefix ?? '') . '/export')));
 $tableTitle = trim((string) ($tableTitle ?? ($title ?? '')));
+$isInventoryList = (bool) preg_match('#(^|/)inventory$#', trim((string) $actionsRoutePrefix, '/'));
 $ratebRowRecordLabel = static function (array $row): string {
     foreach (['batch_no', 'title', 'name', 'item_name', 'request_no', 'order_no', 'contract_no', 'code', 'item_code', 'evaluation_no'] as $key) {
         if (!empty($row[$key])) {
@@ -225,6 +226,17 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                         <?php } ?>
                         <?php if ($actionsEnabled) { ?>
+                        <?php if ($isInventoryList && (float) ($row['quantity'] ?? 0) > 0) { ?>
+                        <form method="post"
+                              action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/transfer-to-pos-warehouse'); ?>"
+                              class="d-inline js-pos-transfer-form">
+                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                            <input type="hidden" name="transfer_qty" value="1" class="js-pos-transfer-qty">
+                            <button type="submit" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape(__('pos_transfer_to_terminal_wh')); ?>">
+                                <i class="fas fa-right-left"></i>
+                            </button>
+                        </form>
+                        <?php } ?>
                         <?php if ($printEnabled) { ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/print'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('print'); ?>" target="_blank" rel="noopener"><i class="fas fa-print"></i></a>
                         <?php } ?>
@@ -321,4 +333,29 @@ foreach ($columns as $col) {
 if ($ratebHasImageCol) {
     Rateb\App\Core\View::partial('image-preview-kit');
 }
+if ($isInventoryList) { ?>
+<script>
+document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || !form.classList || !form.classList.contains('js-pos-transfer-form')) {
+        return;
+    }
+    var raw = window.prompt('<?php echo Rateb\App\Core\View::escape(__('pos_transfer_qty_prompt')); ?>', '1');
+    if (raw === null) {
+        e.preventDefault();
+        return;
+    }
+    var qty = parseFloat(String(raw).replace(',', '.'));
+    if (!isFinite(qty) || qty <= 0) {
+        e.preventDefault();
+        window.alert('<?php echo Rateb\App\Core\View::escape(__('quantity_required')); ?>');
+        return;
+    }
+    var input = form.querySelector('.js-pos-transfer-qty');
+    if (input) {
+        input.value = String(qty);
+    }
+});
+</script>
+<?php }
 ?>

@@ -2540,4 +2540,10 @@ return [
     'cms_partner_login' => 'دخول الشركاء',
     'cms_billing_cycle' => 'دورة الفوترة',
     'cms_footer_quick_links' => 'روابط سريعة',
+    'pos_transfer_to_terminal_wh' => 'تحويل إلى مستودع نقطة البيع',
+    'pos_transfer_qty_prompt' => 'أدخل الكمية المراد تحويلها إلى مستودع جهاز نقطة البيع المفتوح',
+    'pos_transfer_done' => 'تم التحويل بنجاح إلى مستودع جهاز نقطة البيع.',
+    'pos_transfer_no_open_shift' => 'لا توجد وردية POS مفتوحة للمستخدم الحالي.',
+    'pos_transfer_branch_mismatch' => 'تم منع التحويل: فرع الصنف يختلف عن فرع وردية POS المفتوحة.',
+    'pos_transfer_qty_exceeds_stock' => 'الكمية المطلوبة للتحويل أكبر من المخزون المتاح.',
 ];
