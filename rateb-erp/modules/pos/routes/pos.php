@@ -74,6 +74,7 @@ $router->post($posApp('api/register/return'), [PosOrderOpsApiController::class, 
 $router->post($posApp('api/register/exchange'), [PosOrderOpsApiController::class, 'processExchange'], $returnsMw);
 
 $router->get($posApp('settings'), [PosSettingsController::class, 'index'], $posMw('pos/settings'));
+$router->post($posApp('settings/demo-setup'), [PosSettingsController::class, 'setupDemoData'], $posMw('pos/settings'));
 $router->get($posApp('sync'), [PosSyncController::class, 'index'], $posMw('pos/sync'));
 $router->post($posApp('sync/process'), [PosSyncController::class, 'process'], $posMw('pos/sync'));
 $router->post($posApp('sync/conflicts/resolve'), [PosSyncController::class, 'resolveConflict'], $posMw('pos/sync'));
