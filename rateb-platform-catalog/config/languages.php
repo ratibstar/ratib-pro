@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+if (!defined('RATEB_PLATFORM_CATALOG_DEFAULT_LOCALE')) {
+    define('RATEB_PLATFORM_CATALOG_DEFAULT_LOCALE', getenv('RATEB_PLATFORM_CATALOG_DEFAULT_LOCALE') ?: 'ar');
+}
+if (!defined('RATEB_PLATFORM_CATALOG_FALLBACK_LOCALE')) {
+    define('RATEB_PLATFORM_CATALOG_FALLBACK_LOCALE', getenv('RATEB_PLATFORM_CATALOG_FALLBACK_LOCALE') ?: 'en');
+}
+
+return [
+    'supported' => ['ar', 'en'],
+    'default' => RATEB_PLATFORM_CATALOG_DEFAULT_LOCALE,
+    'fallback' => RATEB_PLATFORM_CATALOG_FALLBACK_LOCALE,
+];

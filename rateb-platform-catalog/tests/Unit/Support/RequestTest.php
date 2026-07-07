@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+use Rateb\PlatformCatalog\Support\Request;
+
+catalog_test('Request method reads SERVER value', static function (): void {
+    $_SERVER['REQUEST_METHOD'] = 'PATCH';
+    catalog_assert_same('PATCH', Request::method());
+    unset($_SERVER['REQUEST_METHOD']);
+});
+
+catalog_test('Request detects JSON content type', static function (): void {
+    $_SERVER['CONTENT_TYPE'] = 'application/json; charset=UTF-8';
+    catalog_assert_true(Request::isJson());
+    unset($_SERVER['CONTENT_TYPE']);
+});
+
+catalog_test('Request header lookup is case-insensitive for HTTP_ prefix', static function (): void {
+    $_SERVER['HTTP_X_RATEB_LOCALE'] = 'ar';
+    catalog_assert_same('ar', Request::header('X-Rateb-Locale'));
+    unset($_SERVER['HTTP_X_RATEB_LOCALE']);
+});

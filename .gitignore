@@ -74,3 +74,14 @@ rateb-erp/storage/backups/*.tar.gz
 
 # Keep Designed folder out of repo operations by default
 Designed/
+
+# RATEB Platform Catalog — local binaries & runtime (do not commit)
+rateb-platform-catalog/bin/meilisearch.exe
+rateb-platform-catalog/bin/*.exe
+rateb-platform-catalog/storage/meilisearch/
+rateb-platform-catalog/storage/catalog/
+rateb-platform-catalog/storage/logs/
+rateb-platform-catalog/storage/cache/
+rateb-platform-catalog/storage/queue/
+rateb-platform-catalog/storage/backups/
+rateb-platform-catalog/storage/products/

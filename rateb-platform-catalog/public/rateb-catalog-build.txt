@@ -1,0 +1,5 @@
+release=2.8.0
+phase=2.8
+architecture=1.3.1
+build=2026-07-07T20:24:00+03:00
+tests=118/118
