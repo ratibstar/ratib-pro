@@ -171,7 +171,7 @@ try {
             ];
         }
 
-        // Fallback demo catalog for local testing when no inventory rows are visible.
+        // Fallback demo catalog for full end-to-end POS testing.
         if ($posBootstrap['catalogSeed'] === []) {
             $demoCategoryIds = [];
             foreach ($posBootstrap['categories'] as $cat) {
@@ -183,20 +183,76 @@ try {
             $defaultCategoryId = $demoCategoryIds[0] ?? 0;
 
             $demoProducts = [
-                ['id' => 900001, 'item_code' => 'DEMO-ESP', 'item_name' => 'Espresso (Demo)', 'unit_price' => 12.00],
-                ['id' => 900002, 'item_code' => 'DEMO-LAT', 'item_name' => 'Latte (Demo)', 'unit_price' => 16.00],
-                ['id' => 900003, 'item_code' => 'DEMO-CRO', 'item_name' => 'Croissant (Demo)', 'unit_price' => 9.50],
-                ['id' => 900004, 'item_code' => 'DEMO-SAN', 'item_name' => 'Chicken Sandwich (Demo)', 'unit_price' => 22.00],
-                ['id' => 900005, 'item_code' => 'DEMO-WAT', 'item_name' => 'Water 330ml (Demo)', 'unit_price' => 3.00],
+                ['item_code' => 'DEMO-ESP', 'item_name' => 'Espresso (Demo)', 'unit_price' => 12.00],
+                ['item_code' => 'DEMO-LAT', 'item_name' => 'Latte (Demo)', 'unit_price' => 16.00],
+                ['item_code' => 'DEMO-CRO', 'item_name' => 'Croissant (Demo)', 'unit_price' => 9.50],
+                ['item_code' => 'DEMO-SAN', 'item_name' => 'Chicken Sandwich (Demo)', 'unit_price' => 22.00],
+                ['item_code' => 'DEMO-WAT', 'item_name' => 'Water 330ml (Demo)', 'unit_price' => 3.00],
             ];
 
+            $branchId = (int) ($context['session']['branch_id'] ?? 0);
+            if ($branchId < 1) {
+                $branchId = (int) ($context['shift']['branch_id'] ?? 0);
+            }
+            $warehouseId = (int) ($context['session']['warehouse_id'] ?? 0);
+            if ($warehouseId < 1) {
+                $warehouseId = (int) ($context['terminal']['warehouse_id'] ?? 0);
+            }
+            if ($warehouseId < 1) {
+                try {
+                    $db = \Rateb\App\Core\Database::connection();
+                    $wStmt = $db->prepare('SELECT id, branch_id FROM rateb_warehouses WHERE company_id = :cid ORDER BY id ASC LIMIT 1');
+                    $wStmt->execute(['cid' => $companyId]);
+                    $wRow = $wStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+                    if ($wRow) {
+                        $warehouseId = (int) ($wRow['id'] ?? 0);
+                        if ($branchId < 1) {
+                            $branchId = (int) ($wRow['branch_id'] ?? 0);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // keep fallback values
+                }
+            }
+
+            $invModelForSeed = new \Rateb\App\Models\Inventory();
             foreach ($demoProducts as $idx => $demo) {
                 $catId = $demoCategoryIds[$idx % max(1, count($demoCategoryIds))] ?? $defaultCategoryId;
-                $pid = (int) $demo['id'];
+                $itemCode = (string) $demo['item_code'];
+                $pid = 0;
+                try {
+                    $existing = $invModelForSeed->queryOne(
+                        'SELECT id FROM rateb_inventory WHERE company_id = :cid AND item_code = :code LIMIT 1',
+                        ['cid' => $companyId, 'code' => $itemCode]
+                    );
+                    if ($existing) {
+                        $pid = (int) ($existing['id'] ?? 0);
+                    } elseif ($warehouseId > 0) {
+                        $pid = $invModelForSeed->create([
+                            'warehouse_id' => $warehouseId,
+                            'branch_id' => $branchId > 0 ? $branchId : null,
+                            'item_code' => $itemCode,
+                            'item_name' => (string) $demo['item_name'],
+                            'sku' => $itemCode,
+                            'barcode' => $itemCode,
+                            'category_id' => (int) $catId,
+                            'quantity' => 999,
+                            'unit' => 'pcs',
+                            'unit_cost' => (float) ($demo['unit_price'] ?? 0),
+                            'status' => 'active',
+                            'notes' => 'Auto-seeded POS demo item',
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    $pid = 0;
+                }
+                if ($pid < 1) {
+                    $pid = 990000 + $idx + 1;
+                }
                 $posBootstrap['productIndex'][(string) $pid] = (int) $catId;
                 $posBootstrap['catalogSeed'][] = [
                     'id' => $pid,
-                    'item_code' => (string) $demo['item_code'],
+                    'item_code' => $itemCode,
                     'item_name' => (string) $demo['item_name'],
                     'unit_price' => (float) $demo['unit_price'],
                     'category_id' => (int) $catId,
