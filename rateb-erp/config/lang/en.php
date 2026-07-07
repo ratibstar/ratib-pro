@@ -2549,4 +2549,5 @@ return [
     'pos_transfer_shift_required' => 'Please choose an active shift first.',
     'pos_transfer_branch_mismatch' => 'Transfer blocked: source item branch differs from your active POS shift branch.',
     'pos_transfer_qty_exceeds_stock' => 'Transfer quantity exceeds available stock.',
+    'pos_transfer_already_in_target' => 'Item is already in the selected POS warehouse.',
 ];

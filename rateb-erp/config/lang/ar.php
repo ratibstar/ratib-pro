@@ -2548,4 +2548,5 @@ return [
     'pos_transfer_shift_required' => 'اختر وردية فعالة أولاً.',
     'pos_transfer_branch_mismatch' => 'تم منع التحويل: فرع الصنف يختلف عن فرع وردية POS المفتوحة.',
     'pos_transfer_qty_exceeds_stock' => 'الكمية المطلوبة للتحويل أكبر من المخزون المتاح.',
+    'pos_transfer_already_in_target' => 'الصنف موجود مسبقاً في مستودع POS المختار.',
 ];

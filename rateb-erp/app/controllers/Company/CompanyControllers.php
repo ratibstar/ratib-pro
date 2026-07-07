@@ -1601,7 +1601,11 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             return;
         }
 
-        if ($targetInventoryId < 1 || $targetInventoryId === $id) {
+        if ($targetInventoryId === $id) {
+            $this->respondTransfer(true, (string) __('pos_transfer_already_in_target'));
+            return;
+        }
+        if ($targetInventoryId < 1) {
             $this->respondTransfer(false, (string) __('invalid_request'), 400);
             return;
         }
