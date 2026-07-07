@@ -1080,6 +1080,17 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
     }
 
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
+        $data['activePosShifts'] = $this->activePosShifts($companyId);
+        return $data;
+    }
+
     protected function layout(): string
     {
         return 'main';
@@ -1391,6 +1402,45 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         return true;
     }
 
+    /** @return array<int, array<string, mixed>> */
+    private function activePosShifts(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare(
+            'SELECT s.id, s.shift_no, s.branch_id, s.user_id, t.name AS terminal_name, t.code AS terminal_code, t.warehouse_id,
+                    COALESCE(u.name, u.email, CONCAT("User #", s.user_id)) AS cashier_name
+             FROM rateb_pos_shifts s
+             INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
+             LEFT JOIN rateb_users u ON u.id = s.user_id
+             WHERE s.company_id = :cid AND s.status = :st
+             ORDER BY s.id DESC'
+        );
+        $stmt->execute(['cid' => $companyId, 'st' => 'open']);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $out = [];
+        foreach ($rows as $row) {
+            $sid = (int) ($row['id'] ?? 0);
+            if ($sid < 1) {
+                continue;
+            }
+            $out[] = [
+                'id' => $sid,
+                'warehouse_id' => (int) ($row['warehouse_id'] ?? 0),
+                'branch_id' => (int) ($row['branch_id'] ?? 0),
+                'label' => trim(sprintf(
+                    '%s — %s (%s)',
+                    (string) ($row['shift_no'] ?? ('SH-' . $sid)),
+                    trim((string) ($row['terminal_code'] ?? '') . ' ' . (string) ($row['terminal_name'] ?? '')),
+                    (string) ($row['cashier_name'] ?? '')
+                )),
+            ];
+        }
+        return $out;
+    }
+
     public function transferToPosWarehouse(array $params): void
     {
         $this->guardManage();
@@ -1435,17 +1485,25 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
 
         $db = \Rateb\App\Core\Database::connection();
-        $shiftStmt = $db->prepare(
-            'SELECT s.id AS shift_id, s.branch_id, t.id AS terminal_id, t.warehouse_id
-             FROM rateb_pos_shifts s
-             INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
-             WHERE s.company_id = :cid AND s.user_id = :uid AND s.status = :st
-             ORDER BY s.id DESC LIMIT 1'
-        );
-        $shiftStmt->execute(['cid' => $companyId, 'uid' => $userId, 'st' => 'open']);
+        $shiftId = (int) $this->input('shift_id', 0);
+        $shiftSql = 'SELECT s.id AS shift_id, s.branch_id, t.id AS terminal_id, t.warehouse_id
+                     FROM rateb_pos_shifts s
+                     INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
+                     WHERE s.company_id = :cid AND s.status = :st';
+        $shiftParams = ['cid' => $companyId, 'st' => 'open'];
+        if ($shiftId > 0) {
+            $shiftSql .= ' AND s.id = :sid';
+            $shiftParams['sid'] = $shiftId;
+        } else {
+            $shiftSql .= ' AND s.user_id = :uid';
+            $shiftParams['uid'] = $userId;
+        }
+        $shiftSql .= ' ORDER BY s.id DESC LIMIT 1';
+        $shiftStmt = $db->prepare($shiftSql);
+        $shiftStmt->execute($shiftParams);
         $shift = $shiftStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
         if (!$shift) {
-            SessionManager::flash('error', __('pos_transfer_no_open_shift'));
+            SessionManager::flash('error', __('pos_transfer_shift_not_found'));
             $this->redirect(rateb_url($this->routePrefix));
             return;
         }

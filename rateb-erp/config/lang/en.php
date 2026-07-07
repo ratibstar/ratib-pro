@@ -2545,6 +2545,8 @@ return [
     'pos_transfer_qty_prompt' => 'Quantity to transfer to active POS terminal warehouse',
     'pos_transfer_done' => 'Transferred successfully to POS terminal warehouse.',
     'pos_transfer_no_open_shift' => 'No open POS shift found for your user.',
+    'pos_transfer_shift_not_found' => 'Selected POS shift is not active or not found.',
+    'pos_transfer_shift_required' => 'Please choose an active shift first.',
     'pos_transfer_branch_mismatch' => 'Transfer blocked: source item branch differs from your active POS shift branch.',
     'pos_transfer_qty_exceeds_stock' => 'Transfer quantity exceeds available stock.',
 ];

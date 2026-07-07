@@ -613,6 +613,16 @@
     setInterval(tickClock, 30000);
     bindConnection();
 
+    // Auto-refresh catalog when inventory transfer pushes new stock to POS warehouse from another tab/page.
+    window.addEventListener('storage', function (e) {
+        if (e.key !== 'rateb_pos_catalog_refresh' || !e.newValue) {
+            return;
+        }
+        catalogLoaded = false;
+        productCache = {};
+        loadCategory({ id: activeCategoryId || 'all', name: '' });
+    });
+
     window.addEventListener('resize', function () {
         var catBar = categoriesEl && categoriesEl.closest('.rateb-pos__cat-bar');
         var active = categoriesEl && categoriesEl.querySelector('.rateb-pos__cat-btn.is-active');

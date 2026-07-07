@@ -51,6 +51,7 @@ $tableToolsEnabled = $tableToolsEnabled ?? true;
 $exportRoute = trim((string) ($exportRoute ?? rateb_url(($routePrefix ?? '') . '/export')));
 $tableTitle = trim((string) ($tableTitle ?? ($title ?? '')));
 $isInventoryList = (bool) preg_match('#(^|/)inventory$#', trim((string) $actionsRoutePrefix, '/'));
+$activePosShifts = (isset($activePosShifts) && is_array($activePosShifts)) ? $activePosShifts : [];
 $ratebRowRecordLabel = static function (array $row): string {
     foreach (['batch_no', 'title', 'name', 'item_name', 'request_no', 'order_no', 'contract_no', 'code', 'item_code', 'evaluation_no'] as $key) {
         if (!empty($row[$key])) {
@@ -229,10 +230,12 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php if ($isInventoryList && (float) ($row['quantity'] ?? 0) > 0) { ?>
                         <form method="post"
                               action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/transfer-to-pos-warehouse'); ?>"
-                              class="d-inline js-pos-transfer-form">
+                              class="d-inline js-pos-transfer-form"
+                              data-item-name="<?php echo Rateb\App\Core\View::escape((string) ($row['item_name'] ?? $row['item_code'] ?? ('#' . (int) ($row['id'] ?? 0)))); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <input type="hidden" name="transfer_qty" value="1" class="js-pos-transfer-qty">
-                            <button type="submit" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape(__('pos_transfer_to_terminal_wh')); ?>">
+                            <input type="hidden" name="shift_id" value="" class="js-pos-transfer-shift-id">
+                            <button type="button" class="btn btn-sm btn-outline-success js-pos-transfer-open" title="<?php echo Rateb\App\Core\View::escape(__('pos_transfer_to_terminal_wh')); ?>">
                                 <i class="fas fa-right-left"></i>
                             </button>
                         </form>
@@ -334,27 +337,103 @@ if ($ratebHasImageCol) {
     Rateb\App\Core\View::partial('image-preview-kit');
 }
 if ($isInventoryList) { ?>
+<div class="modal fade" id="ratebPosTransferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title"><?php echo Rateb\App\Core\View::escape(__('pos_transfer_to_terminal_wh')); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Rateb\App\Core\View::escape(__('close')); ?>"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2 text-muted small" id="ratebPosTransferItem"></div>
+                <div class="mb-3">
+                    <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('quantity')); ?></label>
+                    <input type="number" min="0.001" step="0.001" class="form-control" id="ratebPosTransferQty" value="1">
+                </div>
+                <div>
+                    <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('pos_shifts')); ?></label>
+                    <select class="form-select" id="ratebPosTransferShift">
+                        <option value=""><?php echo Rateb\App\Core\View::escape(__('select')); ?></option>
+                        <?php foreach ($activePosShifts as $shift) { ?>
+                        <option value="<?php echo (int) ($shift['id'] ?? 0); ?>"><?php echo Rateb\App\Core\View::escape((string) ($shift['label'] ?? '')); ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?php echo Rateb\App\Core\View::escape(__('cancel')); ?></button>
+                <button type="button" class="btn btn-primary" id="ratebPosTransferSubmit"><?php echo Rateb\App\Core\View::escape(__('save')); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
-document.addEventListener('submit', function (e) {
-    var form = e.target;
-    if (!form || !form.classList || !form.classList.contains('js-pos-transfer-form')) {
+document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('ratebPosTransferModal');
+    var qtyInput = document.getElementById('ratebPosTransferQty');
+    var shiftSelect = document.getElementById('ratebPosTransferShift');
+    var submitBtn = document.getElementById('ratebPosTransferSubmit');
+    var itemLabel = document.getElementById('ratebPosTransferItem');
+    var currentForm = null;
+    var modal = (window.bootstrap && modalEl) ? new window.bootstrap.Modal(modalEl) : null;
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('.js-pos-transfer-open') : null;
+        if (!btn) {
+            return;
+        }
+        var form = btn.closest('form.js-pos-transfer-form');
+        if (!form) {
+            return;
+        }
+        currentForm = form;
+        if (itemLabel) {
+            itemLabel.textContent = form.getAttribute('data-item-name') || '';
+        }
+        if (qtyInput) {
+            qtyInput.value = '1';
+        }
+        if (shiftSelect) {
+            shiftSelect.value = '';
+        }
+        if (modal) {
+            modal.show();
+        }
+    });
+
+    if (!submitBtn) {
         return;
     }
-    var raw = window.prompt('<?php echo Rateb\App\Core\View::escape(__('pos_transfer_qty_prompt')); ?>', '1');
-    if (raw === null) {
-        e.preventDefault();
-        return;
-    }
-    var qty = parseFloat(String(raw).replace(',', '.'));
-    if (!isFinite(qty) || qty <= 0) {
-        e.preventDefault();
-        window.alert('<?php echo Rateb\App\Core\View::escape(__('quantity_required')); ?>');
-        return;
-    }
-    var input = form.querySelector('.js-pos-transfer-qty');
-    if (input) {
-        input.value = String(qty);
-    }
+    submitBtn.addEventListener('click', function () {
+        if (!currentForm) {
+            return;
+        }
+        var qty = parseFloat(String((qtyInput && qtyInput.value) || '').replace(',', '.'));
+        if (!isFinite(qty) || qty <= 0) {
+            window.alert('<?php echo Rateb\App\Core\View::escape(__('quantity_required')); ?>');
+            return;
+        }
+        var shiftId = (shiftSelect && shiftSelect.value) ? String(shiftSelect.value) : '';
+        if (!shiftId) {
+            window.alert('<?php echo Rateb\App\Core\View::escape(__('pos_transfer_shift_required')); ?>');
+            return;
+        }
+        var qtyField = currentForm.querySelector('.js-pos-transfer-qty');
+        var shiftField = currentForm.querySelector('.js-pos-transfer-shift-id');
+        if (qtyField) {
+            qtyField.value = String(qty);
+        }
+        if (shiftField) {
+            shiftField.value = shiftId;
+        }
+        try {
+            localStorage.setItem('rateb_pos_catalog_refresh', String(Date.now()));
+        } catch (err) {}
+        if (modal) {
+            modal.hide();
+        }
+        currentForm.submit();
+    });
 });
 </script>
 <?php }
