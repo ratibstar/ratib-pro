@@ -235,6 +235,8 @@ $ratebRowRecordLabel = static function (array $row): string {
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <input type="hidden" name="transfer_qty" value="1" class="js-pos-transfer-qty">
                             <input type="hidden" name="shift_id" value="" class="js-pos-transfer-shift-id">
+                            <input type="hidden" name="target_warehouse_id" value="" class="js-pos-transfer-warehouse-id">
+                            <input type="hidden" name="target_branch_id" value="" class="js-pos-transfer-branch-id">
                             <button type="button" class="btn btn-sm btn-outline-success js-pos-transfer-open" title="<?php echo Rateb\App\Core\View::escape(__('pos_transfer_to_terminal_wh')); ?>">
                                 <i class="fas fa-right-left"></i>
                             </button>
@@ -356,7 +358,11 @@ if ($isInventoryList) { ?>
                     <select class="form-select" id="ratebPosTransferShift">
                         <option value=""><?php echo Rateb\App\Core\View::escape(__('select')); ?> (<?php echo Rateb\App\Core\View::escape(__('optional')); ?>)</option>
                         <?php foreach ($activePosShifts as $shift) { ?>
-                        <option value="<?php echo (int) ($shift['id'] ?? 0); ?>"><?php echo Rateb\App\Core\View::escape((string) ($shift['label'] ?? '')); ?></option>
+                        <option value="<?php echo (int) ($shift['id'] ?? 0); ?>"
+                                data-warehouse-id="<?php echo (int) ($shift['warehouse_id'] ?? 0); ?>"
+                                data-branch-id="<?php echo (int) ($shift['branch_id'] ?? 0); ?>">
+                            <?php echo Rateb\App\Core\View::escape((string) ($shift['label'] ?? '')); ?>
+                        </option>
                         <?php } ?>
                     </select>
                 </div>
@@ -494,13 +500,24 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         var shiftId = (shiftSelect && shiftSelect.value) ? String(shiftSelect.value) : '';
+        var selectedOption = (shiftSelect && shiftSelect.selectedOptions && shiftSelect.selectedOptions[0]) ? shiftSelect.selectedOptions[0] : null;
+        var targetWarehouseId = selectedOption ? String(selectedOption.getAttribute('data-warehouse-id') || '') : '';
+        var targetBranchId = selectedOption ? String(selectedOption.getAttribute('data-branch-id') || '') : '';
         var qtyField = currentForm.querySelector('.js-pos-transfer-qty');
         var shiftField = currentForm.querySelector('.js-pos-transfer-shift-id');
+        var whField = currentForm.querySelector('.js-pos-transfer-warehouse-id');
+        var brField = currentForm.querySelector('.js-pos-transfer-branch-id');
         if (qtyField) {
             qtyField.value = String(qty);
         }
         if (shiftField) {
             shiftField.value = shiftId;
+        }
+        if (whField) {
+            whField.value = targetWarehouseId;
+        }
+        if (brField) {
+            brField.value = targetBranchId;
         }
         var fd = new FormData(currentForm);
         var body = new URLSearchParams();

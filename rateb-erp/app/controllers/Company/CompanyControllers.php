@@ -1480,30 +1480,33 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
 
         $db = \Rateb\App\Core\Database::connection();
-        $shiftId = (int) $this->input('shift_id', 0);
-        $shiftSql = 'SELECT s.id AS shift_id, s.branch_id, t.id AS terminal_id, t.warehouse_id
-                     FROM rateb_pos_shifts s
-                     INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
-                     WHERE s.company_id = :cid AND s.status = :st';
-        $shiftParams = ['cid' => $companyId, 'st' => 'open'];
-        if ($shiftId > 0) {
-            $shiftSql .= ' AND s.id = :sid';
-            $shiftParams['sid'] = $shiftId;
-        } else {
-            $shiftSql .= ' AND s.user_id = :uid';
-            $shiftParams['uid'] = $userId;
+        $targetWarehouseId = (int) $this->input('target_warehouse_id', 0);
+        $targetBranchId = (int) $this->input('target_branch_id', 0);
+        if ($targetWarehouseId < 1 || $targetBranchId < 1) {
+            $shiftId = (int) $this->input('shift_id', 0);
+            $shiftSql = 'SELECT s.id AS shift_id, s.branch_id, t.id AS terminal_id, t.warehouse_id
+                         FROM rateb_pos_shifts s
+                         INNER JOIN rateb_pos_terminals t ON t.id = s.terminal_id
+                         WHERE s.company_id = :cid AND s.status = :st';
+            $shiftParams = ['cid' => $companyId, 'st' => 'open'];
+            if ($shiftId > 0) {
+                $shiftSql .= ' AND s.id = :sid';
+                $shiftParams['sid'] = $shiftId;
+            } else {
+                $shiftSql .= ' AND s.user_id = :uid';
+                $shiftParams['uid'] = $userId;
+            }
+            $shiftSql .= ' ORDER BY s.id DESC LIMIT 1';
+            $shiftStmt = $db->prepare($shiftSql);
+            $shiftStmt->execute($shiftParams);
+            $shift = $shiftStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+            if (!$shift) {
+                $this->respondTransfer(false, (string) __('pos_transfer_shift_not_found'), 422);
+                return;
+            }
+            $targetWarehouseId = (int) ($shift['warehouse_id'] ?? 0);
+            $targetBranchId = (int) ($shift['branch_id'] ?? 0);
         }
-        $shiftSql .= ' ORDER BY s.id DESC LIMIT 1';
-        $shiftStmt = $db->prepare($shiftSql);
-        $shiftStmt->execute($shiftParams);
-        $shift = $shiftStmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-        if (!$shift) {
-            $this->respondTransfer(false, (string) __('pos_transfer_shift_not_found'), 422);
-            return;
-        }
-
-        $targetWarehouseId = (int) ($shift['warehouse_id'] ?? 0);
-        $targetBranchId = (int) ($shift['branch_id'] ?? 0);
         if ($targetBranchId < 1) {
             $this->respondTransfer(false, (string) __('pos_transfer_shift_not_found'), 422);
             return;
