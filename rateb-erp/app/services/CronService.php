@@ -35,6 +35,7 @@ final class CronService
             'warranty_alerts' => (new AssetDeviceAutomationService())->processWarrantyExpiryAlerts(),
             'spare_part_alerts' => (new AssetDeviceAutomationService())->processSparePartsLowStock(),
             'batch_expiry_alerts' => 0,
+            'pos_sync_batches' => 0,
             'invoice_overdue_marked' => (new BillingAutomationService())->markOverdueInvoices(),
             'invoice_due_reminders' => (new BillingAutomationService())->processDueReminders(),
             'cms_pages_published' => 0,
@@ -58,6 +59,7 @@ final class CronService
             $stats['inventory_alerts'] += $invSvc->processExpiryAlerts($cid);
             $stats['low_stock_alerts'] += $invSvc->processLowStockAlerts($cid);
             $stats['batch_expiry_alerts'] += $invSvc->processBatchExpiryAlerts($cid);
+            $stats['pos_sync_batches'] += $this->processPosSyncBatch($cid);
         }
         TenantContext::setCompanyId(null);
 
@@ -73,5 +75,16 @@ final class CronService
         $stmt = $db->prepare('DELETE FROM rateb_password_resets WHERE expires_at < NOW() OR used_at IS NOT NULL');
         $stmt->execute();
         return $stmt->rowCount();
+    }
+
+    private function processPosSyncBatch(int $companyId): int
+    {
+        if ($companyId < 1 || !class_exists(\Rateb\App\Pos\Services\PosSyncBatchProcessorService::class)) {
+            return 0;
+        }
+
+        $result = (new \Rateb\App\Pos\Services\PosSyncBatchProcessorService())->processPending($companyId, 50);
+
+        return (int) ($result['synced'] ?? 0);
     }
 }

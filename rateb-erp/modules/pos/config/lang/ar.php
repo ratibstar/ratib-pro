@@ -29,6 +29,8 @@ return [
     'pos_sync_accept_server' => 'قبول السيرفر',
     'pos_sync_accept_client' => 'قبول الجهاز',
     'pos_offline_queued' => 'تم حفظ البيع محلياً — ستُزامَن عند عودة الاتصال.',
+    'pos_sync_offline_blocked' => 'لا يمكن تنفيذ المزامنة دون اتصال بالإنترنت.',
+    'pos_sync_conflicts_migration_required' => 'جدول rateb_pos_sync_conflicts غير موجود — نفّذ ترحيل 169_pos_sync_conflicts.sql.',
     'pos_sync_queue_depth' => 'عمق الطابور',
     'pos_sync_pending' => 'معلّق',
     'pos_sync_conflicts' => 'تعارضات',

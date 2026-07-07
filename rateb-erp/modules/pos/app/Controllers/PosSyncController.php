@@ -22,6 +22,10 @@ final class PosSyncController extends PosBaseController
             'items' => $service->recentQueue(50, $cid),
             'conflicts' => $service->openConflicts(50, $cid),
             'csrf' => Csrf::token(),
+            'syncApi' => [
+                'process' => rateb_app_url('pos/api/sync/process'),
+                'resolveConflict' => rateb_app_url('pos/api/sync/conflicts/{id}/resolve'),
+            ],
         ]);
     }
 
@@ -39,7 +43,7 @@ final class PosSyncController extends PosBaseController
             'synced' => (string) ($result['synced'] ?? 0),
             'failed' => (string) ($result['failed'] ?? 0),
         ]));
-        $this->redirect(rateb_app_url('pos/sync'));
+        $this->redirect($this->syncRedirectUrl());
     }
 
     public function resolveConflict(): void
@@ -65,6 +69,20 @@ final class PosSyncController extends PosBaseController
             SessionManager::flash('error', (string) ($result['error'] ?? __('invalid_request')));
         }
 
-        $this->redirect(rateb_app_url('pos/sync'));
+        $this->redirect($this->syncRedirectUrl());
+    }
+
+    private function syncRedirectUrl(): string
+    {
+        $url = rateb_app_url('pos/sync');
+        $companyId = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        if ($companyId > 0) {
+            $url .= (str_contains($url, '?') ? '&' : '?') . 'company_id=' . $companyId;
+        }
+
+        return $url;
     }
 }

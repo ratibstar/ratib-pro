@@ -29,6 +29,8 @@ return [
     'pos_sync_accept_server' => 'Accept server',
     'pos_sync_accept_client' => 'Accept device',
     'pos_offline_queued' => 'Sale saved locally — will sync when back online.',
+    'pos_sync_offline_blocked' => 'Sync actions require an internet connection.',
+    'pos_sync_conflicts_migration_required' => 'Table rateb_pos_sync_conflicts is missing — run migration 169_pos_sync_conflicts.sql.',
     'pos_sync_queue_depth' => 'Queue depth',
     'pos_sync_pending' => 'Pending',
     'pos_sync_conflicts' => 'Conflicts',

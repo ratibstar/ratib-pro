@@ -40,6 +40,7 @@ final class PosOfflineSyncService
             'last_sync' => $summary['last_sync'],
             'online' => true,
             'scaffold' => false,
+            'conflicts_migration_required' => !$this->conflicts->isAvailable(),
         ];
     }
 
