@@ -339,7 +339,7 @@ if ($ratebHasImageCol) {
 if ($isInventoryList) { ?>
 <div class="modal fade" id="ratebPosTransferModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
+        <div class="modal-content border-0 shadow rateb-pos-transfer-modal">
             <div class="modal-header">
                 <h5 class="modal-title"><?php echo Rateb\App\Core\View::escape(__('pos_transfer_to_terminal_wh')); ?></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Rateb\App\Core\View::escape(__('close')); ?>"></button>
@@ -348,12 +348,12 @@ if ($isInventoryList) { ?>
                 <div class="mb-2 text-muted small" id="ratebPosTransferItem"></div>
                 <div class="mb-3">
                     <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('quantity')); ?></label>
-                    <input type="number" min="0.001" step="0.001" class="form-control" id="ratebPosTransferQty" value="1">
+                    <input type="number" min="0.001" step="0.001" class="form-control form-control-lg" id="ratebPosTransferQty" value="1">
                 </div>
                 <div>
                     <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('pos_shifts')); ?></label>
                     <select class="form-select" id="ratebPosTransferShift">
-                        <option value=""><?php echo Rateb\App\Core\View::escape(__('select')); ?></option>
+                        <option value=""><?php echo Rateb\App\Core\View::escape(__('select')); ?> (<?php echo Rateb\App\Core\View::escape(__('optional')); ?>)</option>
                         <?php foreach ($activePosShifts as $shift) { ?>
                         <option value="<?php echo (int) ($shift['id'] ?? 0); ?>"><?php echo Rateb\App\Core\View::escape((string) ($shift['label'] ?? '')); ?></option>
                         <?php } ?>
@@ -367,6 +367,11 @@ if ($isInventoryList) { ?>
         </div>
     </div>
 </div>
+<style>
+.rateb-pos-transfer-modal .modal-body{padding-top:1rem}
+.rateb-pos-transfer-modal .form-control,
+.rateb-pos-transfer-modal .form-select{min-height:44px}
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var modalEl = document.getElementById('ratebPosTransferModal');
@@ -394,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
             qtyInput.value = '1';
         }
         if (shiftSelect) {
-            shiftSelect.value = '';
+            shiftSelect.selectedIndex = (shiftSelect.options.length > 1) ? 1 : 0;
         }
         if (modal) {
             modal.show();
@@ -414,10 +419,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         var shiftId = (shiftSelect && shiftSelect.value) ? String(shiftSelect.value) : '';
-        if (!shiftId) {
-            window.alert('<?php echo Rateb\App\Core\View::escape(__('pos_transfer_shift_required')); ?>');
-            return;
-        }
         var qtyField = currentForm.querySelector('.js-pos-transfer-qty');
         var shiftField = currentForm.querySelector('.js-pos-transfer-shift-id');
         if (qtyField) {
@@ -428,6 +429,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         try {
             localStorage.setItem('rateb_pos_catalog_refresh', String(Date.now()));
+            if (window.BroadcastChannel) {
+                var ch = new BroadcastChannel('rateb_pos_catalog_channel');
+                ch.postMessage({ type: 'refresh', ts: Date.now() });
+                ch.close();
+            }
         } catch (err) {}
         if (modal) {
             modal.hide();

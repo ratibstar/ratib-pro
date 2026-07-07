@@ -622,6 +622,21 @@
         productCache = {};
         loadCategory({ id: activeCategoryId || 'all', name: '' });
     });
+    if (window.BroadcastChannel) {
+        try {
+            var refreshCh = new BroadcastChannel('rateb_pos_catalog_channel');
+            refreshCh.onmessage = function (evt) {
+                if (!evt || !evt.data || evt.data.type !== 'refresh') {
+                    return;
+                }
+                catalogLoaded = false;
+                productCache = {};
+                loadCategory({ id: activeCategoryId || 'all', name: '' });
+            };
+        } catch (err) {
+            // ignore channel errors and rely on storage event
+        }
+    }
 
     window.addEventListener('resize', function () {
         var catBar = categoriesEl && categoriesEl.closest('.rateb-pos__cat-bar');
