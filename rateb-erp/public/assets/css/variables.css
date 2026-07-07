@@ -17,7 +17,7 @@
     --rateb-border: #2a3a52;
     --rateb-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
     --rateb-radius: 12px;
-    --rateb-font: 'Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --rateb-font: system-ui, -apple-system, 'Segoe UI', Tahoma, 'IBM Plex Sans Arabic', sans-serif;
     --rateb-table-hover: rgba(45, 212, 191, 0.06);
     --rateb-table-visible-rows: 5;
     --rateb-table-row-h: 3rem;

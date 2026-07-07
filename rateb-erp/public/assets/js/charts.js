@@ -54,7 +54,7 @@
     }
 
     function fontFamily() {
-        return 'Tajawal, system-ui, sans-serif';
+        return 'system-ui, -apple-system, "Segoe UI", sans-serif';
     }
 
     function formatTick(value) {

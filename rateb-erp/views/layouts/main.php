@@ -3,6 +3,19 @@ $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $erpRoute = rateb_current_erp_route();
+$layoutAssets = class_exists(\Rateb\App\Support\ErpLayoutAssets::class)
+    ? \Rateb\App\Support\ErpLayoutAssets::resolve($erpRoute)
+    : [
+        'charts' => true,
+        'lineItems' => true,
+        'formHybrid' => true,
+        'fiscalYear' => true,
+        'inventoryBatch' => true,
+        'contractRenewal' => true,
+        'cmsAdmin' => true,
+        'entityDocuments' => true,
+        'defer' => [],
+    ];
 $accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|cost-of-sales|trial-balance|journal-register|account-statement|partners-subsidiary-ledger|invoices|payments|subscriptions|reports/cost-analysis|reports/inventory-valuation|asset-depreciation)#', $erpRoute);
 $modulePageMetrics = [];
 if (empty($hideModulePageStats) && $erpRoute !== '' && function_exists('rateb_module_page_metrics')) {
@@ -63,9 +76,6 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
     <script src="<?php echo rateb_asset('js/rateb-console-quiet.js'); ?>"></script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
     <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <?php if ($dir === 'rtl') { ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <?php } else { ?>
@@ -238,7 +248,10 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             <?php }
             } ?>
             <?php if (function_exists('rateb_branch_access_all') && rateb_branch_access_all() && !rateb_is_portal_branch_session() && rateb_company_branches_nav_enabled()) {
-                $hoBranches = (new \Rateb\App\Services\BranchService())->listForCompany((int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? rateb_resolve_ops_company_id()));
+                $hoCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? rateb_resolve_ops_company_id());
+                $hoBranches = function_exists('rateb_company_branches_cached')
+                    ? rateb_company_branches_cached($hoCompanyId)
+                    : (new \Rateb\App\Services\BranchService())->listForCompany($hoCompanyId);
                 if ($hoBranches !== []) {
                     Rateb\App\Core\View::partial('branch-filter-switcher', [
                         'branches' => $hoBranches,
@@ -274,29 +287,78 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 </div>
 <?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
 <?php Rateb\App\Core\View::partial('rateb-confirm-modal'); ?>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/lang.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/rateb-modal.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/rateb-bulk-delete.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/table-tools.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/app.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/rateb-date-inputs.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/form-fiscal-year.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/line-items.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/inventory-batch-form.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/contract-renewal-form.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/charts.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/cms-admin.js'); ?>"></script>
-<script src="<?php echo rateb_asset('js/entity-documents-modal.js'); ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+<?php if (!empty($layoutAssets['charts'])) { ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+<?php } ?>
+<script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/lang.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/rateb-modal.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/rateb-bulk-delete.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/table-tools.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/app.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/rateb-date-inputs.js'); ?>" defer></script>
+<?php if (!empty($layoutAssets['formHybrid'])) { ?>
+<script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>" defer></script>
+<?php } ?>
+<?php if (!empty($layoutAssets['fiscalYear'])) { ?>
+<script src="<?php echo rateb_asset('js/form-fiscal-year.js'); ?>" defer></script>
+<?php } ?>
+<?php if (!empty($layoutAssets['lineItems'])) { ?>
+<script src="<?php echo rateb_asset('js/line-items.js'); ?>" defer></script>
+<?php } ?>
+<?php if (!empty($layoutAssets['inventoryBatch'])) { ?>
+<script src="<?php echo rateb_asset('js/inventory-batch-form.js'); ?>" defer></script>
+<?php } ?>
+<?php if (!empty($layoutAssets['contractRenewal'])) { ?>
+<script src="<?php echo rateb_asset('js/contract-renewal-form.js'); ?>" defer></script>
+<?php } ?>
+<?php if (!empty($layoutAssets['cmsAdmin'])) { ?>
+<script src="<?php echo rateb_asset('js/cms-admin.js'); ?>" defer></script>
+<?php } ?>
+<?php
+$deferAssetScripts = [];
+foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
+    $deferAssetScripts[] = rateb_asset('js/' . $deferFile);
+}
+?>
+<?php if ($deferAssetScripts !== []) { ?>
+<script>
+(function () {
+    var queue = <?php echo json_encode($deferAssetScripts, JSON_UNESCAPED_SLASHES); ?>;
+    var idx = 0;
+    function loadNext() {
+        if (idx >= queue.length) {
+            return;
+        }
+        var s = document.createElement('script');
+        s.src = queue[idx++];
+        s.defer = true;
+        s.onload = loadNext;
+        s.onerror = loadNext;
+        document.body.appendChild(s);
+    }
+    function start() {
+        if (window.requestIdleCallback) {
+            window.requestIdleCallback(loadNext, { timeout: 2000 });
+        } else {
+            setTimeout(loadNext, 350);
+        }
+    }
+    if (document.readyState === 'complete') {
+        start();
+    } else {
+        window.addEventListener('load', start, { once: true });
+    }
+})();
+</script>
+<?php } ?>
 <?php if ($approvalsOversightJs) { ?>
-<script src="<?php echo rateb_asset('js/approvals-oversight.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/approvals-oversight.js'); ?>" defer></script>
 <?php } ?>
 <?php if ($navActive('admin/agency-updates')) { ?>
-<script src="<?php echo rateb_asset('js/agency-updates.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/agency-updates.js'); ?>" defer></script>
 <?php } ?>
 </body>
 </html>

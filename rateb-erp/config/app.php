@@ -2663,6 +2663,29 @@ if (!function_exists('__')) {
 }
 
 /** Module list-page KPI strip (real DB calculations). */
+if (!function_exists('rateb_company_branches_cached')) {
+    /** @return list<array<string, mixed>> */
+    function rateb_company_branches_cached(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $key = 'rateb_nav_branches_' . $companyId;
+        $raw = \Rateb\App\Core\SessionManager::get($key);
+        if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
+            return $raw['data'];
+        }
+        try {
+            $data = (new \Rateb\App\Services\BranchService())->listForCompany($companyId);
+        } catch (\Throwable $e) {
+            $data = [];
+        }
+        \Rateb\App\Core\SessionManager::set($key, ['exp' => time() + 120, 'data' => $data]);
+        return $data;
+    }
+}
+
+/** Module list-page KPI strip (real DB calculations). */
 if (!function_exists('rateb_module_page_metrics')) {
     /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
     function rateb_module_page_metrics(?string $route = null): array
@@ -2674,11 +2697,19 @@ if (!function_exists('rateb_module_page_metrics')) {
         if ($route === '') {
             return [];
         }
+        $companyId = function_exists('rateb_resolve_ops_company_id') ? (int) rateb_resolve_ops_company_id() : 0;
+        $cacheKey = 'rateb_module_metrics_' . md5($route . '|' . $companyId);
+        $cached = \Rateb\App\Core\SessionManager::get($cacheKey);
+        if (is_array($cached) && is_array($cached['data'] ?? null) && (int) ($cached['exp'] ?? 0) > time()) {
+            return $cached['data'];
+        }
         try {
-            return (new \Rateb\App\Services\ModulePageStatsService())->forRoute($route);
+            $data = (new \Rateb\App\Services\ModulePageStatsService())->forRoute($route);
         } catch (\Throwable $e) {
             error_log('rateb_module_page_metrics: ' . $e->getMessage());
-            return [];
+            $data = [];
         }
+        \Rateb\App\Core\SessionManager::set($cacheKey, ['exp' => time() + 45, 'data' => $data]);
+        return $data;
     }
 }
