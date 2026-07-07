@@ -349,7 +349,7 @@ if ($isInventoryList) { ?>
                 <div class="alert d-none" id="ratebPosTransferInlineMsg" role="alert"></div>
                 <div class="mb-3">
                     <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('quantity')); ?></label>
-                    <input type="number" min="0.001" step="0.001" class="form-control form-control-lg" id="ratebPosTransferQty" value="1">
+                    <input type="text" inputmode="decimal" class="form-control form-control-lg" id="ratebPosTransferQty" value="1" placeholder="1">
                 </div>
                 <div>
                     <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('pos_shifts')); ?></label>
@@ -380,6 +380,17 @@ if ($isInventoryList) { ?>
 .rateb-pos-transfer-modal .modal-body{padding-top:1rem}
 .rateb-pos-transfer-modal .form-control,
 .rateb-pos-transfer-modal .form-select{min-height:44px}
+.rateb-pos-transfer-modal .form-control{
+    color:#e8eefc;
+    background:#081327;
+    border-color:#1e3a5f;
+}
+.rateb-pos-transfer-modal .form-control:focus{
+    color:#fff;
+    background:#0b1a33;
+    border-color:#2f5f97;
+    box-shadow:0 0 0 .2rem rgba(47,95,151,.2);
+}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -417,6 +428,14 @@ document.addEventListener('DOMContentLoaded', function () {
         inlineMsg.classList.add('d-none');
         inlineMsg.textContent = '';
     }
+    function normalizeDigits(v) {
+        var s = String(v || '');
+        var ar = '٠١٢٣٤٥٦٧٨٩';
+        var fa = '۰۱۲۳۴۵۶۷۸۹';
+        s = s.replace(/[٠-٩]/g, function (ch) { return String(ar.indexOf(ch)); });
+        s = s.replace(/[۰-۹]/g, function (ch) { return String(fa.indexOf(ch)); });
+        return s.replace(',', '.').trim();
+    }
 
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest ? e.target.closest('.js-pos-transfer-open') : null;
@@ -434,6 +453,8 @@ document.addEventListener('DOMContentLoaded', function () {
         clearInline();
         if (qtyInput) {
             qtyInput.value = '1';
+            qtyInput.focus();
+            qtyInput.select();
         }
         if (shiftSelect) {
             shiftSelect.selectedIndex = (shiftSelect.options.length > 1) ? 1 : 0;
@@ -451,7 +472,12 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         submitBtn.disabled = true;
-        var qty = parseFloat(String((qtyInput && qtyInput.value) || '').replace(',', '.'));
+        var rawQty = normalizeDigits((qtyInput && qtyInput.value) || '1');
+        if (qtyInput && rawQty === '') {
+            qtyInput.value = '1';
+            rawQty = '1';
+        }
+        var qty = parseFloat(rawQty);
         if (!isFinite(qty) || qty <= 0) {
             showInline('<?php echo Rateb\App\Core\View::escape(__('quantity_required')); ?>', false);
             submitBtn.disabled = false;
