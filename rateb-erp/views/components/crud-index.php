@@ -403,7 +403,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var toastEl = document.getElementById('ratebPosTransferToast');
     var toastBody = document.getElementById('ratebPosTransferToastBody');
     var currentForm = null;
-    var modal = (window.bootstrap && modalEl) ? new window.bootstrap.Modal(modalEl) : null;
+    if (modalEl && modalEl.parentElement !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+    if (toastEl && toastEl.parentElement && toastEl.parentElement.parentElement !== document.body) {
+        document.body.appendChild(toastEl.parentElement);
+    }
+    if (modalEl) {
+        modalEl.style.zIndex = '2000';
+        modalEl.style.pointerEvents = 'auto';
+    }
+    var modal = (window.bootstrap && modalEl) ? new window.bootstrap.Modal(modalEl, { backdrop: true, keyboard: true }) : null;
     var toast = (window.bootstrap && toastEl) ? new window.bootstrap.Toast(toastEl, { delay: 2600 }) : null;
 
     function showToast(msg, ok) {
