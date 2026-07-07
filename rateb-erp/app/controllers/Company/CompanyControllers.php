@@ -1560,10 +1560,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                 return;
             }
         }
-        if ($sourceBranchId > 0 && $sourceBranchId !== $targetBranchId) {
-            $this->respondTransfer(false, (string) __('pos_transfer_branch_mismatch'), 422);
-            return;
-        }
+        // Selected open shift is the source of truth for target POS warehouse.
 
         $targetInventoryId = 0;
         try {
