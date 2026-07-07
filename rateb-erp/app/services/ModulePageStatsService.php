@@ -323,19 +323,19 @@ final class ModulePageStatsService
 
         if (str_contains($path, 'inventory-valuation')) {
             return $this->cards([
-                ['label' => __('inventory_value'), 'value' => $this->money((float) ($kpi['inventory_value'] ?? $inv->totalValue($cid))), 'tone' => 'green'],
-                ['label' => __('inventory'), 'value' => $this->intStr($itemCount), 'tone' => 'blue'],
-                ['label' => __('low_stock'), 'value' => $this->intStr((int) ($kpi['low_stock'] ?? 0)), 'tone' => 'orange'],
-                ['label' => __('expiring_soon'), 'value' => $this->intStr((int) ($kpi['expiring_soon'] ?? 0)), 'tone' => 'red'],
+                ['key' => 'inventory_value', 'label' => __('inventory_value'), 'value' => $this->money((float) ($kpi['inventory_value'] ?? $inv->totalValue($cid))), 'tone' => 'green'],
+                ['key' => 'inventory', 'label' => __('inventory'), 'value' => $this->intStr($itemCount), 'tone' => 'blue'],
+                ['key' => 'low_stock', 'label' => __('low_stock'), 'value' => $this->intStr((int) ($kpi['low_stock'] ?? 0)), 'tone' => 'orange'],
+                ['key' => 'expiring_soon', 'label' => __('expiring_soon'), 'value' => $this->intStr((int) ($kpi['expiring_soon'] ?? 0)), 'tone' => 'red'],
             ]);
         }
 
         return $this->cards([
-            ['label' => __('inventory'), 'value' => $this->intStr($itemCount), 'tone' => 'blue'],
-            ['label' => __('inventory_value'), 'value' => $this->money((float) ($kpi['inventory_value'] ?? $inv->totalValue($cid))), 'tone' => 'green'],
-            ['label' => __('warehouses'), 'value' => $this->intStr($whCount), 'tone' => 'teal'],
-            ['label' => __('low_stock'), 'value' => $this->intStr((int) ($kpi['low_stock'] ?? 0)), 'tone' => 'orange'],
-            ['label' => __('expiring_soon'), 'value' => $this->intStr((int) ($kpi['expiring_soon'] ?? 0)), 'tone' => 'red'],
+            ['key' => 'inventory', 'label' => __('inventory'), 'value' => $this->intStr($itemCount), 'tone' => 'blue'],
+            ['key' => 'inventory_value', 'label' => __('inventory_value'), 'value' => $this->money((float) ($kpi['inventory_value'] ?? $inv->totalValue($cid))), 'tone' => 'green'],
+            ['key' => 'warehouses', 'label' => __('warehouses'), 'value' => $this->intStr($whCount), 'tone' => 'teal'],
+            ['key' => 'low_stock', 'label' => __('low_stock'), 'value' => $this->intStr((int) ($kpi['low_stock'] ?? 0)), 'tone' => 'orange'],
+            ['key' => 'expiring_soon', 'label' => __('expiring_soon'), 'value' => $this->intStr((int) ($kpi['expiring_soon'] ?? 0)), 'tone' => 'red'],
             ['label' => __('pending_approvals'), 'value' => $this->intStr((int) ($kpi['pending_workflows'] ?? 0)), 'tone' => 'purple'],
         ]);
     }

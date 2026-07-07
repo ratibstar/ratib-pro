@@ -584,6 +584,25 @@ document.addEventListener('DOMContentLoaded', function () {
                         qtyCell.setAttribute('data-qty-value', q.toFixed(3));
                     }
                 }
+                if (payload.stats && typeof payload.stats === 'object') {
+                    var strip = document.querySelector('[data-cm-module-stats] .cm-strip');
+                    if (strip) {
+                        var keys = ['inventory', 'inventory_value', 'warehouses', 'low_stock', 'expiring_soon'];
+                        keys.forEach(function (k) {
+                            var item = strip.querySelector('.cm-strip__item[data-stat-key="' + k + '"] .cm-strip__val');
+                            if (!item || typeof payload.stats[k] === 'undefined') {
+                                return;
+                            }
+                            if (k === 'inventory_value') {
+                                if (payload.stats.inventory_value_fmt) {
+                                    item.innerHTML = String(payload.stats.inventory_value_fmt);
+                                }
+                            } else {
+                                item.textContent = String(payload.stats[k]);
+                            }
+                        });
+                    }
+                }
                 try {
                     localStorage.setItem('rateb_pos_catalog_refresh', String(Date.now()));
                     if (window.BroadcastChannel) {

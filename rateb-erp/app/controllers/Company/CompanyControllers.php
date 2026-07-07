@@ -1573,6 +1573,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             ]);
             $this->respondTransfer(true, (string) __('pos_transfer_topup_done'), 200, [
                 'source_quantity' => $this->currentInventoryQty($id),
+                'stats' => $this->inventoryRealtimeStats($companyId),
             ]);
             return;
         }
@@ -1620,6 +1621,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         ]);
         $this->respondTransfer(true, (string) __('pos_transfer_done'), 200, [
             'source_quantity' => $this->currentInventoryQty($id),
+            'stats' => $this->inventoryRealtimeStats($companyId),
         ]);
     }
 
@@ -1651,6 +1653,24 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
         $row = $this->model->find($inventoryId);
         return round((float) ($row['quantity'] ?? 0), 3);
+    }
+
+    /** @return array<string, string|int|float> */
+    private function inventoryRealtimeStats(int $companyId): array
+    {
+        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        $inv = new \Rateb\App\Models\Inventory();
+        $analytics = (new \Rateb\App\Services\ErpAnalyticsService())->companyKpi($companyId);
+        $whCount = (new \Rateb\App\Services\WarehouseService())->countForCompany($companyId);
+        $inventoryValue = (float) ($analytics['inventory_value'] ?? $inv->totalValue($companyId));
+        return [
+            'inventory' => (int) $inv->count(),
+            'inventory_value' => $inventoryValue,
+            'inventory_value_fmt' => number_format($inventoryValue, 2) . ' <small>SAR</small>',
+            'warehouses' => (int) $whCount,
+            'low_stock' => (int) ($analytics['low_stock'] ?? 0),
+            'expiring_soon' => (int) ($analytics['expiring_soon'] ?? 0),
+        ];
     }
 
     private function isTrustedSameOriginRequest(): bool
