@@ -126,6 +126,29 @@ final class PosOrderOpsApiController extends PosBaseController
         }
     }
 
+    public function resumeQuote(array $params): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        $this->requireCsrf();
+        $scope = $this->registerScope();
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $result = (new PosQuoteService())->resume(
+                $id,
+                $scope['company_id'],
+                $scope['branch_id'],
+                $scope['user_id']
+            );
+            $session = new PosSessionService();
+            $session->setCartLines($result['lines'] ?? []);
+            $session->setCustomer($result['customer'] ?? null);
+            $this->json($result);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
     public function returnableLines(array $params): void
     {
         $this->bootstrapPos();

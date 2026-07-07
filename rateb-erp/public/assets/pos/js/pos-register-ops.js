@@ -460,6 +460,7 @@
                 window.RatebPosRegisterReset();
             }
             loadSuspended();
+            switchSavedTab('suspended');
             notify(t('pos_suspend_saved', 'Sale suspended'));
         }).catch(function (err) {
             notify(err.message, true);
@@ -472,6 +473,7 @@
         }
         var st = state();
         if (!st.lines.length) {
+            notify(t('pos_cart_empty', 'Cart empty'), true);
             return;
         }
         var body = new URLSearchParams();
@@ -479,29 +481,114 @@
         body.set('lines', JSON.stringify(st.lines));
         body.set('customer', JSON.stringify(st.customer));
         fetchJson(api.quoteSave, { method: 'POST', body: body }).then(function (data) {
+            loadQuotes();
+            switchSavedTab('quotes');
             notify(t('pos_quote_saved', 'Quote saved') + ': ' + (data.order_no || ''));
         }).catch(function (err) {
             notify(err.message, true);
         });
     }
 
+    function renderSavedItem(item, kind) {
+        var row = document.createElement('div');
+        row.className = 'rateb-pos__saved-item';
+
+        var meta = document.createElement('div');
+        meta.className = 'rateb-pos__saved-meta';
+
+        var title = document.createElement('strong');
+        title.className = 'rateb-pos__saved-title';
+        title.textContent = item.order_no || ('#' + item.id);
+
+        var total = document.createElement('span');
+        total.className = 'rateb-pos__saved-total';
+        total.textContent = money(item.total || 0);
+
+        meta.appendChild(title);
+        meta.appendChild(total);
+
+        if (kind === 'quote' && item.quote_expires_at) {
+            var exp = document.createElement('span');
+            exp.className = 'rateb-pos__saved-exp';
+            exp.textContent = String(item.quote_expires_at).slice(0, 10);
+            meta.appendChild(exp);
+        }
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rateb-pos__saved-resume';
+        btn.textContent = kind === 'quote'
+            ? t('pos_load_quote', 'Load')
+            : t('pos_resume_sale', 'Resume');
+        btn.addEventListener('click', function () {
+            if (kind === 'quote') {
+                resumeQuote(item.id);
+            } else {
+                resumeSuspended(item.id);
+            }
+        });
+
+        row.appendChild(meta);
+        row.appendChild(btn);
+        return row;
+    }
+
+    function switchSavedTab(tab) {
+        var tabs = root.querySelectorAll('[data-pos-saved-tab]');
+        var panels = root.querySelectorAll('[data-pos-saved-panel]');
+        tabs.forEach(function (el) {
+            var active = el.getAttribute('data-pos-saved-tab') === tab;
+            el.classList.toggle('is-active', active);
+            el.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        panels.forEach(function (el) {
+            var active = el.getAttribute('data-pos-saved-panel') === tab;
+            el.classList.toggle('is-active', active);
+            el.hidden = !active;
+        });
+    }
+
     function loadSuspended() {
         var list = root.querySelector('[data-pos-suspended-list]');
+        var empty = root.querySelector('[data-pos-suspended-empty]');
         if (!list || !api.suspendedList) {
             return;
         }
         fetchJson(api.suspendedList).then(function (data) {
+            var items = data.items || [];
             list.innerHTML = '';
-            (data.items || []).forEach(function (item) {
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'rateb-pos__customer-chip';
-                btn.textContent = (item.order_no || '') + ' — ' + Number(item.total || 0).toFixed(2);
-                btn.addEventListener('click', function () {
-                    resumeSuspended(item.id);
-                });
-                list.appendChild(btn);
+            if (empty) {
+                empty.hidden = items.length > 0;
+            }
+            items.forEach(function (item) {
+                list.appendChild(renderSavedItem(item, 'suspended'));
             });
+        }).catch(function () {
+            if (empty) {
+                empty.hidden = false;
+            }
+        });
+    }
+
+    function loadQuotes() {
+        var list = root.querySelector('[data-pos-quotes-list]');
+        var empty = root.querySelector('[data-pos-quotes-empty]');
+        if (!list || !api.quotesList) {
+            return;
+        }
+        fetchJson(api.quotesList).then(function (data) {
+            var items = data.items || [];
+            list.innerHTML = '';
+            if (empty) {
+                empty.hidden = items.length > 0;
+            }
+            items.forEach(function (item) {
+                list.appendChild(renderSavedItem(item, 'quote'));
+            });
+        }).catch(function () {
+            if (empty) {
+                empty.hidden = false;
+            }
         });
     }
 
@@ -517,6 +604,47 @@
         }).catch(function (err) {
             notify(err.message, true);
         });
+    }
+
+    function resumeQuote(id) {
+        if (!api.quoteResume) {
+            return;
+        }
+        var url = api.quoteResume.replace('{id}', String(id));
+        var body = new URLSearchParams();
+        body.set('_csrf', csrf());
+        fetchJson(url, { method: 'POST', body: body }).then(function (data) {
+            notify(t('pos_quote_loaded', 'Quote loaded') + ': ' + (data.order_no || ''));
+            location.reload();
+        }).catch(function (err) {
+            notify(err.message, true);
+        });
+    }
+
+    function bindSavedTabs() {
+        root.querySelectorAll('[data-pos-saved-tab]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var tab = btn.getAttribute('data-pos-saved-tab') || 'suspended';
+                switchSavedTab(tab);
+                if (tab === 'quotes') {
+                    loadQuotes();
+                } else {
+                    loadSuspended();
+                }
+            });
+        });
+        var refreshBtn = root.querySelector('[data-pos-saved-refresh]');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function () {
+                var active = root.querySelector('[data-pos-saved-tab].is-active');
+                var tab = active ? active.getAttribute('data-pos-saved-tab') : 'suspended';
+                if (tab === 'quotes') {
+                    loadQuotes();
+                } else {
+                    loadSuspended();
+                }
+            });
+        }
     }
 
     function bindRefundPicker() {
@@ -582,7 +710,9 @@
     bindOrderSearch();
     bindRefundPicker();
     bindReturnBarcode();
+    bindSavedTabs();
     loadSuspended();
+    loadQuotes();
 
     window.RatebPosOpsUpdateNet = updateNetSummary;
 })();

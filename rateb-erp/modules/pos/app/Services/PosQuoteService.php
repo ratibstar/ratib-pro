@@ -174,4 +174,61 @@ final class PosQuoteService
 
         return $result;
     }
+
+    /** @return array<string, mixed> */
+    public function resume(int $quoteId, int $companyId, int $branchId, int $userId): array
+    {
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare(
+                'SELECT * FROM rateb_pos_orders
+                 WHERE id = :id AND company_id = :cid AND branch_id = :bid
+                   AND order_type = :ot AND status = :st FOR UPDATE'
+            );
+            $stmt->execute([
+                'id' => $quoteId,
+                'cid' => $companyId,
+                'bid' => $branchId,
+                'ot' => 'quote',
+                'st' => 'draft',
+            ]);
+            $quote = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$quote) {
+                throw new \RuntimeException(__('no_records'));
+            }
+            $expires = (string) ($quote['quote_expires_at'] ?? '');
+            if ($expires !== '' && strtotime($expires) < time()) {
+                throw new \RuntimeException(__('pos_quote_expired'));
+            }
+            $payload = json_decode((string) ($quote['suspended_payload'] ?? ''), true);
+            if (!is_array($payload) || !is_array($payload['lines'] ?? null)) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+
+            (new PosOrder())->update($quoteId, [
+                'status' => 'void',
+                'notes' => trim((string) ($quote['notes'] ?? '') . ' [loaded by user #' . $userId . ']'),
+            ]);
+
+            $db->commit();
+            $this->audit->log('pos_quote_resume', 'pos_order', $quoteId, [
+                'order_no' => $quote['order_no'] ?? '',
+                'company_id' => $companyId,
+            ]);
+
+            return [
+                'ok' => true,
+                'lines' => $payload['lines'],
+                'customer' => $payload['customer'] ?? null,
+                'quote_order_id' => $quoteId,
+                'order_no' => $quote['order_no'] ?? '',
+            ];
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+    }
 }

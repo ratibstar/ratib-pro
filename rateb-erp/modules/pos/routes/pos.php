@@ -68,6 +68,7 @@ $router->post($posApp('api/register/suspended/{id}/resume'), [PosOrderOpsApiCont
 $router->post($posApp('api/register/quote/save'), [PosOrderOpsApiController::class, 'saveQuote'], $opsMw);
 $router->get($posApp('api/register/quotes'), [PosOrderOpsApiController::class, 'quotesList'], $opsMw);
 $router->post($posApp('api/register/quotes/{id}/convert'), [PosOrderOpsApiController::class, 'convertQuote'], $opsMw);
+$router->post($posApp('api/register/quotes/{id}/resume'), [PosOrderOpsApiController::class, 'resumeQuote'], $opsMw);
 $router->get($posApp('api/register/orders/search'), [PosOrderOpsApiController::class, 'searchOrdersForReturn'], $returnsMw);
 $router->get($posApp('api/register/orders/{id}/returnable-lines'), [PosOrderOpsApiController::class, 'returnableLines'], $returnsMw);
 $router->post($posApp('api/register/return'), [PosOrderOpsApiController::class, 'processReturn'], $returnsMw);

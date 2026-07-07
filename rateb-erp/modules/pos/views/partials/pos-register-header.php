@@ -9,9 +9,6 @@ $locale = rateb_locale();
 ?>
 <header class="rateb-pos__header" role="banner">
     <div class="rateb-pos__header-start">
-        <button type="button" class="rateb-pos__header-menu" data-pos-modes-toggle aria-expanded="false" aria-controls="rateb-pos-modes-menu" aria-label="<?php echo __('pos_more_actions'); ?>">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
         <div class="rateb-pos__brand">
             <span class="rateb-pos__brand-mark" aria-hidden="true">R</span>
             <span class="rateb-pos__brand-name">RATEB POS</span>

@@ -3,17 +3,6 @@ declare(strict_types=1);
 
 /** @var bool $canReturns */
 ?>
-<div class="rateb-pos__modes-menu" id="rateb-pos-modes-menu" data-pos-modes-menu hidden>
-    <button type="button" class="rateb-pos__modes-item" data-pos-suspend><?php echo __('pos_suspend_sale'); ?></button>
-    <button type="button" class="rateb-pos__modes-item" data-pos-save-quote><?php echo __('pos_save_quote'); ?></button>
-    <?php if ($canReturns): ?>
-    <button type="button" class="rateb-pos__modes-item" data-pos-return-open><?php echo __('pos_return'); ?></button>
-    <button type="button" class="rateb-pos__modes-item" data-pos-exchange-open><?php echo __('pos_exchange'); ?></button>
-    <?php endif; ?>
-    <button type="button" class="rateb-pos__modes-item" data-pos-new-sale><?php echo __('pos_new_sale'); ?></button>
-    <button type="button" class="rateb-pos__modes-item rateb-pos__modes-item--danger" data-pos-clear-cart><?php echo __('pos_clear_cart'); ?></button>
-</div>
-
 <?php if ($canReturns): ?>
 <div class="rateb-pos__service-panel rateb-pos__return-sheet" data-pos-return-panel hidden>
     <header class="rateb-pos__service-head">
@@ -143,4 +132,3 @@ declare(strict_types=1);
 
 <input type="checkbox" data-pos-gift-receipt hidden aria-hidden="true" tabindex="-1" />
 <ul class="visually-hidden" data-pos-shortcuts-list aria-hidden="true"></ul>
-<div class="rateb-pos__suspended" data-pos-suspended-list aria-hidden="true"></div>

@@ -43,6 +43,7 @@ $router->post('/api/v1/pos/register/suspended/{id}/resume', [PosOrderOpsApiContr
 $router->post('/api/v1/pos/register/quote/save', [PosOrderOpsApiController::class, 'saveQuote'], $posApi);
 $router->get('/api/v1/pos/register/quotes', [PosOrderOpsApiController::class, 'quotesList'], $posApi);
 $router->post('/api/v1/pos/register/quotes/{id}/convert', [PosOrderOpsApiController::class, 'convertQuote'], $posApi);
+$router->post('/api/v1/pos/register/quotes/{id}/resume', [PosOrderOpsApiController::class, 'resumeQuote'], $posApi);
 $router->get('/api/v1/pos/register/orders/search', [PosOrderOpsApiController::class, 'searchOrdersForReturn'], $posApi);
 $router->get('/api/v1/pos/register/orders/{id}/returnable-lines', [PosOrderOpsApiController::class, 'returnableLines'], $posApi);
 $router->post('/api/v1/pos/register/return', [PosOrderOpsApiController::class, 'processReturn'], $posApi);

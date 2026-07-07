@@ -1019,18 +1019,27 @@ html[dir="rtl"] .rateb-pos__catalog {
 
 .rateb-pos__order-actions {
     display: flex;
-    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    max-width: min(100%, 420px);
 }
 
 .rateb-pos__order-btn {
-    min-height: 36px;
-    padding: 0 14px;
+    min-height: 38px;
+    padding: 0 12px;
     border: none;
     border-radius: var(--pos-radius-sm);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.rateb-pos__order-btn--new {
+    background: var(--pos-accent);
+    color: #fff;
 }
 
 .rateb-pos__order-btn--hold {
@@ -1038,9 +1047,139 @@ html[dir="rtl"] .rateb-pos__catalog {
     color: #713f12;
 }
 
+.rateb-pos__order-btn--quote {
+    background: #dbeafe;
+    color: #1e3a8a;
+}
+
 .rateb-pos__order-btn--cancel {
     background: var(--pos-surface-3);
     color: var(--pos-ticket-text);
+}
+
+.rateb-pos__saved {
+    flex-shrink: 0;
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid var(--pos-border);
+    background: var(--pos-surface-2);
+}
+
+.rateb-pos__saved-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.rateb-pos__saved-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.rateb-pos__saved-tab {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--pos-border);
+    border-radius: 999px;
+    background: var(--pos-ticket-bg);
+    color: var(--pos-ticket-text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.rateb-pos__saved-tab.is-active {
+    border-color: var(--pos-accent);
+    background: color-mix(in srgb, var(--pos-accent) 12%, var(--pos-ticket-bg));
+    color: var(--pos-accent);
+}
+
+.rateb-pos__saved-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius-sm);
+    background: var(--pos-ticket-bg);
+    color: var(--pos-ticket-text);
+    cursor: pointer;
+}
+
+.rateb-pos__saved-refresh:hover {
+    background: var(--pos-surface-3);
+}
+
+.rateb-pos__saved-panel {
+    max-height: 132px;
+    overflow: auto;
+}
+
+.rateb-pos__saved-empty {
+    margin: 0;
+    padding: 8px 4px;
+    font-size: 12px;
+    color: var(--pos-text-muted);
+}
+
+.rateb-pos__saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rateb-pos__saved-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius-sm);
+    background: var(--pos-ticket-bg);
+}
+
+.rateb-pos__saved-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 10px;
+    min-width: 0;
+}
+
+.rateb-pos__saved-title {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.rateb-pos__saved-total {
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--pos-accent);
+}
+
+.rateb-pos__saved-exp {
+    font-size: 11px;
+    color: var(--pos-text-muted);
+}
+
+.rateb-pos__saved-resume {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 0 12px;
+    border: none;
+    border-radius: var(--pos-radius-sm);
+    background: var(--pos-accent);
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .rateb-pos__ticket-customer {
@@ -1156,6 +1295,18 @@ html[dir="rtl"] .rateb-pos__catalog {
 
 .rateb-pos__util-btn:hover {
     background: var(--pos-surface-3);
+}
+
+.rateb-pos__util-btn--accent {
+    border-color: color-mix(in srgb, var(--pos-accent) 35%, var(--pos-border));
+    background: color-mix(in srgb, var(--pos-accent) 8%, var(--pos-surface-2));
+    color: var(--pos-accent);
+    font-size: 13px;
+    min-height: 46px;
+}
+
+.rateb-pos__util-btn--accent:hover {
+    background: color-mix(in srgb, var(--pos-accent) 14%, var(--pos-surface-2));
 }
 
 .rateb-pos__ticket-count.is-bump {
@@ -1803,10 +1954,6 @@ html[dir="rtl"] .rateb-pos__catalog {
         transform: translate(var(--fly-tx), var(--fly-ty)) scale(0.2);
         opacity: 0;
     }
-}
-
-.rateb-pos__suspended {
-    display: none;
 }
 
 /* ── Reduced motion ── */
