@@ -5,7 +5,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         var root = document.documentElement;
         var syncThemeButtons = function () {
-            var mode = localStorage.getItem('rateb_theme') || root.getAttribute('data-theme') || 'dark';
+            var mode = localStorage.getItem('rateb_pos_theme') || root.getAttribute('data-theme') || 'dark';
             document.querySelectorAll('[data-theme-choice]').forEach(function (btn) {
                 var choice = btn.getAttribute('data-theme-choice');
                 var active = choice === mode;

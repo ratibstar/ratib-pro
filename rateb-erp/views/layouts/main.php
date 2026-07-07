@@ -41,7 +41,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
+<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme-scope="erp" data-theme="dark" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,7 +51,7 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
     <script>
     (function () {
         try {
-            var mode = localStorage.getItem('rateb_theme') || 'dark';
+            var mode = localStorage.getItem('rateb_erp_theme') || localStorage.getItem('rateb_theme') || 'dark';
             var bs = mode === 'auto'
                 ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
                 : (mode === 'light' ? 'light' : 'dark');

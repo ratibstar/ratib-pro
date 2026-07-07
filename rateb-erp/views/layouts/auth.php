@@ -3,10 +3,20 @@ $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
+<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme-scope="erp" data-theme="dark" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+    (function () {
+        try {
+            var mode = localStorage.getItem('rateb_erp_theme') || localStorage.getItem('rateb_theme') || 'dark';
+            var bs = mode === 'light' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', mode);
+            document.documentElement.setAttribute('data-bs-theme', bs);
+        } catch (e) {}
+    })();
+    </script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? __('login')); ?> | <?php echo __('rateb_erp'); ?></title>
     <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
