@@ -65,6 +65,8 @@ use Rateb\App\Controllers\Company\DeviceMaintenanceController;
 use Rateb\App\Controllers\Company\DeviceSparePartsController;
 use Rateb\App\Controllers\Company\DeviceWarrantyController;
 use Rateb\App\Controllers\Company\AnalyticsReportsController;
+use Rateb\App\Core\Middleware\CompanySaaSMiddleware;
+use Rateb\App\Core\Middleware\ErpAuthMiddleware;
 use Rateb\App\Core\Response;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
@@ -163,7 +165,9 @@ $router->get($app('supplier-evaluations/history'), [SupplierEvaluationsControlle
 $router->post($app('supplier-evaluations/{id}/approve'), $blockCompanyApprovalAction, $seMw);
 $router->post($app('supplier-evaluations/{id}/reject'), $blockCompanyApprovalAction, $seMw);
 
+$invImgMw = [ErpAuthMiddleware::class, CompanySaaSMiddleware::class];
 $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'warehouseItemsJson'], rateb_erp_mw('inventory', '', 'inventory'));
+$router->get($app('inventory/{id}/image'), [InventoryController::class, 'image'], $invImgMw);
 $router->post($app('inventory/{id}/transfer-to-pos-warehouse'), [InventoryController::class, 'transferToPosWarehouse'], rateb_erp_mw('inventory', '', 'inventory'));
 
 $router->get($app('purchase-requests/line-attachment/{itemId}'), [PurchaseRequestsController::class, 'downloadLineAttachment'], rateb_erp_mw('procurement', '', 'purchase-requests'));

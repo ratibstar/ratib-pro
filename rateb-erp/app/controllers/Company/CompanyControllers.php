@@ -1060,6 +1060,18 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         exit;
     }
 
+    public function image(array $params): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            http_response_code(404);
+            echo 'Not found';
+            return;
+        }
+        (new \Rateb\App\Services\InventoryImageService())->sendImage($id);
+    }
+
     public function index(): void
     {
         try {

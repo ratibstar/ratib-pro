@@ -159,6 +159,27 @@ final class DocumentService
     }
 
     /** @return array<string, mixed>|null */
+    public function latestImageForEntity(int $companyId, string $entityType, int $entityId): ?array
+    {
+        if ($companyId < 1 || $entityId < 1) {
+            return null;
+        }
+        foreach ($this->listForEntity($entityType, $entityId, $companyId) as $row) {
+            $mime = (string) ($row['mime_type'] ?? '');
+            if ($mime !== '' && str_starts_with($mime, 'image/')) {
+                return $row;
+            }
+            $name = (string) ($row['file_name'] ?? '');
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array<string, mixed>|null */
     public function latestForEntity(int $companyId, string $entityType, int $entityId): ?array
     {
         if ($companyId < 1 || $entityId < 1) {

@@ -89,6 +89,15 @@ final class PosRegisterBootstrapService
             $scopeBranchId = (int) ($context['session']['branch_id'] ?? 0);
 
             $invRows = $this->loadInventoryRows($companyId, $scopeWarehouseId, $scopeBranchId);
+            $inventoryIds = [];
+            foreach ($invRows as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $inventoryIds[] = $id;
+                }
+            }
+            $imageSvc = new \Rateb\App\Services\InventoryImageService();
+            $imageDocIds = $imageSvc->inventoryIdsWithImageDocs($companyId, $inventoryIds);
             foreach ($invRows as $row) {
                 $id = (int) ($row['id'] ?? 0);
                 if ($id < 1) {
@@ -96,7 +105,7 @@ final class PosRegisterBootstrapService
                 }
                 $categoryId = (int) ($row['category_id'] ?? 0);
                 $out['productIndex'][(string) $id] = $categoryId;
-                $imgUrl = $this->resolveImageUrl($id, trim((string) ($row['document_path'] ?? '')));
+                $imgUrl = $imageSvc->resolveCatalogImageUrl($id, $row, isset($imageDocIds[$id]));
                 if ($imgUrl !== '') {
                     $out['productImages'][(string) $id] = $imgUrl;
                 }
@@ -205,24 +214,6 @@ final class PosRegisterBootstrapService
         }
 
         return round((float) ($row['unit_cost'] ?? 0), 2);
-    }
-
-    private function resolveImageUrl(int $id, string $doc): string
-    {
-        if ($doc === '') {
-            return '';
-        }
-        if (preg_match('#^https?://#i', $doc)) {
-            return $doc;
-        }
-        if (str_starts_with($doc, '/')) {
-            return $doc;
-        }
-        if (str_starts_with($doc, 'uploads/')) {
-            return '';
-        }
-
-        return rateb_asset(ltrim($doc, '/'));
     }
 
     /**
