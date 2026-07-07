@@ -70,6 +70,7 @@ final class PosRegisterController extends PosBaseController
                 'searchOrders' => rateb_app_url('pos/api/register/orders/search'),
                 'processReturn' => rateb_app_url('pos/api/register/return'),
                 'processExchange' => rateb_app_url('pos/api/register/exchange'),
+                'sync' => rateb_app_url('pos/api/sync'),
             ],
             'canReturns' => function_exists('rateb_can') && rateb_can('pos.returns.manage'),
             'context' => $context,
@@ -112,7 +113,7 @@ final class PosRegisterController extends PosBaseController
             'pos_exchange', 'pos_process_exchange', 'pos_search_order', 'pos_search_order_placeholder',
             'pos_return_lines', 'pos_returnable_qty', 'pos_exchange_cart_hint',
             'pos_net_due', 'pos_net_refund', 'pos_net_even', 'pos_exchange_complete',
-            'invalid_request', 'pos_discount_permission_denied',
+            'invalid_request', 'pos_discount_permission_denied', 'pos_offline_queued',
         ];
         $out = [];
         foreach ($keys as $key) {

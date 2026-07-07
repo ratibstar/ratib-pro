@@ -75,10 +75,15 @@ $router->post($posApp('api/register/exchange'), [PosOrderOpsApiController::class
 
 $router->get($posApp('settings'), [PosSettingsController::class, 'index'], $posMw('pos/settings'));
 $router->get($posApp('sync'), [PosSyncController::class, 'index'], $posMw('pos/sync'));
+$router->post($posApp('sync/process'), [PosSyncController::class, 'process'], $posMw('pos/sync'));
+$router->post($posApp('sync/conflicts/resolve'), [PosSyncController::class, 'resolveConflict'], $posMw('pos/sync'));
 
 $router->get($posApp('api/context'), [PosApiController::class, 'context'], $posMw('pos'));
 $router->get($posApp('api/sync/status'), [PosApiController::class, 'syncStatus'], $posMw('pos/sync'));
 $router->post($posApp('api/sync/push'), [PosApiController::class, 'syncPush'], $posMw('pos/sync'));
+$router->post($posApp('api/sync/process'), [PosApiController::class, 'syncProcess'], $posMw('pos/sync'));
+$router->get($posApp('api/sync/conflicts'), [PosApiController::class, 'syncConflicts'], $posMw('pos/sync'));
+$router->post($posApp('api/sync/conflicts/{id}/resolve'), [PosApiController::class, 'syncResolveConflict'], $posMw('pos/sync'));
 $router->get($posApp('api/pricing/preview'), [PosApiController::class, 'pricingPreview'], $posMw('pos/register'));
 
 $regMw = $posMw('pos/register');

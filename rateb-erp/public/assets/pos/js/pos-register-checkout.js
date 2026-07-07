@@ -359,22 +359,72 @@
             notify(t('pos_payment_invalid_amount', 'Invalid payment amount'), true);
             return;
         }
+        var invoiceDiscount = {
+            type: invoiceDiscType ? invoiceDiscType.value : 'amount',
+            value: invoiceDiscValue ? Number(invoiceDiscValue.value || 0) : 0
+        };
+        if (!checkoutIdempotencyKey) {
+            checkoutIdempotencyKey = newIdempotencyKey();
+        }
+
+        if (!navigator.onLine && window.RatebPosOffline) {
+            var cfgCtx = config.context || {};
+            var cfgSess = config.session || {};
+            if (completeBtn) {
+                completeBtn.disabled = true;
+            }
+            window.RatebPosOffline.push({
+                client_id: checkoutIdempotencyKey,
+                action: 'checkout',
+                payload: {
+                    lines: state.lines,
+                    customer: state.customer,
+                    payments: payments,
+                    invoice_discount: invoiceDiscount,
+                    coupon_code: rewardsState.couponCode || '',
+                    points_redeem: pointsInput ? Number(pointsInput.value || 0) : 0,
+                    gift_receipt: !!window.RatebPosGiftReceipt,
+                    tax_rate: 0.15,
+                    scope: {
+                        terminal_id: (cfgCtx.terminal && cfgCtx.terminal.id) || cfgSess.terminal_id || 0,
+                        shift_id: (cfgCtx.shift && cfgCtx.shift.id) || cfgSess.shift_id || 0,
+                        branch_id: (cfgCtx.branch && cfgCtx.branch.id) || cfgSess.branch_id || 0,
+                        warehouse_id: cfgSess.warehouse_id || null,
+                        session_id: cfgSess.db_session_id || null,
+                        user_id: config.userId || 0
+                    }
+                },
+                version: 1
+            }, { apiBase: api.sync }).then(function () {
+                closeCheckout();
+                checkoutIdempotencyKey = null;
+                notify(t('pos_offline_queued', 'Sale queued for sync'));
+                if (window.RatebPosRegisterReset) {
+                    window.RatebPosRegisterReset();
+                }
+            }).catch(function (err) {
+                notify(err.message || t('pos_checkout_failed', 'Checkout failed'), true);
+            }).finally(function () {
+                if (completeBtn) {
+                    completeBtn.disabled = false;
+                }
+            });
+            return;
+        }
+
         var body = new URLSearchParams();
         body.set('_csrf', csrfToken());
         body.set('lines', JSON.stringify(state.lines));
         body.set('customer', JSON.stringify(state.customer));
         body.set('payments', JSON.stringify(payments));
-        body.set('invoice_discount', JSON.stringify({
-            type: invoiceDiscType ? invoiceDiscType.value : 'amount',
-            value: invoiceDiscValue ? Number(invoiceDiscValue.value || 0) : 0
-        }));
+        body.set('invoice_discount', JSON.stringify(invoiceDiscount));
         if (rewardsState.couponCode) {
             body.set('coupon_code', rewardsState.couponCode);
         }
         if (pointsInput && Number(pointsInput.value) > 0) {
             body.set('points_redeem', String(Number(pointsInput.value)));
         }
-        body.set('idempotency_key', checkoutIdempotencyKey || newIdempotencyKey());
+        body.set('idempotency_key', checkoutIdempotencyKey);
         if (window.RatebPosGiftReceipt) {
             body.set('gift_receipt', '1');
         }

@@ -10,6 +10,8 @@ final class PosOfflineSyncService
 {
     public function __construct(
         private PosSyncQueueService $queue = new PosSyncQueueService(),
+        private PosSyncBatchProcessorService $processor = new PosSyncBatchProcessorService(),
+        private PosSyncConflictService $conflicts = new PosSyncConflictService(),
         private PosOfflineSyncTransportInterface $transport = new NullPosOfflineSyncTransport(),
     ) {
     }
@@ -47,6 +49,12 @@ final class PosOfflineSyncService
         return $this->queue->listRecent($limit, $companyId);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function openConflicts(int $limit = 50, ?int $companyId = null): array
+    {
+        return $this->conflicts->listOpen($limit, $companyId);
+    }
+
     /**
      * @param array<int, array<string, mixed>> $items
      * @param array<string, mixed> $context
@@ -58,6 +66,24 @@ final class PosOfflineSyncService
             return $this->transport->push($items);
         }
 
-        return $this->queue->enqueueBatch($items, $context);
+        $result = $this->queue->enqueueBatch($items, $context);
+        if (($result['accepted'] ?? 0) > 0) {
+            $companyId = (int) ($context['company_id'] ?? 0);
+            $result['process'] = $this->processor->processPending($companyId > 0 ? $companyId : null, 50);
+        }
+
+        return $result;
+    }
+
+    /** @return array<string, int> */
+    public function processPending(?int $companyId = null, int $limit = 50): array
+    {
+        return $this->processor->processPending($companyId, $limit);
+    }
+
+    /** @return array<string, mixed> */
+    public function resolveConflict(int $conflictId, string $resolution, int $userId, ?int $companyId = null): array
+    {
+        return $this->conflicts->resolve($conflictId, $resolution, $userId, $companyId);
     }
 }

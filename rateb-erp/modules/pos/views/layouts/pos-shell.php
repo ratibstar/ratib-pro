@@ -28,6 +28,7 @@ $fontArabic = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wgh
 <script type="application/json" id="rateb-pos-register-config"><?php echo $configJson ?: '{}'; ?></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>"></script>
+<script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-motion.js'); ?>"></script>

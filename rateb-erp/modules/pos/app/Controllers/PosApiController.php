@@ -55,6 +55,47 @@ final class PosApiController extends PosBaseController
         ]);
     }
 
+    public function syncProcess(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosManage('pos/sync');
+        $this->requireSessionCsrfOrAbort();
+        $companyId = $this->companyId();
+        $service = new PosOfflineSyncService();
+        $this->json([
+            'ok' => true,
+            'result' => $service->processPending($companyId > 0 ? $companyId : null, 50),
+        ]);
+    }
+
+    public function syncConflicts(): void
+    {
+        $this->bootstrapPos();
+        $companyId = $this->companyId();
+        $service = new PosOfflineSyncService();
+        $this->json([
+            'ok' => true,
+            'conflicts' => $service->openConflicts(50, $companyId > 0 ? $companyId : null),
+        ]);
+    }
+
+    public function syncResolveConflict(int $id): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosManage('pos/sync');
+        $this->requireSessionCsrfOrAbort();
+        $body = $this->jsonBody();
+        $resolution = trim((string) ($body['resolution'] ?? $_POST['resolution'] ?? ''));
+        $companyId = $this->companyId();
+        $service = new PosOfflineSyncService();
+        $this->json($service->resolveConflict(
+            $id,
+            $resolution,
+            $this->userId(),
+            $companyId > 0 ? $companyId : null
+        ));
+    }
+
     public function pricingPreview(): void
     {
         $this->bootstrapPos();

@@ -14,6 +14,7 @@ final class PosSyncQueueService
     public function __construct(
         private PosSyncQueueItem $model = new PosSyncQueueItem(),
         private PosOfflineConflictResolverService $conflicts = new PosOfflineConflictResolverService(),
+        private PosSyncConflictService $conflictStore = new PosSyncConflictService(),
         private PosAuditBridgeService $audit = new PosAuditBridgeService(),
     ) {
     }
@@ -278,6 +279,11 @@ final class PosSyncQueueService
                     'status' => 'conflict',
                     'last_error' => (string) ($resolution['reason'] ?? 'server_newer'),
                 ]);
+                $this->recordConflictRow(
+                    $existing,
+                    $item,
+                    (string) ($resolution['reason'] ?? 'server_newer')
+                );
             }
 
             return 'conflict';
@@ -309,6 +315,13 @@ final class PosSyncQueueService
                     'status' => 'conflict',
                     'last_error' => (string) ($resolution['reason'] ?? 'server_newer'),
                 ]);
+                if ($existing !== null) {
+                    $this->recordConflictRow(
+                        $existing,
+                        $item,
+                        (string) ($resolution['reason'] ?? 'server_newer')
+                    );
+                }
 
                 return ['status' => 'conflict', 'reason' => (string) ($resolution['reason'] ?? 'server_newer')];
             }
@@ -351,5 +364,24 @@ final class PosSyncQueueService
         }
 
         return (int) (TenantContext::companyId() ?? 0);
+    }
+
+    /** @param array<string, mixed> $queueRow @param array<string, mixed> $clientItem */
+    private function recordConflictRow(array $queueRow, array $clientItem, string $reason): void
+    {
+        $companyId = (int) ($queueRow['company_id'] ?? 0);
+        $queueId = (int) ($queueRow['id'] ?? 0);
+        if ($companyId < 1 || $queueId < 1) {
+            return;
+        }
+
+        $this->conflictStore->record(
+            $companyId,
+            $queueId,
+            (string) ($queueRow['idempotency_key'] ?? ''),
+            $reason,
+            $this->normalizePayload($clientItem),
+            $this->decodePayload($queueRow)
+        );
     }
 }

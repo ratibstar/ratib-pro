@@ -15,6 +15,9 @@ $posApi = [ApiAuthMiddleware::class, [ApiModuleMiddleware::class, 'pos']];
 $router->get('/api/v1/pos/context', [PosApiController::class, 'context'], $posApi);
 $router->get('/api/v1/pos/sync/status', [PosApiController::class, 'syncStatus'], $posApi);
 $router->post('/api/v1/pos/sync/push', [PosApiController::class, 'syncPush'], $posApi);
+$router->post('/api/v1/pos/sync/process', [PosApiController::class, 'syncProcess'], $posApi);
+$router->get('/api/v1/pos/sync/conflicts', [PosApiController::class, 'syncConflicts'], $posApi);
+$router->post('/api/v1/pos/sync/conflicts/{id}/resolve', [PosApiController::class, 'syncResolveConflict'], $posApi);
 $router->get('/api/v1/pos/pricing/preview', [PosApiController::class, 'pricingPreview'], $posApi);
 
 $router->get('/api/v1/pos/register/session', [PosRegisterApiController::class, 'sessionGet'], $posApi);
