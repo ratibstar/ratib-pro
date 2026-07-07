@@ -8,11 +8,14 @@ use Rateb\App\Pos\Services\Bridge\PosBarcodeLookupBridgeService;
 use Rateb\App\Pos\Services\Bridge\PosCustomerBridgeService;
 use Rateb\App\Pos\Services\Bridge\PosInventoryBridgeService;
 use Rateb\App\Pos\Services\PosDiscountGuardService;
+use Rateb\App\Pos\Services\PosCashDrawerService;
 use Rateb\App\Pos\Services\PosCheckoutService;
 use Rateb\App\Pos\Services\PosContextService;
+use Rateb\App\Pos\Services\PosHardwareManager;
 use Rateb\App\Pos\Services\PosInventoryReservationService;
 use Rateb\App\Pos\Services\PosPricingService;
 use Rateb\App\Pos\Services\PosRegisterCartService;
+use Rateb\App\Pos\Services\PosReportService;
 use Rateb\App\Pos\Services\PosRewardService;
 use Rateb\App\Pos\Services\PosSellPriceService;
 use Rateb\App\Pos\Services\PosSessionService;
@@ -176,6 +179,10 @@ final class PosRegisterApiController extends PosBaseController
         $lineId = trim((string) ($payload['line_id'] ?? ''));
         $qty = (float) ($payload['quantity'] ?? 0);
         $serialNo = trim((string) ($payload['serial_no'] ?? ''));
+        $discountType = trim((string) ($payload['discount_type'] ?? ''));
+        $discountValue = (float) ($payload['discount_value'] ?? 0);
+        $lineNotes = trim((string) ($payload['notes'] ?? ''));
+        $qtyProvided = array_key_exists('quantity', $payload);
 
         if ($lineId === '') {
             $this->json(['ok' => false, 'error' => __('invalid_request')], 400);
@@ -197,8 +204,11 @@ final class PosRegisterApiController extends PosBaseController
                 continue;
             }
             $found = true;
-            if ($qty <= 0) {
+            if ($qtyProvided && $qty <= 0) {
                 continue;
+            }
+            if (!$qtyProvided) {
+                $qty = (float) ($line['quantity'] ?? 0);
             }
             $invId = (int) ($line['product_id'] ?? 0);
             $effectiveSerial = $serialNo !== '' ? $serialNo : trim((string) ($line['serial_no'] ?? ''));
@@ -221,7 +231,26 @@ final class PosRegisterApiController extends PosBaseController
             $line['serial_no'] = $effectiveSerial !== '' ? $effectiveSerial : null;
             $line['available_qty'] = (float) ($check['available'] ?? 0);
             $line['batch_preview'] = $check['batch_preview'] ?? [];
-            $line['line_total'] = round($qty * (float) ($line['unit_price'] ?? 0), 2);
+            if ($discountType !== '' || array_key_exists('discount_value', $payload)) {
+                $line['discount_amount'] = 0;
+                $line['discount_percent'] = 0;
+                if ($discountValue > 0) {
+                    if ($discountType === 'percent') {
+                        $line['discount_percent'] = min(100, $discountValue);
+                    } else {
+                        $line['discount_amount'] = $discountValue;
+                    }
+                }
+            }
+            if (array_key_exists('notes', $payload)) {
+                $line['notes'] = $lineNotes !== '' ? $lineNotes : null;
+            }
+            $gross = round($qty * (float) ($line['unit_price'] ?? 0), 2);
+            $disc = (float) ($line['discount_amount'] ?? 0);
+            if ($disc <= 0 && (float) ($line['discount_percent'] ?? 0) > 0) {
+                $disc = round($gross * ((float) $line['discount_percent'] / 100), 2);
+            }
+            $line['line_total'] = max(0, round($gross - min($gross, $disc), 2));
             $newLines[] = $line;
         }
 
@@ -478,7 +507,143 @@ final class PosRegisterApiController extends PosBaseController
             return;
         }
         $balance = (new PosRewardService())->loyaltyBalance($scope['company_id'], $customerId);
-        $this->json(['ok' => true, 'points_balance' => $balance]);
+        $this->json(['ok' => true, 'points_balance' => $balance, 'balance' => $balance, 'points' => $balance]);
+    }
+
+    public function createCustomer(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        if (!Csrf::validate($_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+            $this->json(['ok' => false, 'error' => __('invalid_request')], 419);
+            return;
+        }
+        $scope = $this->registerScope();
+        $payload = $this->inputData();
+        $name = trim((string) ($payload['name'] ?? ''));
+        $phone = trim((string) ($payload['phone'] ?? ''));
+        try {
+            $customer = (new PosCustomerBridgeService())->quickCreate(
+                $name,
+                $phone !== '' ? $phone : null,
+                $scope['branch_id']
+            );
+            (new PosSessionService())->setCustomer($customer);
+            $this->json(['ok' => true, 'customer' => $customer]);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function drawerEvent(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        if (!Csrf::validate($_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+            $this->json(['ok' => false, 'error' => __('invalid_request')], 419);
+            return;
+        }
+        $scope = $this->registerScope();
+        $shiftId = (int) ($scope['shift_id'] ?? 0);
+        if ($shiftId < 1) {
+            $this->json(['ok' => false, 'error' => __('pos_no_shift_warning')], 422);
+            return;
+        }
+        $drawer = (new PosCashDrawerService())->findOpenByShift($shiftId, $scope['company_id']);
+        if (!$drawer) {
+            $this->json(['ok' => false, 'error' => __('pos_drawer_not_found')], 422);
+            return;
+        }
+        $payload = $this->inputData();
+        $eventType = trim((string) ($payload['event_type'] ?? ''));
+        $amount = (float) ($payload['amount'] ?? 0);
+        $notes = trim((string) ($payload['notes'] ?? ''));
+        try {
+            (new PosCashDrawerService())->recordManualEvent(
+                (int) ($drawer['id'] ?? 0),
+                $scope['company_id'],
+                $scope['user_id'],
+                $eventType,
+                $amount,
+                $notes
+            );
+            if ($eventType === 'no_sale') {
+                (new PosHardwareManager())->cashDrawer()->open();
+            }
+            $this->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function openDrawer(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        if (!Csrf::validate($_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+            $this->json(['ok' => false, 'error' => __('invalid_request')], 419);
+            return;
+        }
+        try {
+            (new PosHardwareManager())->cashDrawer()->open();
+            $this->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function xReport(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        $scope = $this->registerScope();
+        $shiftId = (int) ($scope['shift_id'] ?? 0);
+        if ($shiftId < 1) {
+            $this->json(['ok' => false, 'error' => __('pos_no_shift_warning')], 422);
+            return;
+        }
+        try {
+            $report = (new PosReportService())->buildXReport($shiftId, $scope['company_id']);
+            $this->json(['ok' => true, 'report' => $report]);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
+    public function lastReceipt(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        $scope = $this->registerScope();
+        $shiftId = (int) ($scope['shift_id'] ?? 0);
+        if ($shiftId < 1) {
+            $this->json(['ok' => false, 'error' => __('pos_no_shift_warning')], 422);
+            return;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare(
+            'SELECT id, order_no, receipt_json FROM rateb_pos_orders
+             WHERE company_id = :cid AND shift_id = :sid AND status = :st AND order_type = :ot
+             ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute([
+            'cid' => $scope['company_id'],
+            'sid' => $shiftId,
+            'st' => 'completed',
+            'ot' => 'sale',
+        ]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            $this->json(['ok' => false, 'error' => __('no_records')], 404);
+            return;
+        }
+        $receipt = json_decode((string) ($row['receipt_json'] ?? ''), true);
+        $this->json([
+            'ok' => true,
+            'order_id' => (int) ($row['id'] ?? 0),
+            'order_no' => (string) ($row['order_no'] ?? ''),
+            'receipt' => is_array($receipt) ? $receipt : [],
+        ]);
     }
 
     /** @return array{company_id: int, user_id: int, branch_id: int, warehouse_id: ?int, session_id: ?int, terminal_id: ?int, shift_id: ?int} */

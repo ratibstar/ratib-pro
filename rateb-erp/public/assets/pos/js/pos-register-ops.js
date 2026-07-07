@@ -700,13 +700,6 @@
         addExchangePaymentRow('cash', 0, '');
     });
 
-    var giftCb = root.querySelector('[data-pos-gift-receipt]');
-    if (giftCb) {
-        giftCb.addEventListener('change', function () {
-            window.RatebPosGiftReceipt = giftCb.checked;
-        });
-    }
-
     bindOrderSearch();
     bindRefundPicker();
     bindReturnBarcode();

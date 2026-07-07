@@ -34,6 +34,33 @@ final class PosCustomerBridgeService
         return $out;
     }
 
+    /** @return array<string, mixed> */
+    public function quickCreate(string $name, ?string $phone, int $branchId): array
+    {
+        $name = trim($name);
+        if ($name === '') {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        $code = 'POS-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+        $id = (new Customer())->create([
+            'company_id' => $companyId,
+            'branch_id' => $branchId > 0 ? $branchId : null,
+            'code' => $code,
+            'name' => $name,
+            'phone' => trim((string) $phone) ?: null,
+            'is_active' => 1,
+        ]);
+        $row = (new Customer())->find((int) $id);
+        if (!$row) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        return $this->formatCustomer($row);
+    }
+
     /** @param array<string, mixed> $row */
     private function formatCustomer(array $row): array
     {

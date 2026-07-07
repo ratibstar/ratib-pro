@@ -37,5 +37,6 @@ $fontArabic = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wgh
 <script src="<?php echo rateb_pos_asset('js/pos-register-tiles.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-checkout.js'); ?>"></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-ops.js'); ?>"></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register-cashier.js'); ?>"></script>
 </body>
 </html>

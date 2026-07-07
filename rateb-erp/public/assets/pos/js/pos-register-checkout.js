@@ -37,8 +37,14 @@
     var changeWrap = root.querySelector('[data-pos-change-wrap]');
     var changeDueEl = root.querySelector('[data-pos-change-due]');
     var keypad = root.querySelector('[data-pos-keypad]');
+    var giftCardPanel = root.querySelector('[data-pos-gift-card-panel]');
+    var giftCardInput = root.querySelector('[data-pos-gift-card-code]');
+    var giftCardValidateBtn = root.querySelector('[data-pos-gift-card-validate]');
+    var giftCardBalanceEl = root.querySelector('[data-pos-gift-card-balance]');
+    var giftReceiptCb = root.querySelector('[data-pos-gift-receipt]');
 
     var rewardsState = { couponCode: '', couponDiscount: 0, pointsRedeem: 0 };
+    var giftCardRef = '';
     var checkoutIdempotencyKey = null;
     var activeMethod = 'cash';
     var pricingTotal = 0;
@@ -145,7 +151,7 @@
         }
         return fetchJson(api.loyaltyBalance + '?customer_id=' + encodeURIComponent(customer.id))
             .then(function (data) {
-                var bal = data.balance != null ? data.balance : (data.points != null ? data.points : 0);
+                var bal = data.balance != null ? data.balance : (data.points != null ? data.points : (data.points_balance != null ? data.points_balance : 0));
                 loyaltyBalanceEl.textContent = t('pos_loyalty_balance', 'Loyalty balance') + ': ' + money(bal);
             })
             .catch(function () {
@@ -178,9 +184,12 @@
                 payHeadTotal.textContent = money(pricingTotal);
             }
             if (checkoutSummary) {
-                checkoutSummary.innerHTML =
-                    '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_subtotal', 'Subtotal') + '</dt><dd>' + money(p.subtotal) + '</dd></div>' +
-                    '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_tax', 'Tax') + '</dt><dd>' + money(p.tax) + '</dd></div>';
+                var html = '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_subtotal', 'Subtotal') + '</dt><dd>' + money(p.subtotal) + '</dd></div>';
+                if (Number(p.discount_total || 0) > 0) {
+                    html += '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_discount_total', 'Discount') + '</dt><dd>-' + money(p.discount_total) + '</dd></div>';
+                }
+                html += '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_tax', 'Tax') + '</dt><dd>' + money(p.tax) + '</dd></div>';
+                checkoutSummary.innerHTML = html;
             }
             updateChangeDue();
             return p;
@@ -259,9 +268,47 @@
         }
         var activeAmt = Number(keypadBuffer || 0);
         if (activeAmt > 0) {
-            out.push({ method: activeMethod, amount: activeAmt, reference_no: '' });
+            var ref = activeMethod === 'gift_card' ? giftCardRef : '';
+            out.push({ method: activeMethod, amount: activeAmt, reference_no: ref });
         }
         return out;
+    }
+
+    function syncGiftCardPanel() {
+        if (!giftCardPanel) {
+            return;
+        }
+        giftCardPanel.hidden = activeMethod !== 'gift_card';
+    }
+
+    function validateGiftCard() {
+        if (!api.validateGiftCard || !giftCardInput) {
+            return;
+        }
+        var code = (giftCardInput.value || '').trim();
+        if (!code) {
+            return;
+        }
+        var body = new URLSearchParams();
+        body.set('_csrf', csrfToken());
+        body.set('gift_card_code', code);
+        body.set('amount', String(pricingTotal || 0));
+        fetchJson(api.validateGiftCard, { method: 'POST', body: body })
+            .then(function (data) {
+                giftCardRef = code;
+                if (giftCardBalanceEl) {
+                    giftCardBalanceEl.hidden = false;
+                    giftCardBalanceEl.textContent = t('pos_gift_card_balance', 'Gift card balance') + ': ' + money(data.balance || 0);
+                }
+                notify(t('pos_gift_card_balance', 'Gift card balance') + ': ' + money(data.balance || 0));
+            })
+            .catch(function (err) {
+                giftCardRef = '';
+                if (giftCardBalanceEl) {
+                    giftCardBalanceEl.hidden = true;
+                }
+                notify(err.message || t('pos_gift_card_invalid', 'Invalid gift card'), true);
+            });
     }
 
     function openCheckout() {
@@ -277,9 +324,21 @@
             paymentList.innerHTML = '';
         }
         rewardsState = { couponCode: '', couponDiscount: 0, pointsRedeem: 0 };
+        giftCardRef = '';
         checkoutIdempotencyKey = newIdempotencyKey();
         activeMethod = 'cash';
         keypadBuffer = '';
+        if (giftReceiptCb) {
+            giftReceiptCb.checked = false;
+            window.RatebPosGiftReceipt = false;
+        }
+        if (giftCardInput) {
+            giftCardInput.value = '';
+        }
+        if (giftCardBalanceEl) {
+            giftCardBalanceEl.hidden = true;
+        }
+        syncGiftCardPanel();
         root.querySelectorAll('[data-pos-tender-pick]').forEach(function (btn) {
             btn.classList.toggle('is-active', btn.getAttribute('data-pos-tender-pick') === 'cash');
         });
@@ -321,6 +380,27 @@
             '<div class="rateb-pos__receipt-lines">' + linesHtml + '</div>' +
             '<p class="rateb-pos__receipt-total">' + t('pos_total', 'Total') + ': <strong>' + money(receipt.totals && receipt.totals.total) + '</strong></p>';
         receiptModal.hidden = false;
+        try {
+            localStorage.setItem('rateb_pos_last_receipt', JSON.stringify(receipt));
+        } catch (e) { /* ignore */ }
+    }
+
+    window.RatebPosShowReceipt = showReceipt;
+
+    function printReceipt() {
+        var area = receiptModal ? receiptModal.querySelector('[data-pos-receipt-body]') : null;
+        if (!area) {
+            return;
+        }
+        var w = window.open('', '_blank', 'width=400,height=600');
+        if (!w) {
+            notify(t('pos_print_receipt', 'Print'), true);
+            return;
+        }
+        w.document.write('<html><head><title>' + t('pos_receipt', 'Receipt') + '</title><style>body{font-family:monospace;padding:12px} .rateb-pos__receipt-line{display:flex;justify-content:space-between;gap:8px;margin:4px 0}</style></head><body>' + area.innerHTML + '</body></html>');
+        w.document.close();
+        w.focus();
+        w.print();
     }
 
     function applyCoupon() {
@@ -460,6 +540,7 @@
                 root.querySelectorAll('[data-pos-tender-pick]').forEach(function (b) {
                     b.classList.toggle('is-active', b === btn);
                 });
+                syncGiftCardPanel();
                 updateChangeDue();
             });
         });
@@ -540,6 +621,18 @@
     }
     if (applyCouponBtn) {
         applyCouponBtn.addEventListener('click', applyCoupon);
+    }
+    if (giftCardValidateBtn) {
+        giftCardValidateBtn.addEventListener('click', validateGiftCard);
+    }
+    if (giftReceiptCb) {
+        giftReceiptCb.addEventListener('change', function () {
+            window.RatebPosGiftReceipt = giftReceiptCb.checked;
+        });
+    }
+    var printBtn = root.querySelector('[data-pos-receipt-print]');
+    if (printBtn) {
+        printBtn.addEventListener('click', printReceipt);
     }
     if (invoiceDiscType) {
         invoiceDiscType.addEventListener('change', refreshPricing);

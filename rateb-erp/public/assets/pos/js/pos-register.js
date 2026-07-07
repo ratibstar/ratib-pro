@@ -520,16 +520,24 @@
         adjustLineQty(state.selectedLineId, delta);
     }
 
-    function clearCart() {
+    function clearCart(skipConfirm) {
+        if (!skipConfirm && state.lines.length && !window.confirm(t('pos_confirm_clear_cart', 'Cancel current sale and clear the cart?'))) {
+            return;
+        }
         state.lines = [];
         state.selectedLineId = null;
         renderCart();
     }
 
     function newSale() {
-        clearCart();
+        if (state.lines.length && !window.confirm(t('pos_confirm_clear_cart', 'Cancel current sale and clear the cart?'))) {
+            return;
+        }
+        state.lines = [];
+        state.selectedLineId = null;
         state.customer = null;
         renderCustomer();
+        renderCart();
         scheduleSave();
         if (els.productSearch) {
             els.productSearch.value = '';
@@ -1108,6 +1116,44 @@
 
         window.RatebPosPushRecentCustomer = pushRecentCustomer;
         window.RatebPosRefreshCustomerLoyalty = refreshCustomerLoyalty;
+
+        var quickAddBtn = root.querySelector('[data-pos-customer-quick-add]');
+        if (quickAddBtn && api.customerCreate) {
+            quickAddBtn.addEventListener('click', function () {
+                var nameEl = root.querySelector('[data-pos-customer-quick-name]');
+                var phoneEl = root.querySelector('[data-pos-customer-quick-phone]');
+                var name = nameEl ? nameEl.value.trim() : '';
+                if (!name) {
+                    showStatus(t('pos_customer_name', 'Customer name'), true);
+                    return;
+                }
+                var body = new URLSearchParams();
+                body.set('_csrf', csrfToken());
+                body.set('name', name);
+                body.set('phone', phoneEl ? phoneEl.value.trim() : '');
+                fetchJson(api.customerCreate, { method: 'POST', body: body })
+                    .then(function (data) {
+                        state.customer = data.customer || null;
+                        renderCustomer();
+                        scheduleSave();
+                        pushRecentCustomer(state.customer);
+                        refreshCustomerLoyalty();
+                        if (nameEl) {
+                            nameEl.value = '';
+                        }
+                        if (phoneEl) {
+                            phoneEl.value = '';
+                        }
+                        if (customerSheet) {
+                            customerSheet.hidden = true;
+                        }
+                        showStatus(t('pos_add_customer', 'Add customer'));
+                    })
+                    .catch(function (err) {
+                        showStatus(err.message, true);
+                    });
+            });
+        }
     }
 
     bindShortcutsHelp();
@@ -1120,6 +1166,14 @@
         state.customer = null;
         state.selectedLineId = null;
         renderCustomer();
+        renderCartWithoutSave();
+        scheduleSave();
+    };
+    window.RatebPosRegisterApplyLines = function (lines, totals) {
+        state.lines = Array.isArray(lines) ? lines.slice() : [];
+        if (totals) {
+            state.totals = totals;
+        }
         renderCartWithoutSave();
         scheduleSave();
     };

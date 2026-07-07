@@ -202,6 +202,12 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
                        aria-label="<?php echo __('pos_customer_search'); ?>" />
                 <ul class="rateb-pos__dropdown rateb-pos-combobox-list" role="listbox" hidden data-pos-customer-list></ul>
             </div>
+            <div class="rateb-pos__customer-quick" data-pos-customer-quick>
+                <p class="rateb-pos__customer-section-label"><?php echo __('pos_customer_quick_add'); ?></p>
+                <input type="text" class="rateb-pos__input rateb-pos__input--block" data-pos-customer-quick-name placeholder="<?php echo __('pos_customer_name'); ?>" maxlength="120" />
+                <input type="tel" class="rateb-pos__input rateb-pos__input--block" data-pos-customer-quick-phone placeholder="<?php echo __('pos_customer_phone'); ?>" maxlength="30" />
+                <button type="button" class="rateb-pos__customer-clear-btn" data-pos-customer-quick-add><?php echo __('pos_add_customer'); ?></button>
+            </div>
             <p class="rateb-pos__customer-loyalty" data-pos-customer-loyalty-hint hidden></p>
             <p class="rateb-pos__customer-selected" data-pos-customer-display aria-live="polite"></p>
             <button type="button" class="rateb-pos__customer-clear-btn" data-pos-customer-clear><?php echo __('pos_customer_clear'); ?></button>
@@ -209,6 +215,7 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
     </div>
 
     <?php include __DIR__ . '/../partials/pos-register-modes.php'; ?>
+    <?php include __DIR__ . '/../partials/pos-register-cashier.php'; ?>
 
     <div class="rateb-pos__modal" data-pos-serial-modal hidden role="dialog" aria-modal="true" aria-labelledby="rateb-pos-serial-title">
         <div class="rateb-pos__modal-backdrop" data-pos-serial-close tabindex="-1" aria-hidden="true"></div>
@@ -228,11 +235,14 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
         <div class="rateb-pos__modal-panel rateb-pos__modal-panel--receipt">
             <header class="rateb-pos__modal-head">
                 <h2><?php echo __('pos_receipt'); ?></h2>
-                <button type="button" class="rateb-pos__modal-close" data-pos-receipt-close aria-label="<?php echo __('close'); ?>">
+                <div class="rateb-pos__modal-head-actions">
+                    <button type="button" class="rateb-pos__split-btn" data-pos-receipt-print><?php echo __('pos_print_receipt'); ?></button>
+                    <button type="button" class="rateb-pos__modal-close" data-pos-receipt-close aria-label="<?php echo __('close'); ?>">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
+                </div>
             </header>
-            <div class="rateb-pos__modal-body" data-pos-receipt-body></div>
+            <div class="rateb-pos__modal-body rateb-pos__receipt-print-area" data-pos-receipt-body></div>
         </div>
     </div>
 

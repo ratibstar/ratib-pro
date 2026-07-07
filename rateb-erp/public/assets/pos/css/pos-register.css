@@ -205,6 +205,51 @@ html, body.rateb-pos-shell {
 
 .rateb-pos__header-end {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.rateb-pos__header-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rateb-pos__header-tool {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius-sm);
+    background: var(--pos-surface-2);
+    color: inherit;
+    cursor: pointer;
+}
+
+.rateb-pos__header-tool:hover {
+    background: var(--pos-surface-3);
+}
+
+.rateb-pos__offline-queue {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #f59e0b;
+    color: #111827;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 22px;
+    text-align: center;
+}
+
+.rateb-pos__offline-queue[hidden] {
+    display: none !important;
 }
 
 .rateb-pos__header-menu {
@@ -1307,6 +1352,117 @@ html[dir="rtl"] .rateb-pos__catalog {
 
 .rateb-pos__util-btn--accent:hover {
     background: color-mix(in srgb, var(--pos-accent) 14%, var(--pos-surface-2));
+}
+
+.rateb-pos__pay-rewards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--pos-border);
+}
+
+.rateb-pos__pay-rewards-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rateb-pos__pay-disc-row {
+    display: grid;
+    grid-template-columns: minmax(110px, 38%) minmax(0, 1fr);
+    gap: 8px;
+}
+
+.rateb-pos__input--sm {
+    min-height: 40px;
+    font-size: 13px;
+}
+
+.rateb-pos__pay-gift-receipt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.rateb-pos__pay-gift-card {
+    margin-top: 8px;
+}
+
+.rateb-pos__pay-gift-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+}
+
+.rateb-pos__modal-panel--sm {
+    max-width: 420px;
+}
+
+.rateb-pos__modal-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rateb-pos__cashier-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rateb-pos__cashier-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rateb-pos__cashier-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    border-radius: var(--pos-radius-sm);
+    background: #f59e0b;
+    color: #111827;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.rateb-pos__shortcuts-visible {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rateb-pos__shortcuts-visible li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--pos-border);
+    font-size: 13px;
+}
+
+.rateb-pos__shortcuts-visible kbd {
+    min-width: 3rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--pos-surface-3);
+    font-family: inherit;
+    text-align: center;
+}
+
+.rateb-pos__customer-quick {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--pos-border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .rateb-pos__ticket-count.is-bump {

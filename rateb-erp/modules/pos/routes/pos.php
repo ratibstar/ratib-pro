@@ -101,6 +101,11 @@ $router->post($posApp('api/register/cart/update-line'), [PosRegisterApiControlle
 $router->post($posApp('api/register/coupon/validate'), [PosRegisterApiController::class, 'validateCoupon'], $regMw);
 $router->post($posApp('api/register/gift-card/validate'), [PosRegisterApiController::class, 'validateGiftCard'], $regMw);
 $router->get($posApp('api/register/loyalty/balance'), [PosRegisterApiController::class, 'loyaltyBalance'], $regMw);
+$router->post($posApp('api/register/customers/create'), [PosRegisterApiController::class, 'createCustomer'], $regMw);
+$router->post($posApp('api/register/drawer/event'), [PosRegisterApiController::class, 'drawerEvent'], $regMw);
+$router->post($posApp('api/register/drawer/open'), [PosRegisterApiController::class, 'openDrawer'], $regMw);
+$router->get($posApp('api/register/reports/x'), [PosRegisterApiController::class, 'xReport'], $regMw);
+$router->get($posApp('api/register/receipt/last'), [PosRegisterApiController::class, 'lastReceipt'], $regMw);
 $router->get($posApp('api/register/products/detail'), [PosRegisterApiController::class, 'productDetail'], $regMw);
 $router->get($posApp('api/register/products/availability'), [PosRegisterApiController::class, 'productAvailability'], $regMw);
 $router->get($posApp('api/register/products/fefo-preview'), [PosRegisterApiController::class, 'productFefoPreview'], $regMw);

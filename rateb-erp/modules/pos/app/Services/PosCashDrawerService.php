@@ -162,6 +162,22 @@ final class PosCashDrawerService
         return self::sumCashAmount($rows, 'refund_method', 'amount');
     }
 
+    /** @return array<string, mixed>|null */
+    public function findOpenByShift(int $shiftId, int $companyId): ?array
+    {
+        if ($shiftId < 1 || $companyId < 1) {
+            return null;
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT * FROM rateb_pos_cash_drawers
+             WHERE shift_id = :sid AND company_id = :cid AND status = :st LIMIT 1'
+        );
+        $stmt->execute(['sid' => $shiftId, 'cid' => $companyId, 'st' => 'open']);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     public function recordManualEvent(
         int $drawerId,
         int $companyId,

@@ -38,16 +38,21 @@ final class PosRegisterController extends PosBaseController
     /** @param array<string, mixed> $context @param array<string, mixed> $session @param array<int, array<string, mixed>> $lines */
     private function registerConfig(array $context, array $session, array $lines): array
     {
+        $shift = is_array($context['shift'] ?? null) ? $context['shift'] : [];
+        $shiftId = (int) ($shift['id'] ?? 0);
+
         return [
             'locale' => rateb_locale(),
             'rtl' => rateb_is_rtl(),
             'csrf' => Csrf::token(),
             'companyId' => $this->companyId(),
             'userId' => $this->userId(),
+            'shiftId' => $shiftId,
             'api' => [
                 'session' => rateb_app_url('pos/api/register/session'),
                 'sessionSave' => rateb_app_url('pos/api/register/session'),
                 'customers' => rateb_app_url('pos/api/register/customers/search'),
+                'customerCreate' => rateb_app_url('pos/api/register/customers/create'),
                 'products' => rateb_app_url('pos/api/register/products/search'),
                 'barcode' => rateb_app_url('pos/api/register/barcode'),
                 'pricing' => rateb_app_url('pos/api/register/pricing'),
@@ -61,6 +66,10 @@ final class PosRegisterController extends PosBaseController
                 'validateCoupon' => rateb_app_url('pos/api/register/coupon/validate'),
                 'validateGiftCard' => rateb_app_url('pos/api/register/gift-card/validate'),
                 'loyaltyBalance' => rateb_app_url('pos/api/register/loyalty/balance'),
+                'drawerEvent' => rateb_app_url('pos/api/register/drawer/event'),
+                'drawerOpen' => rateb_app_url('pos/api/register/drawer/open'),
+                'xReport' => rateb_app_url('pos/api/register/reports/x'),
+                'lastReceipt' => rateb_app_url('pos/api/register/receipt/last'),
                 'suspend' => rateb_app_url('pos/api/register/suspend'),
                 'suspendedList' => rateb_app_url('pos/api/register/suspended'),
                 'suspendedResume' => rateb_app_url('pos/api/register/suspended/{id}/resume'),
@@ -73,7 +82,16 @@ final class PosRegisterController extends PosBaseController
                 'processExchange' => rateb_app_url('pos/api/register/exchange'),
                 'sync' => rateb_app_url('pos/api/sync'),
             ],
+            'urls' => [
+                'shiftClose' => $shiftId > 0 ? rateb_app_url('pos/shifts/' . $shiftId . '/close') : '',
+            ],
             'canReturns' => function_exists('rateb_can') && rateb_can('pos.returns.manage'),
+            'canDiscount' => (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+                || (function_exists('rateb_can') && rateb_can('pos.discount.manage')),
+            'canShiftClose' => (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+                || (function_exists('rateb_can') && rateb_can('pos.shift.close')),
+            'canDrawerManage' => (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+                || (function_exists('rateb_can') && rateb_can('pos.cash_drawer.manage')),
             'serviceWorker' => rateb_public_url('pos-sw.js'),
             'serviceWorkerScope' => rateb_public_url(''),
             'context' => $context,
@@ -114,11 +132,16 @@ final class PosRegisterController extends PosBaseController
             'pos_saved_orders', 'pos_quotes', 'pos_suspended_empty', 'pos_quotes_empty',
             'pos_resume_sale', 'pos_load_quote', 'pos_quote_loaded',
             'pos_coupon_code', 'pos_apply_coupon', 'pos_loyalty_points', 'pos_loyalty_balance',
-            'pos_gift_card_code', 'pos_gift_card_balance', 'pos_refund_gift_card',
+            'pos_gift_card_code', 'pos_gift_card_balance', 'pos_refund_gift_card', 'pos_gift_card_invalid',
             'pos_exchange', 'pos_process_exchange', 'pos_search_order', 'pos_search_order_placeholder',
             'pos_return_lines', 'pos_returnable_qty', 'pos_exchange_cart_hint',
             'pos_net_due', 'pos_net_refund', 'pos_net_even', 'pos_exchange_complete',
             'invalid_request', 'pos_discount_permission_denied', 'pos_offline_queued', 'pos_offline_mode_banner',
+            'pos_x_report', 'pos_x_report_hint', 'pos_shift_close', 'pos_shift_close_hint', 'pos_closing_float',
+            'pos_pay_in', 'pos_pay_out', 'pos_no_sale', 'pos_open_drawer', 'pos_cashier_tools',
+            'pos_line_discount', 'pos_apply_line_discount', 'pos_confirm_clear_cart', 'pos_customer_quick_add',
+            'pos_customer_name', 'pos_customer_phone', 'pos_add_customer', 'pos_print_receipt', 'pos_reprint_last',
+            'pos_offline_queue', 'pos_gift_card_validate', 'pos_coupon_invalid', 'notes', 'close', 'saved',
         ];
         $out = [];
         foreach ($keys as $key) {
