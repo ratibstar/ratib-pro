@@ -224,16 +224,16 @@
         } catch (e) {
             cfg = {};
         }
-        var ctx = cfg.context || {};
+        var ctx = cfg.registerScope || cfg.context || {};
         var sess = cfg.session || {};
         return {
-            terminal_id: options.terminalId || (ctx.terminal && ctx.terminal.id) || sess.terminal_id || 0,
-            branch_id: options.branchId || (ctx.branch && ctx.branch.id) || sess.branch_id || 0,
+            terminal_id: options.terminalId || ctx.terminal_id || (ctx.terminal && ctx.terminal.id) || sess.terminal_id || 0,
+            branch_id: options.branchId || ctx.branch_id || (ctx.branch && ctx.branch.id) || sess.branch_id || 0,
             scope: {
-                terminal_id: (ctx.terminal && ctx.terminal.id) || sess.terminal_id || 0,
-                shift_id: (ctx.shift && ctx.shift.id) || sess.shift_id || 0,
-                branch_id: (ctx.branch && ctx.branch.id) || sess.branch_id || 0,
-                warehouse_id: sess.warehouse_id || null,
+                terminal_id: ctx.terminal_id || (ctx.terminal && ctx.terminal.id) || sess.terminal_id || 0,
+                shift_id: ctx.shift_id || (ctx.shift && ctx.shift.id) || sess.shift_id || cfg.shiftId || 0,
+                branch_id: ctx.branch_id || (ctx.branch && ctx.branch.id) || sess.branch_id || 0,
+                warehouse_id: ctx.warehouse_id || sess.warehouse_id || null,
                 session_id: sess.db_session_id || null,
                 user_id: cfg.userId || 0
             }

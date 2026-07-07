@@ -448,8 +448,9 @@
         }
 
         if (!navigator.onLine && window.RatebPosOffline) {
-            var cfgCtx = config.context || {};
+            var cfgScope = config.registerScope || {};
             var cfgSess = config.session || {};
+            var cfgCtx = config.context || {};
             if (completeBtn) {
                 completeBtn.disabled = true;
             }
@@ -466,10 +467,10 @@
                     gift_receipt: !!window.RatebPosGiftReceipt,
                     tax_rate: 0.15,
                     scope: {
-                        terminal_id: (cfgCtx.terminal && cfgCtx.terminal.id) || cfgSess.terminal_id || 0,
-                        shift_id: (cfgCtx.shift && cfgCtx.shift.id) || cfgSess.shift_id || 0,
-                        branch_id: (cfgCtx.branch && cfgCtx.branch.id) || cfgSess.branch_id || 0,
-                        warehouse_id: cfgSess.warehouse_id || null,
+                        terminal_id: cfgScope.terminal_id || (cfgCtx.terminal && cfgCtx.terminal.id) || cfgSess.terminal_id || 0,
+                        shift_id: cfgScope.shift_id || (cfgCtx.shift && cfgCtx.shift.id) || cfgSess.shift_id || config.shiftId || 0,
+                        branch_id: cfgScope.branch_id || (cfgCtx.branch && cfgCtx.branch.id) || cfgSess.branch_id || 0,
+                        warehouse_id: cfgScope.warehouse_id || cfgSess.warehouse_id || null,
                         session_id: cfgSess.db_session_id || null,
                         user_id: config.userId || 0
                     }

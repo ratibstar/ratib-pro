@@ -4,7 +4,13 @@ declare(strict_types=1);
 $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-$fontStack = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap';
+$deferScripts = [
+    rateb_pos_asset('js/pos-register-motion.js'),
+    rateb_pos_asset('js/pos-register-cashier.js'),
+    rateb_pos_asset('js/pos-offline-sync.js'),
+    rateb_pos_asset('js/pos-offline-bootstrap.js'),
+];
+$deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo \Rateb\App\Pos\Support\PosView::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme-scope="pos" data-theme="dark" data-bs-theme="dark">
@@ -27,10 +33,6 @@ $fontStack = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&fa
     </script>
     <link rel="manifest" href="<?php echo rateb_public_url('pos-manifest.webmanifest'); ?>">
     <title><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_register')); ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="<?php echo $fontStack; ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link href="<?php echo $fontStack; ?>" rel="stylesheet"></noscript>
     <link href="<?php echo rateb_pos_asset('css/pos-register.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-pos-shell">
@@ -45,9 +47,34 @@ $fontStack = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&fa
 <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-checkout.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-ops.js'); ?>" defer></script>
-<script src="<?php echo rateb_pos_asset('js/pos-register-cashier.js'); ?>" defer></script>
-<script src="<?php echo rateb_pos_asset('js/pos-register-motion.js'); ?>" defer></script>
-<script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>" defer></script>
-<script src="<?php echo rateb_pos_asset('js/pos-offline-bootstrap.js'); ?>" defer></script>
+<script>
+(function () {
+    var queue = <?php echo $deferScriptsJson; ?>;
+    var idx = 0;
+    function loadNext() {
+        if (idx >= queue.length) {
+            return;
+        }
+        var s = document.createElement('script');
+        s.src = queue[idx++];
+        s.defer = true;
+        s.onload = loadNext;
+        s.onerror = loadNext;
+        document.body.appendChild(s);
+    }
+    function start() {
+        if (window.requestIdleCallback) {
+            window.requestIdleCallback(loadNext, { timeout: 2500 });
+        } else {
+            setTimeout(loadNext, 400);
+        }
+    }
+    if (document.readyState === 'complete') {
+        start();
+    } else {
+        window.addEventListener('load', start, { once: true });
+    }
+})();
+</script>
 </body>
 </html>

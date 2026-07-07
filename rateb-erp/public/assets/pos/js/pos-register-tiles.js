@@ -150,6 +150,43 @@
         return seed.slice();
     }
 
+    var catalogFetchPromise = null;
+
+    function applyCatalogPayload(data) {
+        bootstrap.productIndex = data.productIndex || bootstrap.productIndex || {};
+        bootstrap.productImages = data.productImages || bootstrap.productImages || {};
+        window.RatebPosProductImages = bootstrap.productImages || {};
+        var seed = data.catalogSeed || [];
+        seed.forEach(function (p) {
+            if (p && p.id) {
+                productCache[p.id] = mergeProduct(productCache[p.id], p);
+            }
+        });
+        cacheCatalogOffline(seed);
+        return seed.slice();
+    }
+
+    function fetchCatalogFromApi() {
+        if (!api.bootstrap) {
+            return Promise.resolve([]);
+        }
+        if (catalogFetchPromise) {
+            return catalogFetchPromise;
+        }
+        catalogFetchPromise = fetch(api.bootstrap, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' }
+        }).then(function (r) { return r.json(); }).then(function (d) {
+            if (!d || !d.ok) {
+                return [];
+            }
+            return applyCatalogPayload(d);
+        }).catch(function () {
+            return [];
+        });
+        return catalogFetchPromise;
+    }
+
     function refreshCatalogInBackground() {
         if ((bootstrap.catalogSeed || []).length > 0) {
             return Promise.resolve();
@@ -191,6 +228,15 @@
                         productCache[p.id] = mergeProduct(productCache[p.id], p);
                     }
                 });
+                if (!items.length) {
+                    notify(t('pos_catalog_empty', 'No products'));
+                }
+                return items;
+            });
+        }
+        if (api.bootstrap) {
+            return fetchCatalogFromApi().then(function (items) {
+                catalogLoaded = true;
                 if (!items.length) {
                     notify(t('pos_catalog_empty', 'No products'));
                 }
@@ -634,6 +680,7 @@
             return;
         }
         catalogLoaded = false;
+        catalogFetchPromise = null;
         productCache = {};
         loadCategory({ id: activeCategoryId || 'all', name: '' });
     });
@@ -645,6 +692,7 @@
                     return;
                 }
                 catalogLoaded = false;
+                catalogFetchPromise = null;
                 productCache = {};
                 loadCategory({ id: activeCategoryId || 'all', name: '' });
             };
@@ -660,6 +708,7 @@
             if (window.__ratebPosCatalogMarker === marker) { return; }
             window.__ratebPosCatalogMarker = marker;
             catalogLoaded = false;
+            catalogFetchPromise = null;
             productCache = {};
             loadCategory({ id: activeCategoryId || 'all', name: '' });
         } catch (err) {

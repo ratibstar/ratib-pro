@@ -437,6 +437,14 @@
         if (els.checkoutOpen) {
             els.checkoutOpen.disabled = count < 1;
         }
+        if (state.lines.length > 0) {
+            var hasLineTotals = state.lines.some(function (line) {
+                return Number(line.line_total || 0) > 0;
+            });
+            if (hasLineTotals && (!Number(state.totals.total) || state.totals.total === 0)) {
+                computeTotalsLocal();
+            }
+        }
         refreshPricing();
     }
 

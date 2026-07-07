@@ -14,6 +14,7 @@ use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Services\PosHardwareManager;
 use Rateb\App\Pos\Services\PosInventoryReservationService;
 use Rateb\App\Pos\Services\PosPricingService;
+use Rateb\App\Pos\Services\PosRegisterBootstrapService;
 use Rateb\App\Pos\Services\PosRegisterCartService;
 use Rateb\App\Pos\Services\PosReportService;
 use Rateb\App\Pos\Services\PosRewardService;
@@ -23,6 +24,15 @@ use Rateb\App\Pos\Services\PosSessionService;
 /** Register JSON API — cart, inventory lookup, reservations (no order completion). */
 final class PosRegisterApiController extends PosBaseController
 {
+    public function registerBootstrap(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        $context = (new PosContextService())->snapshot();
+        $catalog = (new PosRegisterBootstrapService())->catalogPayload($context);
+        $this->json(['ok' => true] + $catalog);
+    }
+
     public function sessionGet(): void
     {
         $this->bootstrapPos();

@@ -17,7 +17,7 @@
     --pos-radius-sm: 6px;
     --pos-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
     --pos-shadow-tile: 0 2px 6px rgba(15, 23, 42, 0.14);
-    --pos-font: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    --pos-font: system-ui, -apple-system, 'Segoe UI', 'IBM Plex Sans Arabic', 'Inter', sans-serif;
     --pos-header-h: 52px;
     --pos-ease: cubic-bezier(0.16, 1, 0.3, 1);
     --pos-dur: 160ms;

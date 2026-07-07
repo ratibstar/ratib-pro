@@ -20,6 +20,7 @@ $router->get('/api/v1/pos/sync/conflicts', [PosApiController::class, 'syncConfli
 $router->post('/api/v1/pos/sync/conflicts/{id}/resolve', [PosApiController::class, 'syncResolveConflict'], $posApi);
 $router->get('/api/v1/pos/pricing/preview', [PosApiController::class, 'pricingPreview'], $posApi);
 
+$router->get('/api/v1/pos/register/bootstrap', [PosRegisterApiController::class, 'registerBootstrap'], $posApi);
 $router->get('/api/v1/pos/register/session', [PosRegisterApiController::class, 'sessionGet'], $posApi);
 $router->post('/api/v1/pos/register/session', [PosRegisterApiController::class, 'sessionSave'], $posApi);
 $router->get('/api/v1/pos/register/customers/search', [PosRegisterApiController::class, 'searchCustomers'], $posApi);

@@ -89,6 +89,7 @@ $router->post($posApp('api/sync/conflicts/{id}/resolve'), [PosApiController::cla
 $router->get($posApp('api/pricing/preview'), [PosApiController::class, 'pricingPreview'], $posMw('pos/register'));
 
 $regMw = $posMw('pos/register');
+$router->get($posApp('api/register/bootstrap'), [PosRegisterApiController::class, 'registerBootstrap'], $regMw);
 $router->get($posApp('api/register/session'), [PosRegisterApiController::class, 'sessionGet'], $regMw);
 $router->post($posApp('api/register/session'), [PosRegisterApiController::class, 'sessionSave'], $regMw);
 $router->get($posApp('api/register/customers/search'), [PosRegisterApiController::class, 'searchCustomers'], $regMw);

@@ -50,6 +50,7 @@ final class PosRegisterController extends PosBaseController
             'userId' => $this->userId(),
             'shiftId' => $shiftId,
             'api' => [
+                'bootstrap' => rateb_app_url('pos/api/register/bootstrap'),
                 'session' => rateb_app_url('pos/api/register/session'),
                 'sessionSave' => rateb_app_url('pos/api/register/session'),
                 'customers' => rateb_app_url('pos/api/register/customers/search'),
@@ -95,8 +96,13 @@ final class PosRegisterController extends PosBaseController
                 || (function_exists('rateb_can') && rateb_can('pos.cash_drawer.manage')),
             'serviceWorker' => rateb_public_url('pos-sw.js'),
             'serviceWorkerScope' => rateb_public_url(''),
-            'context' => $context,
             'session' => $session,
+            'registerScope' => [
+                'terminal_id' => (int) (($context['terminal']['id'] ?? 0) ?: ($session['terminal_id'] ?? 0)),
+                'shift_id' => $shiftId,
+                'branch_id' => (int) (($context['branch']['id'] ?? 0) ?: ($session['branch_id'] ?? 0)),
+                'warehouse_id' => (int) (($context['warehouse']['id'] ?? 0) ?: ($session['warehouse_id'] ?? 0)),
+            ],
             'initialLines' => $lines,
             'initialTotals' => $totals,
             'i18n' => $this->registerI18n(),
