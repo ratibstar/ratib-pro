@@ -18,10 +18,14 @@ $layoutAssets = class_exists(\Rateb\App\Support\ErpLayoutAssets::class)
     ];
 $accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|cost-of-sales|trial-balance|journal-register|account-statement|partners-subsidiary-ledger|invoices|payments|subscriptions|reports/cost-analysis|reports/inventory-valuation|asset-depreciation)#', $erpRoute);
 $modulePageMetrics = [];
-if (empty($hideModulePageStats) && $erpRoute !== '' && function_exists('rateb_module_page_metrics')) {
-    $modulePageMetrics = rateb_module_page_metrics($erpRoute);
+$deferModulePageMetrics = false;
+if (empty($hideModulePageStats) && $erpRoute !== '' && class_exists(\Rateb\App\Services\ModulePageStatsService::class)) {
+    $deferModulePageMetrics = (new \Rateb\App\Services\ModulePageStatsService())->routeSupportsMetrics($erpRoute);
+    if (!$deferModulePageMetrics && function_exists('rateb_module_page_metrics')) {
+        $modulePageMetrics = rateb_module_page_metrics($erpRoute);
+    }
 }
-$loadModulePageStatsCss = $modulePageMetrics !== [];
+$loadModulePageStatsCss = $deferModulePageMetrics || $modulePageMetrics !== [];
 $navActive = static function (string $route) use ($erpRoute, $currentPath): bool {
     if ($erpRoute !== '') {
         if ($route === 'admin') {
@@ -43,14 +47,6 @@ $approvalsOversightJs = $erpRoute !== '' && (
 );
 if ($approvalsOversightJs && rateb_is_super_admin()) {
     \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
-}
-$oversightPendingApprovals = rateb_oversight_pending_approvals_count();
-$oversightApprovalsNew = 0;
-if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
-    $seenApprovals = (int) (\Rateb\App\Core\SessionManager::get('rateb_oversight_approvals_seen') ?? 0);
-    if ($oversightPendingApprovals > $seenApprovals) {
-        $oversightApprovalsNew = $oversightPendingApprovals - $seenApprovals;
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -81,7 +77,8 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
     <?php } else { ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <?php } ?>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"></noscript>
     <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">
@@ -277,7 +274,13 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
             if ($showOpsCompanyPicker) {
                 Rateb\App\Core\View::partial('ops-company-select');
             }
-            if ($modulePageMetrics !== []) {
+            if ($deferModulePageMetrics) {
+                Rateb\App\Core\View::partial('module-page-stats', [
+                    'async' => true,
+                    'metricsRoute' => $erpRoute,
+                    'metricsUrl' => rateb_url('admin/api/module-metrics') . '?route=' . rawurlencode($erpRoute),
+                ]);
+            } elseif ($modulePageMetrics !== []) {
                 Rateb\App\Core\View::partial('module-page-stats', ['metrics' => $modulePageMetrics]);
             }
             ?>
@@ -299,6 +302,9 @@ if ($oversightPendingApprovals > 0 && rateb_nav_can('workflows.view')) {
 <script src="<?php echo rateb_asset('js/table-tools.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('js/app.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('js/rateb-date-inputs.js'); ?>" defer></script>
+<?php if (!empty($deferModulePageMetrics)) { ?>
+<script src="<?php echo rateb_asset('js/module-page-stats.js'); ?>" defer></script>
+<?php } ?>
 <?php if (!empty($layoutAssets['formHybrid'])) { ?>
 <script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>" defer></script>
 <?php } ?>

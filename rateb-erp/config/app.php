@@ -2328,11 +2328,18 @@ if (!function_exists('rateb_oversight_menu_counts')) {
             $cached = $empty;
             return $cached;
         }
+        $sessionKey = 'rateb_oversight_menu_counts';
+        $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
+        if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
+            $cached = $raw['data'];
+            return $cached;
+        }
         try {
             $cached = (new \Rateb\App\Services\ApprovalOversightService())->menuCounts(null);
         } catch (\Throwable $e) {
             $cached = $empty;
         }
+        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 60, 'data' => $cached]);
         return $cached;
     }
 }
@@ -2408,11 +2415,18 @@ if (!function_exists('rateb_ops_nav_counts')) {
                 $companyFilter = $cid;
             }
         }
+        $sessionKey = 'rateb_ops_nav_counts_' . ($companyFilter ?? 'all');
+        $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
+        if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
+            $cached = $raw['data'];
+            return $cached;
+        }
         try {
             $cached = (new \Rateb\App\Services\ApprovalOversightService())->opsNavCounts($companyFilter);
         } catch (\Throwable $e) {
             $cached = [];
         }
+        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 60, 'data' => $cached]);
         return $cached;
     }
 }
@@ -2454,7 +2468,13 @@ if (!function_exists('rateb_nav_can')) {
         if ($companyId < 1) {
             return false;
         }
-        return (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $module);
+        static $moduleGate = [];
+        $gateKey = $companyId . ':' . $module;
+        if (array_key_exists($gateKey, $moduleGate)) {
+            return $moduleGate[$gateKey];
+        }
+        $moduleGate[$gateKey] = (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $module);
+        return $moduleGate[$gateKey];
     }
 }
 
@@ -2659,6 +2679,36 @@ if (!function_exists('__')) {
             $text = str_replace(':' . $k, (string) $v, $text);
         }
         return $text;
+    }
+}
+
+/** Super-admin ops company picker list (cached). */
+if (!function_exists('rateb_ops_companies_list')) {
+    /** @return list<array<string, mixed>> */
+    function rateb_ops_companies_list(int $limit = 200): array
+    {
+        static $memory = [];
+        if (isset($memory[$limit])) {
+            return $memory[$limit];
+        }
+        if (!rateb_is_super_admin()) {
+            $memory[$limit] = [];
+            return $memory[$limit];
+        }
+        $key = 'rateb_ops_companies_' . $limit;
+        $raw = \Rateb\App\Core\SessionManager::get($key);
+        if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
+            $memory[$limit] = $raw['data'];
+            return $memory[$limit];
+        }
+        try {
+            $data = (new \Rateb\App\Models\Company())->all($limit, 0);
+        } catch (\Throwable $e) {
+            $data = [];
+        }
+        \Rateb\App\Core\SessionManager::set($key, ['exp' => time() + 120, 'data' => $data]);
+        $memory[$limit] = $data;
+        return $data;
     }
 }
 

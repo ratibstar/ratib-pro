@@ -20,6 +20,16 @@ final class ModulePageStatsService
     /** @var array<string, array<int, array<string, mixed>>> */
     private static array $cache = [];
 
+    public function routeSupportsMetrics(string $route): bool
+    {
+        $route = trim($route, '/');
+        if ($route === '' || $this->skipRoute($route)) {
+            return false;
+        }
+
+        return $this->detectModule($route) !== null;
+    }
+
     /** @return array<int, array{label: string, value: string, tone?: string, trend?: string}> */
     public function forRoute(string $route): array
     {

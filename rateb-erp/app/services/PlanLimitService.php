@@ -82,6 +82,11 @@ final class PlanLimitService
     /** @return array{user_limit:int,storage_limit_mb:int,modules:array<int,string>,plan_name:?string} */
     public function getLimits(int $companyId): array
     {
+        static $cache = [];
+        if (isset($cache[$companyId])) {
+            return $cache[$companyId];
+        }
+
         $company = $this->getCompanyRow($companyId);
         if (!$company) {
             return ['user_limit' => 0, 'storage_limit_mb' => 0, 'modules' => [], 'plan_name' => null];
@@ -111,13 +116,15 @@ final class PlanLimitService
             $storageMb = 1024;
         }
 
-        return [
+        $cache[$companyId] = [
             'user_limit' => $userLimit,
             'storage_limit_mb' => $storageMb,
             'branch_limit' => $this->branchLimitForCompany($company, $plan),
             'modules' => $modules,
             'plan_name' => $planName,
         ];
+
+        return $cache[$companyId];
     }
 
     private function branchLimitForCompany(array $company, ?array $plan): int

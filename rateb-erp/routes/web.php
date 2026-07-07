@@ -11,6 +11,7 @@ use Rateb\App\Controllers\Admin\InvoicesController;
 use Rateb\App\Controllers\Admin\LocaleController;
 use Rateb\App\Controllers\Admin\PaymentsController;
 use Rateb\App\Controllers\Admin\PermissionsController;
+use Rateb\App\Controllers\Admin\ModulePageMetricsController;
 use Rateb\App\Controllers\Admin\PlansController;
 use Rateb\App\Controllers\Admin\ProcurementController;
 use Rateb\App\Controllers\Admin\RfqOversightController;
@@ -80,6 +81,7 @@ $router->get('/admin/login', static function (): void {
 });
 $router->post('/admin/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
 $router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMiddleware::class]);
+$router->get('/admin/api/module-metrics', [ModulePageMetricsController::class, 'index'], [ErpAuthMiddleware::class]);
 
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 

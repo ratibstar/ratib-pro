@@ -3,7 +3,7 @@
 if (!rateb_is_super_admin()) {
     return;
 }
-$companies = $companies ?? (new \Rateb\App\Models\Company())->all(200, 0);
+$companies = $companies ?? (function_exists('rateb_ops_companies_list') ? rateb_ops_companies_list() : (new \Rateb\App\Models\Company())->all(200, 0));
 $selectedId = (int) ($selectedCompanyId ?? rateb_resolve_ops_company_id());
 $cpMode = defined('RATEB_CP_MODE') && RATEB_CP_MODE;
 $cpRoute = $cpMode ? rateb_current_erp_route() : rateb_current_erp_route('');

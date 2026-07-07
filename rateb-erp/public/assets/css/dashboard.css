@@ -891,6 +891,39 @@
 .cm-strip__trend.up { color: var(--cm-accent); }
 .cm-strip__trend.down { color: var(--cm-danger); }
 
+.cm--page-stats.is-loading .cm-strip--skeleton {
+    pointer-events: none;
+}
+
+.cm-strip__item--skeleton {
+    border-inline-start-color: var(--cm-line);
+    min-height: 3.25rem;
+}
+
+.cm-skel-line {
+    display: block;
+    height: 0.65rem;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--cm-line-soft) 25%, var(--cm-line) 50%, var(--cm-line-soft) 75%);
+    background-size: 200% 100%;
+    animation: cm-skel-shimmer 1.2s ease-in-out infinite;
+}
+
+.cm-skel-line--wide {
+    height: 1.1rem;
+    width: 55%;
+    margin-top: 0.45rem;
+}
+
+.cm-strip__item--skeleton .cm-strip__lbl.cm-skel-line {
+    width: 70%;
+}
+
+@keyframes cm-skel-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 /* —— Chart grids —— */
 .cm-viz-grid {
     display: grid;
