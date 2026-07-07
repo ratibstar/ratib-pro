@@ -51,8 +51,8 @@ if (!defined('MOBILE_AUTH_SECRET')) {
 define('OBSERVABILITY_DASHBOARD_ENABLED', true);
 define('ADMIN_CONTROL_CENTER_ENABLED', true);
 
-// TEMPORARY: ERP opens /admin without login on rateb.sa — set false or remove to restore login.
-define('RATEB_ERP_LOGIN_BYPASS', true);
+// ERP login bypass (off — normal login required). Set true only for temporary open access.
+define('RATEB_ERP_LOGIN_BYPASS', false);
 
 /*
  * Homepage CMS (rateb_site_content): default to DB-only resolution on this host so stale disk/json
