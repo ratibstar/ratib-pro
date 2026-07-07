@@ -549,16 +549,25 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: body.toString()
         }).then(function (r) {
-            return r.json().catch(function () {
-                return { ok: false, message: '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>' };
-            }).then(function (data) {
-                return { status: r.status, data: data };
+            return r.text().then(function (txt) {
+                var parsed = null;
+                try { parsed = JSON.parse(txt); } catch (e) { parsed = null; }
+                return { status: r.status, okHttp: r.ok, data: parsed, raw: txt || '' };
             });
         }).then(function (data) {
-            var payload = (data && data.data) ? data.data : {};
+            var payload = (data && data.data && typeof data.data === 'object') ? data.data : {};
             var status = Number((data && data.status) || 0);
             var ok = !!payload.ok;
             var msg = payload.message ? String(payload.message) : (ok ? '<?php echo Rateb\App\Core\View::escape(__('pos_transfer_done')); ?>' : '<?php echo Rateb\App\Core\View::escape(__('invalid_request')); ?>');
+            if (!ok) {
+                var raw = String((data && data.raw) || '').replace(/\s+/g, ' ').trim();
+                var rawShort = raw.slice(0, 180);
+                var csrfState = csrfToken ? 'csrf:sent' : 'csrf:missing';
+                msg = msg + ' [debug status=' + status + ' ' + csrfState + ']';
+                if (rawShort) {
+                    msg = msg + ' ' + rawShort;
+                }
+            }
             showInline(msg, ok);
             showToast(msg, ok);
             if (ok) {
