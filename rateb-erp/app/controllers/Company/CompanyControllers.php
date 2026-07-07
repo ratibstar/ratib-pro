@@ -1447,7 +1447,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
-        if (!$this->validateCsrf()) {
+        if (!$this->validateCsrf() && !$this->isTrustedSameOriginRequest()) {
             $this->respondTransfer(false, (string) __('invalid_request'), 419);
             return;
         }
@@ -1664,6 +1664,26 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     {
         $hdr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
         return $hdr === 'xmlhttprequest';
+    }
+
+    private function isTrustedSameOriginRequest(): bool
+    {
+        $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        if ($host === '') {
+            return false;
+        }
+        $origin = (string) ($_SERVER['HTTP_ORIGIN'] ?? '');
+        $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        $src = $origin !== '' ? $origin : $referer;
+        if ($src === '') {
+            return false;
+        }
+        $parts = parse_url($src);
+        $srcHost = strtolower((string) ($parts['host'] ?? ''));
+        if ($srcHost === '') {
+            return false;
+        }
+        return $srcHost === $host;
     }
 }
 
