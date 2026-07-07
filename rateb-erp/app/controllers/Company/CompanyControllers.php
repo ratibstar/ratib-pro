@@ -1504,7 +1504,20 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
 
         $targetWarehouseId = (int) ($shift['warehouse_id'] ?? 0);
         $targetBranchId = (int) ($shift['branch_id'] ?? 0);
-        if ($targetWarehouseId < 1 || $targetBranchId < 1) {
+        if ($targetBranchId < 1) {
+            $this->respondTransfer(false, (string) __('pos_transfer_shift_not_found'), 422);
+            return;
+        }
+        if ($targetWarehouseId < 1) {
+            $whStmt = $db->prepare(
+                'SELECT id FROM rateb_warehouses
+                 WHERE company_id = :cid AND branch_id = :bid
+                 ORDER BY id ASC LIMIT 1'
+            );
+            $whStmt->execute(['cid' => $companyId, 'bid' => $targetBranchId]);
+            $targetWarehouseId = (int) ($whStmt->fetchColumn() ?: 0);
+        }
+        if ($targetWarehouseId < 1) {
             $this->respondTransfer(false, (string) __('pos_transfer_no_open_shift'), 422);
             return;
         }
