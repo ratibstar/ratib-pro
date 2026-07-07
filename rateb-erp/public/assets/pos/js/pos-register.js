@@ -20,7 +20,7 @@
         lines: Array.isArray(config.initialLines) ? config.initialLines.slice() : [],
         customer: (config.session && config.session.customer) ? config.session.customer : null,
         selectedLineId: null,
-        totals: { subtotal: 0, tax: 0, total: 0, discount_total: 0 }
+        totals: config.initialTotals || { subtotal: 0, tax: 0, total: 0, discount_total: 0 }
     };
 
     var els = {
@@ -730,6 +730,9 @@
     }
 
     function loadSession() {
+        renderCustomer();
+        renderCart();
+
         if (!api.session) {
             try {
                 var raw = localStorage.getItem(storageKey);
@@ -741,12 +744,17 @@
                     if (parsed.customer) {
                         state.customer = parsed.customer;
                     }
+                    renderCustomer();
+                    renderCart();
                 }
             } catch (e) { /* ignore */ }
-            renderCustomer();
-            renderCart();
             return;
         }
+
+        if (!navigator.onLine) {
+            return;
+        }
+
         fetchJson(api.session)
             .then(function (data) {
                 if (data.session) {
@@ -763,10 +771,7 @@
                 renderCustomer();
                 renderCart();
             })
-            .catch(function () {
-                renderCustomer();
-                renderCart();
-            });
+            .catch(function () { /* keep server-rendered session */ });
     }
 
     function bindComboboxInput(input, type) {

@@ -54,6 +54,14 @@
         return d.innerHTML;
     }
 
+    function deferIdle(fn, timeoutMs) {
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(fn, { timeout: timeoutMs || 2500 });
+            return;
+        }
+        setTimeout(fn, timeoutMs || 500);
+    }
+
     function fetchJson(url, opts) {
         opts = opts || {};
         var headers = opts.headers || {};
@@ -704,8 +712,9 @@
     bindRefundPicker();
     bindReturnBarcode();
     bindSavedTabs();
-    loadSuspended();
-    loadQuotes();
+    deferIdle(function () {
+        loadSuspended();
+    }, 2000);
 
     window.RatebPosOpsUpdateNet = updateNetSummary;
 })();

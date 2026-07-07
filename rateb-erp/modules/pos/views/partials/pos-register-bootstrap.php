@@ -108,12 +108,13 @@ try {
             $invRows = $invModel->all(500, 0, [], '');
             $usedWarehouseFallback = true;
         }
-        $sellPrices = null;
-        try {
-            $sellPrices = new \Rateb\App\Pos\Services\PosSellPriceService();
-        } catch (\Throwable $e) {
-            $sellPrices = null;
-        }
+        $bootstrapUnitPrice = static function (array $row): float {
+            $sell = $row['sell_price'] ?? null;
+            if ($sell !== null && $sell !== '' && (float) $sell > 0) {
+                return round((float) $sell, 2);
+            }
+            return round((float) ($row['unit_cost'] ?? 0), 2);
+        };
         foreach ($invRows as $row) {
             $id = (int) ($row['id'] ?? 0);
             if ($id < 1) {
@@ -140,21 +141,7 @@ try {
             }
 
             $onHand = (float) ($row['quantity'] ?? 0);
-            $unitPrice = 0.0;
-            if ($sellPrices !== null) {
-                try {
-                    $branchId = (int) ($row['branch_id'] ?? 0);
-                    $resolved = $sellPrices->resolveLine(
-                        ['product_id' => $id, 'quantity' => 1],
-                        $companyId,
-                        $branchId > 0 ? $branchId : 0,
-                        null
-                    );
-                    $unitPrice = (float) ($resolved['unit_price'] ?? 0);
-                } catch (\Throwable $e) {
-                    $unitPrice = 0.0;
-                }
-            }
+            $unitPrice = $bootstrapUnitPrice($row);
 
             $posBootstrap['catalogSeed'][] = [
                 'id' => $id,

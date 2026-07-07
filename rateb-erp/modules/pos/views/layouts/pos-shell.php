@@ -29,24 +29,25 @@ $fontStack = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&fa
     <title><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_register')); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="<?php echo $fontStack; ?>" rel="stylesheet">
+    <link rel="preload" href="<?php echo $fontStack; ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="<?php echo $fontStack; ?>" rel="stylesheet"></noscript>
     <link href="<?php echo rateb_pos_asset('css/pos-register.css'); ?>" rel="stylesheet">
-    <script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-offline-bootstrap.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-register.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-register-motion.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-register-tiles.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-register-checkout.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-register-ops.js'); ?>" defer></script>
-    <script src="<?php echo rateb_pos_asset('js/pos-register-cashier.js'); ?>" defer></script>
 </head>
 <body class="rateb-pos-shell">
 <main class="rateb-pos-main" id="rateb-pos-app">
     <?php echo $pageContent; ?>
 </main>
 <script type="application/json" id="rateb-pos-register-config"><?php echo $configJson ?: '{}'; ?></script>
+<script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register-tiles.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register-checkout.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register-ops.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register-cashier.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-register-motion.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-offline-bootstrap.js'); ?>" defer></script>
 </body>
 </html>

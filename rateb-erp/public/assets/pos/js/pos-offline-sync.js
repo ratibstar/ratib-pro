@@ -328,7 +328,18 @@
         }
     };
 
-    window.RatebPosOffline.init().catch(function () { /* IndexedDB optional */ });
+    function deferOfflineInit() {
+        var run = function () {
+            window.RatebPosOffline.init().catch(function () { /* IndexedDB optional */ });
+        };
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(run, { timeout: 4000 });
+        } else {
+            setTimeout(run, 800);
+        }
+    }
+
+    deferOfflineInit();
 
     window.addEventListener('online', function () {
         window.RatebPosOffline.sync().catch(function () { /* retry later */ });

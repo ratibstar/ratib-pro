@@ -63,6 +63,23 @@
         if (window.RatebPosNotify) { window.RatebPosNotify(msg); }
     }
 
+    function deferIdle(fn, timeoutMs) {
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(fn, { timeout: timeoutMs || 3000 });
+            return;
+        }
+        setTimeout(fn, timeoutMs || 600);
+    }
+
+    function cacheCatalogOffline(seed) {
+        if (!seed.length || !window.RatebPosOffline || !window.RatebPosOffline.catalogPutMany) {
+            return;
+        }
+        deferIdle(function () {
+            window.RatebPosOffline.catalogPutMany(seed);
+        }, 4000);
+    }
+
     function productImageUrl(p) {
         var id = String(p.id || '');
         return p.image_url || p.thumbnail_url || p.image || bootstrap.productImages[id] || '';
@@ -129,13 +146,14 @@
                 productCache[p.id] = mergeProduct(productCache[p.id], p);
             }
         });
-        if (window.RatebPosOffline && window.RatebPosOffline.catalogPutMany) {
-            window.RatebPosOffline.catalogPutMany(seed);
-        }
+        cacheCatalogOffline(seed);
         return seed.slice();
     }
 
     function refreshCatalogInBackground() {
+        if ((bootstrap.catalogSeed || []).length > 0) {
+            return Promise.resolve();
+        }
         var seeds = ['a', 'e', 'i', 'o', 'u', '1', '2', '3', 'b', 'c', 'd', 'f', 'g', 'h', 'm', 's'];
         return Promise.all(seeds.map(fetchProducts)).then(function (groups) {
             groups.forEach(function (items) {
@@ -163,9 +181,6 @@
         var bootItems = seedCatalogFromBootstrap();
         if (bootItems.length) {
             catalogLoaded = true;
-            if (navigator.onLine) {
-                refreshCatalogInBackground();
-            }
             return Promise.resolve(bootItems);
         }
         if (!navigator.onLine && window.RatebPosOffline && window.RatebPosOffline.catalogGetAll) {

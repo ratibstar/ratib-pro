@@ -82,6 +82,14 @@
         badge.hidden = depth < 1;
     }
 
+    function deferIdle(fn, timeoutMs) {
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(fn, { timeout: timeoutMs || 2500 });
+            return;
+        }
+        setTimeout(fn, timeoutMs || 500);
+    }
+
     function bindCashierTools() {
         var toolsModal = root.querySelector('[data-pos-cashier-tools-modal]');
         var openBtn = root.querySelector('[data-pos-cashier-tools-open]');
@@ -288,7 +296,7 @@
     bindLineDiscount();
     bindReprintLast();
 
-    syncOfflineQueueBadge();
-    setInterval(syncOfflineQueueBadge, 5000);
+    deferIdle(syncOfflineQueueBadge, 2500);
+    setInterval(syncOfflineQueueBadge, 15000);
     window.addEventListener('online', syncOfflineQueueBadge);
 })();

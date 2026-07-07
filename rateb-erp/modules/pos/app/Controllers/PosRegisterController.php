@@ -97,6 +97,7 @@ final class PosRegisterController extends PosBaseController
             'context' => $context,
             'session' => $session,
             'initialLines' => $lines,
+            'initialTotals' => $cart->totals($lines),
             'i18n' => $this->registerI18n(),
         ];
     }
