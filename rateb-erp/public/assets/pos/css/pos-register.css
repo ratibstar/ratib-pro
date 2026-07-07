@@ -224,15 +224,19 @@ html, body.rateb-pos-shell {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--pos-border);
+    border: 1px solid rgba(255, 255, 255, 0.28);
     border-radius: var(--pos-radius-sm);
-    background: var(--pos-surface-2);
-    color: inherit;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--pos-header-fg);
     cursor: pointer;
 }
 
 .rateb-pos__header-tool:hover {
-    background: var(--pos-surface-3);
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.rateb-pos__header-tool svg {
+    display: block;
 }
 
 .rateb-pos__offline-queue {
