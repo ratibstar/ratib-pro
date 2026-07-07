@@ -39,7 +39,7 @@
         banner.setAttribute('role', 'status');
         banner.hidden = true;
         banner.textContent = t('pos_offline_mode_banner', 'Offline mode — sales are queued locally');
-        root.prepend(banner);
+        document.body.appendChild(banner);
     }
 
     function syncOfflineUi() {
