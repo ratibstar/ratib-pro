@@ -1546,7 +1546,32 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
 
         if ($targetInventoryId === $id) {
-            $this->respondTransfer(true, (string) __('pos_transfer_already_in_target'));
+            $svc = new \Rateb\App\Services\StockMovementService();
+            try {
+                $db->beginTransaction();
+                $svc->recordWithinTransaction([
+                    'inventory_id' => $id,
+                    'warehouse_id' => $targetWarehouseId,
+                    'movement_type' => 'in',
+                    'quantity' => $qty,
+                    'notes' => 'POS top-up (same warehouse/item)',
+                    'reference_type' => 'pos_transfer_topup',
+                    'reference_id' => $id,
+                ]);
+                $db->commit();
+            } catch (\Throwable $e) {
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
+                $this->respondTransfer(false, \Rateb\App\Services\DatabaseErrorService::userMessage($e), 422);
+                return;
+            }
+            (new AuditService())->log('pos_transfer_topup', $this->entityName, $id, [
+                'inventory_id' => $id,
+                'warehouse_id' => $targetWarehouseId,
+                'quantity' => $qty,
+            ]);
+            $this->respondTransfer(true, (string) __('pos_transfer_topup_done'));
             return;
         }
         if ($targetInventoryId < 1) {
