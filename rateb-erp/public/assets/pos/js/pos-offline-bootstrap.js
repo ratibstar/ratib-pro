@@ -29,30 +29,12 @@
             .catch(function () { /* optional */ });
     }
 
-    function ensureBanner() {
-        if (document.getElementById('rateb-pos-offline-banner')) {
-            return;
-        }
-        var banner = document.createElement('div');
-        banner.id = 'rateb-pos-offline-banner';
-        banner.className = 'rateb-pos-offline-banner';
-        banner.setAttribute('role', 'status');
-        banner.hidden = true;
-        banner.textContent = t('pos_offline_mode_banner', 'Offline mode — sales are queued locally');
-        document.body.appendChild(banner);
-    }
-
     function syncOfflineUi() {
         var online = navigator.onLine;
         root.classList.toggle('rateb-pos--offline', !online);
-        var banner = document.getElementById('rateb-pos-offline-banner');
-        if (banner) {
-            banner.hidden = online;
-        }
     }
 
     registerServiceWorker();
-    ensureBanner();
     syncOfflineUi();
     window.addEventListener('online', syncOfflineUi);
     window.addEventListener('offline', syncOfflineUi);

@@ -287,23 +287,13 @@ html, body.rateb-pos-shell {
     color: #fca5a5;
 }
 
-.rateb-pos-offline-banner {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 10001;
-    margin: 0;
-    padding: 6px 14px;
-    border-radius: 0;
-    background: rgba(154, 52, 18, 0.92);
-    border: none;
-    border-bottom: 1px solid rgba(251, 146, 60, 0.4);
-    color: #fff7ed;
-    font-size: 12px;
-    font-weight: 600;
-    text-align: center;
-    pointer-events: none;
+.rateb-pos__connection.is-offline .rateb-pos-connection__label {
+    animation: pos-offline-blink 1s steps(1, end) infinite;
+}
+
+@keyframes pos-offline-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.25; }
 }
 
 .rateb-pos--offline .rateb-pos__charge:not([disabled]) {
