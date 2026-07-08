@@ -6,6 +6,7 @@ namespace Rateb\PlatformCatalog\Application;
 
 use Rateb\PlatformCatalog\Application\Contracts\StructuredLoggerInterface;
 use Rateb\PlatformCatalog\Application\Events\EventDispatcher;
+use Rateb\PlatformCatalog\Application\Support\ErpSessionIdentityBridge;
 use Rateb\PlatformCatalog\Application\Support\GatewayTrustConfig;
 use Rateb\PlatformCatalog\Application\Support\PlatformIdentityResolver;
 use Rateb\PlatformCatalog\Application\Policies\AssetTypePolicy;
@@ -361,9 +362,13 @@ final class CatalogServiceProvider
         ));
         $container->set(ProductSnapshotGraphWriteRepositoryInterface::class, static fn (): ProductSnapshotGraphWriteRepositoryInterface => new MysqlProductSnapshotGraphWriteRepository());
         $container->set(GatewayTrustConfig::class, static fn (): GatewayTrustConfig => new GatewayTrustConfig());
+        $container->set(ErpSessionIdentityBridge::class, static fn (Container $c): ErpSessionIdentityBridge => new ErpSessionIdentityBridge(
+            $c->get(RbacReadRepositoryInterface::class)
+        ));
         $container->set(PlatformIdentityResolver::class, static fn (Container $c): PlatformIdentityResolver => new PlatformIdentityResolver(
             $c->get(RbacService::class),
-            $c->get(GatewayTrustConfig::class)
+            $c->get(GatewayTrustConfig::class),
+            $c->get(ErpSessionIdentityBridge::class)
         ));
         $container->set(StructuredLoggerInterface::class, static function (): StructuredLoggerInterface {
             $storageRoot = defined('RATEB_PLATFORM_CATALOG_STORAGE_PATH')

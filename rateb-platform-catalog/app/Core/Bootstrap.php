@@ -34,6 +34,7 @@ final class Bootstrap
         self::registerAutoloader($basePath);
         self::loadConfig($basePath);
         self::ensureStorage($basePath);
+        \Rateb\PlatformCatalog\Application\Support\CatalogSession::start();
     }
 
     public static function initMinimal(string $basePath): void

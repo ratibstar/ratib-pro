@@ -30,7 +30,14 @@
         queueEl.innerHTML = '<div class="admin-muted">' + ui.escapeHtml(e.message) + '</div>';
       }
 
-      var products = await api.get('/catalog/products', { limit: 8, offset: 0 });
+      var products = null;
+      try {
+        products = await api.get('/catalog/products', { limit: 8, offset: 0 });
+      } catch (e) {
+        productsEl.innerHTML = '<div class="admin-muted">' + ui.escapeHtml(e.message) + '</div>';
+        products = { data: [] };
+      }
+
       var items = Array.isArray(products.data) ? products.data : [];
       if (stats) {
         stats.innerHTML =

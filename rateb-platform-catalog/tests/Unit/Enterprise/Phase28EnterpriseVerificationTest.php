@@ -249,7 +249,7 @@ catalog_test('Enterprise: completeness scores SEO, images, variants, translation
 catalog_test('Enterprise: RBAC denies unauthenticated workflow permission', static function (): void {
     unset($_SERVER['HTTP_X_PLATFORM_USER_ID'], $_SESSION['platform_user_id']);
 
-    $rbac = new RbacService(new class implements RbacReadRepositoryInterface {
+    $rbacRepo = new class implements RbacReadRepositoryInterface {
         public function listPermissionSlugsForUser(int $userId): array
         {
             return ['catalog.workflow.submit'];
@@ -264,9 +264,10 @@ catalog_test('Enterprise: RBAC denies unauthenticated workflow permission', stat
         {
             return null;
         }
-    });
+    };
+    $rbac = new RbacService($rbacRepo);
 
-    $guard = buildSessionRbacPolicyGuard($rbac);
+    $guard = buildSessionRbacPolicyGuard($rbac, $rbacRepo);
     catalog_assert_false($guard->allows('catalog.workflow.publish'));
 
     try {

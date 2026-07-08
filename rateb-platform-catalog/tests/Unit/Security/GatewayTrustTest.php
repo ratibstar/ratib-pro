@@ -12,7 +12,7 @@ catalog_test('PlatformIdentityResolver rejects spoofed X-Platform-User-Id withou
     putenv('RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_ENABLED=0');
     unset($_SERVER['HTTP_X_PLATFORM_USER_ID'], $_SERVER['HTTP_X_PLATFORM_GATEWAY_TOKEN'], $_SESSION['platform_user_id']);
 
-    $rbac = new RbacService(new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
+    $rbacRepo = new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
         public function listPermissionSlugsForUser(int $userId): array
         {
             return ['catalog.workflow.publish'];
@@ -27,11 +27,12 @@ catalog_test('PlatformIdentityResolver rejects spoofed X-Platform-User-Id withou
         {
             return 1;
         }
-    });
+    };
+    $rbac = new RbacService($rbacRepo);
 
     $_SERVER['HTTP_X_PLATFORM_USER_ID'] = SystemActorContext::SYSTEM_USER_UUID;
 
-    $resolver = new PlatformIdentityResolver($rbac, new GatewayTrustConfig());
+    $resolver = buildPlatformIdentityResolver($rbac, $rbacRepo);
     catalog_assert_same(null, $resolver->resolveActorId());
 
     unset($_SERVER['HTTP_X_PLATFORM_USER_ID']);
@@ -43,7 +44,7 @@ catalog_test('PlatformIdentityResolver accepts trusted gateway headers when enab
     putenv('RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_SECRET=integration-test-secret');
     unset($_SERVER['HTTP_X_PLATFORM_USER_ID'], $_SESSION['platform_user_id']);
 
-    $rbac = new RbacService(new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
+    $rbacRepo = new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
         public function listPermissionSlugsForUser(int $userId): array
         {
             return ['catalog.workflow.publish'];
@@ -58,12 +59,13 @@ catalog_test('PlatformIdentityResolver accepts trusted gateway headers when enab
         {
             return $uuid === '00000000-0000-4000-8000-000000000001' ? 1 : null;
         }
-    });
+    };
+    $rbac = new RbacService($rbacRepo);
 
     $_SERVER['HTTP_X_PLATFORM_USER_ID'] = SystemActorContext::SYSTEM_USER_UUID;
     $_SERVER['HTTP_X_PLATFORM_GATEWAY_TOKEN'] = 'integration-test-secret';
 
-    $guard = buildSessionRbacPolicyGuard($rbac);
+    $guard = buildSessionRbacPolicyGuard($rbac, $rbacRepo);
     catalog_assert_true($guard->allows('catalog.workflow.publish'));
 
     unset($_SERVER['HTTP_X_PLATFORM_USER_ID'], $_SERVER['HTTP_X_PLATFORM_GATEWAY_TOKEN']);
@@ -75,7 +77,7 @@ catalog_test('PlatformIdentityResolver resolves session actor without gateway he
     putenv('RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_ENABLED=0');
     unset($_SERVER['HTTP_X_PLATFORM_USER_ID'], $_SERVER['HTTP_X_PLATFORM_GATEWAY_TOKEN'], $_SESSION['platform_user_id']);
 
-    $rbac = new RbacService(new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
+    $rbacRepo = new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
         public function listPermissionSlugsForUser(int $userId): array
         {
             return $userId === 1 ? ['catalog.workflow.publish'] : [];
@@ -90,11 +92,12 @@ catalog_test('PlatformIdentityResolver resolves session actor without gateway he
         {
             return null;
         }
-    });
+    };
+    $rbac = new RbacService($rbacRepo);
 
     $_SESSION['platform_user_id'] = 1;
 
-    $guard = buildSessionRbacPolicyGuard($rbac);
+    $guard = buildSessionRbacPolicyGuard($rbac, $rbacRepo);
     catalog_assert_true($guard->allows('catalog.workflow.publish'));
 
     unset($_SESSION['platform_user_id']);

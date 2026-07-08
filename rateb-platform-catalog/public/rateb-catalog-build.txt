@@ -1,11 +1,11 @@
 release=2.10.0
 phase=2.10
 architecture=1.3.1
-build=2026-07-08T19:50:00+03:00
+build=2026-07-08T20:00:00+03:00
 feature=enterprise-admin-panel
-fix=request-path-mount-prefix
+fix=erp-session-identity-bridge
 search_adapter_default=database
-core_certification_tests=164
-core_certification_status=164/164
+core_certification_tests=167
+core_certification_status=167/167
 optional_adapter_tests=1
 optional_adapter_suites=meilisearch

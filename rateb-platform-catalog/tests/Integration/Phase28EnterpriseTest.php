@@ -268,7 +268,7 @@ catalog_test('Integration: RBAC denies without platform user', static function (
 
     $pdo = phase28_integration_db();
     if ($pdo === null) {
-        $guard = buildSessionRbacPolicyGuard(new RbacService(new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
+        $rbacRepo = new class implements \Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface {
             public function listPermissionSlugsForUser(int $userId): array
             {
                 return ['catalog.workflow.publish'];
@@ -283,7 +283,8 @@ catalog_test('Integration: RBAC denies without platform user', static function (
             {
                 return null;
             }
-        }));
+        };
+        $guard = buildSessionRbacPolicyGuard(new RbacService($rbacRepo), $rbacRepo);
         catalog_assert_false($guard->allows('catalog.workflow.publish'));
         try {
             (new WorkflowPolicy($guard))->publish();
@@ -295,8 +296,9 @@ catalog_test('Integration: RBAC denies without platform user', static function (
         return;
     }
 
-    $rbac = new RbacService(new MysqlRbacReadRepository());
-    $guard = buildSessionRbacPolicyGuard($rbac);
+    $readRepo = new MysqlRbacReadRepository();
+    $rbac = new RbacService($readRepo);
+    $guard = buildSessionRbacPolicyGuard($rbac, $readRepo);
     catalog_assert_false($guard->allows('catalog.workflow.publish'));
 });
 
@@ -315,8 +317,9 @@ catalog_test('Integration: RBAC super_admin resolves publish via role chain', st
     $_SERVER['HTTP_X_PLATFORM_USER_ID'] = SystemActorContext::SYSTEM_USER_UUID;
     $_SERVER['HTTP_X_PLATFORM_GATEWAY_TOKEN'] = 'integration-test-secret';
 
-    $rbac = new RbacService(new MysqlRbacReadRepository());
-    $guard = buildSessionRbacPolicyGuard($rbac);
+    $readRepo = new MysqlRbacReadRepository();
+    $rbac = new RbacService($readRepo);
+    $guard = buildSessionRbacPolicyGuard($rbac, $readRepo);
     catalog_assert_true($guard->allows('catalog.workflow.publish'));
 
     unset($_SERVER['HTTP_X_PLATFORM_USER_ID'], $_SERVER['HTTP_X_PLATFORM_GATEWAY_TOKEN']);

@@ -11,7 +11,8 @@ final class PlatformIdentityResolver
 {
     public function __construct(
         private readonly RbacService $rbacService,
-        private readonly GatewayTrustConfig $gatewayTrustConfig
+        private readonly GatewayTrustConfig $gatewayTrustConfig,
+        private readonly ErpSessionIdentityBridge $erpSessionIdentityBridge
     ) {
     }
 
@@ -24,6 +25,11 @@ final class PlatformIdentityResolver
 
         if (isset($_SESSION['platform_user_id']) && is_numeric($_SESSION['platform_user_id'])) {
             return (int) $_SESSION['platform_user_id'];
+        }
+
+        $bridged = $this->erpSessionIdentityBridge->resolvePlatformUserId();
+        if ($bridged !== null) {
+            return $bridged;
         }
 
         $headerUser = Request::header($this->gatewayTrustConfig->platformUserIdHeader());
