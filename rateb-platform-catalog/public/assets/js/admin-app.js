@@ -14,6 +14,10 @@
     overlay.id = 'adminSidebarOverlay';
     document.body.appendChild(overlay);
 
+    function isMobileNav() {
+      return window.matchMedia('(max-width: 991.98px)').matches;
+    }
+
     function readOpenGroup() {
       try {
         return localStorage.getItem(STORAGE_OPEN_GROUP) || '';
@@ -76,7 +80,7 @@
           return;
         }
         btn.addEventListener('click', function () {
-          if (shell && shell.classList.contains('is-sidebar-collapsed')) {
+          if (shell && shell.classList.contains('is-sidebar-collapsed') && !isMobileNav()) {
             return;
           }
           var willOpen = !groupEl.classList.contains('is-open');
@@ -93,6 +97,9 @@
       }
       sidebar.classList.remove('is-open');
       overlay.classList.remove('is-open');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', 'false');
+      }
     }
 
     function openMobileSidebar() {
@@ -101,10 +108,17 @@
       }
       sidebar.classList.add('is-open');
       overlay.classList.add('is-open');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', 'true');
+      }
     }
 
     function setSidebarCollapsed(collapsed) {
       if (!shell) {
+        return;
+      }
+      if (isMobileNav()) {
+        shell.classList.remove('is-sidebar-collapsed');
         return;
       }
       shell.classList.toggle('is-sidebar-collapsed', collapsed);
@@ -125,11 +139,15 @@
 
     if (toggle) {
       toggle.addEventListener('click', function () {
-        if (sidebar && sidebar.classList.contains('is-open')) {
-          closeMobileSidebar();
-        } else {
-          openMobileSidebar();
+        if (isMobileNav()) {
+          if (sidebar && sidebar.classList.contains('is-open')) {
+            closeMobileSidebar();
+          } else {
+            openMobileSidebar();
+          }
+          return;
         }
+        setSidebarCollapsed(!(shell && shell.classList.contains('is-sidebar-collapsed')));
       });
     }
 
@@ -140,6 +158,17 @@
     }
 
     overlay.addEventListener('click', closeMobileSidebar);
+
+    window.addEventListener('resize', function () {
+      if (!isMobileNav()) {
+        closeMobileSidebar();
+      }
+      try {
+        setSidebarCollapsed(localStorage.getItem(STORAGE_COLLAPSED) === '1');
+      } catch (e) {
+        setSidebarCollapsed(false);
+      }
+    });
 
     try {
       setSidebarCollapsed(localStorage.getItem(STORAGE_COLLAPSED) === '1');

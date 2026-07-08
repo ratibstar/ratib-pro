@@ -100,7 +100,7 @@ $groupLabels = [
 
     <div class="admin-main">
         <header class="admin-topbar">
-            <button type="button" class="btn btn-outline-secondary btn-sm d-lg-none" id="adminSidebarToggle" aria-label="<?= htmlspecialchars(catalog__('admin_toggle_menu', $locale), ENT_QUOTES, 'UTF-8') ?>">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="adminSidebarToggle" aria-label="<?= htmlspecialchars(catalog__('admin_toggle_menu', $locale), ENT_QUOTES, 'UTF-8') ?>" aria-controls="adminSidebar" aria-expanded="false">
                 <i class="bi bi-list"></i>
             </button>
             <button type="button" class="btn btn-outline-secondary btn-sm d-none d-lg-inline-flex" id="adminSidebarCollapse" aria-label="<?= htmlspecialchars(catalog__('admin_collapse_sidebar', $locale), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(catalog__('admin_collapse_sidebar', $locale), ENT_QUOTES, 'UTF-8') ?>">

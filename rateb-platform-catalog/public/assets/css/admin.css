@@ -47,7 +47,7 @@ body.admin-body {
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  z-index: 30;
+  z-index: 50;
 }
 
 .admin-brand {
@@ -585,20 +585,33 @@ html[dir="rtl"] .admin-footer {
     grid-template-columns: 1fr;
   }
 
+  .admin-shell.is-sidebar-collapsed {
+    --admin-sidebar-width: 280px;
+  }
+
   .admin-sidebar {
     position: fixed;
+    inset-block: 0;
     inset-inline-start: 0;
+    width: min(86vw, 280px);
+    height: 100vh;
     transform: translateX(-105%);
-    width: min(86vw, var(--admin-sidebar-width));
     transition: transform 0.2s ease;
+    box-shadow: none;
   }
 
   html[dir="rtl"] .admin-sidebar {
     transform: translateX(105%);
   }
 
-  .admin-sidebar.is-open {
+  .admin-sidebar.is-open,
+  html[dir="rtl"] .admin-sidebar.is-open {
     transform: translateX(0);
+    box-shadow: var(--admin-shadow);
+  }
+
+  .admin-overlay {
+    z-index: 45;
   }
 
   .admin-split {
