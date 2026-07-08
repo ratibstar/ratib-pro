@@ -261,6 +261,7 @@ use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductFi
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductImageReadRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlIdempotencyReadRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlIdempotencyWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlJobQueueReadRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlJobQueueWriteRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSearchIndexQueueReadRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSearchIndexQueueWriteRepository;
