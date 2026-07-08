@@ -8,7 +8,9 @@ final class LocalStorageAdapter implements StorageAdapterInterface
 {
     public function __construct(
         private readonly string $rootPath,
-        private readonly string $publicBaseUrl = ''
+        private readonly string $publicBaseUrl = '',
+        private readonly bool $signedUrlsEnabled = false,
+        private readonly ?SignedUrlGenerator $signedUrlGenerator = null
     ) {
     }
 
@@ -80,9 +82,11 @@ final class LocalStorageAdapter implements StorageAdapterInterface
 
     public function signedUrl(string $relativePath, int $ttlSeconds): string
     {
-        unset($ttlSeconds);
+        if (!$this->signedUrlsEnabled || !$this->signedUrlGenerator instanceof SignedUrlGenerator) {
+            return $this->publicUrl($relativePath);
+        }
 
-        return $this->publicUrl($relativePath);
+        return $this->signedUrlGenerator->generate($relativePath, $ttlSeconds);
     }
 
     private function normalizeKey(string $relativePath): string

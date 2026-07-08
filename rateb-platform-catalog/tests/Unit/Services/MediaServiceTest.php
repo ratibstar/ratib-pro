@@ -180,12 +180,12 @@ catalog_test('MediaService dispatches ProductImageUploaded event', static functi
     catalog_assert_true($dispatched);
 });
 
-catalog_test('S3CompatibleAdapter is stubbed in Phase 2.6', static function (): void {
-    $adapter = new \Rateb\PlatformCatalog\Infrastructure\Storage\S3CompatibleAdapter();
-    try {
-        $adapter->put('x', 'y');
-        throw new RuntimeException('Expected logic exception');
-    } catch (LogicException $e) {
-        catalog_assert_true(str_contains($e->getMessage(), 'not implemented'));
-    }
+catalog_test('S3CompatibleAdapter requires feature flag and configuration', static function (): void {
+    putenv('STORAGE_ADAPTER=s3');
+    putenv('CATALOG_S3_ENABLED=false');
+
+    $adapter = \Rateb\PlatformCatalog\Infrastructure\Storage\StorageAdapterFactory::create();
+    catalog_assert_true($adapter instanceof LocalStorageAdapter);
+
+    putenv('STORAGE_ADAPTER=local');
 });

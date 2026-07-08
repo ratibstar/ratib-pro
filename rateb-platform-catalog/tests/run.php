@@ -128,6 +128,10 @@ require $root . '/tests/Unit/Mappers/ProductRelationshipMapperTest.php';
 require $root . '/tests/Unit/Services/ProductRelationshipServiceTest.php';
 require $root . '/tests/Unit/Support/MediaStorageKeyBuilderTest.php';
 require $root . '/tests/Unit/Storage/LocalStorageAdapterTest.php';
+require $root . '/tests/Unit/Storage/SignedUrlTest.php';
+require $root . '/tests/Unit/Storage/S3CompatibleAdapterTest.php';
+require $root . '/tests/Unit/Validators/UploadValidatorTest.php';
+require $root . '/tests/Unit/Middleware/IdempotencyMiddlewareTest.php';
 require $root . '/tests/Unit/Mappers/MediaMapperTest.php';
 require $root . '/tests/Unit/Services/MediaServiceTest.php';
 require $root . '/tests/Unit/Support/ArabicNormalizerTest.php';
@@ -156,14 +160,25 @@ require $root . '/tests/Integration/ScheduledPublishIntegrationTest.php';
 require $root . '/tests/Integration/SearchQueueIntegrationTest.php';
 require $root . '/tests/Integration/DatabaseSearchIntegrationTest.php';
 
-$adapterSuiteRequested = strtolower((string) (getenv('CATALOG_ADAPTER_TESTS') ?: '')) === 'meilisearch';
+$adapterSuiteRequested = in_array(
+    strtolower((string) (getenv('CATALOG_ADAPTER_TESTS') ?: '')),
+    ['meilisearch', 's3'],
+    true
+);
 $adapterSuiteExecuted = false;
 
 if ($adapterSuiteRequested) {
     $adapterSuiteExecuted = true;
     $catalogTestContext = 'adapter';
     require $root . '/tests/Integration/Adapters/bootstrap.php';
-    require $root . '/tests/Integration/Adapters/Meilisearch/MeilisearchAdapterIntegrationTest.php';
+
+    if (catalog_adapter_tests_enabled('meilisearch')) {
+        require $root . '/tests/Integration/Adapters/Meilisearch/MeilisearchAdapterIntegrationTest.php';
+    }
+
+    if (catalog_adapter_tests_enabled('s3')) {
+        require $root . '/tests/Integration/Adapters/S3/S3CompatibleAdapterIntegrationTest.php';
+    }
 }
 
 echo PHP_EOL;

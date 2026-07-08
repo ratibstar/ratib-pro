@@ -9,6 +9,7 @@ use Rateb\PlatformCatalog\Http\Controllers\Api\V1\CategoryController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\CategorySchemaController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\HealthController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\MediaServeController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\SignedStorageController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductFamilyController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductMediaController;
@@ -79,6 +80,7 @@ $router->get('/catalog/products/{uuid}/videos', [ProductMediaController::class, 
 $router->post('/catalog/products/{uuid}/videos', [ProductMediaController::class, 'storeVideo']);
 $router->get('/catalog/media/{uuid}/{variant}', [MediaServeController::class, 'serveImage']);
 $router->get('/catalog/files/{uuid}', [MediaServeController::class, 'serveFile']);
+$router->get('/catalog/signed-storage', [SignedStorageController::class, 'serve']);
 
 $router->get('/catalog/search', [SearchController::class, 'search']);
 $router->get('/catalog/search/variants', [SearchController::class, 'searchVariants']);

@@ -12,6 +12,7 @@ use Rateb\PlatformCatalog\Application\Policies\FilePolicy;
 use Rateb\PlatformCatalog\Application\Support\LocaleMetaBuilder;
 use Rateb\PlatformCatalog\Application\Support\MediaStorageKeyBuilder;
 use Rateb\PlatformCatalog\Application\Support\MediaUploadHelper;
+use Rateb\PlatformCatalog\Application\Validators\UploadValidator;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductFileReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductFileWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductReadRepositoryInterface;
@@ -27,7 +28,8 @@ final class FileService
         private readonly StorageAdapterInterface $storage,
         private readonly FilePolicy $policy,
         private readonly LocaleResolverService $localeResolver,
-        private readonly EventDispatcher $events
+        private readonly EventDispatcher $events,
+        private readonly ?UploadValidator $uploadValidator = null
     ) {
     }
 
@@ -72,19 +74,25 @@ final class FileService
         $locale ??= $this->localeResolver->resolveFromRequest();
         $this->assertProductExists($productUuid, $locale);
 
-        $binary = MediaUploadHelper::resolveBinary($payload, $uploadedFile);
+        $assetTypeCode = (string) ($payload['asset_type_code'] ?? 'pdf');
+        $binary = $this->uploadValidator !== null
+            ? $this->uploadValidator->resolveAndValidate($payload, $uploadedFile, $assetTypeCode, $locale, false)
+            : MediaUploadHelper::resolveBinary($payload, $uploadedFile);
         $checksum = MediaUploadHelper::sha256($binary['content']);
         $fileUuid = Uuid::v4();
         $storageKey = MediaStorageKeyBuilder::productFile($productUuid, $fileUuid, $binary['extension']);
 
         try {
-            $this->storage->put($storageKey, $binary['content'], ['mime_type' => $binary['mime_type']]);
+            $this->storage->put($storageKey, $binary['content'], [
+                'mime_type' => $binary['mime_type'],
+                'checksum_sha256' => $checksum,
+            ]);
             $this->writeRepository->createForProduct(
                 $productUuid,
                 $fileUuid,
                 $storageKey,
                 [
-                    'asset_type_code' => $payload['asset_type_code'] ?? 'pdf',
+                    'asset_type_code' => $assetTypeCode,
                     'mime_type' => $binary['mime_type'],
                     'file_size_bytes' => $binary['size'],
                     'checksum_sha256' => $checksum,

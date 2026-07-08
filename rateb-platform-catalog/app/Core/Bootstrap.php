@@ -94,6 +94,8 @@ final class Bootstrap
             'release.php',
             'database.php',
             'storage.php',
+            'upload.php',
+            's3.php',
             'languages.php',
             'gateway.php',
         ] as $configFile) {

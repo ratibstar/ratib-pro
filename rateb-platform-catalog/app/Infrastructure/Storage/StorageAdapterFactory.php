@@ -17,9 +17,27 @@ final class StorageAdapterFactory
             ? (string) RATEB_PLATFORM_CATALOG_CDN_BASE
             : '';
 
-        return match ($adapter) {
-            's3' => new S3CompatibleAdapter(),
-            default => new LocalStorageAdapter($root, $cdnBase),
-        };
+        $signedUrlsEnabled = self::signedUrlsEnabled();
+        $signedUrlGenerator = null;
+        if ($signedUrlsEnabled) {
+            $secret = (string) (getenv('SIGNED_URL_SECRET') ?: '');
+            $signedUrlGenerator = new SignedUrlGenerator($secret, $cdnBase);
+        }
+
+        if ($adapter === 's3' && self::s3Enabled()) {
+            return S3CompatibleAdapter::fromConfig();
+        }
+
+        return new LocalStorageAdapter($root, $cdnBase, $signedUrlsEnabled, $signedUrlGenerator);
+    }
+
+    public static function s3Enabled(): bool
+    {
+        return S3Config::fromEnvironment()->enabled;
+    }
+
+    public static function signedUrlsEnabled(): bool
+    {
+        return filter_var(getenv('CATALOG_SIGNED_URLS_ENABLED') ?: 'false', FILTER_VALIDATE_BOOLEAN);
     }
 }

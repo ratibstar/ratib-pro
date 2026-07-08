@@ -8,12 +8,21 @@ final class Router
 {
     private ?Container $container = null;
 
+    /** @var array<int, callable(string,string):bool> */
+    private array $middleware = [];
+
     /** @var array<int, array{method:string,pattern:string,handler:callable|array|\Closure}> */
     private array $routes = [];
 
     public function setContainer(Container $container): void
     {
         $this->container = $container;
+    }
+
+    /** @param callable(string,string):bool $middleware */
+    public function addMiddleware(callable $middleware): void
+    {
+        $this->middleware[] = $middleware;
     }
 
     /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
@@ -61,6 +70,12 @@ final class Router
         $method = strtoupper($method);
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
         $path = rtrim($path, '/') ?: '/';
+
+        foreach ($this->middleware as $middleware) {
+            if (!$middleware($method, $path)) {
+                return;
+            }
+        }
 
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {

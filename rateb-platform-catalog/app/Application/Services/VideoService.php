@@ -10,6 +10,7 @@ use Rateb\PlatformCatalog\Application\Events\ProductVideoAdded;
 use Rateb\PlatformCatalog\Application\Mappers\MediaMapper;
 use Rateb\PlatformCatalog\Application\Policies\VideoPolicy;
 use Rateb\PlatformCatalog\Application\Support\LocaleMetaBuilder;
+use Rateb\PlatformCatalog\Application\Validators\UploadValidator;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductVideoReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductVideoWriteRepositoryInterface;
@@ -24,7 +25,8 @@ final class VideoService
         private readonly StorageAdapterInterface $storage,
         private readonly VideoPolicy $policy,
         private readonly LocaleResolverService $localeResolver,
-        private readonly EventDispatcher $events
+        private readonly EventDispatcher $events,
+        private readonly ?UploadValidator $uploadValidator = null
     ) {
     }
 
@@ -63,6 +65,12 @@ final class VideoService
         $this->policy->create();
         $locale ??= $this->localeResolver->resolveFromRequest();
         $this->assertProductExists($productUuid, $locale);
+
+        $videoType = (string) ($payload['video_type'] ?? 'youtube');
+        if ($videoType === 'self_hosted' && $this->uploadValidator !== null) {
+            $assetTypeCode = (string) ($payload['asset_type_code'] ?? 'video_self_hosted');
+            $this->uploadValidator->resolveAndValidate($payload, null, $assetTypeCode, $locale, false);
+        }
 
         $videoUuid = $this->writeRepository->createForProduct(
             $productUuid,

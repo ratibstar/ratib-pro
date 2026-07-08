@@ -1,0 +1,167 @@
+# RATEB Platform Catalog — Phase 2.9 Sprint S1 Operations
+
+**Release baseline:** `2.8.1`  
+**Architecture:** `v1.3.1` (LOCKED)  
+**Sprint:** `S1` — Upload validation, S3 storage, signed URLs, API idempotency
+
+---
+
+## Feature flags
+
+| Variable | Default | Effect when `false` |
+|----------|---------|---------------------|
+| `CATALOG_S3_ENABLED` | `false` | `STORAGE_ADAPTER=s3` falls back to `LocalStorageAdapter` |
+| `CATALOG_SIGNED_URLS_ENABLED` | `false` | `signedUrl()` returns `publicUrl()` on all adapters |
+
+Both flags are opt-in. Existing production behavior remains local storage with public document URLs unless explicitly enabled.
+
+---
+
+## Storage configuration
+
+### Local (default)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `STORAGE_ADAPTER` | `local` | Production default |
+| `RATEB_PLATFORM_CATALOG_STORAGE_PATH` | `{root}/storage` | Writable path |
+| `RATEB_PLATFORM_CATALOG_CDN_BASE` | *(empty)* | Optional CDN prefix for `publicUrl()` |
+
+### S3 / MinIO / compatible object storage
+
+S3 activates only when **both** conditions are true:
+
+1. `STORAGE_ADAPTER=s3`
+2. `CATALOG_S3_ENABLED=true`
+
+| Variable | Required | Example | Notes |
+|----------|----------|---------|-------|
+| `S3_ENDPOINT` | Recommended | `https://minio.example.test` | Leave empty for AWS default endpoints |
+| `S3_BUCKET` | Yes | `rateb-catalog` | Target bucket |
+| `S3_KEY` | Yes | `catalog-app` | Access key |
+| `S3_SECRET` | Yes | *(secret)* | Secret key — never commit |
+| `S3_REGION` | Yes | `eu-west-1` | Signing region |
+| `S3_USE_PATH_STYLE` | No | `true` | Required for most MinIO deployments |
+
+Adapter tests (optional):
+
+```bash
+CATALOG_ADAPTER_TESTS=s3 S3_ENDPOINT=... S3_BUCKET=... S3_KEY=... S3_SECRET=... php tests/run.php
+```
+
+---
+
+## Signed URLs
+
+Enable with:
+
+```bash
+CATALOG_SIGNED_URLS_ENABLED=true
+SIGNED_URL_SECRET=<strong-random-secret>
+```
+
+### Local adapter
+
+- Generates HMAC-SHA256 URLs: `/catalog/signed-storage?key=...&expires=...&sig=...`
+- Served by `SignedStorageController` after signature verification
+- Does not expose filesystem paths outside the signed route
+
+### S3 adapter
+
+- Uses native AWS Signature Version 4 presigned URLs when signed URLs are enabled
+- Falls back to `publicUrl()` when `CATALOG_SIGNED_URLS_ENABLED=false`
+
+`MediaMapper` continues to request one-hour signed URLs for product files. When the feature flag is disabled, clients receive deterministic public URLs (unchanged from Phase 2.8).
+
+---
+
+## Upload validation
+
+`UploadValidator` runs in `MediaService`, `FileService`, and `VideoService` (self-hosted video payloads) **before** storage writes.
+
+Validation uses `asset_types` metadata:
+
+| Check | Source |
+|-------|--------|
+| MIME type | `mime_patterns` JSON (category defaults if null) |
+| Extension | `extension_patterns` JSON (category defaults if null) |
+| Size | Category limits in `config/upload.php` |
+| Image dimensions | Required for image uploads |
+| Forbidden executables | Built-in deny list (`.exe`, `.php`, etc.) |
+| Empty uploads | Rejected |
+| Invalid base64 | Rejected via `MediaUploadHelper` |
+
+Optional upload size overrides:
+
+| Variable | Default |
+|----------|---------|
+| `CATALOG_UPLOAD_MAX_IMAGE_BYTES` | 20 MB |
+| `CATALOG_UPLOAD_MAX_DOCUMENT_BYTES` | 50 MB |
+| `CATALOG_UPLOAD_MAX_VIDEO_BYTES` | 500 MB |
+
+Rejected uploads return HTTP `422` with an envelope error message. No storage write occurs.
+
+---
+
+## API idempotency
+
+Middleware: `IdempotencyMiddleware` (registered in `public/index.php`).
+
+| Header | Rule |
+|--------|------|
+| `Idempotency-Key` | Optional; max 128 chars |
+| `X-Idempotency-Scope` | Optional; default `api` |
+
+Applies to `POST`, `PUT`, `PATCH` under `/catalog/*`.
+
+| Behavior | Detail |
+|----------|--------|
+| Lookup key | `(idempotency_key, scope)` unique per M008 schema |
+| Request hash | `SHA-256(method + path + raw body)` |
+| TTL | 24 hours |
+| Replay | Cached JSON response + `X-Idempotency-Replayed: true` |
+| Conflict | Same key, different hash → HTTP `409` |
+| Cleanup | Expired rows deleted on each middleware invocation |
+
+No migration required — uses existing `idempotency_records` table from M008.
+
+---
+
+## Unchanged defaults (regression safety)
+
+| Component | Default |
+|-----------|---------|
+| `SEARCH_ADAPTER` | `database` |
+| `QUEUE_ADAPTER` | `database` |
+| `STORAGE_ADAPTER` | `local` |
+| `CATALOG_S3_ENABLED` | `false` |
+| `CATALOG_SIGNED_URLS_ENABLED` | `false` |
+
+---
+
+## Smoke tests after enablement
+
+1. Upload image with valid PNG → `201`
+2. Upload `.exe` renamed as image → `422`
+3. Repeat `POST` with same `Idempotency-Key` → `X-Idempotency-Replayed: true`
+4. With S3 enabled: put/get/delete roundtrip via adapter test suite
+5. With signed URLs enabled: file list URLs include `sig=` (local) or `X-Amz-Signature=` (S3)
+
+---
+
+## Deferred to Sprint S2
+
+Per Phase 2.8 release notes and architecture §17 — not implemented in S1:
+
+- Import / Export pipelines
+- Outbox / Webhooks
+- Redis / RabbitMQ / SQS queue adapters (production wiring)
+- OpenSearch adapter
+- ERP Bridge
+- Collections / Channels / Pricing
+- Duplicate detection
+- Saved filters
+- Rate limiting middleware
+- Bulk async APIs
+- Media virus scanning pipeline
+- CDN purge integration

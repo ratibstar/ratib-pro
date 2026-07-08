@@ -34,7 +34,8 @@ final class MysqlAssetTypeReadRepository extends BaseRepository implements Asset
         $join = $this->translationJoin('at', 'id', 'asset_type_translations', 'att', 'asset_type_id');
 
         return $this->fetchOne(
-            "SELECT at.id, at.uuid, at.code, at.category, at.is_system, at.status, {$nameSelect}
+            "SELECT at.id, at.uuid, at.code, at.category, at.mime_patterns, at.extension_patterns,
+                    at.is_system, at.status, {$nameSelect}
              FROM asset_types at
              {$join}
              WHERE at.code = :code AND at.deleted_at IS NULL LIMIT 1",

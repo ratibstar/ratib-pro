@@ -12,6 +12,7 @@ use Rateb\PlatformCatalog\Application\Policies\MediaPolicy;
 use Rateb\PlatformCatalog\Application\Support\LocaleMetaBuilder;
 use Rateb\PlatformCatalog\Application\Support\MediaStorageKeyBuilder;
 use Rateb\PlatformCatalog\Application\Support\MediaUploadHelper;
+use Rateb\PlatformCatalog\Application\Validators\UploadValidator;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductImageReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductImageWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductReadRepositoryInterface;
@@ -27,7 +28,8 @@ final class MediaService
         private readonly StorageAdapterInterface $storage,
         private readonly MediaPolicy $policy,
         private readonly LocaleResolverService $localeResolver,
-        private readonly EventDispatcher $events
+        private readonly EventDispatcher $events,
+        private readonly ?UploadValidator $uploadValidator = null
     ) {
     }
 
@@ -72,20 +74,26 @@ final class MediaService
         $locale ??= $this->localeResolver->resolveFromRequest();
         $this->assertProductExists($productUuid, $locale);
 
-        $binary = MediaUploadHelper::resolveBinary($payload, $uploadedFile);
+        $assetTypeCode = (string) ($payload['asset_type_code'] ?? 'image_original');
+        $binary = $this->uploadValidator !== null
+            ? $this->uploadValidator->resolveAndValidate($payload, $uploadedFile, $assetTypeCode, $locale, true)
+            : MediaUploadHelper::resolveBinary($payload, $uploadedFile);
         $checksum = MediaUploadHelper::sha256($binary['content']);
         $dimensions = MediaUploadHelper::imageDimensions($binary['content']);
         $imageUuid = Uuid::v4();
         $storageKey = MediaStorageKeyBuilder::productImage($productUuid, $imageUuid, 'original', $binary['extension']);
 
         try {
-            $this->storage->put($storageKey, $binary['content'], ['mime_type' => $binary['mime_type']]);
+            $this->storage->put($storageKey, $binary['content'], [
+                'mime_type' => $binary['mime_type'],
+                'checksum_sha256' => $checksum,
+            ]);
             $this->writeRepository->createForProduct(
                 $productUuid,
                 $imageUuid,
                 $storageKey,
                 [
-                    'asset_type_code' => $payload['asset_type_code'] ?? 'image_original',
+                    'asset_type_code' => $assetTypeCode,
                     'mime_type' => $binary['mime_type'],
                     'width' => $dimensions['width'],
                     'height' => $dimensions['height'],

@@ -5,7 +5,9 @@ declare(strict_types=1);
 use Rateb\PlatformCatalog\Application\CatalogServiceProvider;
 use Rateb\PlatformCatalog\Core\Bootstrap;
 use Rateb\PlatformCatalog\Core\Container;
+use Rateb\PlatformCatalog\Core\Response;
 use Rateb\PlatformCatalog\Core\Router;
+use Rateb\PlatformCatalog\Http\Middleware\IdempotencyMiddleware;
 use Rateb\PlatformCatalog\Support\Request;
 
 $root = realpath(dirname(__DIR__));
@@ -23,6 +25,13 @@ CatalogServiceProvider::register($container);
 
 $router = new Router();
 $router->setContainer($container);
+
+$idempotency = $container->get(IdempotencyMiddleware::class);
+$router->addMiddleware(static function (string $method, string $path) use ($idempotency): bool {
+    Response::resetBeforeExit();
+
+    return $idempotency->handle($method, $path);
+});
 
 require $root . '/routes/web.php';
 require $root . '/routes/api.php';

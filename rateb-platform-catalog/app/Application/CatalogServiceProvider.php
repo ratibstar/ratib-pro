@@ -71,6 +71,7 @@ use Rateb\PlatformCatalog\Application\Services\SupplierService;
 use Rateb\PlatformCatalog\Application\Services\VideoService;
 use Rateb\PlatformCatalog\Application\Validators\ProductSeoValidator;
 use Rateb\PlatformCatalog\Application\Validators\RbacAdminValidator;
+use Rateb\PlatformCatalog\Application\Validators\UploadValidator;
 use Rateb\PlatformCatalog\Application\Services\WorkflowCommentService;
 use Rateb\PlatformCatalog\Application\Services\WorkflowService;
 use Rateb\PlatformCatalog\Core\Container;
@@ -88,6 +89,7 @@ use Rateb\PlatformCatalog\Http\Controllers\Api\V1\AdminQueueController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\HealthController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\JobController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\SearchController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\SignedStorageController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\MediaServeController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductFamilyController;
@@ -96,8 +98,11 @@ use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductSeoController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductVersionController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\RbacAdminController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\WorkflowController;
+use Rateb\PlatformCatalog\Http\Middleware\IdempotencyMiddleware;
 use Rateb\PlatformCatalog\Infrastructure\Logging\FileStructuredLogger;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Migrations\MigrationRunner;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IdempotencyReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IdempotencyWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\AssetTypeReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\AssetTypeWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\AttributeReadRepositoryInterface;
@@ -176,7 +181,8 @@ use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductFa
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductFileReadRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductFileWriteRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductImageReadRepository;
-use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlJobQueueReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlIdempotencyReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlIdempotencyWriteRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlJobQueueWriteRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSearchIndexQueueReadRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSearchIndexQueueWriteRepository;
@@ -233,6 +239,8 @@ use Rateb\PlatformCatalog\Infrastructure\Queue\QueueAdapterFactory;
 use Rateb\PlatformCatalog\Infrastructure\Queue\QueueAdapterInterface;
 use Rateb\PlatformCatalog\Infrastructure\Search\SearchAdapterFactory;
 use Rateb\PlatformCatalog\Infrastructure\Search\SearchAdapterInterface;
+use Rateb\PlatformCatalog\Infrastructure\Storage\SignedUrlGenerator;
+use Rateb\PlatformCatalog\Infrastructure\Storage\SignedUrlVerifier;
 use Rateb\PlatformCatalog\Infrastructure\Storage\StorageAdapterFactory;
 use Rateb\PlatformCatalog\Infrastructure\Storage\StorageAdapterInterface;
 
@@ -288,6 +296,28 @@ final class CatalogServiceProvider
             $c->get(AuditEventWriteRepositoryInterface::class)
         ));
         $container->set(StorageAdapterInterface::class, static fn (): StorageAdapterInterface => StorageAdapterFactory::create());
+        $container->set(SignedUrlGenerator::class, static function (): SignedUrlGenerator {
+            $cdnBase = defined('RATEB_PLATFORM_CATALOG_CDN_BASE')
+                ? (string) RATEB_PLATFORM_CATALOG_CDN_BASE
+                : '';
+
+            return new SignedUrlGenerator(
+                (string) (getenv('SIGNED_URL_SECRET') ?: ''),
+                $cdnBase
+            );
+        });
+        $container->set(SignedUrlVerifier::class, static fn (Container $c): SignedUrlVerifier => new SignedUrlVerifier(
+            $c->get(SignedUrlGenerator::class)
+        ));
+        $container->set(IdempotencyReadRepositoryInterface::class, static fn (): IdempotencyReadRepositoryInterface => new MysqlIdempotencyReadRepository());
+        $container->set(IdempotencyWriteRepositoryInterface::class, static fn (): IdempotencyWriteRepositoryInterface => new MysqlIdempotencyWriteRepository());
+        $container->set(UploadValidator::class, static fn (Container $c): UploadValidator => new UploadValidator(
+            $c->get(AssetTypeReadRepositoryInterface::class)
+        ));
+        $container->set(IdempotencyMiddleware::class, static fn (Container $c): IdempotencyMiddleware => new IdempotencyMiddleware(
+            $c->get(IdempotencyReadRepositoryInterface::class),
+            $c->get(IdempotencyWriteRepositoryInterface::class)
+        ));
 
         $container->set(CategoryRepositoryInterface::class, static fn (): CategoryRepositoryInterface => new MysqlCategoryRepository());
         $container->set(BrandRepositoryInterface::class, static fn (): BrandRepositoryInterface => new MysqlBrandRepository());
@@ -489,7 +519,8 @@ final class CatalogServiceProvider
             $c->get(StorageAdapterInterface::class),
             $c->get(MediaPolicy::class),
             $c->get(LocaleResolverService::class),
-            $c->get(EventDispatcher::class)
+            $c->get(EventDispatcher::class),
+            $c->get(UploadValidator::class)
         ));
         $container->set(FileService::class, static fn (Container $c): FileService => new FileService(
             $c->get(ProductFileReadRepositoryInterface::class),
@@ -498,7 +529,8 @@ final class CatalogServiceProvider
             $c->get(StorageAdapterInterface::class),
             $c->get(FilePolicy::class),
             $c->get(LocaleResolverService::class),
-            $c->get(EventDispatcher::class)
+            $c->get(EventDispatcher::class),
+            $c->get(UploadValidator::class)
         ));
         $container->set(VideoService::class, static fn (Container $c): VideoService => new VideoService(
             $c->get(ProductVideoReadRepositoryInterface::class),
@@ -507,7 +539,8 @@ final class CatalogServiceProvider
             $c->get(StorageAdapterInterface::class),
             $c->get(VideoPolicy::class),
             $c->get(LocaleResolverService::class),
-            $c->get(EventDispatcher::class)
+            $c->get(EventDispatcher::class),
+            $c->get(UploadValidator::class)
         ));
 
         $container->set(CategorySchemaService::class, static fn (Container $c): CategorySchemaService => new CategorySchemaService(
@@ -689,6 +722,10 @@ final class CatalogServiceProvider
         $container->set(MediaServeController::class, static fn (Container $c): MediaServeController => new MediaServeController(
             $c->get(MediaService::class),
             $c->get(FileService::class)
+        ));
+        $container->set(SignedStorageController::class, static fn (Container $c): SignedStorageController => new SignedStorageController(
+            $c->get(StorageAdapterInterface::class),
+            $c->get(SignedUrlVerifier::class)
         ));
         $container->set(SearchController::class, static fn (Container $c): SearchController => new SearchController(
             $c->get(SearchQueryService::class)
