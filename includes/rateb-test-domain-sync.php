@@ -19,6 +19,7 @@ if (!function_exists('rateb_agency_erp_sync_rateb_erp_skip_rel')) {
             'views/marketing',
             'views/admin/agency-updates',
             'views/admin/executive-dashboard',
+            'views/partials/platform-catalog-nav-link.php',
             'storage/backups',
             'storage/logs',
             'storage/cache',

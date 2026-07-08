@@ -118,11 +118,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
             <?php } ?>
-            <?php if (rateb_platform_catalog_nav_enabled()) { ?>
-            <a href="<?php echo htmlspecialchars(rateb_platform_catalog_admin_url(), ENT_QUOTES, 'UTF-8'); ?>" class="rateb-nav-link">
-                <i class="fas fa-boxes-stacked"></i><span><?php echo __('platform_catalog_admin'); ?></span>
-            </a>
-            <?php } ?>
+            <?php
+            $platformCatalogNavPartial = RATEB_ROOT . '/views/partials/platform-catalog-nav-link.php';
+            if (is_file($platformCatalogNavPartial)) {
+                require $platformCatalogNavPartial;
+            }
+            ?>
             <?php if (rateb_is_super_admin() && rateb_is_platform_oversight_host()) { ?>
             <?php
             $oversightCounts = rateb_oversight_menu_counts();
