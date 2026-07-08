@@ -33,6 +33,8 @@ use Rateb\PlatformCatalog\Application\Policies\QueueAdminPolicy;
 use Rateb\PlatformCatalog\Application\Policies\RbacAdminPolicy;
 use Rateb\PlatformCatalog\Application\Policies\SearchPolicy;
 use Rateb\PlatformCatalog\Application\Policies\PolicyGuardInterface;
+use Rateb\PlatformCatalog\Application\Support\AdminNavigation;
+use Rateb\PlatformCatalog\Http\Controllers\Admin\AdminPageController;
 use Rateb\PlatformCatalog\Application\Policies\ProductAttributePolicy;
 use Rateb\PlatformCatalog\Application\Policies\ProductBarcodePolicy;
 use Rateb\PlatformCatalog\Application\Policies\ProductBundlePolicy;
@@ -376,6 +378,14 @@ final class CatalogServiceProvider
         $container->set(PolicyGuardInterface::class, static fn (Container $c): PolicyGuardInterface => new SessionRbacPolicyGuard(
             $c->get(PlatformIdentityResolver::class),
             $c->get(RbacService::class)
+        ));
+        $container->set(AdminNavigation::class, static fn (Container $c): AdminNavigation => new AdminNavigation(
+            $c->get(PolicyGuardInterface::class),
+            $c->get(RbacService::class)
+        ));
+        $container->set(AdminPageController::class, static fn (Container $c): AdminPageController => new AdminPageController(
+            $c->get(PolicyGuardInterface::class),
+            $c->get(AdminNavigation::class)
         ));
         $container->set(AuditEventWriteRepositoryInterface::class, static fn (): AuditEventWriteRepositoryInterface => new MysqlAuditEventWriteRepository());
         $container->set(AuditEventService::class, static fn (Container $c): AuditEventService => new AuditEventService(
