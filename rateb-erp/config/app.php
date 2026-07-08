@@ -350,6 +350,21 @@ if (!function_exists('rateb_platform_branch_manage_enabled')) {
     }
 }
 
+if (!function_exists('rateb_platform_catalog_nav_enabled')) {
+    /** Platform product catalog admin — rateb.sa SaaS only, never agency/dedicated ERP hosts. */
+    function rateb_platform_catalog_nav_enabled(): bool
+    {
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            return false;
+        }
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return false;
+        }
+
+        return function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+    }
+}
+
 if (!function_exists('rateb_platform_company_branches_url')) {
     /** ERP-native branch management (platform super-admin on rateb.sa). */
     function rateb_platform_company_branches_url(int $companyId = 0): string
