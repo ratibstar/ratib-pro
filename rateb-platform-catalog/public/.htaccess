@@ -1,8 +1,11 @@
+# RATEB Platform Catalog — front controller (cPanel / LiteSpeed safe; no RewriteBase)
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
 
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^ index.php [L]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [L,QSA]
 </IfModule>
+
+Options -Indexes

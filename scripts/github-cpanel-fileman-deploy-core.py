@@ -281,10 +281,12 @@ FAST_FILES = [
     "rateb-erp/public/assets/js/marketing-agency-register.js",
     "rateb-erp/public/assets/css/marketing-agency-register.css",
     "rateb-erp/views/layouts/marketing.php",
+    "rateb-platform-catalog/.htaccess",
     "rateb-platform-catalog/public/index.php",
     "rateb-platform-catalog/public/.htaccess",
     "rateb-platform-catalog/public/rateb-catalog-build.txt",
     "rateb-platform-catalog/bin/migrate.php",
+    "rateb-platform-catalog/config/app.php",
     # Marketing build marker — MUST stay last.
     "public/rateb-build.txt",
 ]

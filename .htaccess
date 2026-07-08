@@ -204,6 +204,25 @@ RewriteCond %{REQUEST_URI} ^/public/ [OR]
 RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ [NC]
 RewriteRule ^ - [L]
 
+# RATEB Platform Catalog — static assets
+RewriteCond %{REQUEST_URI} ^/rateb-platform-catalog/public/assets/ [NC]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# RATEB Platform Catalog — front controller (/rateb-platform-catalog/public/…)
+RewriteCond %{REQUEST_URI} ^/rateb-platform-catalog/public/ [NC]
+RewriteCond %{REQUEST_URI} !^/rateb-platform-catalog/public/index\.php [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^rateb-platform-catalog/public/?(.*)$ rateb-platform-catalog/public/index.php?route=$1 [L,QSA]
+
+# RATEB Platform Catalog — folder alias (/rateb-platform-catalog/admin → public/index.php)
+RewriteCond %{REQUEST_URI} ^/rateb-platform-catalog/ [NC]
+RewriteCond %{REQUEST_URI} !^/rateb-platform-catalog/public/ [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^rateb-platform-catalog/?(.*)$ rateb-platform-catalog/public/index.php?route=$1 [L,QSA]
+
 # RATEB ERP — static assets
 RewriteCond %{REQUEST_URI} ^/rateb-erp/public/assets/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
@@ -239,6 +258,7 @@ RewriteRule ^rateb-erp/public/?(.*)$ rateb-erp/public/index.php?route=$1 [L,QSA]
 
 # Redirect all other requests to public/index.php except existing files/directories
 RewriteCond %{REQUEST_URI} !^/rateb-erp/ [NC]
+RewriteCond %{REQUEST_URI} !^/rateb-platform-catalog/ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]
