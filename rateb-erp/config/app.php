@@ -351,17 +351,28 @@ if (!function_exists('rateb_platform_branch_manage_enabled')) {
 }
 
 if (!function_exists('rateb_platform_catalog_nav_enabled')) {
-    /** Platform product catalog admin — rateb.sa SaaS only, never agency/dedicated ERP hosts. */
+    /** Platform catalog is not linked from tenant/agency ERP navigation — Control Panel only. */
     function rateb_platform_catalog_nav_enabled(): bool
     {
-        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
-            return false;
-        }
-        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
-            return false;
+        return false;
+    }
+}
+
+if (!function_exists('rateb_platform_catalog_admin_url')) {
+    /** Canonical catalog admin URL (rateb.sa platform operators / Control Panel). */
+    function rateb_platform_catalog_admin_url(): string
+    {
+        if (function_exists('rateb_platform_oversight_public_url')) {
+            $erpBase = rateb_platform_oversight_public_url('');
+            if ($erpBase !== '') {
+                $parsed = parse_url($erpBase);
+                if (is_array($parsed) && !empty($parsed['scheme']) && !empty($parsed['host'])) {
+                    return $parsed['scheme'] . '://' . $parsed['host'] . '/rateb-platform-catalog/admin';
+                }
+            }
         }
 
-        return function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+        return 'https://rateb.sa/rateb-platform-catalog/admin';
     }
 }
 

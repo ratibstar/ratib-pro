@@ -47,4 +47,12 @@ $router->addMiddleware(static function (string $method, string $path) use ($idem
 require $root . '/routes/web.php';
 require $root . '/routes/api.php';
 
-$router->dispatch(Request::method(), Request::resolvePath());
+$requestPath = Request::resolvePath();
+$isAdminUi = $requestPath === '/' || str_starts_with($requestPath, '/admin');
+if ($isAdminUi && !catalog_admin_host_allowed()) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('Platform catalog admin is available on rateb.sa only.');
+}
+
+$router->dispatch(Request::method(), $requestPath);

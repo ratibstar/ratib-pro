@@ -8,6 +8,7 @@ if (!defined('IS_CONTROL_PANEL')) {
 }
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/control/rateb-erp-nav.php';
+require_once __DIR__ . '/../../includes/control/platform-catalog-bridge.php';
 
 if (empty($_SESSION['control_logged_in'])) {
     header('Location: ' . pageUrl('login.php'));
@@ -82,6 +83,15 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
         <i class="fas fa-external-link-alt"></i> فتح من rateb.sa
     </a>
 </div>
+<?php if (control_platform_catalog_is_installed()) { ?>
+<div class="control-settings-card mb-4">
+    <h3><i class="fas fa-boxes-stacked"></i> كتالوج منتجات المنصة</h3>
+    <p class="small text-muted mb-2">إدارة المنتجات المركزية للمنصة — خاص بأدمن رتب فقط (لوحة التحكم)، وليس من ERP الوكالات أو الشركات.</p>
+    <a href="<?php echo htmlspecialchars(control_platform_catalog_admin_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary" target="_blank" rel="noopener">
+        <i class="fas fa-external-link-alt"></i> فتح كتالوج المنصة
+    </a>
+</div>
+<?php } ?>
 <?php } ?>
 
 <div class="alert alert-primary mb-4" role="region" aria-label="روابط مباشرة">

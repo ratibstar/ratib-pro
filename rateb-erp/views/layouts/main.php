@@ -118,11 +118,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
             <?php } ?>
-            <?php if (rateb_platform_catalog_nav_enabled()) { ?>
-            <a href="/rateb-platform-catalog/admin" class="rateb-nav-link">
-                <i class="fas fa-boxes-stacked"></i><span><?php echo __('platform_catalog_admin'); ?></span>
-            </a>
-            <?php } ?>
             <?php if (rateb_is_super_admin() && rateb_is_platform_oversight_host()) { ?>
             <?php
             $oversightCounts = rateb_oversight_menu_counts();

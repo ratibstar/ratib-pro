@@ -113,3 +113,12 @@ function control_platform_catalog_run_migrations(): array
 
     return (new \Rateb\PlatformCatalog\Application\Services\MigrationService())->runAll();
 }
+
+function control_platform_catalog_admin_url(): string
+{
+    $base = defined('SITE_URL') && trim((string) SITE_URL) !== ''
+        ? rtrim((string) SITE_URL, '/')
+        : 'https://rateb.sa';
+
+    return $base . '/rateb-platform-catalog/admin';
+}

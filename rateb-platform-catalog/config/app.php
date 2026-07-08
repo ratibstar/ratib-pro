@@ -63,6 +63,47 @@ if (!function_exists('catalog__')) {
     }
 }
 
+if (!function_exists('catalog_admin_host_allowed')) {
+    /** Catalog admin UI — rateb.sa platform host only (never agency ERP hosts). */
+    function catalog_admin_host_allowed(): bool
+    {
+        if (PHP_SAPI === 'cli' && trim((string) ($_SERVER['HTTP_HOST'] ?? '')) === '') {
+            return true;
+        }
+
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        $envRoot = dirname(RATEB_CATALOG_ROOT) . '/config/env';
+        $agencyLookup = $envRoot . '/agency_lookup.php';
+        if (is_file($agencyLookup)) {
+            require_once $agencyLookup;
+        }
+
+        $normalized = function_exists('rateb_normalize_http_host')
+            ? rateb_normalize_http_host($host)
+            : strtolower(trim(explode(':', $host)[0]));
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        if (str_ends_with($normalized, '.rateb.sa') && !in_array($normalized, ['rateb.sa', 'www.rateb.sa'], true)) {
+            return false;
+        }
+
+        if (function_exists('rateb_lookup_agency_erp_by_host') && rateb_lookup_agency_erp_by_host($normalized) !== null) {
+            return false;
+        }
+
+        $resolver = $envRoot . '/erp_agency_resolver.php';
+        if (is_file($resolver)) {
+            require_once $resolver;
+        }
+
+        return function_exists('rateb_erp_is_main_platform_host')
+            && rateb_erp_is_main_platform_host($normalized);
+    }
+}
+
 if (!function_exists('catalog_admin_erp_login_url')) {
     function catalog_admin_erp_login_url(): string
     {
