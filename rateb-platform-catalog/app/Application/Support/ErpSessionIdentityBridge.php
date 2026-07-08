@@ -64,11 +64,27 @@ final class ErpSessionIdentityBridge
      */
     private function isErpPlatformOversightSession(array $erpSession): bool
     {
+        if (!$this->isMainPlatformHost()) {
+            return false;
+        }
+
         if (!empty($erpSession['rateb_is_super_admin'])) {
             return true;
         }
 
         return (string) ($erpSession['rateb_portal'] ?? '') === 'admin';
+    }
+
+    private function isMainPlatformHost(): bool
+    {
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        $resolver = dirname(RATEB_CATALOG_ROOT) . '/config/env/erp_agency_resolver.php';
+        if (is_file($resolver)) {
+            require_once $resolver;
+        }
+
+        return function_exists('rateb_erp_is_main_platform_host')
+            && rateb_erp_is_main_platform_host($host);
     }
 
     private function assignPlatformUser(int $userId): ?int

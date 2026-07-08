@@ -6,8 +6,9 @@ use Rateb\PlatformCatalog\Application\Support\ErpSessionFileReader;
 use Rateb\PlatformCatalog\Application\Support\ErpSessionIdentityBridge;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface;
 
-catalog_test('ErpSessionIdentityBridge maps ERP super admin to platform user 1', static function (): void {
+catalog_test('ErpSessionIdentityBridge maps ERP super admin to platform user 1 on main platform host', static function (): void {
     unset($_SESSION['platform_user_id'], $_SESSION['rateb_user_id'], $_SESSION['rateb_is_super_admin'], $_SESSION['rateb_portal']);
+    $_SERVER['HTTP_HOST'] = 'rateb.sa';
 
     $repo = new class implements RbacReadRepositoryInterface {
         public function listPermissionSlugsForUser(int $userId): array
@@ -44,8 +45,44 @@ catalog_test('ErpSessionIdentityBridge maps ERP super admin to platform user 1',
     unset($_SESSION['platform_user_id'], $_SESSION['rateb_user_id'], $_SESSION['rateb_is_super_admin'], $_SESSION['rateb_portal']);
 });
 
-catalog_test('ErpSessionIdentityBridge maps ERP admin portal session to platform user 1', static function (): void {
+catalog_test('ErpSessionIdentityBridge ignores ERP super admin on agency host', static function (): void {
     unset($_SESSION['platform_user_id'], $_SESSION['rateb_user_id'], $_SESSION['rateb_is_super_admin'], $_SESSION['rateb_portal']);
+    $_SERVER['HTTP_HOST'] = 'test.rateb.sa';
+
+    $repo = new class implements RbacReadRepositoryInterface {
+        public function listPermissionSlugsForUser(int $userId): array
+        {
+            return [];
+        }
+
+        public function userIsActive(int $userId): bool
+        {
+            return $userId === 1;
+        }
+
+        public function findActiveUserIdByUuid(string $uuid): ?int
+        {
+            return null;
+        }
+
+        public function findActiveUserIdByEmail(string $email): ?int
+        {
+            return null;
+        }
+    };
+
+    $_SESSION['rateb_user_id'] = 42;
+    $_SESSION['rateb_is_super_admin'] = true;
+
+    $bridge = new ErpSessionIdentityBridge($repo, new ErpSessionFileReader());
+    catalog_assert_same(null, $bridge->resolvePlatformUserId());
+
+    unset($_SESSION['platform_user_id'], $_SESSION['rateb_user_id'], $_SESSION['rateb_is_super_admin'], $_SESSION['rateb_portal']);
+});
+
+catalog_test('ErpSessionIdentityBridge maps ERP admin portal session to platform user 1 on main platform host', static function (): void {
+    unset($_SESSION['platform_user_id'], $_SESSION['rateb_user_id'], $_SESSION['rateb_is_super_admin'], $_SESSION['rateb_portal']);
+    $_SERVER['HTTP_HOST'] = 'rateb.sa';
 
     $repo = new class implements RbacReadRepositoryInterface {
         public function listPermissionSlugsForUser(int $userId): array
