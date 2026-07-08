@@ -13,12 +13,12 @@ final class ImportPolicy
 
     public function view(): void
     {
-        $this->assert('catalog.import.manage');
+        $this->assert('catalog.import.history');
     }
 
     public function manage(): void
     {
-        $this->assert('catalog.import.manage');
+        $this->assert('catalog.import.csv');
     }
 
     private function assert(string $permission): void

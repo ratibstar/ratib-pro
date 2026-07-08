@@ -91,8 +91,8 @@ final class WebhookDispatchJobHandler implements JobHandlerInterface
 
         $headers = [
             'Content-Type: application/json',
-            'X-Webhook-Signature: ' . $signature,
-            'X-Webhook-Timestamp: ' . (string) $timestamp,
+            'X-Rateb-Signature: ' . $signature,
+            'X-Rateb-Timestamp: ' . (string) $timestamp,
             'X-Correlation-Id: ' . (CorrelationIdContext::get() ?? $eventId),
         ];
 

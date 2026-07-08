@@ -28,7 +28,7 @@ final class DuplicatePolicy
 
     public function resolve(): void
     {
-        $this->assert('catalog.duplicates.view');
+        $this->assert('catalog.duplicates.resolve');
     }
 
     private function assert(string $permission): void
