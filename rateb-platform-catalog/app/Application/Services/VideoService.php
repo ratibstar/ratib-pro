@@ -60,16 +60,20 @@ final class VideoService
      * @param array<string, mixed> $payload
      * @return array{item: array<string, mixed>, meta: array<string, mixed>}
      */
-    public function create(string $productUuid, array $payload, ?LocaleContext $locale = null): array
-    {
+    public function create(
+        string $productUuid,
+        array $payload,
+        ?array $uploadedFile = null,
+        ?LocaleContext $locale = null
+    ): array {
         $this->policy->create();
         $locale ??= $this->localeResolver->resolveFromRequest();
         $this->assertProductExists($productUuid, $locale);
 
         $videoType = (string) ($payload['video_type'] ?? 'youtube');
-        if ($videoType === 'self_hosted' && $this->uploadValidator !== null) {
+        if ($videoType === 'self_hosted' && $this->uploadValidator !== null && $this->hasUploadBinary($payload, $uploadedFile)) {
             $assetTypeCode = (string) ($payload['asset_type_code'] ?? 'video_self_hosted');
-            $this->uploadValidator->resolveAndValidate($payload, null, $assetTypeCode, $locale, false);
+            $this->uploadValidator->resolveAndValidate($payload, $uploadedFile, $assetTypeCode, $locale, false);
         }
 
         $videoUuid = $this->writeRepository->createForProduct(
@@ -105,5 +109,20 @@ final class VideoService
         if ($this->productReadRepository->findByUuid($productUuid, $locale) === null) {
             throw new \RuntimeException('Product not found', 404);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array{name:string,type:string,tmp_name:string,error:int,size:int}|null $uploadedFile
+     */
+    private function hasUploadBinary(array $payload, ?array $uploadedFile): bool
+    {
+        if ($uploadedFile !== null && is_readable($uploadedFile['tmp_name'] ?? '')) {
+            return true;
+        }
+
+        return isset($payload['content_base64'])
+            && is_string($payload['content_base64'])
+            && $payload['content_base64'] !== '';
     }
 }

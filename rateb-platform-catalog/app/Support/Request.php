@@ -6,6 +6,10 @@ namespace Rateb\PlatformCatalog\Support;
 
 final class Request
 {
+    private static ?string $rawBodyCache = null;
+
+    private static bool $rawBodyLoaded = false;
+
     public static function resolvePath(): string
     {
         if (isset($_GET['route']) && is_string($_GET['route']) && $_GET['route'] !== '') {
@@ -53,20 +57,49 @@ final class Request
         return is_string($value) ? $value : $default;
     }
 
+    public static function rawBody(): string
+    {
+        if (self::$rawBodyLoaded) {
+            return self::$rawBodyCache ?? '';
+        }
+
+        self::$rawBodyLoaded = true;
+        $raw = file_get_contents('php://input');
+        self::$rawBodyCache = $raw === false ? '' : $raw;
+
+        return self::$rawBodyCache;
+    }
+
     public static function jsonBody(): array
     {
         if (!self::isJson()) {
             return [];
         }
 
-        $raw = file_get_contents('php://input');
-        if ($raw === false || trim($raw) === '') {
+        $raw = self::rawBody();
+        if (trim($raw) === '') {
             return [];
         }
 
         $decoded = json_decode($raw, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    public static function resetCachedInput(): void
+    {
+        self::$rawBodyCache = null;
+        self::$rawBodyLoaded = false;
+    }
+
+    public static function seedRawBodyForTesting(string $body): void
+    {
+        if (!defined('RATEB_CATALOG_TESTING') || !RATEB_CATALOG_TESTING) {
+            throw new \LogicException('Request::seedRawBodyForTesting is available only in testing');
+        }
+
+        self::$rawBodyCache = $body;
+        self::$rawBodyLoaded = true;
     }
 
     /**

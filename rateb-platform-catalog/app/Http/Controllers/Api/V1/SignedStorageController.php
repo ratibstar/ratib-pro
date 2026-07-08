@@ -6,6 +6,7 @@ namespace Rateb\PlatformCatalog\Http\Controllers\Api\V1;
 
 use Rateb\PlatformCatalog\Infrastructure\Storage\SignedUrlVerifier;
 use Rateb\PlatformCatalog\Infrastructure\Storage\StorageAdapterInterface;
+use Rateb\PlatformCatalog\Infrastructure\Storage\StorageMimeResolver;
 
 final class SignedStorageController
 {
@@ -36,7 +37,7 @@ final class SignedStorageController
         try {
             $stream = $this->storage->get($key);
             if (!headers_sent()) {
-                header('Content-Type: application/octet-stream');
+                header('Content-Type: ' . StorageMimeResolver::resolve($key));
                 header('Cache-Control: private, max-age=3600');
             }
             fpassthru($stream);

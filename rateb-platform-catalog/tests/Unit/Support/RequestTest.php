@@ -21,3 +21,15 @@ catalog_test('Request header lookup is case-insensitive for HTTP_ prefix', stati
     catalog_assert_same('ar', Request::header('X-Rateb-Locale'));
     unset($_SERVER['HTTP_X_RATEB_LOCALE']);
 });
+
+catalog_test('Request rawBody is cached for repeated reads', static function (): void {
+    Request::seedRawBodyForTesting('{"cached":true}');
+    $_SERVER['CONTENT_TYPE'] = 'application/json';
+
+    catalog_assert_same('{"cached":true}', Request::rawBody());
+    catalog_assert_same('{"cached":true}', Request::rawBody());
+    catalog_assert_true(Request::jsonBody()['cached'] ?? false);
+
+    Request::resetCachedInput();
+    unset($_SERVER['CONTENT_TYPE']);
+});

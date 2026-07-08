@@ -16,4 +16,5 @@ return [
     'image_max_height' => (int) (getenv('CATALOG_UPLOAD_IMAGE_MAX_HEIGHT') ?: 10000),
     'image_min_width' => 1,
     'image_min_height' => 1,
+    'forbidden_extensions' => [],
 ];

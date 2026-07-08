@@ -116,7 +116,8 @@ final class ProductMediaController
     public function storeVideo(array $params): void
     {
         try {
-            $result = $this->videoService->create($params['uuid'], Request::jsonBody());
+            $payload = $this->mergeUploadPayload();
+            $result = $this->videoService->create($params['uuid'], $payload, Request::uploadedFile());
             ApiEnvelope::success($result['item'], $result['meta'], [], 201);
         } catch (\RuntimeException $e) {
             $this->handleError($e);

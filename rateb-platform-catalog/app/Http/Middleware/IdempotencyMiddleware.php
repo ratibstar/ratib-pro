@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Rateb\PlatformCatalog\Http\Middleware;
 
+use Rateb\PlatformCatalog\Application\Support\IdempotencyAcquireResult;
+use Rateb\PlatformCatalog\Application\Support\IdempotencyResponseCachePolicy;
 use Rateb\PlatformCatalog\Core\Response;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IdempotencyReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IdempotencyWriteRepositoryInterface;
@@ -60,55 +62,67 @@ final class IdempotencyMiddleware
         $this->readRepository->deleteExpired();
 
         $requestHash = $this->buildRequestHash($method, $path);
-        $existing = $this->readRepository->findByKeyAndScope($idempotencyKey, $scope);
+        $expiresAt = (new \DateTimeImmutable())->modify('+' . self::TTL_SECONDS . ' seconds');
+        $acquire = $this->writeRepository->acquire($idempotencyKey, $scope, $requestHash, $expiresAt);
 
-        if ($existing !== null) {
-            if (!$this->isActive($existing)) {
-                return $this->beginCapture($idempotencyKey, $scope, $requestHash);
-            }
-
-            $storedHash = (string) ($existing['request_hash'] ?? '');
-            if ($storedHash !== '' && !hash_equals($storedHash, $requestHash)) {
-                Response::json([
-                    'data' => null,
-                    'meta' => [],
-                    'errors' => [['message' => 'Idempotency-Key reused with different request payload']],
-                ], 409);
-
-                return false;
-            }
-
-            $this->replayResponse($existing);
+        if ($acquire->action === IdempotencyAcquireResult::HASH_CONFLICT) {
+            Response::json([
+                'data' => null,
+                'meta' => [],
+                'errors' => [['message' => 'Idempotency-Key reused with different request payload']],
+            ], 409);
 
             return false;
         }
 
-        return $this->beginCapture($idempotencyKey, $scope, $requestHash);
+        if ($acquire->action === IdempotencyAcquireResult::IN_PROGRESS) {
+            Response::json([
+                'data' => null,
+                'meta' => [],
+                'errors' => [['message' => 'Idempotent request is already in progress']],
+            ], 409);
+
+            return false;
+        }
+
+        if ($acquire->action === IdempotencyAcquireResult::REPLAY && $acquire->record !== null) {
+            $this->replayResponse($acquire->record);
+
+            return false;
+        }
+
+        return $this->beginCapture($idempotencyKey, $scope, $requestHash, $expiresAt);
     }
 
-    private function beginCapture(string $idempotencyKey, string $scope, string $requestHash): bool
-    {
+    private function beginCapture(
+        string $idempotencyKey,
+        string $scope,
+        string $requestHash,
+        \DateTimeImmutable $expiresAt
+    ): bool {
         $this->activeKey = $idempotencyKey;
         $this->activeScope = $scope;
         $this->activeRequestHash = $requestHash;
 
-        Response::onBeforeExit(function (array $payload, int $status, array $headers): void {
+        Response::onBeforeExit(function (array $payload, int $status, array $headers) use ($expiresAt): void {
             if ($this->activeKey === null || $this->activeScope === null || $this->activeRequestHash === null) {
                 return;
             }
 
-            if ($status < 200 || $status >= 500) {
+            if (IdempotencyResponseCachePolicy::shouldCache($status)) {
+                $this->writeRepository->finalize(
+                    $this->activeKey,
+                    $this->activeScope,
+                    $this->activeRequestHash,
+                    $status,
+                    $payload,
+                    $expiresAt
+                );
+
                 return;
             }
 
-            $this->writeRepository->store(
-                $this->activeKey,
-                $this->activeScope,
-                $this->activeRequestHash,
-                $status,
-                $payload,
-                (new \DateTimeImmutable())->modify('+' . self::TTL_SECONDS . ' seconds')
-            );
+            $this->writeRepository->abandon($this->activeKey, $this->activeScope);
         });
 
         return true;
@@ -132,24 +146,8 @@ final class IdempotencyMiddleware
         Response::json($body, $status, ['X-Idempotency-Replayed' => 'true']);
     }
 
-    /**
-     * @param array<string, mixed> $record
-     */
-    private function isActive(array $record): bool
-    {
-        $expiresAt = (string) ($record['expires_at'] ?? '');
-        if ($expiresAt === '') {
-            return false;
-        }
-
-        return strtotime($expiresAt) >= time();
-    }
-
     private function buildRequestHash(string $method, string $path): string
     {
-        $rawBody = file_get_contents('php://input');
-        $body = $rawBody === false ? '' : $rawBody;
-
-        return hash('sha256', strtoupper($method) . "\n" . $path . "\n" . $body);
+        return hash('sha256', strtoupper($method) . "\n" . $path . "\n" . Request::rawBody());
     }
 }

@@ -14,6 +14,8 @@ final class UploadValidator
     private const FORBIDDEN_EXTENSIONS = [
         'exe', 'bat', 'cmd', 'com', 'scr', 'pif', 'sh', 'bash', 'php', 'phar', 'phtml',
         'js', 'vbs', 'ps1', 'msi', 'dll', 'app', 'deb', 'rpm', 'cgi', 'pl', 'asp', 'aspx', 'jsp',
+        'jar', 'war', 'ear', 'py', 'pyc', 'pyw', 'rb', 'wsf', 'hta', 'gadget', 'msp', 'mst',
+        'reg', 'inf', 'scf', 'lnk', 'so', 'dylib', 'wasm', 'apk', 'dmg', 'pkg', 'run',
     ];
 
     /** @var list<string> */
@@ -153,7 +155,8 @@ final class UploadValidator
 
     private function assertNotForbidden(string $extension, string $mimeType): void
     {
-        if (in_array($extension, self::FORBIDDEN_EXTENSIONS, true)) {
+        $forbiddenExtensions = $this->forbiddenExtensions();
+        if (in_array($extension, $forbiddenExtensions, true)) {
             throw new \InvalidArgumentException('Executable file types are not allowed');
         }
 
@@ -162,6 +165,21 @@ final class UploadValidator
                 throw new \InvalidArgumentException('Executable file types are not allowed');
             }
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function forbiddenExtensions(): array
+    {
+        $configured = $this->config['forbidden_extensions'] ?? [];
+        if (!is_array($configured) || $configured === []) {
+            return self::FORBIDDEN_EXTENSIONS;
+        }
+
+        $merged = array_merge(self::FORBIDDEN_EXTENSIONS, $this->normalizeList($configured));
+
+        return array_values(array_unique($merged));
     }
 
     /**
