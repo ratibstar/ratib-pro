@@ -4,8 +4,7 @@
 **Phase:** `2.8`  
 **Architecture:** `v1.3.1` (LOCKED)  
 **Build:** `2026-07-08T06:15:00+03:00`  
-**Core tests:** `130/130 PASS` (Release 2.8.1 certification)  
-**Optional adapter tests:** `1` (`CATALOG_ADAPTER_TESTS=meilisearch`, not required for production default)
+**Tests:** Core `130/130 PASS` · Optional adapter `1` (Meilisearch, `CATALOG_ADAPTER_TESTS=meilisearch`)
 
 ---
 
@@ -273,7 +272,23 @@ CATALOG_INTEGRATION_TESTS=1 php tests/run.php
 cat public/rateb-catalog-build.txt
 ```
 
-Expected test result: **Passed: 131, Failed: 0**
+Expected core certification result:
+
+```
+Core Tests:
+130 PASS
+0 FAIL
+0 SKIP
+
+Optional Adapter Tests:
+Not Executed
+```
+
+Optional Meilisearch adapter regression (rollback validation):
+
+```bash
+CATALOG_ADAPTER_TESTS=meilisearch MEILISEARCH_HOST=http://127.0.0.1:7700 php tests/run.php
+```
 
 ### M014 migration summary
 

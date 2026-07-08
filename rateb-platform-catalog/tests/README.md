@@ -41,8 +41,6 @@ Not Executed
 
 With a configured catalog database and `CATALOG_INTEGRATION_TESTS=1`, core integration skips drop to **0** when the environment is fully ready.
 
-Deploy marker: `public/rateb-catalog-build.txt` reports `core_certification=130/130` and `optional_adapter_tests=1` separately.
-
 ## Optional Adapter Suites
 
 Optional adapters are **not** part of Release 2.8.1 production certification. They validate rollback / legacy configurations.
@@ -121,3 +119,21 @@ Optional Adapter Tests:
 - `[SKIP]` in core tests increments **Core SKIP** (not PASS).
 - Adapter tests run only when `CATALOG_ADAPTER_TESTS=meilisearch` is set; otherwise the summary shows `Optional Adapter Tests: Not Executed`.
 - Exit code **1** only when any core or adapter test **FAIL**s.
+
+## Build marker
+
+Deploy verification: `public/rateb-catalog-build.txt`
+
+```
+release=2.8.1
+phase=2.8
+architecture=1.3.1
+build=2026-07-08T06:15:00+03:00
+search_adapter_default=database
+core_certification_tests=130
+core_certification_status=130/130
+optional_adapter_tests=1
+optional_adapter_suites=meilisearch
+```
+
+Core certification gate: **130/130 PASS, 0 FAIL, 0 SKIP** with `CATALOG_INTEGRATION_TESTS=1` and a live catalog database.
