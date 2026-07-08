@@ -57,9 +57,19 @@ final class SessionManager
 
     private static function ensureSavePath(): void
     {
+        foreach (self::sessionSavePathCandidates() as $dir) {
+            $resolved = realpath($dir);
+            if ($resolved !== false && is_dir($resolved) && is_writable($resolved)) {
+                session_save_path($resolved);
+
+                return;
+            }
+        }
+
         if (!defined('RATEB_ROOT')) {
             return;
         }
+
         $dir = rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/storage/sessions';
         if (!is_dir($dir)) {
             @mkdir($dir, 0777, true);
@@ -67,6 +77,36 @@ final class SessionManager
         if (is_dir($dir) && is_writable($dir)) {
             session_save_path($dir);
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function sessionSavePathCandidates(): array
+    {
+        $candidates = [];
+
+        $fromEnv = getenv('RATEB_ERP_SESSION_SAVE_PATH');
+        if (is_string($fromEnv) && $fromEnv !== '') {
+            $candidates[] = $fromEnv;
+        }
+
+        if (defined('RATEB_ERP_SESSION_SAVE_PATH') && (string) RATEB_ERP_SESSION_SAVE_PATH !== '') {
+            $candidates[] = (string) RATEB_ERP_SESSION_SAVE_PATH;
+        }
+
+        if (defined('RATEB_ROOT')) {
+            $candidates[] = rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/storage/sessions';
+        }
+
+        $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? (string) $_SERVER['DOCUMENT_ROOT'] : '';
+        if ($docRoot !== '') {
+            $docRoot = rtrim(str_replace('\\', '/', $docRoot), '/');
+            $candidates[] = $docRoot . '/rateb-erp/storage/sessions';
+            $candidates[] = dirname($docRoot) . '/rateb-erp/storage/sessions';
+        }
+
+        return array_values(array_unique($candidates));
     }
 
     public static function get(string $key, $default = null)

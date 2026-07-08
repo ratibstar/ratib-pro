@@ -7,13 +7,14 @@ namespace Rateb\PlatformCatalog\Application\Support;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface;
 
 /**
- * Maps an active RATEB ERP session (rateb_erp) to catalog platform_users.id.
- * No schema changes — platform oversight maps to seeded super_admin user #1.
+ * Maps an active RATEB ERP login to catalog platform_users.id.
+ * Reads ERP session from the rateb_erp cookie file; stores platform_user_id in rateb_catalog session.
  */
 final class ErpSessionIdentityBridge
 {
     public function __construct(
-        private readonly RbacReadRepositoryInterface $rbacReadRepository
+        private readonly RbacReadRepositoryInterface $rbacReadRepository,
+        private readonly ErpSessionFileReader $erpSessionFileReader
     ) {
     }
 
@@ -25,16 +26,17 @@ final class ErpSessionIdentityBridge
             return $this->rbacReadRepository->userIsActive($userId) ? $userId : null;
         }
 
-        $erpUserId = isset($_SESSION['rateb_user_id']) ? (int) $_SESSION['rateb_user_id'] : 0;
+        $erpSession = $this->resolveErpSessionData();
+        $erpUserId = isset($erpSession['rateb_user_id']) ? (int) $erpSession['rateb_user_id'] : 0;
         if ($erpUserId < 1) {
             return null;
         }
 
-        if ($this->isErpPlatformOversightSession()) {
+        if ($this->isErpPlatformOversightSession($erpSession)) {
             return $this->assignPlatformUser(1);
         }
 
-        $email = isset($_SESSION['rateb_user_email']) ? strtolower(trim((string) $_SESSION['rateb_user_email'])) : '';
+        $email = isset($erpSession['rateb_user_email']) ? strtolower(trim((string) $erpSession['rateb_user_email'])) : '';
         if ($email !== '') {
             $mapped = $this->rbacReadRepository->findActiveUserIdByEmail($email);
             if ($mapped !== null) {
@@ -45,13 +47,28 @@ final class ErpSessionIdentityBridge
         return null;
     }
 
-    private function isErpPlatformOversightSession(): bool
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveErpSessionData(): array
     {
-        if (!empty($_SESSION['rateb_is_super_admin'])) {
+        if (isset($_SESSION['rateb_user_id']) && (int) $_SESSION['rateb_user_id'] > 0) {
+            return $_SESSION;
+        }
+
+        return $this->erpSessionFileReader->read();
+    }
+
+    /**
+     * @param array<string, mixed> $erpSession
+     */
+    private function isErpPlatformOversightSession(array $erpSession): bool
+    {
+        if (!empty($erpSession['rateb_is_super_admin'])) {
             return true;
         }
 
-        return (string) ($_SESSION['rateb_portal'] ?? '') === 'admin';
+        return (string) ($erpSession['rateb_portal'] ?? '') === 'admin';
     }
 
     private function assignPlatformUser(int $userId): ?int

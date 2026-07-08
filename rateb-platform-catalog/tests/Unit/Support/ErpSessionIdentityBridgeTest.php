@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Rateb\PlatformCatalog\Application\Support\ErpSessionFileReader;
 use Rateb\PlatformCatalog\Application\Support\ErpSessionIdentityBridge;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\RbacReadRepositoryInterface;
 
@@ -30,7 +31,7 @@ catalog_test('ErpSessionIdentityBridge maps ERP super admin to platform user 1',
         }
     };
 
-    $bridge = new ErpSessionIdentityBridge($repo);
+    $bridge = new ErpSessionIdentityBridge($repo, new ErpSessionFileReader());
 
     catalog_assert_same(null, $bridge->resolvePlatformUserId());
 
@@ -71,7 +72,7 @@ catalog_test('ErpSessionIdentityBridge maps ERP admin portal session to platform
     $_SESSION['rateb_user_id'] = 7;
     $_SESSION['rateb_portal'] = 'admin';
 
-    $bridge = new ErpSessionIdentityBridge($repo);
+    $bridge = new ErpSessionIdentityBridge($repo, new ErpSessionFileReader());
     catalog_assert_same(1, $bridge->resolvePlatformUserId());
 
     unset($_SESSION['platform_user_id'], $_SESSION['rateb_user_id'], $_SESSION['rateb_portal']);
@@ -106,7 +107,7 @@ catalog_test('ErpSessionIdentityBridge maps ERP email to platform user when prov
     $_SESSION['rateb_portal'] = 'company';
     $_SESSION['rateb_user_email'] = 'ops@rateb.local';
 
-    $bridge = new ErpSessionIdentityBridge($repo);
+    $bridge = new ErpSessionIdentityBridge($repo, new ErpSessionFileReader());
     catalog_assert_same(9, $bridge->resolvePlatformUserId());
 
     unset($_SESSION['platform_user_id'], $_SESSION['rateb_user_id'], $_SESSION['rateb_portal'], $_SESSION['rateb_user_email']);
@@ -140,7 +141,7 @@ catalog_test('ErpSessionIdentityBridge ignores ERP session without mapping', sta
     $_SESSION['rateb_user_id'] = 42;
     $_SESSION['rateb_portal'] = 'company';
 
-    $bridge = new ErpSessionIdentityBridge($repo);
+    $bridge = new ErpSessionIdentityBridge($repo, new ErpSessionFileReader());
     catalog_assert_same(null, $bridge->resolvePlatformUserId());
 
     unset($_SESSION['rateb_user_id'], $_SESSION['rateb_portal']);

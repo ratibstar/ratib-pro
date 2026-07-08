@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Rateb\PlatformCatalog\Application\Support;
 
+/**
+ * Catalog admin session (platform_user_id) — separate cookie from ERP (rateb_erp).
+ */
 final class CatalogSession
 {
+    public const COOKIE_NAME = 'rateb_catalog';
+
     public static function start(): void
     {
         if (PHP_SAPI === 'cli') {
@@ -17,15 +22,15 @@ final class CatalogSession
         }
 
         if (session_status() === PHP_SESSION_ACTIVE) {
-            if (session_name() === 'rateb_erp') {
+            if (session_name() === self::COOKIE_NAME) {
                 return;
             }
 
             session_write_close();
         }
 
-        session_name('rateb_erp');
-        self::ensureSavePath();
+        session_name(self::COOKIE_NAME);
+        self::ensureCatalogSavePath();
 
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
@@ -46,24 +51,32 @@ final class CatalogSession
         session_start();
     }
 
-    private static function ensureSavePath(): void
+    private static function ensureCatalogSavePath(): void
     {
-        foreach (self::sessionSavePathCandidates() as $dir) {
-            $resolved = realpath($dir);
-            if ($resolved !== false && is_dir($resolved) && is_writable($resolved)) {
-                session_save_path($resolved);
+        $root = defined('RATEB_CATALOG_ROOT') ? (string) RATEB_CATALOG_ROOT : dirname(__DIR__, 3);
+        $storageRoot = defined('RATEB_PLATFORM_CATALOG_STORAGE_PATH')
+            ? (string) RATEB_PLATFORM_CATALOG_STORAGE_PATH
+            : $root . '/storage';
+        $dir = $storageRoot . '/sessions';
 
-                return;
-            }
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
         }
 
-        error_log('RATEB catalog: shared ERP session path not found — catalog may not see ERP login state');
+        $resolved = realpath($dir);
+        if ($resolved !== false && is_dir($resolved) && is_writable($resolved)) {
+            session_save_path($resolved);
+
+            return;
+        }
+
+        error_log('RATEB catalog: unable to use catalog session storage at ' . $dir);
     }
 
     /**
      * @return list<string>
      */
-    public static function sessionSavePathCandidates(): array
+    public static function erpSessionSavePathCandidates(): array
     {
         $candidates = [];
 
@@ -82,7 +95,9 @@ final class CatalogSession
 
         $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? (string) $_SERVER['DOCUMENT_ROOT'] : '';
         if ($docRoot !== '') {
-            $candidates[] = rtrim(str_replace('\\', '/', $docRoot), '/') . '/rateb-erp/storage/sessions';
+            $docRoot = rtrim(str_replace('\\', '/', $docRoot), '/');
+            $candidates[] = $docRoot . '/rateb-erp/storage/sessions';
+            $candidates[] = dirname($docRoot) . '/rateb-erp/storage/sessions';
         }
 
         return array_values(array_unique($candidates));

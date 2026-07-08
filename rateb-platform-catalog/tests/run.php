@@ -114,6 +114,7 @@ require $root . '/tests/Unit/Core/ContainerTest.php';
 require $root . '/tests/Unit/Core/RouterTest.php';
 require $root . '/tests/Unit/Events/EventDispatcherTest.php';
 require $root . '/tests/Unit/Support/RequestTest.php';
+require $root . '/tests/Unit/Support/ErpSessionFileReaderTest.php';
 require $root . '/tests/Unit/Support/ErpSessionIdentityBridgeTest.php';
 require $root . '/tests/Unit/Services/HealthServiceTest.php';
 require $root . '/tests/Unit/Services/Sprint2EnterpriseTest.php';

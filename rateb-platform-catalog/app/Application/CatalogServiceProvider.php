@@ -6,6 +6,7 @@ namespace Rateb\PlatformCatalog\Application;
 
 use Rateb\PlatformCatalog\Application\Contracts\StructuredLoggerInterface;
 use Rateb\PlatformCatalog\Application\Events\EventDispatcher;
+use Rateb\PlatformCatalog\Application\Support\ErpSessionFileReader;
 use Rateb\PlatformCatalog\Application\Support\ErpSessionIdentityBridge;
 use Rateb\PlatformCatalog\Application\Support\GatewayTrustConfig;
 use Rateb\PlatformCatalog\Application\Support\PlatformIdentityResolver;
@@ -362,8 +363,10 @@ final class CatalogServiceProvider
         ));
         $container->set(ProductSnapshotGraphWriteRepositoryInterface::class, static fn (): ProductSnapshotGraphWriteRepositoryInterface => new MysqlProductSnapshotGraphWriteRepository());
         $container->set(GatewayTrustConfig::class, static fn (): GatewayTrustConfig => new GatewayTrustConfig());
+        $container->set(ErpSessionFileReader::class, static fn (): ErpSessionFileReader => new ErpSessionFileReader());
         $container->set(ErpSessionIdentityBridge::class, static fn (Container $c): ErpSessionIdentityBridge => new ErpSessionIdentityBridge(
-            $c->get(RbacReadRepositoryInterface::class)
+            $c->get(RbacReadRepositoryInterface::class),
+            $c->get(ErpSessionFileReader::class)
         ));
         $container->set(PlatformIdentityResolver::class, static fn (Container $c): PlatformIdentityResolver => new PlatformIdentityResolver(
             $c->get(RbacService::class),
