@@ -1,7 +1,7 @@
 (function (document) {
   'use strict';
 
-  var STORAGE_GROUPS = 'rateb-catalog-admin-nav-groups';
+  var STORAGE_OPEN_GROUP = 'rateb-catalog-admin-nav-open-group';
   var STORAGE_COLLAPSED = 'rateb-catalog-admin-sidebar-collapsed';
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -14,17 +14,21 @@
     overlay.id = 'adminSidebarOverlay';
     document.body.appendChild(overlay);
 
-    function readGroupsState() {
+    function readOpenGroup() {
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_GROUPS) || '{}');
+        return localStorage.getItem(STORAGE_OPEN_GROUP) || '';
       } catch (e) {
-        return {};
+        return '';
       }
     }
 
-    function writeGroupsState(state) {
+    function writeOpenGroup(key) {
       try {
-        localStorage.setItem(STORAGE_GROUPS, JSON.stringify(state));
+        if (key) {
+          localStorage.setItem(STORAGE_OPEN_GROUP, key);
+        } else {
+          localStorage.removeItem(STORAGE_OPEN_GROUP);
+        }
       } catch (e) {
         /* ignore */
       }
@@ -41,15 +45,30 @@
       }
     }
 
-    function initNavGroups() {
-      var saved = readGroupsState();
+    function closeAllGroupsExcept(exceptEl) {
       document.querySelectorAll('[data-nav-group]').forEach(function (groupEl) {
-        var key = groupEl.getAttribute('data-nav-group') || '';
-        var hasActive = !!groupEl.querySelector('.admin-nav-link.is-active');
-        var open = hasActive || saved[key] === true;
-        if (saved[key] === false && !hasActive) {
-          open = false;
+        if (groupEl !== exceptEl) {
+          setGroupOpen(groupEl, false);
         }
+      });
+    }
+
+    function initNavGroups() {
+      var groups = document.querySelectorAll('[data-nav-group]');
+      var savedKey = readOpenGroup();
+      var activeGroup = null;
+
+      groups.forEach(function (groupEl) {
+        if (groupEl.querySelector('.admin-nav-link.is-active')) {
+          activeGroup = groupEl;
+        }
+      });
+
+      groups.forEach(function (groupEl) {
+        var key = groupEl.getAttribute('data-nav-group') || '';
+        var open = activeGroup
+          ? groupEl === activeGroup
+          : (savedKey !== '' && key === savedKey);
         setGroupOpen(groupEl, open);
 
         var btn = groupEl.querySelector('[data-nav-group-toggle]');
@@ -60,10 +79,10 @@
           if (shell && shell.classList.contains('is-sidebar-collapsed')) {
             return;
           }
-          var next = !groupEl.classList.contains('is-open');
-          setGroupOpen(groupEl, next);
-          saved[key] = next;
-          writeGroupsState(saved);
+          var willOpen = !groupEl.classList.contains('is-open');
+          closeAllGroupsExcept(willOpen ? groupEl : null);
+          setGroupOpen(groupEl, willOpen);
+          writeOpenGroup(willOpen ? key : '');
         });
       });
     }
