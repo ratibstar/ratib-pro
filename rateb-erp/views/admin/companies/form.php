@@ -78,6 +78,7 @@ if ($storageLimitVal < 1) {
 
             <div class="mt-4" id="rateb-company-modules">
                 <h3 class="h6 mb-2"><?php echo __('plan_modules'); ?></h3>
+                <p class="form-text mb-2"><?php echo __('company_plan_modules_tenant_help'); ?></p>
                 <div class="row g-2">
                     <?php foreach ($moduleCatalog as $modKey => $modLabel) { ?>
                     <div class="col-md-4 col-lg-3">

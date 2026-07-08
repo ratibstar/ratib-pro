@@ -113,7 +113,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         </div>
         <nav>
             <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>
-            <?php if (rateb_nav_can('dashboard.view')) { ?>
+            <?php if (rateb_nav_can('dashboard.view', 'dashboard')) { ?>
             <a href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>

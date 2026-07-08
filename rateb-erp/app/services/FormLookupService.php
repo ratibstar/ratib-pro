@@ -1178,8 +1178,8 @@ final class FormLookupService
     private function moduleOptions(): array
     {
         $out = [];
-        foreach (array_keys(PlanLimitService::moduleCatalog()) as $module) {
-            $out[] = ['value' => $module, 'label' => __($module)];
+        foreach (PlanLimitService::moduleCatalog() as $module => $labelKey) {
+            $out[] = ['value' => $module, 'label' => __($labelKey)];
         }
         return $out;
     }

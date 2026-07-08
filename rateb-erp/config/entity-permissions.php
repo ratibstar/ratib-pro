@@ -403,7 +403,7 @@ return [
         'approve' => 'workflows.approve',
     ],
     'notifications' => [
-        'module' => '',
+        'module' => 'notifications',
         'view' => 'notifications.manage',
         'manage' => 'notifications.manage',
     ],

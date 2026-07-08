@@ -15,10 +15,12 @@ return [
         'max_branches' => 3,
         'max_storage_mb' => 512,
         'modules' => [
+            'dashboard',
             'procurement',
             'inventory',
             'suppliers',
             'reports',
+            'notifications',
         ],
     ],
     'professional' => [
@@ -30,6 +32,7 @@ return [
         'max_branches' => 5,
         'max_storage_mb' => 2048,
         'modules' => [
+            'dashboard',
             'procurement',
             'inventory',
             'suppliers',
@@ -40,6 +43,8 @@ return [
             'documents',
             'workflows',
             'hr',
+            'branches',
+            'notifications',
         ],
     ],
     'enterprise' => [
@@ -51,6 +56,7 @@ return [
         'max_branches' => 25,
         'max_storage_mb' => 10240,
         'modules' => [
+            'dashboard',
             'procurement',
             'inventory',
             'suppliers',
@@ -63,6 +69,8 @@ return [
             'documents',
             'workflows',
             'hr',
+            'branches',
+            'notifications',
             'pos',
         ],
     ],

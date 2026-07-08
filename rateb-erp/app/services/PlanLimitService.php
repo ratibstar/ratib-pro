@@ -49,23 +49,40 @@ final class PlanLimitService
         return array_values(array_filter(array_map('strval', $mods)));
     }
 
-    /** @return array<string, string> */
+    /** @return array<string, string> module key => lang label key */
     public static function moduleCatalog(): array
     {
-        return [
-            'procurement' => 'procurement',
-            'inventory' => 'inventory',
-            'suppliers' => 'suppliers',
-            'assets' => 'assets',
-            'contracts' => 'contracts',
-            'tenders' => 'tenders',
-            'reports' => 'reports',
-            'medical_devices' => 'medical_devices',
-            'accounting' => 'accounting',
-            'documents' => 'documents',
-            'workflows' => 'workflows',
-            'hr' => 'human_resources',
-        ];
+        static $catalog = null;
+        if ($catalog !== null) {
+            return $catalog;
+        }
+
+        $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+        $cfg = is_file($file) ? require $file : [];
+        $modules = is_array($cfg['company_modules'] ?? null) ? $cfg['company_modules'] : [];
+        $labels = is_array($cfg['tenant_module_labels'] ?? null) ? $cfg['tenant_module_labels'] : [];
+
+        $catalog = [];
+        foreach ($modules as $mod) {
+            $key = trim((string) $mod);
+            if ($key === '') {
+                continue;
+            }
+            $catalog[$key] = trim((string) ($labels[$key] ?? $key));
+        }
+
+        return $catalog;
+    }
+
+    /** @param list<string> $modules @return list<string> */
+    public static function filterKnownModules(array $modules): array
+    {
+        $known = array_keys(self::moduleCatalog());
+
+        return array_values(array_filter(
+            array_map('strval', $modules),
+            static fn(string $module): bool => $module !== '' && in_array($module, $known, true)
+        ));
     }
 
     public function getCompanyRow(int $companyId): ?array
@@ -165,7 +182,43 @@ final class PlanLimitService
             $modules = self::defaultModules();
         }
 
+        return self::applyLegacyImpliedModules($modules, $company);
+    }
+
+    /** @param list<string> $modules @param array<string,mixed> $company @return list<string> */
+    private static function applyLegacyImpliedModules(array $modules, array $company): array
+    {
+        $explicit = self::decodeModulesStatic($company['modules'] ?? null);
+        if ($explicit === []) {
+            return $modules;
+        }
+        $extendedKeys = ['dashboard', 'pos', 'branches', 'notifications'];
+        foreach ($extendedKeys as $key) {
+            if (in_array($key, $explicit, true)) {
+                return $modules;
+            }
+        }
+        foreach (['dashboard', 'notifications'] as $implied) {
+            if (!in_array($implied, $modules, true)) {
+                $modules[] = $implied;
+            }
+        }
+
         return $modules;
+    }
+
+    /** @return list<string> */
+    private static function decodeModulesStatic($raw): array
+    {
+        if (is_array($raw)) {
+            return array_values(array_filter(array_map('strval', $raw)));
+        }
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? array_values(array_filter(array_map('strval', $decoded))) : [];
     }
 
     public function companyHasModule(int $companyId, string $module): bool

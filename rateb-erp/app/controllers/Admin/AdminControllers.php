@@ -304,7 +304,10 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         $data = parent::collectData();
         $modules = $this->input('modules', []);
         if (is_array($modules)) {
-            $data['modules'] = json_encode(array_values(array_filter(array_map('strval', $modules))), JSON_UNESCAPED_UNICODE);
+            $data['modules'] = json_encode(
+                \Rateb\App\Services\PlanLimitService::filterKnownModules($modules),
+                JSON_UNESCAPED_UNICODE
+            );
         }
 
         return $data;
@@ -963,7 +966,10 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         }
         $modules = $this->input('modules', []);
         if (is_array($modules)) {
-            $data['modules'] = json_encode(array_values(array_filter(array_map('strval', $modules))), JSON_UNESCAPED_UNICODE);
+            $data['modules'] = json_encode(
+                \Rateb\App\Services\PlanLimitService::filterKnownModules($modules),
+                JSON_UNESCAPED_UNICODE
+            );
         }
         if (empty($data['modules']) || $data['modules'] === '[]') {
             $data['modules'] = json_encode(

@@ -36,6 +36,27 @@ return [
         'notifications',
         'hr',
         'branches',
+        'pos',
+    ],
+
+    /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
+    'tenant_module_labels' => [
+        'dashboard' => 'dashboard',
+        'procurement' => 'procurement',
+        'inventory' => 'inventory',
+        'suppliers' => 'suppliers',
+        'assets' => 'assets',
+        'contracts' => 'contracts',
+        'tenders' => 'tenders',
+        'reports' => 'reports',
+        'medical_devices' => 'medical_devices',
+        'accounting' => 'accounting_module',
+        'documents' => 'documents',
+        'workflows' => 'workflows',
+        'notifications' => 'notifications',
+        'hr' => 'human_resources',
+        'branches' => 'branches',
+        'pos' => 'pos_nav_section',
     ],
 
     /**
