@@ -278,6 +278,11 @@ catalog_test('Integration: RBAC denies without platform user', static function (
             {
                 return true;
             }
+
+            public function findActiveUserIdByUuid(string $uuid): ?int
+            {
+                return null;
+            }
         }));
         catalog_assert_false($guard->allows('catalog.workflow.publish'));
         try {

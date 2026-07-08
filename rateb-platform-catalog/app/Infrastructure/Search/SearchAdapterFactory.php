@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Rateb\PlatformCatalog\Infrastructure\Search;
 
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSearchIndexReadRepository;
+
 final class SearchAdapterFactory
 {
     public static function create(): SearchAdapterInterface
@@ -13,9 +15,10 @@ final class SearchAdapterFactory
         }
 
         $config = self::config();
-        $adapter = strtolower((string) ($config['SEARCH_ADAPTER'] ?? 'meilisearch'));
+        $adapter = strtolower((string) ($config['SEARCH_ADAPTER'] ?? 'database'));
 
         return match ($adapter) {
+            'database' => new DatabaseSearchAdapter(new MysqlSearchIndexReadRepository()),
             'opensearch' => new OpenSearchAdapter(),
             'memory' => new InMemorySearchAdapter(),
             default => new MeilisearchAdapter(

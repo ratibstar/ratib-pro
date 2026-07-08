@@ -29,6 +29,7 @@ spl_autoload_register(static function (string $class) use ($root): void {
 
 require_once $root . '/tests/Support/ConfigurablePolicyGuard.php';
 require $root . '/tests/Support/SessionRbacPolicyGuardFactory.php';
+require_once $root . '/tests/Support/StubSearchIndexReadRepository.php';
 
 $passed = 0;
 
@@ -91,6 +92,9 @@ require $root . '/tests/Unit/Services/MediaServiceTest.php';
 require $root . '/tests/Unit/Support/ArabicNormalizerTest.php';
 require $root . '/tests/Unit/Queue/RetryPolicyTest.php';
 require $root . '/tests/Unit/Search/MeilisearchAdapterTest.php';
+require $root . '/tests/Unit/Search/DatabaseSearchAdapterTest.php';
+require $root . '/tests/Unit/Search/SearchAdapterFactoryTest.php';
+require $root . '/tests/Unit/Repositories/MysqlSearchIndexReadRepositoryTest.php';
 require $root . '/tests/Unit/Services/SearchQueryServiceTest.php';
 require $root . '/tests/Unit/Services/SearchIndexerServiceTest.php';
 require $root . '/tests/Unit/Queue/QueueAdapterTest.php';
@@ -109,6 +113,7 @@ require $root . '/tests/Integration/ProductSeoIntegrationTest.php';
 require $root . '/tests/Integration/ProductSnapshotRestoreIntegrationTest.php';
 require $root . '/tests/Integration/ScheduledPublishIntegrationTest.php';
 require $root . '/tests/Integration/SearchQueueIntegrationTest.php';
+require $root . '/tests/Integration/DatabaseSearchIntegrationTest.php';
 
 echo PHP_EOL . "Passed: {$passed}, Failed: {$failures}" . PHP_EOL;
 exit($failures > 0 ? 1 : 0);

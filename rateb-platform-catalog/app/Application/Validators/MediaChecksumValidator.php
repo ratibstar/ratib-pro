@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Rateb\PlatformCatalog\Application\Validators;
 
-use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\BaseRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\MediaChecksumReadRepositoryInterface;
 
-final class MediaChecksumValidator extends BaseRepository
+final class MediaChecksumValidator
 {
-    protected function table(): string
-    {
-        return 'product_images';
+    public function __construct(
+        private readonly MediaChecksumReadRepositoryInterface $checksumReadRepository
+    ) {
     }
 
     public function assertImageChecksumAvailable(?string $checksum, ?string $excludeImageUuid = null): void
@@ -19,15 +19,7 @@ final class MediaChecksumValidator extends BaseRepository
             return;
         }
 
-        $sql = 'SELECT id FROM product_images WHERE checksum_sha256 = :checksum AND deleted_at IS NULL';
-        $params = ['checksum' => $checksum];
-        if ($excludeImageUuid !== null) {
-            $sql .= ' AND uuid <> :exclude_uuid';
-            $params['exclude_uuid'] = $excludeImageUuid;
-        }
-        $sql .= ' LIMIT 1';
-
-        if ($this->fetchOne($sql, $params) !== null) {
+        if ($this->checksumReadRepository->imageChecksumExists($checksum, $excludeImageUuid)) {
             throw new \InvalidArgumentException('Image checksum already exists');
         }
     }
@@ -38,15 +30,7 @@ final class MediaChecksumValidator extends BaseRepository
             return;
         }
 
-        $sql = 'SELECT id FROM product_files WHERE checksum_sha256 = :checksum AND deleted_at IS NULL';
-        $params = ['checksum' => $checksum];
-        if ($excludeFileUuid !== null) {
-            $sql .= ' AND uuid <> :exclude_uuid';
-            $params['exclude_uuid'] = $excludeFileUuid;
-        }
-        $sql .= ' LIMIT 1';
-
-        if ($this->fetchOne($sql, $params) !== null) {
+        if ($this->checksumReadRepository->fileChecksumExists($checksum, $excludeFileUuid)) {
             throw new \InvalidArgumentException('File checksum already exists');
         }
     }

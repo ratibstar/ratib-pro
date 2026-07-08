@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 /**
- * Phase 2.8 production release metadata — frozen at release candidate.
+ * Phase 2.8 production release metadata — Release 2.8.1 (database search default).
  * Architecture baseline remains v1.3.1 (RATEB_PLATFORM_CATALOG_VERSION in app.php).
  */
 if (!defined('RATEB_PLATFORM_CATALOG_RELEASE')) {
-    define('RATEB_PLATFORM_CATALOG_RELEASE', '2.8.0');
+    define('RATEB_PLATFORM_CATALOG_RELEASE', '2.8.1');
 }
 
 if (!defined('RATEB_PLATFORM_CATALOG_PHASE')) {
@@ -22,5 +22,5 @@ if (!defined('RATEB_PLATFORM_CATALOG_ARCHITECTURE_VERSION')) {
 }
 
 if (!defined('RATEB_PLATFORM_CATALOG_BUILD_TIMESTAMP')) {
-    define('RATEB_PLATFORM_CATALOG_BUILD_TIMESTAMP', '2026-07-07T20:24:00+03:00');
+    define('RATEB_PLATFORM_CATALOG_BUILD_TIMESTAMP', '2026-07-08T06:15:00+03:00');
 }

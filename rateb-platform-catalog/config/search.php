@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'SEARCH_ADAPTER' => getenv('SEARCH_ADAPTER') ?: 'meilisearch',
+    'SEARCH_ADAPTER' => getenv('SEARCH_ADAPTER') ?: 'database',
     'MEILISEARCH_HOST' => getenv('MEILISEARCH_HOST') ?: '',
     'MEILISEARCH_API_KEY' => getenv('MEILISEARCH_API_KEY') ?: '',
     'QUEUE_ADAPTER' => getenv('QUEUE_ADAPTER') ?: 'database',

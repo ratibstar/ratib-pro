@@ -102,27 +102,7 @@ catalog_test('SearchIndexingListener removes product from all locale indexes on 
 
     $indexer = new SearchIndexerService(
         $adapter,
-        new class implements SearchIndexReadRepositoryInterface {
-            public function listProductsForIndex(string $locale, int $afterId, int $limit): array
-            {
-                return [];
-            }
-
-            public function buildProductDocument(string $productUuid, string $locale): ?array
-            {
-                return null;
-            }
-
-            public function listVariantsForProduct(string $productUuid, string $locale): array
-            {
-                return [];
-            }
-
-            public function buildVariantDocument(string $variantUuid, string $locale): ?array
-            {
-                return null;
-            }
-        },
+        new \Rateb\PlatformCatalog\Tests\Support\StubSearchIndexReadRepository(),
         new class implements SearchIndexQueueReadRepositoryInterface {
             public function listPending(int $limit = 100): array
             {

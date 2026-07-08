@@ -14,7 +14,7 @@ final class MysqlProductFileWriteRepository extends BaseRepository implements Pr
     public function __construct(?\PDO $readPdo = null, ?\PDO $writePdo = null)
     {
         parent::__construct($readPdo, $writePdo);
-        $this->checksumValidator = new MediaChecksumValidator($readPdo, $writePdo);
+        $this->checksumValidator = new MediaChecksumValidator(new MysqlMediaChecksumReadRepository($readPdo, $writePdo));
     }
 
     protected function table(): string

@@ -1,10 +1,10 @@
 # RATEB Platform Catalog — Phase 2.8 Production Release
 
-**Release:** `2.8.0`  
+**Release:** `2.8.1`  
 **Phase:** `2.8`  
 **Architecture:** `v1.3.1` (LOCKED)  
-**Build:** `2026-07-07T20:24:00+03:00`  
-**Tests:** `118/118 PASS`
+**Build:** `2026-07-08T06:15:00+03:00`  
+**Tests:** `131/131 PASS`
 
 ---
 
@@ -49,9 +49,9 @@
    ```bash
    php bin/migrate.php
    ```
-5. Verify migration log shows M010–M013 applied (or “Already applied”).
+5. Verify migration log shows M010–M014 applied (or “Already applied”).
 6. Start / confirm cron jobs (§3).
-7. `GET /health` → `200`, `release: 2.8.0`
+7. `GET /health` → `200`, `release: 2.8.1`
 8. `GET /ready` → `200`, `database: true`, `storage: true`
 9. Run smoke tests (§4).
 10. Resume traffic.
@@ -61,7 +61,7 @@
 - [ ] Monitor `storage/logs/catalog.log` for `scheduled_publish_failed`
 - [ ] Monitor `audit_events` for unexpected denials
 - [ ] Confirm scheduler clears due `publish_at` / `archive_at` rows
-- [ ] Confirm search worker processes `search_reindex` jobs
+- [ ] Confirm search worker processes `search_reindex` jobs (no-op index writes when using database adapter; queue remains for compatibility)
 
 ---
 
@@ -99,15 +99,19 @@ Gateway must:
 
 Writable subdirs (auto-created): `catalog/`, `logs/`, `cache/`, `queue/`, `backups/`.
 
-### Search & queue (Phase 2.8 baseline)
+### Search & queue (Release 2.8.1)
 
 | Variable | Default | Notes |
 |----------|---------|-------|
-| `SEARCH_ADAPTER` | `meilisearch` | |
-| `MEILISEARCH_HOST` | — | Required if using Meilisearch |
-| `MEILISEARCH_API_KEY` | — | Optional |
+| `SEARCH_ADAPTER` | `database` | MariaDB/MySQL via `DatabaseSearchAdapter` |
+| `MEILISEARCH_HOST` | — | Required only when `SEARCH_ADAPTER=meilisearch` |
+| `MEILISEARCH_API_KEY` | — | Optional for Meilisearch |
 | `QUEUE_ADAPTER` | `database` | |
 | `STORAGE_ADAPTER` | `local` | |
+
+**Database search (default):** No external search service is required. Search reads live relational data through `MysqlSearchIndexReadRepository` using FULLTEXT, SKU, and barcode indexes added in migration **M014**.
+
+**Meilisearch (optional):** Set `SEARCH_ADAPTER=meilisearch` and configure `MEILISEARCH_HOST` to use the legacy adapter. All search APIs remain unchanged.
 
 ### Integration tests (CI/staging only — not production)
 
@@ -123,9 +127,11 @@ Writable subdirs (auto-created): `catalog/`, `logs/`, `cache/`, `queue/`, `backu
 |--------|---------|-------------------|
 | `php bin/rpc-scheduler.php` | Due publish/archive + maintenance enqueue | Every 1–5 min (cron) |
 | `php bin/rpc-worker.php --queue=search,maintenance` | Process search reindex + maintenance | Continuous or every minute |
-| `php bin/rpc-search-reindex.php` | Full reindex (DR) | On demand |
+| `php bin/rpc-search-reindex.php` | Full reindex (DR / adapter migration) | On demand |
 
 Scheduler runs as system user via `InternalActorContext` (not HTTP headers).
+
+With `SEARCH_ADAPTER=database`, index write operations are no-ops; the queue and workers remain for API compatibility and event-driven enqueue paths.
 
 ---
 
@@ -138,12 +144,21 @@ Run on staging after deploy; repeat on production before traffic cutover.
 ```http
 GET /health
 ```
-Expect: `status: ok`, `release: 2.8.0`, `architecture_version: 1.3.1`
+Expect: `status: ok`, `release: 2.8.1`, `architecture_version: 1.3.1`
 
 ```http
 GET /ready
 ```
 Expect: `status: ready`, `checks.database: true`, `checks.storage: true`
+
+### Search (database adapter — default)
+
+| Test | Expected |
+|------|----------|
+| `GET /catalog/search?q=test` | `200`, results from MariaDB |
+| `GET /catalog/search/variants?q=test` | `200` |
+| `GET /catalog/search/barcode/{barcode}` | `200` or `404` |
+| Search adapter health (via worker `health_check` job) | Passes when database is reachable |
 
 ### Security
 
@@ -187,14 +202,30 @@ Force stale `lock_version` on scheduled product → run scheduler → verify:
 3. `GET /ready` → confirm healthy.
 4. Resume traffic.
 
-**Do not** run `php bin/migrate.php rollback` on production unless DBA approves — M011 rollback is partial.
+**Do not** run `php bin/migrate.php rollback` on production unless DBA approves — M011 rollback is partial. M014 index rollback is safe but removes search performance indexes.
+
+### Rollback search adapter to Meilisearch
+
+1. Ensure Meilisearch is running and reachable.
+2. Set environment:
+   ```
+   SEARCH_ADAPTER=meilisearch
+   MEILISEARCH_HOST=http://127.0.0.1:7700
+   MEILISEARCH_API_KEY=<key-if-required>
+   ```
+3. Run full reindex:
+   ```bash
+   php bin/rpc-search-reindex.php
+   ```
+4. Verify `GET /catalog/search?q=test` returns Meilisearch-backed results.
+5. No API or schema changes are required — `SearchAdapterInterface` is unchanged.
 
 ### Database rollback (preferred for schema issues)
 
 1. Stop write traffic.
 2. Restore latest `storage/backups/catalog-*.sql.gz` to `admin_rateb_platform_catalog`.
 3. Redeploy matching application version if needed.
-4. Run full search reindex:
+4. Run full search reindex (Meilisearch only):
    ```bash
    php bin/rpc-search-reindex.php
    ```
@@ -213,12 +244,14 @@ Force stale `lock_version` on scheduled product → run scheduler → verify:
 
 ## 6. Release freeze scope
 
-**Included (Phase 2.8):**
+**Included (Phase 2.8 / Release 2.8.1):**
 
 - Workflow, versioning, change requests, completeness
 - RBAC admin APIs, audit events, product SEO
 - Scheduled publish/archive, gateway trust hardening
 - System user protection, scheduler failure logging
+- **DatabaseSearchAdapter** (default production search)
+- Migration **M014** (FULLTEXT + SKU/barcode search indexes)
 
 **Excluded (not in this release):**
 
@@ -229,7 +262,7 @@ Phase 2.9, Import, Export, Outbox, Webhooks, Redis, RabbitMQ, SQS, OpenSearch, S
 ## 7. Verification commands
 
 ```bash
-# Migrations
+# Migrations (includes M014 database search indexes)
 php bin/migrate.php
 
 # Full test suite (CI/staging)
@@ -239,4 +272,15 @@ CATALOG_INTEGRATION_TESTS=1 php tests/run.php
 cat public/rateb-catalog-build.txt
 ```
 
-Expected test result: **Passed: 118, Failed: 0**
+Expected test result: **Passed: 131, Failed: 0**
+
+### M014 migration summary
+
+Migration `014_database_search_indexes` adds:
+
+- `FULLTEXT` on `product_translations` (name, short_description, description)
+- `FULLTEXT` on `product_variant_translations` (name, description)
+- SKU and published-status indexes on `products` / `product_variants`
+- Active barcode indexes on `product_barcodes` / `product_variant_barcodes`
+
+Required before production database search performs acceptably at scale.

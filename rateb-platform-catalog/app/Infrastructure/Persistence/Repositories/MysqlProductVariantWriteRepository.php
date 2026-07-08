@@ -14,7 +14,10 @@ final class MysqlProductVariantWriteRepository extends BaseRepository implements
     public function __construct(?\PDO $readPdo = null, ?\PDO $writePdo = null)
     {
         parent::__construct($readPdo, $writePdo);
-        $this->uniqueness = new SkuBarcodeUniquenessValidator($readPdo, $writePdo);
+        $this->uniqueness = new SkuBarcodeUniquenessValidator(
+            new MysqlSkuUniquenessReadRepository($readPdo, $writePdo),
+            new MysqlBarcodeUniquenessReadRepository($readPdo, $writePdo)
+        );
     }
 
     protected function table(): string

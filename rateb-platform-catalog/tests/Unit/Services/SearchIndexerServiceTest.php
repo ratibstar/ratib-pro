@@ -17,12 +17,7 @@ use Rateb\PlatformCatalog\Tests\Support\EmptyJobQueueWriteRepository;
 
 catalog_test('SearchIndexerService indexes product document', static function (): void {
     $adapter = new InMemorySearchAdapter();
-    $read = new class implements SearchIndexReadRepositoryInterface {
-        public function listProductsForIndex(string $locale, int $afterId, int $limit): array
-        {
-            return [];
-        }
-
+    $read = new class extends \Rateb\PlatformCatalog\Tests\Support\StubSearchIndexReadRepository {
         public function buildProductDocument(string $productUuid, string $locale): ?array
         {
             return [
@@ -31,16 +26,6 @@ catalog_test('SearchIndexerService indexes product document', static function ()
                 'sku' => 'SKU',
                 'boost_score' => 1,
             ];
-        }
-
-        public function listVariantsForProduct(string $productUuid, string $locale): array
-        {
-            return [];
-        }
-
-        public function buildVariantDocument(string $variantUuid, string $locale): ?array
-        {
-            return null;
         }
     };
 
@@ -77,27 +62,7 @@ catalog_test('SearchIndexingListener enqueues variant reindex job', static funct
     $adapter = new InMemorySearchAdapter();
     $indexer = new SearchIndexerService(
         $adapter,
-        new class implements SearchIndexReadRepositoryInterface {
-            public function listProductsForIndex(string $locale, int $afterId, int $limit): array
-            {
-                return [];
-            }
-
-            public function buildProductDocument(string $productUuid, string $locale): ?array
-            {
-                return null;
-            }
-
-            public function listVariantsForProduct(string $productUuid, string $locale): array
-            {
-                return [];
-            }
-
-            public function buildVariantDocument(string $variantUuid, string $locale): ?array
-            {
-                return null;
-            }
-        },
+        new \Rateb\PlatformCatalog\Tests\Support\StubSearchIndexReadRepository(),
         new class implements SearchIndexQueueReadRepositoryInterface {
             public function listPending(int $limit = 100): array
             {
