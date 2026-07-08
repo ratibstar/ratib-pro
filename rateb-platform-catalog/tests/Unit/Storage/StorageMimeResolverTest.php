@@ -11,6 +11,24 @@ catalog_test('StorageMimeResolver maps known pdf extension', static function ():
     );
 });
 
+catalog_test('StorageMimeResolver prefers explicit mime hint', static function (): void {
+    catalog_assert_same(
+        'video/mp4',
+        StorageMimeResolver::resolve('catalog/products/p1/videos/v1/clip.bin', 'video/mp4')
+    );
+});
+
+catalog_test('StorageMimeResolver sniffs buffer content when extension unknown', static function (): void {
+  $sniffed = StorageMimeResolver::sniffBuffer('%PDF-1.4');
+  if ($sniffed === null) {
+      echo "[SKIP] finfo extension unavailable for buffer sniffing\n";
+
+      return;
+  }
+
+  catalog_assert_same('application/pdf', $sniffed);
+});
+
 catalog_test('StorageMimeResolver detects mime from local storage file', static function (): void {
     $root = defined('RATEB_PLATFORM_CATALOG_STORAGE_PATH')
         ? (string) RATEB_PLATFORM_CATALOG_STORAGE_PATH

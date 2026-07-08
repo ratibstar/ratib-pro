@@ -165,3 +165,40 @@ Per Phase 2.8 release notes and architecture §17 — not implemented in S1:
 - Bulk async APIs
 - Media virus scanning pipeline
 - CDN purge integration
+
+---
+
+## Enterprise remediation (S1 certification follow-up)
+
+### Self-hosted video upload contract
+
+`VideoService` supports two modes for `video_type=self_hosted`:
+
+| Mode | Request | Behavior |
+|------|---------|----------|
+| Binary upload | `content_base64` and/or multipart `file` | `UploadValidator` runs, checksum computed, storage key generated via `MediaStorageKeyBuilder::productVideo()`, binary written through `StorageAdapterInterface::put()`, metadata persisted with generated `storage_key`. Storage is rolled back if repository persistence fails. |
+| Metadata-only | `storage_key` only (no binary fields) | Client supplies a pre-uploaded object key. `storage_key` must be non-empty, must not contain `..`, and must reference an object that already exists in storage. |
+
+`storage_key` must **not** be sent together with binary upload fields.
+
+External video types (`youtube`, `vimeo`) are unchanged and require `external_url`.
+
+### Idempotency concurrent acquisition
+
+`MysqlIdempotencyWriteRepository::acquire()` uses `INSERT IGNORE` for first pending rows. When two requests race on the same `(idempotency_key, scope)`, the loser re-selects the row under `FOR UPDATE` and receives `IN_PROGRESS` instead of an uncaught duplicate-key error.
+
+Integration coverage (requires MySQL):
+
+```bash
+CATALOG_INTEGRATION_TESTS=1 php tests/run.php
+```
+
+### Signed storage MIME resolution
+
+`SignedStorageController` resolves `Content-Type` in order:
+
+1. Known extension map (`StorageMimeResolver`)
+2. Local filesystem `mime_content_type()` when the object exists on disk
+3. `finfo` buffer sniffing on the first 8 KB of the response stream when still `application/octet-stream`
+
+Optional `StorageMimeResolver::resolve($key, $mimeHint)` accepts caller-provided MIME metadata when available (images/files store MIME in the database; signed URLs continue to sign only `key` + `expires`).

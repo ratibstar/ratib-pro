@@ -25,8 +25,12 @@ final class StorageMimeResolver
         'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
 
-    public static function resolve(string $storageKey): string
+    public static function resolve(string $storageKey, ?string $mimeHint = null): string
     {
+        if ($mimeHint !== null && trim($mimeHint) !== '') {
+            return trim($mimeHint);
+        }
+
         $extension = strtolower(pathinfo($storageKey, PATHINFO_EXTENSION));
         if ($extension !== '' && isset(self::EXTENSION_MAP[$extension])) {
             return self::EXTENSION_MAP[$extension];
@@ -50,5 +54,25 @@ final class StorageMimeResolver
         }
 
         return 'application/octet-stream';
+    }
+
+    public static function sniffBuffer(string $buffer): ?string
+    {
+        if ($buffer === '') {
+            return null;
+        }
+
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo !== false) {
+                $detected = finfo_buffer($finfo, $buffer);
+                finfo_close($finfo);
+                if (is_string($detected) && $detected !== '' && $detected !== 'application/octet-stream') {
+                    return $detected;
+                }
+            }
+        }
+
+        return null;
     }
 }

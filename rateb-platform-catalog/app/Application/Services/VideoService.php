@@ -10,11 +10,14 @@ use Rateb\PlatformCatalog\Application\Events\ProductVideoAdded;
 use Rateb\PlatformCatalog\Application\Mappers\MediaMapper;
 use Rateb\PlatformCatalog\Application\Policies\VideoPolicy;
 use Rateb\PlatformCatalog\Application\Support\LocaleMetaBuilder;
+use Rateb\PlatformCatalog\Application\Support\MediaStorageKeyBuilder;
+use Rateb\PlatformCatalog\Application\Support\MediaUploadHelper;
 use Rateb\PlatformCatalog\Application\Validators\UploadValidator;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductVideoReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductVideoWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Storage\StorageAdapterInterface;
+use Rateb\PlatformCatalog\Support\Uuid;
 
 final class VideoService
 {
@@ -58,6 +61,7 @@ final class VideoService
 
     /**
      * @param array<string, mixed> $payload
+     * @param array{name:string,type:string,tmp_name:string,error:int,size:int}|null $uploadedFile
      * @return array{item: array<string, mixed>, meta: array<string, mixed>}
      */
     public function create(
@@ -71,17 +75,25 @@ final class VideoService
         $this->assertProductExists($productUuid, $locale);
 
         $videoType = (string) ($payload['video_type'] ?? 'youtube');
-        if ($videoType === 'self_hosted' && $this->uploadValidator !== null && $this->hasUploadBinary($payload, $uploadedFile)) {
-            $assetTypeCode = (string) ($payload['asset_type_code'] ?? 'video_self_hosted');
-            $this->uploadValidator->resolveAndValidate($payload, $uploadedFile, $assetTypeCode, $locale, false);
-        }
+        $storageKeyForRollback = null;
 
-        $videoUuid = $this->writeRepository->createForProduct(
-            $productUuid,
-            $payload,
-            $payload['translations'] ?? [],
-            isset($payload['actor_id']) ? (int) $payload['actor_id'] : null
-        );
+        try {
+            if ($videoType === 'self_hosted') {
+                $payload = $this->prepareSelfHostedPayload($productUuid, $payload, $uploadedFile, $locale, $storageKeyForRollback);
+            }
+
+            $videoUuid = $this->writeRepository->createForProduct(
+                $productUuid,
+                $payload,
+                $payload['translations'] ?? [],
+                isset($payload['actor_id']) ? (int) $payload['actor_id'] : null
+            );
+        } catch (\Throwable $e) {
+            if ($storageKeyForRollback !== null && $this->storage->exists($storageKeyForRollback)) {
+                $this->storage->delete($storageKeyForRollback);
+            }
+            throw $e;
+        }
 
         $this->events->dispatch(new ProductVideoAdded(
             $productUuid,
@@ -108,6 +120,84 @@ final class VideoService
     {
         if ($this->productReadRepository->findByUuid($productUuid, $locale) === null) {
             throw new \RuntimeException('Product not found', 404);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array{name:string,type:string,tmp_name:string,error:int,size:int}|null $uploadedFile
+     * @return array<string, mixed>
+     */
+    private function prepareSelfHostedPayload(
+        string $productUuid,
+        array $payload,
+        ?array $uploadedFile,
+        LocaleContext $locale,
+        ?string &$storageKeyForRollback
+    ): array {
+        $hasBinary = $this->hasUploadBinary($payload, $uploadedFile);
+        $clientKey = isset($payload['storage_key']) ? trim((string) $payload['storage_key']) : '';
+
+        if ($hasBinary && $clientKey !== '') {
+            throw new \InvalidArgumentException('storage_key must not be supplied when uploading binary content');
+        }
+
+        if ($hasBinary) {
+            return $this->storeSelfHostedBinary($productUuid, $payload, $uploadedFile, $locale, $storageKeyForRollback);
+        }
+
+        if ($clientKey === '') {
+            throw new \InvalidArgumentException('storage_key or upload binary is required for self_hosted videos');
+        }
+
+        $this->assertValidClientStorageKey($clientKey);
+        if (!$this->storage->exists($clientKey)) {
+            throw new \InvalidArgumentException('storage_key does not reference an existing stored object');
+        }
+
+        $payload['storage_key'] = $clientKey;
+
+        return $payload;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array{name:string,type:string,tmp_name:string,error:int,size:int}|null $uploadedFile
+     * @return array<string, mixed>
+     */
+    private function storeSelfHostedBinary(
+        string $productUuid,
+        array $payload,
+        ?array $uploadedFile,
+        LocaleContext $locale,
+        ?string &$storageKeyForRollback
+    ): array {
+        $assetTypeCode = (string) ($payload['asset_type_code'] ?? 'video_self_hosted');
+        $binary = $this->uploadValidator !== null
+            ? $this->uploadValidator->resolveAndValidate($payload, $uploadedFile, $assetTypeCode, $locale, false)
+            : MediaUploadHelper::resolveBinary($payload, $uploadedFile);
+        $checksum = MediaUploadHelper::sha256($binary['content']);
+        $videoUuid = Uuid::v4();
+        $filename = $videoUuid . '.' . ltrim($binary['extension'], '.');
+        $storageKey = MediaStorageKeyBuilder::productVideo($productUuid, $videoUuid, $filename);
+        $storageKeyForRollback = $storageKey;
+
+        $this->storage->put($storageKey, $binary['content'], [
+            'mime_type' => $binary['mime_type'],
+            'checksum_sha256' => $checksum,
+        ]);
+
+        $payload['storage_key'] = $storageKey;
+        $payload['video_uuid'] = $videoUuid;
+
+        return $payload;
+    }
+
+    private function assertValidClientStorageKey(string $storageKey): void
+    {
+        $normalized = str_replace('\\', '/', ltrim($storageKey, '/'));
+        if ($normalized === '' || str_contains($normalized, '..')) {
+            throw new \InvalidArgumentException('storage_key is invalid');
         }
     }
 

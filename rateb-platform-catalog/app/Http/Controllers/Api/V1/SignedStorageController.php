@@ -36,9 +36,26 @@ final class SignedStorageController
 
         try {
             $stream = $this->storage->get($key);
+            $prefix = stream_get_contents($stream, 8192);
+            if (!is_string($prefix)) {
+                $prefix = '';
+            }
+
+            $mime = StorageMimeResolver::resolve($key);
+            if ($mime === 'application/octet-stream' && $prefix !== '') {
+                $sniffed = StorageMimeResolver::sniffBuffer($prefix);
+                if ($sniffed !== null) {
+                    $mime = $sniffed;
+                }
+            }
+
             if (!headers_sent()) {
-                header('Content-Type: ' . StorageMimeResolver::resolve($key));
+                header('Content-Type: ' . $mime);
                 header('Cache-Control: private, max-age=3600');
+            }
+
+            if ($prefix !== '') {
+                echo $prefix;
             }
             fpassthru($stream);
             fclose($stream);

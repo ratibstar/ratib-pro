@@ -136,6 +136,7 @@ require $root . '/tests/Unit/Middleware/IdempotencyMiddlewareTest.php';
 require $root . '/tests/Unit/Middleware/IdempotencyRemediationTest.php';
 require $root . '/tests/Unit/Mappers/MediaMapperTest.php';
 require $root . '/tests/Unit/Services/MediaServiceTest.php';
+require $root . '/tests/Unit/Services/VideoServiceTest.php';
 require $root . '/tests/Unit/Support/ArabicNormalizerTest.php';
 require $root . '/tests/Unit/Queue/RetryPolicyTest.php';
 require $root . '/tests/Unit/Search/MeilisearchAdapterTest.php';
@@ -160,6 +161,7 @@ require $root . '/tests/Integration/ProductSeoIntegrationTest.php';
 require $root . '/tests/Integration/ProductSnapshotRestoreIntegrationTest.php';
 require $root . '/tests/Integration/ScheduledPublishIntegrationTest.php';
 require $root . '/tests/Integration/SearchQueueIntegrationTest.php';
+require $root . '/tests/Integration/IdempotencyIntegrationTest.php';
 require $root . '/tests/Integration/DatabaseSearchIntegrationTest.php';
 
 $adapterSuiteRequested = in_array(

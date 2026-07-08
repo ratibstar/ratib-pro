@@ -57,7 +57,9 @@ final class MysqlProductVideoWriteRepository extends BaseRepository implements P
                 throw new \InvalidArgumentException('external_url is required for external videos');
             }
 
-            $uuid = $this->newUuid();
+            $uuid = isset($metadata['video_uuid']) && is_string($metadata['video_uuid']) && $metadata['video_uuid'] !== ''
+                ? (string) $metadata['video_uuid']
+                : $this->newUuid();
             $this->writePdo->prepare(
                 'INSERT INTO product_videos (
                     uuid, product_id, asset_type_id, video_type, external_id, external_url,
