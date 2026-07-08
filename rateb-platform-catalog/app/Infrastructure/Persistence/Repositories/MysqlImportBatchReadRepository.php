@@ -45,12 +45,12 @@ final class MysqlImportBatchReadRepository extends BaseRepository implements Imp
         }
 
         $rows = $this->fetchAll(
-            'SELECT ibr.uuid, ibr.row_number, ibr.raw_payload, ibr.mapped_payload,
+            'SELECT ibr.uuid, ibr.`row_number`, ibr.raw_payload, ibr.mapped_payload,
                     ibr.validation_errors, ibr.status, ibr.entity_uuid, ibr.created_at, ibr.updated_at
              FROM import_batch_rows ibr
              INNER JOIN import_batches ib ON ib.id = ibr.import_batch_id
              WHERE ' . implode(' AND ', $where) . '
-             ORDER BY ibr.row_number ASC
+             ORDER BY ibr.`row_number` ASC
              LIMIT ' . $limit . ' OFFSET ' . $offset,
             $params
         );

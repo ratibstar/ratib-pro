@@ -38,7 +38,7 @@ final class MysqlImportBatchWriteRepository extends BaseRepository implements Im
     {
         $batchId = $this->resolveBatchId($batchUuid);
         $stmt = $this->writePdo->prepare(
-            'INSERT INTO import_batch_rows (uuid, import_batch_id, row_number, raw_payload, status, created_by)
+            'INSERT INTO import_batch_rows (uuid, import_batch_id, `row_number`, raw_payload, status, created_by)
              VALUES (:uuid, :import_batch_id, :row_number, :raw_payload, :status, :created_by)'
         );
 
@@ -94,13 +94,13 @@ final class MysqlImportBatchWriteRepository extends BaseRepository implements Im
         return $this->transaction(function () use ($batchUuid, $limit): array {
             $limit = max(1, min(500, $limit));
             $rows = $this->fetchAll(
-                'SELECT ibr.uuid, ibr.row_number, ibr.raw_payload, ibr.mapped_payload, ibr.status
+                'SELECT ibr.uuid, ibr.`row_number`, ibr.raw_payload, ibr.mapped_payload, ibr.status
                  FROM import_batch_rows ibr
                  INNER JOIN import_batches ib ON ib.id = ibr.import_batch_id AND ib.deleted_at IS NULL
                  WHERE ib.uuid = :batch_uuid
                    AND ibr.status = :status
                    AND ibr.deleted_at IS NULL
-                 ORDER BY ibr.row_number ASC
+                 ORDER BY ibr.`row_number` ASC
                  LIMIT ' . $limit . ' FOR UPDATE',
                 ['batch_uuid' => $batchUuid, 'status' => 'valid'],
                 false

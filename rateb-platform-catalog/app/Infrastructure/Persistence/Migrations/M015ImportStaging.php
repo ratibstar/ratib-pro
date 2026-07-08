@@ -67,7 +67,7 @@ final class M015ImportStaging extends AbstractMigration
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 uuid CHAR(36) NOT NULL,
                 import_batch_id BIGINT UNSIGNED NOT NULL,
-                row_number INT UNSIGNED NOT NULL,
+                `row_number` INT UNSIGNED NOT NULL,
                 raw_payload JSON NOT NULL,
                 mapped_payload JSON NULL,
                 validation_errors JSON NULL,
@@ -80,7 +80,7 @@ final class M015ImportStaging extends AbstractMigration
                 deleted_at DATETIME(6) NULL,
                 deleted_by BIGINT UNSIGNED NULL,
                 UNIQUE KEY uk_import_batch_rows_uuid (uuid),
-                KEY idx_import_batch_rows_batch (import_batch_id, row_number),
+                KEY idx_import_batch_rows_batch (import_batch_id, `row_number`),
                 KEY idx_import_batch_rows_status (import_batch_id, status),
                 KEY idx_import_batch_rows_entity (entity_uuid),
                 CONSTRAINT fk_import_batch_rows_batch FOREIGN KEY (import_batch_id) REFERENCES import_batches (id)
