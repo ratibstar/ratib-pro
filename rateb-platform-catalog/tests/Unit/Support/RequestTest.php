@@ -33,3 +33,24 @@ catalog_test('Request rawBody is cached for repeated reads', static function ():
     Request::resetCachedInput();
     unset($_SERVER['CONTENT_TYPE']);
 });
+
+catalog_test('Request resolvePath strips catalog mount prefix', static function (): void {
+    $cases = [
+        ['/rateb-platform-catalog/health', '/rateb-platform-catalog/public/index.php', null, '/health'],
+        ['/rateb-platform-catalog/admin', '/rateb-platform-catalog/public/index.php', null, '/admin'],
+        ['/rateb-platform-catalog/public/health', '/rateb-platform-catalog/public/index.php', null, '/health'],
+        ['/rateb-platform-catalog/health', '/rateb-platform-catalog/public/index.php', 'health', '/health'],
+    ];
+
+    foreach ($cases as [$uri, $script, $route, $expected]) {
+        unset($_GET['route'], $_SERVER['PATH_INFO']);
+        if ($route !== null) {
+            $_GET['route'] = $route;
+        }
+        $_SERVER['REQUEST_URI'] = $uri;
+        $_SERVER['SCRIPT_NAME'] = $script;
+        catalog_assert_same($expected, Request::resolvePath(), $uri);
+    }
+
+    unset($_GET['route'], $_SERVER['REQUEST_URI'], $_SERVER['SCRIPT_NAME'], $_SERVER['PATH_INFO']);
+});

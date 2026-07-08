@@ -18,10 +18,20 @@ final class Request
             return self::normalize($route);
         }
 
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        return self::normalize(self::extractUriPath());
+    }
 
-        $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
+    private static function extractUriPath(): string
+    {
+        $uri = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/');
+        $path = str_replace('\\', '/', $uri);
+
+        $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+        $scriptBase = rtrim(str_replace('/index.php', '', $scriptName), '/');
+        if ($scriptBase !== '' && $scriptBase !== '/' && str_starts_with($path, $scriptBase)) {
+            $path = substr($path, strlen($scriptBase)) ?: '/';
+        }
+
         $base = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
         if ($base !== '' && $base !== '/' && str_starts_with($path, $base)) {
             $path = substr($path, strlen($base)) ?: '/';
@@ -34,7 +44,24 @@ final class Request
             }
         }
 
-        return self::normalize($path);
+        if (preg_match('#/rateb-platform-catalog/public(/.*)?$#', $path, $matches)) {
+            $path = $matches[1] ?? '/';
+        } elseif (preg_match('#^/rateb-platform-catalog(/.*)?$#', $path, $matches)) {
+            $path = $matches[1] ?? '/';
+        }
+
+        if (!empty($_SERVER['PATH_INFO']) && is_string($_SERVER['PATH_INFO'])) {
+            $pathInfo = str_replace('\\', '/', (string) $_SERVER['PATH_INFO']);
+            if ($pathInfo !== '' && $pathInfo !== '/') {
+                return $pathInfo;
+            }
+        }
+
+        if ($path === '/index.php' || str_ends_with($path, '/index.php')) {
+            return '/';
+        }
+
+        return $path;
     }
 
     public static function method(): string
