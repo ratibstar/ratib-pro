@@ -156,6 +156,10 @@ if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
         try {
             $authz = new \Rateb\App\Services\AuthorizationService();
             $authz->ensureSuggestedRoles();
+            $companyId = \Rateb\App\Services\AuthorizationService::resolveMatrixCompanyId();
+            if ($companyId > 0) {
+                $authz->ensureCompanyRoles($companyId);
+            }
             $authz->refreshDedicatedCompanyAccessPermissions();
             $authz->ensureAgencyCompanyAdminRole((int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0));
             \Rateb\App\Core\SessionManager::set('rateb_agency_access_perms_synced', 1);
@@ -1046,10 +1050,12 @@ if (!function_exists('rateb_can')) {
             return $slug === '';
         }
         static $cache = [];
-        if (!isset($cache[$userId])) {
-            $cache[$userId] = (new \Rateb\App\Services\AuthorizationService())->userPermissionSlugs($userId);
+        $companyId = (int) ($_SESSION['rateb_company_id'] ?? 0);
+        $cacheKey = $userId . ':' . $companyId;
+        if (!isset($cache[$cacheKey])) {
+            $cache[$cacheKey] = (new \Rateb\App\Services\AuthorizationService())->userPermissionSlugs($userId);
         }
-        if (in_array($slug, $cache[$userId], true)) {
+        if (in_array($slug, $cache[$cacheKey], true)) {
             return true;
         }
         static $implies = null;
@@ -1059,7 +1065,7 @@ if (!function_exists('rateb_can')) {
             $implies = is_array($cfg['permission_implies'] ?? null) ? $cfg['permission_implies'] : [];
         }
         foreach ($implies as $parent => $children) {
-            if (!in_array($parent, $cache[$userId], true)) {
+            if (!in_array($parent, $cache[$cacheKey], true)) {
                 continue;
             }
             foreach ((array) $children as $child) {

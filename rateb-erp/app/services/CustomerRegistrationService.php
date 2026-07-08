@@ -91,11 +91,11 @@ final class CustomerRegistrationService
                 'locale' => function_exists('rateb_locale') ? rateb_locale() : 'ar',
             ]);
 
-            $roleRow = $userModel->queryOne(
-                "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
-            );
+            $authz = new AuthorizationService();
+            $authz->ensureCompanyRoles($companyId);
+            $roleRow = $authz->findRoleBySlug('company-full-access', $companyId);
             if ($roleRow) {
-                (new AuthorizationService())->assignRole($userId, (int) $roleRow['id']);
+                $authz->assignRole($userId, (int) $roleRow['id']);
             }
 
             (new BarcodeLoginService())->ensureUserBarcode($userId);

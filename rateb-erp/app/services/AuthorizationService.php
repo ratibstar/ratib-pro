@@ -5,22 +5,59 @@ namespace Rateb\App\Services;
 
 use Rateb\App\Models\Permission;
 use Rateb\App\Models\Role;
+use Rateb\App\Models\User;
 
 final class AuthorizationService
 {
+    /** @return array<string, mixed> */
+    private static function permissionsConfig(): array
+    {
+        static $cfg = null;
+        if ($cfg !== null) {
+            return $cfg;
+        }
+        $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+        $cfg = is_file($file) ? require $file : [];
+
+        return is_array($cfg) ? $cfg : [];
+    }
+
+    /** @return list<string> */
+    public static function platformRoleSlugs(): array
+    {
+        $slugs = self::permissionsConfig()['platform_role_slugs'] ?? [];
+
+        return is_array($slugs) ? array_values(array_filter(array_map('strval', $slugs))) : [];
+    }
+
+    /** @return list<string> */
+    public static function tenantRoleSlugs(): array
+    {
+        $slugs = self::permissionsConfig()['tenant_role_slugs'] ?? [];
+
+        return is_array($slugs) ? array_values(array_filter(array_map('strval', $slugs))) : [];
+    }
+
     public function userHasPermission(int $userId, string $permissionSlug): bool
     {
         if ($permissionSlug === '') {
             return true;
         }
 
-        $row = (new Permission())->queryOne(
-            'SELECT p.id FROM rateb_permissions p
+        $params = ['uid' => $userId, 'slug' => $permissionSlug];
+        $sql = 'SELECT p.id FROM rateb_permissions p
              JOIN rateb_role_permissions rp ON rp.permission_id = p.id
              JOIN rateb_user_roles ur ON ur.role_id = rp.role_id
-             WHERE ur.user_id = :uid AND p.slug = :slug LIMIT 1',
-            ['uid' => $userId, 'slug' => $permissionSlug]
-        );
+             JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid AND p.slug = :slug';
+        $scope = $this->roleCompanyScopeSql($userId, $params);
+        if ($scope === '') {
+            return false;
+        }
+        $sql .= $scope . ' LIMIT 1';
+
+        $row = (new Permission())->queryOne($sql, $params);
+
         return $row !== null;
     }
 
@@ -36,25 +73,75 @@ final class AuthorizationService
         if ($permissionSlug === '') {
             return true;
         }
+
         return $this->userHasPermission($userId, $permissionSlug);
     }
 
     /** @return array<int, string> */
     public function userPermissionSlugs(int $userId): array
     {
-        $rows = (new Permission())->query(
-            'SELECT p.slug FROM rateb_permissions p
+        $params = ['uid' => $userId];
+        $sql = 'SELECT p.slug FROM rateb_permissions p
              JOIN rateb_role_permissions rp ON rp.permission_id = p.id
              JOIN rateb_user_roles ur ON ur.role_id = rp.role_id
-             WHERE ur.user_id = :uid',
-            ['uid' => $userId]
-        );
+             JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid';
+        $scope = $this->roleCompanyScopeSql($userId, $params);
+        if ($scope === '') {
+            return [];
+        }
+        $sql .= $scope;
+
+        $rows = (new Permission())->query($sql, $params);
+
         return array_values(array_unique(array_column($rows, 'slug')));
+    }
+
+    /** @param array<string, int|string> $params */
+    private function roleCompanyScopeSql(int $userId, array &$params): string
+    {
+        if ($this->userIsSuperAdmin($userId)) {
+            return '';
+        }
+        $companyId = $this->userCompanyId($userId);
+        if ($companyId < 1) {
+            return '';
+        }
+        $params['role_cid'] = $companyId;
+
+        return ' AND r.company_id = :role_cid';
+    }
+
+    private function userIsSuperAdmin(int $userId): bool
+    {
+        static $cache = [];
+        if (array_key_exists($userId, $cache)) {
+            return $cache[$userId];
+        }
+        $row = (new User())->find($userId);
+        $cache[$userId] = !empty($row['is_super_admin']);
+
+        return $cache[$userId];
+    }
+
+    private function userCompanyId(int $userId): int
+    {
+        static $cache = [];
+        if (array_key_exists($userId, $cache)) {
+            return $cache[$userId];
+        }
+        $row = (new User())->find($userId);
+        $cache[$userId] = (int) ($row['company_id'] ?? 0);
+
+        return $cache[$userId];
     }
 
     public function assignRole(int $userId, int $roleId): void
     {
-        $stmt = (new Role())->query(
+        if (!$this->roleAssignableToUser($userId, $roleId)) {
+            return;
+        }
+        (new Role())->query(
             'INSERT IGNORE INTO rateb_user_roles (user_id, role_id) VALUES (:uid, :rid)',
             ['uid' => $userId, 'rid' => $roleId]
         );
@@ -63,10 +150,17 @@ final class AuthorizationService
     /** @return array<int, int> */
     public function getUserRoleIds(int $userId): array
     {
-        $rows = (new Role())->query(
-            'SELECT role_id FROM rateb_user_roles WHERE user_id = :uid',
-            ['uid' => $userId]
-        );
+        $params = ['uid' => $userId];
+        $sql = 'SELECT ur.role_id FROM rateb_user_roles ur
+             JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid';
+        $scope = $this->roleCompanyScopeSql($userId, $params);
+        if ($scope === '' && !$this->userIsSuperAdmin($userId)) {
+            return [];
+        }
+        $sql .= $scope;
+        $rows = (new Role())->query($sql, $params);
+
         return array_map('intval', array_column($rows, 'role_id'));
     }
 
@@ -82,14 +176,36 @@ final class AuthorizationService
         if ($ids === []) {
             return;
         }
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $check = $db->prepare('SELECT id FROM rateb_roles WHERE id IN (' . $placeholders . ')');
-        $check->execute($ids);
-        $valid = array_map('intval', array_column($check->fetchAll(\PDO::FETCH_ASSOC), 'id'));
         $stmt = $db->prepare('INSERT INTO rateb_user_roles (user_id, role_id) VALUES (:uid, :rid)');
-        foreach ($valid as $rid) {
-            $stmt->execute(['uid' => $userId, 'rid' => $rid]);
+        foreach ($ids as $rid) {
+            if ($this->roleAssignableToUser($userId, $rid)) {
+                $stmt->execute(['uid' => $userId, 'rid' => $rid]);
+            }
         }
+    }
+
+    public function roleAssignableToUser(int $userId, int $roleId): bool
+    {
+        if ($roleId < 1) {
+            return false;
+        }
+        if ($this->userIsSuperAdmin($userId)) {
+            return (new Role())->find($roleId) !== null;
+        }
+        $role = (new Role())->find($roleId);
+        if (!$role) {
+            return false;
+        }
+        $slug = (string) ($role['slug'] ?? '');
+        if ($slug !== '' && in_array($slug, self::platformRoleSlugs(), true)) {
+            return false;
+        }
+        $companyId = $this->userCompanyId($userId);
+        if ($companyId < 1) {
+            return false;
+        }
+
+        return (int) ($role['company_id'] ?? 0) === $companyId;
     }
 
     /** @return array<int, int> */
@@ -99,6 +215,7 @@ final class AuthorizationService
             'SELECT permission_id FROM rateb_role_permissions WHERE role_id = :rid',
             ['rid' => $roleId]
         );
+
         return array_map('intval', array_column($rows, 'permission_id'));
     }
 
@@ -119,12 +236,8 @@ final class AuthorizationService
     public function allPermissionsGrouped(): array
     {
         $rows = (new Permission())->query('SELECT * FROM rateb_permissions ORDER BY module, slug');
-        $hidden = [];
-        $cfgFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
-        if (is_file($cfgFile)) {
-            $cfg = require $cfgFile;
-            $hidden = is_array($cfg['matrix_hidden_slugs'] ?? null) ? $cfg['matrix_hidden_slugs'] : [];
-        }
+        $cfg = self::permissionsConfig();
+        $hidden = is_array($cfg['matrix_hidden_slugs'] ?? null) ? $cfg['matrix_hidden_slugs'] : [];
         $grouped = [];
         foreach ($rows as $row) {
             $slug = (string) ($row['slug'] ?? '');
@@ -157,6 +270,7 @@ final class AuthorizationService
                 usort($perms, static function (array $a, array $b) use ($accountingOrder): int {
                     $sa = (string) ($a['slug'] ?? '');
                     $sb = (string) ($b['slug'] ?? '');
+
                     return ($accountingOrder[$sa] ?? 99) <=> ($accountingOrder[$sb] ?? 99);
                 });
             }
@@ -189,20 +303,68 @@ final class AuthorizationService
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function allRoles(): array
+    public function allRoles(?int $companyId = null): array
     {
-        $rows = (new Role())->query('SELECT * FROM rateb_roles ORDER BY name, id');
-        $seen = [];
-        $unique = [];
-        foreach ($rows as $row) {
-            $slug = (string) ($row['slug'] ?? '');
-            if ($slug === '' || isset($seen[$slug])) {
-                continue;
-            }
-            $seen[$slug] = true;
-            $unique[] = $row;
+        if ($companyId === null) {
+            $companyId = self::resolveMatrixCompanyId();
         }
-        return $unique;
+        if ($companyId > 0) {
+            return (new Role())->query(
+                'SELECT * FROM rateb_roles WHERE company_id = :cid ORDER BY name, id',
+                ['cid' => $companyId]
+            );
+        }
+
+        $platform = self::platformRoleSlugs();
+        if ($platform === []) {
+            return (new Role())->query(
+                'SELECT * FROM rateb_roles WHERE company_id IS NULL ORDER BY name, id'
+            );
+        }
+        $placeholders = implode(',', array_fill(0, count($platform), '?'));
+
+        return (new Role())->query(
+            'SELECT * FROM rateb_roles WHERE company_id IS NULL AND slug IN (' . $placeholders . ') ORDER BY name, id',
+            $platform
+        );
+    }
+
+    public static function resolveMatrixCompanyId(): int
+    {
+        if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
+            if (function_exists('rateb_resolve_ops_company_id')) {
+                $id = rateb_resolve_ops_company_id();
+                if ($id > 0) {
+                    return $id;
+                }
+            }
+            $sessionCid = (int) ($_SESSION['rateb_company_id'] ?? 0);
+            if ($sessionCid > 0) {
+                return $sessionCid;
+            }
+        }
+
+        return 0;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findRoleBySlug(string $slug, ?int $companyId = null): ?array
+    {
+        $slug = trim($slug);
+        if ($slug === '') {
+            return null;
+        }
+        if ($companyId !== null && $companyId > 0 && !in_array($slug, self::platformRoleSlugs(), true)) {
+            return (new Role())->queryOne(
+                'SELECT * FROM rateb_roles WHERE slug = :slug AND company_id = :cid LIMIT 1',
+                ['slug' => $slug, 'cid' => $companyId]
+            );
+        }
+
+        return (new Role())->queryOne(
+            'SELECT * FROM rateb_roles WHERE slug = :slug AND company_id IS NULL LIMIT 1',
+            ['slug' => $slug]
+        );
     }
 
     public function dedupeDuplicateRoles(): int
@@ -213,7 +375,10 @@ final class AuthorizationService
             'INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id)
              SELECT keeper.id, rp.permission_id
              FROM rateb_roles dup
-             INNER JOIN rateb_roles keeper ON keeper.slug = dup.slug AND keeper.id < dup.id
+             INNER JOIN rateb_roles keeper
+                ON keeper.slug = dup.slug
+               AND (keeper.company_id <=> dup.company_id)
+               AND keeper.id < dup.id
              INNER JOIN rateb_role_permissions rp ON rp.role_id = dup.id'
         );
 
@@ -221,30 +386,37 @@ final class AuthorizationService
             'INSERT IGNORE INTO rateb_user_roles (user_id, role_id)
              SELECT ur.user_id, keeper.id
              FROM rateb_roles dup
-             INNER JOIN rateb_roles keeper ON keeper.slug = dup.slug AND keeper.id < dup.id
+             INNER JOIN rateb_roles keeper
+                ON keeper.slug = dup.slug
+               AND (keeper.company_id <=> dup.company_id)
+               AND keeper.id < dup.id
              INNER JOIN rateb_user_roles ur ON ur.role_id = dup.id'
         );
 
         return $db->exec(
             'DELETE r1 FROM rateb_roles r1
-             INNER JOIN rateb_roles r2 ON r1.slug = r2.slug AND r1.id > r2.id'
+             INNER JOIN rateb_roles r2
+                ON r1.slug = r2.slug
+               AND (r1.company_id <=> r2.company_id)
+               AND r1.id > r2.id'
         );
     }
 
     /** @return array<int, array<int, int>> roleId => permission ids */
-    public function rolePermissionMatrix(): array
+    public function rolePermissionMatrix(?int $companyId = null): array
     {
         $matrix = [];
-        foreach ($this->allRoles() as $role) {
+        foreach ($this->allRoles($companyId) as $role) {
             $matrix[(int) $role['id']] = $this->getRolePermissionIds((int) $role['id']);
         }
+
         return $matrix;
     }
 
     /** @param array<int|string, array<int|string>> $matrix roleId => permission ids */
-    public function syncMatrixFromPost(array $matrix): void
+    public function syncMatrixFromPost(array $matrix, ?int $companyId = null): void
     {
-        foreach ($this->allRoles() as $role) {
+        foreach ($this->allRoles($companyId) as $role) {
             $roleId = (int) $role['id'];
             $permIds = array_map('intval', (array) ($matrix[$roleId] ?? $matrix[(string) $roleId] ?? []));
             $this->syncRolePermissions($roleId, $permIds);
@@ -253,12 +425,17 @@ final class AuthorizationService
 
     public function getUserRoleNames(int $userId): string
     {
-        $rows = (new Role())->query(
-            'SELECT r.name FROM rateb_roles r
+        $params = ['uid' => $userId];
+        $sql = 'SELECT r.name FROM rateb_roles r
              JOIN rateb_user_roles ur ON ur.role_id = r.id
-             WHERE ur.user_id = :uid ORDER BY r.name',
-            ['uid' => $userId]
-        );
+             WHERE ur.user_id = :uid';
+        $scope = $this->roleCompanyScopeSql($userId, $params);
+        if ($scope === '' && !$this->userIsSuperAdmin($userId)) {
+            return '';
+        }
+        $sql .= $scope . ' ORDER BY r.name';
+        $rows = (new Role())->query($sql, $params);
+
         return implode(', ', array_column($rows, 'name'));
     }
 
@@ -268,6 +445,7 @@ final class AuthorizationService
             'SELECT COUNT(*) AS c FROM rateb_role_permissions WHERE role_id = :rid',
             ['rid' => $roleId]
         );
+
         return (int) ($row['c'] ?? 0);
     }
 
@@ -290,13 +468,29 @@ final class AuthorizationService
         ];
     }
 
+    /** @return array{slug:string,name:string,description:string,is_system:bool,permissions:list<string>|null}|null */
+    private static function suggestedDefinitionForSlug(string $slug): ?array
+    {
+        foreach (self::suggestedRoleDefinitions() as $def) {
+            if ((string) ($def['slug'] ?? '') === $slug) {
+                return $def;
+            }
+        }
+
+        return null;
+    }
+
     public function ensureSuggestedRoles(): void
     {
         $roleModel = new Role();
+        $platformSlugs = self::platformRoleSlugs();
         foreach (self::suggestedRoleDefinitions() as $def) {
             $slug = (string) $def['slug'];
+            if (!in_array($slug, $platformSlugs, true)) {
+                continue;
+            }
             $existing = $roleModel->queryOne(
-                'SELECT id FROM rateb_roles WHERE slug = :slug LIMIT 1',
+                'SELECT id FROM rateb_roles WHERE slug = :slug AND company_id IS NULL LIMIT 1',
                 ['slug' => $slug]
             );
             $roleId = (int) ($existing['id'] ?? 0);
@@ -312,32 +506,114 @@ final class AuthorizationService
             if ($roleId < 1 || $def['permissions'] === null) {
                 continue;
             }
-            $permSlugs = $def['permissions'];
-            if ($permSlugs === ['__company_full_access__']) {
+            $this->grantRolePermissionsBySlugs($roleId, $def['permissions']);
+        }
+    }
+
+    public function ensureCompanyRoles(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $this->ensureSuggestedRoles();
+        $roleModel = new Role();
+        foreach (self::tenantRoleSlugs() as $slug) {
+            $def = self::suggestedDefinitionForSlug($slug);
+            if ($def === null) {
+                continue;
+            }
+            $existing = $roleModel->queryOne(
+                'SELECT id FROM rateb_roles WHERE slug = :slug AND company_id = :cid LIMIT 1',
+                ['slug' => $slug, 'cid' => $companyId]
+            );
+            $roleId = (int) ($existing['id'] ?? 0);
+            if ($roleId < 1) {
+                $roleId = $roleModel->create([
+                    'company_id' => $companyId,
+                    'name' => (string) $def['name'],
+                    'slug' => $slug,
+                    'description' => (string) $def['description'],
+                    'is_system' => !empty($def['is_system']) ? 1 : 0,
+                ]);
+            }
+            if ($roleId < 1) {
+                continue;
+            }
+            if ($def['permissions'] === ['__company_full_access__']) {
                 $this->syncCompanyFullAccessPermissions($roleId);
                 continue;
             }
-            $this->grantRolePermissionsBySlugs($roleId, $permSlugs);
+            if (is_array($def['permissions'])) {
+                $this->grantRolePermissionsBySlugs($roleId, $def['permissions']);
+            }
         }
-        $this->syncBranchRolePermissionCatalog();
+        $this->syncBranchRolePermissionCatalogForCompany($companyId);
+        $this->syncPosRolePermissionCatalogForCompany($companyId);
     }
 
-    /** Idempotently grant branch role permission bundles to every branch_manager / branch_user role row. */
-    public function syncBranchRolePermissionCatalog(): void
+    /** Idempotently grant branch role permission bundles for one company. */
+    public function syncBranchRolePermissionCatalogForCompany(int $companyId): void
     {
+        if ($companyId < 1) {
+            return;
+        }
         $roleModel = new Role();
         foreach (BranchAccessService::branchRoleSlugs() as $slug) {
             $permSlugs = BranchAccessService::branchRolePermissionSlugs($slug);
             if ($permSlugs === []) {
                 continue;
             }
-            $rows = $roleModel->query('SELECT id FROM rateb_roles WHERE slug = :slug', ['slug' => $slug]);
-            foreach ($rows as $row) {
-                $roleId = (int) ($row['id'] ?? 0);
-                if ($roleId > 0) {
-                    $this->grantRolePermissionsBySlugs($roleId, $permSlugs);
-                }
+            $row = $roleModel->queryOne(
+                'SELECT id FROM rateb_roles WHERE slug = :slug AND company_id = :cid LIMIT 1',
+                ['slug' => $slug, 'cid' => $companyId]
+            );
+            $roleId = (int) ($row['id'] ?? 0);
+            if ($roleId > 0) {
+                $this->grantRolePermissionsBySlugs($roleId, $permSlugs);
             }
+        }
+    }
+
+    public function syncPosRolePermissionCatalogForCompany(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $bundles = [
+            'pos_cashier' => ['pos.view', 'pos.register', 'pos.shift.open'],
+            'pos_supervisor' => [
+                'pos.view', 'pos.register', 'pos.shift.open', 'pos.shift.close',
+                'pos.discount.manage', 'pos.returns.manage', 'pos.reports.view', 'pos.cash_drawer.manage',
+                'pos.orders.view',
+            ],
+            'pos_manager' => [
+                'pos.view', 'pos.register', 'pos.shift.open', 'pos.shift.close',
+                'pos.discount.manage', 'pos.returns.manage', 'pos.reports.view', 'pos.cash_drawer.manage',
+                'pos.orders.view', 'pos.terminals.manage', 'pos.settings.manage', 'pos.sync.manage',
+            ],
+        ];
+        $roleModel = new Role();
+        foreach ($bundles as $slug => $permSlugs) {
+            $row = $roleModel->queryOne(
+                'SELECT id FROM rateb_roles WHERE slug = :slug AND company_id = :cid LIMIT 1',
+                ['slug' => $slug, 'cid' => $companyId]
+            );
+            $roleId = (int) ($row['id'] ?? 0);
+            if ($roleId > 0) {
+                $this->grantRolePermissionsBySlugs($roleId, $permSlugs);
+            }
+        }
+    }
+
+    /** Idempotently grant branch role permission bundles to every branch_manager / branch_user role row. */
+    public function syncBranchRolePermissionCatalog(): void
+    {
+        $roleModel = new Role();
+        $companyIds = $roleModel->query(
+            'SELECT DISTINCT company_id FROM rateb_roles WHERE company_id IS NOT NULL AND company_id > 0'
+        );
+        foreach ($companyIds as $row) {
+            $this->syncBranchRolePermissionCatalogForCompany((int) ($row['company_id'] ?? 0));
         }
     }
 
@@ -345,6 +621,11 @@ final class AuthorizationService
     private function grantRolePermissionsBySlugs(int $roleId, array $slugs): void
     {
         if ($roleId < 1 || $slugs === []) {
+            return;
+        }
+        if ($slugs === ['__company_full_access__']) {
+            $this->syncCompanyFullAccessPermissions($roleId);
+
             return;
         }
         $db = \Rateb\App\Core\Database::connection();
@@ -367,8 +648,7 @@ final class AuthorizationService
         if ($roleId < 1) {
             return;
         }
-        $configFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
-        $config = is_file($configFile) ? require $configFile : [];
+        $config = self::permissionsConfig();
         $excluded = (array) ($config['company_role_excluded_slugs'] ?? []);
         if (self::isAgencyPermissionMatrixContext()) {
             $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
@@ -391,15 +671,16 @@ final class AuthorizationService
         if (!self::isAgencyPermissionMatrixContext()) {
             return;
         }
-        $this->ensureSuggestedRoles();
-        $role = (new Role())->queryOne(
-            "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
-        );
+        $companyId = self::resolveMatrixCompanyId();
+        if ($companyId < 1) {
+            return;
+        }
+        $this->ensureCompanyRoles($companyId);
+        $role = $this->findRoleBySlug('company-full-access', $companyId);
         if (!$role) {
             return;
         }
-        $configFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
-        $config = is_file($configFile) ? require $configFile : [];
+        $config = self::permissionsConfig();
         $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
         if ($extra !== []) {
             $this->grantRolePermissionsBySlugs((int) $role['id'], $extra);
@@ -412,11 +693,15 @@ final class AuthorizationService
         if ($userId < 1 || !self::isAgencyPermissionMatrixContext()) {
             return;
         }
-        $user = (new \Rateb\App\Models\User())->find($userId);
+        $user = (new User())->find($userId);
         if (!$user || !empty($user['is_super_admin'])) {
             return;
         }
-        $eligible = (int) ($user['company_id'] ?? 0) > 0;
+        $companyId = (int) ($user['company_id'] ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        $eligible = $companyId > 0;
         if (!$eligible) {
             $email = strtolower(trim((string) ($user['email'] ?? '')));
             $name = strtolower(trim((string) ($user['name'] ?? '')));
@@ -425,9 +710,10 @@ final class AuthorizationService
         if (!$eligible) {
             return;
         }
-        $role = (new Role())->queryOne(
-            "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
-        );
+        if ($companyId > 0) {
+            $this->ensureCompanyRoles($companyId);
+        }
+        $role = $this->findRoleBySlug('company-full-access', $companyId > 0 ? $companyId : null);
         if (!$role) {
             return;
         }
@@ -437,10 +723,7 @@ final class AuthorizationService
             ['uid' => $userId, 'rid' => $roleId]
         );
         if ($existing === null) {
-            $db = \Rateb\App\Core\Database::connection();
-            $db->prepare(
-                'INSERT IGNORE INTO rateb_user_roles (user_id, role_id) VALUES (:uid, :rid)'
-            )->execute(['uid' => $userId, 'rid' => $roleId]);
+            $this->assignRole($userId, $roleId);
         }
     }
 
@@ -449,6 +732,7 @@ final class AuthorizationService
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
             return true;
         }
+
         return function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment();
     }
 }

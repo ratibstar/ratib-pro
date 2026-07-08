@@ -374,6 +374,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         $data['status'] = 'pending';
         try {
             $id = $this->model->create($data);
+            (new \Rateb\App\Services\AuthorizationService())->ensureCompanyRoles($id);
             (new \Rateb\App\Services\BranchService())->ensureMainBranch($id);
             (new AuditService())->log('create', $this->entityName, $id, $data);
             \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
@@ -1099,6 +1100,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $branchSvc = new \Rateb\App\Services\BranchService();
         $companyId = $this->scopedCompanyId();
+        $rolesCompanyId = $companyId > 0 ? $companyId : (int) ($item['company_id'] ?? 0);
+        if ($rolesCompanyId > 0) {
+            $authz->ensureCompanyRoles($rolesCompanyId);
+        }
+        $scopedRoles = $authz->allRoles($rolesCompanyId > 0 ? $rolesCompanyId : 0);
         $companies = $companyId > 0
             ? array_values(array_filter(
                 (new \Rateb\App\Models\Company())->all(200, 0),
@@ -1111,7 +1117,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-            'roles' => $authz->allRoles(),
+            'roles' => $scopedRoles,
             'companies' => $companies,
             'selectedRoles' => $userId > 0 ? $authz->getUserRoleIds($userId) : [],
             'selectedBranches' => $userId > 0 ? $branchSvc->getUserBranchIds($userId) : [],
@@ -1126,12 +1132,12 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'branchRestrictedRoleIds' => array_values(array_map(
                 static fn (array $role): int => (int) $role['id'],
                 array_filter(
-                    $authz->allRoles(),
+                    $scopedRoles,
                     static fn (array $role): bool => (new \Rateb\App\Services\BranchAccessService())
                         ->slugRequiresBranchAssignment((string) ($role['slug'] ?? ''))
                 )
             )),
-            'rolesGrouped' => $this->groupRolesForUserForm($authz->allRoles()),
+            'rolesGrouped' => $this->groupRolesForUserForm($scopedRoles),
         ];
     }
 
@@ -1350,9 +1356,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
 
         if ($roleIds === [] && $companyId > 0) {
-            $roleRow = (new User())->queryOne(
-                "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
-            );
+            $authz = new \Rateb\App\Services\AuthorizationService();
+            $authz->ensureCompanyRoles($companyId);
+            $roleRow = $authz->findRoleBySlug('company-full-access', $companyId);
             if ($roleRow) {
                 $roleIds = [(int) $roleRow['id']];
             }
@@ -1431,18 +1437,15 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
     {
         $page = max(1, (int) $this->input('page', 1));
         $limit = rateb_list_per_page();
-        $offset = ($page - 1) * $limit;
         $authz = new \Rateb\App\Services\AuthorizationService();
-        $items = $this->model->all($limit, $offset);
-        $seenSlugs = [];
-        $items = array_values(array_filter($items, static function (array $row) use (&$seenSlugs): bool {
-            $slug = (string) ($row['slug'] ?? '');
-            if ($slug === '' || isset($seenSlugs[$slug])) {
-                return false;
-            }
-            $seenSlugs[$slug] = true;
-            return true;
-        }));
+        $companyId = $this->scopedCompanyId();
+        if ($companyId > 0) {
+            $authz->ensureCompanyRoles($companyId);
+        }
+        $items = $authz->allRoles($companyId > 0 ? $companyId : 0);
+        $total = count($items);
+        $offset = ($page - 1) * $limit;
+        $items = array_slice($items, $offset, $limit);
         foreach ($items as &$row) {
             $row['permission_count'] = $authz->getRolePermissionCount((int) $row['id']);
             if (function_exists('rateb_role_label')) {
@@ -1464,7 +1467,7 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         $this->view($this->viewPrefix . '/index', [
             'title' => __($this->entityName),
             'items' => $items,
-            'total' => $this->model->count(),
+            'total' => $total,
             'page' => $page,
             'limit' => $limit,
             'routePrefix' => $this->routePrefix,
@@ -1485,7 +1488,7 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
     {
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
-        if (!$item) {
+        if (!$item || !$this->roleInScope($item)) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
             return;
@@ -1516,6 +1519,10 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $this->collectData();
+        $companyId = $this->scopedCompanyId();
+        if ($companyId > 0) {
+            $data['company_id'] = $companyId;
+        }
         $permIds = array_map('intval', (array) $this->input('permission_ids', []));
         $id = $this->model->create($data);
         (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
@@ -1531,6 +1538,11 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $existing = $this->model->find($id);
+        if (!$existing || !$this->roleInScope($existing)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $data = $this->collectData();
         $permIds = array_map('intval', (array) $this->input('permission_ids', []));
         $this->model->update($id, $data);
@@ -1562,6 +1574,11 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         }
         $id = (int) ($params['id'] ?? 0);
         if ($id < 1) {
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $existing = $this->model->find($id);
+        if (!$existing || !$this->roleInScope($existing)) {
+            SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
         $this->purgeRoleLinks([$id]);
@@ -1602,6 +1619,25 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
         }
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    private function scopedCompanyId(): int
+    {
+        return \Rateb\App\Services\AuthorizationService::resolveMatrixCompanyId();
+    }
+
+    /** @param array<string, mixed>|null $role */
+    private function roleInScope(?array $role): bool
+    {
+        if ($role === null) {
+            return false;
+        }
+        $companyId = $this->scopedCompanyId();
+        if ($companyId < 1) {
+            return true;
+        }
+
+        return (int) ($role['company_id'] ?? 0) === $companyId;
     }
 }
 

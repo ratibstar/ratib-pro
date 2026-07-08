@@ -99,6 +99,29 @@ return [
     /** Default role slug for demo / full company ERP access. */
     'company_full_access_role' => 'company-full-access',
 
+    /** Global platform roles (company_id NULL — one row each, not tenant-scoped). */
+    'platform_role_slugs' => [
+        'super-admin',
+        'access-manager',
+        'accountant',
+        'accounting-approver',
+    ],
+
+    /** Tenant roles cloned per company (company_id = rateb_companies.id). */
+    'tenant_role_slugs' => [
+        'company-full-access',
+        'hq_admin',
+        'hq_manager',
+        'branch_manager',
+        'branch_user',
+        'procurement-manager',
+        'inventory-manager',
+        'hr-manager',
+        'pos_cashier',
+        'pos_supervisor',
+        'pos_manager',
+    ],
+
     /** Extra permission slugs granted to company-full-access on dedicated / agency ERP hosts only. */
     'dedicated_company_admin_slugs' => [
         'access.manage',

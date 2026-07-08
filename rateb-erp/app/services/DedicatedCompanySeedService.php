@@ -42,18 +42,7 @@ final class DedicatedCompanySeedService
             $this->ensureDedicatedSubscription($companyId, $plan);
             $userId = $this->ensureDedicatedAdminUser($companyId, $email, $contactName, $password);
 
-            $roleRow = (new User())->queryOne(
-                "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
-            );
-            if ($roleRow) {
-                $hasRole = (new User())->queryOne(
-                    'SELECT 1 FROM rateb_user_roles WHERE user_id = :uid AND role_id = :rid LIMIT 1',
-                    ['uid' => $userId, 'rid' => (int) $roleRow['id']]
-                );
-                if (!$hasRole) {
-                    (new AuthorizationService())->assignRole($userId, (int) $roleRow['id']);
-                }
-            }
+            $this->assignCompanyFullAccessRole($userId, $companyId);
 
             (new BarcodeLoginService())->ensureUserBarcode($userId);
             (new BranchService())->ensureMainBranch($companyId);
@@ -156,18 +145,7 @@ final class DedicatedCompanySeedService
             );
         }
 
-        $roleRow = (new User())->queryOne(
-            "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
-        );
-        if ($roleRow) {
-            $hasRole = (new User())->queryOne(
-                'SELECT 1 FROM rateb_user_roles WHERE user_id = :uid AND role_id = :rid LIMIT 1',
-                ['uid' => $userId, 'rid' => (int) $roleRow['id']]
-            );
-            if (!$hasRole) {
-                (new AuthorizationService())->assignRole($userId, (int) $roleRow['id']);
-            }
-        }
+        $this->assignCompanyFullAccessRole($userId, $companyId);
 
         (new BarcodeLoginService())->ensureUserBarcode($userId);
 
@@ -216,11 +194,10 @@ final class DedicatedCompanySeedService
             $tenantUsers = $userModel->query(
                 'SELECT id, email, name FROM rateb_users WHERE is_super_admin = 0 OR is_super_admin IS NULL ORDER BY id ASC'
             );
-            $roleRow = $userModel->queryOne(
-                "SELECT id FROM rateb_roles WHERE slug = 'company-full-access' LIMIT 1"
-            );
-            $roleId = $roleRow ? (int) $roleRow['id'] : 0;
             $auth = new AuthorizationService();
+            $auth->ensureCompanyRoles($companyId);
+            $role = $auth->findRoleBySlug('company-full-access', $companyId);
+            $roleId = $role ? (int) $role['id'] : 0;
             $barcode = new BarcodeLoginService();
 
             foreach ($tenantUsers as $user) {
@@ -533,5 +510,26 @@ final class DedicatedCompanySeedService
         }
 
         return $slug;
+    }
+
+    private function assignCompanyFullAccessRole(int $userId, int $companyId): void
+    {
+        if ($userId < 1 || $companyId < 1) {
+            return;
+        }
+        $authz = new AuthorizationService();
+        $authz->ensureCompanyRoles($companyId);
+        $role = $authz->findRoleBySlug('company-full-access', $companyId);
+        if (!$role) {
+            return;
+        }
+        $roleId = (int) $role['id'];
+        $hasRole = (new User())->queryOne(
+            'SELECT 1 FROM rateb_user_roles WHERE user_id = :uid AND role_id = :rid LIMIT 1',
+            ['uid' => $userId, 'rid' => $roleId]
+        );
+        if (!$hasRole) {
+            $authz->assignRole($userId, $roleId);
+        }
     }
 }

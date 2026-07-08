@@ -21,6 +21,9 @@
         </div>
         <div class="rateb-card-body py-2 px-3 border-bottom">
             <p class="text-muted small mb-1"><?php echo __('permission_matrix_help'); ?></p>
+            <?php if (!empty($scopedCompanyId)) { ?>
+            <p class="text-muted small mb-1"><i class="fas fa-building me-1"></i><?php echo __('permission_matrix_tenant_scope_note'); ?></p>
+            <?php } ?>
             <p class="text-muted small mb-0"><i class="fas fa-circle-info me-1"></i><?php echo __('permission_matrix_implies_note'); ?></p>
         </div>
         <div class="rateb-card-body p-0">

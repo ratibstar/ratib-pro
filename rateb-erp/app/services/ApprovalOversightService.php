@@ -1040,6 +1040,7 @@ final class ApprovalOversightService
             }
             if ($action === 'approve') {
                 $model->activate($recordId);
+                (new \Rateb\App\Services\AuthorizationService())->ensureCompanyRoles($recordId);
                 $planId = (int) ($row['plan_id'] ?? 0);
                 if ($planId > 0) {
                     (new \Rateb\App\Services\BillingService())->ensureInitialSubscription($recordId, $planId, 'active');
