@@ -1678,6 +1678,8 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'module', 'label' => 'module'],
         ];
 
+        $catalogLocked = function_exists('rateb_tenant_permission_catalog_locked') && rateb_tenant_permission_catalog_locked();
+
         $this->view($this->viewPrefix . '/index', [
             'title' => __($this->entityName),
             'items' => $items,
@@ -1687,10 +1689,49 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $displayFields,
             'csrf' => Csrf::token(),
-            'bulkEnabled' => $this->bulkEnabled,
-            'createEnabled' => $this->createEnabled,
-            'actionsEnabled' => $this->actionsEnabled,
+            'bulkEnabled' => $catalogLocked ? false : $this->bulkEnabled,
+            'createEnabled' => $catalogLocked ? false : $this->createEnabled,
+            'actionsEnabled' => $catalogLocked ? false : $this->actionsEnabled,
+            'catalogLocked' => $catalogLocked,
         ], $this->layout());
+    }
+
+    public function create(): void
+    {
+        $this->guardPermissionCatalogWrite();
+        parent::create();
+    }
+
+    public function store(): void
+    {
+        $this->guardPermissionCatalogWrite();
+        parent::store();
+    }
+
+    public function update(array $params): void
+    {
+        $this->guardPermissionCatalogWrite();
+        parent::update($params);
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardPermissionCatalogWrite();
+        parent::destroy($params);
+    }
+
+    public function bulkDestroy(): void
+    {
+        $this->guardPermissionCatalogWrite();
+        parent::bulkDestroy();
+    }
+
+    private function guardPermissionCatalogWrite(): void
+    {
+        if (function_exists('rateb_tenant_permission_catalog_locked') && rateb_tenant_permission_catalog_locked()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('tenant_permission_catalog_locked'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
     }
 }
 

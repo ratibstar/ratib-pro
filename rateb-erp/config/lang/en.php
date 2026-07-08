@@ -754,6 +754,8 @@ return [
     'permission_matrix' => 'Permissions Matrix',
     'permission_matrix_help' => 'Enable or disable permissions per role in one place. Assign roles to users from the Users page.',
     'permission_matrix_tenant_scope_note' => 'This matrix applies to your company only — changes here do not affect other subscribers.',
+    'access_control_tenant_scope_note' => 'Manage users, roles, and the permission matrix for your company only. Global permission definitions are maintained by the platform.',
+    'tenant_permission_catalog_locked' => 'The global permissions catalog is managed by the platform. Use roles and the permission matrix for your company.',
     'permission_matrix_implies_note' => 'Access Control Manage includes users, roles, and permissions. Consolidated reports include inter-branch balances. Revoking View Branches hides the entire branches section.',
     'branches_permissions_matrix_note' => 'View Branches (branches.view) is the master switch for the branches menu and all branch pages on agency ERP hosts. Remove it from a role to hide branches from those users.',
     'cms' => 'Content Management',

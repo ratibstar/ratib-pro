@@ -84,17 +84,22 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['documents', 'documents', 'fa-folder-open', 'documents'],
 ], 'fa-briefcase');
 if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
-    $opsSection(__('access_control'), [
+    $accessNavLinks = [
         ['access-control', 'access_control', 'fa-shield-halved', '', 'access.manage'],
         ['access-control/matrix', 'permission_matrix', 'fa-table-cells', '', 'access.manage'],
         ['users', 'users', 'fa-users', '', 'access.manage'],
         ['roles', 'roles', 'fa-user-shield', '', 'access.manage'],
-        ['permissions', 'permissions', 'fa-key', '', 'access.manage'],
+    ];
+    if (!function_exists('rateb_tenant_permission_catalog_locked') || !rateb_tenant_permission_catalog_locked()) {
+        $accessNavLinks[] = ['permissions', 'permissions', 'fa-key', '', 'access.manage'];
+    }
+    $accessNavLinks = array_merge($accessNavLinks, [
         ['audit-logs', 'audit_logs', 'fa-clipboard-list', '', 'settings.manage'],
         ['support-tickets', 'support_tickets', 'fa-life-ring', '', 'settings.manage'],
         ['email-templates', 'email_templates', 'fa-envelope', '', 'settings.manage'],
         ['sms-templates', 'sms_templates', 'fa-sms', '', 'settings.manage'],
-    ], 'fa-key');
+    ]);
+    $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
 }
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');

@@ -1,4 +1,6 @@
 <?php $s = $stats ?? []; ?>
+<?php $tenantScoped = !empty($scopedCompanyId); ?>
+<?php $catalogLocked = function_exists('rateb_tenant_permission_catalog_locked') && rateb_tenant_permission_catalog_locked(); ?>
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="rateb-widget">
@@ -19,6 +21,9 @@
         </div>
     </div>
 </div>
+<?php if ($tenantScoped) { ?>
+<p class="text-muted small mb-3"><i class="fas fa-building me-1"></i><?php echo __('access_control_tenant_scope_note'); ?></p>
+<?php } ?>
 <div class="row g-3">
     <div class="col-md-4">
         <div class="rateb-card h-100">
@@ -38,6 +43,7 @@
             </div>
         </div>
     </div>
+    <?php if (!$catalogLocked) { ?>
     <div class="col-md-4">
         <div class="rateb-card h-100">
             <div class="rateb-card-body">
@@ -47,6 +53,7 @@
             </div>
         </div>
     </div>
+    <?php } ?>
 </div>
 <div class="rateb-card mt-3">
     <div class="rateb-card-body d-flex flex-wrap justify-content-between align-items-center gap-3">

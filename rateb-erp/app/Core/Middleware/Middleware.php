@@ -56,6 +56,9 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             );
             return false;
         }
+        if (function_exists('rateb_ensure_agency_access_permissions_once')) {
+            rateb_ensure_agency_access_permissions_once();
+        }
 
         return self::enforceActiveCompanyTenant();
     }

@@ -74,14 +74,32 @@ if (!function_exists('rateb_is_agency_erp_host')) {
 }
 
 if (!function_exists('rateb_company_access_routes_enabled')) {
-    /** Agency / dedicated ERP hosts expose access-control under admin/ops (not platform super-admin only). */
+    /** Tenant access-control under admin/ops — agency, dedicated, and main SaaS company admins. */
     function rateb_company_access_routes_enabled(): bool
     {
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
             return true;
         }
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
 
-        return function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment();
+        return function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+    }
+}
+
+if (!function_exists('rateb_tenant_permission_catalog_locked')) {
+    /** Global permission catalog is platform-only; tenants use roles + matrix. */
+    function rateb_tenant_permission_catalog_locked(): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return false;
+        }
+        if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled()) {
+            return false;
+        }
+
+        return \Rateb\App\Services\AuthorizationService::resolveMatrixCompanyId() > 0;
     }
 }
 
@@ -136,7 +154,7 @@ if (!function_exists('rateb_ensure_agency_schema_once')) {
 }
 
 if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
-    /** Grant company-full-access role access.manage on agency DBs (once per login session). */
+    /** Bootstrap tenant roles + access.manage for company admins (agency, dedicated, main SaaS). */
     function rateb_ensure_agency_access_permissions_once(): void
     {
         static $ran = false;
@@ -144,13 +162,21 @@ if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
             return;
         }
         $ran = true;
-        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+        $agency = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+        $saasTenant = function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host()
+            && !$agency;
+        if (!$agency && !$saasTenant) {
             return;
         }
         if (!\Rateb\App\Core\Auth::check()) {
             return;
         }
-        if (\Rateb\App\Core\SessionManager::get('rateb_agency_access_perms_synced') === 1) {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return;
+        }
+        $sessionKey = $agency ? 'rateb_agency_access_perms_synced' : 'rateb_saas_tenant_access_perms_synced';
+        if (\Rateb\App\Core\SessionManager::get($sessionKey) === 1) {
             return;
         }
         try {
@@ -159,10 +185,12 @@ if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
             $companyId = \Rateb\App\Services\AuthorizationService::resolveMatrixCompanyId();
             if ($companyId > 0) {
                 $authz->ensureCompanyRoles($companyId);
+                $authz->refreshTenantSelfServicePermissions($companyId);
             }
-            $authz->refreshDedicatedCompanyAccessPermissions();
-            $authz->ensureAgencyCompanyAdminRole((int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0));
-            \Rateb\App\Core\SessionManager::set('rateb_agency_access_perms_synced', 1);
+            if ($agency) {
+                $authz->ensureAgencyCompanyAdminRole((int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0));
+            }
+            \Rateb\App\Core\SessionManager::set($sessionKey, 1);
         } catch (\Throwable $e) {
             error_log('rateb_ensure_agency_access_permissions_once: ' . $e->getMessage());
         }
@@ -170,10 +198,10 @@ if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
 }
 
 if (!function_exists('rateb_is_agency_company_ops_admin')) {
-    /** Primary company admin on agency ERP (full-access role or dedicated admin login). */
+    /** Primary company admin — agency, dedicated, or main SaaS tenant (full-access / access-manager). */
     function rateb_is_agency_company_ops_admin(?int $userId = null): bool
     {
-        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+        if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled()) {
             return false;
         }
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
@@ -184,24 +212,29 @@ if (!function_exists('rateb_is_agency_company_ops_admin')) {
             return false;
         }
         try {
-            $row = (new \Rateb\App\Models\Role())->queryOne(
-                "SELECT 1 FROM rateb_user_roles ur
-                 INNER JOIN rateb_roles r ON r.id = ur.role_id
-                 WHERE ur.user_id = :uid
-                   AND r.slug IN ('company-full-access', 'access-manager', 'hq_admin')
-                 LIMIT 1",
-                ['uid' => $userId]
-            );
-            if ($row !== null) {
-                return true;
-            }
             $user = (new \Rateb\App\Models\User())->find($userId);
             if (!$user || !empty($user['is_super_admin'])) {
                 return false;
             }
-            $email = strtolower(trim((string) ($user['email'] ?? '')));
-            $name = strtolower(trim((string) ($user['name'] ?? '')));
-            if ($email === 'admin@local' || $name === 'admin' || str_starts_with($email, 'admin+')) {
+            $companyId = (int) ($user['company_id'] ?? 0);
+            if ($companyId < 1) {
+                $email = strtolower(trim((string) ($user['email'] ?? '')));
+                $name = strtolower(trim((string) ($user['name'] ?? '')));
+                if ($email === 'admin@local' || $name === 'admin' || str_starts_with($email, 'admin+')) {
+                    return true;
+                }
+
+                return false;
+            }
+            $row = (new \Rateb\App\Models\Role())->queryOne(
+                "SELECT 1 FROM rateb_user_roles ur
+                 INNER JOIN rateb_roles r ON r.id = ur.role_id AND r.company_id = :cid
+                 WHERE ur.user_id = :uid
+                   AND r.slug IN ('company-full-access', 'access-manager', 'hq_admin')
+                 LIMIT 1",
+                ['uid' => $userId, 'cid' => $companyId]
+            );
+            if ($row !== null) {
                 return true;
             }
         } catch (\Throwable $e) {

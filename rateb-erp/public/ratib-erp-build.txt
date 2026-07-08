@@ -1,1 +1,1 @@
-20260709-tenant-roles-phase2-v1
+20260709-tenant-access-self-service-v1

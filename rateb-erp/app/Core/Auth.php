@@ -141,6 +141,7 @@ final class Auth
         TenantContext::setSuperAdmin($isSuper);
         TenantContext::setCompanyId($user['company_id'] !== null ? (int) $user['company_id'] : null);
         SessionManager::forget('rateb_agency_access_perms_synced');
+        SessionManager::forget('rateb_saas_tenant_access_perms_synced');
         if (function_exists('rateb_ensure_agency_access_permissions_once')) {
             rateb_ensure_agency_access_permissions_once();
         }

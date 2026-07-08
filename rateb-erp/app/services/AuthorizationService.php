@@ -668,11 +668,15 @@ final class AuthorizationService
 
     public function refreshDedicatedCompanyAccessPermissions(): void
     {
-        if (!self::isAgencyPermissionMatrixContext()) {
-            return;
-        }
         $companyId = self::resolveMatrixCompanyId();
-        if ($companyId < 1) {
+        if ($companyId > 0) {
+            $this->refreshTenantSelfServicePermissions($companyId);
+        }
+    }
+
+    public function refreshTenantSelfServicePermissions(int $companyId): void
+    {
+        if ($companyId < 1 || !self::isAgencyPermissionMatrixContext()) {
             return;
         }
         $this->ensureCompanyRoles($companyId);
@@ -680,10 +684,12 @@ final class AuthorizationService
         if (!$role) {
             return;
         }
+        $roleId = (int) $role['id'];
+        $this->syncCompanyFullAccessPermissions($roleId);
         $config = self::permissionsConfig();
         $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
         if ($extra !== []) {
-            $this->grantRolePermissionsBySlugs((int) $role['id'], $extra);
+            $this->grantRolePermissionsBySlugs($roleId, $extra);
         }
     }
 
@@ -732,7 +738,10 @@ final class AuthorizationService
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
             return true;
         }
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
 
-        return function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment();
+        return function_exists('rateb_tenant_permission_catalog_locked') && rateb_tenant_permission_catalog_locked();
     }
 }
