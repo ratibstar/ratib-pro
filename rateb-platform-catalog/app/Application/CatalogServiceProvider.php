@@ -132,6 +132,8 @@ use Rateb\PlatformCatalog\Http\Middleware\CorrelationIdMiddleware;
 use Rateb\PlatformCatalog\Http\Middleware\IdempotencyMiddleware;
 use Rateb\PlatformCatalog\Http\Middleware\RateLimitMiddleware;
 use Rateb\PlatformCatalog\Infrastructure\Logging\FileStructuredLogger;
+use Rateb\PlatformCatalog\Infrastructure\Http\HttpClientInterface;
+use Rateb\PlatformCatalog\Infrastructure\Http\NativeHttpClient;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Migrations\MigrationRunner;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\BarcodeUniquenessReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\SkuUniquenessReadRepositoryInterface;
@@ -305,6 +307,8 @@ use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlWorkflowC
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlWorkflowReadRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSupplierRepository;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\CleanupJobHandler;
+use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\BulkPublishJobHandler;
+use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\BulkArchiveJobHandler;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\ExportChunkJobHandler;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\ImportChunkJobHandler;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\OutboxDispatchJobHandler;
@@ -376,6 +380,7 @@ final class CatalogServiceProvider
             $c->get(AuditEventWriteRepositoryInterface::class)
         ));
         $container->set(StorageAdapterInterface::class, static fn (): StorageAdapterInterface => StorageAdapterFactory::create());
+        $container->set(HttpClientInterface::class, static fn (): HttpClientInterface => new NativeHttpClient());
         $container->set(SignedUrlGenerator::class, static function (): SignedUrlGenerator {
             $cdnBase = defined('RATEB_PLATFORM_CATALOG_CDN_BASE')
                 ? (string) RATEB_PLATFORM_CATALOG_CDN_BASE
@@ -872,7 +877,16 @@ final class CatalogServiceProvider
         ));
         $container->set(WebhookDispatchJobHandler::class, static fn (Container $c): WebhookDispatchJobHandler => new WebhookDispatchJobHandler(
             $c->get(WebhookDeliveryWriteRepositoryInterface::class),
-            $c->get(IntegrationOutboxWriteRepositoryInterface::class)
+            $c->get(IntegrationOutboxWriteRepositoryInterface::class),
+            $c->get(HttpClientInterface::class)
+        ));
+        $container->set(BulkPublishJobHandler::class, static fn (Container $c): BulkPublishJobHandler => new BulkPublishJobHandler(
+            $c->get(WorkflowService::class),
+            $c->get(ProductReadRepositoryInterface::class)
+        ));
+        $container->set(BulkArchiveJobHandler::class, static fn (Container $c): BulkArchiveJobHandler => new BulkArchiveJobHandler(
+            $c->get(WorkflowService::class),
+            $c->get(ProductReadRepositoryInterface::class)
         ));
         $container->set(OutboxDispatchJobHandler::class, static fn (Container $c): OutboxDispatchJobHandler => new OutboxDispatchJobHandler(
             $c->get(IntegrationOutboxService::class)
@@ -893,6 +907,8 @@ final class CatalogServiceProvider
             $processor->registerHandler($c->get(ExportChunkJobHandler::class));
             $processor->registerHandler($c->get(CleanupJobHandler::class));
             $processor->registerHandler($c->get(ImportChunkJobHandler::class));
+            $processor->registerHandler($c->get(BulkPublishJobHandler::class));
+            $processor->registerHandler($c->get(BulkArchiveJobHandler::class));
             $processor->registerHandler($c->get(WebhookDispatchJobHandler::class));
             $processor->registerHandler($c->get(OutboxDispatchJobHandler::class));
             $processor->registerHandler($c->get(DuplicateScanJobHandler::class));

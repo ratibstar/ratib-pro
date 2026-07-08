@@ -123,7 +123,7 @@ final class HealthService
             return $this->s3Configured();
         }
 
-        return $this->localStorageWritable();
+        return $this->storageAdapterWritable();
     }
 
     private function s3Configured(): bool
@@ -137,24 +137,18 @@ final class HealthService
         }
     }
 
-    private function localStorageWritable(): bool
+    private function storageAdapterWritable(): bool
     {
-        $storageRoot = defined('RATEB_PLATFORM_CATALOG_STORAGE_PATH')
-            ? (string) RATEB_PLATFORM_CATALOG_STORAGE_PATH
-            : (defined('RATEB_CATALOG_ROOT') ? RATEB_CATALOG_ROOT . '/storage' : '');
+        try {
+            $storage = StorageAdapterFactory::create();
+            $key = 'health/.ready_probe_' . bin2hex(random_bytes(8));
+            $storage->put($key, '1', ['mime_type' => 'text/plain']);
+            $storage->delete($key);
 
-        if ($storageRoot === '' || !is_dir($storageRoot)) {
+            return true;
+        } catch (\Throwable) {
             return false;
         }
-
-        $probe = $storageRoot . '/.ready_probe';
-        if (@file_put_contents($probe, '1') === false) {
-            return false;
-        }
-
-        @unlink($probe);
-
-        return true;
     }
 
     private function resolveSearchAdapter(): SearchAdapterInterface

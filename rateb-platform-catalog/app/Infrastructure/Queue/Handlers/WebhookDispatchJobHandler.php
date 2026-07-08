@@ -7,6 +7,7 @@ namespace Rateb\PlatformCatalog\Infrastructure\Queue\Handlers;
 use Rateb\PlatformCatalog\Application\Support\CorrelationIdContext;
 use Rateb\PlatformCatalog\Application\Support\SecretCipher;
 use Rateb\PlatformCatalog\Application\Support\WebhookHmacSigner;
+use Rateb\PlatformCatalog\Infrastructure\Http\HttpClientInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IntegrationOutboxWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\WebhookDeliveryWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Contracts\JobHandlerInterface;
@@ -18,7 +19,8 @@ final class WebhookDispatchJobHandler implements JobHandlerInterface
 
     public function __construct(
         private readonly WebhookDeliveryWriteRepositoryInterface $deliveryRepository,
-        private readonly IntegrationOutboxWriteRepositoryInterface $outboxRepository
+        private readonly IntegrationOutboxWriteRepositoryInterface $outboxRepository,
+        private readonly HttpClientInterface $httpClient
     ) {
     }
 
@@ -87,27 +89,13 @@ final class WebhookDispatchJobHandler implements JobHandlerInterface
             return ['status' => 200, 'body' => 'ok'];
         }
 
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => implode("\r\n", [
-                    'Content-Type: application/json',
-                    'X-Webhook-Signature: ' . $signature,
-                    'X-Webhook-Timestamp: ' . (string) $timestamp,
-                    'X-Correlation-Id: ' . (CorrelationIdContext::get() ?? $eventId),
-                ]),
-                'content' => $body,
-                'timeout' => 15,
-                'ignore_errors' => true,
-            ],
-        ]);
+        $headers = [
+            'Content-Type: application/json',
+            'X-Webhook-Signature: ' . $signature,
+            'X-Webhook-Timestamp: ' . (string) $timestamp,
+            'X-Correlation-Id: ' . (CorrelationIdContext::get() ?? $eventId),
+        ];
 
-        $responseBody = @file_get_contents($url, false, $context);
-        $status = 0;
-        if (isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', (string) $http_response_header[0], $matches) === 1) {
-            $status = (int) $matches[1];
-        }
-
-        return ['status' => $status, 'body' => is_string($responseBody) ? $responseBody : null];
+        return $this->httpClient->postRaw($url, $body, $headers, 15, 10);
     }
 }

@@ -93,6 +93,7 @@ final class M015ImportStaging extends AbstractMigration
     public function down(): void
     {
         // Drop in reverse dependency order (FK children first).
+        // This method is required by MigrationInterface for safe rollbacks/deploys.
         $this->exec(
             'DROP TABLE IF EXISTS import_batch_rows;
             DROP TABLE IF EXISTS import_batches;
