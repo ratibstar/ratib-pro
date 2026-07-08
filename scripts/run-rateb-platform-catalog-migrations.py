@@ -69,6 +69,13 @@ def main() -> int:
         print("::warning::Platform Catalog migrations skipped — no SSH credentials", flush=True)
         return 0
     if code != 0:
+        if "Access denied for user 'root'@'localhost'" in body:
+            print(
+                "::warning::Platform Catalog migrations skipped — set RATEB_PLATFORM_CATALOG_DB_* "
+                "or DB_USER/DB_PASS in server .env (CLI must not use root)",
+                flush=True,
+            )
+            return 0
         print("::error::Platform Catalog migration failed", flush=True)
         return 1
     if "Migration failed:" in body or "Refusing to run catalog migrations" in body:
