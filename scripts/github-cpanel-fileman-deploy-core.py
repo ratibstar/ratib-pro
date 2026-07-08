@@ -644,6 +644,37 @@ def ratib_cc_control_panel_files() -> list[str]:
     return sorted(set(out))
 
 
+def rateb_platform_catalog_bundle_files() -> list[str]:
+    """Upload full rateb-platform-catalog runtime tree (exclude storage, tests, docs, binaries)."""
+    root = os.path.join(os.getcwd(), "rateb-platform-catalog")
+    if not os.path.isdir(root):
+        return []
+    skip_prefixes = (
+        "rateb-platform-catalog/storage/",
+        "rateb-platform-catalog/tests/",
+        "rateb-platform-catalog/docs/",
+    )
+    skip_names = frozenset({"meilisearch.exe"})
+    out: list[str] = []
+    for dirpath, _dirnames, filenames in os.walk(root):
+        rel_dir = os.path.relpath(dirpath, os.getcwd()).replace("\\", "/")
+        if rel_dir == "rateb-platform-catalog":
+            rel_dir_prefix = "rateb-platform-catalog/"
+        else:
+            rel_dir_prefix = rel_dir + "/"
+        if any(rel_dir_prefix.startswith(prefix) or rel_dir == prefix.rstrip("/") for prefix in skip_prefixes):
+            continue
+        for name in filenames:
+            if name in skip_names or name.endswith(".mdb"):
+                continue
+            rel = os.path.relpath(os.path.join(dirpath, name), os.getcwd()).replace("\\", "/")
+            if any(rel.startswith(prefix) for prefix in skip_prefixes):
+                continue
+            if is_auto_deploy_path(rel):
+                out.append(rel)
+    return sorted(set(out))
+
+
 def is_auto_deploy_path(path: str) -> bool:
     if not path or path.startswith("."):
         return False
@@ -1037,6 +1068,17 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
             added += 1
         if added:
             print(f"fast deploy: +{added} ratib-contact-center bundle file(s)", flush=True)
+    if os.path.isdir(os.path.join(os.getcwd(), "rateb-platform-catalog")):
+        bundle = rateb_platform_catalog_bundle_files()
+        added = 0
+        for path in bundle:
+            if path in seen:
+                continue
+            extras.append(path)
+            seen.add(path)
+            added += 1
+        if added:
+            print(f"fast deploy: +{added} rateb-platform-catalog bundle file(s)", flush=True)
     files = core + extras + [marker]
     if extras:
         print(
