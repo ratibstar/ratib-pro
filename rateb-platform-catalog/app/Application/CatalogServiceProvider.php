@@ -9,6 +9,7 @@ use Rateb\PlatformCatalog\Application\Events\EventDispatcher;
 use Rateb\PlatformCatalog\Application\Support\GatewayTrustConfig;
 use Rateb\PlatformCatalog\Application\Support\PlatformIdentityResolver;
 use Rateb\PlatformCatalog\Application\Policies\AssetTypePolicy;
+use Rateb\PlatformCatalog\Application\Policies\BrandPolicy;
 use Rateb\PlatformCatalog\Application\Policies\BulkPolicy;
 use Rateb\PlatformCatalog\Application\Policies\ChannelPolicy;
 use Rateb\PlatformCatalog\Application\Policies\CollectionPolicy;
