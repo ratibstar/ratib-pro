@@ -6,6 +6,7 @@ namespace Rateb\PlatformCatalog\Http\Controllers\Api\V1;
 
 use Rateb\PlatformCatalog\Application\Services\FileService;
 use Rateb\PlatformCatalog\Application\Services\MediaService;
+use Rateb\PlatformCatalog\Infrastructure\Storage\StorageMimeResolver;
 
 final class MediaServeController
 {
@@ -42,13 +43,18 @@ final class MediaServeController
     /** @param resource $stream */
     private function stream($stream, string $mimeType, string $cacheControl): void
     {
-        if (!headers_sent()) {
-            header('Content-Type: ' . $mimeType);
-            header('Cache-Control: ' . $cacheControl);
-        }
+        try {
+            if (!headers_sent()) {
+                header('Content-Type: ' . StorageMimeResolver::sanitizeForHeader($mimeType));
+                header('Cache-Control: ' . $cacheControl);
+            }
 
-        fpassthru($stream);
-        fclose($stream);
+            fpassthru($stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
         exit;
     }
 }

@@ -75,4 +75,12 @@ final class StorageMimeResolver
 
         return null;
     }
+
+    public static function sanitizeForHeader(string $mimeType): string
+    {
+        $parts = preg_split('/\R/', $mimeType, 2);
+        $mimeType = trim((string) ($parts[0] ?? ''));
+
+        return $mimeType !== '' ? $mimeType : 'application/octet-stream';
+    }
 }

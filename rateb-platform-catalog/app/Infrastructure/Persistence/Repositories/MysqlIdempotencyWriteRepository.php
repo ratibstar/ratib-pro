@@ -125,9 +125,16 @@ final class MysqlIdempotencyWriteRepository extends BaseRepository implements Id
         }
 
         $this->deleteRow($idempotencyKey, $scope);
-        $this->insertPending($idempotencyKey, $scope, $requestHash, $expiresAt);
+        if ($this->insertPendingIfAbsent($idempotencyKey, $scope, $requestHash, $expiresAt)) {
+            return new IdempotencyAcquireResult(IdempotencyAcquireResult::PROCESS);
+        }
 
-        return new IdempotencyAcquireResult(IdempotencyAcquireResult::PROCESS);
+        $row = $this->fetchRowForUpdate($idempotencyKey, $scope);
+        if ($row === null) {
+            throw new \RuntimeException('Idempotency acquisition failed after concurrent insert');
+        }
+
+        return $this->evaluateActiveRow($row, $idempotencyKey, $scope, $requestHash, $expiresAt);
     }
 
     /**
@@ -163,23 +170,6 @@ final class MysqlIdempotencyWriteRepository extends BaseRepository implements Id
         ]);
 
         return $stmt->rowCount() === 1;
-    }
-
-    private function insertPending(
-        string $idempotencyKey,
-        string $scope,
-        string $requestHash,
-        \DateTimeImmutable $expiresAt
-    ): void {
-        $this->writePdo->prepare(
-            'INSERT INTO idempotency_records (idempotency_key, scope, request_hash, response_status, response_body, expires_at)
-             VALUES (:idempotency_key, :scope, :request_hash, NULL, NULL, :expires_at)'
-        )->execute([
-            'idempotency_key' => $idempotencyKey,
-            'scope' => $scope,
-            'request_hash' => $requestHash,
-            'expires_at' => $expiresAt->format('Y-m-d H:i:s.u'),
-        ]);
     }
 
     private function deleteRow(string $idempotencyKey, string $scope): void

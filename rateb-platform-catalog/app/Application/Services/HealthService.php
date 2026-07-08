@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Rateb\PlatformCatalog\Application\Services;
 
 use Rateb\PlatformCatalog\Core\Database;
+use Rateb\PlatformCatalog\Infrastructure\Storage\S3Config;
+use Rateb\PlatformCatalog\Infrastructure\Storage\StorageAdapterFactory;
 
 final class HealthService
 {
@@ -30,7 +32,7 @@ final class HealthService
     {
         $checks = [
             'database' => Database::ping(true),
-            'storage' => $this->storageWritable(),
+            'storage' => $this->storageReady(),
         ];
 
         $ready = !in_array(false, $checks, true);
@@ -42,7 +44,28 @@ final class HealthService
         ];
     }
 
-    private function storageWritable(): bool
+    private function storageReady(): bool
+    {
+        $adapter = strtolower((string) (getenv('STORAGE_ADAPTER') ?: 'local'));
+        if ($adapter === 's3' && StorageAdapterFactory::s3Enabled()) {
+            return $this->s3Configured();
+        }
+
+        return $this->localStorageWritable();
+    }
+
+    private function s3Configured(): bool
+    {
+        try {
+            S3Config::fromEnvironment()->validate();
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function localStorageWritable(): bool
     {
         $storageRoot = defined('RATEB_PLATFORM_CATALOG_STORAGE_PATH')
             ? (string) RATEB_PLATFORM_CATALOG_STORAGE_PATH

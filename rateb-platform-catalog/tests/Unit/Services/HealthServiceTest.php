@@ -19,3 +19,22 @@ catalog_test('HealthService readiness checks storage writable', static function 
     catalog_assert_true(isset($payload['checks']['storage']));
     catalog_assert_true(is_bool($payload['checks']['storage']));
 });
+
+catalog_test('HealthService readiness accepts configured S3 without local storage path', static function (): void {
+    putenv('STORAGE_ADAPTER=s3');
+    putenv('CATALOG_S3_ENABLED=true');
+    putenv('S3_BUCKET=test-bucket');
+    putenv('S3_KEY=test-key');
+    putenv('S3_SECRET=test-secret');
+
+    $service = new HealthService();
+    $payload = $service->readiness();
+
+    catalog_assert_true($payload['checks']['storage']);
+
+    putenv('STORAGE_ADAPTER=local');
+    putenv('CATALOG_S3_ENABLED=false');
+    putenv('S3_BUCKET');
+    putenv('S3_KEY');
+    putenv('S3_SECRET');
+});

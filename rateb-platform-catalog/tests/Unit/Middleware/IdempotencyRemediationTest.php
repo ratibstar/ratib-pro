@@ -372,6 +372,60 @@ catalog_test('Idempotency does not cache 422 validation responses', static funct
     unset($_SERVER['HTTP_IDEMPOTENCY_KEY']);
 });
 
+catalog_test('IdempotencyMiddleware rejects scope exceeding schema length', static function (): void {
+    $_SERVER['HTTP_IDEMPOTENCY_KEY'] = 'scope-key';
+    $_SERVER['HTTP_X_IDEMPOTENCY_SCOPE'] = str_repeat('x', 81);
+    Request::seedRawBodyForTesting('{}');
+
+    $middleware = new IdempotencyMiddleware(
+        idempotency_test_read_repository(),
+        new class implements IdempotencyWriteRepositoryInterface {
+            public function acquire(
+                string $idempotencyKey,
+                string $scope,
+                string $requestHash,
+                DateTimeImmutable $expiresAt
+            ): IdempotencyAcquireResult {
+                throw new RuntimeException('acquire should not be called');
+            }
+
+            public function finalize(
+                string $idempotencyKey,
+                string $scope,
+                string $requestHash,
+                int $responseStatus,
+                ?array $responseBody,
+                DateTimeImmutable $expiresAt
+            ): void {
+            }
+
+            public function abandon(string $idempotencyKey, string $scope): void
+            {
+            }
+
+            public function store(
+                string $idempotencyKey,
+                string $scope,
+                string $requestHash,
+                int $responseStatus,
+                ?array $responseBody,
+                DateTimeImmutable $expiresAt
+            ): void {
+            }
+        }
+    );
+
+    try {
+        catalog_assert_false($middleware->handle('POST', '/catalog/products'));
+    } catch (\Rateb\PlatformCatalog\Core\ResponseSentException $e) {
+        catalog_assert_same(400, $e->status);
+        catalog_assert_true(str_contains((string) ($e->payload['errors'][0]['message'] ?? ''), 'X-Idempotency-Scope'));
+    }
+
+    Request::resetCachedInput();
+    unset($_SERVER['HTTP_IDEMPOTENCY_KEY'], $_SERVER['HTTP_X_IDEMPOTENCY_SCOPE']);
+});
+
 catalog_test('Idempotency hash conflict is not cached as business replay', static function (): void {
     $read = idempotency_test_read_repository();
     $write = new class implements IdempotencyWriteRepositoryInterface {

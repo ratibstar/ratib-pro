@@ -45,6 +45,17 @@ catalog_test('StorageMimeResolver detects mime from local storage file', static 
     @unlink($absolute);
 });
 
+catalog_test('StorageMimeResolver sanitizes header injection characters', static function (): void {
+    catalog_assert_same(
+        'application/pdf',
+        StorageMimeResolver::sanitizeForHeader("application/pdf\r\nX-Injected: true")
+    );
+    catalog_assert_same(
+        'application/octet-stream',
+        StorageMimeResolver::sanitizeForHeader("\r\n")
+    );
+});
+
 catalog_test('SignedStorageController mime path resolves pdf content type', static function (): void {
     catalog_assert_same(
         'application/pdf',

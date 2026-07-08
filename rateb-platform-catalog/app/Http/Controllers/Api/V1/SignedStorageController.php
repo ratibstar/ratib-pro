@@ -34,6 +34,7 @@ final class SignedStorageController
             exit;
         }
 
+        $stream = null;
         try {
             $stream = $this->storage->get($key);
             $prefix = stream_get_contents($stream, 8192);
@@ -50,7 +51,7 @@ final class SignedStorageController
             }
 
             if (!headers_sent()) {
-                header('Content-Type: ' . $mime);
+                header('Content-Type: ' . StorageMimeResolver::sanitizeForHeader($mime));
                 header('Cache-Control: private, max-age=3600');
             }
 
@@ -58,10 +59,13 @@ final class SignedStorageController
                 echo $prefix;
             }
             fpassthru($stream);
-            fclose($stream);
         } catch (\RuntimeException $e) {
             http_response_code((int) ($e->getCode() >= 400 ? $e->getCode() : 404));
             echo $e->getMessage();
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
         }
         exit;
     }

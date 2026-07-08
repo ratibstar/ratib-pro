@@ -59,7 +59,19 @@ final class IdempotencyMiddleware
             $scope = $this->defaultScope;
         }
 
-        $this->readRepository->deleteExpired();
+        if (strlen($scope) > 80) {
+            Response::json([
+                'data' => null,
+                'meta' => [],
+                'errors' => [['message' => 'X-Idempotency-Scope exceeds maximum length']],
+            ], 400);
+
+            return false;
+        }
+
+        if ((defined('RATEB_CATALOG_TESTING') && RATEB_CATALOG_TESTING) || random_int(1, 100) === 1) {
+            $this->readRepository->deleteExpired();
+        }
 
         $requestHash = $this->buildRequestHash($method, $path);
         $expiresAt = (new \DateTimeImmutable())->modify('+' . self::TTL_SECONDS . ' seconds');

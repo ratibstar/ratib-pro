@@ -202,3 +202,14 @@ CATALOG_INTEGRATION_TESTS=1 php tests/run.php
 3. `finfo` buffer sniffing on the first 8 KB of the response stream when still `application/octet-stream`
 
 Optional `StorageMimeResolver::resolve($key, $mimeHint)` accepts caller-provided MIME metadata when available (images/files store MIME in the database; signed URLs continue to sign only `key` + `expires`).
+
+---
+
+## Enterprise hardening (pre-Sprint S2)
+
+- `SignedStorageController` and `MediaServeController` always close storage streams in `finally` blocks.
+- `StorageMimeResolver::sanitizeForHeader()` strips CR/LF from `Content-Type` values before response headers are sent.
+- `IdempotencyMiddleware` rejects `X-Idempotency-Scope` values longer than 80 characters (matches `idempotency_records.scope`).
+- Expired idempotency cleanup runs on ~1% of keyed requests in production; always in `RATEB_CATALOG_TESTING`.
+- `HealthService` readiness uses S3 configuration validation when `STORAGE_ADAPTER=s3` and `CATALOG_S3_ENABLED=true`; otherwise checks local storage writability.
+- `MysqlIdempotencyWriteRepository` uses `INSERT IGNORE` when recycling non-cacheable idempotency rows to avoid duplicate-key races.
