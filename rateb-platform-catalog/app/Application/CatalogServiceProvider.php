@@ -9,12 +9,22 @@ use Rateb\PlatformCatalog\Application\Events\EventDispatcher;
 use Rateb\PlatformCatalog\Application\Support\GatewayTrustConfig;
 use Rateb\PlatformCatalog\Application\Support\PlatformIdentityResolver;
 use Rateb\PlatformCatalog\Application\Policies\AssetTypePolicy;
+use Rateb\PlatformCatalog\Application\Policies\BulkPolicy;
+use Rateb\PlatformCatalog\Application\Policies\ChannelPolicy;
+use Rateb\PlatformCatalog\Application\Policies\CollectionPolicy;
+use Rateb\PlatformCatalog\Application\Policies\DuplicatePolicy;
+use Rateb\PlatformCatalog\Application\Policies\ErpSyncPolicy;
+use Rateb\PlatformCatalog\Application\Policies\ImportPolicy;
+use Rateb\PlatformCatalog\Application\Policies\PricingPolicy;
+use Rateb\PlatformCatalog\Application\Policies\SavedFilterPolicy;
+use Rateb\PlatformCatalog\Application\Policies\WebhookPolicy;
 use Rateb\PlatformCatalog\Application\Policies\AttributePolicy;
 use Rateb\PlatformCatalog\Application\Policies\ChangeRequestPolicy;
 use Rateb\PlatformCatalog\Application\Policies\CompletenessPolicy;
 use Rateb\PlatformCatalog\Application\Policies\CategoryPolicy;
 use Rateb\PlatformCatalog\Application\Policies\FilePolicy;
 use Rateb\PlatformCatalog\Application\Policies\MediaPolicy;
+use Rateb\PlatformCatalog\Application\Listeners\IntegrationOutboxListener;
 use Rateb\PlatformCatalog\Application\Listeners\SearchIndexingListener;
 use Rateb\PlatformCatalog\Application\Policies\CategorySchemaPolicy;
 use Rateb\PlatformCatalog\Application\Policies\SessionRbacPolicyGuard;
@@ -33,6 +43,16 @@ use Rateb\PlatformCatalog\Application\Policies\ProductVariantPolicy;
 use Rateb\PlatformCatalog\Application\Policies\SupplierPolicy;
 use Rateb\PlatformCatalog\Application\Policies\WorkflowPolicy;
 use Rateb\PlatformCatalog\Application\Policies\VideoPolicy;
+use Rateb\PlatformCatalog\Application\Services\BulkService;
+use Rateb\PlatformCatalog\Application\Services\ChannelService;
+use Rateb\PlatformCatalog\Application\Services\CollectionService;
+use Rateb\PlatformCatalog\Application\Services\DuplicateService;
+use Rateb\PlatformCatalog\Application\Services\ErpSyncService;
+use Rateb\PlatformCatalog\Application\Services\ImportService;
+use Rateb\PlatformCatalog\Application\Services\IntegrationOutboxService;
+use Rateb\PlatformCatalog\Application\Services\PricingService;
+use Rateb\PlatformCatalog\Application\Services\SavedFilterService;
+use Rateb\PlatformCatalog\Application\Services\WebhookService;
 use Rateb\PlatformCatalog\Application\Services\AssetTypeService;
 use Rateb\PlatformCatalog\Application\Services\AttributeService;
 use Rateb\PlatformCatalog\Application\Services\BrandService;
@@ -71,10 +91,20 @@ use Rateb\PlatformCatalog\Application\Services\SupplierService;
 use Rateb\PlatformCatalog\Application\Services\VideoService;
 use Rateb\PlatformCatalog\Application\Validators\ProductSeoValidator;
 use Rateb\PlatformCatalog\Application\Validators\RbacAdminValidator;
+use Rateb\PlatformCatalog\Application\Validators\SkuBarcodeUniquenessValidator;
 use Rateb\PlatformCatalog\Application\Validators\UploadValidator;
 use Rateb\PlatformCatalog\Application\Services\WorkflowCommentService;
 use Rateb\PlatformCatalog\Application\Services\WorkflowService;
 use Rateb\PlatformCatalog\Core\Container;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\BulkController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ChannelController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\CollectionController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\DuplicateController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ErpSyncController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ImportController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\PricingController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\SavedFilterController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\WebhookController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\AssetTypeController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\AttributeController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\CategoryController;
@@ -98,9 +128,55 @@ use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductSeoController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductVersionController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\RbacAdminController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\WorkflowController;
+use Rateb\PlatformCatalog\Http\Middleware\CorrelationIdMiddleware;
 use Rateb\PlatformCatalog\Http\Middleware\IdempotencyMiddleware;
+use Rateb\PlatformCatalog\Http\Middleware\RateLimitMiddleware;
 use Rateb\PlatformCatalog\Infrastructure\Logging\FileStructuredLogger;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Migrations\MigrationRunner;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\BarcodeUniquenessReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\SkuUniquenessReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ImportBatchReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ImportBatchWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\WebhookSubscriptionReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\WebhookSubscriptionWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\WebhookDeliveryWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\CollectionReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\CollectionWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ChannelReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ChannelWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductPriceReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ProductPriceWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\DuplicateReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\DuplicateWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\SavedFilterReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\SavedFilterWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\ErpSyncReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IntegrationOutboxReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IntegrationOutboxWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\MediaJobReadRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\MediaJobWriteRepositoryInterface;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlBarcodeUniquenessReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSkuUniquenessReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlImportBatchReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlImportBatchWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlWebhookSubscriptionReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlWebhookSubscriptionWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlWebhookDeliveryWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlCollectionReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlCollectionWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlChannelReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlChannelWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductPriceReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlProductPriceWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlDuplicateReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlDuplicateWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSavedFilterReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSavedFilterWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlErpSyncReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlIntegrationOutboxReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlIntegrationOutboxWriteRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlMediaJobReadRepository;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlMediaJobWriteRepository;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IdempotencyReadRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\IdempotencyWriteRepositoryInterface;
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\AssetTypeReadRepositoryInterface;
@@ -230,6 +306,10 @@ use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlWorkflowR
 use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlSupplierRepository;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\CleanupJobHandler;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\ExportChunkJobHandler;
+use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\ImportChunkJobHandler;
+use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\OutboxDispatchJobHandler;
+use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\DuplicateScanJobHandler;
+use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\WebhookDispatchJobHandler;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\HealthJobHandler;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\MediaProcessJobHandler;
 use Rateb\PlatformCatalog\Infrastructure\Queue\Handlers\SearchFullReindexJobHandler;
@@ -391,6 +471,30 @@ final class CatalogServiceProvider
         $container->set(CompletenessDataReadRepositoryInterface::class, static fn (): CompletenessDataReadRepositoryInterface => new MysqlCompletenessDataReadRepository());
         $container->set(CategorySchemaReadRepositoryInterface::class, static fn (): CategorySchemaReadRepositoryInterface => new MysqlCategorySchemaReadRepository());
         $container->set(CategorySchemaWriteRepositoryInterface::class, static fn (): CategorySchemaWriteRepositoryInterface => new MysqlCategorySchemaWriteRepository());
+
+        $container->set(SkuUniquenessReadRepositoryInterface::class, static fn (): SkuUniquenessReadRepositoryInterface => new MysqlSkuUniquenessReadRepository());
+        $container->set(BarcodeUniquenessReadRepositoryInterface::class, static fn (): BarcodeUniquenessReadRepositoryInterface => new MysqlBarcodeUniquenessReadRepository());
+        $container->set(ImportBatchReadRepositoryInterface::class, static fn (): ImportBatchReadRepositoryInterface => new MysqlImportBatchReadRepository());
+        $container->set(ImportBatchWriteRepositoryInterface::class, static fn (): ImportBatchWriteRepositoryInterface => new MysqlImportBatchWriteRepository());
+        $container->set(WebhookSubscriptionReadRepositoryInterface::class, static fn (): WebhookSubscriptionReadRepositoryInterface => new MysqlWebhookSubscriptionReadRepository());
+        $container->set(WebhookSubscriptionWriteRepositoryInterface::class, static fn (): WebhookSubscriptionWriteRepositoryInterface => new MysqlWebhookSubscriptionWriteRepository());
+        $container->set(WebhookDeliveryWriteRepositoryInterface::class, static fn (): WebhookDeliveryWriteRepositoryInterface => new MysqlWebhookDeliveryWriteRepository());
+        $container->set(CollectionReadRepositoryInterface::class, static fn (): CollectionReadRepositoryInterface => new MysqlCollectionReadRepository());
+        $container->set(CollectionWriteRepositoryInterface::class, static fn (): CollectionWriteRepositoryInterface => new MysqlCollectionWriteRepository());
+        $container->set(ChannelReadRepositoryInterface::class, static fn (): ChannelReadRepositoryInterface => new MysqlChannelReadRepository());
+        $container->set(ChannelWriteRepositoryInterface::class, static fn (): ChannelWriteRepositoryInterface => new MysqlChannelWriteRepository());
+        $container->set(ProductPriceReadRepositoryInterface::class, static fn (): ProductPriceReadRepositoryInterface => new MysqlProductPriceReadRepository());
+        $container->set(ProductPriceWriteRepositoryInterface::class, static fn (): ProductPriceWriteRepositoryInterface => new MysqlProductPriceWriteRepository());
+        $container->set(DuplicateReadRepositoryInterface::class, static fn (): DuplicateReadRepositoryInterface => new MysqlDuplicateReadRepository());
+        $container->set(DuplicateWriteRepositoryInterface::class, static fn (): DuplicateWriteRepositoryInterface => new MysqlDuplicateWriteRepository());
+        $container->set(SavedFilterReadRepositoryInterface::class, static fn (): SavedFilterReadRepositoryInterface => new MysqlSavedFilterReadRepository());
+        $container->set(SavedFilterWriteRepositoryInterface::class, static fn (): SavedFilterWriteRepositoryInterface => new MysqlSavedFilterWriteRepository());
+        $container->set(ErpSyncReadRepositoryInterface::class, static fn (): ErpSyncReadRepositoryInterface => new MysqlErpSyncReadRepository());
+        $container->set(IntegrationOutboxReadRepositoryInterface::class, static fn (): IntegrationOutboxReadRepositoryInterface => new MysqlIntegrationOutboxReadRepository());
+        $container->set(IntegrationOutboxWriteRepositoryInterface::class, static fn (): IntegrationOutboxWriteRepositoryInterface => new MysqlIntegrationOutboxWriteRepository());
+        $container->set(MediaJobReadRepositoryInterface::class, static fn (): MediaJobReadRepositoryInterface => new MysqlMediaJobReadRepository());
+        $container->set(MediaJobWriteRepositoryInterface::class, static fn (): MediaJobWriteRepositoryInterface => new MysqlMediaJobWriteRepository());
+
         $container->set(ProductSnapshotRestoreRepositoryInterface::class, static fn (Container $c): ProductSnapshotRestoreRepositoryInterface => new MysqlProductSnapshotRestoreRepository(
             null,
             null,
@@ -433,6 +537,20 @@ final class CatalogServiceProvider
         $container->set(CompletenessPolicy::class, static fn (Container $c): CompletenessPolicy => new CompletenessPolicy($c->get(PolicyGuardInterface::class)));
         $container->set(CategorySchemaPolicy::class, static fn (Container $c): CategorySchemaPolicy => new CategorySchemaPolicy($c->get(PolicyGuardInterface::class)));
         $container->set(RbacAdminPolicy::class, static fn (Container $c): RbacAdminPolicy => new RbacAdminPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(ImportPolicy::class, static fn (Container $c): ImportPolicy => new ImportPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(WebhookPolicy::class, static fn (Container $c): WebhookPolicy => new WebhookPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(CollectionPolicy::class, static fn (Container $c): CollectionPolicy => new CollectionPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(ChannelPolicy::class, static fn (Container $c): ChannelPolicy => new ChannelPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(PricingPolicy::class, static fn (Container $c): PricingPolicy => new PricingPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(DuplicatePolicy::class, static fn (Container $c): DuplicatePolicy => new DuplicatePolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(SavedFilterPolicy::class, static fn (Container $c): SavedFilterPolicy => new SavedFilterPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(ErpSyncPolicy::class, static fn (Container $c): ErpSyncPolicy => new ErpSyncPolicy($c->get(PolicyGuardInterface::class)));
+        $container->set(BulkPolicy::class, static fn (Container $c): BulkPolicy => new BulkPolicy($c->get(PolicyGuardInterface::class)));
+
+        $container->set(SkuBarcodeUniquenessValidator::class, static fn (Container $c): SkuBarcodeUniquenessValidator => new SkuBarcodeUniquenessValidator(
+            $c->get(SkuUniquenessReadRepositoryInterface::class),
+            $c->get(BarcodeUniquenessReadRepositoryInterface::class)
+        ));
 
         $container->set(CategoryService::class, static fn (Container $c): CategoryService => new CategoryService(
             $c->get(CategoryRepositoryInterface::class),
@@ -640,6 +758,71 @@ final class CatalogServiceProvider
             $c->get(JobQueueWriteRepositoryInterface::class),
             $c->get(QueueAdminPolicy::class)
         ));
+        $container->set(IntegrationOutboxService::class, static fn (Container $c): IntegrationOutboxService => new IntegrationOutboxService(
+            $c->get(IntegrationOutboxWriteRepositoryInterface::class),
+            $c->get(IntegrationOutboxReadRepositoryInterface::class),
+            $c->get(WebhookSubscriptionReadRepositoryInterface::class),
+            $c->get(ProductReadRepositoryInterface::class),
+            $c->get(QueueService::class),
+            $c->get(LocaleResolverService::class)
+        ));
+        $container->set(ImportService::class, static fn (Container $c): ImportService => new ImportService(
+            $c->get(ImportBatchReadRepositoryInterface::class),
+            $c->get(ImportBatchWriteRepositoryInterface::class),
+            $c->get(ImportPolicy::class),
+            $c->get(QueueService::class),
+            $c->get(SkuBarcodeUniquenessValidator::class),
+            $c->get(PlatformIdentityResolver::class)
+        ));
+        $container->set(WebhookService::class, static fn (Container $c): WebhookService => new WebhookService(
+            $c->get(WebhookSubscriptionReadRepositoryInterface::class),
+            $c->get(WebhookSubscriptionWriteRepositoryInterface::class),
+            $c->get(WebhookPolicy::class)
+        ));
+        $container->set(CollectionService::class, static fn (Container $c): CollectionService => new CollectionService(
+            $c->get(CollectionReadRepositoryInterface::class),
+            $c->get(CollectionWriteRepositoryInterface::class),
+            $c->get(CollectionPolicy::class),
+            $c->get(LocaleResolverService::class),
+            $c->get(PlatformIdentityResolver::class)
+        ));
+        $container->set(ChannelService::class, static fn (Container $c): ChannelService => new ChannelService(
+            $c->get(ChannelReadRepositoryInterface::class),
+            $c->get(ChannelWriteRepositoryInterface::class),
+            $c->get(ProductReadRepositoryInterface::class),
+            $c->get(ChannelPolicy::class),
+            $c->get(LocaleResolverService::class)
+        ));
+        $container->set(PricingService::class, static fn (Container $c): PricingService => new PricingService(
+            $c->get(ProductPriceReadRepositoryInterface::class),
+            $c->get(ProductPriceWriteRepositoryInterface::class),
+            $c->get(ProductReadRepositoryInterface::class),
+            $c->get(PricingPolicy::class),
+            $c->get(LocaleResolverService::class)
+        ));
+        $container->set(DuplicateService::class, static fn (Container $c): DuplicateService => new DuplicateService(
+            $c->get(DuplicateReadRepositoryInterface::class),
+            $c->get(DuplicateWriteRepositoryInterface::class),
+            $c->get(DuplicatePolicy::class),
+            $c->get(QueueService::class),
+            $c->get(PlatformIdentityResolver::class)
+        ));
+        $container->set(SavedFilterService::class, static fn (Container $c): SavedFilterService => new SavedFilterService(
+            $c->get(SavedFilterReadRepositoryInterface::class),
+            $c->get(SavedFilterWriteRepositoryInterface::class),
+            $c->get(SavedFilterPolicy::class),
+            $c->get(PlatformIdentityResolver::class)
+        ));
+        $container->set(ErpSyncService::class, static fn (Container $c): ErpSyncService => new ErpSyncService(
+            $c->get(ErpSyncReadRepositoryInterface::class),
+            $c->get(ErpSyncPolicy::class)
+        ));
+        $container->set(BulkService::class, static fn (Container $c): BulkService => new BulkService(
+            $c->get(BulkPolicy::class),
+            $c->get(ImportPolicy::class),
+            $c->get(QueueService::class),
+            $c->get(ImportService::class)
+        ));
         $container->set(SearchAdminService::class, static fn (Container $c): SearchAdminService => new SearchAdminService(
             $c->get(QueueService::class),
             $c->get(SearchPolicy::class)
@@ -666,9 +849,38 @@ final class CatalogServiceProvider
         $container->set(SearchFullReindexJobHandler::class, static fn (Container $c): SearchFullReindexJobHandler => new SearchFullReindexJobHandler(
             $c->get(SearchIndexerService::class)
         ));
-        $container->set(MediaProcessJobHandler::class, static fn (): MediaProcessJobHandler => new MediaProcessJobHandler());
-        $container->set(ExportChunkJobHandler::class, static fn (): ExportChunkJobHandler => new ExportChunkJobHandler());
-        $container->set(CleanupJobHandler::class, static fn (): CleanupJobHandler => new CleanupJobHandler());
+        $container->set(MediaProcessJobHandler::class, static fn (Container $c): MediaProcessJobHandler => new MediaProcessJobHandler(
+            $c->get(MediaJobReadRepositoryInterface::class),
+            $c->get(MediaJobWriteRepositoryInterface::class),
+            $c->get(ProductImageReadRepositoryInterface::class),
+            $c->get(StorageAdapterInterface::class)
+        ));
+        $container->set(ExportChunkJobHandler::class, static fn (Container $c): ExportChunkJobHandler => new ExportChunkJobHandler(
+            $c->get(ProductReadRepositoryInterface::class),
+            $c->get(LocaleResolverService::class),
+            $c->get(StorageAdapterInterface::class)
+        ));
+        $container->set(CleanupJobHandler::class, static fn (Container $c): CleanupJobHandler => new CleanupJobHandler(
+            $c->get(IdempotencyReadRepositoryInterface::class),
+            $c->get(IntegrationOutboxWriteRepositoryInterface::class)
+        ));
+        $container->set(ImportChunkJobHandler::class, static fn (Container $c): ImportChunkJobHandler => new ImportChunkJobHandler(
+            $c->get(ImportBatchReadRepositoryInterface::class),
+            $c->get(ImportBatchWriteRepositoryInterface::class),
+            $c->get(ProductWriteRepositoryInterface::class),
+            $c->get(EventDispatcher::class)
+        ));
+        $container->set(WebhookDispatchJobHandler::class, static fn (Container $c): WebhookDispatchJobHandler => new WebhookDispatchJobHandler(
+            $c->get(WebhookDeliveryWriteRepositoryInterface::class),
+            $c->get(IntegrationOutboxWriteRepositoryInterface::class)
+        ));
+        $container->set(OutboxDispatchJobHandler::class, static fn (Container $c): OutboxDispatchJobHandler => new OutboxDispatchJobHandler(
+            $c->get(IntegrationOutboxService::class)
+        ));
+        $container->set(DuplicateScanJobHandler::class, static fn (Container $c): DuplicateScanJobHandler => new DuplicateScanJobHandler(
+            $c->get(DuplicateReadRepositoryInterface::class),
+            $c->get(DuplicateWriteRepositoryInterface::class)
+        ));
         $container->set(HealthJobHandler::class, static fn (Container $c): HealthJobHandler => new HealthJobHandler(
             $c->get(SearchAdapterInterface::class)
         ));
@@ -680,6 +892,10 @@ final class CatalogServiceProvider
             $processor->registerHandler($c->get(MediaProcessJobHandler::class));
             $processor->registerHandler($c->get(ExportChunkJobHandler::class));
             $processor->registerHandler($c->get(CleanupJobHandler::class));
+            $processor->registerHandler($c->get(ImportChunkJobHandler::class));
+            $processor->registerHandler($c->get(WebhookDispatchJobHandler::class));
+            $processor->registerHandler($c->get(OutboxDispatchJobHandler::class));
+            $processor->registerHandler($c->get(DuplicateScanJobHandler::class));
             $processor->registerHandler($c->get(HealthJobHandler::class));
 
             return $processor;
@@ -687,6 +903,13 @@ final class CatalogServiceProvider
         $container->set(SearchIndexingListener::class, static fn (Container $c): SearchIndexingListener => new SearchIndexingListener(
             $c->get(SearchIndexerService::class),
             $c->get(QueueService::class)
+        ));
+        $container->set(IntegrationOutboxListener::class, static fn (Container $c): IntegrationOutboxListener => new IntegrationOutboxListener(
+            $c->get(IntegrationOutboxService::class)
+        ));
+        $container->set(CorrelationIdMiddleware::class, static fn (): CorrelationIdMiddleware => new CorrelationIdMiddleware());
+        $container->set(RateLimitMiddleware::class, static fn (Container $c): RateLimitMiddleware => new RateLimitMiddleware(
+            $c->get(PlatformIdentityResolver::class)
         ));
         $container->set(QueueWorkerService::class, static fn (Container $c): QueueWorkerService => new QueueWorkerService(
             $c->get(JobQueueWriteRepositoryInterface::class),
@@ -769,10 +992,23 @@ final class CatalogServiceProvider
         $container->set(RbacAdminController::class, static fn (Container $c): RbacAdminController => new RbacAdminController(
             $c->get(RbacAdminService::class)
         ));
+        $container->set(ImportController::class, static fn (Container $c): ImportController => new ImportController($c->get(ImportService::class)));
+        $container->set(WebhookController::class, static fn (Container $c): WebhookController => new WebhookController($c->get(WebhookService::class)));
+        $container->set(CollectionController::class, static fn (Container $c): CollectionController => new CollectionController($c->get(CollectionService::class)));
+        $container->set(ChannelController::class, static fn (Container $c): ChannelController => new ChannelController($c->get(ChannelService::class)));
+        $container->set(PricingController::class, static fn (Container $c): PricingController => new PricingController($c->get(PricingService::class)));
+        $container->set(DuplicateController::class, static fn (Container $c): DuplicateController => new DuplicateController($c->get(DuplicateService::class)));
+        $container->set(SavedFilterController::class, static fn (Container $c): SavedFilterController => new SavedFilterController($c->get(SavedFilterService::class)));
+        $container->set(ErpSyncController::class, static fn (Container $c): ErpSyncController => new ErpSyncController($c->get(ErpSyncService::class)));
+        $container->set(BulkController::class, static fn (Container $c): BulkController => new BulkController($c->get(BulkService::class)));
 
         SearchIndexingListener::register(
             $container->get(EventDispatcher::class),
             $container->get(SearchIndexingListener::class)
+        );
+        IntegrationOutboxListener::register(
+            $container->get(EventDispatcher::class),
+            $container->get(IntegrationOutboxListener::class)
         );
     }
 }

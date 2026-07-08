@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rateb\PlatformCatalog\Infrastructure\Storage;
 
-final class LocalStorageAdapter implements StorageAdapterInterface
+final class LocalStorageAdapter implements StorageAdapterInterface, CdnPurgeCapableInterface
 {
     public function __construct(
         private readonly string $rootPath,
@@ -103,5 +103,29 @@ final class LocalStorageAdapter implements StorageAdapterInterface
     private function absolutePath(string $normalizedKey): string
     {
         return rtrim($this->rootPath, '/\\') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $normalizedKey);
+    }
+
+    public function purgeCdn(string $relativePath): void
+    {
+        if (!filter_var(getenv('CDN_PURGE_ENABLED') ?: 'false', FILTER_VALIDATE_BOOL)) {
+            return;
+        }
+
+        $url = $this->publicUrl($this->normalizeKey($relativePath));
+        $purgeUrl = (string) (getenv('CDN_PURGE_URL') ?: '');
+        if ($purgeUrl === '') {
+            return;
+        }
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\n",
+                'content' => json_encode(['urls' => [$url]], JSON_UNESCAPED_UNICODE) ?: '{}',
+                'timeout' => 3,
+                'ignore_errors' => true,
+            ],
+        ]);
+        @file_get_contents($purgeUrl, false, $context);
     }
 }

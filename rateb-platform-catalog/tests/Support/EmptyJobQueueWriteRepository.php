@@ -57,4 +57,9 @@ class EmptyJobQueueWriteRepository implements JobQueueWriteRepositoryInterface
     {
         return false;
     }
+
+    public function cancelPending(string $jobId): bool
+    {
+        return false;
+    }
 }

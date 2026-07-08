@@ -89,6 +89,38 @@ final class QueueService
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function getJobItems(string $jobId): ?array
+    {
+        $this->policy->view();
+        $row = $this->jobReadRepository->findByJobId($jobId);
+        if ($row === null) {
+            return null;
+        }
+
+        $payload = json_decode((string) ($row['payload'] ?? '{}'), true);
+        $items = is_array($payload['items'] ?? null) ? $payload['items'] : [];
+
+        return [
+            'job_id' => $jobId,
+            'items' => $items,
+            'progress' => [
+                'total' => (int) ($payload['progress']['total'] ?? count($items)),
+                'processed' => (int) ($payload['progress']['processed'] ?? 0),
+                'failed' => (int) ($payload['progress']['failed'] ?? 0),
+            ],
+        ];
+    }
+
+    public function cancelJob(string $jobId): bool
+    {
+        $this->policy->manage();
+
+        return $this->jobWriteRepository->cancelPending($jobId);
+    }
+
+    /**
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */

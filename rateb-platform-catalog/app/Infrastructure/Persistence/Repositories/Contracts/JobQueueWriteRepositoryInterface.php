@@ -29,4 +29,6 @@ interface JobQueueWriteRepositoryInterface
     public function retry(string $jobId): void;
 
     public function replayDead(string $jobId): bool;
+
+    public function cancelPending(string $jobId): bool;
 }

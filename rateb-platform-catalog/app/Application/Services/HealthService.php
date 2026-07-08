@@ -4,12 +4,26 @@ declare(strict_types=1);
 
 namespace Rateb\PlatformCatalog\Application\Services;
 
+use Rateb\PlatformCatalog\Infrastructure\Cache\CacheAdapterFactory;
+use Rateb\PlatformCatalog\Infrastructure\Cache\CacheAdapterInterface;
+use Rateb\PlatformCatalog\Infrastructure\Queue\QueueAdapterFactory;
+use Rateb\PlatformCatalog\Infrastructure\Queue\QueueAdapterInterface;
+use Rateb\PlatformCatalog\Infrastructure\Search\SearchAdapterFactory;
+use Rateb\PlatformCatalog\Infrastructure\Search\SearchAdapterInterface;
 use Rateb\PlatformCatalog\Core\Database;
+use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\MysqlJobQueueWriteRepository;
 use Rateb\PlatformCatalog\Infrastructure\Storage\S3Config;
 use Rateb\PlatformCatalog\Infrastructure\Storage\StorageAdapterFactory;
 
 final class HealthService
 {
+    public function __construct(
+        private readonly ?SearchAdapterInterface $searchAdapter = null,
+        private readonly ?CacheAdapterInterface $cacheAdapter = null,
+        private readonly ?QueueAdapterInterface $queueAdapter = null
+    ) {
+    }
+
     public function liveness(): array
     {
         return [
@@ -33,7 +47,14 @@ final class HealthService
         $checks = [
             'database' => Database::ping(true),
             'storage' => $this->storageReady(),
+            'search' => $this->searchReady(),
+            'cache' => $this->cacheReady(),
+            'queue' => $this->queueReady(),
         ];
+
+        if ($this->isRedisConfigured()) {
+            $checks['redis'] = $this->redisReady();
+        }
 
         $ready = !in_array(false, $checks, true);
 
@@ -42,6 +63,57 @@ final class HealthService
             'checks' => $checks,
             'timestamp' => gmdate('c'),
         ];
+    }
+
+    private function searchReady(): bool
+    {
+        try {
+            return $this->resolveSearchAdapter()->healthCheck();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function cacheReady(): bool
+    {
+        try {
+            return $this->resolveCacheAdapter()->healthCheck();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function queueReady(): bool
+    {
+        try {
+            $adapter = $this->resolveQueueAdapter();
+            if (method_exists($adapter, 'healthCheck')) {
+                return $adapter->healthCheck();
+            }
+
+            return Database::ping(true);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function redisReady(): bool
+    {
+        try {
+            $cache = $this->resolveCacheAdapter();
+
+            return $cache->healthCheck();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function isRedisConfigured(): bool
+    {
+        $queue = strtolower((string) (getenv('QUEUE_ADAPTER') ?: 'database'));
+        $cache = strtolower((string) (getenv('CACHE_ADAPTER') ?: 'file'));
+
+        return $queue === 'redis' || $cache === 'redis';
     }
 
     private function storageReady(): bool
@@ -83,5 +155,20 @@ final class HealthService
         @unlink($probe);
 
         return true;
+    }
+
+    private function resolveSearchAdapter(): SearchAdapterInterface
+    {
+        return $this->searchAdapter ?? SearchAdapterFactory::create();
+    }
+
+    private function resolveCacheAdapter(): CacheAdapterInterface
+    {
+        return $this->cacheAdapter ?? CacheAdapterFactory::create();
+    }
+
+    private function resolveQueueAdapter(): QueueAdapterInterface
+    {
+        return $this->queueAdapter ?? QueueAdapterFactory::create(new MysqlJobQueueWriteRepository());
     }
 }

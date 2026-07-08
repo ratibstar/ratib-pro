@@ -254,4 +254,17 @@ final class MysqlJobQueueWriteRepository extends BaseRepository implements JobQu
             return $stmt->rowCount() > 0;
         });
     }
+
+    public function cancelPending(string $jobId): bool
+    {
+        return $this->transaction(function () use ($jobId): bool {
+            $stmt = $this->writePdo->prepare(
+                'UPDATE job_queue SET status = "dead", last_error = "cancelled", updated_at = CURRENT_TIMESTAMP(6)
+                 WHERE job_id = :job_id AND status = "pending"'
+            );
+            $stmt->execute(['job_id' => $jobId]);
+
+            return $stmt->rowCount() > 0;
+        });
+    }
 }

@@ -13,9 +13,9 @@ final class QueueAdapterFactory
         $adapter = strtolower((string) (getenv('QUEUE_ADAPTER') ?: 'database'));
 
         return match ($adapter) {
-            'redis' => new RedisQueueAdapter(),
-            'rabbitmq' => new RabbitMqQueueAdapter(),
-            'sqs' => new SqsQueueAdapter(),
+            'redis' => new RedisQueueAdapter($jobQueueWrite),
+            'rabbitmq' => new RabbitMqQueueAdapter($jobQueueWrite),
+            'sqs' => new SqsQueueAdapter($jobQueueWrite),
             default => new DatabaseQueueAdapter($jobQueueWrite),
         };
     }

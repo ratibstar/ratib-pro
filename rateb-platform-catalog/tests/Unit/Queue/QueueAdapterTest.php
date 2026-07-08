@@ -33,26 +33,103 @@ catalog_test('DatabaseQueueAdapter delegates push to repository', static functio
     catalog_assert_same('health_check', $captured);
 });
 
-catalog_test('Queue stubs throw LogicException', static function (): void {
-    $stubs = [new RedisQueueAdapter(), new RabbitMqQueueAdapter(), new SqsQueueAdapter()];
-    foreach ($stubs as $stub) {
-        try {
-            $stub->push(new Job('j1', 'search', 'health_check', []));
-            catalog_assert_true(false, 'Expected LogicException');
-        } catch (LogicException) {
-            catalog_assert_true(true);
+catalog_test('RedisQueueAdapter delegates push to repository', static function (): void {
+    $captured = null;
+    $repo = new class($captured) extends EmptyJobQueueWriteRepository {
+        public function __construct(private mixed &$captured)
+        {
         }
+
+        public function push(Job $job, ?\DateTimeImmutable $availableAt = null): string
+        {
+            $this->captured = $job->jobType;
+
+            return $job->jobId;
+        }
+    };
+
+    $redis = new class implements \Rateb\PlatformCatalog\Infrastructure\Redis\RedisConnectionInterface {
+        public function ping(): bool
+        {
+            return true;
+        }
+
+        public function get(string $key): ?string
+        {
+            return null;
+        }
+
+        public function set(string $key, string $value, ?int $ttlSeconds = null): void
+        {
+        }
+
+        public function del(string $key): void
+        {
+        }
+
+        public function incr(string $key): int
+        {
+            return 1;
+        }
+
+        public function expire(string $key, int $ttlSeconds): void
+        {
+        }
+
+        public function lpush(string $key, string $value): void
+        {
+        }
+
+        public function rpop(string $key): ?string
+        {
+            return null;
+        }
+
+        public function zadd(string $key, float $score, string $member): void
+        {
+        }
+
+        public function zrangebyscore(string $key, float $min, float $max, int $limit = 1): array
+        {
+            return [];
+        }
+
+        public function zrem(string $key, string $member): void
+        {
+        }
+    };
+
+    $adapter = new RedisQueueAdapter($repo, $redis);
+    $adapter->push(new Job('j1', 'search', 'health_check', []));
+    catalog_assert_same('health_check', $captured);
+});
+
+catalog_test('RabbitMq and Sqs adapters delegate push to repository', static function (): void {
+    $captured = null;
+    $repo = new class($captured) extends EmptyJobQueueWriteRepository {
+        public function __construct(private mixed &$captured)
+        {
+        }
+
+        public function push(Job $job, ?\DateTimeImmutable $availableAt = null): string
+        {
+            $this->captured = $job->jobType;
+
+            return $job->jobId;
+        }
+    };
+
+    foreach ([new RabbitMqQueueAdapter($repo), new SqsQueueAdapter($repo)] as $adapter) {
+        $adapter->push(new Job('j2', 'integration', 'webhook_dispatch', []));
+        catalog_assert_same('webhook_dispatch', $captured);
     }
 });
 
-catalog_test('OpenSearch search adapter is stubbed', static function (): void {
+catalog_test('OpenSearch adapter falls back to in-memory search in testing', static function (): void {
     $adapter = new SearchOpenSearchAdapter();
-    try {
-        $adapter->search(new \Rateb\PlatformCatalog\Infrastructure\Search\SearchQuery('x', 'en', 'product'));
-        catalog_assert_true(false, 'Expected LogicException');
-    } catch (LogicException $e) {
-        catalog_assert_true(str_contains($e->getMessage(), 'OpenSearchAdapter'));
-    }
+    $result = $adapter->search(new \Rateb\PlatformCatalog\Infrastructure\Search\SearchQuery('x', 'en', 'product'));
+    catalog_assert_true($result instanceof \Rateb\PlatformCatalog\Infrastructure\Search\SearchResult);
+    catalog_assert_same(0, $result->total);
 });
 
 catalog_test('QueueService returns formatted job status', static function (): void {

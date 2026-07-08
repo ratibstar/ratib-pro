@@ -151,20 +151,22 @@ No migration required — uses existing `idempotency_records` table from M008.
 
 ## Deferred to Sprint S2
 
-Per Phase 2.8 release notes and architecture §17 — not implemented in S1:
+**Status: IMPLEMENTED in Sprint S2 (Phase 2.10).** See `docs/PHASE-2.10-S2-OPERATIONS.md`.
 
-- Import / Export pipelines
-- Outbox / Webhooks
-- Redis / RabbitMQ / SQS queue adapters (production wiring)
-- OpenSearch adapter
-- ERP Bridge
-- Collections / Channels / Pricing
-- Duplicate detection
-- Saved filters
-- Rate limiting middleware
-- Bulk async APIs
-- Media virus scanning pipeline
-- CDN purge integration
+Previously deferred per Phase 2.8 release notes and architecture §17:
+
+- Import / Export pipelines — **done**
+- Outbox / Webhooks — **done**
+- Redis / RabbitMQ / SQS queue adapters — **done**
+- OpenSearch adapter — **done**
+- ERP Bridge catalog APIs — **done**
+- Collections / Channels / Pricing — **done**
+- Duplicate detection — **done**
+- Saved filters — **done**
+- Rate limiting middleware — **done**
+- Bulk async APIs — **done**
+- Media virus scanning pipeline — **done**
+- CDN purge integration — **done**
 
 ---
 

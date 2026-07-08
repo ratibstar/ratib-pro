@@ -115,6 +115,7 @@ require $root . '/tests/Unit/Core/RouterTest.php';
 require $root . '/tests/Unit/Events/EventDispatcherTest.php';
 require $root . '/tests/Unit/Support/RequestTest.php';
 require $root . '/tests/Unit/Services/HealthServiceTest.php';
+require $root . '/tests/Unit/Services/Sprint2EnterpriseTest.php';
 require $root . '/tests/Unit/Migrations/MigrationRunnerTest.php';
 require $root . '/tests/Unit/Mappers/TaxonomyMapperTest.php';
 require $root . '/tests/Unit/Services/TaxonomyServiceTest.php';

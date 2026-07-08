@@ -25,6 +25,15 @@ use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ProductVersionController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\SearchController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\WorkflowController;
 use Rateb\PlatformCatalog\Http\Controllers\Api\V1\SupplierController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ImportController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\WebhookController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\CollectionController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ChannelController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\PricingController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\DuplicateController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\SavedFilterController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\ErpSyncController;
+use Rateb\PlatformCatalog\Http\Controllers\Api\V1\BulkController;
 
 /** @var \Rateb\PlatformCatalog\Core\Router $router */
 
@@ -87,6 +96,8 @@ $router->get('/catalog/search/variants', [SearchController::class, 'searchVarian
 $router->get('/catalog/search/barcode/{barcode}', [SearchController::class, 'barcode']);
 
 $router->get('/catalog/jobs/{job_id}', [JobController::class, 'show']);
+$router->get('/catalog/jobs/{job_id}/items', [JobController::class, 'items']);
+$router->delete('/catalog/jobs/{job_id}', [JobController::class, 'destroy']);
 
 $router->post('/catalog/admin/search/reindex', [AdminQueueController::class, 'requestReindex']);
 $router->get('/catalog/admin/queue/status', [AdminQueueController::class, 'queueStatus']);
@@ -124,3 +135,46 @@ $router->get('/catalog/admin/roles', [RbacAdminController::class, 'listRoles']);
 $router->get('/catalog/admin/users/{uuid}/roles', [RbacAdminController::class, 'getUserRoles']);
 $router->put('/catalog/admin/users/{uuid}/roles', [RbacAdminController::class, 'assignUserRoles']);
 $router->patch('/catalog/admin/roles/{uuid}', [RbacAdminController::class, 'patchRole']);
+
+$router->post('/catalog/import/batches', [ImportController::class, 'store']);
+$router->post('/catalog/import/batches/{uuid}/validate', [ImportController::class, 'validate']);
+$router->get('/catalog/import/batches/{uuid}/preview', [ImportController::class, 'preview']);
+$router->post('/catalog/import/batches/{uuid}/commit', [ImportController::class, 'commit']);
+$router->post('/catalog/import/batches/{uuid}/rollback', [ImportController::class, 'rollback']);
+
+$router->get('/catalog/webhooks', [WebhookController::class, 'index']);
+$router->get('/catalog/webhooks/{uuid}', [WebhookController::class, 'show']);
+$router->post('/catalog/webhooks', [WebhookController::class, 'store']);
+$router->put('/catalog/webhooks/{uuid}', [WebhookController::class, 'update']);
+$router->delete('/catalog/webhooks/{uuid}', [WebhookController::class, 'destroy']);
+
+$router->get('/catalog/collections', [CollectionController::class, 'index']);
+$router->get('/catalog/collections/{uuid}', [CollectionController::class, 'show']);
+$router->get('/catalog/collections/{uuid}/products', [CollectionController::class, 'listProducts']);
+$router->post('/catalog/collections', [CollectionController::class, 'store']);
+$router->put('/catalog/collections/{uuid}', [CollectionController::class, 'update']);
+
+$router->get('/catalog/channels', [ChannelController::class, 'index']);
+$router->get('/catalog/products/{uuid}/channels', [ChannelController::class, 'listForProduct']);
+$router->put('/catalog/products/{uuid}/channels', [ChannelController::class, 'replaceForProduct']);
+
+$router->get('/catalog/products/{uuid}/prices', [PricingController::class, 'show']);
+$router->put('/catalog/products/{uuid}/prices', [PricingController::class, 'update']);
+
+$router->get('/catalog/duplicates', [DuplicateController::class, 'index']);
+$router->get('/catalog/duplicates/{uuid}', [DuplicateController::class, 'show']);
+$router->put('/catalog/duplicates/{uuid}/resolve', [DuplicateController::class, 'resolve']);
+$router->get('/catalog/duplicate-rules', [DuplicateController::class, 'listRules']);
+
+$router->get('/catalog/saved-filters', [SavedFilterController::class, 'index']);
+$router->get('/catalog/saved-filters/{uuid}', [SavedFilterController::class, 'show']);
+$router->post('/catalog/saved-filters', [SavedFilterController::class, 'store']);
+$router->put('/catalog/saved-filters/{uuid}', [SavedFilterController::class, 'update']);
+$router->delete('/catalog/saved-filters/{uuid}', [SavedFilterController::class, 'destroy']);
+
+$router->get('/catalog/sync/{company_id}', [ErpSyncController::class, 'show']);
+
+$router->post('/catalog/bulk/products/import', [BulkController::class, 'importProducts']);
+$router->post('/catalog/bulk/products/export', [BulkController::class, 'exportProducts']);
+$router->post('/catalog/bulk/products/publish', [BulkController::class, 'publishProducts']);
+$router->post('/catalog/bulk/products/archive', [BulkController::class, 'archiveProducts']);

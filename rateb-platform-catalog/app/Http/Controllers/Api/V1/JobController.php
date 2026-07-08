@@ -30,4 +30,38 @@ final class JobController
             ApiEnvelope::error([['message' => $e->getMessage()]], $status);
         }
     }
+
+    /** @param array<string, string> $params */
+    public function items(array $params): void
+    {
+        try {
+            $result = $this->queueService->getJobItems($params['job_id']);
+            if ($result === null) {
+                ApiEnvelope::error([['message' => 'Job not found']], 404);
+
+                return;
+            }
+            ApiEnvelope::success($result);
+        } catch (\RuntimeException $e) {
+            $status = (int) ($e->getCode() >= 400 ? $e->getCode() : 403);
+            ApiEnvelope::error([['message' => $e->getMessage()]], $status);
+        }
+    }
+
+    /** @param array<string, string> $params */
+    public function destroy(array $params): void
+    {
+        try {
+            $cancelled = $this->queueService->cancelJob($params['job_id']);
+            if (!$cancelled) {
+                ApiEnvelope::error([['message' => 'Job not found or not cancellable']], 404);
+
+                return;
+            }
+            ApiEnvelope::success(['job_id' => $params['job_id'], 'cancelled' => true]);
+        } catch (\RuntimeException $e) {
+            $status = (int) ($e->getCode() >= 400 ? $e->getCode() : 403);
+            ApiEnvelope::error([['message' => $e->getMessage()]], $status);
+        }
+    }
 }

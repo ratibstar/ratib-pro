@@ -768,6 +768,53 @@ final class CompletenessService
 
     }
 
+    /**
+     * @param array<string, mixed> $mapped
+     * @return array{failed_rules: list<string>, warnings: list<string>}
+     */
+    public function evaluateImportPayload(int $categoryId, array $mapped, LocaleContext $locale): array
+    {
+        $rules = $this->ruleReadRepository->listActive('product');
+        $translations = is_array($mapped['translations'] ?? null) ? $mapped['translations'] : [];
+        $seo = is_array($mapped['seo'] ?? null) ? $mapped['seo'] : [];
+        $images = is_array($mapped['images'] ?? null) ? $mapped['images'] : [];
+        $variants = is_array($mapped['variants'] ?? null) ? $mapped['variants'] : [];
+        $attributeRows = [];
+        $attributes = is_array($mapped['attributes'] ?? null) ? $mapped['attributes'] : [];
+        foreach ($attributes as $attribute) {
+            if (!is_array($attribute)) {
+                continue;
+            }
+            $attributeRows[] = [
+                'attribute_code' => (string) ($attribute['attribute_code'] ?? $attribute['code'] ?? ''),
+                'language_code' => (string) ($attribute['language_code'] ?? $locale->locale),
+                'value_text' => $attribute['value_text'] ?? $attribute['value'] ?? null,
+            ];
+        }
+
+        $score = $this->scoreLocale(
+            $rules,
+            $translations,
+            $seo,
+            $images,
+            $variants,
+            $attributeRows,
+            $categoryId,
+            'import-preview',
+            $locale->locale
+        );
+
+        $warnings = [];
+        if ($score['score'] < 100.0) {
+            $warnings[] = 'completeness_below_100:' . $locale->locale;
+        }
+
+        return [
+            'failed_rules' => $score['blocking_failed'] ? $score['failed_rules'] : [],
+            'warnings' => $warnings,
+        ];
+    }
+
 
 
     /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Rateb\PlatformCatalog\Infrastructure\Storage;
 
-final class S3CompatibleAdapter implements StorageAdapterInterface
+final class S3CompatibleAdapter implements StorageAdapterInterface, CdnPurgeCapableInterface
 {
     private readonly AwsSigV4Client $client;
 
@@ -115,5 +115,29 @@ final class S3CompatibleAdapter implements StorageAdapterInterface
         }
 
         return $key;
+    }
+
+    public function purgeCdn(string $relativePath): void
+    {
+        if (!filter_var(getenv('CDN_PURGE_ENABLED') ?: 'false', FILTER_VALIDATE_BOOL)) {
+            return;
+        }
+
+        $url = $this->publicUrl($relativePath);
+        $purgeUrl = (string) (getenv('CDN_PURGE_URL') ?: '');
+        if ($purgeUrl === '') {
+            return;
+        }
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\n",
+                'content' => json_encode(['urls' => [$url]], JSON_UNESCAPED_UNICODE) ?: '{}',
+                'timeout' => 3,
+                'ignore_errors' => true,
+            ],
+        ]);
+        @file_get_contents($purgeUrl, false, $context);
     }
 }
