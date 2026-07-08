@@ -351,10 +351,25 @@ if (!function_exists('rateb_platform_branch_manage_enabled')) {
 }
 
 if (!function_exists('rateb_platform_catalog_nav_enabled')) {
-    /** Platform catalog is not linked from tenant/agency ERP navigation — Control Panel only. */
+    /** Platform catalog admin link — rateb.sa super-admin only, never agency ERP hosts. */
     function rateb_platform_catalog_nav_enabled(): bool
     {
-        return false;
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            return false;
+        }
+
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return false;
+        }
+
+        if (PHP_SAPI !== 'cli') {
+            $host = strtolower(trim(explode(':', (string) ($_SERVER['HTTP_HOST'] ?? ''))[0]));
+            if ($host !== '' && str_ends_with($host, '.rateb.sa') && !in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+                return false;
+            }
+        }
+
+        return function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
     }
 }
 
