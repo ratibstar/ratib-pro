@@ -77,6 +77,16 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
         run: bash scripts/run-rateb-erp-migrations.sh
 
+      - name: Run RATEB Platform Catalog migrations
+        if: steps.deploy.outcome == 'success'
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+          DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/public_html' }}
+        run: bash scripts/run-rateb-platform-catalog-migrations.sh
+
       - name: Restore super-admin auth if missing
         if: steps.deploy.outcome == 'success'
         env:
@@ -154,6 +164,9 @@ jobs:
           LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
             "${SITE}/public/rateb-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
+          CATALOG_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 \
+            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
+            "${SITE}/rateb-platform-catalog/public/rateb-catalog-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
           if ! echo "$LIVE_BUILD" | grep -q 'rateb-'; then
             LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' \
               "${SITE}/pages/rateb-rebrand-status.php" 2>/dev/null | sed -n 's/^build=//p' | head -1 | tr -d '\r\n' || true)"
@@ -170,7 +183,7 @@ jobs:
           REG_URL="${SITE}/site/register?_deploy_verify=1"
           HR="$(code "${REG_URL}")"
           REG_BODY="$(curl -sS -L --connect-timeout 10 --max-time 35 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${REG_URL}" 2>/dev/null | head -c 250000 || true)"
-          echo "profile/=$P root/=$ROOT home(redirect)=$H home.php(legacy)=$HLEG register=$HR guard.js=$G live_build=${LIVE_BUILD}"
+          echo "profile/=$P root/=$ROOT home(redirect)=$H home.php(legacy)=$HLEG register=$HR guard.js=$G live_build=${LIVE_BUILD} catalog_build=${CATALOG_BUILD}"
           GOV_URL="${SITE}/public/cms-bundle-gov-control-v2.png?deploy_verify=$(date +%s)"
           GOV_HTTP="$(code "${GOV_URL}")"
           GOV_BYTES="$(curl -sS -L --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' "${GOV_URL}" 2>/dev/null | wc -c | tr -d ' ')"
