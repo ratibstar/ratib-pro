@@ -62,3 +62,16 @@ if (!function_exists('catalog__')) {
         return $key;
     }
 }
+
+if (!function_exists('catalog_admin_erp_login_url')) {
+    function catalog_admin_erp_login_url(): string
+    {
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+        $scheme = $secure ? 'https' : 'http';
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $return = $scheme . '://' . $host . (string) ($_SERVER['REQUEST_URI'] ?? '/rateb-platform-catalog/admin');
+
+        return '/rateb-erp/public/login?next=' . rawurlencode($return);
+    }
+}

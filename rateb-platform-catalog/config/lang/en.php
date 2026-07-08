@@ -10,6 +10,7 @@ return [
     'admin_navigation' => 'Admin navigation',
     'admin_toggle_menu' => 'Toggle menu',
     'admin_guest_mode' => 'Guest mode — authenticate via platform session',
+    'admin_login_erp' => 'Sign in via ERP',
     'admin_authenticated' => 'Authenticated',
     'admin_loading' => 'Loading…',
     'admin_error' => 'An error occurred',

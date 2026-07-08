@@ -119,6 +119,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             </a>
             <?php } ?>
             <?php if (rateb_is_super_admin()) { ?>
+            <a href="/rateb-platform-catalog/admin" class="rateb-nav-link" target="_blank" rel="noopener">
+                <i class="fas fa-boxes-stacked"></i><span><?php echo __('platform_catalog_admin'); ?></span>
+            </a>
             <?php if (rateb_is_platform_oversight_host()) { ?>
             <?php
             $oversightCounts = rateb_oversight_menu_counts();

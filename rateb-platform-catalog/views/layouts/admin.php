@@ -83,7 +83,9 @@ $groupLabels = [
             </div>
             <div class="admin-topbar-actions">
                 <?php if (empty($authenticated)): ?>
-                    <span class="badge text-bg-warning"><?= htmlspecialchars(catalog__('admin_guest_mode', $locale), ENT_QUOTES, 'UTF-8') ?></span>
+                    <a class="btn btn-warning btn-sm" href="<?= htmlspecialchars(catalog_admin_erp_login_url(), ENT_QUOTES, 'UTF-8') ?>">
+                        <?= htmlspecialchars(catalog__('admin_login_erp', $locale), ENT_QUOTES, 'UTF-8') ?>
+                    </a>
                 <?php else: ?>
                     <span class="badge text-bg-success"><?= htmlspecialchars(catalog__('admin_authenticated', $locale), ENT_QUOTES, 'UTF-8') ?></span>
                 <?php endif; ?>

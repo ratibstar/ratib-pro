@@ -2267,6 +2267,7 @@ return [
     'backup_verify_ok' => 'Latest backup verified (gzip + SQL content).',
     'backup_verify_fail' => 'Backup verification failed',
     'cms_section' => 'Marketing CMS',
+    'platform_catalog_admin' => 'Platform product catalog',
     'cms_dashboard' => 'CMS Dashboard',
     'cms_pages' => 'Pages',
     'cms_sections' => 'Sections',

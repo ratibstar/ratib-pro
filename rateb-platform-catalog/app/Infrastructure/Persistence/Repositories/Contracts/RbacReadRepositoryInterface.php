@@ -14,4 +14,6 @@ interface RbacReadRepositoryInterface
     public function userIsActive(int $userId): bool;
     
     public function findActiveUserIdByUuid(string $uuid): ?int;
+
+    public function findActiveUserIdByEmail(string $email): ?int;
 }

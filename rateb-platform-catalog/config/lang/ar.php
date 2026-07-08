@@ -10,6 +10,7 @@ return [
     'admin_navigation' => 'قائمة الإدارة',
     'admin_toggle_menu' => 'فتح القائمة',
     'admin_guest_mode' => 'وضع الضيف — سجّل الدخول عبر المنصة',
+    'admin_login_erp' => 'تسجيل الدخول عبر ERP',
     'admin_authenticated' => 'مصادق',
     'admin_loading' => 'جاري التحميل…',
     'admin_error' => 'حدث خطأ',

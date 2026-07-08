@@ -264,6 +264,11 @@ catalog_test('Enterprise: RBAC denies unauthenticated workflow permission', stat
         {
             return null;
         }
+
+        public function findActiveUserIdByEmail(string $email): ?int
+        {
+            return null;
+        }
     };
     $rbac = new RbacService($rbacRepo);
 
@@ -291,6 +296,11 @@ catalog_test('Enterprise: RBAC resolves user role permission chain', static func
         }
 
         public function findActiveUserIdByUuid(string $uuid): ?int
+        {
+            return null;
+        }
+
+        public function findActiveUserIdByEmail(string $email): ?int
         {
             return null;
         }

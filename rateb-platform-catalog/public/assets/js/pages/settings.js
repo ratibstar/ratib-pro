@@ -17,7 +17,6 @@
         }
       });
     } catch (error) {
-      ui.handleError(error);
       el.innerHTML = '<div class="admin-muted">' + ui.escapeHtml(error.message) + '</div>';
     }
   }

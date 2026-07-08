@@ -136,6 +136,8 @@ final class Auth
         SessionManager::set('rateb_company_id', $user['company_id'] !== null ? (int) $user['company_id'] : null);
         SessionManager::set('rateb_is_super_admin', $isSuper);
         SessionManager::set('rateb_portal', $portal);
+        SessionManager::set('rateb_user_email', (string) ($user['email'] ?? ''));
+        SessionManager::set('rateb_user_display', (string) ($user['name'] ?? $user['display_name'] ?? ''));
         TenantContext::setSuperAdmin($isSuper);
         TenantContext::setCompanyId($user['company_id'] !== null ? (int) $user['company_id'] : null);
         SessionManager::forget('rateb_agency_access_perms_synced');

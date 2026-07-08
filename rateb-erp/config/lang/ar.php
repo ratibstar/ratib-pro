@@ -2266,6 +2266,7 @@ return [
     'backup_verify_ok' => 'تم التحقق من آخر نسخة (gzip + محتوى SQL).',
     'backup_verify_fail' => 'فشل التحقق من النسخة الاحتياطية',
     'cms_section' => 'نظام المحتوى التسويقي',
+    'platform_catalog_admin' => 'كتالوج منتجات المنصة',
     'cms_dashboard' => 'لوحة المحتوى',
     'cms_pages' => 'الصفحات',
     'cms_sections' => 'الأقسام',

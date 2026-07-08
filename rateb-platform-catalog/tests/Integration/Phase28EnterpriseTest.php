@@ -283,6 +283,11 @@ catalog_test('Integration: RBAC denies without platform user', static function (
             {
                 return null;
             }
+
+            public function findActiveUserIdByEmail(string $email): ?int
+            {
+                return null;
+            }
         };
         $guard = buildSessionRbacPolicyGuard(new RbacService($rbacRepo), $rbacRepo);
         catalog_assert_false($guard->allows('catalog.workflow.publish'));

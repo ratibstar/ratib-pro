@@ -17,7 +17,11 @@ final class CatalogSession
         }
 
         if (session_status() === PHP_SESSION_ACTIVE) {
-            return;
+            if (session_name() === 'rateb_erp') {
+                return;
+            }
+
+            session_write_close();
         }
 
         session_name('rateb_erp');
@@ -44,13 +48,7 @@ final class CatalogSession
 
     private static function ensureSavePath(): void
     {
-        $root = defined('RATEB_CATALOG_ROOT') ? (string) RATEB_CATALOG_ROOT : dirname(__DIR__, 3);
-        $candidates = [
-            dirname($root) . '/rateb-erp/storage/sessions',
-            $root . '/../rateb-erp/storage/sessions',
-        ];
-
-        foreach ($candidates as $dir) {
+        foreach (self::sessionSavePathCandidates() as $dir) {
             $resolved = realpath($dir);
             if ($resolved !== false && is_dir($resolved) && is_writable($resolved)) {
                 session_save_path($resolved);
@@ -58,5 +56,35 @@ final class CatalogSession
                 return;
             }
         }
+
+        error_log('RATEB catalog: shared ERP session path not found — catalog may not see ERP login state');
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function sessionSavePathCandidates(): array
+    {
+        $candidates = [];
+
+        $fromEnv = getenv('RATEB_ERP_SESSION_SAVE_PATH');
+        if (is_string($fromEnv) && $fromEnv !== '') {
+            $candidates[] = $fromEnv;
+        }
+
+        if (defined('RATEB_ERP_SESSION_SAVE_PATH') && (string) RATEB_ERP_SESSION_SAVE_PATH !== '') {
+            $candidates[] = (string) RATEB_ERP_SESSION_SAVE_PATH;
+        }
+
+        $root = defined('RATEB_CATALOG_ROOT') ? (string) RATEB_CATALOG_ROOT : dirname(__DIR__, 3);
+        $candidates[] = dirname($root) . '/rateb-erp/storage/sessions';
+        $candidates[] = $root . '/../rateb-erp/storage/sessions';
+
+        $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? (string) $_SERVER['DOCUMENT_ROOT'] : '';
+        if ($docRoot !== '') {
+            $candidates[] = rtrim(str_replace('\\', '/', $docRoot), '/') . '/rateb-erp/storage/sessions';
+        }
+
+        return array_values(array_unique($candidates));
     }
 }

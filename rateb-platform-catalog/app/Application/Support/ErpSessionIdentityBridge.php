@@ -8,7 +8,7 @@ use Rateb\PlatformCatalog\Infrastructure\Persistence\Repositories\Contracts\Rbac
 
 /**
  * Maps an active RATEB ERP session (rateb_erp) to catalog platform_users.id.
- * No schema changes — super admins map to seeded platform user #1.
+ * No schema changes — platform oversight maps to seeded super_admin user #1.
  */
 final class ErpSessionIdentityBridge
 {
@@ -30,12 +30,38 @@ final class ErpSessionIdentityBridge
             return null;
         }
 
-        if (!empty($_SESSION['rateb_is_super_admin']) && $this->rbacReadRepository->userIsActive(1)) {
-            $_SESSION['platform_user_id'] = 1;
+        if ($this->isErpPlatformOversightSession()) {
+            return $this->assignPlatformUser(1);
+        }
 
-            return 1;
+        $email = isset($_SESSION['rateb_user_email']) ? strtolower(trim((string) $_SESSION['rateb_user_email'])) : '';
+        if ($email !== '') {
+            $mapped = $this->rbacReadRepository->findActiveUserIdByEmail($email);
+            if ($mapped !== null) {
+                return $this->assignPlatformUser($mapped);
+            }
         }
 
         return null;
+    }
+
+    private function isErpPlatformOversightSession(): bool
+    {
+        if (!empty($_SESSION['rateb_is_super_admin'])) {
+            return true;
+        }
+
+        return (string) ($_SESSION['rateb_portal'] ?? '') === 'admin';
+    }
+
+    private function assignPlatformUser(int $userId): ?int
+    {
+        if (!$this->rbacReadRepository->userIsActive($userId)) {
+            return null;
+        }
+
+        $_SESSION['platform_user_id'] = $userId;
+
+        return $userId;
     }
 }

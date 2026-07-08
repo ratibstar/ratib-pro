@@ -27,6 +27,11 @@ catalog_test('PlatformIdentityResolver rejects spoofed X-Platform-User-Id withou
         {
             return 1;
         }
+
+        public function findActiveUserIdByEmail(string $email): ?int
+        {
+            return null;
+        }
     };
     $rbac = new RbacService($rbacRepo);
 
@@ -59,6 +64,11 @@ catalog_test('PlatformIdentityResolver accepts trusted gateway headers when enab
         {
             return $uuid === '00000000-0000-4000-8000-000000000001' ? 1 : null;
         }
+
+        public function findActiveUserIdByEmail(string $email): ?int
+        {
+            return null;
+        }
     };
     $rbac = new RbacService($rbacRepo);
 
@@ -89,6 +99,11 @@ catalog_test('PlatformIdentityResolver resolves session actor without gateway he
         }
 
         public function findActiveUserIdByUuid(string $uuid): ?int
+        {
+            return null;
+        }
+
+        public function findActiveUserIdByEmail(string $email): ?int
         {
             return null;
         }

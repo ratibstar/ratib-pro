@@ -72,4 +72,19 @@ final class MysqlRbacReadRepository extends BaseRepository implements RbacReadRe
 
         return $row !== null ? (int) $row['id'] : null;
     }
+
+    public function findActiveUserIdByEmail(string $email): ?int
+    {
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return null;
+        }
+
+        $row = $this->fetchOne(
+            'SELECT id FROM platform_users WHERE email = :email AND status = "active" AND deleted_at IS NULL LIMIT 1',
+            ['email' => $email]
+        );
+
+        return $row !== null ? (int) $row['id'] : null;
+    }
 }
