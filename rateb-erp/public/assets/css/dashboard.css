@@ -4,6 +4,7 @@
     --cm-bg: #080b12;
     --cm-surface: #0f1419;
     --cm-raised: #151b24;
+    --cm-surface-soft: #1a2230;
     --cm-line: #252f3d;
     --cm-line-soft: #1a2230;
     --cm-text: #e8edf4;
@@ -104,9 +105,9 @@
 }
 
 .cm-btn:hover {
-    border-color: #3d4f66;
-    background: #1a2230;
-    color: #fff;
+    border-color: var(--cm-line);
+    background: var(--cm-surface-soft);
+    color: var(--cm-text);
 }
 
 .cm-btn--main {
@@ -1128,4 +1129,66 @@
 .cm-activity__meta em {
     font-style: normal;
     text-transform: capitalize;
+}
+
+/* —— Light theme (.cm command dashboard) —— */
+html[data-theme="light"] .cm,
+html[data-bs-theme="light"] .cm {
+    --cm-bg: var(--rateb-bg);
+    --cm-surface: var(--rateb-surface);
+    --cm-raised: var(--rateb-surface-elevated);
+    --cm-surface-soft: #d8e8f8;
+    --cm-line: var(--rateb-border);
+    --cm-line-soft: #c8daf0;
+    --cm-text: var(--rateb-text);
+    --cm-muted: var(--rateb-text-muted);
+}
+
+html[data-theme="light"] .cm-chart,
+html[data-bs-theme="light"] .cm-chart {
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, var(--cm-bg) 45%);
+}
+
+html[data-theme="light"] .cm-seg__btn:hover,
+html[data-bs-theme="light"] .cm-seg__btn:hover {
+    background: rgba(26, 51, 84, 0.06);
+}
+
+html[data-theme="light"] .cm-tbl tbody tr:nth-child(even) td,
+html[data-bs-theme="light"] .cm-tbl tbody tr:nth-child(even) td {
+    background: rgba(26, 51, 84, 0.03);
+}
+
+html[data-theme="light"] .cm-tbl tbody tr:hover td,
+html[data-bs-theme="light"] .cm-tbl tbody tr:hover td {
+    background: rgba(37, 99, 235, 0.06);
+}
+
+@media (prefers-color-scheme: light) {
+    html[data-theme="auto"] .cm {
+        --cm-bg: var(--rateb-bg);
+        --cm-surface: var(--rateb-surface);
+        --cm-raised: var(--rateb-surface-elevated);
+        --cm-surface-soft: #d8e8f8;
+        --cm-line: var(--rateb-border);
+        --cm-line-soft: #c8daf0;
+        --cm-text: var(--rateb-text);
+        --cm-muted: var(--rateb-text-muted);
+    }
+
+    html[data-theme="auto"] .cm-chart {
+        background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, var(--cm-bg) 45%);
+    }
+
+    html[data-theme="auto"] .cm-seg__btn:hover {
+        background: rgba(26, 51, 84, 0.06);
+    }
+
+    html[data-theme="auto"] .cm-tbl tbody tr:nth-child(even) td {
+        background: rgba(26, 51, 84, 0.03);
+    }
+
+    html[data-theme="auto"] .cm-tbl tbody tr:hover td {
+        background: rgba(37, 99, 235, 0.06);
+    }
 }

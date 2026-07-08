@@ -48,3 +48,52 @@ html[data-theme="light"] .table {
     --bs-table-border-color: var(--rateb-border);
     --bs-table-hover-bg: var(--rateb-table-hover);
 }
+
+@media (prefers-color-scheme: light) {
+    html[data-theme="auto"] {
+        --bs-body-bg: #cce0f5;
+        --bs-body-color: #1a3354;
+        --bs-border-color: #b8cfe8;
+        --bs-tertiary-bg: #e8f2fb;
+    }
+
+    html[data-theme="auto"] body.rateb-app {
+        background-color: var(--rateb-bg) !important;
+        color: var(--rateb-text) !important;
+    }
+
+    html[data-theme="auto"] .rateb-sidebar {
+        background: var(--rateb-sidebar) !important;
+        color: var(--rateb-sidebar-text) !important;
+    }
+
+    html[data-theme="auto"] .rateb-topbar,
+    html[data-theme="auto"] .rateb-card,
+    html[data-theme="auto"] .rateb-widget,
+    html[data-theme="auto"] .rateb-stat-card,
+    html[data-theme="auto"] .rateb-accounting-nav {
+        background-color: var(--rateb-surface) !important;
+    }
+
+    html[data-theme="auto"] .rateb-main {
+        background: var(--rateb-bg);
+    }
+
+    html[data-theme="auto"] .rateb-content {
+        background: transparent;
+    }
+
+    html[data-theme="auto"] .form-control,
+    html[data-theme="auto"] .form-select {
+        background-color: var(--rateb-input-bg) !important;
+        border-color: var(--rateb-border) !important;
+        color: var(--rateb-text) !important;
+    }
+
+    html[data-theme="auto"] .table {
+        --bs-table-bg: transparent;
+        --bs-table-color: var(--rateb-text);
+        --bs-table-border-color: var(--rateb-border);
+        --bs-table-hover-bg: var(--rateb-table-hover);
+    }
+}
