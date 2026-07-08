@@ -36,6 +36,7 @@ logs/
 tmp/
 temp/
 cache/
+!/rateb-platform-catalog/app/Infrastructure/Cache/
 *.cache
 
 # Archives and dumps
