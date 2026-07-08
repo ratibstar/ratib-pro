@@ -11,7 +11,7 @@
       ui.renderTable(list, [
         { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name); } },
         { key: 'entity_type', label: 'Entity', render: function (r) { return ui.escapeHtml(r.entity_type); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'actions', label: 'Actions', render: function (r) {
           return '<button type="button" class="btn btn-sm btn-outline-danger" data-del="' + ui.escapeHtml(r.uuid) + '">Delete</button>';
         } }

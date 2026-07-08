@@ -14,14 +14,14 @@
       var assets = await api.get('/catalog/asset-types');
 
       ui.renderTable(document.getElementById('mediaImages'), [
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'actions', label: 'Actions', render: function (r) {
           return '<button type="button" class="btn btn-sm btn-outline-danger" data-del-image="' + ui.escapeHtml(r.uuid) + '">Delete</button>';
         } }
       ], Array.isArray(images.data) ? images.data : []);
 
       ui.renderTable(document.getElementById('mediaFiles'), [
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'actions', label: 'Actions', render: function (r) {
           return '<button type="button" class="btn btn-sm btn-outline-danger" data-del-file="' + ui.escapeHtml(r.uuid) + '">Delete</button>';
         } }

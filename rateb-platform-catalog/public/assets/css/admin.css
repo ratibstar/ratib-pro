@@ -12,6 +12,7 @@
   --admin-shadow: 0 10px 30px rgba(19, 35, 58, 0.08);
   --admin-radius: 14px;
   --admin-sidebar-width: 280px;
+  --admin-sidebar-collapsed-width: 78px;
   --admin-font: "Segoe UI", "Tahoma", "Noto Sans Arabic", sans-serif;
 }
 
@@ -31,6 +32,11 @@ body.admin-body {
   display: grid;
   grid-template-columns: var(--admin-sidebar-width) 1fr;
   min-height: 100vh;
+  transition: grid-template-columns 0.2s ease;
+}
+
+.admin-shell.is-sidebar-collapsed {
+  --admin-sidebar-width: var(--admin-sidebar-collapsed-width);
 }
 
 .admin-sidebar {
@@ -51,6 +57,11 @@ body.admin-body {
   padding: 0.35rem 0.5rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 1rem;
+  min-height: 58px;
+}
+
+.admin-brand-text {
+  min-width: 0;
 }
 
 .admin-brand-mark {
@@ -76,15 +87,52 @@ body.admin-body {
 }
 
 .admin-nav-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.35rem;
 }
 
-.admin-nav-group-label {
+.admin-nav-group-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.55;
-  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.admin-nav-group-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.admin-nav-group-toggle i {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.admin-nav-group.is-open .admin-nav-group-toggle i {
+  transform: rotate(180deg);
+}
+
+.admin-nav-group-body {
+  display: none;
+  padding-top: 0.15rem;
+}
+
+.admin-nav-group.is-open .admin-nav-group-body {
+  display: block;
+}
+
+.admin-nav-group-label {
+  display: none;
 }
 
 .admin-nav-link {
@@ -109,6 +157,58 @@ body.admin-body {
   font-size: 1.05rem;
   width: 1.2rem;
   text-align: center;
+  flex-shrink: 0;
+}
+
+.admin-sidebar-footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-sidebar-erp-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  color: var(--admin-sidebar-text);
+  text-decoration: none;
+  font-size: 0.88rem;
+  opacity: 0.85;
+}
+
+.admin-sidebar-erp-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  opacity: 1;
+}
+
+.admin-shell.is-sidebar-collapsed .admin-brand-text,
+.admin-shell.is-sidebar-collapsed .admin-nav-group-toggle,
+.admin-shell.is-sidebar-collapsed .admin-nav-link span,
+.admin-shell.is-sidebar-collapsed .admin-sidebar-erp-link span,
+.admin-shell.is-sidebar-collapsed .admin-sidebar-collapse-hint {
+  display: none;
+}
+
+.admin-shell.is-sidebar-collapsed .admin-brand {
+  justify-content: center;
+  padding-inline: 0.35rem;
+}
+
+.admin-shell.is-sidebar-collapsed .admin-nav-group-body {
+  display: block;
+}
+
+.admin-shell.is-sidebar-collapsed .admin-nav-link,
+.admin-shell.is-sidebar-collapsed .admin-sidebar-erp-link {
+  justify-content: center;
+  padding-inline: 0.55rem;
+}
+
+.admin-shell.is-sidebar-collapsed .admin-sidebar {
+  padding-inline: 0.5rem;
 }
 
 .admin-main {

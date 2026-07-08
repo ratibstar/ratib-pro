@@ -18,7 +18,7 @@
         { key: 'sku', label: 'SKU', render: function (r) { return ui.escapeHtml(r.sku); } },
         { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name); } },
         { key: 'status', label: 'Status', render: function (r) { return ui.statusBadge(r.status); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } }
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } }
       ], items, {
         onRowClick: function (row) { openProduct(row.uuid); }
       });

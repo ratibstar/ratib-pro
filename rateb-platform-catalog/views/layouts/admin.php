@@ -49,34 +49,62 @@ $groupLabels = [
     <aside class="admin-sidebar" id="adminSidebar">
         <div class="admin-brand">
             <div class="admin-brand-mark">R</div>
-            <div>
+            <div class="admin-brand-text">
                 <div class="admin-brand-title"><?= htmlspecialchars(catalog__('admin_panel', $locale), ENT_QUOTES, 'UTF-8') ?></div>
                 <div class="admin-brand-meta">v<?= htmlspecialchars((string) ($architecture ?? '1.3.1'), ENT_QUOTES, 'UTF-8') ?></div>
             </div>
         </div>
         <nav class="admin-nav" aria-label="<?= htmlspecialchars(catalog__('admin_navigation', $locale), ENT_QUOTES, 'UTF-8') ?>">
             <?php foreach ($groups as $groupKey => $items): ?>
-                <div class="admin-nav-group">
-                    <div class="admin-nav-group-label"><?= htmlspecialchars($groupLabels[$groupKey] ?? $groupKey, ENT_QUOTES, 'UTF-8') ?></div>
+                <?php
+                $groupHasActive = false;
+                foreach ($items as $navItem) {
+                    if (($pageKey ?? '') === $navItem['key']) {
+                        $groupHasActive = true;
+                        break;
+                    }
+                }
+                ?>
+                <div class="admin-nav-group<?= $groupHasActive ? ' is-open' : '' ?>" data-nav-group="<?= htmlspecialchars($groupKey, ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="button"
+                            class="admin-nav-group-toggle"
+                            data-nav-group-toggle
+                            aria-expanded="<?= $groupHasActive ? 'true' : 'false' ?>">
+                        <span><?= htmlspecialchars($groupLabels[$groupKey] ?? $groupKey, ENT_QUOTES, 'UTF-8') ?></span>
+                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="admin-nav-group-body">
                     <?php foreach ($items as $item): ?>
                         <?php
                         $href = $assetBase . $item['route'] . '?lang=' . rawurlencode($locale);
                         $active = ($pageKey ?? '') === $item['key'];
                         ?>
-                        <a class="admin-nav-link<?= $active ? ' is-active' : '' ?>" href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>">
+                        <a class="admin-nav-link<?= $active ? ' is-active' : '' ?>"
+                           href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>"
+                           title="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>">
                             <i class="bi <?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>
                             <span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
                         </a>
                     <?php endforeach; ?>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </nav>
+        <div class="admin-sidebar-footer">
+            <a class="admin-sidebar-erp-link" href="/rateb-erp/public/admin" title="<?= htmlspecialchars(catalog__('admin_back_erp', $locale), ENT_QUOTES, 'UTF-8') ?>">
+                <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                <span><?= htmlspecialchars(catalog__('admin_back_erp', $locale), ENT_QUOTES, 'UTF-8') ?></span>
+            </a>
+        </div>
     </aside>
 
     <div class="admin-main">
         <header class="admin-topbar">
             <button type="button" class="btn btn-outline-secondary btn-sm d-lg-none" id="adminSidebarToggle" aria-label="<?= htmlspecialchars(catalog__('admin_toggle_menu', $locale), ENT_QUOTES, 'UTF-8') ?>">
                 <i class="bi bi-list"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm d-none d-lg-inline-flex" id="adminSidebarCollapse" aria-label="<?= htmlspecialchars(catalog__('admin_collapse_sidebar', $locale), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(catalog__('admin_collapse_sidebar', $locale), ENT_QUOTES, 'UTF-8') ?>">
+                <i class="bi bi-layout-sidebar-inset"></i>
             </button>
             <div class="admin-topbar-title">
                 <?= htmlspecialchars(catalog__('nav_' . ($pageKey ?? 'dashboard'), $locale), ENT_QUOTES, 'UTF-8') ?>
@@ -145,7 +173,9 @@ window.RatebAdminConfig = {
         stat_health: <?= json_encode($locale === 'ar' ? 'الصحة' : 'Health', JSON_UNESCAPED_UNICODE) ?>,
         stat_ready: <?= json_encode($locale === 'ar' ? 'الجاهزية' : 'Ready', JSON_UNESCAPED_UNICODE) ?>,
         stat_queue: <?= json_encode($locale === 'ar' ? 'الطابور' : 'Queue', JSON_UNESCAPED_UNICODE) ?>,
-        name: <?= json_encode($locale === 'ar' ? 'الاسم' : 'Name', JSON_UNESCAPED_UNICODE) ?>
+        name: <?= json_encode($locale === 'ar' ? 'الاسم' : 'Name', JSON_UNESCAPED_UNICODE) ?>,
+        collapse_sidebar: <?= json_encode(catalog__('admin_collapse_sidebar', $locale), JSON_UNESCAPED_UNICODE) ?>,
+        expand_sidebar: <?= json_encode(catalog__('admin_expand_sidebar', $locale), JSON_UNESCAPED_UNICODE) ?>
     }
 };
 </script>

@@ -12,7 +12,7 @@
       });
       var items = Array.isArray(res.data) ? res.data : [];
       ui.renderTable(list, [
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'status', label: 'Status', render: function (r) { return ui.statusBadge(r.status); } },
         { key: 'request_type', label: 'Type', render: function (r) { return ui.escapeHtml(r.request_type || '—'); } }
       ], items, { onRowClick: openItem });

@@ -9,7 +9,7 @@
       ui.renderTable(list, [
         { key: 'code', label: 'Code', render: function (r) { return ui.escapeHtml(r.code || r.slug || '—'); } },
         { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } }
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } }
       ], Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       ui.handleError(error);

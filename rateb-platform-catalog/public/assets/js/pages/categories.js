@@ -9,7 +9,7 @@
       var items = Array.isArray(res.data) ? res.data : [];
       ui.renderTable(list, [
         { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || r.code || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'status', label: 'Status', render: function (r) { return ui.statusBadge(r.status || '—'); } }
       ], items, { onRowClick: openCategory });
     } catch (error) {

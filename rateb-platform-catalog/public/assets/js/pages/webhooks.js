@@ -8,7 +8,7 @@
       var res = await api.get('/catalog/webhooks', { limit: 100, offset: 0 });
       ui.renderTable(list, [
         { key: 'url', label: 'URL', render: function (r) { return ui.escapeHtml(r.url || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'is_active', label: 'Active', render: function (r) { return ui.escapeHtml(String(r.is_active != null ? r.is_active : '—')); } }
       ], Array.isArray(res.data) ? res.data : [], {
         onRowClick: async function (row) {
