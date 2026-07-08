@@ -6,7 +6,7 @@
     ui.setLoading(el, true);
     try {
       var res = await api.get('/catalog/admin/queue/status');
-      el.innerHTML = ui.jsonBlock(res.data);
+      el.innerHTML = ui.renderQueuePanel(res.data, { includeRaw: true });
     } catch (error) {
       ui.handleError(error);
       el.innerHTML = '<div class="admin-muted">' + ui.escapeHtml(error.message) + '</div>';

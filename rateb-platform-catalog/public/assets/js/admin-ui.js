@@ -108,7 +108,96 @@
   }
 
   function jsonBlock(value) {
-    return '<pre class="admin-json">' + escapeHtml(typeof value === 'string' ? value : JSON.stringify(value, null, 2)) + '</pre>';
+    var text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    return '<pre class="admin-json" dir="ltr">' + escapeHtml(text) + '</pre>';
+  }
+
+  function codeCell(value) {
+    var safe = escapeHtml(value == null ? '' : value);
+    return '<code class="admin-code" title="' + safe + '" dir="ltr">' + safe + '</code>';
+  }
+
+  function kvGrid(items) {
+    var html = '<div class="admin-kv-grid">';
+    items.forEach(function (item) {
+      html += '<div class="admin-kv-item">';
+      html += '<div class="admin-kv-label">' + escapeHtml(item.label) + '</div>';
+      html += '<div class="' + (item.mono ? 'admin-kv-value admin-kv-value-mono' : 'admin-kv-value') + '">';
+      html += item.html != null ? item.html : escapeHtml(item.value == null ? '—' : item.value);
+      html += '</div></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderHealthPanel(health, options) {
+    options = options || {};
+    health = health || {};
+    var html = kvGrid([
+      { label: i18n.status || 'Status', html: statusBadge(health.status || '—') },
+      { label: i18n.service || 'Service', value: health.service || '—' },
+      { label: i18n.version || 'Version', value: health.version || health.architecture_version || '—', mono: true },
+      { label: i18n.release || 'Release', value: health.release || '—', mono: true },
+      { label: i18n.build || 'Build', value: health.build_timestamp || '—', mono: true }
+    ]);
+    if (options.includeRaw !== false) {
+      html += '<details class="admin-json-details"><summary class="admin-muted small">' +
+        escapeHtml(i18n.raw_json || 'Raw JSON') + '</summary>' + jsonBlock(health) + '</details>';
+    }
+    return html;
+  }
+
+  function renderReadyPanel(ready, options) {
+    options = options || {};
+    ready = ready || {};
+    var checks = ready.checks && typeof ready.checks === 'object' ? ready.checks : {};
+    var keys = Object.keys(checks);
+    var html = '<div class="mb-2">' + statusBadge(ready.status || '—') + '</div>';
+    if (keys.length) {
+      html += '<ul class="admin-check-list">';
+      keys.forEach(function (key) {
+        var ok = !!checks[key];
+        html += '<li class="admin-check-item' + (ok ? ' is-ok' : ' is-fail') + '">';
+        html += '<span>' + escapeHtml(key) + '</span>';
+        html += '<span>' + (ok ? '✓' : '✗') + '</span></li>';
+      });
+      html += '</ul>';
+    } else {
+      html += '<div class="admin-muted">' + escapeHtml(i18n.empty || 'No data') + '</div>';
+    }
+    if (options.includeRaw !== false) {
+      html += '<details class="admin-json-details mt-2"><summary class="admin-muted small">' +
+        escapeHtml(i18n.raw_json || 'Raw JSON') + '</summary>' + jsonBlock(ready) + '</details>';
+    }
+    return html;
+  }
+
+  function renderQueuePanel(data, options) {
+    options = options || {};
+    data = data || {};
+    var queues = Array.isArray(data.queues) ? data.queues : [];
+    var pending = data.pending != null ? data.pending : null;
+    var html = kvGrid([
+      { label: i18n.queue_pending || 'Pending', value: pending != null ? String(pending) : '0' },
+      { label: i18n.queue_count || 'Queues', value: String(queues.length) }
+    ]);
+    if (!queues.length) {
+      html += '<div class="admin-muted mt-3">' + escapeHtml(i18n.queue_empty || 'No queued jobs right now.') + '</div>';
+    } else {
+      html += '<div class="admin-table-wrap mt-3"><table class="table admin-table"><thead><tr>' +
+        '<th>' + escapeHtml(i18n.queue_name || 'Queue') + '</th>' +
+        '<th>' + escapeHtml(i18n.queue_pending || 'Pending') + '</th></tr></thead><tbody>';
+      queues.forEach(function (row) {
+        html += '<tr><td>' + escapeHtml(row.name || row.queue || '—') + '</td><td>' +
+          escapeHtml(String(row.pending != null ? row.pending : (row.count != null ? row.count : '—'))) + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    if (options.includeRaw) {
+      html += '<details class="admin-json-details mt-2"><summary class="admin-muted small">' +
+        escapeHtml(i18n.raw_json || 'Raw JSON') + '</summary>' + jsonBlock(data) + '</details>';
+    }
+    return html;
   }
 
   function handleError(error) {
@@ -129,6 +218,11 @@
     bindForm: bindForm,
     can: can,
     jsonBlock: jsonBlock,
+    codeCell: codeCell,
+    kvGrid: kvGrid,
+    renderHealthPanel: renderHealthPanel,
+    renderReadyPanel: renderReadyPanel,
+    renderQueuePanel: renderQueuePanel,
     handleError: handleError,
     t: function (key, fallback) {
       return i18n[key] || fallback || key;

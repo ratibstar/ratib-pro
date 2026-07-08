@@ -11,7 +11,7 @@
         offset: 0
       });
       ui.renderTable(list, [
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'status', label: 'Status', render: function (r) { return ui.statusBadge(r.status); } },
         { key: 'score', label: 'Score', render: function (r) { return ui.escapeHtml(String(r.score != null ? r.score : '—')); } }
       ], Array.isArray(res.data) ? res.data : [], {
@@ -29,7 +29,14 @@
       });
 
       var rules = await api.get('/catalog/duplicate-rules');
-      document.getElementById('dupRules').innerHTML = ui.jsonBlock(rules.data);
+      var ruleItems = Array.isArray(rules.data) ? rules.data : [];
+      ui.renderTable(document.getElementById('dupRules'), [
+        { key: 'code', label: 'Code', render: function (r) { return ui.codeCell(r.code); } },
+        { key: 'match_field', label: 'Field', render: function (r) { return ui.escapeHtml(r.match_field); } },
+        { key: 'match_type', label: 'Type', render: function (r) { return ui.escapeHtml(r.match_type); } },
+        { key: 'priority', label: 'Priority', render: function (r) { return ui.escapeHtml(String(r.priority != null ? r.priority : '—')); } },
+        { key: 'is_active', label: 'Active', render: function (r) { return ui.escapeHtml(String(r.is_active != null ? r.is_active : '—')); } }
+      ], ruleItems);
     } catch (error) {
       ui.handleError(error);
       list.innerHTML = '<div class="admin-muted p-3">' + ui.escapeHtml(error.message) + '</div>';

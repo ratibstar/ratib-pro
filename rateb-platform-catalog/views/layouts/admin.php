@@ -130,7 +130,22 @@ window.RatebAdminConfig = {
         actions: <?= json_encode(catalog__('admin_actions', $locale), JSON_UNESCAPED_UNICODE) ?>,
         search: <?= json_encode(catalog__('admin_search_placeholder', $locale), JSON_UNESCAPED_UNICODE) ?>,
         no_api: <?= json_encode(catalog__('admin_no_api', $locale), JSON_UNESCAPED_UNICODE) ?>,
-        unauthorized: <?= json_encode(catalog__('admin_unauthorized', $locale), JSON_UNESCAPED_UNICODE) ?>
+        unauthorized: <?= json_encode(catalog__('admin_unauthorized', $locale), JSON_UNESCAPED_UNICODE) ?>,
+        status: <?= json_encode($locale === 'ar' ? 'الحالة' : 'Status', JSON_UNESCAPED_UNICODE) ?>,
+        service: <?= json_encode($locale === 'ar' ? 'الخدمة' : 'Service', JSON_UNESCAPED_UNICODE) ?>,
+        version: <?= json_encode($locale === 'ar' ? 'الإصدار' : 'Version', JSON_UNESCAPED_UNICODE) ?>,
+        release: <?= json_encode($locale === 'ar' ? 'الإصدار الإنتاجي' : 'Release', JSON_UNESCAPED_UNICODE) ?>,
+        build: <?= json_encode($locale === 'ar' ? 'البناء' : 'Build', JSON_UNESCAPED_UNICODE) ?>,
+        raw_json: <?= json_encode($locale === 'ar' ? 'JSON خام' : 'Raw JSON', JSON_UNESCAPED_UNICODE) ?>,
+        queue_empty: <?= json_encode($locale === 'ar' ? 'لا توجد مهام في الطابور حالياً.' : 'No queued jobs right now.', JSON_UNESCAPED_UNICODE) ?>,
+        queue_pending: <?= json_encode($locale === 'ar' ? 'معلّق' : 'Pending', JSON_UNESCAPED_UNICODE) ?>,
+        queue_count: <?= json_encode($locale === 'ar' ? 'الطوابير' : 'Queues', JSON_UNESCAPED_UNICODE) ?>,
+        queue_name: <?= json_encode($locale === 'ar' ? 'الطابور' : 'Queue', JSON_UNESCAPED_UNICODE) ?>,
+        stat_products: <?= json_encode($locale === 'ar' ? 'المنتجات' : 'Products', JSON_UNESCAPED_UNICODE) ?>,
+        stat_health: <?= json_encode($locale === 'ar' ? 'الصحة' : 'Health', JSON_UNESCAPED_UNICODE) ?>,
+        stat_ready: <?= json_encode($locale === 'ar' ? 'الجاهزية' : 'Ready', JSON_UNESCAPED_UNICODE) ?>,
+        stat_queue: <?= json_encode($locale === 'ar' ? 'الطابور' : 'Queue', JSON_UNESCAPED_UNICODE) ?>,
+        name: <?= json_encode($locale === 'ar' ? 'الاسم' : 'Name', JSON_UNESCAPED_UNICODE) ?>
     }
 };
 </script>

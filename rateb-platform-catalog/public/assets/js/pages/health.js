@@ -8,15 +8,15 @@
     ui.setLoading(ready, true);
     try {
       var health = await api.get('/health');
-      live.innerHTML = ui.jsonBlock(health.data);
+      live.innerHTML = ui.renderHealthPanel(health.data);
     } catch (error) {
       live.innerHTML = '<div class="admin-muted">' + ui.escapeHtml(error.message) + '</div>';
     }
     try {
       var readiness = await api.get('/ready');
-      ready.innerHTML = ui.jsonBlock(readiness.data);
+      ready.innerHTML = ui.renderReadyPanel(readiness.data);
     } catch (error) {
-      ready.innerHTML = ui.jsonBlock({ status: 'not_ready', message: error.message, payload: error.payload || null });
+      ready.innerHTML = ui.renderReadyPanel({ status: 'not_ready', message: error.message });
     }
   }
 

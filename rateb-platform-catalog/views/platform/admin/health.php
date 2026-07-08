@@ -3,13 +3,13 @@
         <h1 class="h4 mb-0"><?= htmlspecialchars(catalog__('nav_health', $locale), ENT_QUOTES, 'UTF-8') ?></h1>
         <button type="button" class="btn btn-sm btn-outline-secondary" data-admin-refresh="admin:page-refresh"><?= htmlspecialchars(catalog__('admin_refresh', $locale), ENT_QUOTES, 'UTF-8') ?></button>
     </div>
-    <div class="admin-split">
-        <section>
-            <h2 class="h6">/health</h2>
+    <div class="admin-split mt-3">
+        <section class="admin-panel">
+            <h2 class="h6 mb-3">/health</h2>
             <div id="healthLiveness"></div>
         </section>
-        <section>
-            <h2 class="h6">/ready</h2>
+        <section class="admin-panel">
+            <h2 class="h6 mb-3">/ready</h2>
             <div id="healthReady"></div>
         </section>
     </div>

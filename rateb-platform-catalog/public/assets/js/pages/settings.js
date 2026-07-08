@@ -8,7 +8,7 @@
       var res = await api.get('/catalog/admin/roles');
       ui.renderTable(el, [
         { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || r.code || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return '<code>' + ui.escapeHtml(r.uuid) + '</code>'; } },
+        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
         { key: 'is_active', label: 'Active', render: function (r) { return ui.escapeHtml(String(r.is_active != null ? r.is_active : '—')); } }
       ], Array.isArray(res.data) ? res.data : [], {
         onRowClick: function (row) {
