@@ -31,14 +31,19 @@ require_once $root . '/tests/Support/ConfigurablePolicyGuard.php';
 require $root . '/tests/Support/SessionRbacPolicyGuardFactory.php';
 require_once $root . '/tests/Support/StubSearchIndexReadRepository.php';
 
-$passed = 0;
-$failures = 0;
-$skipped = 0;
+$corePassed = 0;
+$coreFailures = 0;
+$coreSkipped = 0;
+$adapterPassed = 0;
+$adapterFailures = 0;
+$adapterSkipped = 0;
+$catalogTestContext = 'core';
 
 /** @param callable(): void $test */
 function catalog_test(string $name, callable $test): void
 {
-    global $failures, $passed, $skipped;
+    global $coreFailures, $corePassed, $coreSkipped;
+    global $adapterFailures, $adapterPassed, $adapterSkipped, $catalogTestContext;
 
     ob_start();
     try {
@@ -48,14 +53,27 @@ function catalog_test(string $name, callable $test): void
             echo $output;
         }
 
+        if ($catalogTestContext === 'adapter') {
+            if ($output !== false && str_contains($output, '[SKIP]')) {
+                $adapterSkipped++;
+
+                return;
+            }
+
+            echo "[PASS] {$name}\n";
+            $adapterPassed++;
+
+            return;
+        }
+
         if ($output !== false && str_contains($output, '[SKIP]')) {
-            $skipped++;
+            $coreSkipped++;
 
             return;
         }
 
         echo "[PASS] {$name}\n";
-        $passed++;
+        $corePassed++;
     } catch (Throwable $e) {
         $output = ob_get_clean();
         if ($output !== false && $output !== '') {
@@ -63,7 +81,11 @@ function catalog_test(string $name, callable $test): void
         }
 
         echo "[FAIL] {$name} — {$e->getMessage()}\n";
-        $failures++;
+        if ($catalogTestContext === 'adapter') {
+            $adapterFailures++;
+        } else {
+            $coreFailures++;
+        }
     }
 }
 
@@ -134,5 +156,31 @@ require $root . '/tests/Integration/ScheduledPublishIntegrationTest.php';
 require $root . '/tests/Integration/SearchQueueIntegrationTest.php';
 require $root . '/tests/Integration/DatabaseSearchIntegrationTest.php';
 
-echo PHP_EOL . "Passed: {$passed}, Failed: {$failures}, Skipped: {$skipped}" . PHP_EOL;
-exit($failures > 0 ? 1 : 0);
+$adapterSuiteRequested = strtolower((string) (getenv('CATALOG_ADAPTER_TESTS') ?: '')) === 'meilisearch';
+$adapterSuiteExecuted = false;
+
+if ($adapterSuiteRequested) {
+    $adapterSuiteExecuted = true;
+    $catalogTestContext = 'adapter';
+    require $root . '/tests/Integration/Adapters/bootstrap.php';
+    require $root . '/tests/Integration/Adapters/Meilisearch/MeilisearchAdapterIntegrationTest.php';
+}
+
+echo PHP_EOL;
+echo 'Core Tests:' . PHP_EOL;
+echo "{$corePassed} PASS" . PHP_EOL;
+echo "{$coreFailures} FAIL" . PHP_EOL;
+echo "{$coreSkipped} SKIP" . PHP_EOL;
+echo PHP_EOL;
+echo 'Optional Adapter Tests:' . PHP_EOL;
+
+if (!$adapterSuiteExecuted) {
+    echo 'Not Executed' . PHP_EOL;
+} else {
+    echo "{$adapterPassed} PASS" . PHP_EOL;
+    echo "{$adapterFailures} FAIL" . PHP_EOL;
+    echo "{$adapterSkipped} SKIP" . PHP_EOL;
+}
+
+$exitCode = ($coreFailures + $adapterFailures) > 0 ? 1 : 0;
+exit($exitCode);

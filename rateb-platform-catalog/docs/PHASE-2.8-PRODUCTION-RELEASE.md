@@ -4,7 +4,8 @@
 **Phase:** `2.8`  
 **Architecture:** `v1.3.1` (LOCKED)  
 **Build:** `2026-07-08T06:15:00+03:00`  
-**Tests:** `131/131 PASS`
+**Core tests:** `130/130 PASS` (Release 2.8.1 certification)  
+**Optional adapter tests:** `1` (`CATALOG_ADAPTER_TESTS=meilisearch`, not required for production default)
 
 ---
 
