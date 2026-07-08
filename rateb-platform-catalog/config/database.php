@@ -56,7 +56,7 @@ if (!function_exists('rateb_platform_catalog_db_credentials')) {
             $pass = (string) RATEB_PLATFORM_CATALOG_DB_PASS;
         } else {
             $fromEnv = getenv('RATEB_PLATFORM_CATALOG_DB_PASS');
-            if ($fromEnv !== false) {
+            if ($fromEnv !== false && $fromEnv !== '') {
                 $pass = (string) $fromEnv;
             }
         }
