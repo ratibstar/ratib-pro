@@ -32,17 +32,36 @@ require $root . '/tests/Support/SessionRbacPolicyGuardFactory.php';
 require_once $root . '/tests/Support/StubSearchIndexReadRepository.php';
 
 $passed = 0;
+$failures = 0;
+$skipped = 0;
 
 /** @param callable(): void $test */
 function catalog_test(string $name, callable $test): void
 {
-    global $failures, $passed;
+    global $failures, $passed, $skipped;
 
+    ob_start();
     try {
         $test();
+        $output = ob_get_clean();
+        if ($output !== false && $output !== '') {
+            echo $output;
+        }
+
+        if ($output !== false && str_contains($output, '[SKIP]')) {
+            $skipped++;
+
+            return;
+        }
+
         echo "[PASS] {$name}\n";
         $passed++;
     } catch (Throwable $e) {
+        $output = ob_get_clean();
+        if ($output !== false && $output !== '') {
+            echo $output;
+        }
+
         echo "[FAIL] {$name} — {$e->getMessage()}\n";
         $failures++;
     }
@@ -115,5 +134,5 @@ require $root . '/tests/Integration/ScheduledPublishIntegrationTest.php';
 require $root . '/tests/Integration/SearchQueueIntegrationTest.php';
 require $root . '/tests/Integration/DatabaseSearchIntegrationTest.php';
 
-echo PHP_EOL . "Passed: {$passed}, Failed: {$failures}" . PHP_EOL;
+echo PHP_EOL . "Passed: {$passed}, Failed: {$failures}, Skipped: {$skipped}" . PHP_EOL;
 exit($failures > 0 ? 1 : 0);
