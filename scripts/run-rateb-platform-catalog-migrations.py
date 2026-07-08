@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run RATEB Platform Catalog migrations on production via SSH after deploy."""
+"""Run RATEB Platform Catalog migrations on production after deploy."""
 from __future__ import annotations
 
 import os
@@ -7,6 +7,44 @@ import stat
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.request
+
+
+def is_transient_network_error(message: str) -> bool:
+    needles = (
+        "Temporary failure in name resolution",
+        "Name or service not known",
+        "timed out",
+        "TimeoutError",
+        "Connection refused",
+        "Connection reset",
+        "getaddrinfo failed",
+    )
+    msg = message or ""
+    return any(needle in msg for needle in needles)
+
+
+def http_migrate(site: str, token: str, path: str) -> tuple[int, str]:
+    url = site.rstrip("/") + path
+    req = urllib.request.Request(
+        url,
+        data=b"",
+        method="POST",
+        headers={
+            "X-Rateb-Migrate-Token": token,
+            "Cache-Control": "no-cache",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=180) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            return int(resp.status), body
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        return int(exc.code), body
+    except Exception as exc:
+        return 0, str(exc)
 
 
 def ssh_migrate() -> tuple[int, str]:
@@ -61,26 +99,69 @@ def ssh_migrate() -> tuple[int, str]:
             pass
 
 
+def migration_body_ok(body: str) -> bool:
+    lines = [ln.strip() for ln in body.strip().splitlines() if ln.strip()]
+    return bool(lines and lines[-1] == "OK")
+
+
 def main() -> int:
-    code, body = ssh_migrate()
-    print("--- rateb-platform-catalog/bin/migrate.php ---", flush=True)
-    print(body, flush=True)
-    if code == 0 and "ssh skipped" in body:
-        print("::warning::Platform Catalog migrations skipped — no SSH credentials", flush=True)
-        return 0
-    if code != 0:
-        if "Access denied for user 'root'@'localhost'" in body:
+    site = os.environ.get("DEPLOY_SITE_URL") or os.environ.get("CPANEL_SITE_URL", "https://rateb.sa")
+    site = site.rstrip("/")
+    token = os.environ.get("RATEB_ERP_MIGRATE_TOKEN") or os.environ.get("CPANEL_API_TOKEN") or ""
+
+    if token:
+        print(
+            f"migrate auth: workflow secret + server token (site={site})",
+            flush=True,
+        )
+        endpoints = [
+            "/control-panel/api/control/platform-catalog-migrate-run.php",
+            "/rateb-platform-catalog/public/run-migrations.php",
+        ]
+        last_body = ""
+        for path in endpoints:
+            code, body = http_migrate(site, token, path)
+            last_body = body
+            print(f"--- {path} (HTTP {code}) ---", flush=True)
+            print(body, flush=True)
+            if migration_body_ok(body):
+                print("RATEB Platform Catalog migrations completed", flush=True)
+                return 0
+            if code == 403 and body.strip() == "Forbidden":
+                continue
+            if code == 404:
+                continue
+            if code == 0 and is_transient_network_error(body):
+                continue
+
+        if "Access denied" in last_body and "platform_catalog" in last_body:
             print(
-                "::warning::Platform Catalog migrations skipped — set RATEB_PLATFORM_CATALOG_DB_* "
-                "or DB_USER/DB_PASS in server .env (CLI must not use root)",
+                "::warning::Platform Catalog migrations skipped — grant admin_rateb full access to "
+                "admin_rateb_platform_catalog in DirectAdmin (or set RATEB_PLATFORM_CATALOG_DB_USER/PASS in .env)",
                 flush=True,
             )
             return 0
+
+    code, body = ssh_migrate()
+    print("--- rateb-platform-catalog/bin/migrate.php (SSH) ---", flush=True)
+    print(body, flush=True)
+    if code == 0 and "ssh skipped" in body:
+        print("::warning::Platform Catalog migrations skipped — no credentials", flush=True)
+        return 0
+    if migration_body_ok(body):
+        print("RATEB Platform Catalog migrations completed", flush=True)
+        return 0
+    if "Access denied" in body and "platform_catalog" in body:
+        print(
+            "::warning::Platform Catalog migrations skipped — grant admin_rateb full access to "
+            "admin_rateb_platform_catalog in DirectAdmin (or set RATEB_PLATFORM_CATALOG_DB_USER/PASS in .env)",
+            flush=True,
+        )
+        return 0
+    if code != 0 or "Migration failed:" in body or "ERROR:" in body or "Refusing to run catalog migrations" in body:
         print("::error::Platform Catalog migration failed", flush=True)
         return 1
-    if "Migration failed:" in body or "Refusing to run catalog migrations" in body:
-        print("::error::Platform Catalog migration reported failure", flush=True)
-        return 1
+
     print("RATEB Platform Catalog migrations completed", flush=True)
     return 0
 

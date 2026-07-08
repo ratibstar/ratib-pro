@@ -5,6 +5,9 @@ declare(strict_types=1);
 if (PHP_SAPI === 'cli' && (empty($_SERVER['HTTP_HOST']) || (string) $_SERVER['HTTP_HOST'] === 'default')) {
     $_SERVER['HTTP_HOST'] = getenv('RATEB_DEPLOY_HOST') ?: 'rateb.sa';
 }
+if (PHP_SAPI === 'cli' && !defined('RATEB_ENV_NO_SESSION')) {
+    define('RATEB_ENV_NO_SESSION', true);
+}
 
 $parentEnv = dirname(__DIR__, 2) . '/config/env/load.php';
 if (is_file($parentEnv)) {
