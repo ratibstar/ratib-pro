@@ -111,6 +111,17 @@ final class M019DuplicatesSavedFilters extends AbstractMigration
         $this->seedDuplicateRules();
     }
 
+    public function down(): void
+    {
+        // Drop in reverse dependency order (FK children first).
+        $this->exec(
+            'DROP TABLE IF EXISTS duplicate_group_products;
+             DROP TABLE IF EXISTS duplicate_groups;
+             DROP TABLE IF EXISTS duplicate_rules;
+             DROP TABLE IF EXISTS saved_filters'
+        );
+    }
+
     private function seedDuplicateRules(): void
     {
         $rules = [

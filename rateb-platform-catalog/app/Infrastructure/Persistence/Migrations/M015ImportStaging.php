@@ -90,6 +90,16 @@ final class M015ImportStaging extends AbstractMigration
         $this->seedImportSources();
     }
 
+    public function down(): void
+    {
+        // Drop in reverse dependency order (FK children first).
+        $this->exec(
+            'DROP TABLE IF EXISTS import_batch_rows;
+            DROP TABLE IF EXISTS import_batches;
+            DROP TABLE IF EXISTS import_sources'
+        );
+    }
+
     private function seedImportSources(): void
     {
         $sources = ['manual', 'csv', 'excel', 'api', 'xml', 'json', 'ftp'];

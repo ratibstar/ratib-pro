@@ -123,4 +123,15 @@ final class M020ErpSyncImportLogs extends AbstractMigration
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
     }
+
+    public function down(): void
+    {
+        // Drop in reverse dependency order (FK children first).
+        $this->exec(
+            'DROP TABLE IF EXISTS sync_logs;
+             DROP TABLE IF EXISTS erp_product_sync;
+             DROP TABLE IF EXISTS import_log_items;
+             DROP TABLE IF EXISTS import_logs'
+        );
+    }
 }

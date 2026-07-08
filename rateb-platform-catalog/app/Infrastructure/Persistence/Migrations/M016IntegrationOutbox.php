@@ -76,4 +76,14 @@ final class M016IntegrationOutbox extends AbstractMigration
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
     }
+
+    public function down(): void
+    {
+        // Drop in reverse dependency order (FK children first).
+        $this->exec(
+            'DROP TABLE IF EXISTS webhook_deliveries;
+             DROP TABLE IF EXISTS webhook_subscriptions;
+             DROP TABLE IF EXISTS integration_outbox'
+        );
+    }
 }

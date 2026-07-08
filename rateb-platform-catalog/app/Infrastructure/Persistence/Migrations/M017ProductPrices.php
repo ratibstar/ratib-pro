@@ -41,4 +41,12 @@ final class M017ProductPrices extends AbstractMigration
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
     }
+
+    public function down(): void
+    {
+        // Reverse dependency order not required (no FK children created here).
+        $this->exec(
+            'DROP TABLE IF EXISTS product_prices'
+        );
+    }
 }

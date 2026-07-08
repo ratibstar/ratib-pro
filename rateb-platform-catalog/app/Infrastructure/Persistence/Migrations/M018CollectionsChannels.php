@@ -148,6 +148,19 @@ final class M018CollectionsChannels extends AbstractMigration
         $this->seedChannels();
     }
 
+    public function down(): void
+    {
+        // Drop in reverse dependency order.
+        $this->exec(
+            'DROP TABLE IF EXISTS product_channels;
+             DROP TABLE IF EXISTS collection_products;
+             DROP TABLE IF EXISTS collection_translations;
+             DROP TABLE IF EXISTS collections;
+             DROP TABLE IF EXISTS channel_translations;
+             DROP TABLE IF EXISTS channels'
+        );
+    }
+
     private function seedChannels(): void
     {
         $channels = [
