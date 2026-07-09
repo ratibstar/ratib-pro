@@ -154,11 +154,11 @@ final class BiometricAuthService
                 'INSERT INTO rateb_webauthn_credentials (user_id, credential_id, public_key, sign_count)
                  VALUES (:uid, :cid, :pk, 0)'
             );
-            $insert->execute([
-                'uid' => $userId,
-                'cid' => $credentialId,
-                'pk' => $publicKey,
-            ]);
+            // Attestation payloads are binary; base64 keeps TEXT columns valid utf8mb4 until blob catch-up runs.
+            $insert->bindValue(':uid', $userId, \PDO::PARAM_INT);
+            $insert->bindValue(':cid', $credentialId, \PDO::PARAM_LOB);
+            $insert->bindValue(':pk', base64_encode($publicKey), \PDO::PARAM_STR);
+            $insert->execute();
         } catch (\Throwable $e) {
             return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
         }

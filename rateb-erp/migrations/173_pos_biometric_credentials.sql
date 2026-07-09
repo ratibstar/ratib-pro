@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS rateb_webauthn_credentials (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id INT UNSIGNED NOT NULL,
     credential_id VARBINARY(512) NOT NULL,
-    public_key TEXT NOT NULL,
+    public_key MEDIUMBLOB NOT NULL,
     sign_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
     last_used DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

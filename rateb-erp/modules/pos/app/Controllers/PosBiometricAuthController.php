@@ -145,7 +145,9 @@ final class PosBiometricAuthController extends PosBaseController
             $body = $this->jsonBody();
             $result = (new BiometricAuthService())->registerFinishWebAuthn($body, $this->userId());
             if (!$result['ok']) {
-                $this->json(['ok' => false, 'error' => (string) ($result['error'] ?? __('pos_biometric_failed'))], 403);
+                $error = (string) ($result['error'] ?? __('pos_biometric_failed'));
+                $status = str_contains($error, (string) __('db_schema_outdated')) ? 503 : 403;
+                $this->json(['ok' => false, 'error' => $error], $status);
                 return;
             }
             $this->json(['ok' => true, 'user_id' => (int) ($result['user_id'] ?? $this->userId())]);
