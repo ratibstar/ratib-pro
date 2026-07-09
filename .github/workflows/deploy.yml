@@ -28,7 +28,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  debounce:
+    if: >-
+      github.event_name == 'push' &&
+      startsWith(github.event.head_commit.message, 'update-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Coalesce rapid auto-commits (40s)
+        run: sleep 40
+
   deploy:
+    needs: debounce
+    if: >-
+      always() &&
+      (needs.debounce.result == 'success' || needs.debounce.result == 'skipped')
     runs-on: ubuntu-latest
     environment: rateb.sa
     timeout-minutes: 20
@@ -39,6 +53,37 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 2
+
+      - name: Classify changed paths
+        id: change_profile
+        run: |
+          set -euo pipefail
+          FILES="$(git diff --name-only HEAD~1 HEAD 2>/dev/null || true)"
+          if [ -z "$FILES" ]; then
+            echo "catalog_only=0" >> "$GITHUB_OUTPUT"
+            echo "profile=full" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          catalog_only=1
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              rateb-platform-catalog/public/*|rateb-platform-catalog/views/*|rateb-platform-catalog/config/lang/*)
+                ;;
+              *)
+                catalog_only=0
+                break
+                ;;
+            esac
+          done <<< "$FILES"
+          echo "catalog_only=${catalog_only}" >> "$GITHUB_OUTPUT"
+          if [ "$catalog_only" = "1" ]; then
+            echo "profile=catalog-ui" >> "$GITHUB_OUTPUT"
+          else
+            echo "profile=full" >> "$GITHUB_OUTPUT"
+          fi
+          echo "changed_files:"
+          echo "$FILES"
 
       - name: Deploy to public_html
         id: deploy
@@ -69,7 +114,7 @@ jobs:
           fi
 
       - name: Run RATEB ERP migrations
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only != '1'
         env:
           DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
           CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
@@ -78,7 +123,7 @@ jobs:
         run: bash scripts/run-rateb-erp-migrations.sh
 
       - name: Run RATEB Platform Catalog migrations
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only != '1'
         env:
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
@@ -88,7 +133,7 @@ jobs:
         run: bash scripts/run-rateb-platform-catalog-migrations.sh
 
       - name: Restore super-admin auth if missing
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only != '1'
         env:
           DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
           CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
@@ -98,7 +143,7 @@ jobs:
         run: bash scripts/run-restore-super-admins.sh
 
       - name: Run RCC migrations
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only != '1'
         env:
           DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
           CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
@@ -108,7 +153,7 @@ jobs:
         run: bash scripts/run-rcc-migrations.sh
 
       - name: Start RCC Realtime Hub (WebSocket)
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only != '1'
         env:
           DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
           CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
@@ -133,7 +178,7 @@ jobs:
           fi
 
       - name: Run RATEB ERP enterprise certification
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only != '1'
         env:
           DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
           CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
@@ -142,8 +187,30 @@ jobs:
           RATEB_ENTERPRISE_SEED: ${{ vars.RATEB_ENTERPRISE_SEED || '0' }}
         run: bash scripts/run-rateb-erp-enterprise-cert.sh
 
+      - name: Verify catalog admin deploy (~15s)
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only == '1'
+        run: |
+          SITE="${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}"
+          CATALOG_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 \
+            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
+            "${SITE}/rateb-platform-catalog/public/rateb-catalog-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
+          ADMIN_HTTP="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 10 --max-time 25 \
+            -H 'Cache-Control: no-cache' "${SITE}/rateb-platform-catalog/admin" 2>/dev/null || echo 000)"
+          CSS_HTTP="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 8 --max-time 20 \
+            -H 'Cache-Control: no-cache' "${SITE}/rateb-platform-catalog/public/assets/css/admin.css" 2>/dev/null || echo 000)"
+          echo "catalog_build=${CATALOG_BUILD} admin_http=${ADMIN_HTTP} admin_css_http=${CSS_HTTP}"
+          if [ "$ADMIN_HTTP" != "200" ]; then
+            echo "::error::catalog admin returned HTTP ${ADMIN_HTTP}"
+            exit 1
+          fi
+          if [ "$CSS_HTTP" != "200" ]; then
+            echo "::error::catalog admin.css returned HTTP ${CSS_HTTP}"
+            exit 1
+          fi
+          echo "::notice::Catalog UI deploy OK"
+
       - name: Verify live site (~20s)
-        if: steps.deploy.outcome == 'success'
+        if: steps.deploy.outcome == 'success' && steps.change_profile.outputs.catalog_only != '1'
         run: |
           SITE="${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}"
           # Unified marketing at / — /home 301→/. Must follow redirects (-L).
