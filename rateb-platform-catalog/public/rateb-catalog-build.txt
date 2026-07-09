@@ -1,9 +1,9 @@
 release=2.10.0
 phase=2.10
 architecture=1.3.1
-build=2026-07-09T13:55:00+03:00
+build=2026-07-09T14:50:00+03:00
 feature=cp-only-admin-host-guard
-fix=admin-moderate-palette
+fix=admin-moderate-palette-v2
 search_adapter_default=database
 core_certification_tests=170
 core_certification_status=170/170

@@ -1,112 +1,112 @@
 :root {
-  --admin-bg: #eef2f7;
-  --admin-bg-top: #f3f5f9;
-  --admin-bg-bottom: #e8edf3;
-  --admin-bg-accent: rgba(71, 98, 130, 0.04);
-  --admin-sidebar-top: #314a66;
-  --admin-sidebar: #2a4058;
-  --admin-sidebar-bottom: #24384f;
-  --admin-sidebar-text: #e8eef4;
-  --admin-sidebar-muted: rgba(232, 238, 244, 0.65);
-  --admin-sidebar-border: rgba(255, 255, 255, 0.08);
-  --admin-nav-hover: rgba(255, 255, 255, 0.07);
-  --admin-nav-active: rgba(255, 255, 255, 0.12);
-  --admin-brand-start: #6b8cae;
-  --admin-brand-end: #4d7399;
-  --admin-accent: #4d7399;
-  --admin-accent-soft: #e8eef5;
-  --admin-accent-glow: rgba(77, 115, 153, 0.12);
-  --admin-border: #d0d9e4;
-  --admin-border-soft: #dce3ec;
-  --admin-surface: #ffffff;
-  --admin-surface-elevated: #fafbfc;
-  --admin-surface-muted: #f5f7fa;
-  --admin-card-shine: #ffffff;
-  --admin-text: #1e293b;
-  --admin-muted: #64748b;
-  --admin-danger: #b42318;
-  --admin-warning: #b54708;
-  --admin-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.06);
-  --admin-shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 22px rgba(15, 23, 42, 0.08);
-  --admin-topbar-bg: rgba(255, 255, 255, 0.9);
-  --admin-table-head: #f5f7fa;
-  --admin-table-row-hover: rgba(71, 98, 130, 0.04);
-  --admin-stat-bg: #ffffff;
-  --admin-stat-accent: #6b8cae;
-  --admin-kv-bg: #fafbfc;
-  --admin-code-bg: #eef2f7;
-  --admin-code-text: #334155;
-  --admin-check-bg: #ffffff;
-  --admin-json-bg: #1e293b;
-  --admin-json-text: #e2e8f0;
-  --admin-success-bg: #eef6f2;
-  --admin-success-border: #c5ddd2;
-  --admin-success-text: #2f5f4a;
-  --admin-ok-border: #c5ddd2;
-  --admin-badge-neutral-bg: #eef2f7;
-  --admin-badge-neutral-text: #475569;
-  --admin-badge-ready-bg: #e8eef5;
-  --admin-badge-ready-text: #3d5f7f;
-  --admin-btn-primary: #4d7399;
-  --admin-btn-primary-hover: #3f6285;
-  --admin-radius: 12px;
-  --admin-radius-sm: 10px;
+  --admin-bg: #e9edf2;
+  --admin-bg-top: #eef1f5;
+  --admin-bg-bottom: #e4e9ef;
+  --admin-bg-accent: rgba(68, 84, 106, 0.03);
+  --admin-sidebar-top: #3f556c;
+  --admin-sidebar: #384e63;
+  --admin-sidebar-bottom: #32465a;
+  --admin-sidebar-text: #e4eaf0;
+  --admin-sidebar-muted: rgba(228, 234, 240, 0.62);
+  --admin-sidebar-border: rgba(255, 255, 255, 0.07);
+  --admin-nav-hover: rgba(255, 255, 255, 0.06);
+  --admin-nav-active: rgba(255, 255, 255, 0.1);
+  --admin-brand-start: #7a94ad;
+  --admin-brand-end: #5f7a94;
+  --admin-accent: #5f7a94;
+  --admin-accent-soft: #e8ecf1;
+  --admin-accent-glow: rgba(95, 122, 148, 0.1);
+  --admin-border: #cdd5df;
+  --admin-border-soft: #d8dfe7;
+  --admin-surface: #f8f9fb;
+  --admin-surface-elevated: #f3f5f8;
+  --admin-surface-muted: #eef1f5;
+  --admin-card-shine: #f8f9fb;
+  --admin-text: #2c3642;
+  --admin-muted: #6b7785;
+  --admin-danger: #a34a4a;
+  --admin-warning: #9a7340;
+  --admin-shadow: 0 1px 2px rgba(30, 41, 59, 0.03), 0 4px 14px rgba(30, 41, 59, 0.05);
+  --admin-shadow-hover: 0 2px 6px rgba(30, 41, 59, 0.05), 0 8px 20px rgba(30, 41, 59, 0.07);
+  --admin-topbar-bg: rgba(248, 249, 251, 0.94);
+  --admin-table-head: #f0f3f7;
+  --admin-table-row-hover: rgba(68, 84, 106, 0.04);
+  --admin-stat-bg: #f8f9fb;
+  --admin-stat-accent: #7a94ad;
+  --admin-kv-bg: #f5f7fa;
+  --admin-code-bg: #eef1f5;
+  --admin-code-text: #475569;
+  --admin-check-bg: #f8f9fb;
+  --admin-json-bg: #2c3642;
+  --admin-json-text: #e4eaf0;
+  --admin-success-bg: #f0f3f7;
+  --admin-success-border: #d0d8e2;
+  --admin-success-text: #556575;
+  --admin-ok-border: #d0d8e2;
+  --admin-badge-neutral-bg: #eef1f5;
+  --admin-badge-neutral-text: #5c6775;
+  --admin-badge-ready-bg: #e8ecf1;
+  --admin-badge-ready-text: #4f6578;
+  --admin-btn-primary: #5f7a94;
+  --admin-btn-primary-hover: #516a82;
+  --admin-radius: 10px;
+  --admin-radius-sm: 8px;
   --admin-sidebar-width: 280px;
   --admin-sidebar-collapsed-width: 78px;
   --admin-font: "Segoe UI", "Tahoma", "Noto Sans Arabic", sans-serif;
 }
 
 html[data-admin-theme="dark"] {
-  --admin-bg: #141820;
-  --admin-bg-top: #171c26;
-  --admin-bg-bottom: #11151d;
-  --admin-bg-accent: rgba(107, 140, 174, 0.04);
-  --admin-sidebar-top: #10141c;
-  --admin-sidebar: #0c1017;
-  --admin-sidebar-bottom: #090c12;
-  --admin-sidebar-text: #cbd5e1;
-  --admin-sidebar-muted: rgba(203, 213, 225, 0.62);
-  --admin-sidebar-border: rgba(148, 163, 184, 0.1);
-  --admin-nav-hover: rgba(255, 255, 255, 0.06);
-  --admin-nav-active: rgba(107, 140, 174, 0.18);
-  --admin-brand-start: #7c9cc4;
-  --admin-brand-end: #5a7fa8;
-  --admin-accent: #7c9cc4;
-  --admin-accent-soft: rgba(107, 140, 174, 0.12);
-  --admin-accent-glow: rgba(107, 140, 174, 0.15);
-  --admin-border: #2a3344;
-  --admin-border-soft: #232b3a;
-  --admin-surface: #1c2433;
-  --admin-surface-elevated: #212b3c;
-  --admin-surface-muted: #181f2c;
-  --admin-card-shine: #1c2433;
-  --admin-text: #e2e8f0;
-  --admin-muted: #94a3b8;
-  --admin-danger: #e57373;
-  --admin-warning: #d4a24c;
-  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 18px rgba(0, 0, 0, 0.22);
-  --admin-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.24), 0 8px 22px rgba(0, 0, 0, 0.28);
-  --admin-topbar-bg: rgba(20, 24, 32, 0.92);
-  --admin-table-head: #1a2230;
-  --admin-table-row-hover: rgba(107, 140, 174, 0.06);
-  --admin-stat-bg: #1c2433;
-  --admin-stat-accent: #6b8cae;
-  --admin-kv-bg: #1a2230;
-  --admin-code-bg: #232b3a;
-  --admin-code-text: #cbd5e1;
-  --admin-check-bg: #1a2230;
-  --admin-json-bg: #0f141c;
-  --admin-json-text: #cbd5e1;
-  --admin-success-bg: rgba(74, 124, 99, 0.12);
-  --admin-success-border: rgba(74, 124, 99, 0.28);
-  --admin-success-text: #8fb9a0;
-  --admin-ok-border: rgba(74, 124, 99, 0.32);
-  --admin-badge-neutral-bg: #232b3a;
-  --admin-badge-neutral-text: #94a3b8;
-  --admin-badge-ready-bg: rgba(107, 140, 174, 0.14);
-  --admin-badge-ready-text: #9bb4d0;
-  --admin-btn-primary: #5a7fa8;
-  --admin-btn-primary-hover: #6b8cae;
+  --admin-bg: #1a1f27;
+  --admin-bg-top: #1c212a;
+  --admin-bg-bottom: #171c24;
+  --admin-bg-accent: rgba(122, 148, 173, 0.03);
+  --admin-sidebar-top: #151920;
+  --admin-sidebar: #12161d;
+  --admin-sidebar-bottom: #0f1319;
+  --admin-sidebar-text: #c5cdd8;
+  --admin-sidebar-muted: rgba(197, 205, 216, 0.58);
+  --admin-sidebar-border: rgba(148, 163, 184, 0.08);
+  --admin-nav-hover: rgba(255, 255, 255, 0.05);
+  --admin-nav-active: rgba(122, 148, 173, 0.14);
+  --admin-brand-start: #8aa0b8;
+  --admin-brand-end: #6d849c;
+  --admin-accent: #8aa0b8;
+  --admin-accent-soft: rgba(122, 148, 173, 0.1);
+  --admin-accent-glow: rgba(122, 148, 173, 0.12);
+  --admin-border: #2c3442;
+  --admin-border-soft: #252d3a;
+  --admin-surface: #212833;
+  --admin-surface-elevated: #252d3a;
+  --admin-surface-muted: #1c222c;
+  --admin-card-shine: #212833;
+  --admin-text: #d8dee6;
+  --admin-muted: #8b95a3;
+  --admin-danger: #c97a7a;
+  --admin-warning: #c4a05a;
+  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 4px 14px rgba(0, 0, 0, 0.2);
+  --admin-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.22), 0 8px 20px rgba(0, 0, 0, 0.26);
+  --admin-topbar-bg: rgba(26, 31, 39, 0.94);
+  --admin-table-head: #1e2530;
+  --admin-table-row-hover: rgba(122, 148, 173, 0.05);
+  --admin-stat-bg: #212833;
+  --admin-stat-accent: #7a94ad;
+  --admin-kv-bg: #1e2530;
+  --admin-code-bg: #2a3240;
+  --admin-code-text: #c5cdd8;
+  --admin-check-bg: #1e2530;
+  --admin-json-bg: #12161d;
+  --admin-json-text: #c5cdd8;
+  --admin-success-bg: rgba(122, 148, 173, 0.08);
+  --admin-success-border: rgba(122, 148, 173, 0.2);
+  --admin-success-text: #9aabb8;
+  --admin-ok-border: rgba(122, 148, 173, 0.22);
+  --admin-badge-neutral-bg: #2a3240;
+  --admin-badge-neutral-text: #9aa3b0;
+  --admin-badge-ready-bg: rgba(122, 148, 173, 0.12);
+  --admin-badge-ready-text: #a8b8c6;
+  --admin-btn-primary: #6d849c;
+  --admin-btn-primary-hover: #7a94ad;
 }
 
 * {
@@ -655,11 +655,18 @@ html[data-admin-theme="dark"] .btn-outline-secondary:hover {
 .admin-check-item.is-ok {
   border-color: var(--admin-ok-border);
   background: var(--admin-success-bg);
+  color: var(--admin-text);
+}
+
+.admin-check-item.is-ok .bi-check-circle-fill,
+.admin-check-item.is-ok .bi-check-lg {
+  color: var(--admin-muted);
 }
 
 .admin-check-item.is-fail {
-  border-color: #fecdca;
-  background: #fef3f2;
+  border-color: #e0c8c8;
+  background: #f7f0f0;
+  color: var(--admin-text);
 }
 
 .admin-json-details {
@@ -740,18 +747,18 @@ html[data-admin-theme="dark"] .admin-badge-status.is-pending {
 html[data-admin-theme="dark"] .admin-badge-status.is-archived,
 html[data-admin-theme="dark"] .admin-badge-status.is-rejected,
 html[data-admin-theme="dark"] .admin-badge-status.is-dead {
-  background: rgba(229, 115, 115, 0.12);
-  color: #e57373;
+  background: rgba(201, 122, 122, 0.1);
+  color: #c97a7a;
 }
 
 html[data-admin-theme="dark"] .admin-check-item.is-fail {
-  border-color: rgba(229, 115, 115, 0.28);
-  background: rgba(229, 115, 115, 0.08);
+  border-color: rgba(201, 122, 122, 0.24);
+  background: rgba(201, 122, 122, 0.08);
 }
 
 html[data-admin-theme="dark"] .admin-flash.is-error {
-  background: rgba(229, 115, 115, 0.1);
-  border-color: rgba(229, 115, 115, 0.28);
+  background: rgba(201, 122, 122, 0.1);
+  border-color: rgba(201, 122, 122, 0.24);
 }
 
 html[data-admin-theme="dark"] .admin-flash.is-info {
@@ -807,9 +814,29 @@ body.admin-body .btn-outline-secondary:hover {
   color: var(--admin-accent);
 }
 
-body.admin-body .badge.text-bg-success {
+body.admin-body .badge.text-bg-success,
+body.admin-body .text-bg-success {
   background-color: var(--admin-badge-ready-bg) !important;
   color: var(--admin-badge-ready-text) !important;
+}
+
+body.admin-body .text-success {
+  color: var(--admin-muted) !important;
+}
+
+body.admin-body .btn-success {
+  --bs-btn-bg: var(--admin-btn-primary);
+  --bs-btn-border-color: var(--admin-btn-primary);
+  --bs-btn-hover-bg: var(--admin-btn-primary-hover);
+  --bs-btn-hover-border-color: var(--admin-btn-primary-hover);
+}
+
+body.admin-body .btn-outline-success {
+  --bs-btn-color: var(--admin-accent);
+  --bs-btn-border-color: var(--admin-border);
+  --bs-btn-hover-bg: var(--admin-accent-soft);
+  --bs-btn-hover-border-color: var(--admin-accent);
+  --bs-btn-hover-color: var(--admin-accent);
 }
 
 .admin-overlay {
