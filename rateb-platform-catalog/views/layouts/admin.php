@@ -11,9 +11,6 @@
 
 $base = defined('RATEB_PLATFORM_CATALOG_BASE_URL') ? rtrim((string) RATEB_PLATFORM_CATALOG_BASE_URL, '/') : '';
 $assetBase = $base !== '' ? $base : '';
-$assetVersion = defined('RATEB_PLATFORM_CATALOG_BUILD_TIMESTAMP')
-    ? preg_replace('/\D+/', '', (string) RATEB_PLATFORM_CATALOG_BUILD_TIMESTAMP)
-    : '1';
 $otherLang = $locale === 'ar' ? 'en' : 'ar';
 $bootstrapCss = $dir === 'rtl'
     ? 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css'
@@ -53,7 +50,7 @@ $groupLabels = [
     </script>
     <link rel="stylesheet" href="<?= htmlspecialchars($bootstrapCss, ENT_QUOTES, 'UTF-8') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= htmlspecialchars($assetBase, ENT_QUOTES, 'UTF-8') ?>/assets/css/admin.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="stylesheet" href="<?= htmlspecialchars($assetBase, ENT_QUOTES, 'UTF-8') ?>/assets/css/admin.css">
 </head>
 <body class="admin-body"
       data-locale="<?= htmlspecialchars($locale, ENT_QUOTES, 'UTF-8') ?>"
