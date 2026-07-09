@@ -82,6 +82,81 @@ final class BiometricAuthService
         }
     }
 
+    /** @return array<string, mixed> */
+    public function registerStartWebAuthn(int $userId): array
+    {
+        if ($userId < 1) {
+            $userId = $this->userId();
+        }
+
+        $sessionUserId = $this->userId();
+        if ($sessionUserId < 1 || $sessionUserId !== $userId) {
+            return ['ok' => false, 'error' => __('access_denied')];
+        }
+
+        try {
+            return ['ok' => true] + $this->buildRegisterWebAuthnOptions($userId);
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /** @param array<string, mixed> $payload */
+    public function registerFinishWebAuthn(array $payload, int $userId): array
+    {
+        if ($userId < 1) {
+            $userId = $this->userId();
+        }
+
+        $sessionUserId = $this->userId();
+        if ($sessionUserId < 1 || $sessionUserId !== $userId) {
+            return ['ok' => false, 'error' => __('access_denied')];
+        }
+
+        $registerUserId = (int) SessionManager::get('pos_webauthn_register_user_id');
+        $expires = (int) SessionManager::get('pos_webauthn_register_expires');
+        if ($registerUserId < 1 || $registerUserId !== $userId || $expires < time()) {
+            return ['ok' => false, 'error' => __('pos_biometric_challenge_expired')];
+        }
+
+        $credentialIdB64 = (string) ($payload['credentialId'] ?? '');
+        $publicKeyB64 = (string) ($payload['publicKey'] ?? $payload['attestationObject'] ?? '');
+        if ($credentialIdB64 === '' || $publicKeyB64 === '') {
+            return ['ok' => false, 'error' => __('invalid_request')];
+        }
+
+        $credentialId = $this->base64DecodeFlexible($credentialIdB64);
+        $publicKey = $this->base64DecodeFlexible($publicKeyB64);
+        if ($credentialId === '' || $publicKey === '') {
+            return ['ok' => false, 'error' => __('pos_biometric_invalid_credential')];
+        }
+
+        $user = (new User())->find($userId);
+        if ($user === null || (string) ($user['status'] ?? '') !== 'active') {
+            return ['ok' => false, 'error' => __('access_denied')];
+        }
+
+        $db = Database::connection();
+        $delete = $db->prepare('DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid');
+        $delete->execute(['uid' => $userId]);
+
+        $insert = $db->prepare(
+            'INSERT INTO rateb_webauthn_credentials (user_id, credential_id, public_key, sign_count)
+             VALUES (:uid, :cid, :pk, 0)'
+        );
+        $insert->execute([
+            'uid' => $userId,
+            'cid' => $credentialId,
+            'pk' => $publicKey,
+        ]);
+
+        SessionManager::remove('pos_webauthn_register_challenge');
+        SessionManager::remove('pos_webauthn_register_user_id');
+        SessionManager::remove('pos_webauthn_register_expires');
+
+        return ['ok' => true, 'user_id' => $userId];
+    }
+
     /** @param array<string, mixed> $payload */
     public function finishWebAuthn(array $payload, int $userId, bool $supervisor = false): array
     {
@@ -226,6 +301,56 @@ final class BiometricAuthService
     }
 
     /** @return array<string, mixed> */
+    private function buildRegisterWebAuthnOptions(int $userId): array
+    {
+        $user = (new User())->find($userId);
+        if ($user === null || (string) ($user['status'] ?? '') !== 'active') {
+            throw new \RuntimeException(__('access_denied'));
+        }
+
+        $displayName = trim((string) ($user['name'] ?? ''));
+        if ($displayName === '') {
+            $displayName = trim((string) ($user['email'] ?? 'user'));
+        }
+        $loginName = trim((string) ($user['email'] ?? $displayName));
+
+        $db = Database::connection();
+        $delete = $db->prepare('DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid');
+        $delete->execute(['uid' => $userId]);
+
+        $challenge = random_bytes(32);
+        SessionManager::set('pos_webauthn_register_challenge', base64_encode($challenge));
+        SessionManager::set('pos_webauthn_register_user_id', $userId);
+        SessionManager::set('pos_webauthn_register_expires', time() + self::CHALLENGE_TTL);
+
+        $rpId = $this->resolveRpId();
+
+        return [
+            'publicKey' => [
+                'challenge' => $this->base64UrlEncode($challenge),
+                'rp' => [
+                    'name' => 'RATEB ERP',
+                    'id' => $rpId,
+                ],
+                'user' => [
+                    'id' => $this->base64UrlEncode(pack('N', $userId)),
+                    'name' => $loginName,
+                    'displayName' => $displayName,
+                ],
+                'pubKeyCredParams' => [
+                    ['type' => 'public-key', 'alg' => -7],
+                    ['type' => 'public-key', 'alg' => -257],
+                ],
+                'timeout' => 120000,
+                'attestation' => 'none',
+                'authenticatorSelection' => [
+                    'userVerification' => 'preferred',
+                ],
+            ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
     private function buildWebAuthnOptions(int $userId): array
     {
         $user = (new User())->find($userId);
@@ -307,5 +432,15 @@ final class BiometricAuthService
         $decoded = base64_decode(strtr($b64, '-_', '+/'), true);
 
         return is_string($decoded) ? $decoded : '';
+    }
+
+    private function base64DecodeFlexible(string $b64): string
+    {
+        $decoded = base64_decode($b64, true);
+        if (is_string($decoded) && $decoded !== '') {
+            return $decoded;
+        }
+
+        return $this->base64UrlDecode($b64);
     }
 }

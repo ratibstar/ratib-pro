@@ -35,6 +35,8 @@ final class PosBiometricAuthController extends PosBaseController
                 'api' => [
                     'start' => rateb_app_url('pos/api/biometric/start'),
                     'finish' => rateb_app_url('pos/api/biometric/finish'),
+                    'registerStart' => rateb_app_url('pos/api/biometric/register-start'),
+                    'registerFinish' => rateb_app_url('pos/api/biometric/register-finish'),
                     'face' => rateb_app_url('pos/api/biometric/face'),
                     'status' => rateb_app_url('pos/api/biometric/status'),
                 ],
@@ -44,6 +46,10 @@ final class PosBiometricAuthController extends PosBaseController
                     'pos_biometric_scan' => __('pos_biometric_scan'),
                     'pos_biometric_face' => __('pos_biometric_face'),
                     'pos_biometric_not_enrolled' => __('pos_biometric_not_enrolled'),
+                    'pos_biometric_register' => __('pos_biometric_register'),
+                    'pos_biometric_register_success' => __('pos_biometric_register_success'),
+                    'pos_biometric_register_loading' => __('pos_biometric_register_loading'),
+                    'pos_biometric_register_settings_hint' => __('pos_biometric_register_settings_hint'),
                     'pos_biometric_success' => __('pos_biometric_success'),
                     'pos_biometric_failed' => __('pos_biometric_failed'),
                 ],
@@ -106,6 +112,35 @@ final class PosBiometricAuthController extends PosBaseController
         }
 
         $this->json(['ok' => true, 'user_id' => (int) ($result['user_id'] ?? 0)]);
+    }
+
+    public function registerStart(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        $this->requireSessionCsrfOrAbort();
+
+        $result = (new BiometricAuthService())->registerStartWebAuthn($this->userId());
+        if (!$result['ok']) {
+            $this->json(['ok' => false, 'error' => (string) ($result['error'] ?? __('invalid_request'))], 400);
+            return;
+        }
+        $this->json(['ok' => true] + $result);
+    }
+
+    public function registerFinish(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        $this->requireSessionCsrfOrAbort();
+
+        $body = $this->jsonBody();
+        $result = (new BiometricAuthService())->registerFinishWebAuthn($body, $this->userId());
+        if (!$result['ok']) {
+            $this->json(['ok' => false, 'error' => (string) ($result['error'] ?? __('pos_biometric_failed'))], 403);
+            return;
+        }
+        $this->json(['ok' => true, 'user_id' => (int) ($result['user_id'] ?? $this->userId())]);
     }
 
     public function face(): void

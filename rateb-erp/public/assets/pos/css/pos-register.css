@@ -3083,6 +3083,21 @@ html[dir="rtl"] .rateb-pos__nav {
     background: var(--pos-purple);
 }
 
+.rateb-pos__biometric-btn--register {
+    background: var(--pos-success, #22c55e);
+}
+
+.rateb-pos__hint--subtle {
+    margin-top: 16px;
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+.rateb-pos__biometric-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .rateb-pos__order-bar {
     flex-direction: column;
     align-items: stretch;

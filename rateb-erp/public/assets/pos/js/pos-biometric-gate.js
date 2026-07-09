@@ -19,6 +19,7 @@
     var statusEl = gate.querySelector('[data-pos-bio-status]');
     var fpBtn = gate.querySelector('[data-pos-bio-fingerprint]');
     var faceBtn = gate.querySelector('[data-pos-bio-face]');
+    var registerBtn = gate.querySelector('[data-pos-bio-register]');
 
     function t(key, fb) {
         return i18n[key] || fb || key;
@@ -69,6 +70,56 @@
         var bin = '';
         bytes.forEach(function (b) { bin += String.fromCharCode(b); });
         return btoa(bin);
+    }
+
+    function runRegister() {
+        if (!window.PublicKeyCredential || !api.registerStart || !api.registerFinish) {
+            setStatus(t('pos_biometric_failed', 'WebAuthn not supported'), true);
+            return;
+        }
+        setStatus(t('pos_biometric_register_loading', 'Preparing fingerprint scanner…'));
+        if (registerBtn) {
+            registerBtn.disabled = true;
+        }
+        fetchJson(api.registerStart, { body: {} })
+            .then(function (data) {
+                var pk = (data.options && data.options.publicKey) || data.publicKey;
+                if (!pk) {
+                    throw new Error(t('pos_biometric_failed', 'Registration failed'));
+                }
+                pk.challenge = b64ToBuf(pk.challenge);
+                if (pk.user && pk.user.id) {
+                    pk.user = {
+                        id: b64ToBuf(pk.user.id),
+                        name: pk.user.name,
+                        displayName: pk.user.displayName
+                    };
+                }
+                return navigator.credentials.create({ publicKey: pk });
+            })
+            .then(function (cred) {
+                if (!cred) {
+                    throw new Error(t('pos_biometric_failed', 'Registration failed'));
+                }
+                var attestationObject = bufToB64(cred.response.attestationObject);
+                return fetchJson(api.registerFinish, {
+                    body: {
+                        credentialId: bufToB64(cred.rawId),
+                        publicKey: attestationObject,
+                        attestationObject: attestationObject
+                    }
+                });
+            })
+            .then(function () {
+                setStatus(t('pos_biometric_register_success', 'Fingerprint registered'));
+                window.location.reload();
+            })
+            .catch(function (err) {
+                if (registerBtn) {
+                    registerBtn.disabled = false;
+                }
+                setStatus(err.message || t('pos_biometric_failed', 'Registration failed'), true);
+            });
     }
 
     function runFingerprint() {
@@ -133,6 +184,9 @@
             });
     }
 
+    if (registerBtn) {
+        registerBtn.addEventListener('click', runRegister);
+    }
     if (fpBtn) {
         fpBtn.addEventListener('click', runFingerprint);
     }

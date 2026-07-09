@@ -94,6 +94,8 @@ $router->get($posApp('api/pricing/preview'), [PosApiController::class, 'pricingP
 $regMw = $posMw('pos/register');
 $router->post($posApp('api/biometric/start'), [PosBiometricAuthController::class, 'start'], $regMw);
 $router->post($posApp('api/biometric/finish'), [PosBiometricAuthController::class, 'finish'], $regMw);
+$router->post($posApp('api/biometric/register-start'), [PosBiometricAuthController::class, 'registerStart'], $regMw);
+$router->post($posApp('api/biometric/register-finish'), [PosBiometricAuthController::class, 'registerFinish'], $regMw);
 $router->post($posApp('api/biometric/face'), [PosBiometricAuthController::class, 'face'], $regMw);
 $router->get($posApp('api/biometric/status'), [PosBiometricAuthController::class, 'status'], $regMw);
 $router->post($posApp('api/approval/request'), [PosApprovalApiController::class, 'requestApproval'], $regMw);
