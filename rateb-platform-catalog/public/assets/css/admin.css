@@ -499,13 +499,13 @@ html[data-admin-theme="dark"] .form-select:focus {
   background-color: var(--admin-surface-elevated);
   border-color: var(--admin-accent);
   color: var(--admin-text);
-  box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.22);
+  box-shadow: 0 0 0 0.2rem var(--admin-accent-glow);
 }
 
 html[data-admin-theme="dark"] .btn-outline-secondary:hover {
-  background-color: #1e293b;
+  background-color: var(--admin-surface-elevated);
   border-color: var(--admin-border);
-  color: #fff;
+  color: var(--admin-text);
 }
 
 .admin-table td,
@@ -894,4 +894,213 @@ body.admin-body .btn-outline-success {
     max-width: none;
     width: 100%;
   }
+}
+
+/* Global moderated palette — all admin pages (Bootstrap + shared UI) */
+body.admin-body {
+  --bs-body-bg: var(--admin-bg);
+  --bs-body-color: var(--admin-text);
+  --bs-border-color: var(--admin-border-soft);
+  --bs-link-color: var(--admin-accent);
+  --bs-link-hover-color: var(--admin-btn-primary-hover);
+  --bs-secondary-color: var(--admin-muted);
+  --bs-tertiary-color: var(--admin-muted);
+  --bs-emphasis-color: var(--admin-text);
+}
+
+body.admin-body a:not(.btn):not(.admin-nav-link):not(.admin-sidebar-erp-link) {
+  color: var(--admin-accent);
+}
+
+body.admin-body a:not(.btn):not(.admin-nav-link):not(.admin-sidebar-erp-link):hover {
+  color: var(--admin-btn-primary-hover);
+}
+
+body.admin-body .form-label,
+body.admin-body label.form-label {
+  color: var(--admin-muted);
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+body.admin-body .h1,
+body.admin-body .h2,
+body.admin-body .h3,
+body.admin-body .h4,
+body.admin-body .h5,
+body.admin-body .h6 {
+  color: var(--admin-text);
+}
+
+body.admin-body .text-muted {
+  color: var(--admin-muted) !important;
+}
+
+body.admin-body .text-danger {
+  color: var(--admin-danger) !important;
+}
+
+body.admin-body .text-warning {
+  color: var(--admin-warning) !important;
+}
+
+body.admin-body .text-primary {
+  color: var(--admin-accent) !important;
+}
+
+body.admin-body .btn-outline-primary {
+  --bs-btn-color: var(--admin-accent);
+  --bs-btn-border-color: var(--admin-border);
+  --bs-btn-hover-bg: var(--admin-accent-soft);
+  --bs-btn-hover-border-color: var(--admin-accent);
+  --bs-btn-hover-color: var(--admin-accent);
+  --bs-btn-active-bg: var(--admin-accent-soft);
+  --bs-btn-active-border-color: var(--admin-accent);
+  --bs-btn-active-color: var(--admin-accent);
+}
+
+body.admin-body .btn-danger {
+  --bs-btn-bg: #9b5a5a;
+  --bs-btn-border-color: #9b5a5a;
+  --bs-btn-hover-bg: #8a4f4f;
+  --bs-btn-hover-border-color: #8a4f4f;
+}
+
+body.admin-body .btn-outline-danger {
+  --bs-btn-color: var(--admin-danger);
+  --bs-btn-border-color: var(--admin-border);
+  --bs-btn-hover-bg: rgba(163, 74, 74, 0.08);
+  --bs-btn-hover-border-color: var(--admin-danger);
+  --bs-btn-hover-color: var(--admin-danger);
+}
+
+body.admin-body .btn-warning {
+  --bs-btn-bg: #9a8250;
+  --bs-btn-border-color: #9a8250;
+  --bs-btn-color: #fff;
+  --bs-btn-hover-bg: #887346;
+  --bs-btn-hover-border-color: #887346;
+}
+
+body.admin-body .alert {
+  border-radius: var(--admin-radius-sm);
+  border-width: 1px;
+}
+
+body.admin-body .alert-info {
+  background: var(--admin-accent-soft);
+  border-color: var(--admin-border);
+  color: var(--admin-text);
+}
+
+body.admin-body .alert-success {
+  background: var(--admin-success-bg);
+  border-color: var(--admin-success-border);
+  color: var(--admin-success-text);
+}
+
+body.admin-body .alert-warning {
+  background: #f8f3ea;
+  border-color: #e5d9c4;
+  color: #7a6238;
+}
+
+body.admin-body .alert-danger {
+  background: #f8ecec;
+  border-color: #e5cccc;
+  color: var(--admin-danger);
+}
+
+html[data-admin-theme="dark"] body.admin-body .alert-warning {
+  background: rgba(196, 160, 90, 0.1);
+  border-color: rgba(196, 160, 90, 0.24);
+  color: #c4a05a;
+}
+
+html[data-admin-theme="dark"] body.admin-body .alert-danger {
+  background: rgba(201, 122, 122, 0.1);
+  border-color: rgba(201, 122, 122, 0.24);
+  color: #c97a7a;
+}
+
+body.admin-body .table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--admin-text);
+  --bs-table-border-color: var(--admin-border-soft);
+  --bs-table-striped-bg: var(--admin-table-row-hover);
+  --bs-table-hover-bg: var(--admin-table-row-hover);
+  --bs-table-hover-color: var(--admin-text);
+}
+
+body.admin-body .pagination {
+  --bs-pagination-bg: var(--admin-surface);
+  --bs-pagination-border-color: var(--admin-border-soft);
+  --bs-pagination-color: var(--admin-muted);
+  --bs-pagination-hover-bg: var(--admin-accent-soft);
+  --bs-pagination-hover-border-color: var(--admin-border);
+  --bs-pagination-hover-color: var(--admin-accent);
+  --bs-pagination-active-bg: var(--admin-btn-primary);
+  --bs-pagination-active-border-color: var(--admin-btn-primary);
+}
+
+body.admin-body .dropdown-menu {
+  background: var(--admin-surface);
+  border-color: var(--admin-border-soft);
+  box-shadow: var(--admin-shadow);
+}
+
+body.admin-body .dropdown-item {
+  color: var(--admin-text);
+}
+
+body.admin-body .dropdown-item:hover,
+body.admin-body .dropdown-item:focus {
+  background: var(--admin-accent-soft);
+  color: var(--admin-text);
+}
+
+body.admin-body .modal-content {
+  background: var(--admin-surface);
+  border-color: var(--admin-border-soft);
+  color: var(--admin-text);
+}
+
+body.admin-body .modal-header,
+body.admin-body .modal-footer {
+  border-color: var(--admin-border-soft);
+}
+
+body.admin-body hr {
+  border-color: var(--admin-border-soft);
+  opacity: 1;
+}
+
+body.admin-body .list-group-item {
+  background: var(--admin-surface);
+  border-color: var(--admin-border-soft);
+  color: var(--admin-text);
+}
+
+body.admin-body .nav-tabs {
+  border-color: var(--admin-border-soft);
+}
+
+body.admin-body .nav-tabs .nav-link {
+  color: var(--admin-muted);
+  border-color: transparent;
+}
+
+body.admin-body .nav-tabs .nav-link:hover {
+  border-color: var(--admin-border-soft);
+  color: var(--admin-text);
+}
+
+body.admin-body .nav-tabs .nav-link.active {
+  background: var(--admin-surface);
+  border-color: var(--admin-border-soft) var(--admin-border-soft) var(--admin-surface);
+  color: var(--admin-text);
+}
+
+body.admin-body [hidden] {
+  display: none !important;
 }
