@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '.cursor/**'
+      - 'Designed/**'
+      - 'docs/**'
+      - 'archive/**'
   workflow_dispatch:
     inputs:
       full_sync:
@@ -25,7 +31,7 @@ on:
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -40,7 +46,29 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Should run deploy (latest commit only)
+        id: should_run
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --depth=1 origin main
+          REMOTE="$(git rev-parse origin/main)"
+          LOCAL="${{ github.sha }}"
+          if [ "$REMOTE" != "$LOCAL" ]; then
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Superseded by newer push on main — skip deploy."
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skipped (superseded by newer push)
+        if: steps.should_run.outputs.ok == 'false'
+        run: echo "No deploy needed for this commit."
+
       - name: Classify changed paths
+        if: steps.should_run.outputs.ok == 'true'
         id: change_profile
         run: |
           set -euo pipefail
@@ -72,6 +100,7 @@ jobs:
           echo "$FILES"
 
       - name: Deploy to public_html
+        if: steps.should_run.outputs.ok == 'true'
         id: deploy
         env:
           DEPLOY_BACKEND: ${{ secrets.DEPLOY_BACKEND || 'rsync' }}
@@ -358,7 +387,7 @@ jobs:
           exit 1
 
       - name: Deploy failed
-        if: steps.deploy.outcome != 'success'
+        if: steps.should_run.outputs.ok == 'true' && steps.deploy.outcome == 'failure'
         run: |
           echo "::error::Deploy failed — see rsync / Fileman logs above"
           exit 1
