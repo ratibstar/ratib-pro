@@ -504,9 +504,24 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
             return true;
         }
 
+        self::denyEntityAccess();
+        return false;
+    }
+
+    private static function denyEntityAccess(): void
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+        $accept = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+        $wantsJson = str_contains($path, '/api/')
+            || str_contains($accept, 'application/json')
+            || isset($_SERVER['HTTP_X_CSRF_TOKEN']);
+        if ($wantsJson) {
+            Response::json(['ok' => false, 'error' => __('access_denied')], 403);
+            return;
+        }
+
         SessionManager::flash('error', __('access_denied'));
         Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
-        return false;
     }
 
     private function isApproveAction(): bool

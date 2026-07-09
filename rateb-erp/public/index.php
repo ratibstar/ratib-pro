@@ -63,6 +63,24 @@ try {
 } catch (Throwable $e) {
     error_log('RATEB ERP error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     if (!headers_sent()) {
+        $apiPath = class_exists(\Rateb\App\Helpers\Request::class)
+            ? \Rateb\App\Helpers\Request::resolvePath()
+            : (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+        $accept = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+        $wantsJson = str_contains($apiPath, '/api/')
+            || str_contains($accept, 'application/json')
+            || isset($_SERVER['HTTP_X_CSRF_TOKEN']);
+        if ($wantsJson && class_exists(\Rateb\App\Core\Response::class)) {
+            $message = class_exists(\Rateb\App\Services\DatabaseErrorService::class)
+                ? \Rateb\App\Services\DatabaseErrorService::userMessage($e)
+                : 'Server error';
+            $status = class_exists(\Rateb\App\Services\DatabaseErrorService::class)
+                && \Rateb\App\Services\DatabaseErrorService::isSchemaIssue($e)
+                ? 503
+                : 500;
+            \Rateb\App\Core\Response::json(['ok' => false, 'error' => $message], $status);
+            return;
+        }
         http_response_code(500);
     }
     if (class_exists(\Rateb\App\Services\DatabaseErrorService::class)) {

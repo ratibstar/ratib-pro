@@ -47,9 +47,24 @@
             headers: headers,
             body: options.body ? JSON.stringify(options.body) : null
         }).then(function (res) {
+            var contentType = (res.headers.get('content-type') || '').toLowerCase();
+            if (contentType.indexOf('application/json') === -1) {
+                return res.text().then(function (body) {
+                    var snippet = (body || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+                    throw new Error(
+                        res.status >= 500
+                            ? t('pos_biometric_failed', 'Registration failed') + ' (HTTP ' + res.status + ')'
+                            : (snippet || t('pos_biometric_failed', 'Registration failed'))
+                    );
+                });
+            }
             return res.json().then(function (data) {
-                if (!res.ok || data.ok === false) {
-                    throw new Error((data && data.error) ? data.error : t('pos_biometric_failed', 'Verification failed'));
+                if (!res.ok || data.ok === false || data.success === false) {
+                    var err = data && data.error;
+                    if (err && typeof err === 'object') {
+                        err = err.message || err.code || t('pos_biometric_failed', 'Verification failed');
+                    }
+                    throw new Error(err || t('pos_biometric_failed', 'Verification failed'));
                 }
                 return data;
             });

@@ -15,19 +15,26 @@ final class BiometricAuthService
 
     public function hasEnrollment(int $userId): bool
     {
-        if ($userId < 1) {
+        if ($userId < 1 || !$this->webauthnTablesReady()) {
             return false;
         }
-        $db = Database::connection();
-        $fp = $db->prepare('SELECT id FROM rateb_webauthn_credentials WHERE user_id = :uid LIMIT 1');
-        $fp->execute(['uid' => $userId]);
-        if ($fp->fetchColumn()) {
-            return true;
-        }
-        $face = $db->prepare('SELECT id FROM rateb_face_templates WHERE user_id = :uid LIMIT 1');
-        $face->execute(['uid' => $userId]);
+        try {
+            $db = Database::connection();
+            $fp = $db->prepare('SELECT id FROM rateb_webauthn_credentials WHERE user_id = :uid LIMIT 1');
+            $fp->execute(['uid' => $userId]);
+            if ($fp->fetchColumn()) {
+                return true;
+            }
+            if (!$this->faceTemplatesTableReady()) {
+                return false;
+            }
+            $face = $db->prepare('SELECT id FROM rateb_face_templates WHERE user_id = :uid LIMIT 1');
+            $face->execute(['uid' => $userId]);
 
-        return (bool) $face->fetchColumn();
+            return (bool) $face->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function isPosVerified(int $userId): bool
@@ -66,7 +73,7 @@ final class BiometricAuthService
             try {
                 return ['ok' => true] + $this->buildSupervisorWebAuthnOptions();
             } catch (\Throwable $e) {
-                return ['ok' => false, 'error' => $e->getMessage()];
+                return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
             }
         }
 
@@ -78,7 +85,7 @@ final class BiometricAuthService
         try {
             return ['ok' => true] + $this->buildWebAuthnOptions($userId);
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => $e->getMessage()];
+            return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
         }
     }
 
@@ -97,7 +104,7 @@ final class BiometricAuthService
         try {
             return ['ok' => true] + $this->buildRegisterWebAuthnOptions($userId);
         } catch (\Throwable $e) {
-            return ['ok' => false, 'error' => $e->getMessage()];
+            return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
         }
     }
 
@@ -136,19 +143,25 @@ final class BiometricAuthService
             return ['ok' => false, 'error' => __('access_denied')];
         }
 
-        $db = Database::connection();
-        $delete = $db->prepare('DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid');
-        $delete->execute(['uid' => $userId]);
+        try {
+            $db = Database::connection();
+            $this->assertWebauthnStorageReady();
 
-        $insert = $db->prepare(
-            'INSERT INTO rateb_webauthn_credentials (user_id, credential_id, public_key, sign_count)
-             VALUES (:uid, :cid, :pk, 0)'
-        );
-        $insert->execute([
-            'uid' => $userId,
-            'cid' => $credentialId,
-            'pk' => $publicKey,
-        ]);
+            $delete = $db->prepare('DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid');
+            $delete->execute(['uid' => $userId]);
+
+            $insert = $db->prepare(
+                'INSERT INTO rateb_webauthn_credentials (user_id, credential_id, public_key, sign_count)
+                 VALUES (:uid, :cid, :pk, 0)'
+            );
+            $insert->execute([
+                'uid' => $userId,
+                'cid' => $credentialId,
+                'pk' => $publicKey,
+            ]);
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
+        }
 
         SessionManager::remove('pos_webauthn_register_challenge');
         SessionManager::remove('pos_webauthn_register_user_id');
@@ -303,6 +316,8 @@ final class BiometricAuthService
     /** @return array<string, mixed> */
     private function buildRegisterWebAuthnOptions(int $userId): array
     {
+        $this->assertWebauthnStorageReady();
+
         $user = (new User())->find($userId);
         if ($user === null || (string) ($user['status'] ?? '') !== 'active') {
             throw new \RuntimeException(__('access_denied'));
@@ -353,6 +368,8 @@ final class BiometricAuthService
     /** @return array<string, mixed> */
     private function buildWebAuthnOptions(int $userId): array
     {
+        $this->assertWebauthnStorageReady();
+
         $user = (new User())->find($userId);
         if ($user === null || (string) ($user['status'] ?? '') !== 'active') {
             throw new \RuntimeException(__('access_denied'));
@@ -442,5 +459,51 @@ final class BiometricAuthService
         }
 
         return $this->base64UrlDecode($b64);
+    }
+
+    private function assertWebauthnStorageReady(): void
+    {
+        if ($this->webauthnTablesReady()) {
+            return;
+        }
+
+        throw new \RuntimeException(__('db_schema_outdated'));
+    }
+
+    private function webauthnTablesReady(): bool
+    {
+        return $this->tableExists('rateb_webauthn_credentials');
+    }
+
+    private function faceTemplatesTableReady(): bool
+    {
+        return $this->tableExists('rateb_face_templates');
+    }
+
+    private function tableExists(string $table): bool
+    {
+        static $cache = [];
+        if (array_key_exists($table, $cache)) {
+            return $cache[$table];
+        }
+
+        try {
+            $db = Database::connection();
+            $safeTable = str_replace('`', '', $table);
+            $stmt = $db->query("SHOW TABLES LIKE " . $db->quote($safeTable));
+            $cache[$table] = $stmt !== false && $stmt->fetch() !== false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+        } catch (\Throwable) {
+            $cache[$table] = false;
+        }
+
+        return $cache[$table];
+    }
+
+    private function publicErrorMessage(\Throwable $e): string
+    {
+        return DatabaseErrorService::userMessage($e);
     }
 }
