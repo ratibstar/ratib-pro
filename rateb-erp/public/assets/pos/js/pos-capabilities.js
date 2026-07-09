@@ -66,25 +66,12 @@
     root.querySelectorAll('[data-pos-nav-action]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var action = btn.getAttribute('data-pos-nav-action');
-            if (action === 'customer') {
-                var customerBtn = root.querySelector('[data-pos-focus-customer]');
-                if (customerBtn) {
-                    customerBtn.click();
-                }
-            } else if (action === 'catalog') {
+            // Dedicated handlers: data-pos-focus-customer, data-pos-focus-search, data-pos-stock-open
+            if (action === 'catalog' && !btn.hasAttribute('data-pos-focus-search')) {
                 var search = root.querySelector('[data-pos-product-search]');
                 if (search) {
                     search.focus();
-                }
-            } else if (action === 'stock') {
-                var stockOpen = root.querySelector('[data-pos-stock-open]');
-                if (stockOpen) {
-                    stockOpen.click();
-                } else if (window.RatebPosRequireApproval) {
-                    var stockModal = root.querySelector('[data-pos-stock-modal]');
-                    if (stockModal) {
-                        stockModal.hidden = false;
-                    }
+                    search.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
                 }
             }
         });

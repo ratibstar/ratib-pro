@@ -1,16 +1,56 @@
 <?php
 declare(strict_types=1);
 
-/** @var array<string, mixed> $capabilities */
+/**
+ * Register rail — stay inside POS. No ERP inventory / purchase-invoice links.
+ *
+ * @var array<string, mixed> $capabilities
+ */
 $nav = is_array($capabilities ?? null) ? ($capabilities['nav'] ?? []) : [];
 $navItems = [
-    'sales' => ['url' => rateb_app_url('pos/register'), 'label' => __('pos_nav_sales'), 'icon' => 'sale', 'active' => true],
-    'customers' => ['url' => '#', 'label' => __('pos_nav_customers'), 'icon' => 'users', 'action' => 'customer'],
-    'products' => ['url' => rateb_app_url('inventory'), 'label' => __('pos_nav_products'), 'icon' => 'box'],
-    'inventory' => ['url' => '#', 'label' => __('pos_nav_inventory'), 'icon' => 'stock', 'action' => 'stock'],
-    'purchases' => ['url' => rateb_app_url('purchase-invoices'), 'label' => __('pos_nav_purchases'), 'icon' => 'cart'],
-    'reports' => ['url' => rateb_app_url('pos/reports'), 'label' => __('pos_nav_reports'), 'icon' => 'chart'],
-    'settings' => ['url' => rateb_app_url('pos/settings'), 'label' => __('pos_nav_settings'), 'icon' => 'settings'],
+    'sales' => [
+        'label' => __('pos_nav_sales'),
+        'icon' => 'sale',
+        'type' => 'link',
+        'url' => rateb_app_url('pos/register'),
+        'active' => true,
+    ],
+    'customers' => [
+        'label' => __('pos_nav_customers'),
+        'icon' => 'users',
+        'type' => 'action',
+        'action' => 'customer',
+    ],
+    'products' => [
+        'label' => __('pos_nav_products'),
+        'icon' => 'box',
+        'type' => 'action',
+        'action' => 'catalog',
+    ],
+    'inventory' => [
+        'label' => __('pos_nav_inventory'),
+        'icon' => 'stock',
+        'type' => 'action',
+        'action' => 'stock',
+    ],
+    'purchases' => [
+        'label' => __('pos_nav_purchases'),
+        'icon' => 'cart',
+        'type' => 'link',
+        'url' => rateb_app_url('pos/orders'),
+    ],
+    'reports' => [
+        'label' => __('pos_nav_reports'),
+        'icon' => 'chart',
+        'type' => 'link',
+        'url' => rateb_app_url('pos/reports'),
+    ],
+    'settings' => [
+        'label' => __('pos_nav_settings'),
+        'icon' => 'settings',
+        'type' => 'link',
+        'url' => rateb_app_url('pos/settings'),
+    ],
 ];
 
 $iconSvg = static function (string $name): string {
@@ -28,24 +68,25 @@ $iconSvg = static function (string $name): string {
 <nav class="rateb-pos__nav" aria-label="<?php echo __('pos_nav_section'); ?>" data-pos-register-nav>
     <?php foreach ($navItems as $key => $item): ?>
         <?php if (empty($nav[$key])) { continue; } ?>
-        <?php if (($item['action'] ?? '') === 'customer'): ?>
-            <button type="button"
-                    class="rateb-pos__nav-item"
-                    data-pos-nav-customer
-                    data-pos-focus-customer>
-                <span class="rateb-pos__nav-icon"><?php echo $iconSvg($item['icon']); ?></span>
-                <span><?php echo \Rateb\App\Pos\Support\PosView::escape($item['label']); ?></span>
-            </button>
-        <?php elseif (($item['action'] ?? '') === 'stock'): ?>
-            <button type="button"
-                    class="rateb-pos__nav-item"
-                    data-pos-stock-open
-                    <?php echo empty($capabilities['inventoryAdjust'] ?? false) ? 'hidden' : ''; ?>>
+        <?php if (($item['type'] ?? '') === 'action'): ?>
+            <?php
+            $action = (string) ($item['action'] ?? '');
+            $attrs = 'type="button" class="rateb-pos__nav-item" data-pos-nav-action="'
+                . \Rateb\App\Pos\Support\PosView::escape($action) . '"';
+            if ($action === 'customer') {
+                $attrs .= ' data-pos-focus-customer';
+            } elseif ($action === 'stock') {
+                $attrs .= ' data-pos-stock-open';
+            } elseif ($action === 'catalog') {
+                $attrs .= ' data-pos-focus-search';
+            }
+            ?>
+            <button <?php echo $attrs; ?>>
                 <span class="rateb-pos__nav-icon"><?php echo $iconSvg($item['icon']); ?></span>
                 <span><?php echo \Rateb\App\Pos\Support\PosView::escape($item['label']); ?></span>
             </button>
         <?php else: ?>
-            <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape($item['url']); ?>"
+            <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($item['url'] ?? '#')); ?>"
                class="rateb-pos__nav-item<?php echo !empty($item['active']) ? ' is-active' : ''; ?>"
                <?php echo !empty($item['active']) ? 'aria-current="page"' : ''; ?>>
                 <span class="rateb-pos__nav-icon"><?php echo $iconSvg($item['icon']); ?></span>

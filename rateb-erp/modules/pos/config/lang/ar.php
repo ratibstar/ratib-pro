@@ -300,6 +300,7 @@ return [
     'pos_nav_products' => 'المنتجات',
     'pos_nav_inventory' => 'المخزون',
     'pos_nav_purchases' => 'المشتريات',
+    'pos_nav_orders' => 'الطلبات',
     'pos_nav_reports' => 'التقارير',
     'pos_nav_settings' => 'الإعدادات',
     'pos_pay_cash' => 'نقدي',

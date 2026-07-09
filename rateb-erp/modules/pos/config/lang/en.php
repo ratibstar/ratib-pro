@@ -301,6 +301,7 @@ return [
     'pos_nav_products' => 'Products',
     'pos_nav_inventory' => 'Inventory',
     'pos_nav_purchases' => 'Purchases',
+    'pos_nav_orders' => 'Orders',
     'pos_nav_reports' => 'Reports',
     'pos_nav_settings' => 'Settings',
     'pos_pay_cash' => 'Cash',
