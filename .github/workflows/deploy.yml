@@ -25,24 +25,10 @@ on:
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  debounce:
-    if: >-
-      github.event_name == 'push' &&
-      startsWith(github.event.head_commit.message, 'update-')
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Coalesce rapid auto-commits (40s)
-        run: sleep 40
-
   deploy:
-    needs: debounce
-    if: >-
-      always() &&
-      (needs.debounce.result == 'success' || needs.debounce.result == 'skipped')
     runs-on: ubuntu-latest
     environment: rateb.sa
     timeout-minutes: 20
