@@ -1,114 +1,112 @@
 :root {
-  --admin-bg: #d4e6f9;
-  --admin-bg-top: #e8f2fc;
-  --admin-bg-bottom: #c5dcf5;
-  --admin-bg-accent: rgba(37, 99, 235, 0.06);
-  --admin-sidebar-top: #1e4a7a;
-  --admin-sidebar: #173a63;
-  --admin-sidebar-bottom: #122f52;
-  --admin-sidebar-text: #dbeafe;
-  --admin-sidebar-muted: rgba(219, 234, 254, 0.72);
-  --admin-sidebar-border: rgba(255, 255, 255, 0.1);
-  --admin-nav-hover: rgba(147, 197, 253, 0.16);
-  --admin-nav-active: rgba(96, 165, 250, 0.28);
-  --admin-brand-start: #60a5fa;
-  --admin-brand-end: #2563eb;
-  --admin-accent: #2563eb;
-  --admin-accent-soft: #dbeafe;
-  --admin-accent-glow: rgba(37, 99, 235, 0.15);
-  --admin-border: #a8c4e8;
-  --admin-border-soft: rgba(168, 196, 232, 0.55);
+  --admin-bg: #eef2f7;
+  --admin-bg-top: #f3f5f9;
+  --admin-bg-bottom: #e8edf3;
+  --admin-bg-accent: rgba(71, 98, 130, 0.04);
+  --admin-sidebar-top: #314a66;
+  --admin-sidebar: #2a4058;
+  --admin-sidebar-bottom: #24384f;
+  --admin-sidebar-text: #e8eef4;
+  --admin-sidebar-muted: rgba(232, 238, 244, 0.65);
+  --admin-sidebar-border: rgba(255, 255, 255, 0.08);
+  --admin-nav-hover: rgba(255, 255, 255, 0.07);
+  --admin-nav-active: rgba(255, 255, 255, 0.12);
+  --admin-brand-start: #6b8cae;
+  --admin-brand-end: #4d7399;
+  --admin-accent: #4d7399;
+  --admin-accent-soft: #e8eef5;
+  --admin-accent-glow: rgba(77, 115, 153, 0.12);
+  --admin-border: #d0d9e4;
+  --admin-border-soft: #dce3ec;
   --admin-surface: #ffffff;
-  --admin-surface-elevated: #f8fbff;
-  --admin-surface-muted: #eef5fd;
-  --admin-card-highlight: linear-gradient(135deg, rgba(96, 165, 250, 0.12), rgba(37, 99, 235, 0.04));
-  --admin-card-shine: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 251, 255, 0.88) 100%);
-  --admin-text: #0c2340;
-  --admin-muted: #5a7290;
+  --admin-surface-elevated: #fafbfc;
+  --admin-surface-muted: #f5f7fa;
+  --admin-card-shine: #ffffff;
+  --admin-text: #1e293b;
+  --admin-muted: #64748b;
   --admin-danger: #b42318;
   --admin-warning: #b54708;
-  --admin-shadow: 0 4px 6px rgba(23, 58, 99, 0.04), 0 14px 32px rgba(23, 58, 99, 0.1);
-  --admin-shadow-hover: 0 8px 12px rgba(23, 58, 99, 0.06), 0 20px 40px rgba(23, 58, 99, 0.14);
-  --admin-topbar-bg: rgba(255, 255, 255, 0.78);
-  --admin-table-head: #e8f2fc;
-  --admin-table-row-hover: rgba(37, 99, 235, 0.04);
-  --admin-stat-bg: linear-gradient(145deg, #ffffff 0%, #f0f7ff 55%, #e8f2fc 100%);
-  --admin-stat-accent: linear-gradient(90deg, #3b82f6, #60a5fa);
-  --admin-kv-bg: linear-gradient(145deg, #ffffff, #f3f8ff);
-  --admin-code-bg: #e3edf9;
-  --admin-code-text: #123456;
+  --admin-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.06);
+  --admin-shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 22px rgba(15, 23, 42, 0.08);
+  --admin-topbar-bg: rgba(255, 255, 255, 0.9);
+  --admin-table-head: #f5f7fa;
+  --admin-table-row-hover: rgba(71, 98, 130, 0.04);
+  --admin-stat-bg: #ffffff;
+  --admin-stat-accent: #6b8cae;
+  --admin-kv-bg: #fafbfc;
+  --admin-code-bg: #eef2f7;
+  --admin-code-text: #334155;
   --admin-check-bg: #ffffff;
-  --admin-json-bg: #0f2744;
-  --admin-json-text: #dbeafe;
-  --admin-success-bg: #e0f2fe;
-  --admin-success-border: #7dd3fc;
-  --admin-success-text: #0369a1;
-  --admin-ok-border: #7dd3fc;
-  --admin-badge-neutral-bg: #e8f0fa;
-  --admin-badge-neutral-text: #334155;
-  --admin-badge-ready-bg: #dbeafe;
-  --admin-badge-ready-text: #1d4ed8;
-  --admin-btn-primary: #2563eb;
-  --admin-btn-primary-hover: #1d4ed8;
-  --admin-radius: 16px;
-  --admin-radius-sm: 12px;
+  --admin-json-bg: #1e293b;
+  --admin-json-text: #e2e8f0;
+  --admin-success-bg: #eef6f2;
+  --admin-success-border: #c5ddd2;
+  --admin-success-text: #2f5f4a;
+  --admin-ok-border: #c5ddd2;
+  --admin-badge-neutral-bg: #eef2f7;
+  --admin-badge-neutral-text: #475569;
+  --admin-badge-ready-bg: #e8eef5;
+  --admin-badge-ready-text: #3d5f7f;
+  --admin-btn-primary: #4d7399;
+  --admin-btn-primary-hover: #3f6285;
+  --admin-radius: 12px;
+  --admin-radius-sm: 10px;
   --admin-sidebar-width: 280px;
   --admin-sidebar-collapsed-width: 78px;
   --admin-font: "Segoe UI", "Tahoma", "Noto Sans Arabic", sans-serif;
 }
 
 html[data-admin-theme="dark"] {
-  --admin-bg: #0a1220;
-  --admin-bg-top: #0f1a2e;
-  --admin-bg-bottom: #060d18;
-  --admin-bg-accent: rgba(56, 189, 248, 0.05);
-  --admin-sidebar-top: #0a1628;
-  --admin-sidebar: #060e1a;
-  --admin-sidebar-bottom: #040a14;
+  --admin-bg: #141820;
+  --admin-bg-top: #171c26;
+  --admin-bg-bottom: #11151d;
+  --admin-bg-accent: rgba(107, 140, 174, 0.04);
+  --admin-sidebar-top: #10141c;
+  --admin-sidebar: #0c1017;
+  --admin-sidebar-bottom: #090c12;
   --admin-sidebar-text: #cbd5e1;
-  --admin-sidebar-muted: rgba(203, 213, 225, 0.68);
-  --admin-sidebar-border: rgba(148, 163, 184, 0.14);
-  --admin-nav-hover: rgba(56, 189, 248, 0.12);
-  --admin-nav-active: rgba(45, 212, 191, 0.22);
-  --admin-brand-start: #2dd4bf;
-  --admin-brand-end: #0ea5e9;
-  --admin-accent: #38bdf8;
-  --admin-accent-soft: rgba(56, 189, 248, 0.14);
-  --admin-accent-glow: rgba(56, 189, 248, 0.12);
-  --admin-border: #2a3a52;
-  --admin-border-soft: rgba(42, 58, 82, 0.8);
-  --admin-surface: #141f33;
-  --admin-surface-elevated: #1a2740;
-  --admin-surface-muted: #111a2c;
-  --admin-card-highlight: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(45, 212, 191, 0.05));
-  --admin-card-shine: linear-gradient(180deg, rgba(26, 39, 64, 0.95) 0%, rgba(20, 31, 51, 0.92) 100%);
-  --admin-text: #eef2f8;
+  --admin-sidebar-muted: rgba(203, 213, 225, 0.62);
+  --admin-sidebar-border: rgba(148, 163, 184, 0.1);
+  --admin-nav-hover: rgba(255, 255, 255, 0.06);
+  --admin-nav-active: rgba(107, 140, 174, 0.18);
+  --admin-brand-start: #7c9cc4;
+  --admin-brand-end: #5a7fa8;
+  --admin-accent: #7c9cc4;
+  --admin-accent-soft: rgba(107, 140, 174, 0.12);
+  --admin-accent-glow: rgba(107, 140, 174, 0.15);
+  --admin-border: #2a3344;
+  --admin-border-soft: #232b3a;
+  --admin-surface: #1c2433;
+  --admin-surface-elevated: #212b3c;
+  --admin-surface-muted: #181f2c;
+  --admin-card-shine: #1c2433;
+  --admin-text: #e2e8f0;
   --admin-muted: #94a3b8;
-  --admin-danger: #f87171;
-  --admin-warning: #fbbf24;
-  --admin-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 16px 36px rgba(0, 0, 0, 0.35);
-  --admin-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.3), 0 24px 48px rgba(0, 0, 0, 0.42);
-  --admin-topbar-bg: rgba(15, 26, 46, 0.82);
-  --admin-table-head: #1a2740;
-  --admin-table-row-hover: rgba(56, 189, 248, 0.06);
-  --admin-stat-bg: linear-gradient(145deg, #1a2740 0%, #141f33 55%, #111a2c 100%);
-  --admin-stat-accent: linear-gradient(90deg, #0ea5e9, #2dd4bf);
-  --admin-kv-bg: linear-gradient(145deg, #1a2740, #141f33);
-  --admin-code-bg: #1e293b;
-  --admin-code-text: #e2e8f0;
-  --admin-check-bg: #1a2740;
-  --admin-json-bg: #020617;
+  --admin-danger: #e57373;
+  --admin-warning: #d4a24c;
+  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 18px rgba(0, 0, 0, 0.22);
+  --admin-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.24), 0 8px 22px rgba(0, 0, 0, 0.28);
+  --admin-topbar-bg: rgba(20, 24, 32, 0.92);
+  --admin-table-head: #1a2230;
+  --admin-table-row-hover: rgba(107, 140, 174, 0.06);
+  --admin-stat-bg: #1c2433;
+  --admin-stat-accent: #6b8cae;
+  --admin-kv-bg: #1a2230;
+  --admin-code-bg: #232b3a;
+  --admin-code-text: #cbd5e1;
+  --admin-check-bg: #1a2230;
+  --admin-json-bg: #0f141c;
   --admin-json-text: #cbd5e1;
-  --admin-success-bg: rgba(45, 212, 191, 0.1);
-  --admin-success-border: rgba(45, 212, 191, 0.35);
-  --admin-success-text: #5eead4;
-  --admin-ok-border: rgba(45, 212, 191, 0.4);
-  --admin-badge-neutral-bg: #1e293b;
-  --admin-badge-neutral-text: #cbd5e1;
-  --admin-badge-ready-bg: rgba(56, 189, 248, 0.16);
-  --admin-badge-ready-text: #7dd3fc;
-  --admin-btn-primary: #0ea5e9;
-  --admin-btn-primary-hover: #38bdf8;
+  --admin-success-bg: rgba(74, 124, 99, 0.12);
+  --admin-success-border: rgba(74, 124, 99, 0.28);
+  --admin-success-text: #8fb9a0;
+  --admin-ok-border: rgba(74, 124, 99, 0.32);
+  --admin-badge-neutral-bg: #232b3a;
+  --admin-badge-neutral-text: #94a3b8;
+  --admin-badge-ready-bg: rgba(107, 140, 174, 0.14);
+  --admin-badge-ready-text: #9bb4d0;
+  --admin-btn-primary: #5a7fa8;
+  --admin-btn-primary-hover: #6b8cae;
 }
 
 * {
@@ -118,10 +116,7 @@ html[data-admin-theme="dark"] {
 body.admin-body {
   margin: 0;
   font-family: var(--admin-font);
-  background:
-    radial-gradient(ellipse 80% 50% at 20% -10%, var(--admin-bg-accent), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, var(--admin-bg-accent), transparent 50%),
-    linear-gradient(180deg, var(--admin-bg-top) 0%, var(--admin-bg) 45%, var(--admin-bg-bottom) 100%);
+  background: linear-gradient(180deg, var(--admin-bg-top) 0%, var(--admin-bg) 50%, var(--admin-bg-bottom) 100%);
   color: var(--admin-text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -251,11 +246,6 @@ body.admin-body {
 .admin-nav-link.is-active {
   background: var(--admin-nav-active);
   color: #fff;
-  box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.55);
-}
-
-html[dir="rtl"] .admin-nav-link.is-active {
-  box-shadow: inset -3px 0 0 rgba(255, 255, 255, 0.55);
 }
 
 .admin-nav-link:hover {
@@ -333,17 +323,12 @@ html[dir="rtl"] .admin-nav-link.is-active {
   gap: 0.75rem;
   padding: 0.95rem 1.25rem;
   background: var(--admin-topbar-bg);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--admin-border-soft);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
   position: sticky;
   top: 0;
   z-index: 20;
-}
-
-html[data-admin-theme="dark"] .admin-topbar {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
 .admin-topbar-title {
@@ -388,29 +373,10 @@ html[data-admin-theme="dark"] .admin-topbar {
   border: 1px solid var(--admin-border-soft);
   border-radius: var(--admin-radius);
   box-shadow: var(--admin-shadow);
-  overflow: hidden;
-  transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
-}
-
-.admin-panel::before,
-.admin-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--admin-stat-accent);
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-.admin-panel:hover,
-.admin-card:hover {
-  box-shadow: var(--admin-shadow-hover);
-  border-color: var(--admin-border);
 }
 
 .admin-panel {
-  padding: 1.25rem 1.35rem;
+  padding: 1.2rem 1.3rem;
 }
 
 .admin-panel > .h5,
@@ -446,48 +412,23 @@ html[data-admin-theme="dark"] .admin-topbar {
 }
 
 .admin-stat {
-  position: relative;
-  padding: 1.1rem 1.15rem 1.05rem;
+  padding: 1rem 1.1rem;
   border-radius: var(--admin-radius-sm);
   background: var(--admin-stat-bg);
   border: 1px solid var(--admin-border-soft);
   box-shadow: var(--admin-shadow);
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.admin-stat::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: var(--admin-stat-accent);
-  border-radius: 4px 0 0 4px;
-}
-
-html[dir="rtl"] .admin-stat::before {
-  inset: 0 0 0 auto;
-  border-radius: 0 4px 4px 0;
-}
-
-.admin-stat:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--admin-shadow-hover);
 }
 
 .admin-stat-label {
   color: var(--admin-muted);
   font-size: 0.8rem;
   font-weight: 500;
-  margin-bottom: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  margin-bottom: 0.35rem;
 }
 
 .admin-stat-value {
-  font-size: 1.55rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1.45rem;
+  font-weight: 600;
   color: var(--admin-text);
 }
 
@@ -496,26 +437,17 @@ html[dir="rtl"] .admin-stat::before {
   border: 1px solid var(--admin-border-soft);
   border-radius: var(--admin-radius-sm);
   background: var(--admin-surface);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-html[data-admin-theme="dark"] .admin-table-wrap {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .admin-table {
   margin: 0;
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
 }
 
 .admin-table thead th {
   background: var(--admin-table-head);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--admin-muted);
   white-space: nowrap;
   border-bottom: 1px solid var(--admin-border-soft);
@@ -602,9 +534,9 @@ html[data-admin-theme="dark"] .btn-outline-secondary:hover {
 }
 
 .admin-flash.is-info {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1e40af;
+  background: #eef2f7;
+  border-color: #d0d9e4;
+  color: #3d5f7f;
 }
 
 .admin-empty,
@@ -677,17 +609,10 @@ html[data-admin-theme="dark"] .btn-outline-secondary:hover {
 }
 
 .admin-kv-item {
-  padding: 0.9rem 1rem;
+  padding: 0.85rem 0.95rem;
   border: 1px solid var(--admin-border-soft);
   border-radius: var(--admin-radius-sm);
   background: var(--admin-kv-bg);
-  box-shadow: var(--admin-shadow);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.admin-kv-item:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--admin-shadow-hover);
 }
 
 .admin-kv-label {
@@ -795,15 +720,44 @@ html[dir="rtl"] .admin-footer {
 
 .admin-badge-status.is-draft,
 .admin-badge-status.is-pending {
-  background: #fff7ed;
-  color: #9a3412;
+  background: #f8f3ea;
+  color: #8a6430;
 }
 
 .admin-badge-status.is-archived,
 .admin-badge-status.is-rejected,
 .admin-badge-status.is-dead {
-  background: #fef3f2;
-  color: #b42318;
+  background: #f8ecec;
+  color: #9b4545;
+}
+
+html[data-admin-theme="dark"] .admin-badge-status.is-draft,
+html[data-admin-theme="dark"] .admin-badge-status.is-pending {
+  background: rgba(212, 162, 76, 0.14);
+  color: #d4a24c;
+}
+
+html[data-admin-theme="dark"] .admin-badge-status.is-archived,
+html[data-admin-theme="dark"] .admin-badge-status.is-rejected,
+html[data-admin-theme="dark"] .admin-badge-status.is-dead {
+  background: rgba(229, 115, 115, 0.12);
+  color: #e57373;
+}
+
+html[data-admin-theme="dark"] .admin-check-item.is-fail {
+  border-color: rgba(229, 115, 115, 0.28);
+  background: rgba(229, 115, 115, 0.08);
+}
+
+html[data-admin-theme="dark"] .admin-flash.is-error {
+  background: rgba(229, 115, 115, 0.1);
+  border-color: rgba(229, 115, 115, 0.28);
+}
+
+html[data-admin-theme="dark"] .admin-flash.is-info {
+  background: rgba(107, 140, 174, 0.12);
+  border-color: rgba(107, 140, 174, 0.28);
+  color: #9bb4d0;
 }
 
 .admin-split {
@@ -832,14 +786,17 @@ body.admin-body .btn-primary {
   --bs-btn-hover-border-color: var(--admin-btn-primary-hover);
   --bs-btn-active-bg: var(--admin-btn-primary-hover);
   --bs-btn-active-border-color: var(--admin-btn-primary-hover);
-  --bs-btn-focus-shadow-rgb: 37, 99, 235;
-  border-radius: 10px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px var(--admin-accent-glow);
+  --bs-btn-focus-shadow-rgb: 77, 115, 153;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+html[data-admin-theme="dark"] body.admin-body .btn-primary {
+  --bs-btn-focus-shadow-rgb: 90, 127, 168;
 }
 
 body.admin-body .btn-outline-secondary {
-  border-radius: 10px;
+  border-radius: 8px;
   border-color: var(--admin-border);
   color: var(--admin-muted);
 }
@@ -848,10 +805,6 @@ body.admin-body .btn-outline-secondary:hover {
   background: var(--admin-accent-soft);
   border-color: var(--admin-accent);
   color: var(--admin-accent);
-}
-
-html[data-admin-theme="dark"] body.admin-body .btn-primary {
-  --bs-btn-focus-shadow-rgb: 14, 165, 233;
 }
 
 body.admin-body .badge.text-bg-success {
