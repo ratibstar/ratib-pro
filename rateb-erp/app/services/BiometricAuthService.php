@@ -62,24 +62,21 @@ final class BiometricAuthService
     public function startWebAuthn(int $userId, bool $supervisor = false): array
     {
         if ($supervisor) {
-            if (!function_exists('rateb_can') || !rateb_can('pos.supervisor.approve')) {
-                if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
-                    return ['ok' => false, 'error' => __('access_denied')];
-                }
-            }
             SessionManager::set('pos_webauthn_supervisor', 1);
-        } else {
-            SessionManager::remove('pos_webauthn_supervisor');
+            try {
+                return ['ok' => true] + $this->buildSupervisorWebAuthnOptions();
+            } catch (\Throwable $e) {
+                return ['ok' => false, 'error' => $e->getMessage()];
+            }
         }
 
+        SessionManager::remove('pos_webauthn_supervisor');
         if ($userId < 1) {
             $userId = $this->userId();
         }
 
         try {
-            $options = $this->buildWebAuthnOptions($userId);
-
-            return ['ok' => true] + $options;
+            return ['ok' => true] + $this->buildWebAuthnOptions($userId);
         } catch (\Throwable $e) {
             return ['ok' => false, 'error' => $e->getMessage()];
         }
@@ -92,14 +89,21 @@ final class BiometricAuthService
             $userId = $this->userId();
         }
 
-        $sessionUserId = (int) SessionManager::get('pos_webauthn_user_id');
-        $expires = (int) SessionManager::get('pos_webauthn_expires');
-        if ($sessionUserId < 1 || $expires < time()) {
-            return ['ok' => false, 'error' => __('pos_biometric_failed')];
-        }
+        if ($supervisor) {
+            $expires = (int) SessionManager::get('pos_webauthn_expires');
+            if ($expires < time()) {
+                return ['ok' => false, 'error' => __('pos_biometric_failed')];
+            }
+        } else {
+            $sessionUserId = (int) SessionManager::get('pos_webauthn_user_id');
+            $expires = (int) SessionManager::get('pos_webauthn_expires');
+            if ($sessionUserId < 1 || $expires < time()) {
+                return ['ok' => false, 'error' => __('pos_biometric_failed')];
+            }
 
-        if (!$supervisor && $sessionUserId !== $userId) {
-            return ['ok' => false, 'error' => __('pos_biometric_failed')];
+            if ($sessionUserId !== $userId) {
+                return ['ok' => false, 'error' => __('pos_biometric_failed')];
+            }
         }
 
         $credentialIdB64 = (string) ($payload['credentialId'] ?? $payload['id'] ?? '');
@@ -110,21 +114,25 @@ final class BiometricAuthService
         $credentialId = $this->base64UrlDecode($credentialIdB64);
         $db = Database::connection();
         $stmt = $db->prepare(
-            'SELECT user_id FROM rateb_webauthn_credentials WHERE user_id = :uid AND credential_id = :cid LIMIT 1'
+            'SELECT user_id FROM rateb_webauthn_credentials WHERE credential_id = :cid LIMIT 1'
         );
-        $stmt->execute(['uid' => $sessionUserId, 'cid' => $credentialId]);
+        $stmt->execute(['cid' => $credentialId]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$row) {
             return ['ok' => false, 'error' => __('pos_biometric_failed')];
         }
 
-        $verifiedId = (int) ($row['user_id'] ?? $sessionUserId);
+        $verifiedId = (int) ($row['user_id'] ?? 0);
         if ($supervisor) {
-            if (!function_exists('rateb_can') || !rateb_can('pos.supervisor.approve')) {
-                if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
-                    return ['ok' => false, 'error' => __('access_denied')];
-                }
+            $authz = new AuthorizationService();
+            $canSupervise = $authz->userHasPermission($verifiedId, 'pos.supervisor.approve')
+                || $authz->userHasPermission($verifiedId, 'pos.discount.manage')
+                || $authz->userHasPermission($verifiedId, 'pos.returns.manage');
+            if (!$canSupervise) {
+                return ['ok' => false, 'error' => __('pos_supervisor_required')];
             }
+        } elseif ($verifiedId !== $userId) {
+            return ['ok' => false, 'error' => __('pos_biometric_failed')];
         }
 
         SessionManager::remove('pos_webauthn_challenge');
@@ -164,6 +172,57 @@ final class BiometricAuthService
         }
 
         return ['ok' => true];
+    }
+
+    /** @return array<string, mixed> */
+    private function buildSupervisorWebAuthnOptions(): array
+    {
+        $db = Database::connection();
+        $rows = $db->query(
+            'SELECT wc.credential_id, wc.user_id
+             FROM rateb_webauthn_credentials wc
+             INNER JOIN rateb_users u ON u.id = wc.user_id
+             WHERE u.status = \'active\''
+        )->fetchAll(\PDO::FETCH_ASSOC);
+
+        $authz = new AuthorizationService();
+        $allow = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
+            $canSupervise = $authz->userHasPermission($uid, 'pos.supervisor.approve')
+                || $authz->userHasPermission($uid, 'pos.discount.manage')
+                || $authz->userHasPermission($uid, 'pos.returns.manage');
+            if (!$canSupervise) {
+                continue;
+            }
+            $allow[] = [
+                'type' => 'public-key',
+                'id' => $this->base64UrlEncode((string) $row['credential_id']),
+                'transports' => ['internal'],
+            ];
+        }
+
+        if ($allow === []) {
+            throw new \RuntimeException(__('pos_supervisor_required'));
+        }
+
+        $challenge = random_bytes(32);
+        SessionManager::set('pos_webauthn_challenge', base64_encode($challenge));
+        SessionManager::set('pos_webauthn_user_id', 0);
+        SessionManager::set('pos_webauthn_expires', time() + self::CHALLENGE_TTL);
+
+        return [
+            'publicKey' => [
+                'challenge' => $this->base64UrlEncode($challenge),
+                'rpId' => $this->resolveRpId(),
+                'allowCredentials' => $allow,
+                'timeout' => 60000,
+                'userVerification' => 'required',
+            ],
+        ];
     }
 
     /** @return array<string, mixed> */
