@@ -64,8 +64,8 @@ $locale = rateb_locale();
             <span class="rateb-pos-connection__label"><?php echo __('pos_online'); ?></span>
         </span>
         <div class="rateb-pos__lang" role="group" aria-label="<?php echo __('language'); ?>">
-            <a href="<?php echo rateb_url('locale/en'); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'en' ? ' is-active' : ''; ?>" data-locale="en" lang="en">EN</a>
-            <a href="<?php echo rateb_url('locale/ar'); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'ar' ? ' is-active' : ''; ?>" data-locale="ar" lang="ar">ع</a>
+            <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape(rateb_locale_switch_url('en')); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'en' ? ' is-active' : ''; ?>" data-locale="en" lang="en">EN</a>
+            <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape(rateb_locale_switch_url('ar')); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'ar' ? ' is-active' : ''; ?>" data-locale="ar" lang="ar">ع</a>
         </div>
         <div class="rateb-pos__theme" role="group" aria-label="<?php echo __('pos_theme_dark'); ?>">
             <button type="button" class="rateb-pos__theme-btn" data-theme-choice="light" aria-pressed="false" title="<?php echo __('pos_theme_light'); ?>">

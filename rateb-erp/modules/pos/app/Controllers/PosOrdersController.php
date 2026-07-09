@@ -41,7 +41,7 @@ final class PosOrdersController extends PosBaseController
             'title' => __('pos_orders'),
             'items' => $items,
             'csrf' => Csrf::token(),
-        ]);
+        ], 'pos-pages-shell');
     }
 
     public function show(array $params): void
@@ -84,7 +84,7 @@ final class PosOrdersController extends PosBaseController
             'refunds' => $refunds->fetchAll(\PDO::FETCH_ASSOC) ?: [],
             'receipt' => $receipt,
             'csrf' => Csrf::token(),
-        ]);
+        ], 'pos-pages-shell');
     }
 
     private function displaySequenceNo(array $order, int $companyId): int

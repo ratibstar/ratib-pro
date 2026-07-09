@@ -988,9 +988,20 @@ if (!function_exists('rateb_locale_switch_url')) {
         if (!in_array($locale, RATEB_SUPPORTED_LOCALES, true)) {
             $locale = RATEB_DEFAULT_LOCALE;
         }
-        return rateb_url_query(rateb_url('locale/' . $locale), [
-            'next' => rateb_current_public_path('site'),
-        ]);
+        $next = rateb_current_erp_route('site');
+        if ($next === '' || $next === '__none__') {
+            $next = rateb_current_public_path('site');
+        }
+        $query = ['next' => $next];
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+            if ($companyId > 0) {
+                $query['company_id'] = $companyId;
+            }
+        }
+
+        return rateb_url_query(rateb_url('locale/' . $locale), $query);
     }
 }
 

@@ -3030,7 +3030,16 @@ final class LocaleController extends Controller
     {
         $next = trim((string) ($_GET['next'] ?? ''));
         if ($next !== '' && $this->isSafeInternalPath($next)) {
-            return rateb_url($next);
+            $url = rateb_url($next);
+            $companyId = (int) ($_GET['company_id'] ?? 0);
+            if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                $companyId = (int) rateb_resolve_ops_company_id();
+            }
+            if ($companyId > 0 && strpos($url, 'company_id=') === false) {
+                $url .= (strpos($url, '?') === false ? '?' : '&') . 'company_id=' . $companyId;
+            }
+
+            return $url;
         }
 
         $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');

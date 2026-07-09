@@ -32,7 +32,7 @@ final class PosReportsController extends PosBaseController
             'snapshots' => $this->reports->listSnapshots($companyId),
             'shifts' => $this->shifts->listForCompany($companyId, 30),
             'csrf' => Csrf::token(),
-        ]);
+        ], 'pos-pages-shell');
     }
 
     public function xReport(array $params): void
@@ -47,7 +47,7 @@ final class PosReportsController extends PosBaseController
                 'title' => __('pos_x_report'),
                 'report' => $report,
                 'csrf' => Csrf::token(),
-            ]);
+            ], 'pos-pages-shell');
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_app_url('pos/reports'));
@@ -77,7 +77,7 @@ final class PosReportsController extends PosBaseController
             'report' => is_array($row['snapshot'] ?? null) ? $row['snapshot'] : [],
             'snapshot' => $row,
             'csrf' => Csrf::token(),
-        ]);
+        ], 'pos-pages-shell');
     }
 
     /** JSON API for register / integrations. */

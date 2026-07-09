@@ -18,7 +18,7 @@ final class PosSettingsController extends PosBaseController
             'title' => __('pos_settings'),
             'csrf' => Csrf::token(),
             'demoSetupUrl' => rateb_app_url('pos/settings/demo-setup'),
-        ]);
+        ], 'pos-pages-shell');
     }
 
     public function setupDemoData(): void
