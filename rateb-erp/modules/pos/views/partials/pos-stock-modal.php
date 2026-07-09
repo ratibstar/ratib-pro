@@ -11,16 +11,14 @@ declare(strict_types=1);
             </button>
         </header>
         <div class="rateb-pos__modal-body">
-            <label class="rateb-pos__field-label" for="rateb-pos-stock-product"><?php echo __('pos_item_name'); ?></label>
+            <label class="rateb-pos__field-label" for="rateb-pos-stock-product"><?php echo __('pos_products'); ?></label>
             <input type="text" class="rateb-pos__input rateb-pos__input--block" id="rateb-pos-stock-product" data-pos-stock-product readonly />
             <input type="hidden" data-pos-stock-inventory-id value="" />
-            <label class="rateb-pos__field-label" for="rateb-pos-stock-delta"><?php echo __('pos_stock_adjust_qty'); ?></label>
-            <input type="number" step="0.01" class="rateb-pos__input rateb-pos__input--block" id="rateb-pos-stock-delta" data-pos-stock-delta inputmode="decimal" />
+            <label class="rateb-pos__field-label" for="rateb-pos-stock-delta"><?php echo __('pos_qty'); ?></label>
+            <input type="number" step="0.01" class="rateb-pos__input rateb-pos__input--block" id="rateb-pos-stock-delta" data-pos-stock-delta value="0" />
             <label class="rateb-pos__field-label" for="rateb-pos-stock-reason"><?php echo __('notes'); ?></label>
             <input type="text" class="rateb-pos__input rateb-pos__input--block" id="rateb-pos-stock-reason" data-pos-stock-reason maxlength="200" />
-            <button type="button" class="rateb-pos__charge rateb-pos__charge--sm" data-pos-stock-save style="margin-top:12px;width:100%;">
-                <?php echo __('pos_stock_adjust_save'); ?>
-            </button>
+            <button type="button" class="rateb-pos__charge rateb-pos__charge--sm" data-pos-stock-save><?php echo __('pos_stock_adjust_save'); ?></button>
         </div>
     </div>
 </div>

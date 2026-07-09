@@ -2,9 +2,11 @@
 declare(strict_types=1);
 
 /** @var array<string, mixed> $context */
+/** @var array<string, mixed> $capabilities */
 /** @var string|null $csrf */
 $registerReady = (bool) ($context['register_ready'] ?? false);
-$canReturns = (bool) ($context['can_returns'] ?? false);
+$canReturns = (bool) ($capabilities['returns'] ?? $context['can_returns'] ?? false);
+$canPaymentCard = (bool) ($capabilities['paymentCard'] ?? true);
 $shift = $context['shift'] ?? null;
 $shiftLabel = $shift ? (string) ($shift['shift_no'] ?? '—') : '—';
 $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
@@ -46,88 +48,6 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
 
     <div class="rateb-pos__stage">
         <?php include __DIR__ . '/../partials/pos-register-nav.php'; ?>
-
-        <main class="rateb-pos__catalog" aria-label="<?php echo __('pos_products'); ?>">
-            </div>
-        </main>
-
-        <aside class="rateb-pos__ticket" aria-label="<?php echo __('pos_cart'); ?>">
-            <header class="rateb-pos__order-bar">
-                <span class="rateb-pos__order-no">#<?php echo \Rateb\App\Pos\Support\PosView::escape($orderRef); ?></span>
-                <div class="rateb-pos__order-actions">
-                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--cancel" data-pos-clear-cart data-pos-cap-cancel><?php echo __('pos_cancel_order'); ?></button>
-                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--quote" data-pos-save-quote><?php echo __('pos_save_quote'); ?></button>
-                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--hold" data-pos-suspend><?php echo __('pos_suspend_sale'); ?></button>
-                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--new" data-pos-new-sale><?php echo __('pos_new_sale'); ?></button>
-                </div>
-            </header>
-
-            <section class="rateb-pos__saved" aria-label="<?php echo __('pos_saved_orders'); ?>">
-                <div class="rateb-pos__saved-head">
-                    <div class="rateb-pos__saved-tabs" role="tablist">
-                        <button type="button" class="rateb-pos__saved-tab is-active" role="tab" aria-selected="true" data-pos-saved-tab="suspended"><?php echo __('pos_suspended_sales'); ?></button>
-                        <button type="button" class="rateb-pos__saved-tab" role="tab" aria-selected="false" data-pos-saved-tab="quotes"><?php echo __('pos_quotes'); ?></button>
-                    </div>
-                    <button type="button" class="rateb-pos__saved-refresh" data-pos-saved-refresh aria-label="<?php echo __('refresh'); ?>">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-                    </button>
-                </div>
-                <div class="rateb-pos__saved-panel is-active" data-pos-saved-panel="suspended" role="tabpanel">
-                    <p class="rateb-pos__saved-empty" data-pos-suspended-empty hidden><?php echo __('pos_suspended_empty'); ?></p>
-                    <div class="rateb-pos__saved-list" data-pos-suspended-list></div>
-                </div>
-                <div class="rateb-pos__saved-panel" data-pos-saved-panel="quotes" role="tabpanel" hidden>
-                    <p class="rateb-pos__saved-empty" data-pos-quotes-empty hidden><?php echo __('pos_quotes_empty'); ?></p>
-                    <div class="rateb-pos__saved-list" data-pos-quotes-list></div>
-                </div>
-            </section>
-
-            <button type="button" class="rateb-pos__ticket-customer" data-pos-focus-customer aria-label="<?php echo __('pos_customer'); ?>">
-                <svg class="rateb-pos__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span data-pos-toolbar-customer><?php echo __('pos_walk_in_customer'); ?></span>
-                <svg class="rateb-pos__icon rateb-pos__ticket-customer-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-
-            <div class="rateb-pos__ticket-body">
-                <div class="rateb-pos__ticket-lines" data-pos-cart-lines role="list"></div>
-                <div class="rateb-pos__ticket-empty" data-pos-cart-empty>
-                    <svg class="rateb-pos__ticket-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                    <p><?php echo __('pos_cart_empty'); ?></p>
-                </div>
-            </div>
-
-            <footer class="rateb-pos__ticket-foot">
-                <dl class="rateb-pos__totals">
-                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
-                        <dt><?php echo __('pos_subtotal'); ?></dt>
-                        <dd data-pos-subtotal>0.00</dd>
-                    </div>
-                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted" data-pos-totals-discount-wrap hidden>
-                        <dt><?php echo __('pos_discount_total'); ?></dt>
-                        <dd data-pos-discount-total>0.00</dd>
-                    </div>
-                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
-                        <dt><?php echo __('pos_tax'); ?></dt>
-                        <dd data-pos-tax>0.00</dd>
-                    </div>
-                    <div class="rateb-pos__totals-row rateb-pos__totals-row--grand">
-                        <dt><?php echo __('pos_total'); ?></dt>
-                        <dd data-pos-total>0.00</dd>
-                    </div>
-                </dl>
-                <button type="button" class="rateb-pos__charge" data-pos-checkout-open disabled>
-                    <span class="rateb-pos__charge-label"><?php echo __('pos_checkout'); ?></span>
-                    <span class="rateb-pos__charge-amount" data-pos-pay-amount>0.00</span>
-                </button>
-                <?php if ($canReturns): ?>
-                <div class="rateb-pos__ticket-utils">
-                    <button type="button" class="rateb-pos__util-btn rateb-pos__util-btn--accent" data-pos-return-open><?php echo __('pos_return'); ?></button>
-                    <button type="button" class="rateb-pos__util-btn rateb-pos__util-btn--accent" data-pos-exchange-open><?php echo __('pos_exchange'); ?></button>
-                </div>
-                <?php endif; ?>
-                <span class="rateb-pos__ticket-count rateb-pos__ticket-count--sr" data-pos-cart-count>0</span>
-            </footer>
-        </aside>
 
         <main class="rateb-pos__catalog" aria-label="<?php echo __('pos_products'); ?>">
             <div class="rateb-pos__catalog-top">
@@ -181,7 +101,108 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
                 </div>
             </div>
         </main>
+
+        <aside class="rateb-pos__ticket" aria-label="<?php echo __('pos_cart'); ?>">
+            <header class="rateb-pos__order-bar">
+                <span class="rateb-pos__order-no">#<?php echo \Rateb\App\Pos\Support\PosView::escape($orderRef); ?></span>
+                <div class="rateb-pos__order-actions">
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--cancel" data-pos-clear-cart><?php echo __('pos_cancel_order'); ?></button>
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--quote" data-pos-save-quote><?php echo __('pos_save_quote'); ?></button>
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--hold" data-pos-suspend><?php echo __('pos_suspend_sale'); ?></button>
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--new" data-pos-new-sale><?php echo __('pos_new_sale'); ?></button>
+                </div>
+            </header>
+
+            <section class="rateb-pos__saved" aria-label="<?php echo __('pos_saved_orders'); ?>">
+                <div class="rateb-pos__saved-head">
+                    <div class="rateb-pos__saved-tabs" role="tablist">
+                        <button type="button" class="rateb-pos__saved-tab is-active" role="tab" aria-selected="true" data-pos-saved-tab="suspended"><?php echo __('pos_suspended_sales'); ?></button>
+                        <button type="button" class="rateb-pos__saved-tab" role="tab" aria-selected="false" data-pos-saved-tab="quotes"><?php echo __('pos_quotes'); ?></button>
+                    </div>
+                    <button type="button" class="rateb-pos__saved-refresh" data-pos-saved-refresh aria-label="<?php echo __('refresh'); ?>">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                    </button>
+                </div>
+                <div class="rateb-pos__saved-panel is-active" data-pos-saved-panel="suspended" role="tabpanel">
+                    <p class="rateb-pos__saved-empty" data-pos-suspended-empty hidden><?php echo __('pos_suspended_empty'); ?></p>
+                    <div class="rateb-pos__saved-list" data-pos-suspended-list></div>
+                </div>
+                <div class="rateb-pos__saved-panel" data-pos-saved-panel="quotes" role="tabpanel" hidden>
+                    <p class="rateb-pos__saved-empty" data-pos-quotes-empty hidden><?php echo __('pos_quotes_empty'); ?></p>
+                    <div class="rateb-pos__saved-list" data-pos-quotes-list></div>
+                </div>
+            </section>
+
+            <button type="button" class="rateb-pos__ticket-customer" data-pos-focus-customer aria-label="<?php echo __('pos_customer'); ?>">
+                <svg class="rateb-pos__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span data-pos-toolbar-customer><?php echo __('pos_walk_in_customer'); ?></span>
+                <svg class="rateb-pos__icon rateb-pos__ticket-customer-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+
+            <div class="rateb-pos__ticket-body">
+                <div class="rateb-pos__cart-table-wrap">
+                    <table class="rateb-pos__cart-table" aria-label="<?php echo __('pos_cart'); ?>">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="visually-hidden"><?php echo __('pos_products'); ?></th>
+                                <th scope="col"><?php echo __('pos_item_name'); ?></th>
+                                <th scope="col"><?php echo __('pos_item_sku'); ?></th>
+                                <th scope="col"><?php echo __('pos_qty'); ?></th>
+                                <th scope="col"><?php echo __('pos_unit_price'); ?></th>
+                                <th scope="col"><?php echo __('pos_line_total'); ?></th>
+                                <th scope="col" class="visually-hidden"><?php echo __('pos_actions'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody class="rateb-pos__ticket-lines" data-pos-cart-lines></tbody>
+                    </table>
+                </div>
+                <div class="rateb-pos__ticket-empty" data-pos-cart-empty>
+                    <svg class="rateb-pos__ticket-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <p><?php echo __('pos_cart_empty'); ?></p>
+                </div>
+            </div>
+
+            <footer class="rateb-pos__ticket-foot">
+                <dl class="rateb-pos__totals">
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
+                        <dt><?php echo __('pos_subtotal'); ?></dt>
+                        <dd data-pos-subtotal>0.00</dd>
+                    </div>
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted" data-pos-totals-discount-wrap hidden>
+                        <dt><?php echo __('pos_discount_total'); ?></dt>
+                        <dd data-pos-discount-total>0.00</dd>
+                    </div>
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
+                        <dt><?php echo __('pos_tax'); ?></dt>
+                        <dd data-pos-tax>0.00</dd>
+                    </div>
+                    <div class="rateb-pos__totals-row rateb-pos__totals-row--grand">
+                        <dt><?php echo __('pos_total'); ?></dt>
+                        <dd data-pos-total>0.00</dd>
+                    </div>
+                </dl>
+                <div class="rateb-pos__pay-methods" data-pos-pay-methods>
+                    <button type="button" class="rateb-pos__pay-quick rateb-pos__pay-quick--cash is-active" data-pos-pay-quick="cash"><?php echo __('pos_pay_cash'); ?></button>
+                    <button type="button" class="rateb-pos__pay-quick rateb-pos__pay-quick--card" data-pos-pay-quick="card" <?php echo $canPaymentCard ? '' : 'hidden'; ?>><?php echo __('pos_pay_card'); ?></button>
+                    <button type="button" class="rateb-pos__pay-quick rateb-pos__pay-quick--other" data-pos-pay-quick="other" <?php echo $canPaymentCard ? '' : 'hidden'; ?>><?php echo __('pos_pay_other'); ?></button>
+                </div>
+                <button type="button" class="rateb-pos__charge" data-pos-checkout-open disabled>
+                    <span class="rateb-pos__charge-label"><?php echo __('pos_checkout'); ?></span>
+                    <span class="rateb-pos__charge-amount" data-pos-pay-amount>0.00</span>
+                </button>
+                <?php if ($canReturns): ?>
+                <div class="rateb-pos__ticket-utils">
+                    <button type="button" class="rateb-pos__util-btn rateb-pos__util-btn--accent" data-pos-return-open><?php echo __('pos_return'); ?></button>
+                    <button type="button" class="rateb-pos__util-btn rateb-pos__util-btn--accent" data-pos-exchange-open><?php echo __('pos_exchange'); ?></button>
+                </div>
+                <?php endif; ?>
+                <span class="rateb-pos__ticket-count rateb-pos__ticket-count--sr" data-pos-cart-count>0</span>
+            </footer>
+        </aside>
     </div>
+
+    <?php include __DIR__ . '/../partials/pos-register-shift-dock.php'; ?>
+    <button type="button" class="visually-hidden" data-pos-stock-open hidden aria-hidden="true"></button>
 
     <div class="rateb-pos__customer-panel" data-pos-customer-sheet hidden>
         <div class="rateb-pos__customer-panel-backdrop" data-pos-customer-sheet-close tabindex="-1" aria-hidden="true"></div>
@@ -222,6 +243,8 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
 
     <?php include __DIR__ . '/../partials/pos-register-modes.php'; ?>
     <?php include __DIR__ . '/../partials/pos-register-cashier.php'; ?>
+    <?php include __DIR__ . '/../partials/pos-stock-modal.php'; ?>
+    <?php include __DIR__ . '/../partials/pos-supervisor-approval-modal.php'; ?>
 
     <div class="rateb-pos__modal" data-pos-serial-modal hidden role="dialog" aria-modal="true" aria-labelledby="rateb-pos-serial-title">
         <div class="rateb-pos__modal-backdrop" data-pos-serial-close tabindex="-1" aria-hidden="true"></div>

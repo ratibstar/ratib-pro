@@ -326,7 +326,7 @@
         rewardsState = { couponCode: '', couponDiscount: 0, pointsRedeem: 0 };
         giftCardRef = '';
         checkoutIdempotencyKey = newIdempotencyKey();
-        activeMethod = 'cash';
+        activeMethod = (window.RatebPosQuickPayMethod && window.RatebPosQuickPayMethod()) || 'cash';
         keypadBuffer = '';
         if (giftReceiptCb) {
             giftReceiptCb.checked = false;
@@ -656,4 +656,31 @@
     bindTenders();
     bindCashShortcuts();
     bindKeypad();
+
+    var quickPayMethod = 'cash';
+    var payMethodsEl = root.querySelector('[data-pos-pay-methods]');
+    if (payMethodsEl) {
+        payMethodsEl.querySelectorAll('[data-pos-pay-quick]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                quickPayMethod = btn.getAttribute('data-pos-pay-quick') || 'cash';
+                payMethodsEl.querySelectorAll('[data-pos-pay-quick]').forEach(function (b) {
+                    b.classList.toggle('is-active', b === btn);
+                });
+                activeMethod = quickPayMethod === 'other' ? 'wallet' : quickPayMethod;
+            });
+        });
+    }
+
+    if (openBtn) {
+        var origOpenHandler = openBtn.onclick;
+        openBtn.addEventListener('click', function (e) {
+            if (quickPayMethod && !panel || (panel && panel.hidden)) {
+                activeMethod = quickPayMethod === 'other' ? 'wallet' : quickPayMethod;
+            }
+        }, true);
+    }
+
+    window.RatebPosQuickPayMethod = function () {
+        return quickPayMethod === 'other' ? 'wallet' : quickPayMethod;
+    };
 })();

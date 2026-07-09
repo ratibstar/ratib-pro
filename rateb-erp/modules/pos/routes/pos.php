@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use Rateb\App\Pos\Controllers\PosApiController;
+use Rateb\App\Pos\Controllers\PosApprovalApiController;
+use Rateb\App\Pos\Controllers\PosBiometricAuthController;
 use Rateb\App\Pos\Controllers\PosCashDrawersController;
 use Rateb\App\Pos\Controllers\PosDashboardController;
 use Rateb\App\Pos\Controllers\PosOrdersController;
@@ -26,6 +28,7 @@ $posMw = static fn (string $entity = 'pos') => rateb_erp_mw('pos', '', $entity);
 $router->get($posApp('dashboard'), [PosDashboardController::class, 'index'], $posMw('pos'));
 $router->get($posApp(''), [PosRegisterController::class, 'index'], $posMw('pos/register'));
 $router->get($posApp('register'), [PosRegisterController::class, 'index'], $posMw('pos/register'));
+$router->get($posApp('biometric'), [PosBiometricAuthController::class, 'gate'], $posMw('pos/register'));
 
 $termMw = $posMw('pos/terminals');
 $router->get($posApp('terminals'), [PosTerminalsController::class, 'index'], $termMw);
@@ -89,6 +92,13 @@ $router->post($posApp('api/sync/conflicts/{id}/resolve'), [PosApiController::cla
 $router->get($posApp('api/pricing/preview'), [PosApiController::class, 'pricingPreview'], $posMw('pos/register'));
 
 $regMw = $posMw('pos/register');
+$router->post($posApp('api/biometric/start'), [PosBiometricAuthController::class, 'start'], $regMw);
+$router->post($posApp('api/biometric/finish'), [PosBiometricAuthController::class, 'finish'], $regMw);
+$router->post($posApp('api/biometric/face'), [PosBiometricAuthController::class, 'face'], $regMw);
+$router->get($posApp('api/biometric/status'), [PosBiometricAuthController::class, 'status'], $regMw);
+$router->post($posApp('api/approval/request'), [PosApprovalApiController::class, 'requestApproval'], $regMw);
+$router->post($posApp('api/approval/grant'), [PosApprovalApiController::class, 'grantApproval'], $regMw);
+$router->post($posApp('api/inventory/adjust'), [PosApprovalApiController::class, 'inventoryAdjust'], $regMw);
 $router->get($posApp('api/register/bootstrap'), [PosRegisterApiController::class, 'registerBootstrap'], $regMw);
 $router->get($posApp('api/register/session'), [PosRegisterApiController::class, 'sessionGet'], $regMw);
 $router->post($posApp('api/register/session'), [PosRegisterApiController::class, 'sessionSave'], $regMw);

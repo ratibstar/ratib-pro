@@ -225,59 +225,45 @@
     }
 
     function renderCartLine(line) {
-        var card = document.createElement('article');
-        card.className = 'rateb-pos__line';
-        card.setAttribute('role', 'listitem');
-        card.setAttribute('data-line-id', line.id || '');
-        card.tabIndex = 0;
+        var row = document.createElement('tr');
+        row.className = 'rateb-pos__line';
+        row.setAttribute('data-line-id', line.id || '');
+        row.tabIndex = 0;
         if (state.selectedLineId === line.id) {
-            card.classList.add('is-selected');
+            row.classList.add('is-selected');
         }
 
-        var modLines = '';
-        if (line.notes) {
-            modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.notes) + '</p>';
-        }
-        if (line.requires_serial && !line.serial_no) {
-            modLines += '<button type="button" class="rateb-pos__line-mod rateb-pos__line-mod--action" data-pos-pick-serial="' + escapeAttr(line.product_id) + '" data-line-id="' + escapeAttr(line.id) + '">' + escapeHtml(t('pos_serial_select', 'Select serial')) + '</button>';
-        } else if (line.serial_no) {
-            modLines += '<p class="rateb-pos__line-mod">' + escapeHtml(line.serial_no) + '</p>';
-        }
-        var disc = Number(line.discount_amount || line.line_discount || 0);
-        if (disc > 0) {
-            modLines += '<p class="rateb-pos__line-mod rateb-pos__line-mod--discount">-' + money(disc) + '</p>';
-        }
-        card.innerHTML =
-            '<div class="rateb-pos__line-media">' + lineThumbHtml(line) + '</div>' +
-            '<div class="rateb-pos__line-body">' +
-            '<p class="rateb-pos__line-name">' + escapeHtml(line.item_name || '') + '</p>' +
-            modLines +
-            '<p class="rateb-pos__line-price">' + money(line.line_total) + '</p>' +
-            '</div>' +
-            '<div class="rateb-pos__line-side">' +
-            '<div class="rateb-pos__line-qty">' +
+        var sku = line.item_code || line.sku || '';
+        var unitPrice = line.unit_price != null ? line.unit_price : (Number(line.line_total || 0) / Math.max(1, Number(line.quantity || 1)));
+
+        row.innerHTML =
+            '<td>' + lineThumbHtml(line) + '</td>' +
+            '<td><p class="rateb-pos__line-name">' + escapeHtml(line.item_name || '') + '</p></td>' +
+            '<td><span class="rateb-pos__line-sku">' + escapeHtml(sku) + '</span></td>' +
+            '<td><div class="rateb-pos__line-qty">' +
             '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-down="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_decrease_qty', 'Decrease quantity')) + '">−</button>' +
             '<span class="rateb-pos-qty-value" aria-live="polite">' + escapeHtml(String(line.quantity)) + '</span>' +
             '<button type="button" class="rateb-pos-qty-btn" data-pos-qty-up="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_increase_qty', 'Increase quantity')) + '">+</button>' +
-            '</div>' +
-            '<button type="button" class="rateb-pos__line-remove" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
-            '</div>';
+            '</div></td>' +
+            '<td class="rateb-pos__line-unit">' + money(unitPrice) + '</td>' +
+            '<td class="rateb-pos__line-price">' + money(line.line_total) + '</td>' +
+            '<td><button type="button" class="rateb-pos__line-remove" data-pos-remove="' + escapeAttr(line.id) + '" aria-label="' + escapeAttr(t('pos_remove_line', 'Remove')) + '">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td>';
 
-        card.addEventListener('click', function (e) {
+        row.addEventListener('click', function (e) {
             if (e.target.closest('[data-pos-remove]') || e.target.closest('[data-pos-pick-serial]') ||
                 e.target.closest('[data-pos-qty-up]') || e.target.closest('[data-pos-qty-down]')) {
                 return;
             }
             selectLine(line.id);
         });
-        card.addEventListener('keydown', function (e) {
+        row.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 selectLine(line.id);
             }
         });
-        return card;
+        return row;
     }
 
     function bindCartLineControls(container) {
@@ -529,12 +515,19 @@
     }
 
     function clearCart(skipConfirm) {
-        if (!skipConfirm && state.lines.length && !window.confirm(t('pos_confirm_clear_cart', 'Cancel current sale and clear the cart?'))) {
+        function doClear() {
+            if (!skipConfirm && state.lines.length && !window.confirm(t('pos_confirm_clear_cart', 'Cancel current sale and clear the cart?'))) {
+                return;
+            }
+            state.lines = [];
+            state.selectedLineId = null;
+            renderCart();
+        }
+        if (window.RatebPosRequireApproval && state.lines.length) {
+            window.RatebPosRequireApproval('cancel_invoice', {}, doClear);
             return;
         }
-        state.lines = [];
-        state.selectedLineId = null;
-        renderCart();
+        doClear();
     }
 
     function newSale() {
@@ -1165,6 +1158,24 @@
                     .catch(function (err) {
                         showStatus(err.message, true);
                     });
+            });
+        }
+
+        var barcodeFocusBtn = document.querySelector('[data-pos-barcode-focus]');
+        if (barcodeFocusBtn && els.barcodeInput) {
+            barcodeFocusBtn.addEventListener('click', function () {
+                els.barcodeInput.focus();
+            });
+        }
+        var fullscreenBtn = document.querySelector('[data-pos-fullscreen]');
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', function () {
+                var el = document.documentElement;
+                if (!document.fullscreenElement && el.requestFullscreen) {
+                    el.requestFullscreen().catch(function () {});
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(function () {});
+                }
             });
         }
     }

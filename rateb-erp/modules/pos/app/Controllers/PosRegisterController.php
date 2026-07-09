@@ -7,6 +7,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Services\PosRegisterCartService;
 use Rateb\App\Pos\Services\PosSessionService;
+use Rateb\App\Services\BiometricAuthService;
 
 final class PosRegisterController extends PosBaseController
 {
@@ -15,8 +16,14 @@ final class PosRegisterController extends PosBaseController
         $this->bootstrapPos();
         $this->guardPosView('pos/register');
 
-        $companyId = $this->companyId();
         $userId = $this->userId();
+        $bio = new BiometricAuthService();
+        if (!$bio->isPosVerified($userId)) {
+            $this->redirect(rateb_app_url('pos/biometric'));
+            return;
+        }
+
+        $companyId = $this->companyId();
         $contextService = new PosContextService();
         $contextService->syncRegisterFromOpenShift($companyId, $userId);
 
@@ -25,6 +32,7 @@ final class PosRegisterController extends PosBaseController
         $lines = $cart->normalizeLines($session->getCartLines());
         $context = $contextService->snapshot();
         $totals = $cart->totals($lines);
+        $registerConfig = $this->registerConfig($context, $session->snapshot(), $lines, $totals);
 
         $this->posView('register/index', [
             'title' => __('pos_register'),
@@ -32,7 +40,8 @@ final class PosRegisterController extends PosBaseController
             'session' => $session->snapshot(),
             'totals' => $totals,
             'csrf' => Csrf::token(),
-            'registerConfig' => $this->registerConfig($context, $session->snapshot(), $lines, $totals),
+            'capabilities' => $registerConfig['capabilities'] ?? [],
+            'registerConfig' => $registerConfig,
         ], 'pos-shell');
     }
 
@@ -41,6 +50,7 @@ final class PosRegisterController extends PosBaseController
     {
         $shift = is_array($context['shift'] ?? null) ? $context['shift'] : [];
         $shiftId = (int) ($shift['id'] ?? 0);
+        $capabilities = $this->resolveCapabilities();
 
         return [
             'locale' => rateb_locale(),
@@ -49,6 +59,7 @@ final class PosRegisterController extends PosBaseController
             'companyId' => $this->companyId(),
             'userId' => $this->userId(),
             'shiftId' => $shiftId,
+            'capabilities' => $capabilities,
             'api' => [
                 'bootstrap' => rateb_app_url('pos/api/register/bootstrap'),
                 'session' => rateb_app_url('pos/api/register/session'),
@@ -83,17 +94,24 @@ final class PosRegisterController extends PosBaseController
                 'processReturn' => rateb_app_url('pos/api/register/return'),
                 'processExchange' => rateb_app_url('pos/api/register/exchange'),
                 'sync' => rateb_app_url('pos/api/sync'),
+                'approvalRequest' => rateb_app_url('pos/api/approval/request'),
+                'approvalGrant' => rateb_app_url('pos/api/approval/grant'),
+                'inventoryAdjust' => rateb_app_url('pos/api/inventory/adjust'),
+                'biometricStart' => rateb_app_url('pos/api/biometric/start'),
+                'biometricFinish' => rateb_app_url('pos/api/biometric/finish'),
+                'biometricFace' => rateb_app_url('pos/api/biometric/face'),
+                'biometricStatus' => rateb_app_url('pos/api/biometric/status'),
             ],
             'urls' => [
                 'shiftClose' => $shiftId > 0 ? rateb_app_url('pos/shifts/' . $shiftId . '/close') : '',
+                'register' => rateb_app_url('pos/register'),
             ],
-            'canReturns' => function_exists('rateb_can') && rateb_can('pos.returns.manage'),
-            'canDiscount' => (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
-                || (function_exists('rateb_can') && rateb_can('pos.discount.manage')),
-            'canShiftClose' => (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
-                || (function_exists('rateb_can') && rateb_can('pos.shift.close')),
-            'canDrawerManage' => (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
-                || (function_exists('rateb_can') && rateb_can('pos.cash_drawer.manage')),
+            'canReturns' => $capabilities['returns'] ?? false,
+            'canDiscount' => $capabilities['discounts'] ?? false,
+            'canShiftClose' => $capabilities['shiftClose'] ?? false,
+            'canDrawerManage' => $capabilities['drawerManage'] ?? false,
+            'canPaymentCard' => $capabilities['paymentCard'] ?? false,
+            'canInventoryAdjust' => $capabilities['inventoryAdjust'] ?? false,
             'serviceWorker' => rateb_public_url('pos-sw.js'),
             'serviceWorkerScope' => rateb_public_url(''),
             'session' => $session,
@@ -106,6 +124,40 @@ final class PosRegisterController extends PosBaseController
             'initialLines' => $lines,
             'initialTotals' => $totals,
             'i18n' => $this->registerI18n(),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function resolveCapabilities(): array
+    {
+        $can = static function (string $slug): bool {
+            if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+                return true;
+            }
+
+            return function_exists('rateb_can') && rateb_can($slug);
+        };
+
+        return [
+            'register' => $can('pos.register'),
+            'returns' => $can('pos.returns.manage'),
+            'discounts' => $can('pos.discount.manage'),
+            'shiftClose' => $can('pos.shift.close'),
+            'reports' => $can('pos.reports.view'),
+            'settings' => $can('pos.settings.manage'),
+            'inventoryAdjust' => $can('pos.inventory.adjust'),
+            'supervisorApprove' => $can('pos.supervisor.approve'),
+            'drawerManage' => $can('pos.cash_drawer.manage'),
+            'paymentCard' => $can('pos.payment.record'),
+            'nav' => [
+                'register' => $can('pos.register'),
+                'customers' => $can('pos.register'),
+                'products' => $can('pos.register'),
+                'inventory' => $can('pos.inventory.adjust') || $can('pos.view'),
+                'purchases' => $can('pos.view'),
+                'reports' => $can('pos.reports.view'),
+                'settings' => $can('pos.settings.manage'),
+            ],
         ];
     }
 
@@ -131,7 +183,7 @@ final class PosRegisterController extends PosBaseController
             'pos_checkout', 'pos_complete_sale', 'pos_receipt', 'pos_invoice_discount',
             'pos_discount_amount', 'pos_discount_percent', 'pos_discount_total',
             'pos_payment_method', 'pos_payment_amount', 'pos_payment_reference', 'pos_add_payment',
-            'pos_payment_invalid_method', 'pos_payment_invalid_amount',             'pos_payment_mismatch', 'pos_checkout_failed',
+            'pos_payment_invalid_method', 'pos_payment_invalid_amount', 'pos_payment_mismatch', 'pos_checkout_failed',
             'pos_register_ops', 'pos_suspend_sale', 'pos_save_quote', 'pos_gift_receipt',
             'pos_return', 'pos_suspended_sales', 'pos_original_order', 'pos_line_id',
             'pos_refund_method', 'pos_refund_cash', 'pos_refund_card', 'pos_refund_bank',
@@ -150,11 +202,18 @@ final class PosRegisterController extends PosBaseController
             'pos_line_discount', 'pos_apply_line_discount', 'pos_confirm_clear_cart', 'pos_customer_quick_add',
             'pos_customer_name', 'pos_customer_phone', 'pos_add_customer', 'pos_print_receipt', 'pos_reprint_last',
             'pos_offline_queue', 'pos_gift_card_validate', 'pos_coupon_invalid', 'notes', 'close', 'saved',
+            'pos_nav_sales', 'pos_nav_customers', 'pos_nav_products', 'pos_nav_inventory', 'pos_nav_purchases',
+            'pos_pay_cash', 'pos_pay_card', 'pos_pay_other', 'pos_main_branch', 'pos_notifications', 'pos_fullscreen',
+            'pos_shift_status_open', 'pos_shift_started', 'pos_shift_total_sales', 'pos_stock_adjust', 'pos_stock_adjust_qty',
+            'pos_supervisor_approval', 'pos_supervisor_scan_prompt', 'pos_supervisor_scan_fingerprint',
+            'pos_supervisor_approval_required', 'pos_biometric_gate', 'pos_biometric_scan_fingerprint',
+            'pos_biometric_scan_face', 'pos_biometric_success', 'pos_biometric_failed', 'pos_biometric_not_enrolled',
         ];
         $out = [];
         foreach ($keys as $key) {
             $out[$key] = __($key);
         }
+
         return $out;
     }
 }

@@ -47,6 +47,9 @@ $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
 <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-checkout.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-ops.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-capabilities.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-supervisor-approval.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-biometric-gate.js'); ?>" defer></script>
 <script>
 (function () {
     var queue = <?php echo $deferScriptsJson; ?>;

@@ -4,13 +4,14 @@ SET CHARACTER SET utf8mb4;
 
 INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
 ('POS Inventory Adjust', 'تعديل مخزون نقطة البيع', 'pos.inventory.adjust', 'pos', 'Adjust stock from POS register', 'تعديل المخزون من شاشة نقطة البيع'),
-('POS Supervisor Approve', 'اعتماد مشرف نقطة البيع', 'pos.supervisor.approve', 'pos', 'Supervisor biometric approval for sensitive POS actions', 'اعتماد بصمة المشرف للإجراءات الحساسة في نقطة البيع')
+('POS Supervisor Approve', 'اعتماد مشرف نقطة البيع', 'pos.supervisor.approve', 'pos', 'Supervisor biometric approval for sensitive POS actions', 'اعتماد بصمة المشرف للإجراءات الحساسة في نقطة البيع'),
+('POS Record Payment', 'تسجيل دفع نقطة البيع', 'pos.payment.record', 'pos', 'Record card and non-cash POS payments', 'تسجيل دفعات البطاقة وغير النقدية في نقطة البيع')
 ON DUPLICATE KEY UPDATE name = VALUES(name), name_ar = VALUES(name_ar), description = VALUES(description);
 
 INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM rateb_roles r
-INNER JOIN rateb_permissions p ON p.slug IN ('pos.inventory.adjust', 'pos.supervisor.approve')
+INNER JOIN rateb_permissions p ON p.slug IN ('pos.inventory.adjust', 'pos.supervisor.approve', 'pos.payment.record')
 WHERE r.slug IN ('pos_supervisor', 'pos_manager', 'super-admin', 'company-full-access', 'branch_manager');
 
 CREATE TABLE IF NOT EXISTS rateb_webauthn_credentials (
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS rateb_pos_approval_requests (
     requested_by INT UNSIGNED NOT NULL,
     status VARCHAR(24) NOT NULL DEFAULT 'pending',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    consumed_at DATETIME NULL,
     PRIMARY KEY (id),
     KEY idx_pos_approval_company (company_id, status, created_at),
     KEY idx_pos_approval_requester (requested_by),
@@ -60,12 +62,12 @@ CREATE TABLE IF NOT EXISTS rateb_pos_approval_grants (
     request_id BIGINT UNSIGNED NOT NULL,
     supervisor_user_id INT UNSIGNED NOT NULL,
     biometric_method VARCHAR(32) NOT NULL DEFAULT 'webauthn',
-    approval_token CHAR(64) NOT NULL,
+    token_hash CHAR(64) NOT NULL,
     verified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at DATETIME NOT NULL,
     consumed_at DATETIME NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_pos_approval_token (approval_token),
+    UNIQUE KEY uq_pos_approval_token_hash (token_hash),
     KEY idx_pos_approval_grant_request (request_id),
     CONSTRAINT fk_pos_grant_request FOREIGN KEY (request_id) REFERENCES rateb_pos_approval_requests(id) ON DELETE CASCADE,
     CONSTRAINT fk_pos_grant_supervisor FOREIGN KEY (supervisor_user_id) REFERENCES rateb_users(id) ON DELETE CASCADE

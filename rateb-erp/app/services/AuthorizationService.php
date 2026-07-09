@@ -584,7 +584,7 @@ final class AuthorizationService
             'pos_supervisor' => [
                 'pos.view', 'pos.register', 'pos.shift.open', 'pos.shift.close',
                 'pos.discount.manage', 'pos.returns.manage', 'pos.reports.view', 'pos.cash_drawer.manage',
-                'pos.orders.view',
+                'pos.orders.view', 'pos.inventory.adjust', 'pos.supervisor.approve', 'pos.payment.record',
             ],
             'pos_manager' => [
                 'pos.view', 'pos.register', 'pos.shift.open', 'pos.shift.close',

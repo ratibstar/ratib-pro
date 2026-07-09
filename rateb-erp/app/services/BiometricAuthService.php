@@ -1,0 +1,252 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Services;
+
+use Rateb\App\Core\Database;
+use Rateb\App\Core\SessionManager;
+use Rateb\App\Models\User;
+
+/** WebAuthn + face biometric bridge for ERP POS (rateb_users scoped). */
+final class BiometricAuthService
+{
+    private const CHALLENGE_TTL = 120;
+    private const POS_VERIFY_TTL = 28800; // 8 hours
+
+    public function hasEnrollment(int $userId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+        $db = Database::connection();
+        $fp = $db->prepare('SELECT id FROM rateb_webauthn_credentials WHERE user_id = :uid LIMIT 1');
+        $fp->execute(['uid' => $userId]);
+        if ($fp->fetchColumn()) {
+            return true;
+        }
+        $face = $db->prepare('SELECT id FROM rateb_face_templates WHERE user_id = :uid LIMIT 1');
+        $face->execute(['uid' => $userId]);
+
+        return (bool) $face->fetchColumn();
+    }
+
+    public function isPosVerified(int $userId): bool
+    {
+        return $this->isPosBiometricVerified($userId);
+    }
+
+    public function isPosBiometricVerified(int $userId): bool
+    {
+        $verifiedUser = (int) SessionManager::get('pos_biometric_user_id');
+        $verifiedAt = (int) SessionManager::get('pos_biometric_verified_at');
+        if ($verifiedUser !== $userId || $verifiedAt < 1) {
+            return false;
+        }
+
+        return (time() - $verifiedAt) < self::POS_VERIFY_TTL;
+    }
+
+    public function markPosVerified(int $userId): void
+    {
+        $this->bindPosBiometricSession($userId, 'webauthn');
+    }
+
+    public function clearPosBiometricSession(): void
+    {
+        SessionManager::remove('pos_biometric_user_id');
+        SessionManager::remove('pos_biometric_verified_at');
+        SessionManager::remove('pos_biometric_method');
+    }
+
+    /** @return array<string, mixed> */
+    public function startWebAuthn(int $userId, bool $supervisor = false): array
+    {
+        if ($supervisor) {
+            if (!function_exists('rateb_can') || !rateb_can('pos.supervisor.approve')) {
+                if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+                    return ['ok' => false, 'error' => __('access_denied')];
+                }
+            }
+            SessionManager::set('pos_webauthn_supervisor', 1);
+        } else {
+            SessionManager::remove('pos_webauthn_supervisor');
+        }
+
+        if ($userId < 1) {
+            $userId = $this->userId();
+        }
+
+        try {
+            $options = $this->buildWebAuthnOptions($userId);
+
+            return ['ok' => true] + $options;
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /** @param array<string, mixed> $payload */
+    public function finishWebAuthn(array $payload, int $userId, bool $supervisor = false): array
+    {
+        if ($userId < 1 && !$supervisor) {
+            $userId = $this->userId();
+        }
+
+        $sessionUserId = (int) SessionManager::get('pos_webauthn_user_id');
+        $expires = (int) SessionManager::get('pos_webauthn_expires');
+        if ($sessionUserId < 1 || $expires < time()) {
+            return ['ok' => false, 'error' => __('pos_biometric_failed')];
+        }
+
+        if (!$supervisor && $sessionUserId !== $userId) {
+            return ['ok' => false, 'error' => __('pos_biometric_failed')];
+        }
+
+        $credentialIdB64 = (string) ($payload['credentialId'] ?? $payload['id'] ?? '');
+        if ($credentialIdB64 === '') {
+            return ['ok' => false, 'error' => __('invalid_request')];
+        }
+
+        $credentialId = $this->base64UrlDecode($credentialIdB64);
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT user_id FROM rateb_webauthn_credentials WHERE user_id = :uid AND credential_id = :cid LIMIT 1'
+        );
+        $stmt->execute(['uid' => $sessionUserId, 'cid' => $credentialId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            return ['ok' => false, 'error' => __('pos_biometric_failed')];
+        }
+
+        $verifiedId = (int) ($row['user_id'] ?? $sessionUserId);
+        if ($supervisor) {
+            if (!function_exists('rateb_can') || !rateb_can('pos.supervisor.approve')) {
+                if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+                    return ['ok' => false, 'error' => __('access_denied')];
+                }
+            }
+        }
+
+        SessionManager::remove('pos_webauthn_challenge');
+        SessionManager::remove('pos_webauthn_user_id');
+        SessionManager::remove('pos_webauthn_expires');
+        SessionManager::remove('pos_webauthn_supervisor');
+
+        return ['ok' => true, 'user_id' => $verifiedId];
+    }
+
+    /** @param array<string, mixed> $payload @return array{ok:bool,error?:string} */
+    public function verifyFace(int $userId, array $payload): array
+    {
+        if ($userId < 1) {
+            $userId = $this->userId();
+        }
+
+        $template = (string) ($payload['faceTemplate'] ?? '');
+        if ($template === '') {
+            return ['ok' => false, 'error' => __('invalid_request')];
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT template_data, confidence_threshold FROM rateb_face_templates WHERE user_id = :uid LIMIT 1'
+        );
+        $stmt->execute(['uid' => $userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row || empty($row['template_data'])) {
+            return ['ok' => false, 'error' => __('pos_biometric_not_enrolled')];
+        }
+
+        $similarity = $this->compareTemplates($template, (string) $row['template_data']);
+        $threshold = (float) ($row['confidence_threshold'] ?? 0.75);
+        if ($similarity < $threshold) {
+            return ['ok' => false, 'error' => __('pos_biometric_failed')];
+        }
+
+        return ['ok' => true];
+    }
+
+    /** @return array<string, mixed> */
+    private function buildWebAuthnOptions(int $userId): array
+    {
+        $user = (new User())->find($userId);
+        if ($user === null || (string) ($user['status'] ?? '') !== 'active') {
+            throw new \RuntimeException(__('access_denied'));
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare('SELECT credential_id FROM rateb_webauthn_credentials WHERE user_id = :uid LIMIT 1');
+        $stmt->execute(['uid' => $userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row || empty($row['credential_id'])) {
+            throw new \RuntimeException(__('pos_biometric_not_enrolled'));
+        }
+
+        $challenge = random_bytes(32);
+        SessionManager::set('pos_webauthn_challenge', base64_encode($challenge));
+        SessionManager::set('pos_webauthn_user_id', $userId);
+        SessionManager::set('pos_webauthn_expires', time() + self::CHALLENGE_TTL);
+
+        return [
+            'publicKey' => [
+                'challenge' => $this->base64UrlEncode($challenge),
+                'rpId' => $this->resolveRpId(),
+                'allowCredentials' => [[
+                    'type' => 'public-key',
+                    'id' => $this->base64UrlEncode($row['credential_id']),
+                    'transports' => ['internal'],
+                ]],
+                'timeout' => 60000,
+                'userVerification' => 'required',
+            ],
+        ];
+    }
+
+    private function bindPosBiometricSession(int $userId, string $method): void
+    {
+        SessionManager::set('pos_biometric_user_id', $userId);
+        SessionManager::set('pos_biometric_verified_at', time());
+        SessionManager::set('pos_biometric_method', $method);
+    }
+
+    private function userId(): int
+    {
+        return (int) (SessionManager::get('rateb_user_id') ?? 0);
+    }
+
+    private function resolveRpId(): string
+    {
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        if (str_contains($host, ':')) {
+            $host = explode(':', $host)[0];
+        }
+
+        return $host;
+    }
+
+    private function compareTemplates(string $a, string $b): float
+    {
+        if ($a === $b) {
+            return 1.0;
+        }
+        similar_text($a, $b, $pct);
+
+        return max(0.0, min(1.0, $pct / 100));
+    }
+
+    private function base64UrlEncode(string $bin): string
+    {
+        return rtrim(strtr(base64_encode($bin), '+/', '-_'), '=');
+    }
+
+    private function base64UrlDecode(string $b64): string
+    {
+        $pad = 4 - (strlen($b64) % 4);
+        if ($pad < 4) {
+            $b64 .= str_repeat('=', $pad);
+        }
+        $decoded = base64_decode(strtr($b64, '-_', '+/'), true);
+
+        return is_string($decoded) ? $decoded : '';
+    }
+}

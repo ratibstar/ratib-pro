@@ -355,8 +355,13 @@
         var imgUrl = productImageUrl(product);
         var modHint = !!(product.has_modifiers || product.requires_modifiers);
         var tileColor = categoryTileColor(product);
+        var sku = product.item_code || product.sku || '';
+        var stockQty = avail.available != null ? avail.available : (product.stock_on_hand != null ? product.stock_on_hand : product.qty_on_hand);
+        var stockLabel = stockQty != null
+            ? (t('pos_stock_available', 'Available') + ': ' + stockQty)
+            : '';
 
-        tile.className = 'rateb-pos__tile';
+        tile.className = 'rateb-pos__tile rateb-pos__tile-body-card';
         tile.style.setProperty('--tile-bg', tileColor);
         tile.setAttribute('data-product-id', String(product.id));
         tile.setAttribute('aria-label', (product.item_name || '') + ' ' + money(product.unit_price || 0));
@@ -387,7 +392,9 @@
             photoHtml +
             '<div class="rateb-pos__tile-label">' +
             '<span class="rateb-pos__tile-name">' + escapeHtml(product.item_name || '') + '</span>' +
+            (sku ? '<span class="rateb-pos__tile-sku">' + escapeHtml(sku) + '</span>' : '') +
             '<span class="rateb-pos__tile-price">' + money(product.unit_price || 0) + '</span>' +
+            (stockLabel ? '<span class="rateb-pos__tile-stock">' + escapeHtml(stockLabel) + '</span>' : '') +
             '</div>' + modDot + '</div>';
 
         var img = tile.querySelector('img[data-src]');
@@ -561,11 +568,7 @@
             btn.setAttribute('role', 'tab');
             btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
             btn.setAttribute('data-cat-id', cat.id);
-            btn.style.setProperty('--cat-color', categoryChipColor(cat.id));
-            var iconLetter = (cat.name || '?').trim().charAt(0) || '?';
-            btn.innerHTML =
-                '<span class="rateb-pos__cat-icon">' + escapeHtml(iconLetter) + '</span>' +
-                '<span class="rateb-pos__cat-label">' + escapeHtml(cat.name) + '</span>';
+            btn.innerHTML = '<span class="rateb-pos__cat-label">' + escapeHtml(cat.name) + '</span>';
             btn.addEventListener('click', function () {
                 setActiveCategory(btn, cat);
                 loadCategory(cat);
