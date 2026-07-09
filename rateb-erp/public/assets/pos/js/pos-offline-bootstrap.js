@@ -25,8 +25,16 @@
             return;
         }
         var scope = config.serviceWorkerScope || undefined;
+        // Never register with site-root scope when SW lives under /rateb-erp/public/.
+        if (scope === '/' || scope === window.location.origin + '/') {
+            try {
+                scope = new URL('.', config.serviceWorker).pathname;
+            } catch (e) {
+                scope = '/rateb-erp/public/';
+            }
+        }
         navigator.serviceWorker.register(config.serviceWorker, scope ? { scope: scope } : undefined)
-            .catch(function () { /* optional */ });
+            .catch(function () { /* optional offline */ });
     }
 
     function syncOfflineUi() {

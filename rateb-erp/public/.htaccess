@@ -10,4 +10,11 @@
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
 
+# Allow POS offline SW to claim the ERP public prefix (not site root).
+<Files "pos-sw.js">
+    <IfModule mod_headers.c>
+        Header set Service-Worker-Allowed "/rateb-erp/public/"
+    </IfModule>
+</Files>
+
 Options -Indexes

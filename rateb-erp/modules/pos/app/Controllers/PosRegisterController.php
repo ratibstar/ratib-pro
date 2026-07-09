@@ -113,7 +113,8 @@ final class PosRegisterController extends PosBaseController
             'canPaymentCard' => $capabilities['paymentCard'] ?? false,
             'canInventoryAdjust' => $capabilities['inventoryAdjust'] ?? false,
             'serviceWorker' => rateb_public_url('pos-sw.js'),
-            'serviceWorkerScope' => rateb_public_url(''),
+            // Must stay under /rateb-erp/public/ (SW script location); rateb_public_url('') is site root on rateb.sa.
+            'serviceWorkerScope' => rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/',
             'session' => $session,
             'registerScope' => [
                 'terminal_id' => (int) (($context['terminal']['id'] ?? 0) ?: ($session['terminal_id'] ?? 0)),
