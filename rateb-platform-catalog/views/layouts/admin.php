@@ -35,6 +35,19 @@ $groupLabels = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars((string) $title, ENT_QUOTES, 'UTF-8') ?></title>
+    <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('rateb-catalog-admin-theme');
+        if (theme !== 'dark' && theme !== 'light') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-admin-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-admin-theme', 'light');
+      }
+    })();
+    </script>
     <link rel="stylesheet" href="<?= htmlspecialchars($bootstrapCss, ENT_QUOTES, 'UTF-8') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= htmlspecialchars($assetBase, ENT_QUOTES, 'UTF-8') ?>/assets/css/admin.css">
@@ -110,6 +123,13 @@ $groupLabels = [
                 <?= htmlspecialchars(catalog__('nav_' . ($pageKey ?? 'dashboard'), $locale), ENT_QUOTES, 'UTF-8') ?>
             </div>
             <div class="admin-topbar-actions">
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        id="adminThemeToggle"
+                        aria-label="<?= htmlspecialchars(catalog__('admin_theme_toggle', $locale), ENT_QUOTES, 'UTF-8') ?>"
+                        title="<?= htmlspecialchars(catalog__('admin_theme_toggle', $locale), ENT_QUOTES, 'UTF-8') ?>">
+                    <i class="bi bi-moon-stars" id="adminThemeIcon" aria-hidden="true"></i>
+                </button>
                 <?php if (empty($authenticated)): ?>
                     <a class="btn btn-warning btn-sm" href="<?= htmlspecialchars(catalog_admin_erp_login_url(), ENT_QUOTES, 'UTF-8') ?>">
                         <?= htmlspecialchars(catalog__('admin_login_erp', $locale), ENT_QUOTES, 'UTF-8') ?>
@@ -175,7 +195,9 @@ window.RatebAdminConfig = {
         stat_queue: <?= json_encode($locale === 'ar' ? 'الطابور' : 'Queue', JSON_UNESCAPED_UNICODE) ?>,
         name: <?= json_encode($locale === 'ar' ? 'الاسم' : 'Name', JSON_UNESCAPED_UNICODE) ?>,
         collapse_sidebar: <?= json_encode(catalog__('admin_collapse_sidebar', $locale), JSON_UNESCAPED_UNICODE) ?>,
-        expand_sidebar: <?= json_encode(catalog__('admin_expand_sidebar', $locale), JSON_UNESCAPED_UNICODE) ?>
+        expand_sidebar: <?= json_encode(catalog__('admin_expand_sidebar', $locale), JSON_UNESCAPED_UNICODE) ?>,
+        theme_light: <?= json_encode(catalog__('admin_theme_light', $locale), JSON_UNESCAPED_UNICODE) ?>,
+        theme_dark: <?= json_encode(catalog__('admin_theme_dark', $locale), JSON_UNESCAPED_UNICODE) ?>
     }
 };
 </script>

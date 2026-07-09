@@ -3,12 +3,15 @@
 
   var STORAGE_OPEN_GROUP = 'rateb-catalog-admin-nav-open-group';
   var STORAGE_COLLAPSED = 'rateb-catalog-admin-sidebar-collapsed';
+  var STORAGE_THEME = 'rateb-catalog-admin-theme';
 
   document.addEventListener('DOMContentLoaded', function () {
     var shell = document.querySelector('.admin-shell');
     var sidebar = document.getElementById('adminSidebar');
     var toggle = document.getElementById('adminSidebarToggle');
     var collapseBtn = document.getElementById('adminSidebarCollapse');
+    var themeBtn = document.getElementById('adminThemeToggle');
+    var themeIcon = document.getElementById('adminThemeIcon');
     var overlay = document.createElement('div');
     overlay.className = 'admin-overlay';
     overlay.id = 'adminSidebarOverlay';
@@ -16,6 +19,31 @@
 
     function isMobileNav() {
       return window.matchMedia('(max-width: 991.98px)').matches;
+    }
+
+    function currentTheme() {
+      var theme = document.documentElement.getAttribute('data-admin-theme');
+      return theme === 'dark' ? 'dark' : 'light';
+    }
+
+    function applyTheme(theme) {
+      var next = theme === 'dark' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-admin-theme', next);
+      try {
+        localStorage.setItem(STORAGE_THEME, next);
+      } catch (e) {
+        /* ignore */
+      }
+      if (themeIcon) {
+        themeIcon.className = next === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+      }
+      if (themeBtn) {
+        var i18n = (window.RatebAdminConfig && RatebAdminConfig.i18n) || {};
+        themeBtn.title = next === 'dark'
+          ? (i18n.theme_light || 'Light mode')
+          : (i18n.theme_dark || 'Dark mode');
+        themeBtn.setAttribute('aria-label', themeBtn.title);
+      }
     }
 
     function readOpenGroup() {
@@ -156,6 +184,14 @@
         setSidebarCollapsed(!(shell && shell.classList.contains('is-sidebar-collapsed')));
       });
     }
+
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function () {
+        applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+      });
+    }
+
+    applyTheme(currentTheme());
 
     overlay.addEventListener('click', closeMobileSidebar);
 
