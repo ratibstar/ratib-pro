@@ -36,7 +36,7 @@ final class PosTerminalsController extends PosBaseController
             'actionsEnabled' => $canManage,
             'bulkEnabled' => false,
             'exportEnabled' => false,
-        ]);
+        ], 'pos-pages-shell');
     }
 
     public function create(): void

@@ -34,7 +34,7 @@ final class PosCashDrawersController extends PosBaseController
             'viewEnabled' => true,
             'bulkEnabled' => false,
             'exportEnabled' => false,
-        ]);
+        ], 'pos-pages-shell');
     }
 
     public function show(array $params): void
@@ -54,7 +54,7 @@ final class PosCashDrawersController extends PosBaseController
             'events' => $this->service->eventsForDrawer($id, $this->companyId()),
             'csrf' => Csrf::token(),
             'canManage' => $canManage && ($drawer['status'] ?? '') === 'open',
-        ]);
+        ], 'pos-pages-shell');
     }
 
     public function storeEvent(array $params): void

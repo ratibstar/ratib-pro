@@ -26,7 +26,7 @@ final class PosSyncController extends PosBaseController
                 'process' => rateb_app_url('pos/api/sync/process'),
                 'resolveConflict' => rateb_app_url('pos/api/sync/conflicts/{id}/resolve'),
             ],
-        ]);
+        ], 'pos-pages-shell');
     }
 
     public function process(): void

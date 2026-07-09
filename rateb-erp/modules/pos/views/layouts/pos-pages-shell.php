@@ -24,6 +24,11 @@ $pageTitle = (string) ($title ?? __('pos_register'));
     })();
     </script>
     <title><?php echo \Rateb\App\Pos\Support\PosView::escape($pageTitle); ?></title>
+    <?php if ($dir === 'rtl'): ?>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <?php else: ?>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php endif; ?>
     <link href="<?php echo rateb_pos_asset('css/pos-register.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_pos_asset('css/pos-module.css'); ?>" rel="stylesheet">
 </head>
