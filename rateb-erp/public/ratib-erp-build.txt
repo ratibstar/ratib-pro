@@ -1,1 +1,1 @@
-20260709-tenant-access-self-service-v1
+20260709-pos-settings-hub-v2

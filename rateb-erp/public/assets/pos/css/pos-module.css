@@ -31,18 +31,21 @@
 .rateb-pos-dl dt { font-weight: 600; }
 .rateb-pos-dl dd { margin-bottom: 0.5rem; }
 
-/* POS settings hub */
+/* POS settings hub — high specificity so Bootstrap does not flatten cards into inline links */
+.rateb-pos-pages-main .rateb-pos-settings,
 .rateb-pos-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
 }
 
+.rateb-pos-pages-main .rateb-pos-settings__card,
 .rateb-pos-settings__card {
-    background: var(--pos-surface, #1a233a);
-    border: 1px solid var(--pos-border, rgba(148, 163, 184, 0.14));
-    border-radius: 12px;
-    padding: 18px 20px;
+    display: block !important;
+    background: var(--pos-surface, #1a233a) !important;
+    border: 1px solid var(--pos-border, rgba(148, 163, 184, 0.14)) !important;
+    border-radius: 12px !important;
+    padding: 18px 20px !important;
     box-shadow: var(--pos-shadow, 0 2px 8px rgba(0, 0, 0, 0.2));
 }
 
@@ -51,44 +54,44 @@
 }
 
 .rateb-pos-settings__h {
-    margin: 0 0 6px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--pos-text, #fff);
+    margin: 0 0 6px !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: var(--pos-text, #fff) !important;
 }
 
 .rateb-pos-settings__hint {
-    margin: 0 0 14px;
-    font-size: 0.9rem;
-    color: var(--pos-text-muted, #94a3b8);
-    line-height: 1.5;
+    margin: 0 0 14px !important;
+    font-size: 0.9rem !important;
+    color: var(--pos-text-muted, #94a3b8) !important;
+    line-height: 1.5 !important;
 }
 
 .rateb-pos-settings__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px 16px;
-    margin: 0;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+    gap: 12px 16px !important;
+    margin: 0 !important;
 }
 
 .rateb-pos-settings__grid dt {
-    margin: 0 0 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    margin: 0 0 4px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    color: var(--pos-text-faint, #64748b);
+    color: var(--pos-text-faint, #64748b) !important;
 }
 
 .rateb-pos-settings__grid dd {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--pos-text, #fff);
+    margin: 0 !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: var(--pos-text, #fff) !important;
 }
 
 .rateb-pos-settings__pill {
-    display: inline-block;
+    display: inline-block !important;
     margin-inline-start: 6px;
     padding: 2px 8px;
     border-radius: 999px;
@@ -99,48 +102,65 @@
 }
 
 .rateb-pos-settings__row {
-    display: flex;
-    flex-wrap: wrap;
+    display: flex !important;
+    flex-wrap: wrap !important;
     align-items: center;
-    gap: 12px;
+    gap: 12px !important;
 }
 
+.rateb-pos-pages-main .rateb-pos-settings__links,
 .rateb-pos-settings__links {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 10px;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
 }
 
-.rateb-pos-settings__link {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 14px 16px;
-    border-radius: 10px;
-    border: 1px solid var(--pos-border, rgba(148, 163, 184, 0.14));
-    background: var(--pos-surface-2, #243352);
-    color: var(--pos-text, #fff);
-    text-decoration: none;
+.rateb-pos-pages-main a.rateb-pos-settings__link,
+.rateb-pos-settings a.rateb-pos-settings__link,
+a.rateb-pos-settings__link {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-height: 84px !important;
+    padding: 14px 16px !important;
+    border-radius: 10px !important;
+    border: 1px solid var(--pos-border, rgba(148, 163, 184, 0.28)) !important;
+    background: var(--pos-surface-2, #243352) !important;
+    color: var(--pos-text, #fff) !important;
+    text-decoration: none !important;
+    box-sizing: border-box !important;
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.rateb-pos-settings__link:hover {
-    border-color: var(--pos-primary, #007bff);
-    background: var(--pos-surface-3, #2d3f5c);
-    color: var(--pos-text, #fff);
+.rateb-pos-pages-main a.rateb-pos-settings__link:hover,
+a.rateb-pos-settings__link:hover {
+    border-color: var(--pos-primary, #007bff) !important;
+    background: var(--pos-surface-3, #2d3f5c) !important;
+    color: var(--pos-text, #fff) !important;
+    text-decoration: none !important;
 }
 
-.rateb-pos-settings__link strong {
-    font-size: 0.95rem;
+.rateb-pos-settings__link strong,
+.rateb-pos-settings__link-title {
+    display: block !important;
+    font-size: 0.98rem !important;
+    font-weight: 700 !important;
+    color: inherit !important;
 }
 
-.rateb-pos-settings__link span {
-    font-size: 0.8rem;
-    color: var(--pos-text-muted, #94a3b8);
+.rateb-pos-settings__link span,
+.rateb-pos-settings__link-hint {
+    display: block !important;
+    font-size: 0.82rem !important;
+    line-height: 1.4 !important;
+    color: var(--pos-text-muted, #94a3b8) !important;
 }
 
 .rateb-pos-settings__btn {
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
     min-height: 40px;
@@ -148,7 +168,7 @@
     border: none;
     border-radius: 10px;
     background: var(--pos-primary, #007bff);
-    color: #fff;
+    color: #fff !important;
     font-weight: 700;
     cursor: pointer;
 }
@@ -174,4 +194,22 @@
     background: rgba(220, 53, 69, 0.18);
     color: #fca5a5;
     border: 1px solid rgba(220, 53, 69, 0.35);
+}
+
+.rateb-pos-order-receipt-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px 14px;
+    margin: 0;
+}
+
+.rateb-pos-order-receipt-summary dt {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--pos-text-muted, #94a3b8);
+}
+
+.rateb-pos-order-receipt-summary dd {
+    margin: 2px 0 0;
+    font-weight: 700;
 }

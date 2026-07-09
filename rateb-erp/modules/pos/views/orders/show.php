@@ -7,9 +7,17 @@ declare(strict_types=1);
 /** @var int $display_no */
 /** @var array<int, array<string, mixed>> $lines */
 /** @var array<int, array<string, mixed>> $payments */
+
+$receipt = is_array($receipt ?? null) ? $receipt : null;
+$completedAt = (string) ($order['completed_at'] ?? $receipt['completed_at'] ?? $order['created_at'] ?? '');
+$paymentSum = 0.0;
+foreach ($payments as $paymentRow) {
+    $paymentSum += (float) ($paymentRow['amount'] ?? 0);
+}
+$orderTotal = (float) ($order['total'] ?? 0);
 ?>
 <div class="rateb-pos-page">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <h1 class="h3 mb-0"><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? ''); ?></h1>
         <a class="btn btn-outline-secondary" href="<?php echo rateb_app_url('pos/orders'); ?>"><?php echo __('back'); ?></a>
     </div>
@@ -24,7 +32,11 @@ declare(strict_types=1);
                 <dt class="col-sm-3"><?php echo __('status'); ?></dt>
                 <dd class="col-sm-9"><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($order['status'] ?? '')); ?></dd>
                 <dt class="col-sm-3"><?php echo __('pos_total'); ?></dt>
-                <dd class="col-sm-9"><?php echo number_format((float) ($order['total'] ?? 0), 2); ?></dd>
+                <dd class="col-sm-9"><?php echo number_format($orderTotal, 2); ?></dd>
+                <?php if ($completedAt !== ''): ?>
+                    <dt class="col-sm-3"><?php echo __('created_at'); ?></dt>
+                    <dd class="col-sm-9"><?php echo \Rateb\App\Pos\Support\PosView::escape($completedAt); ?></dd>
+                <?php endif; ?>
             </dl>
         </div>
     </div>
@@ -84,6 +96,13 @@ declare(strict_types=1);
                     </tbody>
                 </table>
             </div>
+            <?php if (abs($paymentSum - $orderTotal) > 0.009): ?>
+                <div class="card-footer small text-muted">
+                    <?php echo __('pos_total'); ?>: <?php echo number_format($orderTotal, 2); ?>
+                    ·
+                    <?php echo __('pos_payment_amount'); ?>: <?php echo number_format($paymentSum, 2); ?>
+                </div>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
@@ -113,13 +132,29 @@ declare(strict_types=1);
         </div>
     <?php endif; ?>
 
-    <?php if (is_array($receipt)): ?>
-        <div class="card">
+    <?php if ($receipt !== null): ?>
+        <div class="card mb-3">
             <div class="card-header"><?php echo __('pos_receipt'); ?></div>
             <div class="card-body">
-                <pre class="mb-0 small"><?php echo \Rateb\App\Pos\Support\PosView::escape(json_encode($receipt, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
+                <dl class="rateb-pos-order-receipt-summary">
+                    <div>
+                        <dt><?php echo __('pos_order_no'); ?></dt>
+                        <dd><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($receipt['order_no'] ?? $order['order_no'] ?? '')); ?></dd>
+                    </div>
+                    <div>
+                        <dt><?php echo __('pos_total'); ?></dt>
+                        <dd><?php echo number_format((float) ($receipt['total'] ?? $orderTotal), 2); ?></dd>
+                    </div>
+                    <div>
+                        <dt><?php echo __('created_at'); ?></dt>
+                        <dd><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($receipt['completed_at'] ?? $completedAt)); ?></dd>
+                    </div>
+                    <div>
+                        <dt><?php echo __('pos_cart_lines'); ?></dt>
+                        <dd><?php echo is_array($receipt['lines'] ?? null) ? count($receipt['lines']) : count($lines); ?></dd>
+                    </div>
+                </dl>
             </div>
         </div>
     <?php endif; ?>
 </div>
-<link href="<?php echo rateb_pos_asset('css/pos-module.css'); ?>" rel="stylesheet">

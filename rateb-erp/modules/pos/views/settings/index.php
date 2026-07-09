@@ -87,8 +87,8 @@ $shiftStatus = $shift ? (string) ($shift['status'] ?? '') : '';
         <div class="rateb-pos-settings__links">
             <?php foreach ($links as $link): ?>
                 <a class="rateb-pos-settings__link" href="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['url'] ?? '#')); ?>">
-                    <strong><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['title'] ?? '')); ?></strong>
-                    <span><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['hint'] ?? '')); ?></span>
+                    <span class="rateb-pos-settings__link-title"><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['title'] ?? '')); ?></span>
+                    <span class="rateb-pos-settings__link-hint"><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['hint'] ?? '')); ?></span>
                 </a>
             <?php endforeach; ?>
         </div>
