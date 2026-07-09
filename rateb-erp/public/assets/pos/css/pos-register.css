@@ -389,10 +389,108 @@ body.rateb-pos-shell--pages {
     font-size: 15px;
 }
 
+.rateb-pos__brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.15;
+}
+
 .rateb-pos__brand-name {
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.04em;
+}
+
+.rateb-pos__brand-ver {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(248, 250, 252, 0.72);
+}
+
+.rateb-pos__menu {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.rateb-pos__menu-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    inset-inline-end: 0;
+    z-index: 40;
+    min-width: 200px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+}
+
+.rateb-pos__menu-panel[hidden] {
+    display: none !important;
+}
+
+.rateb-pos__menu-label {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.rateb-pos__menu-label + .rateb-pos__lang,
+.rateb-pos__menu-label + .rateb-pos__theme {
+    margin-bottom: 12px;
+}
+
+.rateb-pos__lang--menu,
+.rateb-pos__theme--menu {
+    width: 100%;
+    border-color: #e2e8f0;
+    background: #f8fafc;
+}
+
+.rateb-pos__lang--menu .rateb-pos__lang-btn {
+    flex: 1;
+    color: #334155;
+}
+
+.rateb-pos__lang--menu .rateb-pos__lang-btn.is-active {
+    background: var(--pos-accent, #2563eb);
+    color: #fff;
+}
+
+.rateb-pos__theme--menu .rateb-pos__theme-btn {
+    flex: 1;
+    color: #334155;
+}
+
+.rateb-pos__theme--menu .rateb-pos__theme-btn.is-active,
+.rateb-pos__theme--menu .rateb-pos__theme-btn.active {
+    background: var(--pos-accent, #2563eb);
+    color: #fff;
+}
+
+.rateb-pos__menu-link {
+    display: block;
+    margin-top: 4px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.rateb-pos__menu-link:hover {
+    background: #f1f5f9;
+}
+
+.rateb-pos__menu-toggle[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.28);
 }
 
 .rateb-pos__header-chip,
@@ -1388,6 +1486,33 @@ html[dir="rtl"] .rateb-pos__nav {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+.rateb-pos__cart-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 12px 0;
+    flex-shrink: 0;
+}
+
+.rateb-pos__cart-clear-all {
+    border: none;
+    background: transparent;
+    color: #dc2626;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 2px;
+}
+
+.rateb-pos__cart-clear-all:hover {
+    text-decoration: underline;
+}
+
+.rateb-pos__tax-rate {
+    font-weight: 600;
+    opacity: 0.85;
 }
 
 .rateb-pos__ticket-empty {

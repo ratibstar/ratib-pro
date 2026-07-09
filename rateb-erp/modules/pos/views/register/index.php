@@ -43,7 +43,8 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
 
     <?php
     $sessionSnap = is_array($session ?? null) ? $session : [];
-    $orderRef = str_pad((string) ((int) ($sessionSnap['db_session_id'] ?? 0)), 6, '0', STR_PAD_LEFT);
+    $orderSeq = max(1, (int) ($sessionSnap['db_session_id'] ?? 0));
+    $orderRef = 'INV-' . str_pad((string) $orderSeq, 6, '0', STR_PAD_LEFT);
     ?>
 
     <div class="rateb-pos__stage">
@@ -104,7 +105,7 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
 
         <aside class="rateb-pos__ticket" aria-label="<?php echo __('pos_cart'); ?>">
             <header class="rateb-pos__order-bar">
-                <span class="rateb-pos__order-no">#<?php echo \Rateb\App\Pos\Support\PosView::escape($orderRef); ?></span>
+                <span class="rateb-pos__order-no" data-pos-order-no>#<?php echo \Rateb\App\Pos\Support\PosView::escape($orderRef); ?></span>
                 <div class="rateb-pos__order-actions">
                     <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--cancel" data-pos-clear-cart><?php echo __('pos_cancel_order'); ?></button>
                     <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--quote" data-pos-save-quote><?php echo __('pos_save_quote'); ?></button>
@@ -140,6 +141,11 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
             </button>
 
             <div class="rateb-pos__ticket-body">
+                <div class="rateb-pos__cart-toolbar">
+                    <button type="button" class="rateb-pos__cart-clear-all" data-pos-clear-cart>
+                        <?php echo __('pos_clear_all'); ?>
+                    </button>
+                </div>
                 <div class="rateb-pos__cart-table-wrap">
                     <table class="rateb-pos__cart-table" aria-label="<?php echo __('pos_cart'); ?>">
                         <thead>
@@ -173,7 +179,7 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
                         <dd data-pos-discount-total>0.00</dd>
                     </div>
                     <div class="rateb-pos__totals-row rateb-pos__totals-row--muted">
-                        <dt><?php echo __('pos_tax'); ?></dt>
+                        <dt><?php echo __('pos_tax'); ?> <span class="rateb-pos__tax-rate" data-pos-tax-rate>15%</span></dt>
                         <dd data-pos-tax>0.00</dd>
                     </div>
                     <div class="rateb-pos__totals-row rateb-pos__totals-row--grand">

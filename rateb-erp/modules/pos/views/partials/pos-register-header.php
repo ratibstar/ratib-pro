@@ -14,7 +14,10 @@ $locale = rateb_locale();
     <div class="rateb-pos__header-start">
         <div class="rateb-pos__brand">
             <span class="rateb-pos__brand-mark" aria-hidden="true">R</span>
-            <span class="rateb-pos__brand-name">RATEB POS</span>
+            <div class="rateb-pos__brand-text">
+                <span class="rateb-pos__brand-name">RATEB POS</span>
+                <span class="rateb-pos__brand-ver">v2.1.0</span>
+            </div>
         </div>
         <button type="button" class="rateb-pos__header-branch" data-pos-branch-select aria-haspopup="listbox">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -63,24 +66,41 @@ $locale = rateb_locale();
             <svg class="rateb-pos__icon rateb-pos__connection-dot" width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <span class="rateb-pos-connection__label"><?php echo __('pos_online'); ?></span>
         </span>
-        <div class="rateb-pos__lang" role="group" aria-label="<?php echo __('language'); ?>">
-            <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape(rateb_locale_switch_url('en')); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'en' ? ' is-active' : ''; ?>" data-locale="en" lang="en">EN</a>
-            <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape(rateb_locale_switch_url('ar')); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'ar' ? ' is-active' : ''; ?>" data-locale="ar" lang="ar">ع</a>
-        </div>
-        <div class="rateb-pos__theme" role="group" aria-label="<?php echo __('pos_theme_dark'); ?>">
-            <button type="button" class="rateb-pos__theme-btn" data-theme-choice="light" aria-pressed="false" title="<?php echo __('pos_theme_light'); ?>">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-            </button>
-            <button type="button" class="rateb-pos__theme-btn" data-theme-choice="dark" aria-pressed="true" title="<?php echo __('pos_theme_dark'); ?>">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            </button>
-        </div>
         <div class="rateb-pos__header-user-block">
             <span class="rateb-pos__header-user" title="<?php echo __('pos_cashier'); ?>">
                 <svg class="rateb-pos__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span><?php echo \Rateb\App\Pos\Support\PosView::escape($cashierLabel); ?></span>
             </span>
             <span class="rateb-pos__header-user-role"><?php echo \Rateb\App\Pos\Support\PosView::escape($roleLabel); ?></span>
+        </div>
+        <div class="rateb-pos__menu" data-pos-header-menu>
+            <button type="button"
+                    class="rateb-pos__header-tool rateb-pos__menu-toggle"
+                    data-pos-menu-toggle
+                    aria-expanded="false"
+                    aria-controls="rateb-pos-header-menu"
+                    title="<?php echo __('pos_settings'); ?>"
+                    aria-label="<?php echo __('pos_settings'); ?>">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div class="rateb-pos__menu-panel" id="rateb-pos-header-menu" data-pos-menu-panel hidden>
+                <p class="rateb-pos__menu-label"><?php echo __('language'); ?></p>
+                <div class="rateb-pos__lang rateb-pos__lang--menu" role="group" aria-label="<?php echo __('language'); ?>">
+                    <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape(rateb_locale_switch_url('en')); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'en' ? ' is-active' : ''; ?>" data-locale="en" lang="en">EN</a>
+                    <a href="<?php echo \Rateb\App\Pos\Support\PosView::escape(rateb_locale_switch_url('ar')); ?>" class="rateb-pos__lang-btn<?php echo $locale === 'ar' ? ' is-active' : ''; ?>" data-locale="ar" lang="ar">ع</a>
+                </div>
+                <p class="rateb-pos__menu-label"><?php echo __('pos_theme'); ?></p>
+                <div class="rateb-pos__theme rateb-pos__theme--menu" role="group" aria-label="<?php echo __('pos_theme'); ?>">
+                    <button type="button" class="rateb-pos__theme-btn" data-theme-choice="light" aria-pressed="false" title="<?php echo __('pos_theme_light'); ?>">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    </button>
+                    <button type="button" class="rateb-pos__theme-btn" data-theme-choice="dark" aria-pressed="true" title="<?php echo __('pos_theme_dark'); ?>">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    </button>
+                </div>
+                <a class="rateb-pos__menu-link" href="<?php echo rateb_app_url('pos/settings'); ?>"><?php echo __('pos_settings'); ?></a>
+                <a class="rateb-pos__menu-link" href="<?php echo rateb_app_url('pos/reports'); ?>"><?php echo __('pos_reports'); ?></a>
+            </div>
         </div>
     </div>
     <span class="visually-hidden" data-pos-toolbar-total aria-live="polite">0.00</span>

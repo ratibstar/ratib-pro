@@ -45,8 +45,28 @@
         checkoutOpen: root.querySelector('[data-pos-checkout-open]'),
         shortcutsList: root.querySelector('[data-pos-shortcuts-list]'),
         clearCart: root.querySelector('[data-pos-clear-cart]'),
-        newSale: root.querySelector('[data-pos-new-sale]')
+        newSale: root.querySelector('[data-pos-new-sale]'),
+        orderNo: root.querySelector('[data-pos-order-no]')
     };
+
+    var saleSeq = 0;
+    (function initSaleSeq() {
+        var raw = els.orderNo ? String(els.orderNo.textContent || '') : '';
+        var m = raw.match(/(\d+)\s*$/);
+        saleSeq = m ? Math.max(1, parseInt(m[1], 10) || 1) : 1;
+    })();
+
+    function formatOrderRef(seq) {
+        var n = Math.max(1, Number(seq) || 1);
+        return '#INV-' + String(n).padStart(6, '0');
+    }
+
+    function bumpOrderNo() {
+        saleSeq += 1;
+        if (els.orderNo) {
+            els.orderNo.textContent = formatOrderRef(saleSeq);
+        }
+    }
 
     var saveTimer = null;
     var searchTimer = null;
@@ -537,6 +557,7 @@
         state.lines = [];
         state.selectedLineId = null;
         state.customer = null;
+        bumpOrderNo();
         renderCustomer();
         renderCart();
         scheduleSave();
@@ -1189,6 +1210,7 @@
         state.lines = [];
         state.customer = null;
         state.selectedLineId = null;
+        bumpOrderNo();
         renderCustomer();
         renderCartWithoutSave();
         scheduleSave();

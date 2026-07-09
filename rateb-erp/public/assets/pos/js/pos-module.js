@@ -32,5 +32,47 @@
                 applyPosTheme(btn.getAttribute('data-theme-choice'));
             });
         });
+
+        document.querySelectorAll('[data-pos-header-menu]').forEach(function (menu) {
+            var toggle = menu.querySelector('[data-pos-menu-toggle]');
+            var panel = menu.querySelector('[data-pos-menu-panel]');
+            if (!toggle || !panel) {
+                return;
+            }
+
+            function closeMenu() {
+                panel.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            function openMenu() {
+                panel.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+
+            toggle.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (panel.hidden) {
+                    openMenu();
+                } else {
+                    closeMenu();
+                }
+            });
+
+            panel.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+            });
+
+            document.addEventListener('click', function () {
+                closeMenu();
+            });
+
+            document.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Escape') {
+                    closeMenu();
+                }
+            });
+        });
     });
 })();
