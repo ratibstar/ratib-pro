@@ -21,7 +21,8 @@ final class SecurityHeaders
         header('X-Content-Type-Options: nosniff');
         header('X-Frame-Options: SAMEORIGIN');
         header('Referrer-Policy: strict-origin-when-cross-origin');
-        header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+        // camera=(self): POS biometric face + login barcode scanner need getUserMedia.
+        header('Permissions-Policy: camera=(self), microphone=(), geolocation=()');
 
         if (PHP_SAPI !== 'cli' && !defined('RATEB_HEALTH_PROBE')) {
             header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');

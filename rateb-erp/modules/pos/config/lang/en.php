@@ -334,6 +334,7 @@ return [
     'pos_biometric_register_settings_hint' => 'You can also register from system settings.',
     'pos_biometric_success' => 'Verified successfully',
     'pos_biometric_failed' => 'Verification failed',
+    'pos_biometric_camera_denied' => 'Camera permission denied. Allow camera for this site and try again.',
     'pos_biometric_challenge_expired' => 'Verification session expired',
     'pos_biometric_invalid_credential' => 'Invalid credential',
     'pos_biometric_user_mismatch' => 'User mismatch',

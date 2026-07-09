@@ -333,6 +333,7 @@ return [
     'pos_biometric_register_settings_hint' => 'يمكنك أيضاً التسجيل من إعدادات النظام.',
     'pos_biometric_success' => 'تم التحقق بنجاح',
     'pos_biometric_failed' => 'فشل التحقق',
+    'pos_biometric_camera_denied' => 'تم رفض إذن الكاميرا. اسمح بالكاميرا لهذا الموقع ثم أعد المحاولة.',
     'pos_biometric_challenge_expired' => 'انتهت صلاحية جلسة التحقق',
     'pos_biometric_invalid_credential' => 'بيانات اعتماد غير صالحة',
     'pos_biometric_user_mismatch' => 'المستخدم غير مطابق',

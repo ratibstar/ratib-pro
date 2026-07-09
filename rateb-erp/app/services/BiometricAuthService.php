@@ -60,9 +60,9 @@ final class BiometricAuthService
 
     public function clearPosBiometricSession(): void
     {
-        SessionManager::remove('pos_biometric_user_id');
-        SessionManager::remove('pos_biometric_verified_at');
-        SessionManager::remove('pos_biometric_method');
+        SessionManager::forget('pos_biometric_user_id');
+        SessionManager::forget('pos_biometric_verified_at');
+        SessionManager::forget('pos_biometric_method');
     }
 
     /** @return array<string, mixed> */
@@ -77,7 +77,7 @@ final class BiometricAuthService
             }
         }
 
-        SessionManager::remove('pos_webauthn_supervisor');
+        SessionManager::forget('pos_webauthn_supervisor');
         if ($userId < 1) {
             $userId = $this->userId();
         }
@@ -154,18 +154,19 @@ final class BiometricAuthService
                 'INSERT INTO rateb_webauthn_credentials (user_id, credential_id, public_key, sign_count)
                  VALUES (:uid, :cid, :pk, 0)'
             );
-            // Attestation payloads are binary; base64 keeps TEXT columns valid utf8mb4 until blob catch-up runs.
-            $insert->bindValue(':uid', $userId, \PDO::PARAM_INT);
-            $insert->bindValue(':cid', $credentialId, \PDO::PARAM_LOB);
-            $insert->bindValue(':pk', base64_encode($publicKey), \PDO::PARAM_STR);
-            $insert->execute();
+            // Attestation payloads are binary; base64 keeps TEXT/MEDIUMBLOB columns safe on all MySQL configs.
+            $insert->execute([
+                'uid' => $userId,
+                'cid' => $credentialId,
+                'pk' => base64_encode($publicKey),
+            ]);
         } catch (\Throwable $e) {
             return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
         }
 
-        SessionManager::remove('pos_webauthn_register_challenge');
-        SessionManager::remove('pos_webauthn_register_user_id');
-        SessionManager::remove('pos_webauthn_register_expires');
+        SessionManager::forget('pos_webauthn_register_challenge');
+        SessionManager::forget('pos_webauthn_register_user_id');
+        SessionManager::forget('pos_webauthn_register_expires');
 
         return ['ok' => true, 'user_id' => $userId];
     }
@@ -223,10 +224,10 @@ final class BiometricAuthService
             return ['ok' => false, 'error' => __('pos_biometric_failed')];
         }
 
-        SessionManager::remove('pos_webauthn_challenge');
-        SessionManager::remove('pos_webauthn_user_id');
-        SessionManager::remove('pos_webauthn_expires');
-        SessionManager::remove('pos_webauthn_supervisor');
+        SessionManager::forget('pos_webauthn_challenge');
+        SessionManager::forget('pos_webauthn_user_id');
+        SessionManager::forget('pos_webauthn_expires');
+        SessionManager::forget('pos_webauthn_supervisor');
 
         return ['ok' => true, 'user_id' => $verifiedId];
     }

@@ -52,6 +52,7 @@ final class PosBiometricAuthController extends PosBaseController
                     'pos_biometric_register_settings_hint' => __('pos_biometric_register_settings_hint'),
                     'pos_biometric_success' => __('pos_biometric_success'),
                     'pos_biometric_failed' => __('pos_biometric_failed'),
+                    'pos_biometric_camera_denied' => __('pos_biometric_camera_denied'),
                 ],
             ],
         ], 'pos-shell');

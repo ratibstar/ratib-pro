@@ -195,7 +195,12 @@
                 window.location.href = (config.urls && config.urls.register) || '/pos/register';
             })
             .catch(function (err) {
-                setStatus(err.message || t('pos_biometric_failed', 'Verification failed'), true);
+                var msg = (err && err.message) || '';
+                if (/Permission denied|NotAllowedError|Permissions policy/i.test(msg)
+                    || (err && err.name === 'NotAllowedError')) {
+                    msg = t('pos_biometric_camera_denied', 'Camera permission denied');
+                }
+                setStatus(msg || t('pos_biometric_failed', 'Verification failed'), true);
             });
     }
 
