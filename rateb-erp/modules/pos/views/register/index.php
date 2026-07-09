@@ -45,14 +45,20 @@ $csrfToken = $csrf ?? \Rateb\App\Core\Csrf::token();
     ?>
 
     <div class="rateb-pos__stage">
+        <?php include __DIR__ . '/../partials/pos-register-nav.php'; ?>
+
+        <main class="rateb-pos__catalog" aria-label="<?php echo __('pos_products'); ?>">
+            </div>
+        </main>
+
         <aside class="rateb-pos__ticket" aria-label="<?php echo __('pos_cart'); ?>">
             <header class="rateb-pos__order-bar">
                 <span class="rateb-pos__order-no">#<?php echo \Rateb\App\Pos\Support\PosView::escape($orderRef); ?></span>
                 <div class="rateb-pos__order-actions">
-                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--new" data-pos-new-sale><?php echo __('pos_new_sale'); ?></button>
-                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--hold" data-pos-suspend><?php echo __('pos_suspend_sale'); ?></button>
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--cancel" data-pos-clear-cart data-pos-cap-cancel><?php echo __('pos_cancel_order'); ?></button>
                     <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--quote" data-pos-save-quote><?php echo __('pos_save_quote'); ?></button>
-                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--cancel" data-pos-clear-cart><?php echo __('pos_cancel_order'); ?></button>
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--hold" data-pos-suspend><?php echo __('pos_suspend_sale'); ?></button>
+                    <button type="button" class="rateb-pos__order-btn rateb-pos__order-btn--new" data-pos-new-sale><?php echo __('pos_new_sale'); ?></button>
                 </div>
             </header>
 
