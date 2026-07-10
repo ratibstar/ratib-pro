@@ -401,19 +401,27 @@
         if (!img || img.dataset.loaded) { return; }
         var src = img.dataset.src;
         if (!src) { return; }
+        var online = window.RatebPosConnectivity
+            ? window.RatebPosConnectivity.isOnline()
+            : navigator.onLine;
+        if (!online && /^https?:\/\//i.test(src)) {
+            img.remove();
+            var surface = img.closest('.rateb-pos__tile-surface') || img.closest('.rateb-pos__tile-media');
+            if (surface) { surface.classList.remove('has-photo'); }
+            return;
+        }
         img.dataset.loaded = '1';
-        var media = img.closest('.rateb-pos__tile-surface') || img.closest('.rateb-pos__tile-media');
         var loader = new Image();
         loader.onload = function () {
             img.src = src;
             img.classList.add('is-loaded');
-            var surface = img.closest('.rateb-pos__tile-surface');
-            if (surface) { surface.classList.add('has-photo'); }
+            var surfaceLoaded = img.closest('.rateb-pos__tile-surface');
+            if (surfaceLoaded) { surfaceLoaded.classList.add('has-photo'); }
         };
         loader.onerror = function () {
-            var surface = img.closest('.rateb-pos__tile-surface') || img.closest('.rateb-pos__tile-media');
+            var surfaceErr = img.closest('.rateb-pos__tile-surface') || img.closest('.rateb-pos__tile-media');
             img.remove();
-            if (surface) { surface.classList.remove('has-photo'); }
+            if (surfaceErr) { surfaceErr.classList.remove('has-photo'); }
         };
         loader.src = src;
     }

@@ -408,6 +408,7 @@
             if (online && window.RatebPosOffline && window.RatebPosOffline.sync) {
                 window.RatebPosOffline.sync().catch(function () { /* retry later */ });
             }
+            scheduleProbeLoop();
         }
 
         function resolveProbeUrl() {
@@ -451,7 +452,6 @@
                 headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
                 signal: ctrl ? ctrl.signal : undefined
             }).then(function () {
-                // Any HTTP response means the POS origin is reachable.
                 setOnline(true);
                 return true;
             }).catch(function () {
@@ -463,9 +463,26 @@
             });
         }
 
+        function scheduleProbeLoop() {
+            if (probeTimer) {
+                clearInterval(probeTimer);
+                probeTimer = null;
+            }
+            // Probe less often while offline to reduce console noise.
+            var every = online ? 12000 : 20000;
+            probeTimer = setInterval(function () {
+                if (navigator.onLine === false) {
+                    setOnline(false);
+                    return;
+                }
+                probe();
+            }, every);
+        }
+
         window.RatebPosConnectivity = {
             isOnline: function () { return online; },
             probe: probe,
+            setOnline: setOnline,
             subscribe: function (fn) {
                 if (typeof fn !== 'function') {
                     return function () {};
@@ -480,8 +497,9 @@
 
         window.addEventListener('online', function () { probe(); });
         window.addEventListener('offline', function () { setOnline(false); });
+        document.addEventListener('rateb-pos-force-offline', function () { setOnline(false); });
         setTimeout(probe, 200);
-        probeTimer = setInterval(probe, 12000);
+        scheduleProbeLoop();
         window.addEventListener('beforeunload', function () {
             if (probeTimer) {
                 clearInterval(probeTimer);

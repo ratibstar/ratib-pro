@@ -113,8 +113,28 @@
 
     window.RatebPosNotify = showStatus;
 
+    function isPosOnline() {
+        if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
+            return window.RatebPosConnectivity.isOnline();
+        }
+        return navigator.onLine !== false;
+    }
+
+    function markPosOffline() {
+        if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.setOnline === 'function') {
+            window.RatebPosConnectivity.setOnline(false);
+            return;
+        }
+        try {
+            document.dispatchEvent(new CustomEvent('rateb-pos-force-offline'));
+        } catch (e) { /* ignore */ }
+    }
+
     function fetchJson(url, options) {
         options = options || {};
+        if (!isPosOnline() && !options.allowOffline) {
+            return Promise.reject(new Error(t('pos_offline', 'Offline')));
+        }
         var headers = options.headers || {};
         headers['Accept'] = 'application/json';
         if (options.method === 'POST') {
@@ -131,7 +151,18 @@
                     throw new Error((data && data.error) ? data.error : t('invalid_request', 'Request failed'));
                 }
                 return data;
+            }).catch(function (err) {
+                if (err && err.message && err.message !== t('invalid_request', 'Request failed')) {
+                    throw err;
+                }
+                throw new Error(t('invalid_request', 'Request failed'));
             });
+        }).catch(function (err) {
+            var msg = String((err && err.message) || err || '');
+            if (/Failed to fetch|NetworkError|ERR_INTERNET|offline/i.test(msg) || !navigator.onLine) {
+                markPosOffline();
+            }
+            throw err;
         });
     }
 
@@ -152,7 +183,7 @@
     }
 
     function persistSession() {
-        if (!api.sessionSave) {
+        if (!api.sessionSave || !isPosOnline()) {
             return;
         }
         var body = new URLSearchParams();
@@ -171,13 +202,14 @@
                 }
                 showStatus(t('pos_session_saved', 'Session saved'));
             })
-            .catch(function (err) {
-                showStatus(err.message || t('pos_insufficient_stock', 'Insufficient stock'));
+            .catch(function () {
+                // Keep local cart; avoid noisy offline toasts.
+                localSave();
             });
     }
 
     function refreshPricing() {
-        if (!api.pricing) {
+        if (!api.pricing || !isPosOnline()) {
             computeTotalsLocal();
             return;
         }
@@ -238,7 +270,8 @@
     function lineThumbHtml(line) {
         var images = window.RatebPosProductImages || {};
         var src = images[String(line.product_id || '')] || '';
-        if (src) {
+        var online = isPosOnline();
+        if (src && (online || !/^https?:\/\//i.test(src))) {
             return '<img src="' + escapeAttr(src) + '" alt="" class="rateb-pos__line-photo" loading="lazy" decoding="async" />';
         }
         return '<span class="rateb-pos__line-photo rateb-pos__line-photo--empty" aria-hidden="true"></span>';
@@ -388,6 +421,50 @@
         renderCart();
     }
 
+    function addProductLocal(product, qty, serialNo) {
+        qty = Math.max(1, Number(qty) || 1);
+        var price = Number(product.unit_price != null ? product.unit_price : (product.price || 0));
+        if (!isFinite(price)) {
+            price = 0;
+        }
+        var serial = serialNo || product.matched_serial || '';
+        var existing = null;
+        if (!serial && !product.requires_serial) {
+            for (var i = 0; i < state.lines.length; i += 1) {
+                var line = state.lines[i];
+                if (String(line.product_id) === String(product.id) && !line.serial_no) {
+                    existing = line;
+                    break;
+                }
+            }
+        }
+        if (existing) {
+            existing.quantity = Number(existing.quantity || 0) + qty;
+            existing.unit_price = Number(existing.unit_price != null ? existing.unit_price : price);
+            existing.line_total = Math.round(existing.quantity * existing.unit_price * 100) / 100;
+            state.selectedLineId = existing.id;
+        } else {
+            var id = randomId();
+            state.lines.push({
+                id: id,
+                product_id: product.id,
+                item_name: product.item_name || product.name || '',
+                item_code: product.item_code || product.sku || product.code || '',
+                sku: product.sku || product.item_code || '',
+                quantity: qty,
+                unit_price: price,
+                line_total: Math.round(qty * price * 100) / 100,
+                serial_no: serial || null,
+                tax_rate: 0.15
+            });
+            state.selectedLineId = id;
+        }
+        computeTotalsLocal();
+        renderCartWithoutSave();
+        scheduleSave();
+        showStatus(t('pos_add_to_cart', 'Added to cart'));
+    }
+
     function addProduct(product, qty, serialNo) {
         qty = qty || 1;
         var avail = product && product.availability ? product.availability : {};
@@ -399,7 +476,8 @@
             openSerialPicker(product, qty);
             return;
         }
-        if (!api.cartAdd) {
+        if (!api.cartAdd || !isPosOnline()) {
+            addProductLocal(product, qty, serialNo);
             return;
         }
         var body = new URLSearchParams();
@@ -422,7 +500,10 @@
                 showStatus(t('pos_add_to_cart', 'Added to cart'));
             })
             .catch(function (err) {
-                showStatus(err.message || t('pos_insufficient_stock', 'Insufficient stock'));
+                addProductLocal(product, qty, serialNo);
+                if (err && err.message && !/offline|Failed to fetch|NetworkError/i.test(String(err.message))) {
+                    // Local add succeeded; keep quiet for network failures.
+                }
             });
     }
 
@@ -463,13 +544,18 @@
         return 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     }
 
+    function removeLineLocal(id) {
+        state.lines = state.lines.filter(function (line) { return line.id !== id; });
+        if (state.selectedLineId === id) {
+            state.selectedLineId = null;
+        }
+        computeTotalsLocal();
+        renderCart();
+    }
+
     function removeLine(id) {
-        if (!api.cartUpdate) {
-            state.lines = state.lines.filter(function (line) { return line.id !== id; });
-            if (state.selectedLineId === id) {
-                state.selectedLineId = null;
-            }
-            renderCart();
+        if (!api.cartUpdate || !isPosOnline()) {
+            removeLineLocal(id);
             return;
         }
         var body = new URLSearchParams();
@@ -489,13 +575,34 @@
                 renderCartWithoutSave();
                 scheduleSave();
             })
-            .catch(function (err) {
-                showStatus(err.message);
+            .catch(function () {
+                removeLineLocal(id);
             });
     }
 
+    function adjustLineQtyLocal(lineId, delta) {
+        var line = findLine(lineId);
+        if (!line) {
+            return;
+        }
+        state.selectedLineId = lineId;
+        var q = Math.max(0, Number(line.quantity || 0) + delta);
+        if (q <= 0) {
+            removeLineLocal(lineId);
+            return;
+        }
+        line.quantity = q;
+        line.line_total = Math.round(q * Number(line.unit_price || 0) * 100) / 100;
+        computeTotalsLocal();
+        renderCart();
+    }
+
     function adjustLineQty(lineId, delta) {
-        if (!lineId || !api.cartUpdate) {
+        if (!lineId) {
+            return;
+        }
+        if (!api.cartUpdate || !isPosOnline()) {
+            adjustLineQtyLocal(lineId, delta);
             return;
         }
         var line = findLine(lineId);
@@ -522,8 +629,8 @@
                 renderCartWithoutSave();
                 scheduleSave();
             })
-            .catch(function (err) {
-                showStatus(err.message || t('pos_insufficient_stock', 'Insufficient stock'));
+            .catch(function () {
+                adjustLineQtyLocal(lineId, delta);
             });
     }
 
