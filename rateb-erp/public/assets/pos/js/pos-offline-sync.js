@@ -2,10 +2,11 @@
     'use strict';
 
     var DB_NAME = 'rateb_pos_offline';
-    var DB_VERSION = 3;
+    var DB_VERSION = 4;
     var QUEUE_STORE = 'queue';
     var CATALOG_STORE = 'catalog';
     var META_STORE = 'meta';
+    var SUSPEND_STORE = 'suspended';
     var LEGACY_KEY = 'rateb_pos_offline_queue_v1';
     var CATALOG_META_KEY = 'catalog_meta';
     var dbPromise = null;
@@ -30,6 +31,9 @@
                 }
                 if (!db.objectStoreNames.contains(META_STORE)) {
                     db.createObjectStore(META_STORE, { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains(SUSPEND_STORE)) {
+                    db.createObjectStore(SUSPEND_STORE, { keyPath: 'client_id' });
                 }
             };
             req.onsuccess = function () { resolve(req.result); };
@@ -95,6 +99,78 @@
                 clearReq.onerror = function () { reject(clearReq.error); };
             });
         });
+    }
+
+    function removeByKeys(keys) {
+        var clearSet = {};
+        (keys || []).forEach(function (k) {
+            if (k) {
+                clearSet[String(k)] = true;
+            }
+        });
+        return readAll().then(function (queue) {
+            var remaining = (queue || []).filter(function (item) {
+                var key = String(item.client_id || item.idempotency_key || '');
+                return !clearSet[key];
+            });
+            return writeAll(remaining).then(function () {
+                return remaining;
+            });
+        });
+    }
+
+    function suspendedPut(entry) {
+        if (!entry || !entry.client_id) {
+            return Promise.resolve(false);
+        }
+        return withStore(SUSPEND_STORE, 'readwrite', function (store) {
+            store.put(entry);
+            return true;
+        });
+    }
+
+    function suspendedList() {
+        return withStore(SUSPEND_STORE, 'readonly', function (store) {
+            return new Promise(function (resolve, reject) {
+                var req = store.getAll();
+                req.onsuccess = function () { resolve(req.result || []); };
+                req.onerror = function () { reject(req.error); };
+            });
+        }).catch(function () {
+            return [];
+        });
+    }
+
+    function suspendedRemove(clientId) {
+        return withStore(SUSPEND_STORE, 'readwrite', function (store) {
+            store.delete(String(clientId));
+            return true;
+        });
+    }
+
+    function suspendedGet(clientId) {
+        return withStore(SUSPEND_STORE, 'readonly', function (store) {
+            return new Promise(function (resolve, reject) {
+                var req = store.get(String(clientId));
+                req.onsuccess = function () { resolve(req.result || null); };
+                req.onerror = function () { reject(req.error); };
+            });
+        }).catch(function () {
+            return null;
+        });
+    }
+
+    function buildScopePayload(options) {
+        options = options || {};
+        var reg = registerContext(options);
+        return Object.assign({}, reg.scope, {
+            terminal_id: reg.terminal_id || reg.scope.terminal_id || 0,
+            branch_id: reg.branch_id || reg.scope.branch_id || 0
+        });
+    }
+
+    function newClientId(prefix) {
+        return String(prefix || 'local') + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     }
 
     function normalizeProduct(product) {
@@ -341,13 +417,23 @@
         catalogGetAll: catalogGetAll,
         catalogMetaPut: catalogMetaPut,
         catalogMetaGet: catalogMetaGet,
+        buildScope: buildScopePayload,
+        newClientId: newClientId,
+        suspendedPut: suspendedPut,
+        suspendedList: suspendedList,
+        suspendedRemove: suspendedRemove,
+        suspendedGet: suspendedGet,
 
         push: function (item, options) {
             options = options || {};
+            var payload = item.payload && typeof item.payload === 'object' ? Object.assign({}, item.payload) : {};
+            delete payload.url;
+            delete payload.method;
+            delete payload.headers;
             var entry = {
-                client_id: item.client_id || ('local-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)),
+                client_id: item.client_id || newClientId('local'),
                 action: item.action || 'unknown',
-                payload: item.payload || {},
+                payload: payload,
                 occurred_at: item.occurred_at || new Date().toISOString(),
                 version: item.version || 1
             };
@@ -360,7 +446,7 @@
                 if (window.RatebPosConnectivity ? window.RatebPosConnectivity.isOnline() : navigator.onLine) {
                     return window.RatebPosOffline.sync(options);
                 }
-                return { queued: true, queueDepth: window.RatebPosOffline.queueDepth };
+                return { queued: true, queueDepth: window.RatebPosOffline.queueDepth, client_id: entry.client_id };
             });
         },
 
@@ -368,7 +454,7 @@
             options = options || {};
             return readAll().then(function (queue) {
                 if (!queue.length) {
-                    return { accepted: 0, duplicate: 0, conflict: 0, queueDepth: 0 };
+                    return { accepted: 0, duplicate: 0, conflict: 0, queueDepth: 0, clearable_keys: [] };
                 }
                 var reg = registerContext(options);
                 var base = options.apiBase || configuredSyncBase();
@@ -387,12 +473,28 @@
                     })
                 }).then(function (res) {
                     return res.json().then(function (payload) {
-                        if (!res.ok || !payload.ok) {
-                            throw new Error((payload && payload.error && payload.error.message) || 'sync_failed');
+                        var result = (payload && payload.result) ? payload.result : {};
+                        var clearable = Array.isArray(result.clearable_keys) ? result.clearable_keys : [];
+                        if (!clearable.length && payload && payload.ok) {
+                            clearable = [].concat(
+                                Array.isArray(result.accepted_keys) ? result.accepted_keys : [],
+                                Array.isArray(result.duplicate_keys) ? result.duplicate_keys : []
+                            );
                         }
-                        return writeAll([]).then(function () {
-                            window.RatebPosOffline.queueDepth = 0;
-                            return Object.assign({ queueDepth: 0 }, payload.result || {});
+                        return removeByKeys(clearable).then(function (remaining) {
+                            window.RatebPosOffline.queueDepth = remaining.length;
+                            if (!payload || !payload.ok) {
+                                var err = new Error(
+                                    (payload && payload.error && payload.error.message) || 'sync_failed'
+                                );
+                                err.result = result;
+                                err.remaining = remaining.length;
+                                throw err;
+                            }
+                            return Object.assign({
+                                queueDepth: remaining.length,
+                                clearable_keys: clearable
+                            }, result);
                         });
                     });
                 });

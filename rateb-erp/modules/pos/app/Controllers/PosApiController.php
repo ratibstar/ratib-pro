@@ -45,13 +45,17 @@ final class PosApiController extends PosBaseController
         }
         $companyId = $this->companyId();
         $service = new PosOfflineSyncService();
+        $result = $service->pushQueue($items, [
+            'company_id' => $companyId,
+            'terminal_id' => (int) ($body['terminal_id'] ?? 0),
+            'branch_id' => (int) ($body['branch_id'] ?? 0),
+        ]);
+        $ack = (new \Rateb\App\Pos\Services\PosPushAckContract())->evaluate($result);
+        $result['clearable_keys'] = $ack['clearable_keys'];
+        http_response_code($ack['http_status']);
         $this->json([
-            'ok' => true,
-            'result' => $service->pushQueue($items, [
-                'company_id' => $companyId,
-                'terminal_id' => (int) ($body['terminal_id'] ?? 0),
-                'branch_id' => (int) ($body['branch_id'] ?? 0),
-            ]),
+            'ok' => $ack['ok'],
+            'result' => $result,
         ]);
     }
 

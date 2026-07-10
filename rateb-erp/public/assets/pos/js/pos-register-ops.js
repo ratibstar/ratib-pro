@@ -364,6 +364,44 @@
         return out;
     }
 
+    function isOffline() {
+        return window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine;
+    }
+
+    function offlineScope() {
+        if (window.RatebPosOffline && window.RatebPosOffline.buildScope) {
+            return window.RatebPosOffline.buildScope({ apiBase: api.sync });
+        }
+        var cfgScope = config.registerScope || {};
+        var cfgSess = config.session || {};
+        var cfgCtx = config.context || {};
+        return {
+            terminal_id: cfgScope.terminal_id || (cfgCtx.terminal && cfgCtx.terminal.id) || cfgSess.terminal_id || 0,
+            shift_id: cfgScope.shift_id || (cfgCtx.shift && cfgCtx.shift.id) || cfgSess.shift_id || config.shiftId || 0,
+            branch_id: cfgScope.branch_id || (cfgCtx.branch && cfgCtx.branch.id) || cfgSess.branch_id || 0,
+            warehouse_id: cfgScope.warehouse_id || cfgSess.warehouse_id || null,
+            session_id: cfgSess.db_session_id || null,
+            user_id: config.userId || 0
+        };
+    }
+
+    function queueOffline(action, payload) {
+        if (!window.RatebPosOffline || !window.RatebPosOffline.push) {
+            return Promise.reject(new Error(t('pos_offline', 'Offline')));
+        }
+        var clientId = window.RatebPosOffline.newClientId
+            ? window.RatebPosOffline.newClientId(action)
+            : ('local-' + Date.now());
+        return window.RatebPosOffline.push({
+            client_id: clientId,
+            action: action,
+            payload: payload,
+            version: 1
+        }, { apiBase: api.sync }).then(function (result) {
+            return Object.assign({ client_id: clientId }, result || {});
+        });
+    }
+
     function processReturn() {
         if (!api.processReturn || !canReturns || !selectedOrder) {
             notify(t('pos_search_order', 'Search order'), true);
@@ -375,6 +413,26 @@
             return;
         }
         var method = (panelEl('[data-pos-return-refund-method]') || {}).value || 'cash';
+        if (isOffline()) {
+            queueOffline('process_return', {
+                original_order_id: selectedOrder.id,
+                return_lines: returnLines,
+                refunds: [{ method: method, amount: 0 }],
+                customer: state().customer,
+                scope: offlineScope()
+            }).then(function () {
+                notify(t('pos_offline_queued', 'Queued for sync'));
+                selectedOrder = null;
+                renderReturnLines([]);
+                var display = panelEl('[data-pos-selected-order]');
+                if (display) {
+                    display.textContent = '';
+                }
+            }).catch(function (err) {
+                notify(err.message, true);
+            });
+            return;
+        }
         var body = new URLSearchParams();
         body.set('_csrf', csrf());
         body.set('original_order_id', String(selectedOrder.id));
@@ -421,6 +479,35 @@
         } else if (net < -0.02) {
             refunds = [{ method: 'cash', amount: Math.abs(net) }];
         }
+        var couponEl = panelEl('[data-pos-exchange-coupon]');
+        var pointsEl = panelEl('[data-pos-exchange-points]');
+        if (isOffline()) {
+            queueOffline('process_exchange', {
+                original_order_id: selectedOrder.id,
+                return_lines: returnLines,
+                sale_lines: st.lines,
+                payments: payments,
+                refunds: refunds,
+                customer: st.customer,
+                coupon_code: couponEl && couponEl.value.trim() ? couponEl.value.trim() : '',
+                points_redeem: pointsEl && Number(pointsEl.value) > 0 ? Number(pointsEl.value) : 0,
+                scope: offlineScope()
+            }).then(function () {
+                notify(t('pos_offline_queued', 'Queued for sync'));
+                if (window.RatebPosRegisterReset) {
+                    window.RatebPosRegisterReset();
+                }
+                selectedOrder = null;
+                renderReturnLines([]);
+                var panel = panelEl('[data-pos-return-panel]');
+                if (panel) {
+                    panel.hidden = true;
+                }
+            }).catch(function (err) {
+                notify(err.message, true);
+            });
+            return;
+        }
         var body = new URLSearchParams();
         body.set('_csrf', csrf());
         body.set('original_order_id', String(selectedOrder.id));
@@ -429,8 +516,6 @@
         body.set('payments', JSON.stringify(payments));
         body.set('refunds', JSON.stringify(refunds));
         body.set('customer', JSON.stringify(st.customer));
-        var couponEl = panelEl('[data-pos-exchange-coupon]');
-        var pointsEl = panelEl('[data-pos-exchange-points]');
         if (couponEl && couponEl.value.trim()) {
             body.set('coupon_code', couponEl.value.trim());
         }
@@ -457,6 +542,49 @@
         var st = state();
         if (!st.lines.length) {
             notify(t('pos_cart_empty', 'Cart empty'), true);
+            return;
+        }
+        if (isOffline()) {
+            var scope = offlineScope();
+            var clientId = window.RatebPosOffline && window.RatebPosOffline.newClientId
+                ? window.RatebPosOffline.newClientId('suspend')
+                : ('suspend-' + Date.now());
+            var localEntry = {
+                client_id: clientId,
+                id: clientId,
+                order_no: 'OFF-' + String(clientId).slice(-6).toUpperCase(),
+                total: (st.totals && st.totals.total) || 0,
+                lines: st.lines,
+                customer: st.customer,
+                created_at: new Date().toISOString(),
+                local: true
+            };
+            var putLocal = window.RatebPosOffline && window.RatebPosOffline.suspendedPut
+                ? window.RatebPosOffline.suspendedPut(localEntry)
+                : Promise.resolve(true);
+            putLocal.then(function () {
+                return window.RatebPosOffline.push({
+                    client_id: clientId,
+                    action: 'suspend',
+                    payload: {
+                        lines: st.lines,
+                        customer: st.customer,
+                        notes: '',
+                        scope: scope,
+                        local_client_id: clientId
+                    },
+                    version: 1
+                }, { apiBase: api.sync });
+            }).then(function () {
+                if (window.RatebPosRegisterReset) {
+                    window.RatebPosRegisterReset();
+                }
+                loadSuspended();
+                switchSavedTab('suspended');
+                notify(t('pos_offline_queued', 'Queued for sync'));
+            }).catch(function (err) {
+                notify(err.message, true);
+            });
             return;
         }
         var body = new URLSearchParams();
@@ -559,11 +687,10 @@
     function loadSuspended() {
         var list = root.querySelector('[data-pos-suspended-list]');
         var empty = root.querySelector('[data-pos-suspended-empty]');
-        if (!list || !api.suspendedList) {
+        if (!list) {
             return;
         }
-        fetchJson(api.suspendedList).then(function (data) {
-            var items = data.items || [];
+        function renderItems(items) {
             list.innerHTML = '';
             if (empty) {
                 empty.hidden = items.length > 0;
@@ -571,10 +698,89 @@
             items.forEach(function (item) {
                 list.appendChild(renderSavedItem(item, 'suspended'));
             });
+        }
+        if (isOffline() && window.RatebPosOffline && window.RatebPosOffline.suspendedList) {
+            window.RatebPosOffline.suspendedList().then(renderItems).catch(function () {
+                if (empty) {
+                    empty.hidden = false;
+                }
+            });
+            return;
+        }
+        if (!api.suspendedList) {
+            return;
+        }
+        fetchJson(api.suspendedList).then(function (data) {
+            var items = data.items || [];
+            if (window.RatebPosOffline && window.RatebPosOffline.suspendedList) {
+                return window.RatebPosOffline.suspendedList().then(function (localItems) {
+                    var merged = items.slice();
+                    (localItems || []).forEach(function (local) {
+                        if (!merged.some(function (x) { return String(x.id) === String(local.id); })) {
+                            merged.push(local);
+                        }
+                    });
+                    renderItems(merged);
+                });
+            }
+            renderItems(items);
         }).catch(function () {
+            if (window.RatebPosOffline && window.RatebPosOffline.suspendedList) {
+                window.RatebPosOffline.suspendedList().then(renderItems);
+                return;
+            }
             if (empty) {
                 empty.hidden = false;
             }
+        });
+    }
+
+    function resumeSuspended(id) {
+        if (String(id).indexOf('suspend-') === 0 || String(id).indexOf('local-') === 0) {
+            if (!window.RatebPosOffline || !window.RatebPosOffline.suspendedGet) {
+                return;
+            }
+            window.RatebPosOffline.suspendedGet(String(id)).then(function (entry) {
+                if (!entry) {
+                    notify(t('no_records', 'Not found'), true);
+                    return;
+                }
+                if (window.RatebPosRegisterState) {
+                    window.RatebPosRegisterState.lines = entry.lines || [];
+                    window.RatebPosRegisterState.customer = entry.customer || null;
+                }
+                if (window.RatebPosOffline.suspendedRemove) {
+                    window.RatebPosOffline.suspendedRemove(String(id));
+                }
+                notify(t('pos_resume_sale', 'Resume'));
+                if (window.RatebPosRenderCart) {
+                    window.RatebPosRenderCart();
+                }
+                loadSuspended();
+            });
+            return;
+        }
+        if (!api.suspendedResume) {
+            return;
+        }
+        if (isOffline()) {
+            queueOffline('resume_suspended', {
+                order_id: Number(id),
+                scope: offlineScope()
+            }).then(function () {
+                notify(t('pos_offline_queued', 'Queued for sync'));
+            }).catch(function (err) {
+                notify(err.message, true);
+            });
+            return;
+        }
+        var url = api.suspendedResume.replace('{id}', String(id));
+        var body = new URLSearchParams();
+        body.set('_csrf', csrf());
+        fetchJson(url, { method: 'POST', body: body }).then(function () {
+            location.reload();
+        }).catch(function (err) {
+            notify(err.message, true);
         });
     }
 
@@ -597,20 +803,6 @@
             if (empty) {
                 empty.hidden = false;
             }
-        });
-    }
-
-    function resumeSuspended(id) {
-        if (!api.suspendedResume) {
-            return;
-        }
-        var url = api.suspendedResume.replace('{id}', String(id));
-        var body = new URLSearchParams();
-        body.set('_csrf', csrf());
-        fetchJson(url, { method: 'POST', body: body }).then(function () {
-            location.reload();
-        }).catch(function (err) {
-            notify(err.message, true);
         });
     }
 

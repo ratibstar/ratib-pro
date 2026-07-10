@@ -109,6 +109,35 @@
         var drawerOpenBtn = root.querySelector('[data-pos-drawer-open]');
         if (drawerOpenBtn && api.drawerOpen) {
             drawerOpenBtn.addEventListener('click', function () {
+                if (window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine) {
+                    if (!window.RatebPosOffline || !window.RatebPosOffline.push) {
+                        notify(t('pos_offline', 'Offline'), true);
+                        return;
+                    }
+                    var scope = window.RatebPosOffline.buildScope
+                        ? window.RatebPosOffline.buildScope({ apiBase: api.sync })
+                        : {};
+                    window.RatebPosOffline.push({
+                        client_id: window.RatebPosOffline.newClientId
+                            ? window.RatebPosOffline.newClientId('drawer')
+                            : ('drawer-' + Date.now()),
+                        action: 'drawer_event',
+                        payload: {
+                            event_type: 'no_sale',
+                            amount: 0,
+                            notes: 'open_drawer',
+                            shift_id: scope.shift_id || config.shiftId || 0,
+                            scope: scope
+                        },
+                        version: 1
+                    }, { apiBase: api.sync }).then(function () {
+                        notify(t('pos_offline_queued', 'Queued for sync'));
+                        syncOfflineQueueBadge();
+                    }).catch(function (err) {
+                        notify(err.message, true);
+                    });
+                    return;
+                }
                 var body = new URLSearchParams();
                 body.set('_csrf', csrf());
                 fetchJson(api.drawerOpen, { method: 'POST', body: body })
@@ -132,11 +161,44 @@
                 var typeEl = root.querySelector('[data-pos-drawer-event-type]');
                 var amountEl = root.querySelector('[data-pos-drawer-event-amount]');
                 var notesEl = root.querySelector('[data-pos-drawer-event-notes]');
+                var eventType = typeEl ? typeEl.value : 'pay_in';
+                var amount = amountEl ? String(amountEl.value || 0) : '0';
+                var notes = notesEl ? String(notesEl.value || '') : '';
+                if (window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine) {
+                    if (!window.RatebPosOffline || !window.RatebPosOffline.push) {
+                        notify(t('pos_offline', 'Offline'), true);
+                        return;
+                    }
+                    var scope = window.RatebPosOffline.buildScope
+                        ? window.RatebPosOffline.buildScope({ apiBase: api.sync })
+                        : {};
+                    window.RatebPosOffline.push({
+                        client_id: window.RatebPosOffline.newClientId
+                            ? window.RatebPosOffline.newClientId('drawer')
+                            : ('drawer-' + Date.now()),
+                        action: 'drawer_event',
+                        payload: {
+                            event_type: eventType,
+                            amount: Number(amount || 0),
+                            notes: notes,
+                            shift_id: scope.shift_id || config.shiftId || 0,
+                            scope: scope
+                        },
+                        version: 1
+                    }, { apiBase: api.sync }).then(function () {
+                        notify(t('pos_offline_queued', 'Queued for sync'));
+                        syncOfflineQueueBadge();
+                        modal(toolsModal, false);
+                    }).catch(function (err) {
+                        notify(err.message, true);
+                    });
+                    return;
+                }
                 var body = new URLSearchParams();
                 body.set('_csrf', csrf());
-                body.set('event_type', typeEl ? typeEl.value : 'pay_in');
-                body.set('amount', amountEl ? String(amountEl.value || 0) : '0');
-                body.set('notes', notesEl ? String(notesEl.value || '') : '');
+                body.set('event_type', eventType);
+                body.set('amount', amount);
+                body.set('notes', notes);
                 fetchJson(api.drawerEvent, { method: 'POST', body: body })
                     .then(function () {
                         notify(t('saved', 'Saved'));

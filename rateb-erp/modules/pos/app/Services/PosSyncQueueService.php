@@ -114,7 +114,12 @@ final class PosSyncQueueService
                 'duplicate' => 0,
                 'conflict' => 0,
                 'rejected' => count($items),
+                'accepted_keys' => [],
+                'duplicate_keys' => [],
+                'conflict_keys' => [],
+                'rejected_keys' => [],
                 'errors' => ['migration_required' => true],
+                'clearable_keys' => [],
             ];
         }
 
@@ -125,7 +130,12 @@ final class PosSyncQueueService
                 'duplicate' => 0,
                 'conflict' => 0,
                 'rejected' => count($items),
+                'accepted_keys' => [],
+                'duplicate_keys' => [],
+                'conflict_keys' => [],
+                'rejected_keys' => [],
                 'errors' => ['company_required' => true],
+                'clearable_keys' => [],
             ];
         }
 
@@ -139,6 +149,14 @@ final class PosSyncQueueService
         $duplicate = 0;
         $conflict = 0;
         $rejected = 0;
+        /** @var list<string> $acceptedKeys */
+        $acceptedKeys = [];
+        /** @var list<string> $duplicateKeys */
+        $duplicateKeys = [];
+        /** @var list<string> $conflictKeys */
+        $conflictKeys = [];
+        /** @var list<string> $rejectedKeys */
+        $rejectedKeys = [];
         /** @var array<int, array<string, mixed>> $conflicts */
         $conflicts = [];
 
@@ -159,8 +177,10 @@ final class PosSyncQueueService
                 $outcome = $this->handleDuplicate($existing, $item);
                 if ($outcome === 'duplicate') {
                     $duplicate++;
+                    $duplicateKeys[] = $idempotencyKey;
                 } elseif ($outcome === 'conflict') {
                     $conflict++;
+                    $conflictKeys[] = $idempotencyKey;
                     $conflicts[] = [
                         'client_id' => $idempotencyKey,
                         'queue_id' => (int) ($existing['id'] ?? 0),
@@ -168,6 +188,7 @@ final class PosSyncQueueService
                     ];
                 } else {
                     $accepted++;
+                    $acceptedKeys[] = $idempotencyKey;
                 }
                 continue;
             }
@@ -185,8 +206,10 @@ final class PosSyncQueueService
             $processed = $this->attemptProcess($queueId, $item, null);
             if ($processed['status'] === 'synced') {
                 $accepted++;
+                $acceptedKeys[] = $idempotencyKey;
             } elseif ($processed['status'] === 'conflict') {
                 $conflict++;
+                $conflictKeys[] = $idempotencyKey;
                 $conflicts[] = [
                     'client_id' => $idempotencyKey,
                     'queue_id' => $queueId,
@@ -194,6 +217,7 @@ final class PosSyncQueueService
                 ];
             } else {
                 $accepted++;
+                $acceptedKeys[] = $idempotencyKey;
             }
         }
 
@@ -206,13 +230,23 @@ final class PosSyncQueueService
             ]);
         }
 
-        return [
+        $result = [
             'accepted' => $accepted,
             'duplicate' => $duplicate,
             'conflict' => $conflict,
             'rejected' => $rejected,
+            'accepted_keys' => $acceptedKeys,
+            'duplicate_keys' => $duplicateKeys,
+            'conflict_keys' => $conflictKeys,
+            'rejected_keys' => $rejectedKeys,
             'conflicts' => $conflicts,
         ];
+        $ack = (new PosPushAckContract())->evaluate($result);
+        $result['clearable_keys'] = $ack['clearable_keys'];
+        $result['ack_ok'] = $ack['ok'];
+        $result['http_status'] = $ack['http_status'];
+
+        return $result;
     }
 
     /** @param array<string, mixed> $row */
@@ -328,8 +362,8 @@ final class PosSyncQueueService
         }
 
         $action = (string) ($item['action'] ?? 'unknown');
-        $deferActions = ['complete_sale', 'checkout', 'process_return', 'process_exchange'];
-        if (in_array($action, $deferActions, true)) {
+        // Defer all domain actions to PosSyncBatchProcessorService → PosOfflineReplayService.
+        if (in_array($action, PosOfflineReplayService::deferredActions(), true)) {
             return ['status' => 'pending'];
         }
 

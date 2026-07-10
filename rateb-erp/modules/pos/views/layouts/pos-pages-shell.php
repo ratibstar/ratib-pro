@@ -64,5 +64,7 @@ $pageTitle = (string) ($title ?? __('pos_register'));
 </main>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-shift-offline.js'); ?>" defer></script>
 </body>
 </html>

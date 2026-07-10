@@ -745,6 +745,52 @@
             }
             sel.appendChild(o);
         });
+
+        var form = root.querySelector('[data-pos-shift-form]');
+        if (!form) {
+            return;
+        }
+        form.addEventListener('submit', function (e) {
+            var offline = window.RatebPosConnectivity
+                ? !window.RatebPosConnectivity.isOnline()
+                : !navigator.onLine;
+            if (!offline || !window.RatebPosOffline || !window.RatebPosOffline.push) {
+                return;
+            }
+            e.preventDefault();
+            var terminalEl = form.querySelector('[data-pos-shift-terminal]');
+            var floatEl = form.querySelector('[data-pos-shift-float]');
+            var terminalId = terminalEl ? Number(terminalEl.value || 0) : 0;
+            if (terminalId < 1) {
+                if (window.RatebPosNotify) {
+                    window.RatebPosNotify(t('select', 'Select'), true);
+                }
+                return;
+            }
+            var scope = window.RatebPosOffline.buildScope
+                ? window.RatebPosOffline.buildScope({ apiBase: (api && api.sync) || undefined })
+                : {};
+            window.RatebPosOffline.push({
+                client_id: window.RatebPosOffline.newClientId
+                    ? window.RatebPosOffline.newClientId('shift_open')
+                    : ('shift-open-' + Date.now()),
+                action: 'shift_open',
+                payload: {
+                    terminal_id: terminalId,
+                    opening_float: floatEl ? Number(floatEl.value || 0) : 0,
+                    scope: Object.assign({}, scope, { terminal_id: terminalId, user_id: config.userId || 0 })
+                },
+                version: 1
+            }, { apiBase: (api && api.sync) || undefined }).then(function () {
+                if (window.RatebPosNotify) {
+                    window.RatebPosNotify(t('pos_offline_queued', 'Shift open queued — reconnect to continue'));
+                }
+            }).catch(function (err) {
+                if (window.RatebPosNotify) {
+                    window.RatebPosNotify(err.message || t('invalid_request', 'Failed'), true);
+                }
+            });
+        });
     }
 
     function bindGridScroll() {
