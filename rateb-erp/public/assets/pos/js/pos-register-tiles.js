@@ -203,7 +203,7 @@
             return items;
         }
 
-        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine)
+        if (!isTilesOnline()
             && window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
             return window.RatebPosOffline.catalogSearch(q, 80).then(cacheItems);
         }
@@ -248,8 +248,24 @@
         return seed.slice();
     }
 
+    function isTilesOnline() {
+        if (navigator.onLine === false) {
+            return false;
+        }
+        if (window.RatebPosNet && typeof window.RatebPosNet.isOnline === 'function') {
+            return window.RatebPosNet.isOnline();
+        }
+        if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
+            return window.RatebPosConnectivity.isOnline();
+        }
+        return true;
+    }
+
     function fetchCatalogFromApi() {
         if (!api.bootstrap) {
+            return Promise.resolve([]);
+        }
+        if (!isTilesOnline()) {
             return Promise.resolve([]);
         }
         if (catalogFetchPromise) {
@@ -264,7 +280,15 @@
             }
             return applyCatalogPayload(d);
         }).catch(function () {
+            if (window.RatebPosNet && window.RatebPosNet.markOffline) {
+                window.RatebPosNet.markOffline();
+            }
             return [];
+        }).finally(function () {
+            // Allow retry after reconnect.
+            if (!isTilesOnline()) {
+                catalogFetchPromise = null;
+            }
         });
         return catalogFetchPromise;
     }
@@ -313,7 +337,7 @@
             });
         }
 
-        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine)) {
+        if (!isTilesOnline()) {
             return finishFromIdb();
         }
 
@@ -932,6 +956,9 @@
             if (!marker) { return; }
             if (window.__ratebPosCatalogMarker === marker) { return; }
             window.__ratebPosCatalogMarker = marker;
+            if (!isTilesOnline()) {
+                return;
+            }
             catalogLoaded = false;
             catalogFetchPromise = null;
             productCache = {};

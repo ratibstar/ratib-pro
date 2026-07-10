@@ -623,8 +623,14 @@
             if (probing) {
                 return Promise.resolve(online);
             }
+            // Fully offline (browser flag) — never hit the network (avoids console spam).
             if (navigator.onLine === false) {
                 setOnline(false);
+                return Promise.resolve(false);
+            }
+            // Already marked offline: only re-probe when the browser says we might be back.
+            // Do not poll bootstrap while offline — that floods DevTools with ERR_INTERNET_DISCONNECTED.
+            if (!online) {
                 return Promise.resolve(false);
             }
             probing = true;
@@ -663,15 +669,17 @@
                 clearInterval(probeTimer);
                 probeTimer = null;
             }
-            // Probe less often while offline to reduce console noise.
-            var every = online ? 12000 : 20000;
+            // While offline, rely on window 'online' event — no interval fetch spam.
+            if (!online) {
+                return;
+            }
             probeTimer = setInterval(function () {
                 if (navigator.onLine === false) {
                     setOnline(false);
                     return;
                 }
                 probe();
-            }, every);
+            }, 12000);
         }
 
         window.RatebPosConnectivity = {
