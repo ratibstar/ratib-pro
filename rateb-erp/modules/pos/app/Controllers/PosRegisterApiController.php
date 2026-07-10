@@ -84,15 +84,24 @@ final class PosRegisterApiController extends PosBaseController
             $scope['session_id']
         );
 
+        $cart = new PosRegisterCartService();
+        // Soft-fail inventory: keep cashier cart (demo/catalog/offline) instead of hard 422.
         if (!$validated['ok']) {
+            $normalized = $cart->normalizeLines($lines);
+            $customer = $this->resolveCustomer($payload);
+            $session->setCartLines($normalized);
+            $session->setCustomer($customer);
             $this->json([
-                'ok' => false,
-                'errors' => $validated['errors'] ?? [__('invalid_request')],
-            ], 422);
+                'ok' => true,
+                'warning' => 'inventory_sync_skipped',
+                'errors' => $validated['errors'] ?? [],
+                'session' => $session->snapshot(),
+                'lines' => $normalized,
+                'totals' => $cart->totals($normalized),
+            ]);
             return;
         }
 
-        $cart = new PosRegisterCartService();
         $normalized = $cart->normalizeLines($validated['lines'] ?? []);
 
         $customer = $this->resolveCustomer($payload);
@@ -135,7 +144,12 @@ final class PosRegisterApiController extends PosBaseController
             $scope['session_id']
         );
         if ($product === null) {
-            $this->json(['ok' => false, 'error' => __('pos_product_not_found')], 404);
+            // Catalog/demo product not in inventory bridge — client falls back to local cart.
+            $this->json([
+                'ok' => false,
+                'error' => __('pos_product_not_found'),
+                'fallback_local' => true,
+            ], 404);
             return;
         }
 

@@ -68,8 +68,31 @@
         }, true);
     }
 
+    /** Warm the SW shell cache for /pos and /pos/register while online. */
+    function warmRegisterShell() {
+        if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+            return;
+        }
+        if (navigator.onLine === false) {
+            return;
+        }
+        try {
+            var u = new URL(window.location.href);
+            if (!/\/(admin\/ops\/)?pos/i.test(u.pathname)) {
+                return;
+            }
+            // Touch navigation URL so SW network-first path can cache it.
+            fetch(u.pathname + u.search, {
+                credentials: 'same-origin',
+                headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' },
+                cache: 'no-store'
+            }).catch(function () { /* optional */ });
+        } catch (e) { /* ignore */ }
+    }
+
     registerServiceWorker();
     bindOfflineNavGuard();
+    setTimeout(warmRegisterShell, 1500);
     if (window.RatebPosConnectivity && window.RatebPosConnectivity.subscribe) {
         window.RatebPosConnectivity.subscribe(syncOfflineUi);
     } else {

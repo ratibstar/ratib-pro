@@ -20,7 +20,8 @@
         lines: Array.isArray(config.initialLines) ? config.initialLines.slice() : [],
         customer: (config.session && config.session.customer) ? config.session.customer : null,
         selectedLineId: null,
-        totals: config.initialTotals || { subtotal: 0, tax: 0, total: 0, discount_total: 0 }
+        totals: config.initialTotals || { subtotal: 0, tax: 0, total: 0, discount_total: 0 },
+        localCartOnly: false
     };
 
     var els = {
@@ -186,8 +187,45 @@
         saveTimer = setTimeout(persistSession, 450);
     }
 
+    function refreshPricing() {
+        if (!api.pricing || !isPosOnline() || state.localCartOnly) {
+            computeTotalsLocal();
+            return;
+        }
+        var body = new URLSearchParams();
+        body.set('_csrf', csrfToken());
+        body.set('lines', JSON.stringify(state.lines));
+        var localBefore = Number((state.totals && state.totals.total) || 0);
+        fetchJson(api.pricing, { method: 'POST', body: body })
+            .then(function (data) {
+                if (data.totals) {
+                    var serverTotal = Number(data.totals.total || 0);
+                    var hasLocalLines = state.lines.some(function (line) {
+                        return Number(line.line_total || 0) > 0;
+                    });
+                    // Never wipe a priced cart with a zero server preview (inventory/price-group miss).
+                    if (serverTotal <= 0 && hasLocalLines && localBefore > 0) {
+                        computeTotalsLocal();
+                        return;
+                    }
+                    if (serverTotal <= 0 && hasLocalLines) {
+                        computeTotalsLocal();
+                        return;
+                    }
+                    state.totals = data.totals;
+                    renderTotals();
+                }
+            })
+            .catch(computeTotalsLocal);
+    }
+
     function persistSession() {
         if (!api.sessionSave || !isPosOnline()) {
+            return;
+        }
+        // After inventory 404/422, keep cart local — avoid spam sessionSave failures.
+        if (state.localCartOnly) {
+            localSave();
             return;
         }
         var body = new URLSearchParams();
@@ -201,33 +239,27 @@
                     renderCartWithoutSave();
                 }
                 if (data.totals) {
-                    state.totals = data.totals;
-                    renderTotals();
+                    var serverTotal = Number(data.totals.total || 0);
+                    var hasLocalLines = state.lines.some(function (line) {
+                        return Number(line.line_total || 0) > 0;
+                    });
+                    if (serverTotal <= 0 && hasLocalLines) {
+                        computeTotalsLocal();
+                    } else {
+                        state.totals = data.totals;
+                        renderTotals();
+                    }
                 }
                 showStatus(t('pos_session_saved', 'Session saved'));
             })
-            .catch(function () {
-                // Keep local cart; avoid noisy offline toasts.
+            .catch(function (err) {
+                var msg = String((err && err.message) || '');
+                // Inventory validation failures — stay local, stop retry spam.
+                if (/422|404|invalid|stock|inventory|not found/i.test(msg) || !navigator.onLine) {
+                    state.localCartOnly = true;
+                }
                 localSave();
             });
-    }
-
-    function refreshPricing() {
-        if (!api.pricing || !isPosOnline()) {
-            computeTotalsLocal();
-            return;
-        }
-        var body = new URLSearchParams();
-        body.set('_csrf', csrfToken());
-        body.set('lines', JSON.stringify(state.lines));
-        fetchJson(api.pricing, { method: 'POST', body: body })
-            .then(function (data) {
-                if (data.totals) {
-                    state.totals = data.totals;
-                    renderTotals();
-                }
-            })
-            .catch(computeTotalsLocal);
     }
 
     function computeTotalsLocal() {
@@ -508,10 +540,16 @@
             fetchJson(api.cartAdd, { method: 'POST', body: body })
                 .then(function (data) {
                     if (data && Array.isArray(data.lines) && data.lines.length) {
+                        state.localCartOnly = false;
                         state.lines = data.lines;
                         if (data.totals) {
-                            state.totals = data.totals;
-                            renderTotals();
+                            var serverTotal = Number(data.totals.total || 0);
+                            if (serverTotal > 0) {
+                                state.totals = data.totals;
+                                renderTotals();
+                            } else {
+                                computeTotalsLocal();
+                            }
                         }
                         state.selectedLineId = null;
                         renderCartWithoutSave();
@@ -520,9 +558,11 @@
                         return;
                     }
                     // Empty/invalid server payload — keep cashier unblocked.
+                    state.localCartOnly = true;
                     addProductLocal(product, qty, serialNo);
                 })
                 .catch(function () {
+                    state.localCartOnly = true;
                     addProductLocal(product, qty, serialNo);
                 });
         } catch (err) {
