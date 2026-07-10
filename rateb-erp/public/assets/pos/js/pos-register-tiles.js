@@ -203,7 +203,8 @@
             return items;
         }
 
-        if (!navigator.onLine && window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
+        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine)
+            && window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
             return window.RatebPosOffline.catalogSearch(q, 80).then(cacheItems);
         }
 
@@ -312,7 +313,7 @@
             });
         }
 
-        if (!navigator.onLine) {
+        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine)) {
             return finishFromIdb();
         }
 
@@ -760,8 +761,7 @@
                 setProducts(filterByCategory(Object.values(productCache), activeCategoryId || 'all'));
             });
         }
-        function sync() {
-            var online = navigator.onLine;
+        function applyOnlineState(online) {
             connectionEl.classList.toggle('is-offline', !online);
             var label = connectionEl.querySelector('.rateb-pos-connection__label');
             if (label) { label.textContent = online ? t('pos_online', 'Online') : t('pos_offline', 'Offline'); }
@@ -780,6 +780,14 @@
             } else if (Object.keys(productCache).length) {
                 cacheCatalogOffline(Object.values(productCache));
             }
+        }
+        if (window.RatebPosConnectivity && window.RatebPosConnectivity.subscribe) {
+            window.RatebPosConnectivity.subscribe(applyOnlineState);
+            window.RatebPosConnectivity.probe();
+            return;
+        }
+        function sync() {
+            applyOnlineState(navigator.onLine);
         }
         window.addEventListener('online', sync);
         window.addEventListener('offline', sync);

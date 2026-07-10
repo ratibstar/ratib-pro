@@ -14,12 +14,6 @@
         config = {};
     }
 
-    var i18n = config.i18n || {};
-
-    function t(key, fb) {
-        return i18n[key] || fb || key;
-    }
-
     function registerServiceWorker() {
         if (!('serviceWorker' in navigator) || !config.serviceWorker) {
             return;
@@ -37,13 +31,22 @@
             .catch(function () { /* optional offline */ });
     }
 
-    function syncOfflineUi() {
-        var online = navigator.onLine;
-        root.classList.toggle('rateb-pos--offline', !online);
+    function syncOfflineUi(online) {
+        var isOnline = online;
+        if (typeof isOnline !== 'boolean') {
+            isOnline = window.RatebPosConnectivity
+                ? window.RatebPosConnectivity.isOnline()
+                : navigator.onLine;
+        }
+        root.classList.toggle('rateb-pos--offline', !isOnline);
     }
 
     registerServiceWorker();
-    syncOfflineUi();
-    window.addEventListener('online', syncOfflineUi);
-    window.addEventListener('offline', syncOfflineUi);
+    if (window.RatebPosConnectivity && window.RatebPosConnectivity.subscribe) {
+        window.RatebPosConnectivity.subscribe(syncOfflineUi);
+    } else {
+        syncOfflineUi(navigator.onLine);
+        window.addEventListener('online', function () { syncOfflineUi(true); });
+        window.addEventListener('offline', function () { syncOfflineUi(false); });
+    }
 })();

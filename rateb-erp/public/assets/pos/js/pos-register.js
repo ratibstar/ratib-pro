@@ -674,7 +674,8 @@
             closeList();
             return;
         }
-        if (!navigator.onLine && window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
+        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine)
+            && window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
             window.RatebPosOffline.catalogSearch(q, 40).then(function (items) {
                 renderListItems(els.productList, items || [], 'product');
             }).catch(function () { closeList(); });
@@ -711,7 +712,8 @@
                 showStatus(t('pos_product_not_found', 'Product not found'));
             }
         }
-        if (!navigator.onLine && window.RatebPosOffline && window.RatebPosOffline.catalogLookupBarcode) {
+        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine)
+            && window.RatebPosOffline && window.RatebPosOffline.catalogLookupBarcode) {
             window.RatebPosOffline.catalogLookupBarcode(code).then(onFound).finally(function () {
                 if (els.barcodeInput) {
                     els.barcodeInput.value = '';
@@ -773,7 +775,7 @@
             return;
         }
 
-        if (!navigator.onLine) {
+        if (window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine) {
             return;
         }
 

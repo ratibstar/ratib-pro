@@ -323,7 +323,7 @@
             }).then(function () {
                 return refreshDepth();
             }).then(function () {
-                if (navigator.onLine) {
+                if (window.RatebPosConnectivity ? window.RatebPosConnectivity.isOnline() : navigator.onLine) {
                     return window.RatebPosOffline.sync(options);
                 }
                 return { queued: true, queueDepth: window.RatebPosOffline.queueDepth };
@@ -383,7 +383,109 @@
 
     deferOfflineInit();
 
-    window.addEventListener('online', function () {
-        window.RatebPosOffline.sync().catch(function () { /* retry later */ });
-    });
+    (function setupConnectivity() {
+        var listeners = [];
+        var online = navigator.onLine !== false;
+        var probeTimer = null;
+        var probing = false;
+
+        function emit() {
+            listeners.forEach(function (fn) {
+                try { fn(online); } catch (e) { /* ignore */ }
+            });
+            try {
+                document.dispatchEvent(new CustomEvent('rateb-pos-connectivity', { detail: { online: online } }));
+            } catch (e2) { /* ignore */ }
+        }
+
+        function setOnline(next) {
+            next = !!next;
+            if (online === next) {
+                return;
+            }
+            online = next;
+            emit();
+            if (online && window.RatebPosOffline && window.RatebPosOffline.sync) {
+                window.RatebPosOffline.sync().catch(function () { /* retry later */ });
+            }
+        }
+
+        function resolveProbeUrl() {
+            var cfgEl = document.getElementById('rateb-pos-register-config');
+            var cfg = {};
+            try {
+                cfg = JSON.parse((cfgEl && cfgEl.textContent) || '{}');
+            } catch (e) {
+                cfg = {};
+            }
+            var api = cfg.api || {};
+            if (api.sync) {
+                return String(api.sync).replace(/\/$/, '') + '/status';
+            }
+            if (api.bootstrap) {
+                return String(api.bootstrap);
+            }
+            return defaultApiBase() + '/status';
+        }
+
+        function probe() {
+            if (probing) {
+                return Promise.resolve(online);
+            }
+            if (navigator.onLine === false) {
+                setOnline(false);
+                return Promise.resolve(false);
+            }
+            probing = true;
+            var url = resolveProbeUrl();
+            var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var timer = setTimeout(function () {
+                if (ctrl) {
+                    try { ctrl.abort(); } catch (e) { /* ignore */ }
+                }
+            }, 3500);
+            return fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
+                signal: ctrl ? ctrl.signal : undefined
+            }).then(function () {
+                // Any HTTP response means the POS origin is reachable.
+                setOnline(true);
+                return true;
+            }).catch(function () {
+                setOnline(false);
+                return false;
+            }).finally(function () {
+                clearTimeout(timer);
+                probing = false;
+            });
+        }
+
+        window.RatebPosConnectivity = {
+            isOnline: function () { return online; },
+            probe: probe,
+            subscribe: function (fn) {
+                if (typeof fn !== 'function') {
+                    return function () {};
+                }
+                listeners.push(fn);
+                try { fn(online); } catch (e) { /* ignore */ }
+                return function () {
+                    listeners = listeners.filter(function (x) { return x !== fn; });
+                };
+            }
+        };
+
+        window.addEventListener('online', function () { probe(); });
+        window.addEventListener('offline', function () { setOnline(false); });
+        setTimeout(probe, 200);
+        probeTimer = setInterval(probe, 12000);
+        window.addEventListener('beforeunload', function () {
+            if (probeTimer) {
+                clearInterval(probeTimer);
+            }
+        });
+    })();
 })();

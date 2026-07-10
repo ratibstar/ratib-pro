@@ -447,7 +447,7 @@
             checkoutIdempotencyKey = newIdempotencyKey();
         }
 
-        if (!navigator.onLine && window.RatebPosOffline) {
+        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine) && window.RatebPosOffline) {
             var cfgScope = config.registerScope || {};
             var cfgSess = config.session || {};
             var cfgCtx = config.context || {};
