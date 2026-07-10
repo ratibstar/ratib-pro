@@ -144,12 +144,32 @@ final class PosRegisterApiController extends PosBaseController
             $scope['session_id']
         );
         if ($product === null) {
-            // Catalog/demo product not in inventory bridge — client falls back to local cart.
+            // Demo/catalog seed (990001+) or client-supplied snapshot — add without inventory row.
+            $product = $this->resolveCatalogProductFallback($productId, $payload);
+            if ($product === null) {
+                $this->json([
+                    'ok' => false,
+                    'error' => __('pos_product_not_found'),
+                    'fallback_local' => true,
+                ], 404);
+                return;
+            }
+            $cart = new PosRegisterCartService();
+            $currentLines = $session->getCartLines();
+            $result = $this->addCatalogProductLocal($cart, $currentLines, $product, $qty, $serialNo);
+            if (!$result['ok']) {
+                $this->json(['ok' => false, 'error' => (string) ($result['error'] ?? __('invalid_request'))], 422);
+                return;
+            }
+            $lines = $result['lines'] ?? [];
+            $session->setCartLines($lines);
             $this->json([
-                'ok' => false,
-                'error' => __('pos_product_not_found'),
-                'fallback_local' => true,
-            ], 404);
+                'ok' => true,
+                'demo' => true,
+                'line' => $result['line'] ?? null,
+                'lines' => $lines,
+                'totals' => $cart->totals($lines),
+            ]);
             return;
         }
 
@@ -770,5 +790,101 @@ final class PosRegisterApiController extends PosBaseController
             return $cid > 0 ? (new PosCustomerBridgeService())->findById($cid) : null;
         }
         return null;
+    }
+
+    /**
+     * Resolve demo/catalog seed products that are not inventory rows (ids 990001+).
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>|null
+     */
+    private function resolveCatalogProductFallback(int $productId, array $payload): ?array
+    {
+        $demos = [
+            990001 => ['item_code' => 'DEMO-ESP', 'item_name' => 'Espresso (Demo)', 'unit_price' => 12.00],
+            990002 => ['item_code' => 'DEMO-LAT', 'item_name' => 'Latte (Demo)', 'unit_price' => 16.00],
+            990003 => ['item_code' => 'DEMO-CRO', 'item_name' => 'Croissant (Demo)', 'unit_price' => 9.50],
+            990004 => ['item_code' => 'DEMO-SAN', 'item_name' => 'Chicken Sandwich (Demo)', 'unit_price' => 22.00],
+            990005 => ['item_code' => 'DEMO-WAT', 'item_name' => 'Water 330ml (Demo)', 'unit_price' => 3.00],
+        ];
+        if (isset($demos[$productId])) {
+            $d = $demos[$productId];
+            return [
+                'id' => $productId,
+                'item_code' => $d['item_code'],
+                'item_name' => $d['item_name'],
+                'unit_price' => $d['unit_price'],
+                'demo' => true,
+                'availability' => ['can_add' => true, 'available' => 999.0, 'on_hand' => 999.0],
+            ];
+        }
+
+        $name = trim((string) ($payload['item_name'] ?? $payload['name'] ?? ''));
+        $price = (float) ($payload['unit_price'] ?? $payload['price'] ?? 0);
+        $code = trim((string) ($payload['item_code'] ?? $payload['sku'] ?? ''));
+        if ($productId >= 990000 && ($name !== '' || $price > 0)) {
+            return [
+                'id' => $productId,
+                'item_code' => $code !== '' ? $code : ('DEMO-' . $productId),
+                'item_name' => $name !== '' ? $name : ('Item #' . $productId),
+                'unit_price' => max(0, $price),
+                'demo' => true,
+                'availability' => ['can_add' => true, 'available' => 999.0, 'on_hand' => 999.0],
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Add a catalog/demo product without inventory reservation checks.
+     *
+     * @param array<int, array<string, mixed>> $lines
+     * @param array<string, mixed> $product
+     * @return array{ok: bool, lines?: array<int, array<string, mixed>>, line?: array<string, mixed>, error?: string}
+     */
+    private function addCatalogProductLocal(
+        PosRegisterCartService $cart,
+        array $lines,
+        array $product,
+        float $qty,
+        string $serialNo
+    ): array {
+        $productId = (int) ($product['id'] ?? 0);
+        $qty = max(0.001, $qty);
+        $unitPrice = max(0, round((float) ($product['unit_price'] ?? 0), 2));
+        $mergeSerial = $serialNo === '' && empty($product['requires_serial']);
+
+        if ($mergeSerial) {
+            foreach ($lines as &$line) {
+                if ((int) ($line['product_id'] ?? 0) === $productId && empty($line['serial_no'])) {
+                    $line['quantity'] = round((float) ($line['quantity'] ?? 0) + $qty, 3);
+                    $line['unit_price'] = $unitPrice > 0 ? $unitPrice : (float) ($line['unit_price'] ?? 0);
+                    $line['line_total'] = round((float) $line['quantity'] * (float) $line['unit_price'], 2);
+                    $updated = $line;
+                    unset($line);
+                    return ['ok' => true, 'lines' => $cart->normalizeLines($lines), 'line' => $updated];
+                }
+            }
+            unset($line);
+        }
+
+        $newLine = [
+            'id' => bin2hex(random_bytes(8)),
+            'product_id' => $productId,
+            'item_code' => (string) ($product['item_code'] ?? ''),
+            'item_name' => (string) ($product['item_name'] ?? ''),
+            'barcode' => (string) ($product['barcode'] ?? ''),
+            'quantity' => $qty,
+            'unit_price' => $unitPrice,
+            'line_total' => round($qty * $unitPrice, 2),
+            'serial_no' => $serialNo !== '' ? $serialNo : null,
+            'available_qty' => 999.0,
+            'requires_serial' => false,
+            'has_batches' => false,
+        ];
+        $lines[] = $newLine;
+
+        return ['ok' => true, 'lines' => $cart->normalizeLines($lines), 'line' => $newLine];
     }
 }

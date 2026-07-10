@@ -257,6 +257,7 @@ final class PosRegisterBootstrapService
                 'unit_price' => (float) $demo['unit_price'],
                 'category_id' => (int) $catId,
                 'image_url' => '',
+                'demo' => true,
                 'availability' => [
                     'on_hand' => 999.0,
                     'available' => 999.0,

@@ -526,7 +526,14 @@
                 }
                 // Offline without serial picker API — still add the line.
             }
-            if (!api.cartAdd || !isPosOnline()) {
+            // Demo/catalog seed products (990001+) are not in inventory — local cart only.
+            var isDemoProduct = !!product.demo
+                || Number(product.id) >= 990000
+                || (product.item_code && String(product.item_code).indexOf('DEMO-') === 0);
+            if (!api.cartAdd || !isPosOnline() || isDemoProduct) {
+                if (isDemoProduct) {
+                    state.localCartOnly = true;
+                }
                 addProductLocal(product, qty, serialNo);
                 return;
             }
