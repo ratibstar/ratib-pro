@@ -489,6 +489,18 @@ body.rateb-pos-shell--pages {
     background: #f1f5f9;
 }
 
+.rateb-pos__menu-link--danger {
+    margin-top: 8px;
+    color: #dc2626;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+}
+
+.rateb-pos__menu-link--danger:hover {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
 .rateb-pos__menu-toggle[aria-expanded="true"] {
     background: rgba(255, 255, 255, 0.28);
 }

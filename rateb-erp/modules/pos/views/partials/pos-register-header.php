@@ -100,6 +100,7 @@ $locale = rateb_locale();
                 </div>
                 <a class="rateb-pos__menu-link" href="<?php echo rateb_app_url('pos/settings'); ?>"><?php echo __('pos_settings'); ?></a>
                 <a class="rateb-pos__menu-link" href="<?php echo rateb_app_url('pos/reports'); ?>"><?php echo __('pos_reports'); ?></a>
+                <a class="rateb-pos__menu-link rateb-pos__menu-link--danger" href="<?php echo rateb_url('admin/logout'); ?>"><?php echo __('logout'); ?></a>
             </div>
         </div>
     </div>
