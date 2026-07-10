@@ -427,19 +427,55 @@
     }
 
     function bindTileEvents(tile, product) {
-        var pid = String(product.id);
-        if (boundTiles[pid] === tile) { return; }
-        boundTiles[pid] = tile;
+        function resolveProduct() {
+            var pid = tile.getAttribute('data-product-id');
+            if (pid != null && productCache[pid]) {
+                return productCache[pid];
+            }
+            if (pid != null && productCache[Number(pid)]) {
+                return productCache[Number(pid)];
+            }
+            return product;
+        }
 
         function addOne(e) {
-            if (tile.classList.contains('is-disabled')) { return; }
-            if (motion.ripple && e) { motion.ripple(tile, e.clientX || 0, e.clientY || 0); }
-            if (window.RatebPosRegister && window.RatebPosRegister.addProduct) {
-                window.RatebPosRegister.addProduct(product, 1);
-                tile.classList.add('is-added');
-                setTimeout(function () { tile.classList.remove('is-added'); }, 280);
-                if (motion.flyToCart) { motion.flyToCart(tile); }
+            if (tile.classList.contains('is-disabled') && (window.RatebPosConnectivity ? window.RatebPosConnectivity.isOnline() : navigator.onLine)) {
+                return;
             }
+            var item = resolveProduct();
+            if (!item || item.id == null) {
+                notify(t('pos_product_not_found', 'Product not found'));
+                return;
+            }
+            try {
+                if (motion.ripple && e) { motion.ripple(tile, e.clientX || 0, e.clientY || 0); }
+            } catch (errRipple) { /* ignore motion errors */ }
+
+            var added = false;
+            try {
+                if (window.RatebPosRegister && typeof window.RatebPosRegister.addProduct === 'function') {
+                    window.RatebPosRegister.addProduct(item, 1);
+                    added = true;
+                } else if (window.RatebPosRegister && typeof window.RatebPosRegister.addProductLocal === 'function') {
+                    window.RatebPosRegister.addProductLocal(item, 1);
+                    added = true;
+                }
+            } catch (errAdd) {
+                added = false;
+            }
+            if (!added) {
+                try {
+                    document.dispatchEvent(new CustomEvent('rateb-pos-add-product', { detail: { product: item, qty: 1 } }));
+                } catch (errEvt) {
+                    notify(t('pos_product_not_found', 'Product not found'));
+                    return;
+                }
+            }
+            tile.classList.add('is-added');
+            setTimeout(function () { tile.classList.remove('is-added'); }, 280);
+            try {
+                if (motion.flyToCart) { motion.flyToCart(tile); }
+            } catch (errFly) { /* ignore */ }
         }
 
         tile.onclick = addOne;
@@ -450,7 +486,11 @@
 
     function fillTile(tile, product) {
         var avail = product.availability || {};
-        var canAdd = avail.can_add !== false;
+        var online = navigator.onLine !== false;
+        if (online && window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
+            online = window.RatebPosConnectivity.isOnline();
+        }
+        var canAdd = online ? (avail.can_add !== false) : true;
         var imgUrl = productImageUrl(product);
         var modHint = !!(product.has_modifiers || product.requires_modifiers);
         var tileColor = categoryTileColor(product);

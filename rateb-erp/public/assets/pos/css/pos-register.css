@@ -957,6 +957,12 @@ html[dir="rtl"] .rateb-pos__nav {
     pointer-events: none;
 }
 
+.rateb-pos--offline .rateb-pos__tile.is-disabled {
+    pointer-events: auto;
+    opacity: 0.85;
+    filter: none;
+}
+
 .rateb-pos__tile-surface {
     position: relative;
     width: 100%;

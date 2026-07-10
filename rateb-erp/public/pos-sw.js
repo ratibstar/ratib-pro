@@ -1,8 +1,8 @@
 /* Rateb POS — offline app shell (Phase 4) */
 'use strict';
 
-var SHELL_CACHE = 'rateb-pos-shell-v1';
-var ASSET_CACHE = 'rateb-pos-assets-v1';
+var SHELL_CACHE = 'rateb-pos-shell-v3';
+var ASSET_CACHE = 'rateb-pos-assets-v3';
 
 function isPosNavigation(url) {
     return url.pathname.indexOf('/pos') !== -1 || url.pathname.indexOf('/admin/ops/pos') !== -1;
@@ -66,20 +66,18 @@ self.addEventListener('fetch', function (event) {
     }
 
     if (isPosAsset(url)) {
+        // Network-first so new ?v= builds are not stuck behind stale SW cache.
         event.respondWith(
-            caches.match(event.request).then(function (cached) {
-                if (cached) {
-                    return cached;
+            fetch(event.request).then(function (response) {
+                if (response && response.ok) {
+                    var clone = response.clone();
+                    caches.open(ASSET_CACHE).then(function (cache) {
+                        cache.put(event.request, clone);
+                    });
                 }
-                return fetch(event.request).then(function (response) {
-                    if (response && response.ok) {
-                        var clone = response.clone();
-                        caches.open(ASSET_CACHE).then(function (cache) {
-                            cache.put(event.request, clone);
-                        });
-                    }
-                    return response;
-                });
+                return response;
+            }).catch(function () {
+                return caches.match(event.request);
             })
         );
         return;

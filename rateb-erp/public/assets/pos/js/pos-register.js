@@ -114,10 +114,14 @@
     window.RatebPosNotify = showStatus;
 
     function isPosOnline() {
+        // Browser offline flag wins — Connectivity probe can lag behind DevTools/offline.
+        if (navigator.onLine === false) {
+            return false;
+        }
         if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
             return window.RatebPosConnectivity.isOnline();
         }
-        return navigator.onLine !== false;
+        return true;
     }
 
     function markPosOffline() {
@@ -422,6 +426,10 @@
     }
 
     function addProductLocal(product, qty, serialNo) {
+        if (!product || product.id == null) {
+            showStatus(t('pos_product_not_found', 'Product not found'), true);
+            return false;
+        }
         qty = Math.max(1, Number(qty) || 1);
         var price = Number(product.unit_price != null ? product.unit_price : (product.price || 0));
         if (!isFinite(price)) {
@@ -463,49 +471,80 @@
         renderCartWithoutSave();
         scheduleSave();
         showStatus(t('pos_add_to_cart', 'Added to cart'));
+        return true;
     }
 
     function addProduct(product, qty, serialNo) {
-        qty = qty || 1;
-        var avail = product && product.availability ? product.availability : {};
-        if (avail.can_add === false) {
-            showStatus(t('pos_out_of_stock', 'Out of stock'));
-            return;
-        }
-        if (product.requires_serial && !serialNo && !product.matched_serial) {
-            openSerialPicker(product, qty);
-            return;
-        }
-        if (!api.cartAdd || !isPosOnline()) {
-            addProductLocal(product, qty, serialNo);
-            return;
-        }
-        var body = new URLSearchParams();
-        body.set('_csrf', csrfToken());
-        body.set('product_id', String(product.id));
-        body.set('quantity', String(qty));
-        if (serialNo || product.matched_serial) {
-            body.set('serial_no', serialNo || product.matched_serial);
-        }
-        fetchJson(api.cartAdd, { method: 'POST', body: body })
-            .then(function (data) {
-                state.lines = data.lines || [];
-                if (data.totals) {
-                    state.totals = data.totals;
-                    renderTotals();
+        try {
+            qty = qty || 1;
+            if (!product || product.id == null) {
+                showStatus(t('pos_product_not_found', 'Product not found'), true);
+                return;
+            }
+            var avail = product.availability ? product.availability : {};
+            // Offline: allow cached catalog even if last known stock said can_add=false.
+            if (avail.can_add === false && isPosOnline()) {
+                showStatus(t('pos_out_of_stock', 'Out of stock'));
+                return;
+            }
+            if (product.requires_serial && !serialNo && !product.matched_serial) {
+                if (typeof openSerialPicker === 'function' && isPosOnline()) {
+                    openSerialPicker(product, qty);
+                    return;
                 }
-                state.selectedLineId = null;
-                renderCartWithoutSave();
-                scheduleSave();
-                showStatus(t('pos_add_to_cart', 'Added to cart'));
-            })
-            .catch(function (err) {
+                // Offline without serial picker API — still add the line.
+            }
+            if (!api.cartAdd || !isPosOnline()) {
                 addProductLocal(product, qty, serialNo);
-                if (err && err.message && !/offline|Failed to fetch|NetworkError/i.test(String(err.message))) {
-                    // Local add succeeded; keep quiet for network failures.
-                }
-            });
+                return;
+            }
+            var body = new URLSearchParams();
+            body.set('_csrf', csrfToken());
+            body.set('product_id', String(product.id));
+            body.set('quantity', String(qty));
+            if (serialNo || product.matched_serial) {
+                body.set('serial_no', serialNo || product.matched_serial);
+            }
+            fetchJson(api.cartAdd, { method: 'POST', body: body })
+                .then(function (data) {
+                    if (data && Array.isArray(data.lines) && data.lines.length) {
+                        state.lines = data.lines;
+                        if (data.totals) {
+                            state.totals = data.totals;
+                            renderTotals();
+                        }
+                        state.selectedLineId = null;
+                        renderCartWithoutSave();
+                        scheduleSave();
+                        showStatus(t('pos_add_to_cart', 'Added to cart'));
+                        return;
+                    }
+                    // Empty/invalid server payload — keep cashier unblocked.
+                    addProductLocal(product, qty, serialNo);
+                })
+                .catch(function () {
+                    addProductLocal(product, qty, serialNo);
+                });
+        } catch (err) {
+            try {
+                addProductLocal(product, qty, serialNo);
+            } catch (err2) {
+                showStatus(t('pos_product_not_found', 'Product not found'), true);
+            }
+        }
     }
+
+    // Expose early so tiles can add even if later init throws.
+    window.RatebPosRegister = {
+        addProduct: addProduct,
+        addProductLocal: addProductLocal,
+        adjustLineQty: function (lineId, delta) {
+            if (typeof adjustLineQty === 'function') {
+                adjustLineQty(lineId, delta);
+            }
+        },
+        getState: function () { return state; }
+    };
 
     function renderCartWithoutSave() {
         renderCartLines();
@@ -1314,6 +1353,12 @@
     bindEvents();
     loadSession();
     root.setAttribute('data-pos-register-ready', '1');
+    document.addEventListener('rateb-pos-add-product', function (ev) {
+        var detail = (ev && ev.detail) || {};
+        if (detail.product) {
+            addProduct(detail.product, detail.qty || 1, detail.serialNo);
+        }
+    });
 
     window.RatebPosRegisterReset = function () {
         state.lines = [];
@@ -1334,6 +1379,7 @@
     };
     window.RatebPosRegister = {
         addProduct: addProduct,
+        addProductLocal: addProductLocal,
         adjustLineQty: adjustLineQty,
         getState: function () { return state; }
     };
