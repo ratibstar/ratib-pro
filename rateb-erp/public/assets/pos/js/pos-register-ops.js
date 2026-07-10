@@ -62,8 +62,22 @@
         setTimeout(fn, timeoutMs || 500);
     }
 
+    function isOffline() {
+        if (window.RatebPosNet && window.RatebPosNet.isOnline) {
+            return !window.RatebPosNet.isOnline();
+        }
+        return window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine;
+    }
+
     function fetchJson(url, opts) {
         opts = opts || {};
+        if (window.RatebPosNet && window.RatebPosNet.fetchJson) {
+            opts.csrf = csrf();
+            return window.RatebPosNet.fetchJson(url, opts, t);
+        }
+        if (isOffline() && !opts.allowOffline) {
+            return Promise.reject(new Error(t('pos_offline', 'Offline')));
+        }
         var headers = opts.headers || {};
         headers.Accept = 'application/json';
         if (opts.method === 'POST') {
@@ -81,6 +95,14 @@
                 }
                 return data;
             });
+        }).catch(function (err) {
+            var msg = String((err && err.message) || err || '');
+            if (/Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline/i.test(msg) || !navigator.onLine) {
+                if (window.RatebPosNet && window.RatebPosNet.markOffline) {
+                    window.RatebPosNet.markOffline();
+                }
+            }
+            throw err;
         });
     }
 
@@ -259,6 +281,10 @@
         if (!api.searchOrders) {
             return Promise.resolve([]);
         }
+        if (isOffline()) {
+            notify(t('pos_offline', 'Offline'), true);
+            return Promise.resolve([]);
+        }
         var url = api.searchOrders + '?q=' + encodeURIComponent(term || '');
         return fetchJson(url).then(function (data) {
             return data.items || [];
@@ -362,10 +388,6 @@
             }
         });
         return out;
-    }
-
-    function isOffline() {
-        return window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine;
     }
 
     function offlineScope() {

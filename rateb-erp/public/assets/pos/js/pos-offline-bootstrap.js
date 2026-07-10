@@ -41,7 +41,35 @@
         root.classList.toggle('rateb-pos--offline', !isOnline);
     }
 
+    function bindOfflineNavGuard() {
+        var blocked = /\/pos\/(reports|settings|dashboard|shifts|terminals)(\/|$|\?)/i;
+        document.addEventListener('click', function (e) {
+            var link = e.target.closest('a[href]');
+            if (!link || !root.contains(link)) {
+                return;
+            }
+            var href = link.getAttribute('href') || '';
+            if (!blocked.test(href)) {
+                return;
+            }
+            var offline = window.RatebPosNet
+                ? !window.RatebPosNet.isOnline()
+                : (window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine);
+            if (!offline) {
+                return;
+            }
+            e.preventDefault();
+            if (window.RatebPosNotify) {
+                window.RatebPosNotify(
+                    (config.i18n && config.i18n.pos_offline_nav_blocked) || 'This page needs a connection. Stay on the register while offline.',
+                    true
+                );
+            }
+        }, true);
+    }
+
     registerServiceWorker();
+    bindOfflineNavGuard();
     if (window.RatebPosConnectivity && window.RatebPosConnectivity.subscribe) {
         window.RatebPosConnectivity.subscribe(syncOfflineUi);
     } else {

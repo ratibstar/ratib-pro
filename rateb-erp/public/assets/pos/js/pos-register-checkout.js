@@ -76,8 +76,28 @@
         return 'pos-' + Date.now() + '-' + Math.random().toString(16).slice(2);
     }
 
+    function isPosOnline() {
+        if (window.RatebPosNet && window.RatebPosNet.isOnline) {
+            return window.RatebPosNet.isOnline();
+        }
+        if (navigator.onLine === false) {
+            return false;
+        }
+        if (window.RatebPosConnectivity && window.RatebPosConnectivity.isOnline) {
+            return window.RatebPosConnectivity.isOnline();
+        }
+        return true;
+    }
+
     function fetchJson(url, options) {
         options = options || {};
+        if (window.RatebPosNet && window.RatebPosNet.fetchJson) {
+            options.csrf = csrfToken();
+            return window.RatebPosNet.fetchJson(url, options, t);
+        }
+        if (!isPosOnline() && !options.allowOffline) {
+            return Promise.reject(new Error(t('pos_offline', 'Offline')));
+        }
         var headers = options.headers || {};
         headers['Accept'] = 'application/json';
         if (options.method === 'POST') {
@@ -95,7 +115,59 @@
                 }
                 return data;
             });
+        }).catch(function (err) {
+            var msg = String((err && err.message) || err || '');
+            if (/Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline/i.test(msg) || !navigator.onLine) {
+                if (window.RatebPosNet && window.RatebPosNet.markOffline) {
+                    window.RatebPosNet.markOffline();
+                }
+            }
+            throw err;
         });
+    }
+
+    function computeLocalPricing(state) {
+        var subtotal = 0;
+        (state.lines || []).forEach(function (line) {
+            subtotal += Number(line.line_total || 0);
+        });
+        var discType = invoiceDiscType ? invoiceDiscType.value : 'amount';
+        var discVal = invoiceDiscValue ? Number(invoiceDiscValue.value || 0) : 0;
+        var discount = 0;
+        if (discType === 'percent') {
+            discount = Math.round(subtotal * discVal / 100 * 100) / 100;
+        } else {
+            discount = discVal;
+        }
+        discount = Math.min(discount, subtotal);
+        var afterDisc = Math.max(0, subtotal - discount);
+        var tax = Math.round(afterDisc * 0.15 * 100) / 100;
+        return {
+            subtotal: subtotal,
+            discount_total: discount,
+            tax: tax,
+            total: Math.round((afterDisc + tax) * 100) / 100
+        };
+    }
+
+    function applyPricingToUi(p) {
+        pricingTotal = Number(p.total || 0);
+        if (payDueEl) {
+            payDueEl.textContent = money(pricingTotal);
+        }
+        if (payHeadTotal) {
+            payHeadTotal.textContent = money(pricingTotal);
+        }
+        if (checkoutSummary) {
+            var html = '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_subtotal', 'Subtotal') + '</dt><dd>' + money(p.subtotal) + '</dd></div>';
+            if (Number(p.discount_total || 0) > 0) {
+                html += '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_discount_total', 'Discount') + '</dt><dd>-' + money(p.discount_total) + '</dd></div>';
+            }
+            html += '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_tax', 'Tax') + '</dt><dd>' + money(p.tax) + '</dd></div>';
+            checkoutSummary.innerHTML = html;
+        }
+        updateChangeDue();
+        return p;
     }
 
     function money(n) {
@@ -141,7 +213,10 @@
     }
 
     function refreshLoyaltyBalance() {
-        if (!api.loyaltyBalance || !loyaltyBalanceEl) {
+        if (!api.loyaltyBalance || !loyaltyBalanceEl || !isPosOnline()) {
+            if (loyaltyBalanceEl && !isPosOnline()) {
+                loyaltyBalanceEl.textContent = t('pos_loyalty_balance', 'Loyalty balance') + ': —';
+            }
             return Promise.resolve();
         }
         var customer = getState().customer;
@@ -161,11 +236,20 @@
 
     function refreshPricing() {
         var state = getState();
-        if (!api.pricing || !state.lines.length) {
+        if (!state.lines.length) {
             if (checkoutSummary) {
                 checkoutSummary.innerHTML = '';
             }
             return Promise.resolve(null);
+        }
+        if (!isPosOnline()) {
+            var local = (state.totals && Number(state.totals.total) > 0)
+                ? state.totals
+                : computeLocalPricing(state);
+            return Promise.resolve(applyPricingToUi(local));
+        }
+        if (!api.pricing) {
+            return Promise.resolve(applyPricingToUi(computeLocalPricing(state)));
         }
         var body = new URLSearchParams();
         body.set('_csrf', csrfToken());
@@ -175,24 +259,9 @@
             value: invoiceDiscValue ? Number(invoiceDiscValue.value || 0) : 0
         }));
         return fetchJson(api.pricing, { method: 'POST', body: body }).then(function (data) {
-            var p = data.pricing || data.totals || {};
-            pricingTotal = Number(p.total || 0);
-            if (payDueEl) {
-                payDueEl.textContent = money(pricingTotal);
-            }
-            if (payHeadTotal) {
-                payHeadTotal.textContent = money(pricingTotal);
-            }
-            if (checkoutSummary) {
-                var html = '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_subtotal', 'Subtotal') + '</dt><dd>' + money(p.subtotal) + '</dd></div>';
-                if (Number(p.discount_total || 0) > 0) {
-                    html += '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_discount_total', 'Discount') + '</dt><dd>-' + money(p.discount_total) + '</dd></div>';
-                }
-                html += '<div class="rateb-pos__pay-summary-row"><dt>' + t('pos_tax', 'Tax') + '</dt><dd>' + money(p.tax) + '</dd></div>';
-                checkoutSummary.innerHTML = html;
-            }
-            updateChangeDue();
-            return p;
+            return applyPricingToUi(data.pricing || data.totals || computeLocalPricing(state));
+        }).catch(function () {
+            return applyPricingToUi(computeLocalPricing(state));
         });
     }
 
@@ -285,6 +354,10 @@
         if (!api.validateGiftCard || !giftCardInput) {
             return;
         }
+        if (!isPosOnline()) {
+            notify(t('pos_offline', 'Offline'), true);
+            return;
+        }
         var code = (giftCardInput.value || '').trim();
         if (!code) {
             return;
@@ -354,7 +427,11 @@
         }
         refreshLoyaltyBalance();
         refreshPricing().then(function (p) {
+            var state = getState();
             setActiveAmount(p ? p.total : (state.totals && state.totals.total) || 0);
+        }).catch(function () {
+            var state = getState();
+            setActiveAmount((state.totals && state.totals.total) || 0);
         });
     }
 
@@ -407,6 +484,10 @@
         if (!api.validateCoupon || !couponInput) {
             return;
         }
+        if (!isPosOnline()) {
+            notify(t('pos_offline', 'Offline'), true);
+            return;
+        }
         var code = (couponInput.value || '').trim();
         if (!code) {
             return;
@@ -447,7 +528,7 @@
             checkoutIdempotencyKey = newIdempotencyKey();
         }
 
-        if ((window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine) && window.RatebPosOffline) {
+        if (!isPosOnline() && window.RatebPosOffline) {
             var cfgScope = config.registerScope || {};
             var cfgSess = config.session || {};
             var cfgCtx = config.context || {};

@@ -517,6 +517,59 @@
         window.RatebPosOffline.init().catch(function () { /* IndexedDB optional */ });
     }
 
+    /** Shared network helpers for POS scripts (Phase 2B). */
+    window.RatebPosNet = {
+        isOnline: function () {
+            if (navigator.onLine === false) {
+                return false;
+            }
+            if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
+                return window.RatebPosConnectivity.isOnline();
+            }
+            return true;
+        },
+        markOffline: function () {
+            if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.setOnline === 'function') {
+                window.RatebPosConnectivity.setOnline(false);
+                return;
+            }
+            try {
+                document.dispatchEvent(new CustomEvent('rateb-pos-force-offline'));
+            } catch (e) { /* ignore */ }
+        },
+        fetchJson: function (url, options, translate) {
+            options = options || {};
+            translate = translate || function (k, fb) { return fb || k; };
+            if (!this.isOnline() && !options.allowOffline) {
+                return Promise.reject(new Error(translate('pos_offline', 'Offline')));
+            }
+            var headers = options.headers || {};
+            headers.Accept = 'application/json';
+            if (options.method === 'POST') {
+                headers['X-CSRF-Token'] = options.csrf || '';
+            }
+            return fetch(url, {
+                method: options.method || 'GET',
+                credentials: 'same-origin',
+                headers: headers,
+                body: options.body || null
+            }).then(function (res) {
+                return res.json().then(function (data) {
+                    if (!res.ok) {
+                        throw new Error((data && data.error) ? data.error : translate('invalid_request', 'Request failed'));
+                    }
+                    return data;
+                });
+            }).catch(function (err) {
+                var msg = String((err && err.message) || err || '');
+                if (/Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline/i.test(msg) || !navigator.onLine) {
+                    window.RatebPosNet.markOffline();
+                }
+                throw err;
+            });
+        }
+    };
+
     deferOfflineInit();
 
     (function setupConnectivity() {

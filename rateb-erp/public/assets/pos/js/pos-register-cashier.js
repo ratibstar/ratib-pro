@@ -34,6 +34,14 @@
 
     function fetchJson(url, opts) {
         opts = opts || {};
+        if (window.RatebPosNet && window.RatebPosNet.fetchJson) {
+            opts.csrf = csrf();
+            return window.RatebPosNet.fetchJson(url, opts, t);
+        }
+        var offline = window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine;
+        if (offline && !opts.allowOffline) {
+            return Promise.reject(new Error(t('pos_offline', 'Offline')));
+        }
         var headers = opts.headers || {};
         headers.Accept = 'application/json';
         if (opts.method === 'POST') {
@@ -51,6 +59,14 @@
                 }
                 return data;
             });
+        }).catch(function (err) {
+            var msg = String((err && err.message) || err || '');
+            if (/Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline/i.test(msg) || !navigator.onLine) {
+                if (window.RatebPosNet && window.RatebPosNet.markOffline) {
+                    window.RatebPosNet.markOffline();
+                }
+            }
+            throw err;
         });
     }
 
@@ -222,6 +238,15 @@
             modal(xModal, true);
             if (bodyEl) {
                 bodyEl.innerHTML = '<p class="rateb-pos__hint">' + t('pos_register_loading', 'Loading…') + '</p>';
+            }
+            var offline = window.RatebPosNet
+                ? !window.RatebPosNet.isOnline()
+                : (window.RatebPosConnectivity ? !window.RatebPosConnectivity.isOnline() : !navigator.onLine);
+            if (offline) {
+                if (bodyEl) {
+                    bodyEl.innerHTML = '<p class="rateb-pos__hint">' + t('pos_offline', 'Offline') + '</p>';
+                }
+                return;
             }
             fetchJson(api.xReport).then(function (data) {
                 var r = data.report || {};
