@@ -2,10 +2,12 @@
     'use strict';
 
     var DB_NAME = 'rateb_pos_offline';
-    var DB_VERSION = 2;
+    var DB_VERSION = 3;
     var QUEUE_STORE = 'queue';
     var CATALOG_STORE = 'catalog';
+    var META_STORE = 'meta';
     var LEGACY_KEY = 'rateb_pos_offline_queue_v1';
+    var CATALOG_META_KEY = 'catalog_meta';
     var dbPromise = null;
 
     function openDb() {
@@ -25,6 +27,9 @@
                 }
                 if (!db.objectStoreNames.contains(CATALOG_STORE)) {
                     db.createObjectStore(CATALOG_STORE, { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains(META_STORE)) {
+                    db.createObjectStore(META_STORE, { keyPath: 'key' });
                 }
             };
             req.onsuccess = function () { resolve(req.result); };
@@ -96,13 +101,17 @@
         if (!product || product.id == null) {
             return null;
         }
+        var name = product.item_name || product.name || '';
         return Object.assign({}, product, {
             id: product.id,
-            name: product.name || product.item_name || '',
+            name: name,
+            item_name: product.item_name || name,
             sku: product.sku || product.code || product.item_code || '',
-            barcode: product.barcode || product.barcode_value || '',
+            barcode: product.barcode || product.barcode_value || product.sku || product.item_code || '',
             unit_price: product.unit_price != null ? product.unit_price : (product.price || 0),
-            category_id: product.category_id || null
+            category_id: product.category_id != null ? product.category_id : null,
+            image_url: product.image_url || product.thumbnail_url || product.image || '',
+            availability: product.availability || null
         });
     }
 
@@ -110,19 +119,22 @@
         if (!Array.isArray(products) || !products.length) {
             return Promise.resolve(0);
         }
-        return withStore(CATALOG_STORE, 'readwrite', function (store) {
+        return openDb().then(function (db) {
             return new Promise(function (resolve, reject) {
+                var tx = db.transaction(CATALOG_STORE, 'readwrite');
+                var store = tx.objectStore(CATALOG_STORE);
                 var saved = 0;
                 products.forEach(function (raw) {
                     var product = normalizeProduct(raw);
                     if (!product) {
                         return;
                     }
-                    var req = store.put(product);
-                    req.onsuccess = function () { saved += 1; };
-                    req.onerror = function () { reject(req.error); };
+                    store.put(product);
+                    saved += 1;
                 });
-                resolve(saved);
+                tx.oncomplete = function () { resolve(saved); };
+                tx.onerror = function () { reject(tx.error || new Error('idb_catalog_put_failed')); };
+                tx.onabort = function () { reject(tx.error || new Error('idb_catalog_put_aborted')); };
             });
         });
     }
@@ -134,6 +146,41 @@
                 req.onsuccess = function () { resolve(req.result || []); };
                 req.onerror = function () { reject(req.error); };
             });
+        });
+    }
+
+    function catalogMetaPut(meta) {
+        if (!meta || typeof meta !== 'object') {
+            return Promise.resolve(false);
+        }
+        return openDb().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var tx = db.transaction(META_STORE, 'readwrite');
+                tx.objectStore(META_STORE).put({
+                    key: CATALOG_META_KEY,
+                    productIndex: meta.productIndex || {},
+                    productImages: meta.productImages || {},
+                    categories: Array.isArray(meta.categories) ? meta.categories : [],
+                    savedAt: meta.savedAt || Date.now()
+                });
+                tx.oncomplete = function () { resolve(true); };
+                tx.onerror = function () { reject(tx.error || new Error('idb_meta_put_failed')); };
+            });
+        }).catch(function () {
+            return false;
+        });
+    }
+
+    function catalogMetaGet() {
+        return openDb().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var tx = db.transaction(META_STORE, 'readonly');
+                var req = tx.objectStore(META_STORE).get(CATALOG_META_KEY);
+                req.onsuccess = function () { resolve(req.result || null); };
+                req.onerror = function () { reject(req.error); };
+            });
+        }).catch(function () {
+            return null;
         });
     }
 
@@ -258,6 +305,8 @@
         catalogSearch: catalogSearch,
         catalogLookupBarcode: catalogLookupBarcode,
         catalogGetAll: catalogGetAll,
+        catalogMetaPut: catalogMetaPut,
+        catalogMetaGet: catalogMetaGet,
 
         push: function (item, options) {
             options = options || {};
@@ -329,14 +378,7 @@
     };
 
     function deferOfflineInit() {
-        var run = function () {
-            window.RatebPosOffline.init().catch(function () { /* IndexedDB optional */ });
-        };
-        if (typeof window.requestIdleCallback === 'function') {
-            window.requestIdleCallback(run, { timeout: 4000 });
-        } else {
-            setTimeout(run, 800);
-        }
+        window.RatebPosOffline.init().catch(function () { /* IndexedDB optional */ });
     }
 
     deferOfflineInit();

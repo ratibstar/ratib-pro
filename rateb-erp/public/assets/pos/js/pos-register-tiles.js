@@ -72,12 +72,93 @@
     }
 
     function cacheCatalogOffline(seed) {
-        if (!seed.length || !window.RatebPosOffline || !window.RatebPosOffline.catalogPutMany) {
+        if (!seed || !seed.length) {
             return;
         }
-        deferIdle(function () {
-            window.RatebPosOffline.catalogPutMany(seed);
-        }, 4000);
+        function put() {
+            if (!window.RatebPosOffline || !window.RatebPosOffline.catalogPutMany) {
+                return false;
+            }
+            window.RatebPosOffline.catalogPutMany(seed).catch(function () { /* optional */ });
+            if (window.RatebPosOffline.catalogMetaPut) {
+                window.RatebPosOffline.catalogMetaPut({
+                    productIndex: bootstrap.productIndex || {},
+                    productImages: bootstrap.productImages || {},
+                    categories: bootstrap.categories || [],
+                    savedAt: Date.now()
+                });
+            }
+            return true;
+        }
+        if (put()) {
+            return;
+        }
+        var tries = 0;
+        var timer = setInterval(function () {
+            tries += 1;
+            if (put() || tries > 50) {
+                clearInterval(timer);
+            }
+        }, 100);
+    }
+
+    function whenOfflineReady(timeoutMs) {
+        if (window.RatebPosOffline && window.RatebPosOffline.catalogGetAll) {
+            return Promise.resolve(window.RatebPosOffline);
+        }
+        return new Promise(function (resolve) {
+            var start = Date.now();
+            var max = timeoutMs || 4000;
+            var timer = setInterval(function () {
+                if (window.RatebPosOffline && window.RatebPosOffline.catalogGetAll) {
+                    clearInterval(timer);
+                    resolve(window.RatebPosOffline);
+                    return;
+                }
+                if (Date.now() - start >= max) {
+                    clearInterval(timer);
+                    resolve(null);
+                }
+            }, 50);
+        });
+    }
+
+    function applyOfflineMeta(meta) {
+        if (!meta) {
+            return;
+        }
+        if (meta.productIndex && typeof meta.productIndex === 'object') {
+            bootstrap.productIndex = Object.assign({}, bootstrap.productIndex || {}, meta.productIndex);
+        }
+        if (meta.productImages && typeof meta.productImages === 'object') {
+            bootstrap.productImages = Object.assign({}, bootstrap.productImages || {}, meta.productImages);
+            window.RatebPosProductImages = bootstrap.productImages;
+        }
+        if (Array.isArray(meta.categories) && meta.categories.length && !(bootstrap.categories || []).length) {
+            bootstrap.categories = meta.categories;
+            renderCategories();
+        }
+    }
+
+    function loadCatalogFromIndexedDb() {
+        return whenOfflineReady(4000).then(function (off) {
+            if (!off || !off.catalogGetAll) {
+                return [];
+            }
+            var metaPromise = off.catalogMetaGet ? off.catalogMetaGet() : Promise.resolve(null);
+            return Promise.all([off.catalogGetAll(), metaPromise]).then(function (pair) {
+                var items = pair[0] || [];
+                applyOfflineMeta(pair[1]);
+                items.forEach(function (p) {
+                    if (p && p.id) {
+                        productCache[p.id] = mergeProduct(productCache[p.id], p);
+                    }
+                });
+                return items;
+            });
+        }).catch(function () {
+            return [];
+        });
     }
 
     function productImageUrl(p) {
@@ -212,7 +293,7 @@
     }
 
     function fetchCatalog() {
-        if (catalogLoaded) {
+        if (catalogLoaded && Object.keys(productCache).length) {
             return Promise.resolve(Object.values(productCache));
         }
         var bootItems = seedCatalogFromBootstrap();
@@ -220,27 +301,30 @@
             catalogLoaded = true;
             return Promise.resolve(bootItems);
         }
-        if (!navigator.onLine && window.RatebPosOffline && window.RatebPosOffline.catalogGetAll) {
-            return window.RatebPosOffline.catalogGetAll().then(function (items) {
+
+        function finishFromIdb() {
+            return loadCatalogFromIndexedDb().then(function (items) {
                 catalogLoaded = true;
-                items.forEach(function (p) {
-                    if (p && p.id) {
-                        productCache[p.id] = mergeProduct(productCache[p.id], p);
-                    }
-                });
                 if (!items.length) {
                     notify(t('pos_catalog_empty', 'No products'));
                 }
                 return items;
             });
         }
+
+        if (!navigator.onLine) {
+            return finishFromIdb();
+        }
+
         if (api.bootstrap) {
             return fetchCatalogFromApi().then(function (items) {
-                catalogLoaded = true;
-                if (!items.length) {
-                    notify(t('pos_catalog_empty', 'No products'));
+                if (items && items.length) {
+                    catalogLoaded = true;
+                    return items;
                 }
-                return items;
+                return finishFromIdb();
+            }).catch(function () {
+                return finishFromIdb();
             });
         }
         var seeds = ['a', 'e', 'i', 'o', 'u', '1', '2', '3', 'b', 'c', 'd', 'f', 'g', 'h', 'm', 's'];
@@ -252,9 +336,12 @@
             catalogLoaded = true;
             var items = Object.values(map);
             if (!items.length) {
-                notify(t('pos_catalog_empty', 'No products'));
+                return finishFromIdb();
             }
+            cacheCatalogOffline(items);
             return items;
+        }).catch(function () {
+            return finishFromIdb();
         });
     }
 
@@ -265,7 +352,10 @@
         var cid = Number(catId);
         return items.filter(function (p) {
             var idx = bootstrap.productIndex[String(p.id)];
-            return Number(idx) === cid;
+            if (idx != null && idx !== '') {
+                return Number(idx) === cid;
+            }
+            return Number(p.category_id || 0) === cid;
         });
     }
 
@@ -655,11 +745,41 @@
 
     function bindConnection() {
         if (!connectionEl) { return; }
+        function hydrateIfNeeded() {
+            if (products.length || Object.keys(productCache).length) {
+                if (!products.length && Object.keys(productCache).length) {
+                    setProducts(filterByCategory(Object.values(productCache), activeCategoryId || 'all'));
+                }
+                return Promise.resolve();
+            }
+            return loadCatalogFromIndexedDb().then(function (items) {
+                if (!items.length) {
+                    return;
+                }
+                catalogLoaded = true;
+                setProducts(filterByCategory(Object.values(productCache), activeCategoryId || 'all'));
+            });
+        }
         function sync() {
             var online = navigator.onLine;
             connectionEl.classList.toggle('is-offline', !online);
             var label = connectionEl.querySelector('.rateb-pos-connection__label');
             if (label) { label.textContent = online ? t('pos_online', 'Online') : t('pos_offline', 'Offline'); }
+            root.classList.toggle('rateb-pos--offline', !online);
+            if (!online) {
+                hydrateIfNeeded();
+                return;
+            }
+            if (window.RatebPosOffline && window.RatebPosOffline.sync) {
+                window.RatebPosOffline.sync({ apiBase: (api && api.sync) || undefined }).catch(function () {});
+            }
+            if (!products.length) {
+                catalogLoaded = false;
+                catalogFetchPromise = null;
+                loadCategory({ id: activeCategoryId || 'all', name: '' });
+            } else if (Object.keys(productCache).length) {
+                cacheCatalogOffline(Object.values(productCache));
+            }
         }
         window.addEventListener('online', sync);
         window.addEventListener('offline', sync);

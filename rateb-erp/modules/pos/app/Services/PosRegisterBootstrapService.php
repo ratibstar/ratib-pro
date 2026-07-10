@@ -114,6 +114,9 @@ final class PosRegisterBootstrapService
                     'id' => $id,
                     'item_code' => (string) ($row['item_code'] ?? ''),
                     'item_name' => (string) ($row['item_name'] ?? ''),
+                    'sku' => (string) ($row['sku'] ?? $row['item_code'] ?? ''),
+                    'barcode' => (string) ($row['barcode'] ?? $row['sku'] ?? $row['item_code'] ?? ''),
+                    'name' => (string) ($row['item_name'] ?? ''),
                     'unit_price' => $this->unitPriceFromRow($row),
                     'category_id' => $categoryId,
                     'image_url' => $imgUrl,
@@ -168,7 +171,7 @@ final class PosRegisterBootstrapService
     private function loadInventoryRows(int $companyId, int $scopeWarehouseId, int $scopeBranchId): array
     {
         $db = Database::connection();
-        $sql = 'SELECT id, item_code, item_name, sell_price, unit_cost, category_id, quantity,
+            $sql = 'SELECT id, item_code, item_name, sku, barcode, sell_price, unit_cost, category_id, quantity,
                        warehouse_id, branch_id, document_path
                 FROM rateb_inventory
                 WHERE company_id = :cid';

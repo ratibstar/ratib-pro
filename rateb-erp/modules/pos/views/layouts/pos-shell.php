@@ -7,7 +7,6 @@ $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_H
 $deferScripts = [
     rateb_pos_asset('js/pos-register-motion.js'),
     rateb_pos_asset('js/pos-register-cashier.js'),
-    rateb_pos_asset('js/pos-offline-sync.js'),
     rateb_pos_asset('js/pos-offline-bootstrap.js'),
 ];
 $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
@@ -42,6 +41,7 @@ $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
 <script type="application/json" id="rateb-pos-register-config"><?php echo $configJson ?: '{}'; ?></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-tiles.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>" defer></script>
