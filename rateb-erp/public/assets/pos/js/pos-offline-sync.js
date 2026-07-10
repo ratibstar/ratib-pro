@@ -257,6 +257,40 @@
         return '/rateb-erp/public/admin/ops/pos/api/sync';
     }
 
+    /** Append a path segment before ?query (rateb_app_url adds ?company_id=). */
+    function joinUrlPath(base, pathSuffix) {
+        base = String(base || '');
+        pathSuffix = String(pathSuffix || '');
+        if (!pathSuffix) {
+            return base;
+        }
+        if (pathSuffix.charAt(0) !== '/') {
+            pathSuffix = '/' + pathSuffix;
+        }
+        try {
+            var u = new URL(base, window.location.href);
+            u.pathname = u.pathname.replace(/\/$/, '') + pathSuffix;
+            return u.toString();
+        } catch (e) {
+            var q = base.indexOf('?');
+            if (q >= 0) {
+                return base.slice(0, q).replace(/\/$/, '') + pathSuffix + base.slice(q);
+            }
+            return base.replace(/\/$/, '') + pathSuffix;
+        }
+    }
+
+    function configuredSyncBase() {
+        var cfgEl = document.getElementById('rateb-pos-register-config');
+        var cfg = {};
+        try {
+            cfg = JSON.parse((cfgEl && cfgEl.textContent) || '{}');
+        } catch (e) {
+            cfg = {};
+        }
+        return (cfg.api && cfg.api.sync) ? String(cfg.api.sync) : defaultApiBase();
+    }
+
     function csrfToken() {
         var meta = document.querySelector('meta[name="rateb-csrf"]');
         return meta ? meta.getAttribute('content') : '';
@@ -337,8 +371,8 @@
                     return { accepted: 0, duplicate: 0, conflict: 0, queueDepth: 0 };
                 }
                 var reg = registerContext(options);
-                var base = options.apiBase || defaultApiBase();
-                return fetch(base + '/push', {
+                var base = options.apiBase || configuredSyncBase();
+                return fetch(joinUrlPath(base, '/push'), {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: {
@@ -367,8 +401,8 @@
 
         status: function (options) {
             options = options || {};
-            var base = options.apiBase || defaultApiBase();
-            return fetch(base + '/status', {
+            var base = options.apiBase || configuredSyncBase();
+            return fetch(joinUrlPath(base, '/status'), {
                 credentials: 'same-origin',
                 headers: { 'Accept': 'application/json' }
             }).then(function (res) {
@@ -420,13 +454,14 @@
                 cfg = {};
             }
             var api = cfg.api || {};
-            if (api.sync) {
-                return String(api.sync).replace(/\/$/, '') + '/status';
-            }
+            // Prefer bootstrap — already a working GET JSON endpoint with company_id query.
             if (api.bootstrap) {
                 return String(api.bootstrap);
             }
-            return defaultApiBase() + '/status';
+            if (api.sync) {
+                return joinUrlPath(api.sync, '/status');
+            }
+            return joinUrlPath(defaultApiBase(), '/status');
         }
 
         function probe() {
@@ -451,9 +486,14 @@
                 cache: 'no-store',
                 headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
                 signal: ctrl ? ctrl.signal : undefined
-            }).then(function () {
-                setOnline(true);
-                return true;
+            }).then(function (res) {
+                // Reachable origin counts as online (auth errors still mean network works).
+                if (res && (res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
+                    setOnline(true);
+                    return true;
+                }
+                // Soft failure (e.g. unexpected 404) — keep previous state, don't spam offline flips.
+                return online;
             }).catch(function () {
                 setOnline(false);
                 return false;
