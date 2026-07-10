@@ -1424,11 +1424,33 @@
         renderCartWithoutSave();
         scheduleSave();
     };
+    /** Restore a suspended/local cart into the register UI (offline resume). */
+    window.RatebPosRegisterRestoreCart = function (payload) {
+        payload = payload || {};
+        var lines = Array.isArray(payload.lines) ? payload.lines.slice() : [];
+        state.lines = lines;
+        state.customer = payload.customer || null;
+        state.selectedLineId = null;
+        state.localCartOnly = true;
+        if (payload.totals && Number(payload.totals.total) > 0) {
+            state.totals = payload.totals;
+        } else {
+            computeTotalsLocal();
+        }
+        renderCustomer();
+        renderCartWithoutSave();
+        scheduleSave();
+        return state;
+    };
+    window.RatebPosRenderCart = function () {
+        renderCartWithoutSave();
+    };
     window.RatebPosRegister = {
         addProduct: addProduct,
         addProductLocal: addProductLocal,
         adjustLineQty: adjustLineQty,
-        getState: function () { return state; }
+        getState: function () { return state; },
+        restoreCart: window.RatebPosRegisterRestoreCart
     };
     Object.defineProperty(window, 'RatebPosRegisterState', {
         configurable: true,

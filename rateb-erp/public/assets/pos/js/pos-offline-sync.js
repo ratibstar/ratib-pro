@@ -160,6 +160,50 @@
         });
     }
 
+    /** Resume helper: load suspended draft; if lines were wiped, recover from sync queue payload. */
+    function suspendedGetForResume(clientId) {
+        var key = String(clientId || '');
+        return suspendedGet(key).then(function (entry) {
+            if (entry && Array.isArray(entry.lines) && entry.lines.length) {
+                return entry;
+            }
+            return readAll().then(function (queue) {
+                var match = null;
+                (queue || []).forEach(function (item) {
+                    if (!item || item.action !== 'suspend') {
+                        return;
+                    }
+                    var payload = item.payload || {};
+                    if (String(item.client_id) === key
+                        || String(payload.local_client_id || '') === key) {
+                        match = item;
+                    }
+                });
+                if (!match || !match.payload) {
+                    return entry;
+                }
+                var payload = match.payload;
+                var recovered = {
+                    client_id: key,
+                    id: key,
+                    order_no: (entry && entry.order_no) || ('OFF-' + key.slice(-6).toUpperCase()),
+                    lines: Array.isArray(payload.lines) ? payload.lines : [],
+                    customer: payload.customer || (entry && entry.customer) || null,
+                    totals: entry && entry.totals ? entry.totals : null,
+                    total: entry && entry.total != null ? entry.total : 0,
+                    local: true,
+                    recovered_from_queue: true
+                };
+                if (!recovered.lines.length) {
+                    return entry;
+                }
+                return suspendedPut(recovered).then(function () {
+                    return recovered;
+                });
+            });
+        });
+    }
+
     function buildScopePayload(options) {
         options = options || {};
         var reg = registerContext(options);
@@ -423,6 +467,7 @@
         suspendedList: suspendedList,
         suspendedRemove: suspendedRemove,
         suspendedGet: suspendedGet,
+        suspendedGetForResume: suspendedGetForResume,
 
         push: function (item, options) {
             options = options || {};

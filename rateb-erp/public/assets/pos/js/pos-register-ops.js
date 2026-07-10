@@ -571,13 +571,34 @@
             var clientId = window.RatebPosOffline && window.RatebPosOffline.newClientId
                 ? window.RatebPosOffline.newClientId('suspend')
                 : ('suspend-' + Date.now());
+            var linesCopy;
+            try {
+                linesCopy = JSON.parse(JSON.stringify(st.lines || []));
+            } catch (e) {
+                linesCopy = (st.lines || []).slice();
+            }
+            var customerCopy = null;
+            try {
+                customerCopy = st.customer ? JSON.parse(JSON.stringify(st.customer)) : null;
+            } catch (e2) {
+                customerCopy = st.customer || null;
+            }
+            var totalsCopy = st.totals
+                ? {
+                    subtotal: Number(st.totals.subtotal || 0),
+                    discount_total: Number(st.totals.discount_total || 0),
+                    tax: Number(st.totals.tax || 0),
+                    total: Number(st.totals.total || 0)
+                }
+                : null;
             var localEntry = {
                 client_id: clientId,
                 id: clientId,
                 order_no: 'OFF-' + String(clientId).slice(-6).toUpperCase(),
-                total: (st.totals && st.totals.total) || 0,
-                lines: st.lines,
-                customer: st.customer,
+                total: (totalsCopy && totalsCopy.total) || 0,
+                lines: linesCopy,
+                customer: customerCopy,
+                totals: totalsCopy,
                 created_at: new Date().toISOString(),
                 local: true
             };
@@ -589,8 +610,8 @@
                     client_id: clientId,
                     action: 'suspend',
                     payload: {
-                        lines: st.lines,
-                        customer: st.customer,
+                        lines: linesCopy,
+                        customer: customerCopy,
                         notes: '',
                         scope: scope,
                         local_client_id: clientId
@@ -757,28 +778,109 @@
         });
     }
 
-    function resumeSuspended(id) {
-        if (String(id).indexOf('suspend-') === 0 || String(id).indexOf('local-') === 0) {
-            if (!window.RatebPosOffline || !window.RatebPosOffline.suspendedGet) {
+    function isLocalSuspendedId(id) {
+        var s = String(id || '');
+        return s.indexOf('suspend-') === 0
+            || s.indexOf('local-') === 0
+            || s.indexOf('OFF-') === 0;
+    }
+
+    function resumeLocalSuspended(id) {
+        if (!window.RatebPosOffline || !(window.RatebPosOffline.suspendedGetForResume || window.RatebPosOffline.suspendedGet)) {
+            notify(t('pos_offline', 'Offline'), true);
+            return;
+        }
+        var key = String(id);
+        var loader = window.RatebPosOffline.suspendedGetForResume || window.RatebPosOffline.suspendedGet;
+        loader.call(window.RatebPosOffline, key).then(function (entry) {
+            if (!entry && window.RatebPosOffline.suspendedList) {
+                return window.RatebPosOffline.suspendedList().then(function (items) {
+                    var found = null;
+                    (items || []).forEach(function (item) {
+                        if (!item) {
+                            return;
+                        }
+                        if (String(item.client_id) === key
+                            || String(item.id) === key
+                            || String(item.order_no) === key) {
+                            found = item;
+                        }
+                    });
+                    if (found && window.RatebPosOffline.suspendedGetForResume) {
+                        return window.RatebPosOffline.suspendedGetForResume(String(found.client_id || found.id));
+                    }
+                    return found;
+                });
+            }
+            return entry;
+        }).then(function (entry) {
+            if (!entry) {
+                notify(t('no_records', 'Not found'), true);
                 return;
             }
-            window.RatebPosOffline.suspendedGet(String(id)).then(function (entry) {
-                if (!entry) {
-                    notify(t('no_records', 'Not found'), true);
-                    return;
-                }
+            var lines = entry.lines || [];
+            if (!lines.length) {
+                notify(t('pos_cart_empty', 'Cart empty'), true);
+                return;
+            }
+            var restore = window.RatebPosRegisterRestoreCart
+                || (window.RatebPosRegister && window.RatebPosRegister.restoreCart);
+            if (typeof restore === 'function') {
+                restore({
+                    lines: lines,
+                    customer: entry.customer || null,
+                    totals: entry.totals || null
+                });
+            } else if (window.RatebPosRegisterApplyLines) {
+                window.RatebPosRegisterApplyLines(lines, entry.totals || null);
                 if (window.RatebPosRegisterState) {
-                    window.RatebPosRegisterState.lines = entry.lines || [];
                     window.RatebPosRegisterState.customer = entry.customer || null;
                 }
-                if (window.RatebPosOffline.suspendedRemove) {
-                    window.RatebPosOffline.suspendedRemove(String(id));
-                }
-                notify(t('pos_resume_sale', 'Resume'));
                 if (window.RatebPosRenderCart) {
                     window.RatebPosRenderCart();
                 }
-                loadSuspended();
+            } else {
+                notify(t('invalid_request', 'Failed'), true);
+                return;
+            }
+            var removeKey = String(entry.client_id || entry.id || key);
+            if (window.RatebPosOffline.suspendedRemove) {
+                return window.RatebPosOffline.suspendedRemove(removeKey).then(function () {
+                    notify(t('pos_resume_sale', 'Resume'));
+                    loadSuspended();
+                });
+            }
+            notify(t('pos_resume_sale', 'Resume'));
+            loadSuspended();
+        }).catch(function (err) {
+            notify((err && err.message) || t('invalid_request', 'Failed'), true);
+        });
+    }
+
+    function resumeSuspended(id) {
+        if (isLocalSuspendedId(id)) {
+            resumeLocalSuspended(id);
+            return;
+        }
+        // Also try local store first (covers any offline draft id shape).
+        if (isOffline() && window.RatebPosOffline && window.RatebPosOffline.suspendedGet) {
+            window.RatebPosOffline.suspendedGet(String(id)).then(function (entry) {
+                if (entry && entry.local) {
+                    resumeLocalSuspended(id);
+                    return;
+                }
+                if (!api.suspendedResume) {
+                    notify(t('pos_offline', 'Offline'), true);
+                    return;
+                }
+                queueOffline('resume_suspended', {
+                    order_id: Number(id) || 0,
+                    scope: offlineScope()
+                }).then(function () {
+                    notify(t('pos_offline_queued', 'Queued for sync'));
+                }).catch(function (err) {
+                    notify(err.message, true);
+                });
             });
             return;
         }
