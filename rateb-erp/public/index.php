@@ -34,6 +34,9 @@ try {
     require_once dirname(__FILE__, 2) . '/modules/pos/PosModule.php';
     \Rateb\App\Pos\PosModule::init();
 
+    require_once dirname(__FILE__, 2) . '/offline/OfflineModule.php';
+    \Rateb\App\Offline\OfflineModule::init();
+
     Rateb\App\Core\Auth::bootstrapFromSession();
 
     $router = new Rateb\App\Core\Router();

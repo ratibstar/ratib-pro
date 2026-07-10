@@ -5,11 +5,14 @@ namespace Rateb\App\Pos\Services;
 
 use Rateb\App\Core\Database;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\Models\User;
+use Rateb\App\Services\AuthorizationService;
 
 /** Supervisor biometric approval — request/grant/consume single-use tokens (60s TTL). */
 final class PosSupervisorApprovalService
 {
     private const TOKEN_TTL_SECONDS = 60;
+    private static bool $schemaReady = false;
 
     /** @param array<string, mixed> $payload */
     public function createRequest(
@@ -19,6 +22,11 @@ final class PosSupervisorApprovalService
         array $payload,
         ?int $registerSessionId = null
     ): int {
+        $this->ensureSchema();
+        if ($companyId < 1) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+
         $db = Database::connection();
         $stmt = $db->prepare(
             'INSERT INTO rateb_pos_approval_requests (company_id, register_session_id, action_type, payload_json, requested_by, status)
@@ -38,11 +46,8 @@ final class PosSupervisorApprovalService
 
     public function grantRequest(int $requestId, int $supervisorUserId, string $method = 'webauthn'): ?string
     {
-        $authz = new \Rateb\App\Services\AuthorizationService();
-        $canSupervise = $authz->userHasPermission($supervisorUserId, 'pos.supervisor.approve')
-            || $authz->userHasPermission($supervisorUserId, 'pos.discount.manage')
-            || $authz->userHasPermission($supervisorUserId, 'pos.returns.manage');
-        if (!$canSupervise) {
+        $this->ensureSchema();
+        if (!$this->userCanSupervise($supervisorUserId)) {
             return null;
         }
 
@@ -81,6 +86,7 @@ final class PosSupervisorApprovalService
         if ($token === '') {
             return false;
         }
+        $this->ensureSchema();
         $hash = hash('sha256', $token);
         $db = Database::connection();
         $stmt = $db->prepare(
@@ -130,5 +136,61 @@ final class PosSupervisorApprovalService
             ], 403);
             exit;
         }
+    }
+
+    private function userCanSupervise(int $userId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+        $authz = new AuthorizationService();
+        if ($authz->userHasPermission($userId, 'pos.supervisor.approve')
+            || $authz->userHasPermission($userId, 'pos.discount.manage')
+            || $authz->userHasPermission($userId, 'pos.returns.manage')) {
+            return true;
+        }
+        $user = (new User())->find($userId);
+
+        return $user !== null && !empty($user['is_super_admin']);
+    }
+
+    private function ensureSchema(): void
+    {
+        if (self::$schemaReady) {
+            return;
+        }
+        $db = Database::connection();
+        $db->exec(
+            'CREATE TABLE IF NOT EXISTS rateb_pos_approval_requests (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                company_id INT UNSIGNED NOT NULL,
+                register_session_id BIGINT UNSIGNED NULL,
+                action_type VARCHAR(64) NOT NULL,
+                payload_json JSON NOT NULL,
+                requested_by INT UNSIGNED NOT NULL,
+                status VARCHAR(24) NOT NULL DEFAULT \'pending\',
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                consumed_at DATETIME NULL,
+                PRIMARY KEY (id),
+                KEY idx_pos_approval_company (company_id, status, created_at),
+                KEY idx_pos_approval_requester (requested_by)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+        $db->exec(
+            'CREATE TABLE IF NOT EXISTS rateb_pos_approval_grants (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                request_id BIGINT UNSIGNED NOT NULL,
+                supervisor_user_id INT UNSIGNED NOT NULL,
+                biometric_method VARCHAR(32) NOT NULL DEFAULT \'webauthn\',
+                token_hash CHAR(64) NOT NULL,
+                verified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NOT NULL,
+                consumed_at DATETIME NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_pos_approval_token_hash (token_hash),
+                KEY idx_pos_approval_grant_request (request_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+        self::$schemaReady = true;
     }
 }

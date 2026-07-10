@@ -42,3 +42,6 @@ if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-api.php')) {
 if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-api-v2.php')) {
     require RATEB_ROOT . '/modules/pos/routes/pos-api-v2.php';
 }
+if (is_file(RATEB_ROOT . '/offline/server/routes/offline-api.php')) {
+    require RATEB_ROOT . '/offline/server/routes/offline-api.php';
+}
