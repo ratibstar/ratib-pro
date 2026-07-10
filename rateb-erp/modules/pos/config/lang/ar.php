@@ -356,6 +356,7 @@ return [
     'pos_biometric_face_required' => 'بيانات الوجه مطلوبة',
     'pos_biometric_face_failed' => 'فشل التعرف على الوجه',
     'pos_supervisor_required' => 'مشرف معتمد مطلوب',
+    'pos_supervisor_biometric_missing' => 'لا توجد بصمة مشرف مسجّلة. سجّل بصمة Super Admin أو مشرف من بوابة البصمة أولاً.',
     'pos_approval_invalid_token' => 'رمز الاعتماد غير صالح',
     'pos_approval_token_used' => 'تم استخدام رمز الاعتماد',
     'pos_approval_token_expired' => 'انتهت صلاحية رمز الاعتماد',

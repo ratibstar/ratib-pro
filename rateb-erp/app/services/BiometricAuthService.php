@@ -213,11 +213,7 @@ final class BiometricAuthService
 
         $verifiedId = (int) ($row['user_id'] ?? 0);
         if ($supervisor) {
-            $authz = new AuthorizationService();
-            $canSupervise = $authz->userHasPermission($verifiedId, 'pos.supervisor.approve')
-                || $authz->userHasPermission($verifiedId, 'pos.discount.manage')
-                || $authz->userHasPermission($verifiedId, 'pos.returns.manage');
-            if (!$canSupervise) {
+            if (!$this->userCanSupervise($verifiedId)) {
                 return ['ok' => false, 'error' => __('pos_supervisor_required')];
             }
         } elseif ($verifiedId !== $userId) {
@@ -263,9 +259,29 @@ final class BiometricAuthService
         return ['ok' => true];
     }
 
+    private function userCanSupervise(int $userId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+        $authz = new AuthorizationService();
+        if ($authz->userHasPermission($userId, 'pos.supervisor.approve')
+            || $authz->userHasPermission($userId, 'pos.discount.manage')
+            || $authz->userHasPermission($userId, 'pos.returns.manage')) {
+            return true;
+        }
+
+        // Defensive: is_super_admin users must always be able to approve POS overrides.
+        $user = (new User())->find($userId);
+
+        return $user !== null && !empty($user['is_super_admin']);
+    }
+
     /** @return array<string, mixed> */
     private function buildSupervisorWebAuthnOptions(): array
     {
+        $this->assertWebauthnStorageReady();
+
         $db = Database::connection();
         $rows = $db->query(
             'SELECT wc.credential_id, wc.user_id
@@ -274,28 +290,27 @@ final class BiometricAuthService
              WHERE u.status = \'active\''
         )->fetchAll(\PDO::FETCH_ASSOC);
 
-        $authz = new AuthorizationService();
         $allow = [];
         foreach ($rows as $row) {
             $uid = (int) ($row['user_id'] ?? 0);
-            if ($uid < 1) {
+            if ($uid < 1 || !$this->userCanSupervise($uid)) {
                 continue;
             }
-            $canSupervise = $authz->userHasPermission($uid, 'pos.supervisor.approve')
-                || $authz->userHasPermission($uid, 'pos.discount.manage')
-                || $authz->userHasPermission($uid, 'pos.returns.manage');
-            if (!$canSupervise) {
+            $credentialId = $row['credential_id'] ?? null;
+            if ($credentialId === null || $credentialId === '') {
                 continue;
             }
+            // credential_id is stored as raw binary bytes.
+            $raw = is_string($credentialId) ? $credentialId : (string) $credentialId;
             $allow[] = [
                 'type' => 'public-key',
-                'id' => $this->base64UrlEncode((string) $row['credential_id']),
-                'transports' => ['internal'],
+                'id' => $this->base64UrlEncode($raw),
+                'transports' => ['internal', 'hybrid', 'usb'],
             ];
         }
 
         if ($allow === []) {
-            throw new \RuntimeException(__('pos_supervisor_required'));
+            throw new \RuntimeException(__('pos_supervisor_biometric_missing'));
         }
 
         $challenge = random_bytes(32);

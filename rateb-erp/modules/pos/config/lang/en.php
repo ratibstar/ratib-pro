@@ -357,6 +357,7 @@ return [
     'pos_biometric_face_required' => 'Face data required',
     'pos_biometric_face_failed' => 'Face recognition failed',
     'pos_supervisor_required' => 'Authorized supervisor required',
+    'pos_supervisor_biometric_missing' => 'No supervisor fingerprint enrolled. Register a Super Admin or supervisor passkey on the biometric gate first.',
     'pos_approval_invalid_token' => 'Invalid approval token',
     'pos_approval_token_used' => 'Approval token already used',
     'pos_approval_token_expired' => 'Approval token expired',

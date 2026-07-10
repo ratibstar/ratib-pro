@@ -64,7 +64,11 @@
         }).then(function (res) {
             return res.json().then(function (data) {
                 if (!res.ok || data.ok === false) {
-                    throw new Error((data && data.error) ? data.error : t('invalid_request', 'Failed'));
+                    var err = data && data.error;
+                    if (err && typeof err === 'object') {
+                        err = err.message || err.code || '';
+                    }
+                    throw new Error(err || t('invalid_request', 'Failed'));
                 }
                 return data;
             });

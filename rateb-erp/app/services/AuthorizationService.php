@@ -44,6 +44,11 @@ final class AuthorizationService
             return true;
         }
 
+        // Platform super admin bypasses company-scoped RBAC rows.
+        if ($this->userIsSuperAdmin($userId)) {
+            return true;
+        }
+
         $params = ['uid' => $userId, 'slug' => $permissionSlug];
         $sql = 'SELECT p.id FROM rateb_permissions p
              JOIN rateb_role_permissions rp ON rp.permission_id = p.id
