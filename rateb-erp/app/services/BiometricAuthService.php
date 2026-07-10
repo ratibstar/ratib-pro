@@ -73,6 +73,17 @@ final class BiometricAuthService
             try {
                 return ['ok' => true] + $this->buildSupervisorWebAuthnOptions();
             } catch (\Throwable $e) {
+                // Fallback: logged-in supervisor/super-admin can approve with their own passkey.
+                $selfId = $this->userId();
+                if ($selfId > 0 && $this->userCanSupervise($selfId)) {
+                    try {
+                        $opts = $this->buildWebAuthnOptions($selfId);
+                        SessionManager::set('pos_webauthn_supervisor', 1);
+                        return ['ok' => true] + $opts;
+                    } catch (\Throwable $e2) {
+                        return ['ok' => false, 'error' => $this->publicErrorMessage($e2)];
+                    }
+                }
                 return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
             }
         }
@@ -203,15 +214,33 @@ final class BiometricAuthService
         $credentialId = $this->base64UrlDecode($credentialIdB64);
         $db = Database::connection();
         $stmt = $db->prepare(
-            'SELECT user_id FROM rateb_webauthn_credentials WHERE credential_id = :cid LIMIT 1'
+            'SELECT user_id, credential_id FROM rateb_webauthn_credentials'
         );
-        $stmt->execute(['cid' => $credentialId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$row) {
-            return ['ok' => false, 'error' => __('pos_biometric_failed')];
+        $stmt->execute();
+        $verifiedId = 0;
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $raw = $this->credentialIdToBinary($row['credential_id'] ?? null);
+            if ($raw !== '' && hash_equals($raw, $credentialId)) {
+                $verifiedId = (int) ($row['user_id'] ?? 0);
+                break;
+            }
         }
-
-        $verifiedId = (int) ($row['user_id'] ?? 0);
+        if ($verifiedId < 1) {
+            // Legacy rows may have been stored already base64-encoded.
+            $stmt = $db->prepare(
+                'SELECT user_id FROM rateb_webauthn_credentials WHERE credential_id = :cid LIMIT 1'
+            );
+            $stmt->execute(['cid' => $credentialId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$row) {
+                $stmt->execute(['cid' => $credentialIdB64]);
+                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            }
+            if (!$row) {
+                return ['ok' => false, 'error' => __('pos_biometric_failed')];
+            }
+            $verifiedId = (int) ($row['user_id'] ?? 0);
+        }
         if ($supervisor) {
             if (!$this->userCanSupervise($verifiedId)) {
                 return ['ok' => false, 'error' => __('pos_supervisor_required')];
@@ -284,29 +313,60 @@ final class BiometricAuthService
 
         $db = Database::connection();
         $rows = $db->query(
-            'SELECT wc.credential_id, wc.user_id
+            'SELECT wc.credential_id, wc.user_id, u.is_super_admin
              FROM rateb_webauthn_credentials wc
              INNER JOIN rateb_users u ON u.id = wc.user_id
-             WHERE u.status = \'active\''
+             WHERE (u.status = \'active\' OR u.status = \'1\' OR u.status IS NULL OR u.status = \'\')'
         )->fetchAll(\PDO::FETCH_ASSOC);
 
         $allow = [];
+        $seen = [];
         foreach ($rows as $row) {
             $uid = (int) ($row['user_id'] ?? 0);
-            if ($uid < 1 || !$this->userCanSupervise($uid)) {
+            if ($uid < 1) {
                 continue;
             }
-            $credentialId = $row['credential_id'] ?? null;
-            if ($credentialId === null || $credentialId === '') {
+            $isSuper = !empty($row['is_super_admin']);
+            if (!$isSuper && !$this->userCanSupervise($uid)) {
                 continue;
             }
-            // credential_id is stored as raw binary bytes.
-            $raw = is_string($credentialId) ? $credentialId : (string) $credentialId;
+            $raw = $this->credentialIdToBinary($row['credential_id'] ?? null);
+            if ($raw === '') {
+                continue;
+            }
+            $key = $uid . ':' . $this->base64UrlEncode($raw);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
             $allow[] = [
                 'type' => 'public-key',
                 'id' => $this->base64UrlEncode($raw),
                 'transports' => ['internal', 'hybrid', 'usb'],
             ];
+        }
+
+        // Always include the current session user if they can supervise and have a passkey.
+        $selfId = $this->userId();
+        if ($selfId > 0 && $this->userCanSupervise($selfId)) {
+            $stmt = $db->prepare('SELECT credential_id FROM rateb_webauthn_credentials WHERE user_id = :uid');
+            $stmt->execute(['uid' => $selfId]);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+                $raw = $this->credentialIdToBinary($row['credential_id'] ?? null);
+                if ($raw === '') {
+                    continue;
+                }
+                $key = $selfId . ':' . $this->base64UrlEncode($raw);
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+                $allow[] = [
+                    'type' => 'public-key',
+                    'id' => $this->base64UrlEncode($raw),
+                    'transports' => ['internal', 'hybrid', 'usb'],
+                ];
+            }
         }
 
         if ($allow === []) {
@@ -327,6 +387,20 @@ final class BiometricAuthService
                 'userVerification' => 'required',
             ],
         ];
+    }
+
+    private function credentialIdToBinary(mixed $value): string
+    {
+        if (is_resource($value)) {
+            $data = stream_get_contents($value);
+
+            return $data === false ? '' : $data;
+        }
+        if (!is_string($value) || $value === '') {
+            return '';
+        }
+
+        return $value;
     }
 
     /** @return array<string, mixed> */
@@ -410,8 +484,8 @@ final class BiometricAuthService
                 'rpId' => $this->resolveRpId(),
                 'allowCredentials' => [[
                     'type' => 'public-key',
-                    'id' => $this->base64UrlEncode($row['credential_id']),
-                    'transports' => ['internal'],
+                    'id' => $this->base64UrlEncode($this->credentialIdToBinary($row['credential_id'])),
+                    'transports' => ['internal', 'hybrid', 'usb'],
                 ]],
                 'timeout' => 60000,
                 'userVerification' => 'required',
