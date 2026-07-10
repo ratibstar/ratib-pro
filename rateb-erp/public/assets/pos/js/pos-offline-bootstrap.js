@@ -14,7 +14,7 @@
         config = {};
     }
 
-    var SHELL_CACHE = 'rateb-pos-shell-v6';
+    var SHELL_CACHE = 'rateb-pos-shell-v7';
     var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 
     function registerServiceWorker() {
@@ -79,7 +79,7 @@
         }
     }
 
-    /** Pin current register HTML into Cache Storage (works even if SW put failed). */
+    /** Pin current register HTML + critical POS assets into Cache Storage. */
     function pinRegisterShell() {
         if (!('caches' in window) || navigator.onLine === false) {
             return Promise.resolve(false);
@@ -88,6 +88,15 @@
         if (!/\/pos(\/register)?$/i.test(u.pathname.replace(/\/+$/, ''))) {
             return Promise.resolve(false);
         }
+        var assetUrls = [];
+        document.querySelectorAll('script[src*="/assets/pos/"], link[href*="/assets/pos/"], link[href*="/assets/js/theme.js"]').forEach(function (el) {
+            var src = el.getAttribute('src') || el.getAttribute('href');
+            if (src) {
+                try {
+                    assetUrls.push(new URL(src, window.location.href).href);
+                } catch (e) { /* ignore */ }
+            }
+        });
         return fetch(u.href, {
             credentials: 'same-origin',
             headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' },
@@ -111,6 +120,23 @@
                 ]).then(function () {
                     return true;
                 });
+            });
+        }).then(function (ok) {
+            return caches.open('rateb-pos-assets-v7').then(function (assetCache) {
+                return Promise.all(assetUrls.map(function (href) {
+                    return fetch(href, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
+                        if (!r || !r.ok) {
+                            return;
+                        }
+                        var pathOnly = new URL(href).origin + new URL(href).pathname;
+                        return Promise.all([
+                            assetCache.put(href, r.clone()),
+                            assetCache.put(pathOnly, r.clone())
+                        ]);
+                    }).catch(function () { /* ignore */ });
+                }));
+            }).then(function () {
+                return ok;
             });
         }).then(function (ok) {
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
