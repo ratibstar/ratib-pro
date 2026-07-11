@@ -1394,10 +1394,20 @@
         // Privileged / dynamic chrome
         out = out.replace(/<main\b[^>]*>[\s\S]*?<\/main>/i,
             '<main class="rateb-offline-shell-main" id="rateb-offline-shell-main">'
-            + '<div class="container py-4"><p class="text-muted">Offline — reconnect for live data.</p></div></main>');
+            + '<div class="container py-4">'
+            + '<p class="text-muted">وضع عدم الاتصال — أعد الاتصال لعرض البيانات الحية والتعديل.</p>'
+            + '<p class="text-muted small">Offline shell — reconnect for live data and edits.</p>'
+            + '</div></main>');
         out = out.replace(/<aside\b[^>]*>[\s\S]*?<\/aside>/gi,
             '<aside class="rateb-offline-shell-nav" aria-label="Offline nav"><p>RATEB ERP</p></aside>');
         out = out.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, '<nav class="rateb-offline-shell-nav"></nav>');
+        // Force connection badge to Offline (never freeze "متصل" / Online into the cache).
+        out = out.replace(/rateb-connection-indicator\s+is-online/gi, 'rateb-connection-indicator is-offline');
+        out = out.replace(/(\sclass=["'][^"']*rateb-connection-indicator)(?![^"']*is-offline)/gi,
+            '$1 is-offline');
+        out = out.replace(/data-label-online=["'][^"']*["']/gi, 'data-label-online="Online"');
+        out = out.replace(/(rateb-connection-indicator__label">)\s*[^<]*/gi, '$1غير متصل');
+        out = out.replace(/(title|aria-label)=["']\s*(متصل|Online)\s*["']/gi, '$1="غير متصل"');
         // data-* that may leak URLs / session context
         out = out.replace(/\sdata-rateb-[a-z0-9_-]+=["'][^"']*["']/gi, '');
         out = out.replace(/\sdata-(csrf|token|session|user|company|branch)[a-z0-9_-]*=["'][^"']*["']/gi, '');
@@ -1502,7 +1512,6 @@
         stripSensitive: stripSensitive
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- auth-lock-adapter.js ---- */
 /**

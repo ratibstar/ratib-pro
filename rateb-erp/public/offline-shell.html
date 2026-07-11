@@ -173,7 +173,26 @@ a{color:#8ab4ff}
     });
     shellRoot.hidden = false;
     if (statusBox) statusBox.hidden = true;
+    markConnectionOffline(shellRoot);
     return shellRoot.childNodes.length > 0;
+  }
+
+  /** Never show stale "متصل" / Online inside cached chrome. */
+  function markConnectionOffline(rootEl) {
+    var scope = rootEl || document;
+    var nodes = scope.querySelectorAll
+      ? scope.querySelectorAll('[data-rateb-connection-status], #rateb-connection-indicator, .rateb-connection-indicator')
+      : [];
+    Array.prototype.forEach.call(nodes, function (node) {
+      node.classList.add('is-offline');
+      node.classList.remove('is-online');
+      node.setAttribute('title', 'غير متصل');
+      node.setAttribute('aria-label', 'غير متصل');
+      var label = node.querySelector('.rateb-connection-indicator__label');
+      if (label) {
+        label.textContent = 'غير متصل';
+      }
+    });
   }
 
   function isUnlocked(scope) {
@@ -226,6 +245,7 @@ a{color:#8ab4ff}
             showUnavailable('No cached chrome for this user. Reconnect, open Admin once, then retry offline.');
             return;
           }
+          markConnectionOffline(document);
         };
       } catch (e) {
         showUnavailable();
