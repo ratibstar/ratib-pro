@@ -32,7 +32,7 @@ final class OfflineCursorService
 
     public function isAvailable(): bool
     {
-        return Database::liveTableHasColumn('rateb_offline_entity_cursors', 'id');
+        return OfflineSchema::hasColumn('rateb_offline_entity_cursors', 'id');
     }
 
     /** @return array<string, mixed> */

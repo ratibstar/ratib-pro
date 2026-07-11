@@ -57,7 +57,7 @@ final class OfflineQueueService
 
     public function isAvailable(): bool
     {
-        return Database::liveTableHasColumn('rateb_offline_sync_queue', 'id');
+        return OfflineSchema::hasColumn('rateb_offline_sync_queue', 'id');
     }
 
     /** @return array<string, mixed> */

@@ -80,7 +80,7 @@ final class InventoryOfflineTenantGuard
 
     public function movementExistsForKey(int $companyId, string $idempotencyKey): ?int
     {
-        if ($companyId < 1 || $idempotencyKey === '' || !Database::liveTableHasColumn('rateb_stock_movements', 'id')) {
+        if ($companyId < 1 || $idempotencyKey === '' || !OfflineSchema::hasColumn('rateb_stock_movements', 'id')) {
             return null;
         }
         $marker = '%[offline:' . $idempotencyKey . ']%';
@@ -98,7 +98,7 @@ final class InventoryOfflineTenantGuard
 
     public function transferExistsForKey(int $companyId, string $idempotencyKey): ?int
     {
-        if ($companyId < 1 || $idempotencyKey === '' || !Database::liveTableHasColumn('rateb_warehouse_transfers', 'id')) {
+        if ($companyId < 1 || $idempotencyKey === '' || !OfflineSchema::hasColumn('rateb_warehouse_transfers', 'id')) {
             return null;
         }
         $marker = '%[offline:' . $idempotencyKey . ']%';
@@ -116,7 +116,7 @@ final class InventoryOfflineTenantGuard
 
     public function auditExistsForKey(int $companyId, string $idempotencyKey): ?int
     {
-        if ($companyId < 1 || $idempotencyKey === '' || !Database::liveTableHasColumn('rateb_inventory_audits', 'id')) {
+        if ($companyId < 1 || $idempotencyKey === '' || !OfflineSchema::hasColumn('rateb_inventory_audits', 'id')) {
             return null;
         }
         $marker = '%[offline:' . $idempotencyKey . ']%';

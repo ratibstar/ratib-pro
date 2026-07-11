@@ -32,7 +32,7 @@ final class HrOfflineEmployeeDirectoryService
 
     public function isAvailable(): bool
     {
-        return Database::liveTableHasColumn('rateb_employees', 'id');
+        return OfflineSchema::hasColumn('rateb_employees', 'id');
     }
 
     /**
@@ -72,7 +72,7 @@ final class HrOfflineEmployeeDirectoryService
         $safeLimit = max(1, min(500, $limit));
         [$afterId, $afterUpdated] = $this->parseCursor($cursorToken);
 
-        $hasUpdated = Database::liveTableHasColumn('rateb_employees', 'updated_at');
+        $hasUpdated = OfflineSchema::hasColumn('rateb_employees', 'updated_at');
         $sql = 'SELECT id, company_id, branch_id, employee_code, name, email, phone,
                        department_id, job_title_id, job_title, hire_date, status, user_id';
         if ($hasUpdated) {
@@ -83,7 +83,7 @@ final class HrOfflineEmployeeDirectoryService
         $sql .= ' FROM rateb_employees WHERE company_id = :cid';
         $params = ['cid' => $companyId];
 
-        if ($branchId !== null && $branchId > 0 && Database::liveTableHasColumn('rateb_employees', 'branch_id')) {
+        if ($branchId !== null && $branchId > 0 && OfflineSchema::hasColumn('rateb_employees', 'branch_id')) {
             $sql .= ' AND (branch_id = :bid OR branch_id IS NULL)';
             $params['bid'] = $branchId;
         }
@@ -150,7 +150,7 @@ final class HrOfflineEmployeeDirectoryService
 
     private function persistCursor(int $companyId, ?int $branchId, string $token): void
     {
-        if (!Database::liveTableHasColumn('rateb_offline_entity_cursors', 'id')) {
+        if (!OfflineSchema::hasColumn('rateb_offline_entity_cursors', 'id')) {
             return;
         }
         $params = ['cid' => $companyId, 'et' => self::ENTITY];

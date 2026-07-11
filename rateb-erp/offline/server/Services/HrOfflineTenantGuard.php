@@ -74,7 +74,7 @@ final class HrOfflineTenantGuard
 
     public function attendanceExistsForKey(int $companyId, string $idempotencyKey): ?int
     {
-        if ($companyId < 1 || $idempotencyKey === '' || !Database::liveTableHasColumn('rateb_attendance_records', 'id')) {
+        if ($companyId < 1 || $idempotencyKey === '' || !OfflineSchema::hasColumn('rateb_attendance_records', 'id')) {
             return null;
         }
         $marker = '%[offline:' . $idempotencyKey . ']%';
@@ -90,7 +90,7 @@ final class HrOfflineTenantGuard
 
     public function leaveExistsForKey(int $companyId, string $idempotencyKey): ?int
     {
-        if ($companyId < 1 || $idempotencyKey === '' || !Database::liveTableHasColumn('rateb_leave_requests', 'id')) {
+        if ($companyId < 1 || $idempotencyKey === '' || !OfflineSchema::hasColumn('rateb_leave_requests', 'id')) {
             return null;
         }
         $marker = '%[offline:' . $idempotencyKey . ']%';
@@ -112,7 +112,7 @@ final class HrOfflineTenantGuard
         if ($companyId < 1 || $employeeId < 1 || $date === '') {
             return null;
         }
-        if (!Database::liveTableHasColumn('rateb_attendance_records', 'id')) {
+        if (!OfflineSchema::hasColumn('rateb_attendance_records', 'id')) {
             return null;
         }
 

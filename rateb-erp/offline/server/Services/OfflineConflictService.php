@@ -26,7 +26,7 @@ final class OfflineConflictService
 
     public function isAvailable(): bool
     {
-        return Database::liveTableHasColumn('rateb_offline_sync_conflicts', 'id');
+        return OfflineSchema::hasColumn('rateb_offline_sync_conflicts', 'id');
     }
 
     /**

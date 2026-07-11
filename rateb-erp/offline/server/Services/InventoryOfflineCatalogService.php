@@ -31,7 +31,7 @@ final class InventoryOfflineCatalogService
 
     public function isAvailable(): bool
     {
-        return Database::liveTableHasColumn('rateb_inventory', 'id');
+        return OfflineSchema::hasColumn('rateb_inventory', 'id');
     }
 
     /**
@@ -78,7 +78,7 @@ final class InventoryOfflineCatalogService
                 WHERE company_id = :cid';
         $params = ['cid' => $companyId];
 
-        if ($branchId !== null && $branchId > 0 && Database::liveTableHasColumn('rateb_inventory', 'branch_id')) {
+        if ($branchId !== null && $branchId > 0 && OfflineSchema::hasColumn('rateb_inventory', 'branch_id')) {
             $sql .= ' AND (branch_id = :bid OR branch_id IS NULL)';
             $params['bid'] = $branchId;
         }
@@ -143,7 +143,7 @@ final class InventoryOfflineCatalogService
 
     private function persistCursor(int $companyId, ?int $branchId, string $token): void
     {
-        if (!Database::liveTableHasColumn('rateb_offline_entity_cursors', 'id')) {
+        if (!OfflineSchema::hasColumn('rateb_offline_entity_cursors', 'id')) {
             return;
         }
         $params = [
