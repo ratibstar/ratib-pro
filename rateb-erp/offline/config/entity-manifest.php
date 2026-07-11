@@ -94,6 +94,14 @@ return [
         'replay' => 'delegate_procurement',
         'action' => 'purchase_order.draft',
     ],
+    'procurement_goods_receipt' => [
+        'module' => 'procurement',
+        'method' => 'POST',
+        'path' => null,
+        'replay' => 'delegate_procurement',
+        'action' => 'goods_receipt.receive',
+        // Doc mapping only: transaction_id→client_id, entity→purchase_order, operation→receive
+    ],
     'supplier_directory' => [
         'module' => 'procurement',
         'method' => 'GET',

@@ -36,5 +36,6 @@ return [
         'procurement.purchase_request.draft' => ['class' => 'RS', 'module' => 'procurement'],
         'procurement.rfq.draft' => ['class' => 'RS', 'module' => 'procurement'],
         'procurement.purchase_order.draft' => ['class' => 'RS', 'module' => 'procurement'],
+        'procurement.goods_receipt.receive' => ['class' => 'RS', 'module' => 'procurement'],
     ],
 ];

@@ -1,5 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 13.1.0 (includes Phase 5.0.0 + critical fixes; flags default OFF). */
-
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phase 5.0.0 + Phases 10–14.2 GRN; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -93,7 +92,6 @@
         withStore: withStore
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- migrations.js ---- */
 /**
@@ -212,7 +210,6 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- idempotency.js ---- */
 /**
  * RATEB Offline — Idempotency helpers (Phase 2A).
@@ -246,7 +243,6 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- event-bus.js ---- */
 /**
  * RATEB Offline — Event bus (Phase 2A).
@@ -273,7 +269,6 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- connectivity.js ---- */
 /**
@@ -416,7 +411,6 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- queue-manager.js ---- */
 /**
  * RATEB Offline — Queue Manager (Phase 4.5.1 — durable delete-by-key flush).
@@ -432,6 +426,8 @@
     var flushInFlight = false;
     var apiBase = null;
     var enabled = false;
+    /** Mirrors offline/config/sync-policy.php client_queue_max (Phase 14 enforce). */
+    var clientQueueMax = 500;
 
     function csrfToken() {
         if (typeof document === 'undefined') {
@@ -598,18 +594,27 @@
             return Promise.reject(new Error('stores_unavailable'));
         }
         var entry = normalizeEntry(item, options);
-        return Stores.put(QUEUE, entry).then(function () {
-            if (Events) {
-                Events.emit('queue:enqueued', entry);
+        return depth().then(function (d) {
+            var max = clientQueueMax > 0 ? clientQueueMax : 0;
+            if (max > 0 && d >= max) {
+                if (Events) {
+                    Events.emit('queue:full', { depth: d, max: max });
+                }
+                return Promise.reject(new Error('client_queue_full'));
             }
-            var conn = root.RatebOfflineConnectivity;
-            if (conn && conn.isOnline()) {
-                return flush(options).then(function (result) {
-                    return Object.assign({ queued: true, entry: entry }, result || {});
+            return Stores.put(QUEUE, entry).then(function () {
+                if (Events) {
+                    Events.emit('queue:enqueued', entry);
+                }
+                var conn = root.RatebOfflineConnectivity;
+                if (conn && conn.isOnline()) {
+                    return flush(options).then(function (result) {
+                        return Object.assign({ queued: true, entry: entry }, result || {});
+                    });
+                }
+                return depth().then(function (depthAfter) {
+                    return { queued: true, queueDepth: depthAfter, entry: entry };
                 });
-            }
-            return depth().then(function (d) {
-                return { queued: true, queueDepth: d, entry: entry };
             });
         });
     }
@@ -703,8 +708,12 @@
             if (opts.apiBase) {
                 apiBase = String(opts.apiBase);
             }
+            if (typeof opts.clientQueueMax === 'number' && opts.clientQueueMax >= 0) {
+                clientQueueMax = opts.clientQueueMax;
+            }
         },
         isEnabled: function () { return enabled; },
+        clientQueueMax: function () { return clientQueueMax; },
         enqueue: enqueue,
         flush: flush,
         depth: depth,
@@ -716,7 +725,6 @@
         _simulateDeleteByKeyCrash: simulateDeleteByKeyCrash
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- replay-scheduler.js ---- */
 /**
@@ -750,7 +758,6 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- delta-pull.js ---- */
 /**
@@ -794,7 +801,6 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- transport.js ---- */
 /**
@@ -905,7 +911,6 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- pos-adapter.js ---- */
 /**
  * RATEB Offline — POS adapter (Phase 2A).
@@ -942,7 +947,6 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- inventory-adapter.js ---- */
 /**
@@ -1066,7 +1070,6 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-
 
 /* ---- hr-adapter.js ---- */
 /**
@@ -1194,133 +1197,280 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- procurement-adapter.js ---- */
 /**
- * RATEB Offline — Procurement adapter (Phase 5 / Tier 1).
+
+ * RATEB Offline — Procurement adapter (Phase 5 / Tier 1 + Phase 14.2 GRN).
+
  * Queues PR / RFQ / PO drafts via enterprise offline queue.
+
+ * GRN (goods_receipt.receive) requires offline.procurement.goods_receipt.
+
  * Activated only when offline.enabled + offline.procurement are true.
- * Does NOT enqueue approvals, payments, or accounting posting.
+
+ * Does NOT enqueue approvals, payments, or accounting posting directly.
+
  */
+
 (function (root) {
+
     'use strict';
 
+
+
     function flags() {
+
         if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+
             return root.RatebOffline.flags() || {};
+
         }
+
         return {};
+
     }
+
+
 
     function isActive() {
+
         var f = flags();
+
         return !!(f['offline.enabled'] && f['offline.procurement']);
+
     }
+
+
+
+    function isGoodsReceiptActive() {
+
+        var f = flags();
+
+        return !!(isActive() && f['offline.procurement.goods_receipt']);
+
+    }
+
+
 
     function makeClientId(prefix) {
+
         var rand = Math.random().toString(36).slice(2, 10);
+
         return String(prefix || 'proc') + '-' + Date.now() + '-' + rand;
+
     }
+
+
 
     function enqueue(action, payload, options) {
+
         options = options || {};
+
         if (!isActive()) {
+
             return Promise.reject(new Error('procurement_offline_disabled'));
+
         }
+
+        if (action === 'goods_receipt.receive' && !isGoodsReceiptActive()) {
+
+            return Promise.reject(new Error('procurement_grn_offline_disabled'));
+
+        }
+
         var q = root.RatebOfflineQueue;
+
         if (!q || typeof q.enqueue !== 'function') {
+
             return Promise.reject(new Error('offline_queue_unavailable'));
+
         }
+
         var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+
         return q.enqueue({
+
             client_id: clientId,
+
             idempotency_key: clientId,
+
             module: 'procurement',
+
             action: action,
+
             payload: payload || {},
+
             version: options.version || 1,
+
             occurred_at: options.occurred_at || new Date().toISOString()
+
         });
+
     }
+
+
 
     function pullDirectory(options) {
+
         options = options || {};
+
         if (!isActive()) {
+
             return Promise.resolve({ items: [], stub: true, disabled: true });
+
         }
+
         var pull = root.RatebOfflineDeltaPull;
+
         if (!pull || typeof pull.pull !== 'function') {
+
             return Promise.reject(new Error('delta_pull_unavailable'));
+
         }
+
         return pull.pull('supplier_directory', options).then(function (res) {
+
             var delta = (res && res.delta) ? res.delta : res;
+
             if (delta && Array.isArray(delta.items) && root.RatebOfflineSchema) {
+
                 return root.RatebOfflineSchema.withStore(
+
                     root.RatebOfflineSchema.STORES.ENTITY_CACHE,
+
                     'readwrite',
+
                     function (store) {
+
                         delta.items.forEach(function (item) {
+
                             if (item && item.id) {
+
                                 var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+
                                 var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
+
                                 var bid = parseInt(
+
                                     item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
+
                                     10
+
                                 ) || 0;
+
                                 var id = cid + ':' + bid + ':sup:' + item.id;
+
                                 try { store.delete('sup:' + item.id); } catch (e) { /* legacy */ }
+
                                 if (item.deleted || item.active === false) {
+
                                     store.delete(id);
+
                                     return;
+
                                 }
+
                                 store.put({
+
                                     id: id,
+
                                     entity: 'supplier_directory',
+
                                     company_id: cid,
+
                                     branch_id: bid,
+
                                     payload: item,
+
                                     data: item,
+
                                     updated_at: item.updated_at || null,
+
                                     synced_at: Date.now()
+
                                 });
+
                             }
+
                         });
+
                         return delta;
+
                     }
+
                 ).then(function () { return delta; }).catch(function () { return delta; });
+
             }
+
             return delta || { items: [] };
+
         });
+
     }
 
-    root.RatebOfflineProcurementAdapter = {
-        isActive: isActive,
-        enqueuePurchaseRequestDraft: function (payload, options) {
-            return enqueue('purchase_request.draft', payload || {}, options);
-        },
-        enqueueRfqDraft: function (payload, options) {
-            return enqueue('rfq.draft', payload || {}, options);
-        },
-        enqueuePurchaseOrderDraft: function (payload, options) {
-            return enqueue('purchase_order.draft', payload || {}, options);
-        },
-        pullSupplierDirectory: pullDirectory,
-        sync: function (options) {
-            options = options || {};
-            if (!isActive()) {
-                return Promise.resolve({ skipped: true, disabled: true });
-            }
-            var q = root.RatebOfflineQueue;
-            var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
-            return flush.then(function (flushResult) {
-                return pullDirectory(options).then(function (directory) {
-                    return { flush: flushResult, directory: directory };
-                });
-            });
-        }
-    };
-})(typeof window !== 'undefined' ? window : globalThis);
 
+
+    root.RatebOfflineProcurementAdapter = {
+
+        isActive: isActive,
+
+        isGoodsReceiptActive: isGoodsReceiptActive,
+
+        enqueuePurchaseRequestDraft: function (payload, options) {
+
+            return enqueue('purchase_request.draft', payload || {}, options);
+
+        },
+
+        enqueueRfqDraft: function (payload, options) {
+
+            return enqueue('rfq.draft', payload || {}, options);
+
+        },
+
+        enqueuePurchaseOrderDraft: function (payload, options) {
+
+            return enqueue('purchase_order.draft', payload || {}, options);
+
+        },
+
+        enqueueGoodsReceipt: function (payload, options) {
+
+            return enqueue('goods_receipt.receive', payload || {}, options);
+
+        },
+
+        pullSupplierDirectory: pullDirectory,
+
+        sync: function (options) {
+
+            options = options || {};
+
+            if (!isActive()) {
+
+                return Promise.resolve({ skipped: true, disabled: true });
+
+            }
+
+            var q = root.RatebOfflineQueue;
+
+            var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
+
+            return flush.then(function (flushResult) {
+
+                return pullDirectory(options).then(function (directory) {
+
+                    return { flush: flushResult, directory: directory };
+
+                });
+
+            });
+
+        }
+
+    };
+
+})(typeof window !== 'undefined' ? window : globalThis);
 
 /* ---- form-post-adapter.js ---- */
 /**
@@ -1337,16 +1487,18 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- shell-adapter.js ---- */
 /**
- * RATEB Offline — ERP shell adapter (Phase 10.1 blocking fixes).
+ * RATEB Offline — ERP shell adapter (Phase 10.1 + Phase 14 ops pages).
  * Tenant-scoped snapshots; strips privileged UI + secrets.
+ * Phase 14: allowlisted ops page snapshots (browse) when pilot.ops_pages is on.
  */
 (function (root) {
     'use strict';
 
     var SNAPSHOT_PREFIX = 'erp_shell_chrome';
+    var OPS_PAGE_PREFIX = 'erp_ops_page';
+    var OPS_CACHE = 'rateb-erp-ops-pages-v14';
 
     function flags() {
         if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
@@ -1358,6 +1510,11 @@
     function isActive() {
         var f = flags();
         return !!(f['offline.enabled'] && f['offline.read_cache']);
+    }
+
+    function isOpsPagesActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.read_cache'] && f['offline.pilot.ops_pages']);
     }
 
     function tenantScope() {
@@ -1423,6 +1580,69 @@
         return out;
     }
 
+    /** Phase 14 — keep main content for browse; still strip secrets / scripts / CSRF. */
+    function stripSensitiveOpsPage(html) {
+        var out = String(html || '');
+        out = out.replace(/<meta[^>]*name=["']rateb-csrf["'][^>]*>/gi, '');
+        out = out.replace(/name=["']_csrf["'][^>]*>/gi, '>');
+        out = out.replace(/\svalue=["'][^"']*["'](?=[^>]*name=["']_csrf["'])/gi, ' value=""');
+        out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+        out = out.replace(/rateb-connection-indicator\s+is-online/gi, 'rateb-connection-indicator is-offline');
+        out = out.replace(/(\sclass=["'][^"']*rateb-connection-indicator)(?![^"']*is-offline)/gi,
+            '$1 is-offline');
+        out = out.replace(/(rateb-connection-indicator__label">)\s*[^<]*/gi, '$1غير متصل');
+        out = out.replace(/(title|aria-label)=["']\s*(متصل|Online)\s*["']/gi, '$1="غير متصل"');
+        out = out.replace(/\sdata-rateb-[a-z0-9_-]+=["'][^"']*["']/gi, '');
+        out = out.replace(/\sdata-(csrf|token|session)[a-z0-9_-]*=["'][^"']*["']/gi, '');
+        out = out.replace(/\son[a-z]+\s*=\s*["'][^"']*["']/gi, '');
+        out = out.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+        out = out.replace(/\shref=["']\s*javascript:[^"']*["']/gi, ' href="#"');
+        // Disable forms in cached browse snapshots (writes use live-page hooks).
+        out = out.replace(/<form\b/gi, '<form data-rateb-offline-browse="1" onsubmit="return false;" ');
+        out = out.replace(
+            /<main\b([^>]*)>/i,
+            '<main$1><div class="alert alert-warning m-3" role="status">'
+            + 'وضع عدم الاتصال — صفحة محفوظة للتصفح. التعديل يتطلب اتصال أو نموذج حي قبل انقطاع الشبكة.'
+            + '</div>'
+        );
+        return out;
+    }
+
+    function opsAllowlist() {
+        var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+        var paths = cfg.ops_page_paths;
+        return Array.isArray(paths) ? paths : [];
+    }
+
+    function matchOpsPath(pathname) {
+        var p = String(pathname || '').replace(/\/+$/, '').toLowerCase();
+        var list = opsAllowlist();
+        for (var i = 0; i < list.length; i++) {
+            var a = String(list[i] || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+            if (!a) {
+                continue;
+            }
+            var re = new RegExp('(^|/)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
+            if (re.test(p)) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    function opsSnapshotId(pathname, scope) {
+        scope = scope || tenantScope();
+        var matched = matchOpsPath(pathname);
+        if (!matched || !scope.company_id || !scope.user_id) {
+            return null;
+        }
+        return OPS_PAGE_PREFIX
+            + ':' + scope.company_id
+            + ':' + scope.branch_id
+            + ':' + scope.user_id
+            + ':' + matched;
+    }
+
     function putSnapshot(record) {
         var Schema = root.RatebOfflineSchema;
         if (!Schema || !Schema.withStore) {
@@ -1450,6 +1670,28 @@
                 req.onerror = function () { reject(req.error); };
             });
         });
+    }
+
+    function putOpsPageCache(url, html) {
+        if (!root.caches || !root.caches.open) {
+            return Promise.resolve(false);
+        }
+        try {
+            var res = new Response(html, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'X-Rateb-Offline': '1',
+                    'X-Rateb-Ops-Page': '1',
+                    'Cache-Control': 'no-store'
+                }
+            });
+            return root.caches.open(OPS_CACHE).then(function (cache) {
+                return cache.put(url, res).then(function () { return true; });
+            }).catch(function () { return false; });
+        } catch (e) {
+            return Promise.resolve(false);
+        }
     }
 
     function captureChrome() {
@@ -1485,12 +1727,70 @@
         }
     }
 
+    function captureOpsPage() {
+        if (!isOpsPagesActive()) {
+            return Promise.resolve({ skipped: true, disabled: true });
+        }
+        var path = (root.location && root.location.pathname) || '';
+        if (!matchOpsPath(path)) {
+            return Promise.resolve({ skipped: true, reason: 'path_not_allowlisted' });
+        }
+        var scope = tenantScope();
+        var id = opsSnapshotId(path, scope);
+        if (!id) {
+            return Promise.resolve({ skipped: true, reason: 'tenant_scope_required' });
+        }
+        if (!root.document || !root.document.documentElement) {
+            return Promise.resolve({ skipped: true, reason: 'no_document' });
+        }
+        try {
+            var html = '<!DOCTYPE html>\n' + root.document.documentElement.outerHTML;
+            var safe = stripSensitiveOpsPage(html);
+            var href = (root.location && root.location.href) || path;
+            var record = {
+                id: id,
+                kind: 'erp_ops_page',
+                company_id: scope.company_id,
+                branch_id: scope.branch_id,
+                user_id: scope.user_id,
+                captured_at: new Date().toISOString(),
+                path: path,
+                url: href,
+                html: safe
+            };
+            return putSnapshot(record).then(function () {
+                return putOpsPageCache(href, safe).then(function () {
+                    var origin = (root.location && root.location.origin) || '';
+                    return putOpsPageCache(origin + path, safe);
+                }).then(function () {
+                    try {
+                        if (root.navigator && root.navigator.serviceWorker
+                            && root.navigator.serviceWorker.controller) {
+                            root.navigator.serviceWorker.controller.postMessage({
+                                type: 'CACHE_ERP_OPS_PAGE',
+                                url: href,
+                                path: path,
+                                html: safe
+                            });
+                        }
+                    } catch (e) { /* ignore */ }
+                    return { ok: true, id: id, bytes: safe.length, path: path };
+                });
+            });
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
     function startAutoCapture() {
         if (!isActive()) {
             return;
         }
         var run = function () {
             captureChrome().catch(function () { /* ignore */ });
+            if (isOpsPagesActive()) {
+                captureOpsPage().catch(function () { /* ignore */ });
+            }
         };
         if (root.document && root.document.readyState === 'complete') {
             setTimeout(run, 800);
@@ -1503,13 +1803,20 @@
 
     root.RatebOfflineShellAdapter = {
         SNAPSHOT_PREFIX: SNAPSHOT_PREFIX,
+        OPS_PAGE_PREFIX: OPS_PAGE_PREFIX,
+        OPS_CACHE: OPS_CACHE,
         isActive: isActive,
+        isOpsPagesActive: isOpsPagesActive,
         tenantScope: tenantScope,
         snapshotId: snapshotId,
+        opsSnapshotId: opsSnapshotId,
+        matchOpsPath: matchOpsPath,
         captureChrome: captureChrome,
+        captureOpsPage: captureOpsPage,
         getSnapshot: getSnapshot,
         startAutoCapture: startAutoCapture,
-        stripSensitive: stripSensitive
+        stripSensitive: stripSensitive,
+        stripSensitiveOpsPage: stripSensitiveOpsPage
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -2021,7 +2328,6 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- rbac-cache-adapter.js ---- */
 /**
  * RATEB Offline — ERP RBAC/nav cache adapter (Phase 12).
@@ -2397,7 +2703,6 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
-
 /* ---- master-data-adapter.js ---- */
 /**
  * RATEB Offline — Master-data delta adapter (Phase 13.1).
@@ -2735,6 +3040,82 @@
         });
     }
 
+    /**
+     * Phase 14 — list cached directory rows for offline pickers.
+     * @returns {Promise<{ok: boolean, entity?: string, items: object[], warning?: string}>}
+     */
+    function listCached(entityName, options) {
+        options = options || {};
+        var entity = resolveEntity(entityName);
+        if (!entity) {
+            return Promise.resolve({ ok: false, error: 'entity_not_allowed', items: [] });
+        }
+        var scope = options.scope || tenantScope();
+        var prefix = String(scope.company_id) + ':' + String(scope.branch_id || 0) + ':'
+            + (ENTITIES[entity].prefix) + ':';
+        var q = String(options.query || options.q || '').toLowerCase().trim();
+        var limit = parseInt(options.limit, 10) || 200;
+        if (limit < 1) {
+            limit = 200;
+        }
+        return withEntityCache('readonly', function (store) {
+            return new Promise(function (resolve, reject) {
+                var req = store.openCursor();
+                var items = [];
+                req.onsuccess = function (ev) {
+                    var cursor = ev.target.result;
+                    if (!cursor || items.length >= limit) {
+                        resolve({ ok: true, entity: entity, items: items });
+                        return;
+                    }
+                    var row = cursor.value || {};
+                    var id = String(row.id || '');
+                    if (id.indexOf(prefix) === 0 && row.entity === entity) {
+                        var payload = row.payload || row.data || {};
+                        if (q) {
+                            var label = String(
+                                payload.name || payload.title || payload.label
+                                || payload.code || payload.email || ''
+                            ).toLowerCase();
+                            if (label.indexOf(q) === -1 && String(payload.id || '').indexOf(q) === -1) {
+                                cursor.continue();
+                                return;
+                            }
+                        }
+                        items.push(payload);
+                    }
+                    cursor.continue();
+                };
+                req.onerror = function () { reject(req.error); };
+            });
+        }).catch(function () {
+            return { ok: false, error: 'entity_cache_unavailable', items: [] };
+        });
+    }
+
+    /** Map entity_cache rows to {value,label} for <select> hydration. */
+    function pickerOptions(entityName, options) {
+        return listCached(entityName, options).then(function (res) {
+            var items = (res && res.items) ? res.items : [];
+            var opts = items.map(function (item) {
+                var value = item.id;
+                var label = item.name || item.title || item.label || item.code
+                    || (item.first_name
+                        ? (String(item.first_name) + ' ' + String(item.last_name || '')).trim()
+                        : null)
+                    || String(item.id);
+                return { value: value, label: label, item: item };
+            });
+            return {
+                ok: !!(res && res.ok),
+                entity: res && res.entity,
+                options: opts,
+                warning: res && res.warning,
+                error: res && res.error
+            };
+        });
+    }
+
     function syncAll(options) {
         options = options || {};
         if (!isActive()) {
@@ -2774,6 +3155,8 @@
         readClientCursor: readClientCursor,
         writeClientCursor: writeClientCursor,
         pullEntity: pullEntity,
+        listCached: listCached,
+        pickerOptions: pickerOptions,
         syncAll: syncAll,
         purgeExpired: purgeExpired,
         ENTITIES: ENTITIES,
@@ -2782,10 +3165,441 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- ops-forms-adapter.js ---- */
+/**
+ * RATEB Offline — Ops forms adapter (Phase 14 / 14.2).
+ * Per-module hooks: when offline, allowlisted Inv/HR/Proc forms enqueue via existing adapters.
+ * Does not finish a generic form-post stub; narrow path matching only.
+ * Phase 14.2: purchase-orders/{id}/receive → goods_receipt.receive (flag-gated).
+ */
+(function (root) {
+    'use strict';
+
+    var DEFAULT_HOOKS = [
+        { match: 'stock-movements', module: 'inventory', action: 'stock_movement.create' },
+        { match: 'warehouse-transfers', module: 'inventory', action: 'warehouse_transfer.create' },
+        { match: 'inventory-audits', module: 'inventory', action: 'stock_count.create' },
+        { match: 'hr/attendance/bulk', module: 'hr', action: 'attendance.bulk' },
+        { match: 'hr/attendance', module: 'hr', action: 'attendance.create' },
+        { match: 'hr/leaves', module: 'hr', action: 'leave_request.draft' },
+        { match: 'purchase-requests', module: 'procurement', action: 'purchase_request.draft' },
+        { match: 'purchase-orders', module: 'procurement', action: 'purchase_order.draft' },
+        { match: 'rfq', module: 'procurement', action: 'rfq.draft' }
+    ];
+
+    function cfg() {
+        return root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+    }
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return cfg().flags || {};
+    }
+
+    function isOnline() {
+        var conn = root.RatebOfflineConnectivity;
+        if (conn && typeof conn.isOnline === 'function') {
+            return !!conn.isOnline();
+        }
+        return typeof navigator === 'undefined' || navigator.onLine !== false;
+    }
+
+    function moduleEnabled(module, action) {
+        var f = flags();
+        if (!f['offline.enabled']) {
+            return false;
+        }
+        if (module === 'inventory') {
+            return !!f['offline.inventory.movements'];
+        }
+        if (module === 'hr') {
+            return !!f['offline.hr.attendance'];
+        }
+        if (module === 'procurement') {
+            if (!f['offline.procurement']) {
+                return false;
+            }
+            if (action === 'goods_receipt.receive') {
+                return !!f['offline.procurement.goods_receipt'];
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function formHooks() {
+        var list = cfg().ops_form_hooks;
+        if (Array.isArray(list) && list.length) {
+            return list;
+        }
+        return DEFAULT_HOOKS;
+    }
+
+    function normalizePath(pathname) {
+        return String(pathname || '').replace(/\/+$/, '').toLowerCase();
+    }
+
+    function isPurchaseOrderReceivePath(pathname) {
+        return /purchase-orders\/\d+\/receive(\/|$|\?)/i.test(String(pathname || ''));
+    }
+
+    function extractPoIdFromPath(pathname) {
+        var m = String(pathname || '').match(/purchase-orders\/(\d+)\/receive/i);
+        return m ? (parseInt(m[1], 10) || 0) : 0;
+    }
+
+    function matchHook(pathname) {
+        var p = normalizePath(pathname);
+        var hooks = formHooks();
+        // Longer matches first (bulk before attendance).
+        var sorted = hooks.slice().sort(function (a, b) {
+            return String(b.match || '').length - String(a.match || '').length;
+        });
+        for (var i = 0; i < sorted.length; i++) {
+            var m = String(sorted[i].match || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+            if (!m) {
+                continue;
+            }
+            var re = new RegExp('(^|/)' + m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
+            if (re.test(p)) {
+                var hook = sorted[i];
+                if (String(hook.match).indexOf('purchase-orders') >= 0 && isPurchaseOrderReceivePath(p)) {
+                    return {
+                        match: hook.match,
+                        module: 'procurement',
+                        action: 'goods_receipt.receive'
+                    };
+                }
+                return hook;
+            }
+        }
+        return null;
+    }
+
+    function formToObject(form) {
+        var fd = new FormData(form);
+        var out = {};
+        fd.forEach(function (value, key) {
+            if (key === '_csrf' || key === '_method') {
+                return;
+            }
+            if (Object.prototype.hasOwnProperty.call(out, key)) {
+                if (!Array.isArray(out[key])) {
+                    out[key] = [out[key]];
+                }
+                out[key].push(value);
+            } else {
+                out[key] = value;
+            }
+        });
+        return out;
+    }
+
+    function intOrZero(v) {
+        var n = parseInt(v, 10);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function floatOrZero(v) {
+        var n = parseFloat(v);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function buildBulkAttendance(raw) {
+        var date = String(raw.attendance_date || '');
+        var present = Array.isArray(raw['present[]']) ? raw['present[]'] : (raw.present || []);
+        if (!Array.isArray(present) && present) {
+            present = [present];
+        }
+        var rows = [];
+        (present || []).forEach(function (eid) {
+            var id = intOrZero(eid);
+            if (id < 1) {
+                return;
+            }
+            var checkIn = raw['check_in[' + id + ']'] || raw['check_in'] || '';
+            var checkOut = raw['check_out[' + id + ']'] || raw['check_out'] || '';
+            rows.push({
+                employee_id: id,
+                check_in: checkIn || null,
+                check_out: checkOut || null,
+                status: 'present'
+            });
+        });
+        return { attendance_date: date, rows: rows };
+    }
+
+    function buildStockCount(raw) {
+        var lines = [];
+        if (Array.isArray(raw['line_inventory_id[]']) || raw['line_inventory_id']) {
+            var ids = Array.isArray(raw['line_inventory_id[]'])
+                ? raw['line_inventory_id[]']
+                : [raw['line_inventory_id']];
+            var qtys = Array.isArray(raw['line_counted_qty[]'])
+                ? raw['line_counted_qty[]']
+                : (raw['line_counted_qty'] ? [raw['line_counted_qty']] : []);
+            ids.forEach(function (id, idx) {
+                lines.push({
+                    inventory_id: intOrZero(id),
+                    counted_qty: floatOrZero(qtys[idx] != null ? qtys[idx] : 0)
+                });
+            });
+        } else if (raw.inventory_id) {
+            lines.push({
+                inventory_id: intOrZero(raw.inventory_id),
+                counted_qty: floatOrZero(raw.counted_qty != null ? raw.counted_qty : raw.quantity)
+            });
+        }
+        return {
+            warehouse_id: intOrZero(raw.warehouse_id) || null,
+            notes: raw.notes || null,
+            lines: lines
+        };
+    }
+
+    function buildGoodsReceipt(raw, pathname) {
+        var receiveQtys = {};
+        Object.keys(raw || {}).forEach(function (key) {
+            var m = String(key).match(/^receive_qty\[(\d+)\]$/);
+            if (m) {
+                receiveQtys[m[1]] = floatOrZero(raw[key]);
+            }
+        });
+        if (raw.receive_qty && typeof raw.receive_qty === 'object' && !Array.isArray(raw.receive_qty)) {
+            Object.keys(raw.receive_qty).forEach(function (k) {
+                receiveQtys[k] = floatOrZero(raw.receive_qty[k]);
+            });
+        }
+        return {
+            purchase_order_id: intOrZero(raw.purchase_order_id || raw.order_id)
+                || extractPoIdFromPath(pathname),
+            warehouse_id: intOrZero(raw.warehouse_id) || null,
+            receive_qty: receiveQtys
+        };
+    }
+
+    function buildPayload(hook, raw, pathname) {
+        var action = String(hook.action || '');
+        if (action === 'stock_movement.create') {
+            return {
+                inventory_id: intOrZero(raw.inventory_id),
+                warehouse_id: intOrZero(raw.warehouse_id) || null,
+                movement_type: String(raw.movement_type || 'in'),
+                quantity: floatOrZero(raw.quantity),
+                notes: raw.notes || null
+            };
+        }
+        if (action === 'warehouse_transfer.create') {
+            return {
+                inventory_id: intOrZero(raw.inventory_id),
+                source_warehouse_id: intOrZero(raw.source_warehouse_id),
+                destination_warehouse_id: intOrZero(raw.destination_warehouse_id),
+                quantity: floatOrZero(raw.quantity),
+                notes: raw.notes || null
+            };
+        }
+        if (action === 'stock_count.create') {
+            return buildStockCount(raw);
+        }
+        if (action === 'attendance.create') {
+            return {
+                employee_id: intOrZero(raw.employee_id),
+                attendance_date: String(raw.attendance_date || ''),
+                check_in: raw.check_in || null,
+                check_out: raw.check_out || null,
+                status: raw.status || 'present',
+                notes: raw.notes || null
+            };
+        }
+        if (action === 'attendance.bulk') {
+            return buildBulkAttendance(raw);
+        }
+        if (action === 'leave_request.draft') {
+            return {
+                employee_id: intOrZero(raw.employee_id),
+                leave_type_id: intOrZero(raw.leave_type_id) || null,
+                start_date: raw.start_date || null,
+                end_date: raw.end_date || null,
+                days: raw.days != null ? floatOrZero(raw.days) : null,
+                notes: raw.notes || null,
+                status: 'draft'
+            };
+        }
+        if (action === 'goods_receipt.receive') {
+            return buildGoodsReceipt(raw, pathname || '');
+        }
+        if (action === 'purchase_request.draft'
+            || action === 'rfq.draft'
+            || action === 'purchase_order.draft') {
+            return {
+                title: String(raw.title || raw.subject || 'Offline draft'),
+                supplier_id: intOrZero(raw.supplier_id) || null,
+                department: raw.department || null,
+                priority: raw.priority || null,
+                notes: raw.notes || null,
+                total_estimated: raw.total_estimated != null ? floatOrZero(raw.total_estimated) : null,
+                total_amount: raw.total_amount != null ? floatOrZero(raw.total_amount) : null
+            };
+        }
+        return raw;
+    }
+
+    function enqueueViaAdapter(hook, payload) {
+        var module = String(hook.module || '');
+        var action = String(hook.action || '');
+        if (module === 'inventory') {
+            var inv = root.RatebOfflineInventoryAdapter;
+            if (!inv) {
+                return Promise.reject(new Error('inventory_adapter_unavailable'));
+            }
+            if (action === 'stock_movement.create') {
+                return inv.enqueueMovement(payload);
+            }
+            if (action === 'warehouse_transfer.create') {
+                return inv.enqueueWarehouseTransfer(payload);
+            }
+            if (action === 'stock_count.create') {
+                return inv.enqueueStockCount(payload);
+            }
+        }
+        if (module === 'hr') {
+            var hr = root.RatebOfflineHrAdapter;
+            if (!hr) {
+                return Promise.reject(new Error('hr_adapter_unavailable'));
+            }
+            if (action === 'attendance.create') {
+                return hr.enqueueAttendance(payload);
+            }
+            if (action === 'attendance.bulk') {
+                return hr.enqueueAttendanceBulk(payload);
+            }
+            if (action === 'leave_request.draft') {
+                return hr.enqueueLeaveDraft(payload);
+            }
+        }
+        if (module === 'procurement') {
+            var proc = root.RatebOfflineProcurementAdapter;
+            if (!proc) {
+                return Promise.reject(new Error('procurement_adapter_unavailable'));
+            }
+            if (action === 'purchase_request.draft') {
+                return proc.enqueuePurchaseRequestDraft(payload);
+            }
+            if (action === 'rfq.draft') {
+                return proc.enqueueRfqDraft(payload);
+            }
+            if (action === 'purchase_order.draft') {
+                return proc.enqueuePurchaseOrderDraft(payload);
+            }
+            if (action === 'goods_receipt.receive') {
+                return proc.enqueueGoodsReceipt(payload);
+            }
+        }
+        return Promise.reject(new Error('ops_form_action_unsupported'));
+    }
+
+    function notify(message, isError) {
+        try {
+            if (root.RatebOfflineEvents) {
+                root.RatebOfflineEvents.emit('ops_form:queued', { message: message, error: !!isError });
+            }
+        } catch (e) { /* ignore */ }
+        try {
+            var existing = root.document && root.document.getElementById('rateb-offline-ops-toast');
+            if (existing && existing.parentNode) {
+                existing.parentNode.removeChild(existing);
+            }
+            if (!root.document || !root.document.body) {
+                return;
+            }
+            var el = root.document.createElement('div');
+            el.id = 'rateb-offline-ops-toast';
+            el.setAttribute('role', 'status');
+            el.style.cssText = 'position:fixed;bottom:1rem;inset-inline-start:1rem;z-index:9999;'
+                + 'padding:.75rem 1rem;border-radius:.5rem;max-width:22rem;font-size:.9rem;'
+                + (isError
+                    ? 'background:#7f1d1d;color:#fecaca;'
+                    : 'background:#14532d;color:#bbf7d0;');
+            el.textContent = message;
+            root.document.body.appendChild(el);
+            setTimeout(function () {
+                if (el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            }, 4500);
+        } catch (e2) { /* ignore */ }
+    }
+
+    function handleSubmit(ev) {
+        if (isOnline()) {
+            return;
+        }
+        var form = ev.target;
+        if (!form || form.tagName !== 'FORM') {
+            return;
+        }
+        var actionUrl = form.getAttribute('action') || (root.location && root.location.pathname) || '';
+        var hook = matchHook(actionUrl) || matchHook(root.location && root.location.pathname);
+        if (!hook) {
+            return;
+        }
+        if (!moduleEnabled(hook.module, hook.action)) {
+            return;
+        }
+        ev.preventDefault();
+        ev.stopPropagation();
+        var raw = formToObject(form);
+        var payload = buildPayload(hook, raw, actionUrl);
+        enqueueViaAdapter(hook, payload).then(function (res) {
+            var depth = res && (res.queueDepth != null ? res.queueDepth : null);
+            notify(
+                'تم حفظ العملية في قائمة المزامنة'
+                    + (depth != null ? ' (' + depth + ')' : '')
+                    + '. Offline queued — sync when online.',
+                false
+            );
+        }).catch(function (err) {
+            var msg = (err && err.message) ? String(err.message) : 'queue_failed';
+            if (msg === 'client_queue_full') {
+                notify('قائمة المزامنة ممتلئة — أعد الاتصال وزامِن أولاً. Queue full.', true);
+            } else {
+                notify('تعذر الحفظ أوفلاين: ' + msg, true);
+            }
+        });
+    }
+
+    var bound = false;
+
+    function bind() {
+        if (bound || !root.document) {
+            return;
+        }
+        var f = flags();
+        if (!f['offline.enabled']) {
+            return;
+        }
+        if (!(f['offline.inventory.movements'] || f['offline.hr.attendance'] || f['offline.procurement'])) {
+            return;
+        }
+        root.document.addEventListener('submit', handleSubmit, true);
+        bound = true;
+    }
+
+    root.RatebOfflineOpsForms = {
+        bind: bind,
+        matchHook: matchHook,
+        buildPayload: buildPayload,
+        formToObject: formToObject,
+        isModuleEnabled: moduleEnabled,
+        DEFAULT_HOOKS: DEFAULT_HOOKS
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
 
 /* ---- sdk.js ---- */
 /**
- * RATEB Offline SDK bootstrap (Phase 13.1).
+ * RATEB Offline SDK bootstrap (Phase 14.2).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -2798,10 +3612,12 @@
         'offline.inventory.movements': false,
         'offline.hr.attendance': false,
         'offline.procurement': false,
+        'offline.procurement.goods_receipt': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
-        'offline.master_data': false
+        'offline.master_data': false,
+        'offline.pilot.ops_pages': false
     };
 
     function mergeFlags(incoming) {
@@ -2820,11 +3636,13 @@
             inventory: !!flags['offline.inventory.movements'],
             hr: !!flags['offline.hr.attendance'],
             procurement: !!flags['offline.procurement'],
+            procurement_goods_receipt: !!flags['offline.procurement.goods_receipt'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
             master_data: !!flags['offline.master_data'],
-            version: '13.1.0'
+            pilot_ops_pages: !!flags['offline.pilot.ops_pages'],
+            version: '14.2.0'
         };
     }
 
@@ -2844,7 +3662,10 @@
         if (root.RatebOfflineQueue) {
             root.RatebOfflineQueue.configure({
                 enabled: enabled,
-                apiBase: options.apiBase || ''
+                apiBase: options.apiBase || '',
+                clientQueueMax: typeof options.clientQueueMax === 'number'
+                    ? options.clientQueueMax
+                    : 500
             });
         }
         if (root.RatebOfflineTransport) {
@@ -2869,7 +3690,7 @@
     }
 
     root.RatebOffline = {
-        version: '13.1.0',
+        version: '14.2.0',
         init: init,
         mergeFlags: mergeFlags,
         isBooted: function () { return booted; },
@@ -2882,6 +3703,11 @@
         },
         isProcurementEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.procurement']);
+        },
+        isProcurementGoodsReceiptEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement']
+                && flags['offline.procurement.goods_receipt']);
         },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
@@ -2898,6 +3724,11 @@
         isMasterDataEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.master_data']);
         },
+        isPilotOpsPagesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.read_cache']
+                && flags['offline.pilot.ops_pages']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -2906,6 +3737,7 @@
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
+        opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },
         rbac: function () { return root.RatebOfflineRbacCache || null; },

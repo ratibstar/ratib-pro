@@ -218,7 +218,7 @@ final class ErpOfflineAuthPhase11Test
         $sdk = (string) file_get_contents(RATEB_ROOT . '/offline/client/core/sdk.js');
         $ok = str_contains($sdk, 'isAuthUnlockEnabled')
             && str_contains($sdk, 'auth:')
-            && (str_contains($sdk, '11.0.0') || str_contains($sdk, '12.0.0') || str_contains($sdk, '13.0.0') || str_contains($sdk, '13.1.0'));
+            && (str_contains($sdk, '11.0.0') || str_contains($sdk, '12.0.0') || str_contains($sdk, '13.0.0') || str_contains($sdk, '13.1.0') || str_contains($sdk, '14.0.0') || str_contains($sdk, '14.2.0'));
         $this->record('SDK exposes auth unlock', $ok, $ok ? 'ok' : 'fail');
     }
 

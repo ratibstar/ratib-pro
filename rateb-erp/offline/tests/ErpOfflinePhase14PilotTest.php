@@ -202,7 +202,7 @@ final class ErpOfflinePhase14PilotTest
     {
         $bundle = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/rateb-offline.js');
         $min = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/rateb-offline.min.js');
-        $ok = str_contains($bundle, 'Phase 14.0.0')
+        $ok = (str_contains($bundle, 'Phase 14.0.0') || str_contains($bundle, 'Phase 14.2.0'))
             && str_contains($bundle, '/* ---- ops-forms-adapter.js ---- */')
             && str_contains($bundle, 'RatebOfflineOpsForms')
             && str_contains($bundle, 'client_queue_full')

@@ -13,6 +13,8 @@ return [
         'offline.inventory.movements' => false,
         'offline.hr.attendance' => false,
         'offline.procurement' => false,
+        /** Phase 14.2 — PO goods receipt (GRN) via ProcurementService::receiveOrder (requires procurement). */
+        'offline.procurement.goods_receipt' => false,
         'offline.monitoring' => false,
         'offline.read_cache' => false,
         'offline.auth.unlock' => false,
@@ -29,6 +31,7 @@ return [
         'offline.inventory.movements' => 'RATEB_OFFLINE_INVENTORY_MOVEMENTS',
         'offline.hr.attendance' => 'RATEB_OFFLINE_HR_ATTENDANCE',
         'offline.procurement' => 'RATEB_OFFLINE_PROCUREMENT',
+        'offline.procurement.goods_receipt' => 'RATEB_OFFLINE_PROCUREMENT_GRN',
         'offline.monitoring' => 'RATEB_OFFLINE_MONITORING',
         'offline.read_cache' => 'RATEB_OFFLINE_READ_CACHE',
         'offline.auth.unlock' => 'RATEB_OFFLINE_AUTH_UNLOCK',

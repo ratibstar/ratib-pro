@@ -258,6 +258,12 @@ final class OfflineQueueService
                     $rejectedKeys[] = $idempotencyKey;
                     continue;
                 }
+                if (in_array($normalizedAction, ProcurementOfflineReplayService::goodsReceiptActions(), true)
+                    && !$this->flags()->enabled('offline.procurement.goods_receipt')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
                 $action = $normalizedAction;
             }
 
@@ -495,6 +501,9 @@ final class OfflineQueueService
             'create_po' => 'purchase_order.draft',
             'po.create' => 'purchase_order.draft',
             'pr.create' => 'purchase_request.draft',
+            'receive_goods' => 'goods_receipt.receive',
+            'grn.create' => 'goods_receipt.receive',
+            'po.receive' => 'goods_receipt.receive',
         ];
         $mapped = $aliases[$action] ?? '';
 

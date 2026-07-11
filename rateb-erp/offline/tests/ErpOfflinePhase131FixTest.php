@@ -39,7 +39,7 @@ final class ErpOfflinePhase131FixTest
     {
         $sw = (string) file_get_contents(RATEB_ROOT . '/public/rateb-offline-sw.js');
         $ok = str_contains($sw, 'fetchBypass')
-            && str_contains($sw, 'rateb-erp-assets-v13.1')
+            && (str_contains($sw, 'rateb-erp-assets-v14') || str_contains($sw, 'rateb-erp-assets-v13.1'))
             && str_contains($sw, 'offline-shell.html')
             && !preg_match('/clients\.claim\s*\(/', $sw);
         $this->record('SW precaches/serves real offline-shell via bypass', $ok, $ok ? 'ok' : 'fail');
@@ -50,7 +50,7 @@ final class ErpOfflinePhase131FixTest
         $sdk = (string) file_get_contents(RATEB_ROOT . '/offline/client/core/sdk.js');
         $ok = str_contains($sdk, 'mergeFlags')
             && str_contains($sdk, 'Already booted: merge flags only')
-            && str_contains($sdk, '13.1.0');
+            && (str_contains($sdk, '14.0.0') || str_contains($sdk, '14.2.0') || str_contains($sdk, '13.1.0'));
         $this->record('SDK merges flags without freeze', $ok, $ok ? 'ok' : 'fail');
     }
 

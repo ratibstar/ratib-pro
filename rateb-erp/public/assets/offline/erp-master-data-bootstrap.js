@@ -1,6 +1,7 @@
 /**
- * RATEB Offline — Master-data bootstrap (Phase 13).
+ * RATEB Offline — Master-data bootstrap (Phase 14).
  * Loaded only when offline.enabled + offline.master_data are ON.
+ * Surfaces migration_required / page_limit_reached via CustomEvent.
  */
 (function (root) {
     'use strict';
@@ -10,6 +11,41 @@
     function flagsOk() {
         var f = cfg.flags || {};
         return !!(f['offline.enabled'] && f['offline.master_data']);
+    }
+
+    function emitMasterDataEvent(detail) {
+        try {
+            if (!root.document || typeof root.CustomEvent !== 'function') {
+                return;
+            }
+            root.document.dispatchEvent(new root.CustomEvent('rateb-offline-master-data', {
+                detail: detail || {}
+            }));
+        } catch (e) { /* ignore */ }
+    }
+
+    function surfaceSyncResult(result) {
+        if (!result || !result.results) {
+            return;
+        }
+        var entities = Object.keys(result.results);
+        var migration = false;
+        var pageLimit = false;
+        entities.forEach(function (k) {
+            var r = result.results[k] || {};
+            if (r.migration_required || r.error === 'migration_required' || r.error === 'updated_at_required') {
+                migration = true;
+            }
+            if (r.warning === 'page_limit_reached' || r.incomplete) {
+                pageLimit = true;
+            }
+        });
+        if (migration) {
+            emitMasterDataEvent({ migration_required: true });
+        }
+        if (pageLimit) {
+            emitMasterDataEvent({ page_limit_reached: true, warning: 'page_limit_reached' });
+        }
     }
 
     function boot() {
@@ -42,6 +78,8 @@
                 branch_id: parseInt(cfg.branch_id, 10) || 0,
                 user_id: parseInt(cfg.user_id, 10) || 0
             }
+        }).then(function (result) {
+            surfaceSyncResult(result);
         }).catch(function () { /* fail soft */ });
     }
 

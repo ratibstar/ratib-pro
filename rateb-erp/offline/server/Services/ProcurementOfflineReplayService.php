@@ -11,10 +11,11 @@ use Rateb\App\Models\PurchaseOrder;
 use Rateb\App\Models\PurchaseRequest;
 use Rateb\App\Models\Rfq;
 use Rateb\App\Services\DocumentCodeService;
+use Rateb\App\Services\ProcurementService;
 
 /**
- * Thin Procurement offline replay — drafts only via existing models / LineItems / DocumentCodeService.
- * No approvals, financial posting, supplier payments, or accounting entries (Phase 5 / Tier 1).
+ * Thin Procurement offline replay — Phase 5 drafts + Phase 14.2 GRN via ProcurementService::receiveOrder.
+ * No duplicated GRN business logic; no approvals / supplier payments outside existing services.
  */
 final class ProcurementOfflineReplayService
 {
@@ -35,6 +36,23 @@ final class ProcurementOfflineReplayService
             'purchase_order.create',
             'po.draft',
             'procurement.purchase_order.draft',
+            'goods_receipt.receive',
+            'grn.receive',
+            'procurement.goods_receipt.receive',
+            'purchase_order.receive',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function goodsReceiptActions(): array
+    {
+        return [
+            'goods_receipt.receive',
+            'grn.receive',
+            'procurement.goods_receipt.receive',
+            'purchase_order.receive',
         ];
     }
 
@@ -77,6 +95,11 @@ final class ProcurementOfflineReplayService
             return ['status' => 'skipped', 'error' => 'unknown_procurement_action'];
         }
 
+        if (in_array($action, self::goodsReceiptActions(), true)
+            && !(new OfflineFeatureFlagService())->isProcurementGoodsReceiptEnabled()) {
+            return ['status' => 'skipped', 'error' => 'procurement_grn_offline_disabled'];
+        }
+
         try {
             $scope = $this->buildScope($queueRow);
             if ($scope['company_id'] < 1) {
@@ -109,6 +132,14 @@ final class ProcurementOfflineReplayService
     public function replay(string $action, array $scope, array $inner, string $idempotencyKey = ''): array
     {
         $action = $this->normalizeAction($action);
+
+        if (in_array($action, self::goodsReceiptActions(), true)) {
+            if (!(new OfflineFeatureFlagService())->isProcurementGoodsReceiptEnabled()) {
+                throw new \RuntimeException('procurement_grn_offline_disabled');
+            }
+
+            return $this->goodsReceiptReceive($scope, $inner, $idempotencyKey);
+        }
 
         return match ($action) {
             'purchase_request.draft', 'purchase_request.create', 'pr.draft', 'procurement.purchase_request.draft'
@@ -319,6 +350,85 @@ final class ProcurementOfflineReplayService
         return ['ok' => true, 'purchase_order_id' => $id, 'status' => 'draft', 'draft' => true];
     }
 
+    /**
+     * Phase 14.2 — PO goods receipt via existing ProcurementService::receiveOrder only.
+     *
+     * @param array<string, mixed> $scope
+     * @param array<string, mixed> $inner
+     * @return array<string, mixed>
+     */
+    private function goodsReceiptReceive(array $scope, array $inner, string $idempotencyKey): array
+    {
+        if ($idempotencyKey !== '') {
+            $existingPo = $this->guard()->goodsReceiptExistsForKey($scope['company_id'], $idempotencyKey);
+            if ($existingPo !== null && $existingPo > 0) {
+                return [
+                    'ok' => true,
+                    'idempotent' => true,
+                    'purchase_order_id' => $existingPo,
+                    'goods_receipt' => true,
+                ];
+            }
+        }
+
+        $orderId = (int) ($inner['purchase_order_id'] ?? $inner['order_id'] ?? 0);
+        $assert = $this->guard()->assertPurchaseOrder($orderId, $scope);
+        if (!$assert['ok']) {
+            throw new \RuntimeException((string) ($assert['error'] ?? 'tenant_mismatch'));
+        }
+
+        $warehouseId = isset($inner['warehouse_id']) ? (int) $inner['warehouse_id'] : null;
+        if ($warehouseId !== null && $warehouseId < 1) {
+            $warehouseId = null;
+        }
+        $wh = $this->guard()->assertWarehouse($warehouseId, $scope);
+        if (!$wh['ok']) {
+            throw new \RuntimeException((string) ($wh['error'] ?? 'warehouse_tenant_mismatch'));
+        }
+
+        $receiveQtys = $this->normalizeReceiveQtys($inner);
+        if ($receiveQtys === []) {
+            throw new \RuntimeException('empty_goods_receipt_payload');
+        }
+
+        (new ProcurementService())->receiveOrder($orderId, $receiveQtys, $warehouseId);
+
+        if ($idempotencyKey !== '') {
+            $this->guard()->stampGoodsReceiptMovements($scope['company_id'], $orderId, $idempotencyKey);
+        }
+
+        $order = (new PurchaseOrder())->find($orderId);
+
+        return [
+            'ok' => true,
+            'purchase_order_id' => $orderId,
+            'status' => (string) ($order['status'] ?? ''),
+            'goods_receipt' => true,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $inner
+     * @return array<int|string, float>
+     */
+    private function normalizeReceiveQtys(array $inner): array
+    {
+        $raw = $inner['receive_qty'] ?? $inner['receive_qtys'] ?? $inner['quantities'] ?? null;
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $lineId => $qty) {
+            $id = (int) $lineId;
+            $q = (float) $qty;
+            if ($id > 0 && $q > 0) {
+                $out[$id] = $q;
+            }
+        }
+
+        return $out;
+    }
+
     private function nullableDate(mixed $value): ?string
     {
         $v = trim((string) ($value ?? ''));
@@ -351,6 +461,9 @@ final class ProcurementOfflineReplayService
             'create_po' => 'purchase_order.draft',
             'po.create' => 'purchase_order.draft',
             'pr.create' => 'purchase_request.draft',
+            'receive_goods' => 'goods_receipt.receive',
+            'grn.create' => 'goods_receipt.receive',
+            'po.receive' => 'goods_receipt.receive',
         ];
 
         return $aliases[$action] ?? $action;

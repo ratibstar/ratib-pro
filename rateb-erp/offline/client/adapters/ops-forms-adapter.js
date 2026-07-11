@@ -1,7 +1,8 @@
 /**
- * RATEB Offline — Ops forms adapter (Phase 14).
+ * RATEB Offline — Ops forms adapter (Phase 14 / 14.2).
  * Per-module hooks: when offline, allowlisted Inv/HR/Proc forms enqueue via existing adapters.
  * Does not finish a generic form-post stub; narrow path matching only.
+ * Phase 14.2: purchase-orders/{id}/receive → goods_receipt.receive (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -37,7 +38,7 @@
         return typeof navigator === 'undefined' || navigator.onLine !== false;
     }
 
-    function moduleEnabled(module) {
+    function moduleEnabled(module, action) {
         var f = flags();
         if (!f['offline.enabled']) {
             return false;
@@ -49,7 +50,13 @@
             return !!f['offline.hr.attendance'];
         }
         if (module === 'procurement') {
-            return !!f['offline.procurement'];
+            if (!f['offline.procurement']) {
+                return false;
+            }
+            if (action === 'goods_receipt.receive') {
+                return !!f['offline.procurement.goods_receipt'];
+            }
+            return true;
         }
         return false;
     }
@@ -66,6 +73,15 @@
         return String(pathname || '').replace(/\/+$/, '').toLowerCase();
     }
 
+    function isPurchaseOrderReceivePath(pathname) {
+        return /purchase-orders\/\d+\/receive(\/|$|\?)/i.test(String(pathname || ''));
+    }
+
+    function extractPoIdFromPath(pathname) {
+        var m = String(pathname || '').match(/purchase-orders\/(\d+)\/receive/i);
+        return m ? (parseInt(m[1], 10) || 0) : 0;
+    }
+
     function matchHook(pathname) {
         var p = normalizePath(pathname);
         var hooks = formHooks();
@@ -80,7 +96,15 @@
             }
             var re = new RegExp('(^|/)' + m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
             if (re.test(p)) {
-                return sorted[i];
+                var hook = sorted[i];
+                if (String(hook.match).indexOf('purchase-orders') >= 0 && isPurchaseOrderReceivePath(p)) {
+                    return {
+                        match: hook.match,
+                        module: 'procurement',
+                        action: 'goods_receipt.receive'
+                    };
+                }
+                return hook;
             }
         }
         return null;
@@ -141,7 +165,6 @@
 
     function buildStockCount(raw) {
         var lines = [];
-        var invIds = raw['lines'] || raw['inventory_id'] || null;
         if (Array.isArray(raw['line_inventory_id[]']) || raw['line_inventory_id']) {
             var ids = Array.isArray(raw['line_inventory_id[]'])
                 ? raw['line_inventory_id[]']
@@ -168,7 +191,28 @@
         };
     }
 
-    function buildPayload(hook, raw) {
+    function buildGoodsReceipt(raw, pathname) {
+        var receiveQtys = {};
+        Object.keys(raw || {}).forEach(function (key) {
+            var m = String(key).match(/^receive_qty\[(\d+)\]$/);
+            if (m) {
+                receiveQtys[m[1]] = floatOrZero(raw[key]);
+            }
+        });
+        if (raw.receive_qty && typeof raw.receive_qty === 'object' && !Array.isArray(raw.receive_qty)) {
+            Object.keys(raw.receive_qty).forEach(function (k) {
+                receiveQtys[k] = floatOrZero(raw.receive_qty[k]);
+            });
+        }
+        return {
+            purchase_order_id: intOrZero(raw.purchase_order_id || raw.order_id)
+                || extractPoIdFromPath(pathname),
+            warehouse_id: intOrZero(raw.warehouse_id) || null,
+            receive_qty: receiveQtys
+        };
+    }
+
+    function buildPayload(hook, raw, pathname) {
         var action = String(hook.action || '');
         if (action === 'stock_movement.create') {
             return {
@@ -214,6 +258,9 @@
                 notes: raw.notes || null,
                 status: 'draft'
             };
+        }
+        if (action === 'goods_receipt.receive') {
+            return buildGoodsReceipt(raw, pathname || '');
         }
         if (action === 'purchase_request.draft'
             || action === 'rfq.draft'
@@ -278,6 +325,9 @@
             if (action === 'purchase_order.draft') {
                 return proc.enqueuePurchaseOrderDraft(payload);
             }
+            if (action === 'goods_receipt.receive') {
+                return proc.enqueueGoodsReceipt(payload);
+            }
         }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
@@ -327,13 +377,13 @@
         if (!hook) {
             return;
         }
-        if (!moduleEnabled(hook.module)) {
+        if (!moduleEnabled(hook.module, hook.action)) {
             return;
         }
         ev.preventDefault();
         ev.stopPropagation();
         var raw = formToObject(form);
-        var payload = buildPayload(hook, raw);
+        var payload = buildPayload(hook, raw, actionUrl);
         enqueueViaAdapter(hook, payload).then(function (res) {
             var depth = res && (res.queueDepth != null ? res.queueDepth : null);
             notify(

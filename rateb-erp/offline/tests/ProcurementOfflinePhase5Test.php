@@ -78,6 +78,8 @@ final class ProcurementOfflinePhase5Test
     {
         putenv('RATEB_OFFLINE_ENABLED');
         putenv('RATEB_OFFLINE_PROCUREMENT');
+        putenv('RATEB_OFFLINE_PROCUREMENT_GRN');
+        unset($_ENV['RATEB_OFFLINE_PROCUREMENT_GRN']);
         unset($_ENV['RATEB_OFFLINE_ENABLED'], $_ENV['RATEB_OFFLINE_PROCUREMENT']);
     }
 

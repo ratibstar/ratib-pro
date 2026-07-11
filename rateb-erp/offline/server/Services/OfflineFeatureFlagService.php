@@ -66,6 +66,15 @@ final class OfflineFeatureFlagService
         return $this->isMasterEnabled() && $this->enabled('offline.procurement');
     }
 
+    /**
+     * Phase 14.2 — PO goods receipt / GRN (requires procurement + goods_receipt flag).
+     * Replays via ProcurementService::receiveOrder only.
+     */
+    public function isProcurementGoodsReceiptEnabled(): bool
+    {
+        return $this->isProcurementEnabled() && $this->enabled('offline.procurement.goods_receipt');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {

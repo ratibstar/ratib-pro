@@ -1,7 +1,8 @@
 /**
- * RATEB Offline — ERP shell bootstrap (Phase 13.1).
+ * RATEB Offline — ERP shell bootstrap (Phase 14).
  * Passes full cfg.flags into SDK; never freezes later phase flags.
  * Does not overwrite pos-sw.js when it owns the shared scope.
+ * Sync badge + clientQueueMax for daily ops pilot.
  */
 (function (root) {
     'use strict';
@@ -132,6 +133,75 @@
         }).catch(function () { return null; });
     }
 
+    function ensureSyncBadge() {
+        if (!root.document) {
+            return null;
+        }
+        var existing = root.document.getElementById('rateb-offline-sync-badge');
+        if (existing) {
+            return existing;
+        }
+        var indicator = root.document.getElementById('rateb-connection-indicator');
+        var parent = indicator && indicator.parentNode ? indicator.parentNode : null;
+        if (!parent) {
+            return null;
+        }
+        var badge = root.document.createElement('span');
+        badge.id = 'rateb-offline-sync-badge';
+        badge.className = 'rateb-offline-sync-badge ms-2 small text-muted';
+        badge.setAttribute('role', 'status');
+        badge.setAttribute('aria-live', 'polite');
+        badge.hidden = true;
+        if (indicator.nextSibling) {
+            parent.insertBefore(badge, indicator.nextSibling);
+        } else {
+            parent.appendChild(badge);
+        }
+        return badge;
+    }
+
+    function refreshSyncBadge() {
+        var badge = ensureSyncBadge();
+        if (!badge) {
+            return;
+        }
+        var queue = root.RatebOfflineQueue;
+        if (!queue || typeof queue.depth !== 'function') {
+            badge.hidden = true;
+            return;
+        }
+        queue.depth().then(function (d) {
+            var n = parseInt(d, 10) || 0;
+            if (n < 1) {
+                badge.hidden = true;
+                badge.textContent = '';
+                return;
+            }
+            var max = typeof queue.clientQueueMax === 'function' ? queue.clientQueueMax() : 500;
+            badge.hidden = false;
+            badge.textContent = 'مزامنة: ' + n + (max ? '/' + max : '');
+            badge.title = 'Offline sync queue depth';
+        }).catch(function () {
+            badge.hidden = true;
+        });
+    }
+
+    function bindSyncBadge() {
+        ensureSyncBadge();
+        refreshSyncBadge();
+        var events = root.RatebOfflineEvents;
+        if (events && typeof events.on === 'function') {
+            ['queue:enqueued', 'queue:flushed', 'queue:full', 'sdk:ready', 'sdk:flags'].forEach(function (ev) {
+                events.on(ev, function () { refreshSyncBadge(); });
+            });
+        }
+        if (root.RatebOfflineConnectivity && typeof root.RatebOfflineConnectivity.subscribe === 'function') {
+            root.RatebOfflineConnectivity.subscribe(function () { refreshSyncBadge(); });
+        }
+        root.addEventListener('online', refreshSyncBadge);
+        root.addEventListener('offline', refreshSyncBadge);
+    }
+
     function boot() {
         var flags = flagsFromConfig();
         if (!flags['offline.enabled'] || !flags['offline.read_cache']) {
@@ -145,14 +215,17 @@
         }
         persistOfflineScope(flags);
         if (root.RatebOffline && typeof root.RatebOffline.init === 'function') {
+            var max = parseInt(cfg.client_queue_max, 10);
             root.RatebOffline.init({
                 apiBase: cfg.apiBase || '',
                 probeUrl: cfg.probeUrl || null,
                 flags: flags,
+                clientQueueMax: !isNaN(max) && max >= 0 ? max : 500,
                 startConnectivity: cfg.startConnectivity !== false,
                 startScheduler: false
             });
         }
+        bindSyncBadge();
         registerServiceWorker().then(function () {
             if (root.RatebOfflineShellAdapter && typeof root.RatebOfflineShellAdapter.startAutoCapture === 'function') {
                 root.RatebOfflineShellAdapter.startAutoCapture();

@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 14.0).
+ * RATEB Offline SDK bootstrap (Phase 14.2).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -12,6 +12,7 @@
         'offline.inventory.movements': false,
         'offline.hr.attendance': false,
         'offline.procurement': false,
+        'offline.procurement.goods_receipt': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -35,12 +36,13 @@
             inventory: !!flags['offline.inventory.movements'],
             hr: !!flags['offline.hr.attendance'],
             procurement: !!flags['offline.procurement'],
+            procurement_goods_receipt: !!flags['offline.procurement.goods_receipt'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
             master_data: !!flags['offline.master_data'],
             pilot_ops_pages: !!flags['offline.pilot.ops_pages'],
-            version: '14.0.0'
+            version: '14.2.0'
         };
     }
 
@@ -88,7 +90,7 @@
     }
 
     root.RatebOffline = {
-        version: '14.0.0',
+        version: '14.2.0',
         init: init,
         mergeFlags: mergeFlags,
         isBooted: function () { return booted; },
@@ -101,6 +103,11 @@
         },
         isProcurementEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.procurement']);
+        },
+        isProcurementGoodsReceiptEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement']
+                && flags['offline.procurement.goods_receipt']);
         },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
