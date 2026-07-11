@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme-scope="erp" data-theme="dark" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>RATEB ERP — Offline</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}
+html[data-bs-theme="light"] body{background:#f4f6f8;color:#1a1d24}
+h1{font-size:1.25rem;margin:0 0 .75rem}
+p{opacity:.9;line-height:1.5;max-width:28rem;margin:.5rem auto}
+a{color:#8ab4ff}
+</style>
+<script>
+(function () {
+  try {
+    var mode = localStorage.getItem('rateb_erp_theme') || localStorage.getItem('rateb_theme') || 'dark';
+    var bs = mode === 'auto'
+      ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : (mode === 'light' ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', mode);
+    document.documentElement.setAttribute('data-bs-theme', bs);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body>
+<h1 id="title">وضع عدم الاتصال</h1>
+<p id="msg">لا تتوفر نسخة محفوظة من واجهة النظام. افتح لوحة الإدارة مرة واحدة وأنت متصل، ثم أعد المحاولة دون إنترنت.</p>
+<p><a id="retry" href="#">إعادة المحاولة</a></p>
+<script>
+(function () {
+  var SNAPSHOT_ID = 'erp_shell_chrome';
+  var DB_NAME = 'rateb_erp_offline';
+  var title = document.getElementById('title');
+  var msg = document.getElementById('msg');
+  var retry = document.getElementById('retry');
+  if (retry) {
+    retry.addEventListener('click', function (e) {
+      e.preventDefault();
+      location.reload();
+    });
+  }
+  function showUnavailable() {
+    if (title) title.textContent = 'Cached shell unavailable';
+    if (msg) {
+      msg.textContent = 'No sanitized ERP shell chrome is stored yet. Reconnect, open Admin once with offline read-cache enabled, then retry offline.';
+    }
+  }
+  function useHtml(html) {
+    if (!html || html.indexOf('rateb-offline-shell-main') < 0 && html.indexOf('rateb-app') < 0) {
+      return false;
+    }
+    document.open();
+    document.write(html);
+    document.close();
+    return true;
+  }
+  if (!window.indexedDB) {
+    showUnavailable();
+    return;
+  }
+  var req = indexedDB.open(DB_NAME);
+  req.onerror = showUnavailable;
+  req.onsuccess = function () {
+    try {
+      var db = req.result;
+      if (!db.objectStoreNames.contains('snapshots')) {
+        showUnavailable();
+        return;
+      }
+      var tx = db.transaction('snapshots', 'readonly');
+      var store = tx.objectStore('snapshots');
+      var get = store.get(SNAPSHOT_ID);
+      get.onerror = showUnavailable;
+      get.onsuccess = function () {
+        var row = get.result;
+        if (!row || !row.html || !useHtml(row.html)) {
+          showUnavailable();
+        }
+      };
+    } catch (e) {
+      showUnavailable();
+    }
+  };
+})();
+</script>
+</body>
+</html>

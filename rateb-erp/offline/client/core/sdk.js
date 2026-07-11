@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 5).
+ * RATEB Offline SDK bootstrap (Phase 10).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -49,7 +49,8 @@
                 enabled: enabled,
                 inventory: !!flags['offline.inventory.movements'],
                 hr: !!flags['offline.hr.attendance'],
-                procurement: !!flags['offline.procurement']
+                procurement: !!flags['offline.procurement'],
+                read_cache: !!flags['offline.read_cache']
             });
         }
         return {
@@ -57,12 +58,13 @@
             inventory: !!flags['offline.inventory.movements'],
             hr: !!flags['offline.hr.attendance'],
             procurement: !!flags['offline.procurement'],
-            version: '5.0.0'
+            read_cache: !!flags['offline.read_cache'],
+            version: '10.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '5.0.0',
+        version: '10.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -75,6 +77,9 @@
         isProcurementEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.procurement']);
         },
+        isReadCacheEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.read_cache']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -83,6 +88,7 @@
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
+        shell: function () { return root.RatebOfflineShellAdapter || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

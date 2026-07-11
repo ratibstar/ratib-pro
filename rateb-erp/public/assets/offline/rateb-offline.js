@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 5.0.0 — Procurement drafts (flag default OFF). Master flag default OFF. */
+/*! RATEB Enterprise Offline SDK Phase 10.0.0 (includes Phase 5.0.0 procurement adapters; flag default OFF). Master flag default OFF. */
 
 /* ---- schema.js ---- */
 /**
@@ -1268,9 +1268,129 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
+/* ---- shell-adapter.js ---- */
+/**
+ * RATEB Offline — ERP shell adapter (Phase 10).
+ * Stores sanitized shell chrome in existing snapshots IndexedDB store.
+ * Activated only when offline.enabled + offline.read_cache are true.
+ * Does not touch queue, replay, or business modules.
+ */
+(function (root) {
+    'use strict';
+
+    var SNAPSHOT_ID = 'erp_shell_chrome';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.read_cache']);
+    }
+
+    function stripSensitive(html) {
+        var out = String(html || '');
+        out = out.replace(/<meta[^>]*name=["']rateb-csrf["'][^>]*>/gi, '');
+        out = out.replace(/name=["']_csrf["'][^>]*value=["'][^"']*["']/gi, 'name="_csrf" value=""');
+        out = out.replace(/value=["'][^"']*["'][^>]*name=["']_csrf["']/gi, 'value="" name="_csrf"');
+        out = out.replace(
+            /<main\b[^>]*>[\s\S]*?<\/main>/i,
+            '<main class="rateb-offline-shell-main"><div class="container py-4">'
+            + '<p class="text-muted">Offline shell chrome — reconnect for live data.</p>'
+            + '</div></main>'
+        );
+        out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, function (block) {
+            if (/rateb_erp_theme|data-theme|localStorage/i.test(block) && !/csrf|token|session/i.test(block)) {
+                return block;
+            }
+            return '';
+        });
+        return out;
+    }
+
+    function putSnapshot(record) {
+        var Schema = root.RatebOfflineSchema;
+        if (!Schema || !Schema.withStore) {
+            return Promise.reject(new Error('schema_unavailable'));
+        }
+        return Schema.withStore(Schema.STORES.SNAPSHOTS, 'readwrite', function (store) {
+            store.put(record);
+            return true;
+        });
+    }
+
+    function getSnapshot() {
+        var Schema = root.RatebOfflineSchema;
+        if (!Schema || !Schema.withStore) {
+            return Promise.resolve(null);
+        }
+        return Schema.withStore(Schema.STORES.SNAPSHOTS, 'readonly', function (store) {
+            return new Promise(function (resolve, reject) {
+                var req = store.get(SNAPSHOT_ID);
+                req.onsuccess = function () { resolve(req.result || null); };
+                req.onerror = function () { reject(req.error); };
+            });
+        });
+    }
+
+    function captureChrome() {
+        if (!isActive()) {
+            return Promise.resolve({ skipped: true, disabled: true });
+        }
+        if (!root.document || !root.document.documentElement) {
+            return Promise.resolve({ skipped: true, reason: 'no_document' });
+        }
+        try {
+            var html = '<!DOCTYPE html>\n' + root.document.documentElement.outerHTML;
+            var safe = stripSensitive(html);
+            var record = {
+                id: SNAPSHOT_ID,
+                kind: 'erp_shell_chrome',
+                captured_at: new Date().toISOString(),
+                path: (root.location && root.location.pathname) || '',
+                html: safe
+            };
+            return putSnapshot(record).then(function () {
+                return { ok: true, id: SNAPSHOT_ID, bytes: safe.length };
+            });
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    }
+
+    function startAutoCapture() {
+        if (!isActive()) {
+            return;
+        }
+        var run = function () {
+            captureChrome().catch(function () { /* ignore */ });
+        };
+        if (root.document && root.document.readyState === 'complete') {
+            setTimeout(run, 800);
+        } else if (root.addEventListener) {
+            root.addEventListener('load', function () {
+                setTimeout(run, 800);
+            }, { once: true });
+        }
+    }
+
+    root.RatebOfflineShellAdapter = {
+        SNAPSHOT_ID: SNAPSHOT_ID,
+        isActive: isActive,
+        captureChrome: captureChrome,
+        getSnapshot: getSnapshot,
+        startAutoCapture: startAutoCapture
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+
 /* ---- sdk.js ---- */
 /**
- * RATEB Offline SDK bootstrap (Phase 5).
+ * RATEB Offline SDK bootstrap (Phase 10).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -1320,7 +1440,8 @@
                 enabled: enabled,
                 inventory: !!flags['offline.inventory.movements'],
                 hr: !!flags['offline.hr.attendance'],
-                procurement: !!flags['offline.procurement']
+                procurement: !!flags['offline.procurement'],
+                read_cache: !!flags['offline.read_cache']
             });
         }
         return {
@@ -1328,12 +1449,13 @@
             inventory: !!flags['offline.inventory.movements'],
             hr: !!flags['offline.hr.attendance'],
             procurement: !!flags['offline.procurement'],
-            version: '5.0.0'
+            read_cache: !!flags['offline.read_cache'],
+            version: '10.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '5.0.0',
+        version: '10.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -1346,6 +1468,9 @@
         isProcurementEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.procurement']);
         },
+        isReadCacheEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.read_cache']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -1354,6 +1479,7 @@
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
+        shell: function () { return root.RatebOfflineShellAdapter || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

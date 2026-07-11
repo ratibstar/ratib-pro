@@ -65,9 +65,16 @@ See Phase 1 architecture document for full design. Flags default **OFF** until P
 
 ## Not implemented / out of scope
 
-- ERP shell read cache (`offline.read_cache`)
 - Offline payroll / leave approvals / procurement approvals / payments / accounting posting
+- Auth vault / RBAC cache / master-data deltas (Phase 11+)
 - External pager/email alerting (in-dashboard alerts only)
+
+## Phase 10 delivered (ERP Shell)
+
+- Flag `offline.read_cache` (requires master) gates layout injection
+- `rateb-offline-sw.js` caches first-party assets only; no POS/API/HTML-auth caching
+- Shell chrome → IndexedDB `snapshots` (`erp_shell_chrome`)
+- Static `public/offline-shell.html` fallback
 
 ## Rollback artifact
 

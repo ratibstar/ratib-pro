@@ -14,12 +14,13 @@ return [
         'T3' => ['platform'],
     ],
 
-    /** Phase 5: foundation + POS + Inventory + HR + Procurement (flag-gated). */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement'],
+    /** Phase 10: foundation + POS + Inventory + HR + Procurement + ERP shell (flag-gated). */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'erp_shell'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
         'offline.ack' => ['class' => 'RS', 'module' => 'offline_meta'],
+        'offline.shell.ping' => ['class' => 'OC', 'module' => 'erp_shell'],
         'pos.checkout' => ['class' => 'RS', 'module' => 'pos'],
         'pos.process_return' => ['class' => 'RS', 'module' => 'pos'],
         'pos.process_exchange' => ['class' => 'RS', 'module' => 'pos'],

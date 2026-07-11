@@ -22,7 +22,7 @@ offline/
 | `offline.pos.complete` | `true` when master on | POS T0 bridge |
 | `offline.inventory.movements` | `false` | Tier 1 Inventory Offline (Phase 3) |
 | `offline.hr.attendance` | `false` | Tier 1 HR Offline (Phase 4) |
-| `offline.read_cache` | `false` | Tier 2 (not started) |
+| `offline.read_cache` | `false` | Tier 2 ERP shell SW + chrome snapshot (Phase 10) |
 
 Enable via env:
 
@@ -30,8 +30,12 @@ Enable via env:
 RATEB_OFFLINE_ENABLED=1
 RATEB_OFFLINE_INVENTORY_MOVEMENTS=1
 RATEB_OFFLINE_HR_ATTENDANCE=1
+RATEB_OFFLINE_READ_CACHE=1
 ```
 
+## ERP Shell Offline (Phase 10)
+
+When `offline.enabled` + `offline.read_cache` are ON, `views/layouts/main.php` injects the SDK + `erp-shell-bootstrap.js`, which registers `rateb-offline-sw.js` (never intercepts `/pos/*`, never caches API/HTML auth bodies). Shell chrome is stored in IndexedDB `snapshots` (`erp_shell_chrome`). Flags OFF → zero layout/SW behavior.
 ## API (additive)
 
 - `GET  /api/v1/offline/status`

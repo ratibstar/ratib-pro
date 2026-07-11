@@ -72,6 +72,12 @@ final class OfflineFeatureFlagService
         return $this->enabled('offline.monitoring');
     }
 
+    /** Tier-2 ERP shell read cache (requires master + offline.read_cache). */
+    public function isReadCacheEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.read_cache');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

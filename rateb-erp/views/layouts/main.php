@@ -370,5 +370,29 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
 <?php if ($navActive('admin/agency-updates')) { ?>
 <script src="<?php echo rateb_asset('js/agency-updates.js'); ?>" defer></script>
 <?php } ?>
+<?php
+$ratebOfflineReadCache = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
+    && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isReadCacheEnabled();
+if ($ratebOfflineReadCache) {
+    $ratebOfflineFlags = (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->snapshot();
+    $ratebOfflineSw = rateb_public_url('rateb-offline-sw.js');
+    $ratebOfflineSwScope = function_exists('rateb_site_origin') && function_exists('rateb_erp_app_prefix')
+        ? (rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/')
+        : '';
+    $ratebOfflineApiBase = rateb_url('api/v1/offline');
+    ?>
+<script>
+window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
+    'serviceWorker' => $ratebOfflineSw,
+    'serviceWorkerScope' => $ratebOfflineSwScope,
+    'apiBase' => $ratebOfflineApiBase,
+    'probeUrl' => rtrim($ratebOfflineApiBase, '/') . '/status',
+    'flags' => $ratebOfflineFlags,
+    'startConnectivity' => true,
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+</script>
+<script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('offline/erp-shell-bootstrap.js'); ?>" defer></script>
+<?php } ?>
 </body>
 </html>
