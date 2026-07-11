@@ -17,6 +17,26 @@ return [
         'manage' => 'procurement.manage',
         'export' => 'reports.export',
     ],
+    'eproc' => [
+        'module' => 'procurement',
+        'view' => 'procurement.view',
+        'manage' => 'procurement.manage',
+    ],
+    'eproc-suppliers' => [
+        'module' => 'procurement',
+        'view' => 'procurement.supplier',
+        'manage' => 'procurement.manage',
+    ],
+    'eproc-tenders' => [
+        'module' => 'procurement',
+        'view' => 'procurement.tender',
+        'manage' => 'procurement.manage',
+    ],
+    'eproc-contracts' => [
+        'module' => 'procurement',
+        'view' => 'procurement.contract',
+        'manage' => 'procurement.manage',
+    ],
     'purchase-orders' => [
         'module' => 'procurement',
         'view' => 'procurement.manage',

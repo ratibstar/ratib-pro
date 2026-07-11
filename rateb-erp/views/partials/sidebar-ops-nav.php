@@ -18,6 +18,14 @@ if (!rateb_is_super_admin() && rateb_company_branches_nav_enabled()) {
     ], 'fa-code-branch');
 }
 $opsSection(__('procurement'), [
+    ['eproc', 'procurement_platform', 'fa-building-columns', 'procurement', 'procurement.view'],
+    ['eproc/suppliers', 'eproc_suppliers', 'fa-truck', 'procurement', 'procurement.supplier'],
+    ['eproc/tenders', 'eproc_tenders', 'fa-gavel', 'procurement', 'procurement.tender'],
+    ['eproc/contracts', 'eproc_contracts', 'fa-file-contract', 'procurement', 'procurement.contract'],
+    ['eproc/calendar', 'eproc_calendar', 'fa-calendar-days', 'procurement', 'procurement.view'],
+    ['eproc/spend', 'eproc_spend', 'fa-chart-pie', 'procurement', 'procurement.view'],
+    ['eproc/portal', 'eproc_portal', 'fa-globe', 'procurement', 'procurement.portal'],
+    ['eproc/reports', 'eproc_reports', 'fa-chart-line', 'procurement', 'procurement.view'],
     ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
