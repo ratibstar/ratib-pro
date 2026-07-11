@@ -46,6 +46,11 @@
         'offline.procurement_enterprise.contracts': false,
         'offline.procurement_enterprise.workflow': false,
         'offline.procurement_enterprise.masterdata': false,
+        'offline.manufacturing': false,
+        'offline.manufacturing.production': false,
+        'offline.manufacturing.workflow': false,
+        'offline.manufacturing.quality': false,
+        'offline.manufacturing.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -103,6 +108,11 @@
             procurement_enterprise_contracts: !!flags['offline.procurement_enterprise.contracts'],
             procurement_enterprise_workflow: !!flags['offline.procurement_enterprise.workflow'],
             procurement_enterprise_masterdata: !!flags['offline.procurement_enterprise.masterdata'],
+            manufacturing: !!flags['offline.manufacturing'],
+            manufacturing_production: !!flags['offline.manufacturing.production'],
+            manufacturing_workflow: !!flags['offline.manufacturing.workflow'],
+            manufacturing_quality: !!flags['offline.manufacturing.quality'],
+            manufacturing_masterdata: !!flags['offline.manufacturing.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -326,6 +336,29 @@
                 && flags['offline.procurement_enterprise']
                 && flags['offline.procurement_enterprise.masterdata']);
         },
+        isManufacturingEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.manufacturing']);
+        },
+        isManufacturingProductionEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.manufacturing']
+                && flags['offline.manufacturing.production']);
+        },
+        isManufacturingWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.manufacturing']
+                && flags['offline.manufacturing.workflow']);
+        },
+        isManufacturingQualityEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.manufacturing']
+                && flags['offline.manufacturing.quality']);
+        },
+        isManufacturingMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.manufacturing']
+                && flags['offline.manufacturing.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -361,6 +394,7 @@
         assets: function () { return root.RatebOfflineAssetsAdapter || null; },
         approvals: function () { return root.RatebOfflineApprovalAdapter || null; },
         procurementEnterprise: function () { return root.RatebOfflineProcurementEnterpriseAdapter || null; },
+        manufacturing: function () { return root.RatebOfflineManufacturingAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

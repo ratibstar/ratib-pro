@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. Phase 22B: + manufacturing. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -116,5 +116,23 @@ return [
         'procurement_enterprise.comment.create' => ['class' => 'RS', 'module' => 'procurement_enterprise'],
         'procurement_enterprise.workflow.transition' => ['class' => 'RS', 'module' => 'procurement_enterprise'],
         'procurement_enterprise.note.create' => ['class' => 'RS', 'module' => 'procurement_enterprise'],
+        'manufacturing.bom.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.bom.update' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.routing.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.routing.update' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.production_order.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.production_order.update' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.work_order.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.work_order.update' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.workflow.transition' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.material_reservation.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.material_consumption.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.finished_goods.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.scrap.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.quality_check.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.cost.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.assignment.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.comment.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'manufacturing.note.create' => ['class' => 'RS', 'module' => 'manufacturing'],
     ],
 ];

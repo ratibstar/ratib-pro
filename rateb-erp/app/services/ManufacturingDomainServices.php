@@ -1248,6 +1248,51 @@ final class MfgWorkOrderService
 
         return ['id' => (int) $id, 'code' => $code];
     }
+
+    /** @param array<string, mixed> $input */
+    public function update(int $id, array $input): void
+    {
+        $companyId = ManufacturingSupport::requireCompanyId();
+        $row = ManufacturingSupport::assertWorkOrder($id, $companyId);
+        if (isset($input['expected_version']) && (int) $input['expected_version'] !== (int) ($row['version'] ?? 1)) {
+            throw new \RuntimeException('version_conflict');
+        }
+        $patch = ManufacturingSupport::actorFields(false);
+        foreach (['title', 'notes'] as $f) {
+            if (array_key_exists($f, $input)) {
+                $patch[$f] = $f === 'title'
+                    ? substr(trim((string) $input[$f]), 0, 190)
+                    : ManufacturingSupport::nullIfEmpty($input[$f]);
+            }
+        }
+        foreach (['routing_operation_id', 'work_center_id', 'machine_id', 'seq_no'] as $f) {
+            if (array_key_exists($f, $input)) {
+                $patch[$f] = $f === 'seq_no'
+                    ? (int) $input[$f]
+                    : ManufacturingSupport::intOrNull($input[$f]);
+            }
+        }
+        if (array_key_exists('qty_planned', $input)) {
+            $patch['qty_planned'] = ManufacturingSupport::floatOrZero($input['qty_planned']);
+        }
+        foreach (['planned_start', 'planned_end'] as $f) {
+            if (array_key_exists($f, $input)) {
+                $patch[$f] = ManufacturingSupport::dateOrNull($input[$f]);
+            }
+        }
+        if (isset($patch['title']) && $patch['title'] === '') {
+            throw new \InvalidArgumentException('title_required');
+        }
+        unset($patch['workflow_status']);
+        $patch['version'] = (int) ($row['version'] ?? 1) + 1;
+        (new MfgWorkOrder())->update($id, $patch);
+        (new ManufacturingTimelineService())->record(
+            'work_order_updated',
+            'Work order updated',
+            'work_order',
+            $id
+        );
+    }
 }
 
 final class CapacityPlanService

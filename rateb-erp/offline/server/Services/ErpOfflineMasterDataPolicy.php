@@ -105,6 +105,11 @@ final class ErpOfflineMasterDataPolicy
             'eproc_supplier_profile_status_directory', 'eproc_supplier_statuses',
             'eproc_tender_status_directory', 'eproc_tender_statuses',
             'eproc_contract_status_directory', 'eproc_contract_statuses',
+            'mfg_product_directory', 'mfg_products',
+            'mfg_work_center_directory', 'mfg_work_centers',
+            'mfg_bom_status_directory', 'mfg_bom_statuses',
+            'mfg_production_order_status_directory', 'mfg_production_order_statuses',
+            'mfg_work_order_status_directory', 'mfg_work_order_statuses',
         ], true);
     }
 }

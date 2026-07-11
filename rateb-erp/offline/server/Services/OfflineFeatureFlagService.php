@@ -247,6 +247,32 @@ final class OfflineFeatureFlagService
         return $this->isProcurementEnterpriseEnabled() && $this->enabled('offline.procurement_enterprise.masterdata');
     }
 
+    /** Phase 22B — Manufacturing Tier-1 drafts (requires master + offline.manufacturing). */
+    public function isManufacturingEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.manufacturing');
+    }
+
+    public function isManufacturingProductionEnabled(): bool
+    {
+        return $this->isManufacturingEnabled() && $this->enabled('offline.manufacturing.production');
+    }
+
+    public function isManufacturingWorkflowEnabled(): bool
+    {
+        return $this->isManufacturingEnabled() && $this->enabled('offline.manufacturing.workflow');
+    }
+
+    public function isManufacturingQualityEnabled(): bool
+    {
+        return $this->isManufacturingEnabled() && $this->enabled('offline.manufacturing.quality');
+    }
+
+    public function isManufacturingMasterDataEnabled(): bool
+    {
+        return $this->isManufacturingEnabled() && $this->enabled('offline.manufacturing.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {

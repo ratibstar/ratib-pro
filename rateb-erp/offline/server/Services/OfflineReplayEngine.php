@@ -23,6 +23,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?AssetOfflineReplayService $assets = null;
     private ?ApprovalOfflineReplayService $approval = null;
     private ?ProcurementEnterpriseOfflineReplayService $procurementEnterprise = null;
+    private ?ManufacturingOfflineReplayService $manufacturing = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -79,6 +80,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
         return $this->procurementEnterprise ??= new ProcurementEnterpriseOfflineReplayService();
     }
 
+    private function manufacturing(): ManufacturingOfflineReplayService
+    {
+        return $this->manufacturing ??= new ManufacturingOfflineReplayService();
+    }
+
     /** @param array<string, mixed> $queueRow */
     public function replay(array $queueRow): array
     {
@@ -106,6 +112,14 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->procurementEnterprise()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'manufacturing') {
+            if (!$this->flags()->enabled('offline.manufacturing')) {
+                return ['status' => 'skipped', 'error' => 'manufacturing_offline_disabled'];
+            }
+
+            return $this->manufacturing()->replayFromQueueRow($queueRow);
         }
 
         if ($module === 'inventory' || str_starts_with($action, 'inventory.')
@@ -196,6 +210,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->procurementEnterprise()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'manufacturing' || str_starts_with($action, 'manufacturing.')
+            || in_array($action, ManufacturingOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.manufacturing')) {
+                return ['status' => 'skipped', 'error' => 'manufacturing_offline_disabled'];
+            }
+
+            return $this->manufacturing()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

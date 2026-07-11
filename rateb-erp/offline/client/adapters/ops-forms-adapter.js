@@ -10,6 +10,7 @@
  * Phase 19B: eam assets/maintenance/work-orders/inspections drafts (flag-gated).
  * Phase 20B: approvals requests/comments drafts (flag-gated).
  * Phase 21B: eproc suppliers/tenders/contracts drafts (flag-gated).
+ * Phase 22B: mfg boms/routings/production/work orders/quality drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -57,7 +58,15 @@
         { match: 'eproc/contracts/create', module: 'procurement_enterprise', action: 'contract.create' },
         { match: 'eproc/qualification', module: 'procurement_enterprise', action: 'qualification.create' },
         { match: 'eproc/scorecards', module: 'procurement_enterprise', action: 'scorecard.create' },
-        { match: 'eproc/portal', module: 'procurement_enterprise', action: 'portal_invite.create' }
+        { match: 'eproc/portal', module: 'procurement_enterprise', action: 'portal_invite.create' },
+        { match: 'mfg/boms/create', module: 'manufacturing', action: 'bom.create' },
+        { match: 'mfg/boms', module: 'manufacturing', action: 'bom.update' },
+        { match: 'mfg/production-orders/create', module: 'manufacturing', action: 'production_order.create' },
+        { match: 'mfg/production-orders', module: 'manufacturing', action: 'production_order.update' },
+        { match: 'mfg/work-orders/create', module: 'manufacturing', action: 'work_order.create' },
+        { match: 'mfg/work-orders', module: 'manufacturing', action: 'work_order.update' },
+        { match: 'mfg/routings', module: 'manufacturing', action: 'routing.create' },
+        { match: 'mfg/quality', module: 'manufacturing', action: 'quality_check.create' }
     ];
 
     function cfg() {
@@ -211,6 +220,26 @@
             }
             if (action === 'workflow.transition') {
                 return !!f['offline.procurement_enterprise.workflow'];
+            }
+            return true;
+        }
+        if (module === 'manufacturing') {
+            if (!f['offline.manufacturing']) {
+                return false;
+            }
+            if (action === 'bom.create' || action === 'bom.update'
+                || action === 'routing.create' || action === 'routing.update'
+                || action === 'production_order.create' || action === 'production_order.update'
+                || action === 'work_order.create' || action === 'work_order.update'
+                || action === 'material_reservation.create' || action === 'material_consumption.create'
+                || action === 'finished_goods.create' || action === 'scrap.create') {
+                return !!f['offline.manufacturing.production'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.manufacturing.workflow'];
+            }
+            if (action === 'quality_check.create') {
+                return !!f['offline.manufacturing.quality'];
             }
             return true;
         }
@@ -795,6 +824,45 @@
                 return eproc.enqueue(action, payload);
             }
         }
+        if (module === 'manufacturing') {
+            var mfg = root.RatebOfflineManufacturingAdapter;
+            if (!mfg) {
+                return Promise.reject(new Error('manufacturing_adapter_unavailable'));
+            }
+            if (action === 'bom.create') {
+                return mfg.enqueueBomCreate(payload);
+            }
+            if (action === 'bom.update') {
+                return mfg.enqueueBomUpdate(payload);
+            }
+            if (action === 'routing.create') {
+                return mfg.enqueueRoutingCreate(payload);
+            }
+            if (action === 'routing.update') {
+                return mfg.enqueueRoutingUpdate(payload);
+            }
+            if (action === 'production_order.create') {
+                return mfg.enqueueProductionOrderCreate(payload);
+            }
+            if (action === 'production_order.update') {
+                return mfg.enqueueProductionOrderUpdate(payload);
+            }
+            if (action === 'work_order.create') {
+                return mfg.enqueueWorkOrderCreate(payload);
+            }
+            if (action === 'work_order.update') {
+                return mfg.enqueueWorkOrderUpdate(payload);
+            }
+            if (action === 'quality_check.create') {
+                return mfg.enqueueQualityCheckCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return mfg.enqueueWorkflowTransition(payload);
+            }
+            if (typeof mfg.enqueue === 'function') {
+                return mfg.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -887,7 +955,8 @@
             || f['offline.projects']
             || f['offline.assets']
             || f['offline.approval']
-            || f['offline.procurement_enterprise'])) {
+            || f['offline.procurement_enterprise']
+            || f['offline.manufacturing'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

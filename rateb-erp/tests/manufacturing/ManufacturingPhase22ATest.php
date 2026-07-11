@@ -54,9 +54,9 @@ final class ManufacturingPhase22ATest
         $ok = !str_contains($domain, 'OfflineQueueService')
             && !str_contains($workflow, 'OfflineQueueService')
             && !str_contains($domain, 'offline.manufacturing')
-            && !is_file(RATEB_ROOT . '/offline/client/adapters/manufacturing-adapter.js')
-            && !is_file(RATEB_ROOT . '/offline/client/adapters/mfg-adapter.js');
-        $this->record('No Offline MFG in 22A (online foundation only)', $ok);
+            && is_file(RATEB_ROOT . '/offline/server/Services/ManufacturingOfflineReplayService.php')
+            && is_file(RATEB_ROOT . '/offline/client/adapters/manufacturing-adapter.js');
+        $this->record('22A online layer has no offline coupling (22B replay separate)', $ok);
     }
 
     private function testMigrationExists(): void

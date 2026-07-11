@@ -504,6 +504,45 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'manufacturing') {
+                if (!$this->flags()->enabled('offline.manufacturing')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeManufacturingAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'bom.create', 'bom.update',
+                    'routing.create', 'routing.update',
+                    'production_order.create', 'production_order.update',
+                    'work_order.create', 'work_order.update',
+                    'material_reservation.create', 'material_consumption.create',
+                    'finished_goods.create', 'scrap.create',
+                ], true) && !$this->flags()->enabled('offline.manufacturing.production')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.manufacturing.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'quality_check.create'
+                    && !$this->flags()->enabled('offline.manufacturing.quality')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -777,6 +816,28 @@ final class OfflineQueueService
 
             if ($module === 'procurement_enterprise') {
                 if (!$this->flags()->enabled('offline.procurement_enterprise')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
+            if ($module === 'manufacturing') {
+                if (!$this->flags()->enabled('offline.manufacturing')) {
                     $stats['skipped']++;
                     continue;
                 }
@@ -1085,6 +1146,43 @@ final class OfflineQueueService
             'create_bid_compare' => 'bid_compare.create',
             'create_contract' => 'contract.create',
             'create_collaboration' => 'collaboration.create',
+            'create_assignment' => 'assignment.create',
+            'create_comment' => 'comment.create',
+            'create_note' => 'note.create',
+            'transition_workflow' => 'workflow.transition',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array($prefix . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeManufacturingAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = ManufacturingOfflineReplayService::deferredActions();
+        $prefix = 'manufacturing.';
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, $prefix) ? substr($action, strlen($prefix)) : $action;
+        }
+        $aliases = [
+            'create_bom' => 'bom.create',
+            'update_bom' => 'bom.update',
+            'create_routing' => 'routing.create',
+            'update_routing' => 'routing.update',
+            'create_production_order' => 'production_order.create',
+            'update_production_order' => 'production_order.update',
+            'create_work_order' => 'work_order.create',
+            'update_work_order' => 'work_order.update',
+            'create_material_reservation' => 'material_reservation.create',
+            'create_material_consumption' => 'material_consumption.create',
+            'create_finished_goods' => 'finished_goods.create',
+            'create_scrap' => 'scrap.create',
+            'create_quality_check' => 'quality_check.create',
+            'create_cost' => 'cost.create',
             'create_assignment' => 'assignment.create',
             'create_comment' => 'comment.create',
             'create_note' => 'note.create',

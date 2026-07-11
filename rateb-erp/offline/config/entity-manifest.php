@@ -574,6 +574,36 @@ return [
         'path' => '/api/v1/offline/delta/eproc_tag_directory',
         'replay' => 'delta_pull',
     ],
+    'mfg_bom_create' => [
+        'module' => 'manufacturing',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_manufacturing',
+    ],
+    'mfg_production_order_create' => [
+        'module' => 'manufacturing',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_manufacturing',
+    ],
+    'mfg_workflow_transition' => [
+        'module' => 'manufacturing',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_manufacturing',
+    ],
+    'mfg_product_directory' => [
+        'module' => 'manufacturing',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/mfg_product_directory',
+        'replay' => 'delta_pull',
+    ],
+    'mfg_work_center_directory' => [
+        'module' => 'manufacturing',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/mfg_work_center_directory',
+        'replay' => 'delta_pull',
+    ],
     'customer_directory' => [
         'module' => 'platform',
         'method' => 'GET',
