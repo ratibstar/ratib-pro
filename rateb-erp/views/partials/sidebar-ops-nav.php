@@ -40,6 +40,22 @@ $opsSection(__('crm'), [
     ['crm/contacts', 'crm_contacts', 'fa-address-book', 'crm', 'crm.view'],
     ['crm/companies', 'crm_companies', 'fa-building-user', 'crm', 'crm.view'],
 ], 'fa-handshake');
+$opsSection(__('projects'), [
+    ['projects', 'projects', 'fa-diagram-project', 'projects', 'projects.view'],
+    ['projects/list', 'projects_list', 'fa-folder-open', 'projects', 'projects.view'],
+    ['projects/tasks', 'project_tasks', 'fa-list-check', 'projects', 'projects.tasks'],
+    ['projects/tasks/kanban', 'project_kanban', 'fa-columns', 'projects', 'projects.tasks'],
+    ['projects/tasks/gantt', 'project_gantt', 'fa-chart-gantt', 'projects', 'projects.tasks'],
+    ['projects/tasks/calendar', 'project_calendar', 'fa-calendar-days', 'projects', 'projects.tasks'],
+    ['projects/milestones', 'project_milestones', 'fa-flag', 'projects', 'projects.view'],
+    ['projects/issues', 'project_issues', 'fa-bug', 'projects', 'projects.view'],
+    ['projects/risks', 'project_risks', 'fa-triangle-exclamation', 'projects', 'projects.view'],
+    ['projects/timesheets', 'project_timesheets', 'fa-clock', 'projects', 'projects.timesheets'],
+    ['projects/resources', 'project_resources', 'fa-users-gear', 'projects', 'projects.view'],
+    ['projects/budget', 'project_budget', 'fa-coins', 'projects', 'projects.budget'],
+    ['projects/timeline', 'project_timeline', 'fa-timeline', 'projects', 'projects.view'],
+    ['projects/reports', 'project_reports', 'fa-chart-pie', 'projects', 'projects.reports'],
+], 'fa-diagram-project');
 $opsSection(__('inventory'), [
     ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
     ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],

@@ -502,4 +502,14 @@ return [
         'view' => 'crm.view',
         'manage' => 'crm.manage',
     ],
+    'projects' => [
+        'module' => 'projects',
+        'view' => 'projects.view',
+        'manage' => 'projects.manage',
+    ],
+    'project-tasks' => [
+        'module' => 'projects',
+        'view' => 'projects.tasks',
+        'manage' => 'projects.manage',
+    ],
 ];

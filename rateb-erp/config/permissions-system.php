@@ -39,6 +39,7 @@ return [
         'pos',
         'recruitment',
         'crm',
+        'projects',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -61,6 +62,7 @@ return [
         'pos' => 'pos_nav_section',
         'recruitment' => 'recruitment',
         'crm' => 'crm',
+        'projects' => 'projects',
     ],
 
     /**
@@ -137,6 +139,29 @@ return [
             'crm.pipeline',
             'crm.activities',
             'crm.campaign',
+        ],
+        'projects.manage' => [
+            'projects.view',
+            'projects.create',
+            'projects.update',
+            'projects.delete',
+            'projects.assign',
+            'projects.tasks',
+            'projects.timesheets',
+            'projects.budget',
+            'projects.reports',
+            'projects.admin',
+        ],
+        'projects.admin' => [
+            'projects.view',
+            'projects.create',
+            'projects.update',
+            'projects.delete',
+            'projects.assign',
+            'projects.tasks',
+            'projects.timesheets',
+            'projects.budget',
+            'projects.reports',
         ],
     ],
 
