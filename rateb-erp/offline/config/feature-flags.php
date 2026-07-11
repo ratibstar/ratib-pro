@@ -16,6 +16,7 @@ return [
         'offline.monitoring' => false,
         'offline.read_cache' => false,
         'offline.auth.unlock' => false,
+        'offline.rbac.cache' => false,
     ],
 
     /** Env var overrides (string "1"/"true"/"yes" → true). */
@@ -28,5 +29,6 @@ return [
         'offline.monitoring' => 'RATEB_OFFLINE_MONITORING',
         'offline.read_cache' => 'RATEB_OFFLINE_READ_CACHE',
         'offline.auth.unlock' => 'RATEB_OFFLINE_AUTH_UNLOCK',
+        'offline.rbac.cache' => 'RATEB_OFFLINE_RBAC_CACHE',
     ],
 ];

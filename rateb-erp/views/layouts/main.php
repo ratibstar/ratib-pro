@@ -420,6 +420,13 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
 <script src="<?php echo rateb_asset('offline/erp-auth-bootstrap.js'); ?>" defer></script>
 <?php
     }
+    $ratebOfflineRbacCache = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
+        && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isRbacCacheEnabled();
+    if ($ratebOfflineRbacCache) {
+        ?>
+<script src="<?php echo rateb_asset('offline/erp-rbac-bootstrap.js'); ?>" defer></script>
+<?php
+    }
 }
 ?>
 </body>

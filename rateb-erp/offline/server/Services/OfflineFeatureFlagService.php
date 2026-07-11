@@ -87,6 +87,15 @@ final class OfflineFeatureFlagService
         return $this->isReadCacheEnabled() && $this->enabled('offline.auth.unlock');
     }
 
+    /**
+     * Tier-3 ERP offline RBAC/nav cache (requires master + read_cache + auth.unlock + rbac.cache).
+     * UI cache only — never replaces server authorization.
+     */
+    public function isRbacCacheEnabled(): bool
+    {
+        return $this->isAuthUnlockEnabled() && $this->enabled('offline.rbac.cache');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

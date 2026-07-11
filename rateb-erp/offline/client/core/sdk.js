@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 11).
+ * RATEB Offline SDK bootstrap (Phase 12).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -13,7 +13,8 @@
         'offline.hr.attendance': false,
         'offline.procurement': false,
         'offline.read_cache': false,
-        'offline.auth.unlock': false
+        'offline.auth.unlock': false,
+        'offline.rbac.cache': false
     };
 
     function init(options) {
@@ -52,7 +53,8 @@
                 hr: !!flags['offline.hr.attendance'],
                 procurement: !!flags['offline.procurement'],
                 read_cache: !!flags['offline.read_cache'],
-                auth_unlock: !!flags['offline.auth.unlock']
+                auth_unlock: !!flags['offline.auth.unlock'],
+                rbac_cache: !!flags['offline.rbac.cache']
             });
         }
         return {
@@ -62,12 +64,13 @@
             procurement: !!flags['offline.procurement'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
-            version: '11.0.0'
+            rbac_cache: !!flags['offline.rbac.cache'],
+            version: '12.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '11.0.0',
+        version: '12.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -86,6 +89,12 @@
         isAuthUnlockEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache'] && flags['offline.auth.unlock']);
         },
+        isRbacCacheEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.read_cache']
+                && flags['offline.auth.unlock']
+                && flags['offline.rbac.cache']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -96,6 +105,7 @@
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },
+        rbac: function () { return root.RatebOfflineRbacCache || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Rateb\App\Offline\Controllers\OfflineSyncApiController;
 use Rateb\App\Offline\Controllers\ErpOfflineAuthApiController;
+use Rateb\App\Offline\Controllers\ErpOfflineRbacApiController;
 use Rateb\App\Core\Middleware\ApiAuthMiddleware;
 
 /** @var Rateb\App\Core\Router $router */
@@ -25,3 +26,7 @@ $router->get('/api/v1/offline/delta/{entity}', [OfflineSyncApiController::class,
 $router->get('/api/v1/offline/auth/policy', [ErpOfflineAuthApiController::class, 'policy'], $offlineApi);
 $router->post('/api/v1/offline/auth/device/register', [ErpOfflineAuthApiController::class, 'deviceRegister'], $offlineApi);
 $router->post('/api/v1/offline/auth/device/heartbeat', [ErpOfflineAuthApiController::class, 'deviceHeartbeat'], $offlineApi);
+
+/** Phase 12 — ERP offline RBAC/nav manifest (flag-gated in controller; UI cache only). */
+$router->get('/api/v1/offline/rbac/version', [ErpOfflineRbacApiController::class, 'version'], $offlineApi);
+$router->get('/api/v1/offline/rbac/manifest', [ErpOfflineRbacApiController::class, 'manifest'], $offlineApi);

@@ -22,6 +22,7 @@ return [
         'offline.ack' => ['class' => 'RS', 'module' => 'offline_meta'],
         'offline.shell.ping' => ['class' => 'OC', 'module' => 'erp_shell'],
         'offline.auth.unlock' => ['class' => 'OC', 'module' => 'platform'],
+        'offline.rbac.cache' => ['class' => 'OC', 'module' => 'platform'],
         'pos.checkout' => ['class' => 'RS', 'module' => 'pos'],
         'pos.process_return' => ['class' => 'RS', 'module' => 'pos'],
         'pos.process_exchange' => ['class' => 'RS', 'module' => 'pos'],

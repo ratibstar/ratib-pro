@@ -198,7 +198,7 @@ final class ErpShellOfflinePhase10Test
         $sdk = (string) file_get_contents(RATEB_ROOT . '/offline/client/core/sdk.js');
         $ok = str_contains($sdk, 'isReadCacheEnabled')
             && str_contains($sdk, 'shell:')
-            && (str_contains($sdk, '10.0.0') || str_contains($sdk, '11.0.0'));
+            && (str_contains($sdk, '10.0.0') || str_contains($sdk, '11.0.0') || str_contains($sdk, '12.0.0'));
         $this->record('SDK exposes shell + read_cache', $ok, $ok ? 'ok' : 'fail');
     }
 
