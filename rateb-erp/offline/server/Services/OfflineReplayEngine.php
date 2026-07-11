@@ -7,7 +7,7 @@ namespace Rateb\App\Offline\Services;
 use Rateb\App\Offline\Contracts\OfflineReplayPort;
 
 /**
- * Offline replay engine — ack + Inventory + HR + Procurement + Recruitment + Accounting + CRM Tier-1 when flagged.
+ * Offline replay engine — ack + Inventory + HR + Procurement + Recruitment + Accounting + CRM + Projects Tier-1 when flagged.
  * Does not invoke approvals, payroll, payments, or accounting posting.
  */
 final class OfflineReplayEngine implements OfflineReplayPort
@@ -19,6 +19,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?RecruitmentOfflineReplayService $recruitment = null;
     private ?AccountingOfflineReplayService $accounting = null;
     private ?CrmOfflineReplayService $crm = null;
+    private ?ProjectOfflineReplayService $projects = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -53,6 +54,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private function crm(): CrmOfflineReplayService
     {
         return $this->crm ??= new CrmOfflineReplayService();
+    }
+
+    private function projects(): ProjectOfflineReplayService
+    {
+        return $this->projects ??= new ProjectOfflineReplayService();
     }
 
     /** @param array<string, mixed> $queueRow */
@@ -118,6 +124,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->crm()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'projects' || str_starts_with($action, 'projects.')
+            || in_array($action, ProjectOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.projects')) {
+                return ['status' => 'skipped', 'error' => 'projects_offline_disabled'];
+            }
+
+            return $this->projects()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -66,5 +66,19 @@ return [
         'crm.campaign.create' => ['class' => 'RS', 'module' => 'crm'],
         'crm.contact.create' => ['class' => 'RS', 'module' => 'crm'],
         'crm.company.create' => ['class' => 'RS', 'module' => 'crm'],
+        'projects.project.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.project.update' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.task.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.task.update' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.workflow.transition' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.milestone.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.phase.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.comment.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.assignment.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.timesheet.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.issue.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.risk.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.budget.create' => ['class' => 'RS', 'module' => 'projects'],
+        'projects.activity.create' => ['class' => 'RS', 'module' => 'projects'],
     ],
 ];

@@ -6,6 +6,7 @@
  * Phase 15B: recruitment/candidates create|update|transition (flag-gated).
  * Phase 16B: journal-entries draft create|update + recurring/opening drafts (flag-gated; never post).
  * Phase 17B: crm leads/tasks/meetings/campaigns/contacts/companies drafts (flag-gated).
+ * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -32,7 +33,13 @@
         { match: 'crm/meetings', module: 'crm', action: 'meeting.create' },
         { match: 'crm/campaigns', module: 'crm', action: 'campaign.create' },
         { match: 'crm/contacts', module: 'crm', action: 'contact.create' },
-        { match: 'crm/companies', module: 'crm', action: 'company.create' }
+        { match: 'crm/companies', module: 'crm', action: 'company.create' },
+        { match: 'projects/create', module: 'projects', action: 'project.create' },
+        { match: 'projects/tasks', module: 'projects', action: 'task.create' },
+        { match: 'projects/milestones', module: 'projects', action: 'milestone.create' },
+        { match: 'projects/issues', module: 'projects', action: 'issue.create' },
+        { match: 'projects/risks', module: 'projects', action: 'risk.create' },
+        { match: 'projects/timesheets', module: 'projects', action: 'timesheet.create' }
     ];
 
     function cfg() {
@@ -115,6 +122,21 @@
             }
             if (action === 'meeting.create' || action === 'call.create' || action === 'task.create') {
                 return !!f['offline.crm.activities'];
+            }
+            return true;
+        }
+        if (module === 'projects') {
+            if (!f['offline.projects']) {
+                return false;
+            }
+            if (action === 'task.create' || action === 'task.update') {
+                return !!f['offline.projects.tasks'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.projects.workflow'];
+            }
+            if (action === 'timesheet.create') {
+                return !!f['offline.projects.timesheets'];
             }
             return true;
         }
@@ -576,6 +598,42 @@
                 return crm.enqueue(action, payload);
             }
         }
+        if (module === 'projects') {
+            var prj = root.RatebOfflineProjectsAdapter;
+            if (!prj) {
+                return Promise.reject(new Error('projects_adapter_unavailable'));
+            }
+            if (action === 'project.create') {
+                return prj.enqueueProjectCreate(payload);
+            }
+            if (action === 'project.update') {
+                return prj.enqueueProjectUpdate(payload);
+            }
+            if (action === 'task.create') {
+                return prj.enqueueTaskCreate(payload);
+            }
+            if (action === 'task.update') {
+                return prj.enqueueTaskUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return prj.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'milestone.create') {
+                return prj.enqueueMilestoneCreate(payload);
+            }
+            if (action === 'timesheet.create') {
+                return prj.enqueueTimesheetCreate(payload);
+            }
+            if (action === 'issue.create') {
+                return prj.enqueueIssueCreate(payload);
+            }
+            if (action === 'risk.create') {
+                return prj.enqueueRiskCreate(payload);
+            }
+            if (typeof prj.enqueue === 'function') {
+                return prj.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -664,7 +722,8 @@
             || f['offline.procurement']
             || f['offline.recruitment']
             || f['offline.accounting']
-            || f['offline.crm'])) {
+            || f['offline.crm']
+            || f['offline.projects'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

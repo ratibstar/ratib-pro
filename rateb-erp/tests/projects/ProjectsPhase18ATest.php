@@ -50,11 +50,11 @@ final class ProjectsPhase18ATest
 
     private function testNoOfflineProjects(): void
     {
+        // Phase 18A asserted no offline Projects; Phase 18B adds it — soft check that ONLINE
+        // domain services remain free of offline queue coupling.
         $domain = (string) file_get_contents(RATEB_ROOT . '/app/services/ProjectDomainServices.php');
-        $flags = (string) file_get_contents(RATEB_ROOT . '/offline/config/feature-flags.php');
         $ok = !str_contains($domain, 'OfflineQueueService')
-            && !str_contains($domain, 'offline.projects')
-            && !str_contains($flags, 'offline.projects');
+            && !str_contains($domain, 'offline.projects');
         $this->record('No Offline Projects in 18A (online foundation only)', $ok);
     }
 

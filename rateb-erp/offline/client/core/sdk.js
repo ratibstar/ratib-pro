@@ -26,6 +26,11 @@
         'offline.crm.workflow': false,
         'offline.crm.activities': false,
         'offline.crm.masterdata': false,
+        'offline.projects': false,
+        'offline.projects.tasks': false,
+        'offline.projects.workflow': false,
+        'offline.projects.timesheets': false,
+        'offline.projects.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -63,6 +68,11 @@
             crm_workflow: !!flags['offline.crm.workflow'],
             crm_activities: !!flags['offline.crm.activities'],
             crm_masterdata: !!flags['offline.crm.masterdata'],
+            projects: !!flags['offline.projects'],
+            projects_tasks: !!flags['offline.projects.tasks'],
+            projects_workflow: !!flags['offline.projects.workflow'],
+            projects_timesheets: !!flags['offline.projects.timesheets'],
+            projects_masterdata: !!flags['offline.projects.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -194,6 +204,29 @@
                 && flags['offline.crm']
                 && flags['offline.crm.masterdata']);
         },
+        isProjectsEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.projects']);
+        },
+        isProjectsTasksEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.tasks']);
+        },
+        isProjectsWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.workflow']);
+        },
+        isProjectsTimesheetsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.timesheets']);
+        },
+        isProjectsMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -225,6 +258,7 @@
         recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
         accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
         crm: function () { return root.RatebOfflineCrmAdapter || null; },
+        projects: function () { return root.RatebOfflineProjectsAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

@@ -365,6 +365,39 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'projects') {
+                if (!$this->flags()->enabled('offline.projects')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeProjectsAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, ['task.create', 'task.update'], true)
+                    && !$this->flags()->enabled('offline.projects.tasks')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.projects.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'timesheet.create'
+                    && !$this->flags()->enabled('offline.projects.timesheets')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -570,6 +603,28 @@ final class OfflineQueueService
                 continue;
             }
 
+            if ($module === 'projects') {
+                if (!$this->flags()->enabled('offline.projects')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
             $stats['skipped']++;
         }
 
@@ -743,6 +798,38 @@ final class OfflineQueueService
         $mapped = $aliases[$action] ?? '';
         $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
         if ($canonical === '' && in_array('crm.' . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeProjectsAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = ProjectOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, 'projects.') ? substr($action, 9) : $action;
+        }
+        $aliases = [
+            'create_project' => 'project.create',
+            'update_project' => 'project.update',
+            'create_task' => 'task.create',
+            'update_task' => 'task.update',
+            'transition_workflow' => 'workflow.transition',
+            'create_milestone' => 'milestone.create',
+            'create_phase' => 'phase.create',
+            'create_comment' => 'comment.create',
+            'create_assignment' => 'assignment.create',
+            'create_timesheet' => 'timesheet.create',
+            'create_issue' => 'issue.create',
+            'create_risk' => 'risk.create',
+            'create_budget' => 'budget.create',
+            'create_activity' => 'activity.create',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array('projects.' . $mapped, $allowed, true)) {
             $canonical = $mapped;
         }
 

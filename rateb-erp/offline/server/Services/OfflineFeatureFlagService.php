@@ -143,6 +143,32 @@ final class OfflineFeatureFlagService
         return $this->isCrmEnabled() && $this->enabled('offline.crm.masterdata');
     }
 
+    /** Phase 18B — Projects Tier-1 drafts (requires master + offline.projects). */
+    public function isProjectsEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.projects');
+    }
+
+    public function isProjectsTasksEnabled(): bool
+    {
+        return $this->isProjectsEnabled() && $this->enabled('offline.projects.tasks');
+    }
+
+    public function isProjectsWorkflowEnabled(): bool
+    {
+        return $this->isProjectsEnabled() && $this->enabled('offline.projects.workflow');
+    }
+
+    public function isProjectsTimesheetsEnabled(): bool
+    {
+        return $this->isProjectsEnabled() && $this->enabled('offline.projects.timesheets');
+    }
+
+    public function isProjectsMasterDataEnabled(): bool
+    {
+        return $this->isProjectsEnabled() && $this->enabled('offline.projects.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {
@@ -196,7 +222,8 @@ final class OfflineFeatureFlagService
             || $this->isProcurementEnabled()
             || $this->isRecruitmentEnabled()
             || $this->isAccountingEnabled()
-            || $this->isCrmEnabled();
+            || $this->isCrmEnabled()
+            || $this->isProjectsEnabled();
     }
 
     /** @return array<string, bool> */

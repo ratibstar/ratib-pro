@@ -26,6 +26,7 @@ final class OfflineCursorService
     private ?RecruitmentOfflineLanguageDirectoryService $recruitmentLanguages = null;
     private ?AccountingOfflineMasterDataDirectoryService $accountingMasterData = null;
     private ?CrmOfflineMasterDataDirectoryService $crmMasterData = null;
+    private ?ProjectOfflineMasterDataDirectoryService $projectsMasterData = null;
 
     private function model(): OfflineEntityCursor
     {
@@ -85,6 +86,11 @@ final class OfflineCursorService
     private function crmMasterData(): CrmOfflineMasterDataDirectoryService
     {
         return $this->crmMasterData ??= new CrmOfflineMasterDataDirectoryService();
+    }
+
+    private function projectsMasterData(): ProjectOfflineMasterDataDirectoryService
+    {
+        return $this->projectsMasterData ??= new ProjectOfflineMasterDataDirectoryService();
     }
 
     public function isAvailable(): bool
@@ -169,6 +175,10 @@ final class OfflineCursorService
 
         if ($masterCanonical !== null && $this->crmMasterData()->supports($masterCanonical)) {
             return $this->crmMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
+        }
+
+        if ($masterCanonical !== null && $this->projectsMasterData()->supports($masterCanonical)) {
+            return $this->projectsMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
         }
 
         return [

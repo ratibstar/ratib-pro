@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -1939,6 +1939,185 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- projects-adapter.js ---- */
+/**
+ * RATEB Offline — Projects adapter (Phase 18B / Tier 1 drafts).
+ * Queues project / task / workflow / timesheet drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.projects (sub-flags gate children).
+ * Does NOT enqueue delete, payments, approvals, email/SMS, attachments, or government APIs.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.projects']);
+    }
+
+    function isTasksActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.projects.tasks']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.projects.workflow']);
+    }
+
+    function isTimesheetsActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.projects.timesheets']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.projects.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'prj') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('projects_offline_disabled'));
+        }
+        if ((action === 'task.create' || action === 'task.update') && !isTasksActive()) {
+            return Promise.reject(new Error('projects_tasks_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('projects_workflow_offline_disabled'));
+        }
+        if (action === 'timesheet.create' && !isTimesheetsActive()) {
+            return Promise.reject(new Error('projects_timesheets_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'projects',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineProjectsAdapter = {
+        isActive: isActive,
+        isTasksActive: isTasksActive,
+        isWorkflowActive: isWorkflowActive,
+        isTimesheetsActive: isTimesheetsActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueProjectCreate: function (payload, options) {
+            return enqueue('project.create', payload || {}, options);
+        },
+        enqueueProjectUpdate: function (payload, options) {
+            return enqueue('project.update', payload || {}, options);
+        },
+        enqueueTaskCreate: function (payload, options) {
+            return enqueue('task.create', payload || {}, options);
+        },
+        enqueueTaskUpdate: function (payload, options) {
+            return enqueue('task.update', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        enqueueMilestoneCreate: function (payload, options) {
+            return enqueue('milestone.create', payload || {}, options);
+        },
+        enqueuePhaseCreate: function (payload, options) {
+            return enqueue('phase.create', payload || {}, options);
+        },
+        enqueueCommentCreate: function (payload, options) {
+            return enqueue('comment.create', payload || {}, options);
+        },
+        enqueueAssignmentCreate: function (payload, options) {
+            return enqueue('assignment.create', payload || {}, options);
+        },
+        enqueueTimesheetCreate: function (payload, options) {
+            return enqueue('timesheet.create', payload || {}, options);
+        },
+        enqueueIssueCreate: function (payload, options) {
+            return enqueue('issue.create', payload || {}, options);
+        },
+        enqueueRiskCreate: function (payload, options) {
+            return enqueue('risk.create', payload || {}, options);
+        },
+        enqueueBudgetCreate: function (payload, options) {
+            return enqueue('budget.create', payload || {}, options);
+        },
+        enqueueActivityCreate: function (payload, options) {
+            return enqueue('activity.create', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'projects' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'projects' });
+            }
+            return q.status({ module: 'projects' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'projects' });
+        },
+        pullTags: function (options) {
+            return pullDirectory('project_tag_directory', options);
+        },
+        pullRoles: function (options) {
+            return pullDirectory('project_role_directory', options);
+        },
+        pullTaskStatuses: function (options) {
+            return pullDirectory('task_status_directory', options);
+        },
+        pullRiskLevels: function (options) {
+            return pullDirectory('risk_level_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -3643,6 +3822,7 @@
  * Phase 15B: recruitment/candidates create|update|transition (flag-gated).
  * Phase 16B: journal-entries draft create|update + recurring/opening drafts (flag-gated; never post).
  * Phase 17B: crm leads/tasks/meetings/campaigns/contacts/companies drafts (flag-gated).
+ * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -3669,7 +3849,13 @@
         { match: 'crm/meetings', module: 'crm', action: 'meeting.create' },
         { match: 'crm/campaigns', module: 'crm', action: 'campaign.create' },
         { match: 'crm/contacts', module: 'crm', action: 'contact.create' },
-        { match: 'crm/companies', module: 'crm', action: 'company.create' }
+        { match: 'crm/companies', module: 'crm', action: 'company.create' },
+        { match: 'projects/create', module: 'projects', action: 'project.create' },
+        { match: 'projects/tasks', module: 'projects', action: 'task.create' },
+        { match: 'projects/milestones', module: 'projects', action: 'milestone.create' },
+        { match: 'projects/issues', module: 'projects', action: 'issue.create' },
+        { match: 'projects/risks', module: 'projects', action: 'risk.create' },
+        { match: 'projects/timesheets', module: 'projects', action: 'timesheet.create' }
     ];
 
     function cfg() {
@@ -3752,6 +3938,21 @@
             }
             if (action === 'meeting.create' || action === 'call.create' || action === 'task.create') {
                 return !!f['offline.crm.activities'];
+            }
+            return true;
+        }
+        if (module === 'projects') {
+            if (!f['offline.projects']) {
+                return false;
+            }
+            if (action === 'task.create' || action === 'task.update') {
+                return !!f['offline.projects.tasks'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.projects.workflow'];
+            }
+            if (action === 'timesheet.create') {
+                return !!f['offline.projects.timesheets'];
             }
             return true;
         }
@@ -4213,6 +4414,42 @@
                 return crm.enqueue(action, payload);
             }
         }
+        if (module === 'projects') {
+            var prj = root.RatebOfflineProjectsAdapter;
+            if (!prj) {
+                return Promise.reject(new Error('projects_adapter_unavailable'));
+            }
+            if (action === 'project.create') {
+                return prj.enqueueProjectCreate(payload);
+            }
+            if (action === 'project.update') {
+                return prj.enqueueProjectUpdate(payload);
+            }
+            if (action === 'task.create') {
+                return prj.enqueueTaskCreate(payload);
+            }
+            if (action === 'task.update') {
+                return prj.enqueueTaskUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return prj.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'milestone.create') {
+                return prj.enqueueMilestoneCreate(payload);
+            }
+            if (action === 'timesheet.create') {
+                return prj.enqueueTimesheetCreate(payload);
+            }
+            if (action === 'issue.create') {
+                return prj.enqueueIssueCreate(payload);
+            }
+            if (action === 'risk.create') {
+                return prj.enqueueRiskCreate(payload);
+            }
+            if (typeof prj.enqueue === 'function') {
+                return prj.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -4301,7 +4538,8 @@
             || f['offline.procurement']
             || f['offline.recruitment']
             || f['offline.accounting']
-            || f['offline.crm'])) {
+            || f['offline.crm']
+            || f['offline.projects'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -4347,6 +4585,11 @@
         'offline.crm.workflow': false,
         'offline.crm.activities': false,
         'offline.crm.masterdata': false,
+        'offline.projects': false,
+        'offline.projects.tasks': false,
+        'offline.projects.workflow': false,
+        'offline.projects.timesheets': false,
+        'offline.projects.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -4384,6 +4627,11 @@
             crm_workflow: !!flags['offline.crm.workflow'],
             crm_activities: !!flags['offline.crm.activities'],
             crm_masterdata: !!flags['offline.crm.masterdata'],
+            projects: !!flags['offline.projects'],
+            projects_tasks: !!flags['offline.projects.tasks'],
+            projects_workflow: !!flags['offline.projects.workflow'],
+            projects_timesheets: !!flags['offline.projects.timesheets'],
+            projects_masterdata: !!flags['offline.projects.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -4515,6 +4763,29 @@
                 && flags['offline.crm']
                 && flags['offline.crm.masterdata']);
         },
+        isProjectsEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.projects']);
+        },
+        isProjectsTasksEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.tasks']);
+        },
+        isProjectsWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.workflow']);
+        },
+        isProjectsTimesheetsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.timesheets']);
+        },
+        isProjectsMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.projects']
+                && flags['offline.projects.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -4546,6 +4817,7 @@
         recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
         accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
         crm: function () { return root.RatebOfflineCrmAdapter || null; },
+        projects: function () { return root.RatebOfflineProjectsAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

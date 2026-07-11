@@ -40,6 +40,7 @@ final class OfflineBackgroundSync
                 'recruitment_enabled' => false,
                 'accounting_enabled' => false,
                 'crm_enabled' => false,
+                'projects_enabled' => false,
             ];
         }
 
@@ -50,6 +51,7 @@ final class OfflineBackgroundSync
         $stats['recruitment_enabled'] = $this->flags()->enabled('offline.recruitment');
         $stats['accounting_enabled'] = $this->flags()->enabled('offline.accounting');
         $stats['crm_enabled'] = $this->flags()->enabled('offline.crm');
+        $stats['projects_enabled'] = $this->flags()->enabled('offline.projects');
 
         return $stats;
     }

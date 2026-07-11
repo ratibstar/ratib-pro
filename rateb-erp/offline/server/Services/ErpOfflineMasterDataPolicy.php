@@ -79,6 +79,13 @@ final class ErpOfflineMasterDataPolicy
             'crm_pipeline_stage_directory', 'crm_pipeline_stages', 'pipeline_stages',
             'crm_tag_directory', 'crm_tags',
             'crm_company_directory', 'crm_companies', 'crm_accounts',
+            'project_tag_directory', 'project_tags',
+            'project_role_directory', 'project_roles',
+            'project_type_directory', 'project_types',
+            'milestone_type_directory', 'milestone_types',
+            'task_status_directory', 'project_task_statuses',
+            'issue_type_directory', 'project_issue_types',
+            'risk_level_directory', 'project_risk_levels',
         ], true);
     }
 }
