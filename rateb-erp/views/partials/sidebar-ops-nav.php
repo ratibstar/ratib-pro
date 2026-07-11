@@ -51,6 +51,7 @@ $opsSection(__('suppliers'), [
 require RATEB_ROOT . '/views/partials/sidebar-hr-nav.php';
 $opsSection(__('accounting_module'), [
     ['accounting', 'accounting_dashboard', 'fa-gauge-high', 'accounting'],
+    ['accounting/platform', 'accounting_platform', 'fa-building-columns', 'accounting', 'accounting.view'],
     ['accounting/cfo-dashboard', 'cfo_dashboard', 'fa-user-tie', 'accounting', 'accounting.view'],
     ['accounting/accounts-receivable', 'accounts_receivable', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
     ['accounting/accounts-payable', 'accounts_payable', 'fa-file-invoice-dollar', 'accounting', 'accounting.view'],

@@ -74,6 +74,22 @@ return [
         'suppliers.manage' => ['suppliers.oversight'],
         'hr.manage' => ['hr.oversight'],
         'accounting.approve' => ['accounting.oversight'],
+        'accounting.admin' => [
+            'accounting.view',
+            'accounting.create',
+            'accounting.update',
+            'accounting.manage',
+            'accounting.approve',
+            'accounting.post',
+            'accounting.reverse',
+            'accounting.close_period',
+        ],
+        'accounting.manage' => [
+            'accounting.create',
+            'accounting.update',
+        ],
+        'accounting.close_period' => ['accounting.post'],
+        'accounting.reverse' => ['accounting.post'],
         'contracts.manage' => ['contracts.oversight'],
         'assets.manage' => ['assets.oversight'],
         'recruitment.manage' => [
@@ -163,9 +179,14 @@ return [
      */
     'accounting_permission_slugs' => [
         'accounting.view',
+        'accounting.create',
+        'accounting.update',
         'accounting.manage',
         'accounting.approve',
         'accounting.post',
+        'accounting.reverse',
+        'accounting.close_period',
+        'accounting.admin',
         'accounting.dashboard',
         'accounting.events',
         'accounting.replay',
@@ -185,9 +206,10 @@ return [
         'supplier_payment_void' => 'accounting.post',
         'bank_statement_import' => 'accounting.manage',
         'bank_statement_delete' => 'accounting.manage',
-        'fiscal_period_close' => 'accounting.post',
+        'fiscal_period_close' => 'accounting.close_period',
         'fiscal_period_manage' => 'accounting.manage',
         'accounting_sync' => 'accounting.post',
+        'journal_reverse' => 'accounting.reverse',
     ],
 
     /** Inventory-related permission slugs (company matrix). */
