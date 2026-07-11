@@ -513,6 +513,30 @@ $router->post($app('hrm/competencies'), [HrmCompetenciesController::class, 'stor
 $router->get($app('hrm/reports'), [HrmReportsController::class, 'index'], $hrmMw);
 $router->get($app('hrm/timeline'), [HrmTimelineController::class, 'index'], $hrmMw);
 
+/** Phase 24A — Enterprise Payroll Platform ONLINE (payroll/*; additive; Offline deferred to 24B). */
+$payrollMw = rateb_erp_mw('payroll', 'payroll.view', 'payroll');
+$router->get($app('payroll-platform'), [PayrollPlatformController::class, 'index'], $payrollMw);
+$router->get($app('payroll'), [PayrollDashboardController::class, 'index'], $payrollMw);
+$router->get($app('payroll/dashboard'), [PayrollDashboardController::class, 'index'], $payrollMw);
+$router->get($app('payroll/cycles'), [PayrollCyclesController::class, 'index'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->post($app('payroll/cycles'), [PayrollCyclesController::class, 'store'], rateb_erp_mw('payroll', 'payroll.create', 'payroll'));
+$router->get($app('payroll/batches'), [PayrollBatchesController::class, 'index'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->post($app('payroll/batches'), [PayrollBatchesController::class, 'store'], rateb_erp_mw('payroll', 'payroll.create', 'payroll'));
+$router->get($app('payroll/batches/{id}'), [PayrollBatchesController::class, 'show'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->post($app('payroll/batches/{id}/calculate'), [PayrollBatchesController::class, 'calculate'], rateb_erp_mw('payroll', 'payroll.calculate', 'payroll'));
+$router->post($app('payroll/batches/{id}/transition'), [PayrollBatchesController::class, 'transition'], rateb_erp_mw('payroll', 'payroll.review', 'payroll'));
+$router->get($app('payroll/payslips'), [PayrollPayslipsController::class, 'index'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->get($app('payroll/loans'), [PayrollLoansController::class, 'index'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->post($app('payroll/loans'), [PayrollLoansController::class, 'store'], rateb_erp_mw('payroll', 'payroll.create', 'payroll'));
+$router->get($app('payroll/advances'), [PayrollAdvancesController::class, 'index'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->post($app('payroll/advances'), [PayrollAdvancesController::class, 'store'], rateb_erp_mw('payroll', 'payroll.create', 'payroll'));
+$router->get($app('payroll/overtime'), [PayrollOvertimeController::class, 'index'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->post($app('payroll/overtime'), [PayrollOvertimeController::class, 'store'], rateb_erp_mw('payroll', 'payroll.create', 'payroll'));
+$router->get($app('payroll/salary-structures'), [PayrollSalaryStructuresController::class, 'index'], rateb_erp_mw('payroll', 'payroll.view', 'payroll'));
+$router->post($app('payroll/salary-structures'), [PayrollSalaryStructuresController::class, 'store'], rateb_erp_mw('payroll', 'payroll.create', 'payroll'));
+$router->get($app('payroll/reports'), [PayrollReportsController::class, 'index'], $payrollMw);
+$router->get($app('payroll/timeline'), [PayrollTimelinePageController::class, 'index'], $payrollMw);
+
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);
 $router->post($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'store'], $hrAttMw);

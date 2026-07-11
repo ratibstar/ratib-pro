@@ -103,6 +103,18 @@ $opsSection(__('hr_platform'), [
     ['hrm/timeline', 'hrm_timeline', 'fa-timeline', 'hr', 'hr.view'],
     ['hrm/reports', 'hrm_reports', 'fa-chart-pie', 'hr', 'hr.view'],
 ], 'fa-id-card-clip');
+$opsSection(__('payroll_platform'), [
+    ['payroll/dashboard', 'payroll_platform', 'fa-gauge-high', 'payroll', 'payroll.view'],
+    ['payroll/batches', 'payroll_batches', 'fa-layer-group', 'payroll', 'payroll.view'],
+    ['payroll/cycles', 'payroll_cycles', 'fa-calendar-days', 'payroll', 'payroll.view'],
+    ['payroll/payslips', 'payroll_payslips', 'fa-file-invoice', 'payroll', 'payroll.view'],
+    ['payroll/salary-structures', 'payroll_salary_structures', 'fa-table-list', 'payroll', 'payroll.view'],
+    ['payroll/loans', 'payroll_loans', 'fa-hand-holding-dollar', 'payroll', 'payroll.view'],
+    ['payroll/advances', 'payroll_advances', 'fa-money-bill-transfer', 'payroll', 'payroll.view'],
+    ['payroll/overtime', 'payroll_overtime', 'fa-clock', 'payroll', 'payroll.view'],
+    ['payroll/timeline', 'payroll_timeline', 'fa-timeline', 'payroll', 'payroll.view'],
+    ['payroll/reports', 'payroll_reports', 'fa-chart-pie', 'payroll', 'payroll.view'],
+], 'fa-money-check-dollar');
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }

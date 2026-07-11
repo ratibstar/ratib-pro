@@ -567,6 +567,26 @@ return [
         'view' => 'hr.transfers',
         'manage' => 'hr.manage',
     ],
+    'payroll' => [
+        'module' => 'payroll',
+        'view' => 'payroll.view',
+        'manage' => 'payroll.manage',
+    ],
+    'payroll-batches' => [
+        'module' => 'payroll',
+        'view' => 'payroll.view',
+        'manage' => 'payroll.manage',
+    ],
+    'payroll-payslips' => [
+        'module' => 'payroll',
+        'view' => 'payroll.view',
+        'manage' => 'payroll.manage',
+    ],
+    'payroll-loans' => [
+        'module' => 'payroll',
+        'view' => 'payroll.view',
+        'manage' => 'payroll.manage',
+    ],
     'recruitment' => [
         'module' => 'recruitment',
         'view' => 'recruitment.view',

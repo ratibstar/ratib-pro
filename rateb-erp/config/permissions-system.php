@@ -42,6 +42,7 @@ return [
         'projects',
         'approval',
         'manufacturing',
+        'payroll',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -67,6 +68,7 @@ return [
         'projects' => 'projects',
         'approval' => 'approval_platform',
         'manufacturing' => 'manufacturing_platform',
+        'payroll' => 'payroll_platform',
     ],
 
     /**
@@ -122,6 +124,23 @@ return [
             'hr.performance',
             'hr.promotions',
             'hr.transfers',
+        ],
+        'payroll.manage' => [
+            'payroll.view',
+            'payroll.create',
+            'payroll.calculate',
+            'payroll.review',
+            'payroll.approve',
+            'payroll.post',
+            'payroll.admin',
+        ],
+        'payroll.admin' => [
+            'payroll.view',
+            'payroll.create',
+            'payroll.calculate',
+            'payroll.review',
+            'payroll.approve',
+            'payroll.post',
         ],
         'accounting.approve' => ['accounting.oversight'],
         'accounting.admin' => [
