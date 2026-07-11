@@ -223,6 +223,17 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <h1 class="h5 mb-0"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></h1>
             </div>
             <div class="d-flex align-items-center gap-2">
+                <span class="rateb-connection-indicator is-online"
+                      id="rateb-connection-indicator"
+                      data-rateb-connection-status
+                      data-label-online="<?php echo Rateb\App\Core\View::escape(__('connection_online')); ?>"
+                      data-label-offline="<?php echo Rateb\App\Core\View::escape(__('connection_offline')); ?>"
+                      role="status"
+                      aria-live="polite"
+                      title="<?php echo Rateb\App\Core\View::escape(__('connection_online')); ?>">
+                    <span class="rateb-connection-indicator__dot" aria-hidden="true"></span>
+                    <span class="rateb-connection-indicator__label"><?php echo Rateb\App\Core\View::escape(__('connection_online')); ?></span>
+                </span>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
                     <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
@@ -299,6 +310,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
 <?php } ?>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/connectivity-indicator.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('js/lang.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('js/rateb-modal.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>" defer></script>

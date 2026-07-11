@@ -525,6 +525,8 @@ return [
     'status_pending' => 'Pending',
     'open_in_operations' => 'Open in operations',
     'theme_light' => 'Light',
+    'connection_online' => 'Online',
+    'connection_offline' => 'Offline',
     'theme_dark' => 'Dark',
     'theme_auto' => 'Auto',
     'language' => 'Language',

@@ -298,6 +298,53 @@ body.rateb-app {
     flex-shrink: 0;
 }
 
+.rateb-connection-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.rateb-connection-indicator__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 0 rgba(134, 239, 172, 0.55);
+    animation: rateb-connection-pulse 2s ease-out infinite;
+}
+
+.rateb-connection-indicator.is-offline {
+    border-color: rgba(248, 113, 113, 0.4);
+    background: rgba(248, 113, 113, 0.12);
+    color: #fca5a5;
+}
+
+.rateb-connection-indicator.is-offline .rateb-connection-indicator__dot {
+    animation: none;
+}
+
+@keyframes rateb-connection-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(134, 239, 172, 0.45); }
+    70% { box-shadow: 0 0 0 0.45rem rgba(134, 239, 172, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(134, 239, 172, 0); }
+}
+
+@media (max-width: 575.98px) {
+    .rateb-connection-indicator__label {
+        display: none;
+    }
+}
+
 .rateb-content {
     padding: 1.5rem;
 }

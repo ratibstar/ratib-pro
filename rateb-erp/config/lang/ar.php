@@ -525,6 +525,8 @@ return [
     'status_pending' => 'معلق',
     'open_in_operations' => 'فتح في العمليات',
     'theme_light' => 'فاتح',
+    'connection_online' => 'متصل',
+    'connection_offline' => 'غير متصل',
     'theme_dark' => 'داكن',
     'theme_auto' => 'تلقائي',
     'language' => 'اللغة',
