@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 2A).
+ * RATEB Offline SDK bootstrap (Phase 3).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -8,7 +8,10 @@
     var booted = false;
     var flags = {
         'offline.enabled': false,
-        'offline.pos.complete': true
+        'offline.pos.complete': true,
+        'offline.inventory.movements': false,
+        'offline.hr.attendance': false,
+        'offline.read_cache': false
     };
 
     function init(options) {
@@ -41,24 +44,33 @@
         }
         booted = true;
         if (root.RatebOfflineEvents) {
-            root.RatebOfflineEvents.emit('sdk:ready', { enabled: enabled });
+            root.RatebOfflineEvents.emit('sdk:ready', {
+                enabled: enabled,
+                inventory: !!flags['offline.inventory.movements']
+            });
         }
         return {
             enabled: enabled,
-            version: '2A.1.0'
+            inventory: !!flags['offline.inventory.movements'],
+            version: '3.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '2A.1.0',
+        version: '3.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
+        isInventoryEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.inventory.movements']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
         connectivity: function () { return root.RatebOfflineConnectivity || null; },
         pos: function () { return root.RatebOfflinePosAdapter || null; },
-        schema: function () { return root.RatebOfflineSchema || null; }
+        inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
+        schema: function () { return root.RatebOfflineSchema || null; },
+        deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };
 })(typeof window !== 'undefined' ? window : globalThis);

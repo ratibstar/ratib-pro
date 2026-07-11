@@ -14,8 +14,8 @@ return [
         'T3' => ['platform'],
     ],
 
-    /** Phase 2A: only foundation + POS bridge. */
-    'active_modules' => ['offline_meta', 'pos'],
+    /** Phase 3: foundation + POS bridge + Inventory Tier-1 (flag-gated). */
+    'active_modules' => ['offline_meta', 'pos', 'inventory'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -23,5 +23,8 @@ return [
         'pos.checkout' => ['class' => 'RS', 'module' => 'pos'],
         'pos.process_return' => ['class' => 'RS', 'module' => 'pos'],
         'pos.process_exchange' => ['class' => 'RS', 'module' => 'pos'],
+        'inventory.stock_movement' => ['class' => 'RS', 'module' => 'inventory'],
+        'inventory.stock_count' => ['class' => 'RS', 'module' => 'inventory'],
+        'inventory.warehouse_transfer' => ['class' => 'RS', 'module' => 'inventory'],
     ],
 ];

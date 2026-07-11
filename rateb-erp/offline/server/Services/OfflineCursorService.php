@@ -8,14 +8,20 @@ use Rateb\App\Core\Database;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Offline\Models\OfflineEntityCursor;
 
-/** Delta cursor registry — Phase 2A foundation (no entity pull yet). */
+/** Delta cursor registry — inventory catalog pull when Tier-1 flag is on. */
 final class OfflineCursorService
 {
     private ?OfflineEntityCursor $model = null;
+    private ?InventoryOfflineCatalogService $catalog = null;
 
     private function model(): OfflineEntityCursor
     {
         return $this->model ??= new OfflineEntityCursor();
+    }
+
+    private function catalog(): InventoryOfflineCatalogService
+    {
+        return $this->catalog ??= new InventoryOfflineCatalogService();
     }
 
     public function isAvailable(): bool
@@ -24,15 +30,30 @@ final class OfflineCursorService
     }
 
     /** @return array<string, mixed> */
-    public function getCursor(string $entityType, ?int $companyId = null, ?int $branchId = null): array
+    public function getCursor(string $entityType, ?int $companyId = null, ?int $branchId = null, ?string $cursorToken = null): array
     {
-        if (!$this->isAvailable() || $entityType === '') {
-            return ['entity_type' => $entityType, 'cursor_token' => null, 'stub' => true];
+        $entityType = trim($entityType);
+        if ($entityType === '') {
+            return ['entity_type' => $entityType, 'cursor_token' => null, 'items' => [], 'stub' => true];
+        }
+
+        if (in_array($entityType, ['inventory_catalog', 'inventory', 'catalog'], true)) {
+            $token = $cursorToken;
+            if ($token === null || $token === '') {
+                $stored = $this->readStoredToken($entityType === 'inventory_catalog' ? 'inventory_catalog' : 'inventory_catalog', $companyId, $branchId);
+                $token = $stored;
+            }
+
+            return $this->catalog()->pull($companyId, $branchId, $token);
+        }
+
+        if (!$this->isAvailable()) {
+            return ['entity_type' => $entityType, 'cursor_token' => null, 'stub' => true, 'items' => []];
         }
 
         $companyId = $this->resolveCompanyId($companyId);
         if ($companyId < 1) {
-            return ['entity_type' => $entityType, 'cursor_token' => null];
+            return ['entity_type' => $entityType, 'cursor_token' => null, 'items' => []];
         }
 
         $params = [
@@ -58,6 +79,30 @@ final class OfflineCursorService
             'items' => [],
             'stub' => true,
         ];
+    }
+
+    private function readStoredToken(string $entityType, ?int $companyId, ?int $branchId): ?string
+    {
+        if (!$this->isAvailable()) {
+            return null;
+        }
+        $companyId = $this->resolveCompanyId($companyId);
+        if ($companyId < 1) {
+            return null;
+        }
+        $params = ['cid' => $companyId, 'et' => $entityType];
+        $sql = 'SELECT cursor_token FROM rateb_offline_entity_cursors
+                WHERE company_id = :cid AND entity_type = :et';
+        if ($branchId !== null && $branchId > 0) {
+            $sql .= ' AND branch_id = :bid';
+            $params['bid'] = $branchId;
+        } else {
+            $sql .= ' AND branch_id IS NULL';
+        }
+        $sql .= ' LIMIT 1';
+        $row = $this->model()->queryOne($sql, $params);
+
+        return isset($row['cursor_token']) ? (string) $row['cursor_token'] : null;
     }
 
     private function resolveCompanyId(?int $companyId): int

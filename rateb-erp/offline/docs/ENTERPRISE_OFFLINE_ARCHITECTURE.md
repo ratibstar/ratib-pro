@@ -1,4 +1,4 @@
-# Enterprise Offline Architecture — Phase 2A Implementation Notes
+# Enterprise Offline Architecture — Implementation Notes
 
 See chat Phase 1 architecture document for full design.
 
@@ -13,8 +13,17 @@ See chat Phase 1 architecture document for full design.
 - `OfflineSyncApiController` at `/api/v1/offline/*`
 - Unit tests under `offline/tests/`
 
-## Not in Phase 2A
+## Phase 3 delivered (Inventory Tier 1)
 
-- Inventory / HR / Procurement / ERP shell sync
-- UI script injection (no layout changes)
-- Business logic replay beyond `offline.ack`
+- `InventoryOfflineReplayService` → `StockMovementService` / `InventoryWorkflowService`
+- Stock movement / stock count / warehouse transfer queue actions
+- Inventory catalog delta pull (`inventory_catalog`)
+- Conflict: version LWW + `quantity_changed`
+- Client `RatebOfflineInventoryAdapter`
+- Flag `offline.inventory.movements` default **OFF**
+
+## Not implemented yet
+
+- HR / Procurement sync
+- ERP shell read cache
+- UI script injection into ERP layouts (optional)

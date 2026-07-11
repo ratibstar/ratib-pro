@@ -138,6 +138,8 @@ final class OfflineSyncService
     /** @return array<string, mixed> */
     public function delta(string $entity, ?int $companyId = null, ?int $branchId = null): array
     {
-        return $this->cursors()->getCursor($entity, $companyId, $branchId);
+        $cursorToken = isset($_GET['cursor']) ? trim((string) $_GET['cursor']) : null;
+
+        return $this->cursors()->getCursor($entity, $companyId, $branchId, $cursorToken !== '' ? $cursorToken : null);
     }
 }

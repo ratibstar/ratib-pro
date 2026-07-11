@@ -8,7 +8,7 @@ use Rateb\App\Core\TenantContext;
 
 /**
  * Authorization for offline sync admin operations (process / conflict resolve).
- * Additive — reuses existing pos.sync.manage when available; API tokens need pos ability or unrestricted.
+ * Additive — reuses pos.sync.manage when available; API tokens need pos/inventory ability or unrestricted.
  */
 final class OfflineAuthorizationService
 {
@@ -17,17 +17,30 @@ final class OfflineAuthorizationService
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             return true;
         }
-        if (function_exists('rateb_can') && rateb_can('pos.sync.manage')) {
-            return true;
-        }
 
+        // Explicit API token abilities take precedence (avoids session DB lookups).
         $modules = TenantContext::apiModules();
-        // null/empty abilities = unrestricted token (same convention as ApiModuleMiddleware).
-        if ($modules === null || $modules === []) {
-            return TenantContext::companyId() !== null && (int) TenantContext::companyId() > 0;
+        if (is_array($modules)) {
+            // Empty abilities = unrestricted token (same convention as ApiModuleMiddleware).
+            if ($modules === []) {
+                return TenantContext::companyId() !== null && (int) TenantContext::companyId() > 0;
+            }
+
+            return in_array('pos', $modules, true) || in_array('inventory', $modules, true);
         }
 
-        return in_array('pos', $modules, true);
+        // Session path — prefer permission slug; soft-fail if auth DB unavailable.
+        if (function_exists('rateb_can')) {
+            try {
+                if (rateb_can('pos.sync.manage')) {
+                    return true;
+                }
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     public function isAuthenticatedCompany(): bool

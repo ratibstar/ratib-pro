@@ -1,6 +1,6 @@
 /**
- * RATEB Offline — Delta pull stub (Phase 2A).
- * Inventory/HR/ERP delta sync is intentionally not implemented yet.
+ * RATEB Offline — Delta pull (Phase 3).
+ * Inventory catalog delta is live when Tier-1 flag is on; other entities remain stub-friendly.
  */
 (function (root) {
     'use strict';
@@ -13,8 +13,15 @@
                 return Promise.resolve({ entity: entity || '', items: [], cursor: null, stub: true });
             }
             var url = String(base).replace(/\/$/, '') + '/delta/' + encodeURIComponent(entity);
+            var params = [];
             if (options.cursor) {
-                url += (url.indexOf('?') >= 0 ? '&' : '?') + 'cursor=' + encodeURIComponent(options.cursor);
+                params.push('cursor=' + encodeURIComponent(options.cursor));
+            }
+            if (options.branch_id) {
+                params.push('branch_id=' + encodeURIComponent(String(options.branch_id)));
+            }
+            if (params.length) {
+                url += (url.indexOf('?') >= 0 ? '&' : '?') + params.join('&');
             }
             return fetch(url, {
                 credentials: 'same-origin',

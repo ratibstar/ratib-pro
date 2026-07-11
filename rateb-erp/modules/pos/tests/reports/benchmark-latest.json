@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-07-10T21:30:44+00:00",
+    "generated_at": "2026-07-11T00:09:34+00:00",
     "php_version": "8.4.19",
     "scales": [
         1000,
@@ -7,14 +7,14 @@
         100000
     ],
     "bootstrap": {
-        "execution_ms": 0.136,
+        "execution_ms": 0.112,
         "memory_mb": 10,
         "memory_delta_mb": 0,
         "query_count": 0
     },
     "catalog": {
         "1000": {
-            "execution_ms": 2.086,
+            "execution_ms": 2.376,
             "memory_mb": 10,
             "memory_delta_mb": 0,
             "query_count": 3,
@@ -22,7 +22,7 @@
             "total_reported": 1000
         },
         "10000": {
-            "execution_ms": 0.061,
+            "execution_ms": 0.064,
             "memory_mb": 10,
             "memory_delta_mb": 0,
             "query_count": 3,
@@ -30,7 +30,7 @@
             "total_reported": 10000
         },
         "100000": {
-            "execution_ms": 0.052,
+            "execution_ms": 0.042,
             "memory_mb": 10,
             "memory_delta_mb": 0,
             "query_count": 3,
@@ -39,7 +39,7 @@
         }
     },
     "cart": {
-        "execution_ms": 0.199,
+        "execution_ms": 0.237,
         "memory_mb": 10,
         "memory_delta_mb": 0,
         "query_count": 50,
@@ -47,8 +47,8 @@
         "scope_company_id": 1
     },
     "checkout": {
-        "execution_ms": 4.217,
-        "execution_ms_per_iteration": 0.0422,
+        "execution_ms": 8.531,
+        "execution_ms_per_iteration": 0.0853,
         "memory_mb": 10,
         "memory_delta_mb": 0,
         "query_count": 0,

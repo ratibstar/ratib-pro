@@ -48,6 +48,12 @@ final class OfflineFeatureFlagService
         return $this->enabled('offline.enabled');
     }
 
+    /** Tier-1 inventory movements (requires master + sub-flag). */
+    public function isInventoryMovementsEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.inventory.movements');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

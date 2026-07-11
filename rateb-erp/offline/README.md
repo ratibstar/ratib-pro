@@ -1,4 +1,4 @@
-# RATEB ERP — Enterprise Offline Layer (Phase 2A)
+# RATEB ERP — Enterprise Offline Layer
 
 Additive offline-first foundation. Does **not** modify existing APIs, schema, UI, or business logic.
 
@@ -10,8 +10,8 @@ offline/
 ├── client/          Browser SDK (IndexedDB, connectivity, queue, transport)
 ├── server/          PHP services + OfflineSyncApiController
 ├── migrations/      Additive SQL (also mirrored under rateb-erp/migrations/)
-├── tests/           Unit tests
-└── docs/            Architecture reference
+├── tests/           Unit / integration / stress tests
+└── docs/            Architecture + phase reports
 ```
 
 ## Feature flags
@@ -20,11 +20,16 @@ offline/
 |------|---------|---------|
 | `offline.enabled` | `false` | Master switch |
 | `offline.pos.complete` | `true` when master on | POS T0 bridge |
-| `offline.inventory.movements` | `false` | Tier 1 (not in 2A) |
-| `offline.hr.attendance` | `false` | Tier 1 (not in 2A) |
-| `offline.read_cache` | `false` | Tier 2 (not in 2A) |
+| `offline.inventory.movements` | `false` | Tier 1 Inventory Offline (Phase 3) |
+| `offline.hr.attendance` | `false` | Tier 1 (not started) |
+| `offline.read_cache` | `false` | Tier 2 (not started) |
 
-Enable via env `RATEB_OFFLINE_ENABLED=1` or `offline/config/feature-flags.php`.
+Enable via env:
+
+```bash
+RATEB_OFFLINE_ENABLED=1
+RATEB_OFFLINE_INVENTORY_MOVEMENTS=1
+```
 
 ## API (additive)
 
@@ -33,10 +38,20 @@ Enable via env `RATEB_OFFLINE_ENABLED=1` or `offline/config/feature-flags.php`.
 - `POST /api/v1/offline/process`
 - `GET  /api/v1/offline/conflicts`
 - `POST /api/v1/offline/conflicts/{id}/resolve`
-- `GET  /api/v1/offline/delta/{entity}`
+- `GET  /api/v1/offline/delta/{entity}` — `inventory_catalog` when inventory flag on
+
+## Inventory Offline (Phase 3)
+
+Client: `RatebOffline.inventory()` → enqueue movement / stock count / warehouse transfer + catalog delta pull.
+
+Server replay delegates **only** to:
+
+- `StockMovementService`
+- `InventoryWorkflowService`
 
 ## Tests
 
 ```bash
 php offline/tests/run-offline-foundation-tests.php
+php offline/tests/run-inventory-offline-tests.php
 ```

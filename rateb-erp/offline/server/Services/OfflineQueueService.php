@@ -11,17 +11,19 @@ use Rateb\App\Offline\OfflineModule;
 
 /**
  * Server-side enterprise offline sync queue (rateb_offline_sync_queue).
- * Phase 2A: enqueue + acknowledge-only processing (no Inventory/HR/Procurement replay).
+ * Phase 3: enqueue + ack + Inventory Tier-1 replay (flag-gated).
  */
 final class OfflineQueueService
 {
-    /** Actions that are safe to mark synced without business replay in Phase 2A. */
+    /** Actions that are safe to mark synced without business replay. */
     private const ACK_ACTIONS = ['offline.ack', 'offline.ping', 'ack', 'ping'];
 
     private ?OfflineSyncQueueItem $model = null;
     private ?OfflineConflictResolverService $resolver = null;
     private ?OfflineConflictService $conflicts = null;
     private ?OfflinePayloadSanitizer $sanitizer = null;
+    private ?OfflineFeatureFlagService $flags = null;
+    private ?OfflineReplayEngine $replay = null;
 
     private function model(): OfflineSyncQueueItem
     {
@@ -41,6 +43,16 @@ final class OfflineQueueService
     private function sanitizer(): OfflinePayloadSanitizer
     {
         return $this->sanitizer ??= new OfflinePayloadSanitizer();
+    }
+
+    private function flags(): OfflineFeatureFlagService
+    {
+        return $this->flags ??= new OfflineFeatureFlagService();
+    }
+
+    private function replay(): OfflineReplayEngine
+    {
+        return $this->replay ??= new OfflineReplayEngine();
     }
 
     public function isAvailable(): bool
@@ -198,10 +210,25 @@ final class OfflineQueueService
                 $action = 'offline.ack';
             }
 
-            if (in_array($module, ['inventory', 'hr', 'procurement'], true)) {
+            if (in_array($module, ['hr', 'procurement'], true)) {
                 $rejected++;
                 $rejectedKeys[] = $idempotencyKey;
                 continue;
+            }
+
+            if ($module === 'inventory') {
+                if (!$this->flags()->enabled('offline.inventory.movements')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeInventoryAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
             }
 
             $this->model()->create([
@@ -268,10 +295,34 @@ final class OfflineQueueService
             $stats['processed']++;
             $action = (string) ($row['action'] ?? '');
             $module = (string) ($row['module'] ?? '');
+            $queueId = (int) ($row['id'] ?? 0);
+            $retryCount = (int) ($row['retry_count'] ?? 0);
 
             if (in_array($action, self::ACK_ACTIONS, true) || $module === 'offline_meta') {
-                $this->markSynced((int) ($row['id'] ?? 0));
+                $this->markSynced($queueId);
                 $stats['synced']++;
+                continue;
+            }
+
+            if ($module === 'inventory') {
+                if (!$this->flags()->enabled('offline.inventory.movements')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
                 continue;
             }
 
@@ -279,6 +330,62 @@ final class OfflineQueueService
         }
 
         return $stats;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @param array<string, mixed> $outcome
+     */
+    private function markConflict(int $queueId, array $row, array $outcome): void
+    {
+        if ($queueId < 1) {
+            return;
+        }
+        $companyId = (int) ($row['company_id'] ?? 0);
+        $this->model()->update($queueId, [
+            'status' => 'conflict',
+            'last_error' => substr((string) ($outcome['error'] ?? $outcome['reason'] ?? 'conflict'), 0, 255),
+        ]);
+        $payload = $row['payload'] ?? null;
+        $client = is_string($payload) ? (json_decode($payload, true) ?: []) : (is_array($payload) ? $payload : []);
+        $this->conflicts()->record(
+            $companyId,
+            $queueId,
+            (string) ($row['idempotency_key'] ?? ''),
+            (string) ($outcome['reason'] ?? $outcome['error'] ?? 'conflict'),
+            is_array($client) ? $client : [],
+            ['error' => $outcome['error'] ?? null]
+        );
+    }
+
+    private function markFailed(int $queueId, int $retryCount, string $error): void
+    {
+        if ($queueId < 1) {
+            return;
+        }
+        $this->model()->update($queueId, [
+            'status' => 'failed',
+            'retry_count' => $retryCount + 1,
+            'last_error' => substr($error, 0, 255),
+        ]);
+    }
+
+    private function normalizeInventoryAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = InventoryOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return $action;
+        }
+        $aliases = [
+            'create_stock_movement' => 'stock_movement.create',
+            'create_stock_count' => 'stock_count.create',
+            'create_warehouse_transfer' => 'warehouse_transfer.create',
+            'approve_warehouse_transfer' => 'warehouse_transfer.approve',
+        ];
+        $mapped = $aliases[$action] ?? '';
+
+        return in_array($mapped, $allowed, true) ? $mapped : '';
     }
 
     private function resolveCompanyId(?int $companyId): int

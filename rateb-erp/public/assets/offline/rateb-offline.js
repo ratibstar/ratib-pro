@@ -1,4 +1,4 @@
-﻿/*! RATEB Enterprise Offline SDK Phase 2A.1 — blocking fixes. Master flag default OFF. */
+/*! RATEB Enterprise Offline SDK Phase 3 — Inventory Tier-1. Master flag default OFF. inventory.movements default OFF. */
 
 /* ---- offline\client\db\schema.js ---- */
 
@@ -643,8 +643,8 @@
 /* ---- offline\client\sync\delta-pull.js ---- */
 
 /**
- * RATEB Offline — Delta pull stub (Phase 2A).
- * Inventory/HR/ERP delta sync is intentionally not implemented yet.
+ * RATEB Offline — Delta pull (Phase 3).
+ * Inventory catalog delta is live when Tier-1 flag is on; other entities remain stub-friendly.
  */
 (function (root) {
     'use strict';
@@ -657,8 +657,15 @@
                 return Promise.resolve({ entity: entity || '', items: [], cursor: null, stub: true });
             }
             var url = String(base).replace(/\/$/, '') + '/delta/' + encodeURIComponent(entity);
+            var params = [];
             if (options.cursor) {
-                url += (url.indexOf('?') >= 0 ? '&' : '?') + 'cursor=' + encodeURIComponent(options.cursor);
+                params.push('cursor=' + encodeURIComponent(options.cursor));
+            }
+            if (options.branch_id) {
+                params.push('branch_id=' + encodeURIComponent(String(options.branch_id)));
+            }
+            if (params.length) {
+                url += (url.indexOf('?') >= 0 ? '&' : '?') + params.join('&');
             }
             return fetch(url, {
                 credentials: 'same-origin',
@@ -824,15 +831,112 @@
 /* ---- offline\client\adapters\inventory-adapter.js ---- */
 
 /**
- * RATEB Offline — Inventory adapter stub (Phase 2A — not activated).
+ * RATEB Offline — Inventory adapter (Phase 3 / Tier 1).
+ * Queues stock movements, stock counts, and warehouse transfers via enterprise offline queue.
+ * Activated only when offline.enabled + offline.inventory.movements are true.
  */
 (function (root) {
     'use strict';
 
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.inventory.movements']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'inv') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('inventory_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'inventory',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullCatalog(options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull('inventory_catalog', options).then(function (res) {
+            var delta = (res && res.delta) ? res.delta : res;
+            if (delta && Array.isArray(delta.items) && root.RatebOfflineSchema) {
+                return root.RatebOfflineSchema.withStore(
+                    root.RatebOfflineSchema.STORES.CATALOG_INDEX,
+                    'readwrite',
+                    function (store) {
+                        delta.items.forEach(function (item) {
+                            if (item && item.id) {
+                                store.put({
+                                    id: 'inv:' + item.id,
+                                    entity: 'inventory_catalog',
+                                    data: item,
+                                    updated_at: item.updated_at || null
+                                });
+                            }
+                        });
+                        return delta;
+                    }
+                ).then(function () { return delta; }).catch(function () { return delta; });
+            }
+            return delta || { items: [] };
+        });
+    }
+
     root.RatebOfflineInventoryAdapter = {
-        isActive: function () { return false; },
-        enqueueMovement: function () {
-            return Promise.reject(new Error('inventory_offline_not_implemented'));
+        isActive: isActive,
+        enqueueMovement: function (payload, options) {
+            return enqueue('stock_movement.create', payload || {}, options);
+        },
+        enqueueStockCount: function (payload, options) {
+            return enqueue('stock_count.create', payload || {}, options);
+        },
+        enqueueWarehouseTransfer: function (payload, options) {
+            return enqueue('warehouse_transfer.create', payload || {}, options);
+        },
+        enqueueTransferApprove: function (payload, options) {
+            return enqueue('warehouse_transfer.approve', payload || {}, options);
+        },
+        pullCatalog: pullCatalog,
+        sync: function (options) {
+            options = options || {};
+            if (!isActive()) {
+                return Promise.resolve({ skipped: true, disabled: true });
+            }
+            var q = root.RatebOfflineQueue;
+            var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
+            return flush.then(function (flushResult) {
+                return pullCatalog(options).then(function (catalog) {
+                    return { flush: flushResult, catalog: catalog };
+                });
+            });
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -875,7 +979,7 @@
 /* ---- offline\client\core\sdk.js ---- */
 
 /**
- * RATEB Offline SDK bootstrap (Phase 2A).
+ * RATEB Offline SDK bootstrap (Phase 3).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -884,7 +988,10 @@
     var booted = false;
     var flags = {
         'offline.enabled': false,
-        'offline.pos.complete': true
+        'offline.pos.complete': true,
+        'offline.inventory.movements': false,
+        'offline.hr.attendance': false,
+        'offline.read_cache': false
     };
 
     function init(options) {
@@ -917,25 +1024,35 @@
         }
         booted = true;
         if (root.RatebOfflineEvents) {
-            root.RatebOfflineEvents.emit('sdk:ready', { enabled: enabled });
+            root.RatebOfflineEvents.emit('sdk:ready', {
+                enabled: enabled,
+                inventory: !!flags['offline.inventory.movements']
+            });
         }
         return {
             enabled: enabled,
-            version: '2A.1.0'
+            inventory: !!flags['offline.inventory.movements'],
+            version: '3.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '2A.1.0',
+        version: '3.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
+        isInventoryEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.inventory.movements']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
         connectivity: function () { return root.RatebOfflineConnectivity || null; },
         pos: function () { return root.RatebOfflinePosAdapter || null; },
-        schema: function () { return root.RatebOfflineSchema || null; }
+        inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
+        schema: function () { return root.RatebOfflineSchema || null; },
+        deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 

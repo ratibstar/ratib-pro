@@ -112,10 +112,12 @@ final class OfflineFoundationTest
 
     private function testReplaySkipsBusinessModules(): void
     {
+        putenv('RATEB_OFFLINE_INVENTORY_MOVEMENTS');
+        unset($_ENV['RATEB_OFFLINE_INVENTORY_MOVEMENTS']);
         $engine = new OfflineReplayEngine();
         $r = $engine->replay(['module' => 'inventory', 'action' => 'stock_movement.create']);
         $ok = ($r['status'] ?? '') === 'skipped';
-        $this->record('replay skips inventory (phase 2A)', $ok, (string) ($r['status'] ?? ''));
+        $this->record('replay skips inventory when flag OFF', $ok, (string) ($r['status'] ?? '') . '/' . (string) ($r['error'] ?? ''));
     }
 
     private function testQueueRejectsEmptyIdempotencyWithoutDb(): void
@@ -348,12 +350,12 @@ final class OfflineFoundationTest
     private function testAuthzDeniesRestrictedToken(): void
     {
         TenantContext::setCompanyId(7);
-        TenantContext::setApiModules(['inventory']);
+        TenantContext::setApiModules(['hr']);
         $auth = new OfflineAuthorizationService();
         $ok = $auth->canManageSync() === false;
         TenantContext::setCompanyId(null);
         TenantContext::setApiModules(null);
-        $this->record('authz denies token without pos ability', $ok, $ok ? 'ok' : 'unexpected allow');
+        $this->record('authz denies token without pos/inventory ability', $ok, $ok ? 'ok' : 'unexpected allow');
     }
 
     private function testAuthzAllowsUnrestrictedToken(): void
