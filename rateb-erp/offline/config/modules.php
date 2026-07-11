@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform auth unlock (flag-gated). Phase 15B: + recruitment. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'erp_shell', 'platform'],
+    /** Phase 11: + platform auth unlock (flag-gated). Phase 15B: + recruitment. Phase 16B: + accounting. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -48,5 +48,11 @@ return [
         'recruitment.passport.update' => ['class' => 'RS', 'module' => 'recruitment'],
         'recruitment.contract.create' => ['class' => 'RS', 'module' => 'recruitment'],
         'recruitment.note.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'accounting.journal.create' => ['class' => 'RS', 'module' => 'accounting'],
+        'accounting.journal.update' => ['class' => 'RS', 'module' => 'accounting'],
+        'accounting.workflow.transition' => ['class' => 'RS', 'module' => 'accounting'],
+        'accounting.recurring.create' => ['class' => 'RS', 'module' => 'accounting'],
+        'accounting.opening_balance.create' => ['class' => 'RS', 'module' => 'accounting'],
+        'accounting.note.create' => ['class' => 'RS', 'module' => 'accounting'],
     ],
 ];

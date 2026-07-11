@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment).
+ * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment + Phase 16B accounting).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -17,6 +17,10 @@
         'offline.recruitment.candidates': false,
         'offline.recruitment.workflow': false,
         'offline.recruitment.assignment': false,
+        'offline.accounting': false,
+        'offline.accounting.journals': false,
+        'offline.accounting.workflow': false,
+        'offline.accounting.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -45,6 +49,10 @@
             recruitment_candidates: !!flags['offline.recruitment.candidates'],
             recruitment_workflow: !!flags['offline.recruitment.workflow'],
             recruitment_assignment: !!flags['offline.recruitment.assignment'],
+            accounting: !!flags['offline.accounting'],
+            accounting_journals: !!flags['offline.accounting.journals'],
+            accounting_workflow: !!flags['offline.accounting.workflow'],
+            accounting_masterdata: !!flags['offline.accounting.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -135,6 +143,24 @@
                 && flags['offline.recruitment']
                 && flags['offline.recruitment.assignment']);
         },
+        isAccountingEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.accounting']);
+        },
+        isAccountingJournalsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.accounting']
+                && flags['offline.accounting.journals']);
+        },
+        isAccountingWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.accounting']
+                && flags['offline.accounting.workflow']);
+        },
+        isAccountingMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.accounting']
+                && flags['offline.accounting.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -164,6 +190,7 @@
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
+        accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

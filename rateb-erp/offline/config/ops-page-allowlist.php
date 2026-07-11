@@ -5,7 +5,8 @@ declare(strict_types=1);
 /**
  * Phase 14 — Allowlisted enterprise daily-ops pages for offline snapshot browse.
  * Paths are app-route suffixes (matched against location.pathname).
- * Accounting / payroll / payments / approvals intentionally omitted.
+ * Payroll / payments / approvals intentionally omitted.
+ * Phase 16B: journal draft browse + form hooks only (no post/reverse/close).
  *
  * @return array{
  *   paths: list<string>,
@@ -27,6 +28,13 @@ return [
         'recruitment/candidates',
         'recruitment/agencies',
         'recruitment',
+        'journal-entries',
+        'accounting/platform',
+        'accounting/currencies',
+        'accounting/tax-codes',
+        'accounting/profit-centers',
+        'accounting/recurring',
+        'accounting/opening-balances',
     ],
 
     /** Narrow form-post hooks (pathname substring → adapter action). */
@@ -42,5 +50,9 @@ return [
         ['match' => 'rfq', 'module' => 'procurement', 'action' => 'rfq.draft'],
         ['match' => 'recruitment/candidates/create', 'module' => 'recruitment', 'action' => 'candidate.create'],
         ['match' => 'recruitment/candidates', 'module' => 'recruitment', 'action' => 'candidate.update'],
+        ['match' => 'journal-entries/create', 'module' => 'accounting', 'action' => 'journal.create'],
+        ['match' => 'journal-entries', 'module' => 'accounting', 'action' => 'journal.update'],
+        ['match' => 'accounting/recurring/create', 'module' => 'accounting', 'action' => 'recurring.create'],
+        ['match' => 'accounting/opening-balances', 'module' => 'accounting', 'action' => 'opening_balance.create'],
     ],
 ];

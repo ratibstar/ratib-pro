@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Rateb\App\Offline\Services;
 
 /**
- * Background sync worker façade (Phase 5).
- * Processes ack + Inventory + HR + Procurement + Recruitment Tier-1 queue items when flags allow.
+ * Background sync worker façade (Phase 5 + 15B + 16B).
+ * Processes ack + Inventory + HR + Procurement + Recruitment + Accounting Tier-1 queue items when flags allow.
  */
 final class OfflineBackgroundSync
 {
@@ -38,6 +38,7 @@ final class OfflineBackgroundSync
                 'hr_enabled' => false,
                 'procurement_enabled' => false,
                 'recruitment_enabled' => false,
+                'accounting_enabled' => false,
             ];
         }
 
@@ -46,6 +47,7 @@ final class OfflineBackgroundSync
         $stats['hr_enabled'] = $this->flags()->enabled('offline.hr.attendance');
         $stats['procurement_enabled'] = $this->flags()->enabled('offline.procurement');
         $stats['recruitment_enabled'] = $this->flags()->enabled('offline.recruitment');
+        $stats['accounting_enabled'] = $this->flags()->enabled('offline.accounting');
 
         return $stats;
     }

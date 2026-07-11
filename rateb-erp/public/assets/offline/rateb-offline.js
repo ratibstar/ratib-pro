@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phase 5.0.0 + Phases 10-14.2 GRN + Phase 15B Recruitment; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phase 5.0.0 + Phases 10-14.2 GRN + Phase 15B Recruitment + Phase 16B Accounting drafts; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -1535,6 +1535,219 @@
             return flush.then(function (flushResult) {
                 return pullDirectory('recruitment_agency_directory', options).then(function (directory) {
                     return { flush: flushResult, directory: directory, status: root.RatebOfflineRecruitmentAdapter.status() };
+                });
+            });
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- accounting-adapter.js ---- */
+/**
+ * RATEB Offline — Accounting adapter (Phase 16B / Tier 1 drafts).
+ * Queues journal / workflow / recurring / opening-balance / note drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.accounting (sub-flags gate children).
+ * Does NOT enqueue posting, reverse, period close, payments, bank recon, or ZATCA.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.accounting']);
+    }
+
+    function isJournalsActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.accounting.journals']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.accounting.workflow']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.accounting.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'acc') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('accounting_offline_disabled'));
+        }
+        if ((action === 'journal.create' || action === 'journal.update' || action === 'note.create'
+            || action === 'recurring.create' || action === 'opening_balance.create')
+            && !isJournalsActive()) {
+            return Promise.reject(new Error('accounting_journals_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('accounting_workflow_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'accounting',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    var DIRECTORY_PREFIX = {
+        chart_of_accounts_directory: 'coa',
+        accounting_currency_directory: 'cur',
+        accounting_exchange_rate_directory: 'fx',
+        accounting_tax_code_directory: 'tax',
+        accounting_cost_center_directory: 'cc',
+        accounting_profit_center_directory: 'pc',
+        accounting_fiscal_period_directory: 'fp'
+    };
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            var delta = (res && res.delta) ? res.delta : res;
+            if (delta && Array.isArray(delta.items) && root.RatebOfflineSchema) {
+                var prefix = DIRECTORY_PREFIX[entity] || 'acc';
+                return root.RatebOfflineSchema.withStore(
+                    root.RatebOfflineSchema.STORES.ENTITY_CACHE,
+                    'readwrite',
+                    function (store) {
+                        delta.items.forEach(function (item) {
+                            if (item && item.id) {
+                                var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+                                var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
+                                var bid = parseInt(
+                                    item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
+                                    10
+                                ) || 0;
+                                var id = cid + ':' + bid + ':' + prefix + ':' + item.id;
+                                if (item.deleted || item.active === false) {
+                                    store.delete(id);
+                                    return;
+                                }
+                                store.put({
+                                    id: id,
+                                    entity: entity,
+                                    company_id: cid,
+                                    branch_id: bid,
+                                    payload: item,
+                                    data: item,
+                                    updated_at: item.updated_at || null,
+                                    synced_at: Date.now()
+                                });
+                            }
+                        });
+                        return delta;
+                    }
+                ).then(function () { return delta; }).catch(function () { return delta; });
+            }
+            return delta || { items: [] };
+        });
+    }
+
+    root.RatebOfflineAccountingAdapter = {
+        isActive: isActive,
+        isJournalsActive: isJournalsActive,
+        isWorkflowActive: isWorkflowActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueJournalCreate: function (payload, options) {
+            return enqueue('journal.create', payload || {}, options);
+        },
+        enqueueJournalUpdate: function (payload, options) {
+            return enqueue('journal.update', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        enqueueRecurringCreate: function (payload, options) {
+            return enqueue('recurring.create', payload || {}, options);
+        },
+        enqueueOpeningBalanceCreate: function (payload, options) {
+            return enqueue('opening_balance.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (q && typeof q.flush === 'function') {
+                return q.flush();
+            }
+            return Promise.resolve({ skipped: true });
+        },
+        status: function () {
+            return {
+                active: isActive(),
+                journals: isJournalsActive(),
+                workflow: isWorkflowActive(),
+                masterdata: isMasterDataActive()
+            };
+        },
+        pullChartOfAccounts: function (options) {
+            return pullDirectory('chart_of_accounts_directory', options);
+        },
+        pullCurrencies: function (options) {
+            return pullDirectory('accounting_currency_directory', options);
+        },
+        pullExchangeRates: function (options) {
+            return pullDirectory('accounting_exchange_rate_directory', options);
+        },
+        pullTaxCodes: function (options) {
+            return pullDirectory('accounting_tax_code_directory', options);
+        },
+        pullCostCenters: function (options) {
+            return pullDirectory('accounting_cost_center_directory', options);
+        },
+        pullProfitCenters: function (options) {
+            return pullDirectory('accounting_profit_center_directory', options);
+        },
+        pullFiscalPeriods: function (options) {
+            return pullDirectory('accounting_fiscal_period_directory', options);
+        },
+        sync: function (options) {
+            options = options || {};
+            if (!isActive()) {
+                return Promise.resolve({ skipped: true, disabled: true });
+            }
+            var q = root.RatebOfflineQueue;
+            var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
+            return flush.then(function (flushResult) {
+                if (!isMasterDataActive()) {
+                    return { flush: flushResult, directory: { stub: true }, status: root.RatebOfflineAccountingAdapter.status() };
+                }
+                return pullDirectory('chart_of_accounts_directory', options).then(function (directory) {
+                    return { flush: flushResult, directory: directory, status: root.RatebOfflineAccountingAdapter.status() };
                 });
             });
         }
@@ -3238,11 +3451,12 @@
 
 /* ---- ops-forms-adapter.js ---- */
 /**
- * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B).
- * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment forms enqueue via existing adapters.
+ * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B / 16B).
+ * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment/Accounting-draft forms enqueue via existing adapters.
  * Does not finish a generic form-post stub; narrow path matching only.
  * Phase 14.2: purchase-orders/{id}/receive → goods_receipt.receive (flag-gated).
  * Phase 15B: recruitment/candidates create|update|transition (flag-gated).
+ * Phase 16B: journal-entries draft create|update + recurring/opening drafts (flag-gated; never post).
  */
 (function (root) {
     'use strict';
@@ -3258,7 +3472,11 @@
         { match: 'purchase-orders', module: 'procurement', action: 'purchase_order.draft' },
         { match: 'rfq', module: 'procurement', action: 'rfq.draft' },
         { match: 'recruitment/candidates/create', module: 'recruitment', action: 'candidate.create' },
-        { match: 'recruitment/candidates', module: 'recruitment', action: 'candidate.update' }
+        { match: 'recruitment/candidates', module: 'recruitment', action: 'candidate.update' },
+        { match: 'journal-entries/create', module: 'accounting', action: 'journal.create' },
+        { match: 'journal-entries', module: 'accounting', action: 'journal.update' },
+        { match: 'accounting/recurring/create', module: 'accounting', action: 'recurring.create' },
+        { match: 'accounting/opening-balances', module: 'accounting', action: 'opening_balance.create' }
     ];
 
     function cfg() {
@@ -3315,6 +3533,19 @@
             }
             return true;
         }
+        if (module === 'accounting') {
+            if (!f['offline.accounting']) {
+                return false;
+            }
+            if (action === 'journal.create' || action === 'journal.update' || action === 'note.create'
+                || action === 'recurring.create' || action === 'opening_balance.create') {
+                return !!f['offline.accounting.journals'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.accounting.workflow'];
+            }
+            return false;
+        }
         return false;
     }
 
@@ -3348,8 +3579,25 @@
         return m ? (parseInt(m[1], 10) || 0) : 0;
     }
 
+    function isAccountingLifecyclePath(pathname) {
+        return /journal-entries\/\d+\/lifecycle(\/|$|\?)/i.test(String(pathname || ''));
+    }
+
+    function isAccountingPostPath(pathname) {
+        return /journal-entries\/\d+\/(post|void|reject|submit-approval)(\/|$|\?)/i.test(String(pathname || ''))
+            || /journal-entries\/bulk-(approve|reject|void)/i.test(String(pathname || ''));
+    }
+
+    function extractJournalIdFromPath(pathname) {
+        var m = String(pathname || '').match(/journal-entries\/(\d+)/i);
+        return m ? (parseInt(m[1], 10) || 0) : 0;
+    }
+
     function matchHook(pathname) {
         var p = normalizePath(pathname);
+        if (isAccountingPostPath(p)) {
+            return null;
+        }
         var hooks = formHooks();
         // Longer matches first (bulk before attendance; create before candidates).
         var sorted = hooks.slice().sort(function (a, b) {
@@ -3374,6 +3622,13 @@
                     return {
                         match: hook.match,
                         module: 'recruitment',
+                        action: 'workflow.transition'
+                    };
+                }
+                if (String(hook.match).indexOf('journal-entries') >= 0 && isAccountingLifecyclePath(p)) {
+                    return {
+                        match: hook.match,
+                        module: 'accounting',
                         action: 'workflow.transition'
                     };
                 }
@@ -3565,11 +3820,53 @@
             return cand;
         }
         if (action === 'workflow.transition') {
+            if (String(hook.module || '') === 'accounting') {
+                return {
+                    journal_entry_id: intOrZero(raw.journal_entry_id || raw.entry_id || raw.id)
+                        || extractJournalIdFromPath(pathname || ''),
+                    to_status: String(raw.to_status || raw.target_status || raw.workflow_status || ''),
+                    reason: raw.reason || null,
+                    expected_status: raw.expected_status || null
+                };
+            }
             return {
                 candidate_id: intOrZero(raw.candidate_id)
                     || extractCandidateIdFromPath(pathname || ''),
                 to_status: String(raw.to_status || raw.workflow_status || ''),
                 reason: raw.reason || null
+            };
+        }
+        if (action === 'journal.create' || action === 'journal.update') {
+            var journal = {
+                entry_date: raw.entry_date || null,
+                description: raw.description || null,
+                description_ar: raw.description_ar || null,
+                currency_code: raw.currency_code || null,
+                notes: raw.notes || null,
+                lines: raw.lines || null,
+                expected_status: raw.expected_status || 'draft'
+            };
+            if (action === 'journal.update') {
+                journal.journal_entry_id = intOrZero(raw.journal_entry_id || raw.entry_id || raw.id)
+                    || extractJournalIdFromPath(pathname || '');
+            }
+            return journal;
+        }
+        if (action === 'recurring.create') {
+            return {
+                name: String(raw.name || raw.title || 'Offline recurring'),
+                frequency: raw.frequency || null,
+                start_date: raw.start_date || null,
+                notes: raw.notes || null
+            };
+        }
+        if (action === 'opening_balance.create') {
+            return {
+                fiscal_period_id: intOrZero(raw.fiscal_period_id) || null,
+                account_id: intOrZero(raw.account_id) || null,
+                debit: raw.debit != null ? floatOrZero(raw.debit) : null,
+                credit: raw.credit != null ? floatOrZero(raw.credit) : null,
+                notes: raw.notes || null
             };
         }
         return raw;
@@ -3645,6 +3942,33 @@
             }
             if (typeof rec.enqueue === 'function') {
                 return rec.enqueue(action, payload);
+            }
+        }
+        if (module === 'accounting') {
+            var acc = root.RatebOfflineAccountingAdapter;
+            if (!acc) {
+                return Promise.reject(new Error('accounting_adapter_unavailable'));
+            }
+            if (action === 'journal.create') {
+                return acc.enqueueJournalCreate(payload);
+            }
+            if (action === 'journal.update') {
+                return acc.enqueueJournalUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return acc.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'recurring.create') {
+                return acc.enqueueRecurringCreate(payload);
+            }
+            if (action === 'opening_balance.create') {
+                return acc.enqueueOpeningBalanceCreate(payload);
+            }
+            if (action === 'note.create') {
+                return acc.enqueueNoteCreate(payload);
+            }
+            if (typeof acc.enqueue === 'function') {
+                return acc.enqueue(action, payload);
             }
         }
         return Promise.reject(new Error('ops_form_action_unsupported'));
@@ -3733,7 +4057,8 @@
         if (!(f['offline.inventory.movements']
             || f['offline.hr.attendance']
             || f['offline.procurement']
-            || f['offline.recruitment'])) {
+            || f['offline.recruitment']
+            || f['offline.accounting'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -3752,7 +4077,7 @@
 
 /* ---- sdk.js ---- */
 /**
- * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment).
+ * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment + Phase 16B accounting).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -3770,6 +4095,10 @@
         'offline.recruitment.candidates': false,
         'offline.recruitment.workflow': false,
         'offline.recruitment.assignment': false,
+        'offline.accounting': false,
+        'offline.accounting.journals': false,
+        'offline.accounting.workflow': false,
+        'offline.accounting.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -3798,6 +4127,10 @@
             recruitment_candidates: !!flags['offline.recruitment.candidates'],
             recruitment_workflow: !!flags['offline.recruitment.workflow'],
             recruitment_assignment: !!flags['offline.recruitment.assignment'],
+            accounting: !!flags['offline.accounting'],
+            accounting_journals: !!flags['offline.accounting.journals'],
+            accounting_workflow: !!flags['offline.accounting.workflow'],
+            accounting_masterdata: !!flags['offline.accounting.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -3888,6 +4221,24 @@
                 && flags['offline.recruitment']
                 && flags['offline.recruitment.assignment']);
         },
+        isAccountingEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.accounting']);
+        },
+        isAccountingJournalsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.accounting']
+                && flags['offline.accounting.journals']);
+        },
+        isAccountingWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.accounting']
+                && flags['offline.accounting.workflow']);
+        },
+        isAccountingMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.accounting']
+                && flags['offline.accounting.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -3917,6 +4268,7 @@
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
+        accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

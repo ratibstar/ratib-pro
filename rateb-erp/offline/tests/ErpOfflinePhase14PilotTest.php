@@ -119,12 +119,12 @@ final class ErpOfflinePhase14PilotTest
         $ok = in_array('stock-movements', $paths, true)
             && in_array('hr/attendance', $paths, true)
             && in_array('purchase-requests', $paths, true)
-            && !str_contains($joined, 'accounting')
             && !str_contains($joined, 'payroll')
             && !str_contains($joined, 'payment')
+            && !str_contains($joined, 'zatca')
             && is_array($hooks)
             && count($hooks) >= 5;
-        $this->record('ops allowlist excludes accounting/payroll/payments', $ok, $ok ? 'ok' : 'allowlist bad');
+        $this->record('ops allowlist excludes payroll/payments/zatca', $ok, $ok ? 'ok' : 'allowlist bad');
     }
 
     private function testQueueMaxEnforcedInSource(): void

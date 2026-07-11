@@ -96,6 +96,27 @@ final class OfflineFeatureFlagService
         return $this->isRecruitmentEnabled() && $this->enabled('offline.recruitment.assignment');
     }
 
+    /** Phase 16B — Accounting Tier-1 drafts (requires master + offline.accounting). */
+    public function isAccountingEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.accounting');
+    }
+
+    public function isAccountingJournalsEnabled(): bool
+    {
+        return $this->isAccountingEnabled() && $this->enabled('offline.accounting.journals');
+    }
+
+    public function isAccountingWorkflowEnabled(): bool
+    {
+        return $this->isAccountingEnabled() && $this->enabled('offline.accounting.workflow');
+    }
+
+    public function isAccountingMasterDataEnabled(): bool
+    {
+        return $this->isAccountingEnabled() && $this->enabled('offline.accounting.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {
@@ -147,7 +168,8 @@ final class OfflineFeatureFlagService
         return $this->isInventoryMovementsEnabled()
             || $this->isHrAttendanceEnabled()
             || $this->isProcurementEnabled()
-            || $this->isRecruitmentEnabled();
+            || $this->isRecruitmentEnabled()
+            || $this->isAccountingEnabled();
     }
 
     /** @return array<string, bool> */

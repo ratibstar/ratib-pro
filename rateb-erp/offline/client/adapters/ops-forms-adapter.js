@@ -1,9 +1,10 @@
 /**
- * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B).
- * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment forms enqueue via existing adapters.
+ * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B / 16B).
+ * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment/Accounting-draft forms enqueue via existing adapters.
  * Does not finish a generic form-post stub; narrow path matching only.
  * Phase 14.2: purchase-orders/{id}/receive → goods_receipt.receive (flag-gated).
  * Phase 15B: recruitment/candidates create|update|transition (flag-gated).
+ * Phase 16B: journal-entries draft create|update + recurring/opening drafts (flag-gated; never post).
  */
 (function (root) {
     'use strict';
@@ -19,7 +20,11 @@
         { match: 'purchase-orders', module: 'procurement', action: 'purchase_order.draft' },
         { match: 'rfq', module: 'procurement', action: 'rfq.draft' },
         { match: 'recruitment/candidates/create', module: 'recruitment', action: 'candidate.create' },
-        { match: 'recruitment/candidates', module: 'recruitment', action: 'candidate.update' }
+        { match: 'recruitment/candidates', module: 'recruitment', action: 'candidate.update' },
+        { match: 'journal-entries/create', module: 'accounting', action: 'journal.create' },
+        { match: 'journal-entries', module: 'accounting', action: 'journal.update' },
+        { match: 'accounting/recurring/create', module: 'accounting', action: 'recurring.create' },
+        { match: 'accounting/opening-balances', module: 'accounting', action: 'opening_balance.create' }
     ];
 
     function cfg() {
@@ -76,6 +81,19 @@
             }
             return true;
         }
+        if (module === 'accounting') {
+            if (!f['offline.accounting']) {
+                return false;
+            }
+            if (action === 'journal.create' || action === 'journal.update' || action === 'note.create'
+                || action === 'recurring.create' || action === 'opening_balance.create') {
+                return !!f['offline.accounting.journals'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.accounting.workflow'];
+            }
+            return false;
+        }
         return false;
     }
 
@@ -109,8 +127,25 @@
         return m ? (parseInt(m[1], 10) || 0) : 0;
     }
 
+    function isAccountingLifecyclePath(pathname) {
+        return /journal-entries\/\d+\/lifecycle(\/|$|\?)/i.test(String(pathname || ''));
+    }
+
+    function isAccountingPostPath(pathname) {
+        return /journal-entries\/\d+\/(post|void|reject|submit-approval)(\/|$|\?)/i.test(String(pathname || ''))
+            || /journal-entries\/bulk-(approve|reject|void)/i.test(String(pathname || ''));
+    }
+
+    function extractJournalIdFromPath(pathname) {
+        var m = String(pathname || '').match(/journal-entries\/(\d+)/i);
+        return m ? (parseInt(m[1], 10) || 0) : 0;
+    }
+
     function matchHook(pathname) {
         var p = normalizePath(pathname);
+        if (isAccountingPostPath(p)) {
+            return null;
+        }
         var hooks = formHooks();
         // Longer matches first (bulk before attendance; create before candidates).
         var sorted = hooks.slice().sort(function (a, b) {
@@ -135,6 +170,13 @@
                     return {
                         match: hook.match,
                         module: 'recruitment',
+                        action: 'workflow.transition'
+                    };
+                }
+                if (String(hook.match).indexOf('journal-entries') >= 0 && isAccountingLifecyclePath(p)) {
+                    return {
+                        match: hook.match,
+                        module: 'accounting',
                         action: 'workflow.transition'
                     };
                 }
@@ -326,11 +368,53 @@
             return cand;
         }
         if (action === 'workflow.transition') {
+            if (String(hook.module || '') === 'accounting') {
+                return {
+                    journal_entry_id: intOrZero(raw.journal_entry_id || raw.entry_id || raw.id)
+                        || extractJournalIdFromPath(pathname || ''),
+                    to_status: String(raw.to_status || raw.target_status || raw.workflow_status || ''),
+                    reason: raw.reason || null,
+                    expected_status: raw.expected_status || null
+                };
+            }
             return {
                 candidate_id: intOrZero(raw.candidate_id)
                     || extractCandidateIdFromPath(pathname || ''),
                 to_status: String(raw.to_status || raw.workflow_status || ''),
                 reason: raw.reason || null
+            };
+        }
+        if (action === 'journal.create' || action === 'journal.update') {
+            var journal = {
+                entry_date: raw.entry_date || null,
+                description: raw.description || null,
+                description_ar: raw.description_ar || null,
+                currency_code: raw.currency_code || null,
+                notes: raw.notes || null,
+                lines: raw.lines || null,
+                expected_status: raw.expected_status || 'draft'
+            };
+            if (action === 'journal.update') {
+                journal.journal_entry_id = intOrZero(raw.journal_entry_id || raw.entry_id || raw.id)
+                    || extractJournalIdFromPath(pathname || '');
+            }
+            return journal;
+        }
+        if (action === 'recurring.create') {
+            return {
+                name: String(raw.name || raw.title || 'Offline recurring'),
+                frequency: raw.frequency || null,
+                start_date: raw.start_date || null,
+                notes: raw.notes || null
+            };
+        }
+        if (action === 'opening_balance.create') {
+            return {
+                fiscal_period_id: intOrZero(raw.fiscal_period_id) || null,
+                account_id: intOrZero(raw.account_id) || null,
+                debit: raw.debit != null ? floatOrZero(raw.debit) : null,
+                credit: raw.credit != null ? floatOrZero(raw.credit) : null,
+                notes: raw.notes || null
             };
         }
         return raw;
@@ -406,6 +490,33 @@
             }
             if (typeof rec.enqueue === 'function') {
                 return rec.enqueue(action, payload);
+            }
+        }
+        if (module === 'accounting') {
+            var acc = root.RatebOfflineAccountingAdapter;
+            if (!acc) {
+                return Promise.reject(new Error('accounting_adapter_unavailable'));
+            }
+            if (action === 'journal.create') {
+                return acc.enqueueJournalCreate(payload);
+            }
+            if (action === 'journal.update') {
+                return acc.enqueueJournalUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return acc.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'recurring.create') {
+                return acc.enqueueRecurringCreate(payload);
+            }
+            if (action === 'opening_balance.create') {
+                return acc.enqueueOpeningBalanceCreate(payload);
+            }
+            if (action === 'note.create') {
+                return acc.enqueueNoteCreate(payload);
+            }
+            if (typeof acc.enqueue === 'function') {
+                return acc.enqueue(action, payload);
             }
         }
         return Promise.reject(new Error('ops_form_action_unsupported'));
@@ -494,7 +605,8 @@
         if (!(f['offline.inventory.movements']
             || f['offline.hr.attendance']
             || f['offline.procurement']
-            || f['offline.recruitment'])) {
+            || f['offline.recruitment']
+            || f['offline.accounting'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

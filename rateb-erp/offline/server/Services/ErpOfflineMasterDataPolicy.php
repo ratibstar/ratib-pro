@@ -68,6 +68,13 @@ final class ErpOfflineMasterDataPolicy
             'employee_directory', 'employees', 'hr_employees',
             'supplier_directory', 'suppliers', 'procurement_suppliers',
             'recruitment_agency_directory', 'recruitment_agencies', 'agencies',
+            'chart_of_accounts_directory', 'chart_of_accounts', 'accounts', 'coa',
+            'accounting_currency_directory', 'accounting_currencies', 'currencies',
+            'accounting_exchange_rate_directory', 'accounting_exchange_rates', 'exchange_rates',
+            'accounting_tax_code_directory', 'accounting_tax_codes', 'tax_codes',
+            'accounting_cost_center_directory', 'cost_centers', 'cost_center',
+            'accounting_profit_center_directory', 'profit_centers', 'profit_center',
+            'accounting_fiscal_period_directory', 'fiscal_periods', 'fiscal_period',
         ], true);
     }
 }

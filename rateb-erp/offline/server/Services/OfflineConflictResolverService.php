@@ -172,4 +172,52 @@ final class OfflineConflictResolverService
 
         return $base;
     }
+
+    /**
+     * Accounting-specific: reject when expected lifecycle drifted or period/posted conflict markers.
+     *
+     * @param array<string, mixed> $clientItem
+     * @param array<string, mixed>|null $serverItem
+     * @return array<string, mixed>
+     */
+    public function resolveAccounting(array $clientItem, ?array $serverItem): array
+    {
+        $base = $this->resolve($clientItem, $serverItem);
+        if (($base['action'] ?? '') === 'reject_client') {
+            return $base;
+        }
+        if ($serverItem === null) {
+            return $base;
+        }
+
+        $serverStatus = strtolower((string) ($serverItem['status'] ?? ''));
+        if (in_array($serverStatus, ['posted', 'locked', 'reversed', 'void'], true)) {
+            return [
+                'action' => 'reject_client',
+                'item' => $serverItem,
+                'reason' => 'journal_already_posted',
+            ];
+        }
+
+        if (!empty($serverItem['period_closed'])) {
+            return [
+                'action' => 'reject_client',
+                'item' => $serverItem,
+                'reason' => 'period_closed',
+            ];
+        }
+
+        $expectedStatus = $clientItem['expected_status'] ?? null;
+        if ($expectedStatus !== null && array_key_exists('status', $serverItem)) {
+            if ((string) $serverItem['status'] !== (string) $expectedStatus) {
+                return [
+                    'action' => 'reject_client',
+                    'item' => $serverItem,
+                    'reason' => 'status_changed',
+                ];
+            }
+        }
+
+        return $base;
+    }
 }

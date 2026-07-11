@@ -210,7 +210,8 @@ final class OfflineQueueService
                 $action = 'offline.ack';
             }
 
-            if (in_array($module, ['accounting', 'payroll', 'payments'], true)) {
+            // Phase 16B: accounting Tier-1 drafts are flag-gated below; payroll/payments remain online-only.
+            if (in_array($module, ['payroll', 'payments'], true)) {
                 $rejected++;
                 $rejectedKeys[] = $idempotencyKey;
                 continue;
@@ -293,6 +294,35 @@ final class OfflineQueueService
                 }
                 if ($normalizedAction === 'assignment.create'
                     && !$this->flags()->enabled('offline.recruitment.assignment')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
+            if ($module === 'accounting') {
+                if (!$this->flags()->enabled('offline.accounting')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeAccountingAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'journal.create', 'journal.update', 'note.create',
+                    'recurring.create', 'opening_balance.create',
+                ], true) && !$this->flags()->enabled('offline.accounting.journals')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.accounting.workflow')) {
                     $rejected++;
                     $rejectedKeys[] = $idempotencyKey;
                     continue;
@@ -461,6 +491,28 @@ final class OfflineQueueService
                 continue;
             }
 
+            if ($module === 'accounting') {
+                if (!$this->flags()->enabled('offline.accounting')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
             $stats['skipped']++;
         }
 
@@ -583,6 +635,26 @@ final class OfflineQueueService
             'create_passport' => 'passport.create',
             'update_passport' => 'passport.update',
             'create_contract' => 'contract.create',
+            'create_note' => 'note.create',
+        ];
+        $mapped = $aliases[$action] ?? '';
+
+        return in_array($mapped, $allowed, true) ? $mapped : '';
+    }
+
+    private function normalizeAccountingAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = AccountingOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return $action;
+        }
+        $aliases = [
+            'create_journal' => 'journal.create',
+            'update_journal' => 'journal.update',
+            'transition_workflow' => 'workflow.transition',
+            'create_recurring' => 'recurring.create',
+            'create_opening_balance' => 'opening_balance.create',
             'create_note' => 'note.create',
         ];
         $mapped = $aliases[$action] ?? '';

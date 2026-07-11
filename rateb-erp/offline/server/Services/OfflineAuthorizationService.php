@@ -30,7 +30,8 @@ final class OfflineAuthorizationService
                 || in_array('inventory', $modules, true)
                 || in_array('hr', $modules, true)
                 || in_array('procurement', $modules, true)
-                || in_array('recruitment', $modules, true);
+                || in_array('recruitment', $modules, true)
+                || in_array('accounting', $modules, true);
         }
 
         // Session path — prefer permission slug; soft-fail if auth DB unavailable.
