@@ -121,7 +121,11 @@
                     approval_request_id: pending.requestId,
                     credentialId: bufToB64(cred.rawId),
                     id: bufToB64(cred.rawId),
-                    method: 'webauthn'
+                    method: 'webauthn',
+                    clientDataJSON: bufToB64(cred.response.clientDataJSON),
+                    authenticatorData: bufToB64(cred.response.authenticatorData),
+                    signature: bufToB64(cred.response.signature),
+                    userHandle: cred.response.userHandle ? bufToB64(cred.response.userHandle) : null
                 })
             });
         }).then(function (grant) {

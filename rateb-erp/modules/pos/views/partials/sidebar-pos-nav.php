@@ -11,5 +11,6 @@ $opsSection(__('pos_nav_section'), [
     ['pos/reports', 'pos_reports', 'fa-chart-bar', 'pos', 'pos.reports.view'],
     ['pos/returns', 'pos_returns', 'fa-undo', 'pos', 'pos.returns.manage'],
     ['pos/sync', 'pos_sync', 'fa-cloud-arrow-up', 'pos', 'pos.sync.manage'],
+    ['pos/devices', 'pos_devices', 'fa-mobile-screen', 'pos', 'pos.settings.manage'],
     ['pos/settings', 'pos_settings', 'fa-sliders', 'pos', 'pos.settings.manage'],
 ], 'fa-cash-register');

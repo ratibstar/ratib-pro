@@ -20,6 +20,9 @@
     var fpBtn = gate.querySelector('[data-pos-bio-fingerprint]');
     var faceBtn = gate.querySelector('[data-pos-bio-face]');
     var registerBtn = gate.querySelector('[data-pos-bio-register]');
+    var pinInput = gate.querySelector('[data-pos-bio-pin]');
+    var pinConfirm = gate.querySelector('[data-pos-bio-pin-confirm]');
+    var lastCredentialId = null;
 
     function t(key, fb) {
         return i18n[key] || fb || key;
@@ -35,6 +38,43 @@
         }
         statusEl.textContent = msg || '';
         statusEl.style.color = isError ? 'var(--pos-danger)' : '';
+    }
+
+    function readPinForEnroll() {
+        var pin = (pinInput && pinInput.value) || '';
+        var confirm = (pinConfirm && pinConfirm.value) || '';
+        if (!pin) {
+            return { ok: true, pin: null };
+        }
+        if (pin.length < 4) {
+            return { ok: false, error: t('pos_lock_pin_too_short', 'PIN must be at least 4 digits') };
+        }
+        if (pinConfirm && pin !== confirm) {
+            return { ok: false, error: t('pos_lock_pin_mismatch', 'PIN confirmation does not match') };
+        }
+        return { ok: true, pin: pin };
+    }
+
+    function writeVault(credentialId) {
+        if (!window.RatebPosAuthLock || !window.RatebPosAuthLock.enrollFromGate) {
+            return Promise.resolve();
+        }
+        var pinResult = readPinForEnroll();
+        if (!pinResult.ok) {
+            return Promise.reject(new Error(pinResult.error));
+        }
+        return window.RatebPosAuthLock.enrollFromGate({
+            company_id: config.companyId,
+            branch_id: config.branchId || 0,
+            user_id: config.userId,
+            display_name: config.displayName || '',
+            credential_id: credentialId || lastCredentialId || null,
+            pin: pinResult.pin
+        });
+    }
+
+    function goRegister() {
+        window.location.href = (config.urls && config.urls.register) || '/pos/register';
     }
 
     function fetchJson(url, options) {
@@ -92,6 +132,11 @@
             setStatus(t('pos_biometric_failed', 'WebAuthn not supported'), true);
             return;
         }
+        var pinResult = readPinForEnroll();
+        if (!pinResult.ok) {
+            setStatus(pinResult.error, true);
+            return;
+        }
         setStatus(t('pos_biometric_register_loading', 'Preparing fingerprint scanner…'));
         if (registerBtn) {
             registerBtn.disabled = true;
@@ -116,14 +161,19 @@
                 if (!cred) {
                     throw new Error(t('pos_biometric_failed', 'Registration failed'));
                 }
+                lastCredentialId = bufToB64(cred.rawId);
                 var attestationObject = bufToB64(cred.response.attestationObject);
                 return fetchJson(api.registerFinish, {
                     body: {
-                        credentialId: bufToB64(cred.rawId),
+                        credentialId: lastCredentialId,
                         publicKey: attestationObject,
-                        attestationObject: attestationObject
+                        attestationObject: attestationObject,
+                        clientDataJSON: bufToB64(cred.response.clientDataJSON)
                     }
                 });
+            })
+            .then(function () {
+                return writeVault(lastCredentialId);
             })
             .then(function () {
                 setStatus(t('pos_biometric_register_success', 'Fingerprint registered'));
@@ -161,17 +211,25 @@
                 if (!cred) {
                     throw new Error(t('pos_biometric_failed', 'Verification failed'));
                 }
+                lastCredentialId = bufToB64(cred.rawId);
                 return fetchJson(api.finish, {
                     body: {
-                        credentialId: bufToB64(cred.rawId),
-                        id: bufToB64(cred.rawId),
-                        type: cred.type
+                        credentialId: lastCredentialId,
+                        id: lastCredentialId,
+                        type: cred.type,
+                        clientDataJSON: bufToB64(cred.response.clientDataJSON),
+                        authenticatorData: bufToB64(cred.response.authenticatorData),
+                        signature: bufToB64(cred.response.signature),
+                        userHandle: cred.response.userHandle ? bufToB64(cred.response.userHandle) : null
                     }
                 });
             })
             .then(function () {
+                return writeVault(lastCredentialId);
+            })
+            .then(function () {
                 setStatus(t('pos_biometric_success', 'Verified'));
-                window.location.href = (config.urls && config.urls.register) || '/pos/register';
+                goRegister();
             })
             .catch(function (err) {
                 setStatus(err.message || t('pos_biometric_failed', 'Verification failed'), true);
@@ -179,29 +237,20 @@
     }
 
     function runFace() {
-        setStatus(t('pos_biometric_face', 'Face recognition'));
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            setStatus(t('pos_biometric_failed', 'Camera not available'), true);
-            return;
-        }
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function (stream) {
-                stream.getTracks().forEach(function (tr) { tr.stop(); });
-                var template = 'face-capture-' + Date.now();
-                return fetchJson(api.face, { body: { faceTemplate: template, faceImageData: template } });
-            })
-            .then(function () {
-                setStatus(t('pos_biometric_success', 'Verified'));
-                window.location.href = (config.urls && config.urls.register) || '/pos/register';
-            })
-            .catch(function (err) {
-                var msg = (err && err.message) || '';
-                if (/Permission denied|NotAllowedError|Permissions policy/i.test(msg)
-                    || (err && err.name === 'NotAllowedError')) {
-                    msg = t('pos_biometric_camera_denied', 'Camera permission denied');
-                }
-                setStatus(msg || t('pos_biometric_failed', 'Verification failed'), true);
-            });
+        // Face recognition is not enabled — never call the face API with stub templates.
+        setStatus(
+            t('pos_biometric_face_coming_soon', 'Face recognition coming soon (admin-enabled later)'),
+            true
+        );
+    }
+
+    // Offline: biometric page needs network — send cashiers to cached register + lock.
+    if (navigator.onLine === false && window.RatebPosAuthLock) {
+        window.RatebPosAuthLock.isEnrolled().then(function (enrolled) {
+            if (enrolled) {
+                goRegister();
+            }
+        });
     }
 
     if (registerBtn) {
@@ -211,6 +260,9 @@
         fpBtn.addEventListener('click', runFingerprint);
     }
     if (faceBtn) {
+        faceBtn.disabled = true;
+        faceBtn.setAttribute('aria-disabled', 'true');
+        faceBtn.title = t('pos_biometric_face_coming_soon', 'Face recognition coming soon (admin-enabled later)');
         faceBtn.addEventListener('click', runFace);
     }
 })();

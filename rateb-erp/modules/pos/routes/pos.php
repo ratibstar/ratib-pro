@@ -16,6 +16,8 @@ use Rateb\App\Pos\Controllers\PosSyncController;
 use Rateb\App\Pos\Controllers\PosOrderOpsApiController;
 use Rateb\App\Pos\Controllers\PosReturnsController;
 use Rateb\App\Pos\Controllers\PosTerminalsController;
+use Rateb\App\Pos\Controllers\PosDeviceApiController;
+use Rateb\App\Pos\Controllers\PosDevicesController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -79,6 +81,12 @@ $router->post($posApp('api/register/exchange'), [PosOrderOpsApiController::class
 
 $router->get($posApp('settings'), [PosSettingsController::class, 'index'], $posMw('pos/settings'));
 $router->post($posApp('settings/demo-setup'), [PosSettingsController::class, 'setupDemoData'], $posMw('pos/settings'));
+
+$devicesMw = rateb_erp_mw('pos');
+$router->get($posApp('devices'), [PosDevicesController::class, 'index'], $devicesMw);
+$router->post($posApp('devices/activate'), [PosDevicesController::class, 'activate'], $devicesMw);
+$router->post($posApp('devices/revoke'), [PosDevicesController::class, 'revoke'], $devicesMw);
+
 $router->get($posApp('sync'), [PosSyncController::class, 'index'], $posMw('pos/sync'));
 $router->post($posApp('sync/process'), [PosSyncController::class, 'process'], $posMw('pos/sync'));
 $router->post($posApp('sync/conflicts/resolve'), [PosSyncController::class, 'resolveConflict'], $posMw('pos/sync'));
@@ -98,6 +106,8 @@ $router->post($posApp('api/biometric/register-start'), [PosBiometricAuthControll
 $router->post($posApp('api/biometric/register-finish'), [PosBiometricAuthController::class, 'registerFinish'], $regMw);
 $router->post($posApp('api/biometric/face'), [PosBiometricAuthController::class, 'face'], $regMw);
 $router->get($posApp('api/biometric/status'), [PosBiometricAuthController::class, 'status'], $regMw);
+$router->post($posApp('api/device/register'), [PosDeviceApiController::class, 'register'], $regMw);
+$router->post($posApp('api/device/heartbeat'), [PosDeviceApiController::class, 'heartbeat'], $regMw);
 $router->post($posApp('api/approval/request'), [PosApprovalApiController::class, 'requestApproval'], $regMw);
 $router->post($posApp('api/approval/grant'), [PosApprovalApiController::class, 'grantApproval'], $regMw);
 $router->post($posApp('api/inventory/adjust'), [PosApprovalApiController::class, 'inventoryAdjust'], $regMw);

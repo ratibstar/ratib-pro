@@ -16,6 +16,6 @@ return [
     ],
     'pos_manager' => [
         'pos.view', 'pos.manage', 'pos.register', 'pos.terminal.manage',
-        'pos.settings.manage', 'pos.sync.manage', 'pos.reports.z',
+        'pos.settings.manage', 'pos.devices.manage', 'pos.sync.manage', 'pos.reports.z',
     ],
 ];

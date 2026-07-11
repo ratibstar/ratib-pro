@@ -594,7 +594,7 @@ final class AuthorizationService
             'pos_manager' => [
                 'pos.view', 'pos.register', 'pos.shift.open', 'pos.shift.close',
                 'pos.discount.manage', 'pos.returns.manage', 'pos.reports.view', 'pos.cash_drawer.manage',
-                'pos.orders.view', 'pos.terminals.manage', 'pos.settings.manage', 'pos.sync.manage',
+                'pos.orders.view', 'pos.terminals.manage', 'pos.settings.manage', 'pos.devices.manage', 'pos.sync.manage',
             ],
         ];
         $roleModel = new Role();

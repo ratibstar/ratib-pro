@@ -40,6 +40,11 @@ return [
         'view' => 'pos.view',
         'manage' => 'pos.settings.manage',
     ],
+    'pos/devices' => [
+        'module' => 'pos',
+        'view' => 'pos.settings.manage',
+        'manage' => 'pos.devices.manage',
+    ],
     'pos/sync' => [
         'module' => 'pos',
         'view' => 'pos.view',

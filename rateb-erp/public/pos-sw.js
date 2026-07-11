@@ -25,6 +25,22 @@ function isRegisterShellPath(pathname) {
     return /\/pos(\/register)?$/i.test(p);
 }
 
+/** Online biometric gate — offline should land on cached register + lock, not require gate HTML. */
+function isBiometricGatePath(pathname) {
+    var p = String(pathname || '').replace(/\/+$/, '');
+    return /\/pos\/biometric$/i.test(p);
+}
+
+function registerPathFromBiometric(url) {
+    try {
+        var u = new URL(url.href || url);
+        u.pathname = u.pathname.replace(/\/biometric\/?$/i, '/register');
+        return u;
+    } catch (e) {
+        return url;
+    }
+}
+
 function isPosAsset(url) {
     return url.pathname.indexOf('/assets/pos/') !== -1
         || url.pathname.indexOf('/assets/js/theme.js') !== -1;
@@ -264,9 +280,20 @@ self.addEventListener('fetch', function (event) {
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         event.respondWith(
             fetch(event.request).then(function (response) {
-                event.waitUntil(putShell(event.request, response.clone()));
+                // Do not pin biometric gate HTML as the offline shell — register + lock is the offline entry.
+                if (!isBiometricGatePath(url.pathname)) {
+                    event.waitUntil(putShell(event.request, response.clone()));
+                }
                 return response;
             }).catch(function () {
+                if (isBiometricGatePath(url.pathname)) {
+                    var regUrl = registerPathFromBiometric(url);
+                    return shellFallback(new Request(regUrl.href, {
+                        headers: event.request.headers,
+                        mode: 'navigate',
+                        credentials: event.request.credentials
+                    }));
+                }
                 return shellFallback(event.request);
             })
         );

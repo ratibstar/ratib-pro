@@ -71,6 +71,13 @@ final class PosSettingsController extends PosBaseController
                 'hint' => __('pos_settings_link_sync_hint'),
             ];
         }
+        if ($can('pos.devices.manage') || $can('pos.settings.manage')) {
+            $links[] = [
+                'url' => rateb_app_url('pos/devices'),
+                'title' => __('pos_devices'),
+                'hint' => __('pos_settings_link_devices_hint'),
+            ];
+        }
 
         $this->posView('settings/index', [
             'title' => __('pos_settings'),

@@ -497,6 +497,10 @@
 
         sync: function (options) {
             options = options || {};
+            if (window.RatebPosAuthLock && typeof window.RatebPosAuthLock.sessionNeedsReauth === 'function'
+                && window.RatebPosAuthLock.sessionNeedsReauth()) {
+                return Promise.reject(new Error('session_reauth_required'));
+            }
             return readAll().then(function (queue) {
                 if (!queue.length) {
                     return { accepted: 0, duplicate: 0, conflict: 0, queueDepth: 0, clearable_keys: [] };
@@ -517,6 +521,11 @@
                         items: queue
                     })
                 }).then(function (res) {
+                    if (res.status === 401 || res.status === 403 || res.status === 419) {
+                        if (window.RatebPosAuthLock && window.RatebPosAuthLock.markSessionNeedsReauth) {
+                            window.RatebPosAuthLock.markSessionNeedsReauth();
+                        }
+                    }
                     return res.json().then(function (payload) {
                         var result = (payload && payload.result) ? payload.result : {};
                         var clearable = Array.isArray(result.clearable_keys) ? result.clearable_keys : [];
@@ -695,6 +704,12 @@
             }).then(function (res) {
                 // Reachable origin counts as online (auth errors still mean network works).
                 if (res && (res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
+                    if ((res.status === 401 || res.status === 403 || res.status === 419)
+                        && window.RatebPosAuthLock && window.RatebPosAuthLock.markSessionNeedsReauth) {
+                        window.RatebPosAuthLock.markSessionNeedsReauth();
+                    } else if (res.ok && window.RatebPosAuthLock && window.RatebPosAuthLock.clearSessionNeedsReauth) {
+                        window.RatebPosAuthLock.clearSessionNeedsReauth();
+                    }
                     setOnline(true);
                     return true;
                 }

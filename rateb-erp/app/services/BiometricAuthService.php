@@ -7,7 +7,13 @@ use Rateb\App\Core\Database;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\User;
 
-/** WebAuthn + face biometric bridge for ERP POS (rateb_users scoped). */
+/**
+ * WebAuthn biometric bridge for ERP POS (rateb_users + company scoped).
+ *
+ * Finish path binds the session challenge via clientDataJSON (type + challenge + origin).
+ * Full COSE signature verification is deferred until a WebAuthn library / extracted SPKI is available;
+ * authenticatorData + signature must still be present on assertion finish.
+ */
 final class BiometricAuthService
 {
     private const CHALLENGE_TTL = 120;
@@ -20,18 +26,18 @@ final class BiometricAuthService
         }
         try {
             $db = Database::connection();
-            $fp = $db->prepare('SELECT id FROM rateb_webauthn_credentials WHERE user_id = :uid LIMIT 1');
-            $fp->execute(['uid' => $userId]);
-            if ($fp->fetchColumn()) {
-                return true;
+            $companyId = $this->resolveCompanyId();
+            $sql = 'SELECT id FROM rateb_webauthn_credentials WHERE user_id = :uid';
+            $params = ['uid' => $userId];
+            if ($this->companyColumnReady() && $companyId > 0) {
+                $sql .= ' AND (company_id = :cid OR company_id IS NULL)';
+                $params['cid'] = $companyId;
             }
-            if (!$this->faceTemplatesTableReady()) {
-                return false;
-            }
-            $face = $db->prepare('SELECT id FROM rateb_face_templates WHERE user_id = :uid LIMIT 1');
-            $face->execute(['uid' => $userId]);
+            $sql .= ' LIMIT 1';
+            $fp = $db->prepare($sql);
+            $fp->execute($params);
 
-            return (bool) $face->fetchColumn();
+            return (bool) $fp->fetchColumn();
         } catch (\Throwable) {
             return false;
         }
@@ -133,8 +139,14 @@ final class BiometricAuthService
 
         $registerUserId = (int) SessionManager::get('pos_webauthn_register_user_id');
         $expires = (int) SessionManager::get('pos_webauthn_register_expires');
-        if ($registerUserId < 1 || $registerUserId !== $userId || $expires < time()) {
+        $sessionChallenge = (string) SessionManager::get('pos_webauthn_register_challenge');
+        if ($registerUserId < 1 || $registerUserId !== $userId || $expires < time() || $sessionChallenge === '') {
             return ['ok' => false, 'error' => __('pos_biometric_challenge_expired')];
+        }
+
+        $challengeError = $this->assertClientDataChallenge($payload, $sessionChallenge, 'webauthn.create');
+        if ($challengeError !== null) {
+            return ['ok' => false, 'error' => $challengeError];
         }
 
         $credentialIdB64 = (string) ($payload['credentialId'] ?? '');
@@ -154,23 +166,64 @@ final class BiometricAuthService
             return ['ok' => false, 'error' => __('access_denied')];
         }
 
+        $companyId = $this->resolveCompanyId();
+        if ($companyId < 1) {
+            $companyId = (int) ($user['company_id'] ?? 0);
+        }
+        $branchId = $this->resolveBranchId();
+
         try {
             $db = Database::connection();
             $this->assertWebauthnStorageReady();
 
-            $delete = $db->prepare('DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid');
-            $delete->execute(['uid' => $userId]);
+            $deleteSql = 'DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid';
+            $deleteParams = ['uid' => $userId];
+            if ($this->companyColumnReady() && $companyId > 0) {
+                $deleteSql .= ' AND (company_id = :cid OR company_id IS NULL)';
+                $deleteParams['cid'] = $companyId;
+            }
+            $delete = $db->prepare($deleteSql);
+            $delete->execute($deleteParams);
 
-            $insert = $db->prepare(
-                'INSERT INTO rateb_webauthn_credentials (user_id, credential_id, public_key, sign_count)
-                 VALUES (:uid, :cid, :pk, 0)'
-            );
-            // Attestation payloads are binary; base64 keeps TEXT/MEDIUMBLOB columns safe on all MySQL configs.
-            $insert->execute([
-                'uid' => $userId,
-                'cid' => $credentialId,
-                'pk' => base64_encode($publicKey),
-            ]);
+            if ($this->companyColumnReady()) {
+                $hasBranch = $this->columnExists('rateb_webauthn_credentials', 'branch_id');
+                if ($hasBranch) {
+                    $insert = $db->prepare(
+                        'INSERT INTO rateb_webauthn_credentials
+                            (user_id, company_id, branch_id, credential_id, public_key, sign_count)
+                         VALUES (:uid, :co, :bid, :cred, :pk, 0)'
+                    );
+                    $insert->execute([
+                        'uid' => $userId,
+                        'co' => $companyId > 0 ? $companyId : null,
+                        'bid' => $branchId > 0 ? $branchId : null,
+                        'cred' => $credentialId,
+                        'pk' => base64_encode($publicKey),
+                    ]);
+                } else {
+                    $insert = $db->prepare(
+                        'INSERT INTO rateb_webauthn_credentials
+                            (user_id, company_id, credential_id, public_key, sign_count)
+                         VALUES (:uid, :co, :cred, :pk, 0)'
+                    );
+                    $insert->execute([
+                        'uid' => $userId,
+                        'co' => $companyId > 0 ? $companyId : null,
+                        'cred' => $credentialId,
+                        'pk' => base64_encode($publicKey),
+                    ]);
+                }
+            } else {
+                $insert = $db->prepare(
+                    'INSERT INTO rateb_webauthn_credentials (user_id, credential_id, public_key, sign_count)
+                     VALUES (:uid, :cred, :pk, 0)'
+                );
+                $insert->execute([
+                    'uid' => $userId,
+                    'cred' => $credentialId,
+                    'pk' => base64_encode($publicKey),
+                ]);
+            }
         } catch (\Throwable $e) {
             return ['ok' => false, 'error' => $this->publicErrorMessage($e)];
         }
@@ -187,6 +240,11 @@ final class BiometricAuthService
     {
         if ($userId < 1 && !$supervisor) {
             $userId = $this->userId();
+        }
+
+        $sessionChallenge = (string) SessionManager::get('pos_webauthn_challenge');
+        if ($sessionChallenge === '') {
+            return ['ok' => false, 'error' => __('pos_biometric_failed')];
         }
 
         if ($supervisor) {
@@ -206,34 +264,69 @@ final class BiometricAuthService
             }
         }
 
+        $challengeError = $this->assertClientDataChallenge($payload, $sessionChallenge, 'webauthn.get');
+        if ($challengeError !== null) {
+            return ['ok' => false, 'error' => $challengeError];
+        }
+
+        $authenticatorDataB64 = (string) ($payload['authenticatorData'] ?? '');
+        $signatureB64 = (string) ($payload['signature'] ?? '');
+        if ($authenticatorDataB64 === '' || $signatureB64 === '') {
+            return ['ok' => false, 'error' => __('pos_biometric_invalid_credential')];
+        }
+        if ($this->base64DecodeFlexible($authenticatorDataB64) === ''
+            || $this->base64DecodeFlexible($signatureB64) === '') {
+            return ['ok' => false, 'error' => __('pos_biometric_invalid_credential')];
+        }
+
         $credentialIdB64 = (string) ($payload['credentialId'] ?? $payload['id'] ?? '');
         if ($credentialIdB64 === '') {
             return ['ok' => false, 'error' => __('invalid_request')];
         }
 
         $credentialId = $this->base64UrlDecode($credentialIdB64);
+        if ($credentialId === '') {
+            $credentialId = $this->base64DecodeFlexible($credentialIdB64);
+        }
         $db = Database::connection();
-        $stmt = $db->prepare(
-            'SELECT user_id, credential_id FROM rateb_webauthn_credentials'
-        );
-        $stmt->execute();
+        $companyId = $this->resolveCompanyId();
+        $sql = 'SELECT user_id, company_id, credential_id FROM rateb_webauthn_credentials';
+        $params = [];
+        if ($this->companyColumnReady() && $companyId > 0) {
+            $sql .= ' WHERE (company_id = :cid OR company_id IS NULL)';
+            $params['cid'] = $companyId;
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
         $verifiedId = 0;
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $raw = $this->credentialIdToBinary($row['credential_id'] ?? null);
             if ($raw !== '' && hash_equals($raw, $credentialId)) {
+                if ($this->companyColumnReady() && $companyId > 0) {
+                    $rowCid = (int) ($row['company_id'] ?? 0);
+                    if ($rowCid > 0 && $rowCid !== $companyId) {
+                        continue;
+                    }
+                }
                 $verifiedId = (int) ($row['user_id'] ?? 0);
                 break;
             }
         }
         if ($verifiedId < 1) {
             // Legacy rows may have been stored already base64-encoded.
-            $stmt = $db->prepare(
-                'SELECT user_id FROM rateb_webauthn_credentials WHERE credential_id = :cid LIMIT 1'
-            );
-            $stmt->execute(['cid' => $credentialId]);
+            $legacySql = 'SELECT user_id, company_id FROM rateb_webauthn_credentials WHERE credential_id = :cid';
+            $legacyParams = ['cid' => $credentialId];
+            if ($this->companyColumnReady() && $companyId > 0) {
+                $legacySql .= ' AND (company_id = :co OR company_id IS NULL)';
+                $legacyParams['co'] = $companyId;
+            }
+            $legacySql .= ' LIMIT 1';
+            $stmt = $db->prepare($legacySql);
+            $stmt->execute($legacyParams);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (!$row) {
-                $stmt->execute(['cid' => $credentialIdB64]);
+                $legacyParams['cid'] = $credentialIdB64;
+                $stmt->execute($legacyParams);
                 $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             }
             if (!$row) {
@@ -257,35 +350,17 @@ final class BiometricAuthService
         return ['ok' => true, 'user_id' => $verifiedId];
     }
 
-    /** @param array<string, mixed> $payload @return array{ok:bool,error?:string} */
+    /**
+     * Face recognition is not enabled — stub templates must never authenticate.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{ok:bool,error?:string}
+     */
     public function verifyFace(int $userId, array $payload): array
     {
-        if ($userId < 1) {
-            $userId = $this->userId();
-        }
+        unset($userId, $payload);
 
-        $template = (string) ($payload['faceTemplate'] ?? '');
-        if ($template === '') {
-            return ['ok' => false, 'error' => __('invalid_request')];
-        }
-
-        $db = Database::connection();
-        $stmt = $db->prepare(
-            'SELECT template_data, confidence_threshold FROM rateb_face_templates WHERE user_id = :uid LIMIT 1'
-        );
-        $stmt->execute(['uid' => $userId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$row || empty($row['template_data'])) {
-            return ['ok' => false, 'error' => __('pos_biometric_not_enrolled')];
-        }
-
-        $similarity = $this->compareTemplates($template, (string) $row['template_data']);
-        $threshold = (float) ($row['confidence_threshold'] ?? 0.75);
-        if ($similarity < $threshold) {
-            return ['ok' => false, 'error' => __('pos_biometric_failed')];
-        }
-
-        return ['ok' => true];
+        return ['ok' => false, 'error' => __('pos_biometric_face_coming_soon')];
     }
 
     private function userCanSupervise(int $userId): bool
@@ -312,12 +387,19 @@ final class BiometricAuthService
         $this->assertWebauthnStorageReady();
 
         $db = Database::connection();
-        $rows = $db->query(
-            'SELECT wc.credential_id, wc.user_id, u.is_super_admin
+        $companyId = $this->resolveCompanyId();
+        $sql = 'SELECT wc.credential_id, wc.user_id, wc.company_id, u.is_super_admin
              FROM rateb_webauthn_credentials wc
              INNER JOIN rateb_users u ON u.id = wc.user_id
-             WHERE (u.status = \'active\' OR u.status = \'1\' OR u.status IS NULL OR u.status = \'\')'
-        )->fetchAll(\PDO::FETCH_ASSOC);
+             WHERE (u.status = \'active\' OR u.status = \'1\' OR u.status IS NULL OR u.status = \'\')';
+        $params = [];
+        if ($this->companyColumnReady() && $companyId > 0) {
+            $sql .= ' AND (wc.company_id = :cid OR wc.company_id IS NULL)';
+            $params['cid'] = $companyId;
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         $allow = [];
         $seen = [];
@@ -349,8 +431,14 @@ final class BiometricAuthService
         // Always include the current session user if they can supervise and have a passkey.
         $selfId = $this->userId();
         if ($selfId > 0 && $this->userCanSupervise($selfId)) {
-            $stmt = $db->prepare('SELECT credential_id FROM rateb_webauthn_credentials WHERE user_id = :uid');
-            $stmt->execute(['uid' => $selfId]);
+            $selfSql = 'SELECT credential_id FROM rateb_webauthn_credentials WHERE user_id = :uid';
+            $selfParams = ['uid' => $selfId];
+            if ($this->companyColumnReady() && $companyId > 0) {
+                $selfSql .= ' AND (company_id = :cid OR company_id IS NULL)';
+                $selfParams['cid'] = $companyId;
+            }
+            $stmt = $db->prepare($selfSql);
+            $stmt->execute($selfParams);
             foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
                 $raw = $this->credentialIdToBinary($row['credential_id'] ?? null);
                 if ($raw === '') {
@@ -420,8 +508,18 @@ final class BiometricAuthService
         $loginName = trim((string) ($user['email'] ?? $displayName));
 
         $db = Database::connection();
-        $delete = $db->prepare('DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid');
-        $delete->execute(['uid' => $userId]);
+        $companyId = $this->resolveCompanyId();
+        if ($companyId < 1) {
+            $companyId = (int) ($user['company_id'] ?? 0);
+        }
+        $deleteSql = 'DELETE FROM rateb_webauthn_credentials WHERE user_id = :uid';
+        $deleteParams = ['uid' => $userId];
+        if ($this->companyColumnReady() && $companyId > 0) {
+            $deleteSql .= ' AND (company_id = :cid OR company_id IS NULL)';
+            $deleteParams['cid'] = $companyId;
+        }
+        $delete = $db->prepare($deleteSql);
+        $delete->execute($deleteParams);
 
         $challenge = random_bytes(32);
         SessionManager::set('pos_webauthn_register_challenge', base64_encode($challenge));
@@ -466,8 +564,16 @@ final class BiometricAuthService
         }
 
         $db = Database::connection();
-        $stmt = $db->prepare('SELECT credential_id FROM rateb_webauthn_credentials WHERE user_id = :uid LIMIT 1');
-        $stmt->execute(['uid' => $userId]);
+        $companyId = $this->resolveCompanyId();
+        $sql = 'SELECT credential_id FROM rateb_webauthn_credentials WHERE user_id = :uid';
+        $params = ['uid' => $userId];
+        if ($this->companyColumnReady() && $companyId > 0) {
+            $sql .= ' AND (company_id = :cid OR company_id IS NULL)';
+            $params['cid'] = $companyId;
+        }
+        $sql .= ' LIMIT 1';
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$row || empty($row['credential_id'])) {
             throw new \RuntimeException(__('pos_biometric_not_enrolled'));
@@ -493,6 +599,80 @@ final class BiometricAuthService
         ];
     }
 
+    /**
+     * Bind assertion/attestation to the session challenge via clientDataJSON.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function assertClientDataChallenge(array $payload, string $sessionChallengeB64, string $expectedType): ?string
+    {
+        $clientDataB64 = (string) ($payload['clientDataJSON'] ?? '');
+        if ($clientDataB64 === '') {
+            return __('pos_biometric_invalid_credential');
+        }
+
+        $clientDataRaw = $this->base64DecodeFlexible($clientDataB64);
+        if ($clientDataRaw === '') {
+            return __('pos_biometric_invalid_credential');
+        }
+
+        $data = json_decode($clientDataRaw, true);
+        if (!is_array($data)) {
+            return __('pos_biometric_invalid_credential');
+        }
+
+        if ((string) ($data['type'] ?? '') !== $expectedType) {
+            return __('pos_biometric_failed');
+        }
+
+        $expectedChallenge = base64_decode($sessionChallengeB64, true);
+        if (!is_string($expectedChallenge) || $expectedChallenge === '') {
+            return __('pos_biometric_challenge_expired');
+        }
+
+        $clientChallenge = $this->base64UrlDecode((string) ($data['challenge'] ?? ''));
+        if ($clientChallenge === '' || !hash_equals($expectedChallenge, $clientChallenge)) {
+            return __('pos_biometric_failed');
+        }
+
+        $origin = (string) ($data['origin'] ?? '');
+        $expectedOrigin = $this->resolveExpectedOrigin();
+        if ($origin === '' || ($expectedOrigin !== '' && !hash_equals($expectedOrigin, $origin))) {
+            // Allow localhost http/https swap during local ops only when host matches.
+            if (!$this->originHostMatches($origin, $expectedOrigin)) {
+                return __('pos_biometric_failed');
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveExpectedOrigin(): string
+    {
+        $https = !empty($_SERVER['HTTPS']) && (string) $_SERVER['HTTPS'] !== 'off';
+        $scheme = $https ? 'https' : 'http';
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        if ($host === '') {
+            return '';
+        }
+
+        return $scheme . '://' . $host;
+    }
+
+    private function originHostMatches(string $origin, string $expectedOrigin): bool
+    {
+        if ($origin === '' || $expectedOrigin === '') {
+            return false;
+        }
+        $oHost = parse_url($origin, PHP_URL_HOST);
+        $eHost = parse_url($expectedOrigin, PHP_URL_HOST);
+        if (!is_string($oHost) || !is_string($eHost) || $oHost === '' || $eHost === '') {
+            return false;
+        }
+
+        return hash_equals(strtolower($eHost), strtolower($oHost));
+    }
+
     private function bindPosBiometricSession(int $userId, string $method): void
     {
         SessionManager::set('pos_biometric_user_id', $userId);
@@ -505,6 +685,25 @@ final class BiometricAuthService
         return (int) (SessionManager::get('rateb_user_id') ?? 0);
     }
 
+    private function resolveCompanyId(): int
+    {
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $id = (int) rateb_resolve_ops_company_id();
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        return (int) (SessionManager::get('rateb_company_id') ?? 0);
+    }
+
+    private function resolveBranchId(): int
+    {
+        return (int) (SessionManager::get('rateb_branch_id')
+            ?? SessionManager::get('pos_branch_id')
+            ?? 0);
+    }
+
     private function resolveRpId(): string
     {
         $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
@@ -513,16 +712,6 @@ final class BiometricAuthService
         }
 
         return $host;
-    }
-
-    private function compareTemplates(string $a, string $b): float
-    {
-        if ($a === $b) {
-            return 1.0;
-        }
-        similar_text($a, $b, $pct);
-
-        return max(0.0, min(1.0, $pct / 100));
     }
 
     private function base64UrlEncode(string $bin): string
@@ -565,9 +754,9 @@ final class BiometricAuthService
         return $this->tableExists('rateb_webauthn_credentials');
     }
 
-    private function faceTemplatesTableReady(): bool
+    private function companyColumnReady(): bool
     {
-        return $this->tableExists('rateb_face_templates');
+        return $this->columnExists('rateb_webauthn_credentials', 'company_id');
     }
 
     private function tableExists(string $table): bool
@@ -580,7 +769,7 @@ final class BiometricAuthService
         try {
             $db = Database::connection();
             $safeTable = str_replace('`', '', $table);
-            $stmt = $db->query("SHOW TABLES LIKE " . $db->quote($safeTable));
+            $stmt = $db->query('SHOW TABLES LIKE ' . $db->quote($safeTable));
             $cache[$table] = $stmt !== false && $stmt->fetch() !== false;
             if ($stmt instanceof \PDOStatement) {
                 $stmt->closeCursor();
@@ -590,6 +779,30 @@ final class BiometricAuthService
         }
 
         return $cache[$table];
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        try {
+            $db = Database::connection();
+            $stmt = $db->prepare(
+                'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c
+                 LIMIT 1'
+            );
+            $stmt->execute(['t' => $table, 'c' => $column]);
+            $cache[$key] = (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            $cache[$key] = false;
+        }
+
+        return $cache[$key];
     }
 
     private function publicErrorMessage(\Throwable $e): string

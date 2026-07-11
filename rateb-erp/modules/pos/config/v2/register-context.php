@@ -24,6 +24,7 @@ return [
         'pos.terminal.manage',
         'pos.orders.view',
         'pos.settings.manage',
+        'pos.devices.manage',
         'pos.sync.manage',
         'pos.reports.view',
         'pos.reports.z',

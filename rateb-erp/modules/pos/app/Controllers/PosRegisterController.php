@@ -58,6 +58,8 @@ final class PosRegisterController extends PosBaseController
             'csrf' => Csrf::token(),
             'companyId' => $this->companyId(),
             'userId' => $this->userId(),
+            'displayName' => (string) (\Rateb\App\Core\SessionManager::get('rateb_user_display')
+                ?? \Rateb\App\Core\SessionManager::get('rateb_user_email') ?? ''),
             'shiftId' => $shiftId,
             'capabilities' => $capabilities,
             'api' => [
@@ -101,6 +103,8 @@ final class PosRegisterController extends PosBaseController
                 'biometricFinish' => rateb_app_url('pos/api/biometric/finish'),
                 'biometricFace' => rateb_app_url('pos/api/biometric/face'),
                 'biometricStatus' => rateb_app_url('pos/api/biometric/status'),
+                'deviceRegister' => rateb_app_url('pos/api/device/register'),
+                'deviceHeartbeat' => rateb_app_url('pos/api/device/heartbeat'),
             ],
             'urls' => [
                 'shiftClose' => $shiftId > 0 ? rateb_app_url('pos/shifts/' . $shiftId . '/close') : '',
@@ -210,6 +214,10 @@ final class PosRegisterController extends PosBaseController
             'pos_supervisor_approval', 'pos_supervisor_scan_prompt', 'pos_supervisor_scan_fingerprint',
             'pos_supervisor_approval_required', 'pos_biometric_gate', 'pos_biometric_scan_fingerprint',
             'pos_biometric_scan_face', 'pos_biometric_success', 'pos_biometric_failed', 'pos_biometric_not_enrolled',
+            'pos_lock_title', 'pos_lock_now', 'pos_lock_switch_cashier', 'pos_lock_logout_local',
+            'pos_lock_pin', 'pos_lock_unlock_pin', 'pos_lock_pin_required', 'pos_lock_pin_invalid',
+            'pos_lock_pin_not_set', 'pos_lock_session_renew', 'pos_lock_device_inactive',
+            'pos_biometric_scan', 'pos_cashier', 'pos_offline',
         ];
         $out = [];
         foreach ($keys as $key) {
