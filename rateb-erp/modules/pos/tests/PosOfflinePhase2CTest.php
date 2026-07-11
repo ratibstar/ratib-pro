@@ -236,8 +236,10 @@ final class PosOfflinePhase2CTest
         $ok = str_contains($sw, 'isBiometricGatePath')
             && str_contains($sw, 'registerPathFromBiometric')
             && str_contains($sw, 'Do not pin biometric gate HTML')
-            && str_contains($sw, 'rateb-pos-shell-v7');
-        $this->record('SW biometric offline → register shell', $ok, $ok ? 'v7 redirect' : 'missing');
+            && str_contains($sw, 'shellLookupRequest')
+            && str_contains($sw, 'rateb-pos-shell-v8')
+            && !preg_match("/new Request\\([^)]*mode:\\s*'navigate'/s", $sw);
+        $this->record('SW biometric offline → register shell', $ok, $ok ? 'v8 redirect' : 'missing');
     }
 
     private function testSyncGatesOnSessionReauth(): void

@@ -1,8 +1,8 @@
 /* Rateb POS — offline app shell (Phase 4 + 2B fixes) */
 'use strict';
 
-var SHELL_CACHE = 'rateb-pos-shell-v7';
-var ASSET_CACHE = 'rateb-pos-assets-v7';
+var SHELL_CACHE = 'rateb-pos-shell-v8';
+var ASSET_CACHE = 'rateb-pos-assets-v8';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 
 function registerShellUrl() {
@@ -13,7 +13,7 @@ function registerShellUrl() {
     }
 }
 
-var OFFLINE_HTML = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>POS Offline</title><style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}h1{font-size:1.25rem}a{color:#a78bfa;display:inline-block;margin:.5rem}p{opacity:.85}</style></head><body><h1 id="t">نقطة البيع غير متصلة</h1><p id="m">جاري البحث عن نسخة محفوظة من شاشة البيع…</p><p id="links" hidden><a id="a1" href="#">شاشة البيع</a> · <a id="a2" href="#">شاشة البيع /register</a></p><script>(function(){var SHELL="rateb-pos-shell-v7";var KEY="__rateb_pos_register_shell__";function showFail(){var m=document.getElementById("m");var links=document.getElementById("links");if(m)m.textContent="افتح شاشة البيع مرة واحدة وأنت متصل بالإنترنت، ثم أعد المحاولة دون إنترنت. التقارير والإعدادات تحتاج اتصال.";if(links)links.hidden=false;try{var u=new URL(location.href);var cid=u.searchParams.get("company_id")||"";var q=cid?("?company_id="+cid):"";var base=u.pathname.replace(/\\/register\\/?$/,"").replace(/\\/(reports|settings|dashboard|shifts|terminals).*$/,"");var a1=document.getElementById("a1");var a2=document.getElementById("a2");if(a1)a1.href=base+q;if(a2)a2.href=base.replace(/\\/?$/,"")+"/register"+q;}catch(e){}}function useResponse(res){if(!res)return Promise.resolve(false);return res.text().then(function(html){if(!html||html.indexOf("data-pos-register")<0)return false;document.open();document.write(html);document.close();return true;});}if(!("caches" in window)){showFail();return;}caches.open(SHELL).then(function(cache){var u=new URL(location.href);var candidates=[new URL(KEY,location.origin+"/rateb-erp/public/").href,u.origin+u.pathname,u.href,u.origin+u.pathname.replace(/\\/register\\/?$/,""),u.origin+u.pathname.replace(/\\/register\\/?$/,"")+(u.search||""),u.origin+u.pathname.replace(/\\/?$/,"")+"/register",u.origin+u.pathname.replace(/\\/?$/,"")+"/register"+(u.search||"")];return candidates.reduce(function(p,url){return p.then(function(done){if(done)return true;return cache.match(url).then(useResponse);});},Promise.resolve(false)).then(function(done){if(done)return;return cache.keys().then(function(keys){var next=Promise.resolve(false);keys.forEach(function(req){next=next.then(function(done){if(done)return true;var href=typeof req==="string"?req:(req&&req.url)||"";if(href.indexOf("/pos")<0)return false;return cache.match(req).then(useResponse);});});return next;});}).then(function(done){if(!done)showFail();});}).catch(showFail);})();</script></body></html>';
+var OFFLINE_HTML = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>POS Offline</title><style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}h1{font-size:1.25rem}a{color:#a78bfa;display:inline-block;margin:.5rem}p{opacity:.85}</style></head><body><h1 id="t">نقطة البيع غير متصلة</h1><p id="m">جاري البحث عن نسخة محفوظة من شاشة البيع…</p><p id="links" hidden><a id="a1" href="#">شاشة البيع</a> · <a id="a2" href="#">شاشة البيع /register</a></p><script>(function(){var SHELL="rateb-pos-shell-v8";var KEY="__rateb_pos_register_shell__";function showFail(){var m=document.getElementById("m");var links=document.getElementById("links");if(m)m.textContent="افتح شاشة البيع مرة واحدة وأنت متصل بالإنترنت، ثم أعد المحاولة دون إنترنت. التقارير والإعدادات تحتاج اتصال.";if(links)links.hidden=false;try{var u=new URL(location.href);var cid=u.searchParams.get("company_id")||"";var q=cid?("?company_id="+cid):"";var base=u.pathname.replace(/\\/register\\/?$/,"").replace(/\\/(reports|settings|dashboard|shifts|terminals).*$/,"");var a1=document.getElementById("a1");var a2=document.getElementById("a2");if(a1)a1.href=base+q;if(a2)a2.href=base.replace(/\\/?$/,"")+"/register"+q;}catch(e){}}function useResponse(res){if(!res)return Promise.resolve(false);return res.text().then(function(html){if(!html||html.indexOf("data-pos-register")<0)return false;document.open();document.write(html);document.close();return true;});}if(!("caches" in window)){showFail();return;}caches.open(SHELL).then(function(cache){var u=new URL(location.href);var candidates=[new URL(KEY,location.origin+"/rateb-erp/public/").href,u.origin+u.pathname,u.href,u.origin+u.pathname.replace(/\\/register\\/?$/,""),u.origin+u.pathname.replace(/\\/register\\/?$/,"")+(u.search||""),u.origin+u.pathname.replace(/\\/?$/,"")+"/register",u.origin+u.pathname.replace(/\\/?$/,"")+"/register"+(u.search||"")];return candidates.reduce(function(p,url){return p.then(function(done){if(done)return true;return cache.match(url).then(useResponse);});},Promise.resolve(false)).then(function(done){if(done)return;return cache.keys().then(function(keys){var next=Promise.resolve(false);keys.forEach(function(req){next=next.then(function(done){if(done)return true;var href=typeof req==="string"?req:(req&&req.url)||"";if(href.indexOf("/pos")<0)return false;return cache.match(req).then(useResponse);});});return next;});}).then(function(done){if(!done)showFail();});}).catch(showFail);})();</script></body></html>';
 
 function isPosNavigation(url) {
     return url.pathname.indexOf('/pos') !== -1 || url.pathname.indexOf('/admin/ops/pos') !== -1;
@@ -159,9 +159,57 @@ function putShell(request, response) {
     }).catch(function () { /* ignore quota */ });
 }
 
+/** Prefer HTML shell when falling back from a document navigation. */
+function wantsHtmlShell(request) {
+    if (!request || typeof request === 'string') {
+        return true;
+    }
+    try {
+        if (request.mode === 'navigate') {
+            return true;
+        }
+        var accept = request.headers && request.headers.get
+            ? (request.headers.get('accept') || '')
+            : '';
+        return accept.indexOf('text/html') !== -1;
+    } catch (e) {
+        return true;
+    }
+}
+
+/**
+ * Build a Request safe for SW cache matching.
+ * Browsers forbid `new Request(..., { mode: 'navigate' })` — that threw at biometric offline fallback.
+ */
+function shellLookupRequest(urlHref, sourceRequest) {
+    var headers = { Accept: 'text/html' };
+    try {
+        if (sourceRequest && sourceRequest.headers && sourceRequest.headers.get) {
+            var accept = sourceRequest.headers.get('accept');
+            if (accept) {
+                headers.Accept = accept;
+            }
+        }
+    } catch (e) { /* ignore */ }
+    var creds = 'same-origin';
+    try {
+        if (sourceRequest && sourceRequest.credentials) {
+            creds = sourceRequest.credentials;
+        }
+    } catch (e2) { /* ignore */ }
+    return new Request(String(urlHref), {
+        method: 'GET',
+        credentials: creds,
+        headers: headers
+    });
+}
+
 function shellFallback(request) {
+    var reqUrl = typeof request === 'string'
+        ? request
+        : (request && request.url ? request.url : '');
     return caches.open(SHELL_CACHE).then(function (cache) {
-        var url = new URL(request.url);
+        var url = new URL(reqUrl, self.location.origin);
         var shellKey = registerShellUrl();
         var candidates = [
             request,
@@ -199,7 +247,7 @@ function shellFallback(request) {
                 if (best) {
                     return cache.match(best);
                 }
-                if (request.mode === 'navigate' || (request.headers.get('accept') || '').indexOf('text/html') !== -1) {
+                if (wantsHtmlShell(request)) {
                     return offlineHtmlResponse();
                 }
                 return offlineJsonResponse();
@@ -288,11 +336,7 @@ self.addEventListener('fetch', function (event) {
             }).catch(function () {
                 if (isBiometricGatePath(url.pathname)) {
                     var regUrl = registerPathFromBiometric(url);
-                    return shellFallback(new Request(regUrl.href, {
-                        headers: event.request.headers,
-                        mode: 'navigate',
-                        credentials: event.request.credentials
-                    }));
+                    return shellFallback(shellLookupRequest(regUrl.href, event.request));
                 }
                 return shellFallback(event.request);
             })
