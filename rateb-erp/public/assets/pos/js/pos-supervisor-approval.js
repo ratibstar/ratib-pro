@@ -20,7 +20,15 @@
     var scanBtn = root.querySelector('[data-pos-supervisor-scan]');
     var hintEl = root.querySelector('[data-pos-supervisor-hint]');
     var stockModal = root.querySelector('[data-pos-stock-modal]');
+    var offlineBlock = root.querySelector('[data-pos-supervisor-offline]');
+    var pinInput = root.querySelector('[data-pos-supervisor-pin]');
+    var pinSubmit = root.querySelector('[data-pos-supervisor-pin-submit]');
     var pending = null;
+
+    /** Actions that only mutate local UI and can be approved offline. */
+    var OFFLINE_LOCAL_ACTIONS = {
+        cancel_invoice: true
+    };
 
     function t(key, fb) {
         return i18n[key] || fb || key;
@@ -30,17 +38,56 @@
         return config.csrf || (document.querySelector('meta[name="rateb-csrf"]') || {}).content || '';
     }
 
+    function isOffline() {
+        if (window.RatebPosNet && typeof window.RatebPosNet.isOnline === 'function') {
+            return !window.RatebPosNet.isOnline();
+        }
+        if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
+            return !window.RatebPosConnectivity.isOnline();
+        }
+        return navigator.onLine === false;
+    }
+
     function notify(msg, isError) {
         if (window.RatebPosNotify) {
             window.RatebPosNotify(msg, isError);
         }
     }
 
-    function modalOpen(show) {
+    function setOfflineUi(showOffline) {
+        if (scanBtn) {
+            scanBtn.hidden = !!showOffline;
+        }
+        if (offlineBlock) {
+            offlineBlock.hidden = !showOffline;
+        }
+        if (pinInput) {
+            pinInput.value = '';
+        }
+    }
+
+    function modalOpen(show, offlineMode) {
         if (!modal) {
             return;
         }
+        setOfflineUi(!!offlineMode);
         modal.hidden = !show;
+        if (show && offlineMode && pinInput) {
+            setTimeout(function () {
+                try {
+                    pinInput.focus();
+                } catch (e) { /* ignore */ }
+            }, 50);
+        }
+    }
+
+    function finishGranted(token, requestId) {
+        var cb = pending && pending.onGranted;
+        modalOpen(false, false);
+        pending = null;
+        if (typeof cb === 'function') {
+            cb(token || '', requestId || 0);
+        }
     }
 
     function fetchJson(url, options) {
@@ -129,13 +176,61 @@
                 })
             });
         }).then(function (grant) {
-            pending.token = grant.approval_token;
-            modalOpen(false);
-            if (typeof pending.onGranted === 'function') {
-                pending.onGranted(pending.token, pending.requestId);
-            }
-            pending = null;
+            finishGranted(grant.approval_token, pending && pending.requestId);
         });
+    }
+
+    function completeOfflineApproval() {
+        if (!pending || !pending.offline) {
+            return;
+        }
+        var lock = window.RatebPosAuthLock;
+        var pin = pinInput ? String(pinInput.value || '') : '';
+
+        function grantOffline() {
+            finishGranted('offline:' + (pending.actionType || 'local'), 0);
+        }
+
+        if (!lock || typeof lock.hasPinEnrolled !== 'function') {
+            grantOffline();
+            return;
+        }
+
+        lock.hasPinEnrolled().then(function (hasPin) {
+            if (!hasPin) {
+                grantOffline();
+                return;
+            }
+            if (!pin) {
+                notify(t('pos_lock_pin_required', 'Enter PIN'), true);
+                return;
+            }
+            return lock.verifyPinOnly(pin).then(function () {
+                grantOffline();
+            });
+        }).catch(function (err) {
+            notify((err && err.message) || t('pos_lock_pin_invalid', 'Incorrect PIN'), true);
+        });
+    }
+
+    function requireApprovalOffline(actionType, payload, onGranted) {
+        if (!OFFLINE_LOCAL_ACTIONS[actionType]) {
+            notify(t('pos_supervisor_offline_blocked', 'This action needs a network connection for supervisor approval.'), true);
+            return;
+        }
+        pending = {
+            requestId: 0,
+            actionType: actionType,
+            onGranted: onGranted,
+            offline: true
+        };
+        if (hintEl) {
+            hintEl.textContent = t('pos_supervisor_offline_hint', 'Offline: confirm with local PIN or confirm directly if no PIN is set.');
+        }
+        if (pinSubmit) {
+            pinSubmit.textContent = t('pos_supervisor_offline_confirm', 'Confirm offline cancel');
+        }
+        modalOpen(true, true);
     }
 
     function requireApproval(actionType, payload, onGranted) {
@@ -145,20 +240,31 @@
             }
             return;
         }
+        if (isOffline()) {
+            requireApprovalOffline(actionType, payload, onGranted);
+            return;
+        }
         fetchJson(api.approvalRequest, {
             json: true,
             body: JSON.stringify({ action_type: actionType, payload: payload || {} })
         }).then(function (data) {
             pending = {
                 requestId: data.approval_request_id,
-                onGranted: onGranted
+                actionType: actionType,
+                onGranted: onGranted,
+                offline: false
             };
             if (hintEl) {
                 hintEl.textContent = t('pos_supervisor_scan_hint', 'Supervisor fingerprint required');
             }
-            modalOpen(true);
+            modalOpen(true, false);
         }).catch(function (err) {
-            notify(err.message, true);
+            var msg = (err && err.message) || '';
+            if (isOffline() || /Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline/i.test(msg)) {
+                requireApprovalOffline(actionType, payload, onGranted);
+                return;
+            }
+            notify(msg || t('invalid_request', 'Failed'), true);
         });
     }
 
@@ -175,9 +281,23 @@
         });
     }
 
+    if (pinSubmit) {
+        pinSubmit.addEventListener('click', function () {
+            completeOfflineApproval();
+        });
+    }
+    if (pinInput) {
+        pinInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                completeOfflineApproval();
+            }
+        });
+    }
+
     root.querySelectorAll('[data-pos-supervisor-close]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            modalOpen(false);
+            modalOpen(false, false);
             pending = null;
         });
     });

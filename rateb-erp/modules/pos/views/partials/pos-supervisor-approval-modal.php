@@ -16,6 +16,13 @@ declare(strict_types=1);
             </div>
             <p data-pos-supervisor-hint><?php echo __('pos_supervisor_scan_hint'); ?></p>
             <button type="button" class="rateb-pos__biometric-btn" data-pos-supervisor-scan><?php echo __('pos_biometric_scan'); ?></button>
+            <div class="rateb-pos__supervisor-offline" data-pos-supervisor-offline hidden>
+                <label class="rateb-pos__field-label" for="rateb-pos-supervisor-pin"><?php echo __('pos_lock_pin'); ?></label>
+                <input type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="12"
+                       class="rateb-pos__input rateb-pos__input--block" id="rateb-pos-supervisor-pin"
+                       data-pos-supervisor-pin placeholder="<?php echo \Rateb\App\Pos\Support\PosView::escape(__('pos_lock_pin')); ?>" />
+                <button type="button" class="rateb-pos__biometric-btn" data-pos-supervisor-pin-submit><?php echo __('pos_supervisor_offline_confirm'); ?></button>
+            </div>
         </div>
     </div>
 </div>

@@ -744,6 +744,27 @@
         enroll: enroll,
         enrollFromGate: enrollFromGate,
         unlockWithPin: unlockWithPin,
+        /** Verify offline PIN without changing lock overlay (supervisor gates). */
+        verifyPinOnly: function (pin) {
+            return idbGet().then(function (row) {
+                if (!row || !row.pin_hash) {
+                    return Promise.reject(new Error(t('pos_lock_pin_not_set', 'PIN not set')));
+                }
+                return verifyPin(pin, row).then(function (ok) {
+                    if (!ok) {
+                        throw new Error(t('pos_lock_pin_invalid', 'Incorrect PIN'));
+                    }
+                    return true;
+                });
+            });
+        },
+        hasPinEnrolled: function () {
+            return idbGet().then(function (row) {
+                return !!(row && row.pin_hash);
+            }).catch(function () {
+                return false;
+            });
+        },
         unlockWithWebAuthn: unlockWithWebAuthn,
         lock: lock,
         switchCashier: switchCashier,
