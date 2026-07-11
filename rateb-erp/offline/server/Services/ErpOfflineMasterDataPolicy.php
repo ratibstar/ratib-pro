@@ -116,6 +116,9 @@ final class ErpOfflineMasterDataPolicy
             'hrm_employee_status_directory', 'hrm_employee_statuses',
             'hrm_training_status_directory', 'hrm_training_statuses',
             'hrm_performance_status_directory', 'hrm_performance_statuses',
+            'payroll_structure_directory', 'payroll_structures',
+            'payroll_cycle_directory', 'payroll_cycles',
+            'payroll_batch_status_directory', 'payroll_batch_statuses',
         ], true);
     }
 }

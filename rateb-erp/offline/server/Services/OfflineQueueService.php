@@ -579,6 +579,41 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'payroll') {
+                if (!$this->flags()->enabled('offline.payroll')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizePayrollAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'salary_structure.create', 'salary_structure.update',
+                    'employee_salary.create', 'employee_salary.update',
+                ], true) && !$this->flags()->enabled('offline.payroll.employee')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, ['payroll_batch.create', 'payroll_batch.update'], true)
+                    && !$this->flags()->enabled('offline.payroll.batch')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.payroll.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -875,6 +910,28 @@ final class OfflineQueueService
 
             if ($module === 'manufacturing') {
                 if (!$this->flags()->enabled('offline.manufacturing')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
+            if ($module === 'payroll') {
+                if (!$this->flags()->enabled('offline.payroll')) {
                     $stats['skipped']++;
                     continue;
                 }
@@ -1256,6 +1313,39 @@ final class OfflineQueueService
             'create_quality_check' => 'quality_check.create',
             'create_cost' => 'cost.create',
             'create_assignment' => 'assignment.create',
+            'create_comment' => 'comment.create',
+            'create_note' => 'note.create',
+            'transition_workflow' => 'workflow.transition',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array($prefix . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizePayrollAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = PayrollOfflineReplayService::deferredActions();
+        $prefix = 'payroll.';
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, $prefix) ? substr($action, strlen($prefix)) : $action;
+        }
+        $aliases = [
+            'create_salary_structure' => 'salary_structure.create',
+            'update_salary_structure' => 'salary_structure.update',
+            'create_employee_salary' => 'employee_salary.create',
+            'update_employee_salary' => 'employee_salary.update',
+            'create_payroll_batch' => 'payroll_batch.create',
+            'update_payroll_batch' => 'payroll_batch.update',
+            'create_loan' => 'loan.create',
+            'create_advance' => 'advance.create',
+            'create_bonus' => 'bonus.create',
+            'create_overtime' => 'overtime.create',
+            'create_settlement' => 'settlement.create',
             'create_comment' => 'comment.create',
             'create_note' => 'note.create',
             'transition_workflow' => 'workflow.transition',

@@ -53,8 +53,10 @@ final class PayrollPhase24ATest
         $workflow = (string) file_get_contents(RATEB_ROOT . '/app/services/PayrollWorkflowService.php');
         $ok = !str_contains($domain, 'OfflineQueueService')
             && !str_contains($workflow, 'OfflineQueueService')
-            && !str_contains($domain, 'offline.payroll');
-        $this->record('24A online layer has no offline coupling (24B deferred)', $ok);
+            && !str_contains($domain, 'offline.payroll')
+            && is_file(RATEB_ROOT . '/offline/server/Services/PayrollOfflineReplayService.php')
+            && is_file(RATEB_ROOT . '/offline/client/adapters/payroll-adapter.js');
+        $this->record('24A online layer has no offline coupling (24B replay separate)', $ok);
     }
 
     private function testMigrationExists(): void

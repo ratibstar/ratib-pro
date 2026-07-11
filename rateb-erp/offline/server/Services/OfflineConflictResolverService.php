@@ -520,4 +520,47 @@ final class OfflineConflictResolverService
 
         return $base;
     }
+
+    /**
+     * Phase 24B — Enterprise Payroll conflict policy (additive status-drift + version).
+     *
+     * @param array<string, mixed> $clientItem
+     * @param array<string, mixed>|null $serverItem
+     * @return array<string, mixed>
+     */
+    public function resolvePayroll(array $clientItem, ?array $serverItem): array
+    {
+        $base = $this->resolve($clientItem, $serverItem);
+        if (($base['action'] ?? '') === 'reject_client') {
+            return $base;
+        }
+        if ($serverItem === null) {
+            return $base;
+        }
+
+        $serverStatus = strtolower((string) ($serverItem['status'] ?? $serverItem['workflow_status'] ?? ''));
+        if (in_array($serverStatus, ['closed', 'posted', 'approved', 'archived', 'calculated', 'reviewed'], true)
+            && isset($clientItem['expected_status'])
+            && (string) $clientItem['expected_status'] !== $serverStatus) {
+            return [
+                'action' => 'reject_client',
+                'item' => $serverItem,
+                'reason' => 'status_changed',
+            ];
+        }
+
+        $expectedStatus = $clientItem['expected_status'] ?? null;
+        if ($expectedStatus !== null && ($serverStatus !== '' || array_key_exists('status', $serverItem))) {
+            $compare = $serverStatus !== '' ? $serverStatus : (string) ($serverItem['status'] ?? '');
+            if ($compare !== (string) $expectedStatus) {
+                return [
+                    'action' => 'reject_client',
+                    'item' => $serverItem,
+                    'reason' => 'status_changed',
+                ];
+            }
+        }
+
+        return $base;
+    }
 }

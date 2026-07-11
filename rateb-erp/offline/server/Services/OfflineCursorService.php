@@ -32,6 +32,7 @@ final class OfflineCursorService
     private ?ProcurementEnterpriseOfflineMasterDataDirectoryService $procurementEnterpriseMasterData = null;
     private ?ManufacturingOfflineMasterDataDirectoryService $manufacturingMasterData = null;
     private ?HumanResourcesOfflineMasterDataDirectoryService $humanResourcesMasterData = null;
+    private ?PayrollOfflineMasterDataDirectoryService $payrollMasterData = null;
 
     private function model(): OfflineEntityCursor
     {
@@ -121,6 +122,11 @@ final class OfflineCursorService
     private function humanResourcesMasterData(): HumanResourcesOfflineMasterDataDirectoryService
     {
         return $this->humanResourcesMasterData ??= new HumanResourcesOfflineMasterDataDirectoryService();
+    }
+
+    private function payrollMasterData(): PayrollOfflineMasterDataDirectoryService
+    {
+        return $this->payrollMasterData ??= new PayrollOfflineMasterDataDirectoryService();
     }
 
     public function isAvailable(): bool
@@ -229,6 +235,10 @@ final class OfflineCursorService
 
         if ($masterCanonical !== null && $this->humanResourcesMasterData()->supports($masterCanonical)) {
             return $this->humanResourcesMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
+        }
+
+        if ($masterCanonical !== null && $this->payrollMasterData()->supports($masterCanonical)) {
+            return $this->payrollMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
         }
 
         return [

@@ -304,6 +304,31 @@ final class OfflineFeatureFlagService
         return $this->isManufacturingEnabled() && $this->enabled('offline.manufacturing.masterdata');
     }
 
+    public function isPayrollEnabled(): bool
+    {
+        return $this->enabled('offline.enabled') && $this->enabled('offline.payroll');
+    }
+
+    public function isPayrollEmployeeEnabled(): bool
+    {
+        return $this->isPayrollEnabled() && $this->enabled('offline.payroll.employee');
+    }
+
+    public function isPayrollBatchEnabled(): bool
+    {
+        return $this->isPayrollEnabled() && $this->enabled('offline.payroll.batch');
+    }
+
+    public function isPayrollWorkflowEnabled(): bool
+    {
+        return $this->isPayrollEnabled() && $this->enabled('offline.payroll.workflow');
+    }
+
+    public function isPayrollMasterDataEnabled(): bool
+    {
+        return $this->isPayrollEnabled() && $this->enabled('offline.payroll.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {

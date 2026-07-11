@@ -25,6 +25,7 @@ $order = [
     'offline/client/adapters/approval-adapter.js',
     'offline/client/adapters/procurement-enterprise-adapter.js',
     'offline/client/adapters/manufacturing-adapter.js',
+    'offline/client/adapters/payroll-adapter.js',
     'offline/client/adapters/form-post-adapter.js',
     'offline/client/adapters/shell-adapter.js',
     'offline/client/adapters/auth-lock-adapter.js',
@@ -34,7 +35,7 @@ $order = [
     'offline/client/core/sdk.js',
 ];
 
-$out = "/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG; flags default OFF). */\n\n";
+$out = "/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll; flags default OFF). */\n\n";
 foreach ($order as $rel) {
     $path = $root . '/' . $rel;
     if (!is_file($path)) {
@@ -67,3 +68,5 @@ echo (str_contains($out, 'RatebOfflineProcurementEnterpriseAdapter') ? 'HAS epro
 echo (str_contains($out, 'isProcurementEnterpriseEnabled') ? 'HAS isProcurementEnterpriseEnabled' : 'MISSING eproc helper') . PHP_EOL;
 echo (str_contains($out, 'RatebOfflineManufacturingAdapter') ? 'HAS mfg adapter' : 'MISSING mfg') . PHP_EOL;
 echo (str_contains($out, 'isManufacturingEnabled') ? 'HAS isManufacturingEnabled' : 'MISSING mfg helper') . PHP_EOL;
+echo (str_contains($out, 'RatebOfflinePayrollAdapter') ? 'HAS payroll adapter' : 'MISSING payroll') . PHP_EOL;
+echo (str_contains($out, 'isPayrollEnabled') ? 'HAS isPayrollEnabled' : 'MISSING payroll helper') . PHP_EOL;

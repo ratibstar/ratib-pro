@@ -441,5 +441,30 @@ return [
             'requires_updated_at' => false,
             'static_catalog' => true,
         ],
+        /** Phase 24B — optional payroll directories (read-only; flag offline.payroll.masterdata). */
+        'payroll_structure_directory' => [
+            'table' => 'rateb_payroll_salary_structures',
+            'aliases' => ['payroll_structures'],
+            'cache_prefix' => 'psd',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+            'static_catalog' => false,
+        ],
+        'payroll_cycle_directory' => [
+            'table' => 'rateb_payroll_cycles',
+            'aliases' => ['payroll_cycles'],
+            'cache_prefix' => 'pcd',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+            'static_catalog' => false,
+        ],
+        'payroll_batch_status_directory' => [
+            'table' => null,
+            'aliases' => ['payroll_batch_statuses'],
+            'cache_prefix' => 'pbs',
+            'branch_scoped' => false,
+            'requires_updated_at' => false,
+            'static_catalog' => true,
+        ],
     ],
 ];

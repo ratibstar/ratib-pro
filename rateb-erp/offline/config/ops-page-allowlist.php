@@ -105,6 +105,15 @@ return [
         'hrm/transfers',
         'hrm/goals',
         'hrm/competencies',
+        'payroll',
+        'payroll/dashboard',
+        'payroll/batches',
+        'payroll/cycles',
+        'payroll/payslips',
+        'payroll/salary-structures',
+        'payroll/loans',
+        'payroll/advances',
+        'payroll/overtime',
     ],
 
     /** Narrow form-post hooks (pathname substring → adapter action). */
@@ -174,5 +183,11 @@ return [
         ['match' => 'hrm/competencies', 'module' => 'hr', 'action' => 'competency.create'],
         ['match' => 'hrm/promotions', 'module' => 'hr', 'action' => 'promotion.create'],
         ['match' => 'hrm/transfers', 'module' => 'hr', 'action' => 'transfer.create'],
+        ['match' => 'payroll/salary-structures', 'module' => 'payroll', 'action' => 'salary_structure.create'],
+        ['match' => 'payroll/batches/create', 'module' => 'payroll', 'action' => 'payroll_batch.create'],
+        ['match' => 'payroll/batches', 'module' => 'payroll', 'action' => 'payroll_batch.update'],
+        ['match' => 'payroll/loans', 'module' => 'payroll', 'action' => 'loan.create'],
+        ['match' => 'payroll/advances', 'module' => 'payroll', 'action' => 'advance.create'],
+        ['match' => 'payroll/overtime', 'module' => 'payroll', 'action' => 'overtime.create'],
     ],
 ];

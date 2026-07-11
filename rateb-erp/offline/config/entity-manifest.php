@@ -652,4 +652,34 @@ return [
         'path' => '/api/v1/offline/delta/warehouse_directory',
         'replay' => 'delta_pull',
     ],
+    'payroll_batch_create' => [
+        'module' => 'payroll',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_payroll',
+    ],
+    'payroll_salary_structure_create' => [
+        'module' => 'payroll',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_payroll',
+    ],
+    'payroll_workflow_transition' => [
+        'module' => 'payroll',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_payroll',
+    ],
+    'payroll_structure_directory' => [
+        'module' => 'payroll',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/payroll_structure_directory',
+        'replay' => 'delta_pull',
+    ],
+    'payroll_cycle_directory' => [
+        'module' => 'payroll',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/payroll_cycle_directory',
+        'replay' => 'delta_pull',
+    ],
 ];

@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -3021,6 +3021,183 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- payroll-adapter.js ---- */
+/**
+ * RATEB Offline — Enterprise Payroll adapter (Phase 24B / Tier 1 drafts).
+ * Queues payroll structure / employee salary / batch / loan / advance drafts.
+ * Activated only when offline.enabled + offline.payroll (sub-flags gate children).
+ * Does NOT enqueue delete, calculate, approve, post, payments, GL, attendance import, leave, email/SMS, or binary uploads.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.payroll']);
+    }
+
+    function isEmployeeActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.payroll.employee']);
+    }
+
+    function isBatchActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.payroll.batch']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.payroll.workflow']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.payroll.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'pay') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('payroll_offline_disabled'));
+        }
+        if ((action === 'salary_structure.create' || action === 'salary_structure.update'
+            || action === 'employee_salary.create' || action === 'employee_salary.update') && !isEmployeeActive()) {
+            return Promise.reject(new Error('payroll_employee_offline_disabled'));
+        }
+        if ((action === 'payroll_batch.create' || action === 'payroll_batch.update') && !isBatchActive()) {
+            return Promise.reject(new Error('payroll_batch_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('payroll_workflow_offline_disabled'));
+        }
+        if (action === 'calculate' || action === 'approve' || action === 'post' || action === 'delete') {
+            return Promise.reject(new Error('payroll_action_rejected'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'payroll',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflinePayrollAdapter = {
+        isActive: isActive,
+        isEmployeeActive: isEmployeeActive,
+        isBatchActive: isBatchActive,
+        isWorkflowActive: isWorkflowActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueSalaryStructureCreate: function (payload, options) {
+            return enqueue('salary_structure.create', payload || {}, options);
+        },
+        enqueueSalaryStructureUpdate: function (payload, options) {
+            return enqueue('salary_structure.update', payload || {}, options);
+        },
+        enqueueEmployeeSalaryCreate: function (payload, options) {
+            return enqueue('employee_salary.create', payload || {}, options);
+        },
+        enqueueEmployeeSalaryUpdate: function (payload, options) {
+            return enqueue('employee_salary.update', payload || {}, options);
+        },
+        enqueuePayrollBatchCreate: function (payload, options) {
+            return enqueue('payroll_batch.create', payload || {}, options);
+        },
+        enqueuePayrollBatchUpdate: function (payload, options) {
+            return enqueue('payroll_batch.update', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        enqueueLoanCreate: function (payload, options) {
+            return enqueue('loan.create', payload || {}, options);
+        },
+        enqueueAdvanceCreate: function (payload, options) {
+            return enqueue('advance.create', payload || {}, options);
+        },
+        enqueueBonusCreate: function (payload, options) {
+            return enqueue('bonus.create', payload || {}, options);
+        },
+        enqueueOvertimeCreate: function (payload, options) {
+            return enqueue('overtime.create', payload || {}, options);
+        },
+        enqueueSettlementCreate: function (payload, options) {
+            return enqueue('settlement.create', payload || {}, options);
+        },
+        enqueueCommentCreate: function (payload, options) {
+            return enqueue('comment.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'payroll' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'payroll' });
+            }
+            return q.status({ module: 'payroll' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'payroll' });
+        },
+        pullStructures: function (options) {
+            return pullDirectory('payroll_structure_directory', options);
+        },
+        pullCycles: function (options) {
+            return pullDirectory('payroll_cycle_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -4786,6 +4963,12 @@
         { match: 'mfg/work-orders', module: 'manufacturing', action: 'work_order.update' },
         { match: 'mfg/routings', module: 'manufacturing', action: 'routing.create' },
         { match: 'mfg/quality', module: 'manufacturing', action: 'quality_check.create' },
+        { match: 'payroll/salary-structures', module: 'payroll', action: 'salary_structure.create' },
+        { match: 'payroll/batches/create', module: 'payroll', action: 'payroll_batch.create' },
+        { match: 'payroll/batches', module: 'payroll', action: 'payroll_batch.update' },
+        { match: 'payroll/loans', module: 'payroll', action: 'loan.create' },
+        { match: 'payroll/advances', module: 'payroll', action: 'advance.create' },
+        { match: 'payroll/overtime', module: 'payroll', action: 'overtime.create' },
         { match: 'hrm/employees/create', module: 'hr', action: 'employee.create' },
         { match: 'hrm/employees', module: 'hr', action: 'employee.update' },
         { match: 'hrm/departments', module: 'hr', action: 'department.create' },
@@ -4990,6 +5173,22 @@
             }
             if (action === 'quality_check.create') {
                 return !!f['offline.manufacturing.quality'];
+            }
+            return true;
+        }
+        if (module === 'payroll') {
+            if (!f['offline.payroll']) {
+                return false;
+            }
+            if (action === 'salary_structure.create' || action === 'salary_structure.update'
+                || action === 'employee_salary.create' || action === 'employee_salary.update') {
+                return !!f['offline.payroll.employee'];
+            }
+            if (action === 'payroll_batch.create' || action === 'payroll_batch.update') {
+                return !!f['offline.payroll.batch'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.payroll.workflow'];
             }
             return true;
         }
@@ -5652,6 +5851,45 @@
                 return mfg.enqueue(action, payload);
             }
         }
+        if (module === 'payroll') {
+            var pay = root.RatebOfflinePayrollAdapter;
+            if (!pay) {
+                return Promise.reject(new Error('payroll_adapter_unavailable'));
+            }
+            if (action === 'salary_structure.create') {
+                return pay.enqueueSalaryStructureCreate(payload);
+            }
+            if (action === 'salary_structure.update') {
+                return pay.enqueueSalaryStructureUpdate(payload);
+            }
+            if (action === 'employee_salary.create') {
+                return pay.enqueueEmployeeSalaryCreate(payload);
+            }
+            if (action === 'employee_salary.update') {
+                return pay.enqueueEmployeeSalaryUpdate(payload);
+            }
+            if (action === 'payroll_batch.create') {
+                return pay.enqueuePayrollBatchCreate(payload);
+            }
+            if (action === 'payroll_batch.update') {
+                return pay.enqueuePayrollBatchUpdate(payload);
+            }
+            if (action === 'loan.create') {
+                return pay.enqueueLoanCreate(payload);
+            }
+            if (action === 'advance.create') {
+                return pay.enqueueAdvanceCreate(payload);
+            }
+            if (action === 'overtime.create') {
+                return pay.enqueueOvertimeCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return pay.enqueueWorkflowTransition(payload);
+            }
+            if (typeof pay.enqueue === 'function') {
+                return pay.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -5746,7 +5984,8 @@
             || f['offline.assets']
             || f['offline.approval']
             || f['offline.procurement_enterprise']
-            || f['offline.manufacturing'])) {
+            || f['offline.manufacturing']
+            || f['offline.payroll'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -5823,6 +6062,11 @@
         'offline.manufacturing.workflow': false,
         'offline.manufacturing.quality': false,
         'offline.manufacturing.masterdata': false,
+        'offline.payroll': false,
+        'offline.payroll.employee': false,
+        'offline.payroll.batch': false,
+        'offline.payroll.workflow': false,
+        'offline.payroll.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -5891,6 +6135,11 @@
             manufacturing_workflow: !!flags['offline.manufacturing.workflow'],
             manufacturing_quality: !!flags['offline.manufacturing.quality'],
             manufacturing_masterdata: !!flags['offline.manufacturing.masterdata'],
+            payroll: !!flags['offline.payroll'],
+            payroll_employee: !!flags['offline.payroll.employee'],
+            payroll_batch: !!flags['offline.payroll.batch'],
+            payroll_workflow: !!flags['offline.payroll.workflow'],
+            payroll_masterdata: !!flags['offline.payroll.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -6165,6 +6414,29 @@
                 && flags['offline.manufacturing']
                 && flags['offline.manufacturing.masterdata']);
         },
+        isPayrollEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.payroll']);
+        },
+        isPayrollEmployeeEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.employee']);
+        },
+        isPayrollBatchEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.batch']);
+        },
+        isPayrollWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.workflow']);
+        },
+        isPayrollMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -6201,6 +6473,7 @@
         approvals: function () { return root.RatebOfflineApprovalAdapter || null; },
         procurementEnterprise: function () { return root.RatebOfflineProcurementEnterpriseAdapter || null; },
         manufacturing: function () { return root.RatebOfflineManufacturingAdapter || null; },
+        payroll: function () { return root.RatebOfflinePayrollAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

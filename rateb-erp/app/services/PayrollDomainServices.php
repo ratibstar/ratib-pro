@@ -118,6 +118,121 @@ final class PayrollStructureService
 
         return ['id' => (int) $id, 'code' => $code];
     }
+
+    /** @param array<string, mixed> $input */
+    public function update(int $id, array $input): void
+    {
+        $companyId = PayrollSupport::requireCompanyId();
+        $row = PayrollSupport::assertStructure($id, $companyId);
+        if (isset($input['expected_version']) && (int) $input['expected_version'] !== (int) ($row['version'] ?? 1)) {
+            throw new \RuntimeException('version_conflict');
+        }
+        $patch = PayrollSupport::actorFields(false);
+        foreach (['name', 'name_ar', 'description', 'notes', 'currency_code'] as $f) {
+            if (!array_key_exists($f, $input)) {
+                continue;
+            }
+            if ($f === 'name') {
+                $name = substr(trim((string) $input[$f]), 0, 190);
+                if ($name === '') {
+                    throw new \InvalidArgumentException('name_required');
+                }
+                $patch[$f] = $name;
+            } elseif ($f === 'currency_code') {
+                $patch[$f] = substr(trim((string) ($input[$f] ?? 'SAR')), 0, 3) ?: 'SAR';
+            } else {
+                $patch[$f] = PayrollSupport::nullIfEmpty($input[$f]);
+            }
+        }
+        $patch['version'] = (int) ($row['version'] ?? 1) + 1;
+        (new PayrollSalaryStructure())->update($id, $patch);
+        (new PayrollTimelineService())->record('structure_updated', 'Salary structure updated', 'structure', $id);
+    }
+}
+
+final class EmployeeSalaryService
+{
+    /**
+     * @param array<string, mixed> $input
+     * @return array{id: int}
+     */
+    public function create(array $input): array
+    {
+        $companyId = PayrollSupport::requireCompanyId();
+        $basic = PayrollSupport::floatOrZero($input['basic_salary'] ?? 0);
+        if ($basic < 0) {
+            throw new \InvalidArgumentException('basic_salary_invalid');
+        }
+        $structureId = PayrollSupport::intOrNull($input['structure_id'] ?? null);
+        if ($structureId !== null) {
+            PayrollSupport::assertStructure($structureId, $companyId);
+        }
+        $id = (new PayrollEmployeeSalary())->create(array_merge([
+            'public_uuid' => PayrollSupport::uuidV4(),
+            'company_id' => $companyId,
+            'branch_id' => PayrollSupport::intOrNull($input['branch_id'] ?? null) ?? PayrollSupport::branchId(),
+            'hrm_employee_profile_id' => PayrollSupport::intOrNull($input['hrm_employee_profile_id'] ?? null),
+            'legacy_employee_id' => PayrollSupport::intOrNull($input['legacy_employee_id'] ?? null),
+            'structure_id' => $structureId,
+            'basic_salary' => round($basic, 2),
+            'currency_code' => substr(trim((string) ($input['currency_code'] ?? 'SAR')), 0, 3) ?: 'SAR',
+            'effective_from' => PayrollSupport::dateOrNull($input['effective_from'] ?? null),
+            'effective_to' => PayrollSupport::dateOrNull($input['effective_to'] ?? null),
+            'status' => 'active',
+            'notes' => PayrollSupport::nullIfEmpty($input['notes'] ?? null),
+            'version' => 1,
+        ], PayrollSupport::actorFields(true)));
+
+        (new PayrollTimelineService())->record('employee_salary_created', 'Employee salary assigned', 'employee_salary', (int) $id);
+
+        return ['id' => (int) $id];
+    }
+
+    /** @param array<string, mixed> $input */
+    public function update(int $id, array $input): void
+    {
+        $companyId = PayrollSupport::requireCompanyId();
+        $row = (new PayrollEmployeeSalary())->queryOne(
+            'SELECT * FROM rateb_payroll_employee_salary WHERE id = :id AND company_id = :cid AND deleted_at IS NULL LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        if (!is_array($row)) {
+            throw new \RuntimeException('employee_salary_not_found');
+        }
+        if (isset($input['expected_version']) && (int) $input['expected_version'] !== (int) ($row['version'] ?? 1)) {
+            throw new \RuntimeException('version_conflict');
+        }
+        $patch = PayrollSupport::actorFields(false);
+        if (array_key_exists('basic_salary', $input)) {
+            $patch['basic_salary'] = round(PayrollSupport::floatOrZero($input['basic_salary']), 2);
+        }
+        if (array_key_exists('structure_id', $input)) {
+            $sid = PayrollSupport::intOrNull($input['structure_id']);
+            if ($sid !== null) {
+                PayrollSupport::assertStructure($sid, $companyId);
+            }
+            $patch['structure_id'] = $sid;
+        }
+        foreach (['hrm_employee_profile_id', 'legacy_employee_id'] as $f) {
+            if (array_key_exists($f, $input)) {
+                $patch[$f] = PayrollSupport::intOrNull($input[$f]);
+            }
+        }
+        foreach (['effective_from', 'effective_to', 'notes', 'currency_code'] as $f) {
+            if (!array_key_exists($f, $input)) {
+                continue;
+            }
+            if ($f === 'currency_code') {
+                $patch[$f] = substr(trim((string) ($input[$f] ?? 'SAR')), 0, 3) ?: 'SAR';
+            } elseif ($f === 'effective_from' || $f === 'effective_to') {
+                $patch[$f] = PayrollSupport::dateOrNull($input[$f]);
+            } else {
+                $patch[$f] = PayrollSupport::nullIfEmpty($input[$f]);
+            }
+        }
+        $patch['version'] = (int) ($row['version'] ?? 1) + 1;
+        (new PayrollEmployeeSalary())->update($id, $patch);
+    }
 }
 
 final class PayrollComponentService
@@ -361,6 +476,48 @@ final class PayrollBatchService
         (new PayrollTimelineService())->record('batch_created', 'Payroll batch: ' . $title, 'batch', (int) $id);
 
         return ['id' => (int) $id, 'code' => $code];
+    }
+
+    /** @param array<string, mixed> $input */
+    public function update(int $id, array $input): void
+    {
+        $companyId = PayrollSupport::requireCompanyId();
+        $row = PayrollSupport::assertBatch($id, $companyId);
+        if (isset($input['expected_version']) && (int) $input['expected_version'] !== (int) ($row['version'] ?? 1)) {
+            throw new \RuntimeException('version_conflict');
+        }
+        if (!in_array($row['workflow_status'] ?? '', ['draft', 'prepared'], true)) {
+            throw new \RuntimeException('batch_not_editable');
+        }
+        $patch = PayrollSupport::actorFields(false);
+        foreach (['title', 'title_ar', 'notes'] as $f) {
+            if (!array_key_exists($f, $input)) {
+                continue;
+            }
+            if ($f === 'title') {
+                $title = substr(trim((string) $input[$f]), 0, 190);
+                if ($title === '') {
+                    throw new \InvalidArgumentException('title_required');
+                }
+                $patch[$f] = $title;
+            } else {
+                $patch[$f] = PayrollSupport::nullIfEmpty($input[$f]);
+            }
+        }
+        foreach (['period_start', 'period_end', 'pay_date'] as $f) {
+            if (array_key_exists($f, $input)) {
+                $patch[$f] = PayrollSupport::dateOrNull($input[$f]);
+            }
+        }
+        foreach (['cycle_id', 'run_period_id'] as $f) {
+            if (array_key_exists($f, $input)) {
+                $patch[$f] = PayrollSupport::intOrNull($input[$f]);
+            }
+        }
+        unset($patch['workflow_status']);
+        $patch['version'] = (int) ($row['version'] ?? 1) + 1;
+        (new PayrollBatch())->update($id, $patch);
+        (new PayrollTimelineService())->record('batch_updated', 'Payroll batch updated', 'batch', $id);
     }
 }
 

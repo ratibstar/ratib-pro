@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. Phase 22B: + manufacturing. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. Phase 22B: + manufacturing. Phase 24B: + payroll. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -134,6 +134,20 @@ return [
         'manufacturing.assignment.create' => ['class' => 'RS', 'module' => 'manufacturing'],
         'manufacturing.comment.create' => ['class' => 'RS', 'module' => 'manufacturing'],
         'manufacturing.note.create' => ['class' => 'RS', 'module' => 'manufacturing'],
+        'payroll.salary_structure.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.salary_structure.update' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.employee_salary.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.employee_salary.update' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.payroll_batch.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.payroll_batch.update' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.workflow.transition' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.loan.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.advance.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.bonus.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.overtime.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.settlement.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.comment.create' => ['class' => 'RS', 'module' => 'payroll'],
+        'payroll.note.create' => ['class' => 'RS', 'module' => 'payroll'],
         'hr.employee.create' => ['class' => 'RS', 'module' => 'hr'],
         'hr.employee.update' => ['class' => 'RS', 'module' => 'hr'],
         'hr.department.create' => ['class' => 'RS', 'module' => 'hr'],

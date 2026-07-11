@@ -57,6 +57,11 @@
         'offline.manufacturing.workflow': false,
         'offline.manufacturing.quality': false,
         'offline.manufacturing.masterdata': false,
+        'offline.payroll': false,
+        'offline.payroll.employee': false,
+        'offline.payroll.batch': false,
+        'offline.payroll.workflow': false,
+        'offline.payroll.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -125,6 +130,11 @@
             manufacturing_workflow: !!flags['offline.manufacturing.workflow'],
             manufacturing_quality: !!flags['offline.manufacturing.quality'],
             manufacturing_masterdata: !!flags['offline.manufacturing.masterdata'],
+            payroll: !!flags['offline.payroll'],
+            payroll_employee: !!flags['offline.payroll.employee'],
+            payroll_batch: !!flags['offline.payroll.batch'],
+            payroll_workflow: !!flags['offline.payroll.workflow'],
+            payroll_masterdata: !!flags['offline.payroll.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -399,6 +409,29 @@
                 && flags['offline.manufacturing']
                 && flags['offline.manufacturing.masterdata']);
         },
+        isPayrollEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.payroll']);
+        },
+        isPayrollEmployeeEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.employee']);
+        },
+        isPayrollBatchEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.batch']);
+        },
+        isPayrollWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.workflow']);
+        },
+        isPayrollMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.payroll']
+                && flags['offline.payroll.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -435,6 +468,7 @@
         approvals: function () { return root.RatebOfflineApprovalAdapter || null; },
         procurementEnterprise: function () { return root.RatebOfflineProcurementEnterpriseAdapter || null; },
         manufacturing: function () { return root.RatebOfflineManufacturingAdapter || null; },
+        payroll: function () { return root.RatebOfflinePayrollAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

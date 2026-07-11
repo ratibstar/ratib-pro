@@ -67,6 +67,12 @@
         { match: 'mfg/work-orders', module: 'manufacturing', action: 'work_order.update' },
         { match: 'mfg/routings', module: 'manufacturing', action: 'routing.create' },
         { match: 'mfg/quality', module: 'manufacturing', action: 'quality_check.create' },
+        { match: 'payroll/salary-structures', module: 'payroll', action: 'salary_structure.create' },
+        { match: 'payroll/batches/create', module: 'payroll', action: 'payroll_batch.create' },
+        { match: 'payroll/batches', module: 'payroll', action: 'payroll_batch.update' },
+        { match: 'payroll/loans', module: 'payroll', action: 'loan.create' },
+        { match: 'payroll/advances', module: 'payroll', action: 'advance.create' },
+        { match: 'payroll/overtime', module: 'payroll', action: 'overtime.create' },
         { match: 'hrm/employees/create', module: 'hr', action: 'employee.create' },
         { match: 'hrm/employees', module: 'hr', action: 'employee.update' },
         { match: 'hrm/departments', module: 'hr', action: 'department.create' },
@@ -271,6 +277,22 @@
             }
             if (action === 'quality_check.create') {
                 return !!f['offline.manufacturing.quality'];
+            }
+            return true;
+        }
+        if (module === 'payroll') {
+            if (!f['offline.payroll']) {
+                return false;
+            }
+            if (action === 'salary_structure.create' || action === 'salary_structure.update'
+                || action === 'employee_salary.create' || action === 'employee_salary.update') {
+                return !!f['offline.payroll.employee'];
+            }
+            if (action === 'payroll_batch.create' || action === 'payroll_batch.update') {
+                return !!f['offline.payroll.batch'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.payroll.workflow'];
             }
             return true;
         }
@@ -933,6 +955,45 @@
                 return mfg.enqueue(action, payload);
             }
         }
+        if (module === 'payroll') {
+            var pay = root.RatebOfflinePayrollAdapter;
+            if (!pay) {
+                return Promise.reject(new Error('payroll_adapter_unavailable'));
+            }
+            if (action === 'salary_structure.create') {
+                return pay.enqueueSalaryStructureCreate(payload);
+            }
+            if (action === 'salary_structure.update') {
+                return pay.enqueueSalaryStructureUpdate(payload);
+            }
+            if (action === 'employee_salary.create') {
+                return pay.enqueueEmployeeSalaryCreate(payload);
+            }
+            if (action === 'employee_salary.update') {
+                return pay.enqueueEmployeeSalaryUpdate(payload);
+            }
+            if (action === 'payroll_batch.create') {
+                return pay.enqueuePayrollBatchCreate(payload);
+            }
+            if (action === 'payroll_batch.update') {
+                return pay.enqueuePayrollBatchUpdate(payload);
+            }
+            if (action === 'loan.create') {
+                return pay.enqueueLoanCreate(payload);
+            }
+            if (action === 'advance.create') {
+                return pay.enqueueAdvanceCreate(payload);
+            }
+            if (action === 'overtime.create') {
+                return pay.enqueueOvertimeCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return pay.enqueueWorkflowTransition(payload);
+            }
+            if (typeof pay.enqueue === 'function') {
+                return pay.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -1027,7 +1088,8 @@
             || f['offline.assets']
             || f['offline.approval']
             || f['offline.procurement_enterprise']
-            || f['offline.manufacturing'])) {
+            || f['offline.manufacturing']
+            || f['offline.payroll'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

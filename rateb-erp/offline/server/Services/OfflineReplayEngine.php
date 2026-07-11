@@ -25,6 +25,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?ProcurementEnterpriseOfflineReplayService $procurementEnterprise = null;
     private ?ManufacturingOfflineReplayService $manufacturing = null;
     private ?HumanResourcesOfflineReplayService $humanResources = null;
+    private ?PayrollOfflineReplayService $payroll = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -91,6 +92,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
         return $this->manufacturing ??= new ManufacturingOfflineReplayService();
     }
 
+    private function payroll(): PayrollOfflineReplayService
+    {
+        return $this->payroll ??= new PayrollOfflineReplayService();
+    }
+
     /** @param array<string, mixed> $queueRow */
     public function replay(array $queueRow): array
     {
@@ -126,6 +132,14 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->manufacturing()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'payroll') {
+            if (!$this->flags()->enabled('offline.payroll')) {
+                return ['status' => 'skipped', 'error' => 'payroll_offline_disabled'];
+            }
+
+            return $this->payroll()->replayFromQueueRow($queueRow);
         }
 
         // Phase 4 attendance/leave + Phase 23B enterprise HRMS share module=hr; dispatch by action.
@@ -236,6 +250,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->manufacturing()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'payroll' || str_starts_with($action, 'payroll.')
+            || in_array($action, PayrollOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.payroll')) {
+                return ['status' => 'skipped', 'error' => 'payroll_offline_disabled'];
+            }
+
+            return $this->payroll()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

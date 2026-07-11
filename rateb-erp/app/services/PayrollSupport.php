@@ -67,6 +67,7 @@ final class PayrollSupport
     {
         $allowed = [
             'rateb_payroll_salary_structures',
+            'rateb_payroll_employee_salary',
             'rateb_payroll_cycles',
             'rateb_payroll_run_periods',
             'rateb_payroll_batches',
