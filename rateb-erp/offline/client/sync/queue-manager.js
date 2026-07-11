@@ -199,6 +199,11 @@
         if (!enabled || flushInFlight) {
             return Promise.resolve({ skipped: true });
         }
+        // Phase 11: block sync until online re-login when session reauth required.
+        var authLock = root.RatebOfflineAuthLock;
+        if (authLock && typeof authLock.sessionNeedsReauth === 'function' && authLock.sessionNeedsReauth()) {
+            return Promise.resolve({ skipped: true, reason: 'session_reauth_required' });
+        }
         if (!Stores) {
             return Promise.resolve({ accepted: 0 });
         }

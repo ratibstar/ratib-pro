@@ -404,10 +404,23 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'company_id' => $ratebOfflineCompanyId,
     'branch_id' => $ratebOfflineBranchId,
     'user_id' => $ratebOfflineUserId,
+    'is_super_admin' => (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin'),
+    'logout_vault_policy' => class_exists(\Rateb\App\Offline\Services\ErpOfflineAuthPolicy::class)
+        ? (new \Rateb\App\Offline\Services\ErpOfflineAuthPolicy())->logoutVaultPolicy()
+        : 'keep_vault',
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
 <script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('offline/erp-shell-bootstrap.js'); ?>" defer></script>
-<?php } ?>
+<?php
+    $ratebOfflineAuthUnlock = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
+        && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isAuthUnlockEnabled();
+    if ($ratebOfflineAuthUnlock) {
+        ?>
+<script src="<?php echo rateb_asset('offline/erp-auth-bootstrap.js'); ?>" defer></script>
+<?php
+    }
+}
+?>
 </body>
 </html>

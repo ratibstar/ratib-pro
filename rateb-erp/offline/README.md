@@ -23,6 +23,7 @@ offline/
 | `offline.inventory.movements` | `false` | Tier 1 Inventory Offline (Phase 3) |
 | `offline.hr.attendance` | `false` | Tier 1 HR Offline (Phase 4) |
 | `offline.read_cache` | `false` | Tier 2 ERP shell SW + chrome snapshot (Phase 10) |
+| `offline.auth.unlock` | `false` | Tier 3 local shell unlock PIN/WebAuthn (Phase 11) |
 
 Enable via env:
 
@@ -31,11 +32,16 @@ RATEB_OFFLINE_ENABLED=1
 RATEB_OFFLINE_INVENTORY_MOVEMENTS=1
 RATEB_OFFLINE_HR_ATTENDANCE=1
 RATEB_OFFLINE_READ_CACHE=1
+RATEB_OFFLINE_AUTH_UNLOCK=1
 ```
 
 ## ERP Shell Offline (Phase 10)
 
 When `offline.enabled` + `offline.read_cache` are ON, `views/layouts/main.php` injects the SDK + `erp-shell-bootstrap.js`, which registers `rateb-offline-sw.js` (never intercepts `/pos/*`, never caches API/HTML auth bodies). Shell chrome is stored in IndexedDB `snapshots` (`erp_shell_chrome`). Flags OFF → zero layout/SW behavior.
+
+## ERP Offline Auth (Phase 11)
+
+Requires master + `read_cache` + `auth.unlock`. Vault store `auth_vault` in `rateb_erp_offline` (DB_VERSION 2). Local unlock overlay only — no PHP session offline. Queue flush blocked while `sessionNeedsReauth`.
 ## API (additive)
 
 - `GET  /api/v1/offline/status`

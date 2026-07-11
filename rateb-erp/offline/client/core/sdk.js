@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 10).
+ * RATEB Offline SDK bootstrap (Phase 11).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -12,7 +12,8 @@
         'offline.inventory.movements': false,
         'offline.hr.attendance': false,
         'offline.procurement': false,
-        'offline.read_cache': false
+        'offline.read_cache': false,
+        'offline.auth.unlock': false
     };
 
     function init(options) {
@@ -50,7 +51,8 @@
                 inventory: !!flags['offline.inventory.movements'],
                 hr: !!flags['offline.hr.attendance'],
                 procurement: !!flags['offline.procurement'],
-                read_cache: !!flags['offline.read_cache']
+                read_cache: !!flags['offline.read_cache'],
+                auth_unlock: !!flags['offline.auth.unlock']
             });
         }
         return {
@@ -59,12 +61,13 @@
             hr: !!flags['offline.hr.attendance'],
             procurement: !!flags['offline.procurement'],
             read_cache: !!flags['offline.read_cache'],
-            version: '10.0.0'
+            auth_unlock: !!flags['offline.auth.unlock'],
+            version: '11.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '10.0.0',
+        version: '11.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -80,6 +83,9 @@
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
+        isAuthUnlockEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.read_cache'] && flags['offline.auth.unlock']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -89,6 +95,7 @@
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
+        auth: function () { return root.RatebOfflineAuthLock || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

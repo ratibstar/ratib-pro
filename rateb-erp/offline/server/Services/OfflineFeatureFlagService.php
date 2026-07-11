@@ -78,6 +78,15 @@ final class OfflineFeatureFlagService
         return $this->isMasterEnabled() && $this->enabled('offline.read_cache');
     }
 
+    /**
+     * Tier-3 ERP offline unlock (requires master + read_cache + auth.unlock).
+     * Local shell unlock only — never creates a PHP session.
+     */
+    public function isAuthUnlockEnabled(): bool
+    {
+        return $this->isReadCacheEnabled() && $this->enabled('offline.auth.unlock');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

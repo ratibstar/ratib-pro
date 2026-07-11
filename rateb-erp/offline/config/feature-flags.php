@@ -15,6 +15,7 @@ return [
         'offline.procurement' => false,
         'offline.monitoring' => false,
         'offline.read_cache' => false,
+        'offline.auth.unlock' => false,
     ],
 
     /** Env var overrides (string "1"/"true"/"yes" → true). */
@@ -26,5 +27,6 @@ return [
         'offline.procurement' => 'RATEB_OFFLINE_PROCUREMENT',
         'offline.monitoring' => 'RATEB_OFFLINE_MONITORING',
         'offline.read_cache' => 'RATEB_OFFLINE_READ_CACHE',
+        'offline.auth.unlock' => 'RATEB_OFFLINE_AUTH_UNLOCK',
     ],
 ];

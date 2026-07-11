@@ -1,12 +1,12 @@
 /**
- * RATEB Offline — IndexedDB schema (Phase 2A).
- * DB: rateb_erp_offline (separate from rateb_pos_offline).
+ * RATEB Offline — IndexedDB schema (Phase 11: DB_VERSION 2 + auth_vault).
+ * DB: rateb_erp_offline (separate from rateb_pos_offline / rateb_pos_auth_lock).
  */
 (function (root) {
     'use strict';
 
     var DB_NAME = 'rateb_erp_offline';
-    var DB_VERSION = 1;
+    var DB_VERSION = 2;
 
     var STORES = {
         SYNC_QUEUE: 'sync_queue',
@@ -16,8 +16,26 @@
         FORM_DRAFTS: 'form_drafts',
         SNAPSHOTS: 'snapshots',
         CONFLICTS: 'conflicts',
-        CURSORS: 'cursors'
+        CURSORS: 'cursors',
+        AUTH_VAULT: 'auth_vault'
     };
+
+    function keyPathForStore(name) {
+        if (name === 'sync_queue') {
+            return 'client_id';
+        }
+        if (name === 'sync_meta' || name === 'cursors') {
+            return 'key';
+        }
+        if (name === 'form_drafts') {
+            return 'draft_id';
+        }
+        if (name === 'conflicts') {
+            return 'conflict_id';
+        }
+        // entity_cache, catalog_index, snapshots, auth_vault
+        return 'id';
+    }
 
     function openDatabase() {
         return new Promise(function (resolve, reject) {
@@ -33,11 +51,7 @@
                     if (db.objectStoreNames.contains(name)) {
                         return;
                     }
-                    var keyPath = name === 'sync_queue' ? 'client_id'
-                        : (name === 'sync_meta' || name === 'cursors' ? 'key'
-                            : (name === 'entity_cache' || name === 'catalog_index' || name === 'snapshots' ? 'id'
-                                : (name === 'form_drafts' ? 'draft_id' : 'conflict_id')));
-                    db.createObjectStore(name, { keyPath: keyPath });
+                    db.createObjectStore(name, { keyPath: keyPathForStore(name) });
                 });
             };
             req.onsuccess = function () { resolve(req.result); };

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Rateb\App\Offline\Controllers\OfflineSyncApiController;
+use Rateb\App\Offline\Controllers\ErpOfflineAuthApiController;
 use Rateb\App\Core\Middleware\ApiAuthMiddleware;
 
 /** @var Rateb\App\Core\Router $router */
@@ -19,3 +20,8 @@ $router->post('/api/v1/offline/process', [OfflineSyncApiController::class, 'proc
 $router->get('/api/v1/offline/conflicts', [OfflineSyncApiController::class, 'conflicts'], $offlineApi);
 $router->post('/api/v1/offline/conflicts/{id}/resolve', [OfflineSyncApiController::class, 'resolveConflict'], $offlineApi);
 $router->get('/api/v1/offline/delta/{entity}', [OfflineSyncApiController::class, 'delta'], $offlineApi);
+
+/** Phase 11 — ERP offline auth device enroll (flag-gated in controller). */
+$router->get('/api/v1/offline/auth/policy', [ErpOfflineAuthApiController::class, 'policy'], $offlineApi);
+$router->post('/api/v1/offline/auth/device/register', [ErpOfflineAuthApiController::class, 'deviceRegister'], $offlineApi);
+$router->post('/api/v1/offline/auth/device/heartbeat', [ErpOfflineAuthApiController::class, 'deviceHeartbeat'], $offlineApi);
