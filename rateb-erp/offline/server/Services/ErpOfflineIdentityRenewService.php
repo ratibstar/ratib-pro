@@ -30,12 +30,22 @@ final class ErpOfflineIdentityRenewService
             return ['ok' => false, 'error' => 'device_revoked', 'code' => 'DEVICE_REVOKED'];
         }
 
-        $issued = (new ErpOfflineIdentityService())->renew(
-            $companyId,
-            $branchId,
-            $userId,
-            $deviceId
-        );
+        $cold = new OfflineColdIdentityService();
+        if ($cold->isEnabled()) {
+            $issued = $cold->renewColdPackage(
+                $companyId,
+                $branchId,
+                $userId,
+                $deviceId
+            );
+        } else {
+            $issued = (new ErpOfflineIdentityService())->renew(
+                $companyId,
+                $branchId,
+                $userId,
+                $deviceId
+            );
+        }
         if (!($issued['ok'] ?? false)) {
             return $issued;
         }

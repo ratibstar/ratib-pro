@@ -23,6 +23,9 @@ final class ErpOfflineIdentityAuditService
     public const EVENT_DEVICE_RENAMED = 'device_renamed';
     public const EVENT_DEVICE_RESTORED = 'device_restored';
     public const EVENT_DEVICE_FORCE_LOGOUT = 'device_force_logout';
+    public const EVENT_COLD_UNLOCK_SUCCESS = 'cold_unlock_success';
+    public const EVENT_COLD_UNLOCK_FAILED = 'cold_unlock_failed';
+    public const EVENT_COLD_SESSION_DESTROYED = 'cold_session_destroyed';
 
     /** @var list<string> */
     private const KNOWN_EVENTS = [
@@ -37,6 +40,9 @@ final class ErpOfflineIdentityAuditService
         self::EVENT_DEVICE_RENAMED,
         self::EVENT_DEVICE_RESTORED,
         self::EVENT_DEVICE_FORCE_LOGOUT,
+        self::EVENT_COLD_UNLOCK_SUCCESS,
+        self::EVENT_COLD_UNLOCK_FAILED,
+        self::EVENT_COLD_SESSION_DESTROYED,
     ];
 
     /**

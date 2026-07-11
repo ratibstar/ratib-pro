@@ -86,6 +86,8 @@ return [
         'offline.monitoring' => false,
         'offline.read_cache' => false,
         'offline.auth.unlock' => false,
+        /** Cold offline identity (requires auth.unlock). Default OFF. */
+        'offline.auth.cold' => false,
         'offline.rbac.cache' => false,
         'offline.master_data' => false,
         /** Phase 14 — allowlisted ops page snapshots (requires master + read_cache). */
@@ -166,6 +168,7 @@ return [
         'offline.monitoring' => 'RATEB_OFFLINE_MONITORING',
         'offline.read_cache' => 'RATEB_OFFLINE_READ_CACHE',
         'offline.auth.unlock' => 'RATEB_OFFLINE_AUTH_UNLOCK',
+        'offline.auth.cold' => 'RATEB_OFFLINE_AUTH_COLD',
         'offline.rbac.cache' => 'RATEB_OFFLINE_RBAC_CACHE',
         'offline.master_data' => 'RATEB_OFFLINE_MASTER_DATA',
         'offline.pilot.ops_pages' => 'RATEB_OFFLINE_PILOT_OPS_PAGES',

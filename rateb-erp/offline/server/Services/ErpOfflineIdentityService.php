@@ -22,6 +22,7 @@ final class ErpOfflineIdentityService
     public const DEFAULT_TTL_SECONDS = 30 * 24 * 60 * 60;
 
     /**
+     * @param array<string, mixed> $extraClaims Scalar / JSON-safe array extras merged before sign.
      * @return array{
      *   ok: bool,
      *   error?: string,
@@ -34,7 +35,8 @@ final class ErpOfflineIdentityService
         int $userId,
         string $deviceId,
         ?int $ttlSeconds = null,
-        int $identityVersion = 1
+        int $identityVersion = 1,
+        array $extraClaims = []
     ): array {
         if (!(new OfflineFeatureFlagService())->isAuthUnlockEnabled()) {
             return ['ok' => false, 'error' => 'auth_unlock_disabled'];
@@ -66,6 +68,12 @@ final class ErpOfflineIdentityService
             'anti_rollback' => $now,
             'jti' => bin2hex(random_bytes(16)),
         ];
+        foreach ($this->filterJsonSafeClaims($extraClaims) as $key => $value) {
+            if (!is_string($key) || $key === '' || array_key_exists($key, $claims)) {
+                continue;
+            }
+            $claims[$key] = $value;
+        }
         $canonical = $this->canonical($claims);
         $signature = hash_hmac('sha256', $canonical, $identityKey, true);
         $serverAttestation = hash_hmac('sha256', $canonical . '|' . base64_encode($signature), $this->masterSecret(), true);
@@ -91,6 +99,7 @@ final class ErpOfflineIdentityService
      * Invalidate previous JTI and issue a new identity package (version + 1).
      *
      * @param array<string, mixed>|null $previousClaims
+     * @param array<string, mixed> $extraClaims Merged into renewed claims (cold snapshot extras).
      * @return array{ok: bool, error?: string, identity?: array<string, mixed>}
      */
     public function renew(
@@ -99,7 +108,8 @@ final class ErpOfflineIdentityService
         int $userId,
         string $deviceId,
         ?array $previousClaims = null,
-        ?int $ttlSeconds = null
+        ?int $ttlSeconds = null,
+        array $extraClaims = []
     ): array {
         $deviceId = $this->normalizeDeviceId($deviceId);
         if ($deviceId === '') {
@@ -133,7 +143,8 @@ final class ErpOfflineIdentityService
             $userId,
             $deviceId,
             $ttlSeconds,
-            $prevVersion + 1
+            $prevVersion + 1,
+            $extraClaims
         );
         if (!($issued['ok'] ?? false)) {
             return $issued;
@@ -340,5 +351,45 @@ final class ErpOfflineIdentityService
         $id = preg_replace('/[^a-zA-Z0-9._:-]/', '', trim($raw)) ?? '';
 
         return substr($id, 0, 64);
+    }
+
+    /**
+     * Keep only scalar / nested-array values that json_encode can round-trip.
+     *
+     * @param array<string, mixed> $extra
+     * @return array<string, mixed>
+     */
+    private function filterJsonSafeClaims(array $extra): array
+    {
+        $out = [];
+        foreach ($extra as $key => $value) {
+            if (!is_string($key) && !is_int($key)) {
+                continue;
+            }
+            $key = (string) $key;
+            if ($key === '' || !$this->isJsonSafeValue($value)) {
+                continue;
+            }
+            $out[$key] = $value;
+        }
+
+        return $out;
+    }
+
+    private function isJsonSafeValue(mixed $value): bool
+    {
+        if ($value === null || is_bool($value) || is_int($value) || is_float($value) || is_string($value)) {
+            return true;
+        }
+        if (!is_array($value)) {
+            return false;
+        }
+        foreach ($value as $child) {
+            if (!$this->isJsonSafeValue($child)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

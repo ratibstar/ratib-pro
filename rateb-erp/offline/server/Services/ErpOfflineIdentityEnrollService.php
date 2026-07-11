@@ -40,12 +40,22 @@ final class ErpOfflineIdentityEnrollService
             return $activated;
         }
 
-        $issued = (new ErpOfflineIdentityService())->issue(
-            $companyId,
-            $branchId,
-            $userId,
-            $deviceId
-        );
+        $cold = new OfflineColdIdentityService();
+        if ($cold->isEnabled()) {
+            $issued = $cold->issueColdPackage(
+                $companyId,
+                $branchId,
+                $userId,
+                $deviceId
+            );
+        } else {
+            $issued = (new ErpOfflineIdentityService())->issue(
+                $companyId,
+                $branchId,
+                $userId,
+                $deviceId
+            );
+        }
         if (!($issued['ok'] ?? false)) {
             return $issued;
         }
@@ -73,6 +83,7 @@ final class ErpOfflineIdentityEnrollService
                     'jti' => (string) ($claims['jti'] ?? ''),
                     'identity_version' => (int) ($claims['identity_version'] ?? 1),
                     'expires_at' => (int) ($claims['expires_at'] ?? 0),
+                    'cold_capable' => !empty($claims['cold_capable']),
                 ],
             ]
         );

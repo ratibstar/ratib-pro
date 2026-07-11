@@ -421,6 +421,15 @@ final class OfflineFeatureFlagService
     }
 
     /**
+     * Cold offline identity (requires auth.unlock + offline.auth.cold).
+     * Local shell restore only — never creates a PHP session or bypasses server authz.
+     */
+    public function isColdIdentityEnabled(): bool
+    {
+        return $this->isAuthUnlockEnabled() && $this->enabled('offline.auth.cold');
+    }
+
+    /**
      * Tier-3 ERP offline RBAC/nav cache (requires master + read_cache + auth.unlock + rbac.cache).
      * UI cache only — never replaces server authorization.
      */

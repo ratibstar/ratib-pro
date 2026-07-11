@@ -14,6 +14,7 @@ use Rateb\App\Offline\Services\ErpOfflineAuthPolicy;
 use Rateb\App\Offline\Services\ErpOfflineIdentityEnrollService;
 use Rateb\App\Offline\Services\ErpOfflineIdentityService;
 use Rateb\App\Offline\Services\ErpOfflineIdentitySessionPolicy;
+use Rateb\App\Offline\Services\OfflineBootstrapManager;
 use Rateb\App\Offline\Services\OfflineFeatureFlagService;
 
 /**
@@ -65,16 +66,23 @@ final class ErpOfflineAuthApiController extends Controller
         $policy = new ErpOfflineAuthPolicy();
         $enroll = $policy->assertEnrollAllowed();
         $identity = new ErpOfflineIdentityService();
-        $this->json([
+        $flags = new OfflineFeatureFlagService();
+        $coldOn = $flags->isColdIdentityEnabled();
+        $payload = [
             'ok' => true,
-            'auth_unlock' => (new OfflineFeatureFlagService())->isAuthUnlockEnabled(),
+            'auth_unlock' => $flags->isAuthUnlockEnabled(),
             'enroll' => $enroll,
             'logout_vault_policy' => $policy->logoutVaultPolicy(),
             'identity_ttl_seconds' => $identity->ttlSeconds(),
             'session_policy' => (new ErpOfflineIdentitySessionPolicy())->snapshot(),
             'warm_identity' => true,
+            'cold_identity' => $coldOn,
             'is_super_admin' => !empty(SessionManager::get('rateb_is_super_admin')),
-        ]);
+        ];
+        if ($coldOn) {
+            $payload['cold_boot'] = (new OfflineBootstrapManager())->coldBootConfig();
+        }
+        $this->json($payload);
     }
 
     /** Phase P1 — issue signed warm identity + activate ERP shell device (online session only). */

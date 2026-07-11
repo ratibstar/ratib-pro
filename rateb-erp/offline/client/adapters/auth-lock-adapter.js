@@ -519,6 +519,10 @@
         clearUnlock(scope);
         markSessionNeedsReauth();
         clearPersistedScope();
+        var local = root.RatebOfflineLocalSession;
+        if (local && typeof local.destroy === 'function') {
+            local.destroy(scope);
+        }
         var rbac = root.RatebOfflineRbacCache;
         if (rbac && typeof rbac.clearNavDom === 'function') {
             rbac.clearNavDom();
@@ -651,7 +655,12 @@
                             }
                             clearSessionNeedsReauth();
                             markUnlocked(scope, opened.claims);
-                            return { ok: true, identity: opened.claims, warm: true };
+                            return {
+                                ok: true,
+                                identity: opened.claims,
+                                warm: true,
+                                cold: !!(opened.claims && opened.claims.cold_capable)
+                            };
                         });
                     });
                 }

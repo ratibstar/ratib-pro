@@ -32,6 +32,8 @@ $order = [
     'offline/client/adapters/form-post-adapter.js',
     'offline/client/adapters/shell-adapter.js',
     'offline/client/adapters/auth-lock-adapter.js',
+    'offline/client/adapters/offline-local-session-adapter.js',
+    'offline/client/adapters/offline-cold-bootstrap-adapter.js',
     'offline/client/adapters/rbac-cache-adapter.js',
     'offline/client/adapters/master-data-adapter.js',
     'offline/client/adapters/ops-forms-adapter.js',
