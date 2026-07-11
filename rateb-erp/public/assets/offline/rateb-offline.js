@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -2118,6 +2118,192 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- assets-adapter.js ---- */
+/**
+ * RATEB Offline — Assets adapter (Phase 19B / Tier 1 drafts).
+ * Queues asset / maintenance / workflow / inspection drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.assets (sub-flags gate children).
+ * Does NOT enqueue delete, payments, approvals, email/SMS, attachments, or government APIs.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.assets']);
+    }
+
+    function isMaintenanceActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.assets.maintenance']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.assets.workflow']);
+    }
+
+    function isInspectionsActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.assets.inspections']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.assets.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'eam') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('assets_offline_disabled'));
+        }
+        if ((action === 'maintenance_request.create'
+            || action === 'maintenance_plan.create'
+            || action === 'work_order.create') && !isMaintenanceActive()) {
+            return Promise.reject(new Error('assets_maintenance_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('assets_workflow_offline_disabled'));
+        }
+        if ((action === 'inspection.create'
+            || action === 'checklist.create'
+            || action === 'meter_reading.create') && !isInspectionsActive()) {
+            return Promise.reject(new Error('assets_inspections_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'assets',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineAssetsAdapter = {
+        isActive: isActive,
+        isMaintenanceActive: isMaintenanceActive,
+        isWorkflowActive: isWorkflowActive,
+        isInspectionsActive: isInspectionsActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueAssetCreate: function (payload, options) {
+            return enqueue('asset.create', payload || {}, options);
+        },
+        enqueueAssetUpdate: function (payload, options) {
+            return enqueue('asset.update', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        enqueueAssignmentCreate: function (payload, options) {
+            return enqueue('assignment.create', payload || {}, options);
+        },
+        enqueueTransferCreate: function (payload, options) {
+            return enqueue('transfer.create', payload || {}, options);
+        },
+        enqueueMaintenanceRequestCreate: function (payload, options) {
+            return enqueue('maintenance_request.create', payload || {}, options);
+        },
+        enqueueMaintenancePlanCreate: function (payload, options) {
+            return enqueue('maintenance_plan.create', payload || {}, options);
+        },
+        enqueueWorkOrderCreate: function (payload, options) {
+            return enqueue('work_order.create', payload || {}, options);
+        },
+        enqueueInspectionCreate: function (payload, options) {
+            return enqueue('inspection.create', payload || {}, options);
+        },
+        enqueueChecklistCreate: function (payload, options) {
+            return enqueue('checklist.create', payload || {}, options);
+        },
+        enqueueMeterReadingCreate: function (payload, options) {
+            return enqueue('meter_reading.create', payload || {}, options);
+        },
+        enqueueCommentCreate: function (payload, options) {
+            return enqueue('comment.create', payload || {}, options);
+        },
+        enqueueActivityCreate: function (payload, options) {
+            return enqueue('activity.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'assets' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'assets' });
+            }
+            return q.status({ module: 'assets' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'assets' });
+        },
+        pullCategories: function (options) {
+            return pullDirectory('asset_category_directory', options);
+        },
+        pullManufacturers: function (options) {
+            return pullDirectory('asset_manufacturer_directory', options);
+        },
+        pullLocations: function (options) {
+            return pullDirectory('asset_location_directory', options);
+        },
+        pullModels: function (options) {
+            return pullDirectory('asset_model_directory', options);
+        },
+        pullMaintenancePlans: function (options) {
+            return pullDirectory('maintenance_plan_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -3823,6 +4009,7 @@
  * Phase 16B: journal-entries draft create|update + recurring/opening drafts (flag-gated; never post).
  * Phase 17B: crm leads/tasks/meetings/campaigns/contacts/companies drafts (flag-gated).
  * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
+ * Phase 19B: eam assets/maintenance/work-orders/inspections drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -3855,7 +4042,13 @@
         { match: 'projects/milestones', module: 'projects', action: 'milestone.create' },
         { match: 'projects/issues', module: 'projects', action: 'issue.create' },
         { match: 'projects/risks', module: 'projects', action: 'risk.create' },
-        { match: 'projects/timesheets', module: 'projects', action: 'timesheet.create' }
+        { match: 'projects/timesheets', module: 'projects', action: 'timesheet.create' },
+        { match: 'eam/assets/create', module: 'assets', action: 'asset.create' },
+        { match: 'eam/assets', module: 'assets', action: 'asset.update' },
+        { match: 'eam/requests', module: 'assets', action: 'maintenance_request.create' },
+        { match: 'eam/work-orders', module: 'assets', action: 'work_order.create' },
+        { match: 'eam/maintenance', module: 'assets', action: 'maintenance_plan.create' },
+        { match: 'eam/inspections', module: 'assets', action: 'inspection.create' }
     ];
 
     function cfg() {
@@ -3953,6 +4146,25 @@
             }
             if (action === 'timesheet.create') {
                 return !!f['offline.projects.timesheets'];
+            }
+            return true;
+        }
+        if (module === 'assets') {
+            if (!f['offline.assets']) {
+                return false;
+            }
+            if (action === 'maintenance_request.create'
+                || action === 'maintenance_plan.create'
+                || action === 'work_order.create') {
+                return !!f['offline.assets.maintenance'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.assets.workflow'];
+            }
+            if (action === 'inspection.create'
+                || action === 'checklist.create'
+                || action === 'meter_reading.create') {
+                return !!f['offline.assets.inspections'];
             }
             return true;
         }
@@ -4450,6 +4662,36 @@
                 return prj.enqueue(action, payload);
             }
         }
+        if (module === 'assets') {
+            var eam = root.RatebOfflineAssetsAdapter;
+            if (!eam) {
+                return Promise.reject(new Error('assets_adapter_unavailable'));
+            }
+            if (action === 'asset.create') {
+                return eam.enqueueAssetCreate(payload);
+            }
+            if (action === 'asset.update') {
+                return eam.enqueueAssetUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return eam.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'maintenance_request.create') {
+                return eam.enqueueMaintenanceRequestCreate(payload);
+            }
+            if (action === 'maintenance_plan.create') {
+                return eam.enqueueMaintenancePlanCreate(payload);
+            }
+            if (action === 'work_order.create') {
+                return eam.enqueueWorkOrderCreate(payload);
+            }
+            if (action === 'inspection.create') {
+                return eam.enqueueInspectionCreate(payload);
+            }
+            if (typeof eam.enqueue === 'function') {
+                return eam.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -4539,7 +4781,8 @@
             || f['offline.recruitment']
             || f['offline.accounting']
             || f['offline.crm']
-            || f['offline.projects'])) {
+            || f['offline.projects']
+            || f['offline.assets'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -4590,6 +4833,11 @@
         'offline.projects.workflow': false,
         'offline.projects.timesheets': false,
         'offline.projects.masterdata': false,
+        'offline.assets': false,
+        'offline.assets.maintenance': false,
+        'offline.assets.workflow': false,
+        'offline.assets.inspections': false,
+        'offline.assets.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -4632,6 +4880,11 @@
             projects_workflow: !!flags['offline.projects.workflow'],
             projects_timesheets: !!flags['offline.projects.timesheets'],
             projects_masterdata: !!flags['offline.projects.masterdata'],
+            assets: !!flags['offline.assets'],
+            assets_maintenance: !!flags['offline.assets.maintenance'],
+            assets_workflow: !!flags['offline.assets.workflow'],
+            assets_inspections: !!flags['offline.assets.inspections'],
+            assets_masterdata: !!flags['offline.assets.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -4786,6 +5039,29 @@
                 && flags['offline.projects']
                 && flags['offline.projects.masterdata']);
         },
+        isAssetsEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.assets']);
+        },
+        isAssetsMaintenanceEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.maintenance']);
+        },
+        isAssetsWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.workflow']);
+        },
+        isAssetsInspectionsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.inspections']);
+        },
+        isAssetsMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -4818,6 +5094,7 @@
         accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
         crm: function () { return root.RatebOfflineCrmAdapter || null; },
         projects: function () { return root.RatebOfflineProjectsAdapter || null; },
+        assets: function () { return root.RatebOfflineAssetsAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

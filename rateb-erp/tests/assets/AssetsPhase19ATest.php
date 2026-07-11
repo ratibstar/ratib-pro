@@ -49,12 +49,13 @@ final class AssetsPhase19ATest
 
     private function testNoOfflineAssets(): void
     {
+        // Phase 19A asserted no offline Assets; Phase 19B adds it — soft check that ONLINE
+        // domain services remain free of offline queue coupling.
         $domain = (string) file_get_contents(RATEB_ROOT . '/app/services/AssetDomainServices.php');
         $activity = (string) file_get_contents(RATEB_ROOT . '/app/services/AssetActivityServices.php');
         $ok = !str_contains($domain, 'OfflineQueueService')
             && !str_contains($activity, 'OfflineQueueService')
-            && !str_contains($domain, 'offline.assets')
-            && !is_file(RATEB_ROOT . '/offline/client/adapters/assets-adapter.js');
+            && !str_contains($domain, 'offline.assets');
         $this->record('No Offline Assets in 19A (online foundation only)', $ok);
     }
 

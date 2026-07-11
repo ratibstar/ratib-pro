@@ -20,6 +20,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?AccountingOfflineReplayService $accounting = null;
     private ?CrmOfflineReplayService $crm = null;
     private ?ProjectOfflineReplayService $projects = null;
+    private ?AssetOfflineReplayService $assets = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -59,6 +60,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private function projects(): ProjectOfflineReplayService
     {
         return $this->projects ??= new ProjectOfflineReplayService();
+    }
+
+    private function assets(): AssetOfflineReplayService
+    {
+        return $this->assets ??= new AssetOfflineReplayService();
     }
 
     /** @param array<string, mixed> $queueRow */
@@ -133,6 +139,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->projects()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'assets' || str_starts_with($action, 'assets.')
+            || in_array($action, AssetOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.assets')) {
+                return ['status' => 'skipped', 'error' => 'assets_offline_disabled'];
+            }
+
+            return $this->assets()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

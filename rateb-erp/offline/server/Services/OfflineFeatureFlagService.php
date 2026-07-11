@@ -169,6 +169,32 @@ final class OfflineFeatureFlagService
         return $this->isProjectsEnabled() && $this->enabled('offline.projects.masterdata');
     }
 
+    /** Phase 19B — Assets Tier-1 drafts (requires master + offline.assets). */
+    public function isAssetsEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.assets');
+    }
+
+    public function isAssetsMaintenanceEnabled(): bool
+    {
+        return $this->isAssetsEnabled() && $this->enabled('offline.assets.maintenance');
+    }
+
+    public function isAssetsWorkflowEnabled(): bool
+    {
+        return $this->isAssetsEnabled() && $this->enabled('offline.assets.workflow');
+    }
+
+    public function isAssetsInspectionsEnabled(): bool
+    {
+        return $this->isAssetsEnabled() && $this->enabled('offline.assets.inspections');
+    }
+
+    public function isAssetsMasterDataEnabled(): bool
+    {
+        return $this->isAssetsEnabled() && $this->enabled('offline.assets.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {

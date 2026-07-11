@@ -31,6 +31,11 @@
         'offline.projects.workflow': false,
         'offline.projects.timesheets': false,
         'offline.projects.masterdata': false,
+        'offline.assets': false,
+        'offline.assets.maintenance': false,
+        'offline.assets.workflow': false,
+        'offline.assets.inspections': false,
+        'offline.assets.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -73,6 +78,11 @@
             projects_workflow: !!flags['offline.projects.workflow'],
             projects_timesheets: !!flags['offline.projects.timesheets'],
             projects_masterdata: !!flags['offline.projects.masterdata'],
+            assets: !!flags['offline.assets'],
+            assets_maintenance: !!flags['offline.assets.maintenance'],
+            assets_workflow: !!flags['offline.assets.workflow'],
+            assets_inspections: !!flags['offline.assets.inspections'],
+            assets_masterdata: !!flags['offline.assets.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -227,6 +237,29 @@
                 && flags['offline.projects']
                 && flags['offline.projects.masterdata']);
         },
+        isAssetsEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.assets']);
+        },
+        isAssetsMaintenanceEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.maintenance']);
+        },
+        isAssetsWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.workflow']);
+        },
+        isAssetsInspectionsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.inspections']);
+        },
+        isAssetsMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.assets']
+                && flags['offline.assets.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -259,6 +292,7 @@
         accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
         crm: function () { return root.RatebOfflineCrmAdapter || null; },
         projects: function () { return root.RatebOfflineProjectsAdapter || null; },
+        assets: function () { return root.RatebOfflineAssetsAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -80,5 +80,19 @@ return [
         'projects.risk.create' => ['class' => 'RS', 'module' => 'projects'],
         'projects.budget.create' => ['class' => 'RS', 'module' => 'projects'],
         'projects.activity.create' => ['class' => 'RS', 'module' => 'projects'],
+        'assets.asset.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.asset.update' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.workflow.transition' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.assignment.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.transfer.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.maintenance_request.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.maintenance_plan.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.work_order.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.inspection.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.checklist.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.meter_reading.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.comment.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.activity.create' => ['class' => 'RS', 'module' => 'assets'],
+        'assets.note.create' => ['class' => 'RS', 'module' => 'assets'],
     ],
 ];

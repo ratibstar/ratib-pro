@@ -7,6 +7,7 @@
  * Phase 16B: journal-entries draft create|update + recurring/opening drafts (flag-gated; never post).
  * Phase 17B: crm leads/tasks/meetings/campaigns/contacts/companies drafts (flag-gated).
  * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
+ * Phase 19B: eam assets/maintenance/work-orders/inspections drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -39,7 +40,13 @@
         { match: 'projects/milestones', module: 'projects', action: 'milestone.create' },
         { match: 'projects/issues', module: 'projects', action: 'issue.create' },
         { match: 'projects/risks', module: 'projects', action: 'risk.create' },
-        { match: 'projects/timesheets', module: 'projects', action: 'timesheet.create' }
+        { match: 'projects/timesheets', module: 'projects', action: 'timesheet.create' },
+        { match: 'eam/assets/create', module: 'assets', action: 'asset.create' },
+        { match: 'eam/assets', module: 'assets', action: 'asset.update' },
+        { match: 'eam/requests', module: 'assets', action: 'maintenance_request.create' },
+        { match: 'eam/work-orders', module: 'assets', action: 'work_order.create' },
+        { match: 'eam/maintenance', module: 'assets', action: 'maintenance_plan.create' },
+        { match: 'eam/inspections', module: 'assets', action: 'inspection.create' }
     ];
 
     function cfg() {
@@ -137,6 +144,25 @@
             }
             if (action === 'timesheet.create') {
                 return !!f['offline.projects.timesheets'];
+            }
+            return true;
+        }
+        if (module === 'assets') {
+            if (!f['offline.assets']) {
+                return false;
+            }
+            if (action === 'maintenance_request.create'
+                || action === 'maintenance_plan.create'
+                || action === 'work_order.create') {
+                return !!f['offline.assets.maintenance'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.assets.workflow'];
+            }
+            if (action === 'inspection.create'
+                || action === 'checklist.create'
+                || action === 'meter_reading.create') {
+                return !!f['offline.assets.inspections'];
             }
             return true;
         }
@@ -634,6 +660,36 @@
                 return prj.enqueue(action, payload);
             }
         }
+        if (module === 'assets') {
+            var eam = root.RatebOfflineAssetsAdapter;
+            if (!eam) {
+                return Promise.reject(new Error('assets_adapter_unavailable'));
+            }
+            if (action === 'asset.create') {
+                return eam.enqueueAssetCreate(payload);
+            }
+            if (action === 'asset.update') {
+                return eam.enqueueAssetUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return eam.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'maintenance_request.create') {
+                return eam.enqueueMaintenanceRequestCreate(payload);
+            }
+            if (action === 'maintenance_plan.create') {
+                return eam.enqueueMaintenancePlanCreate(payload);
+            }
+            if (action === 'work_order.create') {
+                return eam.enqueueWorkOrderCreate(payload);
+            }
+            if (action === 'inspection.create') {
+                return eam.enqueueInspectionCreate(payload);
+            }
+            if (typeof eam.enqueue === 'function') {
+                return eam.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -723,7 +779,8 @@
             || f['offline.recruitment']
             || f['offline.accounting']
             || f['offline.crm']
-            || f['offline.projects'])) {
+            || f['offline.projects']
+            || f['offline.assets'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

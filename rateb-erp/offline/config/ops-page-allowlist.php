@@ -53,6 +53,16 @@ return [
         'projects/issues',
         'projects/risks',
         'projects/timesheets',
+        'eam',
+        'eam/assets',
+        'eam/maintenance',
+        'eam/work-orders',
+        'eam/requests',
+        'eam/calendar',
+        'eam/assignments',
+        'eam/inspections',
+        'eam/timeline',
+        'eam/reports',
     ],
 
     /** Narrow form-post hooks (pathname substring → adapter action). */
@@ -86,5 +96,11 @@ return [
         ['match' => 'projects/issues', 'module' => 'projects', 'action' => 'issue.create'],
         ['match' => 'projects/risks', 'module' => 'projects', 'action' => 'risk.create'],
         ['match' => 'projects/timesheets', 'module' => 'projects', 'action' => 'timesheet.create'],
+        ['match' => 'eam/assets/create', 'module' => 'assets', 'action' => 'asset.create'],
+        ['match' => 'eam/assets', 'module' => 'assets', 'action' => 'asset.update'],
+        ['match' => 'eam/requests', 'module' => 'assets', 'action' => 'maintenance_request.create'],
+        ['match' => 'eam/work-orders', 'module' => 'assets', 'action' => 'work_order.create'],
+        ['match' => 'eam/maintenance', 'module' => 'assets', 'action' => 'maintenance_plan.create'],
+        ['match' => 'eam/inspections', 'module' => 'assets', 'action' => 'inspection.create'],
     ],
 ];

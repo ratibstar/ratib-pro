@@ -398,6 +398,41 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'assets') {
+                if (!$this->flags()->enabled('offline.assets')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeAssetsAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'maintenance_request.create', 'maintenance_plan.create', 'work_order.create',
+                ], true) && !$this->flags()->enabled('offline.assets.maintenance')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.assets.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'inspection.create', 'checklist.create', 'meter_reading.create',
+                ], true) && !$this->flags()->enabled('offline.assets.inspections')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -625,6 +660,28 @@ final class OfflineQueueService
                 continue;
             }
 
+            if ($module === 'assets') {
+                if (!$this->flags()->enabled('offline.assets')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
             $stats['skipped']++;
         }
 
@@ -830,6 +887,38 @@ final class OfflineQueueService
         $mapped = $aliases[$action] ?? '';
         $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
         if ($canonical === '' && in_array('projects.' . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeAssetsAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = AssetOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, 'assets.') ? substr($action, 7) : $action;
+        }
+        $aliases = [
+            'create_asset' => 'asset.create',
+            'update_asset' => 'asset.update',
+            'transition_workflow' => 'workflow.transition',
+            'create_assignment' => 'assignment.create',
+            'create_transfer' => 'transfer.create',
+            'create_maintenance_request' => 'maintenance_request.create',
+            'create_maintenance_plan' => 'maintenance_plan.create',
+            'create_work_order' => 'work_order.create',
+            'create_inspection' => 'inspection.create',
+            'create_checklist' => 'checklist.create',
+            'create_meter_reading' => 'meter_reading.create',
+            'create_comment' => 'comment.create',
+            'create_activity' => 'activity.create',
+            'create_note' => 'note.create',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array('assets.' . $mapped, $allowed, true)) {
             $canonical = $mapped;
         }
 

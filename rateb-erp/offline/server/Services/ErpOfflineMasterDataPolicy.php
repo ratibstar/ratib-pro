@@ -86,6 +86,13 @@ final class ErpOfflineMasterDataPolicy
             'task_status_directory', 'project_task_statuses',
             'issue_type_directory', 'project_issue_types',
             'risk_level_directory', 'project_risk_levels',
+            'asset_category_directory', 'asset_categories',
+            'asset_manufacturer_directory', 'asset_manufacturers',
+            'asset_location_directory', 'asset_locations',
+            'asset_model_directory', 'asset_models',
+            'maintenance_plan_directory', 'maintenance_plans',
+            'asset_status_directory', 'asset_statuses',
+            'maintenance_request_status_directory', 'maintenance_request_statuses',
         ], true);
     }
 }
