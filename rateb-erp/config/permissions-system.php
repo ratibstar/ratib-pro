@@ -40,6 +40,7 @@ return [
         'recruitment',
         'crm',
         'projects',
+        'approval',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -63,6 +64,7 @@ return [
         'recruitment' => 'recruitment',
         'crm' => 'crm',
         'projects' => 'projects',
+        'approval' => 'approval_platform',
     ],
 
     /**
@@ -95,7 +97,6 @@ return [
         'accounting.close_period' => ['accounting.post'],
         'accounting.reverse' => ['accounting.post'],
         'contracts.manage' => ['contracts.oversight'],
-        'assets.manage' => ['assets.oversight'],
         'recruitment.manage' => [
             'recruitment.view',
             'recruitment.create',
@@ -164,6 +165,7 @@ return [
             'projects.reports',
         ],
         'assets.manage' => [
+            'assets.oversight',
             'assets.view',
             'assets.create',
             'assets.update',
@@ -183,6 +185,23 @@ return [
             'assets.transfer',
             'assets.maintenance',
             'assets.inspection',
+        ],
+        'approval.manage' => [
+            'approval.view',
+            'approval.create',
+            'approval.submit',
+            'approval.approve',
+            'approval.reject',
+            'approval.delegate',
+            'approval.admin',
+        ],
+        'approval.admin' => [
+            'approval.view',
+            'approval.create',
+            'approval.submit',
+            'approval.approve',
+            'approval.reject',
+            'approval.delegate',
         ],
     ],
 

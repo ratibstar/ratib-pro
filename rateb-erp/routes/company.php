@@ -78,6 +78,14 @@ use Rateb\App\Controllers\Company\EamAssignmentsController;
 use Rateb\App\Controllers\Company\EamTimelineController;
 use Rateb\App\Controllers\Company\EamInspectionsController;
 use Rateb\App\Controllers\Company\EamReportsController;
+use Rateb\App\Controllers\Company\ApprovalDashboardController;
+use Rateb\App\Controllers\Company\ApprovalRequestsController;
+use Rateb\App\Controllers\Company\ApprovalPendingController;
+use Rateb\App\Controllers\Company\ApprovalTemplatesController;
+use Rateb\App\Controllers\Company\ApprovalChainsController;
+use Rateb\App\Controllers\Company\ApprovalRulesController;
+use Rateb\App\Controllers\Company\ApprovalHistoryController;
+use Rateb\App\Controllers\Company\ApprovalReportsController;
 use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAccountsController;
 use Rateb\App\Controllers\Company\ProductCategoriesController;
 use Rateb\App\Controllers\Company\StockMovementsController;
@@ -355,6 +363,27 @@ $router->post($app('eam/assets/{id}/transition'), [EamAssetsController::class, '
 $router->post($app('eam/assets/{id}/assign'), [EamAssetsController::class, 'assign'], rateb_erp_mw('assets', 'assets.assign', 'assets'));
 $router->post($app('eam/assets/{id}/transfer'), [EamAssetsController::class, 'transfer'], rateb_erp_mw('assets', 'assets.transfer', 'assets'));
 $router->post($app('eam/assets/{id}/comments'), [EamAssetsController::class, 'storeComment'], rateb_erp_mw('assets', 'assets.update', 'assets'));
+
+/** Phase 20A — Enterprise Approval Platform ONLINE (approvals/*; legacy WorkflowService / rateb_approval_* untouched). */
+$aprMw = rateb_erp_mw('approval', 'approval.view', 'approval');
+$router->get($app('approvals'), [ApprovalDashboardController::class, 'index'], $aprMw);
+$router->get($app('approvals/requests'), [ApprovalRequestsController::class, 'index'], $aprMw);
+$router->get($app('approvals/requests/create'), [ApprovalRequestsController::class, 'create'], rateb_erp_mw('approval', 'approval.create', 'approval'));
+$router->post($app('approvals/requests'), [ApprovalRequestsController::class, 'store'], rateb_erp_mw('approval', 'approval.create', 'approval'));
+$router->get($app('approvals/pending'), [ApprovalPendingController::class, 'index'], rateb_erp_mw('approval', 'approval.approve', 'approval'));
+$router->get($app('approvals/templates'), [ApprovalTemplatesController::class, 'index'], $aprMw);
+$router->post($app('approvals/templates'), [ApprovalTemplatesController::class, 'store'], rateb_erp_mw('approval', 'approval.create', 'approval'));
+$router->post($app('approvals/templates/stages'), [ApprovalTemplatesController::class, 'storeStage'], rateb_erp_mw('approval', 'approval.create', 'approval'));
+$router->get($app('approvals/chains'), [ApprovalChainsController::class, 'index'], $aprMw);
+$router->post($app('approvals/chains'), [ApprovalChainsController::class, 'store'], rateb_erp_mw('approval', 'approval.create', 'approval'));
+$router->get($app('approvals/rules'), [ApprovalRulesController::class, 'index'], $aprMw);
+$router->post($app('approvals/rules'), [ApprovalRulesController::class, 'store'], rateb_erp_mw('approval', 'approval.create', 'approval'));
+$router->get($app('approvals/history'), [ApprovalHistoryController::class, 'index'], $aprMw);
+$router->get($app('approvals/reports'), [ApprovalReportsController::class, 'index'], $aprMw);
+$router->get($app('approvals/requests/{id}'), [ApprovalRequestsController::class, 'show'], $aprMw);
+$router->post($app('approvals/requests/{id}/transition'), [ApprovalRequestsController::class, 'transition'], rateb_erp_mw('approval', 'approval.submit', 'approval'));
+$router->post($app('approvals/requests/{id}/comments'), [ApprovalRequestsController::class, 'storeComment'], rateb_erp_mw('approval', 'approval.view', 'approval'));
+$router->post($app('approvals/requests/{id}/delegate'), [ApprovalRequestsController::class, 'storeDelegation'], rateb_erp_mw('approval', 'approval.delegate', 'approval'));
 
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);

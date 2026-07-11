@@ -160,6 +160,16 @@ return [
         'view' => 'assets.view',
         'manage' => 'assets.manage',
     ],
+    'approval' => [
+        'module' => 'approval',
+        'view' => 'approval.view',
+        'manage' => 'approval.manage',
+    ],
+    'approvals' => [
+        'module' => 'approval',
+        'view' => 'approval.view',
+        'manage' => 'approval.manage',
+    ],
     'eam-assets' => [
         'module' => 'assets',
         'view' => 'assets.view',

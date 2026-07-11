@@ -112,6 +112,16 @@ $opsSection(__('eam_platform'), [
     ['eam/timeline', 'eam_timeline', 'fa-timeline', 'assets', 'assets.view'],
     ['eam/reports', 'eam_reports', 'fa-chart-pie', 'assets', 'assets.view'],
 ], 'fa-cubes');
+$opsSection(__('approval_platform'), [
+    ['approvals', 'approval_platform', 'fa-clipboard-check', 'approval', 'approval.view'],
+    ['approvals/requests', 'approval_requests', 'fa-inbox', 'approval', 'approval.view'],
+    ['approvals/pending', 'approval_pending', 'fa-hourglass-half', 'approval', 'approval.approve'],
+    ['approvals/templates', 'approval_templates', 'fa-file-lines', 'approval', 'approval.view'],
+    ['approvals/chains', 'approval_chains', 'fa-link', 'approval', 'approval.view'],
+    ['approvals/rules', 'approval_rules', 'fa-scale-balanced', 'approval', 'approval.view'],
+    ['approvals/history', 'approval_history', 'fa-clock-rotate-left', 'approval', 'approval.view'],
+    ['approvals/reports', 'approval_reports', 'fa-chart-pie', 'approval', 'approval.view'],
+], 'fa-clipboard-check');
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
     ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
