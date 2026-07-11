@@ -45,6 +45,7 @@ return [
             'hr',
             'branches',
             'notifications',
+            'recruitment',
         ],
     ],
     'enterprise' => [
@@ -72,6 +73,7 @@ return [
             'branches',
             'notifications',
             'pos',
+            'recruitment',
         ],
     ],
 ];

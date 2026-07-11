@@ -42,6 +42,11 @@ use Rateb\App\Controllers\Company\HrEmployeeDocumentsController;
 use Rateb\App\Controllers\Company\HrFleetController;
 use Rateb\App\Controllers\Company\HrEmployeeRequestsController;
 use Rateb\App\Controllers\Company\HrAttendanceBulkController;
+use Rateb\App\Controllers\Company\RecruitmentDashboardController;
+use Rateb\App\Controllers\Company\RecruitmentCandidatesController;
+use Rateb\App\Controllers\Company\RecruitmentAgenciesController;
+use Rateb\App\Controllers\Company\RecruitmentInterviewsController;
+use Rateb\App\Controllers\Company\RecruitmentChildRecordsController;
 use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAccountsController;
 use Rateb\App\Controllers\Company\ProductCategoriesController;
 use Rateb\App\Controllers\Company\StockMovementsController;
@@ -188,6 +193,28 @@ $router->post($app('purchase-orders/{id}/submit'), [PurchaseOrdersController::cl
 $router->post($app('quotations/{id}/create-po'), [PurchaseOrdersController::class, 'createFromQuotation'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('hr'), [HrDashboardController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
+
+/** Phase 15A — Recruitment ONLINE (no offline hooks). */
+$recMw = rateb_erp_mw('recruitment', '', 'recruitment-candidates');
+$router->get($app('recruitment'), [RecruitmentDashboardController::class, 'index'], $recMw);
+$router->get($app('recruitment/candidates'), [RecruitmentCandidatesController::class, 'index'], $recMw);
+$router->get($app('recruitment/candidates/create'), [RecruitmentCandidatesController::class, 'create'], $recMw);
+$router->post($app('recruitment/candidates'), [RecruitmentCandidatesController::class, 'store'], $recMw);
+$router->get($app('recruitment/candidates/{id}'), [RecruitmentCandidatesController::class, 'show'], $recMw);
+$router->get($app('recruitment/candidates/{id}/edit'), [RecruitmentCandidatesController::class, 'edit'], $recMw);
+$router->post($app('recruitment/candidates/{id}'), [RecruitmentCandidatesController::class, 'update'], $recMw);
+$router->post($app('recruitment/candidates/{id}/delete'), [RecruitmentCandidatesController::class, 'destroy'], $recMw);
+$router->post($app('recruitment/candidates/{id}/transition'), [RecruitmentCandidatesController::class, 'transition'], $recMw);
+$router->post($app('recruitment/candidates/{id}/documents'), [RecruitmentCandidatesController::class, 'storeDocument'], $recMw);
+$router->post($app('recruitment/candidates/{id}/interview'), [RecruitmentInterviewsController::class, 'store'], $recMw);
+$router->post($app('recruitment/candidates/{id}/visa'), [RecruitmentChildRecordsController::class, 'storeVisa'], $recMw);
+$router->post($app('recruitment/candidates/{id}/medical'), [RecruitmentChildRecordsController::class, 'storeMedical'], $recMw);
+$router->post($app('recruitment/candidates/{id}/contract'), [RecruitmentChildRecordsController::class, 'storeContract'], $recMw);
+$router->post($app('recruitment/candidates/{id}/passport'), [RecruitmentChildRecordsController::class, 'storePassport'], $recMw);
+$router->post($app('recruitment/candidates/{id}/assign'), [RecruitmentChildRecordsController::class, 'storeAssignment'], $recMw);
+$router->get($app('recruitment/agencies'), [RecruitmentAgenciesController::class, 'index'], $recMw);
+$router->get($app('recruitment/agencies/create'), [RecruitmentAgenciesController::class, 'create'], $recMw);
+$router->post($app('recruitment/agencies'), [RecruitmentAgenciesController::class, 'store'], $recMw);
 
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);

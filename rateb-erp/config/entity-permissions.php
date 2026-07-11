@@ -477,4 +477,19 @@ return [
         'view' => 'hr.view',
         'manage' => 'hr.manage',
     ],
+    'recruitment' => [
+        'module' => 'recruitment',
+        'view' => 'recruitment.view',
+        'manage' => 'recruitment.manage',
+    ],
+    'recruitment-candidates' => [
+        'module' => 'recruitment',
+        'view' => 'recruitment.view',
+        'manage' => 'recruitment.manage',
+    ],
+    'recruitment-agencies' => [
+        'module' => 'recruitment',
+        'view' => 'recruitment.view',
+        'manage' => 'recruitment.manage',
+    ],
 ];

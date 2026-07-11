@@ -37,6 +37,7 @@ return [
         'hr',
         'branches',
         'pos',
+        'recruitment',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -57,6 +58,7 @@ return [
         'hr' => 'human_resources',
         'branches' => 'branches',
         'pos' => 'pos_nav_section',
+        'recruitment' => 'recruitment',
     ],
 
     /**
@@ -74,6 +76,29 @@ return [
         'accounting.approve' => ['accounting.oversight'],
         'contracts.manage' => ['contracts.oversight'],
         'assets.manage' => ['assets.oversight'],
+        'recruitment.manage' => [
+            'recruitment.view',
+            'recruitment.create',
+            'recruitment.update',
+            'recruitment.delete',
+            'recruitment.interview',
+            'recruitment.visa',
+            'recruitment.contract',
+            'recruitment.medical',
+            'recruitment.assign',
+            'recruitment.admin',
+        ],
+        'recruitment.admin' => [
+            'recruitment.view',
+            'recruitment.create',
+            'recruitment.update',
+            'recruitment.delete',
+            'recruitment.interview',
+            'recruitment.visa',
+            'recruitment.contract',
+            'recruitment.medical',
+            'recruitment.assign',
+        ],
     ],
 
     /** Slugs omitted from matrix UI (still in DB; granted via permission_implies or legacy roles). */

@@ -23,6 +23,11 @@ $opsSection(__('procurement'), [
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
 ], 'fa-cart-shopping');
+$opsSection(__('recruitment'), [
+    ['recruitment', 'recruitment', 'fa-briefcase', 'recruitment'],
+    ['recruitment/candidates', 'recruitment_candidates', 'fa-user-plus', 'recruitment'],
+    ['recruitment/agencies', 'recruitment_agencies', 'fa-building', 'recruitment'],
+], 'fa-user-tie');
 $opsSection(__('inventory'), [
     ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
     ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],

@@ -825,7 +825,7 @@ if (!function_exists('rateb_is_ops_route')) {
             'medical-devices', 'device-maintenance', 'device-spare-parts', 'device-warranty',
             'accounting', 'chart-of-accounts', 'journal-entries', 'cash-vouchers', 'fiscal-periods',
             'cost-centers', 'bank-accounts', 'documents', 'workflows', 'notifications', 'profile', 'reports',
-            'hr', 'pos',
+            'hr', 'pos', 'recruitment',
         ];
         return $roots;
     }
