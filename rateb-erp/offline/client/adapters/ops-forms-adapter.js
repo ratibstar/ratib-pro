@@ -66,7 +66,18 @@
         { match: 'mfg/work-orders/create', module: 'manufacturing', action: 'work_order.create' },
         { match: 'mfg/work-orders', module: 'manufacturing', action: 'work_order.update' },
         { match: 'mfg/routings', module: 'manufacturing', action: 'routing.create' },
-        { match: 'mfg/quality', module: 'manufacturing', action: 'quality_check.create' }
+        { match: 'mfg/quality', module: 'manufacturing', action: 'quality_check.create' },
+        { match: 'hrm/employees/create', module: 'hr', action: 'employee.create' },
+        { match: 'hrm/employees', module: 'hr', action: 'employee.update' },
+        { match: 'hrm/departments', module: 'hr', action: 'department.create' },
+        { match: 'hrm/positions', module: 'hr', action: 'position.create' },
+        { match: 'hrm/organization', module: 'hr', action: 'organization.create' },
+        { match: 'hrm/training/create', module: 'hr', action: 'training.create' },
+        { match: 'hrm/performance/create', module: 'hr', action: 'performance.create' },
+        { match: 'hrm/goals', module: 'hr', action: 'goal.create' },
+        { match: 'hrm/competencies', module: 'hr', action: 'competency.create' },
+        { match: 'hrm/promotions', module: 'hr', action: 'promotion.create' },
+        { match: 'hrm/transfers', module: 'hr', action: 'transfer.create' }
     ];
 
     function cfg() {
@@ -97,7 +108,27 @@
             return !!f['offline.inventory.movements'];
         }
         if (module === 'hr') {
-            return !!f['offline.hr.attendance'];
+            if (action === 'attendance.create' || action === 'attendance.bulk' || action === 'leave_request.draft') {
+                return !!f['offline.hr.attendance'];
+            }
+            if (!f['offline.hr']) {
+                return false;
+            }
+            if (action === 'employee.create' || action === 'employee.update'
+                || action === 'department.create' || action === 'position.create'
+                || action === 'organization.create') {
+                return !!f['offline.hr.employee'];
+            }
+            if (action === 'training.create') {
+                return !!f['offline.hr.training'];
+            }
+            if (action === 'performance.create' || action === 'goal.create' || action === 'competency.create') {
+                return !!f['offline.hr.performance'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.hr.workflow'];
+            }
+            return true;
         }
         if (module === 'procurement') {
             if (!f['offline.procurement']) {
@@ -601,6 +632,45 @@
             if (action === 'leave_request.draft') {
                 return hr.enqueueLeaveDraft(payload);
             }
+            if (action === 'employee.create' && typeof hr.enqueueEmployeeCreate === 'function') {
+                return hr.enqueueEmployeeCreate(payload);
+            }
+            if (action === 'employee.update' && typeof hr.enqueueEmployeeUpdate === 'function') {
+                return hr.enqueueEmployeeUpdate(payload);
+            }
+            if (action === 'department.create' && typeof hr.enqueueDepartmentCreate === 'function') {
+                return hr.enqueueDepartmentCreate(payload);
+            }
+            if (action === 'position.create' && typeof hr.enqueuePositionCreate === 'function') {
+                return hr.enqueuePositionCreate(payload);
+            }
+            if (action === 'organization.create' && typeof hr.enqueueOrganizationCreate === 'function') {
+                return hr.enqueueOrganizationCreate(payload);
+            }
+            if (action === 'training.create' && typeof hr.enqueueTrainingCreate === 'function') {
+                return hr.enqueueTrainingCreate(payload);
+            }
+            if (action === 'performance.create' && typeof hr.enqueuePerformanceCreate === 'function') {
+                return hr.enqueuePerformanceCreate(payload);
+            }
+            if (action === 'goal.create' && typeof hr.enqueueGoalCreate === 'function') {
+                return hr.enqueueGoalCreate(payload);
+            }
+            if (action === 'competency.create' && typeof hr.enqueueCompetencyCreate === 'function') {
+                return hr.enqueueCompetencyCreate(payload);
+            }
+            if (action === 'promotion.create' && typeof hr.enqueuePromotionCreate === 'function') {
+                return hr.enqueuePromotionCreate(payload);
+            }
+            if (action === 'transfer.create' && typeof hr.enqueueTransferCreate === 'function') {
+                return hr.enqueueTransferCreate(payload);
+            }
+            if (action === 'workflow.transition' && typeof hr.enqueueWorkflowTransition === 'function') {
+                return hr.enqueueWorkflowTransition(payload);
+            }
+            if (typeof hr.enqueue === 'function') {
+                return hr.enqueue(action, payload);
+            }
         }
         if (module === 'procurement') {
             var proc = root.RatebOfflineProcurementAdapter;
@@ -948,6 +1018,7 @@
         }
         if (!(f['offline.inventory.movements']
             || f['offline.hr.attendance']
+            || f['offline.hr']
             || f['offline.procurement']
             || f['offline.recruitment']
             || f['offline.accounting']

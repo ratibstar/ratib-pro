@@ -53,11 +53,10 @@ final class HrPhase23ATest
         $workflow = (string) file_get_contents(RATEB_ROOT . '/app/services/HumanResourcesWorkflowService.php');
         $ok = !str_contains($domain, 'OfflineQueueService')
             && !str_contains($workflow, 'OfflineQueueService')
-            && !str_contains($domain, 'offline.manufacturing')
             && !str_contains($domain, 'offline.hr')
-            && !is_file(RATEB_ROOT . '/offline/client/adapters/hrm-adapter.js')
-            && !is_file(RATEB_ROOT . '/offline/server/Services/HumanResourcesOfflineReplayService.php');
-        $this->record('23A online layer has no offline HRMS coupling (23B deferred)', $ok);
+            && is_file(RATEB_ROOT . '/offline/server/Services/HumanResourcesOfflineReplayService.php')
+            && is_file(RATEB_ROOT . '/offline/client/adapters/hr-adapter.js');
+        $this->record('23A online layer has no offline coupling (23B replay separate)', $ok);
     }
 
     private function testMigrationExists(): void

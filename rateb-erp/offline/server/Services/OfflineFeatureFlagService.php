@@ -247,6 +247,37 @@ final class OfflineFeatureFlagService
         return $this->isProcurementEnterpriseEnabled() && $this->enabled('offline.procurement_enterprise.masterdata');
     }
 
+    /** Phase 23B — Enterprise HRMS drafts (requires master + offline.hr). Additive to Phase 4. */
+    public function isHumanResourcesEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.hr');
+    }
+
+    public function isHumanResourcesEmployeeEnabled(): bool
+    {
+        return $this->isHumanResourcesEnabled() && $this->enabled('offline.hr.employee');
+    }
+
+    public function isHumanResourcesTrainingEnabled(): bool
+    {
+        return $this->isHumanResourcesEnabled() && $this->enabled('offline.hr.training');
+    }
+
+    public function isHumanResourcesPerformanceEnabled(): bool
+    {
+        return $this->isHumanResourcesEnabled() && $this->enabled('offline.hr.performance');
+    }
+
+    public function isHumanResourcesWorkflowEnabled(): bool
+    {
+        return $this->isHumanResourcesEnabled() && $this->enabled('offline.hr.workflow');
+    }
+
+    public function isHumanResourcesMasterDataEnabled(): bool
+    {
+        return $this->isHumanResourcesEnabled() && $this->enabled('offline.hr.masterdata');
+    }
+
     /** Phase 22B — Manufacturing Tier-1 drafts (requires master + offline.manufacturing). */
     public function isManufacturingEnabled(): bool
     {

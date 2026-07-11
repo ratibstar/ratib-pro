@@ -11,6 +11,12 @@
         'offline.pos.complete': true,
         'offline.inventory.movements': false,
         'offline.hr.attendance': false,
+        'offline.hr': false,
+        'offline.hr.employee': false,
+        'offline.hr.training': false,
+        'offline.hr.performance': false,
+        'offline.hr.workflow': false,
+        'offline.hr.masterdata': false,
         'offline.procurement': false,
         'offline.procurement.goods_receipt': false,
         'offline.recruitment': false,
@@ -73,6 +79,12 @@
             enabled: !!flags['offline.enabled'],
             inventory: !!flags['offline.inventory.movements'],
             hr: !!flags['offline.hr.attendance'],
+            hr_enterprise: !!flags['offline.hr'],
+            hr_employee: !!flags['offline.hr.employee'],
+            hr_training: !!flags['offline.hr.training'],
+            hr_performance: !!flags['offline.hr.performance'],
+            hr_workflow: !!flags['offline.hr.workflow'],
+            hr_masterdata: !!flags['offline.hr.masterdata'],
             procurement: !!flags['offline.procurement'],
             procurement_goods_receipt: !!flags['offline.procurement.goods_receipt'],
             recruitment: !!flags['offline.recruitment'],
@@ -176,6 +188,34 @@
         },
         isHrEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.hr.attendance']);
+        },
+        isHumanResourcesEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.hr']);
+        },
+        isHumanResourcesEmployeeEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.hr']
+                && flags['offline.hr.employee']);
+        },
+        isHumanResourcesTrainingEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.hr']
+                && flags['offline.hr.training']);
+        },
+        isHumanResourcesPerformanceEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.hr']
+                && flags['offline.hr.performance']);
+        },
+        isHumanResourcesWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.hr']
+                && flags['offline.hr.workflow']);
+        },
+        isHumanResourcesMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.hr']
+                && flags['offline.hr.masterdata']);
         },
         isProcurementEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.procurement']);

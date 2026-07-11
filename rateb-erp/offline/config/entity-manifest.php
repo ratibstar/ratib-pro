@@ -604,6 +604,36 @@ return [
         'path' => '/api/v1/offline/delta/mfg_work_center_directory',
         'replay' => 'delta_pull',
     ],
+    'hrm_employee_create' => [
+        'module' => 'hr',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_human_resources',
+    ],
+    'hrm_workflow_transition' => [
+        'module' => 'hr',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_human_resources',
+    ],
+    'hrm_department_directory' => [
+        'module' => 'hr',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/hrm_department_directory',
+        'replay' => 'delta_pull',
+    ],
+    'hrm_position_directory' => [
+        'module' => 'hr',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/hrm_position_directory',
+        'replay' => 'delta_pull',
+    ],
+    'hrm_employee_profile_directory' => [
+        'module' => 'hr',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/hrm_employee_profile_directory',
+        'replay' => 'delta_pull',
+    ],
     'customer_directory' => [
         'module' => 'platform',
         'method' => 'GET',

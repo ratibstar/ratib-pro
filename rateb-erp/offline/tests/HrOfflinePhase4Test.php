@@ -382,9 +382,10 @@ final class HrOfflinePhase4Test
     private function testAuthzDeniesProcurementOnly(): void
     {
         TenantContext::setCompanyId(42);
-        TenantContext::setApiModules(['accounting']);
+        // payroll is not a sync-manage ability (accounting is allowed since Phase 16B).
+        TenantContext::setApiModules(['payroll']);
         $ok = (new OfflineAuthorizationService())->canManageSync() === false;
-        $this->record('authz denies accounting-only token', $ok, $ok ? 'ok' : 'allowed');
+        $this->record('authz denies payroll-only token', $ok, $ok ? 'ok' : 'allowed');
         TenantContext::setApiModules(null);
         TenantContext::setCompanyId(null);
     }

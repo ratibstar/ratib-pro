@@ -24,6 +24,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?ApprovalOfflineReplayService $approval = null;
     private ?ProcurementEnterpriseOfflineReplayService $procurementEnterprise = null;
     private ?ManufacturingOfflineReplayService $manufacturing = null;
+    private ?HumanResourcesOfflineReplayService $humanResources = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -38,6 +39,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private function hr(): HrOfflineReplayService
     {
         return $this->hr ??= new HrOfflineReplayService();
+    }
+
+    private function humanResources(): HumanResourcesOfflineReplayService
+    {
+        return $this->humanResources ??= new HumanResourcesOfflineReplayService();
     }
 
     private function procurement(): ProcurementOfflineReplayService
@@ -122,6 +128,26 @@ final class OfflineReplayEngine implements OfflineReplayPort
             return $this->manufacturing()->replayFromQueueRow($queueRow);
         }
 
+        // Phase 4 attendance/leave + Phase 23B enterprise HRMS share module=hr; dispatch by action.
+        if ($module === 'hr' || str_starts_with($action, 'hr.')
+            || HumanResourcesOfflineReplayService::isEnterpriseAction($action)
+            || in_array($action, HrOfflineReplayService::deferredActions(), true)
+            || in_array($action, HumanResourcesOfflineReplayService::deferredActions(), true)) {
+            if (HumanResourcesOfflineReplayService::isEnterpriseAction($action)
+                || in_array($action, HumanResourcesOfflineReplayService::deferredActions(), true)) {
+                if (!$this->flags()->enabled('offline.hr')) {
+                    return ['status' => 'skipped', 'error' => 'human_resources_offline_disabled'];
+                }
+
+                return $this->humanResources()->replayFromQueueRow($queueRow);
+            }
+            if (!$this->flags()->enabled('offline.hr.attendance')) {
+                return ['status' => 'skipped', 'error' => 'hr_offline_disabled'];
+            }
+
+            return $this->hr()->replayFromQueueRow($queueRow);
+        }
+
         if ($module === 'inventory' || str_starts_with($action, 'inventory.')
             || in_array($action, InventoryOfflineReplayService::deferredActions(), true)) {
             if (!$this->flags()->enabled('offline.inventory.movements')) {
@@ -129,15 +155,6 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->inventory()->replayFromQueueRow($queueRow);
-        }
-
-        if ($module === 'hr' || str_starts_with($action, 'hr.')
-            || in_array($action, HrOfflineReplayService::deferredActions(), true)) {
-            if (!$this->flags()->enabled('offline.hr.attendance')) {
-                return ['status' => 'skipped', 'error' => 'hr_offline_disabled'];
-            }
-
-            return $this->hr()->replayFromQueueRow($queueRow);
         }
 
         if ($module === 'procurement' || str_starts_with($action, 'procurement.')

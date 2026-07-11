@@ -45,6 +45,7 @@ final class OfflineBackgroundSync
                 'approval_enabled' => false,
                 'procurement_enterprise_enabled' => false,
                 'manufacturing_enabled' => false,
+                'hr_enterprise_enabled' => false,
             ];
         }
 
@@ -60,6 +61,7 @@ final class OfflineBackgroundSync
         $stats['approval_enabled'] = $this->flags()->enabled('offline.approval');
         $stats['procurement_enterprise_enabled'] = $this->flags()->enabled('offline.procurement_enterprise');
         $stats['manufacturing_enabled'] = $this->flags()->enabled('offline.manufacturing');
+        $stats['hr_enterprise_enabled'] = $this->flags()->enabled('offline.hr');
 
         return $stats;
     }

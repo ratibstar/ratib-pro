@@ -233,18 +233,54 @@ final class OfflineQueueService
             }
 
             if ($module === 'hr') {
-                if (!$this->flags()->enabled('offline.hr.attendance')) {
+                $enterpriseAction = $this->normalizeHumanResourcesAction($action);
+                $attendanceAction = $this->normalizeHrAction($action);
+                if ($enterpriseAction !== '') {
+                    if (!$this->flags()->enabled('offline.hr')) {
+                        $rejected++;
+                        $rejectedKeys[] = $idempotencyKey;
+                        continue;
+                    }
+                    if (in_array($enterpriseAction, [
+                        'employee.create', 'employee.update',
+                        'department.create', 'position.create', 'organization.create',
+                    ], true) && !$this->flags()->enabled('offline.hr.employee')) {
+                        $rejected++;
+                        $rejectedKeys[] = $idempotencyKey;
+                        continue;
+                    }
+                    if ($enterpriseAction === 'training.create'
+                        && !$this->flags()->enabled('offline.hr.training')) {
+                        $rejected++;
+                        $rejectedKeys[] = $idempotencyKey;
+                        continue;
+                    }
+                    if (in_array($enterpriseAction, [
+                        'performance.create', 'goal.create', 'competency.create',
+                    ], true) && !$this->flags()->enabled('offline.hr.performance')) {
+                        $rejected++;
+                        $rejectedKeys[] = $idempotencyKey;
+                        continue;
+                    }
+                    if ($enterpriseAction === 'workflow.transition'
+                        && !$this->flags()->enabled('offline.hr.workflow')) {
+                        $rejected++;
+                        $rejectedKeys[] = $idempotencyKey;
+                        continue;
+                    }
+                    $action = $enterpriseAction;
+                } elseif ($attendanceAction !== '') {
+                    if (!$this->flags()->enabled('offline.hr.attendance')) {
+                        $rejected++;
+                        $rejectedKeys[] = $idempotencyKey;
+                        continue;
+                    }
+                    $action = $attendanceAction;
+                } else {
                     $rejected++;
                     $rejectedKeys[] = $idempotencyKey;
                     continue;
                 }
-                $normalizedAction = $this->normalizeHrAction($action);
-                if ($normalizedAction === '') {
-                    $rejected++;
-                    $rejectedKeys[] = $idempotencyKey;
-                    continue;
-                }
-                $action = $normalizedAction;
             }
 
             if ($module === 'procurement') {
@@ -639,7 +675,8 @@ final class OfflineQueueService
             }
 
             if ($module === 'hr') {
-                if (!$this->flags()->enabled('offline.hr.attendance')) {
+                if (!$this->flags()->enabled('offline.hr')
+                    && !$this->flags()->enabled('offline.hr.attendance')) {
                     $stats['skipped']++;
                     continue;
                 }
@@ -902,24 +939,6 @@ final class OfflineQueueService
         ]);
     }
 
-    private function normalizeInventoryAction(string $action): string
-    {
-        $action = trim($action);
-        $allowed = InventoryOfflineReplayService::deferredActions();
-        if (in_array($action, $allowed, true)) {
-            return $action;
-        }
-        $aliases = [
-            'create_stock_movement' => 'stock_movement.create',
-            'create_stock_count' => 'stock_count.create',
-            'create_warehouse_transfer' => 'warehouse_transfer.create',
-            'approve_warehouse_transfer' => 'warehouse_transfer.approve',
-        ];
-        $mapped = $aliases[$action] ?? '';
-
-        return in_array($mapped, $allowed, true) ? $mapped : '';
-    }
-
     private function normalizeHrAction(string $action): string
     {
         $action = trim($action);
@@ -932,6 +951,59 @@ final class OfflineQueueService
             'bulk_attendance' => 'attendance.bulk',
             'create_leave_draft' => 'leave_request.draft',
             'create_leave' => 'leave_request.draft',
+        ];
+        $mapped = $aliases[$action] ?? '';
+
+        return in_array($mapped, $allowed, true) ? $mapped : '';
+    }
+
+    private function normalizeHumanResourcesAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = HumanResourcesOfflineReplayService::deferredActions();
+        $prefix = 'hr.';
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, $prefix) ? substr($action, strlen($prefix)) : $action;
+        }
+        $aliases = [
+            'create_employee' => 'employee.create',
+            'update_employee' => 'employee.update',
+            'create_department' => 'department.create',
+            'create_position' => 'position.create',
+            'create_organization' => 'organization.create',
+            'create_org_unit' => 'organization.create',
+            'create_training' => 'training.create',
+            'create_performance' => 'performance.create',
+            'create_goal' => 'goal.create',
+            'create_competency' => 'competency.create',
+            'create_promotion' => 'promotion.create',
+            'create_transfer' => 'transfer.create',
+            'create_assignment' => 'assignment.create',
+            'create_comment' => 'comment.create',
+            'create_note' => 'note.create',
+            'transition_workflow' => 'workflow.transition',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array($prefix . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeInventoryAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = InventoryOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return $action;
+        }
+        $aliases = [
+            'create_stock_movement' => 'stock_movement.create',
+            'create_stock_count' => 'stock_count.create',
+            'create_warehouse_transfer' => 'warehouse_transfer.create',
+            'approve_warehouse_transfer' => 'warehouse_transfer.approve',
         ];
         $mapped = $aliases[$action] ?? '';
 

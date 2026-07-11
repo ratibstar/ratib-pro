@@ -110,6 +110,12 @@ final class ErpOfflineMasterDataPolicy
             'mfg_bom_status_directory', 'mfg_bom_statuses',
             'mfg_production_order_status_directory', 'mfg_production_order_statuses',
             'mfg_work_order_status_directory', 'mfg_work_order_statuses',
+            'hrm_department_directory', 'hrm_departments',
+            'hrm_position_directory', 'hrm_positions',
+            'hrm_employee_profile_directory', 'hrm_employee_profiles',
+            'hrm_employee_status_directory', 'hrm_employee_statuses',
+            'hrm_training_status_directory', 'hrm_training_statuses',
+            'hrm_performance_status_directory', 'hrm_performance_statuses',
         ], true);
     }
 }
