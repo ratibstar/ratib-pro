@@ -11,6 +11,8 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Offline\Services\ErpOfflineAuthDeviceService;
 use Rateb\App\Offline\Services\ErpOfflineAuthPolicy;
+use Rateb\App\Offline\Services\ErpOfflineIdentityEnrollService;
+use Rateb\App\Offline\Services\ErpOfflineIdentityService;
 use Rateb\App\Offline\Services\OfflineFeatureFlagService;
 
 /**
@@ -61,13 +63,36 @@ final class ErpOfflineAuthApiController extends Controller
         $this->gate();
         $policy = new ErpOfflineAuthPolicy();
         $enroll = $policy->assertEnrollAllowed();
+        $identity = new ErpOfflineIdentityService();
         $this->json([
             'ok' => true,
             'auth_unlock' => (new OfflineFeatureFlagService())->isAuthUnlockEnabled(),
             'enroll' => $enroll,
             'logout_vault_policy' => $policy->logoutVaultPolicy(),
+            'identity_ttl_seconds' => $identity->ttlSeconds(),
+            'warm_identity' => true,
             'is_super_admin' => !empty(SessionManager::get('rateb_is_super_admin')),
         ]);
+    }
+
+    /** Phase P1 — issue signed warm identity + activate ERP shell device (online session only). */
+    public function identityEnroll(): void
+    {
+        $this->gate();
+        $this->requireCsrfOrAbort();
+        $body = $this->jsonBody();
+        $policy = (new ErpOfflineAuthPolicy())->assertEnrollAllowed();
+        if (!($policy['ok'] ?? false)) {
+            $this->json(['ok' => false, 'error' => ['code' => (string) ($policy['error'] ?? 'denied')]], 403);
+            return;
+        }
+        $result = (new ErpOfflineIdentityEnrollService())->enroll(
+            (int) $policy['company_id'],
+            (int) $policy['user_id'],
+            (int) ($policy['branch_id'] ?? 0),
+            $body
+        );
+        $this->json($result, !empty($result['ok']) ? 200 : 403);
     }
 
     private function gate(): void

@@ -64,6 +64,7 @@
         var urls = [
             base + 'offline-shell.html',
             base + 'assets/offline/rateb-offline.js',
+            base + 'assets/offline/erp-offline-shell-auth.js',
             base + 'assets/offline/erp-offline-shell-rbac.js'
         ];
         if (!('caches' in root) || !root.fetch) {

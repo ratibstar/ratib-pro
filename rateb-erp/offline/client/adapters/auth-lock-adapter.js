@@ -1,7 +1,8 @@
 /**
- * RATEB Offline — ERP auth lock adapter (Phase 11).
+ * RATEB Offline — ERP auth lock adapter (Phase 11 + Phase P1 Warm Identity).
  * Local shell unlock only. Uses rateb_erp_offline / auth_vault (DB_VERSION 2).
- * Never stores passwords / sessions / CSRF / JWT.
+ * Never stores passwords / PHP sessions / CSRF / JWT.
+ * PIN decrypts sealed warm identity; server remains authoritative for replay.
  */
 (function (root) {
     'use strict';
@@ -12,6 +13,10 @@
     var UNLOCK_UNTIL_PREFIX = 'rateb_erp_unlock_until:';
     var REAUTH_KEY = 'rateb_erp_session_reauth';
     var DEVICE_META_PREFIX = 'auth_device:';
+    var SCOPE_LS_KEY = 'rateb_erp_offline_scope';
+    var IDENTITY_CLAIMS_SESSION = 'rateb_erp_warm_identity:';
+    var SHELL_SNAPSHOT_KIND = 'erp_shell_chrome';
+    var RBAC_SNAPSHOT_KIND = 'erp_rbac';
 
     function cfg() {
         return root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_AUTH_OFFLINE__ || {};
@@ -67,6 +72,14 @@
         return Schema.withStore(Schema.STORES.SYNC_META, mode, fn);
     }
 
+    function withSnapshots(mode, fn) {
+        var Schema = schema();
+        if (!Schema || !Schema.STORES || !Schema.STORES.SNAPSHOTS) {
+            return Promise.reject(new Error('snapshots_unavailable'));
+        }
+        return Schema.withStore(Schema.STORES.SNAPSHOTS, mode, fn);
+    }
+
     function bufToB64(buf) {
         var bytes = new Uint8Array(buf);
         var bin = '';
@@ -101,8 +114,124 @@
                 );
             })
             .then(function (bits) {
-                return { pin_hash: bufToB64(bits), pin_salt: bufToB64(salt.buffer) };
+                return { pin_hash: bufToB64(bits), pin_salt: bufToB64(salt.buffer), bits: bits };
             });
+    }
+
+    function deriveAesKey(pin, saltB64) {
+        return hashPin(pin, saltB64).then(function (hashed) {
+            return root.crypto.subtle.importKey('raw', hashed.bits, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
+                .then(function (key) {
+                    return { key: key, pin_hash: hashed.pin_hash, pin_salt: hashed.pin_salt };
+                });
+        });
+    }
+
+    function sealIdentityPackage(pin, saltB64, identityPackage) {
+        var iv = randomBytes(12);
+        var plain = new TextEncoder().encode(JSON.stringify(identityPackage || {}));
+        return deriveAesKey(pin, saltB64).then(function (derived) {
+            return root.crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, derived.key, plain).then(function (cipher) {
+                return {
+                    pin_hash: derived.pin_hash,
+                    pin_salt: derived.pin_salt,
+                    identity_iv: bufToB64(iv.buffer),
+                    identity_cipher: bufToB64(cipher),
+                    identity_alg: 'AES-GCM',
+                    identity_expires_at: identityPackage && identityPackage.claims
+                        ? (parseInt(identityPackage.claims.expires_at, 10) || 0)
+                        : 0
+                };
+            });
+        });
+    }
+
+    function unsealIdentityPackage(pin, record) {
+        if (!record || !record.identity_cipher || !record.identity_iv || !record.pin_salt) {
+            return Promise.resolve({ ok: false, error: 'identity_missing' });
+        }
+        return deriveAesKey(pin, record.pin_salt).then(function (derived) {
+            if (derived.pin_hash !== record.pin_hash) {
+                return { ok: false, error: 'pin_denied' };
+            }
+            return root.crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: new Uint8Array(b64ToBuf(record.identity_iv)) },
+                derived.key,
+                b64ToBuf(record.identity_cipher)
+            ).then(function (plainBuf) {
+                var json = new TextDecoder().decode(plainBuf);
+                var pkg = JSON.parse(json);
+                return verifyIdentityLocal(pkg, {
+                    company_id: intOr(record.company_id),
+                    branch_id: intOr(record.branch_id),
+                    user_id: intOr(record.user_id),
+                    device_id: String(record.device_id || '')
+                }).then(function (v) {
+                    if (!v.ok) {
+                        return v;
+                    }
+                    return { ok: true, identity: pkg, claims: v.claims };
+                });
+            }).catch(function () {
+                return { ok: false, error: 'pin_denied' };
+            });
+        });
+    }
+
+    function canonicalClaims(claims) {
+        var keys = Object.keys(claims || {}).sort();
+        var ordered = {};
+        keys.forEach(function (k) { ordered[k] = claims[k]; });
+        return JSON.stringify(ordered);
+    }
+
+    function hmacSha256(keyBuf, message) {
+        return root.crypto.subtle.importKey('raw', keyBuf, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+            .then(function (key) {
+                return root.crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
+            })
+            .then(function (sig) {
+                return bufToB64(sig);
+            });
+    }
+
+    function verifyIdentityLocal(pkg, expect) {
+        expect = expect || {};
+        if (!pkg || !pkg.claims || !pkg.signature || !pkg.identity_key) {
+            return Promise.resolve({ ok: false, error: 'identity_incomplete' });
+        }
+        var claims = pkg.claims;
+        if (String(claims.purpose || '') !== 'erp_offline_warm') {
+            return Promise.resolve({ ok: false, error: 'identity_purpose' });
+        }
+        var expiresAt = parseInt(claims.expires_at, 10) || 0;
+        if (expiresAt < 1 || expiresAt * 1000 <= Date.now()) {
+            return Promise.resolve({ ok: false, error: 'identity_expired' });
+        }
+        if (expect.company_id && intOr(claims.company_id) !== expect.company_id) {
+            return Promise.resolve({ ok: false, error: 'tenant_mismatch' });
+        }
+        if (expect.user_id && intOr(claims.user_id) !== expect.user_id) {
+            return Promise.resolve({ ok: false, error: 'tenant_mismatch' });
+        }
+        if (Object.prototype.hasOwnProperty.call(expect, 'branch_id')
+            && intOr(claims.branch_id) !== intOr(expect.branch_id)) {
+            return Promise.resolve({ ok: false, error: 'branch_mismatch' });
+        }
+        if (expect.device_id && String(claims.device_id || '') !== String(expect.device_id)) {
+            return Promise.resolve({ ok: false, error: 'device_mismatch' });
+        }
+        var canonical = (typeof pkg.canonical === 'string' && pkg.canonical !== '')
+            ? pkg.canonical
+            : canonicalClaims(claims);
+        return hmacSha256(b64ToBuf(pkg.identity_key), canonical).then(function (sigB64) {
+            if (sigB64 !== String(pkg.signature || '')) {
+                return { ok: false, error: 'identity_signature' };
+            }
+            return { ok: true, claims: claims };
+        }).catch(function () {
+            return { ok: false, error: 'identity_signature' };
+        });
     }
 
     function getDeviceId() {
@@ -123,6 +252,10 @@
         return UNLOCK_UNTIL_PREFIX + vaultId(scope);
     }
 
+    function identitySessionKey(scope) {
+        return IDENTITY_CLAIMS_SESSION + vaultId(scope);
+    }
+
     function unlockUntil(scope) {
         try {
             return parseInt(sessionStorage.getItem(unlockStorageKey(scope)) || '0', 10) || 0;
@@ -141,12 +274,28 @@
         return unlockUntil(scope) > Date.now();
     }
 
-    function markUnlocked(scope) {
+    function markUnlocked(scope, claims) {
         setUnlockUntil(scope, Date.now() + UNLOCK_TTL_MS);
+        try {
+            if (claims) {
+                sessionStorage.setItem(identitySessionKey(scope), JSON.stringify({
+                    company_id: claims.company_id,
+                    branch_id: claims.branch_id,
+                    user_id: claims.user_id,
+                    device_id: claims.device_id,
+                    expires_at: claims.expires_at,
+                    jti: claims.jti || ''
+                }));
+            }
+        } catch (e) { /* ignore */ }
     }
 
     function clearUnlock(scope) {
-        setUnlockUntil(scope || tenantScope(), 0);
+        scope = scope || tenantScope();
+        setUnlockUntil(scope, 0);
+        try {
+            sessionStorage.removeItem(identitySessionKey(scope));
+        } catch (e) { /* ignore */ }
     }
 
     function sessionNeedsReauth() {
@@ -226,6 +375,55 @@
         }).catch(function () { return null; });
     }
 
+    function deleteDeviceStatus(scope) {
+        var key = DEVICE_META_PREFIX + (scope.company_id || 0) + ':' + (scope.user_id || 0);
+        return withMeta('readwrite', function (store) {
+            store.delete(key);
+            return true;
+        }).catch(function () { return false; });
+    }
+
+    function deleteSnapshot(kind, scope) {
+        scope = scope || tenantScope();
+        if (!scope.company_id || !scope.user_id) {
+            return Promise.resolve(false);
+        }
+        var id = kind + ':' + scope.company_id + ':' + (scope.branch_id || 0) + ':' + scope.user_id;
+        return withSnapshots('readwrite', function (store) {
+            store.delete(id);
+            return true;
+        }).catch(function () { return false; });
+    }
+
+    function clearPersistedScope() {
+        try {
+            localStorage.removeItem(SCOPE_LS_KEY);
+        } catch (e) { /* ignore */ }
+    }
+
+    /** Phase P1 logout: destroy warm identity, PIN vault, RBAC, shell chrome, device meta. */
+    function destroyWarmSession(scope) {
+        scope = scope || tenantScope();
+        clearUnlock(scope);
+        markSessionNeedsReauth();
+        clearPersistedScope();
+        var rbac = root.RatebOfflineRbacCache;
+        if (rbac && typeof rbac.clearNavDom === 'function') {
+            rbac.clearNavDom();
+        }
+        return Promise.all([
+            deleteVault(scope),
+            deleteDeviceStatus(scope),
+            deleteSnapshot(RBAC_SNAPSHOT_KIND, scope),
+            deleteSnapshot(SHELL_SNAPSHOT_KIND, scope),
+            rbac && typeof rbac.deleteManifest === 'function' ? rbac.deleteManifest(scope) : Promise.resolve(false)
+        ]).then(function () {
+            return { ok: true, destroyed: true };
+        }).catch(function () {
+            return { ok: true, destroyed: true, partial: true };
+        });
+    }
+
     function assertUnlockAllowed(scope, deviceMeta) {
         if (!isActive()) {
             return { ok: false, error: 'auth_unlock_disabled' };
@@ -263,15 +461,34 @@
             return Promise.resolve({ ok: false, error: 'pin_too_short' });
         }
         var now = new Date().toISOString();
+        var deviceId = getDeviceId();
         return getVault(scope).then(function (existing) {
-            return hashPin(pin, existing && existing.pin_salt ? existing.pin_salt : null).then(function (hashed) {
+            var salt = existing && existing.pin_salt ? existing.pin_salt : null;
+            var sealPromise = options.identity
+                ? sealIdentityPackage(pin, salt, options.identity)
+                : hashPin(pin, salt).then(function (hashed) {
+                    return {
+                        pin_hash: hashed.pin_hash,
+                        pin_salt: hashed.pin_salt,
+                        identity_iv: '',
+                        identity_cipher: '',
+                        identity_alg: '',
+                        identity_expires_at: 0
+                    };
+                });
+            return sealPromise.then(function (sealed) {
                 var record = {
                     id: id,
                     company_id: scope.company_id,
                     branch_id: scope.branch_id || 0,
                     user_id: scope.user_id,
-                    pin_hash: hashed.pin_hash,
-                    pin_salt: hashed.pin_salt,
+                    device_id: deviceId,
+                    pin_hash: sealed.pin_hash,
+                    pin_salt: sealed.pin_salt,
+                    identity_iv: sealed.identity_iv || '',
+                    identity_cipher: sealed.identity_cipher || '',
+                    identity_alg: sealed.identity_alg || '',
+                    identity_expires_at: sealed.identity_expires_at || 0,
                     webauthn_credential_id: (options.webauthn_credential_id
                         || (existing && existing.webauthn_credential_id)
                         || ''),
@@ -280,7 +497,7 @@
                     updated_at: now
                 };
                 return putVault(record).then(function () {
-                    return { ok: true, id: id };
+                    return { ok: true, id: id, has_identity: !!(sealed.identity_cipher) };
                 });
             });
         });
@@ -298,16 +515,32 @@
                     return { ok: false, error: 'not_enrolled' };
                 }
                 if ((intOr(record.company_id) !== scope.company_id)
-                    || (intOr(record.user_id) !== scope.user_id)
-                    || (intOr(record.branch_id) !== (scope.branch_id || 0))) {
+                    || (intOr(record.user_id) !== scope.user_id)) {
                     return { ok: false, error: 'tenant_mismatch' };
+                }
+                if (intOr(record.branch_id) !== (scope.branch_id || 0)) {
+                    return { ok: false, error: 'branch_mismatch' };
+                }
+                if (record.identity_cipher) {
+                    return unsealIdentityPackage(pin, record).then(function (opened) {
+                        if (!opened.ok) {
+                            return opened;
+                        }
+                        clearSessionNeedsReauth();
+                        markUnlocked(scope, opened.claims);
+                        return { ok: true, identity: opened.claims, warm: true };
+                    });
                 }
                 return hashPin(pin, record.pin_salt).then(function (hashed) {
                     if (hashed.pin_hash !== record.pin_hash) {
                         return { ok: false, error: 'pin_denied' };
                     }
-                    markUnlocked(scope);
-                    return { ok: true };
+                    if (record.identity_expires_at && (record.identity_expires_at * 1000) <= Date.now()) {
+                        return { ok: false, error: 'identity_expired' };
+                    }
+                    clearSessionNeedsReauth();
+                    markUnlocked(scope, null);
+                    return { ok: true, warm: false };
                 });
             });
         });
@@ -343,7 +576,7 @@
                     if (!cred || !cred.id) {
                         return { ok: false, error: 'webauthn_denied' };
                     }
-                    markUnlocked(scope);
+                    markUnlocked(scope, null);
                     return { ok: true };
                 }).catch(function () {
                     return { ok: false, error: 'webauthn_denied' };
@@ -353,6 +586,18 @@
     }
 
     var overlayEl = null;
+    var unlockWaiters = [];
+
+    function notifyUnlocked(result) {
+        var waiters = unlockWaiters.slice();
+        unlockWaiters = [];
+        waiters.forEach(function (fn) {
+            try { fn(result); } catch (e) { /* ignore */ }
+        });
+        try {
+            root.dispatchEvent(new CustomEvent('rateb:offline-unlocked', { detail: result || { ok: true } }));
+        } catch (e2) { /* ignore */ }
+    }
 
     function ensureOverlay() {
         if (overlayEl || !root.document || !root.document.body) {
@@ -371,7 +616,7 @@
         title.style.marginTop = '0';
         var msg = root.document.createElement('p');
         msg.setAttribute('data-lock-msg', '1');
-        msg.textContent = 'Enter your offline PIN to unlock the cached shell.';
+        msg.textContent = 'Enter your offline PIN to unlock the warm identity.';
         var input = root.document.createElement('input');
         input.type = 'password';
         input.autocomplete = 'current-password';
@@ -385,10 +630,16 @@
             unlockWithPin(input.value).then(function (res) {
                 if (res && res.ok) {
                     hideOverlay();
+                    notifyUnlocked(res);
                     return;
                 }
                 msg.textContent = (res && res.error) ? String(res.error) : 'Unlock denied';
             });
+        });
+        input.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') {
+                btn.click();
+            }
         });
         box.appendChild(title);
         box.appendChild(msg);
@@ -404,6 +655,12 @@
         if (el) {
             el.hidden = false;
             el.style.display = 'flex';
+            try {
+                var pin = el.querySelector('[data-lock-pin]');
+                if (pin) {
+                    pin.focus();
+                }
+            } catch (e) { /* ignore */ }
         }
     }
 
@@ -426,7 +683,6 @@
             hideOverlay();
             return Promise.resolve({ ok: true, unlocked: true });
         }
-        // Online with live CSRF: still require ACTIVE device before auto-unlock (Phase 13.1).
         var online = root.navigator && root.navigator.onLine !== false;
         var csrf = '';
         try {
@@ -438,8 +694,9 @@
                 var status = device && device.status ? String(device.status).toLowerCase() : '';
                 if (status === 'active') {
                     clearSessionNeedsReauth();
-                    markUnlocked(scope);
+                    markUnlocked(scope, null);
                     hideOverlay();
+                    notifyUnlocked({ ok: true, online_session: true });
                     return { ok: true, online_session: true, device_active: true };
                 }
                 markSessionNeedsReauth();
@@ -452,7 +709,9 @@
             });
         }
         showOverlay();
-        return Promise.resolve({ ok: false, locked: true });
+        return new Promise(function (resolve) {
+            unlockWaiters.push(resolve);
+        });
     }
 
     function handleLogoutClick(ev) {
@@ -464,11 +723,7 @@
         if (!/\/logout/i.test(href)) {
             return;
         }
-        clearUnlock(tenantScope());
-        var policy = (cfg().logout_vault_policy || 'keep_vault');
-        if (policy === 'clear_vault') {
-            deleteVault(tenantScope()).catch(function () { /* ignore */ });
-        }
+        destroyWarmSession(tenantScope());
     }
 
     function start() {
@@ -489,6 +744,9 @@
         enrollPin: enrollPin,
         unlockWithPin: unlockWithPin,
         unlockWithWebAuthn: unlockWithWebAuthn,
+        sealIdentityPackage: sealIdentityPackage,
+        verifyIdentityLocal: verifyIdentityLocal,
+        destroyWarmSession: destroyWarmSession,
         isUnlocked: function () { return isUnlocked(tenantScope()); },
         clearUnlock: clearUnlock,
         deleteVault: deleteVault,

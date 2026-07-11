@@ -283,11 +283,13 @@ final class ErpOfflineRbacPhase12Test
     private function testPhase11Intact(): void
     {
         $auth = (string) file_get_contents(RATEB_ROOT . '/offline/client/adapters/auth-lock-adapter.js');
+        // Phase P1 may wipe erp_rbac snapshots on logout; must still not implement RBAC authz.
         $ok = str_contains($auth, 'auth_vault')
             && str_contains($auth, 'PBKDF2')
-            && !str_contains($auth, 'erp_rbac')
-            && !str_contains($auth, 'permission_slugs');
-        $this->record('Phase 11 auth adapter unchanged', $ok, $ok ? 'ok' : 'regressed');
+            && !str_contains($auth, 'permission_slugs')
+            && !str_contains($auth, 'navCan')
+            && !str_contains($auth, 'applyCachedNav');
+        $this->record('Phase 11 auth adapter intact (P1 wipe allowed)', $ok, $ok ? 'ok' : 'regressed');
     }
 
     private function testPosQueueReplayUntouched(): void

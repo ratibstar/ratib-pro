@@ -1,5 +1,5 @@
 /**
- * RATEB Offline — ERP auth bootstrap (Phase 11).
+ * RATEB Offline — ERP auth bootstrap (Phase 11 + Phase P1 Warm Identity).
  * Loaded only when offline.enabled + read_cache + auth.unlock are ON.
  */
 (function (root) {
@@ -38,28 +38,25 @@
         });
     }
 
-    function enrollDevice() {
+    function enrollWarmIdentity() {
         var lock = root.RatebOfflineAuthLock;
         if (!lock) {
             return Promise.resolve(null);
         }
         var deviceId = lock.getDeviceId();
-        return postJson(apiUrl('/auth/device/register'), {
+        return postJson(apiUrl('/auth/identity/enroll'), {
             device_id: deviceId,
             label: 'ERP shell',
             ua: (root.navigator && root.navigator.userAgent) || ''
-        }).then(function (reg) {
-            return postJson(apiUrl('/auth/device/heartbeat'), { device_id: deviceId }).then(function (hb) {
-                var device = (hb.payload && hb.payload.device)
-                    || (reg.payload && reg.payload.device)
-                    || null;
-                if (device && lock.cacheDeviceStatus) {
-                    return lock.cacheDeviceStatus(lock.tenantScope(), device).then(function () {
-                        return device;
-                    });
-                }
-                return device;
-            });
+        }).then(function (res) {
+            var payload = res.payload || {};
+            var device = payload.device || null;
+            if (device && lock.cacheDeviceStatus) {
+                return lock.cacheDeviceStatus(lock.tenantScope(), device).then(function () {
+                    return payload;
+                });
+            }
+            return payload;
         }).catch(function () {
             if (lock.markSessionNeedsReauth) {
                 lock.markSessionNeedsReauth();
@@ -68,46 +65,43 @@
         });
     }
 
-    function maybePromptEnroll() {
+    function maybePromptEnroll(identityPayload) {
         var lock = root.RatebOfflineAuthLock;
         if (!lock || !lock.isActive()) {
-            return;
+            return Promise.resolve(null);
         }
-        // Non-blocking: if no vault yet and online, prompt once for PIN enroll.
-        lock.readDeviceStatus(lock.tenantScope()).then(function () {
-            return new Promise(function (resolve) {
-                // Use schema get via unlock path — enroll UI minimal prompt.
-                var Schema = root.RatebOfflineSchema;
-                if (!Schema) {
-                    resolve(null);
-                    return;
-                }
-                var id = lock.vaultId(lock.tenantScope());
-                if (!id) {
-                    resolve(null);
-                    return;
-                }
-                Schema.withStore(Schema.STORES.AUTH_VAULT, 'readonly', function (store) {
-                    return new Promise(function (res, rej) {
-                        var req = store.get(id);
-                        req.onsuccess = function () { res(req.result || null); };
-                        req.onerror = function () { rej(req.error); };
-                    });
-                }).then(function (row) {
-                    if (row && row.pin_hash) {
-                        resolve(row);
-                        return;
-                    }
-                    var pin = root.prompt
-                        ? root.prompt('Set ERP offline unlock PIN (min 4 digits). Cancel to skip.', '')
-                        : '';
-                    if (!pin || String(pin).length < 4) {
-                        resolve(null);
-                        return;
-                    }
-                    lock.enrollPin(pin).then(resolve).catch(function () { resolve(null); });
-                }).catch(function () { resolve(null); });
+        var Schema = root.RatebOfflineSchema;
+        if (!Schema) {
+            return Promise.resolve(null);
+        }
+        var id = lock.vaultId(lock.tenantScope());
+        if (!id) {
+            return Promise.resolve(null);
+        }
+        return Schema.withStore(Schema.STORES.AUTH_VAULT, 'readonly', function (store) {
+            return new Promise(function (res, rej) {
+                var req = store.get(id);
+                req.onsuccess = function () { res(req.result || null); };
+                req.onerror = function () { rej(req.error); };
             });
+        }).then(function (row) {
+            var needsIdentity = !(row && row.identity_cipher);
+            var needsPin = !(row && row.pin_hash);
+            if (!needsPin && !needsIdentity) {
+                return row;
+            }
+            if (!(identityPayload && identityPayload.identity)) {
+                return row;
+            }
+            var pin = root.prompt
+                ? root.prompt('Set ERP offline unlock PIN (min 4 digits). Cancel to skip.', '')
+                : '';
+            if (!pin || String(pin).length < 4) {
+                return null;
+            }
+            return lock.enrollPin(pin, { identity: identityPayload.identity });
+        }).catch(function () {
+            return null;
         });
     }
 
@@ -135,12 +129,13 @@
             root.RatebOfflineAuthLock.start();
         }
         if (root.navigator && root.navigator.onLine !== false && csrfToken()) {
-            enrollDevice().then(function () {
-                maybePromptEnroll();
-                if (root.RatebOfflineAuthLock) {
-                    root.RatebOfflineAuthLock.clearSessionNeedsReauth();
-                    root.RatebOfflineAuthLock.requireUnlockIfNeeded();
-                }
+            enrollWarmIdentity().then(function (payload) {
+                return maybePromptEnroll(payload).then(function () {
+                    if (root.RatebOfflineAuthLock) {
+                        root.RatebOfflineAuthLock.clearSessionNeedsReauth();
+                        root.RatebOfflineAuthLock.requireUnlockIfNeeded();
+                    }
+                });
             });
         } else if (root.RatebOfflineAuthLock) {
             root.RatebOfflineAuthLock.markSessionNeedsReauth();

@@ -85,10 +85,11 @@ final class ErpOfflineAuthPolicy
             $env = (string) ($_ENV['RATEB_OFFLINE_AUTH_LOGOUT_VAULT'] ?? '');
         }
         $v = strtolower(trim((string) $env));
-        if ($v === self::LOGOUT_CLEAR_VAULT || $v === 'clear') {
-            return self::LOGOUT_CLEAR_VAULT;
+        // Phase P1 default: logout destroys warm identity + PIN vault.
+        if ($v === self::LOGOUT_KEEP_VAULT || $v === 'keep') {
+            return self::LOGOUT_KEEP_VAULT;
         }
 
-        return self::LOGOUT_KEEP_VAULT;
+        return self::LOGOUT_CLEAR_VAULT;
     }
 }
