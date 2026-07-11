@@ -385,9 +385,12 @@ final class OfflineFoundationTest
         $src = (string) file_get_contents(RATEB_ROOT . '/offline/client/sync/queue-manager.js');
         $bundle = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/rateb-offline.js');
         $ok = str_contains($src, 'clearable_keys')
-            && str_contains($src, 'Never clear rejected')
+            && (str_contains($src, 'Never clear rejected') || str_contains($src, 'Never delete rejected'))
+            && str_contains($src, 'removeByKeys')
+            && !str_contains($src, 'Stores.clear(QUEUE)')
             && !str_contains($src, 'return writeAll([]).then')
-            && str_contains($bundle, 'clearable_keys');
+            && str_contains($bundle, 'clearable_keys')
+            && !str_contains($bundle, 'Stores.clear(QUEUE)');
         $this->record('client flush keeps rejected/conflict items', $ok, $ok ? 'ok' : 'legacy clear-all still present');
     }
 

@@ -58,4 +58,6 @@ Server replay uses existing HR domain (`AttendanceRecord`, `LeaveRequest`, `HrSe
 php offline/tests/run-offline-foundation-tests.php
 php offline/tests/run-inventory-offline-tests.php
 php offline/tests/run-hr-offline-tests.php
+php offline/tests/run-queue-durability-tests.php
+php offline/tests/run-phase45-integration-validation.php
 ```

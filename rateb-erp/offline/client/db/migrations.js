@@ -61,6 +61,38 @@
         });
     }
 
+    /**
+     * Atomically delete many keys in a single IndexedDB transaction.
+     * Crash mid-tx rolls back all deletes — remaining rows are never wiped.
+     *
+     * @param {string} storeName
+     * @param {string[]} keys
+     * @returns {Promise<number>} number of delete ops issued
+     */
+    function removeMany(storeName, keys) {
+        var list = [];
+        (keys || []).forEach(function (k) {
+            if (k !== null && k !== undefined && String(k) !== '') {
+                list.push(String(k));
+            }
+        });
+        if (!list.length) {
+            return Promise.resolve(0);
+        }
+        return Schema.openDatabase().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var tx = db.transaction(storeName, 'readwrite');
+                var store = tx.objectStore(storeName);
+                list.forEach(function (k) {
+                    store.delete(k);
+                });
+                tx.oncomplete = function () { resolve(list.length); };
+                tx.onerror = function () { reject(tx.error || new Error('idb_remove_many_failed')); };
+                tx.onabort = function () { reject(tx.error || new Error('idb_remove_many_aborted')); };
+            });
+        });
+    }
+
     function get(storeName, key) {
         return Schema.withStore(storeName, 'readonly', function (store) {
             return new Promise(function (resolve, reject) {
@@ -77,6 +109,7 @@
         put: put,
         putMany: putMany,
         clear: clear,
-        remove: remove
+        remove: remove,
+        removeMany: removeMany
     };
 })(typeof window !== 'undefined' ? window : globalThis);

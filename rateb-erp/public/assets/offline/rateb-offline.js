@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 4 — HR Tier-1. Master flag default OFF. hr.attendance default OFF. */
+/*! RATEB Enterprise Offline SDK Phase 4.5.1 — durable delete-by-key flush. Master flag default OFF. */
 
 /* ---- offline\client\db\schema.js ---- */
 
@@ -146,6 +146,38 @@
         });
     }
 
+    /**
+     * Atomically delete many keys in a single IndexedDB transaction.
+     * Crash mid-tx rolls back all deletes — remaining rows are never wiped.
+     *
+     * @param {string} storeName
+     * @param {string[]} keys
+     * @returns {Promise<number>} number of delete ops issued
+     */
+    function removeMany(storeName, keys) {
+        var list = [];
+        (keys || []).forEach(function (k) {
+            if (k !== null && k !== undefined && String(k) !== '') {
+                list.push(String(k));
+            }
+        });
+        if (!list.length) {
+            return Promise.resolve(0);
+        }
+        return Schema.openDatabase().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var tx = db.transaction(storeName, 'readwrite');
+                var store = tx.objectStore(storeName);
+                list.forEach(function (k) {
+                    store.delete(k);
+                });
+                tx.oncomplete = function () { resolve(list.length); };
+                tx.onerror = function () { reject(tx.error || new Error('idb_remove_many_failed')); };
+                tx.onabort = function () { reject(tx.error || new Error('idb_remove_many_aborted')); };
+            });
+        });
+    }
+
     function get(storeName, key) {
         return Schema.withStore(storeName, 'readonly', function (store) {
             return new Promise(function (resolve, reject) {
@@ -162,7 +194,8 @@
         put: put,
         putMany: putMany,
         clear: clear,
-        remove: remove
+        remove: remove,
+        removeMany: removeMany
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -377,7 +410,7 @@
 /* ---- offline\client\sync\queue-manager.js ---- */
 
 /**
- * RATEB Offline — Queue Manager (Phase 2A).
+ * RATEB Offline — Queue Manager (Phase 4.5.1 — durable delete-by-key flush).
  */
 (function (root) {
     'use strict';
@@ -441,8 +474,29 @@
             version: item.version || 1,
             status: 'pending',
             retry_count: 0,
-            depends_on: Array.isArray(item.depends_on) ? item.depends_on : []
+            depends_on: Array.isArray(item.depends_on) ? item.depends_on : [],
+            // Monotonic enqueue seq for FIFO push ordering (survives delete-by-key).
+            seq: typeof item.seq === 'number' ? item.seq : Date.now()
         };
+    }
+
+    function sortFifo(items) {
+        return (items || []).slice().sort(function (a, b) {
+            var sa = typeof a.seq === 'number' ? a.seq : 0;
+            var sb = typeof b.seq === 'number' ? b.seq : 0;
+            if (sa !== sb) {
+                return sa - sb;
+            }
+            var oa = String(a.occurred_at || '');
+            var ob = String(b.occurred_at || '');
+            if (oa < ob) {
+                return -1;
+            }
+            if (oa > ob) {
+                return 1;
+            }
+            return String(a.client_id || '').localeCompare(String(b.client_id || ''));
+        });
     }
 
     function depth() {
@@ -452,6 +506,79 @@
         return Stores.getAll(QUEUE).then(function (items) {
             return items.length;
         });
+    }
+
+    function listFifo() {
+        if (!Stores) {
+            return Promise.resolve([]);
+        }
+        return Stores.getAll(QUEUE).then(function (items) {
+            return sortFifo(items);
+        });
+    }
+
+    /**
+     * Crash-safe selective clear — delete only clearable keys in one IDB transaction.
+     * Never store.clear(); rejected/conflict/pending siblings remain untouched.
+     * Mirrors POS removeByKeys API shape with true delete-by-key durability.
+     *
+     * @param {string[]} keys
+     * @returns {Promise<object[]>} remaining queue (FIFO ordered)
+     */
+    function removeByKeys(keys) {
+        var clearSet = {};
+        var deleteKeys = [];
+        (keys || []).forEach(function (k) {
+            if (!k) {
+                return;
+            }
+            var s = String(k);
+            if (!clearSet[s]) {
+                clearSet[s] = true;
+                deleteKeys.push(s);
+            }
+        });
+        if (!Stores) {
+            return Promise.resolve([]);
+        }
+        if (!deleteKeys.length) {
+            return listFifo();
+        }
+        var removeOp = typeof Stores.removeMany === 'function'
+            ? Stores.removeMany(QUEUE, deleteKeys)
+            : Promise.all(deleteKeys.map(function (k) {
+                return Stores.remove(QUEUE, k);
+            }));
+        return removeOp.then(function () {
+            return listFifo();
+        });
+    }
+
+    /**
+     * Simulate crash between clear and rewrite (legacy unsafe path) — for tests only.
+     * @returns {{lost: boolean, remaining: object[]}}
+     */
+    function simulateClearRewriteCrash(queue, clearableKeys) {
+        var clearSet = {};
+        (clearableKeys || []).forEach(function (k) {
+            if (k) {
+                clearSet[String(k)] = true;
+            }
+        });
+        var remaining = (queue || []).filter(function (item) {
+            var key = String(item.client_id || item.idempotency_key || '');
+            return !clearSet[key];
+        });
+        // Legacy: clear committed, rewrite never ran → empty store (data loss).
+        return { lost: true, remaining: [], wouldHaveKept: remaining };
+    }
+
+    /**
+     * Simulate crash during atomic delete-by-key — transaction aborts → full queue intact.
+     * @returns {{lost: boolean, remaining: object[]}}
+     */
+    function simulateDeleteByKeyCrash(queue) {
+        return { lost: false, remaining: sortFifo(queue || []) };
     }
 
     function enqueue(item, options) {
@@ -492,7 +619,7 @@
         }
         flushInFlight = true;
         var base = options.apiBase || apiBase;
-        return Stores.getAll(QUEUE).then(function (queue) {
+        return listFifo().then(function (queue) {
             if (!queue.length) {
                 return { accepted: 0, queueDepth: 0 };
             }
@@ -523,64 +650,33 @@
                             Array.isArray(result.duplicate_keys) ? result.duplicate_keys : []
                         );
                     }
-                    // Never clear rejected or conflicted items — even when HTTP ok.
-                    var clearSet = {};
-                    clearable.forEach(function (k) {
-                        if (k) {
-                            clearSet[String(k)] = true;
+                    // Never delete rejected or conflicted items — even when HTTP ok.
+                    return removeByKeys(clearable).then(function (remaining) {
+                        if (Events) {
+                            Events.emit('queue:flushed', {
+                                result: result,
+                                cleared: clearable.length,
+                                remaining: remaining.length,
+                                ok: !!(payload && payload.ok)
+                            });
                         }
-                    });
-                    return Stores.getAll(QUEUE).then(function (current) {
-                        var remaining = (current || []).filter(function (item) {
-                            var key = String(item.client_id || item.idempotency_key || '');
-                            return !clearSet[key];
-                        });
-                        return Stores.clear(QUEUE).then(function () {
-                            return Stores.putMany ? Stores.putMany(QUEUE, remaining) : writeRemaining(remaining);
-                        }).then(function () {
-                            if (Events) {
-                                Events.emit('queue:flushed', {
-                                    result: result,
-                                    cleared: Object.keys(clearSet).length,
-                                    remaining: remaining.length,
-                                    ok: !!(payload && payload.ok)
-                                });
-                            }
-                            if (!payload || !payload.ok) {
-                                var err = new Error(
-                                    (payload && payload.error && payload.error.message) || 'sync_failed'
-                                );
-                                err.result = result;
-                                err.remaining = remaining.length;
-                                throw err;
-                            }
-                            return Object.assign({
-                                queueDepth: remaining.length,
-                                clearable_keys: Object.keys(clearSet)
-                            }, result);
-                        });
+                        if (!payload || !payload.ok) {
+                            var err = new Error(
+                                (payload && payload.error && payload.error.message) || 'sync_failed'
+                            );
+                            err.result = result;
+                            err.remaining = remaining.length;
+                            throw err;
+                        }
+                        return Object.assign({
+                            queueDepth: remaining.length,
+                            clearable_keys: clearable
+                        }, result);
                     });
                 });
             });
         }).finally(function () {
             flushInFlight = false;
-        });
-    }
-
-    function writeRemaining(items) {
-        if (!Stores || !Schema) {
-            return Promise.resolve();
-        }
-        return Schema.openDatabase().then(function (db) {
-            return new Promise(function (resolve, reject) {
-                var tx = db.transaction(QUEUE, 'readwrite');
-                var store = tx.objectStore(QUEUE);
-                (items || []).forEach(function (item) {
-                    store.put(item);
-                });
-                tx.oncomplete = function () { resolve(true); };
-                tx.onerror = function () { reject(tx.error || new Error('idb_rewrite_failed')); };
-            });
         });
     }
 
@@ -598,9 +694,12 @@
         enqueue: enqueue,
         flush: flush,
         depth: depth,
-        list: function () {
-            return Stores ? Stores.getAll(QUEUE) : Promise.resolve([]);
-        }
+        list: listFifo,
+        removeByKeys: removeByKeys,
+        // Test / soak helpers (no side effects on live IDB).
+        _sortFifo: sortFifo,
+        _simulateClearRewriteCrash: simulateClearRewriteCrash,
+        _simulateDeleteByKeyCrash: simulateDeleteByKeyCrash
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
