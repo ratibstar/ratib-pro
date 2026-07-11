@@ -240,6 +240,10 @@ RewriteCond %{REQUEST_URI} ^/ratib-contact-center/public/api/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
+# RATEB ERP — never use underscore path as HTTP root (DB/IDB names may still use rateb_erp)
+RewriteRule ^rateb_erp/public/?(.*)$ /rateb-erp/public/$1 [R=301,L,QSA]
+RewriteRule ^rateb_erp/?$ /rateb-erp/public/admin [R=301,L]
+
 # RATEB ERP — folder alias (/rateb-erp/ without /public/)
 RewriteRule ^rateb-erp/?$ rateb-erp/public/admin [R=302,L]
 
