@@ -850,9 +850,9 @@ function control_rateb_erp_run_migrations(): array
 /** @return array{erp:array<string,mixed>,control_panel:array<string,mixed>} */
 function control_rateb_erp_db_diagnose(): array
 {
-    control_rateb_erp_ensure_root();
+    // Need ERP autoload (SchemaDiagnosticService) — require_once alone is not enough.
+    control_rateb_erp_bootstrap_minimal();
     require_once RATEB_ROOT . '/config/database.php';
-    require_once RATEB_ROOT . '/app/Core/Database.php';
     require_once RATEB_ROOT . '/app/services/ErpDatabaseService.php';
     $svc = new \Rateb\App\Services\ErpDatabaseService();
 

@@ -103,6 +103,11 @@ startControlLayout('نظام رتب ERP — إعداد قاعدة البيانا
                 <td><?php echo (int) ($erpD['roles'] ?? 0); ?></td>
                 <td><?php echo (int) ($erpD['duplicate_role_slugs'] ?? 0); ?></td>
             </tr>
+            <?php if (empty($erpD['ok']) && !empty($erpD['error'])) { ?>
+            <tr>
+                <td colspan="6" class="small text-danger"><?php echo htmlspecialchars((string) $erpD['error'], ENT_QUOTES, 'UTF-8'); ?></td>
+            </tr>
+            <?php } ?>
             <tr>
                 <td><code><?php echo htmlspecialchars((string) ($cpD['db'] ?? 'admin_control_panel_db'), ENT_QUOTES, 'UTF-8'); ?></code> <span class="badge bg-secondary">CP</span></td>
                 <td><?php echo !empty($cpD['ok']) ? '<span class="text-success">OK</span>' : '<span class="text-warning">—</span>'; ?></td>

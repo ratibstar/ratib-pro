@@ -191,6 +191,18 @@ final class PosSupervisorApprovalService
                 KEY idx_pos_approval_grant_request (request_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
+        // Legacy column from an older schema; must not block token_hash-only inserts.
+        try {
+            $col = $db->query("SHOW COLUMNS FROM rateb_pos_approval_grants LIKE 'approval_token'");
+            if ($col !== false && $col->fetch() !== false) {
+                $db->exec('ALTER TABLE rateb_pos_approval_grants MODIFY approval_token CHAR(64) NULL');
+            }
+            if ($col instanceof \PDOStatement) {
+                $col->closeCursor();
+            }
+        } catch (\Throwable) {
+            // Best-effort; grant insert still uses token_hash only.
+        }
         self::$schemaReady = true;
     }
 }
