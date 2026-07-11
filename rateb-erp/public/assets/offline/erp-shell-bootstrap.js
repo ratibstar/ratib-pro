@@ -25,7 +25,29 @@
         return f;
     }
 
-    function erpOfflineShellUrl() {
+    function persistOfflineScope(flags) {
+        try {
+            if (!(parseInt(cfg.company_id, 10) > 0 && parseInt(cfg.user_id, 10) > 0)) {
+                return;
+            }
+            root.localStorage.setItem('rateb_erp_offline_scope', JSON.stringify({
+                company_id: parseInt(cfg.company_id, 10) || 0,
+                branch_id: parseInt(cfg.branch_id, 10) || 0,
+                user_id: parseInt(cfg.user_id, 10) || 0,
+                auth_unlock: !!(flags && flags['offline.auth.unlock']),
+                flags: {
+                    'offline.enabled': true,
+                    'offline.read_cache': true,
+                    'offline.auth.unlock': !!(flags && flags['offline.auth.unlock']),
+                    'offline.rbac.cache': !!(flags && flags['offline.rbac.cache'])
+                },
+                saved_at: new Date().toISOString()
+            }));
+        } catch (e) { /* ignore */ }
+    }
+
+    function warmErpShellUrls() {
+        var base;
         try {
             var scope = cfg.serviceWorkerScope || '';
             if (!scope) {
@@ -34,10 +56,32 @@
             if (scope.slice(-1) !== '/') {
                 scope += '/';
             }
-            return new URL('offline-shell.html', scope).href;
+            base = scope;
         } catch (e) {
-            return '/rateb-erp/public/offline-shell.html';
+            base = '/rateb-erp/public/';
         }
+        var urls = [
+            base + 'offline-shell.html',
+            base + 'assets/offline/rateb-offline.js',
+            base + 'assets/offline/erp-offline-shell-rbac.js'
+        ];
+        if (!('caches' in root) || !root.fetch) {
+            return Promise.resolve(null);
+        }
+        return root.caches.open('rateb-erp-coexist-v1').then(function (cache) {
+            return Promise.all(urls.map(function (u) {
+                return root.fetch(u, {
+                    credentials: 'same-origin',
+                    cache: 'no-cache',
+                    headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
+                }).then(function (res) {
+                    if (res && res.ok) {
+                        return cache.put(u, res.clone());
+                    }
+                    return null;
+                }).catch(function () { return null; });
+            }));
+        }).catch(function () { return null; });
     }
 
     function warmErpShellViaPosSw(controller) {
@@ -46,22 +90,7 @@
                 controller.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
             }
         } catch (e) { /* ignore */ }
-        if (!('caches' in root) || !root.fetch) {
-            return Promise.resolve(null);
-        }
-        var key = erpOfflineShellUrl();
-        return root.fetch(key, {
-            credentials: 'same-origin',
-            cache: 'no-cache',
-            headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
-        }).then(function (res) {
-            if (!res || !res.ok) {
-                return null;
-            }
-            return root.caches.open('rateb-erp-coexist-v1').then(function (cache) {
-                return cache.put(key, res.clone());
-            });
-        }).catch(function () { return null; });
+        return warmErpShellUrls();
     }
 
     function registerServiceWorker() {
@@ -114,6 +143,7 @@
         if (!(parseInt(cfg.company_id, 10) > 0 && parseInt(cfg.user_id, 10) > 0)) {
             return;
         }
+        persistOfflineScope(flags);
         if (root.RatebOffline && typeof root.RatebOffline.init === 'function') {
             root.RatebOffline.init({
                 apiBase: cfg.apiBase || '',

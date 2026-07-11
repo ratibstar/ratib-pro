@@ -145,7 +145,9 @@ final class ErpOfflinePhase131FixTest
         $fb = (string) file_get_contents(RATEB_ROOT . '/public/offline-shell.html');
         $ok = str_contains($fb, 'showLocked')
             && str_contains($fb, 'isUnlocked')
-            && str_contains($fb, 'do not reveal chrome before unlock');
+            && str_contains($fb, 'auth_unlock')
+            && str_contains($fb, 'rateb_erp_offline_scope')
+            && str_contains($fb, 'publicBase');
         $this->record('offline chrome gated on unlock', $ok, $ok ? 'ok' : 'fail');
     }
 

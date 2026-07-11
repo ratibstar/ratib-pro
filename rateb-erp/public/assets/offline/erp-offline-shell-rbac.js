@@ -20,6 +20,17 @@
                 scope.user_id = parseInt(q.get('user_id'), 10) || 0;
             } catch (e) { /* ignore */ }
         }
+        if (!scope.company_id || !scope.user_id) {
+            try {
+                var raw = root.localStorage.getItem('rateb_erp_offline_scope');
+                if (raw) {
+                    var o = JSON.parse(raw);
+                    scope.company_id = parseInt(o.company_id, 10) || 0;
+                    scope.branch_id = parseInt(o.branch_id, 10) || 0;
+                    scope.user_id = parseInt(o.user_id, 10) || 0;
+                }
+            } catch (e2) { /* ignore */ }
+        }
         return scope;
     }
 

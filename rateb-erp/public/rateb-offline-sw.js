@@ -149,15 +149,37 @@ function assetNetworkFirst(request) {
 
 self.addEventListener('install', function (event) {
     self.skipWaiting();
-    // Precache real offline-shell.html via bypass fetch (no recursion).
+    // Precache real offline-shell.html + shell helper scripts via bypass fetch (no recursion).
     event.waitUntil(
         caches.open(ASSET_CACHE).then(function (cache) {
             var key = shellRequestUrl();
+            var base;
+            try {
+                base = self.registration.scope;
+            } catch (e) {
+                base = self.location.origin + '/rateb-erp/public/';
+            }
+            if (base.slice(-1) !== '/') {
+                base += '/';
+            }
+            var helpers = [
+                base + 'assets/offline/rateb-offline.js',
+                base + 'assets/offline/erp-offline-shell-rbac.js'
+            ];
             return fetchBypass(key).then(function (res) {
-                if (res && res.ok) {
-                    return cache.put(key, res);
-                }
-                return cache.put(key, inlineOfflineShellResponse());
+                var putShell = (res && res.ok)
+                    ? cache.put(key, res)
+                    : cache.put(key, inlineOfflineShellResponse());
+                return putShell.then(function () {
+                    return Promise.all(helpers.map(function (u) {
+                        return fetchBypass(u).then(function (r) {
+                            if (r && r.ok) {
+                                return cache.put(u, r);
+                            }
+                            return null;
+                        }).catch(function () { return null; });
+                    }));
+                });
             }).catch(function () {
                 return cache.put(key, inlineOfflineShellResponse());
             });

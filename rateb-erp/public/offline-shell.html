@@ -37,6 +37,7 @@ a{color:#8ab4ff}
 <script>
 (function () {
   var SNAPSHOT_PREFIX = 'erp_shell_chrome';
+  var SCOPE_KEY = 'rateb_erp_offline_scope';
   var DB_NAME = 'rateb_erp_offline';
   var title = document.getElementById('title');
   var msg = document.getElementById('msg');
@@ -47,6 +48,31 @@ a{color:#8ab4ff}
     retry.addEventListener('click', function (e) {
       e.preventDefault();
       location.reload();
+    });
+  }
+
+  /** Public base under …/public/ so scripts resolve when SW serves this HTML at /admin/. */
+  function publicBase() {
+    try {
+      var p = String(location.pathname || '');
+      var m = p.match(/^(.*\/public\/)/i);
+      if (m && m[1]) {
+        return m[1];
+      }
+    } catch (e) { /* ignore */ }
+    return '/rateb-erp/public/';
+  }
+
+  function loadShellScripts() {
+    var base = publicBase();
+    [
+      'assets/offline/rateb-offline.js',
+      'assets/offline/erp-offline-shell-rbac.js'
+    ].forEach(function (rel) {
+      var s = document.createElement('script');
+      s.src = base + rel;
+      s.defer = true;
+      document.body.appendChild(s);
     });
   }
 
@@ -68,19 +94,40 @@ a{color:#8ab4ff}
       return {
         company_id: parseInt(q.get('company_id'), 10) || 0,
         branch_id: parseInt(q.get('branch_id'), 10) || 0,
-        user_id: parseInt(q.get('user_id'), 10) || 0
+        user_id: parseInt(q.get('user_id'), 10) || 0,
+        auth_unlock: false
       };
     } catch (e) {
-      return { company_id: 0, branch_id: 0, user_id: 0 };
+      return { company_id: 0, branch_id: 0, user_id: 0, auth_unlock: false };
+    }
+  }
+
+  function readTenantFromLocal() {
+    try {
+      var raw = localStorage.getItem(SCOPE_KEY);
+      if (!raw) {
+        return { company_id: 0, branch_id: 0, user_id: 0, auth_unlock: false };
+      }
+      var o = JSON.parse(raw);
+      return {
+        company_id: parseInt(o.company_id, 10) || 0,
+        branch_id: parseInt(o.branch_id, 10) || 0,
+        user_id: parseInt(o.user_id, 10) || 0,
+        auth_unlock: !!(o.auth_unlock || (o.flags && o.flags['offline.auth.unlock']))
+      };
+    } catch (e) {
+      return { company_id: 0, branch_id: 0, user_id: 0, auth_unlock: false };
     }
   }
 
   function readTenantFromConfig() {
     var cfg = window.__RATEB_ERP_SHELL_OFFLINE__ || {};
+    var flags = cfg.flags || {};
     return {
       company_id: parseInt(cfg.company_id, 10) || 0,
       branch_id: parseInt(cfg.branch_id, 10) || 0,
-      user_id: parseInt(cfg.user_id, 10) || 0
+      user_id: parseInt(cfg.user_id, 10) || 0,
+      auth_unlock: !!(flags['offline.auth.unlock'])
     };
   }
 
@@ -89,7 +136,6 @@ a{color:#8ab4ff}
     return SNAPSHOT_PREFIX + ':' + scope.company_id + ':' + scope.branch_id + ':' + scope.user_id;
   }
 
-  /** DOMParser + importNode only — never document.write / innerHTML assignment of raw HTML. */
   function renderSafeShell(html) {
     if (!html || typeof DOMParser === 'undefined') return false;
     var parser = new DOMParser();
@@ -120,8 +166,7 @@ a{color:#8ab4ff}
     if (!shellRoot) return false;
     while (shellRoot.firstChild) shellRoot.removeChild(shellRoot.firstChild);
 
-    var source = doc.body;
-    Array.prototype.forEach.call(source.childNodes, function (node) {
+    Array.prototype.forEach.call(doc.body.childNodes, function (node) {
       if (node.nodeType === 1 || node.nodeType === 3) {
         shellRoot.appendChild(document.importNode(node, true));
       }
@@ -159,8 +204,7 @@ a{color:#8ab4ff}
       showUnavailable();
       return;
     }
-    // Phase 13.1: do not reveal chrome before unlock.
-    if (!isUnlocked(scope)) {
+    if (scope.auth_unlock && !isUnlocked(scope)) {
       showLocked();
       return;
     }
@@ -179,7 +223,7 @@ a{color:#8ab4ff}
         get.onsuccess = function () {
           var row = get.result;
           if (!row || !row.html || !renderSafeShell(row.html)) {
-            showUnavailable();
+            showUnavailable('No cached chrome for this user. Reconnect, open Admin once, then retry offline.');
             return;
           }
         };
@@ -191,18 +235,29 @@ a{color:#8ab4ff}
 
   var scope = readTenantFromConfig();
   if (!scope.company_id || !scope.user_id) {
+    scope = readTenantFromLocal();
+  }
+  if (!scope.company_id || !scope.user_id) {
     scope = readTenantFromQuery();
   }
+  window.__RATEB_ERP_SHELL_OFFLINE__ = window.__RATEB_ERP_SHELL_OFFLINE__ || {};
+  window.__RATEB_ERP_SHELL_OFFLINE__.company_id = scope.company_id;
+  window.__RATEB_ERP_SHELL_OFFLINE__.branch_id = scope.branch_id;
+  window.__RATEB_ERP_SHELL_OFFLINE__.user_id = scope.user_id;
+  window.__RATEB_ERP_SHELL_OFFLINE__.flags = window.__RATEB_ERP_SHELL_OFFLINE__.flags || {
+    'offline.enabled': true,
+    'offline.read_cache': true,
+    'offline.auth.unlock': !!scope.auth_unlock
+  };
+
   var id = snapshotId(scope);
   if (!id) {
     showUnavailable('Tenant scope (company_id + user_id) required to load cached shell.');
-    return;
+  } else {
+    loadSnapshot(id, scope);
   }
-  loadSnapshot(id, scope);
+  loadShellScripts();
 })();
 </script>
-<!-- Phase 12/13.1: RBAC apply + unlock gate scripts -->
-<script src="assets/offline/rateb-offline.js" defer></script>
-<script src="assets/offline/erp-offline-shell-rbac.js" defer></script>
 </body>
 </html>

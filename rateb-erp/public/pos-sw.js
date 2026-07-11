@@ -134,19 +134,40 @@ function erpAdminOfflineFallback() {
 }
 
 function warmErpOfflineShell() {
-    var key = erpOfflineShellUrl();
-    return fetch(key, {
-        credentials: 'same-origin',
-        cache: 'no-cache',
-        headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
-    }).then(function (res) {
-        if (!res || !res.ok) {
-            return null;
-        }
-        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-            return cache.put(key, res.clone()).then(function () { return res; });
-        });
+    var base;
+    try {
+        base = self.registration.scope;
+    } catch (e) {
+        base = self.location.origin + '/rateb-erp/public/';
+    }
+    if (base.slice(-1) !== '/') {
+        base += '/';
+    }
+    var urls = [
+        base + ERP_OFFLINE_SHELL,
+        base + 'assets/offline/rateb-offline.js',
+        base + 'assets/offline/erp-offline-shell-rbac.js'
+    ];
+    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+        return Promise.all(urls.map(function (key) {
+            return fetch(key, {
+                credentials: 'same-origin',
+                cache: 'no-cache',
+                headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
+            }).then(function (res) {
+                if (!res || !res.ok) {
+                    return null;
+                }
+                return cache.put(key, res.clone());
+            }).catch(function () { return null; });
+        }));
     }).catch(function () { return null; });
+}
+
+function isErpOfflineAsset(url) {
+    var p = String(url.pathname || '');
+    return p.indexOf('/assets/offline/') !== -1
+        || /\/offline-shell\.html$/i.test(p);
 }
 
 function offlineHtmlResponse() {
@@ -496,6 +517,36 @@ self.addEventListener('fetch', function (event) {
             }).catch(function () {
                 return matchAsset(event.request).then(function (cached) {
                     return cached || emptyAssetResponse(event.request);
+                });
+            })
+        );
+        return;
+    }
+
+    // Smart coexist: cache ERP offline assets (SDK + shell RBAC helper).
+    if (isErpOfflineAsset(url)) {
+        event.respondWith(
+            fetch(event.request).then(function (response) {
+                if (response && response.ok) {
+                    var copy = response.clone();
+                    event.waitUntil(
+                        caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                            return Promise.all([
+                                cache.put(event.request, copy.clone()),
+                                cache.put(url.origin + url.pathname, copy)
+                            ]);
+                        }).catch(function () { /* ignore */ })
+                    );
+                }
+                return response;
+            }).catch(function () {
+                return caches.match(event.request).then(function (hit) {
+                    if (hit) {
+                        return hit;
+                    }
+                    return caches.match(url.origin + url.pathname).then(function (hit2) {
+                        return hit2 || emptyAssetResponse(event.request);
+                    });
                 });
             })
         );
