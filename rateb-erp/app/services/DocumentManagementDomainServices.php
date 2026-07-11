@@ -6,6 +6,7 @@ namespace Rateb\App\Services;
 
 use Rateb\App\Models\DmsAuditLog;
 use Rateb\App\Models\DmsCategory;
+use Rateb\App\Models\DmsCheckout;
 use Rateb\App\Models\DmsComment;
 use Rateb\App\Models\DmsDocument;
 use Rateb\App\Models\DmsDocumentLink;
@@ -108,6 +109,53 @@ final class DmsRepositoryService
 
         return ['id' => (int) $id, 'code' => $code];
     }
+
+    /**
+     * Metadata update only — no storage / binary changes.
+     *
+     * @param array<string, mixed> $input
+     */
+    public function update(int $id, array $input): void
+    {
+        $companyId = DocumentManagementSupport::requireCompanyId();
+        $row = DocumentManagementSupport::assertRepository($id, $companyId);
+        DocumentManagementSupport::assertOptimisticVersion($row, $input['expected_version'] ?? null);
+        $patch = array_merge(DocumentManagementSupport::actorFields(false), [
+            'version' => (int) ($row['version'] ?? 1) + 1,
+        ]);
+        if (array_key_exists('name', $input)) {
+            $name = trim((string) $input['name']);
+            if ($name === '') {
+                throw new \InvalidArgumentException('name_required');
+            }
+            $patch['name'] = substr($name, 0, 190);
+        }
+        if (array_key_exists('name_ar', $input)) {
+            $patch['name_ar'] = DocumentManagementSupport::nullIfEmpty($input['name_ar']);
+        }
+        if (array_key_exists('description', $input)) {
+            $patch['description'] = DocumentManagementSupport::nullIfEmpty($input['description']);
+        }
+        if (array_key_exists('storage_driver', $input)) {
+            $patch['storage_driver'] = substr((string) ($input['storage_driver'] ?? 'local'), 0, 40);
+        }
+        if (array_key_exists('notes', $input)) {
+            $patch['notes'] = DocumentManagementSupport::nullIfEmpty($input['notes']);
+        }
+        if (array_key_exists('status', $input)) {
+            $st = (string) $input['status'];
+            if (in_array($st, ['active', 'inactive', 'archived'], true)) {
+                $patch['status'] = $st;
+            }
+        }
+        (new DmsRepository())->update($id, $patch);
+        (new DocumentTimelineService())->record(
+            'repository_updated',
+            'Repository updated: ' . (string) ($patch['name'] ?? $row['name'] ?? $id),
+            'repository',
+            $id
+        );
+    }
 }
 
 final class DmsFolderService
@@ -174,6 +222,56 @@ final class DmsFolderService
         (new DocumentTimelineService())->record('folder_created', 'Folder: ' . $name, 'folder', (int) $id);
 
         return ['id' => (int) $id, 'code' => $code];
+    }
+
+    /**
+     * Metadata update only.
+     *
+     * @param array<string, mixed> $input
+     */
+    public function update(int $id, array $input): void
+    {
+        $companyId = DocumentManagementSupport::requireCompanyId();
+        $row = DocumentManagementSupport::assertFolder($id, $companyId);
+        DocumentManagementSupport::assertOptimisticVersion($row, $input['expected_version'] ?? null);
+        $patch = array_merge(DocumentManagementSupport::actorFields(false), [
+            'version' => (int) ($row['version'] ?? 1) + 1,
+        ]);
+        if (array_key_exists('name', $input)) {
+            $name = trim((string) $input['name']);
+            if ($name === '') {
+                throw new \InvalidArgumentException('name_required');
+            }
+            $patch['name'] = substr($name, 0, 190);
+        }
+        if (array_key_exists('name_ar', $input)) {
+            $patch['name_ar'] = DocumentManagementSupport::nullIfEmpty($input['name_ar']);
+        }
+        if (array_key_exists('parent_folder_id', $input)) {
+            $patch['parent_folder_id'] = DocumentManagementSupport::intOrNull($input['parent_folder_id']);
+        }
+        if (array_key_exists('path_text', $input)) {
+            $patch['path_text'] = DocumentManagementSupport::nullIfEmpty($input['path_text']);
+        }
+        if (array_key_exists('sort_order', $input)) {
+            $patch['sort_order'] = (int) $input['sort_order'];
+        }
+        if (array_key_exists('notes', $input)) {
+            $patch['notes'] = DocumentManagementSupport::nullIfEmpty($input['notes']);
+        }
+        if (array_key_exists('status', $input)) {
+            $st = (string) $input['status'];
+            if (in_array($st, ['active', 'inactive', 'archived'], true)) {
+                $patch['status'] = $st;
+            }
+        }
+        (new DmsFolder())->update($id, $patch);
+        (new DocumentTimelineService())->record(
+            'folder_updated',
+            'Folder updated: ' . (string) ($patch['name'] ?? $row['name'] ?? $id),
+            'folder',
+            $id
+        );
     }
 }
 
@@ -284,6 +382,73 @@ final class DmsDocumentService
 
         return ['id' => (int) $id, 'code' => $code];
     }
+
+    /**
+     * Draft-field update only — never changes workflow_status (DocumentWorkflowService owns that).
+     *
+     * @param array<string, mixed> $input
+     */
+    public function update(int $id, array $input): void
+    {
+        $companyId = DocumentManagementSupport::requireCompanyId();
+        $row = DocumentManagementSupport::assertDocument($id, $companyId);
+        DocumentManagementSupport::assertOptimisticVersion($row, $input['expected_version'] ?? null);
+        $wf = (string) ($row['workflow_status'] ?? 'draft');
+        if (in_array($wf, ['published', 'archived'], true)) {
+            throw new \RuntimeException('document_not_editable');
+        }
+        $patch = array_merge(DocumentManagementSupport::actorFields(false), [
+            'version' => (int) ($row['version'] ?? 1) + 1,
+        ]);
+        if (array_key_exists('title', $input)) {
+            $title = trim((string) $input['title']);
+            if ($title === '') {
+                throw new \InvalidArgumentException('title_required');
+            }
+            $patch['title'] = substr($title, 0, 190);
+        }
+        if (array_key_exists('title_ar', $input)) {
+            $patch['title_ar'] = DocumentManagementSupport::nullIfEmpty($input['title_ar']);
+        }
+        if (array_key_exists('folder_id', $input)) {
+            $patch['folder_id'] = DocumentManagementSupport::intOrNull($input['folder_id']);
+        }
+        if (array_key_exists('category_id', $input)) {
+            $patch['category_id'] = DocumentManagementSupport::intOrNull($input['category_id']);
+        }
+        if (array_key_exists('document_type', $input)) {
+            $patch['document_type'] = DocumentManagementSupport::nullIfEmpty($input['document_type']);
+        }
+        if (array_key_exists('mime_type', $input)) {
+            $patch['mime_type'] = DocumentManagementSupport::nullIfEmpty($input['mime_type']);
+        }
+        if (array_key_exists('file_extension', $input)) {
+            $patch['file_extension'] = DocumentManagementSupport::nullIfEmpty($input['file_extension']);
+        }
+        if (array_key_exists('notes', $input)) {
+            $patch['notes'] = DocumentManagementSupport::nullIfEmpty($input['notes']);
+        }
+        (new DmsDocument())->update($id, $patch);
+        if (isset($patch['title'])) {
+            $idx = (new DmsSearchIndex())->queryOne(
+                'SELECT id, version FROM rateb_dms_search_index WHERE company_id = :cid AND document_id = :did AND deleted_at IS NULL LIMIT 1',
+                ['cid' => $companyId, 'did' => $id]
+            );
+            if (is_array($idx) && isset($idx['id'])) {
+                (new DmsSearchIndex())->update((int) $idx['id'], array_merge([
+                    'title_index' => substr((string) $patch['title'], 0, 190),
+                    'indexed_at' => date('Y-m-d H:i:s'),
+                    'version' => (int) ($idx['version'] ?? 1) + 1,
+                ], DocumentManagementSupport::actorFields(false)));
+            }
+        }
+        (new DocumentTimelineService())->record(
+            'document_updated',
+            'Document updated: ' . (string) ($patch['title'] ?? $row['title'] ?? $id),
+            'document',
+            $id
+        );
+    }
 }
 
 final class DmsVersionService
@@ -308,6 +473,150 @@ final class DmsVersionService
         );
 
         return ['items' => is_array($items) ? $items : [], 'total' => (int) ($totalRow['c'] ?? 0)];
+    }
+
+    /**
+     * Create a new document version metadata row (no binary upload).
+     *
+     * @param array<string, mixed> $input
+     * @return array{id: int, version_no: int}
+     */
+    public function create(array $input): array
+    {
+        $companyId = DocumentManagementSupport::requireCompanyId();
+        $documentId = DocumentManagementSupport::intOrNull($input['document_id'] ?? null);
+        if ($documentId === null) {
+            throw new \InvalidArgumentException('document_required');
+        }
+        $doc = DocumentManagementSupport::assertDocument($documentId, $companyId);
+        DocumentManagementSupport::assertOptimisticVersion($doc, $input['expected_version'] ?? null);
+        $wf = (string) ($doc['workflow_status'] ?? 'draft');
+        if ($wf === 'archived') {
+            throw new \RuntimeException('document_archived');
+        }
+
+        $maxRow = (new DmsVersion())->queryOne(
+            'SELECT MAX(version_no) AS m FROM rateb_dms_versions WHERE company_id = :cid AND document_id = :did AND deleted_at IS NULL',
+            ['cid' => $companyId, 'did' => $documentId]
+        );
+        $nextNo = (int) ($maxRow['m'] ?? 0) + 1;
+
+        $currentRows = (new DmsVersion())->query(
+            'SELECT id, version FROM rateb_dms_versions WHERE company_id = :cid AND document_id = :did'
+            . ' AND is_current = 1 AND deleted_at IS NULL',
+            ['cid' => $companyId, 'did' => $documentId]
+        );
+        if (is_array($currentRows)) {
+            foreach ($currentRows as $cur) {
+                (new DmsVersion())->update((int) $cur['id'], array_merge([
+                    'is_current' => 0,
+                    'version' => (int) ($cur['version'] ?? 1) + 1,
+                ], DocumentManagementSupport::actorFields(false)));
+            }
+        }
+
+        $id = (new DmsVersion())->create(array_merge([
+            'public_uuid' => DocumentManagementSupport::uuidV4(),
+            'company_id' => $companyId,
+            'branch_id' => DocumentManagementSupport::branchId(),
+            'document_id' => $documentId,
+            'version_no' => $nextNo,
+            'storage_path' => DocumentManagementSupport::nullIfEmpty($input['storage_path'] ?? null),
+            'storage_driver' => substr((string) ($input['storage_driver'] ?? 'local'), 0, 40),
+            'file_size' => DocumentManagementSupport::intOrNull($input['file_size'] ?? null),
+            'checksum_sha256' => DocumentManagementSupport::nullIfEmpty($input['checksum_sha256'] ?? null),
+            'change_summary' => DocumentManagementSupport::nullIfEmpty($input['change_summary'] ?? null),
+            'is_current' => 1,
+            'status' => 'active',
+            'notes' => DocumentManagementSupport::nullIfEmpty($input['notes'] ?? null),
+            'version' => 1,
+        ], DocumentManagementSupport::actorFields(true)));
+
+        (new DmsDocument())->update($documentId, array_merge([
+            'current_version_no' => $nextNo,
+            'version' => (int) ($doc['version'] ?? 1) + 1,
+        ], DocumentManagementSupport::actorFields(false)));
+
+        (new DocumentTimelineService())->record(
+            'version_created',
+            (string) ($doc['code'] ?? 'document') . ' v' . $nextNo,
+            'document',
+            $documentId
+        );
+
+        return ['id' => (int) $id, 'version_no' => $nextNo];
+    }
+}
+
+/**
+ * Enterprise checkout metadata only — no binary / storage / download changes.
+ */
+final class DmsCheckoutService
+{
+    /**
+     * @param array<string, mixed> $input
+     * @return array{id: int, document_id: int}
+     */
+    public function create(array $input): array
+    {
+        $companyId = DocumentManagementSupport::requireCompanyId();
+        $documentId = DocumentManagementSupport::intOrNull($input['document_id'] ?? null);
+        if ($documentId === null) {
+            throw new \InvalidArgumentException('document_required');
+        }
+        $doc = DocumentManagementSupport::assertDocument($documentId, $companyId);
+        DocumentManagementSupport::assertOptimisticVersion($doc, $input['expected_version'] ?? null);
+        $wf = (string) ($doc['workflow_status'] ?? 'draft');
+        if (in_array($wf, ['published', 'archived'], true)) {
+            throw new \RuntimeException('document_not_checkoutable');
+        }
+        if (!empty($doc['checked_out_by'])) {
+            throw new \RuntimeException('document_already_checked_out');
+        }
+        $userId = DocumentManagementSupport::intOrNull($input['user_id'] ?? null)
+            ?? DocumentManagementSupport::userId();
+        if ($userId === null || $userId < 1) {
+            throw new \RuntimeException('user_required');
+        }
+
+        $open = (new DmsCheckout())->queryOne(
+            'SELECT id FROM rateb_dms_checkouts WHERE company_id = :cid AND document_id = :did'
+            . ' AND checkout_status = :st AND deleted_at IS NULL LIMIT 1',
+            ['cid' => $companyId, 'did' => $documentId, 'st' => 'open']
+        );
+        if (is_array($open)) {
+            throw new \RuntimeException('document_already_checked_out');
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $id = (new DmsCheckout())->create(array_merge([
+            'public_uuid' => DocumentManagementSupport::uuidV4(),
+            'company_id' => $companyId,
+            'branch_id' => DocumentManagementSupport::branchId(),
+            'document_id' => $documentId,
+            'user_id' => $userId,
+            'checked_out_at' => $now,
+            'due_at' => DocumentManagementSupport::dateOrNull($input['due_at'] ?? null),
+            'checkout_status' => 'open',
+            'status' => 'active',
+            'notes' => DocumentManagementSupport::nullIfEmpty($input['notes'] ?? null),
+            'version' => 1,
+        ], DocumentManagementSupport::actorFields(true)));
+
+        (new DmsDocument())->update($documentId, array_merge([
+            'checked_out_by' => $userId,
+            'checked_out_at' => $now,
+            'version' => (int) ($doc['version'] ?? 1) + 1,
+        ], DocumentManagementSupport::actorFields(false)));
+
+        (new DocumentTimelineService())->record(
+            'checkout_created',
+            (string) ($doc['code'] ?? 'document') . ' checked out',
+            'document',
+            $documentId
+        );
+
+        return ['id' => (int) $id, 'document_id' => $documentId];
     }
 }
 
@@ -427,6 +736,48 @@ final class DmsRetentionService
         (new DocumentTimelineService())->record('retention_policy_created', 'Retention: ' . $name, 'retention_policy', (int) $id);
 
         return ['id' => (int) $id, 'code' => $code];
+    }
+}
+
+/**
+ * Phase 26A.1 — replay-target alias for Offline (26B).
+ * Delegates to DmsRetentionService — does not rename or break existing callers.
+ */
+final class DmsRetentionPolicyService
+{
+    private DmsRetentionService $inner;
+
+    public function __construct(?DmsRetentionService $inner = null)
+    {
+        $this->inner = $inner ?? new DmsRetentionService();
+    }
+
+    /**
+     * @return array{items: list<array<string,mixed>>, total: int}
+     */
+    public function listPolicies(int $limit = 25, int $offset = 0): array
+    {
+        return $this->inner->listPolicies($limit, $offset);
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array{id: int, code: string}
+     */
+    public function createPolicy(array $input): array
+    {
+        return $this->inner->createPolicy($input);
+    }
+
+    /**
+     * Alias for createPolicy — Offline queue action retention_policy.create.
+     *
+     * @param array<string, mixed> $input
+     * @return array{id: int, code: string}
+     */
+    public function create(array $input): array
+    {
+        return $this->inner->createPolicy($input);
     }
 }
 

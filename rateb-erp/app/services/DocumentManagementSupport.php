@@ -7,6 +7,8 @@ namespace Rateb\App\Services;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\DmsDocument;
+use Rateb\App\Models\DmsFolder;
+use Rateb\App\Models\DmsRepository;
 
 /**
  * Shared helpers for Phase 26A Enterprise Document Management (DMS) domain services.
@@ -116,6 +118,56 @@ final class DocumentManagementSupport
         $row = self::findDocument($id, $companyId);
         if ($row === null) {
             throw new \RuntimeException('document_not_found');
+        }
+
+        return $row;
+    }
+
+    /** @return array<string, mixed>|null */
+    public static function findRepository(int $id, int $companyId): ?array
+    {
+        if ($id < 1 || $companyId < 1) {
+            return null;
+        }
+        $row = (new DmsRepository())->queryOne(
+            'SELECT * FROM rateb_dms_repositories WHERE id = :id AND company_id = :cid AND deleted_at IS NULL LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string, mixed> */
+    public static function assertRepository(int $id, int $companyId): array
+    {
+        $row = self::findRepository($id, $companyId);
+        if ($row === null) {
+            throw new \RuntimeException('repository_not_found');
+        }
+
+        return $row;
+    }
+
+    /** @return array<string, mixed>|null */
+    public static function findFolder(int $id, int $companyId): ?array
+    {
+        if ($id < 1 || $companyId < 1) {
+            return null;
+        }
+        $row = (new DmsFolder())->queryOne(
+            'SELECT * FROM rateb_dms_folders WHERE id = :id AND company_id = :cid AND deleted_at IS NULL LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @return array<string, mixed> */
+    public static function assertFolder(int $id, int $companyId): array
+    {
+        $row = self::findFolder($id, $companyId);
+        if ($row === null) {
+            throw new \RuntimeException('folder_not_found');
         }
 
         return $row;

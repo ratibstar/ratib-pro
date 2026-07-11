@@ -28,6 +28,7 @@ final class DocumentManagementPhase26ATest
         $this->testSidebarAndLang();
         $this->testArchitectureDoc();
         $this->testOfflineReadinessDoc();
+        $this->testReplayReadiness();
 
         return $this->results;
     }
@@ -112,8 +113,10 @@ final class DocumentManagementPhase26ATest
             && class_exists(\Rateb\App\Services\DmsFolderService::class)
             && class_exists(\Rateb\App\Services\DmsDocumentService::class)
             && class_exists(\Rateb\App\Services\DmsVersionService::class)
+            && class_exists(\Rateb\App\Services\DmsCheckoutService::class)
             && class_exists(\Rateb\App\Services\DmsShareService::class)
             && class_exists(\Rateb\App\Services\DmsRetentionService::class)
+            && class_exists(\Rateb\App\Services\DmsRetentionPolicyService::class)
             && class_exists(\Rateb\App\Services\DmsLegalHoldService::class)
             && class_exists(\Rateb\App\Services\DmsPermissionService::class)
             && class_exists(\Rateb\App\Services\DmsSearchService::class)
@@ -258,5 +261,39 @@ final class DocumentManagementPhase26ATest
             && str_contains($doc, '26B')
             && str_contains($doc, 'Replay-ready');
         $this->record('offline readiness matrix in docs', $ok);
+    }
+
+    private function testReplayReadiness(): void
+    {
+        $ok = class_exists(\Rateb\App\Services\DocumentWorkflowService::class)
+            && class_exists(\Rateb\App\Services\DmsRepositoryService::class)
+            && method_exists(\Rateb\App\Services\DmsRepositoryService::class, 'create')
+            && method_exists(\Rateb\App\Services\DmsRepositoryService::class, 'update')
+            && class_exists(\Rateb\App\Services\DmsFolderService::class)
+            && method_exists(\Rateb\App\Services\DmsFolderService::class, 'create')
+            && method_exists(\Rateb\App\Services\DmsFolderService::class, 'update')
+            && class_exists(\Rateb\App\Services\DmsDocumentService::class)
+            && method_exists(\Rateb\App\Services\DmsDocumentService::class, 'create')
+            && method_exists(\Rateb\App\Services\DmsDocumentService::class, 'update')
+            && class_exists(\Rateb\App\Services\DmsVersionService::class)
+            && method_exists(\Rateb\App\Services\DmsVersionService::class, 'create')
+            && class_exists(\Rateb\App\Services\DmsCheckoutService::class)
+            && method_exists(\Rateb\App\Services\DmsCheckoutService::class, 'create')
+            && class_exists(\Rateb\App\Services\DmsShareService::class)
+            && method_exists(\Rateb\App\Services\DmsShareService::class, 'create')
+            && class_exists(\Rateb\App\Services\DmsPermissionService::class)
+            && method_exists(\Rateb\App\Services\DmsPermissionService::class, 'grant')
+            && class_exists(\Rateb\App\Services\DmsRetentionService::class)
+            && class_exists(\Rateb\App\Services\DmsRetentionPolicyService::class)
+            && method_exists(\Rateb\App\Services\DmsRetentionPolicyService::class, 'create')
+            && method_exists(\Rateb\App\Services\DmsRetentionPolicyService::class, 'createPolicy')
+            && class_exists(\Rateb\App\Services\DmsLegalHoldService::class)
+            && method_exists(\Rateb\App\Services\DmsLegalHoldService::class, 'create')
+            && class_exists(\Rateb\App\Services\DmsCommentService::class)
+            && method_exists(\Rateb\App\Services\DmsCommentService::class, 'create')
+            && class_exists(\Rateb\App\Services\DocumentTimelineService::class)
+            && class_exists(\Rateb\App\Services\DocumentManagementSupport::class)
+            && method_exists(\Rateb\App\Services\DocumentWorkflowService::class, 'transition');
+        $this->record('Replay Readiness', $ok);
     }
 }
