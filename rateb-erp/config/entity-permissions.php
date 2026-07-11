@@ -537,6 +537,36 @@ return [
         'view' => 'hr.view',
         'manage' => 'hr.manage',
     ],
+    'hrm' => [
+        'module' => 'hr',
+        'view' => 'hr.view',
+        'manage' => 'hr.manage',
+    ],
+    'hrm-employees' => [
+        'module' => 'hr',
+        'view' => 'hr.view',
+        'manage' => 'hr.manage',
+    ],
+    'hrm-training' => [
+        'module' => 'hr',
+        'view' => 'hr.training',
+        'manage' => 'hr.manage',
+    ],
+    'hrm-performance' => [
+        'module' => 'hr',
+        'view' => 'hr.performance',
+        'manage' => 'hr.manage',
+    ],
+    'hrm-promotions' => [
+        'module' => 'hr',
+        'view' => 'hr.promotions',
+        'manage' => 'hr.manage',
+    ],
+    'hrm-transfers' => [
+        'module' => 'hr',
+        'view' => 'hr.transfers',
+        'manage' => 'hr.manage',
+    ],
     'recruitment' => [
         'module' => 'recruitment',
         'view' => 'recruitment.view',

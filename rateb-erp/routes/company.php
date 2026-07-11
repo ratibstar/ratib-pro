@@ -476,6 +476,43 @@ $router->get($app('mfg/quality'), [MfgQualityController::class, 'index'], rateb_
 $router->post($app('mfg/quality'), [MfgQualityController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
 $router->get($app('mfg/reports'), [MfgReportsController::class, 'index'], $mfgMw);
 
+/** Phase 23A — Enterprise HR Platform ONLINE (hrm/*; additive; Offline deferred to 23B). */
+$hrmMw = rateb_erp_mw('hr', 'hr.view', 'hr');
+$router->get($app('hrm'), [HrmDashboardController::class, 'index'], $hrmMw);
+$router->get($app('hrm/dashboard'), [HrmDashboardController::class, 'index'], $hrmMw);
+$router->get($app('hrm/employees'), [HrmEmployeesController::class, 'index'], rateb_erp_mw('hr', 'hr.view', 'hr'));
+$router->get($app('hrm/employees/create'), [HrmEmployeesController::class, 'create'], rateb_erp_mw('hr', 'hr.create', 'hr'));
+$router->post($app('hrm/employees'), [HrmEmployeesController::class, 'store'], rateb_erp_mw('hr', 'hr.create', 'hr'));
+$router->get($app('hrm/employees/{id}'), [HrmEmployeesController::class, 'show'], rateb_erp_mw('hr', 'hr.view', 'hr'));
+$router->post($app('hrm/employees/{id}/transition'), [HrmEmployeesController::class, 'transition'], rateb_erp_mw('hr', 'hr.update', 'hr'));
+$router->get($app('hrm/departments'), [HrmDepartmentsController::class, 'index'], rateb_erp_mw('hr', 'hr.view', 'hr'));
+$router->post($app('hrm/departments'), [HrmDepartmentsController::class, 'store'], rateb_erp_mw('hr', 'hr.create', 'hr'));
+$router->get($app('hrm/positions'), [HrmPositionsController::class, 'index'], rateb_erp_mw('hr', 'hr.view', 'hr'));
+$router->post($app('hrm/positions'), [HrmPositionsController::class, 'store'], rateb_erp_mw('hr', 'hr.create', 'hr'));
+$router->get($app('hrm/organization'), [HrmOrganizationController::class, 'index'], rateb_erp_mw('hr', 'hr.view', 'hr'));
+$router->post($app('hrm/organization/units'), [HrmOrganizationController::class, 'storeUnit'], rateb_erp_mw('hr', 'hr.create', 'hr'));
+$router->post($app('hrm/organization/locations'), [HrmOrganizationController::class, 'storeLocation'], rateb_erp_mw('hr', 'hr.create', 'hr'));
+$router->get($app('hrm/training'), [HrmTrainingController::class, 'index'], rateb_erp_mw('hr', 'hr.training', 'hr'));
+$router->get($app('hrm/training/create'), [HrmTrainingController::class, 'create'], rateb_erp_mw('hr', 'hr.training', 'hr'));
+$router->post($app('hrm/training'), [HrmTrainingController::class, 'store'], rateb_erp_mw('hr', 'hr.training', 'hr'));
+$router->get($app('hrm/training/{id}'), [HrmTrainingController::class, 'show'], rateb_erp_mw('hr', 'hr.training', 'hr'));
+$router->post($app('hrm/training/{id}/transition'), [HrmTrainingController::class, 'transition'], rateb_erp_mw('hr', 'hr.training', 'hr'));
+$router->get($app('hrm/performance'), [HrmPerformanceController::class, 'index'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->get($app('hrm/performance/create'), [HrmPerformanceController::class, 'create'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->post($app('hrm/performance'), [HrmPerformanceController::class, 'store'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->get($app('hrm/performance/{id}'), [HrmPerformanceController::class, 'show'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->post($app('hrm/performance/{id}/transition'), [HrmPerformanceController::class, 'transition'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->get($app('hrm/promotions'), [HrmPromotionsController::class, 'index'], rateb_erp_mw('hr', 'hr.promotions', 'hr'));
+$router->post($app('hrm/promotions'), [HrmPromotionsController::class, 'store'], rateb_erp_mw('hr', 'hr.promotions', 'hr'));
+$router->get($app('hrm/transfers'), [HrmTransfersController::class, 'index'], rateb_erp_mw('hr', 'hr.transfers', 'hr'));
+$router->post($app('hrm/transfers'), [HrmTransfersController::class, 'store'], rateb_erp_mw('hr', 'hr.transfers', 'hr'));
+$router->get($app('hrm/goals'), [HrmGoalsController::class, 'index'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->post($app('hrm/goals'), [HrmGoalsController::class, 'store'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->get($app('hrm/competencies'), [HrmCompetenciesController::class, 'index'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->post($app('hrm/competencies'), [HrmCompetenciesController::class, 'store'], rateb_erp_mw('hr', 'hr.performance', 'hr'));
+$router->get($app('hrm/reports'), [HrmReportsController::class, 'index'], $hrmMw);
+$router->get($app('hrm/timeline'), [HrmTimelineController::class, 'index'], $hrmMw);
+
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);
 $router->post($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'store'], $hrAttMw);

@@ -88,6 +88,21 @@ $opsSection(__('manufacturing_platform'), [
     ['mfg/quality', 'mfg_quality', 'fa-clipboard-check', 'manufacturing', 'manufacturing.quality'],
     ['mfg/reports', 'mfg_reports', 'fa-chart-line', 'manufacturing', 'manufacturing.view'],
 ], 'fa-industry');
+$opsSection(__('hr_platform'), [
+    ['hrm', 'hr_platform', 'fa-id-card-clip', 'hr', 'hr.view'],
+    ['hrm/employees', 'hrm_employees', 'fa-user-tie', 'hr', 'hr.view'],
+    ['hrm/departments', 'hrm_departments', 'fa-building', 'hr', 'hr.view'],
+    ['hrm/positions', 'hrm_positions', 'fa-briefcase', 'hr', 'hr.view'],
+    ['hrm/organization', 'hrm_organization', 'fa-sitemap', 'hr', 'hr.view'],
+    ['hrm/training', 'hrm_training', 'fa-chalkboard-user', 'hr', 'hr.training'],
+    ['hrm/performance', 'hrm_performance', 'fa-chart-simple', 'hr', 'hr.performance'],
+    ['hrm/goals', 'hrm_goals', 'fa-bullseye', 'hr', 'hr.performance'],
+    ['hrm/competencies', 'hrm_competencies', 'fa-layer-group', 'hr', 'hr.performance'],
+    ['hrm/promotions', 'hrm_promotions', 'fa-arrow-up', 'hr', 'hr.promotions'],
+    ['hrm/transfers', 'hrm_transfers', 'fa-right-left', 'hr', 'hr.transfers'],
+    ['hrm/timeline', 'hrm_timeline', 'fa-timeline', 'hr', 'hr.view'],
+    ['hrm/reports', 'hrm_reports', 'fa-chart-pie', 'hr', 'hr.view'],
+], 'fa-id-card-clip');
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }
