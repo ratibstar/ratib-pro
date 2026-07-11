@@ -60,6 +60,12 @@ final class OfflineFeatureFlagService
         return $this->isMasterEnabled() && $this->enabled('offline.hr.attendance');
     }
 
+    /** Tier-1 procurement drafts (requires master + sub-flag). */
+    public function isProcurementEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.procurement');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

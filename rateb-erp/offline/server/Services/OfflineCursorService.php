@@ -8,12 +8,13 @@ use Rateb\App\Core\Database;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Offline\Models\OfflineEntityCursor;
 
-/** Delta cursor registry — inventory catalog + employee directory when flags on. */
+/** Delta cursor registry — inventory catalog + employee + supplier directories when flags on. */
 final class OfflineCursorService
 {
     private ?OfflineEntityCursor $model = null;
     private ?InventoryOfflineCatalogService $catalog = null;
     private ?HrOfflineEmployeeDirectoryService $employees = null;
+    private ?ProcurementOfflineSupplierDirectoryService $suppliers = null;
 
     private function model(): OfflineEntityCursor
     {
@@ -28,6 +29,11 @@ final class OfflineCursorService
     private function employees(): HrOfflineEmployeeDirectoryService
     {
         return $this->employees ??= new HrOfflineEmployeeDirectoryService();
+    }
+
+    private function suppliers(): ProcurementOfflineSupplierDirectoryService
+    {
+        return $this->suppliers ??= new ProcurementOfflineSupplierDirectoryService();
     }
 
     public function isAvailable(): bool
@@ -59,6 +65,15 @@ final class OfflineCursorService
             }
 
             return $this->employees()->pull($companyId, $branchId, $token);
+        }
+
+        if (in_array($entityType, ['supplier_directory', 'suppliers', 'procurement_suppliers'], true)) {
+            $token = $cursorToken;
+            if ($token === null || $token === '') {
+                $token = $this->readStoredToken('supplier_directory', $companyId, $branchId);
+            }
+
+            return $this->suppliers()->pull($companyId, $branchId, $token);
         }
 
         if (!$this->isAvailable()) {

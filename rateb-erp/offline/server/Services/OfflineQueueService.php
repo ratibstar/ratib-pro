@@ -210,7 +210,7 @@ final class OfflineQueueService
                 $action = 'offline.ack';
             }
 
-            if (in_array($module, ['procurement'], true)) {
+            if (in_array($module, ['accounting', 'payroll', 'payments'], true)) {
                 $rejected++;
                 $rejectedKeys[] = $idempotencyKey;
                 continue;
@@ -238,6 +238,21 @@ final class OfflineQueueService
                     continue;
                 }
                 $normalizedAction = $this->normalizeHrAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
+            if ($module === 'procurement') {
+                if (!$this->flags()->enabled('offline.procurement')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeProcurementAction($action);
                 if ($normalizedAction === '') {
                     $rejected++;
                     $rejectedKeys[] = $idempotencyKey;
@@ -363,6 +378,28 @@ final class OfflineQueueService
                 continue;
             }
 
+            if ($module === 'procurement') {
+                if (!$this->flags()->enabled('offline.procurement')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
             $stats['skipped']++;
         }
 
@@ -437,6 +474,27 @@ final class OfflineQueueService
             'bulk_attendance' => 'attendance.bulk',
             'create_leave_draft' => 'leave_request.draft',
             'create_leave' => 'leave_request.draft',
+        ];
+        $mapped = $aliases[$action] ?? '';
+
+        return in_array($mapped, $allowed, true) ? $mapped : '';
+    }
+
+    private function normalizeProcurementAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = ProcurementOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return $action;
+        }
+        $aliases = [
+            'create_purchase_request' => 'purchase_request.draft',
+            'create_pr' => 'purchase_request.draft',
+            'create_rfq' => 'rfq.draft',
+            'create_purchase_order' => 'purchase_order.draft',
+            'create_po' => 'purchase_order.draft',
+            'po.create' => 'purchase_order.draft',
+            'pr.create' => 'purchase_request.draft',
         ];
         $mapped = $aliases[$action] ?? '';
 

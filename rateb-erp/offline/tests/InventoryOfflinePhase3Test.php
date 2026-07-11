@@ -436,9 +436,9 @@ final class InventoryOfflinePhase3Test
     private function testAuthzDeniesUnrelatedAbility(): void
     {
         TenantContext::setCompanyId(42);
-        TenantContext::setApiModules(['procurement']);
+        TenantContext::setApiModules(['accounting']);
         $ok = (new OfflineAuthorizationService())->canManageSync() === false;
-        $this->record('authz denies procurement-only token for sync manage', $ok, $ok ? 'ok' : 'allowed');
+        $this->record('authz denies accounting-only token for sync manage', $ok, $ok ? 'ok' : 'allowed');
         TenantContext::setApiModules(null);
         TenantContext::setCompanyId(null);
     }

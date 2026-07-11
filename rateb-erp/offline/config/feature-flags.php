@@ -12,6 +12,7 @@ return [
         'offline.pos.complete' => true,
         'offline.inventory.movements' => false,
         'offline.hr.attendance' => false,
+        'offline.procurement' => false,
         'offline.read_cache' => false,
     ],
 
@@ -21,6 +22,7 @@ return [
         'offline.pos.complete' => 'RATEB_OFFLINE_POS_COMPLETE',
         'offline.inventory.movements' => 'RATEB_OFFLINE_INVENTORY_MOVEMENTS',
         'offline.hr.attendance' => 'RATEB_OFFLINE_HR_ATTENDANCE',
+        'offline.procurement' => 'RATEB_OFFLINE_PROCUREMENT',
         'offline.read_cache' => 'RATEB_OFFLINE_READ_CACHE',
     ],
 ];

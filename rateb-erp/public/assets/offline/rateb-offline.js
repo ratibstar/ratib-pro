@@ -1,7 +1,6 @@
-/*! RATEB Enterprise Offline SDK Phase 4.5.1 — durable delete-by-key flush. Master flag default OFF. */
+/*! RATEB Enterprise Offline SDK Phase 5.0.0 — Procurement drafts (flag default OFF). Master flag default OFF. */
 
-/* ---- offline\client\db\schema.js ---- */
-
+/* ---- schema.js ---- */
 /**
  * RATEB Offline — IndexedDB schema (Phase 2A).
  * DB: rateb_erp_offline (separate from rateb_pos_offline).
@@ -81,8 +80,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\db\migrations.js ---- */
-
+/* ---- migrations.js ---- */
 /**
  * RATEB Offline — IndexedDB store helpers (Phase 2A).
  */
@@ -200,8 +198,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\core\idempotency.js ---- */
-
+/* ---- idempotency.js ---- */
 /**
  * RATEB Offline — Idempotency helpers (Phase 2A).
  */
@@ -235,8 +232,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\core\event-bus.js ---- */
-
+/* ---- event-bus.js ---- */
 /**
  * RATEB Offline — Event bus (Phase 2A).
  */
@@ -264,8 +260,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\core\connectivity.js ---- */
-
+/* ---- connectivity.js ---- */
 /**
  * RATEB Offline — Connectivity Manager (Phase 2A).
  */
@@ -407,8 +402,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\sync\queue-manager.js ---- */
-
+/* ---- queue-manager.js ---- */
 /**
  * RATEB Offline — Queue Manager (Phase 4.5.1 — durable delete-by-key flush).
  */
@@ -704,8 +698,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\sync\replay-scheduler.js ---- */
-
+/* ---- replay-scheduler.js ---- */
 /**
  * RATEB Offline — Replay scheduler stub (Phase 2A).
  * Full module replay lands in later phases; here we only flush the client queue.
@@ -739,8 +732,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\sync\delta-pull.js ---- */
-
+/* ---- delta-pull.js ---- */
 /**
  * RATEB Offline — Delta pull (Phase 3).
  * Inventory catalog delta is live when Tier-1 flag is on; other entities remain stub-friendly.
@@ -777,8 +769,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\core\transport.js ---- */
-
+/* ---- transport.js ---- */
 /**
  * RATEB Offline — Transport Layer (Phase 2A).
  * Wraps fetch: online → passthrough; offline + RS → queue. Never alters business payloads.
@@ -888,8 +879,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\adapters\pos-adapter.js ---- */
-
+/* ---- pos-adapter.js ---- */
 /**
  * RATEB Offline — POS adapter (Phase 2A).
  * Delegates to existing RatebPosOffline when present; does not modify POS logic.
@@ -927,8 +917,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\adapters\inventory-adapter.js ---- */
-
+/* ---- inventory-adapter.js ---- */
 /**
  * RATEB Offline — Inventory adapter (Phase 3 / Tier 1).
  * Queues stock movements, stock counts, and warehouse transfers via enterprise offline queue.
@@ -1041,8 +1030,7 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\adapters\hr-adapter.js ---- */
-
+/* ---- hr-adapter.js ---- */
 /**
  * RATEB Offline — HR adapter (Phase 4 / Tier 1).
  * Queues attendance, bulk attendance, and leave drafts via enterprise offline queue.
@@ -1153,8 +1141,118 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\adapters\form-post-adapter.js ---- */
+/* ---- procurement-adapter.js ---- */
+/**
+ * RATEB Offline — Procurement adapter (Phase 5 / Tier 1).
+ * Queues PR / RFQ / PO drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.procurement are true.
+ * Does NOT enqueue approvals, payments, or accounting posting.
+ */
+(function (root) {
+    'use strict';
 
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.procurement']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'proc') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('procurement_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'procurement',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull('supplier_directory', options).then(function (res) {
+            var delta = (res && res.delta) ? res.delta : res;
+            if (delta && Array.isArray(delta.items) && root.RatebOfflineSchema) {
+                return root.RatebOfflineSchema.withStore(
+                    root.RatebOfflineSchema.STORES.ENTITY_CACHE,
+                    'readwrite',
+                    function (store) {
+                        delta.items.forEach(function (item) {
+                            if (item && item.id) {
+                                store.put({
+                                    id: 'sup:' + item.id,
+                                    entity: 'supplier_directory',
+                                    data: item,
+                                    updated_at: item.updated_at || null
+                                });
+                            }
+                        });
+                        return delta;
+                    }
+                ).then(function () { return delta; }).catch(function () { return delta; });
+            }
+            return delta || { items: [] };
+        });
+    }
+
+    root.RatebOfflineProcurementAdapter = {
+        isActive: isActive,
+        enqueuePurchaseRequestDraft: function (payload, options) {
+            return enqueue('purchase_request.draft', payload || {}, options);
+        },
+        enqueueRfqDraft: function (payload, options) {
+            return enqueue('rfq.draft', payload || {}, options);
+        },
+        enqueuePurchaseOrderDraft: function (payload, options) {
+            return enqueue('purchase_order.draft', payload || {}, options);
+        },
+        pullSupplierDirectory: pullDirectory,
+        sync: function (options) {
+            options = options || {};
+            if (!isActive()) {
+                return Promise.resolve({ skipped: true, disabled: true });
+            }
+            var q = root.RatebOfflineQueue;
+            var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
+            return flush.then(function (flushResult) {
+                return pullDirectory(options).then(function (directory) {
+                    return { flush: flushResult, directory: directory };
+                });
+            });
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+
+/* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
  */
@@ -1170,10 +1268,9 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* ---- offline\client\core\sdk.js ---- */
-
+/* ---- sdk.js ---- */
 /**
- * RATEB Offline SDK bootstrap (Phase 4).
+ * RATEB Offline SDK bootstrap (Phase 5).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -1185,6 +1282,7 @@
         'offline.pos.complete': true,
         'offline.inventory.movements': false,
         'offline.hr.attendance': false,
+        'offline.procurement': false,
         'offline.read_cache': false
     };
 
@@ -1221,19 +1319,21 @@
             root.RatebOfflineEvents.emit('sdk:ready', {
                 enabled: enabled,
                 inventory: !!flags['offline.inventory.movements'],
-                hr: !!flags['offline.hr.attendance']
+                hr: !!flags['offline.hr.attendance'],
+                procurement: !!flags['offline.procurement']
             });
         }
         return {
             enabled: enabled,
             inventory: !!flags['offline.inventory.movements'],
             hr: !!flags['offline.hr.attendance'],
-            version: '4.0.0'
+            procurement: !!flags['offline.procurement'],
+            version: '5.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '4.0.0',
+        version: '5.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -1243,6 +1343,9 @@
         isHrEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.hr.attendance']);
         },
+        isProcurementEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.procurement']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -1250,6 +1353,7 @@
         pos: function () { return root.RatebOfflinePosAdapter || null; },
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
+        procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

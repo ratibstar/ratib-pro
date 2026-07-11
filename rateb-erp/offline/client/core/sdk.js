@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 4).
+ * RATEB Offline SDK bootstrap (Phase 5).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -11,6 +11,7 @@
         'offline.pos.complete': true,
         'offline.inventory.movements': false,
         'offline.hr.attendance': false,
+        'offline.procurement': false,
         'offline.read_cache': false
     };
 
@@ -47,19 +48,21 @@
             root.RatebOfflineEvents.emit('sdk:ready', {
                 enabled: enabled,
                 inventory: !!flags['offline.inventory.movements'],
-                hr: !!flags['offline.hr.attendance']
+                hr: !!flags['offline.hr.attendance'],
+                procurement: !!flags['offline.procurement']
             });
         }
         return {
             enabled: enabled,
             inventory: !!flags['offline.inventory.movements'],
             hr: !!flags['offline.hr.attendance'],
-            version: '4.0.0'
+            procurement: !!flags['offline.procurement'],
+            version: '5.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '4.0.0',
+        version: '5.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -69,6 +72,9 @@
         isHrEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.hr.attendance']);
         },
+        isProcurementEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.procurement']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -76,6 +82,7 @@
         pos: function () { return root.RatebOfflinePosAdapter || null; },
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
+        procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

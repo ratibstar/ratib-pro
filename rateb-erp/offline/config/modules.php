@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Module tier + operation classification registry (Phase 4).
- * Tier 1/2 adapters are registered; Procurement not activated.
+ * Module tier + operation classification registry (Phase 5).
+ * Tier 1 adapters: Inventory, HR, Procurement (all flag-gated).
  */
 return [
     'tiers' => [
@@ -14,8 +14,8 @@ return [
         'T3' => ['platform'],
     ],
 
-    /** Phase 4: foundation + POS + Inventory + HR (flag-gated). */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr'],
+    /** Phase 5: foundation + POS + Inventory + HR + Procurement (flag-gated). */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -29,5 +29,8 @@ return [
         'hr.attendance' => ['class' => 'RS', 'module' => 'hr'],
         'hr.attendance.bulk' => ['class' => 'RS', 'module' => 'hr'],
         'hr.leave_draft' => ['class' => 'RS', 'module' => 'hr'],
+        'procurement.purchase_request.draft' => ['class' => 'RS', 'module' => 'procurement'],
+        'procurement.rfq.draft' => ['class' => 'RS', 'module' => 'procurement'],
+        'procurement.purchase_order.draft' => ['class' => 'RS', 'module' => 'procurement'],
     ],
 ];

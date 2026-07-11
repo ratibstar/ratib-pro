@@ -28,7 +28,8 @@ final class OfflineAuthorizationService
 
             return in_array('pos', $modules, true)
                 || in_array('inventory', $modules, true)
-                || in_array('hr', $modules, true);
+                || in_array('hr', $modules, true)
+                || in_array('procurement', $modules, true);
         }
 
         // Session path — prefer permission slug; soft-fail if auth DB unavailable.

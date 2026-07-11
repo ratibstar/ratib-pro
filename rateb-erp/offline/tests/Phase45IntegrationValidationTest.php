@@ -30,7 +30,7 @@ final class Phase45IntegrationValidationTest
         $this->clearEnv();
 
         $this->testAllFlagsDefaultSafe();
-        $this->testProcurementStillRejectedInQueueSource();
+        $this->testProcurementFlagGatedInQueueSource();
         $this->testCrossModuleReplayIsolation();
         $this->testAckZeroDataLossContract();
         $this->testEnterpriseFlushDurabilityPattern();
@@ -60,6 +60,7 @@ final class Phase45IntegrationValidationTest
             'RATEB_OFFLINE_ENABLED',
             'RATEB_OFFLINE_INVENTORY_MOVEMENTS',
             'RATEB_OFFLINE_HR_ATTENDANCE',
+            'RATEB_OFFLINE_PROCUREMENT',
         ] as $k) {
             putenv($k);
             unset($_ENV[$k]);
@@ -72,17 +73,19 @@ final class Phase45IntegrationValidationTest
         $ok = $svc->isMasterEnabled() === false
             && $svc->enabled('offline.inventory.movements') === false
             && $svc->enabled('offline.hr.attendance') === false
+            && $svc->enabled('offline.procurement') === false
             && $svc->enabled('offline.read_cache') === false;
         $this->record('flags default OFF (safe production posture)', $ok, $ok ? 'ok' : 'flag unexpectedly on', 'Critical');
     }
 
-    private function testProcurementStillRejectedInQueueSource(): void
+    private function testProcurementFlagGatedInQueueSource(): void
     {
         $src = (string) file_get_contents(RATEB_ROOT . '/offline/server/Services/OfflineQueueService.php');
-        $ok = str_contains($src, "['procurement']")
-            || str_contains($src, "'procurement'");
-        $ok = $ok && preg_match("/in_array\(\\\$module,\s*\[[^\]]*procurement/", $src);
-        $this->record('procurement module still rejected at queue', (bool) $ok, $ok ? 'ok' : 'procurement may enqueue', 'Critical');
+        $ok = str_contains($src, "module === 'procurement'")
+            && str_contains($src, "enabled('offline.procurement')")
+            && str_contains($src, 'normalizeProcurementAction')
+            && !preg_match("/in_array\(\\\$module,\s*\[[^\]]*procurement/", $src);
+        $this->record('procurement module flag-gated at queue (not hard-rejected)', (bool) $ok, $ok ? 'ok' : 'legacy hard-reject or missing gate', 'High');
     }
 
     private function testCrossModuleReplayIsolation(): void
@@ -99,6 +102,7 @@ final class Phase45IntegrationValidationTest
         $ok = ($invSkip['status'] ?? '') === 'skipped'
             && ($hrSkip['status'] ?? '') === 'skipped'
             && ($procSkip['status'] ?? '') === 'skipped'
+            && ($procSkip['error'] ?? '') === 'procurement_offline_disabled'
             && !str_contains($invSrc, 'HrService')
             && !str_contains($hrSrc, 'StockMovementService')
             && !str_contains($posSrc, 'InventoryOffline')
@@ -194,8 +198,11 @@ final class Phase45IntegrationValidationTest
         $resolver = new OfflineConflictResolverService();
         $inv = $resolver->resolveInventory(['version' => 2, 'expected_quantity' => 1], ['version' => 1, 'quantity' => 9]);
         $hr = $resolver->resolveHr(['version' => 2, 'expected_status' => 'present'], ['version' => 1, 'status' => 'absent']);
-        $ok = ($inv['reason'] ?? '') === 'quantity_changed' && ($hr['reason'] ?? '') === 'status_changed';
-        $this->record('conflict resolution inventory + HR', $ok, $ok ? 'ok' : 'missing', 'High');
+        $proc = $resolver->resolveProcurement(['version' => 2, 'expected_status' => 'draft'], ['version' => 1, 'status' => 'submitted']);
+        $ok = ($inv['reason'] ?? '') === 'quantity_changed'
+            && ($hr['reason'] ?? '') === 'status_changed'
+            && ($proc['reason'] ?? '') === 'status_changed';
+        $this->record('conflict resolution inventory + HR + procurement', $ok, $ok ? 'ok' : 'missing', 'High');
     }
 
     private function testBackgroundSyncFlagGates(): void
@@ -203,7 +210,8 @@ final class Phase45IntegrationValidationTest
         $src = (string) file_get_contents(RATEB_ROOT . '/offline/server/Services/OfflineBackgroundSync.php');
         $ok = str_contains($src, 'isMasterEnabled')
             && str_contains($src, 'inventory_enabled')
-            && str_contains($src, 'hr_enabled');
+            && str_contains($src, 'hr_enabled')
+            && str_contains($src, 'procurement_enabled');
         $this->record('background sync reports module flag gates', $ok, $ok ? 'ok' : 'missing', 'Medium');
     }
 
@@ -297,9 +305,10 @@ final class Phase45IntegrationValidationTest
         $ok = str_contains($bundle, 'RatebOfflineInventoryAdapter')
             && str_contains($bundle, 'RatebOfflineHrAdapter')
             && str_contains($bundle, 'RatebOfflinePosAdapter')
+            && str_contains($bundle, 'RatebOfflineProcurementAdapter')
             && str_contains($bundle, 'clearable_keys')
-            && str_contains($bundle, 'Phase 4');
-        $this->record('SDK bundle contains POS/Inv/HR adapters', $ok, $ok ? 'ok' : 'stale bundle', 'High');
+            && (str_contains($bundle, 'Phase 5') || str_contains($bundle, '5.0.0'));
+        $this->record('SDK bundle contains POS/Inv/HR/Procurement adapters', $ok, $ok ? 'ok' : 'stale bundle', 'High');
     }
 
     private function testUnknownDeviceUnlockResidual(): void

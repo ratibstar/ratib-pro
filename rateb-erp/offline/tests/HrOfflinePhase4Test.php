@@ -382,9 +382,9 @@ final class HrOfflinePhase4Test
     private function testAuthzDeniesProcurementOnly(): void
     {
         TenantContext::setCompanyId(42);
-        TenantContext::setApiModules(['procurement']);
+        TenantContext::setApiModules(['accounting']);
         $ok = (new OfflineAuthorizationService())->canManageSync() === false;
-        $this->record('authz denies procurement-only token', $ok, $ok ? 'ok' : 'allowed');
+        $this->record('authz denies accounting-only token', $ok, $ok ? 'ok' : 'allowed');
         TenantContext::setApiModules(null);
         TenantContext::setCompanyId(null);
     }

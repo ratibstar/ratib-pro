@@ -110,4 +110,35 @@ final class OfflineConflictResolverService
 
         return $base;
     }
+
+    /**
+     * Procurement-specific: reject when expected draft status drifted.
+     *
+     * @param array<string, mixed> $clientItem
+     * @param array<string, mixed>|null $serverItem
+     * @return array<string, mixed>
+     */
+    public function resolveProcurement(array $clientItem, ?array $serverItem): array
+    {
+        $base = $this->resolve($clientItem, $serverItem);
+        if (($base['action'] ?? '') === 'reject_client') {
+            return $base;
+        }
+        if ($serverItem === null) {
+            return $base;
+        }
+
+        $expectedStatus = $clientItem['expected_status'] ?? null;
+        if ($expectedStatus !== null && array_key_exists('status', $serverItem)) {
+            if ((string) $serverItem['status'] !== (string) $expectedStatus) {
+                return [
+                    'action' => 'reject_client',
+                    'item' => $serverItem,
+                    'reason' => 'status_changed',
+                ];
+            }
+        }
+
+        return $base;
+    }
 }
