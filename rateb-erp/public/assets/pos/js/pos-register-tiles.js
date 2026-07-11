@@ -188,6 +188,22 @@
         return merged;
     }
 
+    function isTilesOnline() {
+        if (navigator.onLine === false) {
+            return false;
+        }
+        if (root.classList.contains('rateb-pos--offline')) {
+            return false;
+        }
+        if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
+            return window.RatebPosConnectivity.isOnline();
+        }
+        if (window.RatebPosNet && typeof window.RatebPosNet.isOnline === 'function') {
+            return window.RatebPosNet.isOnline();
+        }
+        return navigator.onLine !== false;
+    }
+
     function fetchProducts(query) {
         if (!api.products) { return Promise.resolve([]); }
         var q = (query || '').trim();
@@ -203,9 +219,11 @@
             return items;
         }
 
-        if (!isTilesOnline()
-            && window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
-            return window.RatebPosOffline.catalogSearch(q, 80).then(cacheItems);
+        if (!isTilesOnline()) {
+            if (window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
+                return window.RatebPosOffline.catalogSearch(q, 80).then(cacheItems);
+            }
+            return Promise.resolve([]);
         }
 
         return fetch(api.products + '?q=' + encodeURIComponent(q), {
@@ -213,6 +231,9 @@
         }).then(function (r) { return r.json(); }).then(function (d) {
             return cacheItems(d.items || []);
         }).catch(function () {
+            if (window.RatebPosNet && window.RatebPosNet.markOffline) {
+                window.RatebPosNet.markOffline();
+            }
             if (window.RatebPosOffline && window.RatebPosOffline.catalogSearch) {
                 return window.RatebPosOffline.catalogSearch(q, 80).then(cacheItems);
             }
@@ -246,19 +267,6 @@
         });
         cacheCatalogOffline(seed);
         return seed.slice();
-    }
-
-    function isTilesOnline() {
-        if (navigator.onLine === false) {
-            return false;
-        }
-        if (window.RatebPosNet && typeof window.RatebPosNet.isOnline === 'function') {
-            return window.RatebPosNet.isOnline();
-        }
-        if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.isOnline === 'function') {
-            return window.RatebPosConnectivity.isOnline();
-        }
-        return true;
     }
 
     function fetchCatalogFromApi() {
@@ -918,10 +926,10 @@
     bindResize();
     bindModesMenu();
     bindReturnClose();
+    bindConnection();
     loadCategory({ id: 'all' });
     tickClock();
     setInterval(tickClock, 30000);
-    bindConnection();
 
     // Auto-refresh catalog when inventory transfer pushes new stock to POS warehouse from another tab/page.
     window.addEventListener('storage', function (e) {
