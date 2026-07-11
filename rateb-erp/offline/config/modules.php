@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform auth unlock (flag-gated). */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'erp_shell', 'platform'],
+    /** Phase 11: + platform auth unlock (flag-gated). Phase 15B: + recruitment. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -37,5 +37,16 @@ return [
         'procurement.rfq.draft' => ['class' => 'RS', 'module' => 'procurement'],
         'procurement.purchase_order.draft' => ['class' => 'RS', 'module' => 'procurement'],
         'procurement.goods_receipt.receive' => ['class' => 'RS', 'module' => 'procurement'],
+        'recruitment.candidate.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.candidate.update' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.workflow.transition' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.assignment.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.interview.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.visa.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.medical.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.passport.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.passport.update' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.contract.create' => ['class' => 'RS', 'module' => 'recruitment'],
+        'recruitment.note.create' => ['class' => 'RS', 'module' => 'recruitment'],
     ],
 ];

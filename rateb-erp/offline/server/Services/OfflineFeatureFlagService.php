@@ -75,6 +75,27 @@ final class OfflineFeatureFlagService
         return $this->isProcurementEnabled() && $this->enabled('offline.procurement.goods_receipt');
     }
 
+    /** Phase 15B — Recruitment Tier-1 (requires master + offline.recruitment). */
+    public function isRecruitmentEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.recruitment');
+    }
+
+    public function isRecruitmentCandidatesEnabled(): bool
+    {
+        return $this->isRecruitmentEnabled() && $this->enabled('offline.recruitment.candidates');
+    }
+
+    public function isRecruitmentWorkflowEnabled(): bool
+    {
+        return $this->isRecruitmentEnabled() && $this->enabled('offline.recruitment.workflow');
+    }
+
+    public function isRecruitmentAssignmentEnabled(): bool
+    {
+        return $this->isRecruitmentEnabled() && $this->enabled('offline.recruitment.assignment');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {
@@ -125,7 +146,8 @@ final class OfflineFeatureFlagService
     {
         return $this->isInventoryMovementsEnabled()
             || $this->isHrAttendanceEnabled()
-            || $this->isProcurementEnabled();
+            || $this->isProcurementEnabled()
+            || $this->isRecruitmentEnabled();
     }
 
     /** @return array<string, bool> */

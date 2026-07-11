@@ -267,6 +267,39 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'recruitment') {
+                if (!$this->flags()->enabled('offline.recruitment')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeRecruitmentAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, ['candidate.create', 'candidate.update', 'note.create'], true)
+                    && !$this->flags()->enabled('offline.recruitment.candidates')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.recruitment.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'assignment.create'
+                    && !$this->flags()->enabled('offline.recruitment.assignment')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -406,6 +439,28 @@ final class OfflineQueueService
                 continue;
             }
 
+            if ($module === 'recruitment') {
+                if (!$this->flags()->enabled('offline.recruitment')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
             $stats['skipped']++;
         }
 
@@ -504,6 +559,31 @@ final class OfflineQueueService
             'receive_goods' => 'goods_receipt.receive',
             'grn.create' => 'goods_receipt.receive',
             'po.receive' => 'goods_receipt.receive',
+        ];
+        $mapped = $aliases[$action] ?? '';
+
+        return in_array($mapped, $allowed, true) ? $mapped : '';
+    }
+
+    private function normalizeRecruitmentAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = RecruitmentOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return $action;
+        }
+        $aliases = [
+            'create_candidate' => 'candidate.create',
+            'update_candidate' => 'candidate.update',
+            'transition_workflow' => 'workflow.transition',
+            'create_assignment' => 'assignment.create',
+            'create_interview' => 'interview.create',
+            'create_visa' => 'visa.create',
+            'create_medical' => 'medical.create',
+            'create_passport' => 'passport.create',
+            'update_passport' => 'passport.update',
+            'create_contract' => 'contract.create',
+            'create_note' => 'note.create',
         ];
         $mapped = $aliases[$action] ?? '';
 

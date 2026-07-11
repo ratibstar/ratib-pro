@@ -53,5 +53,27 @@ return [
             'branch_scoped' => true,
             'requires_updated_at' => true,
         ],
+        /** Phase 15B — optional recruitment directories (read-only). */
+        'recruitment_agency_directory' => [
+            'table' => 'rateb_recruitment_agencies',
+            'aliases' => ['recruitment_agencies', 'agencies'],
+            'cache_prefix' => 'rag',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+        ],
+        'recruitment_skill_directory' => [
+            'table' => 'rateb_recruitment_skills',
+            'aliases' => ['recruitment_skills', 'skills'],
+            'cache_prefix' => 'rsk',
+            'branch_scoped' => false,
+            'requires_updated_at' => false,
+        ],
+        'recruitment_language_directory' => [
+            'table' => 'rateb_recruitment_languages',
+            'aliases' => ['recruitment_languages', 'languages'],
+            'cache_prefix' => 'rlg',
+            'branch_scoped' => false,
+            'requires_updated_at' => false,
+        ],
     ],
 ];

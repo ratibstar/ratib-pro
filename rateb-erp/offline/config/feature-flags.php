@@ -15,6 +15,11 @@ return [
         'offline.procurement' => false,
         /** Phase 14.2 — PO goods receipt (GRN) via ProcurementService::receiveOrder (requires procurement). */
         'offline.procurement.goods_receipt' => false,
+        /** Phase 15B — Recruitment Tier-1 (requires master). */
+        'offline.recruitment' => false,
+        'offline.recruitment.candidates' => false,
+        'offline.recruitment.workflow' => false,
+        'offline.recruitment.assignment' => false,
         'offline.monitoring' => false,
         'offline.read_cache' => false,
         'offline.auth.unlock' => false,
@@ -32,6 +37,10 @@ return [
         'offline.hr.attendance' => 'RATEB_OFFLINE_HR_ATTENDANCE',
         'offline.procurement' => 'RATEB_OFFLINE_PROCUREMENT',
         'offline.procurement.goods_receipt' => 'RATEB_OFFLINE_PROCUREMENT_GRN',
+        'offline.recruitment' => 'RATEB_OFFLINE_RECRUITMENT',
+        'offline.recruitment.candidates' => 'RATEB_OFFLINE_RECRUITMENT_CANDIDATES',
+        'offline.recruitment.workflow' => 'RATEB_OFFLINE_RECRUITMENT_WORKFLOW',
+        'offline.recruitment.assignment' => 'RATEB_OFFLINE_RECRUITMENT_ASSIGNMENT',
         'offline.monitoring' => 'RATEB_OFFLINE_MONITORING',
         'offline.read_cache' => 'RATEB_OFFLINE_READ_CACHE',
         'offline.auth.unlock' => 'RATEB_OFFLINE_AUTH_UNLOCK',

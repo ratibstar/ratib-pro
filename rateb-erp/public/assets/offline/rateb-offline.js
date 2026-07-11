@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phase 5.0.0 + Phases 10–14.2 GRN; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phase 5.0.0 + Phases 10-14.2 GRN + Phase 15B Recruitment; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -726,6 +726,7 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- replay-scheduler.js ---- */
 /**
  * RATEB Offline — Replay scheduler stub (Phase 2A).
@@ -1198,278 +1199,346 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* ---- procurement-adapter.js ---- */
+/**
+ * RATEB Offline — Procurement adapter (Phase 5 / Tier 1 + Phase 14.2 GRN).
+ * Queues PR / RFQ / PO drafts via enterprise offline queue.
+ * GRN (goods_receipt.receive) requires offline.procurement.goods_receipt.
+ * Activated only when offline.enabled + offline.procurement are true.
+ * Does NOT enqueue approvals, payments, or accounting posting directly.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.procurement']);
+    }
+
+    function isGoodsReceiptActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.procurement.goods_receipt']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'proc') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('procurement_offline_disabled'));
+        }
+        if (action === 'goods_receipt.receive' && !isGoodsReceiptActive()) {
+            return Promise.reject(new Error('procurement_grn_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'procurement',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull('supplier_directory', options).then(function (res) {
+            var delta = (res && res.delta) ? res.delta : res;
+            if (delta && Array.isArray(delta.items) && root.RatebOfflineSchema) {
+                return root.RatebOfflineSchema.withStore(
+                    root.RatebOfflineSchema.STORES.ENTITY_CACHE,
+                    'readwrite',
+                    function (store) {
+                        delta.items.forEach(function (item) {
+                            if (item && item.id) {
+                                var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+                                var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
+                                var bid = parseInt(
+                                    item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
+                                    10
+                                ) || 0;
+                                var id = cid + ':' + bid + ':sup:' + item.id;
+                                try { store.delete('sup:' + item.id); } catch (e) { /* legacy */ }
+                                if (item.deleted || item.active === false) {
+                                    store.delete(id);
+                                    return;
+                                }
+                                store.put({
+                                    id: id,
+                                    entity: 'supplier_directory',
+                                    company_id: cid,
+                                    branch_id: bid,
+                                    payload: item,
+                                    data: item,
+                                    updated_at: item.updated_at || null,
+                                    synced_at: Date.now()
+                                });
+                            }
+                        });
+                        return delta;
+                    }
+                ).then(function () { return delta; }).catch(function () { return delta; });
+            }
+            return delta || { items: [] };
+        });
+    }
+
+    root.RatebOfflineProcurementAdapter = {
+        isActive: isActive,
+        isGoodsReceiptActive: isGoodsReceiptActive,
+        enqueuePurchaseRequestDraft: function (payload, options) {
+            return enqueue('purchase_request.draft', payload || {}, options);
+        },
+        enqueueRfqDraft: function (payload, options) {
+            return enqueue('rfq.draft', payload || {}, options);
+        },
+        enqueuePurchaseOrderDraft: function (payload, options) {
+            return enqueue('purchase_order.draft', payload || {}, options);
+        },
+        enqueueGoodsReceipt: function (payload, options) {
+            return enqueue('goods_receipt.receive', payload || {}, options);
+        },
+        pullSupplierDirectory: pullDirectory,
+        sync: function (options) {
+            options = options || {};
+            if (!isActive()) {
+                return Promise.resolve({ skipped: true, disabled: true });
+            }
+            var q = root.RatebOfflineQueue;
+            var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
+            return flush.then(function (flushResult) {
+                return pullDirectory(options).then(function (directory) {
+                    return { flush: flushResult, directory: directory };
+                });
+            });
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+
+/* ---- recruitment-adapter.js ---- */
 /**
-
- * RATEB Offline — Procurement adapter (Phase 5 / Tier 1 + Phase 14.2 GRN).
-
- * Queues PR / RFQ / PO drafts via enterprise offline queue.
-
- * GRN (goods_receipt.receive) requires offline.procurement.goods_receipt.
-
- * Activated only when offline.enabled + offline.procurement are true.
-
- * Does NOT enqueue approvals, payments, or accounting posting directly.
-
+ * RATEB Offline — Recruitment adapter (Phase 15B / Tier 1).
+ * Queues candidate / workflow / assignment / metadata drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.recruitment (sub-flags gate children).
+ * Does NOT enqueue approvals, payments, government submission, or binary uploads.
  */
-
 (function (root) {
-
     'use strict';
 
-
-
     function flags() {
-
         if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
-
             return root.RatebOffline.flags() || {};
-
         }
-
         return {};
-
     }
-
-
 
     function isActive() {
-
         var f = flags();
-
-        return !!(f['offline.enabled'] && f['offline.procurement']);
-
+        return !!(f['offline.enabled'] && f['offline.recruitment']);
     }
 
-
-
-    function isGoodsReceiptActive() {
-
+    function isCandidatesActive() {
         var f = flags();
-
-        return !!(isActive() && f['offline.procurement.goods_receipt']);
-
+        return !!(isActive() && f['offline.recruitment.candidates']);
     }
 
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.recruitment.workflow']);
+    }
 
+    function isAssignmentActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.recruitment.assignment']);
+    }
 
     function makeClientId(prefix) {
-
         var rand = Math.random().toString(36).slice(2, 10);
-
-        return String(prefix || 'proc') + '-' + Date.now() + '-' + rand;
-
+        return String(prefix || 'rec') + '-' + Date.now() + '-' + rand;
     }
-
-
 
     function enqueue(action, payload, options) {
-
         options = options || {};
-
         if (!isActive()) {
-
-            return Promise.reject(new Error('procurement_offline_disabled'));
-
+            return Promise.reject(new Error('recruitment_offline_disabled'));
         }
-
-        if (action === 'goods_receipt.receive' && !isGoodsReceiptActive()) {
-
-            return Promise.reject(new Error('procurement_grn_offline_disabled'));
-
+        if ((action === 'candidate.create' || action === 'candidate.update' || action === 'note.create')
+            && !isCandidatesActive()) {
+            return Promise.reject(new Error('recruitment_candidates_offline_disabled'));
         }
-
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('recruitment_workflow_offline_disabled'));
+        }
+        if (action === 'assignment.create' && !isAssignmentActive()) {
+            return Promise.reject(new Error('recruitment_assignment_offline_disabled'));
+        }
         var q = root.RatebOfflineQueue;
-
         if (!q || typeof q.enqueue !== 'function') {
-
             return Promise.reject(new Error('offline_queue_unavailable'));
-
         }
-
         var clientId = options.client_id || options.idempotency_key || makeClientId(action);
-
         return q.enqueue({
-
             client_id: clientId,
-
             idempotency_key: clientId,
-
-            module: 'procurement',
-
+            module: 'recruitment',
             action: action,
-
             payload: payload || {},
-
             version: options.version || 1,
-
             occurred_at: options.occurred_at || new Date().toISOString()
-
         });
-
     }
 
-
-
-    function pullDirectory(options) {
-
+    function pullDirectory(entity, options) {
         options = options || {};
-
         if (!isActive()) {
-
             return Promise.resolve({ items: [], stub: true, disabled: true });
-
         }
-
         var pull = root.RatebOfflineDeltaPull;
-
         if (!pull || typeof pull.pull !== 'function') {
-
             return Promise.reject(new Error('delta_pull_unavailable'));
-
         }
-
-        return pull.pull('supplier_directory', options).then(function (res) {
-
+        return pull.pull(entity, options).then(function (res) {
             var delta = (res && res.delta) ? res.delta : res;
-
             if (delta && Array.isArray(delta.items) && root.RatebOfflineSchema) {
-
+                var prefix = entity === 'recruitment_agency_directory' ? 'rag'
+                    : (entity === 'recruitment_skill_directory' ? 'rsk' : 'rlg');
                 return root.RatebOfflineSchema.withStore(
-
                     root.RatebOfflineSchema.STORES.ENTITY_CACHE,
-
                     'readwrite',
-
                     function (store) {
-
                         delta.items.forEach(function (item) {
-
                             if (item && item.id) {
-
                                 var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
-
                                 var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
-
                                 var bid = parseInt(
-
                                     item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
-
                                     10
-
                                 ) || 0;
-
-                                var id = cid + ':' + bid + ':sup:' + item.id;
-
-                                try { store.delete('sup:' + item.id); } catch (e) { /* legacy */ }
-
+                                var id = cid + ':' + bid + ':' + prefix + ':' + item.id;
                                 if (item.deleted || item.active === false) {
-
                                     store.delete(id);
-
                                     return;
-
                                 }
-
                                 store.put({
-
                                     id: id,
-
-                                    entity: 'supplier_directory',
-
+                                    entity: entity,
                                     company_id: cid,
-
                                     branch_id: bid,
-
                                     payload: item,
-
                                     data: item,
-
                                     updated_at: item.updated_at || null,
-
                                     synced_at: Date.now()
-
                                 });
-
                             }
-
                         });
-
                         return delta;
-
                     }
-
                 ).then(function () { return delta; }).catch(function () { return delta; });
-
             }
-
             return delta || { items: [] };
-
         });
-
     }
 
-
-
-    root.RatebOfflineProcurementAdapter = {
-
+    root.RatebOfflineRecruitmentAdapter = {
         isActive: isActive,
-
-        isGoodsReceiptActive: isGoodsReceiptActive,
-
-        enqueuePurchaseRequestDraft: function (payload, options) {
-
-            return enqueue('purchase_request.draft', payload || {}, options);
-
+        isCandidatesActive: isCandidatesActive,
+        isWorkflowActive: isWorkflowActive,
+        isAssignmentActive: isAssignmentActive,
+        enqueue: enqueue,
+        enqueueCandidateCreate: function (payload, options) {
+            return enqueue('candidate.create', payload || {}, options);
         },
-
-        enqueueRfqDraft: function (payload, options) {
-
-            return enqueue('rfq.draft', payload || {}, options);
-
+        enqueueCandidateUpdate: function (payload, options) {
+            return enqueue('candidate.update', payload || {}, options);
         },
-
-        enqueuePurchaseOrderDraft: function (payload, options) {
-
-            return enqueue('purchase_order.draft', payload || {}, options);
-
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
         },
-
-        enqueueGoodsReceipt: function (payload, options) {
-
-            return enqueue('goods_receipt.receive', payload || {}, options);
-
+        enqueueAssignmentCreate: function (payload, options) {
+            return enqueue('assignment.create', payload || {}, options);
         },
-
-        pullSupplierDirectory: pullDirectory,
-
-        sync: function (options) {
-
-            options = options || {};
-
-            if (!isActive()) {
-
-                return Promise.resolve({ skipped: true, disabled: true });
-
-            }
-
+        enqueueInterviewCreate: function (payload, options) {
+            return enqueue('interview.create', payload || {}, options);
+        },
+        enqueueVisaCreate: function (payload, options) {
+            return enqueue('visa.create', payload || {}, options);
+        },
+        enqueueMedicalCreate: function (payload, options) {
+            return enqueue('medical.create', payload || {}, options);
+        },
+        enqueuePassportUpdate: function (payload, options) {
+            return enqueue('passport.update', payload || {}, options);
+        },
+        enqueueContractCreate: function (payload, options) {
+            return enqueue('contract.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
             var q = root.RatebOfflineQueue;
-
+            if (q && typeof q.flush === 'function') {
+                return q.flush();
+            }
+            return Promise.resolve({ skipped: true });
+        },
+        status: function () {
+            return {
+                active: isActive(),
+                candidates: isCandidatesActive(),
+                workflow: isWorkflowActive(),
+                assignment: isAssignmentActive()
+            };
+        },
+        pullAgencyDirectory: function (options) {
+            return pullDirectory('recruitment_agency_directory', options);
+        },
+        pullSkillDirectory: function (options) {
+            return pullDirectory('recruitment_skill_directory', options);
+        },
+        pullLanguageDirectory: function (options) {
+            return pullDirectory('recruitment_language_directory', options);
+        },
+        sync: function (options) {
+            options = options || {};
+            if (!isActive()) {
+                return Promise.resolve({ skipped: true, disabled: true });
+            }
+            var q = root.RatebOfflineQueue;
             var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
-
             return flush.then(function (flushResult) {
-
-                return pullDirectory(options).then(function (directory) {
-
-                    return { flush: flushResult, directory: directory };
-
+                return pullDirectory('recruitment_agency_directory', options).then(function (directory) {
+                    return { flush: flushResult, directory: directory, status: root.RatebOfflineRecruitmentAdapter.status() };
                 });
-
             });
-
         }
-
     };
-
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* ---- form-post-adapter.js ---- */
@@ -1819,6 +1888,7 @@
         stripSensitiveOpsPage: stripSensitiveOpsPage
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- auth-lock-adapter.js ---- */
 /**
@@ -3165,12 +3235,14 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- ops-forms-adapter.js ---- */
 /**
- * RATEB Offline — Ops forms adapter (Phase 14 / 14.2).
- * Per-module hooks: when offline, allowlisted Inv/HR/Proc forms enqueue via existing adapters.
+ * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B).
+ * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment forms enqueue via existing adapters.
  * Does not finish a generic form-post stub; narrow path matching only.
  * Phase 14.2: purchase-orders/{id}/receive → goods_receipt.receive (flag-gated).
+ * Phase 15B: recruitment/candidates create|update|transition (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -3184,7 +3256,9 @@
         { match: 'hr/leaves', module: 'hr', action: 'leave_request.draft' },
         { match: 'purchase-requests', module: 'procurement', action: 'purchase_request.draft' },
         { match: 'purchase-orders', module: 'procurement', action: 'purchase_order.draft' },
-        { match: 'rfq', module: 'procurement', action: 'rfq.draft' }
+        { match: 'rfq', module: 'procurement', action: 'rfq.draft' },
+        { match: 'recruitment/candidates/create', module: 'recruitment', action: 'candidate.create' },
+        { match: 'recruitment/candidates', module: 'recruitment', action: 'candidate.update' }
     ];
 
     function cfg() {
@@ -3226,6 +3300,21 @@
             }
             return true;
         }
+        if (module === 'recruitment') {
+            if (!f['offline.recruitment']) {
+                return false;
+            }
+            if (action === 'candidate.create' || action === 'candidate.update' || action === 'note.create') {
+                return !!f['offline.recruitment.candidates'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.recruitment.workflow'];
+            }
+            if (action === 'assignment.create') {
+                return !!f['offline.recruitment.assignment'];
+            }
+            return true;
+        }
         return false;
     }
 
@@ -3250,10 +3339,19 @@
         return m ? (parseInt(m[1], 10) || 0) : 0;
     }
 
+    function isRecruitmentTransitionPath(pathname) {
+        return /recruitment\/candidates\/\d+\/transition(\/|$|\?)/i.test(String(pathname || ''));
+    }
+
+    function extractCandidateIdFromPath(pathname) {
+        var m = String(pathname || '').match(/recruitment\/candidates\/(\d+)/i);
+        return m ? (parseInt(m[1], 10) || 0) : 0;
+    }
+
     function matchHook(pathname) {
         var p = normalizePath(pathname);
         var hooks = formHooks();
-        // Longer matches first (bulk before attendance).
+        // Longer matches first (bulk before attendance; create before candidates).
         var sorted = hooks.slice().sort(function (a, b) {
             return String(b.match || '').length - String(a.match || '').length;
         });
@@ -3270,6 +3368,13 @@
                         match: hook.match,
                         module: 'procurement',
                         action: 'goods_receipt.receive'
+                    };
+                }
+                if (String(hook.match).indexOf('recruitment/candidates') >= 0 && isRecruitmentTransitionPath(p)) {
+                    return {
+                        match: hook.match,
+                        module: 'recruitment',
+                        action: 'workflow.transition'
                     };
                 }
                 return hook;
@@ -3443,6 +3548,30 @@
                 total_amount: raw.total_amount != null ? floatOrZero(raw.total_amount) : null
             };
         }
+        if (action === 'candidate.create' || action === 'candidate.update') {
+            var cand = {
+                full_name: String(raw.full_name || raw.name || ''),
+                nationality: raw.nationality || null,
+                phone: raw.phone || null,
+                email: raw.email || null,
+                agency_id: intOrZero(raw.agency_id) || null,
+                notes: raw.notes || null,
+                expected_status: raw.expected_status || raw.expected_workflow_status || null
+            };
+            if (action === 'candidate.update') {
+                cand.candidate_id = intOrZero(raw.candidate_id || raw.id)
+                    || extractCandidateIdFromPath(pathname || '');
+            }
+            return cand;
+        }
+        if (action === 'workflow.transition') {
+            return {
+                candidate_id: intOrZero(raw.candidate_id)
+                    || extractCandidateIdFromPath(pathname || ''),
+                to_status: String(raw.to_status || raw.workflow_status || ''),
+                reason: raw.reason || null
+            };
+        }
         return raw;
     }
 
@@ -3495,6 +3624,27 @@
             }
             if (action === 'goods_receipt.receive') {
                 return proc.enqueueGoodsReceipt(payload);
+            }
+        }
+        if (module === 'recruitment') {
+            var rec = root.RatebOfflineRecruitmentAdapter;
+            if (!rec) {
+                return Promise.reject(new Error('recruitment_adapter_unavailable'));
+            }
+            if (action === 'candidate.create') {
+                return rec.enqueueCandidateCreate(payload);
+            }
+            if (action === 'candidate.update') {
+                return rec.enqueueCandidateUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return rec.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'assignment.create') {
+                return rec.enqueueAssignmentCreate(payload);
+            }
+            if (typeof rec.enqueue === 'function') {
+                return rec.enqueue(action, payload);
             }
         }
         return Promise.reject(new Error('ops_form_action_unsupported'));
@@ -3580,7 +3730,10 @@
         if (!f['offline.enabled']) {
             return;
         }
-        if (!(f['offline.inventory.movements'] || f['offline.hr.attendance'] || f['offline.procurement'])) {
+        if (!(f['offline.inventory.movements']
+            || f['offline.hr.attendance']
+            || f['offline.procurement']
+            || f['offline.recruitment'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -3599,7 +3752,7 @@
 
 /* ---- sdk.js ---- */
 /**
- * RATEB Offline SDK bootstrap (Phase 14.2).
+ * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -3613,6 +3766,10 @@
         'offline.hr.attendance': false,
         'offline.procurement': false,
         'offline.procurement.goods_receipt': false,
+        'offline.recruitment': false,
+        'offline.recruitment.candidates': false,
+        'offline.recruitment.workflow': false,
+        'offline.recruitment.assignment': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -3637,6 +3794,10 @@
             hr: !!flags['offline.hr.attendance'],
             procurement: !!flags['offline.procurement'],
             procurement_goods_receipt: !!flags['offline.procurement.goods_receipt'],
+            recruitment: !!flags['offline.recruitment'],
+            recruitment_candidates: !!flags['offline.recruitment.candidates'],
+            recruitment_workflow: !!flags['offline.recruitment.workflow'],
+            recruitment_assignment: !!flags['offline.recruitment.assignment'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -3709,6 +3870,24 @@
                 && flags['offline.procurement']
                 && flags['offline.procurement.goods_receipt']);
         },
+        isRecruitmentEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.recruitment']);
+        },
+        isRecruitmentCandidatesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.recruitment']
+                && flags['offline.recruitment.candidates']);
+        },
+        isRecruitmentWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.recruitment']
+                && flags['offline.recruitment.workflow']);
+        },
+        isRecruitmentAssignmentEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.recruitment']
+                && flags['offline.recruitment.assignment']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -3737,6 +3916,7 @@
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
+        recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

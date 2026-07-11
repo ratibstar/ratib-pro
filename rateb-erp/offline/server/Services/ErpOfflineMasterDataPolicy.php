@@ -67,6 +67,7 @@ final class ErpOfflineMasterDataPolicy
             'inventory_catalog', 'inventory', 'catalog',
             'employee_directory', 'employees', 'hr_employees',
             'supplier_directory', 'suppliers', 'procurement_suppliers',
+            'recruitment_agency_directory', 'recruitment_agencies', 'agencies',
         ], true);
     }
 }

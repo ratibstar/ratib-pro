@@ -141,4 +141,35 @@ final class OfflineConflictResolverService
 
         return $base;
     }
+
+    /**
+     * Recruitment-specific: reject when expected workflow status drifted.
+     *
+     * @param array<string, mixed> $clientItem
+     * @param array<string, mixed>|null $serverItem
+     * @return array<string, mixed>
+     */
+    public function resolveRecruitment(array $clientItem, ?array $serverItem): array
+    {
+        $base = $this->resolve($clientItem, $serverItem);
+        if (($base['action'] ?? '') === 'reject_client') {
+            return $base;
+        }
+        if ($serverItem === null) {
+            return $base;
+        }
+
+        $expectedStatus = $clientItem['expected_status'] ?? null;
+        if ($expectedStatus !== null && array_key_exists('status', $serverItem)) {
+            if ((string) $serverItem['status'] !== (string) $expectedStatus) {
+                return [
+                    'action' => 'reject_client',
+                    'item' => $serverItem,
+                    'reason' => 'status_changed',
+                ];
+            }
+        }
+
+        return $base;
+    }
 }

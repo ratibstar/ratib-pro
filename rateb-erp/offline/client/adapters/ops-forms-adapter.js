@@ -1,8 +1,9 @@
 /**
- * RATEB Offline — Ops forms adapter (Phase 14 / 14.2).
- * Per-module hooks: when offline, allowlisted Inv/HR/Proc forms enqueue via existing adapters.
+ * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B).
+ * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment forms enqueue via existing adapters.
  * Does not finish a generic form-post stub; narrow path matching only.
  * Phase 14.2: purchase-orders/{id}/receive → goods_receipt.receive (flag-gated).
+ * Phase 15B: recruitment/candidates create|update|transition (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -16,7 +17,9 @@
         { match: 'hr/leaves', module: 'hr', action: 'leave_request.draft' },
         { match: 'purchase-requests', module: 'procurement', action: 'purchase_request.draft' },
         { match: 'purchase-orders', module: 'procurement', action: 'purchase_order.draft' },
-        { match: 'rfq', module: 'procurement', action: 'rfq.draft' }
+        { match: 'rfq', module: 'procurement', action: 'rfq.draft' },
+        { match: 'recruitment/candidates/create', module: 'recruitment', action: 'candidate.create' },
+        { match: 'recruitment/candidates', module: 'recruitment', action: 'candidate.update' }
     ];
 
     function cfg() {
@@ -58,6 +61,21 @@
             }
             return true;
         }
+        if (module === 'recruitment') {
+            if (!f['offline.recruitment']) {
+                return false;
+            }
+            if (action === 'candidate.create' || action === 'candidate.update' || action === 'note.create') {
+                return !!f['offline.recruitment.candidates'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.recruitment.workflow'];
+            }
+            if (action === 'assignment.create') {
+                return !!f['offline.recruitment.assignment'];
+            }
+            return true;
+        }
         return false;
     }
 
@@ -82,10 +100,19 @@
         return m ? (parseInt(m[1], 10) || 0) : 0;
     }
 
+    function isRecruitmentTransitionPath(pathname) {
+        return /recruitment\/candidates\/\d+\/transition(\/|$|\?)/i.test(String(pathname || ''));
+    }
+
+    function extractCandidateIdFromPath(pathname) {
+        var m = String(pathname || '').match(/recruitment\/candidates\/(\d+)/i);
+        return m ? (parseInt(m[1], 10) || 0) : 0;
+    }
+
     function matchHook(pathname) {
         var p = normalizePath(pathname);
         var hooks = formHooks();
-        // Longer matches first (bulk before attendance).
+        // Longer matches first (bulk before attendance; create before candidates).
         var sorted = hooks.slice().sort(function (a, b) {
             return String(b.match || '').length - String(a.match || '').length;
         });
@@ -102,6 +129,13 @@
                         match: hook.match,
                         module: 'procurement',
                         action: 'goods_receipt.receive'
+                    };
+                }
+                if (String(hook.match).indexOf('recruitment/candidates') >= 0 && isRecruitmentTransitionPath(p)) {
+                    return {
+                        match: hook.match,
+                        module: 'recruitment',
+                        action: 'workflow.transition'
                     };
                 }
                 return hook;
@@ -275,6 +309,30 @@
                 total_amount: raw.total_amount != null ? floatOrZero(raw.total_amount) : null
             };
         }
+        if (action === 'candidate.create' || action === 'candidate.update') {
+            var cand = {
+                full_name: String(raw.full_name || raw.name || ''),
+                nationality: raw.nationality || null,
+                phone: raw.phone || null,
+                email: raw.email || null,
+                agency_id: intOrZero(raw.agency_id) || null,
+                notes: raw.notes || null,
+                expected_status: raw.expected_status || raw.expected_workflow_status || null
+            };
+            if (action === 'candidate.update') {
+                cand.candidate_id = intOrZero(raw.candidate_id || raw.id)
+                    || extractCandidateIdFromPath(pathname || '');
+            }
+            return cand;
+        }
+        if (action === 'workflow.transition') {
+            return {
+                candidate_id: intOrZero(raw.candidate_id)
+                    || extractCandidateIdFromPath(pathname || ''),
+                to_status: String(raw.to_status || raw.workflow_status || ''),
+                reason: raw.reason || null
+            };
+        }
         return raw;
     }
 
@@ -327,6 +385,27 @@
             }
             if (action === 'goods_receipt.receive') {
                 return proc.enqueueGoodsReceipt(payload);
+            }
+        }
+        if (module === 'recruitment') {
+            var rec = root.RatebOfflineRecruitmentAdapter;
+            if (!rec) {
+                return Promise.reject(new Error('recruitment_adapter_unavailable'));
+            }
+            if (action === 'candidate.create') {
+                return rec.enqueueCandidateCreate(payload);
+            }
+            if (action === 'candidate.update') {
+                return rec.enqueueCandidateUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return rec.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'assignment.create') {
+                return rec.enqueueAssignmentCreate(payload);
+            }
+            if (typeof rec.enqueue === 'function') {
+                return rec.enqueue(action, payload);
             }
         }
         return Promise.reject(new Error('ops_form_action_unsupported'));
@@ -412,7 +491,10 @@
         if (!f['offline.enabled']) {
             return;
         }
-        if (!(f['offline.inventory.movements'] || f['offline.hr.attendance'] || f['offline.procurement'])) {
+        if (!(f['offline.inventory.movements']
+            || f['offline.hr.attendance']
+            || f['offline.procurement']
+            || f['offline.recruitment'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

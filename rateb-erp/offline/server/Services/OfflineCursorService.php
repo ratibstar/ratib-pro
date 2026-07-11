@@ -21,6 +21,9 @@ final class OfflineCursorService
     private ?CustomerOfflineDirectoryService $customers = null;
     private ?BranchOfflineDirectoryService $branches = null;
     private ?WarehouseOfflineDirectoryService $warehouses = null;
+    private ?RecruitmentOfflineAgencyDirectoryService $recruitmentAgencies = null;
+    private ?RecruitmentOfflineSkillDirectoryService $recruitmentSkills = null;
+    private ?RecruitmentOfflineLanguageDirectoryService $recruitmentLanguages = null;
 
     private function model(): OfflineEntityCursor
     {
@@ -55,6 +58,21 @@ final class OfflineCursorService
     private function warehouses(): WarehouseOfflineDirectoryService
     {
         return $this->warehouses ??= new WarehouseOfflineDirectoryService();
+    }
+
+    private function recruitmentAgencies(): RecruitmentOfflineAgencyDirectoryService
+    {
+        return $this->recruitmentAgencies ??= new RecruitmentOfflineAgencyDirectoryService();
+    }
+
+    private function recruitmentSkills(): RecruitmentOfflineSkillDirectoryService
+    {
+        return $this->recruitmentSkills ??= new RecruitmentOfflineSkillDirectoryService();
+    }
+
+    private function recruitmentLanguages(): RecruitmentOfflineLanguageDirectoryService
+    {
+        return $this->recruitmentLanguages ??= new RecruitmentOfflineLanguageDirectoryService();
     }
 
     public function isAvailable(): bool
@@ -116,6 +134,21 @@ final class OfflineCursorService
 
         if ($masterCanonical === 'warehouse_directory') {
             return $this->warehouses()->pull($companyId, $branchId, $token);
+        }
+
+        if (in_array($entityType, ['recruitment_agency_directory', 'recruitment_agencies', 'agencies'], true)
+            || $masterCanonical === 'recruitment_agency_directory') {
+            return $this->recruitmentAgencies()->pull($companyId, $branchId, $token);
+        }
+
+        if (in_array($entityType, ['recruitment_skill_directory', 'recruitment_skills', 'skills'], true)
+            || $masterCanonical === 'recruitment_skill_directory') {
+            return $this->recruitmentSkills()->pull($companyId, $branchId, $token);
+        }
+
+        if (in_array($entityType, ['recruitment_language_directory', 'recruitment_languages', 'languages'], true)
+            || $masterCanonical === 'recruitment_language_directory') {
+            return $this->recruitmentLanguages()->pull($companyId, $branchId, $token);
         }
 
         return [

@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 14.2).
+ * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -13,6 +13,10 @@
         'offline.hr.attendance': false,
         'offline.procurement': false,
         'offline.procurement.goods_receipt': false,
+        'offline.recruitment': false,
+        'offline.recruitment.candidates': false,
+        'offline.recruitment.workflow': false,
+        'offline.recruitment.assignment': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -37,6 +41,10 @@
             hr: !!flags['offline.hr.attendance'],
             procurement: !!flags['offline.procurement'],
             procurement_goods_receipt: !!flags['offline.procurement.goods_receipt'],
+            recruitment: !!flags['offline.recruitment'],
+            recruitment_candidates: !!flags['offline.recruitment.candidates'],
+            recruitment_workflow: !!flags['offline.recruitment.workflow'],
+            recruitment_assignment: !!flags['offline.recruitment.assignment'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -109,6 +117,24 @@
                 && flags['offline.procurement']
                 && flags['offline.procurement.goods_receipt']);
         },
+        isRecruitmentEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.recruitment']);
+        },
+        isRecruitmentCandidatesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.recruitment']
+                && flags['offline.recruitment.candidates']);
+        },
+        isRecruitmentWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.recruitment']
+                && flags['offline.recruitment.workflow']);
+        },
+        isRecruitmentAssignmentEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.recruitment']
+                && flags['offline.recruitment.assignment']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -137,6 +163,7 @@
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
+        recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },
@@ -146,4 +173,3 @@
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
-

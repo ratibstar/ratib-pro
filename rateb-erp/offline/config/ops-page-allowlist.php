@@ -24,6 +24,9 @@ return [
         'purchase-requests',
         'purchase-orders',
         'rfq',
+        'recruitment/candidates',
+        'recruitment/agencies',
+        'recruitment',
     ],
 
     /** Narrow form-post hooks (pathname substring → adapter action). */
@@ -37,5 +40,7 @@ return [
         ['match' => 'purchase-requests', 'module' => 'procurement', 'action' => 'purchase_request.draft'],
         ['match' => 'purchase-orders', 'module' => 'procurement', 'action' => 'purchase_order.draft'],
         ['match' => 'rfq', 'module' => 'procurement', 'action' => 'rfq.draft'],
+        ['match' => 'recruitment/candidates/create', 'module' => 'recruitment', 'action' => 'candidate.create'],
+        ['match' => 'recruitment/candidates', 'module' => 'recruitment', 'action' => 'candidate.update'],
     ],
 ];
