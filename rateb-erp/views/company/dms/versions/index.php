@@ -1,0 +1,5 @@
+<?php declare(strict_types=1); /** @var list<array<string,mixed>> $items */ /** @var int|null $documentId */ ?>
+<div class="container-fluid py-3">
+<h1 class="h3 mb-3"><?php echo htmlspecialchars((string)($title??''), ENT_QUOTES,'UTF-8'); ?></h1>
+<?php if($documentId): ?><p class="text-muted"><?php echo htmlspecialchars(__('dms_documents'), ENT_QUOTES,'UTF-8'); ?> #<?php echo (int)$documentId; ?></p><?php endif; ?>
+<div class="table-responsive border rounded"><table class="table mb-0"><thead><tr><th>v</th><th><?php echo htmlspecialchars(__('path'), ENT_QUOTES,'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('status'), ENT_QUOTES,'UTF-8'); ?></th></tr></thead><tbody><?php foreach(($items??[]) as $r): ?><tr><td><?php echo (int)($r['version_no']??0); ?></td><td><?php echo htmlspecialchars((string)($r['storage_path']??''), ENT_QUOTES,'UTF-8'); ?></td><td><?php echo htmlspecialchars((string)($r['status']??''), ENT_QUOTES,'UTF-8'); ?></td></tr><?php endforeach; ?><?php if(($items??[])===[]): ?><tr><td colspan="3" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES,'UTF-8'); ?></td></tr><?php endif; ?></tbody></table></div></div>

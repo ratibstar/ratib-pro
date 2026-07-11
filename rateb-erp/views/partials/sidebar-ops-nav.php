@@ -131,6 +131,20 @@ $opsSection(__('quality_platform'), [
     ['qms/timeline', 'quality_timeline', 'fa-timeline', 'quality', 'quality.view'],
     ['qms/reports', 'quality_reports', 'fa-chart-pie', 'quality', 'quality.view'],
 ], 'fa-shield-halved');
+$opsSection(__('dms_platform'), [
+    ['dms/dashboard', 'dms_platform', 'fa-folder-tree', 'documents', 'documents.view'],
+    ['dms/repositories', 'dms_repositories', 'fa-database', 'documents', 'documents.view'],
+    ['dms/folders', 'dms_folders', 'fa-folder', 'documents', 'documents.view'],
+    ['dms/documents', 'dms_documents', 'fa-file-lines', 'documents', 'documents.view'],
+    ['dms/search', 'dms_search', 'fa-magnifying-glass', 'documents', 'documents.view'],
+    ['dms/favorites', 'dms_favorites', 'fa-star', 'documents', 'documents.view'],
+    ['dms/shares', 'dms_shares', 'fa-share-nodes', 'documents', 'documents.view'],
+    ['dms/retention', 'dms_retention', 'fa-clock-rotate-left', 'documents', 'documents.retention'],
+    ['dms/legal-holds', 'dms_legal_holds', 'fa-gavel', 'documents', 'documents.retention'],
+    ['dms/permissions', 'dms_permissions', 'fa-key', 'documents', 'documents.admin'],
+    ['dms/timeline', 'dms_timeline', 'fa-timeline', 'documents', 'documents.view'],
+    ['dms/reports', 'dms_reports', 'fa-chart-pie', 'documents', 'documents.view'],
+], 'fa-folder-tree');
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }

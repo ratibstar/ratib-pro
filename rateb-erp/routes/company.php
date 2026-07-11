@@ -571,6 +571,33 @@ $router->post($app('qms/supplier-quality'), [QualitySupplierQualityController::c
 $router->get($app('qms/reports'), [QualityReportsController::class, 'index'], $qmsMw);
 $router->get($app('qms/timeline'), [QualityTimelinePageController::class, 'index'], $qmsMw);
 
+/** Phase 26A — Enterprise Document Management Platform ONLINE (dms/*; additive; Offline deferred to 26B). */
+$dmsMw = rateb_erp_mw('documents', 'documents.view', 'documents');
+$router->get($app('dms-platform'), [DocumentManagementPlatformController::class, 'index'], $dmsMw);
+$router->get($app('dms'), [DmsDashboardController::class, 'index'], $dmsMw);
+$router->get($app('dms/dashboard'), [DmsDashboardController::class, 'index'], $dmsMw);
+$router->get($app('dms/repositories'), [DmsRepositoriesController::class, 'index'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->post($app('dms/repositories'), [DmsRepositoriesController::class, 'store'], rateb_erp_mw('documents', 'documents.create', 'documents'));
+$router->get($app('dms/folders'), [DmsFoldersController::class, 'index'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->post($app('dms/folders'), [DmsFoldersController::class, 'store'], rateb_erp_mw('documents', 'documents.create', 'documents'));
+$router->get($app('dms/documents'), [DmsDocumentsController::class, 'index'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->post($app('dms/documents'), [DmsDocumentsController::class, 'store'], rateb_erp_mw('documents', 'documents.create', 'documents'));
+$router->get($app('dms/documents/{id}'), [DmsDocumentsController::class, 'show'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->post($app('dms/documents/{id}/transition'), [DmsDocumentsController::class, 'transition'], rateb_erp_mw('documents', 'documents.update', 'documents'));
+$router->get($app('dms/versions'), [DmsVersionsController::class, 'index'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->get($app('dms/search'), [DmsSearchController::class, 'index'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->get($app('dms/favorites'), [DmsFavoritesController::class, 'index'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->get($app('dms/shares'), [DmsSharesController::class, 'index'], rateb_erp_mw('documents', 'documents.view', 'documents'));
+$router->post($app('dms/shares'), [DmsSharesController::class, 'store'], rateb_erp_mw('documents', 'documents.share', 'documents'));
+$router->get($app('dms/retention'), [DmsRetentionController::class, 'index'], rateb_erp_mw('documents', 'documents.retention', 'documents'));
+$router->post($app('dms/retention'), [DmsRetentionController::class, 'store'], rateb_erp_mw('documents', 'documents.retention', 'documents'));
+$router->get($app('dms/legal-holds'), [DmsLegalHoldsController::class, 'index'], rateb_erp_mw('documents', 'documents.retention', 'documents'));
+$router->post($app('dms/legal-holds'), [DmsLegalHoldsController::class, 'store'], rateb_erp_mw('documents', 'documents.retention', 'documents'));
+$router->get($app('dms/permissions'), [DmsPermissionsController::class, 'index'], rateb_erp_mw('documents', 'documents.admin', 'documents'));
+$router->post($app('dms/permissions'), [DmsPermissionsController::class, 'store'], rateb_erp_mw('documents', 'documents.admin', 'documents'));
+$router->get($app('dms/timeline'), [DmsTimelinePageController::class, 'index'], $dmsMw);
+$router->get($app('dms/reports'), [DmsReportsController::class, 'index'], $dmsMw);
+
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);
 $router->post($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'store'], $hrAttMw);

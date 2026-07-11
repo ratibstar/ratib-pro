@@ -456,6 +456,21 @@ return [
         'view' => 'documents.view',
         'manage' => 'documents.manage',
     ],
+    'dms-repositories' => [
+        'module' => 'documents',
+        'view' => 'documents.view',
+        'manage' => 'documents.manage',
+    ],
+    'dms-documents' => [
+        'module' => 'documents',
+        'view' => 'documents.view',
+        'manage' => 'documents.manage',
+    ],
+    'dms-shares' => [
+        'module' => 'documents',
+        'view' => 'documents.view',
+        'manage' => 'documents.share',
+    ],
     'workflows' => [
         'module' => 'workflows',
         'view' => 'workflows.view',

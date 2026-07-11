@@ -163,6 +163,23 @@ return [
             'quality.corrective',
             'quality.preventive',
         ],
+        'documents.manage' => [
+            'documents.view',
+            'documents.create',
+            'documents.update',
+            'documents.share',
+            'documents.download',
+            'documents.retention',
+            'documents.admin',
+        ],
+        'documents.admin' => [
+            'documents.view',
+            'documents.create',
+            'documents.update',
+            'documents.share',
+            'documents.download',
+            'documents.retention',
+        ],
         'accounting.approve' => ['accounting.oversight'],
         'accounting.admin' => [
             'accounting.view',
