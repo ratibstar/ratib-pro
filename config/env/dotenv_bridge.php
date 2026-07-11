@@ -113,7 +113,9 @@ if (!function_exists('rateb_env_load_bridge_dotenv')) {
             }
             // Enterprise accounting flags (Control Center) — prefix allowlist
             $accountingFlag = strncmp($key, 'ACCOUNTING_', 11) === 0;
-            if (!$accountingFlag && !in_array($key, $allowed, true)) {
+            // Enterprise offline pilot flags (rateb-erp) — prefix allowlist
+            $offlineFlag = strncmp($key, 'RATEB_OFFLINE_', 14) === 0;
+            if (!$accountingFlag && !$offlineFlag && !in_array($key, $allowed, true)) {
                 continue;
             }
             $len = strlen($val);
