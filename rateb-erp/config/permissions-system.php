@@ -44,6 +44,7 @@ return [
         'manufacturing',
         'payroll',
         'quality',
+        'bi',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -71,6 +72,7 @@ return [
         'manufacturing' => 'manufacturing_platform',
         'payroll' => 'payroll_platform',
         'quality' => 'quality_platform',
+        'bi' => 'bi_platform',
     ],
 
     /**
@@ -179,6 +181,21 @@ return [
             'documents.share',
             'documents.download',
             'documents.retention',
+        ],
+        'bi.manage' => [
+            'bi.view',
+            'bi.create',
+            'bi.update',
+            'bi.publish',
+            'bi.export',
+            'bi.admin',
+        ],
+        'bi.admin' => [
+            'bi.view',
+            'bi.create',
+            'bi.update',
+            'bi.publish',
+            'bi.export',
         ],
         'accounting.approve' => ['accounting.oversight'],
         'accounting.admin' => [

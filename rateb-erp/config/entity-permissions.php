@@ -657,4 +657,24 @@ return [
         'view' => 'projects.tasks',
         'manage' => 'projects.manage',
     ],
+    'bi' => [
+        'module' => 'bi',
+        'view' => 'bi.view',
+        'manage' => 'bi.manage',
+    ],
+    'bi-dashboards' => [
+        'module' => 'bi',
+        'view' => 'bi.view',
+        'manage' => 'bi.manage',
+    ],
+    'bi-reports' => [
+        'module' => 'bi',
+        'view' => 'bi.view',
+        'manage' => 'bi.manage',
+    ],
+    'bi-kpis' => [
+        'module' => 'bi',
+        'view' => 'bi.view',
+        'manage' => 'bi.manage',
+    ],
 ];

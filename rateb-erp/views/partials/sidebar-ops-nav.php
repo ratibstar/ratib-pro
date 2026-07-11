@@ -145,6 +145,22 @@ $opsSection(__('dms_platform'), [
     ['dms/timeline', 'dms_timeline', 'fa-timeline', 'documents', 'documents.view'],
     ['dms/reports', 'dms_reports', 'fa-chart-pie', 'documents', 'documents.view'],
 ], 'fa-folder-tree');
+$opsSection(__('bi_platform'), [
+    ['bi/dashboard', 'bi_platform', 'fa-chart-line', 'bi', 'bi.view'],
+    ['bi/dashboards', 'bi_dashboards', 'fa-table-columns', 'bi', 'bi.view'],
+    ['bi/kpis', 'bi_kpis', 'fa-bullseye', 'bi', 'bi.view'],
+    ['bi/reports', 'bi_reports', 'fa-file-invoice', 'bi', 'bi.view'],
+    ['bi/widgets', 'bi_widgets', 'fa-puzzle-piece', 'bi', 'bi.view'],
+    ['bi/datasets', 'bi_datasets', 'fa-database', 'bi', 'bi.view'],
+    ['bi/analytics', 'bi_analytics', 'fa-chart-area', 'bi', 'bi.view'],
+    ['bi/alerts', 'bi_alerts', 'fa-bell', 'bi', 'bi.view'],
+    ['bi/schedules', 'bi_schedules', 'fa-clock', 'bi', 'bi.view'],
+    ['bi/exports', 'bi_exports', 'fa-download', 'bi', 'bi.export'],
+    ['bi/trends', 'bi_trends', 'fa-arrow-trend-up', 'bi', 'bi.view'],
+    ['bi/forecasts', 'bi_forecasts', 'fa-chart-simple', 'bi', 'bi.view'],
+    ['bi/scopes', 'bi_scopes', 'fa-layer-group', 'bi', 'bi.view'],
+    ['bi/timeline', 'bi_timeline', 'fa-timeline', 'bi', 'bi.view'],
+], 'fa-chart-line');
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }

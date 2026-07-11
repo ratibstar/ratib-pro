@@ -598,6 +598,42 @@ $router->post($app('dms/permissions'), [DmsPermissionsController::class, 'store'
 $router->get($app('dms/timeline'), [DmsTimelinePageController::class, 'index'], $dmsMw);
 $router->get($app('dms/reports'), [DmsReportsController::class, 'index'], $dmsMw);
 
+/** Phase 27A — Enterprise Business Intelligence & Analytics Platform ONLINE (bi/*; additive; Offline deferred to 27B). */
+$biMw = rateb_erp_mw('bi', 'bi.view', 'bi');
+$router->get($app('bi-platform'), [BiPlatformController::class, 'index'], $biMw);
+$router->get($app('bi'), [BiDashboardController::class, 'index'], $biMw);
+$router->get($app('bi/dashboard'), [BiDashboardController::class, 'index'], $biMw);
+$router->get($app('bi/dashboards'), [BiDashboardsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/dashboards'), [BiDashboardsController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/dashboards/{id}'), [BiDashboardsController::class, 'show'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/dashboards/{id}/transition'), [BiDashboardsController::class, 'transition'], rateb_erp_mw('bi', 'bi.publish', 'bi'));
+$router->get($app('bi/kpis'), [BiKpisController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/kpis'), [BiKpisController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/kpis/{id}'), [BiKpisController::class, 'show'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/kpis/{id}/transition'), [BiKpisController::class, 'transition'], rateb_erp_mw('bi', 'bi.publish', 'bi'));
+$router->get($app('bi/reports'), [BiReportsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/reports'), [BiReportsController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/reports/{id}'), [BiReportsController::class, 'show'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/reports/{id}/transition'), [BiReportsController::class, 'transition'], rateb_erp_mw('bi', 'bi.publish', 'bi'));
+$router->get($app('bi/widgets'), [BiWidgetsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/widgets'), [BiWidgetsController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/datasets'), [BiDatasetsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/datasets'), [BiDatasetsController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/alerts'), [BiAlertsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/alerts'), [BiAlertsController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/schedules'), [BiSchedulesController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/schedules'), [BiSchedulesController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/exports'), [BiExportsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/exports'), [BiExportsController::class, 'store'], rateb_erp_mw('bi', 'bi.export', 'bi'));
+$router->get($app('bi/trends'), [BiTrendsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/trends'), [BiTrendsController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/forecasts'), [BiForecastsController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/forecasts'), [BiForecastsController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/scopes'), [BiScopesController::class, 'index'], rateb_erp_mw('bi', 'bi.view', 'bi'));
+$router->post($app('bi/scopes'), [BiScopesController::class, 'store'], rateb_erp_mw('bi', 'bi.create', 'bi'));
+$router->get($app('bi/analytics'), [BiAnalyticsController::class, 'index'], $biMw);
+$router->get($app('bi/timeline'), [BiTimelinePageController::class, 'index'], $biMw);
+
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);
 $router->post($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'store'], $hrAttMw);
