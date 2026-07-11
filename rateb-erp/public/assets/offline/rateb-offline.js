@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -2304,6 +2304,156 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- approval-adapter.js ---- */
+/**
+ * RATEB Offline — Approval adapter (Phase 20B / Tier 1 drafts).
+ * Queues approval request / workflow / comment / delegation drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.approval (sub-flags gate children).
+ * Does NOT enqueue decision actions, escalate, notifications, attachments, email/SMS, payments, or government APIs.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.approval']);
+    }
+
+    function isRequestsActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.approval.requests']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.approval.workflow']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.approval.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'eap') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('approval_offline_disabled'));
+        }
+        if ((action === 'approval_request.create' || action === 'approval_request.update')
+            && !isRequestsActive()) {
+            return Promise.reject(new Error('approval_requests_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('approval_workflow_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'approval',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineApprovalAdapter = {
+        isActive: isActive,
+        isRequestsActive: isRequestsActive,
+        isWorkflowActive: isWorkflowActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueRequestCreate: function (payload, options) {
+            return enqueue('approval_request.create', payload || {}, options);
+        },
+        enqueueRequestUpdate: function (payload, options) {
+            return enqueue('approval_request.update', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        enqueueCommentCreate: function (payload, options) {
+            return enqueue('comment.create', payload || {}, options);
+        },
+        enqueueDelegationCreate: function (payload, options) {
+            return enqueue('delegation.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'approval' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'approval' });
+            }
+            return q.status({ module: 'approval' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'approval' });
+        },
+        pullTemplates: function (options) {
+            return pullDirectory('approval_template_directory', options);
+        },
+        pullChains: function (options) {
+            return pullDirectory('approval_chain_directory', options);
+        },
+        pullStages: function (options) {
+            return pullDirectory('approval_stage_directory', options);
+        },
+        pullRules: function (options) {
+            return pullDirectory('approval_rule_directory', options);
+        },
+        pullDelegations: function (options) {
+            return pullDirectory('approval_delegation_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -4010,6 +4160,7 @@
  * Phase 17B: crm leads/tasks/meetings/campaigns/contacts/companies drafts (flag-gated).
  * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
  * Phase 19B: eam assets/maintenance/work-orders/inspections drafts (flag-gated).
+ * Phase 20B: approvals requests/comments drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -4048,7 +4199,9 @@
         { match: 'eam/requests', module: 'assets', action: 'maintenance_request.create' },
         { match: 'eam/work-orders', module: 'assets', action: 'work_order.create' },
         { match: 'eam/maintenance', module: 'assets', action: 'maintenance_plan.create' },
-        { match: 'eam/inspections', module: 'assets', action: 'inspection.create' }
+        { match: 'eam/inspections', module: 'assets', action: 'inspection.create' },
+        { match: 'approvals/requests/create', module: 'approval', action: 'approval_request.create' },
+        { match: 'approvals/requests', module: 'approval', action: 'approval_request.update' }
     ];
 
     function cfg() {
@@ -4165,6 +4318,18 @@
                 || action === 'checklist.create'
                 || action === 'meter_reading.create') {
                 return !!f['offline.assets.inspections'];
+            }
+            return true;
+        }
+        if (module === 'approval') {
+            if (!f['offline.approval']) {
+                return false;
+            }
+            if (action === 'approval_request.create' || action === 'approval_request.update') {
+                return !!f['offline.approval.requests'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.approval.workflow'];
             }
             return true;
         }
@@ -4692,6 +4857,30 @@
                 return eam.enqueue(action, payload);
             }
         }
+        if (module === 'approval') {
+            var eap = root.RatebOfflineApprovalAdapter;
+            if (!eap) {
+                return Promise.reject(new Error('approval_adapter_unavailable'));
+            }
+            if (action === 'approval_request.create') {
+                return eap.enqueueRequestCreate(payload);
+            }
+            if (action === 'approval_request.update') {
+                return eap.enqueueRequestUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return eap.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'comment.create') {
+                return eap.enqueueCommentCreate(payload);
+            }
+            if (action === 'delegation.create') {
+                return eap.enqueueDelegationCreate(payload);
+            }
+            if (typeof eap.enqueue === 'function') {
+                return eap.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -4782,7 +4971,8 @@
             || f['offline.accounting']
             || f['offline.crm']
             || f['offline.projects']
-            || f['offline.assets'])) {
+            || f['offline.assets']
+            || f['offline.approval'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -4838,6 +5028,10 @@
         'offline.assets.workflow': false,
         'offline.assets.inspections': false,
         'offline.assets.masterdata': false,
+        'offline.approval': false,
+        'offline.approval.requests': false,
+        'offline.approval.workflow': false,
+        'offline.approval.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -4885,6 +5079,10 @@
             assets_workflow: !!flags['offline.assets.workflow'],
             assets_inspections: !!flags['offline.assets.inspections'],
             assets_masterdata: !!flags['offline.assets.masterdata'],
+            approval: !!flags['offline.approval'],
+            approval_requests: !!flags['offline.approval.requests'],
+            approval_workflow: !!flags['offline.approval.workflow'],
+            approval_masterdata: !!flags['offline.approval.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -5062,6 +5260,24 @@
                 && flags['offline.assets']
                 && flags['offline.assets.masterdata']);
         },
+        isApprovalEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.approval']);
+        },
+        isApprovalRequestsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.approval']
+                && flags['offline.approval.requests']);
+        },
+        isApprovalWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.approval']
+                && flags['offline.approval.workflow']);
+        },
+        isApprovalMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.approval']
+                && flags['offline.approval.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -5095,6 +5311,7 @@
         crm: function () { return root.RatebOfflineCrmAdapter || null; },
         projects: function () { return root.RatebOfflineProjectsAdapter || null; },
         assets: function () { return root.RatebOfflineAssetsAdapter || null; },
+        approvals: function () { return root.RatebOfflineApprovalAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

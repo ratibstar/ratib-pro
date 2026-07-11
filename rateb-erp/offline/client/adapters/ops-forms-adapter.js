@@ -8,6 +8,7 @@
  * Phase 17B: crm leads/tasks/meetings/campaigns/contacts/companies drafts (flag-gated).
  * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
  * Phase 19B: eam assets/maintenance/work-orders/inspections drafts (flag-gated).
+ * Phase 20B: approvals requests/comments drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -46,7 +47,9 @@
         { match: 'eam/requests', module: 'assets', action: 'maintenance_request.create' },
         { match: 'eam/work-orders', module: 'assets', action: 'work_order.create' },
         { match: 'eam/maintenance', module: 'assets', action: 'maintenance_plan.create' },
-        { match: 'eam/inspections', module: 'assets', action: 'inspection.create' }
+        { match: 'eam/inspections', module: 'assets', action: 'inspection.create' },
+        { match: 'approvals/requests/create', module: 'approval', action: 'approval_request.create' },
+        { match: 'approvals/requests', module: 'approval', action: 'approval_request.update' }
     ];
 
     function cfg() {
@@ -163,6 +166,18 @@
                 || action === 'checklist.create'
                 || action === 'meter_reading.create') {
                 return !!f['offline.assets.inspections'];
+            }
+            return true;
+        }
+        if (module === 'approval') {
+            if (!f['offline.approval']) {
+                return false;
+            }
+            if (action === 'approval_request.create' || action === 'approval_request.update') {
+                return !!f['offline.approval.requests'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.approval.workflow'];
             }
             return true;
         }
@@ -690,6 +705,30 @@
                 return eam.enqueue(action, payload);
             }
         }
+        if (module === 'approval') {
+            var eap = root.RatebOfflineApprovalAdapter;
+            if (!eap) {
+                return Promise.reject(new Error('approval_adapter_unavailable'));
+            }
+            if (action === 'approval_request.create') {
+                return eap.enqueueRequestCreate(payload);
+            }
+            if (action === 'approval_request.update') {
+                return eap.enqueueRequestUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return eap.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'comment.create') {
+                return eap.enqueueCommentCreate(payload);
+            }
+            if (action === 'delegation.create') {
+                return eap.enqueueDelegationCreate(payload);
+            }
+            if (typeof eap.enqueue === 'function') {
+                return eap.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -780,7 +819,8 @@
             || f['offline.accounting']
             || f['offline.crm']
             || f['offline.projects']
-            || f['offline.assets'])) {
+            || f['offline.assets']
+            || f['offline.approval'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

@@ -7,8 +7,8 @@ namespace Rateb\App\Offline\Services;
 use Rateb\App\Offline\Contracts\OfflineReplayPort;
 
 /**
- * Offline replay engine — ack + Inventory + HR + Procurement + Recruitment + Accounting + CRM + Projects Tier-1 when flagged.
- * Does not invoke approvals, payroll, payments, or accounting posting.
+ * Offline replay engine — ack + Inventory + HR + Procurement + Recruitment + Accounting + CRM + Projects + Assets + Approval Tier-1 when flagged.
+ * Does not invoke payroll, payments, or accounting posting. Approval decisions (final approve/reject) remain ONLINE ONLY.
  */
 final class OfflineReplayEngine implements OfflineReplayPort
 {
@@ -21,6 +21,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?CrmOfflineReplayService $crm = null;
     private ?ProjectOfflineReplayService $projects = null;
     private ?AssetOfflineReplayService $assets = null;
+    private ?ApprovalOfflineReplayService $approval = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -67,6 +68,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
         return $this->assets ??= new AssetOfflineReplayService();
     }
 
+    private function approval(): ApprovalOfflineReplayService
+    {
+        return $this->approval ??= new ApprovalOfflineReplayService();
+    }
+
     /** @param array<string, mixed> $queueRow */
     public function replay(array $queueRow): array
     {
@@ -76,6 +82,16 @@ final class OfflineReplayEngine implements OfflineReplayPort
         if (in_array($action, ['offline.ack', 'offline.ping', 'ack', 'ping'], true)
             || $module === 'offline_meta') {
             return ['status' => 'synced'];
+        }
+
+        // Exclusive module dispatch — shared action names (workflow.transition, comment.create)
+        // must not be stolen by earlier modules' deferredActions lists.
+        if ($module === 'approval') {
+            if (!$this->flags()->enabled('offline.approval')) {
+                return ['status' => 'skipped', 'error' => 'approval_offline_disabled'];
+            }
+
+            return $this->approval()->replayFromQueueRow($queueRow);
         }
 
         if ($module === 'inventory' || str_starts_with($action, 'inventory.')
@@ -148,6 +164,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->assets()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'approval' || str_starts_with($action, 'approval.')
+            || in_array($action, ApprovalOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.approval')) {
+                return ['status' => 'skipped', 'error' => 'approval_offline_disabled'];
+            }
+
+            return $this->approval()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

@@ -195,6 +195,27 @@ final class OfflineFeatureFlagService
         return $this->isAssetsEnabled() && $this->enabled('offline.assets.masterdata');
     }
 
+    /** Phase 20B — Approval Tier-1 drafts (requires master + offline.approval). */
+    public function isApprovalEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.approval');
+    }
+
+    public function isApprovalRequestsEnabled(): bool
+    {
+        return $this->isApprovalEnabled() && $this->enabled('offline.approval.requests');
+    }
+
+    public function isApprovalWorkflowEnabled(): bool
+    {
+        return $this->isApprovalEnabled() && $this->enabled('offline.approval.workflow');
+    }
+
+    public function isApprovalMasterDataEnabled(): bool
+    {
+        return $this->isApprovalEnabled() && $this->enabled('offline.approval.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {

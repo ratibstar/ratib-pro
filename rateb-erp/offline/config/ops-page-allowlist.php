@@ -5,8 +5,9 @@ declare(strict_types=1);
 /**
  * Phase 14 — Allowlisted enterprise daily-ops pages for offline snapshot browse.
  * Paths are app-route suffixes (matched against location.pathname).
- * Payroll / payments / approvals intentionally omitted.
+ * Payroll / payments intentionally omitted from default browse (Approval Tier-1 added in Phase 20B).
  * Phase 16B: journal draft browse + form hooks only (no post/reverse/close).
+ * Phase 20B: approvals browse + draft form hooks (no final decisions / escalate / notifications).
  *
  * @return array{
  *   paths: list<string>,
@@ -63,6 +64,14 @@ return [
         'eam/inspections',
         'eam/timeline',
         'eam/reports',
+        'approvals',
+        'approvals/requests',
+        'approvals/pending',
+        'approvals/templates',
+        'approvals/chains',
+        'approvals/rules',
+        'approvals/history',
+        'approvals/reports',
     ],
 
     /** Narrow form-post hooks (pathname substring → adapter action). */
@@ -102,5 +111,8 @@ return [
         ['match' => 'eam/work-orders', 'module' => 'assets', 'action' => 'work_order.create'],
         ['match' => 'eam/maintenance', 'module' => 'assets', 'action' => 'maintenance_plan.create'],
         ['match' => 'eam/inspections', 'module' => 'assets', 'action' => 'inspection.create'],
+        ['match' => 'approvals/requests/create', 'module' => 'approval', 'action' => 'approval_request.create'],
+        ['match' => 'approvals/requests', 'module' => 'approval', 'action' => 'approval_request.update'],
+        ['match' => 'approvals/requests/', 'module' => 'approval', 'action' => 'comment.create'],
     ],
 ];

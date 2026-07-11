@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -94,5 +94,11 @@ return [
         'assets.comment.create' => ['class' => 'RS', 'module' => 'assets'],
         'assets.activity.create' => ['class' => 'RS', 'module' => 'assets'],
         'assets.note.create' => ['class' => 'RS', 'module' => 'assets'],
+        'approval.approval_request.create' => ['class' => 'RS', 'module' => 'approval'],
+        'approval.approval_request.update' => ['class' => 'RS', 'module' => 'approval'],
+        'approval.workflow.transition' => ['class' => 'RS', 'module' => 'approval'],
+        'approval.comment.create' => ['class' => 'RS', 'module' => 'approval'],
+        'approval.delegation.create' => ['class' => 'RS', 'module' => 'approval'],
+        'approval.note.create' => ['class' => 'RS', 'module' => 'approval'],
     ],
 ];

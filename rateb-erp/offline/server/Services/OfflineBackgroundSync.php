@@ -42,6 +42,7 @@ final class OfflineBackgroundSync
                 'crm_enabled' => false,
                 'projects_enabled' => false,
                 'assets_enabled' => false,
+                'approval_enabled' => false,
             ];
         }
 
@@ -54,6 +55,7 @@ final class OfflineBackgroundSync
         $stats['crm_enabled'] = $this->flags()->enabled('offline.crm');
         $stats['projects_enabled'] = $this->flags()->enabled('offline.projects');
         $stats['assets_enabled'] = $this->flags()->enabled('offline.assets');
+        $stats['approval_enabled'] = $this->flags()->enabled('offline.approval');
 
         return $stats;
     }

@@ -93,6 +93,12 @@ final class ErpOfflineMasterDataPolicy
             'maintenance_plan_directory', 'maintenance_plans',
             'asset_status_directory', 'asset_statuses',
             'maintenance_request_status_directory', 'maintenance_request_statuses',
+            'approval_template_directory', 'approval_templates',
+            'approval_chain_directory', 'approval_chains',
+            'approval_stage_directory', 'approval_stages',
+            'approval_rule_directory', 'approval_rules',
+            'approval_delegation_directory', 'approval_delegations',
+            'approval_status_directory', 'approval_statuses',
         ], true);
     }
 }

@@ -433,6 +433,34 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'approval') {
+                if (!$this->flags()->enabled('offline.approval')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeApprovalAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'approval_request.create', 'approval_request.update',
+                ], true) && !$this->flags()->enabled('offline.approval.requests')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.approval.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -662,6 +690,28 @@ final class OfflineQueueService
 
             if ($module === 'assets') {
                 if (!$this->flags()->enabled('offline.assets')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
+            if ($module === 'approval') {
+                if (!$this->flags()->enabled('offline.approval')) {
                     $stats['skipped']++;
                     continue;
                 }
@@ -919,6 +969,30 @@ final class OfflineQueueService
         $mapped = $aliases[$action] ?? '';
         $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
         if ($canonical === '' && in_array('assets.' . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeApprovalAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = ApprovalOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, 'approval.') ? substr($action, 9) : $action;
+        }
+        $aliases = [
+            'create_approval_request' => 'approval_request.create',
+            'update_approval_request' => 'approval_request.update',
+            'transition_workflow' => 'workflow.transition',
+            'create_comment' => 'comment.create',
+            'create_delegation' => 'delegation.create',
+            'create_note' => 'note.create',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array('approval.' . $mapped, $allowed, true)) {
             $canonical = $mapped;
         }
 

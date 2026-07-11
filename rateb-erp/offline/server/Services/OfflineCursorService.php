@@ -28,6 +28,7 @@ final class OfflineCursorService
     private ?CrmOfflineMasterDataDirectoryService $crmMasterData = null;
     private ?ProjectOfflineMasterDataDirectoryService $projectsMasterData = null;
     private ?AssetOfflineMasterDataDirectoryService $assetsMasterData = null;
+    private ?ApprovalOfflineMasterDataDirectoryService $approvalMasterData = null;
 
     private function model(): OfflineEntityCursor
     {
@@ -97,6 +98,11 @@ final class OfflineCursorService
     private function assetsMasterData(): AssetOfflineMasterDataDirectoryService
     {
         return $this->assetsMasterData ??= new AssetOfflineMasterDataDirectoryService();
+    }
+
+    private function approvalMasterData(): ApprovalOfflineMasterDataDirectoryService
+    {
+        return $this->approvalMasterData ??= new ApprovalOfflineMasterDataDirectoryService();
     }
 
     public function isAvailable(): bool
@@ -189,6 +195,10 @@ final class OfflineCursorService
 
         if ($masterCanonical !== null && $this->assetsMasterData()->supports($masterCanonical)) {
             return $this->assetsMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
+        }
+
+        if ($masterCanonical !== null && $this->approvalMasterData()->supports($masterCanonical)) {
+            return $this->approvalMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
         }
 
         return [
