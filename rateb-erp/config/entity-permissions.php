@@ -37,6 +37,26 @@ return [
         'view' => 'procurement.contract',
         'manage' => 'procurement.manage',
     ],
+    'mfg' => [
+        'module' => 'manufacturing',
+        'view' => 'manufacturing.view',
+        'manage' => 'manufacturing.manage',
+    ],
+    'mfg-products' => [
+        'module' => 'manufacturing',
+        'view' => 'manufacturing.view',
+        'manage' => 'manufacturing.manage',
+    ],
+    'mfg-boms' => [
+        'module' => 'manufacturing',
+        'view' => 'manufacturing.bom',
+        'manage' => 'manufacturing.manage',
+    ],
+    'mfg-production-orders' => [
+        'module' => 'manufacturing',
+        'view' => 'manufacturing.shopfloor',
+        'manage' => 'manufacturing.manage',
+    ],
     'purchase-orders' => [
         'module' => 'procurement',
         'view' => 'procurement.manage',

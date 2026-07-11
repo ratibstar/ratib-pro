@@ -438,6 +438,44 @@ $router->post($app('eproc/collaboration/{id}/transition'), [EprocCollaborationCo
 $router->get($app('eproc/qualification/{id}'), [EprocQualificationController::class, 'show'], rateb_erp_mw('procurement', 'procurement.supplier', 'procurement'));
 $router->post($app('eproc/qualification/{id}/transition'), [EprocQualificationController::class, 'transition'], rateb_erp_mw('procurement', 'procurement.submit', 'procurement'));
 
+/** Phase 22A — Enterprise Manufacturing (MRP) Platform ONLINE (mfg/*; additive; Offline deferred to 22B). */
+$mfgMw = rateb_erp_mw('manufacturing', 'manufacturing.view', 'manufacturing');
+$router->get($app('mfg'), [MfgDashboardController::class, 'index'], $mfgMw);
+$router->get($app('mfg/products'), [MfgProductsController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.view', 'manufacturing'));
+$router->get($app('mfg/products/create'), [MfgProductsController::class, 'create'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->post($app('mfg/products'), [MfgProductsController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/products/{id}'), [MfgProductsController::class, 'show'], rateb_erp_mw('manufacturing', 'manufacturing.view', 'manufacturing'));
+$router->post($app('mfg/products/{id}/transition'), [MfgProductsController::class, 'transition'], rateb_erp_mw('manufacturing', 'manufacturing.submit', 'manufacturing'));
+$router->get($app('mfg/boms'), [MfgBomsController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.bom', 'manufacturing'));
+$router->get($app('mfg/boms/create'), [MfgBomsController::class, 'create'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->post($app('mfg/boms'), [MfgBomsController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/boms/{id}'), [MfgBomsController::class, 'show'], rateb_erp_mw('manufacturing', 'manufacturing.bom', 'manufacturing'));
+$router->post($app('mfg/boms/{id}/transition'), [MfgBomsController::class, 'transition'], rateb_erp_mw('manufacturing', 'manufacturing.submit', 'manufacturing'));
+$router->get($app('mfg/production-orders'), [MfgProductionOrdersController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.shopfloor', 'manufacturing'));
+$router->get($app('mfg/production-orders/create'), [MfgProductionOrdersController::class, 'create'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->post($app('mfg/production-orders'), [MfgProductionOrdersController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/production-orders/{id}'), [MfgProductionOrdersController::class, 'show'], rateb_erp_mw('manufacturing', 'manufacturing.shopfloor', 'manufacturing'));
+$router->post($app('mfg/production-orders/{id}/transition'), [MfgProductionOrdersController::class, 'transition'], rateb_erp_mw('manufacturing', 'manufacturing.submit', 'manufacturing'));
+$router->get($app('mfg/work-orders'), [MfgWorkOrdersController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.shopfloor', 'manufacturing'));
+$router->get($app('mfg/work-orders/create'), [MfgWorkOrdersController::class, 'create'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->post($app('mfg/work-orders'), [MfgWorkOrdersController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/work-orders/{id}'), [MfgWorkOrdersController::class, 'show'], rateb_erp_mw('manufacturing', 'manufacturing.shopfloor', 'manufacturing'));
+$router->post($app('mfg/work-orders/{id}/transition'), [MfgWorkOrdersController::class, 'transition'], rateb_erp_mw('manufacturing', 'manufacturing.submit', 'manufacturing'));
+$router->get($app('mfg/work-centers'), [MfgWorkCentersController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.planning', 'manufacturing'));
+$router->post($app('mfg/work-centers'), [MfgWorkCentersController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/routings'), [MfgRoutingsController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.bom', 'manufacturing'));
+$router->post($app('mfg/routings'), [MfgRoutingsController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/routings/{id}'), [MfgRoutingsController::class, 'show'], rateb_erp_mw('manufacturing', 'manufacturing.bom', 'manufacturing'));
+$router->get($app('mfg/capacity'), [MfgCapacityController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.planning', 'manufacturing'));
+$router->post($app('mfg/capacity'), [MfgCapacityController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/calendar'), [MfgCalendarController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.planning', 'manufacturing'));
+$router->post($app('mfg/calendar'), [MfgCalendarController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/schedules'), [MfgSchedulesController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.planning', 'manufacturing'));
+$router->post($app('mfg/schedules'), [MfgSchedulesController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/quality'), [MfgQualityController::class, 'index'], rateb_erp_mw('manufacturing', 'manufacturing.quality', 'manufacturing'));
+$router->post($app('mfg/quality'), [MfgQualityController::class, 'store'], rateb_erp_mw('manufacturing', 'manufacturing.create', 'manufacturing'));
+$router->get($app('mfg/reports'), [MfgReportsController::class, 'index'], $mfgMw);
+
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);
 $router->post($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'store'], $hrAttMw);

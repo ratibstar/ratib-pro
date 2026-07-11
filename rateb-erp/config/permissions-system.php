@@ -41,6 +41,7 @@ return [
         'crm',
         'projects',
         'approval',
+        'manufacturing',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -65,6 +66,7 @@ return [
         'crm' => 'crm',
         'projects' => 'projects',
         'approval' => 'approval_platform',
+        'manufacturing' => 'manufacturing_platform',
     ],
 
     /**
@@ -223,6 +225,27 @@ return [
             'approval.approve',
             'approval.reject',
             'approval.delegate',
+        ],
+        'manufacturing.manage' => [
+            'manufacturing.view',
+            'manufacturing.create',
+            'manufacturing.update',
+            'manufacturing.submit',
+            'manufacturing.bom',
+            'manufacturing.planning',
+            'manufacturing.shopfloor',
+            'manufacturing.quality',
+            'manufacturing.admin',
+        ],
+        'manufacturing.admin' => [
+            'manufacturing.view',
+            'manufacturing.create',
+            'manufacturing.update',
+            'manufacturing.submit',
+            'manufacturing.bom',
+            'manufacturing.planning',
+            'manufacturing.shopfloor',
+            'manufacturing.quality',
         ],
     ],
 

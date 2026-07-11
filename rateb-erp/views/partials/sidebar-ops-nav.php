@@ -74,6 +74,20 @@ $opsSection(__('inventory'), [
     ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
     ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
 ], 'fa-boxes-stacked');
+$opsSection(__('manufacturing_platform'), [
+    ['mfg', 'manufacturing_platform', 'fa-industry', 'manufacturing', 'manufacturing.view'],
+    ['mfg/products', 'mfg_products', 'fa-cube', 'manufacturing', 'manufacturing.view'],
+    ['mfg/boms', 'mfg_boms', 'fa-sitemap', 'manufacturing', 'manufacturing.bom'],
+    ['mfg/production-orders', 'mfg_production_orders', 'fa-clipboard-list', 'manufacturing', 'manufacturing.shopfloor'],
+    ['mfg/work-orders', 'mfg_work_orders', 'fa-hammer', 'manufacturing', 'manufacturing.shopfloor'],
+    ['mfg/work-centers', 'mfg_work_centers', 'fa-warehouse', 'manufacturing', 'manufacturing.planning'],
+    ['mfg/routings', 'mfg_routings', 'fa-route', 'manufacturing', 'manufacturing.bom'],
+    ['mfg/capacity', 'mfg_capacity', 'fa-gauge-high', 'manufacturing', 'manufacturing.planning'],
+    ['mfg/calendar', 'mfg_calendar', 'fa-calendar-days', 'manufacturing', 'manufacturing.planning'],
+    ['mfg/schedules', 'mfg_schedules', 'fa-timeline', 'manufacturing', 'manufacturing.planning'],
+    ['mfg/quality', 'mfg_quality', 'fa-clipboard-check', 'manufacturing', 'manufacturing.quality'],
+    ['mfg/reports', 'mfg_reports', 'fa-chart-line', 'manufacturing', 'manufacturing.view'],
+], 'fa-industry');
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }

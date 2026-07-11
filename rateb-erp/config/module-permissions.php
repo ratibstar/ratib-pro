@@ -19,4 +19,5 @@ return [
     'branches' => 'branches.view',
     'pos' => 'pos.view',
     'recruitment' => 'recruitment.manage',
+    'manufacturing' => 'manufacturing.manage',
 ];
