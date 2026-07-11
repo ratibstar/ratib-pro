@@ -125,5 +125,34 @@ return [
             'branch_scoped' => false,
             'requires_updated_at' => true,
         ],
+        /** Phase 17B — optional CRM directories (read-only; flag offline.crm.masterdata). */
+        'crm_lead_source_directory' => [
+            'table' => 'rateb_crm_lead_sources',
+            'aliases' => ['crm_lead_sources', 'lead_sources'],
+            'cache_prefix' => 'cls',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+        ],
+        'crm_pipeline_stage_directory' => [
+            'table' => 'rateb_crm_pipeline_stages',
+            'aliases' => ['crm_pipeline_stages', 'pipeline_stages'],
+            'cache_prefix' => 'cps',
+            'branch_scoped' => false,
+            'requires_updated_at' => true,
+        ],
+        'crm_tag_directory' => [
+            'table' => 'rateb_crm_tags',
+            'aliases' => ['crm_tags', 'tags'],
+            'cache_prefix' => 'ctg',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+        ],
+        'crm_company_directory' => [
+            'table' => 'rateb_crm_companies',
+            'aliases' => ['crm_companies', 'crm_accounts'],
+            'cache_prefix' => 'cco',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+        ],
     ],
 ];

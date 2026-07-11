@@ -19,6 +19,7 @@ $order = [
     'offline/client/adapters/procurement-adapter.js',
     'offline/client/adapters/recruitment-adapter.js',
     'offline/client/adapters/accounting-adapter.js',
+    'offline/client/adapters/crm-adapter.js',
     'offline/client/adapters/form-post-adapter.js',
     'offline/client/adapters/shell-adapter.js',
     'offline/client/adapters/auth-lock-adapter.js',
@@ -28,7 +29,7 @@ $order = [
     'offline/client/core/sdk.js',
 ];
 
-$out = "/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phase 5.0.0 + Phases 10-14.2 GRN + Phase 15B Recruitment + Phase 16B Accounting drafts; flags default OFF). */\n\n";
+$out = "/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM; flags default OFF). */\n\n";
 foreach ($order as $rel) {
     $path = $root . '/' . $rel;
     if (!is_file($path)) {
@@ -49,6 +50,5 @@ $min = $root . '/public/assets/offline/rateb-offline.min.js';
 file_put_contents($dest, $out);
 file_put_contents($min, $out);
 echo 'Wrote ' . strlen($out) . " bytes\n";
-echo (str_contains($out, 'RatebOfflineRecruitmentAdapter') ? 'HAS recruitment adapter' : 'MISSING recruitment') . PHP_EOL;
-echo (str_contains($out, 'RatebOfflineAccountingAdapter') ? 'HAS accounting adapter' : 'MISSING accounting') . PHP_EOL;
-echo (str_contains($out, 'isAccountingEnabled') ? 'HAS isAccountingEnabled' : 'MISSING accounting helper') . PHP_EOL;
+echo (str_contains($out, 'RatebOfflineCrmAdapter') ? 'HAS crm adapter' : 'MISSING crm') . PHP_EOL;
+echo (str_contains($out, 'isCrmEnabled') ? 'HAS isCrmEnabled' : 'MISSING crm helper') . PHP_EOL;

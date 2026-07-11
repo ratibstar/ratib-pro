@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment + Phase 16B accounting).
+ * RATEB Offline SDK bootstrap (Phase 14.2 + 15B + 16B + 17B CRM).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -21,6 +21,11 @@
         'offline.accounting.journals': false,
         'offline.accounting.workflow': false,
         'offline.accounting.masterdata': false,
+        'offline.crm': false,
+        'offline.crm.leads': false,
+        'offline.crm.workflow': false,
+        'offline.crm.activities': false,
+        'offline.crm.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -53,6 +58,11 @@
             accounting_journals: !!flags['offline.accounting.journals'],
             accounting_workflow: !!flags['offline.accounting.workflow'],
             accounting_masterdata: !!flags['offline.accounting.masterdata'],
+            crm: !!flags['offline.crm'],
+            crm_leads: !!flags['offline.crm.leads'],
+            crm_workflow: !!flags['offline.crm.workflow'],
+            crm_activities: !!flags['offline.crm.activities'],
+            crm_masterdata: !!flags['offline.crm.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -161,6 +171,29 @@
                 && flags['offline.accounting']
                 && flags['offline.accounting.masterdata']);
         },
+        isCrmEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.crm']);
+        },
+        isCrmLeadsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.leads']);
+        },
+        isCrmWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.workflow']);
+        },
+        isCrmActivitiesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.activities']);
+        },
+        isCrmMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -191,6 +224,7 @@
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
         accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
+        crm: function () { return root.RatebOfflineCrmAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

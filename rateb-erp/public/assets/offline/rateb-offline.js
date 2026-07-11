@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phase 5.0.0 + Phases 10-14.2 GRN + Phase 15B Recruitment + Phase 16B Accounting drafts; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -1754,6 +1754,191 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- crm-adapter.js ---- */
+/**
+ * RATEB Offline — CRM adapter (Phase 17B / Tier 1 drafts).
+ * Queues lead / workflow / activity / opportunity drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.crm (sub-flags gate children).
+ * Does NOT enqueue delete, payments, approvals, email/SMS, attachments, or government APIs.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.crm']);
+    }
+
+    function isLeadsActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.crm.leads']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.crm.workflow']);
+    }
+
+    function isActivitiesActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.crm.activities']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.crm.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'crm') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('crm_offline_disabled'));
+        }
+        if ((action === 'lead.create' || action === 'lead.update' || action === 'note.create'
+            || action === 'contact.create' || action === 'company.create')
+            && !isLeadsActive()) {
+            return Promise.reject(new Error('crm_leads_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('crm_workflow_offline_disabled'));
+        }
+        if ((action === 'meeting.create' || action === 'call.create' || action === 'task.create')
+            && !isActivitiesActive()) {
+            return Promise.reject(new Error('crm_activities_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'crm',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineCrmAdapter = {
+        isActive: isActive,
+        isLeadsActive: isLeadsActive,
+        isWorkflowActive: isWorkflowActive,
+        isActivitiesActive: isActivitiesActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueLeadCreate: function (payload, options) {
+            return enqueue('lead.create', payload || {}, options);
+        },
+        enqueueLeadUpdate: function (payload, options) {
+            return enqueue('lead.update', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        enqueueOpportunityCreate: function (payload, options) {
+            return enqueue('opportunity.create', payload || {}, options);
+        },
+        enqueueMeetingCreate: function (payload, options) {
+            return enqueue('meeting.create', payload || {}, options);
+        },
+        enqueueCallCreate: function (payload, options) {
+            return enqueue('call.create', payload || {}, options);
+        },
+        enqueueTaskCreate: function (payload, options) {
+            return enqueue('task.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        enqueueAssignmentCreate: function (payload, options) {
+            return enqueue('assignment.create', payload || {}, options);
+        },
+        enqueueCampaignCreate: function (payload, options) {
+            return enqueue('campaign.create', payload || {}, options);
+        },
+        enqueueContactCreate: function (payload, options) {
+            return enqueue('contact.create', payload || {}, options);
+        },
+        enqueueCompanyCreate: function (payload, options) {
+            return enqueue('company.create', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (q && typeof q.flush === 'function') {
+                return q.flush();
+            }
+            return Promise.resolve({ skipped: true });
+        },
+        status: function () {
+            return {
+                active: isActive(),
+                leads: isLeadsActive(),
+                workflow: isWorkflowActive(),
+                activities: isActivitiesActive(),
+                masterdata: isMasterDataActive()
+            };
+        },
+        pullLeadSources: function (options) {
+            return pullDirectory('crm_lead_source_directory', options);
+        },
+        pullPipelineStages: function (options) {
+            return pullDirectory('crm_pipeline_stage_directory', options);
+        },
+        pullTags: function (options) {
+            return pullDirectory('crm_tag_directory', options);
+        },
+        pullCompanies: function (options) {
+            return pullDirectory('crm_company_directory', options);
+        },
+        sync: function (options) {
+            options = options || {};
+            if (!isActive()) {
+                return Promise.resolve({ skipped: true, disabled: true });
+            }
+            var q = root.RatebOfflineQueue;
+            var flush = (q && typeof q.flush === 'function') ? q.flush() : Promise.resolve({ skipped: true });
+            return flush.then(function (flushResult) {
+                return {
+                    flush: flushResult,
+                    status: root.RatebOfflineCrmAdapter.status()
+                };
+            });
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -3451,12 +3636,13 @@
 
 /* ---- ops-forms-adapter.js ---- */
 /**
- * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B / 16B).
- * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment/Accounting-draft forms enqueue via existing adapters.
+ * RATEB Offline — Ops forms adapter (Phase 14 / 14.2 / 15B / 16B / 17B).
+ * Per-module hooks: when offline, allowlisted Inv/HR/Proc/Recruitment/Accounting/CRM-draft forms enqueue via existing adapters.
  * Does not finish a generic form-post stub; narrow path matching only.
  * Phase 14.2: purchase-orders/{id}/receive → goods_receipt.receive (flag-gated).
  * Phase 15B: recruitment/candidates create|update|transition (flag-gated).
  * Phase 16B: journal-entries draft create|update + recurring/opening drafts (flag-gated; never post).
+ * Phase 17B: crm leads/tasks/meetings/campaigns/contacts/companies drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -3476,7 +3662,14 @@
         { match: 'journal-entries/create', module: 'accounting', action: 'journal.create' },
         { match: 'journal-entries', module: 'accounting', action: 'journal.update' },
         { match: 'accounting/recurring/create', module: 'accounting', action: 'recurring.create' },
-        { match: 'accounting/opening-balances', module: 'accounting', action: 'opening_balance.create' }
+        { match: 'accounting/opening-balances', module: 'accounting', action: 'opening_balance.create' },
+        { match: 'crm/leads/create', module: 'crm', action: 'lead.create' },
+        { match: 'crm/leads', module: 'crm', action: 'lead.update' },
+        { match: 'crm/tasks', module: 'crm', action: 'task.create' },
+        { match: 'crm/meetings', module: 'crm', action: 'meeting.create' },
+        { match: 'crm/campaigns', module: 'crm', action: 'campaign.create' },
+        { match: 'crm/contacts', module: 'crm', action: 'contact.create' },
+        { match: 'crm/companies', module: 'crm', action: 'company.create' }
     ];
 
     function cfg() {
@@ -3545,6 +3738,22 @@
                 return !!f['offline.accounting.workflow'];
             }
             return false;
+        }
+        if (module === 'crm') {
+            if (!f['offline.crm']) {
+                return false;
+            }
+            if (action === 'lead.create' || action === 'lead.update' || action === 'note.create'
+                || action === 'contact.create' || action === 'company.create') {
+                return !!f['offline.crm.leads'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.crm.workflow'];
+            }
+            if (action === 'meeting.create' || action === 'call.create' || action === 'task.create') {
+                return !!f['offline.crm.activities'];
+            }
+            return true;
         }
         return false;
     }
@@ -3971,6 +4180,39 @@
                 return acc.enqueue(action, payload);
             }
         }
+        if (module === 'crm') {
+            var crm = root.RatebOfflineCrmAdapter;
+            if (!crm) {
+                return Promise.reject(new Error('crm_adapter_unavailable'));
+            }
+            if (action === 'lead.create') {
+                return crm.enqueueLeadCreate(payload);
+            }
+            if (action === 'lead.update') {
+                return crm.enqueueLeadUpdate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return crm.enqueueWorkflowTransition(payload);
+            }
+            if (action === 'meeting.create') {
+                return crm.enqueueMeetingCreate(payload);
+            }
+            if (action === 'task.create') {
+                return crm.enqueueTaskCreate(payload);
+            }
+            if (action === 'campaign.create') {
+                return crm.enqueueCampaignCreate(payload);
+            }
+            if (action === 'contact.create') {
+                return crm.enqueueContactCreate(payload);
+            }
+            if (action === 'company.create') {
+                return crm.enqueueCompanyCreate(payload);
+            }
+            if (typeof crm.enqueue === 'function') {
+                return crm.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -4058,7 +4300,8 @@
             || f['offline.hr.attendance']
             || f['offline.procurement']
             || f['offline.recruitment']
-            || f['offline.accounting'])) {
+            || f['offline.accounting']
+            || f['offline.crm'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -4077,7 +4320,7 @@
 
 /* ---- sdk.js ---- */
 /**
- * RATEB Offline SDK bootstrap (Phase 14.2 + Phase 15B recruitment + Phase 16B accounting).
+ * RATEB Offline SDK bootstrap (Phase 14.2 + 15B + 16B + 17B CRM).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -4099,6 +4342,11 @@
         'offline.accounting.journals': false,
         'offline.accounting.workflow': false,
         'offline.accounting.masterdata': false,
+        'offline.crm': false,
+        'offline.crm.leads': false,
+        'offline.crm.workflow': false,
+        'offline.crm.activities': false,
+        'offline.crm.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -4131,6 +4379,11 @@
             accounting_journals: !!flags['offline.accounting.journals'],
             accounting_workflow: !!flags['offline.accounting.workflow'],
             accounting_masterdata: !!flags['offline.accounting.masterdata'],
+            crm: !!flags['offline.crm'],
+            crm_leads: !!flags['offline.crm.leads'],
+            crm_workflow: !!flags['offline.crm.workflow'],
+            crm_activities: !!flags['offline.crm.activities'],
+            crm_masterdata: !!flags['offline.crm.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -4239,6 +4492,29 @@
                 && flags['offline.accounting']
                 && flags['offline.accounting.masterdata']);
         },
+        isCrmEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.crm']);
+        },
+        isCrmLeadsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.leads']);
+        },
+        isCrmWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.workflow']);
+        },
+        isCrmActivitiesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.activities']);
+        },
+        isCrmMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.crm']
+                && flags['offline.crm.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -4269,6 +4545,7 @@
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },
         accounting: function () { return root.RatebOfflineAccountingAdapter || null; },
+        crm: function () { return root.RatebOfflineCrmAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

@@ -49,13 +49,12 @@ final class CrmPhase17ATest
 
     private function testNoOfflineCrm(): void
     {
-        $flags = (string) file_get_contents(RATEB_ROOT . '/offline/config/feature-flags.php');
-        $engine = (string) file_get_contents(RATEB_ROOT . '/offline/server/Services/OfflineReplayEngine.php');
-        $ok = !str_contains($flags, 'offline.crm')
-            && !preg_match("/module === 'crm'/", $engine)
-            && !is_file(RATEB_ROOT . '/offline/client/adapters/crm-adapter.js')
-            && !is_file(RATEB_ROOT . '/offline/server/Services/CrmOfflineReplayService.php');
-        $this->record('no Offline CRM (Phase 17B deferred)', $ok);
+        // Phase 17A asserted no offline CRM; Phase 17B adds it — this online gate no longer applies.
+        // Kept as a soft check that ONLINE domain services remain free of offline queue coupling.
+        $lead = (string) file_get_contents(RATEB_ROOT . '/app/services/CrmDomainServices.php');
+        $ok = !str_contains($lead, 'OfflineQueueService')
+            && !str_contains($lead, 'offline.crm');
+        $this->record('CRM Online services free of offline queue coupling', $ok);
     }
 
     private function testMigrationExists(): void

@@ -35,6 +35,14 @@ return [
         'accounting/profit-centers',
         'accounting/recurring',
         'accounting/opening-balances',
+        'crm',
+        'crm/leads',
+        'crm/pipeline',
+        'crm/tasks',
+        'crm/meetings',
+        'crm/campaigns',
+        'crm/contacts',
+        'crm/companies',
     ],
 
     /** Narrow form-post hooks (pathname substring → adapter action). */
@@ -54,5 +62,12 @@ return [
         ['match' => 'journal-entries', 'module' => 'accounting', 'action' => 'journal.update'],
         ['match' => 'accounting/recurring/create', 'module' => 'accounting', 'action' => 'recurring.create'],
         ['match' => 'accounting/opening-balances', 'module' => 'accounting', 'action' => 'opening_balance.create'],
+        ['match' => 'crm/leads/create', 'module' => 'crm', 'action' => 'lead.create'],
+        ['match' => 'crm/leads', 'module' => 'crm', 'action' => 'lead.update'],
+        ['match' => 'crm/tasks', 'module' => 'crm', 'action' => 'task.create'],
+        ['match' => 'crm/meetings', 'module' => 'crm', 'action' => 'meeting.create'],
+        ['match' => 'crm/campaigns', 'module' => 'crm', 'action' => 'campaign.create'],
+        ['match' => 'crm/contacts', 'module' => 'crm', 'action' => 'contact.create'],
+        ['match' => 'crm/companies', 'module' => 'crm', 'action' => 'company.create'],
     ],
 ];

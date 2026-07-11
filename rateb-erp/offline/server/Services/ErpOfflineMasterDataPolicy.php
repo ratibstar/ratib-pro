@@ -75,6 +75,10 @@ final class ErpOfflineMasterDataPolicy
             'accounting_cost_center_directory', 'cost_centers', 'cost_center',
             'accounting_profit_center_directory', 'profit_centers', 'profit_center',
             'accounting_fiscal_period_directory', 'fiscal_periods', 'fiscal_period',
+            'crm_lead_source_directory', 'crm_lead_sources', 'lead_sources',
+            'crm_pipeline_stage_directory', 'crm_pipeline_stages', 'pipeline_stages',
+            'crm_tag_directory', 'crm_tags',
+            'crm_company_directory', 'crm_companies', 'crm_accounts',
         ], true);
     }
 }

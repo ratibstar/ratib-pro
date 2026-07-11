@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform auth unlock (flag-gated). Phase 15B: + recruitment. Phase 16B: + accounting. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -54,5 +54,17 @@ return [
         'accounting.recurring.create' => ['class' => 'RS', 'module' => 'accounting'],
         'accounting.opening_balance.create' => ['class' => 'RS', 'module' => 'accounting'],
         'accounting.note.create' => ['class' => 'RS', 'module' => 'accounting'],
+        'crm.lead.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.lead.update' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.workflow.transition' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.opportunity.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.meeting.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.call.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.task.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.note.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.assignment.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.campaign.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.contact.create' => ['class' => 'RS', 'module' => 'crm'],
+        'crm.company.create' => ['class' => 'RS', 'module' => 'crm'],
     ],
 ];

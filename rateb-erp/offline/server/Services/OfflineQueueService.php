@@ -330,6 +330,41 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'crm') {
+                if (!$this->flags()->enabled('offline.crm')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeCrmAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'lead.create', 'lead.update', 'note.create', 'contact.create', 'company.create',
+                ], true) && !$this->flags()->enabled('offline.crm.leads')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.crm.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'meeting.create', 'call.create', 'task.create',
+                ], true) && !$this->flags()->enabled('offline.crm.activities')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -513,6 +548,28 @@ final class OfflineQueueService
                 continue;
             }
 
+            if ($module === 'crm') {
+                if (!$this->flags()->enabled('offline.crm')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
             $stats['skipped']++;
         }
 
@@ -660,6 +717,36 @@ final class OfflineQueueService
         $mapped = $aliases[$action] ?? '';
 
         return in_array($mapped, $allowed, true) ? $mapped : '';
+    }
+
+    private function normalizeCrmAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = CrmOfflineReplayService::deferredActions();
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, 'crm.') ? substr($action, 4) : $action;
+        }
+        $aliases = [
+            'create_lead' => 'lead.create',
+            'update_lead' => 'lead.update',
+            'transition_workflow' => 'workflow.transition',
+            'create_opportunity' => 'opportunity.create',
+            'create_meeting' => 'meeting.create',
+            'create_call' => 'call.create',
+            'create_task' => 'task.create',
+            'create_note' => 'note.create',
+            'create_assignment' => 'assignment.create',
+            'create_campaign' => 'campaign.create',
+            'create_contact' => 'contact.create',
+            'create_company' => 'company.create',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array('crm.' . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
     }
 
     private function resolveCompanyId(?int $companyId): int
