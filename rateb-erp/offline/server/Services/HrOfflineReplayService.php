@@ -62,7 +62,7 @@ final class HrOfflineReplayService
             (string) ($decoded['action'] ?? $queueRow['action'] ?? '')
         );
         $inner = is_array($decoded['payload'] ?? null) ? $decoded['payload'] : [];
-        $scope = $this->buildScope($queueRow, $inner);
+        unset($inner['branch_id'], $inner['company_id'], $inner['user_id'], $inner['device_id']);
         $idempotencyKey = substr(trim((string) (
             $queueRow['idempotency_key']
             ?? $decoded['client_id']
@@ -74,11 +74,12 @@ final class HrOfflineReplayService
             return ['status' => 'skipped', 'error' => 'unknown_hr_action'];
         }
 
-        if ($scope['company_id'] < 1) {
-            return ['status' => 'failed', 'error' => 'company_required'];
-        }
-
         try {
+            $scope = $this->buildScope($queueRow);
+            if ($scope['company_id'] < 1) {
+                return ['status' => 'failed', 'error' => 'company_required'];
+            }
+
             TenantContext::setCompanyId($scope['company_id']);
             if ($scope['user_id'] > 0) {
                 SessionManager::set('rateb_user_id', $scope['user_id']);
@@ -370,17 +371,13 @@ final class HrOfflineReplayService
     }
 
     /**
+     * Scope from queue row only — never from client payload (H-BRANCH-001).
+     *
      * @param array<string, mixed> $queueRow
-     * @param array<string, mixed> $inner
      * @return array{company_id: int, branch_id: int, user_id: int, device_id: string}
      */
-    private function buildScope(array $queueRow, array $inner): array
+    private function buildScope(array $queueRow): array
     {
-        return [
-            'company_id' => (int) ($queueRow['company_id'] ?? $inner['company_id'] ?? 0),
-            'branch_id' => (int) ($queueRow['branch_id'] ?? $inner['branch_id'] ?? 0),
-            'user_id' => (int) ($queueRow['user_id'] ?? $inner['user_id'] ?? 0),
-            'device_id' => (string) ($queueRow['device_id'] ?? $inner['device_id'] ?? ''),
-        ];
+        return (new OfflineReplayScopeService())->fromQueueRow($queueRow);
     }
 }

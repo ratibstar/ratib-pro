@@ -11,6 +11,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Offline\Services\OfflineAuthorizationService;
 use Rateb\App\Offline\Services\OfflineBranchGuard;
+use Rateb\App\Offline\Services\OfflineDeviceGuard;
 use Rateb\App\Offline\Services\OfflineFeatureFlagService;
 use Rateb\App\Offline\Services\OfflinePushAckContract;
 use Rateb\App\Offline\Services\OfflineSyncService;
@@ -70,6 +71,26 @@ final class OfflineSyncApiController extends Controller
             return;
         }
 
+        $companyId = $this->companyId();
+        $deviceId = trim((string) ($body['device_id'] ?? ''));
+        $deviceCheck = (new OfflineDeviceGuard())->assertActive($companyId, $deviceId);
+        if (!$deviceCheck['ok']) {
+            $code = (string) ($deviceCheck['error'] ?? 'device_denied');
+            $this->json([
+                'ok' => false,
+                'error' => ['message' => 'Device not allowed', 'code' => $code],
+                'result' => [
+                    'accepted' => 0,
+                    'duplicate' => 0,
+                    'conflict' => 0,
+                    'rejected' => 0,
+                    'clearable_keys' => [],
+                    'errors' => [$code => true],
+                ],
+            ], 403);
+            return;
+        }
+
         $items = $body['items'] ?? $body;
         if (!is_array($items)) {
             $items = [];
@@ -78,12 +99,30 @@ final class OfflineSyncApiController extends Controller
             $items = [$items];
         }
 
+        // Strip client identity/scope from each item payload before enqueue (defense in depth).
+        foreach ($items as $i => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            if (isset($item['payload']) && is_array($item['payload'])) {
+                unset(
+                    $item['payload']['branch_id'],
+                    $item['payload']['company_id'],
+                    $item['payload']['user_id'],
+                    $item['payload']['device_id']
+                );
+                $items[$i] = $item;
+            }
+        }
+
+        $canManage = (new OfflineAuthorizationService())->canManageSync();
         $service = new OfflineSyncService();
         $result = $service->pushQueue($items, [
-            'company_id' => $this->companyId(),
+            'company_id' => $companyId,
             'branch_id' => (int) ($branchCheck['branch_id'] ?? 0),
-            'device_id' => (string) ($body['device_id'] ?? ''),
+            'device_id' => (string) ($deviceCheck['device_id'] ?? $deviceId),
             'user_id' => $this->userId(),
+            'auto_process' => $canManage,
         ]);
 
         $ack = (new OfflinePushAckContract())->evaluate($result);

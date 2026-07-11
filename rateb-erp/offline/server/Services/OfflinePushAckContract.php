@@ -58,6 +58,9 @@ final class OfflinePushAckContract
         if (!empty($errors['branch_denied'])) {
             return ['ok' => false, 'http_status' => 403, 'clearable_keys' => []];
         }
+        if (!empty($errors['device_denied']) || !empty($errors['device_unknown'])) {
+            return ['ok' => false, 'http_status' => 403, 'clearable_keys' => []];
+        }
         if (!empty($errors['company_required'])) {
             return ['ok' => false, 'http_status' => 403, 'clearable_keys' => []];
         }

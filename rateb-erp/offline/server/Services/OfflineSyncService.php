@@ -105,7 +105,10 @@ final class OfflineSyncService
         $result['clearable_keys'] = $ack['clearable_keys'];
         $result['ack_ok'] = $ack['ok'];
 
-        if (($result['accepted'] ?? 0) > 0) {
+        // H-AUTHZ-001: enqueue ≠ company-wide replay. Auto-process only when caller opted in
+        // with Sync Manage (controller sets context.auto_process after canManageSync()).
+        $autoProcess = !empty($context['auto_process']);
+        if ($autoProcess && ($result['accepted'] ?? 0) > 0) {
             $companyId = (int) ($context['company_id'] ?? 0);
             $result['process'] = $this->background()->process($companyId > 0 ? $companyId : null, 50);
         }

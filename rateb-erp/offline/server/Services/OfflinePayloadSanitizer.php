@@ -16,8 +16,16 @@ final class OfflinePayloadSanitizer
     public function normalize(array $item): array
     {
         $inner = is_array($item['payload'] ?? null) ? $item['payload'] : [];
-        // Strip nested transport hints if present.
-        unset($inner['url'], $inner['method'], $inner['headers']);
+        // Strip nested transport hints + identity/scope fields (server queue is authoritative).
+        unset(
+            $inner['url'],
+            $inner['method'],
+            $inner['headers'],
+            $inner['branch_id'],
+            $inner['company_id'],
+            $inner['user_id'],
+            $inner['device_id']
+        );
 
         return [
             'client_id' => $item['client_id'] ?? null,
