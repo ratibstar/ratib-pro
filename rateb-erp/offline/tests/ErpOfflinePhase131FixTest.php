@@ -58,7 +58,8 @@ final class ErpOfflinePhase131FixTest
     {
         $boot = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/erp-shell-bootstrap.js');
         $ok = str_contains($boot, 'Object.assign({}, cfg.flags')
-            && str_contains($boot, 'posOwns')
+            && str_contains($boot, 'posReg')
+            && str_contains($boot, 'WARM_ERP_OFFLINE_SHELL')
             && str_contains($boot, 'Never displace pos-sw');
         $this->record('shell bootstrap passes cfg.flags; skips POS SW', $ok, $ok ? 'ok' : 'fail');
     }
@@ -130,9 +131,13 @@ final class ErpOfflinePhase131FixTest
     private function testPosSwNotDisplaced(): void
     {
         $boot = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/erp-shell-bootstrap.js');
-        $ok = str_contains($boot, 'if (posOwns)')
-            && str_contains($boot, 'return null');
-        $this->record('ERP SW does not displace POS SW', $ok, $ok ? 'ok' : 'fail');
+        $pos = (string) file_get_contents(RATEB_ROOT . '/public/pos-sw.js');
+        $ok = str_contains($boot, 'if (posReg)')
+            && str_contains($boot, 'WARM_ERP_OFFLINE_SHELL')
+            && str_contains($pos, 'erpAdminOfflineFallback')
+            && str_contains($pos, 'rateb-erp-coexist-v1')
+            && str_contains($pos, 'Smart coexist');
+        $this->record('ERP SW does not displace POS SW (smart coexist)', $ok, $ok ? 'ok' : 'fail');
     }
 
     private function testChromeUnlockGate(): void

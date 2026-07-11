@@ -1,9 +1,11 @@
-/* Rateb POS — offline app shell (Phase 4 + 2B fixes) */
+/* Rateb POS — offline app shell (Phase 4 + 2B + ERP coexist) */
 'use strict';
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v1';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
+var ERP_OFFLINE_SHELL = 'offline-shell.html';
 
 function registerShellUrl() {
     try {
@@ -48,6 +50,103 @@ function isPosAsset(url) {
 
 function isApiRequest(url) {
     return url.pathname.indexOf('/api/') !== -1;
+}
+
+/** Auth / login — never intercept (same contract as ERP SW). */
+function isAuthPath(pathname) {
+    var p = String(pathname || '');
+    return /\/login(\/|$)/i.test(p)
+        || /\/logout(\/|$)/i.test(p)
+        || /\/password\//i.test(p)
+        || /\/api\/login/i.test(p)
+        || /\/api\/qr-login/i.test(p)
+        || /\/login\/2fa/i.test(p)
+        || /\/login\/barcode/i.test(p)
+        || /\/login\/scan/i.test(p)
+        || /\/login\/badge/i.test(p);
+}
+
+function erpOfflineShellUrl() {
+    try {
+        return new URL(ERP_OFFLINE_SHELL, self.registration.scope).href;
+    } catch (e) {
+        return self.location.origin + '/rateb-erp/public/' + ERP_OFFLINE_SHELL;
+    }
+}
+
+function erpInlineShellResponse() {
+    var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>RATEB ERP — Offline</title>'
+        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}</style>'
+        + '</head><body>'
+        + '<h1>وضع عدم الاتصال</h1>'
+        + '<p>Cached ERP shell unavailable. Reconnect and open Admin once.</p>'
+        + '</body></html>';
+    return new Response(body, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-Rateb-Offline': '1',
+            'X-Rateb-Coexist': 'pos-sw'
+        }
+    });
+}
+
+/**
+ * Smart coexist: when this SW owns the shared scope, serve ERP offline-shell
+ * for non-POS admin navigations (do not steal POS register shell logic).
+ */
+function erpAdminOfflineFallback() {
+    var key = erpOfflineShellUrl();
+    return caches.match(key).then(function (hit) {
+        if (hit) {
+            return hit;
+        }
+        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+            return cache.match(key).then(function (cached) {
+                if (cached) {
+                    return cached;
+                }
+                return caches.keys().then(function (names) {
+                    var erpCaches = (names || []).filter(function (n) {
+                        return String(n).indexOf('rateb-erp-assets-') === 0
+                            || String(n) === ERP_COEXIST_CACHE;
+                    });
+                    return erpCaches.reduce(function (chain, name) {
+                        return chain.then(function (found) {
+                            if (found) {
+                                return found;
+                            }
+                            return caches.open(name).then(function (c) {
+                                return c.match(key);
+                            });
+                        });
+                    }, Promise.resolve(null)).then(function (found) {
+                        return found || erpInlineShellResponse();
+                    });
+                });
+            });
+        });
+    }).catch(function () {
+        return erpInlineShellResponse();
+    });
+}
+
+function warmErpOfflineShell() {
+    var key = erpOfflineShellUrl();
+    return fetch(key, {
+        credentials: 'same-origin',
+        cache: 'no-cache',
+        headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+    }).then(function (res) {
+        if (!res || !res.ok) {
+            return null;
+        }
+        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+            return cache.put(key, res.clone()).then(function () { return res; });
+        });
+    }).catch(function () { return null; });
 }
 
 function offlineHtmlResponse() {
@@ -179,7 +278,7 @@ function wantsHtmlShell(request) {
 
 /**
  * Build a Request safe for SW cache matching.
- * Browsers forbid `new Request(..., { mode: 'navigate' })` — that threw at biometric offline fallback.
+ * Browsers forbid constructing a Request with navigate mode — that threw at biometric offline fallback.
  */
 function shellLookupRequest(urlHref, sourceRequest) {
     var headers = { Accept: 'text/html' };
@@ -258,7 +357,12 @@ function shellFallback(request) {
 
 self.addEventListener('install', function (event) {
     self.skipWaiting();
-    event.waitUntil(caches.open(ASSET_CACHE));
+    event.waitUntil(
+        Promise.all([
+            caches.open(ASSET_CACHE),
+            warmErpOfflineShell()
+        ]).catch(function () { /* ignore */ })
+    );
 });
 
 self.addEventListener('activate', function (event) {
@@ -312,6 +416,10 @@ self.addEventListener('message', function (event) {
                 return putShell(data.url, response);
             }).catch(function () { /* ignore */ })
         );
+        return;
+    }
+    if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
+        event.waitUntil(warmErpOfflineShell());
     }
 });
 
@@ -339,6 +447,19 @@ self.addEventListener('fetch', function (event) {
                     return shellFallback(shellLookupRequest(regUrl.href, event.request));
                 }
                 return shellFallback(event.request);
+            })
+        );
+        return;
+    }
+
+    // Smart coexist: non-POS admin HTML → network, offline → ERP offline-shell.
+    if (event.request.mode === 'navigate'
+        && !isPosNavigation(url)
+        && !isAuthPath(url.pathname)
+        && !isApiRequest(url)) {
+        event.respondWith(
+            fetch(event.request).catch(function () {
+                return erpAdminOfflineFallback();
             })
         );
         return;
