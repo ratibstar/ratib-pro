@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 3).
+ * RATEB Offline SDK bootstrap (Phase 4).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -46,23 +46,28 @@
         if (root.RatebOfflineEvents) {
             root.RatebOfflineEvents.emit('sdk:ready', {
                 enabled: enabled,
-                inventory: !!flags['offline.inventory.movements']
+                inventory: !!flags['offline.inventory.movements'],
+                hr: !!flags['offline.hr.attendance']
             });
         }
         return {
             enabled: enabled,
             inventory: !!flags['offline.inventory.movements'],
-            version: '3.0.0'
+            hr: !!flags['offline.hr.attendance'],
+            version: '4.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '3.0.0',
+        version: '4.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
         isInventoryEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.inventory.movements']);
+        },
+        isHrEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.hr.attendance']);
         },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
@@ -70,6 +75,7 @@
         connectivity: function () { return root.RatebOfflineConnectivity || null; },
         pos: function () { return root.RatebOfflinePosAdapter || null; },
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
+        hr: function () { return root.RatebOfflineHrAdapter || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

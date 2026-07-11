@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Module tier + operation classification registry (Phase 2A).
- * Tier 1/2 adapters are registered but not activated until later phases.
+ * Module tier + operation classification registry (Phase 4).
+ * Tier 1/2 adapters are registered; Procurement not activated.
  */
 return [
     'tiers' => [
@@ -14,8 +14,8 @@ return [
         'T3' => ['platform'],
     ],
 
-    /** Phase 3: foundation + POS bridge + Inventory Tier-1 (flag-gated). */
-    'active_modules' => ['offline_meta', 'pos', 'inventory'],
+    /** Phase 4: foundation + POS + Inventory + HR (flag-gated). */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -26,5 +26,8 @@ return [
         'inventory.stock_movement' => ['class' => 'RS', 'module' => 'inventory'],
         'inventory.stock_count' => ['class' => 'RS', 'module' => 'inventory'],
         'inventory.warehouse_transfer' => ['class' => 'RS', 'module' => 'inventory'],
+        'hr.attendance' => ['class' => 'RS', 'module' => 'hr'],
+        'hr.attendance.bulk' => ['class' => 'RS', 'module' => 'hr'],
+        'hr.leave_draft' => ['class' => 'RS', 'module' => 'hr'],
     ],
 ];

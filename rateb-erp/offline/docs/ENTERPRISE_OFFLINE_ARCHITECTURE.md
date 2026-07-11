@@ -22,8 +22,17 @@ See chat Phase 1 architecture document for full design.
 - Client `RatebOfflineInventoryAdapter`
 - Flag `offline.inventory.movements` default **OFF**
 
+## Phase 4 delivered (HR Tier 1)
+
+- `HrOfflineReplayService` → attendance / bulk / leave drafts (no approvals/payroll)
+- Employee directory delta pull (`employee_directory`)
+- Conflict: version LWW + `status_changed`
+- Client `RatebOfflineHrAdapter`
+- Flag `offline.hr.attendance` default **OFF**
+
 ## Not implemented yet
 
-- HR / Procurement sync
+- Procurement sync
 - ERP shell read cache
 - UI script injection into ERP layouts (optional)
+- Offline payroll / leave approvals

@@ -26,7 +26,9 @@ final class OfflineAuthorizationService
                 return TenantContext::companyId() !== null && (int) TenantContext::companyId() > 0;
             }
 
-            return in_array('pos', $modules, true) || in_array('inventory', $modules, true);
+            return in_array('pos', $modules, true)
+                || in_array('inventory', $modules, true)
+                || in_array('hr', $modules, true);
         }
 
         // Session path — prefer permission slug; soft-fail if auth DB unavailable.

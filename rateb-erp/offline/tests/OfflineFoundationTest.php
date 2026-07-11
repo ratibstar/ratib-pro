@@ -350,12 +350,12 @@ final class OfflineFoundationTest
     private function testAuthzDeniesRestrictedToken(): void
     {
         TenantContext::setCompanyId(7);
-        TenantContext::setApiModules(['hr']);
+        TenantContext::setApiModules(['procurement']);
         $auth = new OfflineAuthorizationService();
         $ok = $auth->canManageSync() === false;
         TenantContext::setCompanyId(null);
         TenantContext::setApiModules(null);
-        $this->record('authz denies token without pos/inventory ability', $ok, $ok ? 'ok' : 'unexpected allow');
+        $this->record('authz denies token without pos/inventory/hr ability', $ok, $ok ? 'ok' : 'unexpected allow');
     }
 
     private function testAuthzAllowsUnrestrictedToken(): void

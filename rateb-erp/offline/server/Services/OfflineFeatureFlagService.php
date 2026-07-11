@@ -54,6 +54,12 @@ final class OfflineFeatureFlagService
         return $this->isMasterEnabled() && $this->enabled('offline.inventory.movements');
     }
 
+    /** Tier-1 HR attendance (requires master + sub-flag). */
+    public function isHrAttendanceEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.hr.attendance');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

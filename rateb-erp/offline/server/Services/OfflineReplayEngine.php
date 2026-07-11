@@ -7,13 +7,14 @@ namespace Rateb\App\Offline\Services;
 use Rateb\App\Offline\Contracts\OfflineReplayPort;
 
 /**
- * Offline replay engine — acknowledge-only + Inventory Tier-1 when flagged.
- * Does not invoke HR/Procurement/ERP shell business services.
+ * Offline replay engine — ack + Inventory + HR Tier-1 when flagged.
+ * Does not invoke Procurement/ERP shell/payroll business services.
  */
 final class OfflineReplayEngine implements OfflineReplayPort
 {
     private ?OfflineFeatureFlagService $flags = null;
     private ?InventoryOfflineReplayService $inventory = null;
+    private ?HrOfflineReplayService $hr = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -23,6 +24,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private function inventory(): InventoryOfflineReplayService
     {
         return $this->inventory ??= new InventoryOfflineReplayService();
+    }
+
+    private function hr(): HrOfflineReplayService
+    {
+        return $this->hr ??= new HrOfflineReplayService();
     }
 
     /** @param array<string, mixed> $queueRow */
@@ -43,6 +49,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->inventory()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'hr' || str_starts_with($action, 'hr.')
+            || in_array($action, HrOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.hr.attendance')) {
+                return ['status' => 'skipped', 'error' => 'hr_offline_disabled'];
+            }
+
+            return $this->hr()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

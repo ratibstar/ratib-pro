@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Entity → API route mapping for offline replay (Phase 3).
- * Inventory replay delegates to existing services; HR/Procurement still stubbed.
+ * Entity → API route mapping for offline replay (Phase 4).
+ * Inventory + HR replay delegate to existing domain; Procurement still stubbed.
  */
 return [
     'offline_ack' => [
@@ -44,6 +44,33 @@ return [
         'module' => 'inventory',
         'method' => 'GET',
         'path' => '/api/v1/offline/delta/inventory_catalog',
+        'replay' => 'delta_pull',
+    ],
+    'hr_attendance' => [
+        'module' => 'hr',
+        'method' => 'POST',
+        'path' => null,
+        'replay' => 'delegate_hr',
+        'action' => 'attendance.create',
+    ],
+    'hr_attendance_bulk' => [
+        'module' => 'hr',
+        'method' => 'POST',
+        'path' => null,
+        'replay' => 'delegate_hr',
+        'action' => 'attendance.bulk',
+    ],
+    'hr_leave_draft' => [
+        'module' => 'hr',
+        'method' => 'POST',
+        'path' => null,
+        'replay' => 'delegate_hr',
+        'action' => 'leave_request.draft',
+    ],
+    'employee_directory' => [
+        'module' => 'hr',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/employee_directory',
         'replay' => 'delta_pull',
     ],
 ];

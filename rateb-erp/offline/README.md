@@ -21,7 +21,7 @@ offline/
 | `offline.enabled` | `false` | Master switch |
 | `offline.pos.complete` | `true` when master on | POS T0 bridge |
 | `offline.inventory.movements` | `false` | Tier 1 Inventory Offline (Phase 3) |
-| `offline.hr.attendance` | `false` | Tier 1 (not started) |
+| `offline.hr.attendance` | `false` | Tier 1 HR Offline (Phase 4) |
 | `offline.read_cache` | `false` | Tier 2 (not started) |
 
 Enable via env:
@@ -29,6 +29,7 @@ Enable via env:
 ```bash
 RATEB_OFFLINE_ENABLED=1
 RATEB_OFFLINE_INVENTORY_MOVEMENTS=1
+RATEB_OFFLINE_HR_ATTENDANCE=1
 ```
 
 ## API (additive)
@@ -38,20 +39,23 @@ RATEB_OFFLINE_INVENTORY_MOVEMENTS=1
 - `POST /api/v1/offline/process`
 - `GET  /api/v1/offline/conflicts`
 - `POST /api/v1/offline/conflicts/{id}/resolve`
-- `GET  /api/v1/offline/delta/{entity}` — `inventory_catalog` when inventory flag on
+- `GET  /api/v1/offline/delta/{entity}` — `inventory_catalog`, `employee_directory`
 
 ## Inventory Offline (Phase 3)
 
 Client: `RatebOffline.inventory()` → enqueue movement / stock count / warehouse transfer + catalog delta pull.
 
-Server replay delegates **only** to:
+## HR Offline (Phase 4)
 
-- `StockMovementService`
-- `InventoryWorkflowService`
+Client: `RatebOffline.hr()` → enqueue attendance / bulk / leave draft + employee directory pull.
+
+Server replay uses existing HR domain (`AttendanceRecord`, `LeaveRequest`, `HrService::bootstrapTenant`).  
+**Not included:** payroll, approvals, financial posting.
 
 ## Tests
 
 ```bash
 php offline/tests/run-offline-foundation-tests.php
 php offline/tests/run-inventory-offline-tests.php
+php offline/tests/run-hr-offline-tests.php
 ```
