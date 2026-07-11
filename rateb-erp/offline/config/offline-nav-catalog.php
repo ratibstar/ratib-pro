@@ -13,10 +13,11 @@ declare(strict_types=1);
  * }
  */
 return [
-    /** Accounting write nav stays disabled; Tier-1 drafts use ops allowlist + SDK. Payroll / payments stay offline-disabled. */
+    /** Accounting write nav stays disabled; Tier-1 drafts use ops allowlist + SDK. Payroll / quality / payments stay offline-disabled in nav. */
     'offline_disabled_modules' => [
         'accounting',
         'payroll',
+        'quality',
         'payments',
         'pos',
     ],

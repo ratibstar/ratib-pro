@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Models\QmsAudit;
+use Rateb\App\Models\QmsAssignment;
 use Rateb\App\Models\QmsChecklist;
 use Rateb\App\Models\QmsComment;
 use Rateb\App\Models\QmsComplaint;
@@ -316,6 +317,51 @@ final class QualityInspectionService
         (new QualityTimelineService())->record('inspection_created', 'Inspection: ' . $title, 'inspection', (int) $id);
 
         return ['id' => (int) $id, 'code' => $code];
+    }
+
+    /**
+     * Draft-field update only — never changes workflow_status (QualityWorkflowService owns that).
+     *
+     * @param array<string, mixed> $input
+     */
+    public function update(int $id, array $input): void
+    {
+        $companyId = QualitySupport::requireCompanyId();
+        $row = QualitySupport::assertInspection($id, $companyId);
+        QualitySupport::assertOptimisticVersion($row, $input['expected_version'] ?? null);
+        $status = (string) ($row['workflow_status'] ?? 'planned');
+        if (!in_array($status, ['planned', 'scheduled'], true)) {
+            throw new \RuntimeException('inspection_not_editable');
+        }
+        $patch = array_merge(QualitySupport::actorFields(false), [
+            'version' => (int) ($row['version'] ?? 1) + 1,
+        ]);
+        if (array_key_exists('title', $input)) {
+            $title = trim((string) $input['title']);
+            if ($title === '') {
+                throw new \InvalidArgumentException('title_required');
+            }
+            $patch['title'] = substr($title, 0, 190);
+        }
+        if (array_key_exists('title_ar', $input)) {
+            $patch['title_ar'] = QualitySupport::nullIfEmpty($input['title_ar']);
+        }
+        if (array_key_exists('planned_at', $input)) {
+            $patch['planned_at'] = QualitySupport::dateOrNull($input['planned_at']);
+        }
+        if (array_key_exists('checklist_id', $input)) {
+            $patch['checklist_id'] = QualitySupport::intOrNull($input['checklist_id']);
+        }
+        if (array_key_exists('plan_id', $input)) {
+            $patch['plan_id'] = QualitySupport::intOrNull($input['plan_id']);
+        }
+        if (array_key_exists('inspector_user_id', $input)) {
+            $patch['inspector_user_id'] = QualitySupport::intOrNull($input['inspector_user_id']);
+        }
+        if (array_key_exists('notes', $input)) {
+            $patch['notes'] = QualitySupport::nullIfEmpty($input['notes']);
+        }
+        (new QmsInspection())->update($id, $patch);
     }
 }
 
@@ -780,6 +826,37 @@ final class QualityCommentService
             'entity_id' => $entityId,
             'comment_text' => $text,
             'status' => 'active',
+            'version' => 1,
+        ], QualitySupport::actorFields(true)));
+
+        return ['id' => (int) $id];
+    }
+}
+
+final class QualityAssignmentService
+{
+    /**
+     * @param array<string, mixed> $input
+     * @return array{id: int}
+     */
+    public function create(array $input): array
+    {
+        $companyId = QualitySupport::requireCompanyId();
+        $entityType = trim((string) ($input['entity_type'] ?? ''));
+        $entityId = QualitySupport::intOrNull($input['entity_id'] ?? null);
+        if ($entityType === '' || $entityId === null) {
+            throw new \InvalidArgumentException('assignment_fields_required');
+        }
+        $id = (new QmsAssignment())->create(array_merge([
+            'public_uuid' => QualitySupport::uuidV4(),
+            'company_id' => $companyId,
+            'branch_id' => QualitySupport::branchId(),
+            'entity_type' => substr($entityType, 0, 40),
+            'entity_id' => $entityId,
+            'assignee_user_id' => QualitySupport::intOrNull($input['assignee_user_id'] ?? null),
+            'role_label' => QualitySupport::nullIfEmpty($input['role_label'] ?? null),
+            'status' => 'active',
+            'notes' => QualitySupport::nullIfEmpty($input['notes'] ?? null),
             'version' => 1,
         ], QualitySupport::actorFields(true)));
 

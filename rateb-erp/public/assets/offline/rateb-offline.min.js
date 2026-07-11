@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll + 25B Quality; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -3198,6 +3198,188 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- quality-adapter.js ---- */
+/**
+ * RATEB Offline — Enterprise Quality (QMS) adapter (Phase 25B / Tier 1 drafts).
+ * Queues inspection / checklist / audit / defect / CAPA / complaint drafts.
+ * Activated only when offline.enabled + offline.quality (sub-flags gate children).
+ * Does NOT enqueue delete, attachments, binary uploads, notifications, email/SMS,
+ * payments, government, approvals, inventory posting, or GL posting.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.quality']);
+    }
+
+    function isInspectionsActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.quality.inspections']);
+    }
+
+    function isAuditActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.quality.audit']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.quality.workflow']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.quality.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'qms') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('quality_offline_disabled'));
+        }
+        if ((action === 'inspection.create' || action === 'inspection.update'
+            || action === 'checklist.create') && !isInspectionsActive()) {
+            return Promise.reject(new Error('quality_inspections_offline_disabled'));
+        }
+        if (action === 'audit.create' && !isAuditActive()) {
+            return Promise.reject(new Error('quality_audit_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('quality_workflow_offline_disabled'));
+        }
+        if (action === 'delete' || action === 'attachment.create' || action === 'upload'
+            || action === 'payment.create' || action === 'accounting.post') {
+            return Promise.reject(new Error('quality_action_rejected'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'quality',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineQualityAdapter = {
+        isActive: isActive,
+        isInspectionsActive: isInspectionsActive,
+        isAuditActive: isAuditActive,
+        isWorkflowActive: isWorkflowActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueInspectionCreate: function (payload, options) {
+            return enqueue('inspection.create', payload || {}, options);
+        },
+        enqueueInspectionUpdate: function (payload, options) {
+            return enqueue('inspection.update', payload || {}, options);
+        },
+        enqueueChecklistCreate: function (payload, options) {
+            return enqueue('checklist.create', payload || {}, options);
+        },
+        enqueueAuditCreate: function (payload, options) {
+            return enqueue('audit.create', payload || {}, options);
+        },
+        enqueueDefectCreate: function (payload, options) {
+            return enqueue('defect.create', payload || {}, options);
+        },
+        enqueueNonconformityCreate: function (payload, options) {
+            return enqueue('nonconformity.create', payload || {}, options);
+        },
+        enqueueCorrectiveActionCreate: function (payload, options) {
+            return enqueue('corrective_action.create', payload || {}, options);
+        },
+        enqueuePreventiveActionCreate: function (payload, options) {
+            return enqueue('preventive_action.create', payload || {}, options);
+        },
+        enqueueSupplierQualityCreate: function (payload, options) {
+            return enqueue('supplier_quality.create', payload || {}, options);
+        },
+        enqueueComplaintCreate: function (payload, options) {
+            return enqueue('complaint.create', payload || {}, options);
+        },
+        enqueueAssignmentCreate: function (payload, options) {
+            return enqueue('assignment.create', payload || {}, options);
+        },
+        enqueueCommentCreate: function (payload, options) {
+            return enqueue('comment.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'quality' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'quality' });
+            }
+            return q.status({ module: 'quality' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'quality' });
+        },
+        pullPlans: function (options) {
+            return pullDirectory('quality_plan_directory', options);
+        },
+        pullChecklists: function (options) {
+            return pullDirectory('quality_checklist_directory', options);
+        },
+        pullStandards: function (options) {
+            return pullDirectory('quality_standard_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -4969,6 +5151,15 @@
         { match: 'payroll/loans', module: 'payroll', action: 'loan.create' },
         { match: 'payroll/advances', module: 'payroll', action: 'advance.create' },
         { match: 'payroll/overtime', module: 'payroll', action: 'overtime.create' },
+        { match: 'qms/inspections', module: 'quality', action: 'inspection.create' },
+        { match: 'qms/checklists', module: 'quality', action: 'checklist.create' },
+        { match: 'qms/audits', module: 'quality', action: 'audit.create' },
+        { match: 'qms/defects', module: 'quality', action: 'defect.create' },
+        { match: 'qms/nonconformities', module: 'quality', action: 'nonconformity.create' },
+        { match: 'qms/corrective-actions', module: 'quality', action: 'corrective_action.create' },
+        { match: 'qms/preventive-actions', module: 'quality', action: 'preventive_action.create' },
+        { match: 'qms/complaints', module: 'quality', action: 'complaint.create' },
+        { match: 'qms/supplier-quality', module: 'quality', action: 'supplier_quality.create' },
         { match: 'hrm/employees/create', module: 'hr', action: 'employee.create' },
         { match: 'hrm/employees', module: 'hr', action: 'employee.update' },
         { match: 'hrm/departments', module: 'hr', action: 'department.create' },
@@ -5189,6 +5380,22 @@
             }
             if (action === 'workflow.transition') {
                 return !!f['offline.payroll.workflow'];
+            }
+            return true;
+        }
+        if (module === 'quality') {
+            if (!f['offline.quality']) {
+                return false;
+            }
+            if (action === 'inspection.create' || action === 'inspection.update'
+                || action === 'checklist.create') {
+                return !!f['offline.quality.inspections'];
+            }
+            if (action === 'audit.create') {
+                return !!f['offline.quality.audit'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.quality.workflow'];
             }
             return true;
         }
@@ -5890,6 +6097,48 @@
                 return pay.enqueue(action, payload);
             }
         }
+        if (module === 'quality') {
+            var qms = root.RatebOfflineQualityAdapter;
+            if (!qms) {
+                return Promise.reject(new Error('quality_adapter_unavailable'));
+            }
+            if (action === 'inspection.create') {
+                return qms.enqueueInspectionCreate(payload);
+            }
+            if (action === 'inspection.update') {
+                return qms.enqueueInspectionUpdate(payload);
+            }
+            if (action === 'checklist.create') {
+                return qms.enqueueChecklistCreate(payload);
+            }
+            if (action === 'audit.create') {
+                return qms.enqueueAuditCreate(payload);
+            }
+            if (action === 'defect.create') {
+                return qms.enqueueDefectCreate(payload);
+            }
+            if (action === 'nonconformity.create') {
+                return qms.enqueueNonconformityCreate(payload);
+            }
+            if (action === 'corrective_action.create') {
+                return qms.enqueueCorrectiveActionCreate(payload);
+            }
+            if (action === 'preventive_action.create') {
+                return qms.enqueuePreventiveActionCreate(payload);
+            }
+            if (action === 'complaint.create') {
+                return qms.enqueueComplaintCreate(payload);
+            }
+            if (action === 'supplier_quality.create') {
+                return qms.enqueueSupplierQualityCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return qms.enqueueWorkflowTransition(payload);
+            }
+            if (typeof qms.enqueue === 'function') {
+                return qms.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -5985,7 +6234,8 @@
             || f['offline.approval']
             || f['offline.procurement_enterprise']
             || f['offline.manufacturing']
-            || f['offline.payroll'])) {
+            || f['offline.payroll']
+            || f['offline.quality'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -6067,6 +6317,11 @@
         'offline.payroll.batch': false,
         'offline.payroll.workflow': false,
         'offline.payroll.masterdata': false,
+        'offline.quality': false,
+        'offline.quality.inspections': false,
+        'offline.quality.audit': false,
+        'offline.quality.workflow': false,
+        'offline.quality.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -6140,6 +6395,11 @@
             payroll_batch: !!flags['offline.payroll.batch'],
             payroll_workflow: !!flags['offline.payroll.workflow'],
             payroll_masterdata: !!flags['offline.payroll.masterdata'],
+            quality: !!flags['offline.quality'],
+            quality_inspections: !!flags['offline.quality.inspections'],
+            quality_audit: !!flags['offline.quality.audit'],
+            quality_workflow: !!flags['offline.quality.workflow'],
+            quality_masterdata: !!flags['offline.quality.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -6437,6 +6697,29 @@
                 && flags['offline.payroll']
                 && flags['offline.payroll.masterdata']);
         },
+        isQualityEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.quality']);
+        },
+        isQualityInspectionsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.inspections']);
+        },
+        isQualityAuditEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.audit']);
+        },
+        isQualityWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.workflow']);
+        },
+        isQualityMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -6474,6 +6757,7 @@
         procurementEnterprise: function () { return root.RatebOfflineProcurementEnterpriseAdapter || null; },
         manufacturing: function () { return root.RatebOfflineManufacturingAdapter || null; },
         payroll: function () { return root.RatebOfflinePayrollAdapter || null; },
+        quality: function () { return root.RatebOfflineQualityAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

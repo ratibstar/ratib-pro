@@ -210,8 +210,9 @@ final class OfflineQueueService
                 $action = 'offline.ack';
             }
 
-            // Phase 16B: accounting Tier-1 drafts are flag-gated below; payroll/payments remain online-only.
-            if (in_array($module, ['payroll', 'payments'], true)) {
+            // Phase 16B: accounting Tier-1 drafts are flag-gated below; payments remain online-only.
+            // Phase 24B/25B: payroll + quality are flag-gated (not hard-rejected).
+            if (in_array($module, ['payments'], true)) {
                 $rejected++;
                 $rejectedKeys[] = $idempotencyKey;
                 continue;
@@ -614,6 +615,40 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'quality') {
+                if (!$this->flags()->enabled('offline.quality')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeQualityAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'inspection.create', 'inspection.update', 'checklist.create',
+                ], true) && !$this->flags()->enabled('offline.quality.inspections')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'audit.create'
+                    && !$this->flags()->enabled('offline.quality.audit')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.quality.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -932,6 +967,28 @@ final class OfflineQueueService
 
             if ($module === 'payroll') {
                 if (!$this->flags()->enabled('offline.payroll')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
+            if ($module === 'quality') {
+                if (!$this->flags()->enabled('offline.quality')) {
                     $stats['skipped']++;
                     continue;
                 }
@@ -1346,6 +1403,39 @@ final class OfflineQueueService
             'create_bonus' => 'bonus.create',
             'create_overtime' => 'overtime.create',
             'create_settlement' => 'settlement.create',
+            'create_comment' => 'comment.create',
+            'create_note' => 'note.create',
+            'transition_workflow' => 'workflow.transition',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array($prefix . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeQualityAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = QualityOfflineReplayService::deferredActions();
+        $prefix = 'quality.';
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, $prefix) ? substr($action, strlen($prefix)) : $action;
+        }
+        $aliases = [
+            'create_inspection' => 'inspection.create',
+            'update_inspection' => 'inspection.update',
+            'create_checklist' => 'checklist.create',
+            'create_audit' => 'audit.create',
+            'create_defect' => 'defect.create',
+            'create_nonconformity' => 'nonconformity.create',
+            'create_corrective_action' => 'corrective_action.create',
+            'create_preventive_action' => 'preventive_action.create',
+            'create_supplier_quality' => 'supplier_quality.create',
+            'create_complaint' => 'complaint.create',
+            'create_assignment' => 'assignment.create',
             'create_comment' => 'comment.create',
             'create_note' => 'note.create',
             'transition_workflow' => 'workflow.transition',

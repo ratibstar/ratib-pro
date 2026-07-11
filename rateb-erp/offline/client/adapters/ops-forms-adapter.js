@@ -73,6 +73,15 @@
         { match: 'payroll/loans', module: 'payroll', action: 'loan.create' },
         { match: 'payroll/advances', module: 'payroll', action: 'advance.create' },
         { match: 'payroll/overtime', module: 'payroll', action: 'overtime.create' },
+        { match: 'qms/inspections', module: 'quality', action: 'inspection.create' },
+        { match: 'qms/checklists', module: 'quality', action: 'checklist.create' },
+        { match: 'qms/audits', module: 'quality', action: 'audit.create' },
+        { match: 'qms/defects', module: 'quality', action: 'defect.create' },
+        { match: 'qms/nonconformities', module: 'quality', action: 'nonconformity.create' },
+        { match: 'qms/corrective-actions', module: 'quality', action: 'corrective_action.create' },
+        { match: 'qms/preventive-actions', module: 'quality', action: 'preventive_action.create' },
+        { match: 'qms/complaints', module: 'quality', action: 'complaint.create' },
+        { match: 'qms/supplier-quality', module: 'quality', action: 'supplier_quality.create' },
         { match: 'hrm/employees/create', module: 'hr', action: 'employee.create' },
         { match: 'hrm/employees', module: 'hr', action: 'employee.update' },
         { match: 'hrm/departments', module: 'hr', action: 'department.create' },
@@ -293,6 +302,22 @@
             }
             if (action === 'workflow.transition') {
                 return !!f['offline.payroll.workflow'];
+            }
+            return true;
+        }
+        if (module === 'quality') {
+            if (!f['offline.quality']) {
+                return false;
+            }
+            if (action === 'inspection.create' || action === 'inspection.update'
+                || action === 'checklist.create') {
+                return !!f['offline.quality.inspections'];
+            }
+            if (action === 'audit.create') {
+                return !!f['offline.quality.audit'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.quality.workflow'];
             }
             return true;
         }
@@ -994,6 +1019,48 @@
                 return pay.enqueue(action, payload);
             }
         }
+        if (module === 'quality') {
+            var qms = root.RatebOfflineQualityAdapter;
+            if (!qms) {
+                return Promise.reject(new Error('quality_adapter_unavailable'));
+            }
+            if (action === 'inspection.create') {
+                return qms.enqueueInspectionCreate(payload);
+            }
+            if (action === 'inspection.update') {
+                return qms.enqueueInspectionUpdate(payload);
+            }
+            if (action === 'checklist.create') {
+                return qms.enqueueChecklistCreate(payload);
+            }
+            if (action === 'audit.create') {
+                return qms.enqueueAuditCreate(payload);
+            }
+            if (action === 'defect.create') {
+                return qms.enqueueDefectCreate(payload);
+            }
+            if (action === 'nonconformity.create') {
+                return qms.enqueueNonconformityCreate(payload);
+            }
+            if (action === 'corrective_action.create') {
+                return qms.enqueueCorrectiveActionCreate(payload);
+            }
+            if (action === 'preventive_action.create') {
+                return qms.enqueuePreventiveActionCreate(payload);
+            }
+            if (action === 'complaint.create') {
+                return qms.enqueueComplaintCreate(payload);
+            }
+            if (action === 'supplier_quality.create') {
+                return qms.enqueueSupplierQualityCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return qms.enqueueWorkflowTransition(payload);
+            }
+            if (typeof qms.enqueue === 'function') {
+                return qms.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -1089,7 +1156,8 @@
             || f['offline.approval']
             || f['offline.procurement_enterprise']
             || f['offline.manufacturing']
-            || f['offline.payroll'])) {
+            || f['offline.payroll']
+            || f['offline.quality'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

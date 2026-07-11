@@ -466,5 +466,38 @@ return [
             'requires_updated_at' => false,
             'static_catalog' => true,
         ],
+        /** Phase 25B — optional quality directories (read-only; flag offline.quality.masterdata). */
+        'quality_plan_directory' => [
+            'table' => 'rateb_qms_plans',
+            'aliases' => ['quality_plans'],
+            'cache_prefix' => 'qpd',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+            'static_catalog' => false,
+        ],
+        'quality_checklist_directory' => [
+            'table' => 'rateb_qms_checklists',
+            'aliases' => ['quality_checklists'],
+            'cache_prefix' => 'qcd',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+            'static_catalog' => false,
+        ],
+        'quality_standard_directory' => [
+            'table' => 'rateb_qms_standards',
+            'aliases' => ['quality_standards'],
+            'cache_prefix' => 'qsd',
+            'branch_scoped' => true,
+            'requires_updated_at' => true,
+            'static_catalog' => false,
+        ],
+        'quality_inspection_status_directory' => [
+            'table' => null,
+            'aliases' => ['quality_inspection_statuses'],
+            'cache_prefix' => 'qis',
+            'branch_scoped' => false,
+            'requires_updated_at' => false,
+            'static_catalog' => true,
+        ],
     ],
 ];

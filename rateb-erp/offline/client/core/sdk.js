@@ -62,6 +62,11 @@
         'offline.payroll.batch': false,
         'offline.payroll.workflow': false,
         'offline.payroll.masterdata': false,
+        'offline.quality': false,
+        'offline.quality.inspections': false,
+        'offline.quality.audit': false,
+        'offline.quality.workflow': false,
+        'offline.quality.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -135,6 +140,11 @@
             payroll_batch: !!flags['offline.payroll.batch'],
             payroll_workflow: !!flags['offline.payroll.workflow'],
             payroll_masterdata: !!flags['offline.payroll.masterdata'],
+            quality: !!flags['offline.quality'],
+            quality_inspections: !!flags['offline.quality.inspections'],
+            quality_audit: !!flags['offline.quality.audit'],
+            quality_workflow: !!flags['offline.quality.workflow'],
+            quality_masterdata: !!flags['offline.quality.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -432,6 +442,29 @@
                 && flags['offline.payroll']
                 && flags['offline.payroll.masterdata']);
         },
+        isQualityEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.quality']);
+        },
+        isQualityInspectionsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.inspections']);
+        },
+        isQualityAuditEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.audit']);
+        },
+        isQualityWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.workflow']);
+        },
+        isQualityMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.quality']
+                && flags['offline.quality.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -469,6 +502,7 @@
         procurementEnterprise: function () { return root.RatebOfflineProcurementEnterpriseAdapter || null; },
         manufacturing: function () { return root.RatebOfflineManufacturingAdapter || null; },
         payroll: function () { return root.RatebOfflinePayrollAdapter || null; },
+        quality: function () { return root.RatebOfflineQualityAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

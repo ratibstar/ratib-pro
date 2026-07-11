@@ -47,6 +47,7 @@ final class OfflineBackgroundSync
                 'manufacturing_enabled' => false,
                 'hr_enterprise_enabled' => false,
                 'payroll_enabled' => false,
+                'quality_enabled' => false,
             ];
         }
 
@@ -64,6 +65,7 @@ final class OfflineBackgroundSync
         $stats['manufacturing_enabled'] = $this->flags()->enabled('offline.manufacturing');
         $stats['hr_enterprise_enabled'] = $this->flags()->enabled('offline.hr');
         $stats['payroll_enabled'] = $this->flags()->enabled('offline.payroll');
+        $stats['quality_enabled'] = $this->flags()->enabled('offline.quality');
 
         return $stats;
     }

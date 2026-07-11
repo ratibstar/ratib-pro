@@ -54,9 +54,9 @@ final class QualityPhase25ATest
         $ok = !str_contains($domain, 'OfflineQueueService')
             && !str_contains($workflow, 'OfflineQueueService')
             && !str_contains($domain, 'offline.quality')
-            && !is_file(RATEB_ROOT . '/offline/server/Services/QualityOfflineReplayService.php')
-            && !is_file(RATEB_ROOT . '/offline/client/adapters/quality-adapter.js');
-        $this->record('25A online layer has no offline coupling (25B deferred)', $ok);
+            && is_file(RATEB_ROOT . '/offline/server/Services/QualityOfflineReplayService.php')
+            && is_file(RATEB_ROOT . '/offline/client/adapters/quality-adapter.js');
+        $this->record('25A online layer has no offline coupling (25B replay separate)', $ok);
     }
 
     private function testMigrationExists(): void

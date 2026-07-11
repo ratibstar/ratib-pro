@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'quality'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. Phase 22B: + manufacturing. Phase 24B: + payroll. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. Phase 22B: + manufacturing. Phase 24B: + payroll. Phase 25B: + quality. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'quality', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -163,5 +163,19 @@ return [
         'hr.workflow.transition' => ['class' => 'RS', 'module' => 'hr'],
         'hr.comment.create' => ['class' => 'RS', 'module' => 'hr'],
         'hr.note.create' => ['class' => 'RS', 'module' => 'hr'],
+        'quality.inspection.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.inspection.update' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.checklist.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.audit.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.defect.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.nonconformity.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.corrective_action.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.preventive_action.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.supplier_quality.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.complaint.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.assignment.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.comment.create' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.workflow.transition' => ['class' => 'RS', 'module' => 'quality'],
+        'quality.note.create' => ['class' => 'RS', 'module' => 'quality'],
     ],
 ];

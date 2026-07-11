@@ -329,6 +329,31 @@ final class OfflineFeatureFlagService
         return $this->isPayrollEnabled() && $this->enabled('offline.payroll.masterdata');
     }
 
+    public function isQualityEnabled(): bool
+    {
+        return $this->enabled('offline.enabled') && $this->enabled('offline.quality');
+    }
+
+    public function isQualityInspectionsEnabled(): bool
+    {
+        return $this->isQualityEnabled() && $this->enabled('offline.quality.inspections');
+    }
+
+    public function isQualityAuditEnabled(): bool
+    {
+        return $this->isQualityEnabled() && $this->enabled('offline.quality.audit');
+    }
+
+    public function isQualityWorkflowEnabled(): bool
+    {
+        return $this->isQualityEnabled() && $this->enabled('offline.quality.workflow');
+    }
+
+    public function isQualityMasterDataEnabled(): bool
+    {
+        return $this->isQualityEnabled() && $this->enabled('offline.quality.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {

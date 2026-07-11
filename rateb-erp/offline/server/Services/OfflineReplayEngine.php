@@ -26,6 +26,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?ManufacturingOfflineReplayService $manufacturing = null;
     private ?HumanResourcesOfflineReplayService $humanResources = null;
     private ?PayrollOfflineReplayService $payroll = null;
+    private ?QualityOfflineReplayService $quality = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -97,6 +98,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
         return $this->payroll ??= new PayrollOfflineReplayService();
     }
 
+    private function quality(): QualityOfflineReplayService
+    {
+        return $this->quality ??= new QualityOfflineReplayService();
+    }
+
     /** @param array<string, mixed> $queueRow */
     public function replay(array $queueRow): array
     {
@@ -140,6 +146,14 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->payroll()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'quality') {
+            if (!$this->flags()->enabled('offline.quality')) {
+                return ['status' => 'skipped', 'error' => 'quality_offline_disabled'];
+            }
+
+            return $this->quality()->replayFromQueueRow($queueRow);
         }
 
         // Phase 4 attendance/leave + Phase 23B enterprise HRMS share module=hr; dispatch by action.
@@ -259,6 +273,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->payroll()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'quality' || str_starts_with($action, 'quality.')
+            || in_array($action, QualityOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.quality')) {
+                return ['status' => 'skipped', 'error' => 'quality_offline_disabled'];
+            }
+
+            return $this->quality()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

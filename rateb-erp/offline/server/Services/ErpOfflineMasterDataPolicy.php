@@ -119,6 +119,10 @@ final class ErpOfflineMasterDataPolicy
             'payroll_structure_directory', 'payroll_structures',
             'payroll_cycle_directory', 'payroll_cycles',
             'payroll_batch_status_directory', 'payroll_batch_statuses',
+            'quality_plan_directory', 'quality_plans',
+            'quality_checklist_directory', 'quality_checklists',
+            'quality_standard_directory', 'quality_standards',
+            'quality_inspection_status_directory', 'quality_inspection_statuses',
         ], true);
     }
 }

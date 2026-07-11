@@ -682,4 +682,34 @@ return [
         'path' => '/api/v1/offline/delta/payroll_cycle_directory',
         'replay' => 'delta_pull',
     ],
+    'quality_inspection_create' => [
+        'module' => 'quality',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_quality',
+    ],
+    'quality_checklist_create' => [
+        'module' => 'quality',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_quality',
+    ],
+    'quality_workflow_transition' => [
+        'module' => 'quality',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_quality',
+    ],
+    'quality_plan_directory' => [
+        'module' => 'quality',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/quality_plan_directory',
+        'replay' => 'delta_pull',
+    ],
+    'quality_checklist_directory' => [
+        'module' => 'quality',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/quality_checklist_directory',
+        'replay' => 'delta_pull',
+    ],
 ];
