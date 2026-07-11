@@ -152,7 +152,17 @@ return [
     ],
     'assets' => [
         'module' => 'assets',
-        'view' => 'assets.manage',
+        'view' => 'assets.view',
+        'manage' => 'assets.manage',
+    ],
+    'eam' => [
+        'module' => 'assets',
+        'view' => 'assets.view',
+        'manage' => 'assets.manage',
+    ],
+    'eam-assets' => [
+        'module' => 'assets',
+        'view' => 'assets.view',
         'manage' => 'assets.manage',
     ],
     'asset-maintenance' => [

@@ -163,6 +163,27 @@ return [
             'projects.budget',
             'projects.reports',
         ],
+        'assets.manage' => [
+            'assets.view',
+            'assets.create',
+            'assets.update',
+            'assets.delete',
+            'assets.assign',
+            'assets.transfer',
+            'assets.maintenance',
+            'assets.inspection',
+            'assets.admin',
+        ],
+        'assets.admin' => [
+            'assets.view',
+            'assets.create',
+            'assets.update',
+            'assets.delete',
+            'assets.assign',
+            'assets.transfer',
+            'assets.maintenance',
+            'assets.inspection',
+        ],
     ],
 
     /** Slugs omitted from matrix UI (still in DB; granted via permission_implies or legacy roles). */

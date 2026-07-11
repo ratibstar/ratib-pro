@@ -100,6 +100,18 @@ $opsSection(__('accounting_module'), [
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
 ], 'fa-calculator');
+$opsSection(__('eam_platform'), [
+    ['eam', 'eam_platform', 'fa-cubes', 'assets', 'assets.view'],
+    ['eam/assets', 'eam_assets', 'fa-toolbox', 'assets', 'assets.view'],
+    ['eam/maintenance', 'eam_maintenance', 'fa-wrench', 'assets', 'assets.maintenance'],
+    ['eam/work-orders', 'eam_work_orders', 'fa-clipboard-list', 'assets', 'assets.maintenance'],
+    ['eam/requests', 'eam_requests', 'fa-inbox', 'assets', 'assets.maintenance'],
+    ['eam/calendar', 'eam_calendar', 'fa-calendar-days', 'assets', 'assets.maintenance'],
+    ['eam/assignments', 'eam_assignments', 'fa-user-check', 'assets', 'assets.assign'],
+    ['eam/inspections', 'eam_inspections', 'fa-clipboard-check', 'assets', 'assets.inspection'],
+    ['eam/timeline', 'eam_timeline', 'fa-timeline', 'assets', 'assets.view'],
+    ['eam/reports', 'eam_reports', 'fa-chart-pie', 'assets', 'assets.view'],
+], 'fa-cubes');
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
     ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
