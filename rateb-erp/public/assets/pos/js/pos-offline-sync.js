@@ -670,6 +670,17 @@
             if (api.sync) {
                 return joinUrlPath(api.sync, '/status');
             }
+            // Static marker on this origin — proves network even if API routes 404.
+            try {
+                var origin = window.location.origin || '';
+                var path = window.location.pathname || '';
+                var pub = path.indexOf('/public/') >= 0
+                    ? path.slice(0, path.indexOf('/public/') + '/public'.length)
+                    : '';
+                if (origin && pub) {
+                    return origin + pub + '/ratib-erp-build.txt';
+                }
+            } catch (e3) { /* ignore */ }
             return joinUrlPath(defaultApiBase(), '/status');
         }
 
@@ -701,19 +712,21 @@
                 headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
                 signal: ctrl ? ctrl.signal : undefined
             }).then(function (res) {
-                // Reachable origin counts as online (auth errors still mean network works).
-                if (res && (res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
-                    if ((res.status === 401 || res.status === 403 || res.status === 419)
-                        && window.RatebPosAuthLock && window.RatebPosAuthLock.markSessionNeedsReauth) {
-                        window.RatebPosAuthLock.markSessionNeedsReauth();
-                    } else if (res.ok && window.RatebPosAuthLock && window.RatebPosAuthLock.clearSessionNeedsReauth) {
-                        window.RatebPosAuthLock.clearSessionNeedsReauth();
-                    }
-                    setOnline(true);
-                    return true;
+                // Any HTTP response means the origin is reachable (internet works).
+                // Do not treat 404/5xx as "offline" — that trapped the UI on غير متصل
+                // while Wi‑Fi was fine and forced a full refresh to recover.
+                if (!res) {
+                    return online;
                 }
-                // Soft failure (e.g. unexpected 404) — keep previous state, don't spam offline flips.
-                return online;
+                if (res.status === 401 || res.status === 403 || res.status === 419) {
+                    if (window.RatebPosAuthLock && window.RatebPosAuthLock.markSessionNeedsReauth) {
+                        window.RatebPosAuthLock.markSessionNeedsReauth();
+                    }
+                } else if (res.ok && window.RatebPosAuthLock && window.RatebPosAuthLock.clearSessionNeedsReauth) {
+                    window.RatebPosAuthLock.clearSessionNeedsReauth();
+                }
+                setOnline(true);
+                return true;
             }).catch(function () {
                 setOnline(false);
                 return false;
