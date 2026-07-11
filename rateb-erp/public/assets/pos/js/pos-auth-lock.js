@@ -687,6 +687,7 @@
             var lockBtn = e.target.closest('[data-pos-auth-lock-now]');
             var switchBtn = e.target.closest('[data-pos-auth-switch-cashier]');
             var logoutBtn = e.target.closest('[data-pos-auth-logout-local]');
+            var bioLogout = e.target.closest('[data-pos-auth-logout-biometric]');
             if (lockBtn) {
                 e.preventDefault();
                 lock();
@@ -696,6 +697,11 @@
             } else if (logoutBtn) {
                 e.preventDefault();
                 logoutLocal();
+            } else if (bioLogout) {
+                // Clear local unlock vault session, then follow href to biometric gate.
+                try {
+                    clearUnlock();
+                } catch (err) { /* ignore */ }
             }
         });
     }

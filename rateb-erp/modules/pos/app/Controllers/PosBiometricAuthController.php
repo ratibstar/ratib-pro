@@ -8,6 +8,15 @@ use Rateb\App\Services\BiometricAuthService;
 
 final class PosBiometricAuthController extends PosBaseController
 {
+    /** Clear POS biometric session and send cashier to fingerprint gate (ERP login stays). */
+    public function logoutToGate(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosView('pos/register');
+        (new BiometricAuthService())->clearPosBiometricSession();
+        $this->redirect(rateb_app_url('pos/biometric'));
+    }
+
     public function gate(): void
     {
         $this->bootstrapPos();

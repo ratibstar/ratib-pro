@@ -103,7 +103,7 @@ $locale = rateb_locale();
                 <button type="button" class="rateb-pos__menu-link" data-pos-auth-lock-now><?php echo __('pos_lock_now'); ?></button>
                 <button type="button" class="rateb-pos__menu-link" data-pos-auth-switch-cashier><?php echo __('pos_lock_switch_cashier'); ?></button>
                 <button type="button" class="rateb-pos__menu-link" data-pos-auth-logout-local><?php echo __('pos_lock_logout_local'); ?></button>
-                <a class="rateb-pos__menu-link rateb-pos__menu-link--danger" href="<?php echo rateb_url('admin/logout'); ?>"><?php echo __('logout'); ?></a>
+                <a class="rateb-pos__menu-link rateb-pos__menu-link--danger" data-pos-auth-logout-biometric href="<?php echo rateb_app_url('pos/logout'); ?>"><?php echo __('logout'); ?></a>
             </div>
         </div>
     </div>

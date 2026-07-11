@@ -31,6 +31,7 @@ $router->get($posApp('dashboard'), [PosDashboardController::class, 'index'], $po
 $router->get($posApp(''), [PosRegisterController::class, 'index'], $posMw('pos/register'));
 $router->get($posApp('register'), [PosRegisterController::class, 'index'], $posMw('pos/register'));
 $router->get($posApp('biometric'), [PosBiometricAuthController::class, 'gate'], $posMw('pos/register'));
+$router->get($posApp('logout'), [PosBiometricAuthController::class, 'logoutToGate'], $posMw('pos/register'));
 
 $termMw = $posMw('pos/terminals');
 $router->get($posApp('terminals'), [PosTerminalsController::class, 'index'], $termMw);
