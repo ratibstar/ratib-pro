@@ -1,9 +1,15 @@
 # Enterprise Offline Architecture — Implementation Notes
 
+**Official Baseline:** **Enterprise Baseline v1.2** — see `ENTERPRISE_BASELINE_V1_2_CERTIFICATION.md`  
+**Offline Foundation (frozen):** **v1.1** (included in Baseline v1.2)  
+**SDK:** **14.2.0** · **IndexedDB:** `rateb_erp_offline` / `DB_VERSION 2`
+
 **Official production target:** `https://rateb.sa/rateb-erp/public/admin/`  
 **Production filesystem:** `/home/admin/domains/rateb.sa/public_html/rateb-erp`  
 **Production database:** `admin_rateb-erp`  
 **Do not use staging** (`dev.rateb.sa` / `admin_rateb_dev`) for production certification.
+
+Future modules MUST follow `ENTERPRISE_BASELINE_V1_2_DEVELOPMENT_POLICY.md` and `ENTERPRISE_BASELINE_V1_2_EXTENSION_GUIDE.md`.
 
 See Phase 1 architecture document for full design. Flags default **OFF** until Phase 8/9 pilot enablement.
 

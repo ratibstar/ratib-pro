@@ -1,7 +1,8 @@
 # Phase 15A — Enterprise Recruitment Platform (ONLINE FOUNDATION)
 
-**Status:** Implemented (ONLINE only)  
-**Offline:** NO offline code — Foundation v1.1 untouched  
+**Status:** Certified under Enterprise Baseline v1.2  
+**Online:** Domain services are the ONLY source of recruitment business logic  
+**Offline:** Phase 15B is additive Tier-1; Foundation contracts remain frozen  
 **Migration:** `migrations/181_recruitment_platform.sql`
 
 ## Purpose

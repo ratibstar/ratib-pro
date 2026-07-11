@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Phase 15A — Online Recruitment Platform gate tests (NO offline code).
+ * Phase 15A — Online Recruitment Platform gate tests.
+ * Baseline v1.2: online domain remains source of business logic;
+ * Offline Foundation contracts stay frozen (15B is additive only).
  *
  * Run: php tests/recruitment/run-recruitment-phase15a-tests.php
  */
@@ -16,7 +18,7 @@ final class RecruitmentPhase15ATest
     /** @return list<array{name: string, passed: bool, detail: string}> */
     public function run(): array
     {
-        $this->testNoOfflineTouches();
+        $this->testFoundationContractsIntact();
         $this->testMigrationExists();
         $this->testModelsExist();
         $this->testServicesExist();
@@ -37,14 +39,26 @@ final class RecruitmentPhase15ATest
         echo ($passed ? 'PASS' : 'FAIL') . ': ' . $name . ($detail !== '' ? ' — ' . $detail : '') . PHP_EOL;
     }
 
-    private function testNoOfflineTouches(): void
+    /**
+     * Baseline v1.2 — certify frozen Offline Foundation contracts + online domain ownership.
+     * Phase 15B may add recruitment offline; it must not redesign IDB/SDK/queue.
+     */
+    private function testFoundationContractsIntact(): void
     {
-        $engine = (string) file_get_contents(RATEB_ROOT . '/offline/server/Services/OfflineReplayEngine.php');
-        $flags = (string) file_get_contents(RATEB_ROOT . '/offline/config/feature-flags.php');
-        $ok = !str_contains($engine, 'recruitment')
-            && !str_contains($flags, 'offline.recruitment')
-            && !is_file(RATEB_ROOT . '/offline/client/adapters/recruitment-adapter.js');
-        $this->record('offline foundation untouched', $ok);
+        $schema = (string) file_get_contents(RATEB_ROOT . '/offline/client/db/schema.js');
+        $sdk = (string) file_get_contents(RATEB_ROOT . '/offline/client/core/sdk.js');
+        $qm = (string) file_get_contents(RATEB_ROOT . '/offline/client/sync/queue-manager.js');
+        $replay = (string) file_get_contents(RATEB_ROOT . '/offline/server/Services/RecruitmentOfflineReplayService.php');
+        $ok = str_contains($schema, 'DB_VERSION = 2')
+            && str_contains($sdk, "version: '14.2.0'")
+            && str_contains($qm, 'client_id')
+            && str_contains($qm, 'idempotency_key')
+            && str_contains($qm, 'occurred_at')
+            && is_file(RATEB_ROOT . '/app/Services/CandidateService.php')
+            && str_contains($replay, 'CandidateService')
+            && str_contains($replay, 'RecruitmentWorkflowService')
+            && !preg_match('/function\s+transition\s*\(/', $replay);
+        $this->record('foundation contracts intact (online domain owns business rules)', $ok);
     }
 
     private function testMigrationExists(): void
@@ -172,7 +186,7 @@ final class RecruitmentPhase15ATest
         $src = is_file($path) ? (string) file_get_contents($path) : '';
         $ok = str_contains($src, 'Offline Replay Compatible')
             && str_contains($src, 'CandidateService')
-            && str_contains($src, 'NO offline');
+            && (str_contains($src, 'Baseline v1.2') || str_contains($src, 'ONLY source of recruitment business logic'));
         $this->record('offline readiness matrix doc', $ok);
     }
 }
