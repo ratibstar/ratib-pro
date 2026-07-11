@@ -1,33 +1,55 @@
-/* Rateb Enterprise Offline SW — Phase 10 ERP shell (additive; does not replace pos-sw.js) */
+/* Rateb Enterprise Offline SW — Phase 10.1 blocking fixes (does not replace pos-sw.js) */
 'use strict';
 
-var ASSET_CACHE = 'rateb-erp-assets-v10';
+var ASSET_CACHE = 'rateb-erp-assets-v10.1';
 var FALLBACK_URL = 'offline-shell.html';
+var BYPASS_HEADER = 'X-Rateb-SW-Bypass';
 
 function isPosPath(pathname) {
     var p = String(pathname || '');
-    return p.indexOf('/pos') !== -1 || p.indexOf('/admin/ops/pos') !== -1;
+    // Segment-safe: /pos, /pos/..., /assets/pos/... — not /posting
+    return /\/pos(\/|$)/i.test(p)
+        || /\/admin\/ops\/pos(\/|$)/i.test(p)
+        || /\/assets\/pos\//i.test(p);
 }
 
 function isApiPath(pathname) {
     return String(pathname || '').indexOf('/api/') !== -1;
 }
 
-function isLoginPost(request, pathname) {
-    if (!request || String(request.method || 'GET').toUpperCase() !== 'POST') {
-        return false;
-    }
+function isAuthPath(pathname) {
     var p = String(pathname || '');
-    return /\/login\/?$/i.test(p) || /\/admin\/login\/?$/i.test(p) || /\/company\/login\/?$/i.test(p);
+    return /\/login(\/|$)/i.test(p)
+        || /\/logout(\/|$)/i.test(p)
+        || /\/password\//i.test(p)
+        || /\/api\/login/i.test(p)
+        || /\/api\/qr-login/i.test(p)
+        || /\/login\/2fa/i.test(p)
+        || /\/login\/barcode/i.test(p)
+        || /\/login\/scan/i.test(p)
+        || /\/login\/badge/i.test(p);
 }
 
-/** First-party static assets only — never POS assets, never HTML documents. */
-function isCacheableAsset(url) {
-    var path = String(url.pathname || '');
-    if (isPosPath(path) || isApiPath(path)) {
+function isOfflineShellUrl(url) {
+    try {
+        return /\/offline-shell\.html$/i.test(String(url.pathname || ''));
+    } catch (e) {
         return false;
     }
-    if (path.indexOf('/assets/pos/') !== -1) {
+}
+
+function hasBypassHeader(request) {
+    try {
+        return !!(request && request.headers && request.headers.get(BYPASS_HEADER) === '1');
+    } catch (e) {
+        return false;
+    }
+}
+
+/** First-party static assets only — never POS, never HTML, never auth. */
+function isCacheableAsset(url) {
+    var path = String(url.pathname || '');
+    if (isPosPath(path) || isApiPath(path) || isAuthPath(path) || isOfflineShellUrl(url)) {
         return false;
     }
     if (path.indexOf('/assets/') === -1 && path.indexOf('/rateb-offline') === -1) {
@@ -48,26 +70,36 @@ function offlineJsonResponse() {
     });
 }
 
-function offlineShellFallback() {
-    return caches.match(new URL(FALLBACK_URL, self.registration.scope).href).then(function (hit) {
-        if (hit) {
-            return hit;
+/** Inline fallback only — never fetch() (prevents SW recursion). */
+function inlineOfflineShellResponse() {
+    var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>RATEB ERP — Offline</title>'
+        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}</style>'
+        + '</head><body>'
+        + '<h1>وضع عدم الاتصال</h1>'
+        + '<p>Cached shell unavailable. Reconnect and open Admin once.</p>'
+        + '</body></html>';
+    return new Response(body, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-Rateb-Offline': '1',
+            'Cache-Control': 'no-store'
         }
-        return fetch(new URL(FALLBACK_URL, self.registration.scope).href).then(function (res) {
-            return res;
-        }).catch(function () {
-            return new Response(
-                '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>Offline</title></head>'
-                + '<body><p>Cached ERP shell unavailable. Reconnect and open Admin once.</p></body></html>',
-                {
-                    status: 200,
-                    headers: {
-                        'Content-Type': 'text/html; charset=utf-8',
-                        'X-Rateb-Offline': '1'
-                    }
-                }
-            );
-        });
+    });
+}
+
+/**
+ * Offline HTML fallback: Cache API hit or inline HTML only.
+ * NEVER calls fetch() — eliminates recursive fetch handler entry.
+ */
+function offlineShellFallback() {
+    var key = new URL(FALLBACK_URL, self.registration.scope).href;
+    return caches.match(key).then(function (hit) {
+        return hit || inlineOfflineShellResponse();
+    }).catch(function () {
+        return inlineOfflineShellResponse();
     });
 }
 
@@ -86,25 +118,24 @@ function assetNetworkFirst(request) {
         return response;
     }).catch(function () {
         return caches.match(request).then(function (hit) {
-            return hit || caches.match(new URL(request.url).pathname).then(function (byPath) {
-                return byPath || Promise.reject(new Error('asset_offline_miss'));
-            });
+            return hit || Promise.reject(new Error('asset_offline_miss'));
         });
     });
 }
 
 self.addEventListener('install', function (event) {
     self.skipWaiting();
+    // Precache via inline Response only — never fetch during install (no recursion).
     event.waitUntil(
         caches.open(ASSET_CACHE).then(function (cache) {
-            return cache.addAll([
-                new URL(FALLBACK_URL, self.registration.scope).href
-            ]).catch(function () { /* optional precache */ });
-        })
+            var key = new URL(FALLBACK_URL, self.registration.scope).href;
+            return cache.put(key, inlineOfflineShellResponse());
+        }).catch(function () { /* ignore */ })
     );
 });
 
 self.addEventListener('activate', function (event) {
+    // Do NOT clients.claim() — avoids stealing open POS tabs from pos-sw.js.
     event.waitUntil(
         caches.keys().then(function (keys) {
             return Promise.all(keys.map(function (name) {
@@ -113,8 +144,6 @@ self.addEventListener('activate', function (event) {
                 }
                 return Promise.resolve();
             }));
-        }).then(function () {
-            return self.clients.claim();
         })
     );
 });
@@ -128,13 +157,24 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Never interfere with POS — leave request to network / pos-sw.js controller.
+    // Bypass header: allow non-recursive network (unused for fallback; reserved).
+    if (hasBypassHeader(request)) {
+        return;
+    }
+
+    // offline-shell.html: cache or inline only — never fetch, never recurse.
+    if (isOfflineShellUrl(url)) {
+        event.respondWith(offlineShellFallback());
+        return;
+    }
+
+    // Never own /pos — no respondWith (pos-sw.js / network remain authoritative).
     if (isPosPath(url.pathname)) {
         return;
     }
 
-    // Never cache login POST.
-    if (isLoginPost(request, url.pathname)) {
+    // Never intercept auth/login/logout/password/session pages.
+    if (isAuthPath(url.pathname)) {
         return;
     }
 
@@ -161,10 +201,9 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // HTML navigations: network only — never cache authenticated documents / CSRF.
-    // Offline → static offline-shell.html (shell chrome may hydrate from IndexedDB).
+    // HTML navigations (non-auth, non-POS): network only; offline → non-recursive fallback.
     if (request.method === 'GET' && (request.mode === 'navigate'
-        || (request.headers.get('accept') || '').indexOf('text/html') !== -1)) {
+        || (request.headers && (request.headers.get('accept') || '').indexOf('text/html') !== -1))) {
         event.respondWith(
             networkOnly(request).catch(function () {
                 return offlineShellFallback();

@@ -33,6 +33,11 @@ final class ErpShellOfflinePhase10Test
         $this->testPosUntouched();
         $this->testQueueReplayGuardsUntouched();
         $this->testStripSensitivePatterns();
+        $this->testNoSwRecursion();
+        $this->testTenantScopedSnapshot();
+        $this->testNoDocumentWrite();
+        $this->testAuthPathsExcluded();
+        $this->testNoClientsClaim();
 
         return $this->results;
     }
@@ -139,8 +144,10 @@ final class ErpShellOfflinePhase10Test
             && str_contains($bootSrc, 'serviceWorker.register')
             && str_contains($bootSrc, 'RatebOffline.init')
             && str_contains($bootSrc, 'RatebOfflineShellAdapter')
+            && str_contains($bootSrc, 'isPosLocation')
             && !str_contains($fbSrc, '<?php')
-            && str_contains($fbSrc, 'Cached shell unavailable');
+            && str_contains($fbSrc, 'Cached shell unavailable')
+            && !preg_match('/document\.write\s*\(/', $fbSrc);
         $this->record('bootstrap + static offline-shell.html', $ok, $ok ? 'ok' : 'missing pieces');
     }
 
@@ -149,17 +156,15 @@ final class ErpShellOfflinePhase10Test
         $sw = (string) file_get_contents(RATEB_ROOT . '/public/rateb-offline-sw.js');
         $ok = str_contains($sw, 'isPosPath')
             && str_contains($sw, 'isApiPath')
+            && str_contains($sw, 'isAuthPath')
             && str_contains($sw, 'offlineJsonResponse')
-            && str_contains($sw, 'isLoginPost')
-            && str_contains($sw, 'Never interfere with POS')
-            && str_contains($sw, 'never cache authenticated documents')
-            && preg_match('/if\s*\(\s*isPosPath\([^)]+\)\s*\)\s*\{\s*return;/s', $sw) === 1
+            && str_contains($sw, 'inlineOfflineShellResponse')
+            && str_contains($sw, 'isOfflineShellUrl')
+            && str_contains($sw, '/pos(\\/|$)')
             && str_contains($sw, "indexOf('/api/')")
             && str_contains($sw, 'Cache-Control')
             && str_contains($sw, 'no-store');
-        // Ensure API path uses respondWith with offline JSON, not cache.put of API.
-        $apiOk = str_contains($sw, 'API: never cache')
-            || (str_contains($sw, 'isApiPath') && str_contains($sw, 'offlineJsonResponse'));
+        $apiOk = str_contains($sw, 'isApiPath') && str_contains($sw, 'offlineJsonResponse');
         $noApiCachePut = !preg_match('/isApiPath[\s\S]{0,400}cache\.put/m', $sw);
         $this->record(
             'SW excludes POS, never caches API/HTML auth',
@@ -172,13 +177,19 @@ final class ErpShellOfflinePhase10Test
     {
         $src = (string) file_get_contents(RATEB_ROOT . '/offline/client/adapters/shell-adapter.js');
         $bundle = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/rateb-offline.js');
+        $layout = (string) file_get_contents(RATEB_ROOT . '/views/layouts/main.php');
         $ok = str_contains($src, 'SNAPSHOTS')
-            && str_contains($src, 'erp_shell_chrome')
+            && str_contains($src, 'SNAPSHOT_PREFIX')
+            && str_contains($src, 'company_id')
+            && str_contains($src, 'branch_id')
+            && str_contains($src, 'user_id')
             && str_contains($src, 'rateb-csrf')
             && str_contains($src, 'stripSensitive')
             && !str_contains($src, 'RatebOfflineQueue.enqueue')
             && str_contains($bundle, 'RatebOfflineShellAdapter')
-            && str_contains($bundle, 'version: \'10.0.0\'');
+            && str_contains($bundle, 'tenantScope')
+            && str_contains($layout, 'company_id')
+            && str_contains($layout, 'user_id');
         $this->record('shell adapter uses snapshots, strips CSRF', $ok, $ok ? 'ok' : 'fail');
     }
 
@@ -224,14 +235,74 @@ final class ErpShellOfflinePhase10Test
     private function testStripSensitivePatterns(): void
     {
         $src = (string) file_get_contents(RATEB_ROOT . '/offline/client/adapters/shell-adapter.js');
-        $sample = '<html><head><meta name="rateb-csrf" content="SECRET"><script>var x=1</script></head>'
-            . '<body class="rateb-app"><main>SECRET_DATA</main></body></html>';
-        // Execute stripSensitive via eval of function body is heavy; assert source patterns instead.
         $ok = str_contains($src, 'rateb-csrf')
             && str_contains($src, 'rateb-offline-shell-main')
             && str_contains($src, '_csrf')
-            && !str_contains($sample, 'unused');
+            && str_contains($src, 'data-rateb-')
+            && str_contains($src, '<aside')
+            && str_contains($src, 'javascript:');
         $this->record('sensitive strip patterns present', $ok, $ok ? 'ok' : 'fail');
+    }
+
+    private function testNoSwRecursion(): void
+    {
+        $sw = (string) file_get_contents(RATEB_ROOT . '/public/rateb-offline-sw.js');
+        // offlineShellFallback must not call fetch(
+        $fallbackFn = '';
+        if (preg_match('/function offlineShellFallback\(\)\s*\{([\s\S]*?)\n\}/', $sw, $m)) {
+            $fallbackFn = $m[1];
+        }
+        $ok = $fallbackFn !== ''
+            && !str_contains($fallbackFn, 'fetch(')
+            && str_contains($fallbackFn, 'inlineOfflineShellResponse')
+            && str_contains($sw, 'isOfflineShellUrl')
+            && str_contains($sw, 'NEVER calls fetch')
+            && !str_contains($sw, 'cache.addAll');
+        $this->record('SW offline fallback has no fetch recursion', $ok, $ok ? 'ok' : 'recursion risk');
+    }
+
+    private function testTenantScopedSnapshot(): void
+    {
+        $src = (string) file_get_contents(RATEB_ROOT . '/offline/client/adapters/shell-adapter.js');
+        $ok = str_contains($src, 'SNAPSHOT_PREFIX')
+            && str_contains($src, 'function snapshotId')
+            && str_contains($src, 'company_id')
+            && str_contains($src, 'branch_id')
+            && str_contains($src, 'user_id')
+            && str_contains($src, 'tenant_scope_required')
+            && !preg_match('/id:\s*[\'"]erp_shell_chrome[\'"]\s*,/', $src);
+        $this->record('snapshot keyed by company/branch/user', $ok, $ok ? 'ok' : 'global key');
+    }
+
+    private function testNoDocumentWrite(): void
+    {
+        $fb = (string) file_get_contents(RATEB_ROOT . '/public/offline-shell.html');
+        $ok = !preg_match('/document\.write\s*\(/', $fb)
+            && str_contains($fb, 'DOMParser')
+            && str_contains($fb, 'importNode')
+            && str_contains($fb, 'renderSafeShell');
+        $this->record('offline-shell uses DOMParser not document.write', $ok, $ok ? 'ok' : 'xss risk');
+    }
+
+    private function testAuthPathsExcluded(): void
+    {
+        $sw = (string) file_get_contents(RATEB_ROOT . '/public/rateb-offline-sw.js');
+        $ok = str_contains($sw, 'isAuthPath')
+            && str_contains($sw, '/logout')
+            && str_contains($sw, '/password/')
+            && preg_match('/if\s*\(\s*isAuthPath\([^)]+\)\s*\)\s*\{\s*return;/s', $sw) === 1;
+        $this->record('auth pages excluded from SW interception', $ok, $ok ? 'ok' : 'auth intercept');
+    }
+
+    private function testNoClientsClaim(): void
+    {
+        $sw = (string) file_get_contents(RATEB_ROOT . '/public/rateb-offline-sw.js');
+        $boot = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/erp-shell-bootstrap.js');
+        $ok = !preg_match('/self\.clients\.claim\s*\(/', $sw)
+            && str_contains($sw, 'avoids stealing open POS')
+            && str_contains($boot, 'isPosLocation')
+            && str_contains($boot, 'pos-sw.js');
+        $this->record('no clients.claim; bootstrap skips POS', $ok, $ok ? 'ok' : 'POS claim risk');
     }
 
     private function record(string $name, bool $passed, string $detail): void

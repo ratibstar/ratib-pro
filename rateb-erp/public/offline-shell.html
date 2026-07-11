@@ -10,6 +10,8 @@ body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;c
 html[data-bs-theme="light"] body{background:#f4f6f8;color:#1a1d24}
 h1{font-size:1.25rem;margin:0 0 .75rem}
 p{opacity:.9;line-height:1.5;max-width:28rem;margin:.5rem auto}
+#shell-root{text-align:initial;max-width:72rem;margin:1rem auto;padding:0 1rem}
+#shell-root .rateb-offline-shell-main{padding:1rem 0}
 a{color:#8ab4ff}
 </style>
 <script>
@@ -26,15 +28,20 @@ a{color:#8ab4ff}
 </script>
 </head>
 <body>
-<h1 id="title">وضع عدم الاتصال</h1>
-<p id="msg">لا تتوفر نسخة محفوظة من واجهة النظام. افتح لوحة الإدارة مرة واحدة وأنت متصل، ثم أعد المحاولة دون إنترنت.</p>
-<p><a id="retry" href="#">إعادة المحاولة</a></p>
+<div id="offline-status">
+  <h1 id="title">وضع عدم الاتصال</h1>
+  <p id="msg">لا تتوفر نسخة محفوظة من واجهة النظام. افتح لوحة الإدارة مرة وأنت متصل، ثم أعد المحاولة دون إنترنت.</p>
+  <p><a id="retry" href="#">إعادة المحاولة</a></p>
+</div>
+<div id="shell-root" hidden></div>
 <script>
 (function () {
-  var SNAPSHOT_ID = 'erp_shell_chrome';
+  var SNAPSHOT_PREFIX = 'erp_shell_chrome';
   var DB_NAME = 'rateb_erp_offline';
   var title = document.getElementById('title');
   var msg = document.getElementById('msg');
+  var statusBox = document.getElementById('offline-status');
+  var shellRoot = document.getElementById('shell-root');
   var retry = document.getElementById('retry');
   if (retry) {
     retry.addEventListener('click', function (e) {
@@ -42,48 +49,128 @@ a{color:#8ab4ff}
       location.reload();
     });
   }
-  function showUnavailable() {
+
+  function showUnavailable(detail) {
     if (title) title.textContent = 'Cached shell unavailable';
     if (msg) {
-      msg.textContent = 'No sanitized ERP shell chrome is stored yet. Reconnect, open Admin once with offline read-cache enabled, then retry offline.';
+      msg.textContent = detail || 'No tenant-scoped ERP shell chrome is stored. Reconnect, open Admin once with offline read-cache enabled, then retry offline.';
+    }
+    if (statusBox) statusBox.hidden = false;
+    if (shellRoot) {
+      shellRoot.hidden = true;
+      while (shellRoot.firstChild) shellRoot.removeChild(shellRoot.firstChild);
     }
   }
-  function useHtml(html) {
-    if (!html || html.indexOf('rateb-offline-shell-main') < 0 && html.indexOf('rateb-app') < 0) {
-      return false;
-    }
-    document.open();
-    document.write(html);
-    document.close();
-    return true;
-  }
-  if (!window.indexedDB) {
-    showUnavailable();
-    return;
-  }
-  var req = indexedDB.open(DB_NAME);
-  req.onerror = showUnavailable;
-  req.onsuccess = function () {
+
+  function readTenantFromQuery() {
     try {
-      var db = req.result;
-      if (!db.objectStoreNames.contains('snapshots')) {
-        showUnavailable();
-        return;
-      }
-      var tx = db.transaction('snapshots', 'readonly');
-      var store = tx.objectStore('snapshots');
-      var get = store.get(SNAPSHOT_ID);
-      get.onerror = showUnavailable;
-      get.onsuccess = function () {
-        var row = get.result;
-        if (!row || !row.html || !useHtml(row.html)) {
-          showUnavailable();
-        }
+      var q = new URLSearchParams(location.search || '');
+      return {
+        company_id: parseInt(q.get('company_id'), 10) || 0,
+        branch_id: parseInt(q.get('branch_id'), 10) || 0,
+        user_id: parseInt(q.get('user_id'), 10) || 0
       };
     } catch (e) {
-      showUnavailable();
+      return { company_id: 0, branch_id: 0, user_id: 0 };
     }
-  };
+  }
+
+  function readTenantFromConfig() {
+    var cfg = window.__RATEB_ERP_SHELL_OFFLINE__ || {};
+    return {
+      company_id: parseInt(cfg.company_id, 10) || 0,
+      branch_id: parseInt(cfg.branch_id, 10) || 0,
+      user_id: parseInt(cfg.user_id, 10) || 0
+    };
+  }
+
+  function snapshotId(scope) {
+    if (!scope.company_id || !scope.user_id) return null;
+    return SNAPSHOT_PREFIX + ':' + scope.company_id + ':' + scope.branch_id + ':' + scope.user_id;
+  }
+
+  /** DOMParser + importNode only — never document.write / innerHTML assignment of raw HTML. */
+  function renderSafeShell(html) {
+    if (!html || typeof DOMParser === 'undefined') return false;
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(String(html), 'text/html');
+    if (!doc || !doc.body) return false;
+    var marker = doc.getElementById('rateb-offline-shell-main')
+      || doc.querySelector('.rateb-offline-shell-main');
+    if (!marker) return false;
+
+    doc.querySelectorAll('script, iframe, object, embed, link[rel="import"]').forEach(function (el) {
+      el.remove();
+    });
+    doc.querySelectorAll('*').forEach(function (el) {
+      var attrs = el.attributes ? Array.prototype.slice.call(el.attributes) : [];
+      attrs.forEach(function (attr) {
+        var name = String(attr.name || '');
+        var val = String(attr.value || '');
+        if (/^on/i.test(name)) {
+          el.removeAttribute(name);
+        } else if ((name === 'href' || name === 'xlink:href' || name === 'src') && /^\s*javascript:/i.test(val)) {
+          el.removeAttribute(name);
+        } else if (/^data-rateb-/i.test(name) || /^(data-csrf|data-token|data-session)/i.test(name)) {
+          el.removeAttribute(name);
+        }
+      });
+    });
+
+    if (!shellRoot) return false;
+    while (shellRoot.firstChild) shellRoot.removeChild(shellRoot.firstChild);
+
+    var source = doc.body;
+    Array.prototype.forEach.call(source.childNodes, function (node) {
+      if (node.nodeType === 1 || node.nodeType === 3) {
+        shellRoot.appendChild(document.importNode(node, true));
+      }
+    });
+    shellRoot.hidden = false;
+    if (statusBox) statusBox.hidden = true;
+    return shellRoot.childNodes.length > 0;
+  }
+
+  function loadSnapshot(id) {
+    if (!window.indexedDB || !id) {
+      showUnavailable();
+      return;
+    }
+    var req = indexedDB.open(DB_NAME);
+    req.onerror = function () { showUnavailable(); };
+    req.onsuccess = function () {
+      try {
+        var db = req.result;
+        if (!db.objectStoreNames.contains('snapshots')) {
+          showUnavailable();
+          return;
+        }
+        var tx = db.transaction('snapshots', 'readonly');
+        var get = tx.objectStore('snapshots').get(id);
+        get.onerror = function () { showUnavailable(); };
+        get.onsuccess = function () {
+          var row = get.result;
+          if (!row || !row.html || !renderSafeShell(row.html)) {
+            showUnavailable();
+            return;
+          }
+        };
+      } catch (e) {
+        showUnavailable();
+      }
+    };
+  }
+
+  var scope = readTenantFromConfig();
+  if (!scope.company_id || !scope.user_id) {
+    scope = readTenantFromQuery();
+  }
+  var id = snapshotId(scope);
+  if (!id) {
+    showUnavailable('Tenant scope (company_id + user_id) required to load cached shell.');
+    return;
+  }
+  loadSnapshot(id);
 })();
 </script>
 </body>

@@ -380,6 +380,18 @@ if ($ratebOfflineReadCache) {
         ? (rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/')
         : '';
     $ratebOfflineApiBase = rateb_url('api/v1/offline');
+    $ratebOfflineCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+    if ($ratebOfflineCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+        $ratebOfflineCompanyId = (int) rateb_resolve_ops_company_id();
+    }
+    $ratebOfflineBranchId = 0;
+    if (function_exists('rateb_portal_branch_id')) {
+        $ratebOfflineBranchId = (int) rateb_portal_branch_id();
+    }
+    if ($ratebOfflineBranchId < 1 && function_exists('rateb_active_branch_filter_id')) {
+        $ratebOfflineBranchId = (int) rateb_active_branch_filter_id();
+    }
+    $ratebOfflineUserId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
     ?>
 <script>
 window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
@@ -389,6 +401,9 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'probeUrl' => rtrim($ratebOfflineApiBase, '/') . '/status',
     'flags' => $ratebOfflineFlags,
     'startConnectivity' => true,
+    'company_id' => $ratebOfflineCompanyId,
+    'branch_id' => $ratebOfflineBranchId,
+    'user_id' => $ratebOfflineUserId,
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
 <script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>

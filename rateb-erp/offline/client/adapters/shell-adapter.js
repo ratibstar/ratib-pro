@@ -1,13 +1,11 @@
 /**
- * RATEB Offline — ERP shell adapter (Phase 10).
- * Stores sanitized shell chrome in existing snapshots IndexedDB store.
- * Activated only when offline.enabled + offline.read_cache are true.
- * Does not touch queue, replay, or business modules.
+ * RATEB Offline — ERP shell adapter (Phase 10.1 blocking fixes).
+ * Tenant-scoped snapshots; strips privileged UI + secrets.
  */
 (function (root) {
     'use strict';
 
-    var SNAPSHOT_ID = 'erp_shell_chrome';
+    var SNAPSHOT_PREFIX = 'erp_shell_chrome';
 
     function flags() {
         if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
@@ -21,26 +19,56 @@
         return !!(f['offline.enabled'] && f['offline.read_cache']);
     }
 
+    function tenantScope() {
+        var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+        var companyId = parseInt(cfg.company_id, 10) || 0;
+        var branchId = parseInt(cfg.branch_id, 10) || 0;
+        var userId = parseInt(cfg.user_id, 10) || 0;
+        return {
+            company_id: companyId,
+            branch_id: branchId,
+            user_id: userId
+        };
+    }
+
+    function snapshotId(scope) {
+        scope = scope || tenantScope();
+        if (!scope.company_id || !scope.user_id) {
+            return null;
+        }
+        return SNAPSHOT_PREFIX
+            + ':' + scope.company_id
+            + ':' + scope.branch_id
+            + ':' + scope.user_id;
+    }
+
     function stripSensitive(html) {
         var out = String(html || '');
-        // Never persist CSRF tokens.
+        // CSRF / tokens
         out = out.replace(/<meta[^>]*name=["']rateb-csrf["'][^>]*>/gi, '');
-        out = out.replace(/name=["']_csrf["'][^>]*value=["'][^"']*["']/gi, 'name="_csrf" value=""');
-        out = out.replace(/value=["'][^"']*["'][^>]*name=["']_csrf["']/gi, 'value="" name="_csrf"');
-        // Drop main page body content (authenticated data).
-        out = out.replace(
-            /<main\b[^>]*>[\s\S]*?<\/main>/i,
-            '<main class="rateb-offline-shell-main"><div class="container py-4">'
-            + '<p class="text-muted">Offline shell chrome — reconnect for live data.</p>'
-            + '</div></main>'
-        );
-        // Remove inline scripts that may embed tokens or session payloads.
-        out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, function (block) {
-            if (/rateb_erp_theme|data-theme|localStorage/i.test(block) && !/csrf|token|session/i.test(block)) {
-                return block;
-            }
-            return '';
-        });
+        out = out.replace(/name=["']_csrf["'][^>]*>/gi, '>');
+        out = out.replace(/\svalue=["'][^"']*["'](?=[^>]*name=["']_csrf["'])/gi, ' value=""');
+        // All scripts (theme applied by offline-shell.html itself)
+        out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+        // Privileged / dynamic chrome
+        out = out.replace(/<main\b[^>]*>[\s\S]*?<\/main>/i,
+            '<main class="rateb-offline-shell-main" id="rateb-offline-shell-main">'
+            + '<div class="container py-4"><p class="text-muted">Offline — reconnect for live data.</p></div></main>');
+        out = out.replace(/<aside\b[^>]*>[\s\S]*?<\/aside>/gi,
+            '<aside class="rateb-offline-shell-nav" aria-label="Offline nav"><p>RATEB ERP</p></aside>');
+        out = out.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, '<nav class="rateb-offline-shell-nav"></nav>');
+        // data-* that may leak URLs / session context
+        out = out.replace(/\sdata-rateb-[a-z0-9_-]+=["'][^"']*["']/gi, '');
+        out = out.replace(/\sdata-(csrf|token|session|user|company|branch)[a-z0-9_-]*=["'][^"']*["']/gi, '');
+        // Forms / alerts / badges (counts, PII surfaces)
+        out = out.replace(/<form\b[^>]*>[\s\S]*?<\/form>/gi, '');
+        out = out.replace(/<div[^>]*class=["'][^"']*\balert\b[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '');
+        out = out.replace(/<span[^>]*class=["'][^"']*badge[^"']*["'][^>]*>[\s\S]*?<\/span>/gi, '');
+        // Inline event handlers
+        out = out.replace(/\son[a-z]+\s*=\s*["'][^"']*["']/gi, '');
+        out = out.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+        // javascript: URLs
+        out = out.replace(/\shref=["']\s*javascript:[^"']*["']/gi, ' href="#"');
         return out;
     }
 
@@ -55,14 +83,18 @@
         });
     }
 
-    function getSnapshot() {
+    function getSnapshot(scope) {
+        var id = snapshotId(scope);
+        if (!id) {
+            return Promise.resolve(null);
+        }
         var Schema = root.RatebOfflineSchema;
         if (!Schema || !Schema.withStore) {
             return Promise.resolve(null);
         }
         return Schema.withStore(Schema.STORES.SNAPSHOTS, 'readonly', function (store) {
             return new Promise(function (resolve, reject) {
-                var req = store.get(SNAPSHOT_ID);
+                var req = store.get(id);
                 req.onsuccess = function () { resolve(req.result || null); };
                 req.onerror = function () { reject(req.error); };
             });
@@ -73,6 +105,11 @@
         if (!isActive()) {
             return Promise.resolve({ skipped: true, disabled: true });
         }
+        var scope = tenantScope();
+        var id = snapshotId(scope);
+        if (!id) {
+            return Promise.resolve({ skipped: true, reason: 'tenant_scope_required' });
+        }
         if (!root.document || !root.document.documentElement) {
             return Promise.resolve({ skipped: true, reason: 'no_document' });
         }
@@ -80,14 +117,17 @@
             var html = '<!DOCTYPE html>\n' + root.document.documentElement.outerHTML;
             var safe = stripSensitive(html);
             var record = {
-                id: SNAPSHOT_ID,
+                id: id,
                 kind: 'erp_shell_chrome',
+                company_id: scope.company_id,
+                branch_id: scope.branch_id,
+                user_id: scope.user_id,
                 captured_at: new Date().toISOString(),
                 path: (root.location && root.location.pathname) || '',
                 html: safe
             };
             return putSnapshot(record).then(function () {
-                return { ok: true, id: SNAPSHOT_ID, bytes: safe.length };
+                return { ok: true, id: id, bytes: safe.length };
             });
         } catch (e) {
             return Promise.reject(e);
@@ -111,10 +151,13 @@
     }
 
     root.RatebOfflineShellAdapter = {
-        SNAPSHOT_ID: SNAPSHOT_ID,
+        SNAPSHOT_PREFIX: SNAPSHOT_PREFIX,
         isActive: isActive,
+        tenantScope: tenantScope,
+        snapshotId: snapshotId,
         captureChrome: captureChrome,
         getSnapshot: getSnapshot,
-        startAutoCapture: startAutoCapture
+        startAutoCapture: startAutoCapture,
+        stripSensitive: stripSensitive
     };
 })(typeof window !== 'undefined' ? window : globalThis);
