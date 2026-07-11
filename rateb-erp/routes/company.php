@@ -687,4 +687,8 @@ $router->get($app('accounting-control/diagnostics'), [AccountingControlControlle
 $router->get($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlApiMw);
 $router->post($app('accounting-control/api/{resource}'), [AccountingControlController::class, 'api'], $accCtrlApiMw);
 
+if (is_file(RATEB_ROOT . '/offline/server/routes/offline-web.php')) {
+    require RATEB_ROOT . '/offline/server/routes/offline-web.php';
+}
+
 require RATEB_ROOT . '/routes/company-access.php';

@@ -66,6 +66,12 @@ final class OfflineFeatureFlagService
         return $this->isMasterEnabled() && $this->enabled('offline.procurement');
     }
 
+    /** Ops monitoring dashboards (independent of master — read-only visibility). */
+    public function isMonitoringEnabled(): bool
+    {
+        return $this->enabled('offline.monitoring');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {
