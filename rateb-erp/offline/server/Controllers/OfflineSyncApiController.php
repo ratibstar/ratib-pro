@@ -9,6 +9,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
+use Rateb\App\Offline\Services\DeviceTrustService;
 use Rateb\App\Offline\Services\OfflineAuthorizationService;
 use Rateb\App\Offline\Services\OfflineBranchGuard;
 use Rateb\App\Offline\Services\OfflineDeviceGuard;
@@ -90,6 +91,23 @@ final class OfflineSyncApiController extends Controller
             ], 403);
             return;
         }
+        $trust = new DeviceTrustService();
+        if (!$trust->isReplayAllowed($companyId, $deviceId)) {
+            $this->json([
+                'ok' => false,
+                'error' => ['message' => 'Device not allowed', 'code' => 'device_revoked'],
+                'result' => [
+                    'accepted' => 0,
+                    'duplicate' => 0,
+                    'conflict' => 0,
+                    'rejected' => 0,
+                    'clearable_keys' => [],
+                    'errors' => ['device_revoked' => true],
+                ],
+            ], 403);
+            return;
+        }
+        $trust->touchReplay($companyId, $deviceId);
 
         $items = $body['items'] ?? $body;
         if (!is_array($items)) {

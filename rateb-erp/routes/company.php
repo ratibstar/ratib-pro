@@ -17,6 +17,7 @@ use Rateb\App\Controllers\Company\SuppliersController;
 use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
 use Rateb\App\Controllers\Company\BranchesController;
+use Rateb\App\Controllers\Company\OfflineDevicesController;
 use Rateb\App\Controllers\Company\BranchDashboardController;
 use Rateb\App\Controllers\Company\BranchFinancialReportsController;
 use Rateb\App\Controllers\Admin\AccountingControlController;
@@ -1153,5 +1154,14 @@ $router->post($app('accounting-control/api/{resource}'), [AccountingControlContr
 if (is_file(RATEB_ROOT . '/offline/server/routes/offline-web.php')) {
     require RATEB_ROOT . '/offline/server/routes/offline-web.php';
 }
+
+// Phase P2 — Offline device trust admin (company security)
+$offlineDevicesViewMw = rateb_erp_mw('', 'offline.devices.view', 'security/offline-devices');
+$offlineDevicesManageMw = rateb_erp_mw('', 'offline.devices.manage', 'security/offline-devices');
+$router->get($app('security/offline-devices'), [OfflineDevicesController::class, 'index'], $offlineDevicesViewMw);
+$router->post($app('security/offline-devices/revoke'), [OfflineDevicesController::class, 'revoke'], $offlineDevicesManageMw);
+$router->post($app('security/offline-devices/rename'), [OfflineDevicesController::class, 'rename'], $offlineDevicesManageMw);
+$router->post($app('security/offline-devices/force-logout'), [OfflineDevicesController::class, 'forceLogout'], $offlineDevicesManageMw);
+$router->post($app('security/offline-devices/restore'), [OfflineDevicesController::class, 'restore'], $offlineDevicesManageMw);
 
 require RATEB_ROOT . '/routes/company-access.php';

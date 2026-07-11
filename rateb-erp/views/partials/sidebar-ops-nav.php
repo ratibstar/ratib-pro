@@ -252,5 +252,8 @@ if (function_exists('rateb_company_access_routes_enabled') && rateb_company_acce
     ]);
     $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
 }
+$opsSection(__('security'), [
+    ['security/offline-devices', 'offline_devices', 'fa-mobile-screen', '', 'offline.devices.view'],
+], 'fa-shield-halved');
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');

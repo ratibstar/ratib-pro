@@ -18,9 +18,21 @@ final class OfflineDevice extends Model
         'device_id',
         'user_id',
         'label',
+        'fingerprint',
+        'nickname',
         'meta_json',
         'last_seen_at',
+        'last_online_at',
+        'last_replay_at',
+        'last_unlock_at',
+        'last_logout_at',
         'status',
+        'trust_status',
+        'identity_expires_at',
+        'identity_version',
+        'identity_jti',
+        'force_logout_at',
+        'vault_integrity',
         'activated_by',
         'activated_at',
         'approved_by',
@@ -30,6 +42,14 @@ final class OfflineDevice extends Model
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
     public const STATUS_REVOKED = 'revoked';
+    public const STATUS_TRUSTED = 'trusted';
+    public const STATUS_LOST = 'lost';
+    public const STATUS_DISABLED = 'disabled';
+
+    public const TRUST_TRUSTED = 'trusted';
+    public const TRUST_REVOKED = 'revoked';
+    public const TRUST_LOST = 'lost';
+    public const TRUST_DISABLED = 'disabled';
 
     /** @return array<string, mixed>|null */
     public function findByDeviceId(int $companyId, string $deviceId): ?array

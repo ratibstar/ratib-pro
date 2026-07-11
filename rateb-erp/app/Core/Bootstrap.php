@@ -148,6 +148,7 @@ final class Bootstrap
             '/app/controllers/Company/QualityControllers.php',
             '/app/controllers/Company/BranchControllers.php',
             '/app/controllers/Company/BusinessControllers.php',
+            '/app/controllers/Company/OfflineDevicesController.php',
             '/app/controllers/Shared/PasswordResetController.php',
             '/app/controllers/Shared/LoginController.php',
             '/app/controllers/Api/ApiController.php',

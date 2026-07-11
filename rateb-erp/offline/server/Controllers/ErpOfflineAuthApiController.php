@@ -13,6 +13,7 @@ use Rateb\App\Offline\Services\ErpOfflineAuthDeviceService;
 use Rateb\App\Offline\Services\ErpOfflineAuthPolicy;
 use Rateb\App\Offline\Services\ErpOfflineIdentityEnrollService;
 use Rateb\App\Offline\Services\ErpOfflineIdentityService;
+use Rateb\App\Offline\Services\ErpOfflineIdentitySessionPolicy;
 use Rateb\App\Offline\Services\OfflineFeatureFlagService;
 
 /**
@@ -70,6 +71,7 @@ final class ErpOfflineAuthApiController extends Controller
             'enroll' => $enroll,
             'logout_vault_policy' => $policy->logoutVaultPolicy(),
             'identity_ttl_seconds' => $identity->ttlSeconds(),
+            'session_policy' => (new ErpOfflineIdentitySessionPolicy())->snapshot(),
             'warm_identity' => true,
             'is_super_admin' => !empty(SessionManager::get('rateb_is_super_admin')),
         ]);

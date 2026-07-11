@@ -4073,9 +4073,14 @@
     'use strict';
 
     var PBKDF2_ITERATIONS = 120000;
-    var UNLOCK_TTL_MS = 8 * 60 * 60 * 1000;
+    var DEFAULT_UNLOCK_TTL_MS = 8 * 60 * 60 * 1000;
+    var DEFAULT_IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+    var DEFAULT_MAX_OFFLINE_SESSION_MS = 72 * 60 * 60 * 1000;
+    var DEFAULT_CLOCK_SKEW_SECONDS = 300;
     var DEVICE_LS_KEY = 'rateb_erp_device_uuid';
     var UNLOCK_UNTIL_PREFIX = 'rateb_erp_unlock_until:';
+    var UNLOCK_STARTED_PREFIX = 'rateb_erp_unlock_started:';
+    var IDLE_AT_PREFIX = 'rateb_erp_idle_at:';
     var REAUTH_KEY = 'rateb_erp_session_reauth';
     var DEVICE_META_PREFIX = 'auth_device:';
     var SCOPE_LS_KEY = 'rateb_erp_offline_scope';
@@ -4085,6 +4090,28 @@
 
     function cfg() {
         return root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_AUTH_OFFLINE__ || {};
+    }
+
+    /** Phase P2 — session policy from server policy() snapshot (fail-closed defaults). */
+    function sessionPolicy() {
+        var p = cfg().session_policy || {};
+        return {
+            unlock_ttl_ms: parseInt(p.unlock_ttl_ms, 10) > 0 ? parseInt(p.unlock_ttl_ms, 10) : DEFAULT_UNLOCK_TTL_MS,
+            idle_timeout_ms: parseInt(p.idle_timeout_ms, 10) > 0 ? parseInt(p.idle_timeout_ms, 10) : DEFAULT_IDLE_TIMEOUT_MS,
+            max_offline_session_ms: parseInt(p.max_offline_session_ms, 10) > 0
+                ? parseInt(p.max_offline_session_ms, 10)
+                : DEFAULT_MAX_OFFLINE_SESSION_MS,
+            clock_skew_seconds: parseInt(p.clock_skew_seconds, 10) > 0
+                ? parseInt(p.clock_skew_seconds, 10)
+                : DEFAULT_CLOCK_SKEW_SECONDS,
+            renew_before_seconds: parseInt(p.renew_before_seconds, 10) > 0
+                ? parseInt(p.renew_before_seconds, 10)
+                : (3 * 24 * 60 * 60)
+        };
+    }
+
+    function unlockTtlMs() {
+        return sessionPolicy().unlock_ttl_ms;
     }
 
     function flags() {
@@ -4273,6 +4300,24 @@
         if (expiresAt < 1 || expiresAt * 1000 <= Date.now()) {
             return Promise.resolve({ ok: false, error: 'identity_expired' });
         }
+        var skew = sessionPolicy().clock_skew_seconds;
+        var issuedAt = parseInt(claims.issued_at, 10) || 0;
+        var nowSec = Math.floor(Date.now() / 1000);
+        if (issuedAt > nowSec + skew) {
+            return Promise.resolve({ ok: false, error: 'clock_rollback' });
+        }
+        var notBefore = parseInt(claims.not_before, 10) || issuedAt;
+        if (notBefore > nowSec + skew) {
+            return Promise.resolve({ ok: false, error: 'identity_not_before' });
+        }
+        var antiRollback = parseInt(claims.anti_rollback, 10) || issuedAt;
+        if (expect.min_anti_rollback && antiRollback < parseInt(expect.min_anti_rollback, 10)) {
+            return Promise.resolve({ ok: false, error: 'anti_rollback' });
+        }
+        if (expect.min_identity_version
+            && (parseInt(claims.identity_version, 10) || 1) < parseInt(expect.min_identity_version, 10)) {
+            return Promise.resolve({ ok: false, error: 'identity_version' });
+        }
         if (expect.company_id && intOr(claims.company_id) !== expect.company_id) {
             return Promise.resolve({ ok: false, error: 'tenant_mismatch' });
         }
@@ -4335,13 +4380,21 @@
         } catch (e) { /* ignore */ }
     }
 
-    function isUnlocked(scope) {
-        return unlockUntil(scope) > Date.now();
+    function unlockStartedKey(scope) {
+        return UNLOCK_STARTED_PREFIX + vaultId(scope);
+    }
+
+    function idleAtKey(scope) {
+        return IDLE_AT_PREFIX + vaultId(scope);
     }
 
     function markUnlocked(scope, claims) {
-        setUnlockUntil(scope, Date.now() + UNLOCK_TTL_MS);
+        var now = Date.now();
+        var policy = sessionPolicy();
+        setUnlockUntil(scope, now + policy.unlock_ttl_ms);
         try {
+            sessionStorage.setItem(unlockStartedKey(scope), String(now));
+            sessionStorage.setItem(idleAtKey(scope), String(now));
             if (claims) {
                 sessionStorage.setItem(identitySessionKey(scope), JSON.stringify({
                     company_id: claims.company_id,
@@ -4349,10 +4402,51 @@
                     user_id: claims.user_id,
                     device_id: claims.device_id,
                     expires_at: claims.expires_at,
+                    issued_at: claims.issued_at || 0,
+                    identity_version: claims.identity_version || 1,
+                    anti_rollback: claims.anti_rollback || claims.issued_at || 0,
                     jti: claims.jti || ''
                 }));
             }
         } catch (e) { /* ignore */ }
+    }
+
+    function touchIdle(scope) {
+        scope = scope || tenantScope();
+        try {
+            sessionStorage.setItem(idleAtKey(scope), String(Date.now()));
+        } catch (e) { /* ignore */ }
+    }
+
+    function assertSessionTtl(scope) {
+        scope = scope || tenantScope();
+        var policy = sessionPolicy();
+        var until = unlockUntil(scope);
+        if (until <= Date.now()) {
+            return { ok: false, error: 'unlock_ttl_expired' };
+        }
+        try {
+            var started = parseInt(sessionStorage.getItem(unlockStartedKey(scope)) || '0', 10) || 0;
+            if (started > 0 && (Date.now() - started) > policy.max_offline_session_ms) {
+                clearUnlock(scope);
+                return { ok: false, error: 'max_offline_session' };
+            }
+            var idleAt = parseInt(sessionStorage.getItem(idleAtKey(scope)) || '0', 10) || 0;
+            if (idleAt > 0 && (Date.now() - idleAt) > policy.idle_timeout_ms) {
+                clearUnlock(scope);
+                return { ok: false, error: 'idle_timeout' };
+            }
+        } catch (e) {
+            return { ok: false, error: 'session_ttl_unavailable' };
+        }
+        return { ok: true };
+    }
+
+    function isUnlocked(scope) {
+        if (unlockUntil(scope) <= Date.now()) {
+            return false;
+        }
+        return assertSessionTtl(scope).ok === true;
     }
 
     function clearUnlock(scope) {
@@ -4360,7 +4454,25 @@
         setUnlockUntil(scope, 0);
         try {
             sessionStorage.removeItem(identitySessionKey(scope));
+            sessionStorage.removeItem(unlockStartedKey(scope));
+            sessionStorage.removeItem(idleAtKey(scope));
         } catch (e) { /* ignore */ }
+    }
+
+    function vaultIntegrityHash(record) {
+        var parts = [
+            String(record.company_id || 0),
+            String(record.branch_id || 0),
+            String(record.user_id || 0),
+            String(record.device_id || ''),
+            String(record.pin_hash || ''),
+            String(record.identity_cipher || ''),
+            String(record.identity_expires_at || 0),
+            String(record.identity_version || 1)
+        ];
+        return root.crypto.subtle.digest('SHA-256', new TextEncoder().encode(parts.join('|'))).then(function (buf) {
+            return bufToB64(buf);
+        });
     }
 
     function sessionNeedsReauth() {
@@ -4557,12 +4669,19 @@
                     webauthn_credential_id: (options.webauthn_credential_id
                         || (existing && existing.webauthn_credential_id)
                         || ''),
-                    unlock_ttl_ms: UNLOCK_TTL_MS,
+                    unlock_ttl_ms: unlockTtlMs(),
+                    identity_version: options.identity && options.identity.claims
+                        ? (parseInt(options.identity.claims.identity_version, 10) || 1)
+                        : 1,
+                    vault_integrity: '',
                     created_at: (existing && existing.created_at) ? existing.created_at : now,
                     updated_at: now
                 };
-                return putVault(record).then(function () {
-                    return { ok: true, id: id, has_identity: !!(sealed.identity_cipher) };
+                return vaultIntegrityHash(record).then(function (hash) {
+                    record.vault_integrity = hash;
+                    return putVault(record).then(function () {
+                        return { ok: true, id: id, has_identity: !!(sealed.identity_cipher), vault_integrity: hash };
+                    });
                 });
             });
         });
@@ -4591,9 +4710,14 @@
                         if (!opened.ok) {
                             return opened;
                         }
-                        clearSessionNeedsReauth();
-                        markUnlocked(scope, opened.claims);
-                        return { ok: true, identity: opened.claims, warm: true };
+                        return vaultIntegrityHash(record).then(function (hash) {
+                            if (record.vault_integrity && hash !== record.vault_integrity) {
+                                return { ok: false, error: 'vault_tamper' };
+                            }
+                            clearSessionNeedsReauth();
+                            markUnlocked(scope, opened.claims);
+                            return { ok: true, identity: opened.claims, warm: true };
+                        });
                     });
                 }
                 return hashPin(pin, record.pin_salt).then(function (hashed) {
@@ -4812,6 +4936,19 @@
         sealIdentityPackage: sealIdentityPackage,
         verifyIdentityLocal: verifyIdentityLocal,
         destroyWarmSession: destroyWarmSession,
+        sessionPolicy: sessionPolicy,
+        touchIdle: touchIdle,
+        assertSessionTtl: assertSessionTtl,
+        vaultIntegrityHash: vaultIntegrityHash,
+        needsIdentityRenewal: function (claims) {
+            claims = claims || {};
+            var exp = parseInt(claims.expires_at, 10) || 0;
+            if (exp < 1) {
+                return false;
+            }
+            var before = sessionPolicy().renew_before_seconds;
+            return (exp - Math.floor(Date.now() / 1000)) <= before;
+        },
         isUnlocked: function () { return isUnlocked(tenantScope()); },
         clearUnlock: clearUnlock,
         deleteVault: deleteVault,

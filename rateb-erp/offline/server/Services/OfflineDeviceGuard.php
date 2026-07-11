@@ -8,7 +8,8 @@ use Rateb\App\Offline\Models\OfflineDevice;
 
 /**
  * Enterprise push device gate (Phase 7.1 / H-DEVICE-001).
- * ACTIVE devices only — pending / inactive / revoked / unknown rejected.
+ * ACTIVE (or trusted) devices only — pending / inactive / revoked / unknown rejected.
+ * Phase P2: also deny trust_status revoked/lost/disabled and force_logout_at.
  */
 final class OfflineDeviceGuard
 {
@@ -34,7 +35,9 @@ final class OfflineDeviceGuard
         }
 
         $status = strtolower(trim((string) ($row['status'] ?? '')));
-        if ($status !== OfflineDevice::STATUS_ACTIVE) {
+        $statusOk = $status === OfflineDevice::STATUS_ACTIVE
+            || $status === OfflineDevice::STATUS_TRUSTED;
+        if (!$statusOk) {
             return [
                 'ok' => false,
                 'device_id' => $deviceId,
@@ -43,10 +46,55 @@ final class OfflineDeviceGuard
             ];
         }
 
+        if (OfflineSchema::hasColumn('rateb_offline_devices', 'trust_status')) {
+            $trust = strtolower(trim((string) ($row['trust_status'] ?? '')));
+            if ($trust === '' || $trust === 'active') {
+                $trust = OfflineDevice::TRUST_TRUSTED;
+            }
+            if ($trust === OfflineDevice::TRUST_REVOKED) {
+                return [
+                    'ok' => false,
+                    'device_id' => $deviceId,
+                    'status' => $status,
+                    'error' => 'device_revoked',
+                ];
+            }
+            if ($trust === OfflineDevice::TRUST_LOST) {
+                return [
+                    'ok' => false,
+                    'device_id' => $deviceId,
+                    'status' => $status,
+                    'error' => 'device_lost',
+                ];
+            }
+            if ($trust === OfflineDevice::TRUST_DISABLED) {
+                return [
+                    'ok' => false,
+                    'device_id' => $deviceId,
+                    'status' => $status,
+                    'error' => 'device_disabled',
+                ];
+            }
+        }
+
+        if (OfflineSchema::hasColumn('rateb_offline_devices', 'force_logout_at')) {
+            $forceLogout = $row['force_logout_at'] ?? null;
+            if ($forceLogout !== null && trim((string) $forceLogout) !== '') {
+                return [
+                    'ok' => false,
+                    'device_id' => $deviceId,
+                    'status' => $status,
+                    'error' => 'device_force_logout',
+                ];
+            }
+        }
+
         return [
             'ok' => true,
             'device_id' => $deviceId,
-            'status' => OfflineDevice::STATUS_ACTIVE,
+            'status' => $status === OfflineDevice::STATUS_TRUSTED
+                ? OfflineDevice::STATUS_TRUSTED
+                : OfflineDevice::STATUS_ACTIVE,
         ];
     }
 }

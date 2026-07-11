@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Rateb\App\Offline\Services;
 
+use Rateb\App\Core\TenantContext;
+use Rateb\App\Offline\Models\OfflineDevice;
+use Rateb\App\Offline\Models\OfflineIdentityNonce;
+
 /**
  * Phase P1 — Enterprise Offline Warm Identity (server-issued, cryptographically signed).
+ * Phase P2 — renew, nonce registry, clock skew / anti-rollback checks (additive).
  *
  * Does not create PHP sessions. Does not bypass Auth/RBAC.
  * Client seals the issued package under a PIN-derived AES key; PIN only decrypts locally.
@@ -28,7 +33,8 @@ final class ErpOfflineIdentityService
         int $branchId,
         int $userId,
         string $deviceId,
-        ?int $ttlSeconds = null
+        ?int $ttlSeconds = null,
+        int $identityVersion = 1
     ): array {
         if (!(new OfflineFeatureFlagService())->isAuthUnlockEnabled()) {
             return ['ok' => false, 'error' => 'auth_unlock_disabled'];
@@ -44,6 +50,7 @@ final class ErpOfflineIdentityService
         $ttl = $ttlSeconds ?? $this->ttlSeconds();
         $ttl = max(3600, min($ttl, 90 * 24 * 60 * 60));
         $now = time();
+        $identityVersion = max(1, $identityVersion);
         $identityKey = random_bytes(32);
         $claims = [
             'v' => 1,
@@ -53,12 +60,17 @@ final class ErpOfflineIdentityService
             'user_id' => $userId,
             'device_id' => $deviceId,
             'issued_at' => $now,
+            'not_before' => $now,
             'expires_at' => $now + $ttl,
+            'identity_version' => $identityVersion,
+            'anti_rollback' => $now,
             'jti' => bin2hex(random_bytes(16)),
         ];
         $canonical = $this->canonical($claims);
         $signature = hash_hmac('sha256', $canonical, $identityKey, true);
         $serverAttestation = hash_hmac('sha256', $canonical . '|' . base64_encode($signature), $this->masterSecret(), true);
+
+        $this->registerNonce($companyId, $deviceId, $claims);
 
         return [
             'ok' => true,
@@ -76,10 +88,84 @@ final class ErpOfflineIdentityService
     }
 
     /**
+     * Invalidate previous JTI and issue a new identity package (version + 1).
+     *
+     * @param array<string, mixed>|null $previousClaims
+     * @return array{ok: bool, error?: string, identity?: array<string, mixed>}
+     */
+    public function renew(
+        int $companyId,
+        int $branchId,
+        int $userId,
+        string $deviceId,
+        ?array $previousClaims = null,
+        ?int $ttlSeconds = null
+    ): array {
+        $deviceId = $this->normalizeDeviceId($deviceId);
+        if ($deviceId === '') {
+            return ['ok' => false, 'error' => 'device_id_required'];
+        }
+
+        $prevVersion = 1;
+        $prevJti = '';
+        if (is_array($previousClaims)) {
+            $prevVersion = max(1, (int) ($previousClaims['identity_version'] ?? 1));
+            $prevJti = trim((string) ($previousClaims['jti'] ?? ''));
+        } else {
+            $device = null;
+            if (OfflineSchema::hasColumn('rateb_offline_devices', 'id')) {
+                TenantContext::setCompanyId($companyId);
+                $device = (new OfflineDevice())->findByDeviceId($companyId, $deviceId);
+            }
+            if ($device !== null) {
+                $prevVersion = max(1, (int) ($device['identity_version'] ?? 1));
+                $prevJti = trim((string) ($device['identity_jti'] ?? ''));
+            }
+        }
+
+        if ($prevJti !== '' && OfflineSchema::hasColumn('rateb_offline_identity_nonces', 'id')) {
+            (new OfflineIdentityNonce())->invalidateJti($companyId, $prevJti);
+        }
+
+        $issued = $this->issue(
+            $companyId,
+            $branchId,
+            $userId,
+            $deviceId,
+            $ttlSeconds,
+            $prevVersion + 1
+        );
+        if (!($issued['ok'] ?? false)) {
+            return $issued;
+        }
+
+        $claims = is_array($issued['identity']['claims'] ?? null)
+            ? $issued['identity']['claims']
+            : [];
+        if (OfflineSchema::hasColumn('rateb_offline_devices', 'id')) {
+            (new DeviceTrustService())->markEnrolledTrusted($companyId, $deviceId, [
+                'identity_expires_at' => (int) ($claims['expires_at'] ?? 0) ?: null,
+                'identity_version' => (int) ($claims['identity_version'] ?? ($prevVersion + 1)),
+                'identity_jti' => (string) ($claims['jti'] ?? ''),
+            ]);
+        }
+
+        return $issued;
+    }
+
+    /**
      * Verify a decrypted identity package (client or reconnect path).
      *
      * @param array<string, mixed> $package
-     * @param array{company_id?: int, branch_id?: int, user_id?: int, device_id?: string} $expect
+     * @param array{
+     *   company_id?: int,
+     *   branch_id?: int,
+     *   user_id?: int,
+     *   device_id?: string,
+     *   identity_version?: int,
+     *   previous_issued_at?: int,
+     *   check_nonce?: bool
+     * } $expect
      * @return array{ok: bool, error?: string, claims?: array<string, mixed>}
      */
     public function verifyPackage(array $package, array $expect = []): array
@@ -94,6 +180,33 @@ final class ErpOfflineIdentityService
         $expiresAt = (int) ($claims['expires_at'] ?? 0);
         if ($expiresAt < 1 || $expiresAt <= time()) {
             return ['ok' => false, 'error' => 'identity_expired'];
+        }
+
+        $now = time();
+        $issuedAt = (int) ($claims['issued_at'] ?? 0);
+        $skew = (new ErpOfflineIdentitySessionPolicy())->clockSkewSeconds();
+        if ($issuedAt > 0 && $issuedAt > ($now + $skew)) {
+            return ['ok' => false, 'error' => 'identity_clock_skew'];
+        }
+        $notBefore = (int) ($claims['not_before'] ?? $issuedAt);
+        if ($notBefore > 0 && $now + $skew < $notBefore) {
+            return ['ok' => false, 'error' => 'identity_not_before'];
+        }
+
+        if (isset($expect['identity_version'])) {
+            $expectedVer = (int) $expect['identity_version'];
+            $gotVer = (int) ($claims['identity_version'] ?? 1);
+            if ($expectedVer > 0 && $gotVer !== $expectedVer) {
+                return ['ok' => false, 'error' => 'identity_version_mismatch'];
+            }
+        }
+
+        if (isset($expect['previous_issued_at'])) {
+            $prevIssued = (int) $expect['previous_issued_at'];
+            $anti = (int) ($claims['anti_rollback'] ?? $issuedAt);
+            if ($prevIssued > 0 && $anti < $prevIssued) {
+                return ['ok' => false, 'error' => 'identity_anti_rollback'];
+            }
         }
 
         $identityKeyB64 = (string) ($package['identity_key'] ?? '');
@@ -138,6 +251,26 @@ final class ErpOfflineIdentityService
             return ['ok' => false, 'error' => 'device_mismatch'];
         }
 
+        $checkNonce = !array_key_exists('check_nonce', $expect) || !empty($expect['check_nonce']);
+        if ($checkNonce && OfflineSchema::hasColumn('rateb_offline_identity_nonces', 'id')) {
+            $jti = trim((string) ($claims['jti'] ?? ''));
+            $cid = (int) ($claims['company_id'] ?? 0);
+            if ($jti !== '' && $cid > 0) {
+                $active = (new OfflineIdentityNonce())->findActiveJti($cid, $jti);
+                if ($active === null) {
+                    // Allow packages issued before nonce table existed (no row at all vs invalidated).
+                    $any = (new OfflineIdentityNonce())->queryOne(
+                        'SELECT id, status FROM rateb_offline_identity_nonces
+                         WHERE company_id = :cid AND jti = :jti LIMIT 1',
+                        ['cid' => $cid, 'jti' => $jti]
+                    );
+                    if ($any !== null) {
+                        return ['ok' => false, 'error' => 'identity_jti_invalid'];
+                    }
+                }
+            }
+        }
+
         return ['ok' => true, 'claims' => $claims];
     }
 
@@ -174,6 +307,32 @@ final class ErpOfflineIdentityService
         $root = defined('RATEB_ROOT') ? (string) RATEB_ROOT : dirname(__DIR__, 3);
         // Fail-safe local secret (production must set RATEB_OFFLINE_IDENTITY_SECRET).
         return hash('sha256', 'rateb-offline-identity|local|' . $root, true);
+    }
+
+    /** @param array<string, mixed> $claims */
+    private function registerNonce(int $companyId, string $deviceId, array $claims): void
+    {
+        if (!OfflineSchema::hasColumn('rateb_offline_identity_nonces', 'id')) {
+            return;
+        }
+        $jti = trim((string) ($claims['jti'] ?? ''));
+        if ($jti === '') {
+            return;
+        }
+        try {
+            TenantContext::setCompanyId($companyId);
+            (new OfflineIdentityNonce())->create([
+                'company_id' => $companyId,
+                'device_id' => $deviceId,
+                'jti' => $jti,
+                'identity_version' => max(1, (int) ($claims['identity_version'] ?? 1)),
+                'status' => OfflineIdentityNonce::STATUS_ACTIVE,
+                'issued_at' => (int) ($claims['issued_at'] ?? time()),
+                'expires_at' => (int) ($claims['expires_at'] ?? (time() + $this->ttlSeconds())),
+            ]);
+        } catch (\Throwable $e) {
+            // Nonce registry is best-effort additive; issue still succeeds.
+        }
     }
 
     private function normalizeDeviceId(string $raw): string

@@ -677,4 +677,9 @@ return [
         'view' => 'bi.view',
         'manage' => 'bi.manage',
     ],
+    'security/offline-devices' => [
+        'module' => '',
+        'view' => 'offline.devices.view',
+        'manage' => 'offline.devices.manage',
+    ],
 ];

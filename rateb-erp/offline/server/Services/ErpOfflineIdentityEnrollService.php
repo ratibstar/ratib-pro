@@ -9,7 +9,7 @@ use Rateb\App\Offline\Models\OfflineDevice;
 
 /**
  * Phase P1 — Online enroll of warm offline identity + device activation.
- * Additive; does not create PHP sessions.
+ * Phase P2 — audit + device trust fields (additive).
  */
 final class ErpOfflineIdentityEnrollService
 {
@@ -50,9 +50,42 @@ final class ErpOfflineIdentityEnrollService
             return $issued;
         }
 
+        $claims = is_array($issued['identity']['claims'] ?? null)
+            ? $issued['identity']['claims']
+            : [];
+        $trust = new DeviceTrustService();
+        $fingerprint = trim((string) ($input['fingerprint'] ?? ''));
+        $trust->markEnrolledTrusted($companyId, $deviceId, [
+            'identity_expires_at' => (int) ($claims['expires_at'] ?? 0) ?: null,
+            'identity_version' => (int) ($claims['identity_version'] ?? 1),
+            'identity_jti' => (string) ($claims['jti'] ?? ''),
+            'fingerprint' => $fingerprint !== '' ? $fingerprint : null,
+        ]);
+
+        (new ErpOfflineIdentityAuditService())->log(
+            ErpOfflineIdentityAuditService::EVENT_IDENTITY_ENROLLED,
+            $companyId,
+            [
+                'branch_id' => $branchId,
+                'user_id' => $userId,
+                'device_id' => $deviceId,
+                'detail' => [
+                    'jti' => (string) ($claims['jti'] ?? ''),
+                    'identity_version' => (int) ($claims['identity_version'] ?? 1),
+                    'expires_at' => (int) ($claims['expires_at'] ?? 0),
+                ],
+            ]
+        );
+
+        $deviceOut = $activated['device'] ?? ($reg['device'] ?? null);
+        $fresh = (new OfflineDevice())->findByDeviceId($companyId, $deviceId);
+        if ($fresh !== null) {
+            $deviceOut = $trust->publicRow($fresh);
+        }
+
         return [
             'ok' => true,
-            'device' => $activated['device'] ?? ($reg['device'] ?? null),
+            'device' => $deviceOut,
             'identity' => $issued['identity'] ?? null,
             'logout_destroys_identity' => true,
         ];
@@ -80,6 +113,14 @@ final class ErpOfflineIdentityEnrollService
         if ($status === OfflineDevice::STATUS_REVOKED) {
             return ['ok' => false, 'error' => 'device_revoked'];
         }
+        if (OfflineSchema::hasColumn('rateb_offline_devices', 'trust_status')) {
+            $trust = strtolower(trim((string) ($existing['trust_status'] ?? '')));
+            if ($trust === OfflineDevice::TRUST_REVOKED
+                || $trust === OfflineDevice::TRUST_LOST
+                || $trust === OfflineDevice::TRUST_DISABLED) {
+                return ['ok' => false, 'error' => 'device_revoked'];
+            }
+        }
 
         $existingUser = (int) ($existing['user_id'] ?? 0);
         if ($existingUser > 0 && $existingUser !== $userId) {
@@ -92,6 +133,9 @@ final class ErpOfflineIdentityEnrollService
             'user_id' => $userId,
             'last_seen_at' => date('Y-m-d H:i:s'),
         ];
+        if (OfflineSchema::hasColumn('rateb_offline_devices', 'trust_status')) {
+            $patch['trust_status'] = OfflineDevice::TRUST_TRUSTED;
+        }
         if ($branchId > 0) {
             $patch['branch_id'] = $branchId;
         }
@@ -104,7 +148,8 @@ final class ErpOfflineIdentityEnrollService
             'device' => [
                 'device_id' => (string) ($device['device_id'] ?? $deviceId),
                 'status' => $statusOut,
-                'is_active' => $statusOut === OfflineDevice::STATUS_ACTIVE,
+                'is_active' => $statusOut === OfflineDevice::STATUS_ACTIVE
+                    || $statusOut === OfflineDevice::STATUS_TRUSTED,
                 'company_id' => (int) ($device['company_id'] ?? $companyId),
                 'branch_id' => (int) ($device['branch_id'] ?? $branchId),
                 'user_id' => (int) ($device['user_id'] ?? $userId),

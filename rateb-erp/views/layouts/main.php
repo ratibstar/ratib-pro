@@ -433,7 +433,10 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'is_super_admin' => (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin'),
     'logout_vault_policy' => class_exists(\Rateb\App\Offline\Services\ErpOfflineAuthPolicy::class)
         ? (new \Rateb\App\Offline\Services\ErpOfflineAuthPolicy())->logoutVaultPolicy()
-        : 'keep_vault',
+        : 'clear_vault',
+    'session_policy' => class_exists(\Rateb\App\Offline\Services\ErpOfflineIdentitySessionPolicy::class)
+        ? (new \Rateb\App\Offline\Services\ErpOfflineIdentitySessionPolicy())->snapshot()
+        : [],
     'client_queue_max' => (int) ($ratebOfflineSyncPolicy['client_queue_max'] ?? 500),
     'ops_page_paths' => array_values(array_map('strval', $ratebOfflineOpsAllowlist['paths'] ?? [])),
     'ops_form_hooks' => array_values($ratebOfflineOpsAllowlist['form_hooks'] ?? []),

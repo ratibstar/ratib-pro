@@ -194,6 +194,16 @@
         waitForAuthLock().then(function (lock) {
             var unlockNeeded = !!(root.__RATEB_ERP_SHELL_OFFLINE__.flags['offline.auth.unlock']);
             var proceed = function () {
+                if (lock && lock.touchIdle) {
+                    lock.touchIdle(scope);
+                    if (root.document) {
+                        ['mousemove', 'keydown', 'touchstart', 'click'].forEach(function (ev) {
+                            root.document.addEventListener(ev, function () {
+                                lock.touchIdle(scope);
+                            }, { passive: true });
+                        });
+                    }
+                }
                 return loadSnapshot(scope).then(function (ok) {
                     if (ok) {
                         return applyRbac();
