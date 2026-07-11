@@ -587,6 +587,26 @@ return [
         'view' => 'payroll.view',
         'manage' => 'payroll.manage',
     ],
+    'quality' => [
+        'module' => 'quality',
+        'view' => 'quality.view',
+        'manage' => 'quality.manage',
+    ],
+    'quality-inspections' => [
+        'module' => 'quality',
+        'view' => 'quality.view',
+        'manage' => 'quality.manage',
+    ],
+    'quality-corrective' => [
+        'module' => 'quality',
+        'view' => 'quality.view',
+        'manage' => 'quality.manage',
+    ],
+    'quality-audits' => [
+        'module' => 'quality',
+        'view' => 'quality.view',
+        'manage' => 'quality.manage',
+    ],
     'recruitment' => [
         'module' => 'recruitment',
         'view' => 'recruitment.view',

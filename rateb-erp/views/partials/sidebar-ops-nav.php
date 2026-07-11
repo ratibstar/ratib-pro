@@ -115,6 +115,22 @@ $opsSection(__('payroll_platform'), [
     ['payroll/timeline', 'payroll_timeline', 'fa-timeline', 'payroll', 'payroll.view'],
     ['payroll/reports', 'payroll_reports', 'fa-chart-pie', 'payroll', 'payroll.view'],
 ], 'fa-money-check-dollar');
+$opsSection(__('quality_platform'), [
+    ['qms/dashboard', 'quality_platform', 'fa-clipboard-check', 'quality', 'quality.view'],
+    ['qms/plans', 'quality_plans', 'fa-map', 'quality', 'quality.view'],
+    ['qms/standards', 'quality_standards', 'fa-certificate', 'quality', 'quality.view'],
+    ['qms/checklists', 'quality_checklists', 'fa-list-check', 'quality', 'quality.view'],
+    ['qms/inspections', 'quality_inspections', 'fa-magnifying-glass', 'quality', 'quality.view'],
+    ['qms/defects', 'quality_defects', 'fa-bug', 'quality', 'quality.view'],
+    ['qms/nonconformities', 'quality_nonconformities', 'fa-triangle-exclamation', 'quality', 'quality.view'],
+    ['qms/corrective-actions', 'quality_corrective_actions', 'fa-wrench', 'quality', 'quality.view'],
+    ['qms/preventive-actions', 'quality_preventive_actions', 'fa-shield-halved', 'quality', 'quality.view'],
+    ['qms/audits', 'quality_audits', 'fa-file-circle-check', 'quality', 'quality.view'],
+    ['qms/complaints', 'quality_complaints', 'fa-comment-dots', 'quality', 'quality.view'],
+    ['qms/supplier-quality', 'quality_supplier_quality', 'fa-truck', 'quality', 'quality.view'],
+    ['qms/timeline', 'quality_timeline', 'fa-timeline', 'quality', 'quality.view'],
+    ['qms/reports', 'quality_reports', 'fa-chart-pie', 'quality', 'quality.view'],
+], 'fa-shield-halved');
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }

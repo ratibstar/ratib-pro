@@ -537,6 +537,40 @@ $router->post($app('payroll/salary-structures'), [PayrollSalaryStructuresControl
 $router->get($app('payroll/reports'), [PayrollReportsController::class, 'index'], $payrollMw);
 $router->get($app('payroll/timeline'), [PayrollTimelinePageController::class, 'index'], $payrollMw);
 
+/** Phase 25A — Enterprise Quality Management Platform ONLINE (qms/*; additive; Offline deferred to 25B). */
+$qmsMw = rateb_erp_mw('quality', 'quality.view', 'quality');
+$router->get($app('qms-platform'), [QualityPlatformController::class, 'index'], $qmsMw);
+$router->get($app('qms'), [QualityDashboardController::class, 'index'], $qmsMw);
+$router->get($app('qms/dashboard'), [QualityDashboardController::class, 'index'], $qmsMw);
+$router->get($app('qms/plans'), [QualityPlansController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/plans'), [QualityPlansController::class, 'store'], rateb_erp_mw('quality', 'quality.create', 'quality'));
+$router->get($app('qms/standards'), [QualityStandardsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/standards'), [QualityStandardsController::class, 'store'], rateb_erp_mw('quality', 'quality.create', 'quality'));
+$router->get($app('qms/checklists'), [QualityChecklistsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/checklists'), [QualityChecklistsController::class, 'store'], rateb_erp_mw('quality', 'quality.create', 'quality'));
+$router->get($app('qms/inspections'), [QualityInspectionsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/inspections'), [QualityInspectionsController::class, 'store'], rateb_erp_mw('quality', 'quality.inspect', 'quality'));
+$router->get($app('qms/inspections/{id}'), [QualityInspectionsController::class, 'show'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/inspections/{id}/transition'), [QualityInspectionsController::class, 'transition'], rateb_erp_mw('quality', 'quality.inspect', 'quality'));
+$router->get($app('qms/defects'), [QualityDefectsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/defects'), [QualityDefectsController::class, 'store'], rateb_erp_mw('quality', 'quality.create', 'quality'));
+$router->get($app('qms/nonconformities'), [QualityNonconformitiesController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/nonconformities'), [QualityNonconformitiesController::class, 'store'], rateb_erp_mw('quality', 'quality.create', 'quality'));
+$router->get($app('qms/corrective-actions'), [QualityCorrectiveActionsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/corrective-actions'), [QualityCorrectiveActionsController::class, 'store'], rateb_erp_mw('quality', 'quality.corrective', 'quality'));
+$router->get($app('qms/corrective-actions/{id}'), [QualityCorrectiveActionsController::class, 'show'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/corrective-actions/{id}/transition'), [QualityCorrectiveActionsController::class, 'transition'], rateb_erp_mw('quality', 'quality.corrective', 'quality'));
+$router->get($app('qms/preventive-actions'), [QualityPreventiveActionsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/preventive-actions'), [QualityPreventiveActionsController::class, 'store'], rateb_erp_mw('quality', 'quality.preventive', 'quality'));
+$router->get($app('qms/audits'), [QualityAuditsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/audits'), [QualityAuditsController::class, 'store'], rateb_erp_mw('quality', 'quality.audit', 'quality'));
+$router->get($app('qms/complaints'), [QualityComplaintsController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/complaints'), [QualityComplaintsController::class, 'store'], rateb_erp_mw('quality', 'quality.create', 'quality'));
+$router->get($app('qms/supplier-quality'), [QualitySupplierQualityController::class, 'index'], rateb_erp_mw('quality', 'quality.view', 'quality'));
+$router->post($app('qms/supplier-quality'), [QualitySupplierQualityController::class, 'store'], rateb_erp_mw('quality', 'quality.create', 'quality'));
+$router->get($app('qms/reports'), [QualityReportsController::class, 'index'], $qmsMw);
+$router->get($app('qms/timeline'), [QualityTimelinePageController::class, 'index'], $qmsMw);
+
 $hrAttMw = rateb_erp_mw('hr', '', 'hr-attendance');
 $router->get($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'index'], $hrAttMw);
 $router->post($app('hr/attendance/bulk'), [HrAttendanceBulkController::class, 'store'], $hrAttMw);

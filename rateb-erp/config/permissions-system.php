@@ -43,6 +43,7 @@ return [
         'approval',
         'manufacturing',
         'payroll',
+        'quality',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -69,6 +70,7 @@ return [
         'approval' => 'approval_platform',
         'manufacturing' => 'manufacturing_platform',
         'payroll' => 'payroll_platform',
+        'quality' => 'quality_platform',
     ],
 
     /**
@@ -141,6 +143,25 @@ return [
             'payroll.review',
             'payroll.approve',
             'payroll.post',
+        ],
+        'quality.manage' => [
+            'quality.view',
+            'quality.create',
+            'quality.update',
+            'quality.inspect',
+            'quality.audit',
+            'quality.corrective',
+            'quality.preventive',
+            'quality.admin',
+        ],
+        'quality.admin' => [
+            'quality.view',
+            'quality.create',
+            'quality.update',
+            'quality.inspect',
+            'quality.audit',
+            'quality.corrective',
+            'quality.preventive',
         ],
         'accounting.approve' => ['accounting.oversight'],
         'accounting.admin' => [
