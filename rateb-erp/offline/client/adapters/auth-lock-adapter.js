@@ -426,7 +426,7 @@
             hideOverlay();
             return Promise.resolve({ ok: true, unlocked: true });
         }
-        // Online with live CSRF → treat as enrolled session; clear reauth and skip lock.
+        // Online with live CSRF: still require ACTIVE device before auto-unlock (Phase 13.1).
         var online = root.navigator && root.navigator.onLine !== false;
         var csrf = '';
         try {
@@ -434,10 +434,22 @@
             csrf = meta ? (meta.getAttribute('content') || '') : '';
         } catch (e) { /* ignore */ }
         if (online && csrf) {
-            clearSessionNeedsReauth();
-            markUnlocked(scope);
-            hideOverlay();
-            return Promise.resolve({ ok: true, online_session: true });
+            return readDeviceStatus(scope).then(function (device) {
+                var status = device && device.status ? String(device.status).toLowerCase() : '';
+                if (status === 'active') {
+                    clearSessionNeedsReauth();
+                    markUnlocked(scope);
+                    hideOverlay();
+                    return { ok: true, online_session: true, device_active: true };
+                }
+                markSessionNeedsReauth();
+                showOverlay();
+                return { ok: false, locked: true, error: 'inactive_device' };
+            }).catch(function () {
+                markSessionNeedsReauth();
+                showOverlay();
+                return { ok: false, locked: true, error: 'inactive_device' };
+            });
         }
         showOverlay();
         return Promise.resolve({ ok: false, locked: true });

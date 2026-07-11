@@ -1,6 +1,7 @@
 /**
- * RATEB Offline — ERP shell bootstrap (Phase 10.1).
- * Registers enterprise SW only on non-POS pages when read_cache is enabled.
+ * RATEB Offline — ERP shell bootstrap (Phase 13.1).
+ * Passes full cfg.flags into SDK; never freezes later phase flags.
+ * Does not overwrite pos-sw.js when it owns the shared scope.
  */
 (function (root) {
     'use strict';
@@ -17,21 +18,17 @@
     }
 
     function flagsFromConfig() {
-        return {
-            'offline.enabled': true,
-            'offline.read_cache': true,
-            'offline.pos.complete': !!(cfg.flags && cfg.flags['offline.pos.complete']),
-            'offline.inventory.movements': !!(cfg.flags && cfg.flags['offline.inventory.movements']),
-            'offline.hr.attendance': !!(cfg.flags && cfg.flags['offline.hr.attendance']),
-            'offline.procurement': !!(cfg.flags && cfg.flags['offline.procurement'])
-        };
+        var f = Object.assign({}, cfg.flags || {});
+        // Ensure shell prerequisites when this bootstrap runs (read_cache path).
+        f['offline.enabled'] = true;
+        f['offline.read_cache'] = true;
+        return f;
     }
 
     function registerServiceWorker() {
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve(null);
         }
-        // Never register from POS pages — pos-sw.js remains authoritative.
         if (isPosLocation()) {
             return Promise.resolve(null);
         }
@@ -48,17 +45,15 @@
             }
         }
         return root.navigator.serviceWorker.getRegistrations().then(function (regs) {
-            // If an active worker is pos-sw.js, do not overwrite from ERP bootstrap.
+            // Never displace pos-sw.js on the shared scope (Phase 13.1 coexistence).
             var posOwns = (regs || []).some(function (reg) {
                 var active = reg.active || reg.waiting || reg.installing;
                 var src = (active && active.scriptURL) ? String(active.scriptURL) : '';
                 return /pos-sw\.js/i.test(src);
             });
-            if (posOwns && isPosLocation()) {
+            if (posOwns) {
                 return null;
             }
-            // When POS SW owns the shared scope, still allow ERP register from Admin pages;
-            // POS pages re-register pos-sw.js on load (untouched). Avoid claim in ERP SW.
             return root.navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined);
         }).catch(function () { return null; });
     }

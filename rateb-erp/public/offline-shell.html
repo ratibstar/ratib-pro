@@ -131,9 +131,37 @@ a{color:#8ab4ff}
     return shellRoot.childNodes.length > 0;
   }
 
-  function loadSnapshot(id) {
+  function isUnlocked(scope) {
+    try {
+      var key = 'rateb_erp_unlock_until:'
+        + scope.company_id + ':' + (scope.branch_id || 0) + ':' + scope.user_id;
+      var until = parseInt(sessionStorage.getItem(key) || '0', 10) || 0;
+      return until > Date.now();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function showLocked() {
+    if (title) title.textContent = 'Unlock required';
+    if (msg) {
+      msg.textContent = 'Cached shell is locked. Open Admin online, unlock with your PIN, then retry offline.';
+    }
+    if (statusBox) statusBox.hidden = false;
+    if (shellRoot) {
+      shellRoot.hidden = true;
+      while (shellRoot.firstChild) shellRoot.removeChild(shellRoot.firstChild);
+    }
+  }
+
+  function loadSnapshot(id, scope) {
     if (!window.indexedDB || !id) {
       showUnavailable();
+      return;
+    }
+    // Phase 13.1: do not reveal chrome before unlock.
+    if (!isUnlocked(scope)) {
+      showLocked();
       return;
     }
     var req = indexedDB.open(DB_NAME);
@@ -170,10 +198,10 @@ a{color:#8ab4ff}
     showUnavailable('Tenant scope (company_id + user_id) required to load cached shell.');
     return;
   }
-  loadSnapshot(id);
+  loadSnapshot(id, scope);
 })();
 </script>
-<!-- Phase 12 additive: RBAC/nav apply only (does not alter Phase 10 import/strip). -->
+<!-- Phase 12/13.1: RBAC apply + unlock gate scripts -->
 <script src="assets/offline/rateb-offline.js" defer></script>
 <script src="assets/offline/erp-offline-shell-rbac.js" defer></script>
 </body>

@@ -216,10 +216,10 @@ final class ErpOfflineMasterDataPhase13Test
         $sdk = (string) file_get_contents(RATEB_ROOT . '/offline/client/core/sdk.js');
         $bundle = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/rateb-offline.js');
         $ok = str_contains($sdk, 'isMasterDataEnabled')
-            && str_contains($sdk, '13.0.0')
+            && (str_contains($sdk, '13.0.0') || str_contains($sdk, '13.1.0'))
             && str_contains($sdk, 'masterData:')
             && str_contains($bundle, 'RatebOfflineMasterData')
-            && str_contains($bundle, '13.0.0');
+            && (str_contains($bundle, '13.0.0') || str_contains($bundle, '13.1.0'));
         $this->record('SDK exposes master data', $ok, $ok ? 'ok' : 'fail');
     }
 

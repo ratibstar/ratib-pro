@@ -122,12 +122,12 @@
         if (!(parseInt(cfg.company_id, 10) > 0 && parseInt(cfg.user_id, 10) > 0)) {
             return;
         }
-        if (root.RatebOffline && typeof root.RatebOffline.init === 'function' && !root.RatebOffline.isBooted()) {
+        if (root.RatebOffline && typeof root.RatebOffline.init === 'function') {
             root.RatebOffline.init({
                 apiBase: cfg.apiBase || '',
                 probeUrl: cfg.probeUrl || null,
                 flags: f,
-                startConnectivity: true,
+                startConnectivity: !root.RatebOffline.isBooted(),
                 startScheduler: false
             });
         }

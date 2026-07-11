@@ -1,7 +1,7 @@
 /**
- * RATEB Offline — Master-data delta adapter (Phase 13).
- * Client-owned cursors in IndexedDB `cursors`; rows in `entity_cache`.
- * Read-only — never enqueues writes or conflicts.
+ * RATEB Offline — Master-data delta adapter (Phase 13.1).
+ * Read-only delta pull into entity_cache. No write-queue enqueue.
+ * Tenant-scoped entity_cache keys; client-owned cursors; debounce + TTL purge.
  */
 (function (root) {
     'use strict';
@@ -13,6 +13,9 @@
         employee_directory: { prefix: 'emp', aliases: ['employees', 'hr_employees'] },
         supplier_directory: { prefix: 'sup', aliases: ['suppliers', 'procurement_suppliers'] }
     };
+    var SYNC_DEBOUNCE_MS = 5 * 60 * 1000;
+    var DEFAULT_TTL_MS = 12 * 60 * 60 * 1000;
+    var MAX_PAGES = 50;
 
     function cfg() {
         return root.__RATEB_ERP_MASTER_DATA__ || root.__RATEB_ERP_SHELL_OFFLINE__ || {};
@@ -54,9 +57,27 @@
         return null;
     }
 
+    /** company:branch:prefix:id — Phase 13.1 tenant isolation */
+    function cacheRowId(prefix, itemId, scope) {
+        scope = scope || tenantScope();
+        return String(scope.company_id)
+            + ':' + String(scope.branch_id || 0)
+            + ':' + prefix
+            + ':' + String(itemId);
+    }
+
+    function legacyCacheRowId(prefix, itemId) {
+        return prefix + ':' + String(itemId);
+    }
+
     function cursorKey(entity, scope) {
         scope = scope || tenantScope();
         return 'md:' + scope.company_id + ':' + (scope.branch_id || 0) + ':' + entity;
+    }
+
+    function syncMetaKey(scope) {
+        scope = scope || tenantScope();
+        return 'md_sync:' + scope.company_id + ':' + (scope.branch_id || 0);
     }
 
     function withCursors(mode, fn) {
@@ -73,6 +94,14 @@
             return Promise.reject(new Error('schema_unavailable'));
         }
         return Schema.withStore(Schema.STORES.ENTITY_CACHE, mode, fn);
+    }
+
+    function withMeta(mode, fn) {
+        var Schema = root.RatebOfflineSchema;
+        if (!Schema || !Schema.withStore) {
+            return Promise.reject(new Error('schema_unavailable'));
+        }
+        return Schema.withStore(Schema.STORES.SYNC_META, mode, fn);
     }
 
     function readClientCursor(entity, scope) {
@@ -117,7 +146,9 @@
                 if (!item || !item.id) {
                     return;
                 }
-                var id = prefix + ':' + item.id;
+                var id = cacheRowId(prefix, item.id, scope);
+                var legacy = legacyCacheRowId(prefix, item.id);
+                try { store.delete(legacy); } catch (e) { /* ignore */ }
                 if (item.deleted || item.active === false) {
                     store.delete(id);
                 } else {
@@ -135,6 +166,72 @@
             });
             return n;
         });
+    }
+
+    function purgeExpired(scope) {
+        scope = scope || tenantScope();
+        var ttl = DEFAULT_TTL_MS;
+        var cutoff = Date.now() - ttl;
+        var prefix = String(scope.company_id) + ':' + String(scope.branch_id || 0) + ':';
+        return withEntityCache('readwrite', function (store) {
+            return new Promise(function (resolve, reject) {
+                var req = store.openCursor();
+                var removed = 0;
+                req.onsuccess = function (ev) {
+                    var cursor = ev.target.result;
+                    if (!cursor) {
+                        resolve(removed);
+                        return;
+                    }
+                    var row = cursor.value || {};
+                    var id = String(row.id || '');
+                    if (id.indexOf(prefix) === 0) {
+                        var synced = parseInt(row.synced_at, 10) || 0;
+                        if (synced > 0 && synced < cutoff) {
+                            cursor.delete();
+                            removed += 1;
+                        }
+                    }
+                    cursor.continue();
+                };
+                req.onerror = function () { reject(req.error); };
+            });
+        }).catch(function () { return 0; });
+    }
+
+    function shouldDebounce(scope) {
+        var key = syncMetaKey(scope);
+        return withMeta('readonly', function (store) {
+            return new Promise(function (resolve) {
+                var req = store.get(key);
+                req.onsuccess = function () {
+                    var row = req.result || null;
+                    var last = row && row.last_sync_at ? parseInt(row.last_sync_at, 10) : 0;
+                    resolve(last > 0 && (Date.now() - last) < SYNC_DEBOUNCE_MS);
+                };
+                req.onerror = function () { resolve(false); };
+            });
+        }).catch(function () { return false; });
+    }
+
+    function markSynced(scope, info) {
+        var key = syncMetaKey(scope);
+        return withMeta('readwrite', function (store) {
+            store.put({
+                key: key,
+                last_sync_at: Date.now(),
+                info: info || null
+            });
+            return true;
+        }).catch(function () { return false; });
+    }
+
+    function deviceId() {
+        var lock = root.RatebOfflineAuthLock;
+        if (lock && typeof lock.getDeviceId === 'function') {
+            return lock.getDeviceId();
+        }
+        return '';
     }
 
     function pullEntity(entityName, options) {
@@ -157,12 +254,15 @@
         var apiBase = options.apiBase || cfg().apiBase || '';
         var pages = 0;
         var total = 0;
+        var incomplete = false;
+        var dev = options.device_id || deviceId();
 
         function next(cursor) {
             return pull.pull(entity, {
                 apiBase: apiBase,
                 cursor: cursor || undefined,
-                branch_id: scope.branch_id || undefined
+                branch_id: scope.branch_id || undefined,
+                device_id: dev || undefined
             }).then(function (res) {
                 if (res && res.ok === false) {
                     return {
@@ -175,6 +275,15 @@
                 var delta = (res && res.delta) ? res.delta : res;
                 if (!delta) {
                     return { ok: false, error: 'empty_delta', pages: pages, total: total };
+                }
+                if (delta.migration_required || delta.error === 'updated_at_required') {
+                    return {
+                        ok: false,
+                        error: delta.error || 'migration_required',
+                        migration_required: true,
+                        pages: pages,
+                        total: total
+                    };
                 }
                 if (delta.error === 'entity_not_allowed' || delta.disabled) {
                     return {
@@ -190,7 +299,20 @@
                     total += n;
                     var token = delta.cursor_token || cursor || null;
                     return writeClientCursor(entity, token, scope).then(function () {
-                        if (delta.has_more && items.length > 0 && pages < 50) {
+                        if (delta.has_more && items.length > 0) {
+                            if (pages >= MAX_PAGES) {
+                                incomplete = true;
+                                return {
+                                    ok: true,
+                                    entity: entity,
+                                    pages: pages,
+                                    total: total,
+                                    cursor_token: token,
+                                    has_more: true,
+                                    incomplete: true,
+                                    warning: 'page_limit_reached'
+                                };
+                            }
                             return next(token);
                         }
                         return {
@@ -199,7 +321,8 @@
                             pages: pages,
                             total: total,
                             cursor_token: token,
-                            has_more: !!delta.has_more
+                            has_more: !!delta.has_more,
+                            incomplete: incomplete
                         };
                     });
                 });
@@ -207,27 +330,37 @@
         }
 
         return readClientCursor(entity, scope).then(function (stored) {
-            // Client-owned cursor preferred; never rely solely on server-stored cursor.
             return next(options.cursor != null ? options.cursor : stored);
         });
     }
 
     function syncAll(options) {
+        options = options || {};
         if (!isActive()) {
             return Promise.resolve({ skipped: true });
         }
-        var list = Object.keys(ENTITIES);
-        var results = {};
-        var chain = Promise.resolve();
-        list.forEach(function (entity) {
-            chain = chain.then(function () {
-                return pullEntity(entity, options).then(function (r) {
-                    results[entity] = r;
+        var scope = options.scope || tenantScope();
+        return shouldDebounce(scope).then(function (skip) {
+            if (skip && !options.force) {
+                return { ok: true, debounced: true, results: {} };
+            }
+            return purgeExpired(scope).then(function (purged) {
+                var list = Object.keys(ENTITIES);
+                var results = {};
+                var chain = Promise.resolve();
+                list.forEach(function (entity) {
+                    chain = chain.then(function () {
+                        return pullEntity(entity, options).then(function (r) {
+                            results[entity] = r;
+                        });
+                    });
+                });
+                return chain.then(function () {
+                    return markSynced(scope, { purged: purged, results: results }).then(function () {
+                        return { ok: true, purged: purged, results: results };
+                    });
                 });
             });
-        });
-        return chain.then(function () {
-            return { ok: true, results: results };
         });
     }
 
@@ -235,11 +368,15 @@
         isActive: isActive,
         tenantScope: tenantScope,
         resolveEntity: resolveEntity,
+        cacheRowId: cacheRowId,
         cursorKey: cursorKey,
         readClientCursor: readClientCursor,
         writeClientCursor: writeClientCursor,
         pullEntity: pullEntity,
         syncAll: syncAll,
-        ENTITIES: ENTITIES
+        purgeExpired: purgeExpired,
+        ENTITIES: ENTITIES,
+        MAX_PAGES: MAX_PAGES,
+        SYNC_DEBOUNCE_MS: SYNC_DEBOUNCE_MS
     };
 })(typeof window !== 'undefined' ? window : globalThis);

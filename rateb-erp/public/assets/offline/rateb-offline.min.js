@@ -1,4 +1,5 @@
-/*! RATEB Enterprise Offline SDK Phase 13.0.0 (includes Phase 5.0.0 + 10 shell + 11 auth + 12 rbac; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 13.1.0 (includes Phase 5.0.0 + critical fixes; flags default OFF). */
+
 
 /* ---- schema.js ---- */
 /**
@@ -92,6 +93,7 @@
         withStore: withStore
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- migrations.js ---- */
 /**
@@ -210,6 +212,7 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- idempotency.js ---- */
 /**
  * RATEB Offline — Idempotency helpers (Phase 2A).
@@ -243,6 +246,7 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- event-bus.js ---- */
 /**
  * RATEB Offline — Event bus (Phase 2A).
@@ -269,6 +273,7 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- connectivity.js ---- */
 /**
@@ -410,6 +415,7 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- queue-manager.js ---- */
 /**
@@ -711,6 +717,7 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- replay-scheduler.js ---- */
 /**
  * RATEB Offline — Replay scheduler stub (Phase 2A).
@@ -744,10 +751,11 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- delta-pull.js ---- */
 /**
- * RATEB Offline — Delta pull (Phase 3).
- * Inventory catalog delta is live when Tier-1 flag is on; other entities remain stub-friendly.
+ * RATEB Offline — Delta pull (Phase 13.1).
+ * Supports client cursor, branch_id, and optional device_id for master-data gates.
  */
 (function (root) {
     'use strict';
@@ -767,18 +775,26 @@
             if (options.branch_id) {
                 params.push('branch_id=' + encodeURIComponent(String(options.branch_id)));
             }
+            if (options.device_id) {
+                params.push('device_id=' + encodeURIComponent(String(options.device_id)));
+            }
             if (params.length) {
                 url += (url.indexOf('?') >= 0 ? '&' : '?') + params.join('&');
             }
+            var headers = { Accept: 'application/json' };
+            if (options.device_id) {
+                headers['X-Rateb-Device-Id'] = String(options.device_id);
+            }
             return fetch(url, {
                 credentials: 'same-origin',
-                headers: { Accept: 'application/json' }
+                headers: headers
             }).then(function (res) {
                 return res.json();
             });
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- transport.js ---- */
 /**
@@ -889,6 +905,7 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- pos-adapter.js ---- */
 /**
  * RATEB Offline — POS adapter (Phase 2A).
@@ -925,6 +942,7 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- inventory-adapter.js ---- */
 /**
@@ -991,11 +1009,22 @@
                     function (store) {
                         delta.items.forEach(function (item) {
                             if (item && item.id) {
+                                var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+                                var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
+                                var bid = parseInt(
+                                    item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
+                                    10
+                                ) || 0;
+                                var id = cid + ':' + bid + ':inv:' + item.id;
+                                try { store.delete('inv:' + item.id); } catch (e) { /* legacy */ }
                                 store.put({
-                                    id: 'inv:' + item.id,
+                                    id: id,
                                     entity: 'inventory_catalog',
+                                    company_id: cid,
+                                    branch_id: bid,
                                     data: item,
-                                    updated_at: item.updated_at || null
+                                    updated_at: item.updated_at || null,
+                                    synced_at: Date.now()
                                 });
                             }
                         });
@@ -1037,6 +1066,7 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- hr-adapter.js ---- */
 /**
@@ -1104,11 +1134,27 @@
                     function (store) {
                         delta.items.forEach(function (item) {
                             if (item && item.id) {
+                                var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+                                var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
+                                var bid = parseInt(
+                                    item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
+                                    10
+                                ) || 0;
+                                var id = cid + ':' + bid + ':emp:' + item.id;
+                                try { store.delete('emp:' + item.id); } catch (e) { /* legacy */ }
+                                if (item.deleted || item.active === false) {
+                                    store.delete(id);
+                                    return;
+                                }
                                 store.put({
-                                    id: 'emp:' + item.id,
+                                    id: id,
                                     entity: 'employee_directory',
+                                    company_id: cid,
+                                    branch_id: bid,
+                                    payload: item,
                                     data: item,
-                                    updated_at: item.updated_at || null
+                                    updated_at: item.updated_at || null,
+                                    synced_at: Date.now()
                                 });
                             }
                         });
@@ -1147,6 +1193,7 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- procurement-adapter.js ---- */
 /**
@@ -1214,11 +1261,27 @@
                     function (store) {
                         delta.items.forEach(function (item) {
                             if (item && item.id) {
+                                var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+                                var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
+                                var bid = parseInt(
+                                    item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
+                                    10
+                                ) || 0;
+                                var id = cid + ':' + bid + ':sup:' + item.id;
+                                try { store.delete('sup:' + item.id); } catch (e) { /* legacy */ }
+                                if (item.deleted || item.active === false) {
+                                    store.delete(id);
+                                    return;
+                                }
                                 store.put({
-                                    id: 'sup:' + item.id,
+                                    id: id,
                                     entity: 'supplier_directory',
+                                    company_id: cid,
+                                    branch_id: bid,
+                                    payload: item,
                                     data: item,
-                                    updated_at: item.updated_at || null
+                                    updated_at: item.updated_at || null,
+                                    synced_at: Date.now()
                                 });
                             }
                         });
@@ -1258,6 +1321,7 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -1272,6 +1336,7 @@
         }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- shell-adapter.js ---- */
 /**
@@ -1437,6 +1502,7 @@
         stripSensitive: stripSensitive
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- auth-lock-adapter.js ---- */
 /**
@@ -1867,7 +1933,7 @@
             hideOverlay();
             return Promise.resolve({ ok: true, unlocked: true });
         }
-        // Online with live CSRF → treat as enrolled session; clear reauth and skip lock.
+        // Online with live CSRF: still require ACTIVE device before auto-unlock (Phase 13.1).
         var online = root.navigator && root.navigator.onLine !== false;
         var csrf = '';
         try {
@@ -1875,10 +1941,22 @@
             csrf = meta ? (meta.getAttribute('content') || '') : '';
         } catch (e) { /* ignore */ }
         if (online && csrf) {
-            clearSessionNeedsReauth();
-            markUnlocked(scope);
-            hideOverlay();
-            return Promise.resolve({ ok: true, online_session: true });
+            return readDeviceStatus(scope).then(function (device) {
+                var status = device && device.status ? String(device.status).toLowerCase() : '';
+                if (status === 'active') {
+                    clearSessionNeedsReauth();
+                    markUnlocked(scope);
+                    hideOverlay();
+                    return { ok: true, online_session: true, device_active: true };
+                }
+                markSessionNeedsReauth();
+                showOverlay();
+                return { ok: false, locked: true, error: 'inactive_device' };
+            }).catch(function () {
+                markSessionNeedsReauth();
+                showOverlay();
+                return { ok: false, locked: true, error: 'inactive_device' };
+            });
         }
         showOverlay();
         return Promise.resolve({ ok: false, locked: true });
@@ -1933,6 +2011,7 @@
         PBKDF2_ITERATIONS: PBKDF2_ITERATIONS
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 /* ---- rbac-cache-adapter.js ---- */
 /**
@@ -2175,7 +2254,7 @@
                     + '</div>';
             }
             visible.forEach(function (item) {
-                var href = String(item.href || '#');
+                var href = safeHref(item.href);
                 var label = String(item.label || item.label_key || item.path || '');
                 html += '<a class="rateb-offline-rbac-link" href="' + escapeAttr(href) + '">'
                     + '<span>' + escapeHtml(label) + '</span></a>';
@@ -2210,6 +2289,21 @@
 
     function escapeAttr(s) {
         return escapeHtml(s).replace(/'/g, '&#39;');
+    }
+
+    /** Phase 13.1 — block javascript:/data:/vbscript: hrefs (IndexedDB poison). */
+    function safeHref(raw) {
+        var href = String(raw || '#').trim();
+        if (href === '') {
+            return '#';
+        }
+        var lower = href.toLowerCase();
+        if (lower.indexOf('javascript:') === 0
+            || lower.indexOf('data:') === 0
+            || lower.indexOf('vbscript:') === 0) {
+            return '#';
+        }
+        return href;
     }
 
     /**
@@ -2294,11 +2388,12 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- master-data-adapter.js ---- */
 /**
- * RATEB Offline — Master-data delta adapter (Phase 13).
- * Client-owned cursors in IndexedDB `cursors`; rows in `entity_cache`.
- * Read-only — never enqueues writes or conflicts.
+ * RATEB Offline — Master-data delta adapter (Phase 13.1).
+ * Read-only delta pull into entity_cache. No write-queue enqueue.
+ * Tenant-scoped entity_cache keys; client-owned cursors; debounce + TTL purge.
  */
 (function (root) {
     'use strict';
@@ -2310,6 +2405,9 @@
         employee_directory: { prefix: 'emp', aliases: ['employees', 'hr_employees'] },
         supplier_directory: { prefix: 'sup', aliases: ['suppliers', 'procurement_suppliers'] }
     };
+    var SYNC_DEBOUNCE_MS = 5 * 60 * 1000;
+    var DEFAULT_TTL_MS = 12 * 60 * 60 * 1000;
+    var MAX_PAGES = 50;
 
     function cfg() {
         return root.__RATEB_ERP_MASTER_DATA__ || root.__RATEB_ERP_SHELL_OFFLINE__ || {};
@@ -2351,9 +2449,27 @@
         return null;
     }
 
+    /** company:branch:prefix:id — Phase 13.1 tenant isolation */
+    function cacheRowId(prefix, itemId, scope) {
+        scope = scope || tenantScope();
+        return String(scope.company_id)
+            + ':' + String(scope.branch_id || 0)
+            + ':' + prefix
+            + ':' + String(itemId);
+    }
+
+    function legacyCacheRowId(prefix, itemId) {
+        return prefix + ':' + String(itemId);
+    }
+
     function cursorKey(entity, scope) {
         scope = scope || tenantScope();
         return 'md:' + scope.company_id + ':' + (scope.branch_id || 0) + ':' + entity;
+    }
+
+    function syncMetaKey(scope) {
+        scope = scope || tenantScope();
+        return 'md_sync:' + scope.company_id + ':' + (scope.branch_id || 0);
     }
 
     function withCursors(mode, fn) {
@@ -2370,6 +2486,14 @@
             return Promise.reject(new Error('schema_unavailable'));
         }
         return Schema.withStore(Schema.STORES.ENTITY_CACHE, mode, fn);
+    }
+
+    function withMeta(mode, fn) {
+        var Schema = root.RatebOfflineSchema;
+        if (!Schema || !Schema.withStore) {
+            return Promise.reject(new Error('schema_unavailable'));
+        }
+        return Schema.withStore(Schema.STORES.SYNC_META, mode, fn);
     }
 
     function readClientCursor(entity, scope) {
@@ -2414,7 +2538,9 @@
                 if (!item || !item.id) {
                     return;
                 }
-                var id = prefix + ':' + item.id;
+                var id = cacheRowId(prefix, item.id, scope);
+                var legacy = legacyCacheRowId(prefix, item.id);
+                try { store.delete(legacy); } catch (e) { /* ignore */ }
                 if (item.deleted || item.active === false) {
                     store.delete(id);
                 } else {
@@ -2432,6 +2558,72 @@
             });
             return n;
         });
+    }
+
+    function purgeExpired(scope) {
+        scope = scope || tenantScope();
+        var ttl = DEFAULT_TTL_MS;
+        var cutoff = Date.now() - ttl;
+        var prefix = String(scope.company_id) + ':' + String(scope.branch_id || 0) + ':';
+        return withEntityCache('readwrite', function (store) {
+            return new Promise(function (resolve, reject) {
+                var req = store.openCursor();
+                var removed = 0;
+                req.onsuccess = function (ev) {
+                    var cursor = ev.target.result;
+                    if (!cursor) {
+                        resolve(removed);
+                        return;
+                    }
+                    var row = cursor.value || {};
+                    var id = String(row.id || '');
+                    if (id.indexOf(prefix) === 0) {
+                        var synced = parseInt(row.synced_at, 10) || 0;
+                        if (synced > 0 && synced < cutoff) {
+                            cursor.delete();
+                            removed += 1;
+                        }
+                    }
+                    cursor.continue();
+                };
+                req.onerror = function () { reject(req.error); };
+            });
+        }).catch(function () { return 0; });
+    }
+
+    function shouldDebounce(scope) {
+        var key = syncMetaKey(scope);
+        return withMeta('readonly', function (store) {
+            return new Promise(function (resolve) {
+                var req = store.get(key);
+                req.onsuccess = function () {
+                    var row = req.result || null;
+                    var last = row && row.last_sync_at ? parseInt(row.last_sync_at, 10) : 0;
+                    resolve(last > 0 && (Date.now() - last) < SYNC_DEBOUNCE_MS);
+                };
+                req.onerror = function () { resolve(false); };
+            });
+        }).catch(function () { return false; });
+    }
+
+    function markSynced(scope, info) {
+        var key = syncMetaKey(scope);
+        return withMeta('readwrite', function (store) {
+            store.put({
+                key: key,
+                last_sync_at: Date.now(),
+                info: info || null
+            });
+            return true;
+        }).catch(function () { return false; });
+    }
+
+    function deviceId() {
+        var lock = root.RatebOfflineAuthLock;
+        if (lock && typeof lock.getDeviceId === 'function') {
+            return lock.getDeviceId();
+        }
+        return '';
     }
 
     function pullEntity(entityName, options) {
@@ -2454,12 +2646,15 @@
         var apiBase = options.apiBase || cfg().apiBase || '';
         var pages = 0;
         var total = 0;
+        var incomplete = false;
+        var dev = options.device_id || deviceId();
 
         function next(cursor) {
             return pull.pull(entity, {
                 apiBase: apiBase,
                 cursor: cursor || undefined,
-                branch_id: scope.branch_id || undefined
+                branch_id: scope.branch_id || undefined,
+                device_id: dev || undefined
             }).then(function (res) {
                 if (res && res.ok === false) {
                     return {
@@ -2472,6 +2667,15 @@
                 var delta = (res && res.delta) ? res.delta : res;
                 if (!delta) {
                     return { ok: false, error: 'empty_delta', pages: pages, total: total };
+                }
+                if (delta.migration_required || delta.error === 'updated_at_required') {
+                    return {
+                        ok: false,
+                        error: delta.error || 'migration_required',
+                        migration_required: true,
+                        pages: pages,
+                        total: total
+                    };
                 }
                 if (delta.error === 'entity_not_allowed' || delta.disabled) {
                     return {
@@ -2487,7 +2691,20 @@
                     total += n;
                     var token = delta.cursor_token || cursor || null;
                     return writeClientCursor(entity, token, scope).then(function () {
-                        if (delta.has_more && items.length > 0 && pages < 50) {
+                        if (delta.has_more && items.length > 0) {
+                            if (pages >= MAX_PAGES) {
+                                incomplete = true;
+                                return {
+                                    ok: true,
+                                    entity: entity,
+                                    pages: pages,
+                                    total: total,
+                                    cursor_token: token,
+                                    has_more: true,
+                                    incomplete: true,
+                                    warning: 'page_limit_reached'
+                                };
+                            }
                             return next(token);
                         }
                         return {
@@ -2496,7 +2713,8 @@
                             pages: pages,
                             total: total,
                             cursor_token: token,
-                            has_more: !!delta.has_more
+                            has_more: !!delta.has_more,
+                            incomplete: incomplete
                         };
                     });
                 });
@@ -2504,27 +2722,37 @@
         }
 
         return readClientCursor(entity, scope).then(function (stored) {
-            // Client-owned cursor preferred; never rely solely on server-stored cursor.
             return next(options.cursor != null ? options.cursor : stored);
         });
     }
 
     function syncAll(options) {
+        options = options || {};
         if (!isActive()) {
             return Promise.resolve({ skipped: true });
         }
-        var list = Object.keys(ENTITIES);
-        var results = {};
-        var chain = Promise.resolve();
-        list.forEach(function (entity) {
-            chain = chain.then(function () {
-                return pullEntity(entity, options).then(function (r) {
-                    results[entity] = r;
+        var scope = options.scope || tenantScope();
+        return shouldDebounce(scope).then(function (skip) {
+            if (skip && !options.force) {
+                return { ok: true, debounced: true, results: {} };
+            }
+            return purgeExpired(scope).then(function (purged) {
+                var list = Object.keys(ENTITIES);
+                var results = {};
+                var chain = Promise.resolve();
+                list.forEach(function (entity) {
+                    chain = chain.then(function () {
+                        return pullEntity(entity, options).then(function (r) {
+                            results[entity] = r;
+                        });
+                    });
+                });
+                return chain.then(function () {
+                    return markSynced(scope, { purged: purged, results: results }).then(function () {
+                        return { ok: true, purged: purged, results: results };
+                    });
                 });
             });
-        });
-        return chain.then(function () {
-            return { ok: true, results: results };
         });
     }
 
@@ -2532,19 +2760,24 @@
         isActive: isActive,
         tenantScope: tenantScope,
         resolveEntity: resolveEntity,
+        cacheRowId: cacheRowId,
         cursorKey: cursorKey,
         readClientCursor: readClientCursor,
         writeClientCursor: writeClientCursor,
         pullEntity: pullEntity,
         syncAll: syncAll,
-        ENTITIES: ENTITIES
+        purgeExpired: purgeExpired,
+        ENTITIES: ENTITIES,
+        MAX_PAGES: MAX_PAGES,
+        SYNC_DEBOUNCE_MS: SYNC_DEBOUNCE_MS
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+
 /* ---- sdk.js ---- */
 /**
- * RATEB Offline SDK bootstrap (Phase 13).
- * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
+ * RATEB Offline SDK bootstrap (Phase 13.1).
+ * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
     'use strict';
@@ -2562,12 +2795,41 @@
         'offline.master_data': false
     };
 
+    function mergeFlags(incoming) {
+        if (!incoming || typeof incoming !== 'object') {
+            return flags;
+        }
+        Object.keys(incoming).forEach(function (k) {
+            flags[k] = !!incoming[k];
+        });
+        return flags;
+    }
+
+    function statusPayload() {
+        return {
+            enabled: !!flags['offline.enabled'],
+            inventory: !!flags['offline.inventory.movements'],
+            hr: !!flags['offline.hr.attendance'],
+            procurement: !!flags['offline.procurement'],
+            read_cache: !!flags['offline.read_cache'],
+            auth_unlock: !!flags['offline.auth.unlock'],
+            rbac_cache: !!flags['offline.rbac.cache'],
+            master_data: !!flags['offline.master_data'],
+            version: '13.1.0'
+        };
+    }
+
     function init(options) {
         options = options || {};
         if (options.flags && typeof options.flags === 'object') {
-            Object.keys(options.flags).forEach(function (k) {
-                flags[k] = !!options.flags[k];
-            });
+            mergeFlags(options.flags);
+        }
+        // Already booted: merge flags only (Phase 13.1 — no freeze).
+        if (booted) {
+            if (root.RatebOfflineEvents) {
+                root.RatebOfflineEvents.emit('sdk:flags', statusPayload());
+            }
+            return statusPayload();
         }
         var enabled = !!flags['offline.enabled'];
         if (root.RatebOfflineQueue) {
@@ -2592,33 +2854,15 @@
         }
         booted = true;
         if (root.RatebOfflineEvents) {
-            root.RatebOfflineEvents.emit('sdk:ready', {
-                enabled: enabled,
-                inventory: !!flags['offline.inventory.movements'],
-                hr: !!flags['offline.hr.attendance'],
-                procurement: !!flags['offline.procurement'],
-                read_cache: !!flags['offline.read_cache'],
-                auth_unlock: !!flags['offline.auth.unlock'],
-                rbac_cache: !!flags['offline.rbac.cache'],
-                master_data: !!flags['offline.master_data']
-            });
+            root.RatebOfflineEvents.emit('sdk:ready', statusPayload());
         }
-        return {
-            enabled: enabled,
-            inventory: !!flags['offline.inventory.movements'],
-            hr: !!flags['offline.hr.attendance'],
-            procurement: !!flags['offline.procurement'],
-            read_cache: !!flags['offline.read_cache'],
-            auth_unlock: !!flags['offline.auth.unlock'],
-            rbac_cache: !!flags['offline.rbac.cache'],
-            master_data: !!flags['offline.master_data'],
-            version: '13.0.0'
-        };
+        return statusPayload();
     }
 
     root.RatebOffline = {
-        version: '13.0.0',
+        version: '13.1.0',
         init: init,
+        mergeFlags: mergeFlags,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
         isInventoryEnabled: function () {

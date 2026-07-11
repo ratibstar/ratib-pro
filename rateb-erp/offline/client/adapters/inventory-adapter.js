@@ -62,11 +62,22 @@
                     function (store) {
                         delta.items.forEach(function (item) {
                             if (item && item.id) {
+                                var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
+                                var cid = parseInt(item.company_id || cfg.company_id, 10) || 0;
+                                var bid = parseInt(
+                                    item.branch_id != null ? item.branch_id : (cfg.branch_id || 0),
+                                    10
+                                ) || 0;
+                                var id = cid + ':' + bid + ':inv:' + item.id;
+                                try { store.delete('inv:' + item.id); } catch (e) { /* legacy */ }
                                 store.put({
-                                    id: 'inv:' + item.id,
+                                    id: id,
                                     entity: 'inventory_catalog',
+                                    company_id: cid,
+                                    branch_id: bid,
                                     data: item,
-                                    updated_at: item.updated_at || null
+                                    updated_at: item.updated_at || null,
+                                    synced_at: Date.now()
                                 });
                             }
                         });

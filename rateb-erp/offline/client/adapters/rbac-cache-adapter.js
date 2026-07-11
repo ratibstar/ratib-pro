@@ -238,7 +238,7 @@
                     + '</div>';
             }
             visible.forEach(function (item) {
-                var href = String(item.href || '#');
+                var href = safeHref(item.href);
                 var label = String(item.label || item.label_key || item.path || '');
                 html += '<a class="rateb-offline-rbac-link" href="' + escapeAttr(href) + '">'
                     + '<span>' + escapeHtml(label) + '</span></a>';
@@ -273,6 +273,21 @@
 
     function escapeAttr(s) {
         return escapeHtml(s).replace(/'/g, '&#39;');
+    }
+
+    /** Phase 13.1 — block javascript:/data:/vbscript: hrefs (IndexedDB poison). */
+    function safeHref(raw) {
+        var href = String(raw || '#').trim();
+        if (href === '') {
+            return '#';
+        }
+        var lower = href.toLowerCase();
+        if (lower.indexOf('javascript:') === 0
+            || lower.indexOf('data:') === 0
+            || lower.indexOf('vbscript:') === 0) {
+            return '#';
+        }
+        return href;
     }
 
     /**

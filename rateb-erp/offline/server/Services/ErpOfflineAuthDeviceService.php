@@ -59,18 +59,6 @@ final class ErpOfflineAuthDeviceService
         }
 
         $id = (int) ($existing['id'] ?? 0);
-        $patch = [
-            'user_id' => $userId,
-            'last_seen_at' => $now,
-            'label' => $label,
-        ];
-        if ($branchId > 0) {
-            $patch['branch_id'] = $branchId;
-        }
-        if ($meta !== false) {
-            $patch['meta_json'] = $meta;
-        }
-        // Never auto-activate; keep revoked as revoked.
         $status = strtolower(trim((string) ($existing['status'] ?? '')));
         if ($status === OfflineDevice::STATUS_REVOKED) {
             return [
@@ -79,6 +67,31 @@ final class ErpOfflineAuthDeviceService
                 'code' => 'REVOKED',
                 'device' => $this->publicDevice($existing),
             ];
+        }
+
+        // Phase 13.1: do not rebind device to a different user.
+        $existingUser = (int) ($existing['user_id'] ?? 0);
+        if ($existingUser > 0 && $userId > 0 && $existingUser !== $userId) {
+            return [
+                'ok' => false,
+                'error' => 'device_user_mismatch',
+                'code' => 'DEVICE_USER_MISMATCH',
+                'device' => $this->publicDevice($existing),
+            ];
+        }
+
+        $patch = [
+            'last_seen_at' => $now,
+            'label' => $label,
+        ];
+        if ($existingUser < 1 && $userId > 0) {
+            $patch['user_id'] = $userId;
+        }
+        if ($branchId > 0) {
+            $patch['branch_id'] = $branchId;
+        }
+        if ($meta !== false) {
+            $patch['meta_json'] = $meta;
         }
         $model->update($id, $patch);
         $device = $model->find($id);

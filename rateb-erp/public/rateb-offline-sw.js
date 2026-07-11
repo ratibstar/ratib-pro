@@ -1,13 +1,12 @@
-/* Rateb Enterprise Offline SW — Phase 10.1 blocking fixes (does not replace pos-sw.js) */
+/* Rateb Enterprise Offline SW — Phase 13.1 (real offline-shell; does not replace pos-sw.js) */
 'use strict';
 
-var ASSET_CACHE = 'rateb-erp-assets-v10.1';
+var ASSET_CACHE = 'rateb-erp-assets-v13.1';
 var FALLBACK_URL = 'offline-shell.html';
 var BYPASS_HEADER = 'X-Rateb-SW-Bypass';
 
 function isPosPath(pathname) {
     var p = String(pathname || '');
-    // Segment-safe: /pos, /pos/..., /assets/pos/... — not /posting
     return /\/pos(\/|$)/i.test(p)
         || /\/admin\/ops\/pos(\/|$)/i.test(p)
         || /\/assets\/pos\//i.test(p);
@@ -46,6 +45,17 @@ function hasBypassHeader(request) {
     }
 }
 
+function shellRequestUrl() {
+    return new URL(FALLBACK_URL, self.registration.scope).href;
+}
+
+/** Network fetch that skips this SW (no recursion). */
+function fetchBypass(url) {
+    var headers = new Headers();
+    headers.set(BYPASS_HEADER, '1');
+    return fetch(url, { headers: headers, credentials: 'same-origin', cache: 'no-cache' });
+}
+
 /** First-party static assets only — never POS, never HTML, never auth. */
 function isCacheableAsset(url) {
     var path = String(url.pathname || '');
@@ -70,7 +80,7 @@ function offlineJsonResponse() {
     });
 }
 
-/** Inline fallback only — never fetch() (prevents SW recursion). */
+/** Last-resort inline stub — used only when real shell cannot be cached/fetched. */
 function inlineOfflineShellResponse() {
     var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -91,13 +101,27 @@ function inlineOfflineShellResponse() {
 }
 
 /**
- * Offline HTML fallback: Cache API hit or inline HTML only.
- * NEVER calls fetch() — eliminates recursive fetch handler entry.
+ * Prefer cached real offline-shell.html.
+ * Network via bypass header only (never re-enters this fetch handler).
+ * Inline stub last.
  */
 function offlineShellFallback() {
-    var key = new URL(FALLBACK_URL, self.registration.scope).href;
-    return caches.match(key).then(function (hit) {
-        return hit || inlineOfflineShellResponse();
+    var key = shellRequestUrl();
+    return caches.open(ASSET_CACHE).then(function (cache) {
+        return cache.match(key).then(function (hit) {
+            if (hit) {
+                return hit;
+            }
+            return fetchBypass(key).then(function (res) {
+                if (res && res.ok) {
+                    cache.put(key, res.clone()).catch(function () { /* quota */ });
+                    return res;
+                }
+                return inlineOfflineShellResponse();
+            }).catch(function () {
+                return inlineOfflineShellResponse();
+            });
+        });
     }).catch(function () {
         return inlineOfflineShellResponse();
     });
@@ -125,17 +149,24 @@ function assetNetworkFirst(request) {
 
 self.addEventListener('install', function (event) {
     self.skipWaiting();
-    // Precache via inline Response only — never fetch during install (no recursion).
+    // Precache real offline-shell.html via bypass fetch (no recursion).
     event.waitUntil(
         caches.open(ASSET_CACHE).then(function (cache) {
-            var key = new URL(FALLBACK_URL, self.registration.scope).href;
-            return cache.put(key, inlineOfflineShellResponse());
+            var key = shellRequestUrl();
+            return fetchBypass(key).then(function (res) {
+                if (res && res.ok) {
+                    return cache.put(key, res);
+                }
+                return cache.put(key, inlineOfflineShellResponse());
+            }).catch(function () {
+                return cache.put(key, inlineOfflineShellResponse());
+            });
         }).catch(function () { /* ignore */ })
     );
 });
 
 self.addEventListener('activate', function (event) {
-    // Do NOT clients.claim() — avoids stealing open POS tabs from pos-sw.js.
+    // Do NOT call claim on clients — avoids stealing open POS tabs from pos-sw.js.
     event.waitUntil(
         caches.keys().then(function (keys) {
             return Promise.all(keys.map(function (name) {
@@ -157,12 +188,12 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Bypass header: allow non-recursive network (unused for fallback; reserved).
+    // Bypass header: network passthrough (used to fetch real offline-shell without recursion).
     if (hasBypassHeader(request)) {
         return;
     }
 
-    // offline-shell.html: cache or inline only — never fetch, never recurse.
+    // offline-shell.html: cache → bypass-network → inline. Never recurse.
     if (isOfflineShellUrl(url)) {
         event.respondWith(offlineShellFallback());
         return;
@@ -201,7 +232,7 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // HTML navigations (non-auth, non-POS): network only; offline → non-recursive fallback.
+    // HTML navigations (non-auth, non-POS): network only; offline → shell fallback.
     if (request.method === 'GET' && (request.mode === 'navigate'
         || (request.headers && (request.headers.get('accept') || '').indexOf('text/html') !== -1))) {
         event.respondWith(

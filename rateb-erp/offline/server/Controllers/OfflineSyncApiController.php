@@ -221,6 +221,27 @@ final class OfflineSyncApiController extends Controller
             return;
         }
 
+        // Phase 13.1: master-data directory pulls require ACTIVE device when master_data ON.
+        if ($policy->isEnabled() && $masterCanonical !== null) {
+            $deviceId = trim((string) ($_GET['device_id'] ?? $_SERVER['HTTP_X_RATEB_DEVICE_ID'] ?? ''));
+            if ($deviceId === '') {
+                $this->json([
+                    'ok' => false,
+                    'error' => ['message' => 'Device required', 'code' => 'device_required'],
+                ], 403);
+                return;
+            }
+            $deviceCheck = (new OfflineDeviceGuard())->assertActive($this->companyId(), $deviceId);
+            if (!($deviceCheck['ok'] ?? false)) {
+                $code = (string) ($deviceCheck['error'] ?? 'device_denied');
+                $this->json([
+                    'ok' => false,
+                    'error' => ['message' => 'Device not allowed', 'code' => $code],
+                ], 403);
+                return;
+            }
+        }
+
         $service = new OfflineSyncService();
         $delta = $service->delta($entity, $this->companyId(), $branchId);
         if (($delta['error'] ?? '') === 'entity_not_allowed') {

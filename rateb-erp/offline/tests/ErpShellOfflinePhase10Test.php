@@ -198,7 +198,7 @@ final class ErpShellOfflinePhase10Test
         $sdk = (string) file_get_contents(RATEB_ROOT . '/offline/client/core/sdk.js');
         $ok = str_contains($sdk, 'isReadCacheEnabled')
             && str_contains($sdk, 'shell:')
-            && (str_contains($sdk, '10.0.0') || str_contains($sdk, '11.0.0') || str_contains($sdk, '12.0.0') || str_contains($sdk, '13.0.0'));
+            && (str_contains($sdk, '10.0.0') || str_contains($sdk, '11.0.0') || str_contains($sdk, '12.0.0') || str_contains($sdk, '13.0.0') || str_contains($sdk, '13.1.0'));
         $this->record('SDK exposes shell + read_cache', $ok, $ok ? 'ok' : 'fail');
     }
 
@@ -247,17 +247,15 @@ final class ErpShellOfflinePhase10Test
     private function testNoSwRecursion(): void
     {
         $sw = (string) file_get_contents(RATEB_ROOT . '/public/rateb-offline-sw.js');
-        // offlineShellFallback must not call fetch(
-        $fallbackFn = '';
-        if (preg_match('/function offlineShellFallback\(\)\s*\{([\s\S]*?)\n\}/', $sw, $m)) {
-            $fallbackFn = $m[1];
-        }
-        $ok = $fallbackFn !== ''
-            && !str_contains($fallbackFn, 'fetch(')
-            && str_contains($fallbackFn, 'inlineOfflineShellResponse')
-            && str_contains($sw, 'isOfflineShellUrl')
-            && str_contains($sw, 'NEVER calls fetch')
-            && !str_contains($sw, 'cache.addAll');
+        $ok = str_contains($sw, 'isOfflineShellUrl')
+            && str_contains($sw, 'BYPASS_HEADER')
+            && str_contains($sw, 'fetchBypass')
+            && str_contains($sw, 'inlineOfflineShellResponse')
+            && str_contains($sw, 'hasBypassHeader')
+            && !str_contains($sw, 'cache.addAll')
+            && !preg_match('/clients\.claim\s*\(/', $sw);
+        // Recursion avoided: bypass path returns without respondWith; fallback uses fetchBypass only.
+        $ok = $ok && preg_match('/function hasBypassHeader[\s\S]*?if \(hasBypassHeader\(request\)\) \{\s*return;/m', $sw);
         $this->record('SW offline fallback has no fetch recursion', $ok, $ok ? 'ok' : 'recursion risk');
     }
 

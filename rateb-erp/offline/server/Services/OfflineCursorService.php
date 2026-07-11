@@ -9,7 +9,8 @@ use Rateb\App\Offline\Models\OfflineEntityCursor;
 
 /**
  * Delta cursor registry — Tier-1 catalogs + Phase 13 master-data directories.
- * Read-only routing; does not alter replay/queue write paths.
+ * Phase 13.1: client-supplied cursor is authoritative; server token is never
+ * injected into pulls (avoids multi-device skip). Server persist remains telemetry.
  */
 final class OfflineCursorService
 {
@@ -78,7 +79,6 @@ final class OfflineCursorService
         $masterCanonical = $policy->resolveCanonical($entityType);
         $isLegacy = $policy->isLegacyTier1Entity($entityType);
 
-        // Unknown entity — reject (no open stub).
         if ($masterCanonical === null && !$isLegacy) {
             return [
                 'entity_type' => $entityType,
@@ -89,59 +89,32 @@ final class OfflineCursorService
             ];
         }
 
-        if (in_array($entityType, ['inventory_catalog', 'inventory', 'catalog'], true)) {
-            $token = $cursorToken;
-            if ($token === null || $token === '') {
-                $token = $this->readStoredToken('inventory_catalog', $companyId, $branchId);
-            }
+        // Client-owned cursor: empty/null means bootstrap from start — never inject server token.
+        $token = ($cursorToken !== null && $cursorToken !== '') ? $cursorToken : null;
 
+        if (in_array($entityType, ['inventory_catalog', 'inventory', 'catalog'], true)) {
             return $this->catalog()->pull($companyId, $branchId, $token);
         }
 
         if (in_array($entityType, ['employee_directory', 'employees', 'hr_employees'], true)
             || $masterCanonical === 'employee_directory') {
-            $token = $cursorToken;
-            if ($token === null || $token === '') {
-                $token = $this->readStoredToken('employee_directory', $companyId, $branchId);
-            }
-
             return $this->employees()->pull($companyId, $branchId, $token);
         }
 
         if (in_array($entityType, ['supplier_directory', 'suppliers', 'procurement_suppliers'], true)
             || $masterCanonical === 'supplier_directory') {
-            $token = $cursorToken;
-            if ($token === null || $token === '') {
-                $token = $this->readStoredToken('supplier_directory', $companyId, $branchId);
-            }
-
             return $this->suppliers()->pull($companyId, $branchId, $token);
         }
 
         if ($masterCanonical === 'customer_directory') {
-            $token = $cursorToken;
-            if ($token === null || $token === '') {
-                $token = $this->readStoredToken('customer_directory', $companyId, $branchId);
-            }
-
             return $this->customers()->pull($companyId, $branchId, $token);
         }
 
         if ($masterCanonical === 'branch_directory') {
-            $token = $cursorToken;
-            if ($token === null || $token === '') {
-                $token = $this->readStoredToken('branch_directory', $companyId, $branchId);
-            }
-
             return $this->branches()->pull($companyId, $branchId, $token);
         }
 
         if ($masterCanonical === 'warehouse_directory') {
-            $token = $cursorToken;
-            if ($token === null || $token === '') {
-                $token = $this->readStoredToken('warehouse_directory', $companyId, $branchId);
-            }
-
             return $this->warehouses()->pull($companyId, $branchId, $token);
         }
 
@@ -153,7 +126,10 @@ final class OfflineCursorService
         ];
     }
 
-    private function readStoredToken(string $entityType, ?int $companyId, ?int $branchId): ?string
+    /**
+     * Optional telemetry read — not used to drive pull authority (Phase 13.1).
+     */
+    public function peekStoredToken(string $entityType, ?int $companyId, ?int $branchId): ?string
     {
         if (!$this->isAvailable()) {
             return null;

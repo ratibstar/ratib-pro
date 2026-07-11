@@ -1,6 +1,6 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 13).
- * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
+ * RATEB Offline SDK bootstrap (Phase 13.1).
+ * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
     'use strict';
@@ -18,12 +18,41 @@
         'offline.master_data': false
     };
 
+    function mergeFlags(incoming) {
+        if (!incoming || typeof incoming !== 'object') {
+            return flags;
+        }
+        Object.keys(incoming).forEach(function (k) {
+            flags[k] = !!incoming[k];
+        });
+        return flags;
+    }
+
+    function statusPayload() {
+        return {
+            enabled: !!flags['offline.enabled'],
+            inventory: !!flags['offline.inventory.movements'],
+            hr: !!flags['offline.hr.attendance'],
+            procurement: !!flags['offline.procurement'],
+            read_cache: !!flags['offline.read_cache'],
+            auth_unlock: !!flags['offline.auth.unlock'],
+            rbac_cache: !!flags['offline.rbac.cache'],
+            master_data: !!flags['offline.master_data'],
+            version: '13.1.0'
+        };
+    }
+
     function init(options) {
         options = options || {};
         if (options.flags && typeof options.flags === 'object') {
-            Object.keys(options.flags).forEach(function (k) {
-                flags[k] = !!options.flags[k];
-            });
+            mergeFlags(options.flags);
+        }
+        // Already booted: merge flags only (Phase 13.1 — no freeze).
+        if (booted) {
+            if (root.RatebOfflineEvents) {
+                root.RatebOfflineEvents.emit('sdk:flags', statusPayload());
+            }
+            return statusPayload();
         }
         var enabled = !!flags['offline.enabled'];
         if (root.RatebOfflineQueue) {
@@ -48,33 +77,15 @@
         }
         booted = true;
         if (root.RatebOfflineEvents) {
-            root.RatebOfflineEvents.emit('sdk:ready', {
-                enabled: enabled,
-                inventory: !!flags['offline.inventory.movements'],
-                hr: !!flags['offline.hr.attendance'],
-                procurement: !!flags['offline.procurement'],
-                read_cache: !!flags['offline.read_cache'],
-                auth_unlock: !!flags['offline.auth.unlock'],
-                rbac_cache: !!flags['offline.rbac.cache'],
-                master_data: !!flags['offline.master_data']
-            });
+            root.RatebOfflineEvents.emit('sdk:ready', statusPayload());
         }
-        return {
-            enabled: enabled,
-            inventory: !!flags['offline.inventory.movements'],
-            hr: !!flags['offline.hr.attendance'],
-            procurement: !!flags['offline.procurement'],
-            read_cache: !!flags['offline.read_cache'],
-            auth_unlock: !!flags['offline.auth.unlock'],
-            rbac_cache: !!flags['offline.rbac.cache'],
-            master_data: !!flags['offline.master_data'],
-            version: '13.0.0'
-        };
+        return statusPayload();
     }
 
     root.RatebOffline = {
-        version: '13.0.0',
+        version: '13.1.0',
         init: init,
+        mergeFlags: mergeFlags,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
         isInventoryEnabled: function () {
