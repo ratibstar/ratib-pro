@@ -673,7 +673,8 @@
             return joinUrlPath(defaultApiBase(), '/status');
         }
 
-        function probe() {
+        function probe(options) {
+            options = options || {};
             if (probing) {
                 return Promise.resolve(online);
             }
@@ -682,11 +683,9 @@
                 setOnline(false);
                 return Promise.resolve(false);
             }
-            // Already marked offline: only re-probe when the browser says we might be back.
-            // Do not poll bootstrap while offline — that floods DevTools with ERR_INTERNET_DISCONNECTED.
-            if (!online) {
-                return Promise.resolve(false);
-            }
+            // Recovery path: browser reports connectivity. Always probe the origin even if we
+            // previously marked ourselves offline (failed fetch / brief blip). Blocking here
+            // required a full page refresh to go online again while the PC still had internet.
             probing = true;
             var url = resolveProbeUrl();
             var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -729,17 +728,20 @@
                 clearInterval(probeTimer);
                 probeTimer = null;
             }
-            // While offline, rely on window 'online' event — no interval fetch spam.
-            if (!online) {
+            // Browser fully offline — wait for window 'online' (no fetch spam).
+            if (navigator.onLine === false) {
                 return;
             }
+            // Online: health check every 12s. Marked offline but PC has net: recover every 8s.
+            var interval = online ? 12000 : 8000;
             probeTimer = setInterval(function () {
                 if (navigator.onLine === false) {
                     setOnline(false);
+                    scheduleProbeLoop();
                     return;
                 }
                 probe();
-            }, 12000);
+            }, interval);
         }
 
         window.RatebPosConnectivity = {
