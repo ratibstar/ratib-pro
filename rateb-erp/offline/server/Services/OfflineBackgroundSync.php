@@ -48,6 +48,8 @@ final class OfflineBackgroundSync
                 'hr_enterprise_enabled' => false,
                 'payroll_enabled' => false,
                 'quality_enabled' => false,
+                'documents_enabled' => false,
+                'bi_enabled' => false,
             ];
         }
 
@@ -66,6 +68,8 @@ final class OfflineBackgroundSync
         $stats['hr_enterprise_enabled'] = $this->flags()->enabled('offline.hr');
         $stats['payroll_enabled'] = $this->flags()->enabled('offline.payroll');
         $stats['quality_enabled'] = $this->flags()->enabled('offline.quality');
+        $stats['documents_enabled'] = $this->flags()->enabled('offline.documents');
+        $stats['bi_enabled'] = $this->flags()->enabled('offline.bi');
 
         return $stats;
     }

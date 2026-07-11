@@ -1,24 +1,70 @@
-/* Rateb Enterprise Offline SW — Phase 14 (ops page cache + Phase 13.1 shell; does not replace pos-sw.js) */
+/* Rateb Enterprise Offline SW — Phase 14+ (ops page cache + shell; does not replace pos-sw.js) */
 'use strict';
 
 var ASSET_CACHE = 'rateb-erp-assets-v14';
 var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
+var ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v14';
 var FALLBACK_URL = 'offline-shell.html';
 var BYPASS_HEADER = 'X-Rateb-SW-Bypass';
+var ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
 
-/** Default allowlist — mirrors offline/config/ops-page-allowlist.php */
-var DEFAULT_OPS_PATHS = [
-    'stock-movements',
-    'warehouse-transfers',
-    'inventory-audits',
-    'inventory',
-    'warehouses',
-    'hr/attendance',
-    'hr/leaves',
-    'purchase-requests',
-    'purchase-orders',
-    'rfq'
-];
+/**
+ * Runtime paths loaded from ops-page-allowlist.json (generated from
+ * offline/config/ops-page-allowlist.php). Paths are never hardcoded here.
+ * @type {string[]}
+ */
+var OPS_PATHS = [];
+
+function allowlistRequestUrl() {
+    return new URL(ALLOWLIST_URL, self.registration.scope).href;
+}
+
+function applyAllowlistPayload(payload) {
+    var paths = payload && Array.isArray(payload.paths) ? payload.paths : [];
+    OPS_PATHS = paths.map(function (p) {
+        return String(p || '').replace(/^\/+|\/+$/g, '');
+    }).filter(function (p) {
+        return p !== '';
+    });
+    return OPS_PATHS.length;
+}
+
+function loadOpsAllowlist() {
+    var url = allowlistRequestUrl();
+    return caches.open(ALLOWLIST_CACHE).then(function (cache) {
+        return fetchBypass(url).then(function (res) {
+            if (res && res.ok) {
+                return res.clone().json().then(function (payload) {
+                    applyAllowlistPayload(payload);
+                    return cache.put(url, res).then(function () {
+                        return OPS_PATHS.length;
+                    });
+                });
+            }
+            return cache.match(url).then(function (hit) {
+                if (!hit) {
+                    return 0;
+                }
+                return hit.json().then(function (payload) {
+                    applyAllowlistPayload(payload);
+                    return OPS_PATHS.length;
+                });
+            });
+        }).catch(function () {
+            return cache.match(url).then(function (hit) {
+                if (!hit) {
+                    return 0;
+                }
+                return hit.json().then(function (payload) {
+                    applyAllowlistPayload(payload);
+                    return OPS_PATHS.length;
+                });
+            });
+        });
+    }).catch(function () {
+        return 0;
+    });
+}
 
 function isPosPath(pathname) {
     var p = String(pathname || '');
@@ -73,7 +119,7 @@ function fetchBypass(url) {
 
 function matchOpsPath(pathname) {
     var p = String(pathname || '').replace(/\/+$/, '').toLowerCase();
-    var list = DEFAULT_OPS_PATHS;
+    var list = OPS_PATHS;
     // Longer paths first so hr/attendance beats attendance-like noise.
     var sorted = list.slice().sort(function (a, b) {
         return String(b).length - String(a).length;
@@ -268,39 +314,42 @@ function navigateOfflineFallback(request, url) {
 
 self.addEventListener('install', function (event) {
     self.skipWaiting();
-    // Precache real offline-shell.html + shell helper scripts via bypass fetch (no recursion).
+    // Precache allowlist + offline-shell.html + shell helper scripts via bypass fetch (no recursion).
     event.waitUntil(
-        caches.open(ASSET_CACHE).then(function (cache) {
-            var key = shellRequestUrl();
-            var base;
-            try {
-                base = self.registration.scope;
-            } catch (e) {
-                base = self.location.origin + '/rateb-erp/public/';
-            }
-            if (base.slice(-1) !== '/') {
-                base += '/';
-            }
-            var helpers = [
-                base + 'assets/offline/rateb-offline.js',
-                base + 'assets/offline/erp-offline-shell-rbac.js'
-            ];
-            return fetchBypass(key).then(function (res) {
-                var putShell = (res && res.ok)
-                    ? cache.put(key, res)
-                    : cache.put(key, inlineOfflineShellResponse());
-                return putShell.then(function () {
-                    return Promise.all(helpers.map(function (u) {
-                        return fetchBypass(u).then(function (r) {
-                            if (r && r.ok) {
-                                return cache.put(u, r);
-                            }
-                            return null;
-                        }).catch(function () { return null; });
-                    }));
+        loadOpsAllowlist().then(function () {
+            return caches.open(ASSET_CACHE).then(function (cache) {
+                var key = shellRequestUrl();
+                var base;
+                try {
+                    base = self.registration.scope;
+                } catch (e) {
+                    base = self.location.origin + '/rateb-erp/public/';
+                }
+                if (base.slice(-1) !== '/') {
+                    base += '/';
+                }
+                var helpers = [
+                    base + 'assets/offline/rateb-offline.js',
+                    base + 'assets/offline/erp-offline-shell-rbac.js',
+                    base + 'assets/offline/ops-page-allowlist.json'
+                ];
+                return fetchBypass(key).then(function (res) {
+                    var putShell = (res && res.ok)
+                        ? cache.put(key, res)
+                        : cache.put(key, inlineOfflineShellResponse());
+                    return putShell.then(function () {
+                        return Promise.all(helpers.map(function (u) {
+                            return fetchBypass(u).then(function (r) {
+                                if (r && r.ok) {
+                                    return cache.put(u, r);
+                                }
+                                return null;
+                            }).catch(function () { return null; });
+                        }));
+                    });
+                }).catch(function () {
+                    return cache.put(key, inlineOfflineShellResponse());
                 });
-            }).catch(function () {
-                return cache.put(key, inlineOfflineShellResponse());
             });
         }).catch(function () { /* ignore */ })
     );
@@ -309,16 +358,21 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
     // Do NOT call claim on clients — avoids stealing open POS tabs from pos-sw.js.
     event.waitUntil(
-        caches.keys().then(function (keys) {
-            return Promise.all(keys.map(function (name) {
-                if (name.indexOf('rateb-erp-assets-') === 0 && name !== ASSET_CACHE) {
-                    return caches.delete(name);
-                }
-                if (name.indexOf('rateb-erp-ops-pages-') === 0 && name !== OPS_PAGE_CACHE) {
-                    return caches.delete(name);
-                }
-                return Promise.resolve();
-            }));
+        loadOpsAllowlist().then(function () {
+            return caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (name) {
+                    if (name.indexOf('rateb-erp-assets-') === 0 && name !== ASSET_CACHE) {
+                        return caches.delete(name);
+                    }
+                    if (name.indexOf('rateb-erp-ops-pages-') === 0 && name !== OPS_PAGE_CACHE) {
+                        return caches.delete(name);
+                    }
+                    if (name.indexOf('rateb-erp-ops-allowlist-') === 0 && name !== ALLOWLIST_CACHE) {
+                        return caches.delete(name);
+                    }
+                    return Promise.resolve();
+                }));
+            });
         })
     );
 });
@@ -327,6 +381,9 @@ self.addEventListener('message', function (event) {
     var data = event.data || {};
     if (data.type === 'CACHE_ERP_OPS_PAGE') {
         event.waitUntil(putOpsPageFromMessage(data));
+    }
+    if (data.type === 'RELOAD_OPS_ALLOWLIST') {
+        event.waitUntil(loadOpsAllowlist());
     }
 });
 

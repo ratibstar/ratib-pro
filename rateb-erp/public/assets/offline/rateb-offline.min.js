@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll + 25B Quality; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll + 25B Quality + 26B Documents + 27B BI; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -3380,6 +3380,339 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- documents-adapter.js ---- */
+/**
+ * RATEB Offline — Enterprise Documents (DMS) adapter (Phase 26B / Tier 1 drafts).
+ * Queues repository / folder / document / version / checkout / share / permission drafts.
+ * Activated only when offline.enabled + offline.documents (sub-flags gate children).
+ * Does NOT enqueue delete, upload, attachments, binary, notifications, email/SMS,
+ * payments, signature, publish, approve, or download.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.documents']);
+    }
+
+    function isRepositoriesActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.documents.repositories']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.documents.workflow']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.documents.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'dms') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('documents_offline_disabled'));
+        }
+        if ((action === 'repository.create' || action === 'repository.update'
+            || action === 'folder.create' || action === 'folder.update') && !isRepositoriesActive()) {
+            return Promise.reject(new Error('documents_repositories_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('documents_workflow_offline_disabled'));
+        }
+        if (action === 'delete' || action === 'attachment.create' || action === 'upload'
+            || action === 'payment.create' || action === 'accounting.post'
+            || action === 'signature.create' || action === 'publish' || action === 'approve'
+            || action === 'download' || action === 'email.send' || action === 'sms.send') {
+            return Promise.reject(new Error('documents_action_rejected'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'documents',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineDocumentsAdapter = {
+        isActive: isActive,
+        isRepositoriesActive: isRepositoriesActive,
+        isWorkflowActive: isWorkflowActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueRepositoryCreate: function (payload, options) {
+            return enqueue('repository.create', payload || {}, options);
+        },
+        enqueueRepositoryUpdate: function (payload, options) {
+            return enqueue('repository.update', payload || {}, options);
+        },
+        enqueueFolderCreate: function (payload, options) {
+            return enqueue('folder.create', payload || {}, options);
+        },
+        enqueueFolderUpdate: function (payload, options) {
+            return enqueue('folder.update', payload || {}, options);
+        },
+        enqueueDocumentCreate: function (payload, options) {
+            return enqueue('document.create', payload || {}, options);
+        },
+        enqueueDocumentUpdate: function (payload, options) {
+            return enqueue('document.update', payload || {}, options);
+        },
+        enqueueVersionCreate: function (payload, options) {
+            return enqueue('version.create', payload || {}, options);
+        },
+        enqueueCheckoutCreate: function (payload, options) {
+            return enqueue('checkout.create', payload || {}, options);
+        },
+        enqueueShareCreate: function (payload, options) {
+            return enqueue('share.create', payload || {}, options);
+        },
+        enqueuePermissionCreate: function (payload, options) {
+            return enqueue('permission.create', payload || {}, options);
+        },
+        enqueueCommentCreate: function (payload, options) {
+            return enqueue('comment.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'documents' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'documents' });
+            }
+            return q.status({ module: 'documents' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'documents' });
+        },
+        pullRepositories: function (options) {
+            return pullDirectory('documents_repository_directory', options);
+        },
+        pullCategories: function (options) {
+            return pullDirectory('documents_category_directory', options);
+        },
+        pullWorkflowStatuses: function (options) {
+            return pullDirectory('documents_workflow_status_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- bi-adapter.js ---- */
+/**
+ * RATEB Offline — Enterprise Business Intelligence adapter (Phase 27B / Tier 1 drafts).
+ * Queues dashboard / KPI / report / widget / dataset / alert / schedule drafts.
+ * Activated only when offline.enabled + offline.bi (sub-flags gate children).
+ * Does NOT enqueue delete, binary uploads, notifications, email/SMS, payments, or publish.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.bi']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.bi.workflow']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.bi.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'bi') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('bi_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('bi_workflow_offline_disabled'));
+        }
+        if (action === 'delete' || action === 'attachment.create' || action === 'upload'
+            || action === 'payment.create' || action === 'accounting.post'
+            || action === 'publish' || action === 'download' || action === 'binary.upload'
+            || action === 'email.send' || action === 'sms.send') {
+            return Promise.reject(new Error('bi_action_rejected'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'bi',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineBiAdapter = {
+        isActive: isActive,
+        isWorkflowActive: isWorkflowActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueDashboardCreate: function (payload, options) {
+            return enqueue('dashboard.create', payload || {}, options);
+        },
+        enqueueKpiCreate: function (payload, options) {
+            return enqueue('kpi.create', payload || {}, options);
+        },
+        enqueueReportCreate: function (payload, options) {
+            return enqueue('report.create', payload || {}, options);
+        },
+        enqueueWidgetCreate: function (payload, options) {
+            return enqueue('widget.create', payload || {}, options);
+        },
+        enqueueDatasetCreate: function (payload, options) {
+            return enqueue('dataset.create', payload || {}, options);
+        },
+        enqueueAlertCreate: function (payload, options) {
+            return enqueue('alert.create', payload || {}, options);
+        },
+        enqueueScheduleCreate: function (payload, options) {
+            return enqueue('schedule.create', payload || {}, options);
+        },
+        enqueueExportCreate: function (payload, options) {
+            return enqueue('export.create', payload || {}, options);
+        },
+        enqueueTrendCreate: function (payload, options) {
+            return enqueue('trend.create', payload || {}, options);
+        },
+        enqueueForecastCreate: function (payload, options) {
+            return enqueue('forecast.create', payload || {}, options);
+        },
+        enqueueScopeCreate: function (payload, options) {
+            return enqueue('scope.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'bi' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'bi' });
+            }
+            return q.status({ module: 'bi' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'bi' });
+        },
+        pullDashboards: function (options) {
+            return pullDirectory('bi_dashboard_directory', options);
+        },
+        pullKpis: function (options) {
+            return pullDirectory('bi_kpi_directory', options);
+        },
+        pullWorkflowStatuses: function (options) {
+            return pullDirectory('bi_workflow_status_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -5089,6 +5422,10 @@
  * Phase 20B: approvals requests/comments drafts (flag-gated).
  * Phase 21B: eproc suppliers/tenders/contracts drafts (flag-gated).
  * Phase 22B: mfg boms/routings/production/work orders/quality drafts (flag-gated).
+ * Phase 24B: payroll salary/batch/loan/advance/overtime drafts (flag-gated).
+ * Phase 25B: qms inspections/checklists/audits drafts (flag-gated).
+ * Phase 26B: dms repositories/folders/documents drafts (flag-gated).
+ * Phase 27B: bi dashboards/kpis/reports drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -5160,6 +5497,22 @@
         { match: 'qms/preventive-actions', module: 'quality', action: 'preventive_action.create' },
         { match: 'qms/complaints', module: 'quality', action: 'complaint.create' },
         { match: 'qms/supplier-quality', module: 'quality', action: 'supplier_quality.create' },
+        { match: 'dms/repositories', module: 'documents', action: 'repository.create' },
+        { match: 'dms/folders', module: 'documents', action: 'folder.create' },
+        { match: 'dms/documents', module: 'documents', action: 'document.create' },
+        { match: 'dms/shares', module: 'documents', action: 'share.create' },
+        { match: 'dms/permissions', module: 'documents', action: 'permission.create' },
+        { match: 'bi/dashboards', module: 'bi', action: 'dashboard.create' },
+        { match: 'bi/kpis', module: 'bi', action: 'kpi.create' },
+        { match: 'bi/reports', module: 'bi', action: 'report.create' },
+        { match: 'bi/widgets', module: 'bi', action: 'widget.create' },
+        { match: 'bi/datasets', module: 'bi', action: 'dataset.create' },
+        { match: 'bi/alerts', module: 'bi', action: 'alert.create' },
+        { match: 'bi/schedules', module: 'bi', action: 'schedule.create' },
+        { match: 'bi/exports', module: 'bi', action: 'export.create' },
+        { match: 'bi/trends', module: 'bi', action: 'trend.create' },
+        { match: 'bi/forecasts', module: 'bi', action: 'forecast.create' },
+        { match: 'bi/scopes', module: 'bi', action: 'scope.create' },
         { match: 'hrm/employees/create', module: 'hr', action: 'employee.create' },
         { match: 'hrm/employees', module: 'hr', action: 'employee.update' },
         { match: 'hrm/departments', module: 'hr', action: 'department.create' },
@@ -5396,6 +5749,28 @@
             }
             if (action === 'workflow.transition') {
                 return !!f['offline.quality.workflow'];
+            }
+            return true;
+        }
+        if (module === 'documents') {
+            if (!f['offline.documents']) {
+                return false;
+            }
+            if (action === 'repository.create' || action === 'repository.update'
+                || action === 'folder.create' || action === 'folder.update') {
+                return !!f['offline.documents.repositories'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.documents.workflow'];
+            }
+            return true;
+        }
+        if (module === 'bi') {
+            if (!f['offline.bi']) {
+                return false;
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.bi.workflow'];
             }
             return true;
         }
@@ -6139,6 +6514,87 @@
                 return qms.enqueue(action, payload);
             }
         }
+        if (module === 'documents') {
+            var dms = root.RatebOfflineDocumentsAdapter;
+            if (!dms) {
+                return Promise.reject(new Error('documents_adapter_unavailable'));
+            }
+            if (action === 'repository.create') {
+                return dms.enqueueRepositoryCreate(payload);
+            }
+            if (action === 'repository.update') {
+                return dms.enqueueRepositoryUpdate(payload);
+            }
+            if (action === 'folder.create') {
+                return dms.enqueueFolderCreate(payload);
+            }
+            if (action === 'folder.update') {
+                return dms.enqueueFolderUpdate(payload);
+            }
+            if (action === 'document.create') {
+                return dms.enqueueDocumentCreate(payload);
+            }
+            if (action === 'document.update') {
+                return dms.enqueueDocumentUpdate(payload);
+            }
+            if (action === 'share.create') {
+                return dms.enqueueShareCreate(payload);
+            }
+            if (action === 'permission.create') {
+                return dms.enqueuePermissionCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return dms.enqueueWorkflowTransition(payload);
+            }
+            if (typeof dms.enqueue === 'function') {
+                return dms.enqueue(action, payload);
+            }
+        }
+        if (module === 'bi') {
+            var bi = root.RatebOfflineBiAdapter;
+            if (!bi) {
+                return Promise.reject(new Error('bi_adapter_unavailable'));
+            }
+            if (action === 'dashboard.create') {
+                return bi.enqueueDashboardCreate(payload);
+            }
+            if (action === 'kpi.create') {
+                return bi.enqueueKpiCreate(payload);
+            }
+            if (action === 'report.create') {
+                return bi.enqueueReportCreate(payload);
+            }
+            if (action === 'widget.create') {
+                return bi.enqueueWidgetCreate(payload);
+            }
+            if (action === 'dataset.create') {
+                return bi.enqueueDatasetCreate(payload);
+            }
+            if (action === 'alert.create') {
+                return bi.enqueueAlertCreate(payload);
+            }
+            if (action === 'schedule.create') {
+                return bi.enqueueScheduleCreate(payload);
+            }
+            if (action === 'export.create') {
+                return bi.enqueueExportCreate(payload);
+            }
+            if (action === 'trend.create') {
+                return bi.enqueueTrendCreate(payload);
+            }
+            if (action === 'forecast.create') {
+                return bi.enqueueForecastCreate(payload);
+            }
+            if (action === 'scope.create') {
+                return bi.enqueueScopeCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return bi.enqueueWorkflowTransition(payload);
+            }
+            if (typeof bi.enqueue === 'function') {
+                return bi.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -6235,7 +6691,9 @@
             || f['offline.procurement_enterprise']
             || f['offline.manufacturing']
             || f['offline.payroll']
-            || f['offline.quality'])) {
+            || f['offline.quality']
+            || f['offline.documents']
+            || f['offline.bi'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -6322,6 +6780,15 @@
         'offline.quality.audit': false,
         'offline.quality.workflow': false,
         'offline.quality.masterdata': false,
+        'offline.documents': false,
+        'offline.documents.repositories': false,
+        'offline.documents.workflow': false,
+        'offline.documents.masterdata': false,
+        'offline.bi': false,
+        'offline.bi.dashboards': false,
+        'offline.bi.reports': false,
+        'offline.bi.workflow': false,
+        'offline.bi.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -6400,6 +6867,15 @@
             quality_audit: !!flags['offline.quality.audit'],
             quality_workflow: !!flags['offline.quality.workflow'],
             quality_masterdata: !!flags['offline.quality.masterdata'],
+            documents: !!flags['offline.documents'],
+            documents_repositories: !!flags['offline.documents.repositories'],
+            documents_workflow: !!flags['offline.documents.workflow'],
+            documents_masterdata: !!flags['offline.documents.masterdata'],
+            bi: !!flags['offline.bi'],
+            bi_dashboards: !!flags['offline.bi.dashboards'],
+            bi_reports: !!flags['offline.bi.reports'],
+            bi_workflow: !!flags['offline.bi.workflow'],
+            bi_masterdata: !!flags['offline.bi.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -6720,6 +7196,47 @@
                 && flags['offline.quality']
                 && flags['offline.quality.masterdata']);
         },
+        isDocumentsEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.documents']);
+        },
+        isDocumentsRepositoriesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.documents']
+                && flags['offline.documents.repositories']);
+        },
+        isDocumentsWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.documents']
+                && flags['offline.documents.workflow']);
+        },
+        isDocumentsMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.documents']
+                && flags['offline.documents.masterdata']);
+        },
+        isBiEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.bi']);
+        },
+        isBiDashboardsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.dashboards']);
+        },
+        isBiReportsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.reports']);
+        },
+        isBiWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.workflow']);
+        },
+        isBiMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -6758,6 +7275,8 @@
         manufacturing: function () { return root.RatebOfflineManufacturingAdapter || null; },
         payroll: function () { return root.RatebOfflinePayrollAdapter || null; },
         quality: function () { return root.RatebOfflineQualityAdapter || null; },
+        documents: function () { return root.RatebOfflineDocumentsAdapter || null; },
+        bi: function () { return root.RatebOfflineBiAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

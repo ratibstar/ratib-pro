@@ -649,6 +649,55 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'documents') {
+                if (!$this->flags()->enabled('offline.documents')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeDocumentsAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'repository.create', 'repository.update', 'folder.create', 'folder.update',
+                ], true) && !$this->flags()->enabled('offline.documents.repositories')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.documents.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
+            if ($module === 'bi') {
+                if (!$this->flags()->enabled('offline.bi')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeBiAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.bi.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -989,6 +1038,50 @@ final class OfflineQueueService
 
             if ($module === 'quality') {
                 if (!$this->flags()->enabled('offline.quality')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
+            if ($module === 'documents') {
+                if (!$this->flags()->enabled('offline.documents')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
+            if ($module === 'bi') {
+                if (!$this->flags()->enabled('offline.bi')) {
                     $stats['skipped']++;
                     continue;
                 }
@@ -1437,6 +1530,70 @@ final class OfflineQueueService
             'create_complaint' => 'complaint.create',
             'create_assignment' => 'assignment.create',
             'create_comment' => 'comment.create',
+            'create_note' => 'note.create',
+            'transition_workflow' => 'workflow.transition',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array($prefix . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeDocumentsAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = DocumentOfflineReplayService::deferredActions();
+        $prefix = 'documents.';
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, $prefix) ? substr($action, strlen($prefix)) : $action;
+        }
+        $aliases = [
+            'create_repository' => 'repository.create',
+            'update_repository' => 'repository.update',
+            'create_folder' => 'folder.create',
+            'update_folder' => 'folder.update',
+            'create_document' => 'document.create',
+            'update_document' => 'document.update',
+            'create_version' => 'version.create',
+            'create_checkout' => 'checkout.create',
+            'create_share' => 'share.create',
+            'create_permission' => 'permission.create',
+            'create_comment' => 'comment.create',
+            'create_note' => 'note.create',
+            'transition_workflow' => 'workflow.transition',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array($prefix . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeBiAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = BiOfflineReplayService::deferredActions();
+        $prefix = 'bi.';
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, $prefix) ? substr($action, strlen($prefix)) : $action;
+        }
+        $aliases = [
+            'create_dashboard' => 'dashboard.create',
+            'create_kpi' => 'kpi.create',
+            'create_report' => 'report.create',
+            'create_widget' => 'widget.create',
+            'create_dataset' => 'dataset.create',
+            'create_alert' => 'alert.create',
+            'create_schedule' => 'schedule.create',
+            'create_export' => 'export.create',
+            'create_trend' => 'trend.create',
+            'create_forecast' => 'forecast.create',
+            'create_scope' => 'scope.create',
             'create_note' => 'note.create',
             'transition_workflow' => 'workflow.transition',
         ];

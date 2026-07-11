@@ -67,6 +67,15 @@
         'offline.quality.audit': false,
         'offline.quality.workflow': false,
         'offline.quality.masterdata': false,
+        'offline.documents': false,
+        'offline.documents.repositories': false,
+        'offline.documents.workflow': false,
+        'offline.documents.masterdata': false,
+        'offline.bi': false,
+        'offline.bi.dashboards': false,
+        'offline.bi.reports': false,
+        'offline.bi.workflow': false,
+        'offline.bi.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -145,6 +154,15 @@
             quality_audit: !!flags['offline.quality.audit'],
             quality_workflow: !!flags['offline.quality.workflow'],
             quality_masterdata: !!flags['offline.quality.masterdata'],
+            documents: !!flags['offline.documents'],
+            documents_repositories: !!flags['offline.documents.repositories'],
+            documents_workflow: !!flags['offline.documents.workflow'],
+            documents_masterdata: !!flags['offline.documents.masterdata'],
+            bi: !!flags['offline.bi'],
+            bi_dashboards: !!flags['offline.bi.dashboards'],
+            bi_reports: !!flags['offline.bi.reports'],
+            bi_workflow: !!flags['offline.bi.workflow'],
+            bi_masterdata: !!flags['offline.bi.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -465,6 +483,47 @@
                 && flags['offline.quality']
                 && flags['offline.quality.masterdata']);
         },
+        isDocumentsEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.documents']);
+        },
+        isDocumentsRepositoriesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.documents']
+                && flags['offline.documents.repositories']);
+        },
+        isDocumentsWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.documents']
+                && flags['offline.documents.workflow']);
+        },
+        isDocumentsMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.documents']
+                && flags['offline.documents.masterdata']);
+        },
+        isBiEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.bi']);
+        },
+        isBiDashboardsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.dashboards']);
+        },
+        isBiReportsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.reports']);
+        },
+        isBiWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.workflow']);
+        },
+        isBiMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.bi']
+                && flags['offline.bi.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -503,6 +562,8 @@
         manufacturing: function () { return root.RatebOfflineManufacturingAdapter || null; },
         payroll: function () { return root.RatebOfflinePayrollAdapter || null; },
         quality: function () { return root.RatebOfflineQualityAdapter || null; },
+        documents: function () { return root.RatebOfflineDocumentsAdapter || null; },
+        bi: function () { return root.RatebOfflineBiAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

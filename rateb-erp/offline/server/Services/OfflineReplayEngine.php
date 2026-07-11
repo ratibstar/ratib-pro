@@ -27,6 +27,8 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?HumanResourcesOfflineReplayService $humanResources = null;
     private ?PayrollOfflineReplayService $payroll = null;
     private ?QualityOfflineReplayService $quality = null;
+    private ?DocumentOfflineReplayService $documents = null;
+    private ?BiOfflineReplayService $bi = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -103,6 +105,16 @@ final class OfflineReplayEngine implements OfflineReplayPort
         return $this->quality ??= new QualityOfflineReplayService();
     }
 
+    private function documents(): DocumentOfflineReplayService
+    {
+        return $this->documents ??= new DocumentOfflineReplayService();
+    }
+
+    private function bi(): BiOfflineReplayService
+    {
+        return $this->bi ??= new BiOfflineReplayService();
+    }
+
     /** @param array<string, mixed> $queueRow */
     public function replay(array $queueRow): array
     {
@@ -154,6 +166,22 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->quality()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'documents') {
+            if (!$this->flags()->enabled('offline.documents')) {
+                return ['status' => 'skipped', 'error' => 'documents_offline_disabled'];
+            }
+
+            return $this->documents()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'bi') {
+            if (!$this->flags()->enabled('offline.bi')) {
+                return ['status' => 'skipped', 'error' => 'bi_offline_disabled'];
+            }
+
+            return $this->bi()->replayFromQueueRow($queueRow);
         }
 
         // Phase 4 attendance/leave + Phase 23B enterprise HRMS share module=hr; dispatch by action.
@@ -282,6 +310,24 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->quality()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'documents' || str_starts_with($action, 'documents.')
+            || in_array($action, DocumentOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.documents')) {
+                return ['status' => 'skipped', 'error' => 'documents_offline_disabled'];
+            }
+
+            return $this->documents()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'bi' || str_starts_with($action, 'bi.')
+            || in_array($action, BiOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.bi')) {
+                return ['status' => 'skipped', 'error' => 'bi_offline_disabled'];
+            }
+
+            return $this->bi()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];

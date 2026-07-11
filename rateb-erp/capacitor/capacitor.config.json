@@ -1,0 +1,33 @@
+{
+  "appId": "sa.rateb.erp",
+  "appName": "RATEB ERP",
+  "webDir": "www",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  },
+  "android": {
+    "webContentsDebuggingEnabled": false,
+    "allowMixedContent": false,
+    "backgroundColor": "#0f1117"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#0f1117",
+    "preferredContentMode": "mobile"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "backgroundColor": "#0f1117",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "iosSpinnerStyle": "none"
+    },
+    "App": {
+      "disableBackButtonHandler": false
+    }
+  }
+}

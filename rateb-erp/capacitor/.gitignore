@@ -1,0 +1,13 @@
+node_modules/
+www/
+.DS_Store
+*.log
+local.properties
+.idea/
+*.iml
+android/.gradle/
+android/app/build/
+android/build/
+android/captures/
+ios/App/Pods/
+ios/DerivedData/

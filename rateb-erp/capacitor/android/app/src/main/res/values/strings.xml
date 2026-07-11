@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RATEB ERP</string>
+    <string name="title_activity_main">RATEB ERP</string>
+    <string name="package_name">sa.rateb.erp</string>
+    <string name="custom_url_scheme">sa.rateb.erp</string>
+</resources>

@@ -9,13 +9,13 @@ declare(strict_types=1);
 return [
     'tiers' => [
         'T0' => ['pos'],
-        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'quality'],
+        'T1' => ['inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'quality', 'documents', 'bi'],
         'T2' => ['erp_shell'],
         'T3' => ['platform'],
     ],
 
-    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. Phase 22B: + manufacturing. Phase 24B: + payroll. Phase 25B: + quality. */
-    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'quality', 'erp_shell', 'platform'],
+    /** Phase 11: + platform. Phase 15B: + recruitment. Phase 16B: + accounting. Phase 17B: + crm. Phase 18B: + projects. Phase 19B: + assets. Phase 20B: + approval. Phase 21B: + procurement_enterprise. Phase 22B: + manufacturing. Phase 24B: + payroll. Phase 25B: + quality. Phase 26B: + documents. Phase 27B: + bi. */
+    'active_modules' => ['offline_meta', 'pos', 'inventory', 'hr', 'procurement', 'recruitment', 'accounting', 'crm', 'projects', 'assets', 'approval', 'procurement_enterprise', 'manufacturing', 'payroll', 'quality', 'documents', 'bi', 'erp_shell', 'platform'],
 
     'operations' => [
         'offline.ping' => ['class' => 'OC', 'module' => 'offline_meta'],
@@ -177,5 +177,31 @@ return [
         'quality.comment.create' => ['class' => 'RS', 'module' => 'quality'],
         'quality.workflow.transition' => ['class' => 'RS', 'module' => 'quality'],
         'quality.note.create' => ['class' => 'RS', 'module' => 'quality'],
+        'documents.repository.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.repository.update' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.folder.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.folder.update' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.document.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.document.update' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.version.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.checkout.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.share.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.permission.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.comment.create' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.workflow.transition' => ['class' => 'RS', 'module' => 'documents'],
+        'documents.note.create' => ['class' => 'RS', 'module' => 'documents'],
+        'bi.dashboard.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.kpi.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.report.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.widget.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.dataset.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.alert.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.schedule.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.export.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.trend.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.forecast.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.scope.create' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.workflow.transition' => ['class' => 'RS', 'module' => 'bi'],
+        'bi.note.create' => ['class' => 'RS', 'module' => 'bi'],
     ],
 ];

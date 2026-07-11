@@ -123,6 +123,12 @@ final class ErpOfflineMasterDataPolicy
             'quality_checklist_directory', 'quality_checklists',
             'quality_standard_directory', 'quality_standards',
             'quality_inspection_status_directory', 'quality_inspection_statuses',
+            'documents_repository_directory', 'documents_repositories',
+            'documents_category_directory', 'documents_categories',
+            'documents_workflow_status_directory', 'documents_workflow_statuses',
+            'bi_dashboard_directory', 'bi_dashboards',
+            'bi_kpi_directory', 'bi_kpis',
+            'bi_workflow_status_directory', 'bi_workflow_statuses',
         ], true);
     }
 }

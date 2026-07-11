@@ -354,6 +354,51 @@ final class OfflineFeatureFlagService
         return $this->isQualityEnabled() && $this->enabled('offline.quality.masterdata');
     }
 
+    public function isDocumentsEnabled(): bool
+    {
+        return $this->enabled('offline.enabled') && $this->enabled('offline.documents');
+    }
+
+    public function isDocumentsRepositoriesEnabled(): bool
+    {
+        return $this->isDocumentsEnabled() && $this->enabled('offline.documents.repositories');
+    }
+
+    public function isDocumentsWorkflowEnabled(): bool
+    {
+        return $this->isDocumentsEnabled() && $this->enabled('offline.documents.workflow');
+    }
+
+    public function isDocumentsMasterDataEnabled(): bool
+    {
+        return $this->isDocumentsEnabled() && $this->enabled('offline.documents.masterdata');
+    }
+
+    public function isBiEnabled(): bool
+    {
+        return $this->enabled('offline.enabled') && $this->enabled('offline.bi');
+    }
+
+    public function isBiDashboardsEnabled(): bool
+    {
+        return $this->isBiEnabled() && $this->enabled('offline.bi.dashboards');
+    }
+
+    public function isBiReportsEnabled(): bool
+    {
+        return $this->isBiEnabled() && $this->enabled('offline.bi.reports');
+    }
+
+    public function isBiWorkflowEnabled(): bool
+    {
+        return $this->isBiEnabled() && $this->enabled('offline.bi.workflow');
+    }
+
+    public function isBiMasterDataEnabled(): bool
+    {
+        return $this->isBiEnabled() && $this->enabled('offline.bi.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {
@@ -408,7 +453,9 @@ final class OfflineFeatureFlagService
             || $this->isRecruitmentEnabled()
             || $this->isAccountingEnabled()
             || $this->isCrmEnabled()
-            || $this->isProjectsEnabled();
+            || $this->isProjectsEnabled()
+            || $this->isDocumentsEnabled()
+            || $this->isBiEnabled();
     }
 
     /** @return array<string, bool> */

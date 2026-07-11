@@ -72,6 +72,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <script src="<?php echo rateb_asset('js/rateb-console-quiet.js'); ?>"></script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
     <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
+    <link rel="manifest" href="<?php echo rateb_public_url('manifest.webmanifest'); ?>">
+    <meta name="theme-color" content="#0f1117">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RATEB ERP">
+    <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
     <?php if ($dir === 'rtl') { ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <?php } else { ?>
@@ -512,5 +519,6 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 <?php
 }
 ?>
+<script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
 </body>
 </html>

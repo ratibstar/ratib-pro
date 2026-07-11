@@ -1,0 +1,5 @@
+<!-- Placeholder iOS associated domains / URL types notes for RATEB ERP.
+     Apply after `npx cap add ios` in Xcode:
+     - Associated Domains: applinks:YOUR_ERP_HOST
+     - URL Types: scheme rateberp
+-->

@@ -1,0 +1,26 @@
+{
+  "name": "rateb-erp-capacitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RATEB ERP Capacitor shell (Android + iOS). Reuses Offline SDK from rateb-erp/public/assets/offline.",
+  "scripts": {
+    "sync:www": "node scripts/sync-www.js",
+    "cap:sync": "npm run sync:www && npx cap sync",
+    "cap:android": "npm run sync:www && npx cap add android && npx cap sync android",
+    "cap:ios": "npm run sync:www && npx cap add ios && npx cap sync ios",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/camera": "^6.1.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/filesystem": "^6.0.2",
+    "@capacitor/ios": "^6.2.0",
+    "@capacitor/share": "^6.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

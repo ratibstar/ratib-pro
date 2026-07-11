@@ -27,6 +27,8 @@ $order = [
     'offline/client/adapters/manufacturing-adapter.js',
     'offline/client/adapters/payroll-adapter.js',
     'offline/client/adapters/quality-adapter.js',
+    'offline/client/adapters/documents-adapter.js',
+    'offline/client/adapters/bi-adapter.js',
     'offline/client/adapters/form-post-adapter.js',
     'offline/client/adapters/shell-adapter.js',
     'offline/client/adapters/auth-lock-adapter.js',
@@ -36,7 +38,7 @@ $order = [
     'offline/client/core/sdk.js',
 ];
 
-$out = "/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll + 25B Quality; flags default OFF). */\n\n";
+$out = "/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll + 25B Quality + 26B Documents + 27B BI; flags default OFF). */\n\n";
 foreach ($order as $rel) {
     $path = $root . '/' . $rel;
     if (!is_file($path)) {
@@ -56,6 +58,15 @@ $dest = $root . '/public/assets/offline/rateb-offline.js';
 $min = $root . '/public/assets/offline/rateb-offline.min.js';
 file_put_contents($dest, $out);
 file_put_contents($min, $out);
+
+$syncAllowlist = $root . '/offline/scripts/sync-ops-page-allowlist.php';
+if (is_file($syncAllowlist)) {
+    passthru(PHP_BINARY . ' ' . escapeshellarg($syncAllowlist), $allowlistCode);
+    if (($allowlistCode ?? 1) !== 0) {
+        fwrite(STDERR, "ops-page-allowlist sync failed\n");
+        exit(1);
+    }
+}
 echo 'Wrote ' . strlen($out) . " bytes\n";
 echo (str_contains($out, 'RatebOfflineCrmAdapter') ? 'HAS crm adapter' : 'MISSING crm') . PHP_EOL;
 echo (str_contains($out, 'isCrmEnabled') ? 'HAS isCrmEnabled' : 'MISSING crm helper') . PHP_EOL;
@@ -73,3 +84,7 @@ echo (str_contains($out, 'RatebOfflinePayrollAdapter') ? 'HAS payroll adapter' :
 echo (str_contains($out, 'isPayrollEnabled') ? 'HAS isPayrollEnabled' : 'MISSING payroll helper') . PHP_EOL;
 echo (str_contains($out, 'RatebOfflineQualityAdapter') ? 'HAS quality adapter' : 'MISSING quality') . PHP_EOL;
 echo (str_contains($out, 'isQualityEnabled') ? 'HAS isQualityEnabled' : 'MISSING quality helper') . PHP_EOL;
+echo (str_contains($out, 'RatebOfflineDocumentsAdapter') ? 'HAS documents adapter' : 'MISSING documents') . PHP_EOL;
+echo (str_contains($out, 'isDocumentsEnabled') ? 'HAS isDocumentsEnabled' : 'MISSING documents helper') . PHP_EOL;
+echo (str_contains($out, 'RatebOfflineBiAdapter') ? 'HAS bi adapter' : 'MISSING bi') . PHP_EOL;
+echo (str_contains($out, 'isBiEnabled') ? 'HAS isBiEnabled' : 'MISSING bi helper') . PHP_EOL;
