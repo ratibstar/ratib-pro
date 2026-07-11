@@ -96,6 +96,12 @@ final class OfflineFeatureFlagService
         return $this->isAuthUnlockEnabled() && $this->enabled('offline.rbac.cache');
     }
 
+    /** Phase 13 — enterprise master-data delta (requires master + offline.master_data). */
+    public function isMasterDataEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.master_data');
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

@@ -197,10 +197,42 @@ final class OfflineSyncApiController extends Controller
                 return;
             }
         }
+
+        $policy = new \Rateb\App\Offline\Services\ErpOfflineMasterDataPolicy();
+        $masterCanonical = $policy->resolveCanonical($entity);
+        $isLegacy = $policy->isLegacyTier1Entity($entity);
+
+        // Phase 13 master-data entities require offline.master_data.
+        if ($masterCanonical !== null
+            && in_array($masterCanonical, ['customer_directory', 'branch_directory', 'warehouse_directory'], true)
+            && !$policy->isEnabled()) {
+            $this->json([
+                'ok' => false,
+                'error' => ['message' => 'master_data_disabled', 'code' => 'master_data_disabled'],
+            ], 403);
+            return;
+        }
+
+        if ($entity === '' || ($masterCanonical === null && !$isLegacy)) {
+            $this->json([
+                'ok' => false,
+                'error' => ['message' => 'Entity not allowed', 'code' => 'entity_not_allowed'],
+            ], 400);
+            return;
+        }
+
         $service = new OfflineSyncService();
+        $delta = $service->delta($entity, $this->companyId(), $branchId);
+        if (($delta['error'] ?? '') === 'entity_not_allowed') {
+            $this->json([
+                'ok' => false,
+                'error' => ['message' => 'Entity not allowed', 'code' => 'entity_not_allowed'],
+            ], 400);
+            return;
+        }
         $this->json([
             'ok' => true,
-            'delta' => $service->delta($entity, $this->companyId(), $branchId),
+            'delta' => $delta,
         ]);
     }
 

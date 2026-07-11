@@ -40,7 +40,8 @@ final class HrOfflineEmployeeDirectoryService
      */
     public function pull(?int $companyId = null, ?int $branchId = null, ?string $cursorToken = null, int $limit = 200): array
     {
-        if (!$this->flags()->enabled('offline.hr.attendance')) {
+        if (!$this->flags()->enabled('offline.hr.attendance')
+            && !$this->flags()->isMasterDataEnabled()) {
             return [
                 'entity_type' => self::ENTITY,
                 'items' => [],
@@ -70,7 +71,7 @@ final class HrOfflineEmployeeDirectoryService
         }
 
         $safeLimit = max(1, min(500, $limit));
-        [$afterId, $afterUpdated] = $this->parseCursor($cursorToken);
+        [$afterId, $afterUpdated] = OfflineDeltaCursorCodec::parse($cursorToken);
 
         $hasUpdated = OfflineSchema::hasColumn('rateb_employees', 'updated_at');
         $sql = 'SELECT id, company_id, branch_id, employee_code, name, email, phone,
@@ -113,6 +114,9 @@ final class HrOfflineEmployeeDirectoryService
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
         $items = array_map(static function (array $row): array {
+            $status = (string) ($row['status'] ?? '');
+            $deleted = OfflineDeltaCursorCodec::isInactiveStatus($status);
+
             return [
                 'id' => (int) ($row['id'] ?? 0),
                 'company_id' => (int) ($row['company_id'] ?? 0),
@@ -125,8 +129,10 @@ final class HrOfflineEmployeeDirectoryService
                 'job_title_id' => isset($row['job_title_id']) ? (int) $row['job_title_id'] : null,
                 'job_title' => (string) ($row['job_title'] ?? ''),
                 'hire_date' => $row['hire_date'] ?? null,
-                'status' => (string) ($row['status'] ?? ''),
+                'status' => $status,
                 'user_id' => isset($row['user_id']) ? (int) $row['user_id'] : null,
+                'active' => !$deleted,
+                'deleted' => $deleted,
                 'updated_at' => $row['updated_at'] ?? ($row['created_at'] ?? null),
                 'version' => max(1, (int) ($row['id'] ?? 1)),
             ];
@@ -135,7 +141,7 @@ final class HrOfflineEmployeeDirectoryService
         $nextCursor = $cursorToken;
         if ($items !== []) {
             $last = $items[count($items) - 1];
-            $nextCursor = $this->encodeCursor((int) $last['id'], (string) ($last['updated_at'] ?? ''));
+            $nextCursor = OfflineDeltaCursorCodec::encode((int) $last['id'], (string) ($last['updated_at'] ?? ''));
             $this->persistCursor($companyId, $branchId, $nextCursor);
         }
 
@@ -145,6 +151,7 @@ final class HrOfflineEmployeeDirectoryService
             'cursor_token' => $nextCursor,
             'has_more' => count($items) >= $safeLimit,
             'stub' => false,
+            'read_only' => true,
         ];
     }
 
@@ -176,31 +183,6 @@ final class HrOfflineEmployeeDirectoryService
             'entity_type' => self::ENTITY,
             'cursor_token' => substr($token, 0, 128),
         ]);
-    }
-
-    /** @return array{0: int, 1: string} */
-    private function parseCursor(?string $token): array
-    {
-        $token = trim((string) $token);
-        if ($token === '') {
-            return [0, ''];
-        }
-        if (str_contains($token, '|')) {
-            [$updated, $id] = explode('|', $token, 2);
-
-            return [max(0, (int) $id), trim($updated)];
-        }
-
-        return [max(0, (int) $token), ''];
-    }
-
-    private function encodeCursor(int $id, string $updatedAt): string
-    {
-        if ($updatedAt !== '') {
-            return $updatedAt . '|' . $id;
-        }
-
-        return (string) $id;
     }
 
     private function resolveCompanyId(?int $companyId): int

@@ -1,0 +1,53 @@
+/**
+ * RATEB Offline — Master-data bootstrap (Phase 13).
+ * Loaded only when offline.enabled + offline.master_data are ON.
+ */
+(function (root) {
+    'use strict';
+
+    var cfg = root.__RATEB_ERP_MASTER_DATA__ || root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+
+    function flagsOk() {
+        var f = cfg.flags || {};
+        return !!(f['offline.enabled'] && f['offline.master_data']);
+    }
+
+    function boot() {
+        if (!flagsOk()) {
+            return;
+        }
+        if (!(parseInt(cfg.company_id, 10) > 0)) {
+            return;
+        }
+        if (root.RatebOffline && typeof root.RatebOffline.init === 'function' && !root.RatebOffline.isBooted()) {
+            root.RatebOffline.init({
+                apiBase: cfg.apiBase || '',
+                probeUrl: cfg.probeUrl || null,
+                flags: cfg.flags || {},
+                startConnectivity: true,
+                startScheduler: false
+            });
+        }
+        var md = root.RatebOfflineMasterData;
+        if (!md || !md.isActive()) {
+            return;
+        }
+        if (root.navigator && root.navigator.onLine === false) {
+            return;
+        }
+        md.syncAll({
+            apiBase: cfg.apiBase || '',
+            scope: {
+                company_id: parseInt(cfg.company_id, 10) || 0,
+                branch_id: parseInt(cfg.branch_id, 10) || 0,
+                user_id: parseInt(cfg.user_id, 10) || 0
+            }
+        }).catch(function () { /* fail soft */ });
+    }
+
+    if (root.document && root.document.readyState === 'loading') {
+        root.document.addEventListener('DOMContentLoaded', boot, { once: true });
+    } else {
+        boot();
+    }
+})(typeof window !== 'undefined' ? window : globalThis);

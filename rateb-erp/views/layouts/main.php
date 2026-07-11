@@ -428,6 +428,58 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
 <?php
     }
 }
+$ratebOfflineMasterData = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
+    && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isMasterDataEnabled();
+if ($ratebOfflineMasterData) {
+    $ratebMdFlags = (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->snapshot();
+    $ratebMdApiBase = rateb_url('api/v1/offline');
+    $ratebMdCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+    if ($ratebMdCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+        $ratebMdCompanyId = (int) rateb_resolve_ops_company_id();
+    }
+    $ratebMdBranchId = 0;
+    if (function_exists('rateb_portal_branch_id')) {
+        $ratebMdBranchId = (int) rateb_portal_branch_id();
+    }
+    if ($ratebMdBranchId < 1 && function_exists('rateb_active_branch_filter_id')) {
+        $ratebMdBranchId = (int) rateb_active_branch_filter_id();
+    }
+    $ratebMdUserId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
+    if (empty($ratebOfflineReadCache)) {
+        ?>
+<script>
+window.__RATEB_ERP_MASTER_DATA__ = <?php echo json_encode([
+    'apiBase' => $ratebMdApiBase,
+    'probeUrl' => rtrim($ratebMdApiBase, '/') . '/status',
+    'flags' => $ratebMdFlags,
+    'company_id' => $ratebMdCompanyId,
+    'branch_id' => $ratebMdBranchId,
+    'user_id' => $ratebMdUserId,
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+</script>
+<script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
+<?php
+    } else {
+        ?>
+<script>
+window.__RATEB_ERP_MASTER_DATA__ = window.__RATEB_ERP_SHELL_OFFLINE__ || <?php echo json_encode([
+    'apiBase' => $ratebMdApiBase,
+    'flags' => $ratebMdFlags,
+    'company_id' => $ratebMdCompanyId,
+    'branch_id' => $ratebMdBranchId,
+    'user_id' => $ratebMdUserId,
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.flags) {
+  window.__RATEB_ERP_MASTER_DATA__.flags = window.__RATEB_ERP_SHELL_OFFLINE__.flags;
+  window.__RATEB_ERP_MASTER_DATA__.apiBase = window.__RATEB_ERP_SHELL_OFFLINE__.apiBase || window.__RATEB_ERP_MASTER_DATA__.apiBase;
+}
+</script>
+<?php
+    }
+    ?>
+<script src="<?php echo rateb_asset('offline/erp-master-data-bootstrap.js'); ?>" defer></script>
+<?php
+}
 ?>
 </body>
 </html>

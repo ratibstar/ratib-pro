@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Rateb\App\Offline\Services;
 
-use Rateb\App\Core\Database;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Offline\Models\OfflineEntityCursor;
 
-/** Delta cursor registry — inventory catalog + employee + supplier directories when flags on. */
+/**
+ * Delta cursor registry — Tier-1 catalogs + Phase 13 master-data directories.
+ * Read-only routing; does not alter replay/queue write paths.
+ */
 final class OfflineCursorService
 {
     private ?OfflineEntityCursor $model = null;
     private ?InventoryOfflineCatalogService $catalog = null;
     private ?HrOfflineEmployeeDirectoryService $employees = null;
     private ?ProcurementOfflineSupplierDirectoryService $suppliers = null;
+    private ?CustomerOfflineDirectoryService $customers = null;
+    private ?BranchOfflineDirectoryService $branches = null;
+    private ?WarehouseOfflineDirectoryService $warehouses = null;
 
     private function model(): OfflineEntityCursor
     {
@@ -36,6 +41,21 @@ final class OfflineCursorService
         return $this->suppliers ??= new ProcurementOfflineSupplierDirectoryService();
     }
 
+    private function customers(): CustomerOfflineDirectoryService
+    {
+        return $this->customers ??= new CustomerOfflineDirectoryService();
+    }
+
+    private function branches(): BranchOfflineDirectoryService
+    {
+        return $this->branches ??= new BranchOfflineDirectoryService();
+    }
+
+    private function warehouses(): WarehouseOfflineDirectoryService
+    {
+        return $this->warehouses ??= new WarehouseOfflineDirectoryService();
+    }
+
     public function isAvailable(): bool
     {
         return OfflineSchema::hasColumn('rateb_offline_entity_cursors', 'id');
@@ -46,7 +66,27 @@ final class OfflineCursorService
     {
         $entityType = trim($entityType);
         if ($entityType === '') {
-            return ['entity_type' => $entityType, 'cursor_token' => null, 'items' => [], 'stub' => true];
+            return [
+                'entity_type' => $entityType,
+                'cursor_token' => null,
+                'items' => [],
+                'error' => 'entity_required',
+            ];
+        }
+
+        $policy = new ErpOfflineMasterDataPolicy();
+        $masterCanonical = $policy->resolveCanonical($entityType);
+        $isLegacy = $policy->isLegacyTier1Entity($entityType);
+
+        // Unknown entity — reject (no open stub).
+        if ($masterCanonical === null && !$isLegacy) {
+            return [
+                'entity_type' => $entityType,
+                'cursor_token' => null,
+                'items' => [],
+                'error' => 'entity_not_allowed',
+                'stub' => false,
+            ];
         }
 
         if (in_array($entityType, ['inventory_catalog', 'inventory', 'catalog'], true)) {
@@ -58,7 +98,8 @@ final class OfflineCursorService
             return $this->catalog()->pull($companyId, $branchId, $token);
         }
 
-        if (in_array($entityType, ['employee_directory', 'employees', 'hr_employees'], true)) {
+        if (in_array($entityType, ['employee_directory', 'employees', 'hr_employees'], true)
+            || $masterCanonical === 'employee_directory') {
             $token = $cursorToken;
             if ($token === null || $token === '') {
                 $token = $this->readStoredToken('employee_directory', $companyId, $branchId);
@@ -67,7 +108,8 @@ final class OfflineCursorService
             return $this->employees()->pull($companyId, $branchId, $token);
         }
 
-        if (in_array($entityType, ['supplier_directory', 'suppliers', 'procurement_suppliers'], true)) {
+        if (in_array($entityType, ['supplier_directory', 'suppliers', 'procurement_suppliers'], true)
+            || $masterCanonical === 'supplier_directory') {
             $token = $cursorToken;
             if ($token === null || $token === '') {
                 $token = $this->readStoredToken('supplier_directory', $companyId, $branchId);
@@ -76,37 +118,38 @@ final class OfflineCursorService
             return $this->suppliers()->pull($companyId, $branchId, $token);
         }
 
-        if (!$this->isAvailable()) {
-            return ['entity_type' => $entityType, 'cursor_token' => null, 'stub' => true, 'items' => []];
+        if ($masterCanonical === 'customer_directory') {
+            $token = $cursorToken;
+            if ($token === null || $token === '') {
+                $token = $this->readStoredToken('customer_directory', $companyId, $branchId);
+            }
+
+            return $this->customers()->pull($companyId, $branchId, $token);
         }
 
-        $companyId = $this->resolveCompanyId($companyId);
-        if ($companyId < 1) {
-            return ['entity_type' => $entityType, 'cursor_token' => null, 'items' => []];
+        if ($masterCanonical === 'branch_directory') {
+            $token = $cursorToken;
+            if ($token === null || $token === '') {
+                $token = $this->readStoredToken('branch_directory', $companyId, $branchId);
+            }
+
+            return $this->branches()->pull($companyId, $branchId, $token);
         }
 
-        $params = [
-            'cid' => $companyId,
-            'et' => substr($entityType, 0, 64),
-        ];
-        $sql = 'SELECT * FROM rateb_offline_entity_cursors
-                WHERE company_id = :cid AND entity_type = :et';
-        if ($branchId !== null && $branchId > 0) {
-            $sql .= ' AND branch_id = :bid';
-            $params['bid'] = $branchId;
-        } else {
-            $sql .= ' AND branch_id IS NULL';
-        }
-        $sql .= ' LIMIT 1';
+        if ($masterCanonical === 'warehouse_directory') {
+            $token = $cursorToken;
+            if ($token === null || $token === '') {
+                $token = $this->readStoredToken('warehouse_directory', $companyId, $branchId);
+            }
 
-        $row = $this->model()->queryOne($sql, $params);
+            return $this->warehouses()->pull($companyId, $branchId, $token);
+        }
 
         return [
             'entity_type' => $entityType,
-            'cursor_token' => $row['cursor_token'] ?? null,
-            'updated_at' => $row['updated_at'] ?? null,
+            'cursor_token' => null,
             'items' => [],
-            'stub' => true,
+            'error' => 'entity_not_allowed',
         ];
     }
 
@@ -115,11 +158,11 @@ final class OfflineCursorService
         if (!$this->isAvailable()) {
             return null;
         }
-        $companyId = $this->resolveCompanyId($companyId);
+        $companyId = $companyId ?? (int) (TenantContext::companyId() ?? 0);
         if ($companyId < 1) {
             return null;
         }
-        $params = ['cid' => $companyId, 'et' => $entityType];
+        $params = ['cid' => $companyId, 'et' => substr($entityType, 0, 64)];
         $sql = 'SELECT cursor_token FROM rateb_offline_entity_cursors
                 WHERE company_id = :cid AND entity_type = :et';
         if ($branchId !== null && $branchId > 0) {
@@ -132,14 +175,5 @@ final class OfflineCursorService
         $row = $this->model()->queryOne($sql, $params);
 
         return isset($row['cursor_token']) ? (string) $row['cursor_token'] : null;
-    }
-
-    private function resolveCompanyId(?int $companyId): int
-    {
-        if ($companyId !== null && $companyId > 0) {
-            return $companyId;
-        }
-
-        return (int) (TenantContext::companyId() ?? 0);
     }
 }

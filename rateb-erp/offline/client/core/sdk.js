@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 12).
+ * RATEB Offline SDK bootstrap (Phase 13).
  * Expects sibling modules already loaded, or use public/assets/offline/rateb-offline.js bundle.
  */
 (function (root) {
@@ -14,7 +14,8 @@
         'offline.procurement': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
-        'offline.rbac.cache': false
+        'offline.rbac.cache': false,
+        'offline.master_data': false
     };
 
     function init(options) {
@@ -54,7 +55,8 @@
                 procurement: !!flags['offline.procurement'],
                 read_cache: !!flags['offline.read_cache'],
                 auth_unlock: !!flags['offline.auth.unlock'],
-                rbac_cache: !!flags['offline.rbac.cache']
+                rbac_cache: !!flags['offline.rbac.cache'],
+                master_data: !!flags['offline.master_data']
             });
         }
         return {
@@ -65,12 +67,13 @@
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
-            version: '12.0.0'
+            master_data: !!flags['offline.master_data'],
+            version: '13.0.0'
         };
     }
 
     root.RatebOffline = {
-        version: '12.0.0',
+        version: '13.0.0',
         init: init,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -95,6 +98,9 @@
                 && flags['offline.auth.unlock']
                 && flags['offline.rbac.cache']);
         },
+        isMasterDataEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.master_data']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -106,6 +112,7 @@
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },
         rbac: function () { return root.RatebOfflineRbacCache || null; },
+        masterData: function () { return root.RatebOfflineMasterData || null; },
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };

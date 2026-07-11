@@ -25,6 +25,7 @@ offline/
 | `offline.read_cache` | `false` | Tier 2 ERP shell SW + chrome snapshot (Phase 10) |
 | `offline.auth.unlock` | `false` | Tier 3 local shell unlock PIN/WebAuthn (Phase 11) |
 | `offline.rbac.cache` | `false` | Tier 3 RBAC/nav manifest cache (Phase 12; UI only) |
+| `offline.master_data` | `false` | Phase 13 master-data delta (customers/branches/warehouses + normalized emp/sup) |
 
 Enable via env:
 
@@ -35,6 +36,7 @@ RATEB_OFFLINE_HR_ATTENDANCE=1
 RATEB_OFFLINE_READ_CACHE=1
 RATEB_OFFLINE_AUTH_UNLOCK=1
 RATEB_OFFLINE_RBAC_CACHE=1
+RATEB_OFFLINE_MASTER_DATA=1
 ```
 
 ## ERP Shell Offline (Phase 10)
@@ -48,6 +50,10 @@ Requires master + `read_cache` + `auth.unlock`. Vault store `auth_vault` in `rat
 ## ERP Offline RBAC (Phase 12)
 
 Requires master + `read_cache` + `auth.unlock` + `rbac.cache`. Manifest stored as snapshot kind `erp_rbac` (TTL + `rbac_version`). UI/nav only — never replaces server authorization.
+
+## Master Data Delta (Phase 13)
+
+Requires master + `offline.master_data`. Cursor format `updated_at|id`. Entities: customers, branches, warehouses (+ normalized employees/suppliers). Client-owned cursors in IndexedDB `cursors`. Read-only — no replay conflicts.
 ## API (additive)
 
 - `GET  /api/v1/offline/status`

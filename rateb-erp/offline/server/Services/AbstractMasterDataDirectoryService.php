@@ -9,30 +9,36 @@ use Rateb\App\Core\TenantContext;
 use Rateb\App\Offline\Models\OfflineEntityCursor;
 
 /**
- * Additive supplier directory delta pull for offline Procurement clients.
- * Read-only — does not modify supplier rows or existing APIs.
- * Excludes payment / banking fields from the cache payload.
+ * Phase 13 — Shared read-only master-data delta pull helpers.
  */
-final class ProcurementOfflineSupplierDirectoryService
+abstract class AbstractMasterDataDirectoryService
 {
-    private const ENTITY = 'supplier_directory';
+    abstract protected function entityType(): string;
 
-    private ?OfflineEntityCursor $cursors = null;
-    private ?OfflineFeatureFlagService $flags = null;
+    abstract protected function table(): string;
 
-    private function cursors(): OfflineEntityCursor
+    /** @return list<string> SELECT columns (without updated_at/created_at) */
+    abstract protected function selectColumns(): array;
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    abstract protected function mapItem(array $row): array;
+
+    protected function requiresUpdatedAt(): bool
     {
-        return $this->cursors ??= new OfflineEntityCursor();
+        return true;
     }
 
-    private function flags(): OfflineFeatureFlagService
+    protected function branchColumn(): ?string
     {
-        return $this->flags ??= new OfflineFeatureFlagService();
+        return null;
     }
 
     public function isAvailable(): bool
     {
-        return OfflineSchema::hasColumn('rateb_suppliers', 'id');
+        return OfflineSchema::hasColumn($this->table(), 'id');
     }
 
     /**
@@ -40,10 +46,10 @@ final class ProcurementOfflineSupplierDirectoryService
      */
     public function pull(?int $companyId = null, ?int $branchId = null, ?string $cursorToken = null, int $limit = 200): array
     {
-        if (!$this->flags()->enabled('offline.procurement')
-            && !$this->flags()->isMasterDataEnabled()) {
+        $entity = $this->entityType();
+        if (!(new OfflineFeatureFlagService())->isMasterDataEnabled()) {
             return [
-                'entity_type' => self::ENTITY,
+                'entity_type' => $entity,
                 'items' => [],
                 'cursor_token' => $cursorToken,
                 'stub' => true,
@@ -54,7 +60,7 @@ final class ProcurementOfflineSupplierDirectoryService
         $companyId = $this->resolveCompanyId($companyId);
         if ($companyId < 1) {
             return [
-                'entity_type' => self::ENTITY,
+                'entity_type' => $entity,
                 'items' => [],
                 'cursor_token' => null,
                 'error' => 'company_required',
@@ -63,34 +69,50 @@ final class ProcurementOfflineSupplierDirectoryService
 
         if (!$this->isAvailable()) {
             return [
-                'entity_type' => self::ENTITY,
+                'entity_type' => $entity,
                 'items' => [],
                 'cursor_token' => $cursorToken,
                 'migration_required' => true,
             ];
         }
 
+        $hasUpdated = OfflineSchema::hasColumn($this->table(), 'updated_at');
+        if ($this->requiresUpdatedAt() && !$hasUpdated) {
+            return [
+                'entity_type' => $entity,
+                'items' => [],
+                'cursor_token' => $cursorToken,
+                'migration_required' => true,
+                'error' => 'updated_at_required',
+            ];
+        }
+
         $safeLimit = max(1, min(500, $limit));
         [$afterId, $afterUpdated] = OfflineDeltaCursorCodec::parse($cursorToken);
 
-        $hasUpdated = OfflineSchema::hasColumn('rateb_suppliers', 'updated_at');
-        $sql = 'SELECT id, company_id, branch_id, name, code, email, phone, address,
-                       rating, classification_id, status';
+        $cols = $this->selectColumns();
         if ($hasUpdated) {
-            $sql .= ', updated_at, created_at';
-        } else {
-            $sql .= ', created_at';
+            $cols[] = 'updated_at';
         }
-        $sql .= ' FROM rateb_suppliers WHERE company_id = :cid';
+        if (OfflineSchema::hasColumn($this->table(), 'created_at')) {
+            $cols[] = 'created_at';
+        }
+        $cols = array_values(array_unique($cols));
+
+        $sql = 'SELECT ' . implode(', ', $cols)
+            . ' FROM ' . $this->table()
+            . ' WHERE company_id = :cid';
         $params = ['cid' => $companyId];
 
-        if ($branchId !== null && $branchId > 0 && OfflineSchema::hasColumn('rateb_suppliers', 'branch_id')) {
-            $sql .= ' AND (branch_id = :bid OR branch_id IS NULL)';
+        $branchCol = $this->branchColumn();
+        if ($branchId !== null && $branchId > 0 && $branchCol !== null
+            && OfflineSchema::hasColumn($this->table(), $branchCol)) {
+            $sql .= ' AND (' . $branchCol . ' = :bid OR ' . $branchCol . ' IS NULL)';
             $params['bid'] = $branchId;
         }
 
         if ($afterId > 0) {
-            if ($hasUpdated && $afterUpdated !== '') {
+            if ($hasUpdated && $afterUpdated !== '' && $afterUpdated !== '0') {
                 $sql .= ' AND (updated_at > :u OR (updated_at = :u2 AND id > :aid))';
                 $params['u'] = $afterUpdated;
                 $params['u2'] = $afterUpdated;
@@ -113,38 +135,23 @@ final class ProcurementOfflineSupplierDirectoryService
         /** @var list<array<string, mixed>> $rows */
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-        $items = array_map(static function (array $row): array {
-            $status = (string) ($row['status'] ?? '');
-            $deleted = OfflineDeltaCursorCodec::isInactiveStatus($status);
-
-            return [
-                'id' => (int) ($row['id'] ?? 0),
-                'company_id' => (int) ($row['company_id'] ?? 0),
-                'branch_id' => isset($row['branch_id']) ? (int) $row['branch_id'] : null,
-                'name' => (string) ($row['name'] ?? ''),
-                'code' => (string) ($row['code'] ?? ''),
-                'email' => (string) ($row['email'] ?? ''),
-                'phone' => (string) ($row['phone'] ?? ''),
-                'address' => (string) ($row['address'] ?? ''),
-                'rating' => isset($row['rating']) ? (float) $row['rating'] : null,
-                'classification_id' => isset($row['classification_id']) ? (int) $row['classification_id'] : null,
-                'status' => $status,
-                'active' => !$deleted,
-                'deleted' => $deleted,
-                'updated_at' => $row['updated_at'] ?? ($row['created_at'] ?? null),
-                'version' => max(1, (int) ($row['id'] ?? 1)),
-            ];
-        }, $rows);
+        $items = [];
+        foreach ($rows as $row) {
+            $items[] = $this->mapItem($row);
+        }
 
         $nextCursor = $cursorToken;
         if ($items !== []) {
             $last = $items[count($items) - 1];
-            $nextCursor = OfflineDeltaCursorCodec::encode((int) $last['id'], (string) ($last['updated_at'] ?? ''));
+            $nextCursor = OfflineDeltaCursorCodec::encode(
+                (int) $last['id'],
+                (string) ($last['updated_at'] ?? '')
+            );
             $this->persistCursor($companyId, $branchId, $nextCursor);
         }
 
         return [
-            'entity_type' => self::ENTITY,
+            'entity_type' => $entity,
             'items' => $items,
             'cursor_token' => $nextCursor,
             'has_more' => count($items) >= $safeLimit,
@@ -158,7 +165,8 @@ final class ProcurementOfflineSupplierDirectoryService
         if (!OfflineSchema::hasColumn('rateb_offline_entity_cursors', 'id')) {
             return;
         }
-        $params = ['cid' => $companyId, 'et' => self::ENTITY];
+        $model = new OfflineEntityCursor();
+        $params = ['cid' => $companyId, 'et' => $this->entityType()];
         $sql = 'SELECT id FROM rateb_offline_entity_cursors
                 WHERE company_id = :cid AND entity_type = :et';
         if ($branchId !== null && $branchId > 0) {
@@ -168,17 +176,17 @@ final class ProcurementOfflineSupplierDirectoryService
             $sql .= ' AND branch_id IS NULL';
         }
         $sql .= ' LIMIT 1';
-        $existing = $this->cursors()->queryOne($sql, $params);
+        $existing = $model->queryOne($sql, $params);
         if ($existing !== null) {
-            $this->cursors()->update((int) $existing['id'], [
+            $model->update((int) $existing['id'], [
                 'cursor_token' => substr($token, 0, 128),
             ]);
             return;
         }
-        $this->cursors()->create([
+        $model->create([
             'company_id' => $companyId,
             'branch_id' => ($branchId !== null && $branchId > 0) ? $branchId : null,
-            'entity_type' => self::ENTITY,
+            'entity_type' => $this->entityType(),
             'cursor_token' => substr($token, 0, 128),
         ]);
     }

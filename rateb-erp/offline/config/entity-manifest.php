@@ -100,4 +100,22 @@ return [
         'path' => '/api/v1/offline/delta/supplier_directory',
         'replay' => 'delta_pull',
     ],
+    'customer_directory' => [
+        'module' => 'platform',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/customer_directory',
+        'replay' => 'delta_pull',
+    ],
+    'branch_directory' => [
+        'module' => 'platform',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/branch_directory',
+        'replay' => 'delta_pull',
+    ],
+    'warehouse_directory' => [
+        'module' => 'platform',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/warehouse_directory',
+        'replay' => 'delta_pull',
+    ],
 ];
