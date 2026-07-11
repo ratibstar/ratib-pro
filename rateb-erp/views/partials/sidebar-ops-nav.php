@@ -28,6 +28,18 @@ $opsSection(__('recruitment'), [
     ['recruitment/candidates', 'recruitment_candidates', 'fa-user-plus', 'recruitment'],
     ['recruitment/agencies', 'recruitment_agencies', 'fa-building', 'recruitment'],
 ], 'fa-user-tie');
+$opsSection(__('crm'), [
+    ['crm', 'crm', 'fa-handshake', 'crm', 'crm.view'],
+    ['crm/leads', 'crm_leads', 'fa-user-tag', 'crm', 'crm.view'],
+    ['crm/leads/board', 'crm_lead_board', 'fa-columns', 'crm', 'crm.view'],
+    ['crm/pipeline', 'crm_pipeline', 'fa-filter', 'crm', 'crm.pipeline'],
+    ['crm/opportunities', 'crm_opportunities', 'fa-bullseye', 'crm', 'crm.view'],
+    ['crm/meetings', 'crm_meetings', 'fa-calendar', 'crm', 'crm.activities'],
+    ['crm/tasks', 'crm_tasks', 'fa-list-check', 'crm', 'crm.activities'],
+    ['crm/campaigns', 'crm_campaigns', 'fa-bullhorn', 'crm', 'crm.campaign'],
+    ['crm/contacts', 'crm_contacts', 'fa-address-book', 'crm', 'crm.view'],
+    ['crm/companies', 'crm_companies', 'fa-building-user', 'crm', 'crm.view'],
+], 'fa-handshake');
 $opsSection(__('inventory'), [
     ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
     ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],

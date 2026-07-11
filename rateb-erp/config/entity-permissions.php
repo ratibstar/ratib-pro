@@ -492,4 +492,14 @@ return [
         'view' => 'recruitment.view',
         'manage' => 'recruitment.manage',
     ],
+    'crm' => [
+        'module' => 'crm',
+        'view' => 'crm.view',
+        'manage' => 'crm.manage',
+    ],
+    'crm-leads' => [
+        'module' => 'crm',
+        'view' => 'crm.view',
+        'manage' => 'crm.manage',
+    ],
 ];

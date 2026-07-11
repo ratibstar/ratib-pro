@@ -38,6 +38,7 @@ return [
         'branches',
         'pos',
         'recruitment',
+        'crm',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -59,6 +60,7 @@ return [
         'branches' => 'branches',
         'pos' => 'pos_nav_section',
         'recruitment' => 'recruitment',
+        'crm' => 'crm',
     ],
 
     /**
@@ -114,6 +116,27 @@ return [
             'recruitment.contract',
             'recruitment.medical',
             'recruitment.assign',
+        ],
+        'crm.manage' => [
+            'crm.view',
+            'crm.create',
+            'crm.update',
+            'crm.delete',
+            'crm.assign',
+            'crm.pipeline',
+            'crm.activities',
+            'crm.campaign',
+            'crm.admin',
+        ],
+        'crm.admin' => [
+            'crm.view',
+            'crm.create',
+            'crm.update',
+            'crm.delete',
+            'crm.assign',
+            'crm.pipeline',
+            'crm.activities',
+            'crm.campaign',
         ],
     ],
 
