@@ -102,6 +102,23 @@ final class OfflineFeatureFlagService
         return $this->isMasterEnabled() && $this->enabled('offline.master_data');
     }
 
+    /**
+     * Phase 14 — allowlisted ops page snapshots (requires master + read_cache + pilot.ops_pages).
+     * Browse-only cache; does not expand write surface by itself.
+     */
+    public function isPilotOpsPagesEnabled(): bool
+    {
+        return $this->isReadCacheEnabled() && $this->enabled('offline.pilot.ops_pages');
+    }
+
+    /** Any Tier-1 write module flag under master (for layout SDK / form-hook injection). */
+    public function isAnyTier1WriteEnabled(): bool
+    {
+        return $this->isInventoryMovementsEnabled()
+            || $this->isHrAttendanceEnabled()
+            || $this->isProcurementEnabled();
+    }
+
     /** @return array<string, bool> */
     public function snapshot(): array
     {

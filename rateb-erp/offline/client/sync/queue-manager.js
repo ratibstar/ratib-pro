@@ -12,6 +12,8 @@
     var flushInFlight = false;
     var apiBase = null;
     var enabled = false;
+    /** Mirrors offline/config/sync-policy.php client_queue_max (Phase 14 enforce). */
+    var clientQueueMax = 500;
 
     function csrfToken() {
         if (typeof document === 'undefined') {
@@ -178,18 +180,27 @@
             return Promise.reject(new Error('stores_unavailable'));
         }
         var entry = normalizeEntry(item, options);
-        return Stores.put(QUEUE, entry).then(function () {
-            if (Events) {
-                Events.emit('queue:enqueued', entry);
+        return depth().then(function (d) {
+            var max = clientQueueMax > 0 ? clientQueueMax : 0;
+            if (max > 0 && d >= max) {
+                if (Events) {
+                    Events.emit('queue:full', { depth: d, max: max });
+                }
+                return Promise.reject(new Error('client_queue_full'));
             }
-            var conn = root.RatebOfflineConnectivity;
-            if (conn && conn.isOnline()) {
-                return flush(options).then(function (result) {
-                    return Object.assign({ queued: true, entry: entry }, result || {});
+            return Stores.put(QUEUE, entry).then(function () {
+                if (Events) {
+                    Events.emit('queue:enqueued', entry);
+                }
+                var conn = root.RatebOfflineConnectivity;
+                if (conn && conn.isOnline()) {
+                    return flush(options).then(function (result) {
+                        return Object.assign({ queued: true, entry: entry }, result || {});
+                    });
+                }
+                return depth().then(function (depthAfter) {
+                    return { queued: true, queueDepth: depthAfter, entry: entry };
                 });
-            }
-            return depth().then(function (d) {
-                return { queued: true, queueDepth: d, entry: entry };
             });
         });
     }
@@ -283,8 +294,12 @@
             if (opts.apiBase) {
                 apiBase = String(opts.apiBase);
             }
+            if (typeof opts.clientQueueMax === 'number' && opts.clientQueueMax >= 0) {
+                clientQueueMax = opts.clientQueueMax;
+            }
         },
         isEnabled: function () { return enabled; },
+        clientQueueMax: function () { return clientQueueMax; },
         enqueue: enqueue,
         flush: flush,
         depth: depth,
@@ -296,3 +311,4 @@
         _simulateDeleteByKeyCrash: simulateDeleteByKeyCrash
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+

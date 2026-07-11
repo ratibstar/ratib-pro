@@ -334,6 +334,82 @@
         });
     }
 
+    /**
+     * Phase 14 — list cached directory rows for offline pickers.
+     * @returns {Promise<{ok: boolean, entity?: string, items: object[], warning?: string}>}
+     */
+    function listCached(entityName, options) {
+        options = options || {};
+        var entity = resolveEntity(entityName);
+        if (!entity) {
+            return Promise.resolve({ ok: false, error: 'entity_not_allowed', items: [] });
+        }
+        var scope = options.scope || tenantScope();
+        var prefix = String(scope.company_id) + ':' + String(scope.branch_id || 0) + ':'
+            + (ENTITIES[entity].prefix) + ':';
+        var q = String(options.query || options.q || '').toLowerCase().trim();
+        var limit = parseInt(options.limit, 10) || 200;
+        if (limit < 1) {
+            limit = 200;
+        }
+        return withEntityCache('readonly', function (store) {
+            return new Promise(function (resolve, reject) {
+                var req = store.openCursor();
+                var items = [];
+                req.onsuccess = function (ev) {
+                    var cursor = ev.target.result;
+                    if (!cursor || items.length >= limit) {
+                        resolve({ ok: true, entity: entity, items: items });
+                        return;
+                    }
+                    var row = cursor.value || {};
+                    var id = String(row.id || '');
+                    if (id.indexOf(prefix) === 0 && row.entity === entity) {
+                        var payload = row.payload || row.data || {};
+                        if (q) {
+                            var label = String(
+                                payload.name || payload.title || payload.label
+                                || payload.code || payload.email || ''
+                            ).toLowerCase();
+                            if (label.indexOf(q) === -1 && String(payload.id || '').indexOf(q) === -1) {
+                                cursor.continue();
+                                return;
+                            }
+                        }
+                        items.push(payload);
+                    }
+                    cursor.continue();
+                };
+                req.onerror = function () { reject(req.error); };
+            });
+        }).catch(function () {
+            return { ok: false, error: 'entity_cache_unavailable', items: [] };
+        });
+    }
+
+    /** Map entity_cache rows to {value,label} for <select> hydration. */
+    function pickerOptions(entityName, options) {
+        return listCached(entityName, options).then(function (res) {
+            var items = (res && res.items) ? res.items : [];
+            var opts = items.map(function (item) {
+                var value = item.id;
+                var label = item.name || item.title || item.label || item.code
+                    || (item.first_name
+                        ? (String(item.first_name) + ' ' + String(item.last_name || '')).trim()
+                        : null)
+                    || String(item.id);
+                return { value: value, label: label, item: item };
+            });
+            return {
+                ok: !!(res && res.ok),
+                entity: res && res.entity,
+                options: opts,
+                warning: res && res.warning,
+                error: res && res.error
+            };
+        });
+    }
+
     function syncAll(options) {
         options = options || {};
         if (!isActive()) {
@@ -373,6 +449,8 @@
         readClientCursor: readClientCursor,
         writeClientCursor: writeClientCursor,
         pullEntity: pullEntity,
+        listCached: listCached,
+        pickerOptions: pickerOptions,
         syncAll: syncAll,
         purgeExpired: purgeExpired,
         ENTITIES: ENTITIES,
@@ -380,3 +458,4 @@
         SYNC_DEBOUNCE_MS: SYNC_DEBOUNCE_MS
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+

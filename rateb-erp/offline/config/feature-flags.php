@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Enterprise offline feature flags (Phase 2A).
+ * Enterprise offline feature flags (Phase 2A + Phase 14 pilot).
  * Master default is OFF — no behavior change until explicitly enabled.
  */
 return [
@@ -18,6 +18,8 @@ return [
         'offline.auth.unlock' => false,
         'offline.rbac.cache' => false,
         'offline.master_data' => false,
+        /** Phase 14 — allowlisted ops page snapshots (requires master + read_cache). */
+        'offline.pilot.ops_pages' => false,
     ],
 
     /** Env var overrides (string "1"/"true"/"yes" → true). */
@@ -32,5 +34,6 @@ return [
         'offline.auth.unlock' => 'RATEB_OFFLINE_AUTH_UNLOCK',
         'offline.rbac.cache' => 'RATEB_OFFLINE_RBAC_CACHE',
         'offline.master_data' => 'RATEB_OFFLINE_MASTER_DATA',
+        'offline.pilot.ops_pages' => 'RATEB_OFFLINE_PILOT_OPS_PAGES',
     ],
 ];

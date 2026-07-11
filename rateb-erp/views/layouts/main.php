@@ -404,6 +404,13 @@ if ($ratebOfflineReadCache) {
         $ratebOfflineBranchId = (int) rateb_active_branch_filter_id();
     }
     $ratebOfflineUserId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
+    $ratebOfflineSyncPolicy = class_exists(\Rateb\App\Offline\OfflineModule::class)
+        ? \Rateb\App\Offline\OfflineModule::syncPolicy()
+        : [];
+    $ratebOfflineOpsAllowlist = class_exists(\Rateb\App\Offline\OfflineModule::class)
+        ? \Rateb\App\Offline\OfflineModule::opsPageAllowlist()
+        : [];
+    $ratebOfflineFlagSvc = new \Rateb\App\Offline\Services\OfflineFeatureFlagService();
     ?>
 <script>
 window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
@@ -420,6 +427,10 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'logout_vault_policy' => class_exists(\Rateb\App\Offline\Services\ErpOfflineAuthPolicy::class)
         ? (new \Rateb\App\Offline\Services\ErpOfflineAuthPolicy())->logoutVaultPolicy()
         : 'keep_vault',
+    'client_queue_max' => (int) ($ratebOfflineSyncPolicy['client_queue_max'] ?? 500),
+    'ops_page_paths' => array_values(array_map('strval', $ratebOfflineOpsAllowlist['paths'] ?? [])),
+    'ops_form_hooks' => array_values($ratebOfflineOpsAllowlist['form_hooks'] ?? []),
+    'pilot_ops_pages' => $ratebOfflineFlagSvc->isPilotOpsPagesEnabled(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
 <script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
@@ -437,6 +448,14 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     if ($ratebOfflineRbacCache) {
         ?>
 <script src="<?php echo rateb_asset('offline/erp-rbac-bootstrap.js'); ?>" defer></script>
+<?php
+    }
+    $ratebOfflineOpsForms = $ratebOfflineFlagSvc->isAnyTier1WriteEnabled()
+        || $ratebOfflineFlagSvc->isMasterDataEnabled()
+        || $ratebOfflineFlagSvc->isPilotOpsPagesEnabled();
+    if ($ratebOfflineOpsForms) {
+        ?>
+<script src="<?php echo rateb_asset('offline/erp-ops-forms-bootstrap.js'); ?>" defer></script>
 <?php
     }
 }

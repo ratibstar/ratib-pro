@@ -1,9 +1,24 @@
-/* Rateb Enterprise Offline SW — Phase 13.1 (real offline-shell; does not replace pos-sw.js) */
+/* Rateb Enterprise Offline SW — Phase 14 (ops page cache + Phase 13.1 shell; does not replace pos-sw.js) */
 'use strict';
 
-var ASSET_CACHE = 'rateb-erp-assets-v13.1';
+var ASSET_CACHE = 'rateb-erp-assets-v14';
+var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var FALLBACK_URL = 'offline-shell.html';
 var BYPASS_HEADER = 'X-Rateb-SW-Bypass';
+
+/** Default allowlist — mirrors offline/config/ops-page-allowlist.php */
+var DEFAULT_OPS_PATHS = [
+    'stock-movements',
+    'warehouse-transfers',
+    'inventory-audits',
+    'inventory',
+    'warehouses',
+    'hr/attendance',
+    'hr/leaves',
+    'purchase-requests',
+    'purchase-orders',
+    'rfq'
+];
 
 function isPosPath(pathname) {
     var p = String(pathname || '');
@@ -54,6 +69,26 @@ function fetchBypass(url) {
     var headers = new Headers();
     headers.set(BYPASS_HEADER, '1');
     return fetch(url, { headers: headers, credentials: 'same-origin', cache: 'no-cache' });
+}
+
+function matchOpsPath(pathname) {
+    var p = String(pathname || '').replace(/\/+$/, '').toLowerCase();
+    var list = DEFAULT_OPS_PATHS;
+    // Longer paths first so hr/attendance beats attendance-like noise.
+    var sorted = list.slice().sort(function (a, b) {
+        return String(b).length - String(a).length;
+    });
+    for (var i = 0; i < sorted.length; i++) {
+        var a = String(sorted[i] || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+        if (!a) {
+            continue;
+        }
+        var re = new RegExp('(^|/)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
+        if (re.test(p)) {
+            return a;
+        }
+    }
+    return null;
 }
 
 /** First-party static assets only — never POS, never HTML, never auth. */
@@ -127,6 +162,81 @@ function offlineShellFallback() {
     });
 }
 
+/** Phase 14 — serve allowlisted ops page snapshot when offline. */
+function opsPageFallback(request, url) {
+    var candidates = [];
+    try {
+        if (request && request.url) {
+            candidates.push(request.url);
+        }
+    } catch (e) { /* ignore */ }
+    try {
+        if (url) {
+            candidates.push(url.origin + url.pathname);
+            if (url.href) {
+                candidates.push(url.href);
+            }
+        }
+    } catch (e2) { /* ignore */ }
+    return caches.open(OPS_PAGE_CACHE).then(function (cache) {
+        var chain = Promise.resolve(null);
+        candidates.forEach(function (key) {
+            if (!key) {
+                return;
+            }
+            chain = chain.then(function (found) {
+                if (found) {
+                    return found;
+                }
+                return cache.match(key);
+            });
+        });
+        return chain.then(function (hit) {
+            return hit || null;
+        });
+    }).catch(function () {
+        return null;
+    });
+}
+
+function putOpsPageFromMessage(data) {
+    var html = data && data.html ? String(data.html) : '';
+    if (!html) {
+        return Promise.resolve(false);
+    }
+    var urls = [];
+    if (data.url) {
+        urls.push(String(data.url));
+    }
+    if (data.path) {
+        try {
+            var origin = self.location.origin;
+            var path = String(data.path);
+            if (path.charAt(0) !== '/') {
+                path = '/' + path;
+            }
+            urls.push(origin + path);
+        } catch (e) { /* ignore */ }
+    }
+    if (!urls.length) {
+        return Promise.resolve(false);
+    }
+    var res = new Response(html, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-Rateb-Offline': '1',
+            'X-Rateb-Ops-Page': '1',
+            'Cache-Control': 'no-store'
+        }
+    });
+    return caches.open(OPS_PAGE_CACHE).then(function (cache) {
+        return Promise.all(urls.map(function (u) {
+            return cache.put(u, res.clone()).catch(function () { return null; });
+        })).then(function () { return true; });
+    }).catch(function () { return false; });
+}
+
 function networkOnly(request) {
     return fetch(request);
 }
@@ -145,6 +255,15 @@ function assetNetworkFirst(request) {
             return hit || Promise.reject(new Error('asset_offline_miss'));
         });
     });
+}
+
+function navigateOfflineFallback(request, url) {
+    if (matchOpsPath(url.pathname)) {
+        return opsPageFallback(request, url).then(function (hit) {
+            return hit || offlineShellFallback();
+        });
+    }
+    return offlineShellFallback();
 }
 
 self.addEventListener('install', function (event) {
@@ -195,10 +314,20 @@ self.addEventListener('activate', function (event) {
                 if (name.indexOf('rateb-erp-assets-') === 0 && name !== ASSET_CACHE) {
                     return caches.delete(name);
                 }
+                if (name.indexOf('rateb-erp-ops-pages-') === 0 && name !== OPS_PAGE_CACHE) {
+                    return caches.delete(name);
+                }
                 return Promise.resolve();
             }));
         })
     );
+});
+
+self.addEventListener('message', function (event) {
+    var data = event.data || {};
+    if (data.type === 'CACHE_ERP_OPS_PAGE') {
+        event.waitUntil(putOpsPageFromMessage(data));
+    }
 });
 
 self.addEventListener('fetch', function (event) {
@@ -254,12 +383,12 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // HTML navigations (non-auth, non-POS): network only; offline → shell fallback.
+    // HTML navigations (non-auth, non-POS): network only; offline → ops page or shell.
     if (request.method === 'GET' && (request.mode === 'navigate'
         || (request.headers && (request.headers.get('accept') || '').indexOf('text/html') !== -1))) {
         event.respondWith(
             networkOnly(request).catch(function () {
-                return offlineShellFallback();
+                return navigateOfflineFallback(request, url);
             })
         );
     }

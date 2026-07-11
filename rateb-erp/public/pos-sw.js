@@ -4,8 +4,23 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v1';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
+
+/** Phase 14 — mirrors offline/config/ops-page-allowlist.php (ERP coexist). */
+var ERP_OPS_PATHS = [
+    'stock-movements',
+    'warehouse-transfers',
+    'inventory-audits',
+    'inventory',
+    'warehouses',
+    'hr/attendance',
+    'hr/leaves',
+    'purchase-requests',
+    'purchase-orders',
+    'rfq'
+];
 
 function registerShellUrl() {
     try {
@@ -93,37 +108,137 @@ function erpInlineShellResponse() {
     });
 }
 
-/**
- * Smart coexist: when this SW owns the shared scope, serve ERP offline-shell
- * for non-POS admin navigations (do not steal POS register shell logic).
- */
-function erpAdminOfflineFallback() {
-    var key = erpOfflineShellUrl();
-    return caches.match(key).then(function (hit) {
-        if (hit) {
-            return hit;
+function matchErpOpsPath(pathname) {
+    var p = String(pathname || '').replace(/\/+$/, '').toLowerCase();
+    var sorted = ERP_OPS_PATHS.slice().sort(function (a, b) {
+        return String(b).length - String(a).length;
+    });
+    for (var i = 0; i < sorted.length; i++) {
+        var a = String(sorted[i] || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+        if (!a) {
+            continue;
         }
-        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-            return cache.match(key).then(function (cached) {
-                if (cached) {
-                    return cached;
+        var re = new RegExp('(^|/)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
+        if (re.test(p)) {
+            return a;
+        }
+    }
+    return null;
+}
+
+function erpOpsPageFallback(request, url) {
+    var candidates = [];
+    try {
+        if (request && request.url) {
+            candidates.push(request.url);
+        }
+    } catch (e) { /* ignore */ }
+    try {
+        if (url) {
+            candidates.push(url.origin + url.pathname);
+            if (url.href) {
+                candidates.push(url.href);
+            }
+        }
+    } catch (e2) { /* ignore */ }
+    return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+        var chain = Promise.resolve(null);
+        candidates.forEach(function (key) {
+            if (!key) {
+                return;
+            }
+            chain = chain.then(function (found) {
+                if (found) {
+                    return found;
                 }
-                return caches.keys().then(function (names) {
-                    var erpCaches = (names || []).filter(function (n) {
-                        return String(n).indexOf('rateb-erp-assets-') === 0
-                            || String(n) === ERP_COEXIST_CACHE;
-                    });
-                    return erpCaches.reduce(function (chain, name) {
-                        return chain.then(function (found) {
-                            if (found) {
-                                return found;
-                            }
-                            return caches.open(name).then(function (c) {
-                                return c.match(key);
-                            });
+                return cache.match(key);
+            });
+        });
+        return chain;
+    }).catch(function () {
+        return null;
+    });
+}
+
+function putErpOpsPageFromMessage(data) {
+    var html = data && data.html ? String(data.html) : '';
+    if (!html) {
+        return Promise.resolve(false);
+    }
+    var urls = [];
+    if (data.url) {
+        urls.push(String(data.url));
+    }
+    if (data.path) {
+        try {
+            var path = String(data.path);
+            if (path.charAt(0) !== '/') {
+                path = '/' + path;
+            }
+            urls.push(self.location.origin + path);
+        } catch (e) { /* ignore */ }
+    }
+    if (!urls.length) {
+        return Promise.resolve(false);
+    }
+    var res = new Response(html, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-Rateb-Offline': '1',
+            'X-Rateb-Ops-Page': '1',
+            'X-Rateb-Coexist': 'pos-sw'
+        }
+    });
+    return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+        return Promise.all(urls.map(function (u) {
+            return cache.put(u, res.clone()).catch(function () { return null; });
+        })).then(function () { return true; });
+    }).catch(function () { return false; });
+}
+
+/**
+ * Smart coexist: when this SW owns the shared scope, serve ERP ops page
+ * (if allowlisted) then offline-shell for non-POS admin navigations.
+ * @param {Request} [request]
+ * @param {URL} [url]
+ */
+function erpAdminOfflineFallback(request, url) {
+    var tryOps = (url && matchErpOpsPath(url.pathname))
+        ? erpOpsPageFallback(request, url)
+        : Promise.resolve(null);
+    return tryOps.then(function (opsHit) {
+        if (opsHit) {
+            return opsHit;
+        }
+        var key = erpOfflineShellUrl();
+        return caches.match(key).then(function (hit) {
+            if (hit) {
+                return hit;
+            }
+            return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                return cache.match(key).then(function (cached) {
+                    if (cached) {
+                        return cached;
+                    }
+                    return caches.keys().then(function (names) {
+                        var erpCaches = (names || []).filter(function (n) {
+                            return String(n).indexOf('rateb-erp-assets-') === 0
+                                || String(n) === ERP_COEXIST_CACHE
+                                || String(n) === ERP_OPS_PAGE_CACHE;
                         });
-                    }, Promise.resolve(null)).then(function (found) {
-                        return found || erpInlineShellResponse();
+                        return erpCaches.reduce(function (chain, name) {
+                            return chain.then(function (found) {
+                                if (found) {
+                                    return found;
+                                }
+                                return caches.open(name).then(function (c) {
+                                    return c.match(key);
+                                });
+                            });
+                        }, Promise.resolve(null)).then(function (found) {
+                            return found || erpInlineShellResponse();
+                        });
                     });
                 });
             });
@@ -441,6 +556,10 @@ self.addEventListener('message', function (event) {
     }
     if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
         event.waitUntil(warmErpOfflineShell());
+        return;
+    }
+    if (data.type === 'CACHE_ERP_OPS_PAGE') {
+        event.waitUntil(putErpOpsPageFromMessage(data));
     }
 });
 
@@ -473,14 +592,14 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: non-POS admin HTML → network, offline → ERP offline-shell.
+    // Smart coexist: non-POS admin HTML → network, offline → ops page then ERP shell.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
             fetch(event.request).catch(function () {
-                return erpAdminOfflineFallback();
+                return erpAdminOfflineFallback(event.request, url);
             })
         );
         return;

@@ -1,5 +1,5 @@
 /**
- * RATEB Offline SDK bootstrap (Phase 13.1).
+ * RATEB Offline SDK bootstrap (Phase 14.0).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
  */
 (function (root) {
@@ -15,7 +15,8 @@
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
-        'offline.master_data': false
+        'offline.master_data': false,
+        'offline.pilot.ops_pages': false
     };
 
     function mergeFlags(incoming) {
@@ -38,7 +39,8 @@
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
             master_data: !!flags['offline.master_data'],
-            version: '13.1.0'
+            pilot_ops_pages: !!flags['offline.pilot.ops_pages'],
+            version: '14.0.0'
         };
     }
 
@@ -58,7 +60,10 @@
         if (root.RatebOfflineQueue) {
             root.RatebOfflineQueue.configure({
                 enabled: enabled,
-                apiBase: options.apiBase || ''
+                apiBase: options.apiBase || '',
+                clientQueueMax: typeof options.clientQueueMax === 'number'
+                    ? options.clientQueueMax
+                    : 500
             });
         }
         if (root.RatebOfflineTransport) {
@@ -83,7 +88,7 @@
     }
 
     root.RatebOffline = {
-        version: '13.1.0',
+        version: '14.0.0',
         init: init,
         mergeFlags: mergeFlags,
         isBooted: function () { return booted; },
@@ -112,6 +117,11 @@
         isMasterDataEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.master_data']);
         },
+        isPilotOpsPagesEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.read_cache']
+                && flags['offline.pilot.ops_pages']);
+        },
         flags: function () { return Object.assign({}, flags); },
         queue: function () { return root.RatebOfflineQueue || null; },
         transport: function () { return root.RatebOfflineTransport || null; },
@@ -120,6 +130,7 @@
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
+        opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },
         rbac: function () { return root.RatebOfflineRbacCache || null; },
@@ -128,3 +139,4 @@
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+

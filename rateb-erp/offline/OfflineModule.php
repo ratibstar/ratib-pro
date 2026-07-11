@@ -49,6 +49,15 @@ final class OfflineModule
         return is_file($file) ? require $file : [];
     }
 
+    /** @return array{paths?: list<string>, form_hooks?: list<array<string, string>>} */
+    public static function opsPageAllowlist(): array
+    {
+        $file = self::rootPath() . '/config/ops-page-allowlist.php';
+        $cfg = is_file($file) ? require $file : [];
+
+        return is_array($cfg) ? $cfg : [];
+    }
+
     private static function registerAutoload(): void
     {
         $server = self::serverPath();
