@@ -532,6 +532,48 @@ return [
         'path' => '/api/v1/offline/delta/approval_delegation_directory',
         'replay' => 'delta_pull',
     ],
+    'eproc_supplier_profile_create' => [
+        'module' => 'procurement_enterprise',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_procurement_enterprise',
+    ],
+    'eproc_workflow_transition' => [
+        'module' => 'procurement_enterprise',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_procurement_enterprise',
+    ],
+    'eproc_tender_create' => [
+        'module' => 'procurement_enterprise',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_procurement_enterprise',
+    ],
+    'eproc_contract_create' => [
+        'module' => 'procurement_enterprise',
+        'method' => 'POST',
+        'path' => '/api/v1/offline/queue',
+        'replay' => 'delegate_procurement_enterprise',
+    ],
+    'eproc_supplier_category_directory' => [
+        'module' => 'procurement_enterprise',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/eproc_supplier_category_directory',
+        'replay' => 'delta_pull',
+    ],
+    'eproc_rfq_template_directory' => [
+        'module' => 'procurement_enterprise',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/eproc_rfq_template_directory',
+        'replay' => 'delta_pull',
+    ],
+    'eproc_tag_directory' => [
+        'module' => 'procurement_enterprise',
+        'method' => 'GET',
+        'path' => '/api/v1/offline/delta/eproc_tag_directory',
+        'replay' => 'delta_pull',
+    ],
     'customer_directory' => [
         'module' => 'platform',
         'method' => 'GET',

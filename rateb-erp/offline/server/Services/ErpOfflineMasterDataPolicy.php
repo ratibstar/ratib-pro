@@ -99,6 +99,12 @@ final class ErpOfflineMasterDataPolicy
             'approval_rule_directory', 'approval_rules',
             'approval_delegation_directory', 'approval_delegations',
             'approval_status_directory', 'approval_statuses',
+            'eproc_supplier_category_directory', 'eproc_supplier_categories',
+            'eproc_rfq_template_directory', 'eproc_rfq_templates',
+            'eproc_tag_directory', 'eproc_tags',
+            'eproc_supplier_profile_status_directory', 'eproc_supplier_statuses',
+            'eproc_tender_status_directory', 'eproc_tender_statuses',
+            'eproc_contract_status_directory', 'eproc_contract_statuses',
         ], true);
     }
 }

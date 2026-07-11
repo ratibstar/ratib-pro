@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC; flags default OFF). */
 
 /* ---- schema.js ---- */
 /**
@@ -2454,6 +2454,207 @@
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 
+/* ---- procurement-enterprise-adapter.js ---- */
+/**
+ * RATEB Offline — Enterprise Procurement adapter (Phase 21B / Tier 1 drafts).
+ * Queues EPROC supplier / tender / contract / workflow drafts via enterprise offline queue.
+ * Activated only when offline.enabled + offline.procurement_enterprise (sub-flags gate children).
+ * Distinct from legacy RatebOfflineProcurementAdapter (PR/PO/RFQ).
+ * Does NOT enqueue delete, payments, approvals, notifications, email/SMS, attachments, or government APIs.
+ */
+(function (root) {
+    'use strict';
+
+    function flags() {
+        if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
+            return root.RatebOffline.flags() || {};
+        }
+        return {};
+    }
+
+    function isActive() {
+        var f = flags();
+        return !!(f['offline.enabled'] && f['offline.procurement_enterprise']);
+    }
+
+    function isSuppliersActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.procurement_enterprise.suppliers']);
+    }
+
+    function isTendersActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.procurement_enterprise.tenders']);
+    }
+
+    function isContractsActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.procurement_enterprise.contracts']);
+    }
+
+    function isWorkflowActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.procurement_enterprise.workflow']);
+    }
+
+    function isMasterDataActive() {
+        var f = flags();
+        return !!(isActive() && f['offline.procurement_enterprise.masterdata']);
+    }
+
+    function makeClientId(prefix) {
+        var rand = Math.random().toString(36).slice(2, 10);
+        return String(prefix || 'eproc') + '-' + Date.now() + '-' + rand;
+    }
+
+    function enqueue(action, payload, options) {
+        options = options || {};
+        if (!isActive()) {
+            return Promise.reject(new Error('procurement_enterprise_offline_disabled'));
+        }
+        if ((action === 'supplier_profile.create'
+            || action === 'supplier_profile.update'
+            || action === 'qualification.create'
+            || action === 'qualification.update'
+            || action === 'risk.create'
+            || action === 'scorecard.create'
+            || action === 'portal_invite.create'
+            || action === 'collaboration.create') && !isSuppliersActive()) {
+            return Promise.reject(new Error('procurement_enterprise_suppliers_offline_disabled'));
+        }
+        if ((action === 'tender.create'
+            || action === 'bid.create'
+            || action === 'bid_compare.create') && !isTendersActive()) {
+            return Promise.reject(new Error('procurement_enterprise_tenders_offline_disabled'));
+        }
+        if (action === 'contract.create' && !isContractsActive()) {
+            return Promise.reject(new Error('procurement_enterprise_contracts_offline_disabled'));
+        }
+        if (action === 'workflow.transition' && !isWorkflowActive()) {
+            return Promise.reject(new Error('procurement_enterprise_workflow_offline_disabled'));
+        }
+        var q = root.RatebOfflineQueue;
+        if (!q || typeof q.enqueue !== 'function') {
+            return Promise.reject(new Error('offline_queue_unavailable'));
+        }
+        var clientId = options.client_id || options.idempotency_key || makeClientId(action);
+        return q.enqueue({
+            client_id: clientId,
+            idempotency_key: clientId,
+            module: 'procurement_enterprise',
+            action: action,
+            payload: payload || {},
+            version: options.version || 1,
+            occurred_at: options.occurred_at || new Date().toISOString()
+        });
+    }
+
+    function pullDirectory(entity, options) {
+        options = options || {};
+        if (!isMasterDataActive()) {
+            return Promise.resolve({ items: [], stub: true, disabled: true });
+        }
+        var pull = root.RatebOfflineDeltaPull;
+        if (!pull || typeof pull.pull !== 'function') {
+            return Promise.reject(new Error('delta_pull_unavailable'));
+        }
+        return pull.pull(entity, options).then(function (res) {
+            return (res && res.delta) ? res.delta : (res || { items: [] });
+        });
+    }
+
+    root.RatebOfflineProcurementEnterpriseAdapter = {
+        isActive: isActive,
+        isSuppliersActive: isSuppliersActive,
+        isTendersActive: isTendersActive,
+        isContractsActive: isContractsActive,
+        isWorkflowActive: isWorkflowActive,
+        isMasterDataActive: isMasterDataActive,
+        enqueue: enqueue,
+        enqueueSupplierProfileCreate: function (payload, options) {
+            return enqueue('supplier_profile.create', payload || {}, options);
+        },
+        enqueueSupplierProfileUpdate: function (payload, options) {
+            return enqueue('supplier_profile.update', payload || {}, options);
+        },
+        enqueueQualificationCreate: function (payload, options) {
+            return enqueue('qualification.create', payload || {}, options);
+        },
+        enqueueQualificationUpdate: function (payload, options) {
+            return enqueue('qualification.update', payload || {}, options);
+        },
+        enqueueRiskCreate: function (payload, options) {
+            return enqueue('risk.create', payload || {}, options);
+        },
+        enqueueScorecardCreate: function (payload, options) {
+            return enqueue('scorecard.create', payload || {}, options);
+        },
+        enqueuePortalInviteCreate: function (payload, options) {
+            return enqueue('portal_invite.create', payload || {}, options);
+        },
+        enqueueTenderCreate: function (payload, options) {
+            return enqueue('tender.create', payload || {}, options);
+        },
+        enqueueBidCreate: function (payload, options) {
+            return enqueue('bid.create', payload || {}, options);
+        },
+        enqueueBidCompareCreate: function (payload, options) {
+            return enqueue('bid_compare.create', payload || {}, options);
+        },
+        enqueueContractCreate: function (payload, options) {
+            return enqueue('contract.create', payload || {}, options);
+        },
+        enqueueCollaborationCreate: function (payload, options) {
+            return enqueue('collaboration.create', payload || {}, options);
+        },
+        enqueueAssignmentCreate: function (payload, options) {
+            return enqueue('assignment.create', payload || {}, options);
+        },
+        enqueueCommentCreate: function (payload, options) {
+            return enqueue('comment.create', payload || {}, options);
+        },
+        enqueueNoteCreate: function (payload, options) {
+            return enqueue('note.create', payload || {}, options);
+        },
+        enqueueWorkflowTransition: function (payload, options) {
+            return enqueue('workflow.transition', payload || {}, options);
+        },
+        draft: function (action, payload, options) {
+            return enqueue(action, payload || {}, options);
+        },
+        retry: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.retryFailed !== 'function') {
+                return Promise.reject(new Error('offline_queue_unavailable'));
+            }
+            return q.retryFailed({ module: 'procurement_enterprise' });
+        },
+        status: function () {
+            var q = root.RatebOfflineQueue;
+            if (!q || typeof q.status !== 'function') {
+                return Promise.resolve({ pending: 0, failed: 0, module: 'procurement_enterprise' });
+            }
+            return q.status({ module: 'procurement_enterprise' });
+        },
+        sync: function () {
+            var transport = root.RatebOfflineTransport;
+            if (!transport || typeof transport.flush !== 'function') {
+                return Promise.reject(new Error('offline_transport_unavailable'));
+            }
+            return transport.flush({ module: 'procurement_enterprise' });
+        },
+        pullCategories: function (options) {
+            return pullDirectory('eproc_supplier_category_directory', options);
+        },
+        pullRfqTemplates: function (options) {
+            return pullDirectory('eproc_rfq_template_directory', options);
+        },
+        pullTags: function (options) {
+            return pullDirectory('eproc_tag_directory', options);
+        }
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ---- form-post-adapter.js ---- */
 /**
  * RATEB Offline — Form POST adapter stub (Phase 2A — not activated).
@@ -4161,6 +4362,7 @@
  * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
  * Phase 19B: eam assets/maintenance/work-orders/inspections drafts (flag-gated).
  * Phase 20B: approvals requests/comments drafts (flag-gated).
+ * Phase 21B: eproc suppliers/tenders/contracts drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -4201,7 +4403,14 @@
         { match: 'eam/maintenance', module: 'assets', action: 'maintenance_plan.create' },
         { match: 'eam/inspections', module: 'assets', action: 'inspection.create' },
         { match: 'approvals/requests/create', module: 'approval', action: 'approval_request.create' },
-        { match: 'approvals/requests', module: 'approval', action: 'approval_request.update' }
+        { match: 'approvals/requests', module: 'approval', action: 'approval_request.update' },
+        { match: 'eproc/suppliers/create', module: 'procurement_enterprise', action: 'supplier_profile.create' },
+        { match: 'eproc/suppliers', module: 'procurement_enterprise', action: 'supplier_profile.update' },
+        { match: 'eproc/tenders/create', module: 'procurement_enterprise', action: 'tender.create' },
+        { match: 'eproc/contracts/create', module: 'procurement_enterprise', action: 'contract.create' },
+        { match: 'eproc/qualification', module: 'procurement_enterprise', action: 'qualification.create' },
+        { match: 'eproc/scorecards', module: 'procurement_enterprise', action: 'scorecard.create' },
+        { match: 'eproc/portal', module: 'procurement_enterprise', action: 'portal_invite.create' }
     ];
 
     function cfg() {
@@ -4330,6 +4539,31 @@
             }
             if (action === 'workflow.transition') {
                 return !!f['offline.approval.workflow'];
+            }
+            return true;
+        }
+        if (module === 'procurement_enterprise') {
+            if (!f['offline.procurement_enterprise']) {
+                return false;
+            }
+            if (action === 'supplier_profile.create'
+                || action === 'supplier_profile.update'
+                || action === 'qualification.create'
+                || action === 'qualification.update'
+                || action === 'risk.create'
+                || action === 'scorecard.create'
+                || action === 'portal_invite.create'
+                || action === 'collaboration.create') {
+                return !!f['offline.procurement_enterprise.suppliers'];
+            }
+            if (action === 'tender.create' || action === 'bid.create' || action === 'bid_compare.create') {
+                return !!f['offline.procurement_enterprise.tenders'];
+            }
+            if (action === 'contract.create') {
+                return !!f['offline.procurement_enterprise.contracts'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.procurement_enterprise.workflow'];
             }
             return true;
         }
@@ -4881,6 +5115,39 @@
                 return eap.enqueue(action, payload);
             }
         }
+        if (module === 'procurement_enterprise') {
+            var eproc = root.RatebOfflineProcurementEnterpriseAdapter;
+            if (!eproc) {
+                return Promise.reject(new Error('procurement_enterprise_adapter_unavailable'));
+            }
+            if (action === 'supplier_profile.create') {
+                return eproc.enqueueSupplierProfileCreate(payload);
+            }
+            if (action === 'supplier_profile.update') {
+                return eproc.enqueueSupplierProfileUpdate(payload);
+            }
+            if (action === 'qualification.create') {
+                return eproc.enqueueQualificationCreate(payload);
+            }
+            if (action === 'tender.create') {
+                return eproc.enqueueTenderCreate(payload);
+            }
+            if (action === 'contract.create') {
+                return eproc.enqueueContractCreate(payload);
+            }
+            if (action === 'scorecard.create') {
+                return eproc.enqueueScorecardCreate(payload);
+            }
+            if (action === 'portal_invite.create') {
+                return eproc.enqueuePortalInviteCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return eproc.enqueueWorkflowTransition(payload);
+            }
+            if (typeof eproc.enqueue === 'function') {
+                return eproc.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -4972,7 +5239,8 @@
             || f['offline.crm']
             || f['offline.projects']
             || f['offline.assets']
-            || f['offline.approval'])) {
+            || f['offline.approval']
+            || f['offline.procurement_enterprise'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);
@@ -5032,6 +5300,12 @@
         'offline.approval.requests': false,
         'offline.approval.workflow': false,
         'offline.approval.masterdata': false,
+        'offline.procurement_enterprise': false,
+        'offline.procurement_enterprise.suppliers': false,
+        'offline.procurement_enterprise.tenders': false,
+        'offline.procurement_enterprise.contracts': false,
+        'offline.procurement_enterprise.workflow': false,
+        'offline.procurement_enterprise.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -5083,6 +5357,12 @@
             approval_requests: !!flags['offline.approval.requests'],
             approval_workflow: !!flags['offline.approval.workflow'],
             approval_masterdata: !!flags['offline.approval.masterdata'],
+            procurement_enterprise: !!flags['offline.procurement_enterprise'],
+            procurement_enterprise_suppliers: !!flags['offline.procurement_enterprise.suppliers'],
+            procurement_enterprise_tenders: !!flags['offline.procurement_enterprise.tenders'],
+            procurement_enterprise_contracts: !!flags['offline.procurement_enterprise.contracts'],
+            procurement_enterprise_workflow: !!flags['offline.procurement_enterprise.workflow'],
+            procurement_enterprise_masterdata: !!flags['offline.procurement_enterprise.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -5278,6 +5558,34 @@
                 && flags['offline.approval']
                 && flags['offline.approval.masterdata']);
         },
+        isProcurementEnterpriseEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.procurement_enterprise']);
+        },
+        isProcurementEnterpriseSuppliersEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.suppliers']);
+        },
+        isProcurementEnterpriseTendersEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.tenders']);
+        },
+        isProcurementEnterpriseContractsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.contracts']);
+        },
+        isProcurementEnterpriseWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.workflow']);
+        },
+        isProcurementEnterpriseMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -5312,6 +5620,7 @@
         projects: function () { return root.RatebOfflineProjectsAdapter || null; },
         assets: function () { return root.RatebOfflineAssetsAdapter || null; },
         approvals: function () { return root.RatebOfflineApprovalAdapter || null; },
+        procurementEnterprise: function () { return root.RatebOfflineProcurementEnterpriseAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

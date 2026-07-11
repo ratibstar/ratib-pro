@@ -9,6 +9,7 @@
  * Phase 18B: projects create/update/tasks/timesheets drafts (flag-gated).
  * Phase 19B: eam assets/maintenance/work-orders/inspections drafts (flag-gated).
  * Phase 20B: approvals requests/comments drafts (flag-gated).
+ * Phase 21B: eproc suppliers/tenders/contracts drafts (flag-gated).
  */
 (function (root) {
     'use strict';
@@ -49,7 +50,14 @@
         { match: 'eam/maintenance', module: 'assets', action: 'maintenance_plan.create' },
         { match: 'eam/inspections', module: 'assets', action: 'inspection.create' },
         { match: 'approvals/requests/create', module: 'approval', action: 'approval_request.create' },
-        { match: 'approvals/requests', module: 'approval', action: 'approval_request.update' }
+        { match: 'approvals/requests', module: 'approval', action: 'approval_request.update' },
+        { match: 'eproc/suppliers/create', module: 'procurement_enterprise', action: 'supplier_profile.create' },
+        { match: 'eproc/suppliers', module: 'procurement_enterprise', action: 'supplier_profile.update' },
+        { match: 'eproc/tenders/create', module: 'procurement_enterprise', action: 'tender.create' },
+        { match: 'eproc/contracts/create', module: 'procurement_enterprise', action: 'contract.create' },
+        { match: 'eproc/qualification', module: 'procurement_enterprise', action: 'qualification.create' },
+        { match: 'eproc/scorecards', module: 'procurement_enterprise', action: 'scorecard.create' },
+        { match: 'eproc/portal', module: 'procurement_enterprise', action: 'portal_invite.create' }
     ];
 
     function cfg() {
@@ -178,6 +186,31 @@
             }
             if (action === 'workflow.transition') {
                 return !!f['offline.approval.workflow'];
+            }
+            return true;
+        }
+        if (module === 'procurement_enterprise') {
+            if (!f['offline.procurement_enterprise']) {
+                return false;
+            }
+            if (action === 'supplier_profile.create'
+                || action === 'supplier_profile.update'
+                || action === 'qualification.create'
+                || action === 'qualification.update'
+                || action === 'risk.create'
+                || action === 'scorecard.create'
+                || action === 'portal_invite.create'
+                || action === 'collaboration.create') {
+                return !!f['offline.procurement_enterprise.suppliers'];
+            }
+            if (action === 'tender.create' || action === 'bid.create' || action === 'bid_compare.create') {
+                return !!f['offline.procurement_enterprise.tenders'];
+            }
+            if (action === 'contract.create') {
+                return !!f['offline.procurement_enterprise.contracts'];
+            }
+            if (action === 'workflow.transition') {
+                return !!f['offline.procurement_enterprise.workflow'];
             }
             return true;
         }
@@ -729,6 +762,39 @@
                 return eap.enqueue(action, payload);
             }
         }
+        if (module === 'procurement_enterprise') {
+            var eproc = root.RatebOfflineProcurementEnterpriseAdapter;
+            if (!eproc) {
+                return Promise.reject(new Error('procurement_enterprise_adapter_unavailable'));
+            }
+            if (action === 'supplier_profile.create') {
+                return eproc.enqueueSupplierProfileCreate(payload);
+            }
+            if (action === 'supplier_profile.update') {
+                return eproc.enqueueSupplierProfileUpdate(payload);
+            }
+            if (action === 'qualification.create') {
+                return eproc.enqueueQualificationCreate(payload);
+            }
+            if (action === 'tender.create') {
+                return eproc.enqueueTenderCreate(payload);
+            }
+            if (action === 'contract.create') {
+                return eproc.enqueueContractCreate(payload);
+            }
+            if (action === 'scorecard.create') {
+                return eproc.enqueueScorecardCreate(payload);
+            }
+            if (action === 'portal_invite.create') {
+                return eproc.enqueuePortalInviteCreate(payload);
+            }
+            if (action === 'workflow.transition') {
+                return eproc.enqueueWorkflowTransition(payload);
+            }
+            if (typeof eproc.enqueue === 'function') {
+                return eproc.enqueue(action, payload);
+            }
+        }
         return Promise.reject(new Error('ops_form_action_unsupported'));
     }
 
@@ -820,7 +886,8 @@
             || f['offline.crm']
             || f['offline.projects']
             || f['offline.assets']
-            || f['offline.approval'])) {
+            || f['offline.approval']
+            || f['offline.procurement_enterprise'])) {
             return;
         }
         root.document.addEventListener('submit', handleSubmit, true);

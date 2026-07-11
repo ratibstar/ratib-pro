@@ -43,6 +43,7 @@ final class OfflineBackgroundSync
                 'projects_enabled' => false,
                 'assets_enabled' => false,
                 'approval_enabled' => false,
+                'procurement_enterprise_enabled' => false,
             ];
         }
 
@@ -56,6 +57,7 @@ final class OfflineBackgroundSync
         $stats['projects_enabled'] = $this->flags()->enabled('offline.projects');
         $stats['assets_enabled'] = $this->flags()->enabled('offline.assets');
         $stats['approval_enabled'] = $this->flags()->enabled('offline.approval');
+        $stats['procurement_enterprise_enabled'] = $this->flags()->enabled('offline.procurement_enterprise');
 
         return $stats;
     }

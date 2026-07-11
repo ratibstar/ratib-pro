@@ -461,6 +461,49 @@ final class OfflineQueueService
                 $action = $normalizedAction;
             }
 
+            if ($module === 'procurement_enterprise') {
+                if (!$this->flags()->enabled('offline.procurement_enterprise')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $normalizedAction = $this->normalizeProcurementEnterpriseAction($action);
+                if ($normalizedAction === '') {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'supplier_profile.create', 'supplier_profile.update',
+                    'qualification.create', 'qualification.update',
+                    'risk.create', 'scorecard.create', 'portal_invite.create', 'collaboration.create',
+                ], true) && !$this->flags()->enabled('offline.procurement_enterprise.suppliers')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if (in_array($normalizedAction, [
+                    'tender.create', 'bid.create', 'bid_compare.create',
+                ], true) && !$this->flags()->enabled('offline.procurement_enterprise.tenders')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'contract.create'
+                    && !$this->flags()->enabled('offline.procurement_enterprise.contracts')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                if ($normalizedAction === 'workflow.transition'
+                    && !$this->flags()->enabled('offline.procurement_enterprise.workflow')) {
+                    $rejected++;
+                    $rejectedKeys[] = $idempotencyKey;
+                    continue;
+                }
+                $action = $normalizedAction;
+            }
+
             $this->model()->create([
                 'company_id' => $companyId,
                 'branch_id' => $branchId > 0 ? $branchId : null,
@@ -712,6 +755,28 @@ final class OfflineQueueService
 
             if ($module === 'approval') {
                 if (!$this->flags()->enabled('offline.approval')) {
+                    $stats['skipped']++;
+                    continue;
+                }
+                $outcome = $this->replay()->replay($row);
+                $status = (string) ($outcome['status'] ?? 'skipped');
+                if ($status === 'synced') {
+                    $this->markSynced($queueId);
+                    $stats['synced']++;
+                } elseif ($status === 'conflict') {
+                    $this->markConflict($queueId, $row, $outcome);
+                    $stats['conflicts']++;
+                } elseif ($status === 'failed') {
+                    $this->markFailed($queueId, $retryCount, (string) ($outcome['error'] ?? 'replay_failed'));
+                    $stats['failed']++;
+                } else {
+                    $stats['skipped']++;
+                }
+                continue;
+            }
+
+            if ($module === 'procurement_enterprise') {
+                if (!$this->flags()->enabled('offline.procurement_enterprise')) {
                     $stats['skipped']++;
                     continue;
                 }
@@ -993,6 +1058,41 @@ final class OfflineQueueService
         $mapped = $aliases[$action] ?? '';
         $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
         if ($canonical === '' && in_array('approval.' . $mapped, $allowed, true)) {
+            $canonical = $mapped;
+        }
+
+        return $canonical;
+    }
+
+    private function normalizeProcurementEnterpriseAction(string $action): string
+    {
+        $action = trim($action);
+        $allowed = ProcurementEnterpriseOfflineReplayService::deferredActions();
+        $prefix = 'procurement_enterprise.';
+        if (in_array($action, $allowed, true)) {
+            return str_starts_with($action, $prefix) ? substr($action, strlen($prefix)) : $action;
+        }
+        $aliases = [
+            'create_supplier_profile' => 'supplier_profile.create',
+            'update_supplier_profile' => 'supplier_profile.update',
+            'create_qualification' => 'qualification.create',
+            'update_qualification' => 'qualification.update',
+            'create_risk' => 'risk.create',
+            'create_scorecard' => 'scorecard.create',
+            'create_portal_invite' => 'portal_invite.create',
+            'create_tender' => 'tender.create',
+            'create_bid' => 'bid.create',
+            'create_bid_compare' => 'bid_compare.create',
+            'create_contract' => 'contract.create',
+            'create_collaboration' => 'collaboration.create',
+            'create_assignment' => 'assignment.create',
+            'create_comment' => 'comment.create',
+            'create_note' => 'note.create',
+            'transition_workflow' => 'workflow.transition',
+        ];
+        $mapped = $aliases[$action] ?? '';
+        $canonical = in_array($mapped, $allowed, true) ? $mapped : '';
+        if ($canonical === '' && in_array($prefix . $mapped, $allowed, true)) {
             $canonical = $mapped;
         }
 

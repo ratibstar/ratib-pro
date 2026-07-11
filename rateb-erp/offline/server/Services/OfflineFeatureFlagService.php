@@ -216,6 +216,37 @@ final class OfflineFeatureFlagService
         return $this->isApprovalEnabled() && $this->enabled('offline.approval.masterdata');
     }
 
+    /** Phase 21B — EPROC Tier-1 drafts (requires master + offline.procurement_enterprise). */
+    public function isProcurementEnterpriseEnabled(): bool
+    {
+        return $this->isMasterEnabled() && $this->enabled('offline.procurement_enterprise');
+    }
+
+    public function isProcurementEnterpriseSuppliersEnabled(): bool
+    {
+        return $this->isProcurementEnterpriseEnabled() && $this->enabled('offline.procurement_enterprise.suppliers');
+    }
+
+    public function isProcurementEnterpriseTendersEnabled(): bool
+    {
+        return $this->isProcurementEnterpriseEnabled() && $this->enabled('offline.procurement_enterprise.tenders');
+    }
+
+    public function isProcurementEnterpriseContractsEnabled(): bool
+    {
+        return $this->isProcurementEnterpriseEnabled() && $this->enabled('offline.procurement_enterprise.contracts');
+    }
+
+    public function isProcurementEnterpriseWorkflowEnabled(): bool
+    {
+        return $this->isProcurementEnterpriseEnabled() && $this->enabled('offline.procurement_enterprise.workflow');
+    }
+
+    public function isProcurementEnterpriseMasterDataEnabled(): bool
+    {
+        return $this->isProcurementEnterpriseEnabled() && $this->enabled('offline.procurement_enterprise.masterdata');
+    }
+
     /** Ops monitoring dashboards (independent of master — read-only visibility). */
     public function isMonitoringEnabled(): bool
     {

@@ -29,6 +29,7 @@ final class OfflineCursorService
     private ?ProjectOfflineMasterDataDirectoryService $projectsMasterData = null;
     private ?AssetOfflineMasterDataDirectoryService $assetsMasterData = null;
     private ?ApprovalOfflineMasterDataDirectoryService $approvalMasterData = null;
+    private ?ProcurementEnterpriseOfflineMasterDataDirectoryService $procurementEnterpriseMasterData = null;
 
     private function model(): OfflineEntityCursor
     {
@@ -103,6 +104,11 @@ final class OfflineCursorService
     private function approvalMasterData(): ApprovalOfflineMasterDataDirectoryService
     {
         return $this->approvalMasterData ??= new ApprovalOfflineMasterDataDirectoryService();
+    }
+
+    private function procurementEnterpriseMasterData(): ProcurementEnterpriseOfflineMasterDataDirectoryService
+    {
+        return $this->procurementEnterpriseMasterData ??= new ProcurementEnterpriseOfflineMasterDataDirectoryService();
     }
 
     public function isAvailable(): bool
@@ -199,6 +205,10 @@ final class OfflineCursorService
 
         if ($masterCanonical !== null && $this->approvalMasterData()->supports($masterCanonical)) {
             return $this->approvalMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
+        }
+
+        if ($masterCanonical !== null && $this->procurementEnterpriseMasterData()->supports($masterCanonical)) {
+            return $this->procurementEnterpriseMasterData()->pull($masterCanonical, $companyId, $branchId, $token);
         }
 
         return [

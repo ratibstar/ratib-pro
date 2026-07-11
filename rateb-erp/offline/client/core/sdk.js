@@ -40,6 +40,12 @@
         'offline.approval.requests': false,
         'offline.approval.workflow': false,
         'offline.approval.masterdata': false,
+        'offline.procurement_enterprise': false,
+        'offline.procurement_enterprise.suppliers': false,
+        'offline.procurement_enterprise.tenders': false,
+        'offline.procurement_enterprise.contracts': false,
+        'offline.procurement_enterprise.workflow': false,
+        'offline.procurement_enterprise.masterdata': false,
         'offline.read_cache': false,
         'offline.auth.unlock': false,
         'offline.rbac.cache': false,
@@ -91,6 +97,12 @@
             approval_requests: !!flags['offline.approval.requests'],
             approval_workflow: !!flags['offline.approval.workflow'],
             approval_masterdata: !!flags['offline.approval.masterdata'],
+            procurement_enterprise: !!flags['offline.procurement_enterprise'],
+            procurement_enterprise_suppliers: !!flags['offline.procurement_enterprise.suppliers'],
+            procurement_enterprise_tenders: !!flags['offline.procurement_enterprise.tenders'],
+            procurement_enterprise_contracts: !!flags['offline.procurement_enterprise.contracts'],
+            procurement_enterprise_workflow: !!flags['offline.procurement_enterprise.workflow'],
+            procurement_enterprise_masterdata: !!flags['offline.procurement_enterprise.masterdata'],
             read_cache: !!flags['offline.read_cache'],
             auth_unlock: !!flags['offline.auth.unlock'],
             rbac_cache: !!flags['offline.rbac.cache'],
@@ -286,6 +298,34 @@
                 && flags['offline.approval']
                 && flags['offline.approval.masterdata']);
         },
+        isProcurementEnterpriseEnabled: function () {
+            return !!(flags['offline.enabled'] && flags['offline.procurement_enterprise']);
+        },
+        isProcurementEnterpriseSuppliersEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.suppliers']);
+        },
+        isProcurementEnterpriseTendersEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.tenders']);
+        },
+        isProcurementEnterpriseContractsEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.contracts']);
+        },
+        isProcurementEnterpriseWorkflowEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.workflow']);
+        },
+        isProcurementEnterpriseMasterDataEnabled: function () {
+            return !!(flags['offline.enabled']
+                && flags['offline.procurement_enterprise']
+                && flags['offline.procurement_enterprise.masterdata']);
+        },
         isReadCacheEnabled: function () {
             return !!(flags['offline.enabled'] && flags['offline.read_cache']);
         },
@@ -320,6 +360,7 @@
         projects: function () { return root.RatebOfflineProjectsAdapter || null; },
         assets: function () { return root.RatebOfflineAssetsAdapter || null; },
         approvals: function () { return root.RatebOfflineApprovalAdapter || null; },
+        procurementEnterprise: function () { return root.RatebOfflineProcurementEnterpriseAdapter || null; },
         opsForms: function () { return root.RatebOfflineOpsForms || null; },
         shell: function () { return root.RatebOfflineShellAdapter || null; },
         auth: function () { return root.RatebOfflineAuthLock || null; },

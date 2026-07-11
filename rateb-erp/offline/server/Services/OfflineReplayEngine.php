@@ -22,6 +22,7 @@ final class OfflineReplayEngine implements OfflineReplayPort
     private ?ProjectOfflineReplayService $projects = null;
     private ?AssetOfflineReplayService $assets = null;
     private ?ApprovalOfflineReplayService $approval = null;
+    private ?ProcurementEnterpriseOfflineReplayService $procurementEnterprise = null;
 
     private function flags(): OfflineFeatureFlagService
     {
@@ -73,6 +74,11 @@ final class OfflineReplayEngine implements OfflineReplayPort
         return $this->approval ??= new ApprovalOfflineReplayService();
     }
 
+    private function procurementEnterprise(): ProcurementEnterpriseOfflineReplayService
+    {
+        return $this->procurementEnterprise ??= new ProcurementEnterpriseOfflineReplayService();
+    }
+
     /** @param array<string, mixed> $queueRow */
     public function replay(array $queueRow): array
     {
@@ -92,6 +98,14 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->approval()->replayFromQueueRow($queueRow);
+        }
+
+        if ($module === 'procurement_enterprise') {
+            if (!$this->flags()->enabled('offline.procurement_enterprise')) {
+                return ['status' => 'skipped', 'error' => 'procurement_enterprise_offline_disabled'];
+            }
+
+            return $this->procurementEnterprise()->replayFromQueueRow($queueRow);
         }
 
         if ($module === 'inventory' || str_starts_with($action, 'inventory.')
@@ -173,6 +187,15 @@ final class OfflineReplayEngine implements OfflineReplayPort
             }
 
             return $this->approval()->replayFromQueueRow($queueRow);
+        }
+
+        if (str_starts_with($action, 'procurement_enterprise.')
+            || in_array($action, ProcurementEnterpriseOfflineReplayService::deferredActions(), true)) {
+            if (!$this->flags()->enabled('offline.procurement_enterprise')) {
+                return ['status' => 'skipped', 'error' => 'procurement_enterprise_offline_disabled'];
+            }
+
+            return $this->procurementEnterprise()->replayFromQueueRow($queueRow);
         }
 
         return ['status' => 'skipped', 'error' => 'replay_not_implemented'];
