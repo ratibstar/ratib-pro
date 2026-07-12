@@ -22,4 +22,4 @@
 | Frozen business layers | 10/10 |
 | Sync reuse (C/C.1) | 10/10 |
 
-**Production readiness score: 90/90** (pending enterprise verify green).
+**Production readiness score: 90/90** (enterprise verify green).
