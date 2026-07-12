@@ -2467,7 +2467,7 @@ if (!function_exists('rateb_oversight_menu_counts')) {
         } catch (\Throwable $e) {
             $cached = $empty;
         }
-        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 60, 'data' => $cached]);
+        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 300, 'data' => $cached]);
         return $cached;
     }
 }
@@ -2554,7 +2554,7 @@ if (!function_exists('rateb_ops_nav_counts')) {
         } catch (\Throwable $e) {
             $cached = [];
         }
-        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 60, 'data' => $cached]);
+        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 300, 'data' => $cached]);
         return $cached;
     }
 }

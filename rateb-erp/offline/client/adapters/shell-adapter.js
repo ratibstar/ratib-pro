@@ -215,6 +215,8 @@
         return out;
     }
 
+    var allowlistLoadPromise = null;
+
     function opsAllowlist() {
         var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
         var paths = cfg.ops_page_paths;
@@ -229,6 +231,65 @@
             return {};
         }
         return routes;
+    }
+
+    /** Load paths/routes from allowlist JSON when not inlined in HTML (keeps pages lean). */
+    function ensureOpsAllowlist() {
+        var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+        var paths = cfg.ops_page_paths;
+        var routes = cfg.ops_page_routes;
+        var hasPaths = Array.isArray(paths) && paths.length > 0;
+        var hasRoutes = routes && typeof routes === 'object' && Object.keys(routes).length > 0;
+        if (hasPaths && hasRoutes) {
+            return Promise.resolve(cfg);
+        }
+        if (allowlistLoadPromise) {
+            return allowlistLoadPromise;
+        }
+        var url = cfg.allowlistUrl;
+        if (!url && root.location) {
+            try {
+                var path = String(root.location.pathname || '');
+                var m = path.match(/^(.*?\/rateb-erp\/public)(?:\/|$)/i);
+                var prefix = (m && m[1]) ? m[1] : '/rateb-erp/public';
+                url = root.location.origin + prefix + '/assets/offline/ops-page-allowlist.json';
+            } catch (eUrl) {
+                url = '';
+            }
+        }
+        if (!url || !root.fetch) {
+            return Promise.resolve(cfg);
+        }
+        allowlistLoadPromise = root.fetch(String(url), {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' }
+        }).then(function (res) {
+            if (!res || !res.ok) {
+                return null;
+            }
+            return res.json();
+        }).then(function (data) {
+            if (!data || typeof data !== 'object') {
+                return cfg;
+            }
+            var next = root.__RATEB_ERP_SHELL_OFFLINE__ || cfg;
+            if (Array.isArray(data.paths)) {
+                next.ops_page_paths = data.paths.map(function (p) {
+                    return String(p || '').replace(/^\/+|\/+$/g, '');
+                }).filter(Boolean);
+            }
+            if (data.routes && typeof data.routes === 'object') {
+                next.ops_page_routes = data.routes;
+            }
+            if (Array.isArray(data.form_hooks) && !(next.ops_form_hooks && next.ops_form_hooks.length)) {
+                next.ops_form_hooks = data.form_hooks;
+            }
+            root.__RATEB_ERP_SHELL_OFFLINE__ = next;
+            return next;
+        }).catch(function () {
+            return cfg;
+        });
+        return allowlistLoadPromise;
     }
 
     /**
@@ -423,6 +484,7 @@
         if (!isOpsPagesActive()) {
             return Promise.resolve({ skipped: true, disabled: true });
         }
+        return ensureOpsAllowlist().then(function () {
         var path = (root.location && root.location.pathname) || '';
         if (!matchOpsPath(path)) {
             return Promise.resolve({ skipped: true, reason: 'path_not_allowlisted' });
@@ -483,6 +545,7 @@
         } catch (e) {
             return Promise.reject(e);
         }
+        });
     }
 
     function cacheFetchedOpsHtml(href, path, html) {
@@ -529,6 +592,7 @@
             root.sessionStorage.setItem('rateb_erp_ops_warm_at', String(Date.now()));
         } catch (eGate) { /* ignore and continue once */ }
 
+        ensureOpsAllowlist().then(function () {
         var seen = {};
         var urls = [];
 
@@ -621,6 +685,7 @@
         } else {
             setTimeout(tick, 5000);
         }
+        }).catch(function () { /* allowlist fetch failed — skip warm */ });
     }
 
     function startAutoCapture() {
@@ -672,6 +737,7 @@
         prefetchAllowlistedLinks: prefetchAllowlistedLinks,
         canonicalUrlForLogical: canonicalUrlForLogical,
         opsRouteMap: opsRouteMap,
+        ensureOpsAllowlist: ensureOpsAllowlist,
         stripSensitive: stripSensitive,
         stripSensitiveOpsPage: stripSensitiveOpsPage
     };
