@@ -4,14 +4,17 @@ declare(strict_types=1);
 namespace Rateb\App\Core;
 
 use PDO;
+use PDOException;
 
 /**
- * Phase A — minimal SQLite schema for Hybrid Core Seam.
- * Full ERP table mirror is a later phase; this only creates hybrid infra tables.
+ * Phase B — apply full ERP SQLite schema (generated from MySQL) plus Phase A hybrid tables.
  * Does not alter Controllers, Services, or Models.
  */
 final class SqliteSchemaBootstrap
 {
+    public const SCHEMA_VERSION_PHASE_A = '1';
+    public const SCHEMA_VERSION_PHASE_B = '2';
+
     /**
      * Ensure Phase A hybrid tables exist on the given SQLite PDO.
      *
@@ -50,23 +53,138 @@ final class SqliteSchemaBootstrap
              ON rateb_sync_outbox (status, id)'
         );
 
+        self::upsertMeta($pdo, 'hybrid_phase', 'A');
+        self::upsertMeta($pdo, 'schema_version', self::SCHEMA_VERSION_PHASE_A);
+
+        return ['rateb_hybrid_meta', 'rateb_sync_outbox'];
+    }
+
+    /**
+     * Ensure full Branch ERP schema (Phase B) is applied once.
+     *
+     * @return array{applied:bool,tables:int,version:string}
+     */
+    public static function ensureErpSchema(PDO $pdo): array
+    {
+        self::ensureMinimal($pdo);
+
+        $version = self::metaValue($pdo, 'schema_version');
+        $hasCompanies = self::tableExists($pdo, 'rateb_companies');
+        if ($hasCompanies && ($version === self::SCHEMA_VERSION_PHASE_B || $version === 'B')) {
+            self::upsertMeta($pdo, 'hybrid_phase', 'B');
+            return ['applied' => false, 'tables' => self::countUserTables($pdo), 'version' => self::SCHEMA_VERSION_PHASE_B];
+        }
+
+        $schemaFile = self::schemaFilePath();
+        if (!is_readable($schemaFile)) {
+            throw new PDOException(
+                'RATEB Branch: SQLite schema missing at ' . $schemaFile
+                . ' — run bin/hybrid-phase-b-generate-sqlite-schema.php'
+            );
+        }
+
+        $sql = (string) file_get_contents($schemaFile);
+        $tables = self::execSqliteScript($pdo, $sql);
+        self::ensureMinimal($pdo); // re-assert hybrid tables / indexes
+        self::upsertMeta($pdo, 'schema_version', self::SCHEMA_VERSION_PHASE_B);
+        self::upsertMeta($pdo, 'hybrid_phase', 'B');
+        self::upsertMeta($pdo, 'schema_source', basename($schemaFile));
+
+        return ['applied' => true, 'tables' => $tables, 'version' => self::SCHEMA_VERSION_PHASE_B];
+    }
+
+    public static function schemaFilePath(): string
+    {
+        $root = defined('RATEB_ROOT') && (string) RATEB_ROOT !== ''
+            ? (string) RATEB_ROOT
+            : dirname(__DIR__, 2);
+
+        return str_replace('\\', '/', $root) . '/schema/sqlite/branch-erp-schema.sql';
+    }
+
+    /** @return int number of CREATE TABLE statements executed (best-effort) */
+    public static function execSqliteScript(PDO $pdo, string $sql): int
+    {
+        $pdo->exec('PRAGMA foreign_keys=OFF');
+        $tables = 0;
+        // Split on semicolons at end of lines (DDL statements)
+        $chunks = preg_split('/;\s*\n/', $sql) ?: [];
+        foreach ($chunks as $chunk) {
+            $stmt = trim($chunk);
+            if ($stmt === '' || str_starts_with($stmt, '--')) {
+                // may still contain only comments
+                $stmt = trim(preg_replace('/^--.*$/m', '', $stmt) ?? '');
+            }
+            if ($stmt === '') {
+                continue;
+            }
+            if (preg_match('/^PRAGMA\s+/i', $stmt)) {
+                try {
+                    $pdo->exec($stmt);
+                } catch (\Throwable $e) {
+                    // ignore pragma errors
+                }
+                continue;
+            }
+            try {
+                $pdo->exec($stmt);
+                if (preg_match('/^CREATE\s+TABLE/i', $stmt)) {
+                    $tables++;
+                }
+            } catch (PDOException $e) {
+                $msg = $e->getMessage();
+                // Idempotent apply
+                if (str_contains($msg, 'already exists')) {
+                    continue;
+                }
+                throw new PDOException('SQLite schema apply failed: ' . $msg . ' :: ' . substr($stmt, 0, 120), (int) $e->getCode(), $e);
+            }
+        }
+        $pdo->exec('PRAGMA foreign_keys=ON');
+
+        return $tables;
+    }
+
+    public static function tableExists(PDO $pdo, string $table): bool
+    {
+        $st = $pdo->prepare(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name = :n LIMIT 1"
+        );
+        $st->execute(['n' => $table]);
+
+        return (bool) $st->fetchColumn();
+    }
+
+    public static function countUserTables(PDO $pdo): int
+    {
+        $n = $pdo->query(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        );
+
+        return $n ? (int) $n->fetchColumn() : 0;
+    }
+
+    public static function metaValue(PDO $pdo, string $key): ?string
+    {
+        try {
+            $st = $pdo->prepare('SELECT value FROM rateb_hybrid_meta WHERE key = :k LIMIT 1');
+            $st->execute(['k' => $key]);
+            $v = $st->fetchColumn();
+
+            return $v === false ? null : (string) $v;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    public static function upsertMeta(PDO $pdo, string $key, string $value): void
+    {
         $now = gmdate('c');
         $stmt = $pdo->prepare(
             'INSERT INTO rateb_hybrid_meta (key, value, updated_at)
              VALUES (:k, :v, :t)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at'
         );
-        $stmt->execute([
-            'k' => 'hybrid_phase',
-            'v' => 'A',
-            't' => $now,
-        ]);
-        $stmt->execute([
-            'k' => 'schema_version',
-            'v' => '1',
-            't' => $now,
-        ]);
-
-        return ['rateb_hybrid_meta', 'rateb_sync_outbox'];
+        $stmt->execute(['k' => $key, 'v' => $value, 't' => $now]);
     }
 }

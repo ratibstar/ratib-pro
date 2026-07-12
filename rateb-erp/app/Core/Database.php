@@ -423,6 +423,12 @@ final class Database
         $pdo->exec('PRAGMA busy_timeout=5000');
         $pdo->exec('PRAGMA temp_store=MEMORY');
 
+        // Phase B: ensure full ERP schema on first branch open (idempotent).
+        // Phase A hybrid tables are included. Cloud MySQL path is untouched.
+        if (!defined('RATEB_SQLITE_SKIP_SCHEMA_BOOTSTRAP') || !RATEB_SQLITE_SKIP_SCHEMA_BOOTSTRAP) {
+            SqliteSchemaBootstrap::ensureErpSchema($pdo);
+        }
+
         return $pdo;
     }
 
