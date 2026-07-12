@@ -45,11 +45,18 @@ try {
 
     Rateb\App\Core\Bootstrap::init($ratebRootHint);
 
-    require_once dirname(__FILE__, 2) . '/modules/pos/PosModule.php';
-    \Rateb\App\Pos\PosModule::init();
+    $posModule = dirname(__FILE__, 2) . '/modules/pos/PosModule.php';
+    if (is_file($posModule)) {
+        require_once $posModule;
+        \Rateb\App\Pos\PosModule::init();
+    }
 
-    require_once dirname(__FILE__, 2) . '/offline/OfflineModule.php';
-    \Rateb\App\Offline\OfflineModule::init();
+    // Soft-load: production must not fatal if offline/ not yet deployed.
+    $offlineModule = dirname(__FILE__, 2) . '/offline/OfflineModule.php';
+    if (is_file($offlineModule)) {
+        require_once $offlineModule;
+        \Rateb\App\Offline\OfflineModule::init();
+    }
 
     Rateb\App\Core\Auth::bootstrapFromSession();
 

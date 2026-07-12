@@ -49,7 +49,6 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             return true;
         }
         if ((int) SessionManager::get('rateb_company_id', 0) < 1) {
-            Auth::logout();
             Response::redirect(
                 function_exists('rateb_list_url')
                     ? rateb_list_url('login', ['err' => 'session'])
@@ -69,7 +68,6 @@ final class ErpAuthMiddleware implements MiddlewareInterface
     {
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
         if ($companyId < 1) {
-            Auth::logout();
             Response::redirect(
                 function_exists('rateb_list_url')
                     ? rateb_list_url('login', ['err' => 'session'])

@@ -7,6 +7,7 @@ namespace Rateb\App\Offline;
 /**
  * Enterprise Offline module bootstrap — isolated under offline/.
  * Additive only; does not alter existing ERP modules.
+ * Phase D.1: soft-loaded from public/index.php when file is present on host.
  */
 final class OfflineModule
 {

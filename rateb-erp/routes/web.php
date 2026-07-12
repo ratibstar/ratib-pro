@@ -52,11 +52,6 @@ $router->get('/', static function (): void {
         \Rateb\App\Core\Response::redirect(rateb_url(\Rateb\App\Core\Auth::homePath()));
         return;
     }
-    // Local Branch Appliance only (loopback). Never gate cloud SaaS on HybridRuntime.
-    if (function_exists('rateb_is_local_appliance_host') && rateb_is_local_appliance_host()) {
-        \Rateb\App\Core\Response::redirect(rateb_url('login'));
-        return;
-    }
     if (function_exists('rateb_erp_public_prefix') && rateb_erp_public_prefix() === '') {
         (new \Rateb\App\Controllers\Marketing\MarketingController())->home();
         return;

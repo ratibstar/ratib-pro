@@ -6,29 +6,12 @@ namespace Rateb\App\Core;
 /**
  * Phase D.1 — Load branch appliance serve.env before HybridRuntime boots.
  *
- * ONLY for local Branch Appliance (php -S / loopback) or explicit allow.
- * Cloud hosts (rateb.sa / *.rateb.sa) never auto-load serve.env — and any
- * leaked RATEB_RUNTIME=branch from prior putenv (PHP-FPM workers) is cleared.
+ * When storage/branch/serve.env exists (installer-written), apply its variables
+ * so HTTP requests via public/index.php activate branch/SQLite mode — same as
+ * hybrid-branch-serve.php. Cloud hosts without serve.env are unchanged.
  */
 final class BranchServeEnvBootstrap
 {
-    /** @var list<string> */
-    private const BRANCH_ENV_KEYS = [
-        'RATEB_RUNTIME',
-        'RATEB_ALLOW_RUNTIME_MARKER',
-        'RATEB_SQLITE_PATH',
-        'RATEB_HYBRID_SYNC_ENABLED',
-        'RATEB_HYBRID_SYNC_SINK',
-        'RATEB_HYBRID_SYNC_KEY',
-        'RATEB_HYBRID_SYNC_MIRROR',
-        'RATEB_HYBRID_SYNC_CAPTURE',
-        'RATEB_HYBRID_SYNC_PULL_ENTITIES',
-        'RATEB_BRANCH_UUID',
-        'RATEB_DEVICE_UUID',
-        'RATEB_ERP_PUBLIC_PREFIX',
-        'RATEB_ALLOW_SERVE_ENV_HTTP',
-    ];
-
     private static bool $applied = false;
 
     public static function reset(): void
@@ -43,12 +26,7 @@ final class BranchServeEnvBootstrap
         }
         self::$applied = true;
 
-        if (self::isServerCloudLocked() || self::isCloudHostname()) {
-            self::forceCloudRuntime();
-            return;
-        }
-
-        if (!self::mayLoadServeEnvFromHttp()) {
+        if (self::isServerCloudLocked()) {
             return;
         }
 
@@ -77,62 +55,6 @@ final class BranchServeEnvBootstrap
         }
     }
 
-    /** Undo leaked branch putenv inside long-lived PHP-FPM / LiteSpeed workers. */
-    private static function forceCloudRuntime(): void
-    {
-        foreach (self::BRANCH_ENV_KEYS as $key) {
-            putenv($key);
-            unset($_ENV[$key], $_SERVER[$key]);
-        }
-        if (class_exists(HybridRuntime::class, false)) {
-            HybridRuntime::reset();
-        }
-    }
-
-    /**
-     * Local php -S / loopback may load serve.env.
-     * Production Branch Appliance should inject env via systemd/Windows service.
-     */
-    private static function mayLoadServeEnvFromHttp(): bool
-    {
-        if (self::envFlagTruthy('RATEB_ALLOW_SERVE_ENV_HTTP')) {
-            return true;
-        }
-
-        if (PHP_SAPI === 'cli-server') {
-            return true;
-        }
-
-        if (PHP_SAPI === 'cli') {
-            return false;
-        }
-
-        $host = self::requestHost();
-
-        return $host === '127.0.0.1'
-            || $host === 'localhost'
-            || $host === '::1'
-            || $host === '0.0.0.0';
-    }
-
-    private static function isCloudHostname(): bool
-    {
-        $host = self::requestHost();
-        if ($host === '') {
-            return false;
-        }
-        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
-            return true;
-        }
-
-        return str_ends_with($host, '.rateb.sa');
-    }
-
-    private static function requestHost(): string
-    {
-        return strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
-    }
-
     private static function isServerCloudLocked(): bool
     {
         $deployment = self::readServerScalar('RATEB_DEPLOYMENT');
@@ -148,13 +70,6 @@ final class BranchServeEnvBootstrap
         $fromServer = self::readServerScalar($key);
 
         return $fromServer !== null && $fromServer !== '';
-    }
-
-    private static function envFlagTruthy(string $name): bool
-    {
-        $raw = self::readServerScalar($name);
-
-        return $raw !== null && in_array($raw, ['1', 'true', 'yes', 'on'], true);
     }
 
     private static function readServerScalar(string $key): ?string

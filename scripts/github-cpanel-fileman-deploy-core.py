@@ -281,6 +281,8 @@ FAST_FILES = [
     "rateb-erp/public/assets/js/marketing-agency-register.js",
     "rateb-erp/public/assets/css/marketing-agency-register.css",
     "rateb-erp/views/layouts/marketing.php",
+    "rateb-erp/public/index.php",
+    "rateb-erp/offline/OfflineModule.php",
     "rateb-platform-catalog/.htaccess",
     "rateb-platform-catalog/public/index.php",
     "rateb-platform-catalog/public/.htaccess",
