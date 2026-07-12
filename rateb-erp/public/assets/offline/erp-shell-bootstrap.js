@@ -3,11 +3,39 @@
  * Passes full cfg.flags into SDK; never freezes later phase flags.
  * Does not overwrite pos-sw.js when it owns the shared scope.
  * Sync badge + clientQueueMax for daily ops pilot.
+ * TEMP: RatebOfflineTrace diagnostics (remove with erp-offline-debug.js).
  */
 (function (root) {
     'use strict';
 
     var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+
+    function trace() {
+        return root.RatebOfflineTrace || null;
+    }
+
+    function tPass(step, file, fn, reason) {
+        var t = trace();
+        if (!t) {
+            return true;
+        }
+        return t.pass(step, file, fn, reason);
+    }
+
+    function tFail(step, file, fn, reason) {
+        var t = trace();
+        if (!t) {
+            return false;
+        }
+        return t.fail(step, file, fn, reason);
+    }
+
+    function tStopped() {
+        var t = trace();
+        return !!(t && t.stopped());
+    }
+
+    tPass(3, 'erp-shell-bootstrap.js', 'load', 'erp-shell-bootstrap.js loaded and executing');
 
     function isPosLocation() {
         try {
@@ -48,6 +76,9 @@
     }
 
     function warmErpShellUrls() {
+        if (tStopped()) {
+            return Promise.resolve(null);
+        }
         var base;
         try {
             var scope = cfg.serviceWorkerScope || '';
@@ -61,49 +92,117 @@
         } catch (e) {
             base = '/rateb-erp/public/';
         }
+        var shellUrl = base + 'offline-shell.html';
         var urls = [
-            base + 'offline-shell.html',
+            shellUrl,
             base + 'assets/offline/rateb-offline.js',
             base + 'assets/offline/erp-offline-shell-auth.js',
             base + 'assets/offline/erp-offline-shell-rbac.js'
         ];
         if (!('caches' in root) || !root.fetch) {
+            tFail(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls', 'caches or fetch unavailable');
             return Promise.resolve(null);
         }
+        tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
         return root.caches.open('rateb-erp-coexist-v1').then(function (cache) {
-            return Promise.all(urls.map(function (u) {
-                return root.fetch(u, {
-                    credentials: 'same-origin',
-                    cache: 'no-cache',
-                    headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
-                }).then(function (res) {
-                    if (res && res.ok) {
-                        return cache.put(u, res.clone());
-                    }
+            return root.fetch(shellUrl, {
+                credentials: 'same-origin',
+                cache: 'no-cache',
+                headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
+            }).then(function (res) {
+                if (tStopped()) {
                     return null;
-                }).catch(function () { return null; });
-            }));
-        }).catch(function () { return null; });
+                }
+                if (!res || !res.ok) {
+                    tFail(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch',
+                        'fetch not ok status=' + (res ? res.status : 'null') + ' url=' + shellUrl);
+                    return null;
+                }
+                tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch ok status=' + res.status);
+                return cache.put(shellUrl, res.clone()).then(function () {
+                    if (tStopped()) {
+                        return null;
+                    }
+                    tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
+                        'cache.put cache=rateb-erp-coexist-v1 key=' + shellUrl);
+                    return cache.match(shellUrl).then(function (hit) {
+                        if (hit) {
+                            tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
+                                'offline-shell.html present in rateb-erp-coexist-v1');
+                        } else {
+                            tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
+                                'cache.match miss after put key=' + shellUrl);
+                        }
+                        return hit;
+                    });
+                }).catch(function (err) {
+                    tFail(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
+                        'cache.put failed: ' + String(err && err.message ? err.message : err));
+                    return null;
+                });
+            }).catch(function (err) {
+                tFail(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch',
+                    'fetch threw: ' + String(err && err.message ? err.message : err));
+                return null;
+            }).then(function () {
+                // Still warm helpers (best-effort; do not fail chain if shell already cached).
+                return Promise.all(urls.slice(1).map(function (u) {
+                    return root.fetch(u, {
+                        credentials: 'same-origin',
+                        cache: 'no-cache',
+                        headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
+                    }).then(function (res) {
+                        if (res && res.ok) {
+                            return cache.put(u, res.clone());
+                        }
+                        return null;
+                    }).catch(function () { return null; });
+                }));
+            });
+        }).catch(function (err) {
+            tFail(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.caches.open',
+                'caches.open failed: ' + String(err && err.message ? err.message : err));
+            return null;
+        });
     }
 
     function warmErpShellViaPosSw(controller) {
+        if (tStopped()) {
+            return Promise.resolve(null);
+        }
         try {
             if (controller && typeof controller.postMessage === 'function') {
                 controller.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
+                tPass(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
+                    'postMessage WARM_ERP_OFFLINE_SHELL to controller');
+            } else {
+                tPass(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
+                    'no controller postMessage — page Cache API warm only');
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+            tFail(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
+                'postMessage threw: ' + String(e && e.message ? e.message : e));
+            return Promise.resolve(null);
+        }
         return warmErpShellUrls();
     }
 
     function registerServiceWorker() {
+        if (tStopped()) {
+            return Promise.resolve(null);
+        }
+        tPass(5, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'entered registerServiceWorker');
         if (!('serviceWorker' in root.navigator)) {
+            tFail(5, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'serviceWorker API unavailable');
             return Promise.resolve(null);
         }
         if (isPosLocation()) {
+            tFail(5, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'POS location — SW register skipped');
             return Promise.resolve(null);
         }
         var swUrl = cfg.serviceWorker || '';
         if (!swUrl) {
+            tFail(5, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'cfg.serviceWorker empty');
             return Promise.resolve(null);
         }
         var scope = cfg.serviceWorkerScope || undefined;
@@ -115,6 +214,9 @@
             }
         }
         return root.navigator.serviceWorker.getRegistrations().then(function (regs) {
+            if (tStopped()) {
+                return null;
+            }
             // Never displace pos-sw.js on the shared scope (smart coexist).
             var posReg = null;
             (regs || []).forEach(function (reg) {
@@ -128,10 +230,49 @@
                 var ctrl = (posReg.active)
                     || (root.navigator.serviceWorker && root.navigator.serviceWorker.controller)
                     || null;
+                if (ctrl) {
+                    tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                        'pos-sw registration present; coexist warm path');
+                    tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                        'controller found script=' + (ctrl.scriptURL || ''));
+                } else {
+                    tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                        'pos-sw registration present; no controller yet');
+                    tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                        'controller absent — page Cache API warm only');
+                }
                 return warmErpShellViaPosSw(ctrl).then(function () { return null; });
             }
-            return root.navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined);
-        }).catch(function () { return null; });
+            return root.navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined)
+                .then(function (reg) {
+                    if (tStopped()) {
+                        return null;
+                    }
+                    tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                        'rateb-offline-sw registered scope=' + ((reg && reg.scope) || scope || ''));
+                    var ctrl2 = (root.navigator.serviceWorker && root.navigator.serviceWorker.controller)
+                        || (reg && reg.active)
+                        || null;
+                    if (ctrl2) {
+                        tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                            'controller found script=' + (ctrl2.scriptURL || ''));
+                    } else {
+                        tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                            'no controller yet after register (install may still warm)');
+                    }
+                    // No pos-sw: still warm via Cache API from page.
+                    return warmErpShellUrls().then(function () { return reg; });
+                })
+                .catch(function (err) {
+                    tFail(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                        'register failed: ' + String(err && err.message ? err.message : err));
+                    return null;
+                });
+        }).catch(function (err) {
+            tFail(5, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                'getRegistrations failed: ' + String(err && err.message ? err.message : err));
+            return null;
+        });
     }
 
     function ensureSyncBadge() {
@@ -203,15 +344,113 @@
         root.addEventListener('offline', refreshSyncBadge);
     }
 
+    function afterWarmDiagnostics() {
+        if (tStopped()) {
+            return Promise.resolve();
+        }
+        if (root.RatebOffline && typeof root.RatebOffline.init === 'function') {
+            tPass(14, 'erp-shell-bootstrap.js', 'RatebOffline.init', 'SDK init already invoked in boot');
+        } else {
+            tFail(14, 'erp-shell-bootstrap.js', 'RatebOffline.init', 'RatebOffline SDK missing');
+            return Promise.resolve();
+        }
+        if (!root.indexedDB) {
+            tFail(15, 'erp-shell-bootstrap.js', 'indexedDB', 'indexedDB unavailable');
+            return Promise.resolve();
+        }
+        return new Promise(function (resolve) {
+            var req = root.indexedDB.open('rateb_erp_offline');
+            req.onerror = function () {
+                tFail(15, 'erp-shell-bootstrap.js', 'indexedDB.open', 'open failed');
+                resolve();
+            };
+            req.onsuccess = function () {
+                tPass(15, 'erp-shell-bootstrap.js', 'indexedDB.open', 'rateb_erp_offline opened');
+                try {
+                    req.result.close();
+                } catch (e) { /* ignore */ }
+                resolve();
+            };
+        }).then(function () {
+            if (tStopped()) {
+                return null;
+            }
+            var shell = root.RatebOfflineShellAdapter;
+            if (!shell || typeof shell.captureChrome !== 'function') {
+                tFail(16, 'erp-shell-bootstrap.js', 'captureChrome', 'RatebOfflineShellAdapter.captureChrome missing');
+                return null;
+            }
+            return shell.captureChrome().then(function (res) {
+                if (tStopped()) {
+                    return null;
+                }
+                if (res && res.ok) {
+                    tPass(16, 'shell-adapter.js', 'captureChrome', 'shell snapshot saved id=' + (res.id || ''));
+                } else {
+                    tFail(16, 'shell-adapter.js', 'captureChrome',
+                        'snapshot not saved: ' + JSON.stringify(res || {}));
+                }
+                return res;
+            }).catch(function (err) {
+                tFail(16, 'shell-adapter.js', 'captureChrome',
+                    'threw: ' + String(err && err.message ? err.message : err));
+                return null;
+            });
+        }).then(function () {
+            if (tStopped()) {
+                return null;
+            }
+            var rbac = root.RatebOfflineRbacCache;
+            if (!rbac || typeof rbac.applyCachedNav !== 'function') {
+                // RBAC may be flag-off; do not hard-fail Offline Ready if rbac.cache disabled.
+                var flags = (cfg.flags || {});
+                if (!flags['offline.rbac.cache']) {
+                    tPass(17, 'erp-shell-bootstrap.js', 'RBAC', 'offline.rbac.cache off — skipped');
+                    tPass(18, 'erp-shell-bootstrap.js', 'Offline Ready', 'warm+sdk+idb path complete (rbac skipped)');
+                    return null;
+                }
+                tFail(17, 'erp-shell-bootstrap.js', 'applyCachedNav', 'RatebOfflineRbacCache missing');
+                return null;
+            }
+            return rbac.applyCachedNav({ requireDeviceActive: false }).then(function (nav) {
+                if (tStopped()) {
+                    return null;
+                }
+                if (nav && (nav.ok || nav.applied || nav.html || nav.items)) {
+                    tPass(17, 'rbac-cache-adapter.js', 'applyCachedNav', 'RBAC/nav restore attempted ok');
+                } else {
+                    tPass(17, 'rbac-cache-adapter.js', 'applyCachedNav',
+                        'RBAC restore returned: ' + JSON.stringify(nav || {}));
+                }
+                tPass(18, 'erp-shell-bootstrap.js', 'Offline Ready', 'diagnostic chain completed');
+                return nav;
+            }).catch(function (err) {
+                tFail(17, 'rbac-cache-adapter.js', 'applyCachedNav',
+                    'threw: ' + String(err && err.message ? err.message : err));
+                return null;
+            });
+        });
+    }
+
     function boot() {
+        if (tStopped()) {
+            return;
+        }
+        tPass(4, 'erp-shell-bootstrap.js', 'boot', 'boot() entered');
         var flags = flagsFromConfig();
         if (!flags['offline.enabled'] || !flags['offline.read_cache']) {
+            tFail(4, 'erp-shell-bootstrap.js', 'boot',
+                'flags gate failed enabled=' + !!flags['offline.enabled']
+                + ' read_cache=' + !!flags['offline.read_cache']);
             return;
         }
         if (isPosLocation()) {
+            tFail(4, 'erp-shell-bootstrap.js', 'boot', 'POS location — boot aborted');
             return;
         }
         if (!(parseInt(cfg.company_id, 10) > 0 && parseInt(cfg.user_id, 10) > 0)) {
+            tFail(4, 'erp-shell-bootstrap.js', 'boot',
+                'tenant gate failed company_id=' + cfg.company_id + ' user_id=' + cfg.user_id);
             return;
         }
         persistOfflineScope(flags);
@@ -231,6 +470,7 @@
             if (root.RatebOfflineShellAdapter && typeof root.RatebOfflineShellAdapter.startAutoCapture === 'function') {
                 root.RatebOfflineShellAdapter.startAutoCapture();
             }
+            return afterWarmDiagnostics();
         });
     }
 

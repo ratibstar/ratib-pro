@@ -271,10 +271,38 @@ function warmErpOfflineShell() {
                 headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
             }).then(function (res) {
                 if (!res || !res.ok) {
+                    try {
+                        console.error('[RATIB OFFLINE]', 'FAIL', 'step=11', 'file=pos-sw.js',
+                            'function=warmErpOfflineShell.fetch',
+                            'reason=fetch not ok status=' + (res ? res.status : 'null') + ' key=' + key);
+                    } catch (e0) { /* ignore */ }
                     return null;
                 }
-                return cache.put(key, res.clone());
-            }).catch(function () { return null; });
+                try {
+                    console.log('[RATIB OFFLINE]', 'PASS', 'step=11', 'file=pos-sw.js',
+                        'function=warmErpOfflineShell.fetch', 'reason=fetch ok status=' + res.status + ' key=' + key);
+                } catch (e1) { /* ignore */ }
+                return cache.put(key, res.clone()).then(function () {
+                    try {
+                        console.log('[RATIB OFFLINE]', 'PASS', 'step=12', 'file=pos-sw.js',
+                            'function=warmErpOfflineShell.cache.put',
+                            'reason=cache.put cache=rateb-erp-coexist-v1 key=' + key);
+                        if (/offline-shell\.html/i.test(key)) {
+                            console.log('[RATIB OFFLINE]', 'PASS', 'step=13', 'file=pos-sw.js',
+                                'function=warmErpOfflineShell',
+                                'reason=offline-shell.html cached in rateb-erp-coexist-v1');
+                        }
+                    } catch (e2) { /* ignore */ }
+                    return true;
+                });
+            }).catch(function (err) {
+                try {
+                    console.error('[RATIB OFFLINE]', 'FAIL', 'step=11', 'file=pos-sw.js',
+                        'function=warmErpOfflineShell.fetch',
+                        'reason=fetch threw: ' + String(err && err.message ? err.message : err) + ' key=' + key);
+                } catch (e3) { /* ignore */ }
+                return null;
+            });
         }));
     }).catch(function () { return null; });
 }
@@ -555,7 +583,26 @@ self.addEventListener('message', function (event) {
         return;
     }
     if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
-        event.waitUntil(warmErpOfflineShell());
+        try {
+            console.log('[RATIB OFFLINE]', 'PASS', 'step=9', 'file=pos-sw.js', 'function=message',
+                'reason=received WARM_ERP_OFFLINE_SHELL');
+            console.log('[RATIB OFFLINE]', 'PASS', 'step=10', 'file=pos-sw.js', 'function=warmErpOfflineShell',
+                'reason=warmErpOfflineShell() scheduled');
+        } catch (eLog) { /* ignore */ }
+        event.waitUntil(
+            warmErpOfflineShell().then(function () {
+                try {
+                    console.log('[RATIB OFFLINE]', 'PASS', 'step=10', 'file=pos-sw.js',
+                        'function=warmErpOfflineShell', 'reason=warmErpOfflineShell() finished');
+                } catch (e2) { /* ignore */ }
+            }).catch(function (err) {
+                try {
+                    console.error('[RATIB OFFLINE]', 'FAIL', 'step=10', 'file=pos-sw.js',
+                        'function=warmErpOfflineShell',
+                        'reason=' + String(err && err.message ? err.message : err));
+                } catch (e3) { /* ignore */ }
+            })
+        );
         return;
     }
     if (data.type === 'CACHE_ERP_OPS_PAGE') {
