@@ -304,10 +304,14 @@
         html += '</nav>';
         try {
             var targets = root.document.querySelectorAll(
-                'aside.rateb-offline-shell-nav, aside.rateb-sidebar, aside[aria-label="Offline nav"]'
+                'aside.rateb-offline-shell-nav, aside[aria-label="Offline nav"]'
             );
+            // Do not wipe live Admin sidebars (aside.rateb-sidebar) — only the offline-shell host.
             if (!targets.length) {
-                targets = root.document.querySelectorAll('.rateb-offline-shell-nav, #rateb-sidebar');
+                var path = String((root.location && root.location.pathname) || '');
+                if (/offline-shell\.html$/i.test(path) || root.document.getElementById('rateb-offline-shell-main')) {
+                    targets = root.document.querySelectorAll('#rateb-sidebar, aside.rateb-sidebar');
+                }
             }
             if (!targets.length) {
                 return false;
@@ -398,6 +402,15 @@
         if (!isActive()) {
             return Promise.resolve({ ok: false, error: 'rbac_disabled' });
         }
+        // Captured ops pages already have the live Admin sidebar — never replace with
+        // a simplified RBAC tree (that caused offline nav mismatch vs online).
+        try {
+            var cfgSnap = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+            if (cfgSnap.offline_ops_snapshot
+                || (root.document && root.document.querySelector('[data-rateb-offline-ops-banner]'))) {
+                return Promise.resolve({ ok: true, skipped: true, reason: 'keep_captured_live_nav' });
+            }
+        } catch (eSkip) { /* ignore */ }
         var scope = tenantScope();
         return getManifest(scope).then(function (row) {
             return validateForUseAsync(row, scope, opts || {}).then(function (v) {

@@ -60,6 +60,14 @@
                 return;
             }
         }
+        // Captured ops pages keep live sidebar HTML — do not rebuild from RBAC.
+        try {
+            var snapCfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+            if (snapCfg.offline_ops_snapshot
+                || (root.document && root.document.querySelector('[data-rateb-offline-ops-banner]'))) {
+                return;
+            }
+        } catch (eSnap) { /* ignore */ }
         var rbac = root.RatebOfflineRbacCache;
         var lock = root.RatebOfflineAuthLock;
         if (!rbac || !rbac.isActive()) {

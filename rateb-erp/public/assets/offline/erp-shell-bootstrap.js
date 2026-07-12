@@ -379,6 +379,9 @@
         if (doc.getElementById('rateb-offline-shell-main') || doc.querySelector('.rateb-offline-home')) {
             return true;
         }
+        if (doc.querySelector('[data-rateb-offline-ops-banner="1"], [data-rateb-offline-ops-banner]')) {
+            return true;
+        }
         try {
             if (/offline-shell\.html$/i.test(String(root.location.pathname || ''))) {
                 return true;
@@ -386,6 +389,11 @@
         } catch (e) { /* ignore */ }
         var shellCfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
         return !!shellCfg.offline_ops_snapshot;
+    }
+
+    /** Cached ops/shell HTML (same URL as live) — must hard-reload when back online. */
+    function isCachedOfflineUi() {
+        return isOfflineShellDocument();
     }
 
     function connectivitySaysOnline() {
@@ -488,11 +496,17 @@
         ensureReconnectButton(true);
         paintConnectionIndicator(true);
         try {
+            // Bypass bfcache / sticky SW HTML: navigate to same URL with a bust query.
+            var href = String(root.location.href || '');
+            var u = new URL(href, root.location.origin);
+            u.searchParams.set('rateb_live', String(Date.now()));
             root.setTimeout(function () {
-                root.location.reload();
-            }, 350);
+                root.location.replace(u.href);
+            }, 200);
         } catch (e2) {
-            root.location.reload();
+            try {
+                root.location.reload();
+            } catch (e3) { /* ignore */ }
         }
     }
 
@@ -501,12 +515,16 @@
         paintConnectionIndicator(online);
         refreshSyncBadge();
         ensureReconnectButton(online);
-        // Auto-reload ONLY on a real offline → online transition while viewing an offline shell.
-        // Do not reload on first boot subscribe (null → true): that fought live pages and felt like lag.
-        if (online && lastConnectivityOnline === false && isOfflineShellDocument()) {
-            requestLiveReload('reconnect');
-        } else if (online && isOfflineShellDocument()) {
-            ensureReconnectButton(true);
+        // Viewing cached offline UI while network is back → always restore live Admin.
+        // Include first-boot (null → true): cached ops pages paint "متصل" without reload otherwise.
+        if (online && isCachedOfflineUi()) {
+            var cameBack = lastConnectivityOnline === false;
+            var bootAlreadyOnline = lastConnectivityOnline === null;
+            if (cameBack || bootAlreadyOnline) {
+                requestLiveReload(cameBack ? 'reconnect' : 'boot-online-cached');
+            } else {
+                ensureReconnectButton(true);
+            }
         }
         lastConnectivityOnline = online;
     }
@@ -608,11 +626,15 @@
             if (tStopped()) {
                 return null;
             }
-            // Never mutate live online DOM with cached offline RBAC/nav.
-            // applyCachedNav belongs on offline-shell.html only.
+            // Never mutate live / captured-ops sidebar with RBAC rebuild.
+            // Offline must keep the same captured nav as online (icons + full sections).
+            // applyCachedNav is only for offline-shell.html home (no captured module chrome).
             var onlineNow = !(root.navigator && root.navigator.onLine === false);
-            if (onlineNow) {
-                tPass(17, 'erp-shell-bootstrap.js', 'RBAC', 'online — skipped applyCachedNav (keep live UI)');
+            var opsSnap = !!(cfg.offline_ops_snapshot)
+                || !!(root.document && root.document.querySelector('[data-rateb-offline-ops-banner]'));
+            if (onlineNow || opsSnap) {
+                tPass(17, 'erp-shell-bootstrap.js', 'RBAC',
+                    opsSnap ? 'ops snapshot — keep captured live nav' : 'online — skipped applyCachedNav');
                 tPass(18, 'erp-shell-bootstrap.js', 'Offline Ready', 'warm+sdk+idb+capture complete');
                 return null;
             }

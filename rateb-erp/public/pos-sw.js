@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v7';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v8';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';

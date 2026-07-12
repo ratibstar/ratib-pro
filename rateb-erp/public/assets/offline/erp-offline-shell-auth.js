@@ -369,7 +369,7 @@
             });
         }
 
-        // When already online on offline-shell.html, offer return to live Admin (no forced redirect loop).
+        // When already online on offline-shell.html, return to live Admin automatically.
         try {
             if (root.navigator && root.navigator.onLine !== false) {
                 var last = '';
@@ -378,9 +378,14 @@
                 if (!target || !/\/rateb-erp\/public\//i.test(target)) {
                     target = publicBase() + 'admin/?company_id=' + encodeURIComponent(String(scope.company_id || ''));
                 }
+                try {
+                    var tu = new URL(target, root.location.origin);
+                    tu.searchParams.set('rateb_live', String(Date.now()));
+                    target = tu.href;
+                } catch (eTu) { /* keep target */ }
                 var msg = root.document.getElementById('msg');
                 if (msg) {
-                    msg.textContent = 'أنت متصل — اضغط إعادة المحاولة للعودة للواجهة الحية.';
+                    msg.textContent = 'أنت متصل — جاري العودة للواجهة الحية…';
                 }
                 var retry = root.document.getElementById('retry');
                 if (retry) {
@@ -388,6 +393,10 @@
                         root.location.href = target;
                     };
                 }
+                root.setTimeout(function () {
+                    root.location.replace(target);
+                }, 250);
+                return;
             }
         } catch (eOnline) { /* ignore */ }
 
