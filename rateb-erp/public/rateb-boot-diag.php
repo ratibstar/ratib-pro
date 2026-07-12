@@ -11,62 +11,52 @@ $out = [];
 $step = 'start';
 
 try {
-    $step = 'initMinimal';
-    define('RATEB_ENV_NO_SESSION', true);
+    $step = 'fullInit';
     require_once $root . '/app/Core/Bootstrap.php';
-    \Rateb\App\Core\Bootstrap::initMinimal($root);
-    $out[] = 'initMinimal=ok mode=' . \Rateb\App\Core\HybridRuntime::mode();
+    \Rateb\App\Core\Bootstrap::init($root);
+    $out[] = 'fullInit=ok';
 
-    $step = 'initFull';
-    // Full init needs session; use a throwaway session name
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('rateb_diag');
-    }
-    // Re-enter full boot path pieces that login uses
-    require_once $root . '/app/Core/Database.php';
-    $pdo = \Rateb\App\Core\Database::connection();
-    $out[] = 'db=ok';
+    $step = 'posModule';
+    require_once $root . '/modules/pos/PosModule.php';
+    \Rateb\App\Pos\PosModule::init();
+    $out[] = 'pos=ok';
 
-    $step = 'marketingHome';
-    if (class_exists(\Rateb\App\Controllers\Marketing\MarketingController::class)) {
-        $out[] = 'MarketingController=loaded';
-    } else {
-        require_once $root . '/app/controllers/Marketing/MarketingController.php';
-        $out[] = 'MarketingController=required';
-    }
+    $step = 'offlineModule';
+    require_once $root . '/offline/OfflineModule.php';
+    \Rateb\App\Offline\OfflineModule::init();
+    $out[] = 'offline=ok';
 
-    $step = 'loginController';
-    if (!class_exists(\Rateb\App\Controllers\Shared\LoginController::class)) {
-        // rely on autoload
-    }
-    $out[] = 'LoginController=' . (class_exists(\Rateb\App\Controllers\Shared\LoginController::class) ? 'ok' : 'missing');
+    $step = 'authBootstrap';
+    \Rateb\App\Core\Auth::bootstrapFromSession();
+    $out[] = 'auth=ok check=' . (\Rateb\App\Core\Auth::check() ? '1' : '0');
 
-    $step = 'authLayout';
-    $locale = function_exists('rateb_locale') ? rateb_locale() : 'ar';
-    $out[] = 'locale=' . $locale;
-    $out[] = 'rtl=' . (function_exists('rateb_is_rtl') && rateb_is_rtl() ? '1' : '0');
-    $out[] = 'bs=' . rateb_bootstrap_css();
-    $out[] = 'fa=' . rateb_fontawesome_css();
+    $step = 'routerLoad';
+    $router = new \Rateb\App\Core\Router();
+    require $root . '/routes/web.php';
+    require $root . '/routes/marketing.php';
+    require $root . '/routes/cms.php';
+    require $root . '/routes/company.php';
+    require $root . '/routes/api.php';
+    require $root . '/modules/pos/routes/pos.php';
+    $out[] = 'routes=ok';
 
-    $step = 'renderLoginView';
+    $step = 'resolvePath';
+    require_once $root . '/app/helpers/Request.php';
+    $_SERVER['REQUEST_URI'] = '/';
+    $path = \Rateb\App\Helpers\Request::resolvePath();
+    $out[] = 'path=' . $path;
+
+    $step = 'cmsRedirect';
+    (new \Rateb\App\Services\CmsService())->applyRedirectIfAny($path);
+    $out[] = 'cmsRedirect=ok';
+
+    $step = 'dispatchRoot';
     ob_start();
-    $title = 'diag';
-    $pageContent = '<p>diag</p>';
-    include $root . '/views/layouts/auth.php';
-    $html = ob_get_clean();
-    $out[] = 'authLayoutLen=' . strlen($html);
-    $out[] = 'authHasVendor=' . (str_contains($html, 'vendor/bootstrap') ? '1' : '0');
-
-    $step = 'renderMarketingLayout';
-    ob_start();
-    $meta = ['title' => 'diag'];
-    $theme = [];
-    $analytics = [];
-    $pageContent = '<p>diag</p>';
-    include $root . '/views/layouts/marketing.php';
-    $html2 = ob_get_clean();
-    $out[] = 'marketingLayoutLen=' . strlen($html2);
-    $out[] = 'mktHasHeroClass=' . (str_contains($html2, 'rateb-marketing') ? '1' : '0');
+    $router->dispatch('GET', '/');
+    $body = ob_get_clean();
+    $out[] = 'dispatchRootLen=' . strlen((string) $body);
+    $out[] = 'hasMkt=' . (str_contains((string) $body, 'rateb-marketing') ? '1' : '0');
+    $out[] = 'hasErr=' . (str_contains((string) $body, 'تعذّر') ? '1' : '0');
 
     $step = 'done';
     $out[] = 'ALL_OK';
@@ -74,7 +64,7 @@ try {
     $out[] = 'FAIL_STEP=' . $step;
     $out[] = 'FAIL ' . $e->getMessage();
     $out[] = 'at ' . $e->getFile() . ':' . $e->getLine();
-    $out[] = substr($e->getTraceAsString(), 0, 1500);
+    $out[] = substr($e->getTraceAsString(), 0, 2000);
 }
 
 echo implode("\n", $out) . "\n";
