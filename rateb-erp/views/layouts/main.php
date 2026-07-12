@@ -452,7 +452,9 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
 <script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
+<?php if (!empty($_GET['rateb_offline_debug'])) { ?>
 <script src="<?php echo rateb_asset('offline/erp-offline-debug.js'); ?>" defer></script>
+<?php } ?>
 <script src="<?php echo rateb_asset('offline/erp-shell-bootstrap.js'); ?>" defer></script>
 <?php
     $ratebOfflineAuthUnlock = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)

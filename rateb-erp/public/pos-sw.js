@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v6';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v7';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -584,9 +584,11 @@ function migrateErpCoexistCaches(keys) {
 
 function isErpOfflineAsset(url) {
     var p = String(url.pathname || '');
+    // Only offline SDK / shell assets. Do NOT intercept live ERP CSS —
+    // network-first CSS with a multi-second race made every admin (and login)
+    // page spin for several seconds before paint.
     return p.indexOf('/assets/offline/') !== -1
-        || /\/offline-shell\.html$/i.test(p)
-        || /\/assets\/css\/(variables|main|components|dark|rtl|light|dashboard)\.css$/i.test(p);
+        || /\/offline-shell\.html$/i.test(p);
 }
 
 function offlineHtmlResponse() {
@@ -992,7 +994,7 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Online: network-first so identity/RBAC/shell fixes ship immediately.
+    // Online: short network race then cache (never block paint for many seconds).
     // Offline: cache-first with fail-fast (no hanging fetch).
     if (isErpOfflineAsset(url)) {
         event.respondWith((function () {
@@ -1004,17 +1006,31 @@ self.addEventListener('fetch', function (event) {
                 }).catch(function () { return null; });
             }
             if (!offline) {
-                return fetchErpAssetNetwork(event.request, 6000).then(function (response) {
-                    if (response) {
+                // Prefer cache hit for instant paint; refresh in background.
+                return matchErpOfflineCached(event.request, url).then(function (cached) {
+                    if (cached) {
                         event.waitUntil(
-                            caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                                return putBoth(cache, response);
+                            fetchErpAssetNetwork(event.request, 2000).then(function (fresh) {
+                                if (!fresh) {
+                                    return null;
+                                }
+                                return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                                    return putBoth(cache, fresh);
+                                });
                             })
                         );
-                        return response;
+                        return cached;
                     }
-                    return matchErpOfflineCached(event.request, url).then(function (cached) {
-                        return cached || emptyAssetResponse(event.request);
+                    return fetchErpAssetNetwork(event.request, 2000).then(function (response) {
+                        if (response) {
+                            event.waitUntil(
+                                caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                                    return putBoth(cache, response);
+                                })
+                            );
+                            return response;
+                        }
+                        return emptyAssetResponse(event.request);
                     });
                 });
             }

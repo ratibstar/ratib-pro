@@ -177,6 +177,16 @@
         if (tStopped()) {
             return Promise.resolve(null);
         }
+        // Once per tab session — eager warm on every page navigation saturates the network.
+        try {
+            var warmKey = 'rateb_erp_shell_warm_at';
+            var at = parseInt(root.sessionStorage.getItem(warmKey) || '0', 10) || 0;
+            if (at > 0 && (Date.now() - at) < (30 * 60 * 1000)) {
+                tPass(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw', 'skipped — warmed this session');
+                return Promise.resolve(null);
+            }
+            root.sessionStorage.setItem(warmKey, String(Date.now()));
+        } catch (eGate) { /* ignore */ }
         try {
             if (controller && typeof controller.postMessage === 'function') {
                 controller.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
@@ -191,7 +201,13 @@
                 'postMessage threw: ' + String(e && e.message ? e.message : e));
             return Promise.resolve(null);
         }
-        return warmErpShellUrls();
+        // Idle-only; do not block page interactivity.
+        if (typeof root.requestIdleCallback === 'function') {
+            root.requestIdleCallback(function () { warmErpShellUrls(); }, { timeout: 20000 });
+            return Promise.resolve(null);
+        }
+        root.setTimeout(function () { warmErpShellUrls(); }, 4000);
+        return Promise.resolve(null);
     }
 
     function registerServiceWorker() {
@@ -277,13 +293,11 @@
                         if (ctrl2) {
                             tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
                                 'controller found script=' + (ctrl2.scriptURL || ''));
-                            return warmErpShellViaPosSw(ctrl2).then(function () {
-                                return warmErpShellUrls().then(function () { return reg; });
-                            });
+                            return warmErpShellViaPosSw(ctrl2).then(function () { return reg; });
                         }
                         tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
-                            'no controller yet after register — Cache API warm only');
-                        return warmErpShellUrls().then(function () { return reg; });
+                            'no controller yet after register — skip eager warm');
+                        return reg;
                     });
                 })
                 .catch(function (err) {
@@ -566,6 +580,14 @@
                 tFail(16, 'erp-shell-bootstrap.js', 'captureChrome', 'RatebOfflineShellAdapter.captureChrome missing');
                 return null;
             }
+            try {
+                var capAt = parseInt(root.sessionStorage.getItem('rateb_erp_chrome_cap_at') || '0', 10) || 0;
+                if (capAt > 0 && (Date.now() - capAt) < (30 * 60 * 1000)) {
+                    tPass(16, 'shell-adapter.js', 'captureChrome', 'skipped — captured this session');
+                    return null;
+                }
+                root.sessionStorage.setItem('rateb_erp_chrome_cap_at', String(Date.now()));
+            } catch (eCap) { /* ignore */ }
             return shell.captureChrome().then(function (res) {
                 if (tStopped()) {
                     return null;
