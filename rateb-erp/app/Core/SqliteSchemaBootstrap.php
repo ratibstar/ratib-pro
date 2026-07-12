@@ -53,10 +53,83 @@ final class SqliteSchemaBootstrap
              ON rateb_sync_outbox (status, id)'
         );
 
+        self::ensurePhaseCSyncTables($pdo);
+
         self::upsertMeta($pdo, 'hybrid_phase', 'A');
         self::upsertMeta($pdo, 'schema_version', self::SCHEMA_VERSION_PHASE_A);
 
         return ['rateb_hybrid_meta', 'rateb_sync_outbox'];
+    }
+
+    /**
+     * Phase C — extend outbox + audit/batch/cursor tables (idempotent ALTERs).
+     */
+    public static function ensurePhaseCSyncTables(PDO $pdo): void
+    {
+        $alters = [
+            'tenant_id' => 'INTEGER NOT NULL DEFAULT 0',
+            'branch_id' => 'INTEGER NOT NULL DEFAULT 0',
+            'payload_hash' => "TEXT NOT NULL DEFAULT ''",
+            'signature' => "TEXT NOT NULL DEFAULT ''",
+            'batch_uuid' => "TEXT NOT NULL DEFAULT ''",
+            'synced_at' => "TEXT NOT NULL DEFAULT ''",
+        ];
+        foreach ($alters as $col => $def) {
+            self::addColumnIfMissing($pdo, 'rateb_sync_outbox', $col, $def);
+        }
+
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS rateb_sync_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event TEXT NOT NULL,
+                batch_uuid TEXT NOT NULL DEFAULT \'\',
+                detail_json TEXT NOT NULL DEFAULT \'\',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )'
+        );
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS rateb_sync_batches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                batch_uuid TEXT NOT NULL UNIQUE,
+                direction TEXT NOT NULL,
+                item_count INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT \'pending\',
+                payload_hash TEXT NOT NULL DEFAULT \'\',
+                signature TEXT NOT NULL DEFAULT \'\',
+                error TEXT NOT NULL DEFAULT \'\',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                completed_at TEXT NOT NULL DEFAULT \'\'
+            )'
+        );
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS rateb_sync_cloud_inbox (
+                idempotency_key TEXT PRIMARY KEY NOT NULL,
+                uuid TEXT NOT NULL UNIQUE,
+                entity_table TEXT NOT NULL,
+                applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )'
+        );
+        self::upsertMeta($pdo, 'hybrid_sync_schema', 'C1');
+    }
+
+    private static function addColumnIfMissing(PDO $pdo, string $table, string $column, string $definition): void
+    {
+        $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', $table) ?? '';
+        $want = strtolower($column);
+        try {
+            $stmt = $pdo->query('PRAGMA table_info(' . $safeTable . ')');
+            if ($stmt === false) {
+                return;
+            }
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (strtolower((string) ($row['name'] ?? '')) === $want) {
+                    return;
+                }
+            }
+            $pdo->exec('ALTER TABLE ' . $safeTable . ' ADD COLUMN ' . $column . ' ' . $definition);
+        } catch (\Throwable $e) {
+            // ignore — best-effort schema evolve
+        }
     }
 
     /**

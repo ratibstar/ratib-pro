@@ -7,20 +7,22 @@ use PDO;
 use PDOStatement;
 
 /**
- * Phase B.1–B.2.1 — PDO wrapper for Branch SQLite.
+ * Phase B.1–C — PDO wrapper for Branch SQLite.
  *
  * - Translates MySQL dialect via SqlDialectAdapter
  * - Ignores MySQL-only PDO attributes
  * - Registers GET_LOCK / RELEASE_LOCK UDFs (SqliteAdvisoryLock)
- * - beginTransaction() uses BEGIN IMMEDIATE so writers take a RESERVED lock early
- *   (enterprise substitute for MySQL row locks under FOR UPDATE inside a transaction)
+ * - beginTransaction() uses BEGIN IMMEDIATE
+ * - Phase C: captures INSERT/UPDATE/DELETE into rateb_sync_outbox
  */
 final class SqliteCompatPdo extends PDO
 {
     public function __construct(string $dsn, ?string $username = null, ?string $password = null, ?array $options = null)
     {
         parent::__construct($dsn, $username, $password, $options ?? []);
+        $this->setAttribute(PDO::ATTR_STATEMENT_CLASS, [HybridSyncPdoStatement::class, []]);
         $this->registerAdvisoryLockFunctions();
+        HybridSyncOutboxCapture::registerShutdownFlush();
     }
 
     private function registerAdvisoryLockFunctions(): void
@@ -33,40 +35,72 @@ final class SqliteCompatPdo extends PDO
         }, 1);
     }
 
-    /**
-     * Prefer BEGIN IMMEDIATE over deferred BEGIN.
-     * Acquires a RESERVED lock up front so concurrent writers serialize before
-     * mutating rows — closer to MySQL FOR UPDATE write-intent under a transaction.
-     */
     public function beginTransaction(): bool
     {
         if ($this->inTransaction()) {
             return false;
         }
-        // Avoid parent::beginTransaction() (DEFERRED). Use IMMEDIATE for enterprise safety.
         $result = parent::exec('BEGIN IMMEDIATE');
 
         return $result !== false;
     }
 
+    public function commit(): bool
+    {
+        if (!$this->inTransaction()) {
+            return false;
+        }
+        $ok = parent::exec('COMMIT') !== false;
+        if ($ok) {
+            HybridSyncOutboxCapture::flushBuffered();
+        }
+
+        return $ok;
+    }
+
+    public function rollBack(): bool
+    {
+        HybridSyncOutboxCapture::discardBuffered();
+        if (!$this->inTransaction()) {
+            return false;
+        }
+
+        return parent::exec('ROLLBACK') !== false;
+    }
+
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
-        return parent::prepare(SqlDialectAdapter::toSqlite($query), $options);
+        $translated = SqlDialectAdapter::toSqlite($query);
+        $stmt = parent::prepare($translated, $options);
+        if ($stmt instanceof HybridSyncPdoStatement) {
+            $stmt->bindOwner($this, $query);
+        }
+
+        return $stmt;
     }
 
     public function exec(string $statement): int|false
     {
-        return parent::exec(SqlDialectAdapter::toSqlite($statement));
+        $sql = SqlDialectAdapter::toSqlite($statement);
+        $n = parent::exec($sql);
+        if ($n !== false) {
+            HybridSyncOutboxCapture::afterMutate($this, $statement, null);
+        }
+
+        return $n;
     }
 
     public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): PDOStatement|false
     {
-        $query = SqlDialectAdapter::toSqlite($query);
+        $translated = SqlDialectAdapter::toSqlite($query);
         if ($fetchMode === null && $fetchModeArgs === []) {
-            return parent::query($query);
+            $stmt = parent::query($translated);
+        } else {
+            $stmt = parent::query($translated, $fetchMode, ...$fetchModeArgs);
         }
+        // SELECT/query does not mutate — no outbox
 
-        return parent::query($query, $fetchMode, ...$fetchModeArgs);
+        return $stmt;
     }
 
     public function setAttribute(int $attribute, mixed $value): bool

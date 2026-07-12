@@ -425,10 +425,27 @@ final class Database
         $pdo->exec('PRAGMA busy_timeout=30000');
         $pdo->exec('PRAGMA temp_store=MEMORY');
 
-        // Phase B: ensure full ERP schema on first branch open (idempotent).
-        // Phase A hybrid tables are included. Cloud MySQL path is untouched.
-        if (!defined('RATEB_SQLITE_SKIP_SCHEMA_BOOTSTRAP') || !RATEB_SQLITE_SKIP_SCHEMA_BOOTSTRAP) {
-            SqliteSchemaBootstrap::ensureErpSchema($pdo);
+        HybridSyncConfig::suppressCapture(true);
+        try {
+            // Phase B: ensure full ERP schema on first branch open (idempotent).
+            // Phase A hybrid tables are included. Cloud MySQL path is untouched.
+            if (!defined('RATEB_SQLITE_SKIP_SCHEMA_BOOTSTRAP') || !RATEB_SQLITE_SKIP_SCHEMA_BOOTSTRAP) {
+                SqliteSchemaBootstrap::ensureErpSchema($pdo);
+            } else {
+                // Tests that skip ERP DDL still need Phase A/C sync tables.
+                SqliteSchemaBootstrap::ensureMinimal($pdo);
+            }
+        } finally {
+            HybridSyncConfig::suppressCapture(false);
+        }
+
+        // Phase C: resume any rows left mid-flight after unexpected shutdown.
+        if (HybridSyncConfig::enabled()) {
+            try {
+                (new HybridSyncEngine())->resumeInterrupted($pdo);
+            } catch (\Throwable $e) {
+                // never block open
+            }
         }
 
         return $pdo;
@@ -464,6 +481,7 @@ final class Database
         self::$resolvedDbName = '';
         self::$columnCache = [];
         self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
+        HybridSyncOutboxCapture::resetConnection();
     }
 
     /** @param array<string, mixed> $params @return array<int, array<string, mixed>> */
