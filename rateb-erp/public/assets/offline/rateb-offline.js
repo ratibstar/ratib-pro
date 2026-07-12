@@ -4952,14 +4952,17 @@
         destroyWarmSession(tenantScope());
     }
 
-    function start() {
+    function start(options) {
+        options = options || {};
         if (!isActive()) {
             return;
         }
         if (root.document) {
             root.document.addEventListener('click', handleLogoutClick, true);
         }
-        requireUnlockIfNeeded();
+        if (!options.deferUnlock) {
+            requireUnlockIfNeeded();
+        }
     }
 
     root.RatebOfflineAuthLock = {

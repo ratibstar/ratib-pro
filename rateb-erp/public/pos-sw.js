@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v1';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v2';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
@@ -557,9 +557,19 @@ self.addEventListener('activate', function (event) {
                     });
                 })).then(function () {
                     return Promise.all(keys.map(function (key) {
-                        if (key !== SHELL_CACHE && key !== ASSET_CACHE) {
+                        // Keep POS shell/assets + current ERP offline caches; drop stale coexist versions only.
+                        if (key === SHELL_CACHE || key === ASSET_CACHE
+                            || key === ERP_COEXIST_CACHE || key === ERP_OPS_PAGE_CACHE) {
+                            return undefined;
+                        }
+                        if (String(key).indexOf('rateb-erp-coexist-') === 0
+                            || String(key).indexOf('rateb-erp-ops-pages-') === 0
+                            || String(key).indexOf('rateb-erp-assets-') === 0
+                            || String(key).indexOf('rateb-pos-shell-') === 0
+                            || String(key).indexOf('rateb-pos-assets-') === 0) {
                             return caches.delete(key);
                         }
+                        return undefined;
                     }));
                 });
             });
@@ -689,29 +699,32 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: cache ERP offline assets (SDK + shell RBAC helper).
+    // Smart coexist: cache-first for ERP offline assets (avoid long network hang when offline).
     if (isErpOfflineAsset(url)) {
         event.respondWith(
-            fetch(event.request).then(function (response) {
-                if (response && response.ok) {
-                    var copy = response.clone();
-                    event.waitUntil(
-                        caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                            return Promise.all([
-                                cache.put(event.request, copy.clone()),
-                                cache.put(url.origin + url.pathname, copy)
-                            ]);
-                        }).catch(function () { /* ignore */ })
-                    );
-                }
-                return response;
-            }).catch(function () {
-                return caches.match(event.request).then(function (hit) {
-                    if (hit) {
-                        return hit;
+            caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                return cache.match(event.request).then(function (cached) {
+                    if (!cached) {
+                        return cache.match(url.origin + url.pathname);
                     }
-                    return caches.match(url.origin + url.pathname).then(function (hit2) {
-                        return hit2 || emptyAssetResponse(event.request);
+                    return cached;
+                }).then(function (cached) {
+                    var networkFetch = fetch(event.request).then(function (response) {
+                        if (response && response.ok) {
+                            var copy = response.clone();
+                            cache.put(event.request, copy.clone()).catch(function () { /* ignore */ });
+                            cache.put(url.origin + url.pathname, copy).catch(function () { /* ignore */ });
+                        }
+                        return response;
+                    }).catch(function () {
+                        return null;
+                    });
+                    if (cached) {
+                        event.waitUntil(networkFetch);
+                        return cached;
+                    }
+                    return networkFetch.then(function (response) {
+                        return response || emptyAssetResponse(event.request);
                     });
                 });
             })

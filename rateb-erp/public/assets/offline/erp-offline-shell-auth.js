@@ -159,7 +159,8 @@
         if (root.RatebOfflineAuthLock) {
             return Promise.resolve(root.RatebOfflineAuthLock);
         }
-        if (tries > 40) {
+        // Cap ~500ms (was 2s) — SDK already loaded before this host script.
+        if (tries > 10) {
             return Promise.resolve(null);
         }
         return new Promise(function (resolve) {
@@ -170,6 +171,9 @@
     }
 
     function boot() {
+        // Paint unlock copy immediately — do not leave "loading identity" spinner stuck.
+        showMsg('Unlock required', 'Enter your offline PIN to open the warm ERP identity.');
+
         var scope = readScope();
         if (!scope.company_id || !scope.user_id) {
             showMsg(

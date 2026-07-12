@@ -32,8 +32,8 @@ html[data-bs-theme="light"] .rateb-offline-local-session-banner{background:#dbe7
 </head>
 <body>
 <div id="offline-status">
-  <h1 id="title">وضع عدم الاتصال</h1>
-  <p id="msg">جاري تحميل الهوية المحلية…</p>
+  <h1 id="title">Unlock required</h1>
+  <p id="msg">Preparing offline unlock…</p>
   <p><a id="retry" href="#">إعادة المحاولة</a></p>
 </div>
 <div id="shell-root" hidden></div>
@@ -62,6 +62,7 @@ html[data-bs-theme="light"] .rateb-offline-local-session-banner{background:#dbe7
     return new Promise(function (resolve, reject) {
       var s = document.createElement('script');
       s.src = src;
+      s.async = false;
       s.onload = function () { resolve(src); };
       s.onerror = function () { reject(new Error('load_failed:' + src)); };
       document.body.appendChild(s);
@@ -69,15 +70,26 @@ html[data-bs-theme="light"] .rateb-offline-local-session-banner{background:#dbe7
   }
 
   var base = publicBase();
-  // Phase P1: SDK → shell auth host → RBAC apply
-  loadScript(base + 'assets/offline/rateb-offline.js')
-    .then(function () { return loadScript(base + 'assets/offline/erp-offline-shell-auth.js'); })
-    .then(function () { return loadScript(base + 'assets/offline/erp-offline-shell-rbac.js'); })
+  // Cache-bust so SW coexist updates are picked up after identity fixes.
+  var v = 'oid-20260712b';
+  var t0 = Date.now();
+  var slow = setTimeout(function () {
+    var msg = document.getElementById('msg');
+    if (msg && Date.now() - t0 > 1500) {
+      msg.textContent = 'Loading offline scripts from cache…';
+    }
+  }, 1500);
+
+  loadScript(base + 'assets/offline/rateb-offline.js?v=' + v)
+    .then(function () { return loadScript(base + 'assets/offline/erp-offline-shell-auth.js?v=' + v); })
+    .then(function () { return loadScript(base + 'assets/offline/erp-offline-shell-rbac.js?v=' + v); })
+    .then(function () { clearTimeout(slow); })
     .catch(function () {
+      clearTimeout(slow);
       var title = document.getElementById('title');
       var msg = document.getElementById('msg');
       if (title) title.textContent = 'Offline shell error';
-      if (msg) msg.textContent = 'Unable to load offline identity scripts. Reconnect and open Admin once.';
+      if (msg) msg.textContent = 'Unable to load offline identity scripts. Reconnect, hard-refresh Admin once, then retry offline.';
     });
 })();
 </script>

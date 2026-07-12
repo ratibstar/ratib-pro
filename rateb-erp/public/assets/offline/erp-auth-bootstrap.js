@@ -1,9 +1,7 @@
 /**
- * RATEB Offline — ERP auth bootstrap (Phase 11 + P1 Warm Identity + P2 renew/TTL).
- * Loaded only when offline.enabled + read_cache + auth.unlock are ON.
- *
- * Online login → identity enroll → device ACTIVE → PIN seal → persist scope/device.
- * Company-bound super-admin (resolved company_id) may enroll; unbound platform SA may not.
+ * RATEB Offline — ERP auth bootstrap (Phase 11 + P1 Warm Identity + P2).
+ * Online: enroll device+identity FIRST, then PIN seal, then unlock gate.
+ * Never show unlock overlay before enroll completes (fixes device_unknown race).
  */
 (function (root) {
     'use strict';
@@ -118,6 +116,72 @@
         }
     }
 
+    /** In-page PIN modal — window.prompt is often blocked and easy to cancel. */
+    function promptPinModal(titleText, hintText) {
+        return new Promise(function (resolve) {
+            if (!root.document || !root.document.body) {
+                resolve('');
+                return;
+            }
+            var overlay = root.document.createElement('div');
+            overlay.setAttribute('data-rateb-erp-enroll-pin', '1');
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,17,23,.94);'
+                + 'display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+            var box = root.document.createElement('div');
+            box.style.cssText = 'background:#1a1d24;color:#e8eaed;padding:1.5rem;border-radius:8px;max-width:22rem;width:100%;';
+            var title = root.document.createElement('h2');
+            title.textContent = titleText || 'Set offline PIN';
+            title.style.marginTop = '0';
+            var hint = root.document.createElement('p');
+            hint.textContent = hintText || 'Min 4 characters. Required before offline unlock.';
+            hint.style.opacity = '0.9';
+            var input = root.document.createElement('input');
+            input.type = 'password';
+            input.autocomplete = 'new-password';
+            input.style.cssText = 'width:100%;padding:.5rem;margin:.5rem 0;box-sizing:border-box;';
+            var err = root.document.createElement('p');
+            err.style.cssText = 'color:#f28b82;min-height:1.2em;margin:0;';
+            var row = root.document.createElement('div');
+            row.style.cssText = 'display:flex;gap:.5rem;margin-top:.75rem;';
+            var save = root.document.createElement('button');
+            save.type = 'button';
+            save.textContent = 'Save PIN';
+            save.style.cssText = 'flex:1;padding:.6rem;cursor:pointer;';
+            var skip = root.document.createElement('button');
+            skip.type = 'button';
+            skip.textContent = 'Later';
+            skip.style.cssText = 'padding:.6rem;cursor:pointer;opacity:.85;';
+            function close(val) {
+                try { overlay.remove(); } catch (e) { /* ignore */ }
+                resolve(val || '');
+            }
+            save.addEventListener('click', function () {
+                var pin = String(input.value || '');
+                if (pin.length < 4) {
+                    err.textContent = 'PIN must be at least 4 characters.';
+                    return;
+                }
+                close(pin);
+            });
+            skip.addEventListener('click', function () { close(''); });
+            input.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter') {
+                    save.click();
+                }
+            });
+            row.appendChild(save);
+            row.appendChild(skip);
+            box.appendChild(title);
+            box.appendChild(hint);
+            box.appendChild(input);
+            box.appendChild(err);
+            box.appendChild(row);
+            overlay.appendChild(box);
+            root.document.body.appendChild(overlay);
+            try { input.focus(); } catch (e2) { /* ignore */ }
+        });
+    }
+
     function enrollWarmIdentity() {
         var lock = root.RatebOfflineAuthLock;
         if (!lock) {
@@ -135,9 +199,6 @@
                 try {
                     console.warn('[RATIB OFFLINE] identity enroll failed', res.http, payload.error || payload);
                 } catch (e) { /* ignore */ }
-                if (lock.markSessionNeedsReauth) {
-                    lock.markSessionNeedsReauth();
-                }
                 return null;
             }
             var device = payload.device;
@@ -152,9 +213,6 @@
             try {
                 console.warn('[RATIB OFFLINE] identity enroll network error', err);
             } catch (e2) { /* ignore */ }
-            if (lock.markSessionNeedsReauth) {
-                lock.markSessionNeedsReauth();
-            }
             return null;
         });
     }
@@ -178,14 +236,16 @@
             if (!(payload.ok && payload.identity)) {
                 return row;
             }
-            var pin = root.prompt
-                ? root.prompt('Renew offline identity — re-enter PIN (min 4). Cancel to keep current until expiry.', '')
-                : '';
-            if (!pin || String(pin).length < 4) {
-                return row;
-            }
-            return lock.enrollPin(pin, { identity: payload.identity }).then(function () {
-                return row;
+            return promptPinModal(
+                'Renew offline identity',
+                'Re-enter your offline PIN (min 4) to seal the renewed identity.'
+            ).then(function (pin) {
+                if (!pin || String(pin).length < 4) {
+                    return row;
+                }
+                return lock.enrollPin(pin, { identity: payload.identity }).then(function () {
+                    return row;
+                });
             });
         }).catch(function () {
             return row;
@@ -220,20 +280,22 @@
             if (!(identityPayload && identityPayload.identity)) {
                 return row;
             }
-            var pin = root.prompt
-                ? root.prompt('Set ERP offline unlock PIN (min 4 digits). Required for offline unlock.', '')
-                : '';
-            if (!pin || String(pin).length < 4) {
-                try {
-                    console.warn('[RATIB OFFLINE] PIN enroll skipped — offline unlock will require re-login enroll');
-                } catch (e) { /* ignore */ }
-                return null;
-            }
-            return lock.enrollPin(pin, { identity: identityPayload.identity }).then(function (enrolled) {
-                if (enrolled && enrolled.ok) {
-                    persistEnrolledScope(identityPayload.device || null);
+            return promptPinModal(
+                'Set ERP offline unlock PIN',
+                'This PIN unlocks the warm ERP shell when offline. Min 4 characters.'
+            ).then(function (pin) {
+                if (!pin || String(pin).length < 4) {
+                    try {
+                        console.warn('[RATIB OFFLINE] PIN enroll deferred — device is registered; set PIN next visit');
+                    } catch (e) { /* ignore */ }
+                    return null;
                 }
-                return enrolled;
+                return lock.enrollPin(pin, { identity: identityPayload.identity }).then(function (enrolled) {
+                    if (enrolled && enrolled.ok) {
+                        persistEnrolledScope(identityPayload.device || null);
+                    }
+                    return enrolled;
+                });
             });
         }).catch(function () {
             return null;
@@ -243,12 +305,28 @@
     function canEnrollWarmIdentity() {
         var companyId = parseInt(cfg.company_id, 10) || 0;
         var userId = parseInt(cfg.user_id, 10) || 0;
-        if (!(companyId > 0 && userId > 0)) {
-            return false;
+        return companyId > 0 && userId > 0;
+    }
+
+    function bindIdle() {
+        if (!root.document || !root.RatebOfflineAuthLock) {
+            return;
         }
-        // Unbound platform super-admin has no tenant shell identity.
-        // Company-bound SA (dedicated/ops company) enrolls like a tenant user.
-        return true;
+        ['mousemove', 'keydown', 'touchstart', 'click'].forEach(function (ev) {
+            root.document.addEventListener(ev, function () {
+                if (root.RatebOfflineAuthLock && root.RatebOfflineAuthLock.touchIdle) {
+                    root.RatebOfflineAuthLock.touchIdle();
+                }
+            }, { passive: true });
+        });
+    }
+
+    function finishUnlockGate() {
+        if (!root.RatebOfflineAuthLock) {
+            return;
+        }
+        root.RatebOfflineAuthLock.clearSessionNeedsReauth();
+        root.RatebOfflineAuthLock.requireUnlockIfNeeded();
     }
 
     function boot() {
@@ -269,16 +347,9 @@
             });
         }
         if (root.RatebOfflineAuthLock) {
-            root.RatebOfflineAuthLock.start();
-            if (root.document) {
-                ['mousemove', 'keydown', 'touchstart', 'click'].forEach(function (ev) {
-                    root.document.addEventListener(ev, function () {
-                        if (root.RatebOfflineAuthLock && root.RatebOfflineAuthLock.touchIdle) {
-                            root.RatebOfflineAuthLock.touchIdle();
-                        }
-                    }, { passive: true });
-                });
-            }
+            // Defer unlock overlay until identity enroll finishes (prevents device_unknown race).
+            root.RatebOfflineAuthLock.start({ deferUnlock: true });
+            bindIdle();
         }
         if (root.navigator && root.navigator.onLine !== false && csrfToken()) {
             loadPolicy().then(function (policy) {
@@ -287,20 +358,20 @@
                     try {
                         console.info('[RATIB OFFLINE] warm identity enroll skipped (unbound super-admin)');
                     } catch (e) { /* ignore */ }
+                    finishUnlockGate();
                     return null;
                 }
                 return enrollWarmIdentity().then(function (payload) {
                     return maybePromptEnroll(payload).then(function () {
-                        if (root.RatebOfflineAuthLock) {
-                            root.RatebOfflineAuthLock.clearSessionNeedsReauth();
-                            root.RatebOfflineAuthLock.requireUnlockIfNeeded();
-                        }
+                        finishUnlockGate();
                     });
                 });
+            }).catch(function () {
+                finishUnlockGate();
             });
         } else if (root.RatebOfflineAuthLock) {
             root.RatebOfflineAuthLock.markSessionNeedsReauth();
-            root.RatebOfflineAuthLock.requireUnlockIfNeeded();
+            finishUnlockGate();
         }
     }
 
