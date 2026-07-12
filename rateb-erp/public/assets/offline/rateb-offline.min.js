@@ -5638,6 +5638,11 @@
     }
 
     function can(slug, manifest) {
+        // Company-bound super-admin: warm nav is UI-only; do not hide catalog by empty slug lists.
+        var c = cfg();
+        if (c.is_super_admin && (parseInt(c.company_id, 10) > 0)) {
+            return true;
+        }
         if (!manifest || !Array.isArray(manifest.permission_slugs)) {
             return false;
         }
@@ -5657,6 +5662,10 @@
         var disabled = manifest.offline_disabled_modules || [];
         if (module && disabled.indexOf(module) !== -1) {
             return false;
+        }
+        var c = cfg();
+        if (c.is_super_admin && (parseInt(c.company_id, 10) > 0)) {
+            return true;
         }
         if (permission !== '' && !can(permission, manifest)) {
             return false;

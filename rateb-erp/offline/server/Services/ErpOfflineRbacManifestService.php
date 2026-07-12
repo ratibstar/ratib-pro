@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Offline\Services;
 
+use Rateb\App\Core\SessionManager;
 use Rateb\App\Offline\OfflineModule;
 
 /**
@@ -40,6 +41,31 @@ final class ErpOfflineRbacManifestService
         $planModules = $fp['plan_modules'];
         $disabled = $policy->offlineDisabledModules();
         $nav = $this->buildNavTree($disabled);
+
+        // Company-bound super-admin may have empty plan_modules / sparse slugs while still
+        // passing rateb_nav_can(). Seed modules from the offline catalog so client navCan
+        // does not collapse the warm menu to account-only links.
+        $isSuper = !empty(SessionManager::get('rateb_is_super_admin'));
+        if ($isSuper && $companyId > 0) {
+            $disabledFlipLocal = array_fill_keys($disabled, true);
+            $catalogMods = [];
+            foreach ($nav as $section) {
+                foreach (($section['items'] ?? []) as $item) {
+                    $mod = (string) ($item['module'] ?? '');
+                    if ($mod !== '' && !isset($disabledFlipLocal[$mod])) {
+                        $catalogMods[$mod] = true;
+                    }
+                    $perm = (string) ($item['permission'] ?? '');
+                    if ($perm !== '' && !in_array($perm, $effectiveSlugs, true)) {
+                        $effectiveSlugs[] = $perm;
+                    }
+                }
+            }
+            $planModules = array_values(array_unique(array_merge($planModules, array_keys($catalogMods))));
+            sort($planModules);
+            $effectiveSlugs = array_values(array_unique($effectiveSlugs));
+            sort($effectiveSlugs);
+        }
 
         $now = time();
         $ttl = $policy->ttlSeconds();
