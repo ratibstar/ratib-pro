@@ -6,9 +6,9 @@ namespace Rateb\App\Core;
 /**
  * Phase D.1 — Load branch appliance serve.env before HybridRuntime boots.
  *
- * When storage/branch/serve.env exists (installer-written), apply its variables
- * so HTTP requests via public/index.php activate branch/SQLite mode — same as
- * hybrid-branch-serve.php. Cloud hosts without serve.env are unchanged.
+ * ONLY for local Branch Appliance (php -S / loopback) or explicit allow.
+ * Cloud hosts (rateb.sa / *.rateb.sa) never auto-load serve.env — even if the
+ * file exists on disk — so SaaS MySQL runtime stays identical.
  */
 final class BranchServeEnvBootstrap
 {
@@ -26,7 +26,11 @@ final class BranchServeEnvBootstrap
         }
         self::$applied = true;
 
-        if (self::isServerCloudLocked()) {
+        if (self::isServerCloudLocked() || self::isCloudHostname()) {
+            return;
+        }
+
+        if (!self::mayLoadServeEnvFromHttp()) {
             return;
         }
 
@@ -55,6 +59,51 @@ final class BranchServeEnvBootstrap
         }
     }
 
+    /**
+     * Local php -S / loopback may load serve.env.
+     * Production Branch Appliance should inject env via systemd/Windows service
+     * (EnvironmentFile), not by reading the file from untrusted public HTTP hosts.
+     */
+    private static function mayLoadServeEnvFromHttp(): bool
+    {
+        if (self::envFlagTruthy('RATEB_ALLOW_SERVE_ENV_HTTP')) {
+            return true;
+        }
+
+        if (PHP_SAPI === 'cli-server') {
+            return true;
+        }
+
+        if (PHP_SAPI === 'cli') {
+            return false;
+        }
+
+        $host = self::requestHost();
+
+        return $host === '127.0.0.1'
+            || $host === 'localhost'
+            || $host === '::1'
+            || $host === '0.0.0.0';
+    }
+
+    private static function isCloudHostname(): bool
+    {
+        $host = self::requestHost();
+        if ($host === '') {
+            return false;
+        }
+        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+            return true;
+        }
+
+        return str_ends_with($host, '.rateb.sa');
+    }
+
+    private static function requestHost(): string
+    {
+        return strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+    }
+
     private static function isServerCloudLocked(): bool
     {
         $deployment = self::readServerScalar('RATEB_DEPLOYMENT');
@@ -70,6 +119,13 @@ final class BranchServeEnvBootstrap
         $fromServer = self::readServerScalar($key);
 
         return $fromServer !== null && $fromServer !== '';
+    }
+
+    private static function envFlagTruthy(string $name): bool
+    {
+        $raw = self::readServerScalar($name);
+
+        return $raw !== null && in_array($raw, ['1', 'true', 'yes', 'on'], true);
     }
 
     private static function readServerScalar(string $key): ?string
