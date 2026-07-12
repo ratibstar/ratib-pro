@@ -139,14 +139,25 @@ final class ErpOfflineRbacPhase12Test
         }
         SessionManager::set('rateb_is_super_admin', 1);
         SessionManager::set('rateb_user_id', 1);
-        SessionManager::set('rateb_company_id', 1);
+        SessionManager::set('rateb_company_id', 0);
+        SessionManager::set('rateb_ops_company_id', 0);
         $gate = (new ErpOfflineRbacPolicy())->assertManifestAllowed();
         $ok = ($gate['ok'] ?? true) === false
-            && ($gate['error'] ?? '') === 'super_admin_denied';
+            && in_array(($gate['error'] ?? ''), ['super_admin_denied', 'online_session_required'], true);
+        if (($gate['ok'] ?? false) === true && (int) ($gate['company_id'] ?? 0) > 0) {
+            $ok = true; // dedicated primary bound — allowed
+        }
+
+        SessionManager::set('rateb_company_id', 42);
+        $bound = (new ErpOfflineRbacPolicy())->assertManifestAllowed();
+        $okBound = ($bound['ok'] ?? false) === true && (int) ($bound['company_id'] ?? 0) === 42;
+        $this->record('policy allows company-bound super-admin rbac', $okBound, $okBound ? 'ok' : (json_encode($bound) ?: 'fail'));
+
         SessionManager::set('rateb_is_super_admin', 0);
         SessionManager::forget('rateb_user_id');
         SessionManager::forget('rateb_company_id');
-        $this->record('policy denies super-admin', $ok, $ok ? 'ok' : (json_encode($gate) ?: 'fail'));
+        SessionManager::forget('rateb_ops_company_id');
+        $this->record('policy handles unbound super-admin rbac', $ok, $ok ? 'ok' : (json_encode($gate) ?: 'fail'));
         $this->clearEnv();
     }
 

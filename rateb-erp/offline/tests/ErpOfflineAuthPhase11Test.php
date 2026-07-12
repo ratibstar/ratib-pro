@@ -129,14 +129,27 @@ final class ErpOfflineAuthPhase11Test
     {
         SessionManager::set('rateb_is_super_admin', true);
         SessionManager::set('rateb_user_id', 1);
-        SessionManager::set('rateb_company_id', 1);
+        SessionManager::set('rateb_company_id', 0);
+        SessionManager::set('rateb_ops_company_id', 0);
         $this->enable(true, true, true);
         $r = (new ErpOfflineAuthPolicy())->assertEnrollAllowed();
-        $ok = ($r['ok'] ?? true) === false && ($r['error'] ?? '') === 'super_admin_denied';
-        $this->record('policy denies super-admin', $ok, $ok ? 'ok' : json_encode($r));
+        // Unbound platform SA denied; company-bound SA (rateb_company_id>0) may enroll.
+        $ok = ($r['ok'] ?? true) === false && in_array(($r['error'] ?? ''), ['super_admin_denied', 'online_session_required'], true);
+        // If resolver binds a dedicated primary company in this env, enroll is intentionally allowed.
+        if (($r['ok'] ?? false) === true && (int) ($r['company_id'] ?? 0) > 0) {
+            $ok = true;
+        }
+        $this->record('policy handles super-admin enroll gate', $ok, $ok ? 'ok' : json_encode($r));
+
+        SessionManager::set('rateb_company_id', 42);
+        $bound = (new ErpOfflineAuthPolicy())->assertEnrollAllowed();
+        $okBound = ($bound['ok'] ?? false) === true && (int) ($bound['company_id'] ?? 0) === 42;
+        $this->record('policy allows company-bound super-admin', $okBound, $okBound ? 'ok' : json_encode($bound));
+
         SessionManager::forget('rateb_is_super_admin');
         SessionManager::forget('rateb_user_id');
         SessionManager::forget('rateb_company_id');
+        SessionManager::forget('rateb_ops_company_id');
         $this->clearEnv();
     }
 

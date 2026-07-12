@@ -470,7 +470,11 @@
                 device_id: device && device.device_id ? String(device.device_id) : '',
                 status: device && device.status ? String(device.status) : '',
                 is_active: !!(device && device.is_active),
-                updated_at: new Date().toISOString()
+                label: device && device.label ? String(device.label) : 'ERP shell',
+                company_id: scope.company_id || 0,
+                user_id: scope.user_id || 0,
+                updated_at: new Date().toISOString(),
+                created_at: (device && device.created_at) ? String(device.created_at) : new Date().toISOString()
             });
             return true;
         });
@@ -544,7 +548,8 @@
         if (!isActive()) {
             return { ok: false, error: 'auth_unlock_disabled' };
         }
-        if (scope.is_super_admin) {
+        // Unbound platform super-admin only — company-bound SA may unlock warm identity.
+        if (scope.is_super_admin && !scope.company_id) {
             return { ok: false, error: 'super_admin_denied' };
         }
         if (!scope.company_id || !scope.user_id) {
@@ -566,7 +571,7 @@
             return Promise.resolve({ ok: false, error: 'auth_unlock_disabled' });
         }
         var scope = tenantScope();
-        if (scope.is_super_admin) {
+        if (scope.is_super_admin && !scope.company_id) {
             return Promise.resolve({ ok: false, error: 'super_admin_denied' });
         }
         var id = vaultId(scope);
@@ -766,7 +771,14 @@
                     notifyUnlocked(res);
                     return;
                 }
-                msg.textContent = (res && res.error) ? String(res.error) : 'Unlock denied';
+                var err = (res && res.error) ? String(res.error) : 'Unlock denied';
+                if (err === 'device_unknown') {
+                    msg.textContent = 'Device not enrolled. Open Admin online once to register this device and set a PIN.';
+                } else if (err === 'not_enrolled') {
+                    msg.textContent = 'Offline PIN not set. Open Admin online and complete PIN enrollment.';
+                } else {
+                    msg.textContent = err;
+                }
             });
         });
         input.addEventListener('keydown', function (ev) {
@@ -790,9 +802,25 @@
             el.style.display = 'flex';
             try {
                 var pin = el.querySelector('[data-lock-pin]');
+                var msg = el.querySelector('[data-lock-msg]');
                 if (pin) {
                     pin.focus();
                 }
+                readDeviceStatus(tenantScope()).then(function (device) {
+                    if (!msg) {
+                        return;
+                    }
+                    if (device && device.status && String(device.status).toLowerCase() === 'active') {
+                        var label = device.label ? String(device.label) : 'ERP shell';
+                        var shortId = device.device_id
+                            ? String(device.device_id).slice(0, 12) + (String(device.device_id).length > 12 ? '…' : '')
+                            : '';
+                        msg.textContent = label + (shortId ? ' (' + shortId + ')' : '')
+                            + ' — enter your offline PIN.';
+                    } else {
+                        msg.textContent = 'device_unknown — open Admin online to enroll this device first.';
+                    }
+                }).catch(function () { /* ignore */ });
             } catch (e) { /* ignore */ }
         }
     }
@@ -809,7 +837,7 @@
             return Promise.resolve({ skipped: true });
         }
         var scope = tenantScope();
-        if (scope.is_super_admin) {
+        if (scope.is_super_admin && !scope.company_id) {
             return Promise.resolve({ ok: false, error: 'super_admin_denied' });
         }
         if (isUnlocked(scope)) {

@@ -114,14 +114,27 @@ final class ErpOfflineAuthApiController extends Controller
             ], 403);
             exit;
         }
-        $companyId = (int) (TenantContext::companyId() ?? SessionManager::get('rateb_company_id', 0) ?? 0);
         $userId = (int) (SessionManager::get('rateb_user_id', 0) ?? 0);
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_erp_shell_company_id')) {
+            $companyId = (int) rateb_resolve_erp_shell_company_id();
+        }
+        if ($companyId < 1) {
+            $companyId = (int) (SessionManager::get('rateb_company_id', 0) ?? 0);
+        }
+        if ($companyId < 1) {
+            $companyId = (int) (SessionManager::get('rateb_ops_company_id', 0) ?? 0);
+        }
         if ($companyId < 1 || $userId < 1) {
             Response::json([
                 'ok' => false,
                 'error' => ['message' => 'Unauthorized', 'code' => 'unauthorized'],
             ], 401);
             exit;
+        }
+        TenantContext::setCompanyId($companyId);
+        if (function_exists('rateb_sync_ops_session_to_company')) {
+            rateb_sync_ops_session_to_company($companyId);
         }
     }
 

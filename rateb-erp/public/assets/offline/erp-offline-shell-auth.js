@@ -32,8 +32,10 @@
                     scope.auth_unlock = !!(o.auth_unlock || (o.flags && o.flags['offline.auth.unlock']));
                     root.__RATEB_ERP_SHELL_OFFLINE__ = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
                     root.__RATEB_ERP_SHELL_OFFLINE__.company_id = scope.company_id;
+                    root.__RATEB_ERP_SHELL_OFFLINE__.tenant_id = parseInt(o.tenant_id || o.company_id, 10) || scope.company_id;
                     root.__RATEB_ERP_SHELL_OFFLINE__.branch_id = scope.branch_id;
                     root.__RATEB_ERP_SHELL_OFFLINE__.user_id = scope.user_id;
+                    root.__RATEB_ERP_SHELL_OFFLINE__.is_super_admin = !!o.is_super_admin;
                     root.__RATEB_ERP_SHELL_OFFLINE__.flags = root.__RATEB_ERP_SHELL_OFFLINE__.flags || o.flags || {
                         'offline.enabled': true,
                         'offline.read_cache': true,

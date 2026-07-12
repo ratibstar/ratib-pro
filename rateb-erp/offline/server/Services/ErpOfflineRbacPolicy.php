@@ -22,12 +22,22 @@ final class ErpOfflineRbacPolicy
             return ['ok' => false, 'error' => 'rbac_cache_disabled'];
         }
 
-        if (!empty(SessionManager::get('rateb_is_super_admin'))) {
-            return ['ok' => false, 'error' => 'super_admin_denied'];
+        $userId = (int) (SessionManager::get('rateb_user_id', 0) ?? 0);
+        $isSuper = !empty(SessionManager::get('rateb_is_super_admin'));
+        $companyId = 0;
+        if (function_exists('rateb_resolve_erp_shell_company_id')) {
+            $companyId = (int) rateb_resolve_erp_shell_company_id();
+        }
+        if ($companyId < 1) {
+            $companyId = (int) (SessionManager::get('rateb_company_id', 0) ?? 0);
+        }
+        if ($companyId < 1) {
+            $companyId = (int) (SessionManager::get('rateb_ops_company_id', 0) ?? 0);
         }
 
-        $userId = (int) (SessionManager::get('rateb_user_id', 0) ?? 0);
-        $companyId = (int) (SessionManager::get('rateb_company_id', 0) ?? 0);
+        if ($isSuper && $companyId < 1) {
+            return ['ok' => false, 'error' => 'super_admin_denied'];
+        }
         if ($userId < 1 || $companyId < 1) {
             return ['ok' => false, 'error' => 'online_session_required'];
         }

@@ -1,11 +1,15 @@
 /**
  * RATEB Offline — ERP auth bootstrap (Phase 11 + P1 Warm Identity + P2 renew/TTL).
  * Loaded only when offline.enabled + read_cache + auth.unlock are ON.
+ *
+ * Online login → identity enroll → device ACTIVE → PIN seal → persist scope/device.
+ * Company-bound super-admin (resolved company_id) may enroll; unbound platform SA may not.
  */
 (function (root) {
     'use strict';
 
     var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+    var SCOPE_LS_KEY = 'rateb_erp_offline_scope';
 
     function csrfToken() {
         try {
@@ -58,6 +62,38 @@
         }
     }
 
+    function persistEnrolledScope(device) {
+        try {
+            var flags = (cfg.flags) || {};
+            var deviceId = '';
+            if (device && device.device_id) {
+                deviceId = String(device.device_id);
+            } else {
+                try {
+                    deviceId = root.localStorage.getItem('rateb_erp_device_uuid') || '';
+                } catch (e2) { deviceId = ''; }
+            }
+            root.localStorage.setItem(SCOPE_LS_KEY, JSON.stringify({
+                company_id: parseInt(cfg.company_id, 10) || 0,
+                tenant_id: parseInt(cfg.tenant_id || cfg.company_id, 10) || 0,
+                branch_id: parseInt(cfg.branch_id, 10) || 0,
+                user_id: parseInt(cfg.user_id, 10) || 0,
+                is_super_admin: !!cfg.is_super_admin,
+                device_id: deviceId,
+                device_label: device && device.label ? String(device.label) : 'ERP shell',
+                auth_unlock: !!flags['offline.auth.unlock'],
+                flags: {
+                    'offline.enabled': true,
+                    'offline.read_cache': true,
+                    'offline.auth.unlock': !!flags['offline.auth.unlock'],
+                    'offline.rbac.cache': !!flags['offline.rbac.cache']
+                },
+                enrolled_at: new Date().toISOString(),
+                saved_at: new Date().toISOString()
+            }));
+        } catch (e) { /* ignore */ }
+    }
+
     function loadPolicy() {
         return getJson(apiUrl('/auth/policy')).then(function (res) {
             applySessionPolicy(res.payload || {});
@@ -95,14 +131,27 @@
             fingerprint: deviceFingerprint()
         }).then(function (res) {
             var payload = res.payload || {};
-            var device = payload.device || null;
-            if (device && lock.cacheDeviceStatus) {
+            if (!(payload.ok && payload.identity && payload.device)) {
+                try {
+                    console.warn('[RATIB OFFLINE] identity enroll failed', res.http, payload.error || payload);
+                } catch (e) { /* ignore */ }
+                if (lock.markSessionNeedsReauth) {
+                    lock.markSessionNeedsReauth();
+                }
+                return null;
+            }
+            var device = payload.device;
+            persistEnrolledScope(device);
+            if (lock.cacheDeviceStatus) {
                 return lock.cacheDeviceStatus(lock.tenantScope(), device).then(function () {
                     return payload;
                 });
             }
             return payload;
-        }).catch(function () {
+        }).catch(function (err) {
+            try {
+                console.warn('[RATIB OFFLINE] identity enroll network error', err);
+            } catch (e2) { /* ignore */ }
             if (lock.markSessionNeedsReauth) {
                 lock.markSessionNeedsReauth();
             }
@@ -172,15 +221,34 @@
                 return row;
             }
             var pin = root.prompt
-                ? root.prompt('Set ERP offline unlock PIN (min 4 digits). Cancel to skip.', '')
+                ? root.prompt('Set ERP offline unlock PIN (min 4 digits). Required for offline unlock.', '')
                 : '';
             if (!pin || String(pin).length < 4) {
+                try {
+                    console.warn('[RATIB OFFLINE] PIN enroll skipped — offline unlock will require re-login enroll');
+                } catch (e) { /* ignore */ }
                 return null;
             }
-            return lock.enrollPin(pin, { identity: identityPayload.identity });
+            return lock.enrollPin(pin, { identity: identityPayload.identity }).then(function (enrolled) {
+                if (enrolled && enrolled.ok) {
+                    persistEnrolledScope(identityPayload.device || null);
+                }
+                return enrolled;
+            });
         }).catch(function () {
             return null;
         });
+    }
+
+    function canEnrollWarmIdentity() {
+        var companyId = parseInt(cfg.company_id, 10) || 0;
+        var userId = parseInt(cfg.user_id, 10) || 0;
+        if (!(companyId > 0 && userId > 0)) {
+            return false;
+        }
+        // Unbound platform super-admin has no tenant shell identity.
+        // Company-bound SA (dedicated/ops company) enrolls like a tenant user.
+        return true;
     }
 
     function boot() {
@@ -188,10 +256,7 @@
         if (!(f['offline.enabled'] && f['offline.read_cache'] && f['offline.auth.unlock'])) {
             return;
         }
-        if (cfg.is_super_admin) {
-            return;
-        }
-        if (!(parseInt(cfg.company_id, 10) > 0 && parseInt(cfg.user_id, 10) > 0)) {
+        if (!canEnrollWarmIdentity()) {
             return;
         }
         if (root.RatebOffline && typeof root.RatebOffline.init === 'function') {
@@ -216,7 +281,14 @@
             }
         }
         if (root.navigator && root.navigator.onLine !== false && csrfToken()) {
-            loadPolicy().then(function () {
+            loadPolicy().then(function (policy) {
+                if (policy && policy.enroll && policy.enroll.ok === false
+                    && String(policy.enroll.error || '') === 'super_admin_denied') {
+                    try {
+                        console.info('[RATIB OFFLINE] warm identity enroll skipped (unbound super-admin)');
+                    } catch (e) { /* ignore */ }
+                    return null;
+                }
                 return enrollWarmIdentity().then(function (payload) {
                     return maybePromptEnroll(payload).then(function () {
                         if (root.RatebOfflineAuthLock) {

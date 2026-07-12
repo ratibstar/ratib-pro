@@ -48,6 +48,16 @@ final class ErpOfflineIdentityEnrollService
                 $userId,
                 $deviceId
             );
+            // Company-bound warm path must still succeed if cold RBAC snapshot is denied.
+            if (!($issued['ok'] ?? false)
+                && in_array((string) ($issued['error'] ?? ''), ['super_admin_denied', 'rbac_denied', 'rbac_unavailable'], true)) {
+                $issued = (new ErpOfflineIdentityService())->issue(
+                    $companyId,
+                    $branchId,
+                    $userId,
+                    $deviceId
+                );
+            }
         } else {
             $issued = (new ErpOfflineIdentityService())->issue(
                 $companyId,

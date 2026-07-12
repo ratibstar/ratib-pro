@@ -61,8 +61,15 @@
             }
             root.localStorage.setItem('rateb_erp_offline_scope', JSON.stringify({
                 company_id: parseInt(cfg.company_id, 10) || 0,
+                tenant_id: parseInt(cfg.tenant_id || cfg.company_id, 10) || 0,
                 branch_id: parseInt(cfg.branch_id, 10) || 0,
                 user_id: parseInt(cfg.user_id, 10) || 0,
+                is_super_admin: !!cfg.is_super_admin,
+                device_id: (function () {
+                    try {
+                        return root.localStorage.getItem('rateb_erp_device_uuid') || '';
+                    } catch (e) { return ''; }
+                })(),
                 auth_unlock: !!(flags && flags['offline.auth.unlock']),
                 flags: {
                     'offline.enabled': true,
