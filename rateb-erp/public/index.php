@@ -1,6 +1,20 @@
 <?php
 declare(strict_types=1);
 
+// PHP built-in server (Branch Appliance): let real static files bypass the front controller.
+if (PHP_SAPI === 'cli-server') {
+    $cliPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '';
+    if ($cliPath !== '' && $cliPath !== '/') {
+        $cliFile = __DIR__ . str_replace('/', DIRECTORY_SEPARATOR, $cliPath);
+        if (is_file($cliFile)) {
+            $ext = strtolower(pathinfo($cliFile, PATHINFO_EXTENSION));
+            if ($ext !== 'php') {
+                return false;
+            }
+        }
+    }
+}
+
 if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');

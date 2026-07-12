@@ -42,6 +42,16 @@ final class Request
     {
         $uri = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
 
+        // PHP built-in server (Branch Appliance): SCRIPT_NAME stripping is unreliable
+        // and can collapse /admin → /. Use the request path directly.
+        if (PHP_SAPI === 'cli-server') {
+            if (preg_match('#/rateb-erp/public(/.*)?$#', $uri, $m)) {
+                $uri = $m[1] ?? '/';
+            }
+
+            return $uri === '' ? '/' : $uri;
+        }
+
         $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
         $scriptBase = rtrim(str_replace('/index.php', '', $scriptName), '/');
 
