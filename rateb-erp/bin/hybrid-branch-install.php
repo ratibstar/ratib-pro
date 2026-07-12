@@ -57,6 +57,7 @@ $envBody = implode("\n", [
     'RATEB_ALLOW_RUNTIME_MARKER=1',
     'RATEB_SQLITE_PATH=' . $sqlitePath,
     'RATEB_DEPLOYMENT=',
+    'RATEB_ERP_PUBLIC_PREFIX=',
     'RATEB_HYBRID_SYNC_ENABLED=1',
     'RATEB_HYBRID_SYNC_SINK=mysql',
     'RATEB_HYBRID_SYNC_KEY=' . $syncKey,

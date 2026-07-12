@@ -73,9 +73,10 @@ $cmd = [
     $router,
 ];
 
-// Pass env to child
+// Child inherits current process env (serve.env already applied via putenv).
+// Passing a partial env array breaks Windows sockets (SystemRoot/PATH missing).
 $descriptors = [STDIN, STDOUT, STDERR];
-$proc = proc_open($cmd, $descriptors, $pipes, $root, $env + $_ENV);
+$proc = proc_open($cmd, $descriptors, $pipes, $root, null);
 if (!is_resource($proc)) {
     fwrite(STDERR, "Failed to start PHP built-in server\n");
     exit(1);

@@ -508,6 +508,22 @@ if (!function_exists('rateb_is_production')) {
     }
 }
 
+if (!function_exists('rateb_is_local_appliance_host')) {
+    /** Loopback / Branch Appliance PHP built-in server (not cloud). */
+    function rateb_is_local_appliance_host(?string $host = null): bool
+    {
+        if ($host === null) {
+            $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        }
+        $host = strtolower(trim((string) $host));
+
+        return $host === '127.0.0.1'
+            || $host === 'localhost'
+            || $host === '::1'
+            || $host === '0.0.0.0';
+    }
+}
+
 if (!function_exists('rateb_erp_public_prefix')) {
     /** Marketing/locale URL prefix ('' = domain root on rateb.sa). Override via RATEB_ERP_PUBLIC_PREFIX. */
     function rateb_erp_public_prefix(): string
@@ -522,8 +538,14 @@ if (!function_exists('rateb_erp_public_prefix')) {
 
             return $prefix;
         }
-        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
         if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+            $prefix = '';
+
+            return $prefix;
+        }
+        // Branch local serve: document root is public/ → URLs at /assets, /login (not /rateb-erp/public/...).
+        if (rateb_is_local_appliance_host($host)) {
             $prefix = '';
 
             return $prefix;
@@ -538,6 +560,10 @@ if (!function_exists('rateb_erp_app_prefix')) {
     /** App routes (admin, login, api) — stays under /rateb-erp/public when marketing uses domain root. */
     function rateb_erp_app_prefix(): string
     {
+        // Local Branch Appliance (php -S -t public): routes and assets at document root.
+        if (function_exists('rateb_is_local_appliance_host') && rateb_is_local_appliance_host()) {
+            return rateb_erp_public_prefix();
+        }
         $prefix = rateb_erp_public_prefix();
 
         return $prefix === '' ? '/rateb-erp/public' : $prefix;
@@ -578,7 +604,12 @@ if (!function_exists('rateb_site_origin')) {
     function rateb_site_origin(): string
     {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+        $httpHost = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+        $host = preg_replace('/:\d+$/', '', $httpHost) ?? '';
+        // Branch appliance: keep host:port (PHP -S 127.0.0.1:8099).
+        if (rateb_is_local_appliance_host($host) && $httpHost !== '') {
+            return $scheme . '://' . $httpHost;
+        }
         if ($host !== '' && $host !== 'localhost') {
             if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
                 return $scheme . '://' . $host;
