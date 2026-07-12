@@ -352,6 +352,152 @@
         });
     }
 
+    var LIVE_RELOAD_KEY = 'rateb_erp_live_reload_at';
+    var lastConnectivityOnline = null;
+
+    function isOfflineShellDocument() {
+        var doc = root.document;
+        if (!doc) {
+            return false;
+        }
+        if (doc.getElementById('rateb-offline-shell-main') || doc.querySelector('.rateb-offline-home')) {
+            return true;
+        }
+        if (doc.querySelector('.rateb-offline-ops-banner') || doc.querySelector('.rateb-offline-shell-nav')) {
+            return true;
+        }
+        var shellCfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+        if (shellCfg.offline_ops_snapshot) {
+            return true;
+        }
+        try {
+            return /offline-shell\.html$/i.test(String(root.location.pathname || ''));
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function connectivitySaysOnline() {
+        var conn = root.RatebOfflineConnectivity;
+        if (conn && typeof conn.isOnline === 'function') {
+            return !!conn.isOnline();
+        }
+        return !(root.navigator && root.navigator.onLine === false);
+    }
+
+    function paintConnectionIndicator(online) {
+        var doc = root.document;
+        if (!doc) {
+            return;
+        }
+        var nodes = doc.querySelectorAll(
+            '#rateb-connection-indicator, .rateb-connection-indicator, [data-rateb-connection-status]'
+        );
+        Array.prototype.forEach.call(nodes, function (el) {
+            if (online) {
+                el.classList.remove('is-offline');
+                el.classList.add('is-online');
+                el.setAttribute('title', 'متصل');
+                el.setAttribute('aria-label', 'متصل');
+            } else {
+                el.classList.remove('is-online');
+                el.classList.add('is-offline');
+                el.setAttribute('title', 'غير متصل');
+                el.setAttribute('aria-label', 'غير متصل');
+            }
+            var label = el.querySelector('.rateb-connection-indicator__label');
+            if (label) {
+                label.textContent = online ? 'متصل' : 'غير متصل';
+            }
+        });
+    }
+
+    function ensureReconnectButton(online) {
+        var doc = root.document;
+        if (!doc || !isOfflineShellDocument()) {
+            return;
+        }
+        var home = doc.querySelector('.rateb-offline-home') || doc.getElementById('rateb-offline-shell-main');
+        if (!home) {
+            return;
+        }
+        var btn = doc.getElementById('rateb-offline-reconnect-btn');
+        if (!btn) {
+            btn = doc.createElement('button');
+            btn.id = 'rateb-offline-reconnect-btn';
+            btn.type = 'button';
+            btn.className = 'btn btn-primary mt-3';
+            btn.addEventListener('click', function () {
+                try {
+                    root.sessionStorage.setItem(LIVE_RELOAD_KEY, '0');
+                } catch (e0) { /* ignore */ }
+                root.location.reload();
+            });
+            home.appendChild(btn);
+        }
+        btn.hidden = !online;
+        btn.textContent = online ? 'العودة للوضع المتصل (تحديث الصفحة)' : 'بانتظار الاتصال…';
+        var hint = doc.getElementById('rateb-offline-reconnect-hint');
+        if (online) {
+            if (!hint) {
+                hint = doc.createElement('p');
+                hint.id = 'rateb-offline-reconnect-hint';
+                hint.className = 'text-success small mt-2';
+                home.appendChild(hint);
+            }
+            hint.hidden = false;
+            hint.textContent = 'أنت متصل بالشبكة — جاري استعادة الواجهة الحية…';
+        } else if (hint) {
+            hint.hidden = true;
+        }
+    }
+
+    function canAutoLiveReload() {
+        if (!isOfflineShellDocument() || !connectivitySaysOnline()) {
+            return false;
+        }
+        try {
+            var last = parseInt(root.sessionStorage.getItem(LIVE_RELOAD_KEY) || '0', 10) || 0;
+            if (last > 0 && (Date.now() - last) < 15000) {
+                return false;
+            }
+        } catch (e) { /* ignore */ }
+        return true;
+    }
+
+    function requestLiveReload(reason) {
+        if (!canAutoLiveReload()) {
+            ensureReconnectButton(true);
+            paintConnectionIndicator(true);
+            return;
+        }
+        try {
+            root.sessionStorage.setItem(LIVE_RELOAD_KEY, String(Date.now()));
+        } catch (e1) { /* ignore */ }
+        ensureReconnectButton(true);
+        paintConnectionIndicator(true);
+        try {
+            root.setTimeout(function () {
+                root.location.reload();
+            }, 350);
+        } catch (e2) {
+            root.location.reload();
+        }
+    }
+
+    function onConnectivityChange(online) {
+        online = !!online;
+        paintConnectionIndicator(online);
+        refreshSyncBadge();
+        ensureReconnectButton(online);
+        if (online && (lastConnectivityOnline === false || lastConnectivityOnline === null)
+            && isOfflineShellDocument()) {
+            // null = first subscribe while already online on an offline shell document
+            requestLiveReload(lastConnectivityOnline === null ? 'boot-online' : 'reconnect');
+        }
+        lastConnectivityOnline = online;
+    }
+
     function bindSyncBadge() {
         ensureSyncBadge();
         refreshSyncBadge();
@@ -362,10 +508,27 @@
             });
         }
         if (root.RatebOfflineConnectivity && typeof root.RatebOfflineConnectivity.subscribe === 'function') {
-            root.RatebOfflineConnectivity.subscribe(function () { refreshSyncBadge(); });
+            root.RatebOfflineConnectivity.subscribe(function (online) {
+                onConnectivityChange(online);
+            });
+        } else {
+            onConnectivityChange(connectivitySaysOnline());
         }
-        root.addEventListener('online', refreshSyncBadge);
-        root.addEventListener('offline', refreshSyncBadge);
+        root.addEventListener('online', function () {
+            var conn = root.RatebOfflineConnectivity;
+            if (conn && typeof conn.probe === 'function') {
+                conn.probe().then(function (ok) {
+                    onConnectivityChange(ok !== false && connectivitySaysOnline());
+                }).catch(function () {
+                    onConnectivityChange(true);
+                });
+            } else {
+                onConnectivityChange(true);
+            }
+        });
+        root.addEventListener('offline', function () {
+            onConnectivityChange(false);
+        });
     }
 
     function afterWarmDiagnostics() {

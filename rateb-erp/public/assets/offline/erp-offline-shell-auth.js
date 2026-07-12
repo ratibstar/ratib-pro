@@ -364,10 +364,36 @@
         if (root.RatebOffline && typeof root.RatebOffline.init === 'function') {
             root.RatebOffline.init({
                 flags: root.__RATEB_ERP_SHELL_OFFLINE__.flags,
-                startConnectivity: false,
+                startConnectivity: true,
                 startScheduler: false
             });
         }
+
+        // If the device is already online on offline-shell.html, jump back to live Admin.
+        try {
+            if (root.navigator && root.navigator.onLine !== false) {
+                var last = '';
+                try { last = root.localStorage.getItem('rateb_erp_offline_last_url') || ''; } catch (eL) { /* ignore */ }
+                var target = last;
+                if (!target || !/\/rateb-erp\/public\//i.test(target)) {
+                    target = publicBase() + 'admin/?company_id=' + encodeURIComponent(String(scope.company_id || ''));
+                }
+                root.setTimeout(function () {
+                    if (root.navigator && root.navigator.onLine === false) {
+                        return;
+                    }
+                    try {
+                        var key = 'rateb_erp_live_reload_at';
+                        var prev = parseInt(root.sessionStorage.getItem(key) || '0', 10) || 0;
+                        if (prev > 0 && (Date.now() - prev) < 15000) {
+                            return;
+                        }
+                        root.sessionStorage.setItem(key, String(Date.now()));
+                    } catch (eS) { /* ignore */ }
+                    root.location.href = target;
+                }, 600);
+            }
+        } catch (eOnline) { /* ignore */ }
 
         waitForAuthLock().then(function (lock) {
             var unlockNeeded = !!(root.__RATEB_ERP_SHELL_OFFLINE__.flags['offline.auth.unlock']);

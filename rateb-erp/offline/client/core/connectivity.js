@@ -129,7 +129,14 @@
         },
         start: function () {
             if (typeof window !== 'undefined') {
-                window.addEventListener('online', function () { probe(); });
+                // Probe immediately on browser online — do not wait for the 12–20s interval.
+                window.addEventListener('online', function () {
+                    if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+                        // Optimistic flip so UI can recover; probe confirms within timeoutMs.
+                        setOnline(true);
+                    }
+                    probe();
+                });
                 window.addEventListener('offline', function () { setOnline(false); });
             }
             scheduleProbeLoop();
