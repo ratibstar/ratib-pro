@@ -1,0 +1,21 @@
+<!--
+  RATEB Hybrid Sync — Windows Service via WinSW (https://github.com/winsw/winsw)
+  Do NOT use Task Scheduler. Install with bin/windows/install-hybrid-sync-service.ps1
+-->
+<service>
+  <id>RatebHybridSync</id>
+  <name>RATEB Hybrid Sync Service</name>
+  <description>Always-On Hybrid Sync orchestrator (Branch SQLite → Cloud MySQL). Reuses Phase C HybridSyncEngine.</description>
+  <executable>php.exe</executable>
+  <arguments>-d extension=pdo_sqlite -d extension=sqlite3 "%BASE%\..\hybrid-sync-service.php"</arguments>
+  <workingdirectory>%BASE%\..\..</workingdirectory>
+  <logmode>roll</logmode>
+  <logpath>%BASE%\..\..\storage\branch\logs</logpath>
+  <onfailure action="restart" delay="5 sec"/>
+  <resetfailure>1 hour</resetfailure>
+  <stoptimeout>30 sec</stoptimeout>
+  <env name="RATEB_RUNTIME" value="branch"/>
+  <env name="RATEB_HYBRID_SYNC_ENABLED" value="1"/>
+  <env name="RATEB_HYBRID_SYNC_SINK" value="mysql"/>
+  <stopparentprocessfirst>true</stopparentprocessfirst>
+</service>

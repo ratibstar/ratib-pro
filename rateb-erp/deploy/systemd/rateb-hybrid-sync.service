@@ -1,0 +1,36 @@
+[Unit]
+Description=RATEB ERP Hybrid Sync Service (Always-On)
+Documentation=file://%h/rateb-erp/docs/HYBRID_SYNC_SERVICE.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rateb
+Group=rateb
+WorkingDirectory=/var/www/rateb-erp
+# Adjust paths for the branch appliance install.
+Environment=RATEB_RUNTIME=branch
+Environment=RATEB_HYBRID_SYNC_ENABLED=1
+Environment=RATEB_HYBRID_SYNC_SINK=mysql
+EnvironmentFile=-/var/www/rateb-erp/storage/branch/serve.env
+EnvironmentFile=-/etc/rateb/hybrid-sync.env
+ExecStart=/usr/bin/php -d extension=pdo_sqlite -d extension=sqlite3 /var/www/rateb-erp/bin/hybrid-sync-service.php
+ExecStop=/usr/bin/php -d extension=pdo_sqlite -d extension=sqlite3 /var/www/rateb-erp/bin/hybrid-sync-service.php --stop
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rateb-hybrid-sync
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/rateb-erp/storage/branch
+
+[Install]
+WantedBy=multi-user.target
