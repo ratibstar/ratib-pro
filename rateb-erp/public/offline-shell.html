@@ -58,38 +58,76 @@ html[data-bs-theme="light"] .rateb-offline-local-session-banner{background:#dbe7
     return '/rateb-erp/public/';
   }
 
-  function loadScript(src) {
+  function setStatus(titleText, msgText) {
+    var title = document.getElementById('title');
+    var msg = document.getElementById('msg');
+    if (title && titleText) title.textContent = titleText;
+    if (msg && msgText) msg.textContent = msgText;
+  }
+
+  function loadScript(src, timeoutMs) {
     return new Promise(function (resolve, reject) {
+      var done = false;
       var s = document.createElement('script');
       s.src = src;
       s.async = false;
-      s.onload = function () { resolve(src); };
-      s.onerror = function () { reject(new Error('load_failed:' + src)); };
+      var timer = setTimeout(function () {
+        if (done) return;
+        done = true;
+        try { s.remove(); } catch (e) { /* ignore */ }
+        reject(new Error('timeout:' + src));
+      }, typeof timeoutMs === 'number' ? timeoutMs : 4000);
+      s.onload = function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(src);
+      };
+      s.onerror = function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(new Error('load_failed:' + src));
+      };
       document.body.appendChild(s);
     });
   }
 
-  var base = publicBase();
-  // Cache-bust so SW coexist updates are picked up after identity fixes.
-  var v = 'oid-20260712b';
+  /** Prefer cached pathname (no ?v=); fall back to cache-busted URL. */
+  function loadOfflineScript(relPath) {
+    var base = publicBase();
+    var plain = base + relPath;
+    var bust = plain + (plain.indexOf('?') >= 0 ? '&' : '?') + 'v=oid-20260712c';
+    return loadScript(plain, 3500).catch(function () {
+      return loadScript(bust, 3500);
+    });
+  }
+
   var t0 = Date.now();
   var slow = setTimeout(function () {
-    var msg = document.getElementById('msg');
-    if (msg && Date.now() - t0 > 1500) {
-      msg.textContent = 'Loading offline scripts from cache…';
+    if (Date.now() - t0 > 1200) {
+      setStatus('Unlock required', 'Loading offline scripts from cache…');
     }
-  }, 1500);
+  }, 1200);
 
-  loadScript(base + 'assets/offline/rateb-offline.js?v=' + v)
-    .then(function () { return loadScript(base + 'assets/offline/erp-offline-shell-auth.js?v=' + v); })
-    .then(function () { return loadScript(base + 'assets/offline/erp-offline-shell-rbac.js?v=' + v); })
-    .then(function () { clearTimeout(slow); })
-    .catch(function () {
+  loadOfflineScript('assets/offline/rateb-offline.js')
+    .then(function () { return loadOfflineScript('assets/offline/erp-offline-shell-auth.js'); })
+    .then(function () { return loadOfflineScript('assets/offline/erp-offline-shell-rbac.js'); })
+    .then(function () {
       clearTimeout(slow);
-      var title = document.getElementById('title');
-      var msg = document.getElementById('msg');
-      if (title) title.textContent = 'Offline shell error';
-      if (msg) msg.textContent = 'Unable to load offline identity scripts. Reconnect, hard-refresh Admin once, then retry offline.';
+      if (!(window.RatebOfflineAuthLock && typeof window.RatebOfflineAuthLock.requireUnlockIfNeeded === 'function')) {
+        setStatus(
+          'Offline shell error',
+          'Offline identity scripts are missing from cache. Reconnect, open Admin once (online), then retry offline.'
+        );
+      }
+    })
+    .catch(function (err) {
+      clearTimeout(slow);
+      setStatus(
+        'Offline shell error',
+        'Unable to load offline identity scripts (' + String(err && err.message ? err.message : err) + '). Reconnect, hard-refresh Admin once, then retry offline.'
+      );
     });
 })();
 </script>
