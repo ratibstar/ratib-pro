@@ -49,6 +49,11 @@ $cases = [
     'INSERT IGNORE INTO t (a) VALUES (1)' => 'INSERT OR IGNORE',
     'INSERT INTO t (id,a) VALUES (1,2) ON DUPLICATE KEY UPDATE a=VALUES(a)' => 'ON CONFLICT',
     'DELETE r1 FROM rateb_roles r1 INNER JOIN rateb_roles r2 ON r1.slug=r2.slug WHERE r1.id>r2.id' => 'rowid IN',
+    "ORDER BY FIELD(r.slug, 'hq_admin', 'branch_user')" => 'CASE r.slug',
+    'WHERE company_id <=> :cid' => 'company_id IS :cid',
+    "SELECT CONCAT('invoice', id)" => '||',
+    "SELECT LPAD(period_month, 2, '0')" => 'printf',
+    'SELECT GROUP_CONCAT(id ORDER BY id) FROM t' => 'GROUP_CONCAT(id)',
 ];
 foreach ($cases as $in => $expect) {
     $out = SqlDialectAdapter::toSqlite($in);
@@ -121,6 +126,15 @@ try {
     assert_true('exec DELETE_JOIN', false, $e->getMessage());
 }
 
+// Null-safe equality (AccountingService company_id <=> :cid)
+try {
+    $pdo->prepare('SELECT id FROM rateb_chart_of_accounts WHERE company_id <=> :cid LIMIT 1')
+        ->execute(['cid' => (int) $seed['company_id']]);
+    assert_true('exec NULLSAFE_EQ', true);
+} catch (Throwable $e) {
+    assert_true('exec NULLSAFE_EQ', false, $e->getMessage());
+}
+
 // Dashboard service (MySQL DATE_FORMAT SQL unchanged in service)
 try {
     Auth::loginUser($user);
@@ -129,6 +143,16 @@ try {
     assert_true('DashboardService::adminMetrics', is_array($metrics), json_encode(array_keys($metrics)) ?: '');
 } catch (Throwable $e) {
     assert_true('DashboardService::adminMetrics', false, $e->getMessage());
+}
+
+// Accounting dashboard build (FIELD, <=>, DATE_FORMAT)
+try {
+    \Rateb\App\Core\TenantContext::setCompanyId((int) $seed['company_id']);
+    $acctDash = new \Rateb\App\Services\AccountingDashboardService();
+    $built = $acctDash->build((int) $seed['company_id']);
+    assert_true('AccountingDashboardService::build', is_array($built) && isset($built['metrics']));
+} catch (Throwable $e) {
+    assert_true('AccountingDashboardService::build', false, $e->getMessage());
 }
 
 // Module schema queries via MySQL idioms

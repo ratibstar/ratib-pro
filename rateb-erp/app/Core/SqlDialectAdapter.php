@@ -37,6 +37,11 @@ final class SqlDialectAdapter
         $sql = self::rewriteDateAddSub($sql);
         $sql = self::rewriteScalarFunctions($sql);
         $sql = self::rewriteIfFunction($sql);
+        $sql = self::rewriteFieldFunction($sql);
+        $sql = self::rewriteNullSafeEquals($sql);
+        $sql = self::rewriteConcat($sql);
+        $sql = self::rewriteLpad($sql);
+        $sql = self::rewriteGroupConcatOrderBy($sql);
         $sql = self::rewriteBinaryKeyword($sql);
         $sql = self::rewriteBackticks($sql);
 
@@ -285,6 +290,106 @@ final class SqlDialectAdapter
         }
 
         return $sql;
+    }
+
+    /** MySQL FIELD(x, a, b, c) → CASE x WHEN a THEN 1 WHEN b THEN 2 … ELSE 0 END */
+    private static function rewriteFieldFunction(string $sql): string
+    {
+        $guard = 0;
+        while ($guard++ < 40 && preg_match('/(?<![A-Za-z_])FIELD\s*\(/i', $sql, $m, PREG_OFFSET_CAPTURE)) {
+            $start = (int) $m[0][1];
+            $open = strpos($sql, '(', $start);
+            if ($open === false) {
+                break;
+            }
+            $inner = self::extractParenContents($sql, $open);
+            $args = self::splitArgs($inner);
+            if (count($args) < 2) {
+                break;
+            }
+            $expr = trim($args[0]);
+            $parts = ['CASE ' . $expr];
+            for ($i = 1, $n = count($args); $i < $n; $i++) {
+                $parts[] = 'WHEN ' . trim($args[$i]) . ' THEN ' . $i;
+            }
+            $parts[] = 'ELSE 0 END';
+            $end = self::matchingParenEnd($sql, $open);
+            $sql = substr($sql, 0, $start) . implode(' ', $parts) . substr($sql, $end + 1);
+        }
+
+        return $sql;
+    }
+
+    /** MySQL null-safe equality `<=>` → SQLite `IS` (NULL-safe). */
+    private static function rewriteNullSafeEquals(string $sql): string
+    {
+        return preg_replace('/\s*<=>\s*/', ' IS ', $sql) ?? $sql;
+    }
+
+    /** MySQL CONCAT(a, b, …) → (a || b || …) */
+    private static function rewriteConcat(string $sql): string
+    {
+        $guard = 0;
+        while ($guard++ < 40 && preg_match('/(?<![A-Za-z_])CONCAT\s*\(/i', $sql, $m, PREG_OFFSET_CAPTURE)) {
+            $start = (int) $m[0][1];
+            $open = strpos($sql, '(', $start);
+            if ($open === false) {
+                break;
+            }
+            $inner = self::extractParenContents($sql, $open);
+            $args = self::splitArgs($inner);
+            if ($args === []) {
+                break;
+            }
+            $parts = array_map('trim', $args);
+            $end = self::matchingParenEnd($sql, $open);
+            $replacement = '(' . implode(' || ', $parts) . ')';
+            $sql = substr($sql, 0, $start) . $replacement . substr($sql, $end + 1);
+        }
+
+        return $sql;
+    }
+
+    /** MySQL LPAD(expr, len, pad) — common pad-left with zeros → printf / substr fallback. */
+    private static function rewriteLpad(string $sql): string
+    {
+        $guard = 0;
+        while ($guard++ < 40 && preg_match('/(?<![A-Za-z_])LPAD\s*\(/i', $sql, $m, PREG_OFFSET_CAPTURE)) {
+            $start = (int) $m[0][1];
+            $open = strpos($sql, '(', $start);
+            if ($open === false) {
+                break;
+            }
+            $inner = self::extractParenContents($sql, $open);
+            $args = self::splitArgs($inner);
+            if (count($args) < 3) {
+                break;
+            }
+            $expr = trim($args[0]);
+            $len = trim($args[1]);
+            $pad = trim($args[2]);
+            $end = self::matchingParenEnd($sql, $open);
+            // printf('%0Nd', expr) when pad is '0' and len is int literal
+            if (preg_match('/^(\d+)$/', $len) && preg_match('/^[\'"]0[\'"]$/', $pad)) {
+                $n = (int) $len;
+                $replacement = 'printf(' . self::quoteString('%0' . $n . 'd') . ', ' . $expr . ')';
+            } else {
+                $replacement = 'substr((' . $pad . ' || ' . $expr . '), -(' . $len . '))';
+            }
+            $sql = substr($sql, 0, $start) . $replacement . substr($sql, $end + 1);
+        }
+
+        return $sql;
+    }
+
+    /** MySQL GROUP_CONCAT(x ORDER BY y [SEP]) → GROUP_CONCAT(x) (ordering not required for correctness of most callers). */
+    private static function rewriteGroupConcatOrderBy(string $sql): string
+    {
+        return preg_replace(
+            '/GROUP_CONCAT\s*\(\s*([^()]+?)\s+ORDER\s+BY\s+[^)]+\)/i',
+            'GROUP_CONCAT($1)',
+            $sql
+        ) ?? $sql;
     }
 
     private static function rewriteBinaryKeyword(string $sql): string
