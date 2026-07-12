@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace Rateb\App\Core;
 
 /**
- * Phase B.1 — MySQL → SQLite SQL translator (Core only).
+ * Phase B.1/B.2 — MySQL → SQLite SQL translator (Core only).
  *
  * Applied only when Branch SQLite is active. MySQL path never calls this.
  * Controllers/Services/Models keep issuing MySQL dialect SQL transparently.
+ *
+ * FOR UPDATE / LOCK IN SHARE MODE: stripped. SQLite has no row-level locks;
+ * isolation relies on the enclosing transaction + WAL busy_timeout (see Database::openSqlite).
  */
 final class SqlDialectAdapter
 {
@@ -29,10 +32,14 @@ final class SqlDialectAdapter
 
         $sql = self::rewriteShowTables($sql);
         $sql = self::rewriteShowColumns($sql);
+        $sql = self::rewriteShowIndex($sql);
         $sql = self::rewriteInformationSchema($sql);
+        $sql = self::rewriteReplaceInto($sql);
         $sql = self::rewriteInsertIgnore($sql);
         $sql = self::rewriteOnDuplicateKey($sql);
+        $sql = self::rewriteUpdateJoin($sql);
         $sql = self::rewriteDeleteJoin($sql);
+        $sql = self::rewriteForUpdate($sql);
         $sql = self::rewriteDateFormat($sql);
         $sql = self::rewriteDateAddSub($sql);
         $sql = self::rewriteScalarFunctions($sql);
@@ -132,9 +139,130 @@ final class SqlDialectAdapter
         return $sql;
     }
 
+    private static function rewriteShowIndex(string $sql): string
+    {
+        if (!preg_match('/^\s*SHOW\s+(INDEX|INDEXES|KEYS)\s+FROM\s+[`"]?([a-zA-Z0-9_]+)[`"]?/i', $sql, $m)) {
+            return $sql;
+        }
+
+        return 'SELECT name AS Key_name, "1" AS Non_unique, name AS Column_name'
+            . ' FROM pragma_index_list(' . self::quoteIdent($m[2]) . ')';
+    }
+
+    private static function rewriteReplaceInto(string $sql): string
+    {
+        return preg_replace('/\bREPLACE\s+INTO\b/i', 'INSERT OR REPLACE INTO', $sql) ?? $sql;
+    }
+
     private static function rewriteInsertIgnore(string $sql): string
     {
         return preg_replace('/\bINSERT\s+IGNORE\s+INTO\b/i', 'INSERT OR IGNORE INTO', $sql) ?? $sql;
+    }
+
+    /**
+     * MySQL: UPDATE t a JOIN u b ON … SET a.x=… WHERE …
+     * SQLite: UPDATE t SET x=… WHERE rowid IN (SELECT … nested …)
+     */
+    private static function rewriteUpdateJoin(string $sql): string
+    {
+        if (!preg_match('/^\s*UPDATE\b/i', $sql) || !preg_match('/\bJOIN\b/i', $sql)) {
+            return $sql;
+        }
+        if (!preg_match(
+            '/^\s*UPDATE\s+([`"]?[a-zA-Z0-9_]+[`"]?)\s+(?:AS\s+)?([a-zA-Z_][\w]*)\s+(.+)$/is',
+            $sql,
+            $m
+        )) {
+            return $sql;
+        }
+        $table = trim($m[1], '`"');
+        $alias = $m[2];
+        $rest = $m[3];
+        if (!preg_match('/^\s*((?:(?:INNER|LEFT|RIGHT)\s+)?JOIN)\b/i', $rest)) {
+            return $sql;
+        }
+
+        $setPos = self::findKeywordPos($sql, 'SET');
+        if ($setPos === null) {
+            return $sql;
+        }
+        $wherePos = self::findKeywordPos($sql, 'WHERE', $setPos + 3);
+        $head = trim(substr($sql, 0, $setPos));
+        if (!preg_match(
+            '/^\s*UPDATE\s+[`"]?[a-zA-Z0-9_]+[`"]?\s+(?:AS\s+)?[a-zA-Z_][\w]*\s+(.+)$/is',
+            $head,
+            $hm
+        )) {
+            return $sql;
+        }
+        $joinPart = trim($hm[1]);
+        $assignRaw = $wherePos !== null
+            ? substr($sql, $setPos + 3, $wherePos - ($setPos + 3))
+            : substr($sql, $setPos + 3);
+        $whereRaw = $wherePos !== null ? substr($sql, $wherePos + 5) : '1';
+        $assignments = preg_replace('/\b' . preg_quote($alias, '/') . '\./i', '', trim($assignRaw)) ?? trim($assignRaw);
+        $where = trim($whereRaw);
+
+        // Double-nested subquery: SQLite cannot UPDATE a table referenced in a plain IN-subquery.
+        return 'UPDATE ' . $table . ' SET ' . $assignments
+            . ' WHERE rowid IN (SELECT rowid FROM ('
+            . 'SELECT ' . $alias . '.rowid AS rowid FROM ' . $table . ' AS ' . $alias . ' ' . $joinPart
+            . ' WHERE ' . $where
+            . ') AS _rateb_uj)';
+    }
+
+    /** Strip MySQL row lock clauses (SQLite uses transaction + WAL serialization). */
+    private static function rewriteForUpdate(string $sql): string
+    {
+        $sql = preg_replace('/\s+FOR\s+UPDATE\b/i', '', $sql) ?? $sql;
+        $sql = preg_replace('/\s+LOCK\s+IN\s+SHARE\s+MODE\b/i', '', $sql) ?? $sql;
+
+        return $sql;
+    }
+
+    /** Find SQL keyword at depth 0 outside quotes. */
+    private static function findKeywordPos(string $sql, string $keyword, int $from = 0): ?int
+    {
+        $len = strlen($sql);
+        $kw = strtoupper($keyword);
+        $kwLen = strlen($kw);
+        $depth = 0;
+        $inSingle = false;
+        $inDouble = false;
+        for ($i = $from; $i < $len; $i++) {
+            $ch = $sql[$i];
+            if ($ch === "'" && !$inDouble) {
+                $inSingle = !$inSingle;
+                continue;
+            }
+            if ($ch === '"' && !$inSingle) {
+                $inDouble = !$inDouble;
+                continue;
+            }
+            if ($inSingle || $inDouble) {
+                continue;
+            }
+            if ($ch === '(') {
+                $depth++;
+                continue;
+            }
+            if ($ch === ')') {
+                $depth = max(0, $depth - 1);
+                continue;
+            }
+            if ($depth !== 0) {
+                continue;
+            }
+            if (strtoupper(substr($sql, $i, $kwLen)) === $kw) {
+                $before = $i === 0 ? ' ' : $sql[$i - 1];
+                $after = ($i + $kwLen < $len) ? $sql[$i + $kwLen] : ' ';
+                if (preg_match('/\W/', $before) && preg_match('/\W/', $after)) {
+                    return $i;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static function rewriteOnDuplicateKey(string $sql): string

@@ -7,14 +7,27 @@ use PDO;
 use PDOStatement;
 
 /**
- * Phase B.1 — PDO wrapper for Branch SQLite.
- * Translates MySQL dialect transparently; ignores MySQL-only attributes.
+ * Phase B.1/B.2 — PDO wrapper for Branch SQLite.
+ * Translates MySQL dialect transparently; ignores MySQL-only attributes;
+ * registers GET_LOCK / RELEASE_LOCK UDFs for local-device advisory locks.
  */
 final class SqliteCompatPdo extends PDO
 {
     public function __construct(string $dsn, ?string $username = null, ?string $password = null, ?array $options = null)
     {
         parent::__construct($dsn, $username, $password, $options ?? []);
+        $this->registerAdvisoryLockFunctions();
+    }
+
+    private function registerAdvisoryLockFunctions(): void
+    {
+        // MySQL-compatible signatures used by WarehouseService (unchanged).
+        $this->sqliteCreateFunction('GET_LOCK', static function ($name, $timeout = 0): int {
+            return SqliteAdvisoryLock::get((string) $name, (int) $timeout);
+        }, 2);
+        $this->sqliteCreateFunction('RELEASE_LOCK', static function ($name): int {
+            return SqliteAdvisoryLock::release((string) $name);
+        }, 1);
     }
 
     public function prepare(string $query, array $options = []): PDOStatement|false
