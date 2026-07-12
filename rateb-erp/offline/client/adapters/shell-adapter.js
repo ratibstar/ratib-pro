@@ -519,13 +519,35 @@
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             return;
         }
+        // Once per browser tab/session — never re-warm 40 ERP pages on every navigation
+        // (that saturates PHP/MySQL and makes the whole product feel extremely slow).
+        try {
+            var warmAt = parseInt(root.sessionStorage.getItem('rateb_erp_ops_warm_at') || '0', 10) || 0;
+            if (warmAt > 0 && (Date.now() - warmAt) < (30 * 60 * 1000)) {
+                return;
+            }
+            root.sessionStorage.setItem('rateb_erp_ops_warm_at', String(Date.now()));
+        } catch (eGate) { /* ignore and continue once */ }
 
         var seen = {};
         var urls = [];
 
-        // 1) Canonical routes from rateb_app_route() — never invent /admin/ops/.
+        // Prefer a small priority set first (production UX), then a few more from the map.
+        var priority = ['purchase-requests', 'inventory', 'hr/attendance', 'warehouses', 'purchase-orders'];
         var map = opsRouteMap();
+        priority.forEach(function (logical) {
+            var href = canonicalUrlForLogical(logical);
+            if (!href || seen[href]) {
+                return;
+            }
+            seen[href] = true;
+            urls.push({ href: href, logical: logical, path: String((map && map[logical]) || '') });
+        });
+
         Object.keys(map || {}).forEach(function (logical) {
+            if (urls.length >= 8) {
+                return;
+            }
             var href = canonicalUrlForLogical(logical);
             if (!href || seen[href]) {
                 return;
@@ -534,11 +556,14 @@
             urls.push({ href: href, logical: logical, path: String(map[logical] || '') });
         });
 
-        // 2) Live sidebar links that already match allowlist (correct rateb_app_url hrefs).
+        // Live sidebar links that already match allowlist (fill remaining slots only).
         var links = root.document.querySelectorAll(
             'aside.rateb-sidebar a[href], #rateb-sidebar a[href], .rateb-offline-rbac-link[href]'
         );
         Array.prototype.forEach.call(links, function (a) {
+            if (urls.length >= 8) {
+                return;
+            }
             var href = (a.getAttribute('href') || '').trim();
             if (!href || href === '#' || /^javascript:/i.test(href) || seen[href]) {
                 return;
@@ -556,8 +581,6 @@
             } catch (e) { /* ignore */ }
         });
 
-        // Cap idle warm to avoid hammering production; validator does full crawl.
-        urls = urls.slice(0, 40);
         var i = 0;
         var tick = function () {
             if (i >= urls.length) {
@@ -585,17 +608,18 @@
                     return cacheFetchedOpsHtml(next.href, next.path || next.logical, html);
                 });
             }).catch(function () { /* ignore */ }).then(function () {
+                // Slow, idle-only warm — never compete with the user's current navigation.
                 if (typeof root.requestIdleCallback === 'function') {
-                    root.requestIdleCallback(tick, { timeout: 4000 });
+                    root.requestIdleCallback(tick, { timeout: 12000 });
                 } else {
-                    setTimeout(tick, 800);
+                    setTimeout(tick, 2500);
                 }
             });
         };
         if (typeof root.requestIdleCallback === 'function') {
-            root.requestIdleCallback(tick, { timeout: 6000 });
+            root.requestIdleCallback(tick, { timeout: 15000 });
         } else {
-            setTimeout(tick, 2500);
+            setTimeout(tick, 5000);
         }
     }
 

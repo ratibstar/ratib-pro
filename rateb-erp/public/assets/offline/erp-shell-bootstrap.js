@@ -360,21 +360,18 @@
         if (!doc) {
             return false;
         }
+        // Strict markers only — do not treat live pages with leftover classes as offline shells
+        // (false positives caused auto-reload loops and made every navigation feel broken/slow).
         if (doc.getElementById('rateb-offline-shell-main') || doc.querySelector('.rateb-offline-home')) {
             return true;
         }
-        if (doc.querySelector('.rateb-offline-ops-banner') || doc.querySelector('.rateb-offline-shell-nav')) {
-            return true;
-        }
-        var shellCfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
-        if (shellCfg.offline_ops_snapshot) {
-            return true;
-        }
         try {
-            return /offline-shell\.html$/i.test(String(root.location.pathname || ''));
-        } catch (e) {
-            return false;
-        }
+            if (/offline-shell\.html$/i.test(String(root.location.pathname || ''))) {
+                return true;
+            }
+        } catch (e) { /* ignore */ }
+        var shellCfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+        return !!shellCfg.offline_ops_snapshot;
     }
 
     function connectivitySaysOnline() {
@@ -490,10 +487,12 @@
         paintConnectionIndicator(online);
         refreshSyncBadge();
         ensureReconnectButton(online);
-        if (online && (lastConnectivityOnline === false || lastConnectivityOnline === null)
-            && isOfflineShellDocument()) {
-            // null = first subscribe while already online on an offline shell document
-            requestLiveReload(lastConnectivityOnline === null ? 'boot-online' : 'reconnect');
+        // Auto-reload ONLY on a real offline → online transition while viewing an offline shell.
+        // Do not reload on first boot subscribe (null → true): that fought live pages and felt like lag.
+        if (online && lastConnectivityOnline === false && isOfflineShellDocument()) {
+            requestLiveReload('reconnect');
+        } else if (online && isOfflineShellDocument()) {
+            ensureReconnectButton(true);
         }
         lastConnectivityOnline = online;
     }
