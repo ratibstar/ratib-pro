@@ -1,0 +1,5 @@
+# Branch Hybrid Runtime local files (Phase A+)
+*
+!.gitignore
+
+# Keep directory in git; SQLite DB and WAL files stay local.

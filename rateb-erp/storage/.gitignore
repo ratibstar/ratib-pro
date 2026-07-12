@@ -10,6 +10,8 @@
 !backups/**
 !rate-limit/
 !rate-limit/**
+!branch/
+!branch/.gitignore
 
 .deploy-migrate-token
 deploy-migrate-token
