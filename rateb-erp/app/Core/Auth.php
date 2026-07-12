@@ -132,14 +132,22 @@ final class Auth
     {
         SessionManager::regenerate();
         $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
+        $companyId = $user['company_id'] !== null ? (int) $user['company_id'] : 0;
         SessionManager::set('rateb_user_id', (int) $user['id']);
-        SessionManager::set('rateb_company_id', $user['company_id'] !== null ? (int) $user['company_id'] : null);
+        SessionManager::set('rateb_company_id', $companyId > 0 ? $companyId : null);
         SessionManager::set('rateb_is_super_admin', $isSuper);
         SessionManager::set('rateb_portal', $portal);
         SessionManager::set('rateb_user_email', (string) ($user['email'] ?? ''));
         SessionManager::set('rateb_user_display', (string) ($user['name'] ?? $user['display_name'] ?? ''));
         TenantContext::setSuperAdmin($isSuper);
-        TenantContext::setCompanyId($user['company_id'] !== null ? (int) $user['company_id'] : null);
+        TenantContext::setCompanyId($companyId > 0 ? $companyId : null);
+        // Super-admin rows often have null company_id — bind operational tenant before ERP shell boot.
+        if ($isSuper && $companyId < 1 && function_exists('rateb_resolve_erp_shell_company_id')) {
+            $shellCompany = (int) rateb_resolve_erp_shell_company_id();
+            if ($shellCompany > 0) {
+                $companyId = $shellCompany;
+            }
+        }
         SessionManager::forget('rateb_agency_access_perms_synced');
         SessionManager::forget('rateb_saas_tenant_access_perms_synced');
         if (function_exists('rateb_ensure_agency_access_permissions_once')) {

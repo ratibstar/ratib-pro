@@ -2234,6 +2234,43 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
     }
 }
 
+/**
+ * Resolve company_id for ERP shell / offline warm payload.
+ * Prefer explicit ops selection; for super-admin without a bound company, use the same
+ * primary-company default as Admin dashboard (DedicatedTenantPolicy::primaryCompanyId).
+ * Syncs session when a valid company is adopted — never invents an unverified id.
+ */
+if (!function_exists('rateb_resolve_erp_shell_company_id')) {
+    function rateb_resolve_erp_shell_company_id(): int
+    {
+        $resolved = 0;
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $resolved = (int) rateb_resolve_ops_company_id();
+        }
+        if ($resolved < 1) {
+            $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+            if ($sessionCompany > 0 && function_exists('rateb_adopt_ops_company_id')) {
+                $resolved = (int) rateb_adopt_ops_company_id($sessionCompany);
+            }
+        }
+        if ($resolved < 1 && (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')) {
+            if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)) {
+                $primary = (int) \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+                if ($primary > 0 && function_exists('rateb_adopt_ops_company_id')) {
+                    $resolved = (int) rateb_adopt_ops_company_id($primary);
+                } elseif ($primary > 0) {
+                    $resolved = $primary;
+                }
+            }
+        }
+        if ($resolved > 0 && function_exists('rateb_sync_ops_session_to_company')) {
+            rateb_sync_ops_session_to_company($resolved);
+        }
+
+        return $resolved > 0 ? $resolved : 0;
+    }
+}
+
 /** Query params preserved across paginated list links (search, filters). */
 if (!function_exists('rateb_list_default_per_page')) {
     function rateb_list_default_per_page(): int

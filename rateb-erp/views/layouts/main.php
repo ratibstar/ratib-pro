@@ -399,9 +399,14 @@ if ($ratebOfflineReadCache) {
         ? (rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/')
         : '';
     $ratebOfflineApiBase = rateb_url('api/v1/offline');
-    $ratebOfflineCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
-    if ($ratebOfflineCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-        $ratebOfflineCompanyId = (int) rateb_resolve_ops_company_id();
+    $ratebOfflineCompanyId = 0;
+    if (function_exists('rateb_resolve_erp_shell_company_id')) {
+        $ratebOfflineCompanyId = (int) rateb_resolve_erp_shell_company_id();
+    } else {
+        $ratebOfflineCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+        if ($ratebOfflineCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $ratebOfflineCompanyId = (int) rateb_resolve_ops_company_id();
+        }
     }
     $ratebOfflineBranchId = 0;
     if (function_exists('rateb_portal_branch_id')) {
@@ -428,6 +433,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'flags' => $ratebOfflineFlags,
     'startConnectivity' => true,
     'company_id' => $ratebOfflineCompanyId,
+    'tenant_id' => $ratebOfflineCompanyId,
     'branch_id' => $ratebOfflineBranchId,
     'user_id' => $ratebOfflineUserId,
     'is_super_admin' => (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin'),
@@ -475,9 +481,14 @@ $ratebOfflineMasterData = class_exists(\Rateb\App\Offline\Services\OfflineFeatur
 if ($ratebOfflineMasterData) {
     $ratebMdFlags = (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->snapshot();
     $ratebMdApiBase = rateb_url('api/v1/offline');
-    $ratebMdCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
-    if ($ratebMdCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-        $ratebMdCompanyId = (int) rateb_resolve_ops_company_id();
+    $ratebMdCompanyId = 0;
+    if (function_exists('rateb_resolve_erp_shell_company_id')) {
+        $ratebMdCompanyId = (int) rateb_resolve_erp_shell_company_id();
+    } else {
+        $ratebMdCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+        if ($ratebMdCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $ratebMdCompanyId = (int) rateb_resolve_ops_company_id();
+        }
     }
     $ratebMdBranchId = 0;
     if (function_exists('rateb_portal_branch_id')) {

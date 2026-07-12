@@ -26,6 +26,7 @@ final class ErpShellOfflinePhase10Test
         $this->testIsReadCacheEnabledHelper();
         $this->testModulesRegistryHasErpShell();
         $this->testLayoutInjectionGated();
+        $this->testShellCompanyResolverPresent();
         $this->testBootstrapAndFallbackExist();
         $this->testServiceWorkerRules();
         $this->testShellAdapterSource();
@@ -131,6 +132,19 @@ final class ErpShellOfflinePhase10Test
             && str_contains($layout, '$ratebOfflineReadCache')
             && preg_match('/if\s*\(\s*\$ratebOfflineReadCache\s*\)/', $layout) === 1;
         $this->record('layout injection gated on isReadCacheEnabled', $ok, $ok ? 'ok' : 'ungated or missing');
+    }
+
+    private function testShellCompanyResolverPresent(): void
+    {
+        $app = (string) file_get_contents(RATEB_ROOT . '/config/app.php');
+        $layout = (string) file_get_contents(RATEB_ROOT . '/views/layouts/main.php');
+        $boot = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/erp-shell-bootstrap.js');
+        $ok = str_contains($app, 'function rateb_resolve_erp_shell_company_id')
+            && str_contains($layout, 'rateb_resolve_erp_shell_company_id')
+            && str_contains($layout, "'tenant_id'")
+            && str_contains($boot, 'showTenantGateError')
+            && str_contains($boot, 'rateb_offline_tenant_gate_failed');
+        $this->record('shell company resolver + tenant gate diagnostics', $ok, $ok ? 'ok' : 'missing');
     }
 
     private function testBootstrapAndFallbackExist(): void

@@ -432,6 +432,39 @@
         });
     }
 
+    function showTenantGateError(companyId, userId) {
+        var payload = {
+            event: 'rateb_offline_tenant_gate_failed',
+            user_id: userId,
+            company_id: companyId,
+            timestamp: new Date().toISOString(),
+            route: (root.location && (root.location.pathname + (root.location.search || ''))) || ''
+        };
+        try {
+            console.error('[RATIB OFFLINE]', 'FAIL', 'tenant_gate', payload);
+        } catch (eLog) { /* ignore */ }
+        try {
+            if (!root.document || !root.document.body) {
+                return;
+            }
+            var existing = root.document.getElementById('rateb-offline-tenant-gate-error');
+            if (existing) {
+                return;
+            }
+            var el = root.document.createElement('div');
+            el.id = 'rateb-offline-tenant-gate-error';
+            el.setAttribute('role', 'alert');
+            el.style.cssText = 'position:relative;z-index:9999;margin:0;padding:12px 16px;'
+                + 'background:#7f1d1d;color:#fff;font:14px/1.45 Tajawal,sans-serif;text-align:center';
+            el.textContent = 'Offline shell blocked: invalid tenant context'
+                + ' (user_id=' + String(userId)
+                + ', company_id=' + String(companyId)
+                + '). Select an operational company, then reload Admin.';
+            var host = root.document.querySelector('main') || root.document.body;
+            host.insertBefore(el, host.firstChild);
+        } catch (eDom) { /* ignore */ }
+    }
+
     function boot() {
         if (tStopped()) {
             return;
@@ -448,9 +481,12 @@
             tFail(4, 'erp-shell-bootstrap.js', 'boot', 'POS location — boot aborted');
             return;
         }
-        if (!(parseInt(cfg.company_id, 10) > 0 && parseInt(cfg.user_id, 10) > 0)) {
+        var gateCompany = parseInt(cfg.company_id, 10) || 0;
+        var gateUser = parseInt(cfg.user_id, 10) || 0;
+        if (!(gateCompany > 0 && gateUser > 0)) {
             tFail(4, 'erp-shell-bootstrap.js', 'boot',
                 'tenant gate failed company_id=' + cfg.company_id + ' user_id=' + cfg.user_id);
+            showTenantGateError(gateCompany, gateUser);
             return;
         }
         persistOfflineScope(flags);
