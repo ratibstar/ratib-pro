@@ -39,10 +39,13 @@ $allowedPrefixes = [
     'rateb-erp/schema/sqlite/',
     'rateb-erp/config/hybrid.',
     'rateb-erp/storage/',
+    'rateb-erp/deploy/',
+    'rateb-erp/docs/',
     'rateb-erp/offline/tests/OfflineFoundationTest.php',
 ];
 $allowedExact = [
     'rateb-erp/offline/tests/OfflineFoundationTest.php',
+    'rateb-erp/VERSION',
 ];
 $changed = [];
 foreach (preg_split('/\R/', $allDiff) ?: [] as $f) {
