@@ -127,6 +127,9 @@
         if (root.RatebOfflineOpsForms && typeof root.RatebOfflineOpsForms.bind === 'function') {
             root.RatebOfflineOpsForms.bind();
         }
+        if (root.RatebOfflineFormPostAdapter && typeof root.RatebOfflineFormPostAdapter.bind === 'function') {
+            root.RatebOfflineFormPostAdapter.bind();
+        }
         surfaceSyncWarnings();
         var runPickers = function () {
             hydratePickers();

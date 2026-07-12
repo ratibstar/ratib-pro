@@ -42,9 +42,24 @@ All flags remain **OFF** in production until soak sign-off.
 2. `RATEB_OFFLINE_READ_CACHE=1`  
    Optional next: `RATEB_OFFLINE_AUTH_UNLOCK=1` → `RATEB_OFFLINE_RBAC_CACHE=1` → `RATEB_OFFLINE_MASTER_DATA=1`
 3. `RATEB_OFFLINE_PILOT_OPS_PAGES=1` (allowlisted page snapshots + SW serve)
-4. Write modules one at a time:  
-   `RATEB_OFFLINE_INVENTORY_MOVEMENTS=1` → then `RATEB_OFFLINE_HR_ATTENDANCE=1` → then `RATEB_OFFLINE_PROCUREMENT=1`
+4. Write modules one at a time (first verticals for full offline R/W):  
+   `RATEB_OFFLINE_INVENTORY_MOVEMENTS=1` → then `RATEB_OFFLINE_HR_ATTENDANCE=1` → then `RATEB_OFFLINE_PROCUREMENT=1`  
+   Optional later: remaining Tier-1 module env keys documented in `PHASE_8_PRODUCTION_ROLLOUT.md` / module PHASE_*B docs — enable only after Inv/HR/Proc are green.  
+   **Do not** invent production `.env` secrets in git; set flags on the server / local `.env` only.
 5. POS offline remains its own stack; after each step verify `pos-sw.js` still owns `/pos` and ERP fallback coexist works
+
+### Recommended first-vertical block (docs template)
+
+```env
+RATEB_OFFLINE_ENABLED=1
+RATEB_OFFLINE_READ_CACHE=1
+RATEB_OFFLINE_PILOT_OPS_PAGES=1
+RATEB_OFFLINE_INVENTORY_MOVEMENTS=1
+RATEB_OFFLINE_HR_ATTENDANCE=1
+RATEB_OFFLINE_PROCUREMENT=1
+```
+
+Hardening checklist: `offline/docs/FULL_OFFLINE_ERP_HARDENING.md`.
 
 ## Delivered (Phase 14)
 

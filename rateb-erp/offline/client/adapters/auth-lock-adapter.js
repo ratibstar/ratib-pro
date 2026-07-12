@@ -745,31 +745,45 @@
         overlayEl.setAttribute('data-rateb-erp-auth-lock', '1');
         overlayEl.setAttribute('role', 'dialog');
         overlayEl.setAttribute('aria-modal', 'true');
-        overlayEl.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,17,23,.92);'
+        overlayEl.setAttribute('aria-label', 'RATEB ERP Offline Unlock');
+        overlayEl.style.cssText = 'position:fixed;inset:0;z-index:99999;'
+            + 'background:radial-gradient(ellipse at 30% 20%,#1e3a5f 0%,#0f1117 55%,#0a0c10 100%);'
             + 'display:flex;align-items:center;justify-content:center;padding:1.5rem;';
         var box = root.document.createElement('div');
-        box.style.cssText = 'background:#1a1d24;color:#e8eaed;padding:1.5rem;border-radius:8px;max-width:22rem;width:100%;';
+        box.style.cssText = 'background:rgba(26,29,36,.96);color:#e8eaed;padding:1.75rem 1.5rem;'
+            + 'border-radius:12px;max-width:22rem;width:100%;border:1px solid #2a3344;'
+            + 'box-shadow:0 18px 48px rgba(0,0,0,.45);text-align:center;';
+        var brand = root.document.createElement('div');
+        brand.textContent = 'RATEB ERP';
+        brand.style.cssText = 'font:700 1.35rem/1.2 system-ui,Segoe UI,sans-serif;letter-spacing:.04em;'
+            + 'margin:0 0 .35rem;color:#8ab4ff;';
         var title = root.document.createElement('h2');
-        title.textContent = 'ERP Offline Unlock';
-        title.style.marginTop = '0';
+        title.textContent = 'فتح أوفلاين';
+        title.style.cssText = 'margin:.25rem 0 .75rem;font-size:1.05rem;font-weight:600;';
         var msg = root.document.createElement('p');
         msg.setAttribute('data-lock-msg', '1');
-        msg.textContent = 'Enter your offline PIN to unlock the warm identity.';
+        msg.style.cssText = 'opacity:.9;font-size:.92rem;line-height:1.45;margin:0 0 .75rem;';
+        msg.textContent = 'أدخل رمز PIN لفتح الهوية الدافئة والعمل بنفس واجهة النظام.';
         var input = root.document.createElement('input');
         input.type = 'password';
         input.autocomplete = 'current-password';
         input.setAttribute('data-lock-pin', '1');
-        input.style.cssText = 'width:100%;padding:.5rem;margin:.5rem 0;';
+        input.setAttribute('placeholder', 'PIN');
+        input.setAttribute('aria-label', 'Offline PIN');
+        input.style.cssText = 'width:100%;padding:.65rem .75rem;margin:.35rem 0 .75rem;'
+            + 'border-radius:8px;border:1px solid #3a4558;background:#12151c;color:#e8eaed;box-sizing:border-box;';
         var btn = root.document.createElement('button');
         btn.type = 'button';
-        btn.textContent = 'Unlock';
-        btn.style.cssText = 'width:100%;padding:.6rem;cursor:pointer;';
+        btn.textContent = 'فتح';
+        btn.style.cssText = 'width:100%;padding:.7rem;cursor:pointer;border:0;border-radius:8px;'
+            + 'background:#3b82f6;color:#fff;font-weight:600;';
         btn.addEventListener('click', function () {
             var pinVal = String(input.value || '');
             unlockWithPin(pinVal).then(function (res) {
                 if (res && res.ok) {
                     hideOverlay();
                     notifyUnlocked(res);
+                    landAfterUnlock();
                     return;
                 }
                 var err = (res && res.error) ? String(res.error) : 'Unlock denied';
@@ -782,7 +796,7 @@
                     if (pending && pending.identity) {
                         return enrollPin(pinVal, { identity: pending.identity }).then(function (enrolled) {
                             if (!(enrolled && enrolled.ok)) {
-                                msg.textContent = 'Could not seal offline PIN. Open Admin online once, then retry.';
+                                msg.textContent = 'تعذر حفظ رمز PIN. افتح الإدارة وأنت متصل مرة واحدة ثم أعد المحاولة.';
                                 return;
                             }
                             try { root.localStorage.removeItem('rateb_erp_pending_identity'); } catch (eClr) { /* ignore */ }
@@ -790,17 +804,18 @@
                                 if (res2 && res2.ok) {
                                     hideOverlay();
                                     notifyUnlocked(res2);
+                                    landAfterUnlock();
                                     return;
                                 }
-                                msg.textContent = (res2 && res2.error) ? String(res2.error) : 'Unlock denied';
+                                msg.textContent = (res2 && res2.error) ? String(res2.error) : 'رفض الفتح';
                             });
                         });
                     }
                 }
                 if (err === 'device_unknown') {
-                    msg.textContent = 'Device not enrolled. Open Admin online once to register this device.';
+                    msg.textContent = 'الجهاز غير مسجّل. افتح الإدارة وأنت متصل مرة واحدة لتسجيل هذا الجهاز.';
                 } else if (err === 'not_enrolled') {
-                    msg.textContent = 'Set a new offline PIN (min 4). Device must be enrolled online first.';
+                    msg.textContent = 'عيّن رمز PIN جديداً (4 أحرف على الأقل). يجب تسجيل الجهاز وأنت متصل أولاً.';
                 } else {
                     msg.textContent = err;
                 }
@@ -811,6 +826,7 @@
                 btn.click();
             }
         });
+        box.appendChild(brand);
         box.appendChild(title);
         box.appendChild(msg);
         box.appendChild(input);
@@ -818,6 +834,51 @@
         overlayEl.appendChild(box);
         root.document.body.appendChild(overlayEl);
         return overlayEl;
+    }
+
+    var LAST_URL_KEY = 'rateb_erp_offline_last_url';
+
+    function rememberLastUrl() {
+        try {
+            if (!root.location || !root.location.href) {
+                return;
+            }
+            var href = String(root.location.href);
+            if (/offline-shell\.html/i.test(href) || /\/login/i.test(href)) {
+                return;
+            }
+            root.localStorage.setItem(LAST_URL_KEY, href);
+        } catch (e) { /* ignore */ }
+    }
+
+    function landAfterUnlock() {
+        try {
+            var path = String((root.location && root.location.pathname) || '');
+            // Already on a real module page (SW-served ops HTML) — stay.
+            if (!/offline-shell\.html$/i.test(path)) {
+                rememberLastUrl();
+                return;
+            }
+            var last = '';
+            try {
+                last = String(root.localStorage.getItem(LAST_URL_KEY) || '');
+            } catch (e0) {
+                last = '';
+            }
+            if (last && !/offline-shell\.html/i.test(last) && !/\/login/i.test(last)) {
+                root.location.href = last;
+                return;
+            }
+            var base = '/rateb-erp/public/admin/';
+            try {
+                var p = String(root.location.pathname || '');
+                var m = p.match(/^(.*\/public\/)/i);
+                if (m && m[1]) {
+                    base = m[1] + 'admin/';
+                }
+            } catch (e1) { /* ignore */ }
+            root.location.href = base;
+        } catch (e2) { /* ignore */ }
     }
 
     function showOverlay() {
@@ -912,6 +973,37 @@
             return;
         }
         destroyWarmSession(tenantScope());
+        try {
+            root.localStorage.removeItem(LAST_URL_KEY);
+        } catch (eClr) { /* ignore */ }
+        var offline = false;
+        try {
+            var conn = root.RatebOfflineConnectivity;
+            if (conn && typeof conn.isOnline === 'function') {
+                offline = !conn.isOnline();
+            } else {
+                offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            }
+        } catch (eOff) {
+            offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        }
+        if (offline) {
+            try {
+                ev.preventDefault();
+                ev.stopPropagation();
+            } catch (ePrev) { /* ignore */ }
+            var shell = '/rateb-erp/public/offline-shell.html';
+            try {
+                var p = String((root.location && root.location.pathname) || '');
+                var m = p.match(/^(.*\/public\/)/i);
+                if (m && m[1]) {
+                    shell = m[1] + 'offline-shell.html';
+                }
+            } catch (eShell) { /* ignore */ }
+            try {
+                root.location.href = shell;
+            } catch (eNav) { /* ignore */ }
+        }
     }
 
     function start(options) {
@@ -919,6 +1011,7 @@
         if (!isActive()) {
             return;
         }
+        rememberLastUrl();
         if (root.document) {
             root.document.addEventListener('click', handleLogoutClick, true);
         }
@@ -962,6 +1055,8 @@
         requireUnlockIfNeeded: requireUnlockIfNeeded,
         showOverlay: showOverlay,
         hideOverlay: hideOverlay,
+        landAfterUnlock: landAfterUnlock,
+        rememberLastUrl: rememberLastUrl,
         start: start,
         PBKDF2_ITERATIONS: PBKDF2_ITERATIONS
     };

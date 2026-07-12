@@ -5,11 +5,18 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v6';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
+var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
 
-/** Phase 14 — mirrors offline/config/ops-page-allowlist.php (ERP coexist). */
-var ERP_OPS_PATHS = [
+/**
+ * Runtime paths from ops-page-allowlist.json (synced from
+ * offline/config/ops-page-allowlist.php). Seed used only until JSON loads.
+ * @type {string[]}
+ */
+var ERP_OPS_PATHS = [];
+var ERP_OPS_PATHS_SEED = [
     'stock-movements',
     'warehouse-transfers',
     'inventory-audits',
@@ -21,6 +28,71 @@ var ERP_OPS_PATHS = [
     'purchase-orders',
     'rfq'
 ];
+
+function erpOpsAllowlistRequestUrl() {
+    try {
+        return new URL(ERP_OPS_ALLOWLIST_URL, self.registration.scope).href;
+    } catch (e) {
+        return self.location.origin + '/rateb-erp/public/' + ERP_OPS_ALLOWLIST_URL;
+    }
+}
+
+function applyErpOpsAllowlistPayload(payload) {
+    var paths = payload && Array.isArray(payload.paths) ? payload.paths : [];
+    ERP_OPS_PATHS = paths.map(function (p) {
+        return String(p || '').replace(/^\/+|\/+$/g, '');
+    }).filter(function (p) {
+        return p !== '';
+    });
+    if (!ERP_OPS_PATHS.length) {
+        ERP_OPS_PATHS = ERP_OPS_PATHS_SEED.slice();
+    }
+    return ERP_OPS_PATHS.length;
+}
+
+function loadErpOpsAllowlist() {
+    var url = erpOpsAllowlistRequestUrl();
+    return caches.open(ERP_OPS_ALLOWLIST_CACHE).then(function (cache) {
+        return fetch(url, {
+            credentials: 'same-origin',
+            cache: 'no-cache',
+            headers: { Accept: 'application/json', 'X-Rateb-Shell-Warm': '1' }
+        }).then(function (res) {
+            if (res && res.ok) {
+                return res.clone().json().then(function (payload) {
+                    applyErpOpsAllowlistPayload(payload);
+                    return cache.put(url, res).then(function () {
+                        return ERP_OPS_PATHS.length;
+                    });
+                });
+            }
+            return cache.match(url).then(function (hit) {
+                if (!hit) {
+                    applyErpOpsAllowlistPayload({ paths: ERP_OPS_PATHS_SEED });
+                    return ERP_OPS_PATHS.length;
+                }
+                return hit.json().then(function (payload) {
+                    applyErpOpsAllowlistPayload(payload);
+                    return ERP_OPS_PATHS.length;
+                });
+            });
+        }).catch(function () {
+            return cache.match(url).then(function (hit) {
+                if (!hit) {
+                    applyErpOpsAllowlistPayload({ paths: ERP_OPS_PATHS_SEED });
+                    return ERP_OPS_PATHS.length;
+                }
+                return hit.json().then(function (payload) {
+                    applyErpOpsAllowlistPayload(payload);
+                    return ERP_OPS_PATHS.length;
+                });
+            });
+        });
+    }).catch(function () {
+        applyErpOpsAllowlistPayload({ paths: ERP_OPS_PATHS_SEED });
+        return ERP_OPS_PATHS.length;
+    });
+}
 
 function registerShellUrl() {
     try {
@@ -136,8 +208,21 @@ function erpOpsPageFallback(request, url) {
     try {
         if (url) {
             candidates.push(url.origin + url.pathname);
+            if (url.search) {
+                candidates.push(url.origin + url.pathname + url.search);
+            }
             if (url.href) {
                 candidates.push(url.href);
+            }
+            // Trailing-slash variant (with and without company_id).
+            var bare = String(url.pathname || '').replace(/\/+$/, '');
+            if (bare && bare !== url.pathname) {
+                candidates.push(url.origin + bare);
+                if (url.search) {
+                    candidates.push(url.origin + bare + url.search);
+                }
+            } else if (bare) {
+                candidates.push(url.origin + bare + '/');
             }
         }
     } catch (e2) { /* ignore */ }
@@ -154,7 +239,47 @@ function erpOpsPageFallback(request, url) {
                 return cache.match(key);
             });
         });
-        return chain;
+        return chain.then(function (found) {
+            if (found) {
+                return found;
+            }
+            if (!url || !url.pathname) {
+                return null;
+            }
+            // Query-string / trailing-slash variants of the same ops page (?company_id=).
+            return cache.match(url.origin + url.pathname, { ignoreSearch: true }).then(function (hit) {
+                if (hit) {
+                    return hit;
+                }
+                var want = String(url.pathname || '').replace(/\/+$/, '').toLowerCase();
+                return cache.keys().then(function (keys) {
+                    var best = null;
+                    for (var i = 0; i < (keys || []).length; i++) {
+                        try {
+                            var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
+                            var ku = new URL(href);
+                            var got = String(ku.pathname || '').replace(/\/+$/, '').toLowerCase();
+                            if (got === want) {
+                                // Prefer same company_id when present.
+                                var wantCid = '';
+                                var gotCid = '';
+                                try {
+                                    wantCid = String(url.searchParams.get('company_id') || '');
+                                    gotCid = String(ku.searchParams.get('company_id') || '');
+                                } catch (eCid) { /* ignore */ }
+                                if (wantCid && gotCid && wantCid === gotCid) {
+                                    return cache.match(keys[i]);
+                                }
+                                if (!best) {
+                                    best = keys[i];
+                                }
+                            }
+                        } catch (e3) { /* ignore */ }
+                    }
+                    return best ? cache.match(best) : null;
+                });
+            });
+        });
     }).catch(function () {
         return null;
     });
@@ -204,9 +329,9 @@ function putErpOpsPageFromMessage(data) {
  * @param {URL} [url]
  */
 function erpAdminOfflineFallback(request, url) {
-    var tryOps = (url && matchErpOpsPath(url.pathname))
-        ? erpOpsPageFallback(request, url)
-        : Promise.resolve(null);
+    // Captures are allowlist-gated at write time; always try Cache API first so
+    // ?company_id= and allowlist-load races still hit real module HTML.
+    var tryOps = erpOpsPageFallback(request, url);
     return tryOps.then(function (opsHit) {
         if (opsHit) {
             return opsHit;
@@ -261,13 +386,19 @@ function warmErpOfflineShell() {
     var urls = [
         base + ERP_OFFLINE_SHELL,
         base + 'assets/offline/rateb-offline.js',
+        base + 'assets/offline/rateb-offline.min.js',
         base + 'assets/offline/erp-offline-shell-auth.js',
         base + 'assets/offline/erp-offline-shell-rbac.js',
+        base + 'assets/offline/erp-ops-forms-bootstrap.js',
+        base + 'assets/offline/erp-shell-bootstrap.js',
+        base + 'assets/offline/ops-page-allowlist.json',
         base + 'assets/css/variables.css',
         base + 'assets/css/main.css',
         base + 'assets/css/components.css',
         base + 'assets/css/dark.css',
-        base + 'assets/css/rtl.css'
+        base + 'assets/css/rtl.css',
+        base + 'assets/css/light.css',
+        base + 'assets/css/dashboard.css'
     ];
     return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
         return Promise.all(urls.map(function (key) {
@@ -652,6 +783,7 @@ self.addEventListener('install', function (event) {
     event.waitUntil(
         Promise.all([
             caches.open(ASSET_CACHE),
+            loadErpOpsAllowlist(),
             warmErpOfflineShell()
         ]).catch(function () { /* ignore */ })
     );
@@ -659,7 +791,9 @@ self.addEventListener('install', function (event) {
 
 self.addEventListener('activate', function (event) {
     event.waitUntil(
-        caches.keys().then(function (keys) {
+        loadErpOpsAllowlist().then(function () {
+            return caches.keys();
+        }).then(function (keys) {
             // Migrate last register shell from older shell caches before delete.
             var oldShells = keys.filter(function (k) {
                 return k.indexOf('rateb-pos-shell-') === 0 && k !== SHELL_CACHE;
@@ -691,11 +825,13 @@ self.addEventListener('activate', function (event) {
                     return Promise.all(keys.map(function (key) {
                         // Keep POS shell/assets + current ERP offline caches; drop stale coexist versions only.
                         if (key === SHELL_CACHE || key === ASSET_CACHE
-                            || key === ERP_COEXIST_CACHE || key === ERP_OPS_PAGE_CACHE) {
+                            || key === ERP_COEXIST_CACHE || key === ERP_OPS_PAGE_CACHE
+                            || key === ERP_OPS_ALLOWLIST_CACHE) {
                             return undefined;
                         }
                         if (String(key).indexOf('rateb-erp-coexist-') === 0
                             || String(key).indexOf('rateb-erp-ops-pages-') === 0
+                            || String(key).indexOf('rateb-erp-ops-allowlist-') === 0
                             || String(key).indexOf('rateb-erp-assets-') === 0
                             || String(key).indexOf('rateb-pos-shell-') === 0
                             || String(key).indexOf('rateb-pos-assets-') === 0) {
@@ -706,6 +842,8 @@ self.addEventListener('activate', function (event) {
                 });
             });
         }).then(function () {
+            return self.clients.claim();
+        }).catch(function () {
             return self.clients.claim();
         })
     );
@@ -749,6 +887,10 @@ self.addEventListener('message', function (event) {
     }
     if (data.type === 'CACHE_ERP_OPS_PAGE') {
         event.waitUntil(putErpOpsPageFromMessage(data));
+        return;
+    }
+    if (data.type === 'RELOAD_OPS_ALLOWLIST') {
+        event.waitUntil(loadErpOpsAllowlist());
     }
 });
 

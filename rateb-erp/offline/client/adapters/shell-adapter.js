@@ -113,7 +113,66 @@
         return out;
     }
 
-    /** Phase 14 — keep main content for browse; still strip secrets / scripts / CSRF. */
+    /** Money / posting / final-approve — stay online-only even on cached ops pages. */
+    var ONLINE_ONLY_FORM_RE = /(?:post|reverse|close[-_]?period|approve|final[-_]?approve|decide|escalate|pay(?:ment)?|payroll[-_]?calc|calculate|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)/i;
+
+    function isOnlineOnlyFormMarkup(formTag) {
+        var s = String(formTag || '');
+        if (ONLINE_ONLY_FORM_RE.test(s)) {
+            return true;
+        }
+        if (/\b(?:action|data-action|name|id)=["'][^"']*(?:approve|post|pay|decide|escalate|payroll)[^"']*["']/i.test(s)) {
+            return true;
+        }
+        return false;
+    }
+
+    function buildOpsOfflineBootScripts() {
+        var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+        var flags = {};
+        try {
+            flags = (cfg.flags && typeof cfg.flags === 'object') ? cfg.flags : {};
+        } catch (e0) {
+            flags = {};
+        }
+        var safe = {
+            apiBase: cfg.apiBase || '',
+            probeUrl: cfg.probeUrl || '',
+            flags: flags,
+            startConnectivity: true,
+            company_id: parseInt(cfg.company_id, 10) || 0,
+            tenant_id: parseInt(cfg.tenant_id || cfg.company_id, 10) || 0,
+            branch_id: parseInt(cfg.branch_id, 10) || 0,
+            user_id: parseInt(cfg.user_id, 10) || 0,
+            is_super_admin: !!cfg.is_super_admin,
+            client_queue_max: parseInt(cfg.client_queue_max, 10) || 500,
+            ops_page_paths: Array.isArray(cfg.ops_page_paths) ? cfg.ops_page_paths : [],
+            ops_form_hooks: Array.isArray(cfg.ops_form_hooks) ? cfg.ops_form_hooks : [],
+            pilot_ops_pages: !!cfg.pilot_ops_pages,
+            offline_ops_snapshot: true
+        };
+        var json;
+        try {
+            json = JSON.stringify(safe);
+        } catch (e1) {
+            json = '{}';
+        }
+        var base = '/rateb-erp/public/';
+        try {
+            var p = String((root.location && root.location.pathname) || '');
+            var m = p.match(/^(.*\/public\/)/i);
+            if (m && m[1]) {
+                base = m[1];
+            }
+        } catch (e2) { /* ignore */ }
+        return '<script>window.__RATEB_ERP_SHELL_OFFLINE__=' + json
+            + ';window.__RATEB_ERP_MASTER_DATA__=window.__RATEB_ERP_SHELL_OFFLINE__;</script>\n'
+            + '<script src="' + base + 'assets/offline/rateb-offline.js" defer></script>\n'
+            + '<script src="' + base + 'assets/offline/erp-shell-bootstrap.js" defer></script>\n'
+            + '<script src="' + base + 'assets/offline/erp-ops-forms-bootstrap.js" defer></script>\n';
+    }
+
+    /** Phase 14+ — keep main; mark writable Tier-1 forms; reinject offline hooks. */
     function stripSensitiveOpsPage(html) {
         var out = String(html || '');
         out = out.replace(/<meta[^>]*name=["']rateb-csrf["'][^>]*>/gi, '');
@@ -130,14 +189,26 @@
         out = out.replace(/\son[a-z]+\s*=\s*["'][^"']*["']/gi, '');
         out = out.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
         out = out.replace(/\shref=["']\s*javascript:[^"']*["']/gi, ' href="#"');
-        // Disable forms in cached browse snapshots (writes use live-page hooks).
-        out = out.replace(/<form\b/gi, '<form data-rateb-offline-browse="1" onsubmit="return false;" ');
+        // Writable drafts offline; money/posting/final-approve stay hard-disabled.
+        out = out.replace(/<form\b([^>]*)>/gi, function (_m, attrs) {
+            var a = String(attrs || '');
+            if (isOnlineOnlyFormMarkup(a)) {
+                return '<form data-rateb-offline-online-only="1" onsubmit="return false;" ' + a + '>';
+            }
+            return '<form data-rateb-offline-writable="1" ' + a + '>';
+        });
         out = out.replace(
             /<main\b([^>]*)>/i,
-            '<main$1><div class="alert alert-warning m-3" role="status">'
-            + 'وضع عدم الاتصال — صفحة محفوظة للتصفح. التعديل يتطلب اتصال أو نموذج حي قبل انقطاع الشبكة.'
+            '<main$1><div class="alert alert-info m-3" role="status" data-rateb-offline-ops-banner="1">'
+            + 'وضع عدم الاتصال — يمكنك إنشاء مسودات؛ الترحيل/الاعتماد النهائي/المدفوعات تتطلب اتصالاً.'
             + '</div>'
         );
+        var boot = buildOpsOfflineBootScripts();
+        if (/<\/body>/i.test(out)) {
+            out = out.replace(/<\/body>/i, boot + '</body>');
+        } else {
+            out += boot;
+        }
         return out;
     }
 
@@ -305,6 +376,11 @@
                                 path: path,
                                 html: safe
                             });
+                            try {
+                                root.navigator.serviceWorker.controller.postMessage({
+                                    type: 'RELOAD_OPS_ALLOWLIST'
+                                });
+                            } catch (eReload) { /* ignore */ }
                         }
                     } catch (e) { /* ignore */ }
                     return { ok: true, id: id, bytes: safe.length, path: path };
@@ -315,14 +391,83 @@
         }
     }
 
+    function prefetchAllowlistedLinks() {
+        if (!isOpsPagesActive() || !root.document || !root.fetch) {
+            return;
+        }
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            return;
+        }
+        var links = root.document.querySelectorAll(
+            'aside.rateb-sidebar a[href], #rateb-sidebar a[href], .rateb-offline-rbac-link[href]'
+        );
+        var seen = {};
+        var urls = [];
+        Array.prototype.forEach.call(links, function (a) {
+            var href = (a.getAttribute('href') || '').trim();
+            if (!href || href === '#' || /^javascript:/i.test(href) || seen[href]) {
+                return;
+            }
+            try {
+                var u = new URL(href, root.location.origin);
+                if (u.origin !== root.location.origin) {
+                    return;
+                }
+                if (!matchOpsPath(u.pathname)) {
+                    return;
+                }
+                seen[href] = true;
+                urls.push(u.href);
+            } catch (e) { /* ignore */ }
+        });
+        urls = urls.slice(0, 8);
+        var i = 0;
+        var tick = function () {
+            if (i >= urls.length) {
+                return;
+            }
+            var next = urls[i++];
+            root.fetch(next, {
+                credentials: 'same-origin',
+                headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+            }).then(function () {
+                /* capture happens when user visits; warm HTML into HTTP cache only */
+            }).catch(function () { /* ignore */ }).then(function () {
+                if (typeof root.requestIdleCallback === 'function') {
+                    root.requestIdleCallback(tick, { timeout: 4000 });
+                } else {
+                    setTimeout(tick, 1200);
+                }
+            });
+        };
+        if (typeof root.requestIdleCallback === 'function') {
+            root.requestIdleCallback(tick, { timeout: 6000 });
+        } else {
+            setTimeout(tick, 2500);
+        }
+    }
+
     function startAutoCapture() {
         if (!isActive()) {
             return;
         }
         var run = function () {
-            captureChrome().catch(function () { /* ignore */ });
+            captureChrome().then(function (res) {
+                try {
+                    console.info('[RATIB OFFLINE] captureChrome', res || {});
+                } catch (e0) { /* ignore */ }
+            }).catch(function () { /* ignore */ });
             if (isOpsPagesActive()) {
-                captureOpsPage().catch(function () { /* ignore */ });
+                captureOpsPage().then(function (res) {
+                    try {
+                        console.info('[RATIB OFFLINE] captureOpsPage', res || {});
+                    } catch (e1) { /* ignore */ }
+                }).catch(function () { /* ignore */ });
+                prefetchAllowlistedLinks();
+            } else {
+                try {
+                    console.info('[RATIB OFFLINE] captureOpsPage skipped (pilot.ops_pages off)');
+                } catch (e2) { /* ignore */ }
             }
         };
         if (root.document && root.document.readyState === 'complete') {
@@ -348,6 +493,7 @@
         captureOpsPage: captureOpsPage,
         getSnapshot: getSnapshot,
         startAutoCapture: startAutoCapture,
+        prefetchAllowlistedLinks: prefetchAllowlistedLinks,
         stripSensitive: stripSensitive,
         stripSensitiveOpsPage: stripSensitiveOpsPage
     };

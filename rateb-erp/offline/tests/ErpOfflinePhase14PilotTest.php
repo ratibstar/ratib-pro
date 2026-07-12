@@ -29,6 +29,8 @@ final class ErpOfflinePhase14PilotTest
         $this->testShellOpsPageCapture();
         $this->testMasterDataPickerApis();
         $this->testSwOpsPageCoexist();
+        $this->testShellOpsWritablePolicy();
+        $this->testAdminNavigateRespondWithGate();
         $this->testLayoutInjection();
         $this->testSdkBundlePhase14();
         $this->testPilotDocExists();
@@ -116,15 +118,17 @@ final class ErpOfflinePhase14PilotTest
         $paths = $cfg['paths'] ?? [];
         $hooks = $cfg['form_hooks'] ?? [];
         $joined = implode(',', array_map('strval', $paths));
+        // Browse may include payroll module shells; money movement / ZATCA stay out.
+        // Calculate/post/approve remain blocked by writable deny-list + flags.
         $ok = in_array('stock-movements', $paths, true)
             && in_array('hr/attendance', $paths, true)
             && in_array('purchase-requests', $paths, true)
-            && !str_contains($joined, 'payroll')
+            && in_array('suppliers', $paths, true)
             && !str_contains($joined, 'payment')
             && !str_contains($joined, 'zatca')
             && is_array($hooks)
             && count($hooks) >= 5;
-        $this->record('ops allowlist excludes payroll/payments/zatca', $ok, $ok ? 'ok' : 'allowlist bad');
+        $this->record('ops allowlist first verticals + no payments/zatca', $ok, $ok ? 'ok' : 'allowlist bad');
     }
 
     private function testQueueMaxEnforcedInSource(): void
@@ -177,11 +181,42 @@ final class ErpOfflinePhase14PilotTest
         $pos = (string) file_get_contents(RATEB_ROOT . '/public/pos-sw.js');
         $ok = str_contains($sw, 'OPS_PAGE_CACHE')
             && str_contains($sw, 'opsPageFallback')
-            && !preg_match('/clients\.claim\s*\(/', $sw)
+            && str_contains($sw, 'ignoreSearch')
+            && preg_match('/clients\.claim\s*\(/', $sw) === 1
             && str_contains($pos, 'ERP_OPS_PAGE_CACHE')
             && str_contains($pos, 'erpOpsPageFallback')
-            && str_contains($pos, 'CACHE_ERP_OPS_PAGE');
-        $this->record('SW ops page + POS coexist', $ok, $ok ? 'ok' : 'sw missing ops');
+            && str_contains($pos, 'CACHE_ERP_OPS_PAGE')
+            && str_contains($pos, 'loadErpOpsAllowlist')
+            && str_contains($pos, 'ops-page-allowlist.json')
+            && str_contains($pos, 'ignoreSearch')
+            && preg_match('/clients\.claim\s*\(/', $pos) === 1
+            && str_contains($pos, "mode === 'navigate'")
+            && str_contains($pos, 'respondWith');
+        $this->record('SW ops page + POS coexist + allowlist load', $ok, $ok ? 'ok' : 'sw missing ops');
+    }
+
+    private function testShellOpsWritablePolicy(): void
+    {
+        $src = (string) file_get_contents(RATEB_ROOT . '/offline/client/adapters/shell-adapter.js');
+        $formPost = (string) file_get_contents(RATEB_ROOT . '/offline/client/adapters/form-post-adapter.js');
+        $ok = str_contains($src, 'data-rateb-offline-writable')
+            && str_contains($src, 'data-rateb-offline-online-only')
+            && str_contains($src, 'erp-ops-forms-bootstrap.js')
+            && !str_contains($src, 'data-rateb-offline-browse="1" onsubmit="return false;"')
+            && str_contains($formPost, 'RatebOfflineFormPostAdapter')
+            && str_contains($formPost, 'formDenied')
+            && str_contains($formPost, 'isActive: isActive');
+        $this->record('ops writable strip + form-post adapter', $ok, $ok ? 'ok' : 'writable policy missing');
+    }
+
+    private function testAdminNavigateRespondWithGate(): void
+    {
+        $pos = (string) file_get_contents(RATEB_ROOT . '/public/pos-sw.js');
+        // Non-POS admin navigations must always respondWith so Chrome never paints native offline.
+        $ok = str_contains($pos, 'erpAdminOfflineFallback')
+            && preg_match("/mode === 'navigate'[\s\S]{0,400}respondWith/", $pos) === 1
+            && str_contains($pos, 'self.clients.claim');
+        $this->record('admin navigate always respondWith', $ok, $ok ? 'ok' : 'respondWith gate missing');
     }
 
     private function testLayoutInjection(): void
@@ -208,6 +243,9 @@ final class ErpOfflinePhase14PilotTest
             && str_contains($bundle, 'client_queue_full')
             && str_contains($bundle, 'listCached')
             && str_contains($bundle, 'offline.pilot.ops_pages')
+            && str_contains($bundle, 'data-rateb-offline-writable')
+            && str_contains($bundle, 'RatebOfflineFormPostAdapter')
+            && str_contains($bundle, 'landAfterUnlock')
             && str_contains($min, 'RatebOfflineOpsForms');
         $this->record('SDK bundle Phase 14', $ok, $ok ? 'ok' : 'bundle stale');
     }
@@ -216,12 +254,16 @@ final class ErpOfflinePhase14PilotTest
     {
         $doc = RATEB_ROOT . '/offline/docs/PHASE_14_ENTERPRISE_DAILY_OPS_PILOT.md';
         $txt = is_file($doc) ? (string) file_get_contents($doc) : '';
+        $hard = RATEB_ROOT . '/offline/docs/FULL_OFFLINE_ERP_HARDENING.md';
+        $hardTxt = is_file($hard) ? (string) file_get_contents($hard) : '';
         $ok = $txt !== ''
             && str_contains($txt, 'Pilot matrix')
             && str_contains($txt, 'RATEB_OFFLINE_PILOT_OPS_PAGES')
             && str_contains($txt, 'Soak')
-            && str_contains($txt, 'Accounting');
-        $this->record('Phase 14 pilot doc', $ok, $ok ? 'ok' : 'doc missing');
+            && str_contains($txt, 'Accounting')
+            && str_contains($hardTxt, 'respondWith')
+            && str_contains($hardTxt, 'data-rateb-offline-writable');
+        $this->record('Phase 14 pilot + hardening docs', $ok, $ok ? 'ok' : 'doc missing');
     }
 
     private function testNoReplayEngineRedesign(): void

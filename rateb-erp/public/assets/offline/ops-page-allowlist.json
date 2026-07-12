@@ -1,6 +1,6 @@
 {
     "version": 1,
-    "generated_at": "2026-07-12T03:35:40+00:00",
+    "generated_at": "2026-07-12T03:58:11+00:00",
     "source": "offline/config/ops-page-allowlist.php",
     "paths": [
         "stock-movements",
@@ -13,6 +13,8 @@
         "purchase-requests",
         "purchase-orders",
         "rfq",
+        "suppliers",
+        "goods-receipts",
         "recruitment/candidates",
         "recruitment/agencies",
         "recruitment",

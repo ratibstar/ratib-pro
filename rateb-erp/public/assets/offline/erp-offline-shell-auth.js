@@ -73,6 +73,19 @@
         }
     }
 
+    function brandOfflineStatus() {
+        var statusBox = $('offline-status');
+        if (!statusBox || statusBox.querySelector('[data-rateb-brand]')) {
+            return;
+        }
+        var brand = root.document.createElement('div');
+        brand.setAttribute('data-rateb-brand', '1');
+        brand.textContent = 'RATEB ERP';
+        brand.style.cssText = 'font:700 1.5rem/1.2 system-ui,Segoe UI,sans-serif;letter-spacing:.04em;'
+            + 'color:#8ab4ff;margin:0 0 .5rem;';
+        statusBox.insertBefore(brand, statusBox.firstChild);
+    }
+
     /** Snapshot HTML keeps <link> in <head>; restore must import those or the shell looks unstyled. */
     function injectStylesFromDoc(doc) {
         if (!doc || !root.document || !root.document.head) {
@@ -329,14 +342,15 @@
     }
 
     function boot() {
+        brandOfflineStatus();
         // Paint unlock copy immediately — do not leave "loading identity" spinner stuck.
-        showMsg('Unlock required', 'Enter your offline PIN to open the warm ERP identity.');
+        showMsg('فتح أوفلاين', 'أدخل رمز PIN لفتح الهوية الدافئة والعمل بنفس واجهة النظام.');
 
         var scope = readScope();
         if (!scope.company_id || !scope.user_id) {
             showMsg(
-                'Cached shell unavailable',
-                'Tenant scope (company_id + user_id) required. Open Admin online once to enroll.'
+                'الواجهة المحفوظة غير متاحة',
+                'يلزم نطاق المستأجر (company_id + user_id). افتح الإدارة وأنت متصل مرة واحدة للتسجيل.'
             );
             return;
         }
@@ -380,17 +394,26 @@
                 return;
             }
             if (lock.isUnlocked && lock.isUnlocked()) {
+                if (typeof lock.landAfterUnlock === 'function') {
+                    try { lock.landAfterUnlock(); } catch (eLand0) { /* ignore */ }
+                }
                 proceed();
                 return;
             }
-            showMsg('Unlock required', 'Enter your offline PIN to open the warm ERP identity.');
+            showMsg('فتح أوفلاين', 'أدخل رمز PIN لفتح الهوية الدافئة والعمل بنفس واجهة النظام.');
             lock.requireUnlockIfNeeded().then(function (res) {
                 if (res && res.ok) {
+                    if (typeof lock.landAfterUnlock === 'function') {
+                        try { lock.landAfterUnlock(); } catch (eLand1) { /* ignore */ }
+                    }
                     proceed();
                     return;
                 }
                 root.addEventListener('rateb:offline-unlocked', function onUnlock() {
                     root.removeEventListener('rateb:offline-unlocked', onUnlock);
+                    if (typeof lock.landAfterUnlock === 'function') {
+                        try { lock.landAfterUnlock(); } catch (eLand2) { /* ignore */ }
+                    }
                     proceed();
                 });
             });

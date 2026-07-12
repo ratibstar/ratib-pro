@@ -219,8 +219,15 @@ function opsPageFallback(request, url) {
     try {
         if (url) {
             candidates.push(url.origin + url.pathname);
+            if (url.search) {
+                candidates.push(url.origin + url.pathname + url.search);
+            }
             if (url.href) {
                 candidates.push(url.href);
+            }
+            var bare = String(url.pathname || '').replace(/\/+$/, '');
+            if (bare && bare !== url.pathname) {
+                candidates.push(url.origin + bare);
             }
         }
     } catch (e2) { /* ignore */ }
@@ -238,7 +245,31 @@ function opsPageFallback(request, url) {
             });
         });
         return chain.then(function (hit) {
-            return hit || null;
+            if (hit) {
+                return hit;
+            }
+            if (!url || !url.pathname) {
+                return null;
+            }
+            return cache.match(url.origin + url.pathname, { ignoreSearch: true }).then(function (hit2) {
+                if (hit2) {
+                    return hit2;
+                }
+                var want = String(url.pathname || '').replace(/\/+$/, '').toLowerCase();
+                return cache.keys().then(function (keys) {
+                    for (var i = 0; i < (keys || []).length; i++) {
+                        try {
+                            var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
+                            var ku = new URL(href);
+                            var got = String(ku.pathname || '').replace(/\/+$/, '').toLowerCase();
+                            if (got === want) {
+                                return cache.match(keys[i]);
+                            }
+                        } catch (e3) { /* ignore */ }
+                    }
+                    return null;
+                });
+            });
         });
     }).catch(function () {
         return null;

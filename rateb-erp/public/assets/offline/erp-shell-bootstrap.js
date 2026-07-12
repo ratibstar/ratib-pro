@@ -344,8 +344,9 @@
             }
             var max = typeof queue.clientQueueMax === 'function' ? queue.clientQueueMax() : 500;
             badge.hidden = false;
-            badge.textContent = 'مزامنة: ' + n + (max ? '/' + max : '');
-            badge.title = 'Offline sync queue depth';
+            badge.textContent = n + ' عمليات بانتظار المزامنة';
+            badge.title = 'Offline sync queue — drafts waiting to flush when online';
+            badge.setAttribute('data-rateb-offline-queue-depth', String(n));
         }).catch(function () {
             badge.hidden = true;
         });
