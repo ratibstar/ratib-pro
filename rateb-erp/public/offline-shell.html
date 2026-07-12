@@ -102,7 +102,7 @@ html[data-bs-theme="light"] .rateb-offline-local-session-banner{background:#dbe7
   function loadOfflineScript(relPath) {
     var base = publicBase();
     var plain = base + relPath;
-    var bust = plain + (plain.indexOf('?') >= 0 ? '&' : '?') + 'v=oid-20260712c';
+    var bust = plain + (plain.indexOf('?') >= 0 ? '&' : '?') + 'v=oid-20260712e';
     return loadScript(plain, 3500).catch(function () {
       return loadScript(bust, 3500);
     });

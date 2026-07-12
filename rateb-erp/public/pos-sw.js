@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v5';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v6';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
@@ -848,45 +848,36 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: cache-first for ERP offline assets (avoid long network hang when offline).
+    // Online: network-first so identity/RBAC/shell fixes ship immediately.
+    // Offline: cache-first with fail-fast (no hanging fetch).
     if (isErpOfflineAsset(url)) {
-        event.respondWith(
-            matchErpOfflineCached(event.request, url).then(function (cached) {
-                if (cached) {
-                    // Background refresh only while online — never block unlock UI.
-                    if (!(self.navigator && self.navigator.onLine === false)) {
-                        event.waitUntil(
-                            fetchErpAssetNetwork(event.request, 4000).then(function (response) {
-                                if (!response) {
-                                    return null;
-                                }
-                                return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                                    var copy = response.clone();
-                                    return cache.put(event.request, copy.clone()).then(function () {
-                                        return cache.put(url.origin + url.pathname, copy);
-                                    });
-                                }).catch(function () { return null; });
-                            })
-                        );
-                    }
-                    return cached;
-                }
-                return fetchErpAssetNetwork(event.request, 2500).then(function (response) {
+        event.respondWith((function () {
+            var offline = self.navigator && self.navigator.onLine === false;
+            function putBoth(cache, response) {
+                var copy = response.clone();
+                return cache.put(event.request, copy.clone()).then(function () {
+                    return cache.put(url.origin + url.pathname, copy);
+                }).catch(function () { return null; });
+            }
+            if (!offline) {
+                return fetchErpAssetNetwork(event.request, 6000).then(function (response) {
                     if (response) {
                         event.waitUntil(
                             caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                                var copy = response.clone();
-                                return cache.put(event.request, copy.clone()).then(function () {
-                                    return cache.put(url.origin + url.pathname, copy);
-                                });
-                            }).catch(function () { return null; })
+                                return putBoth(cache, response);
+                            })
                         );
                         return response;
                     }
-                    return emptyAssetResponse(event.request);
+                    return matchErpOfflineCached(event.request, url).then(function (cached) {
+                        return cached || emptyAssetResponse(event.request);
+                    });
                 });
-            })
-        );
+            }
+            return matchErpOfflineCached(event.request, url).then(function (cached) {
+                return cached || emptyAssetResponse(event.request);
+            });
+        })());
         return;
     }
 

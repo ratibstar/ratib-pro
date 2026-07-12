@@ -79,7 +79,7 @@
         }
         // Device gate: prefer auth lock helper when present.
         var apply = function () {
-            rbac.applyCachedNav({ requireDeviceActive: !!root.RatebOfflineAuthLock }).catch(function () {
+            rbac.applyCachedNav({ requireDeviceActive: false }).catch(function () {
                 rbac.clearNavDom();
             });
         };

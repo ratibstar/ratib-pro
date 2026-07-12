@@ -82,11 +82,15 @@
         if (root.navigator && root.navigator.onLine === false) {
             return Promise.resolve();
         }
-        return rbac.syncFromServer(fetchVersion, fetchManifest).then(function () {
-            tryApply();
-        }).catch(function () {
-            // Fail closed for apply; keep prior cache only if still valid offline.
-            tryApply();
+        return rbac.syncFromServer(fetchVersion, fetchManifest).then(function (res) {
+            try {
+                console.info('[RATIB OFFLINE] RBAC sync', res && res.ok ? 'ok' : 'result', res || {});
+            } catch (e) { /* ignore */ }
+            // Do not applyCachedNav on live online Admin DOM — only persist cache for offline.
+        }).catch(function (err) {
+            try {
+                console.warn('[RATIB OFFLINE] RBAC sync failed', err);
+            } catch (e2) { /* ignore */ }
         });
     }
 

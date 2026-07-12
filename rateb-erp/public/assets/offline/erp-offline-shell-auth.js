@@ -305,7 +305,7 @@
         if (!rbac || typeof rbac.applyCachedNav !== 'function') {
             return Promise.resolve({ ok: false });
         }
-        return rbac.applyCachedNav({ requireDeviceActive: true }).then(function (res) {
+        return rbac.applyCachedNav({ requireDeviceActive: false }).then(function (res) {
             forceOfflineBadge();
             fillModuleHomeFromNav();
             return res;
