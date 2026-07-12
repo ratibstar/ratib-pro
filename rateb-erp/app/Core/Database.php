@@ -10,12 +10,28 @@ final class Database
 {
     private static ?PDO $pdo = null;
     private static string $resolvedDbName = '';
+    private static string $activeDriver = 'mysql';
 
     /** @var array<string, bool> */
     private static array $columnCache = [];
 
     /** @var array{host:string,port:int,user:string,pass:string,db:string}|null */
     private static ?array $connectionOverride = null;
+
+    /** Active PDO driver: mysql | sqlite (HybridRuntime Phase A). */
+    public static function activeDriver(): string
+    {
+        if (self::$pdo instanceof PDO) {
+            return self::$activeDriver;
+        }
+
+        return HybridRuntime::driver();
+    }
+
+    public static function isSqlite(): bool
+    {
+        return self::activeDriver() === HybridRuntime::DRIVER_SQLITE;
+    }
 
     /**
      * Force the next connection() to a specific database (provisioning / control-panel per-agency).
@@ -62,6 +78,11 @@ final class Database
     {
         try {
             $pdo = self::connection();
+            if (self::isSqlite()) {
+                return self::resolvedDatabaseName() !== ''
+                    ? self::resolvedDatabaseName()
+                    : 'branch_sqlite';
+            }
             $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
 
             return is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
@@ -76,6 +97,9 @@ final class Database
         try {
             $pdo = self::connection();
             $safeTable = str_replace('`', '', $table);
+            if (self::isSqlite()) {
+                return self::sqliteTableHasColumn($pdo, $safeTable, $column);
+            }
             $stmt = $pdo->query(
                 'SHOW COLUMNS FROM `' . $safeTable . '` LIKE ' . $pdo->quote($column)
             );
@@ -90,10 +114,21 @@ final class Database
         }
     }
 
-    /** Cached per database — uses SHOW COLUMNS on the live PDO database. */
+    /** Cached per database — uses SHOW COLUMNS on MySQL or PRAGMA on SQLite. */
     public static function tableHasColumn(string $table, string $column): bool
     {
         $pdo = self::connection();
+        $safeTable = str_replace('`', '', $table);
+        if (self::isSqlite()) {
+            $db = self::liveDatabaseName();
+            $key = $db . '|' . $safeTable . '.' . $column;
+            if (array_key_exists($key, self::$columnCache)) {
+                return self::$columnCache[$key];
+            }
+            self::$columnCache[$key] = self::sqliteTableHasColumn($pdo, $safeTable, $column);
+
+            return self::$columnCache[$key];
+        }
         try {
             $dbRow = $pdo->query('SELECT DATABASE()')->fetch(\PDO::FETCH_NUM);
             $db = is_array($dbRow) ? (string) ($dbRow[0] ?? '') : '';
@@ -103,7 +138,6 @@ final class Database
         if ($db === '') {
             return false;
         }
-        $safeTable = str_replace('`', '', $table);
         $key = $db . '|' . $safeTable . '.' . $column;
         if (array_key_exists($key, self::$columnCache)) {
             return self::$columnCache[$key];
@@ -129,6 +163,7 @@ final class Database
             return self::$pdo;
         }
 
+        // Explicit MySQL override (provisioning / control-panel) always wins.
         if (self::$connectionOverride !== null) {
             $cfg = self::$connectionOverride;
             self::$pdo = self::openWith(
@@ -139,8 +174,24 @@ final class Database
                 (string) $cfg['pass']
             );
             self::$resolvedDbName = (string) $cfg['db'];
+            self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
 
             return self::$pdo;
+        }
+
+        // Hybrid Runtime: branch appliance → local SQLite (Phase A seam).
+        if (HybridRuntime::shouldUseSqlite()) {
+            self::$pdo = self::openSqlite(HybridRuntime::sqlitePath());
+            self::$resolvedDbName = 'branch_sqlite';
+            self::$activeDriver = HybridRuntime::DRIVER_SQLITE;
+
+            return self::$pdo;
+        }
+
+        if (HybridRuntime::isBranchMode() && !HybridRuntime::sqliteExtensionAvailable()) {
+            throw new PDOException(
+                'RATEB Hybrid Runtime: branch mode requires PHP pdo_sqlite extension.'
+            );
         }
 
         $agencyBinding = self::resolveAgencyBindingForRequest();
@@ -153,6 +204,7 @@ final class Database
                 (string) $agencyBinding['pass']
             );
             self::$resolvedDbName = (string) $agencyBinding['db'];
+            self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
 
             return self::$pdo;
         }
@@ -169,6 +221,7 @@ final class Database
             try {
                 self::$pdo = self::open($dbName);
                 self::$resolvedDbName = $dbName;
+                self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
                 return self::$pdo;
             } catch (PDOException $e) {
                 $last = $e;
@@ -186,6 +239,7 @@ final class Database
                 try {
                     self::$pdo = self::open($probed);
                     self::$resolvedDbName = $probed;
+                    self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
                     return self::$pdo;
                 } catch (PDOException $e) {
                     $last = $e;
@@ -339,11 +393,69 @@ final class Database
         return new PDO($dsn, $user, $pass, $options);
     }
 
+    /**
+     * Open local branch SQLite with WAL + durability pragmas (Phase A).
+     * Controllers/Services/Models remain unaware of the driver.
+     */
+    private static function openSqlite(string $path): PDO
+    {
+        if (!extension_loaded('pdo_sqlite')) {
+            throw new PDOException('RATEB Hybrid Runtime: pdo_sqlite extension is not loaded.');
+        }
+
+        HybridRuntime::ensureBranchStorage();
+        $dir = dirname($path);
+        if (!is_dir($dir) && !@mkdir($dir, 0770, true) && !is_dir($dir)) {
+            throw new PDOException('RATEB Hybrid Runtime: cannot create SQLite directory: ' . $dir);
+        }
+
+        $dsn = 'sqlite:' . $path;
+        $pdo = new PDO($dsn, null, null, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+
+        // Enterprise local durability (rule 17).
+        $pdo->exec('PRAGMA journal_mode=WAL');
+        $pdo->exec('PRAGMA synchronous=NORMAL');
+        $pdo->exec('PRAGMA foreign_keys=ON');
+        $pdo->exec('PRAGMA busy_timeout=5000');
+        $pdo->exec('PRAGMA temp_store=MEMORY');
+
+        return $pdo;
+    }
+
+    private static function sqliteTableHasColumn(PDO $pdo, string $table, string $column): bool
+    {
+        $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', $table) ?? '';
+        if ($safeTable === '') {
+            return false;
+        }
+        try {
+            $stmt = $pdo->query('PRAGMA table_info(' . $safeTable . ')');
+            if ($stmt === false) {
+                return false;
+            }
+            $want = strtolower($column);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (strtolower((string) ($row['name'] ?? '')) === $want) {
+                    return true;
+                }
+            }
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return false;
+    }
+
     public static function disconnect(): void
     {
         self::$pdo = null;
         self::$resolvedDbName = '';
         self::$columnCache = [];
+        self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
     }
 
     /** @param array<string, mixed> $params @return array<int, array<string, mixed>> */
