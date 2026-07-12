@@ -7,9 +7,13 @@ use PDO;
 use PDOStatement;
 
 /**
- * Phase B.1/B.2 — PDO wrapper for Branch SQLite.
- * Translates MySQL dialect transparently; ignores MySQL-only attributes;
- * registers GET_LOCK / RELEASE_LOCK UDFs for local-device advisory locks.
+ * Phase B.1–B.2.1 — PDO wrapper for Branch SQLite.
+ *
+ * - Translates MySQL dialect via SqlDialectAdapter
+ * - Ignores MySQL-only PDO attributes
+ * - Registers GET_LOCK / RELEASE_LOCK UDFs (SqliteAdvisoryLock)
+ * - beginTransaction() uses BEGIN IMMEDIATE so writers take a RESERVED lock early
+ *   (enterprise substitute for MySQL row locks under FOR UPDATE inside a transaction)
  */
 final class SqliteCompatPdo extends PDO
 {
@@ -21,13 +25,28 @@ final class SqliteCompatPdo extends PDO
 
     private function registerAdvisoryLockFunctions(): void
     {
-        // MySQL-compatible signatures used by WarehouseService (unchanged).
         $this->sqliteCreateFunction('GET_LOCK', static function ($name, $timeout = 0): int {
             return SqliteAdvisoryLock::get((string) $name, (int) $timeout);
         }, 2);
         $this->sqliteCreateFunction('RELEASE_LOCK', static function ($name): int {
             return SqliteAdvisoryLock::release((string) $name);
         }, 1);
+    }
+
+    /**
+     * Prefer BEGIN IMMEDIATE over deferred BEGIN.
+     * Acquires a RESERVED lock up front so concurrent writers serialize before
+     * mutating rows — closer to MySQL FOR UPDATE write-intent under a transaction.
+     */
+    public function beginTransaction(): bool
+    {
+        if ($this->inTransaction()) {
+            return false;
+        }
+        // Avoid parent::beginTransaction() (DEFERRED). Use IMMEDIATE for enterprise safety.
+        $result = parent::exec('BEGIN IMMEDIATE');
+
+        return $result !== false;
     }
 
     public function prepare(string $query, array $options = []): PDOStatement|false
@@ -52,7 +71,6 @@ final class SqliteCompatPdo extends PDO
 
     public function setAttribute(int $attribute, mixed $value): bool
     {
-        // MySQL-only attributes must not break SQLite connections.
         if ($attribute === PDO::MYSQL_ATTR_INIT_COMMAND
             || (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS') && $attribute === PDO::MYSQL_ATTR_MULTI_STATEMENTS)
             || (defined('PDO::MYSQL_ATTR_LOCAL_INFILE') && $attribute === PDO::MYSQL_ATTR_LOCAL_INFILE)
@@ -66,7 +84,6 @@ final class SqliteCompatPdo extends PDO
             return true;
         }
 
-        // Numeric MySQL ATTR constants typically > PDO::ATTR_TIMEOUT range; ignore unknown high MySQL attrs.
         if ($attribute >= 1000) {
             return true;
         }

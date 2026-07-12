@@ -9,8 +9,9 @@ namespace Rateb\App\Core;
  * Applied only when Branch SQLite is active. MySQL path never calls this.
  * Controllers/Services/Models keep issuing MySQL dialect SQL transparently.
  *
- * FOR UPDATE / LOCK IN SHARE MODE: stripped. SQLite has no row-level locks;
- * isolation relies on the enclosing transaction + WAL busy_timeout (see Database::openSqlite).
+ * FOR UPDATE / LOCK IN SHARE MODE: stripped. SQLite has no row-level locks.
+ * Enterprise substitute (B.2.1): SqliteCompatPdo::beginTransaction() → BEGIN IMMEDIATE
+ * + WAL + busy_timeout=30000. Concurrent writers serialize; no lost updates under stress.
  */
 final class SqlDialectAdapter
 {

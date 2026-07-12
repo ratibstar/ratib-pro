@@ -417,10 +417,12 @@ final class Database
         ]);
 
         // Enterprise local durability (rule 17).
+        // busy_timeout=30000: Branch appliance concurrency (POS / inventory / transfers).
+        // Writers serialize under WAL; wait instead of failing under short bursts.
         $pdo->exec('PRAGMA journal_mode=WAL');
         $pdo->exec('PRAGMA synchronous=NORMAL');
         $pdo->exec('PRAGMA foreign_keys=ON');
-        $pdo->exec('PRAGMA busy_timeout=5000');
+        $pdo->exec('PRAGMA busy_timeout=30000');
         $pdo->exec('PRAGMA temp_store=MEMORY');
 
         // Phase B: ensure full ERP schema on first branch open (idempotent).
