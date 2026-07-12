@@ -260,8 +260,26 @@ final class HybridSyncEngine
             'online' => self::isOnline(),
             'sink' => HybridSyncConfig::sinkMode(),
             'outbox' => $counts,
+            'actionable' => $this->actionableOutboxCount($pdo),
             'push_cursor' => SqliteSchemaBootstrap::metaValue($pdo, 'sync_push_cursor'),
             'last_push_at' => SqliteSchemaBootstrap::metaValue($pdo, 'sync_last_push_at'),
         ];
+    }
+
+    /**
+     * Rows the engine will still attempt (pending/failed under max retries, or syncing).
+     * Used by Always-On daemon so exhausted failures do not busy-loop.
+     */
+    public function actionableOutboxCount(?PDO $branchPdo = null): int
+    {
+        $pdo = $branchPdo ?? Database::connection();
+        $st = $pdo->prepare(
+            "SELECT COUNT(*) FROM rateb_sync_outbox
+             WHERE status = 'syncing'
+                OR (status IN ('pending','failed') AND retry_count < :max)"
+        );
+        $st->execute(['max' => HybridSyncConfig::MAX_RETRIES]);
+
+        return (int) $st->fetchColumn();
     }
 }
