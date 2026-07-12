@@ -407,6 +407,14 @@
             if (tStopped()) {
                 return null;
             }
+            // Never mutate live online DOM with cached offline RBAC/nav.
+            // applyCachedNav belongs on offline-shell.html only.
+            var onlineNow = !(root.navigator && root.navigator.onLine === false);
+            if (onlineNow) {
+                tPass(17, 'erp-shell-bootstrap.js', 'RBAC', 'online — skipped applyCachedNav (keep live UI)');
+                tPass(18, 'erp-shell-bootstrap.js', 'Offline Ready', 'warm+sdk+idb+capture complete');
+                return null;
+            }
             var rbac = root.RatebOfflineRbacCache;
             if (!rbac || typeof rbac.applyCachedNav !== 'function') {
                 // RBAC may be flag-off; do not hard-fail Offline Ready if rbac.cache disabled.

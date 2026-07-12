@@ -217,6 +217,21 @@
         });
     }
 
+    var PENDING_IDENTITY_KEY = 'rateb_erp_pending_identity';
+
+    function storePendingIdentity(identityPayload) {
+        if (!(identityPayload && identityPayload.identity)) {
+            return;
+        }
+        try {
+            root.localStorage.setItem(PENDING_IDENTITY_KEY, JSON.stringify({
+                identity: identityPayload.identity,
+                device: identityPayload.device || null,
+                at: Date.now()
+            }));
+        } catch (e) { /* ignore */ }
+    }
+
     function renewIdentityIfNeeded(row) {
         var lock = root.RatebOfflineAuthLock;
         if (!lock || !row || !row.identity_expires_at) {
@@ -236,6 +251,12 @@
             if (!(payload.ok && payload.identity)) {
                 return row;
             }
+            // Online: never block live ERP with a PIN modal — seal on next offline unlock.
+            var online = !(root.navigator && root.navigator.onLine === false);
+            if (online) {
+                storePendingIdentity({ identity: payload.identity, device: null });
+                return row;
+            }
             return promptPinModal(
                 'Renew offline identity',
                 'Re-enter your offline PIN (min 4) to seal the renewed identity.'
@@ -252,6 +273,10 @@
         });
     }
 
+    /**
+     * Online: silent device+identity enroll only — never show PIN modal on live ERP.
+     * PIN is set on first offline unlock (pending identity stored locally).
+     */
     function maybePromptEnroll(identityPayload) {
         var lock = root.RatebOfflineAuthLock;
         if (!lock || !lock.isActive()) {
@@ -280,19 +305,29 @@
             if (!(identityPayload && identityPayload.identity)) {
                 return row;
             }
+            var online = !(root.navigator && root.navigator.onLine === false);
+            if (online) {
+                storePendingIdentity(identityPayload);
+                try {
+                    console.info('[RATIB OFFLINE] PIN seal deferred until offline unlock (live UI uninterrupted)');
+                } catch (e) { /* ignore */ }
+                return row;
+            }
             return promptPinModal(
                 'Set ERP offline unlock PIN',
                 'This PIN unlocks the warm ERP shell when offline. Min 4 characters.'
             ).then(function (pin) {
                 if (!pin || String(pin).length < 4) {
+                    storePendingIdentity(identityPayload);
                     try {
-                        console.warn('[RATIB OFFLINE] PIN enroll deferred — device is registered; set PIN next visit');
+                        console.warn('[RATIB OFFLINE] PIN enroll deferred — device is registered; set PIN on offline unlock');
                     } catch (e) { /* ignore */ }
                     return null;
                 }
                 return lock.enrollPin(pin, { identity: identityPayload.identity }).then(function (enrolled) {
                     if (enrolled && enrolled.ok) {
                         persistEnrolledScope(identityPayload.device || null);
+                        try { root.localStorage.removeItem(PENDING_IDENTITY_KEY); } catch (e2) { /* ignore */ }
                     }
                     return enrolled;
                 });

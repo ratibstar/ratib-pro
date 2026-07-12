@@ -99,6 +99,16 @@
 
     function onUnlocked(ev) {
         var detail = (ev && ev.detail) ? ev.detail : {};
+        // Live online session must keep full ERP DOM — never restore offline chrome/nav.
+        if (detail.online_session || detail.live_ui) {
+            return;
+        }
+        if (root.navigator && root.navigator.onLine !== false) {
+            var path = (root.location && root.location.pathname) || '';
+            if (!/offline-shell\.html/i.test(path)) {
+                return;
+            }
+        }
         restoreAfterUnlock(detail).catch(function () { /* ignore */ });
     }
 

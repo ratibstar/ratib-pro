@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v2';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v3';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
@@ -649,13 +649,30 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: non-POS admin HTML → network, offline → ops page then ERP shell.
+    // Smart coexist: non-POS admin HTML → network; offline shell ONLY when truly offline.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
             fetch(event.request).catch(function () {
+                var trulyOffline = self.navigator && self.navigator.onLine === false;
+                if (!trulyOffline) {
+                    // Online blip / server error: do not replace live ERP with offline shell.
+                    return fetch(event.request).catch(function () {
+                        return new Response(
+                            '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+                            + '<title>RATEB ERP</title></head><body style="font-family:system-ui;padding:2rem;text-align:center">'
+                            + '<p>تعذر تحميل الصفحة. تحقق من الاتصال وأعد المحاولة.</p>'
+                            + '<p><a href="' + String(url.href).replace(/"/g, '&quot;') + '">إعادة المحاولة</a></p>'
+                            + '</body></html>',
+                            {
+                                status: 504,
+                                headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
+                            }
+                        );
+                    });
+                }
                 return erpAdminOfflineFallback(event.request, url);
             })
         );

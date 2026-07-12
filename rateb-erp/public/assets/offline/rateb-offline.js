@@ -4830,17 +4830,42 @@
         btn.textContent = 'Unlock';
         btn.style.cssText = 'width:100%;padding:.6rem;cursor:pointer;';
         btn.addEventListener('click', function () {
-            unlockWithPin(input.value).then(function (res) {
+            var pinVal = String(input.value || '');
+            unlockWithPin(pinVal).then(function (res) {
                 if (res && res.ok) {
                     hideOverlay();
                     notifyUnlocked(res);
                     return;
                 }
                 var err = (res && res.error) ? String(res.error) : 'Unlock denied';
+                if (err === 'not_enrolled' && pinVal.length >= 4) {
+                    var pending = null;
+                    try {
+                        var raw = root.localStorage.getItem('rateb_erp_pending_identity');
+                        pending = raw ? JSON.parse(raw) : null;
+                    } catch (ePend) { pending = null; }
+                    if (pending && pending.identity) {
+                        return enrollPin(pinVal, { identity: pending.identity }).then(function (enrolled) {
+                            if (!(enrolled && enrolled.ok)) {
+                                msg.textContent = 'Could not seal offline PIN. Open Admin online once, then retry.';
+                                return;
+                            }
+                            try { root.localStorage.removeItem('rateb_erp_pending_identity'); } catch (eClr) { /* ignore */ }
+                            return unlockWithPin(pinVal).then(function (res2) {
+                                if (res2 && res2.ok) {
+                                    hideOverlay();
+                                    notifyUnlocked(res2);
+                                    return;
+                                }
+                                msg.textContent = (res2 && res2.error) ? String(res2.error) : 'Unlock denied';
+                            });
+                        });
+                    }
+                }
                 if (err === 'device_unknown') {
-                    msg.textContent = 'Device not enrolled. Open Admin online once to register this device and set a PIN.';
+                    msg.textContent = 'Device not enrolled. Open Admin online once to register this device.';
                 } else if (err === 'not_enrolled') {
-                    msg.textContent = 'Offline PIN not set. Open Admin online and complete PIN enrollment.';
+                    msg.textContent = 'Set a new offline PIN (min 4). Device must be enrolled online first.';
                 } else {
                     msg.textContent = err;
                 }
@@ -4916,22 +4941,24 @@
             csrf = meta ? (meta.getAttribute('content') || '') : '';
         } catch (e) { /* ignore */ }
         if (online && csrf) {
+            // Live ERP session: never show unlock/PIN overlay while online.
             return readDeviceStatus(scope).then(function (device) {
                 var status = device && device.status ? String(device.status).toLowerCase() : '';
-                if (status === 'active') {
-                    clearSessionNeedsReauth();
-                    markUnlocked(scope, null);
-                    hideOverlay();
-                    notifyUnlocked({ ok: true, online_session: true });
-                    return { ok: true, online_session: true, device_active: true };
-                }
-                markSessionNeedsReauth();
-                showOverlay();
-                return { ok: false, locked: true, error: 'inactive_device' };
+                clearSessionNeedsReauth();
+                markUnlocked(scope, null);
+                hideOverlay();
+                // Do not dispatch offline-unlocked — that restores cold/warm chrome onto live DOM.
+                return {
+                    ok: true,
+                    online_session: true,
+                    live_ui: true,
+                    device_active: status === 'active'
+                };
             }).catch(function () {
-                markSessionNeedsReauth();
-                showOverlay();
-                return { ok: false, locked: true, error: 'inactive_device' };
+                clearSessionNeedsReauth();
+                markUnlocked(scope, null);
+                hideOverlay();
+                return { ok: true, online_session: true, live_ui: true, device_active: false };
             });
         }
         showOverlay();
@@ -5336,6 +5363,16 @@
 
     function onUnlocked(ev) {
         var detail = (ev && ev.detail) ? ev.detail : {};
+        // Live online session must keep full ERP DOM — never restore offline chrome/nav.
+        if (detail.online_session || detail.live_ui) {
+            return;
+        }
+        if (root.navigator && root.navigator.onLine !== false) {
+            var path = (root.location && root.location.pathname) || '';
+            if (!/offline-shell\.html/i.test(path)) {
+                return;
+            }
+        }
         restoreAfterUnlock(detail).catch(function () { /* ignore */ });
     }
 

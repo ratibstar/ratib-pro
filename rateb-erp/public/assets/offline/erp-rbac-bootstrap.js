@@ -53,6 +53,13 @@
     }
 
     function tryApply() {
+        // Live online Admin: never mutate DOM with cached offline nav.
+        if (!(root.navigator && root.navigator.onLine === false)) {
+            var path = (root.location && root.location.pathname) || '';
+            if (!/offline-shell\.html/i.test(path)) {
+                return;
+            }
+        }
         var rbac = root.RatebOfflineRbacCache;
         var lock = root.RatebOfflineAuthLock;
         if (!rbac || !rbac.isActive()) {
