@@ -13,6 +13,17 @@
         return root.document.getElementById(id);
     }
 
+    function publicBase() {
+        try {
+            var p = String(root.location.pathname || '');
+            var m = p.match(/^(.*\/public\/)/i);
+            if (m && m[1]) {
+                return m[1];
+            }
+        } catch (e) { /* ignore */ }
+        return '/rateb-erp/public/';
+    }
+
     function readScope() {
         var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
         var scope = {
@@ -62,6 +73,96 @@
         }
     }
 
+    /** Snapshot HTML keeps <link> in <head>; restore must import those or the shell looks unstyled. */
+    function injectStylesFromDoc(doc) {
+        if (!doc || !root.document || !root.document.head) {
+            return;
+        }
+        var links = doc.querySelectorAll('link[rel="stylesheet"], link[rel="preload"][as="style"]');
+        Array.prototype.forEach.call(links, function (link) {
+            var href = link.getAttribute('href') || '';
+            if (!href || /^javascript:/i.test(href)) {
+                return;
+            }
+            if (root.document.head.querySelector('link[data-rateb-offline-css="' + href.replace(/"/g, '') + '"]')) {
+                return;
+            }
+            var el = root.document.createElement('link');
+            el.rel = 'stylesheet';
+            el.href = href;
+            el.setAttribute('data-rateb-offline-css', href);
+            root.document.head.appendChild(el);
+        });
+        // Fallback core ERP CSS if snapshot had none (old captures).
+        if (!links.length) {
+            var base = publicBase();
+            [
+                'assets/css/variables.css',
+                'assets/css/main.css',
+                'assets/css/components.css',
+                'assets/css/dark.css',
+                'assets/css/rtl.css'
+            ].forEach(function (rel) {
+                var href = base + rel;
+                if (root.document.head.querySelector('link[data-rateb-offline-css="' + href + '"]')) {
+                    return;
+                }
+                var el = root.document.createElement('link');
+                el.rel = 'stylesheet';
+                el.href = href;
+                el.setAttribute('data-rateb-offline-css', href);
+                root.document.head.appendChild(el);
+            });
+        }
+    }
+
+    function forceOfflineBadge() {
+        try {
+            var nodes = root.document.querySelectorAll(
+                '.rateb-connection-indicator, [data-rateb-connection-status], #rateb-connection-indicator'
+            );
+            Array.prototype.forEach.call(nodes, function (el) {
+                el.classList.remove('is-online');
+                el.classList.add('is-offline');
+                el.setAttribute('title', 'غير متصل');
+                el.setAttribute('aria-label', 'غير متصل');
+                var label = el.querySelector('.rateb-connection-indicator__label');
+                if (label) {
+                    label.textContent = 'غير متصل';
+                }
+            });
+            // Nuke leftover live-only chrome fragments
+            root.document.querySelectorAll(
+                '#rateb-modal, .rateb-modal, [data-rateb-confirm], .rateb-confirm, '
+                + '#rateb-loading, .rateb-loading, [data-rateb-attachments]'
+            ).forEach(function (el) {
+                try { el.remove(); } catch (e) { /* ignore */ }
+            });
+        } catch (e2) { /* ignore */ }
+    }
+
+    function fillModuleHomeFromNav() {
+        var host = root.document.getElementById('rateb-offline-module-links');
+        if (!host) {
+            return;
+        }
+        var links = root.document.querySelectorAll('.rateb-offline-rbac-link');
+        if (!links.length) {
+            host.innerHTML = '<p class="text-muted">لا توجد وحدات محفوظة للتصفح أوفلاين بعد. ادخل أونلاين مرة ثم أعد المحاولة.</p>';
+            return;
+        }
+        var html = '<div class="list-group">';
+        Array.prototype.forEach.call(links, function (a) {
+            var href = a.getAttribute('href') || '#';
+            var label = (a.textContent || '').trim() || href;
+            html += '<a class="list-group-item list-group-item-action" href="'
+                + String(href).replace(/"/g, '&quot;') + '">'
+                + String(label).replace(/</g, '&lt;') + '</a>';
+        });
+        html += '</div>';
+        host.innerHTML = html;
+    }
+
     function renderSafeShell(html) {
         var shellRoot = $('shell-root');
         var statusBox = $('offline-status');
@@ -89,6 +190,7 @@
                 }
             });
         });
+        injectStylesFromDoc(doc);
         while (shellRoot.firstChild) shellRoot.removeChild(shellRoot.firstChild);
         Array.prototype.forEach.call(doc.body.childNodes, function (node) {
             if (node.nodeType === 1 || node.nodeType === 3) {
@@ -97,7 +199,35 @@
         });
         shellRoot.hidden = false;
         if (statusBox) statusBox.hidden = true;
+        root.document.body.classList.add('rateb-offline-shell-active');
+        forceOfflineBadge();
+        ensureOfflineHomeHost();
         return shellRoot.childNodes.length > 0;
+    }
+
+    function ensureOfflineHomeHost() {
+        var main = root.document.getElementById('rateb-offline-shell-main')
+            || root.document.querySelector('.rateb-offline-shell-main, main.rateb-content, main');
+        if (!main) {
+            return;
+        }
+        if (!root.document.getElementById('rateb-offline-module-links')) {
+            var wrap = root.document.createElement('div');
+            wrap.className = 'container py-4 rateb-offline-home';
+            wrap.innerHTML = '<h2 class="h4 mb-2">وضع عدم الاتصال</h2>'
+                + '<p class="text-muted mb-3">القائمة والصفحات المحفوظة متاحة للتصفح. البيانات الحية والتعديل يحتاجان اتصالاً.</p>'
+                + '<div id="rateb-offline-module-links" class="rateb-offline-module-links"></div>';
+            // Prefer replacing empty placeholder content
+            main.innerHTML = '';
+            main.appendChild(wrap);
+        }
+        var aside = root.document.querySelector('aside.rateb-sidebar, aside.rateb-offline-shell-nav, aside');
+        if (aside) {
+            aside.classList.add('rateb-sidebar', 'rateb-offline-shell-nav');
+            if (!aside.id) {
+                aside.id = 'rateb-sidebar';
+            }
+        }
     }
 
     function loadSnapshot(scope) {
@@ -151,7 +281,11 @@
         if (!rbac || typeof rbac.applyCachedNav !== 'function') {
             return Promise.resolve({ ok: false });
         }
-        return rbac.applyCachedNav({ requireDeviceActive: true });
+        return rbac.applyCachedNav({ requireDeviceActive: true }).then(function (res) {
+            forceOfflineBadge();
+            fillModuleHomeFromNav();
+            return res;
+        });
     }
 
     function waitForAuthLock(tries) {

@@ -11,8 +11,13 @@ body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;c
 html[data-bs-theme="light"] body{background:#f4f6f8;color:#1a1d24}
 h1{font-size:1.25rem;margin:0 0 .75rem}
 p{opacity:.9;line-height:1.5;max-width:28rem;margin:.5rem auto}
-#shell-root{text-align:initial;max-width:72rem;margin:1rem auto;padding:0 1rem}
+#shell-root{text-align:initial;max-width:none;margin:0;padding:0;min-height:100vh}
 #shell-root .rateb-offline-shell-main{padding:1rem 0}
+body.rateb-offline-shell-active{padding:0;text-align:initial}
+body.rateb-offline-shell-active #shell-root{display:block}
+.rateb-offline-module-links .list-group-item{background:#1a1d24;color:#e8eaed;border-color:#2a2f3a}
+.rateb-offline-rbac-link{display:block;padding:.45rem .75rem;color:#e8eaed;text-decoration:none}
+.rateb-offline-rbac-section-title{opacity:.7;font-size:.85rem;padding:.5rem .75rem 0}
 a{color:#8ab4ff}
 .rateb-offline-local-session-banner{position:sticky;top:0;z-index:99990;padding:.4rem .75rem;background:#1e3a5f;color:#e8eaed;font:13px/1.4 system-ui,sans-serif;text-align:center}
 html[data-bs-theme="light"] .rateb-offline-local-session-banner{background:#dbe7f5;color:#1a1d24}

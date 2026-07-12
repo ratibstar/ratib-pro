@@ -87,7 +87,9 @@
         var tries = 0;
         var timer = root.setInterval(function () {
             tries += 1;
-            var hasAside = !!(root.document && root.document.querySelector('aside.rateb-offline-shell-nav, aside[aria-label="Offline nav"]'));
+            var hasAside = !!(root.document && root.document.querySelector(
+                'aside.rateb-offline-shell-nav, aside.rateb-sidebar, aside[aria-label="Offline nav"], #rateb-sidebar'
+            ));
             if (hasAside || tries >= 15) {
                 root.clearInterval(timer);
                 if (hasAside) {

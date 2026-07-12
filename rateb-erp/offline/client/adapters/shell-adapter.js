@@ -58,23 +58,34 @@
         out = out.replace(/\svalue=["'][^"']*["'](?=[^>]*name=["']_csrf["'])/gi, ' value=""');
         // All scripts (theme applied by offline-shell.html itself)
         out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
-        // Privileged / dynamic chrome
+        // Drop live-only overlays that otherwise leak into the warm shell
+        out = out.replace(/<div[^>]*(id|class)=["'][^"']*(rateb-modal|rateb-confirm|rateb-loading|rateb-attachments|modal)[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '');
+        // Privileged / dynamic chrome — keep sidebar class so ERP CSS still applies offline
         out = out.replace(/<main\b[^>]*>[\s\S]*?<\/main>/i,
-            '<main class="rateb-offline-shell-main" id="rateb-offline-shell-main">'
-            + '<div class="container py-4">'
-            + '<p class="text-muted">وضع عدم الاتصال — أعد الاتصال لعرض البيانات الحية والتعديل.</p>'
-            + '<p class="text-muted small">Offline shell — reconnect for live data and edits.</p>'
+            '<main class="rateb-content rateb-offline-shell-main" id="rateb-offline-shell-main">'
+            + '<div class="container py-4 rateb-offline-home">'
+            + '<h2 class="h4 mb-2">وضع عدم الاتصال</h2>'
+            + '<p class="text-muted mb-3">القائمة والصفحات المحفوظة متاحة للتصفح. البيانات الحية والتعديل يحتاجان اتصالاً.</p>'
+            + '<div id="rateb-offline-module-links" class="rateb-offline-module-links"></div>'
+            + '<p class="text-muted small mt-3">Offline shell — browse cached modules; reconnect for live data and edits.</p>'
             + '</div></main>');
         out = out.replace(/<aside\b[^>]*>[\s\S]*?<\/aside>/gi,
-            '<aside class="rateb-offline-shell-nav" aria-label="Offline nav"><p>RATEB ERP</p></aside>');
-        out = out.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, '<nav class="rateb-offline-shell-nav"></nav>');
+            '<aside class="rateb-sidebar rateb-offline-shell-nav" id="rateb-sidebar" aria-label="Offline nav">'
+            + '<div class="rateb-sidebar-brand"><span>RATEB ERP</span></div>'
+            + '<p class="px-3 text-muted small">جاري تحميل القائمة…</p>'
+            + '</aside>');
+        // Keep top chrome nav; clear nested app navs only inside content if needed
+        out = out.replace(/<nav\b([^>]*class=["'][^"']*rateb-sidebar[^"']*["'][^>]*)>[\s\S]*?<\/nav>/gi,
+            '<nav$1 class="rateb-offline-shell-nav"></nav>');
         // Force connection badge to Offline (never freeze "متصل" / Online into the cache).
         out = out.replace(/rateb-connection-indicator\s+is-online/gi, 'rateb-connection-indicator is-offline');
         out = out.replace(/(\sclass=["'][^"']*rateb-connection-indicator)(?![^"']*is-offline)/gi,
             '$1 is-offline');
         out = out.replace(/data-label-online=["'][^"']*["']/gi, 'data-label-online="Online"');
-        out = out.replace(/(rateb-connection-indicator__label">)\s*[^<]*/gi, '$1غير متصل');
+        out = out.replace(/(rateb-connection-indicator__label[^>]*>)\s*[^<]*/gi, '$1غير متصل');
         out = out.replace(/(title|aria-label)=["']\s*(متصل|Online)\s*["']/gi, '$1="غير متصل"');
+        out = out.replace(/>\s*متصل\s*</g, '>غير متصل<');
+        out = out.replace(/>\s*Online\s*</g, '>Offline<');
         // data-* that may leak URLs / session context
         out = out.replace(/\sdata-rateb-[a-z0-9_-]+=["'][^"']*["']/gi, '');
         out = out.replace(/\sdata-(csrf|token|session|user|company|branch)[a-z0-9_-]*=["'][^"']*["']/gi, '');

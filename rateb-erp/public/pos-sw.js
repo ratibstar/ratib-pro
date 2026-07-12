@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v4';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v5';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
@@ -262,7 +262,12 @@ function warmErpOfflineShell() {
         base + ERP_OFFLINE_SHELL,
         base + 'assets/offline/rateb-offline.js',
         base + 'assets/offline/erp-offline-shell-auth.js',
-        base + 'assets/offline/erp-offline-shell-rbac.js'
+        base + 'assets/offline/erp-offline-shell-rbac.js',
+        base + 'assets/css/variables.css',
+        base + 'assets/css/main.css',
+        base + 'assets/css/components.css',
+        base + 'assets/css/dark.css',
+        base + 'assets/css/rtl.css'
     ];
     return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
         return Promise.all(urls.map(function (key) {
@@ -432,7 +437,8 @@ function migrateErpCoexistCaches(keys) {
 function isErpOfflineAsset(url) {
     var p = String(url.pathname || '');
     return p.indexOf('/assets/offline/') !== -1
-        || /\/offline-shell\.html$/i.test(p);
+        || /\/offline-shell\.html$/i.test(p)
+        || /\/assets\/css\/(variables|main|components|dark|rtl|light|dashboard)\.css$/i.test(p);
 }
 
 function offlineHtmlResponse() {

@@ -247,9 +247,11 @@
         });
         html += '</nav>';
         try {
-            var targets = root.document.querySelectorAll('aside.rateb-offline-shell-nav, aside[aria-label="Offline nav"]');
+            var targets = root.document.querySelectorAll(
+                'aside.rateb-offline-shell-nav, aside.rateb-sidebar, aside[aria-label="Offline nav"]'
+            );
             if (!targets.length) {
-                targets = root.document.querySelectorAll('.rateb-offline-shell-nav');
+                targets = root.document.querySelectorAll('.rateb-offline-shell-nav, #rateb-sidebar');
             }
             if (!targets.length) {
                 return false;
