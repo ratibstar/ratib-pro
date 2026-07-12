@@ -10,6 +10,16 @@
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
 
+# Compress static assets — rateb-offline.js is ~370KB uncompressed without this.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json application/xml
+</IfModule>
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|json|svg)$">
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+</IfModule>
+
 # Allow ERP/POS offline SWs to claim the ERP public prefix (not site root).
 <FilesMatch "^(pos-sw|rateb-offline-sw)\.js$">
     <IfModule mod_headers.c>

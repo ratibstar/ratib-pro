@@ -451,34 +451,57 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'pilot_ops_pages' => $ratebOfflineFlagSvc->isPilotOpsPagesEnabled(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
-<script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
-<?php if (!empty($_GET['rateb_offline_debug'])) { ?>
-<script src="<?php echo rateb_asset('offline/erp-offline-debug.js'); ?>" defer></script>
-<?php } ?>
-<script src="<?php echo rateb_asset('offline/erp-shell-bootstrap.js'); ?>" defer></script>
 <?php
+    $ratebOfflineScriptUrls = [
+        rateb_asset('offline/rateb-offline.js'),
+    ];
+    if (!empty($_GET['rateb_offline_debug'])) {
+        $ratebOfflineScriptUrls[] = rateb_asset('offline/erp-offline-debug.js');
+    }
+    $ratebOfflineScriptUrls[] = rateb_asset('offline/erp-shell-bootstrap.js');
     $ratebOfflineAuthUnlock = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
         && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isAuthUnlockEnabled();
     if ($ratebOfflineAuthUnlock) {
-        ?>
-<script src="<?php echo rateb_asset('offline/erp-auth-bootstrap.js'); ?>" defer></script>
-<?php
+        $ratebOfflineScriptUrls[] = rateb_asset('offline/erp-auth-bootstrap.js');
     }
     $ratebOfflineRbacCache = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
         && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isRbacCacheEnabled();
     if ($ratebOfflineRbacCache) {
-        ?>
-<script src="<?php echo rateb_asset('offline/erp-rbac-bootstrap.js'); ?>" defer></script>
-<?php
+        $ratebOfflineScriptUrls[] = rateb_asset('offline/erp-rbac-bootstrap.js');
     }
     $ratebOfflineOpsForms = $ratebOfflineFlagSvc->isAnyTier1WriteEnabled()
         || $ratebOfflineFlagSvc->isMasterDataEnabled()
         || $ratebOfflineFlagSvc->isPilotOpsPagesEnabled();
     if ($ratebOfflineOpsForms) {
-        ?>
-<script src="<?php echo rateb_asset('offline/erp-ops-forms-bootstrap.js'); ?>" defer></script>
-<?php
+        $ratebOfflineScriptUrls[] = rateb_asset('offline/erp-ops-forms-bootstrap.js');
     }
+    ?>
+<script>
+(function (urls) {
+  // Load offline SDK AFTER first paint — 370KB+ parse was freezing every admin navigation.
+  if (!urls || !urls.length) return;
+  var i = 0;
+  function next() {
+    if (i >= urls.length) return;
+    var s = document.createElement('script');
+    s.src = urls[i++];
+    s.defer = true;
+    s.onload = next;
+    s.onerror = next;
+    (document.body || document.documentElement).appendChild(s);
+  }
+  function start() {
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(next, { timeout: 2500 });
+    } else {
+      setTimeout(next, 100);
+    }
+  }
+  if (document.readyState === 'complete') start();
+  else window.addEventListener('load', start, { once: true });
+})(<?php echo json_encode(array_values($ratebOfflineScriptUrls), JSON_UNESCAPED_SLASHES); ?>);
+</script>
+<?php
 }
 $ratebOfflineMasterData = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
     && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isMasterDataEnabled();
@@ -537,7 +560,11 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 <script src="<?php echo rateb_asset('offline/erp-master-data-bootstrap.js'); ?>" defer></script>
 <?php
 }
-?>
+if (!empty($ratebOfflineReadCache)) {
+    ?>
 <script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
+<?php
+}
+?>
 </body>
 </html>

@@ -49,7 +49,13 @@ final class OfflineModule
         return is_file($file) ? require $file : [];
     }
 
+    /** @var array<string, mixed>|null */
+    private static ?array $opsAllowlistMemo = null;
+
     /**
+     * Prefer prebuilt JSON (routes already resolved). Never re-resolve 140+
+     * rateb_app_route() calls on every HTML request — that made admin feel multi-second slow.
+     *
      * @return array{
      *   paths?: list<string>,
      *   routes?: array<string, string>,
@@ -58,10 +64,40 @@ final class OfflineModule
      */
     public static function opsPageAllowlist(): array
     {
+        if (self::$opsAllowlistMemo !== null) {
+            return self::$opsAllowlistMemo;
+        }
+
+        $root = defined('RATEB_ROOT') ? (string) RATEB_ROOT : dirname(__DIR__);
+        $jsonPath = rtrim(str_replace('\\', '/', $root), '/') . '/public/assets/offline/ops-page-allowlist.json';
+        if (is_file($jsonPath)) {
+            $raw = @file_get_contents($jsonPath);
+            $decoded = is_string($raw) ? json_decode($raw, true) : null;
+            if (is_array($decoded) && isset($decoded['paths']) && is_array($decoded['paths'])) {
+                $routes = [];
+                if (isset($decoded['routes']) && is_array($decoded['routes'])) {
+                    foreach ($decoded['routes'] as $k => $v) {
+                        $routes[(string) $k] = trim((string) $v, "/ \t\n\r");
+                    }
+                }
+                $paths = array_values(array_filter(array_map(
+                    static fn ($p): string => trim((string) $p, "/ \t\n\r"),
+                    $decoded['paths']
+                ), static fn (string $p): bool => $p !== ''));
+
+                return self::$opsAllowlistMemo = [
+                    'version' => (int) ($decoded['version'] ?? 2),
+                    'paths' => $paths,
+                    'routes' => $routes,
+                    'form_hooks' => is_array($decoded['form_hooks'] ?? null) ? $decoded['form_hooks'] : [],
+                ];
+            }
+        }
+
         $file = self::rootPath() . '/config/ops-page-allowlist.php';
         $cfg = is_file($file) ? require $file : [];
         if (!is_array($cfg)) {
-            return [];
+            return self::$opsAllowlistMemo = [];
         }
 
         $paths = array_values(array_filter(array_map(
@@ -82,7 +118,7 @@ final class OfflineModule
         $cfg['paths'] = $paths;
         $cfg['routes'] = $routes;
 
-        return $cfg;
+        return self::$opsAllowlistMemo = $cfg;
     }
 
     private static function registerAutoload(): void
