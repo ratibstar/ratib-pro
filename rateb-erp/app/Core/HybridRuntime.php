@@ -32,7 +32,14 @@ final class HybridRuntime
 
     /**
      * Runtime mode: cloud (MySQL) or branch (SQLite).
-     * Detection order: env RATEB_RUNTIME → constant RATEB_RUNTIME → marker file.
+     *
+     * Trusted sources only (never HTTP / session / cookie / query):
+     * 1) getenv / $_ENV RATEB_RUNTIME  (explicit server env approval)
+     * 2) compile-time constant RATEB_RUNTIME
+     * 3) installer marker file — ONLY when RATEB_ALLOW_RUNTIME_MARKER=1
+     *    and the host is not cloud-locked (RATEB_DEPLOYMENT=cloud / RATEB_CLOUD_LOCK=1)
+     *
+     * Cloud hosts: leave RATEB_RUNTIME unset. Marker alone never activates branch.
      */
     public static function mode(): string
     {
@@ -166,15 +173,66 @@ final class HybridRuntime
             return strtolower(trim((string) RATEB_RUNTIME));
         }
 
-        $marker = self::runtimeMarkerPath();
-        if (is_file($marker)) {
-            $contents = @file_get_contents($marker);
-            if (is_string($contents) && trim($contents) !== '') {
-                return strtolower(trim($contents));
+        // Installer-only marker: requires RATEB_ALLOW_RUNTIME_MARKER and must not run on cloud-locked hosts.
+        if (self::runtimeMarkerAllowed() && !self::isCloudDeploymentLocked()) {
+            $marker = self::runtimeMarkerPath();
+            if (is_file($marker)) {
+                $contents = @file_get_contents($marker);
+                if (is_string($contents) && trim($contents) !== '') {
+                    return strtolower(trim($contents));
+                }
             }
         }
 
         return self::MODE_CLOUD;
+    }
+
+    /**
+     * Marker files are installer-only. Cloud must never honour them without this gate.
+     */
+    public static function runtimeMarkerAllowed(): bool
+    {
+        return self::envFlagTruthy('RATEB_ALLOW_RUNTIME_MARKER');
+    }
+
+    /**
+     * Cloud SaaS lock: marker files are ignored even if RATEB_ALLOW_RUNTIME_MARKER is set.
+     * Explicit RATEB_RUNTIME env/constant still controls mode (trusted server config only).
+     */
+    public static function isCloudDeploymentLocked(): bool
+    {
+        $deployment = self::readTrustedScalar('RATEB_DEPLOYMENT');
+        if ($deployment === 'cloud' || $deployment === 'saas' || $deployment === 'production_cloud') {
+            return true;
+        }
+
+        return self::envFlagTruthy('RATEB_CLOUD_LOCK');
+    }
+
+    private static function envFlagTruthy(string $name): bool
+    {
+        $raw = self::readTrustedScalar($name);
+        if ($raw === null || $raw === '') {
+            return false;
+        }
+
+        return in_array($raw, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private static function readTrustedScalar(string $name): ?string
+    {
+        $fromEnv = getenv($name);
+        if (is_string($fromEnv) && trim($fromEnv) !== '') {
+            return strtolower(trim($fromEnv));
+        }
+        if (isset($_ENV[$name]) && is_string($_ENV[$name]) && trim($_ENV[$name]) !== '') {
+            return strtolower(trim($_ENV[$name]));
+        }
+        if (defined($name) && trim((string) constant($name)) !== '') {
+            return strtolower(trim((string) constant($name)));
+        }
+
+        return null;
     }
 
     private static function erpRoot(): string

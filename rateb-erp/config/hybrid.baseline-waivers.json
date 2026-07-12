@@ -1,0 +1,67 @@
+{
+  "title": "Phase A baseline test waiver (pre-existing failures)",
+  "baseline_commit": "f3b160de",
+  "head_compared": "working-tree-at-verify-time",
+  "methodology": "Hold project-root .env (RATEB_OFFLINE_* activation) aside; run every rateb-erp/offline/tests/run-*-tests.php and rateb-erp/modules/pos/tests/run-*-tests.php on HEAD and on detached worktree at f3b160de; compare failing suite basenames.",
+  "regressed_vs_baseline": 0,
+  "summary": {
+    "head_failing_suites": 13,
+    "baseline_failing_suites": 15,
+    "new_regressions_on_head": 0,
+    "foundation_head": "26/26 PASS (env isolation + authz expectation aligned to allow-list)",
+    "foundation_baseline": "24/26 FAIL (same .env pollution + stale accounting-deny expectation)"
+  },
+  "baseline_failing_suites": [
+    "run-accounting-offline-tests.php",
+    "run-enterprise-baseline-v12-tests.php",
+    "run-erp-offline-auth-tests.php",
+    "run-erp-offline-master-data-tests.php",
+    "run-erp-offline-phase131-tests.php",
+    "run-erp-offline-phase14-tests.php",
+    "run-erp-offline-rbac-tests.php",
+    "run-erp-shell-offline-tests.php",
+    "run-hr-offline-tests.php",
+    "run-inventory-offline-tests.php",
+    "run-offline-foundation-tests.php",
+    "run-procurement-offline-tests.php",
+    "run-all-pos-v2-tests.php",
+    "run-e2e-tests.php",
+    "run-integration-tests.php"
+  ],
+  "head_failing_suites_after_foundation_fix": [
+    "run-accounting-offline-tests.php",
+    "run-enterprise-baseline-v12-tests.php",
+    "run-erp-offline-auth-tests.php",
+    "run-erp-offline-phase131-tests.php",
+    "run-erp-offline-phase14-tests.php",
+    "run-erp-offline-rbac-tests.php",
+    "run-erp-shell-offline-tests.php",
+    "run-hr-offline-tests.php",
+    "run-inventory-offline-tests.php",
+    "run-procurement-offline-tests.php",
+    "run-all-pos-v2-tests.php",
+    "run-e2e-tests.php",
+    "run-integration-tests.php"
+  ],
+  "known_root_causes": [
+    {
+      "suite": "run-enterprise-baseline-v12-tests.php",
+      "detail": "FAIL: ERP SW coexistence (no clients.claim) — identical on baseline and HEAD"
+    },
+    {
+      "suite": "run-e2e-tests.php",
+      "detail": "FAIL: e2e database available — integration fixture unavailable — identical on baseline and HEAD"
+    },
+    {
+      "suite": "multiple offline default-OFF suites",
+      "detail": "Local activation .env sets RATEB_OFFLINE_*=1; suites assert defaults OFF. Failures pre-exist at baseline when .env is present. Isolation (hold .env) still leaves SW/fixture failures."
+    }
+  ],
+  "phase_a_required_gates": [
+    "run-offline-foundation-tests.php = 26/26",
+    "bin/hybrid-phase-a-smoke.php = 0 failed",
+    "bin/hybrid-phase-a-mysql-e2e.php = 0 failed",
+    "regressed_vs_baseline = 0"
+  ],
+  "classification": "BASELINE_WAIVED — not introduced by Phase A Hybrid Core Seam; zero regressions vs f3b160de"
+}

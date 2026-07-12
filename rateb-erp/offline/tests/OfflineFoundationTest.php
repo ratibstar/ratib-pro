@@ -59,14 +59,23 @@ final class OfflineFoundationTest
 
     private function testFeatureFlagsDefaultOff(): void
     {
-        putenv('RATEB_OFFLINE_ENABLED');
-        unset($_ENV['RATEB_OFFLINE_ENABLED']);
+        // Isolate from local activation .env (RATEB_OFFLINE_*). Defaults must be OFF.
+        foreach (array_keys($_ENV) as $key) {
+            if (is_string($key) && str_starts_with($key, 'RATEB_OFFLINE_')) {
+                putenv($key);
+                unset($_ENV[$key], $_SERVER[$key]);
+            }
+        }
+        foreach (['RATEB_OFFLINE_ENABLED', 'RATEB_OFFLINE_INVENTORY_MOVEMENTS', 'RATEB_OFFLINE_HR_ATTENDANCE', 'RATEB_OFFLINE_READ_CACHE'] as $key) {
+            putenv($key);
+            unset($_ENV[$key], $_SERVER[$key]);
+        }
         $svc = new OfflineFeatureFlagService();
         $ok = $svc->isMasterEnabled() === false
             && $svc->enabled('offline.inventory.movements') === false
             && $svc->enabled('offline.hr.attendance') === false
             && $svc->enabled('offline.read_cache') === false;
-        $this->record('feature flags default OFF', $ok, $ok ? 'ok' : 'master unexpectedly on');
+        $this->record('feature flags default OFF', $ok, $ok ? 'ok' : 'flag unexpectedly on after env isolation');
     }
 
     private function testConflictAcceptWhenServerMissing(): void
@@ -349,13 +358,14 @@ final class OfflineFoundationTest
 
     private function testAuthzDeniesRestrictedToken(): void
     {
+        // Use a module outside the sync-manage allow-list (accounting/crm/etc. are intentionally allowed).
         TenantContext::setCompanyId(7);
-        TenantContext::setApiModules(['accounting']);
+        TenantContext::setApiModules(['settings_readonly']);
         $auth = new OfflineAuthorizationService();
         $ok = $auth->canManageSync() === false;
         TenantContext::setCompanyId(null);
         TenantContext::setApiModules(null);
-        $this->record('authz denies token without pos/inventory/hr/procurement ability', $ok, $ok ? 'ok' : 'unexpected allow');
+        $this->record('authz denies token without sync-manage ability', $ok, $ok ? 'ok' : 'unexpected allow');
     }
 
     private function testAuthzAllowsUnrestrictedToken(): void

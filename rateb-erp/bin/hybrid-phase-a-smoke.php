@@ -162,6 +162,55 @@ try {
 }
 assert_true('idempotency_key unique enforced', $dupFailed);
 
+// --- 2b) Marker hardening: alone never activates branch; installer gate required ---
+Database::disconnect();
+putenv('RATEB_RUNTIME');
+unset($_ENV['RATEB_RUNTIME']);
+putenv('RATEB_ALLOW_RUNTIME_MARKER');
+unset($_ENV['RATEB_ALLOW_RUNTIME_MARKER']);
+putenv('RATEB_DEPLOYMENT');
+unset($_ENV['RATEB_DEPLOYMENT']);
+putenv('RATEB_CLOUD_LOCK');
+unset($_ENV['RATEB_CLOUD_LOCK']);
+putenv('RATEB_SQLITE_PATH');
+unset($_ENV['RATEB_SQLITE_PATH']);
+HybridRuntime::reset();
+
+$markerPath = HybridRuntime::runtimeMarkerPath();
+HybridRuntime::ensureBranchStorage();
+file_put_contents($markerPath, "branch\n");
+HybridRuntime::reset();
+assert_true(
+    'marker alone does NOT activate branch',
+    HybridRuntime::isCloudMode() && HybridRuntime::shouldUseSqlite() === false,
+    'mode=' . HybridRuntime::mode()
+);
+
+putenv('RATEB_ALLOW_RUNTIME_MARKER=1');
+$_ENV['RATEB_ALLOW_RUNTIME_MARKER'] = '1';
+HybridRuntime::reset();
+assert_true(
+    'marker + ALLOW activates branch',
+    HybridRuntime::isBranchMode(),
+    'mode=' . HybridRuntime::mode()
+);
+
+putenv('RATEB_DEPLOYMENT=cloud');
+$_ENV['RATEB_DEPLOYMENT'] = 'cloud';
+HybridRuntime::reset();
+assert_true(
+    'cloud lock ignores marker even with ALLOW',
+    HybridRuntime::isCloudMode(),
+    'mode=' . HybridRuntime::mode()
+);
+
+@unlink($markerPath);
+putenv('RATEB_ALLOW_RUNTIME_MARKER');
+unset($_ENV['RATEB_ALLOW_RUNTIME_MARKER']);
+putenv('RATEB_DEPLOYMENT');
+unset($_ENV['RATEB_DEPLOYMENT']);
+HybridRuntime::reset();
+
 // --- 3) Restore cloud default after disconnect ---
 putenv('RATEB_RUNTIME');
 unset($_ENV['RATEB_RUNTIME']);
