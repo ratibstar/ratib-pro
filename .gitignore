@@ -46,6 +46,7 @@ cache/
 *.sql
 !modules/infrastructure-marketplace/Migrations/*.sql
 !rateb-erp/migrations/*.sql
+!rateb-erp/schema/sqlite/*.sql
 !ratib-contact-center/migrations/*.sql
 !rateb-platform-catalog/migrations/*.sql
 *.sqlite
