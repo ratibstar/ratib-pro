@@ -60,6 +60,16 @@ final class OfflineAuthorizationService
 
     public function isAuthenticatedCompany(): bool
     {
-        return (int) (TenantContext::companyId() ?? 0) > 0;
+        if ((int) (TenantContext::companyId() ?? 0) > 0) {
+            return true;
+        }
+        if ((int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0) > 0) {
+            return true;
+        }
+        if ((int) (\Rateb\App\Core\SessionManager::get('rateb_ops_company_id', 0) ?? 0) > 0) {
+            return true;
+        }
+
+        return false;
     }
 }

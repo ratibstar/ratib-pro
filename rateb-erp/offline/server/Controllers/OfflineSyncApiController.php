@@ -287,7 +287,21 @@ final class OfflineSyncApiController extends Controller
             return $fromTenant;
         }
 
-        return (int) (SessionManager::get('rateb_company_id') ?? 0);
+        $sessionCompany = (int) (SessionManager::get('rateb_company_id') ?? 0);
+        if ($sessionCompany > 0) {
+            return $sessionCompany;
+        }
+
+        $opsCompany = (int) (SessionManager::get('rateb_ops_company_id') ?? 0);
+        if ($opsCompany > 0) {
+            return $opsCompany;
+        }
+
+        if (function_exists('rateb_resolve_erp_shell_company_id')) {
+            return (int) rateb_resolve_erp_shell_company_id();
+        }
+
+        return 0;
     }
 
     private function userId(): int

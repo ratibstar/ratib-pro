@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Rateb\App\Offline\Controllers\OfflineMonitoringApiController;
-use Rateb\App\Core\Middleware\ApiAuthMiddleware;
+use Rateb\App\Offline\Middleware\OfflineApiAuthMiddleware;
 
 /** @var Rateb\App\Core\Router $router */
 
@@ -11,7 +11,7 @@ use Rateb\App\Core\Middleware\ApiAuthMiddleware;
  * Additive read-only monitoring API (Phase 6).
  * Does not alter /api/v1/offline/push|process|conflicts resolve.
  */
-$offlineApi = [ApiAuthMiddleware::class];
+$offlineApi = [OfflineApiAuthMiddleware::class];
 
 $router->get('/api/v1/offline/monitoring', [OfflineMonitoringApiController::class, 'overview'], $offlineApi);
 $router->get('/api/v1/offline/monitoring/queue', [OfflineMonitoringApiController::class, 'queue'], $offlineApi);

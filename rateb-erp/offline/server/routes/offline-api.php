@@ -6,15 +6,16 @@ use Rateb\App\Offline\Controllers\OfflineSyncApiController;
 use Rateb\App\Offline\Controllers\ErpOfflineAuthApiController;
 use Rateb\App\Offline\Controllers\ErpOfflineDeviceTrustApiController;
 use Rateb\App\Offline\Controllers\ErpOfflineRbacApiController;
-use Rateb\App\Core\Middleware\ApiAuthMiddleware;
+use Rateb\App\Offline\Middleware\OfflineApiAuthMiddleware;
 
 /** @var Rateb\App\Core\Router $router */
 
 /**
  * Additive enterprise offline sync API (Phase 2A).
  * Does not replace or alter /api/v1/pos/sync/*.
+ * Auth: Bearer API token OR ERP browser session (shell connectivity probe).
  */
-$offlineApi = [ApiAuthMiddleware::class];
+$offlineApi = [OfflineApiAuthMiddleware::class];
 
 $router->get('/api/v1/offline/status', [OfflineSyncApiController::class, 'status'], $offlineApi);
 $router->post('/api/v1/offline/push', [OfflineSyncApiController::class, 'push'], $offlineApi);

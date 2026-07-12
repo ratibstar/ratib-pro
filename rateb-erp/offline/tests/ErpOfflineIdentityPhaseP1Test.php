@@ -254,7 +254,7 @@ final class ErpOfflineIdentityPhaseP1Test
         $skip = $engine->replay(['module' => 'documents', 'action' => 'document.create']);
         $api = (string) file_get_contents(RATEB_ROOT . '/offline/server/routes/offline-api.php');
         $ok = ($skip['status'] ?? '') === 'skipped'
-            && str_contains($api, 'ApiAuthMiddleware')
+            && (str_contains($api, 'OfflineApiAuthMiddleware') || str_contains($api, 'ApiAuthMiddleware'))
             && str_contains($api, '/api/v1/offline/push');
         $this->record('replay still requires authenticated server', $ok, $ok ? 'ok' : json_encode($skip));
     }
