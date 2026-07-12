@@ -102,6 +102,9 @@ final class OfflineApiAuthMiddleware implements MiddlewareInterface
             if (function_exists('rateb_adopt_ops_company_id')) {
                 rateb_adopt_ops_company_id($companyId);
             }
+            if (function_exists('rateb_sync_ops_session_to_company')) {
+                rateb_sync_ops_session_to_company($companyId);
+            }
         }
 
         $userId = (int) (SessionManager::get('rateb_user_id', 0) ?? 0);

@@ -240,23 +240,32 @@ final class OfflineSyncApiController extends Controller
         }
 
         // Phase 13.1: master-data directory pulls require ACTIVE device when master_data ON.
+        // ERP browser session (cookie auth, no Bearer) is already company-bound — allow
+        // read-only delta without prior device enroll. Push/replay still require ACTIVE device.
         if ($policy->isEnabled() && $masterCanonical !== null) {
-            $deviceId = trim((string) ($_GET['device_id'] ?? $_SERVER['HTTP_X_RATEB_DEVICE_ID'] ?? ''));
-            if ($deviceId === '') {
-                $this->json([
-                    'ok' => false,
-                    'error' => ['message' => 'Device required', 'code' => 'device_required'],
-                ], 403);
-                return;
-            }
-            $deviceCheck = (new OfflineDeviceGuard())->assertActive($this->companyId(), $deviceId);
-            if (!($deviceCheck['ok'] ?? false)) {
-                $code = (string) ($deviceCheck['error'] ?? 'device_denied');
-                $this->json([
-                    'ok' => false,
-                    'error' => ['message' => 'Device not allowed', 'code' => $code],
-                ], 403);
-                return;
+            $authHeader = (string) ($_SERVER['HTTP_AUTHORIZATION']
+                ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+                ?? '');
+            $isBearer = preg_match('/Bearer\s+\S+/i', $authHeader) === 1;
+            // Any non-Bearer request that passed requireAuthOrAbort is session-authenticated.
+            if ($isBearer) {
+                $deviceId = trim((string) ($_GET['device_id'] ?? $_SERVER['HTTP_X_RATEB_DEVICE_ID'] ?? ''));
+                if ($deviceId === '') {
+                    $this->json([
+                        'ok' => false,
+                        'error' => ['message' => 'Device required', 'code' => 'device_required'],
+                    ], 403);
+                    return;
+                }
+                $deviceCheck = (new OfflineDeviceGuard())->assertActive($this->companyId(), $deviceId);
+                if (!($deviceCheck['ok'] ?? false)) {
+                    $code = (string) ($deviceCheck['error'] ?? 'device_denied');
+                    $this->json([
+                        'ok' => false,
+                        'error' => ['message' => 'Device not allowed', 'code' => $code],
+                    ], 403);
+                    return;
+                }
             }
         }
 

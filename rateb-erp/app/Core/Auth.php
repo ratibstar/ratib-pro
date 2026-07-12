@@ -146,6 +146,8 @@ final class Auth
             $shellCompany = (int) rateb_resolve_erp_shell_company_id();
             if ($shellCompany > 0) {
                 $companyId = $shellCompany;
+                SessionManager::set('rateb_company_id', $companyId);
+                TenantContext::setCompanyId($companyId);
             }
         }
         SessionManager::forget('rateb_agency_access_perms_synced');
@@ -310,9 +312,16 @@ final class Auth
             }
         }
 
-        TenantContext::setSuperAdmin((bool) SessionManager::get('rateb_is_super_admin'));
+        $isSuper = (bool) SessionManager::get('rateb_is_super_admin');
+        TenantContext::setSuperAdmin($isSuper);
         $companyId = SessionManager::get('rateb_company_id');
-        TenantContext::setCompanyId($companyId !== null ? (int) $companyId : null);
+        $companyIdInt = $companyId !== null ? (int) $companyId : 0;
+        // Stale super-admin sessions may still have null company_id — re-bind primary/ops tenant.
+        if ($companyIdInt < 1 && $isSuper && function_exists('rateb_resolve_erp_shell_company_id')) {
+            $companyIdInt = (int) rateb_resolve_erp_shell_company_id();
+        }
+        TenantContext::setCompanyId($companyIdInt > 0 ? $companyIdInt : null);
+        $companyId = $companyIdInt > 0 ? $companyIdInt : null;
         try {
             if (function_exists('rateb_bootstrap_portal_branch_from_request')) {
                 rateb_bootstrap_portal_branch_from_request();
