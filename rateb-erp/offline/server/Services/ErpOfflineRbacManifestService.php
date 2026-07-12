@@ -166,6 +166,9 @@ final class ErpOfflineRbacManifestService
             }
             $out[] = [
                 'title_key' => (string) ($section['title_key'] ?? ''),
+                'title' => function_exists('__')
+                    ? (string) __((string) ($section['title_key'] ?? ''))
+                    : (string) ($section['title_key'] ?? ''),
                 'icon' => (string) ($section['icon'] ?? ''),
                 'items' => $itemsOut,
             ];

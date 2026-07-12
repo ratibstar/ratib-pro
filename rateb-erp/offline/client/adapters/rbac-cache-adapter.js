@@ -215,13 +215,60 @@
         } catch (e) { /* ignore */ }
     }
 
+    function sectionTitle(section) {
+        section = section || {};
+        var titled = String(section.title || '').trim();
+        if (titled && titled !== String(section.title_key || '')) {
+            return titled;
+        }
+        var key = String(section.title_key || section.title || '').trim();
+        var map = {
+            dashboard: 'لوحة التحكم',
+            procurement: 'المشتريات',
+            inventory: 'المخزون',
+            hr: 'الموارد البشرية',
+            suppliers: 'الموردون',
+            account: 'الحساب'
+        };
+        return map[key] || titled || key;
+    }
+
+    function ensureOfflineNavStyles() {
+        if (!root.document || !root.document.head) {
+            return;
+        }
+        if (root.document.getElementById('rateb-offline-rbac-nav-css')) {
+            return;
+        }
+        var css = root.document.createElement('style');
+        css.id = 'rateb-offline-rbac-nav-css';
+        css.textContent = ''
+            + 'aside.rateb-sidebar.rateb-offline-shell-nav,'
+            + 'aside.rateb-offline-shell-nav{'
+            + 'display:block;min-width:16rem;max-width:18rem;padding:0;overflow:auto;'
+            + 'background:var(--rateb-sidebar,#070d18);color:var(--rateb-sidebar-text,#cbd5e1);}'
+            + 'aside.rateb-sidebar .rateb-sidebar-brand{padding:1rem 1.15rem;font-weight:700;'
+            + 'border-bottom:1px solid rgba(255,255,255,.08);}'
+            + 'aside.rateb-sidebar .rateb-nav-section{padding:.85rem 1.1rem .25rem;font-size:.7rem;'
+            + 'opacity:.6;font-weight:600;}'
+            + 'aside.rateb-sidebar a.rateb-nav-link{display:flex;align-items:center;gap:.55rem;'
+            + 'padding:.5rem .85rem;margin:.1rem .45rem;border-radius:8px;color:inherit;'
+            + 'text-decoration:none;font-size:.86rem;}'
+            + 'aside.rateb-sidebar a.rateb-nav-link:hover{background:rgba(255,255,255,.06);color:#fff;}'
+            + '.rateb-offline-home .list-group-item{display:block;padding:.65rem .85rem;margin:.25rem 0;'
+            + 'border-radius:8px;background:#1a1d24;color:#e8eaed;text-decoration:none;border:1px solid #2a2f3a;}'
+            + '.rateb-offline-home .list-group-item:hover{border-color:#3d4654;}';
+        root.document.head.appendChild(css);
+    }
+
     function renderNav(manifest) {
         if (!root.document || !manifest || !manifest.nav || !Array.isArray(manifest.nav.sections)) {
             clearNavDom();
             return false;
         }
+        ensureOfflineNavStyles();
         var disabled = manifest.offline_disabled_modules || [];
-        var html = '<p class="rateb-offline-rbac-brand">RATEB ERP</p>';
+        var html = '<div class="rateb-sidebar-brand"><span>RATEB ERP</span></div>';
         html += '<nav class="rateb-offline-rbac-nav" aria-label="Offline navigation">';
         manifest.nav.sections.forEach(function (section) {
             var items = (section && section.items) || [];
@@ -242,16 +289,14 @@
             if (visible.length === 0) {
                 return;
             }
-            html += '<div class="rateb-offline-rbac-section">';
-            if (section.title_key || section.title) {
-                html += '<div class="rateb-offline-rbac-section-title">'
-                    + escapeHtml(section.title || section.title_key || '')
-                    + '</div>';
-            }
+            html += '<div class="rateb-offline-rbac-section rateb-nav-group is-open">';
+            html += '<div class="rateb-nav-section">' + escapeHtml(sectionTitle(section)) + '</div>';
             visible.forEach(function (item) {
                 var href = safeHref(item.href);
                 var label = String(item.label || item.label_key || item.path || '');
-                html += '<a class="rateb-offline-rbac-link" href="' + escapeAttr(href) + '">'
+                var icon = String(item.icon || 'fa-circle');
+                html += '<a class="rateb-nav-link rateb-offline-rbac-link" href="' + escapeAttr(href) + '">'
+                    + '<i class="fas ' + escapeAttr(icon) + ' rateb-nav-group-icon" aria-hidden="true"></i>'
                     + '<span>' + escapeHtml(label) + '</span></a>';
             });
             html += '</div>';
@@ -268,6 +313,7 @@
                 return false;
             }
             targets.forEach(function (el) {
+                el.classList.add('rateb-sidebar', 'rateb-offline-shell-nav');
                 el.innerHTML = html;
             });
             return true;
