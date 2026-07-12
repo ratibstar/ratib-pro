@@ -69,14 +69,26 @@
             + '<div id="rateb-offline-module-links" class="rateb-offline-module-links"></div>'
             + '<p class="text-muted small mt-3">Offline shell — browse cached modules; reconnect for live data and edits.</p>'
             + '</div></main>');
-        out = out.replace(/<aside\b[^>]*>[\s\S]*?<\/aside>/gi,
-            '<aside class="rateb-sidebar rateb-offline-shell-nav" id="rateb-sidebar" aria-label="Offline nav">'
-            + '<div class="rateb-sidebar-brand"><span>RATEB ERP</span></div>'
-            + '<p class="px-3 text-muted small">جاري تحميل القائمة…</p>'
-            + '</aside>');
-        // Keep top chrome nav; clear nested app navs only inside content if needed
-        out = out.replace(/<nav\b([^>]*class=["'][^"']*rateb-sidebar[^"']*["'][^>]*)>[\s\S]*?<\/nav>/gi,
-            '<nav$1 class="rateb-offline-shell-nav"></nav>');
+        // Keep live sidebar structure for offline browse (sanitize dangerous bits only).
+        // RBAC may later replace inner HTML when a cached manifest exists.
+        out = out.replace(/<aside\b([^>]*)>/gi, function (m, attrs) {
+            var a = String(attrs || '');
+            if (!/\bclass=/i.test(a)) {
+                a += ' class="rateb-sidebar rateb-offline-shell-nav"';
+            } else if (!/rateb-offline-shell-nav/i.test(a)) {
+                a = a.replace(/\bclass=(["'])([^"']*)\1/i, function (_mm, q, cls) {
+                    return 'class=' + q + cls + ' rateb-offline-shell-nav' + q;
+                });
+            }
+            if (!/\bid=/i.test(a)) {
+                a += ' id="rateb-sidebar"';
+            }
+            if (!/aria-label=/i.test(a)) {
+                a += ' aria-label="Offline nav"';
+            }
+            return '<aside' + a + '>';
+        });
+        // Do NOT wipe nested nav inside sidebar — only clear CSRF/forms via global form strip.
         // Force connection badge to Offline (never freeze "متصل" / Online into the cache).
         out = out.replace(/rateb-connection-indicator\s+is-online/gi, 'rateb-connection-indicator is-offline');
         out = out.replace(/(\sclass=["'][^"']*rateb-connection-indicator)(?![^"']*is-offline)/gi,

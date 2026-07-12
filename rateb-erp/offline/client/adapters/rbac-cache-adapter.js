@@ -115,7 +115,9 @@
     function validateForUse(row, scope, opts) {
         opts = opts || {};
         scope = scope || tenantScope();
-        if (scope.is_super_admin) {
+        // Platform SA without tenant cannot use company RBAC cache.
+        // Company-bound SA (shell company_id > 0) may use warm offline nav.
+        if (scope.is_super_admin && !(scope.company_id > 0)) {
             return { ok: false, error: 'super_admin_denied' };
         }
         if (!row) {
@@ -300,7 +302,8 @@
             return Promise.resolve({ skipped: true, reason: 'rbac_disabled' });
         }
         var scope = tenantScope();
-        if (scope.is_super_admin || !scope.company_id || !scope.user_id) {
+        // Deny only unbound platform SA; company-bound SA may sync warm nav.
+        if ((scope.is_super_admin && !(scope.company_id > 0)) || !scope.company_id || !scope.user_id) {
             return Promise.resolve({ skipped: true, reason: 'denied' });
         }
         return getManifest(scope).then(function (cached) {

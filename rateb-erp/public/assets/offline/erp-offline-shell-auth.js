@@ -131,7 +131,15 @@
                     label.textContent = 'غير متصل';
                 }
             });
-            // Nuke leftover live-only chrome fragments
+            root.document.querySelectorAll('.rateb-topbar *, header *, .navbar *').forEach(function (el) {
+                if (el.children && el.children.length) {
+                    return;
+                }
+                var t = (el.textContent || '').trim();
+                if (t === 'متصل' || t === 'Online') {
+                    el.textContent = 'غير متصل';
+                }
+            });
             root.document.querySelectorAll(
                 '#rateb-modal, .rateb-modal, [data-rateb-confirm], .rateb-confirm, '
                 + '#rateb-loading, .rateb-loading, [data-rateb-attachments]'
@@ -146,18 +154,34 @@
         if (!host) {
             return;
         }
-        var links = root.document.querySelectorAll('.rateb-offline-rbac-link');
-        if (!links.length) {
-            host.innerHTML = '<p class="text-muted">لا توجد وحدات محفوظة للتصفح أوفلاين بعد. ادخل أونلاين مرة ثم أعد المحاولة.</p>';
+        var links = root.document.querySelectorAll(
+            '.rateb-offline-rbac-link, aside.rateb-sidebar a[href], aside.rateb-offline-shell-nav a[href], #rateb-sidebar a[href]'
+        );
+        var seen = {};
+        var items = [];
+        Array.prototype.forEach.call(links, function (a) {
+            var href = (a.getAttribute('href') || '').trim();
+            if (!href || href === '#' || /^javascript:/i.test(href)) {
+                return;
+            }
+            if (seen[href]) {
+                return;
+            }
+            seen[href] = true;
+            items.push({
+                href: href,
+                label: (a.textContent || '').replace(/\s+/g, ' ').trim() || href
+            });
+        });
+        if (!items.length) {
+            host.innerHTML = '<p class="text-muted">لا توجد وحدات محفوظة للتصفح أوفلاين بعد. ادخل أونلاين مرة (مع قائمة النظام ظاهرة) ثم أعد المحاولة أوفلاين.</p>';
             return;
         }
         var html = '<div class="list-group">';
-        Array.prototype.forEach.call(links, function (a) {
-            var href = a.getAttribute('href') || '#';
-            var label = (a.textContent || '').trim() || href;
+        items.forEach(function (it) {
             html += '<a class="list-group-item list-group-item-action" href="'
-                + String(href).replace(/"/g, '&quot;') + '">'
-                + String(label).replace(/</g, '&lt;') + '</a>';
+                + String(it.href).replace(/"/g, '&quot;') + '">'
+                + String(it.label).replace(/</g, '&lt;') + '</a>';
         });
         html += '</div>';
         host.innerHTML = html;

@@ -103,7 +103,7 @@
         if (!flagsOk()) {
             return;
         }
-        if (cfg.is_super_admin) {
+        if (cfg.is_super_admin && !(parseInt(cfg.company_id, 10) > 0)) {
             return;
         }
         if (!(parseInt(cfg.company_id, 10) > 0 && parseInt(cfg.user_id, 10) > 0)) {
