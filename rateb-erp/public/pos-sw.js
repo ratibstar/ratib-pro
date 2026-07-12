@@ -44,6 +44,23 @@ function applyErpOpsAllowlistPayload(payload) {
     }).filter(function (p) {
         return p !== '';
     });
+    // Canonical routes from rateb_app_route() — used for matching pathnames too.
+    var routes = payload && payload.routes && typeof payload.routes === 'object' ? payload.routes : {};
+    var routeValues = Object.keys(routes).map(function (k) {
+        return String(routes[k] || '').replace(/^\/+|\/+$/g, '');
+    }).filter(function (p) {
+        return p !== '';
+    });
+    routeValues.forEach(function (r) {
+        if (ERP_OPS_PATHS.indexOf(r) === -1) {
+            ERP_OPS_PATHS.push(r);
+        }
+        // Also keep short logical suffix after admin/ops/ or admin/
+        var short = r.replace(/^admin\/ops\//i, '').replace(/^admin\//i, '');
+        if (short && ERP_OPS_PATHS.indexOf(short) === -1) {
+            ERP_OPS_PATHS.push(short);
+        }
+    });
     if (!ERP_OPS_PATHS.length) {
         ERP_OPS_PATHS = ERP_OPS_PATHS_SEED.slice();
     }

@@ -445,6 +445,8 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
         : [],
     'client_queue_max' => (int) ($ratebOfflineSyncPolicy['client_queue_max'] ?? 500),
     'ops_page_paths' => array_values(array_map('strval', $ratebOfflineOpsAllowlist['paths'] ?? [])),
+    // Canonical routes from rateb_app_route() only — never reconstruct /admin/ops/ manually.
+    'ops_page_routes' => (object) ($ratebOfflineOpsAllowlist['routes'] ?? []),
     'ops_form_hooks' => array_values($ratebOfflineOpsAllowlist['form_hooks'] ?? []),
     'pilot_ops_pages' => $ratebOfflineFlagSvc->isPilotOpsPagesEnabled(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;

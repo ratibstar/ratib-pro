@@ -202,13 +202,24 @@ final class ProcurementOfflineReplayService
             $notes = trim($notes . ' [offline:' . $idempotencyKey . ']');
         }
 
+        $priorityRaw = strtolower(trim((string) ($inner['priority'] ?? 'medium')));
+        $priorityMap = [
+            'normal' => 'medium',
+            'med' => 'medium',
+            'low' => 'low',
+            'medium' => 'medium',
+            'high' => 'high',
+            'urgent' => 'urgent',
+        ];
+        $priority = $priorityMap[$priorityRaw] ?? 'medium';
+
         $model = new PurchaseRequest();
         $payload = [
             'company_id' => $scope['company_id'],
             'request_no' => $model->generateRequestNo(),
             'title' => $title,
             'department' => trim((string) ($inner['department'] ?? '')) ?: null,
-            'priority' => trim((string) ($inner['priority'] ?? 'normal')) ?: 'normal',
+            'priority' => $priority,
             'status' => 'draft',
             'expected_date' => $this->nullableDate($inner['expected_date'] ?? null),
             'requested_by' => $scope['user_id'] > 0 ? $scope['user_id'] : null,
@@ -222,13 +233,57 @@ final class ProcurementOfflineReplayService
 
         $id = $model->create($payload);
 
-        $lines = is_array($inner['lines'] ?? null) ? $inner['lines'] : [];
+        $lines = $this->normalizePurchaseRequestLines(is_array($inner['lines'] ?? null) ? $inner['lines'] : []);
         if ($lines !== []) {
             $total = LineItems::syncPurchaseRequestItems($id, $lines);
             $model->update($id, ['total_estimated' => $total]);
         }
 
         return ['ok' => true, 'purchase_request_id' => $id, 'status' => 'draft', 'draft' => true];
+    }
+
+    /**
+     * Map offline/UI line shapes onto rateb_purchase_request_items columns.
+     *
+     * @param array<int, mixed> $lines
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizePurchaseRequestLines(array $lines): array
+    {
+        $out = [];
+        foreach ($lines as $line) {
+            if (!is_array($line)) {
+                continue;
+            }
+            $name = trim((string) ($line['item_name'] ?? $line['description'] ?? $line['name'] ?? ''));
+            if ($name === '') {
+                $name = 'Item';
+            }
+            $qty = (float) ($line['quantity'] ?? $line['qty'] ?? 1);
+            if ($qty <= 0) {
+                $qty = 1.0;
+            }
+            $row = [
+                'item_name' => $name,
+                'description' => trim((string) ($line['description'] ?? '')) ?: null,
+                'quantity' => $qty,
+                'unit' => trim((string) ($line['unit'] ?? 'unit')) ?: 'unit',
+                'unit_price' => (float) ($line['unit_price'] ?? 0),
+                'tax_name' => trim((string) ($line['tax_name'] ?? 'Local Sales 0%')) ?: 'Local Sales 0%',
+                'tax_rate' => (float) ($line['tax_rate'] ?? 0),
+                'excluding_tax' => isset($line['excluding_tax']) ? ((int) $line['excluding_tax'] ? 1 : 0) : 1,
+                'total_price' => 0.0,
+            ];
+            foreach (['inventory_id', 'supplier_id', 'warehouse_id', 'account_id'] as $fk) {
+                if (isset($line[$fk]) && (int) $line[$fk] > 0) {
+                    $row[$fk] = (int) $line[$fk];
+                }
+            }
+            $row['total_price'] = round($qty * (float) $row['unit_price'], 2);
+            $out[] = $row;
+        }
+
+        return $out;
     }
 
     /**

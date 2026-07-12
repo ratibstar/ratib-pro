@@ -517,12 +517,29 @@
         } catch (e) { /* ignore */ }
     }
 
-    /** Phase P1 logout: destroy warm identity, PIN vault, RBAC, shell chrome, device meta. */
+    function logoutVaultPolicy() {
+        var p = String((cfg().logout_vault_policy || '')).toLowerCase().trim();
+        if (p === 'keep_vault' || p === 'keep') {
+            return 'keep_vault';
+        }
+        // Default: keep PIN vault so offline unlock still works after logout.
+        // Opt into wipe via logout_vault_policy=clear_vault (or RATEB_OFFLINE_AUTH_LOGOUT_VAULT).
+        if (p === 'clear_vault' || p === 'clear') {
+            return 'clear_vault';
+        }
+        return 'keep_vault';
+    }
+
+    /**
+     * Logout ends the warm unlock session.
+     * keep_vault (default): clear unlock TTL + local session; PIN vault + device meta remain for offline unlock.
+     * clear_vault: also wipe PIN vault, device meta, RBAC/shell snapshots, and persisted scope.
+     */
     function destroyWarmSession(scope) {
         scope = scope || tenantScope();
+        var policy = logoutVaultPolicy();
         clearUnlock(scope);
         markSessionNeedsReauth();
-        clearPersistedScope();
         var local = root.RatebOfflineLocalSession;
         if (local && typeof local.destroy === 'function') {
             local.destroy(scope);
@@ -531,6 +548,10 @@
         if (rbac && typeof rbac.clearNavDom === 'function') {
             rbac.clearNavDom();
         }
+        if (policy === 'keep_vault') {
+            return Promise.resolve({ ok: true, destroyed: true, logout_vault_policy: policy, vault_cleared: false });
+        }
+        clearPersistedScope();
         return Promise.all([
             deleteVault(scope),
             deleteDeviceStatus(scope),
@@ -538,9 +559,9 @@
             deleteSnapshot(SHELL_SNAPSHOT_KIND, scope),
             rbac && typeof rbac.deleteManifest === 'function' ? rbac.deleteManifest(scope) : Promise.resolve(false)
         ]).then(function () {
-            return { ok: true, destroyed: true };
+            return { ok: true, destroyed: true, logout_vault_policy: policy, vault_cleared: true };
         }).catch(function () {
-            return { ok: true, destroyed: true, partial: true };
+            return { ok: true, destroyed: true, logout_vault_policy: policy, vault_cleared: true, partial: true };
         });
     }
 
@@ -624,6 +645,16 @@
                 return vaultIntegrityHash(record).then(function (hash) {
                     record.vault_integrity = hash;
                     return putVault(record).then(function () {
+                        try {
+                            localStorage.setItem(SCOPE_LS_KEY, JSON.stringify({
+                                company_id: scope.company_id,
+                                branch_id: scope.branch_id || 0,
+                                user_id: scope.user_id,
+                                auth_unlock: true,
+                                flags: flags(),
+                                saved_at: now
+                            }));
+                        } catch (eScope) { /* ignore */ }
                         return { ok: true, id: id, has_identity: !!(sealed.identity_cipher), vault_integrity: hash };
                     });
                 });

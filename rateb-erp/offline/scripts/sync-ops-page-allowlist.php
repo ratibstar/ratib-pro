@@ -4,7 +4,17 @@ declare(strict_types=1);
 
 /**
  * Export offline/config/ops-page-allowlist.php → public JSON for the ERP Service Worker.
- * Source of truth remains the PHP allowlist; SW must not hardcode paths.
+ * Canonical routes are resolved ONLY via rateb_app_route() — never hardcoded /admin/ops/.
+ *
+ * JSON shape (v2):
+ * {
+ *   "version": 2,
+ *   "paths": ["purchase-requests", "hr/attendance", ...],
+ *   "routes": {
+ *     "purchase-requests": "admin/ops/purchase-requests",
+ *     "hr/attendance": "admin/hr/attendance"
+ *   }
+ * }
  *
  * Run: php offline/scripts/sync-ops-page-allowlist.php
  */
@@ -15,6 +25,13 @@ $dest = $root . '/public/assets/offline/ops-page-allowlist.json';
 
 if (!is_file($src)) {
     fwrite(STDERR, "MISSING {$src}\n");
+    exit(1);
+}
+
+require_once $root . '/config/app.php';
+
+if (!function_exists('rateb_app_route')) {
+    fwrite(STDERR, "rateb_app_route() unavailable\n");
     exit(1);
 }
 
@@ -29,11 +46,22 @@ $paths = array_values(array_filter(array_map(
     $cfg['paths'] ?? []
 ), static fn (string $p): bool => $p !== ''));
 
+$routes = [];
+foreach ($paths as $logical) {
+    $canonical = trim((string) rateb_app_route($logical), "/ \t\n\r");
+    if ($canonical === '') {
+        fwrite(STDERR, "INVALID ROUTE (empty) for logical path: {$logical}\n");
+        continue;
+    }
+    $routes[$logical] = $canonical;
+}
+
 $payload = [
-    'version' => 1,
+    'version' => 2,
     'generated_at' => gmdate('c'),
-    'source' => 'offline/config/ops-page-allowlist.php',
+    'source' => 'offline/config/ops-page-allowlist.php + rateb_app_route()',
     'paths' => $paths,
+    'routes' => $routes,
 ];
 
 $dir = dirname($dest);
@@ -49,4 +77,6 @@ if ($json === false) {
 }
 
 file_put_contents($dest, $json . "\n");
-echo 'Wrote ' . count($paths) . " paths → {$dest}\n";
+echo 'Wrote ' . count($paths) . ' paths / ' . count($routes) . " routes → {$dest}\n";
+echo 'Sample hr/attendance → ' . ($routes['hr/attendance'] ?? 'MISSING') . "\n";
+echo 'Sample purchase-requests → ' . ($routes['purchase-requests'] ?? 'MISSING') . "\n";

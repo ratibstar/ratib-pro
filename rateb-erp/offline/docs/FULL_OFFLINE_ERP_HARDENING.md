@@ -48,7 +48,9 @@ Keep OFF unless certified: payroll calculate/post, accounting journal post, appr
 - Ops HTML lives in `rateb-erp-ops-pages-v14` (Cache API) + IndexedDB snapshots.
 - Shell CSS/JS warmed into `rateb-erp-coexist-v6`.
 - Eviction: activate migrates then deletes stale `rateb-erp-coexist-*` / `rateb-erp-ops-pages-*` / allowlist caches.
-- First offline hit still requires an online visit per allowlisted path (or idle prefetch of sidebar links).
+- Canonical URLs come from `rateb_app_route()` only (see `ops-page-allowlist.json` → `routes`). Never assume `/admin/ops/{path}` for every entry (e.g. `hr/attendance` → `admin/hr/attendance`).
+- Warm/prefetch skips HTTP ≠ 200 and logs `INVALID ROUTE`.
+- First offline hit still requires an online visit per allowlisted path (or idle prefetch of sidebar/canonical links).
 
 ## Automated smoke
 

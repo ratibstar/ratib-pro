@@ -32,7 +32,7 @@ final class ErpOfflineIdentityPhaseP1Test
         $this->testSignatureTamperRejected();
         $this->testWrongPinSurfaceInAdapter();
         $this->testLogoutDestroysWarmSurface();
-        $this->testLogoutPolicyDefaultsClear();
+        $this->testLogoutPolicyDefaultsKeepVault();
         $this->testOfflineShellHostsPinUnlock();
         $this->testIdentityEnrollRoute();
         $this->testDeviceActivationOnEnrollService();
@@ -192,12 +192,12 @@ final class ErpOfflineIdentityPhaseP1Test
         $this->record('logout destroys warm identity surface', $ok, $ok ? 'ok' : 'missing wipe');
     }
 
-    private function testLogoutPolicyDefaultsClear(): void
+    private function testLogoutPolicyDefaultsKeepVault(): void
     {
         $this->clearEnv();
         $policy = (new ErpOfflineAuthPolicy())->logoutVaultPolicy();
-        $ok = $policy === ErpOfflineAuthPolicy::LOGOUT_CLEAR_VAULT;
-        $this->record('logout policy defaults clear_vault', $ok, $policy);
+        $ok = $policy === ErpOfflineAuthPolicy::LOGOUT_KEEP_VAULT;
+        $this->record('logout policy defaults keep_vault', $ok, $policy);
     }
 
     private function testOfflineShellHostsPinUnlock(): void

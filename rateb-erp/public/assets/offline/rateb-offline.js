@@ -619,6 +619,48 @@
         });
     }
 
+    function resolveFlushDeviceId(options) {
+        options = options || {};
+        if (options.deviceId) {
+            return String(options.deviceId);
+        }
+        if (options.device_id) {
+            return String(options.device_id);
+        }
+        var authLock = root.RatebOfflineAuthLock;
+        if (authLock && typeof authLock.getDeviceId === 'function') {
+            try {
+                var fromLock = authLock.getDeviceId();
+                if (fromLock) {
+                    return String(fromLock);
+                }
+            } catch (e0) { /* ignore */ }
+        }
+        try {
+            var fromLs = root.localStorage && root.localStorage.getItem('rateb_erp_device_uuid');
+            if (fromLs) {
+                return String(fromLs);
+            }
+        } catch (e1) { /* ignore */ }
+        return '';
+    }
+
+    function resolveFlushBranchId(options) {
+        options = options || {};
+        if (options.branchId != null && options.branchId !== '') {
+            return parseInt(options.branchId, 10) || 0;
+        }
+        if (options.branch_id != null && options.branch_id !== '') {
+            return parseInt(options.branch_id, 10) || 0;
+        }
+        try {
+            var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+            return parseInt(cfg.branch_id, 10) || 0;
+        } catch (e) {
+            return 0;
+        }
+    }
+
     function flush(options) {
         options = options || {};
         if (!enabled || flushInFlight) {
@@ -638,6 +680,8 @@
         }
         flushInFlight = true;
         var base = options.apiBase || apiBase;
+        var deviceId = resolveFlushDeviceId(options);
+        var branchId = resolveFlushBranchId(options);
         return listFifo().then(function (queue) {
             if (!queue.length) {
                 return { accepted: 0, queueDepth: 0 };
@@ -645,17 +689,23 @@
             if (!base) {
                 return { error: 'api_base_missing', queueDepth: queue.length };
             }
+            if (!deviceId) {
+                var missing = new Error('Device not allowed');
+                missing.code = 'device_unknown';
+                throw missing;
+            }
             return fetch(joinUrlPath(base, '/push'), {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    'X-CSRF-Token': csrfToken()
+                    'X-CSRF-Token': csrfToken(),
+                    'X-Rateb-Device-Id': deviceId
                 },
                 body: JSON.stringify({
-                    device_id: options.deviceId || '',
-                    branch_id: options.branchId || 0,
+                    device_id: deviceId,
+                    branch_id: branchId,
                     items: queue
                 })
             }).then(function (res) {
@@ -4080,8 +4130,11 @@
             branch_id: parseInt(cfg.branch_id, 10) || 0,
             user_id: parseInt(cfg.user_id, 10) || 0,
             is_super_admin: !!cfg.is_super_admin,
+            logout_vault_policy: cfg.logout_vault_policy || 'keep_vault',
+            session_policy: (cfg.session_policy && typeof cfg.session_policy === 'object') ? cfg.session_policy : {},
             client_queue_max: parseInt(cfg.client_queue_max, 10) || 500,
             ops_page_paths: Array.isArray(cfg.ops_page_paths) ? cfg.ops_page_paths : [],
+            ops_page_routes: (cfg.ops_page_routes && typeof cfg.ops_page_routes === 'object') ? cfg.ops_page_routes : {},
             ops_form_hooks: Array.isArray(cfg.ops_form_hooks) ? cfg.ops_form_hooks : [],
             pilot_ops_pages: !!cfg.pilot_ops_pages,
             offline_ops_snapshot: true
@@ -4153,6 +4206,77 @@
         return Array.isArray(paths) ? paths : [];
     }
 
+    /** Logical key → canonical route from rateb_app_route() (injected as ops_page_routes). */
+    function opsRouteMap() {
+        var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+        var routes = cfg.ops_page_routes;
+        if (!routes || typeof routes !== 'object') {
+            return {};
+        }
+        return routes;
+    }
+
+    /**
+     * Build absolute URL for an allowlist logical key using canonical route only.
+     * Never prefixes /admin/ops/ manually.
+     */
+    function canonicalUrlForLogical(logical) {
+        logical = String(logical || '').replace(/^\/+|\/+$/g, '');
+        if (!logical) {
+            return null;
+        }
+        var map = opsRouteMap();
+        var route = map[logical] ? String(map[logical]).replace(/^\/+|\/+$/g, '') : '';
+        if (!route) {
+            return null;
+        }
+        try {
+            var origin = (root.location && root.location.origin) || '';
+            var prefix = '';
+            try {
+                var path = String((root.location && root.location.pathname) || '');
+                var m = path.match(/^(.*?\/rateb-erp\/public)(?:\/|$)/i);
+                if (m && m[1]) {
+                    prefix = m[1];
+                } else if (/\/rateb-erp\/public/i.test(String((root.location && root.location.href) || ''))) {
+                    prefix = '/rateb-erp/public';
+                }
+            } catch (ePref) { /* ignore */ }
+            var href = origin + prefix + '/' + route;
+            var companyId = parseInt((root.__RATEB_ERP_SHELL_OFFLINE__ || {}).company_id, 10) || 0;
+            if (companyId > 0 && href.indexOf('company_id=') === -1) {
+                href += (href.indexOf('?') === -1 ? '?' : '&') + 'company_id=' + companyId;
+            }
+            return href;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function isHttpErrorDocument() {
+        try {
+            var title = String((root.document && root.document.title) || '');
+            var text = '';
+            try {
+                text = String((root.document.body && root.document.body.innerText) || '').slice(0, 400);
+            } catch (eT) { /* ignore */ }
+            if (/^\s*404\b/i.test(title) || /\b404\s*\|/i.test(title)) {
+                return true;
+            }
+            if (/page not found/i.test(text) && /\b404\b/.test(text)) {
+                return true;
+            }
+            var statusMeta = root.document.querySelector('meta[name="rateb-http-status"]');
+            if (statusMeta) {
+                var st = parseInt(statusMeta.getAttribute('content') || '0', 10) || 0;
+                if (st > 0 && st !== 200) {
+                    return true;
+                }
+            }
+        } catch (e) { /* ignore */ }
+        return false;
+    }
+
     function matchOpsPath(pathname) {
         var p = String(pathname || '').replace(/\/+$/, '').toLowerCase();
         var list = opsAllowlist();
@@ -4164,6 +4288,20 @@
             var re = new RegExp('(^|/)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
             if (re.test(p)) {
                 return a;
+            }
+        }
+        // Also match canonical routes from rateb_app_route() (e.g. admin/hr/attendance).
+        var map = opsRouteMap();
+        var keys = Object.keys(map || {});
+        for (var j = 0; j < keys.length; j++) {
+            var logical = keys[j];
+            var route = String(map[logical] || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+            if (!route) {
+                continue;
+            }
+            var re2 = new RegExp('(^|/)' + route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
+            if (re2.test(p)) {
+                return logical;
             }
         }
         return null;
@@ -4274,6 +4412,12 @@
         if (!matchOpsPath(path)) {
             return Promise.resolve({ skipped: true, reason: 'path_not_allowlisted' });
         }
+        if (isHttpErrorDocument()) {
+            try {
+                console.warn('[RATIB OFFLINE] INVALID ROUTE', path, 'document looks like HTTP error; skip capture');
+            } catch (eInv) { /* ignore */ }
+            return Promise.resolve({ skipped: true, reason: 'invalid_route_http_error' });
+        }
         var scope = tenantScope();
         var id = opsSnapshotId(path, scope);
         if (!id) {
@@ -4326,6 +4470,33 @@
         }
     }
 
+    function cacheFetchedOpsHtml(href, path, html) {
+        var safe = stripSensitiveOpsPage(html);
+        var originPath = '';
+        try {
+            var u = new URL(href, root.location.origin);
+            originPath = u.origin + u.pathname;
+        } catch (eU) {
+            originPath = href;
+        }
+        return putOpsPageCache(href, safe).then(function () {
+            return putOpsPageCache(originPath, safe);
+        }).then(function () {
+            try {
+                if (root.navigator && root.navigator.serviceWorker
+                    && root.navigator.serviceWorker.controller) {
+                    root.navigator.serviceWorker.controller.postMessage({
+                        type: 'CACHE_ERP_OPS_PAGE',
+                        url: href,
+                        path: path,
+                        html: safe
+                    });
+                }
+            } catch (eMsg) { /* ignore */ }
+            return { ok: true, bytes: safe.length, path: path, url: href };
+        });
+    }
+
     function prefetchAllowlistedLinks() {
         if (!isOpsPagesActive() || !root.document || !root.fetch) {
             return;
@@ -4333,11 +4504,25 @@
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             return;
         }
+
+        var seen = {};
+        var urls = [];
+
+        // 1) Canonical routes from rateb_app_route() — never invent /admin/ops/.
+        var map = opsRouteMap();
+        Object.keys(map || {}).forEach(function (logical) {
+            var href = canonicalUrlForLogical(logical);
+            if (!href || seen[href]) {
+                return;
+            }
+            seen[href] = true;
+            urls.push({ href: href, logical: logical, path: String(map[logical] || '') });
+        });
+
+        // 2) Live sidebar links that already match allowlist (correct rateb_app_url hrefs).
         var links = root.document.querySelectorAll(
             'aside.rateb-sidebar a[href], #rateb-sidebar a[href], .rateb-offline-rbac-link[href]'
         );
-        var seen = {};
-        var urls = [];
         Array.prototype.forEach.call(links, function (a) {
             var href = (a.getAttribute('href') || '').trim();
             if (!href || href === '#' || /^javascript:/i.test(href) || seen[href]) {
@@ -4352,26 +4537,43 @@
                     return;
                 }
                 seen[href] = true;
-                urls.push(u.href);
+                urls.push({ href: u.href, logical: matchOpsPath(u.pathname), path: u.pathname });
             } catch (e) { /* ignore */ }
         });
-        urls = urls.slice(0, 8);
+
+        // Cap idle warm to avoid hammering production; validator does full crawl.
+        urls = urls.slice(0, 40);
         var i = 0;
         var tick = function () {
             if (i >= urls.length) {
                 return;
             }
             var next = urls[i++];
-            root.fetch(next, {
+            root.fetch(next.href, {
                 credentials: 'same-origin',
                 headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
-            }).then(function () {
-                /* capture happens when user visits; warm HTML into HTTP cache only */
+            }).then(function (res) {
+                var status = res ? res.status : 0;
+                if (!res || status !== 200) {
+                    try {
+                        console.warn('[RATIB OFFLINE] INVALID ROUTE', next.logical || next.path, next.href, 'HTTP', status);
+                    } catch (eLog) { /* ignore */ }
+                    return null;
+                }
+                return res.text().then(function (html) {
+                    if (!html || /page not found/i.test(String(html).slice(0, 800)) && /\b404\b/.test(String(html).slice(0, 800))) {
+                        try {
+                            console.warn('[RATIB OFFLINE] INVALID ROUTE', next.logical || next.path, next.href, 'body looks like 404');
+                        } catch (e404) { /* ignore */ }
+                        return null;
+                    }
+                    return cacheFetchedOpsHtml(next.href, next.path || next.logical, html);
+                });
             }).catch(function () { /* ignore */ }).then(function () {
                 if (typeof root.requestIdleCallback === 'function') {
                     root.requestIdleCallback(tick, { timeout: 4000 });
                 } else {
-                    setTimeout(tick, 1200);
+                    setTimeout(tick, 800);
                 }
             });
         };
@@ -4429,6 +4631,8 @@
         getSnapshot: getSnapshot,
         startAutoCapture: startAutoCapture,
         prefetchAllowlistedLinks: prefetchAllowlistedLinks,
+        canonicalUrlForLogical: canonicalUrlForLogical,
+        opsRouteMap: opsRouteMap,
         stripSensitive: stripSensitive,
         stripSensitiveOpsPage: stripSensitiveOpsPage
     };
@@ -4955,12 +5159,29 @@
         } catch (e) { /* ignore */ }
     }
 
-    /** Phase P1 logout: destroy warm identity, PIN vault, RBAC, shell chrome, device meta. */
+    function logoutVaultPolicy() {
+        var p = String((cfg().logout_vault_policy || '')).toLowerCase().trim();
+        if (p === 'keep_vault' || p === 'keep') {
+            return 'keep_vault';
+        }
+        // Default: keep PIN vault so offline unlock still works after logout.
+        // Opt into wipe via logout_vault_policy=clear_vault (or RATEB_OFFLINE_AUTH_LOGOUT_VAULT).
+        if (p === 'clear_vault' || p === 'clear') {
+            return 'clear_vault';
+        }
+        return 'keep_vault';
+    }
+
+    /**
+     * Logout ends the warm unlock session.
+     * keep_vault (default): clear unlock TTL + local session; PIN vault + device meta remain for offline unlock.
+     * clear_vault: also wipe PIN vault, device meta, RBAC/shell snapshots, and persisted scope.
+     */
     function destroyWarmSession(scope) {
         scope = scope || tenantScope();
+        var policy = logoutVaultPolicy();
         clearUnlock(scope);
         markSessionNeedsReauth();
-        clearPersistedScope();
         var local = root.RatebOfflineLocalSession;
         if (local && typeof local.destroy === 'function') {
             local.destroy(scope);
@@ -4969,6 +5190,10 @@
         if (rbac && typeof rbac.clearNavDom === 'function') {
             rbac.clearNavDom();
         }
+        if (policy === 'keep_vault') {
+            return Promise.resolve({ ok: true, destroyed: true, logout_vault_policy: policy, vault_cleared: false });
+        }
+        clearPersistedScope();
         return Promise.all([
             deleteVault(scope),
             deleteDeviceStatus(scope),
@@ -4976,9 +5201,9 @@
             deleteSnapshot(SHELL_SNAPSHOT_KIND, scope),
             rbac && typeof rbac.deleteManifest === 'function' ? rbac.deleteManifest(scope) : Promise.resolve(false)
         ]).then(function () {
-            return { ok: true, destroyed: true };
+            return { ok: true, destroyed: true, logout_vault_policy: policy, vault_cleared: true };
         }).catch(function () {
-            return { ok: true, destroyed: true, partial: true };
+            return { ok: true, destroyed: true, logout_vault_policy: policy, vault_cleared: true, partial: true };
         });
     }
 
@@ -5062,6 +5287,16 @@
                 return vaultIntegrityHash(record).then(function (hash) {
                     record.vault_integrity = hash;
                     return putVault(record).then(function () {
+                        try {
+                            localStorage.setItem(SCOPE_LS_KEY, JSON.stringify({
+                                company_id: scope.company_id,
+                                branch_id: scope.branch_id || 0,
+                                user_id: scope.user_id,
+                                auth_unlock: true,
+                                flags: flags(),
+                                saved_at: now
+                            }));
+                        } catch (eScope) { /* ignore */ }
                         return { ok: true, id: id, has_identity: !!(sealed.identity_cipher), vault_integrity: hash };
                     });
                 });

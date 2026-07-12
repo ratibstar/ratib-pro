@@ -26,6 +26,17 @@ function applyAllowlistPayload(payload) {
     }).filter(function (p) {
         return p !== '';
     });
+    var routes = payload && payload.routes && typeof payload.routes === 'object' ? payload.routes : {};
+    Object.keys(routes).forEach(function (k) {
+        var r = String(routes[k] || '').replace(/^\/+|\/+$/g, '');
+        if (r && OPS_PATHS.indexOf(r) === -1) {
+            OPS_PATHS.push(r);
+        }
+        var short = r.replace(/^admin\/ops\//i, '').replace(/^admin\//i, '');
+        if (short && OPS_PATHS.indexOf(short) === -1) {
+            OPS_PATHS.push(short);
+        }
+    });
     return OPS_PATHS.length;
 }
 

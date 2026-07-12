@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 /**
  * Phase 14 — Allowlisted enterprise daily-ops pages for offline snapshot browse.
- * Paths are app-route suffixes (matched against location.pathname).
+ * Paths are logical keys (matched against location.pathname via short key OR
+ * the canonical route from rateb_app_route()). Never assume /admin/ops/ for all.
+ * Generated JSON (`ops-page-allowlist.json`) includes `routes` map from rateb_app_route().
  * Payroll / payments intentionally omitted from default browse (Approval Tier-1 added in Phase 20B).
  * Phase 16B: journal draft browse + form hooks only (no post/reverse/close).
  * Phase 20B: approvals browse + draft form hooks (no final decisions / escalate / notifications).

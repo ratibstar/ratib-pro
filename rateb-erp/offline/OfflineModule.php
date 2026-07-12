@@ -49,13 +49,40 @@ final class OfflineModule
         return is_file($file) ? require $file : [];
     }
 
-    /** @return array{paths?: list<string>, form_hooks?: list<array<string, string>>} */
+    /**
+     * @return array{
+     *   paths?: list<string>,
+     *   routes?: array<string, string>,
+     *   form_hooks?: list<array<string, string>>
+     * }
+     */
     public static function opsPageAllowlist(): array
     {
         $file = self::rootPath() . '/config/ops-page-allowlist.php';
         $cfg = is_file($file) ? require $file : [];
+        if (!is_array($cfg)) {
+            return [];
+        }
 
-        return is_array($cfg) ? $cfg : [];
+        $paths = array_values(array_filter(array_map(
+            static fn ($p): string => trim((string) $p, "/ \t\n\r"),
+            $cfg['paths'] ?? []
+        ), static fn (string $p): bool => $p !== ''));
+
+        $routes = [];
+        if (function_exists('rateb_app_route')) {
+            foreach ($paths as $logical) {
+                $canonical = trim((string) rateb_app_route($logical), "/ \t\n\r");
+                if ($canonical !== '') {
+                    $routes[$logical] = $canonical;
+                }
+            }
+        }
+
+        $cfg['paths'] = $paths;
+        $cfg['routes'] = $routes;
+
+        return $cfg;
     }
 
     private static function registerAutoload(): void

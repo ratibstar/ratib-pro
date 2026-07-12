@@ -205,6 +205,48 @@
         });
     }
 
+    function resolveFlushDeviceId(options) {
+        options = options || {};
+        if (options.deviceId) {
+            return String(options.deviceId);
+        }
+        if (options.device_id) {
+            return String(options.device_id);
+        }
+        var authLock = root.RatebOfflineAuthLock;
+        if (authLock && typeof authLock.getDeviceId === 'function') {
+            try {
+                var fromLock = authLock.getDeviceId();
+                if (fromLock) {
+                    return String(fromLock);
+                }
+            } catch (e0) { /* ignore */ }
+        }
+        try {
+            var fromLs = root.localStorage && root.localStorage.getItem('rateb_erp_device_uuid');
+            if (fromLs) {
+                return String(fromLs);
+            }
+        } catch (e1) { /* ignore */ }
+        return '';
+    }
+
+    function resolveFlushBranchId(options) {
+        options = options || {};
+        if (options.branchId != null && options.branchId !== '') {
+            return parseInt(options.branchId, 10) || 0;
+        }
+        if (options.branch_id != null && options.branch_id !== '') {
+            return parseInt(options.branch_id, 10) || 0;
+        }
+        try {
+            var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+            return parseInt(cfg.branch_id, 10) || 0;
+        } catch (e) {
+            return 0;
+        }
+    }
+
     function flush(options) {
         options = options || {};
         if (!enabled || flushInFlight) {
@@ -224,6 +266,8 @@
         }
         flushInFlight = true;
         var base = options.apiBase || apiBase;
+        var deviceId = resolveFlushDeviceId(options);
+        var branchId = resolveFlushBranchId(options);
         return listFifo().then(function (queue) {
             if (!queue.length) {
                 return { accepted: 0, queueDepth: 0 };
@@ -231,17 +275,23 @@
             if (!base) {
                 return { error: 'api_base_missing', queueDepth: queue.length };
             }
+            if (!deviceId) {
+                var missing = new Error('Device not allowed');
+                missing.code = 'device_unknown';
+                throw missing;
+            }
             return fetch(joinUrlPath(base, '/push'), {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    'X-CSRF-Token': csrfToken()
+                    'X-CSRF-Token': csrfToken(),
+                    'X-Rateb-Device-Id': deviceId
                 },
                 body: JSON.stringify({
-                    device_id: options.deviceId || '',
-                    branch_id: options.branchId || 0,
+                    device_id: deviceId,
+                    branch_id: branchId,
                     items: queue
                 })
             }).then(function (res) {

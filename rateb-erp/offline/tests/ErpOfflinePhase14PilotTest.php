@@ -117,6 +117,7 @@ final class ErpOfflinePhase14PilotTest
         $cfg = OfflineModule::opsPageAllowlist();
         $paths = $cfg['paths'] ?? [];
         $hooks = $cfg['form_hooks'] ?? [];
+        $routes = $cfg['routes'] ?? [];
         $joined = implode(',', array_map('strval', $paths));
         // Browse may include payroll module shells; money movement / ZATCA stay out.
         // Calculate/post/approve remain blocked by writable deny-list + flags.
@@ -127,7 +128,11 @@ final class ErpOfflinePhase14PilotTest
             && !str_contains($joined, 'payment')
             && !str_contains($joined, 'zatca')
             && is_array($hooks)
-            && count($hooks) >= 5;
+            && count($hooks) >= 5
+            && is_array($routes)
+            && (($routes['hr/attendance'] ?? '') === 'admin/hr/attendance'
+                || (($routes['hr/attendance'] ?? '') !== '' && !str_contains((string) ($routes['hr/attendance'] ?? ''), 'ops/hr/')))
+            && str_starts_with((string) ($routes['purchase-requests'] ?? ''), 'admin/');
         $this->record('ops allowlist first verticals + no payments/zatca', $ok, $ok ? 'ok' : 'allowlist bad');
     }
 
@@ -161,7 +166,10 @@ final class ErpOfflinePhase14PilotTest
             && str_contains($src, 'stripSensitiveOpsPage')
             && str_contains($src, 'غير متصل')
             && str_contains($src, 'erp_ops_page')
-            && str_contains($src, 'CACHE_ERP_OPS_PAGE');
+            && str_contains($src, 'CACHE_ERP_OPS_PAGE')
+            && str_contains($src, 'canonicalUrlForLogical')
+            && str_contains($src, 'INVALID ROUTE')
+            && str_contains($src, 'ops_page_routes');
         $this->record('shell ops page capture + offline badge', $ok, $ok ? 'ok' : 'missing capture');
     }
 
@@ -223,6 +231,7 @@ final class ErpOfflinePhase14PilotTest
     {
         $layout = (string) file_get_contents(RATEB_ROOT . '/views/layouts/main.php');
         $ok = str_contains($layout, 'ops_page_paths')
+            && str_contains($layout, 'ops_page_routes')
             && str_contains($layout, 'client_queue_max')
             && str_contains($layout, 'erp-ops-forms-bootstrap.js')
             && str_contains($layout, 'isPilotOpsPagesEnabled')
