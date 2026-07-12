@@ -1,0 +1,22 @@
+/* Self-hosted Tajawal — offline branch appliance (Phase D.1) */
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('tajawal-400.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('tajawal-500.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('tajawal-700.woff2') format('woff2');
+}

@@ -103,8 +103,7 @@ final class ExportService
         echo '<!DOCTYPE html><html lang="' . htmlspecialchars($locale, ENT_QUOTES, 'UTF-8') . '" dir="' . $dir . '"><head>';
         echo '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
         echo '<title>' . htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') . '</title>';
-        echo '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
-        echo '<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">';
+        echo '<link href="' . htmlspecialchars(rateb_tajawal_font_css(), ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
         echo '<style>';
         echo '*,*::before,*::after{box-sizing:border-box}';
         echo 'body{font-family:"Tajawal",Tahoma,Arial,sans-serif;margin:0;padding:24px;color:#1a3354;background:#fff;line-height:1.5;direction:' . $dir . '}';

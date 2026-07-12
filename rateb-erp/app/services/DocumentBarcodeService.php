@@ -294,8 +294,8 @@ final class DocumentBarcodeService
     public function qrImageUrl(string $payload, int $size = 280): string
     {
         $size = max(160, min(500, $size));
-        return 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size
-            . '&margin=20&ecc=H&format=png&color=000000&bgcolor=ffffff&data=' . rawurlencode($payload);
+
+        return rateb_local_qr_url($payload, $size, true);
     }
 
     public function qrProxyUrl(string $payload, int $size = 280): string

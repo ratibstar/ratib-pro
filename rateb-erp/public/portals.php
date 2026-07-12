@@ -20,8 +20,8 @@ $links = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>روابط نظام رتب ERP</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet">
     <style>
         body { background: #0f172a; color: #e2e8f0; font-family: Tajawal, system-ui, sans-serif; }
         .card { background: #1e293b; border: 1px solid #334155; }

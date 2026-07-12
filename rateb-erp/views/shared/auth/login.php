@@ -89,6 +89,7 @@
 window.RATEB_LOGIN_BARCODE = {
     apiPair: <?php echo json_encode(rateb_url('api/login-barcode-pair'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
     scanPage: <?php echo json_encode(rateb_url('login/scan'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
+    qrImageBase: <?php echo json_encode(rateb_url('scan/qr'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
     home: <?php echo json_encode(rateb_url('admin'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 };
 </script>

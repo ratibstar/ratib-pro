@@ -208,8 +208,10 @@
             return;
         }
         var s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-        s.crossOrigin = 'anonymous';
+        s.src = (window.RATEB_QRCODE_JS || '').trim();
+        if (!s.src) {
+            return done();
+        }
         s.onload = function () { done(); };
         s.onerror = function () { done(); };
         document.head.appendChild(s);

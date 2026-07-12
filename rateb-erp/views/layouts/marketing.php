@@ -29,15 +29,13 @@ $headerContext = 'marketing';
     <meta name="twitter:image" content="<?php echo Rateb\App\Core\View::escape($meta['og_image']); ?>">
     <?php } ?>
     <meta name="twitter:card" content="<?php echo Rateb\App\Core\View::escape($meta['twitter_card'] ?? 'summary_large_image'); ?>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
     <?php if ($dir === 'rtl') { ?>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
     <?php } else { ?>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
     <?php } ?>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-dark.css'); ?>" rel="stylesheet">
@@ -80,7 +78,7 @@ require RATEB_ROOT . '/views/marketing/partials/header.php'; ?>
     <?php echo $pageContent; ?>
 </main>
 <?php require RATEB_ROOT . '/views/marketing/partials/footer.php'; ?>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?php echo rateb_bootstrap_js(); ?>"></script>
 <script src="<?php echo rateb_asset('js/marketing.js'); ?>"></script>
 <script>window.RATEB_BASE_URL = <?php echo json_encode(rateb_site_origin()); ?>;</script>
 <script src="<?php echo htmlspecialchars(rateb_site_origin()); ?>/js/payment.js?v=<?php

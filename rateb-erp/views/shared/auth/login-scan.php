@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex,nofollow">
     <title><?php echo Rateb\App\Core\View::escape($title ?? __('barcode_scan_title')); ?> | <?php echo __('rateb_erp'); ?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo rateb_fontawesome_css(); ?>">
     <link href="<?php echo rateb_asset('css/qr-scan.css'); ?>" rel="stylesheet">
     <meta name="theme-color" content="#0b1220">
 </head>
@@ -76,7 +76,7 @@
         'noSavedBadge' => __('badge_no_saved'),
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+    <script src="<?php echo rateb_html5_qrcode_js(); ?>"></script>
     <?php
     $scanAssets = ['js/erp-mobile-badge-store.js', 'js/erp-qr-scanner.js', 'js/erp-login-scan.js'];
     foreach ($scanAssets as $asset) {

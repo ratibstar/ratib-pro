@@ -128,8 +128,8 @@ final class BarcodeLoginService
     public function qrImageUrl(string $payload, int $size = 200): string
     {
         $size = max(120, min(500, $size));
-        return 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size
-            . '&margin=24&ecc=H&format=png&color=000000&bgcolor=ffffff&qzone=2&data=' . rawurlencode($payload);
+
+        return rateb_local_qr_url($payload, $size, true);
     }
 
     public function setPairCookie(string $token): void

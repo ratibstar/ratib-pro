@@ -79,13 +79,14 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RATEB ERP">
     <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
+    <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
     <?php if ($dir === 'rtl') { ?>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
     <?php } else { ?>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
     <?php } ?>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"></noscript>
+    <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet"></noscript>
     <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">
@@ -312,9 +313,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 </div>
 <?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
 <?php Rateb\App\Core\View::partial('rateb-confirm-modal'); ?>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="<?php echo rateb_bootstrap_js(); ?>" defer></script>
 <?php if (!empty($layoutAssets['charts'])) { ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+<script src="<?php echo rateb_chartjs('4.4.3'); ?>" defer></script>
 <?php } ?>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('js/connectivity-indicator.js'); ?>" defer></script>

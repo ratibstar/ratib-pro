@@ -4,10 +4,8 @@ declare(strict_types=1);
 $locale = $v2Config['locale'] ?? rateb_locale();
 $dir = !empty($v2Config['rtl']) ? 'rtl' : 'ltr';
 $configJson = json_encode($v2Config ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-$bsCss = $dir === 'rtl'
-    ? 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css'
-    : 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';
-$fontStack = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap';
+$bsCss = rateb_bootstrap_css();
+$fontStack = rateb_pos_fonts_css();
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo \Rateb\App\Pos\Support\PosView::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme-scope="pos" data-theme="dark" data-bs-theme="dark">
@@ -27,8 +25,6 @@ $fontStack = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&fa
     })();
     </script>
     <title><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_register')); ?> — POS V2</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="<?php echo $fontStack; ?>" rel="stylesheet">
     <link href="<?php echo $bsCss; ?>" rel="stylesheet">
     <link href="<?php echo rateb_pos_asset('v2/pos-v2.css'); ?>" rel="stylesheet">
@@ -39,7 +35,7 @@ $fontStack = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&fa
 </main>
 <script type="application/json" id="pos-v2-config"><?php echo $configJson ?: '{}'; ?></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="<?php echo rateb_bootstrap_js(); ?>" defer></script>
 <script type="module" src="<?php echo rateb_pos_asset('v2/app.js'); ?>"></script>
 </body>
 </html>

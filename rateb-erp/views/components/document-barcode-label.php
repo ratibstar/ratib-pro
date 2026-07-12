@@ -48,5 +48,6 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
         </div>
     </div>
 </div>
+<script>window.RATEB_QRCODE_JS=<?php echo json_encode(rateb_qrcode_js(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;</script>
 <script src="<?php echo rateb_asset('js/barcode-canvas.js'); ?>?v=1"></script>
-<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=7"></script>
+<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=8"></script>

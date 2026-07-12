@@ -147,6 +147,6 @@ $accJsPhase7Url = $accAssetsBase . '/control-center-phase7.js?v=' . rawurlencode
     </div>
 </div>
 <script type="application/json" id="acc-control-i18n"><?php echo json_encode($accI18n, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP); ?></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="<?php echo rateb_chartjs('4.4.1'); ?>"></script>
 <script src="<?php echo Rateb\App\Core\View::escape($accJsUrl); ?>"></script>
 <script src="<?php echo Rateb\App\Core\View::escape($accJsPhase7Url); ?>"></script>

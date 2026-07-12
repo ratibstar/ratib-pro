@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260712-offline-nav-live-v13');
+define('RATEB_ASSET_BUILD', '20260712-phase-d1-offline');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -692,6 +692,85 @@ if (!function_exists('rateb_asset')) {
         $suffix = '?v=' . rawurlencode($ver);
 
         return rateb_site_origin() . rateb_erp_assets_prefix() . '/assets/' . $path . $suffix;
+    }
+}
+
+if (!function_exists('rateb_vendor_asset')) {
+    /** Self-hosted vendor bundle (Bootstrap, Font Awesome, Chart.js, fonts) — no CDN. */
+    function rateb_vendor_asset(string $path): string
+    {
+        return rateb_asset('vendor/' . ltrim($path, '/'));
+    }
+}
+
+if (!function_exists('rateb_bootstrap_css')) {
+    function rateb_bootstrap_css(): string
+    {
+        $file = function_exists('rateb_is_rtl') && rateb_is_rtl()
+            ? 'bootstrap/5.3.3/bootstrap.rtl.min.css'
+            : 'bootstrap/5.3.3/bootstrap.min.css';
+
+        return rateb_vendor_asset($file);
+    }
+}
+
+if (!function_exists('rateb_bootstrap_js')) {
+    function rateb_bootstrap_js(): string
+    {
+        return rateb_vendor_asset('bootstrap/5.3.3/bootstrap.bundle.min.js');
+    }
+}
+
+if (!function_exists('rateb_fontawesome_css')) {
+    function rateb_fontawesome_css(): string
+    {
+        return rateb_vendor_asset('fontawesome/6.5.2/css/all.min.css');
+    }
+}
+
+if (!function_exists('rateb_chartjs')) {
+    function rateb_chartjs(string $version = '4.4.3'): string
+    {
+        $version = in_array($version, ['4.4.1', '4.4.3'], true) ? $version : '4.4.3';
+
+        return rateb_vendor_asset('chartjs/' . $version . '/chart.umd.min.js');
+    }
+}
+
+if (!function_exists('rateb_tajawal_font_css')) {
+    function rateb_tajawal_font_css(): string
+    {
+        return rateb_vendor_asset('fonts/tajawal/tajawal.css');
+    }
+}
+
+if (!function_exists('rateb_pos_fonts_css')) {
+    function rateb_pos_fonts_css(): string
+    {
+        return rateb_vendor_asset('fonts/pos-fonts.css');
+    }
+}
+
+if (!function_exists('rateb_qrcode_js')) {
+    function rateb_qrcode_js(): string
+    {
+        return rateb_vendor_asset('qrcodejs/qrcode.min.js');
+    }
+}
+
+if (!function_exists('rateb_html5_qrcode_js')) {
+    function rateb_html5_qrcode_js(): string
+    {
+        return rateb_vendor_asset('html5-qrcode/html5-qrcode.min.js');
+    }
+}
+
+if (!function_exists('rateb_local_qr_url')) {
+    function rateb_local_qr_url(string $payload, int $size = 280, bool $public = true): string
+    {
+        $route = $public ? 'scan/qr' : 'barcode/qr';
+
+        return rateb_url($route . '?data=' . rawurlencode($payload) . '&size=' . $size);
     }
 }
 

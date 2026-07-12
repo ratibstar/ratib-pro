@@ -20,6 +20,12 @@ final class Bootstrap
             define('RATEB_ROOT', $basePath);
         }
 
+        $branchServeBootstrap = $basePath . '/app/Core/BranchServeEnvBootstrap.php';
+        if (is_file($branchServeBootstrap)) {
+            require_once $branchServeBootstrap;
+            BranchServeEnvBootstrap::apply($basePath);
+        }
+
         if (PHP_VERSION_ID < 70400) {
             http_response_code(500);
             exit('RATEB ERP requires PHP 7.4 or newer.');
@@ -204,6 +210,12 @@ final class Bootstrap
         }
         if (!defined('RATEB_ENV_NO_SESSION')) {
             define('RATEB_ENV_NO_SESSION', true);
+        }
+
+        $branchServeBootstrap = $basePath . '/app/Core/BranchServeEnvBootstrap.php';
+        if (is_file($branchServeBootstrap)) {
+            require_once $branchServeBootstrap;
+            BranchServeEnvBootstrap::apply($basePath);
         }
 
         self::registerAutoloader($basePath);

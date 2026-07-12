@@ -34,17 +34,18 @@ final class SecurityHeaders
         }
 
         $cdn = 'https://cdn.jsdelivr.net https://cdnjs.cloudflare.com';
+        $analytics = 'https://www.googletagmanager.com https://www.google-analytics.com';
         $csp = implode('; ', [
             "default-src 'self'",
             "base-uri 'self'",
             "form-action 'self'",
             "frame-ancestors 'self'",
             "object-src 'none'",
-            "script-src 'self' 'unsafe-inline' {$cdn} https://www.googletagmanager.com https://www.google-analytics.com",
-            "style-src 'self' 'unsafe-inline' {$cdn} https://fonts.googleapis.com",
-            "img-src 'self' data: blob: https:",
-            "font-src 'self' data: {$cdn} https://fonts.gstatic.com",
-            "connect-src 'self' {$cdn} https://www.google-analytics.com https://www.googletagmanager.com",
+            "script-src 'self' 'unsafe-inline' {$cdn} {$analytics}",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob:",
+            "font-src 'self' data:",
+            "connect-src 'self' {$analytics}",
             "media-src 'self' blob:",
         ]);
         header('Content-Security-Policy: ' . $csp);

@@ -17,6 +17,8 @@ storage/.rateb_infra_local_secret_key
 # Dependencies/build artifacts
 node_modules/
 vendor/
+!rateb-erp/public/assets/vendor/
+!rateb-erp/public/assets/vendor/**
 dist/
 build/
 

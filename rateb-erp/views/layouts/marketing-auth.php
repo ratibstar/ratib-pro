@@ -10,15 +10,13 @@ $meta = $meta ?? [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="<?php echo rateb_asset('js/marketing-head.js'); ?>"></script>
     <title><?php echo Rateb\App\Core\View::escape($meta['title'] ?? ($title ?? 'RATEB ERP')); ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
     <?php if ($dir === 'rtl') { ?>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
     <?php } else { ?>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
     <?php } ?>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-dark.css'); ?>" rel="stylesheet">
@@ -33,7 +31,7 @@ require RATEB_ROOT . '/views/marketing/partials/header.php';
     <?php Rateb\App\Core\View::partial('flash'); ?>
     <?php echo $pageContent; ?>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?php echo rateb_bootstrap_js(); ?>"></script>
 <script src="<?php echo rateb_asset('js/marketing.js'); ?>"></script>
 </body>
 </html>

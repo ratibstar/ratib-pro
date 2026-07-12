@@ -62,8 +62,8 @@
             barcodePairQr.innerHTML = '';
             var img = document.createElement('img');
             var pairSize = 190;
-            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + pairSize + 'x' + pairSize
-                + '&margin=18&ecc=H&color=000000&bgcolor=ffffff&data=' + encodeURIComponent(scanUrl);
+            var qrBase = (cfg.qrImageBase || '/scan/qr').replace(/\/$/, '');
+            img.src = qrBase + '?data=' + encodeURIComponent(scanUrl) + '&size=' + pairSize;
             img.alt = 'Open phone scanner';
             img.width = pairSize;
             img.height = pairSize;
