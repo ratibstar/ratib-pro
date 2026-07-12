@@ -7,11 +7,28 @@ namespace Rateb\App\Core;
  * Phase D.1 — Load branch appliance serve.env before HybridRuntime boots.
  *
  * ONLY for local Branch Appliance (php -S / loopback) or explicit allow.
- * Cloud hosts (rateb.sa / *.rateb.sa) never auto-load serve.env — even if the
- * file exists on disk — so SaaS MySQL runtime stays identical.
+ * Cloud hosts (rateb.sa / *.rateb.sa) never auto-load serve.env — and any
+ * leaked RATEB_RUNTIME=branch from prior putenv (PHP-FPM workers) is cleared.
  */
 final class BranchServeEnvBootstrap
 {
+    /** @var list<string> */
+    private const BRANCH_ENV_KEYS = [
+        'RATEB_RUNTIME',
+        'RATEB_ALLOW_RUNTIME_MARKER',
+        'RATEB_SQLITE_PATH',
+        'RATEB_HYBRID_SYNC_ENABLED',
+        'RATEB_HYBRID_SYNC_SINK',
+        'RATEB_HYBRID_SYNC_KEY',
+        'RATEB_HYBRID_SYNC_MIRROR',
+        'RATEB_HYBRID_SYNC_CAPTURE',
+        'RATEB_HYBRID_SYNC_PULL_ENTITIES',
+        'RATEB_BRANCH_UUID',
+        'RATEB_DEVICE_UUID',
+        'RATEB_ERP_PUBLIC_PREFIX',
+        'RATEB_ALLOW_SERVE_ENV_HTTP',
+    ];
+
     private static bool $applied = false;
 
     public static function reset(): void
@@ -27,6 +44,7 @@ final class BranchServeEnvBootstrap
         self::$applied = true;
 
         if (self::isServerCloudLocked() || self::isCloudHostname()) {
+            self::forceCloudRuntime();
             return;
         }
 
@@ -59,10 +77,21 @@ final class BranchServeEnvBootstrap
         }
     }
 
+    /** Undo leaked branch putenv inside long-lived PHP-FPM / LiteSpeed workers. */
+    private static function forceCloudRuntime(): void
+    {
+        foreach (self::BRANCH_ENV_KEYS as $key) {
+            putenv($key);
+            unset($_ENV[$key], $_SERVER[$key]);
+        }
+        if (class_exists(HybridRuntime::class, false)) {
+            HybridRuntime::reset();
+        }
+    }
+
     /**
      * Local php -S / loopback may load serve.env.
-     * Production Branch Appliance should inject env via systemd/Windows service
-     * (EnvironmentFile), not by reading the file from untrusted public HTTP hosts.
+     * Production Branch Appliance should inject env via systemd/Windows service.
      */
     private static function mayLoadServeEnvFromHttp(): bool
     {
