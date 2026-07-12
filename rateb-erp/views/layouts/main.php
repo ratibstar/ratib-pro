@@ -394,7 +394,7 @@ $ratebOfflineReadCache = class_exists(\Rateb\App\Offline\Services\OfflineFeature
     && (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->isReadCacheEnabled();
 if ($ratebOfflineReadCache) {
     $ratebOfflineFlags = (new \Rateb\App\Offline\Services\OfflineFeatureFlagService())->snapshot();
-    $ratebOfflineSw = rateb_public_url('rateb-offline-sw.js');
+    $ratebOfflineSw = rateb_public_url('pos-sw.js');
     $ratebOfflineSwScope = function_exists('rateb_site_origin') && function_exists('rateb_erp_app_prefix')
         ? (rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/')
         : '';

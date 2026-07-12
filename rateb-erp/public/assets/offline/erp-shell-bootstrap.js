@@ -224,13 +224,16 @@
             if (tStopped()) {
                 return null;
             }
-            // Never displace pos-sw.js on the shared scope (smart coexist).
+            // Prefer pos-sw.js (claims clients + ERP offline shell coexist).
             var posReg = null;
+            var legacyErpReg = null;
             (regs || []).forEach(function (reg) {
                 var active = reg.active || reg.waiting || reg.installing;
                 var src = (active && active.scriptURL) ? String(active.scriptURL) : '';
                 if (/pos-sw\.js/i.test(src)) {
                     posReg = reg;
+                } else if (/rateb-offline-sw\.js/i.test(src)) {
+                    legacyErpReg = reg;
                 }
             });
             if (posReg) {
@@ -246,29 +249,42 @@
                     tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
                         'pos-sw registration present; no controller yet');
                     tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
-                        'controller absent — page Cache API warm only');
+                        'controller absent — waiting for claim/ready');
                 }
                 return warmErpShellViaPosSw(ctrl).then(function () { return null; });
             }
-            return root.navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined)
-                .then(function (reg) {
+            // Upgrade legacy ERP-only SW → pos-sw so offline navigations are claimed.
+            var upgrade = Promise.resolve();
+            if (legacyErpReg && /pos-sw\.js/i.test(swUrl)) {
+                tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                    'upgrading rateb-offline-sw → pos-sw');
+                upgrade = legacyErpReg.unregister().catch(function () { return false; });
+            }
+            return upgrade.then(function () {
+                return root.navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined);
+            }).then(function (reg) {
                     if (tStopped()) {
                         return null;
                     }
                     tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
-                        'rateb-offline-sw registered scope=' + ((reg && reg.scope) || scope || ''));
-                    var ctrl2 = (root.navigator.serviceWorker && root.navigator.serviceWorker.controller)
-                        || (reg && reg.active)
-                        || null;
-                    if (ctrl2) {
+                        'SW registered scope=' + ((reg && reg.scope) || scope || '')
+                        + ' script=' + swUrl);
+                    return root.navigator.serviceWorker.ready.then(function (readyReg) {
+                        var ctrl2 = (root.navigator.serviceWorker && root.navigator.serviceWorker.controller)
+                            || (readyReg && readyReg.active)
+                            || (reg && reg.active)
+                            || null;
+                        if (ctrl2) {
+                            tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                                'controller found script=' + (ctrl2.scriptURL || ''));
+                            return warmErpShellViaPosSw(ctrl2).then(function () {
+                                return warmErpShellUrls().then(function () { return reg; });
+                            });
+                        }
                         tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
-                            'controller found script=' + (ctrl2.scriptURL || ''));
-                    } else {
-                        tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
-                            'no controller yet after register (install may still warm)');
-                    }
-                    // No pos-sw: still warm via Cache API from page.
-                    return warmErpShellUrls().then(function () { return reg; });
+                            'no controller yet after register — Cache API warm only');
+                        return warmErpShellUrls().then(function () { return reg; });
+                    });
                 })
                 .catch(function (err) {
                     tFail(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',

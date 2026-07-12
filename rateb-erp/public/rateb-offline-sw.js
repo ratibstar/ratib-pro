@@ -357,7 +357,8 @@ self.addEventListener('install', function (event) {
 });
 
 self.addEventListener('activate', function (event) {
-    // Do NOT call claim on clients — avoids stealing open POS tabs from pos-sw.js.
+    // Claim clients so offline /admin navigations are handled by this SW.
+    // Without claim, Chrome shows its native "No internet" page.
     event.waitUntil(
         loadOpsAllowlist().then(function () {
             return caches.keys().then(function (keys) {
@@ -374,6 +375,10 @@ self.addEventListener('activate', function (event) {
                     return Promise.resolve();
                 }));
             });
+        }).then(function () {
+            return self.clients.claim();
+        }).catch(function () {
+            return self.clients.claim();
         })
     );
 });

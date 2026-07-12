@@ -781,30 +781,15 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: non-POS admin HTML → network; offline shell ONLY when truly offline.
+    // Smart coexist: non-POS admin HTML → network; on network failure → ERP offline shell.
+    // Do not gate on navigator.onLine alone: Chrome can leave the page uncontrolled or
+    // report onLine=true while fetch fails, which previously showed the native offline page.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
             fetch(event.request).catch(function () {
-                var trulyOffline = self.navigator && self.navigator.onLine === false;
-                if (!trulyOffline) {
-                    // Online blip / server error: do not replace live ERP with offline shell.
-                    return fetch(event.request).catch(function () {
-                        return new Response(
-                            '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
-                            + '<title>RATEB ERP</title></head><body style="font-family:system-ui;padding:2rem;text-align:center">'
-                            + '<p>تعذر تحميل الصفحة. تحقق من الاتصال وأعد المحاولة.</p>'
-                            + '<p><a href="' + String(url.href).replace(/"/g, '&quot;') + '">إعادة المحاولة</a></p>'
-                            + '</body></html>',
-                            {
-                                status: 504,
-                                headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
-                            }
-                        );
-                    });
-                }
                 return erpAdminOfflineFallback(event.request, url);
             })
         );
