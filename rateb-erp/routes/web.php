@@ -82,6 +82,7 @@ $router->get('/admin/login', static function (): void {
 $router->post('/admin/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
 $router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMiddleware::class]);
 $router->get('/admin/api/module-metrics', [ModulePageMetricsController::class, 'index'], [ErpAuthMiddleware::class]);
+$router->get('/admin/api/dashboard-charts', [\Rateb\App\Controllers\Admin\DashboardChartsController::class, 'index'], [ErpAuthMiddleware::class]);
 
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 

@@ -657,5 +657,7 @@
         window.ratebChartResize(pane);
     };
 
+    window.ratebChartsBoot = initAll;
+
     document.addEventListener('DOMContentLoaded', initAll);
 })();

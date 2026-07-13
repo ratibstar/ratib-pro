@@ -1,16 +1,31 @@
 <?php
 declare(strict_types=1);
 
-// PHP built-in server (Branch Appliance): let real static files bypass the front controller.
+// PHP built-in server (Branch Appliance): static files bypass the front controller.
+// Missing assets must NOT boot ERP (each miss was ~1.5–2s and queued on single-thread -S).
 if (PHP_SAPI === 'cli-server') {
     $cliPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '';
     if ($cliPath !== '' && $cliPath !== '/') {
         $cliFile = __DIR__ . str_replace('/', DIRECTORY_SEPARATOR, $cliPath);
+        $ext = strtolower(pathinfo($cliFile, PATHINFO_EXTENSION));
+        $staticExt = [
+            'css' => true, 'js' => true, 'mjs' => true, 'map' => true,
+            'png' => true, 'jpg' => true, 'jpeg' => true, 'gif' => true, 'webp' => true, 'svg' => true, 'ico' => true,
+            'woff' => true, 'woff2' => true, 'ttf' => true, 'eot' => true, 'otf' => true,
+            'json' => true, 'webmanifest' => true, 'txt' => true, 'xml' => true, 'pdf' => true,
+        ];
         if (is_file($cliFile)) {
-            $ext = strtolower(pathinfo($cliFile, PATHINFO_EXTENSION));
             if ($ext !== 'php') {
                 return false;
             }
+        } elseif (isset($staticExt[$ext])
+            || str_starts_with($cliPath, '/assets/')
+            || str_starts_with($cliPath, '/favicon')) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=UTF-8');
+            header('Cache-Control: public, max-age=60');
+            echo 'Not Found';
+            return true;
         }
     }
 }
@@ -76,7 +91,11 @@ try {
 
     $path = \Rateb\App\Helpers\Request::resolvePath();
     $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
-    if ($method === 'GET') {
+    // Skip CMS redirect DB hit on admin/api/POS — saves a query on every ERP page.
+    if ($method === 'GET'
+        && !str_starts_with($path, '/admin')
+        && !str_starts_with($path, '/api/')
+        && !str_starts_with($path, '/pos')) {
         try {
             (new \Rateb\App\Services\CmsService())->applyRedirectIfAny($path);
         } catch (Throwable $redirectEx) {

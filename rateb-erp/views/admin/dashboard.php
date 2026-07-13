@@ -58,7 +58,11 @@ $rankRows = array_map(static fn ($r) => [
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
 <!-- rateb-dashboard-v5-charts -->
-<div class="cm cm--wide" data-cm-dash="v5c">
+<div class="cm cm--wide" data-cm-dash="v5c"<?php
+if (!empty($dashboardChartsUrl)) {
+    echo ' data-charts-url="' . Rateb\App\Core\View::escape((string) $dashboardChartsUrl) . '"';
+}
+?>>
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
         'tag' => __('platform_billing'),
@@ -194,3 +198,6 @@ Rateb\App\Core\View::partial('dashboard/head');
         <?php } ?>
     </div>
 </div>
+<?php if (!empty($dashboardChartsUrl)) { ?>
+<script src="<?php echo rateb_asset('js/dashboard-charts-defer.js'); ?>" defer></script>
+<?php } ?>

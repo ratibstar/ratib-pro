@@ -17,6 +17,33 @@ use Rateb\App\Models\User;
 
 final class DashboardService
 {
+    /** Fast first paint: metrics + alerts only. Charts/lists load via admin/api/dashboard-charts. */
+    public function adminBuildLite(): array
+    {
+        $metrics = $this->adminMetrics();
+
+        return [
+            'metrics' => $metrics,
+            'charts' => [],
+            'alerts' => $this->adminAlerts($metrics),
+            'recent_companies' => [],
+            'recent_logins' => [],
+            'top_companies' => [],
+            'charts_deferred' => true,
+        ];
+    }
+
+    /** @return array{charts: array<string, mixed>, recent_companies: list<array>, recent_logins: list<array>, top_companies: list<array>} */
+    public function adminDeferredPanels(): array
+    {
+        return [
+            'charts' => $this->adminCharts(),
+            'recent_companies' => $this->recentCompanies(),
+            'recent_logins' => $this->recentLogins(),
+            'top_companies' => $this->topCompaniesByActivity(),
+        ];
+    }
+
     /** @return array<string, mixed> */
     public function adminBuild(): array
     {
