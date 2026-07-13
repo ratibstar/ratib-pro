@@ -443,54 +443,59 @@ if (!$ratebLocalAppliance) {
     ?>
 <script>
 (function () {
-  /* Force Service Worker rebuild when RATEB_ASSET_BUILD changes.
-     Stale SW (e.g. warm_create_edit) kept throwing Response.clone errors → ERR_FAILED offline. */
+  /* Coordinate SW version bump with register() so we never leave the page uncontrolled
+     (Chrome “لا يتوفر اتصال بالإنترنت” when unregister races register). */
   var NEED = <?php echo json_encode(defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1'); ?>;
   var KEY = 'rateb_sw_build';
   var prev = null;
   try {
     prev = localStorage.getItem(KEY);
   } catch (e0) {}
-  if (prev === NEED) {
+  function clearWarmKeys() {
+    try {
+      localStorage.setItem(KEY, NEED);
+      [
+        'rateb_erp_full_warm_at', 'rateb_erp_full_warm_ok',
+        'rateb_erp_full_warm_at_v3', 'rateb_erp_full_warm_ok_v3',
+        'rateb_erp_full_warm_at_v4', 'rateb_erp_full_warm_ok_v4',
+        'rateb_erp_full_warm_at_v5', 'rateb_erp_full_warm_ok_v5',
+        'rateb_erp_full_warm_at_v6', 'rateb_erp_full_warm_ok_v6',
+        'rateb_erp_full_warm_at_v7', 'rateb_erp_full_warm_ok_v7',
+        'rateb_erp_full_warm_assets_v7'
+      ].forEach(function (k) {
+        try { localStorage.removeItem(k); } catch (eR) {}
+      });
+      sessionStorage.removeItem('rateb_sw_reloaded');
+    } catch (e1) {}
+  }
+  if (prev === NEED || !('serviceWorker' in navigator)) {
+    window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false });
     return;
   }
+  /* Never tear down SW while offline — keep current controller for matrix/sidebar nav. */
   try {
-    localStorage.setItem(KEY, NEED);
-    localStorage.removeItem('rateb_erp_full_warm_at');
-    localStorage.removeItem('rateb_erp_full_warm_ok');
-    localStorage.removeItem('rateb_erp_full_warm_at_v3');
-    localStorage.removeItem('rateb_erp_full_warm_ok_v3');
-    localStorage.removeItem('rateb_erp_full_warm_at_v4');
-    localStorage.removeItem('rateb_erp_full_warm_ok_v4');
-    localStorage.removeItem('rateb_erp_full_warm_at_v5');
-    localStorage.removeItem('rateb_erp_full_warm_ok_v5');
-    localStorage.removeItem('rateb_erp_full_warm_at_v6');
-    localStorage.removeItem('rateb_erp_full_warm_ok_v6');
-    localStorage.removeItem('rateb_erp_full_warm_at_v7');
-    localStorage.removeItem('rateb_erp_full_warm_ok_v7');
-    localStorage.removeItem('rateb_erp_full_warm_assets_v7');
-    sessionStorage.removeItem('rateb_sw_reloaded');
-  } catch (e1) {}
-  if (!('serviceWorker' in navigator)) {
-    return;
-  }
-  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    if (navigator.onLine === false) {
+      window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, deferBump: true });
+      return;
+    }
+  } catch (eOff) {}
+  clearWarmKeys();
+  window.__RATEB_SW_READY_GATE__ = navigator.serviceWorker.getRegistrations().then(function (regs) {
     return Promise.all((regs || []).map(function (r) {
       return r.unregister().catch(function () { return false; });
     }));
   }).then(function () {
+    var already = false;
     try {
-      if (sessionStorage.getItem('rateb_sw_force_' + NEED) === '1') {
-        return;
+      already = sessionStorage.getItem('rateb_sw_force_' + NEED) === '1';
+      if (!already) {
+        sessionStorage.setItem('rateb_sw_force_' + NEED, '1');
       }
-      sessionStorage.setItem('rateb_sw_force_' + NEED, '1');
     } catch (e2) {}
-    try {
-      if (navigator.onLine !== false) {
-        location.reload();
-      }
-    } catch (e3) {}
-  }).catch(function () { /* ignore */ });
+    return { reload: !already };
+  }).catch(function () {
+    return { reload: false };
+  });
 })();
 </script>
 <?php
@@ -764,32 +769,40 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       }
     }
   } catch (eEsc) {}
-  navigator.serviceWorker.register(swUrl, scope
-      ? { scope: scope, updateViaCache: 'none' }
-      : { updateViaCache: 'none' })
-    .then(function (reg) {
-      try {
-        if (reg && typeof reg.update === 'function') reg.update();
-        if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-      } catch (eUp) {}
-      try {
-        if (!window.__ratebSwReloadBound && navigator.serviceWorker) {
-          window.__ratebSwReloadBound = true;
-          navigator.serviceWorker.addEventListener('controllerchange', function () {
-            if (sessionStorage.getItem('rateb_sw_reloaded') === '1') return;
-            // Reloading while offline often yields Chrome ERR_FAILED before SW answers.
-            try {
-              if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-            } catch (eOff) {}
-            sessionStorage.setItem('rateb_sw_reloaded', '1');
-            location.reload();
-          });
-        }
-      } catch (eCh) {}
-      scheduleWarm(reg);
-      return navigator.serviceWorker.ready.then(function (ready) { scheduleWarm(ready); });
-    })
-    .catch(function () {});
+  var gate = window.__RATEB_SW_READY_GATE__ || Promise.resolve({ reload: false });
+  gate.then(function (state) {
+    try {
+      if (state && state.reload && navigator.onLine !== false) {
+        location.reload();
+        return;
+      }
+    } catch (eReload) {}
+    navigator.serviceWorker.register(swUrl, scope
+        ? { scope: scope, updateViaCache: 'none' }
+        : { updateViaCache: 'none' })
+      .then(function (reg) {
+        try {
+          if (reg && typeof reg.update === 'function') reg.update();
+          if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } catch (eUp) {}
+        try {
+          if (!window.__ratebSwReloadBound && navigator.serviceWorker) {
+            window.__ratebSwReloadBound = true;
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+              if (sessionStorage.getItem('rateb_sw_reloaded') === '1') return;
+              try {
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+              } catch (eOff) {}
+              sessionStorage.setItem('rateb_sw_reloaded', '1');
+              location.reload();
+            });
+          }
+        } catch (eCh) {}
+        scheduleWarm(reg);
+        return navigator.serviceWorker.ready.then(function (ready) { scheduleWarm(ready); });
+      })
+      .catch(function () {});
+  });
 })();
 </script>
 <?php

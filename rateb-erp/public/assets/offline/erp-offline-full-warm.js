@@ -319,6 +319,10 @@
                         return;
                     }
                     pushUrl(seen, out, root.location.origin + publicBase() + route);
+                    // Sidebar often uses /admin/ops/… while allowlist routes are /admin/…
+                    if (/^admin\//i.test(route) && !/^admin\/ops\//i.test(route)) {
+                        pushUrl(seen, out, root.location.origin + publicBase() + route.replace(/^admin\//i, 'admin/ops/'));
+                    }
                 });
                 return out;
             });
@@ -529,7 +533,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v28';
+        var build = '20260713-force-sw-v29';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',

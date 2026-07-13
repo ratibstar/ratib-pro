@@ -76,6 +76,8 @@ return [
         'approvals/rules',
         'approvals/history',
         'approvals/reports',
+        'access-control',
+        'access-control/matrix',
         'eproc',
         'eproc/suppliers',
         'eproc/tenders',

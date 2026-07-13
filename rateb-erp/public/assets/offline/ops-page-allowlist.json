@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "generated_at": "2026-07-13T20:24:36+00:00",
+    "generated_at": "2026-07-13T20:51:36+00:00",
     "source": "offline/config/ops-page-allowlist.php + rateb_app_route()",
     "paths": [
         "stock-movements",
@@ -61,6 +61,8 @@
         "approvals/rules",
         "approvals/history",
         "approvals/reports",
+        "access-control",
+        "access-control/matrix",
         "eproc",
         "eproc/suppliers",
         "eproc/tenders",
@@ -205,6 +207,8 @@
         "approvals/rules": "admin/approvals/rules",
         "approvals/history": "admin/approvals/history",
         "approvals/reports": "admin/approvals/reports",
+        "access-control": "admin/access-control",
+        "access-control/matrix": "admin/access-control/matrix",
         "eproc": "admin/eproc",
         "eproc/suppliers": "admin/eproc/suppliers",
         "eproc/tenders": "admin/eproc/tenders",
