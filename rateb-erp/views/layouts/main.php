@@ -461,7 +461,9 @@ if (!$ratebLocalAppliance) {
         'rateb_erp_full_warm_at_v5', 'rateb_erp_full_warm_ok_v5',
         'rateb_erp_full_warm_at_v6', 'rateb_erp_full_warm_ok_v6',
         'rateb_erp_full_warm_at_v7', 'rateb_erp_full_warm_ok_v7',
-        'rateb_erp_full_warm_assets_v7'
+        'rateb_erp_full_warm_assets_v7',
+        'rateb_erp_full_warm_at_v8', 'rateb_erp_full_warm_ok_v8',
+        'rateb_erp_full_warm_assets_v8'
       ].forEach(function (k) {
         try { localStorage.removeItem(k); } catch (eR) {}
       });

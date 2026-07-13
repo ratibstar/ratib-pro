@@ -5,17 +5,18 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 400;
+    var MAX_URLS = 120;
     var CONCURRENCY = 2;
-    var GAP_MS = 400;
+    var GAP_MS = 250;
     var MIN_OK = 8;
     var WARM_TTL_MS = 4 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v31';
     var COEXIST = 'rateb-erp-coexist-v26';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v7';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v7';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v7';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v8';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v8';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v8';
+    var deadWarmUrls = {};
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
     var abortWarm = false;
@@ -152,17 +153,24 @@
                 return false;
             }
             var p = String(u.pathname || '');
-            if (!/\/admin(\/|$)/i.test(p) && !/\/pos(\/|$)/i.test(p)) {
+            // Canonical POS is only under /admin/ops/pos — bare /public/pos/* 404s on cloud.
+            if (/\/public\/pos(\/|$)/i.test(p) || /\/rateb-erp\/public\/pos(\/|$)/i.test(p)) {
+                if (!/\/admin\/ops\/pos/i.test(p)) {
+                    return false;
+                }
+            }
+            if (/\/pos(\/|$)/i.test(p) && !/\/admin\/ops\/pos/i.test(p)) {
+                return false;
+            }
+            if (!/\/admin(\/|$)/i.test(p)) {
                 return false;
             }
             if (/\/(login|logout|password|api)\b/i.test(p)) {
                 return false;
             }
-            // Skip destructive / binary exports — keep create/edit forms.
             if (/\/(delete|destroy|export|pdf|excel|csv|json|tinymce|regenerate)(\/|$)/i.test(p)) {
                 return false;
             }
-            // Skip bare numeric show/update targets unless …/edit.
             if (/\/\d+(\/|$)/.test(p) && !/\/(edit|create|new)(\/|$)/i.test(p) && !/\/\d+\/edit(\/|$)/i.test(p)) {
                 return false;
             }
@@ -210,34 +218,24 @@
     function seedCoreUrls(seen, out) {
         var base = publicBase();
         var origin = root.location.origin;
+        // Lean product set only — never invent bare /pos or enterprise packs.
         var core = [
-            'admin', 'admin/', 'admin/companies', 'admin/companies/create',
-            'admin/users', 'admin/users/create', 'admin/ops/users/create',
+            'admin', 'admin/',
+            'admin/companies', 'admin/companies/create',
+            'admin/ops/users/create', 'admin/users/create',
             'admin/agency-updates',
-            'admin/executive-dashboard', 'admin/notifications', 'admin/profile',
-            'admin/settings',
-            'admin/ops/branch-dashboard', 'admin/ops/branch-dashboard/compare',
-            'admin/ops/branch-dashboard/reports',
-            'admin/oversight/companies-approvals', 'admin/oversight/approvals',
-            'admin/oversight/procurement', 'admin/oversight/rfq',
-            'admin/oversight/inventory', 'admin/oversight/supplier-evaluations',
-            'admin/oversight/workflows',
+            'admin/ops/access-control', 'admin/ops/access-control/matrix',
+            'admin/access-control', 'admin/access-control/matrix',
             'admin/ops/purchase-requests', 'admin/ops/purchase-requests/create',
             'admin/ops/purchase-orders', 'admin/ops/purchase-orders/create',
-            'admin/ops/rfq', 'admin/ops/rfq/create',
-            'admin/ops/quotations', 'admin/ops/quotations/create',
-            'admin/ops/inventory', 'admin/ops/warehouses', 'admin/ops/warehouses/create',
+            'admin/ops/rfq', 'admin/ops/quotations',
+            'admin/ops/inventory', 'admin/ops/warehouses',
             'admin/ops/stock-movements', 'admin/ops/stock-movements/create',
-            'admin/ops/product-categories', 'admin/ops/product-categories/create',
+            'admin/ops/product-categories',
             'admin/ops/suppliers', 'admin/ops/suppliers/create',
             'admin/hr/attendance', 'admin/hr/leaves',
-            'admin/hr/employees', 'admin/hr/employees/create',
-            'admin/ops/goods-receipts', 'admin/ops/warehouse-transfers',
-            'admin/ops/pos', 'admin/ops/pos/dashboard', 'admin/ops/pos/register',
-            'pos', 'pos/register', 'pos/dashboard',
-            'admin/roles', 'admin/roles/create',
-            'admin/permissions', 'admin/plans',
-            'admin/cms/pages', 'admin/cms/pages/create'
+            'admin/ops/pos/register',
+            'admin/ops/accounting'
         ];
         core.forEach(function (rel) {
             pushUrl(seen, out, origin + base + rel.replace(/^\//, ''));
@@ -266,7 +264,7 @@
             return;
         }
         var links = root.document.querySelectorAll(
-            'main a[href], .rateb-main a[href], .rateb-content a[href], table a[href],'
+            'main a[href], .rateb-main a[href], .rateb-content a[href],'
             + ' a.btn[href], a.btn-primary[href], a.btn-outline-primary[href],'
             + ' a[href*="/create"], a[href*="/edit"], a[href*="/new"]'
         );
@@ -279,49 +277,38 @@
         });
     }
 
-    /** From every list URL, also warm …/create (and ops/users ↔ users aliases). */
+    /** From sidebar/list URLs only — never invent /create on POS. */
     function deriveCreateUrls(seen, out) {
         var snapshot = out.slice();
         snapshot.forEach(function (href) {
             try {
                 var u = new URL(href, root.location.origin);
                 var p = String(u.pathname || '').replace(/\/+$/, '');
-                if (/\/(create|edit|new)(\/|$)/i.test(p)) {
+                if (/\/(create|edit|new|pos)(\/|$)/i.test(p)) {
                     return;
                 }
                 if (/\/\d+$/i.test(p)) {
                     return;
                 }
-                pushUrl(seen, out, u.origin + p + '/create' + (u.search || ''));
-                // Alias mistakenly used by some buttons.
-                if (/\/admin\/users$/i.test(p)) {
-                    pushUrl(seen, out, u.origin + p.replace(/\/admin\/users$/i, '/admin/ops/users') + '/create' + (u.search || ''));
+                if (!/\/admin\/(ops\/)?(purchase-|inventory|warehouses|suppliers|users|companies|stock-movements|product-categories|rfq|quotations|hr\/)/i.test(p)) {
+                    return;
                 }
+                pushUrl(seen, out, u.origin + p + '/create' + (u.search || ''));
             } catch (e) { /* ignore */ }
         });
     }
 
+    /** Allowlist warm disabled by default — it sprayed 400+ URLs and 404/500 noise.
+     *  Enable with ?rateb_warm_full=1 when needed. */
     function loadAllowlistUrls(seen, out) {
+        try {
+            if (!/[?&]rateb_warm_full=1(?:&|$)/.test(String(root.location.search || ''))) {
+                return Promise.resolve(out);
+            }
+        } catch (eQ) {
+            return Promise.resolve(out);
+        }
         var url = publicBase() + 'assets/offline/ops-page-allowlist.json';
-        // Same conflict roots as rateb_app_route() — only these get /admin/ops/ form.
-        // Never invent ops URLs for recruitment/crm/… (causes 404 floods).
-        var OPS_ROOTS = {
-            inventory: 1, suppliers: 1, assets: 1, contracts: 1, 'stock-movements': 1,
-            'supplier-evaluations': 1, workflows: 1, 'medical-devices': 1, reports: 1,
-            notifications: 1, accounting: 1, 'chart-of-accounts': 1, 'journal-entries': 1,
-            'cost-centers': 1, 'cash-vouchers': 1, 'fiscal-periods': 1, 'bank-accounts': 1,
-            rfq: 1, quotations: 1, 'purchase-requests': 1, 'purchase-orders': 1,
-            warehouses: 1, 'warehouse-transfers': 1, 'product-categories': 1,
-            branches: 1, 'branch-dashboard': 1, 'branch-financial': 1, 'branch-transfers': 1,
-            'inventory-batches': 1, 'inventory-audits': 1, 'inventory-forecast': 1,
-            'supplier-comms': 1, 'supplier-classifications': 1, 'supplier-kpi': 1,
-            'contract-renewals': 1, tenders: 1, 'asset-maintenance': 1, 'asset-assignments': 1,
-            'asset-depreciation': 1, 'device-maintenance': 1, 'device-spare-parts': 1,
-            'device-warranty': 1, documents: 1, profile: 1, pos: 1,
-            'access-control': 1, users: 1, roles: 1, permissions: 1,
-            'audit-logs': 1, 'support-tickets': 1, 'email-templates': 1, 'sms-templates': 1
-        };
-        // Enterprise packs not in lean ops sidebar — skip to avoid 404/500 storms.
         var SKIP_LOGICAL = /^(recruitment|crm|projects|eam|eproc|mfg|qms|dms|bi|payroll|hrm)(\/|$)/i;
         return root.fetch(url, {
             credentials: 'same-origin',
@@ -338,17 +325,10 @@
                         return;
                     }
                     var route = String(routes[logical] || '').replace(/^\/+|\/+$/g, '');
-                    if (!route) {
+                    if (!route || !/^admin\//i.test(route)) {
                         return;
                     }
                     pushUrl(seen, out, root.location.origin + publicBase() + route);
-                    var rootKey = String(logical.split('/')[0] || '');
-                    if (OPS_ROOTS[rootKey] && /^admin\//i.test(route) && !/^admin\/ops\//i.test(route)) {
-                        pushUrl(seen, out, root.location.origin + publicBase() + route.replace(/^admin\//i, 'admin/ops/'));
-                    }
-                    if (OPS_ROOTS[rootKey] && /^admin\/ops\//i.test(route)) {
-                        pushUrl(seen, out, root.location.origin + publicBase() + route.replace(/^admin\/ops\//i, 'admin/'));
-                    }
                 });
                 return out;
             });
@@ -488,28 +468,27 @@
     }
 
     function harvestLinksFromHtml(html, seen, out) {
-        if (!html || out.length >= MAX_URLS) {
-            return;
-        }
-        var re = /href=["']([^"']+)["']/gi;
-        var m;
-        while ((m = re.exec(html)) && out.length < MAX_URLS) {
-            var raw = String(m[1] || '').trim();
-            if (!raw || raw.charAt(0) === '#' || /^javascript:/i.test(raw)) {
-                continue;
-            }
-            if (!/\/(create|edit|new|register)(\/|$|\?)/i.test(raw)
-                && !/\/pos(\/|$)/i.test(raw)) {
-                continue;
-            }
-            try {
-                pushUrl(seen, out, new URL(raw, root.location.origin + publicBase()).href);
-            } catch (e) { /* ignore */ }
-        }
+        // Disabled: harvesting sprayed broken POS/create links into the warm queue.
+        return;
     }
 
     function fetchAndCache(href, signal) {
         if (abortWarm || stopWarmBannerIfOffline()) {
+            return Promise.resolve(false);
+        }
+        if (!isAdminHref(href) && !/\/assets\//i.test(href) && !/offline-shell\.html/i.test(href)
+            && !/connectivity-probe\.json/i.test(href)
+            && !/ops-page-allowlist\.json/i.test(href)) {
+            return Promise.resolve(false);
+        }
+        var deadKey = '';
+        try {
+            deadKey = new URL(href, root.location.origin).origin
+                + new URL(href, root.location.origin).pathname.replace(/\/+$/, '');
+        } catch (eD) {
+            deadKey = href;
+        }
+        if (deadWarmUrls[deadKey]) {
             return Promise.resolve(false);
         }
         // Prefer already-cached copies — avoids network while SW/Browser cache has the file.
@@ -542,20 +521,17 @@
                     return false;
                 }
                 if (!res || res.status !== 200) {
+                    deadWarmUrls[deadKey] = true;
                     return false;
                 }
                 var ct = String(res.headers.get('Content-Type') || '');
-                if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href) || /\/pos(\/|$)/i.test(href)) {
+                if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href)) {
                     return res.clone().text().then(function (html) {
                         if (!html || html.length < 400 || looksLikeLoginHtml(html)) {
+                            deadWarmUrls[deadKey] = true;
                             return false;
                         }
-                        return putIntoCaches(href, res).then(function (ok) {
-                            if (ok && warmQueueSeen && warmQueueList) {
-                                harvestLinksFromHtml(html, warmQueueSeen, warmQueueList);
-                            }
-                            return ok;
-                        });
+                        return putIntoCaches(href, res);
                     });
                 }
                 return putIntoCaches(href, res);
@@ -566,6 +542,7 @@
                     return false;
                 }
             } catch (e) { /* ignore */ }
+            deadWarmUrls[deadKey] = true;
             return false;
         });
     }
@@ -575,7 +552,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v30';
+        var build = '20260713-force-sw-v31';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -596,12 +573,9 @@
             'assets/css/dashboard.css',
             'assets/css/ar-typography.css',
             'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
-            'assets/vendor/bootstrap/5.3.3/bootstrap.min.css',
             'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
             'assets/vendor/fontawesome/6.5.2/css/all.min.css',
             'assets/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2',
-            'assets/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2',
-            'assets/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2',
             'assets/vendor/fonts/tajawal/tajawal.css',
             'assets/vendor/chartjs/4.4.3/chart.umd.min.js',
             'assets/js/theme.js',
@@ -611,9 +585,7 @@
             'assets/js/lang.js',
             'assets/js/dashboard-tabs.js',
             'assets/js/module-page-stats.js',
-            'assets/js/table-tools.js',
-            'assets/js/rateb-modal.js',
-            'assets/js/rateb-confirm.js'
+            'assets/js/table-tools.js'
         ];
         var out = [];
         var seen = {};
@@ -624,7 +596,7 @@
             seen[u] = true;
             out.push(u);
         }
-        // Exact hrefs from this page first (correct ?v=) — design must match online even if warm aborts later.
+        // Exact hrefs from this page first (correct ?v=).
         try {
             root.document.querySelectorAll('link[rel="stylesheet"][href], script[src]').forEach(function (node) {
                 var href = node.getAttribute('href') || node.getAttribute('src') || '';
@@ -636,7 +608,6 @@
             });
         } catch (eLive) { /* ignore */ }
         files.forEach(function (f) {
-            push(base + f);
             push(base + f + '?v=' + build);
         });
         return out;
@@ -739,22 +710,17 @@
             assetUrls.forEach(function (u) { seen[u] = true; });
             var posFirst = [
                 root.location.origin + publicBase() + 'admin/ops/pos/register',
-                root.location.origin + publicBase() + 'pos/register',
-                root.location.origin + publicBase() + 'admin/ops/pos',
                 root.location.origin + publicBase() + 'admin/ops/access-control/matrix',
-                root.location.origin + publicBase() + 'admin/access-control/matrix',
-                root.location.origin + publicBase() + 'admin/ops/access-control',
-                root.location.origin + publicBase() + 'admin/access-control'
+                root.location.origin + publicBase() + 'admin/ops/access-control'
             ];
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);
             });
-            seedCoreUrls(seen, urls);
             collectSidebarUrls(seen, urls);
             collectActionUrls(seen, urls);
+            seedCoreUrls(seen, urls);
             return loadAllowlistUrls(seen, urls).then(function (list) {
                 deriveCreateUrls(seen, list);
-                collectActionUrls(seen, list);
                 warmQueueSeen = seen;
                 warmQueueList = list;
                 progress.ok = assetStats.ok || 0;
