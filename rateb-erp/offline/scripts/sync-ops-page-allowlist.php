@@ -54,6 +54,21 @@ foreach ($paths as $logical) {
         continue;
     }
     $routes[$logical] = $canonical;
+    // SaaS cloud (rateb.sa) often serves access-control under admin/ops; CLI host may differ.
+    $rootSeg = explode('/', $logical)[0] ?? '';
+    $opsConflict = [
+        'access-control', 'users', 'roles', 'permissions',
+        'audit-logs', 'support-tickets', 'email-templates', 'sms-templates',
+    ];
+    if (in_array($rootSeg, $opsConflict, true)) {
+        $opsForm = 'admin/ops/' . $logical;
+        $adminForm = 'admin/' . $logical;
+        if ($canonical === $adminForm) {
+            $routes[$logical . '@ops'] = $opsForm;
+        } elseif ($canonical === $opsForm) {
+            $routes[$logical . '@admin'] = $adminForm;
+        }
+    }
 }
 
 $payload = [

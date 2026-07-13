@@ -303,6 +303,26 @@
 
     function loadAllowlistUrls(seen, out) {
         var url = publicBase() + 'assets/offline/ops-page-allowlist.json';
+        // Same conflict roots as rateb_app_route() — only these get /admin/ops/ form.
+        // Never invent ops URLs for recruitment/crm/… (causes 404 floods).
+        var OPS_ROOTS = {
+            inventory: 1, suppliers: 1, assets: 1, contracts: 1, 'stock-movements': 1,
+            'supplier-evaluations': 1, workflows: 1, 'medical-devices': 1, reports: 1,
+            notifications: 1, accounting: 1, 'chart-of-accounts': 1, 'journal-entries': 1,
+            'cost-centers': 1, 'cash-vouchers': 1, 'fiscal-periods': 1, 'bank-accounts': 1,
+            rfq: 1, quotations: 1, 'purchase-requests': 1, 'purchase-orders': 1,
+            warehouses: 1, 'warehouse-transfers': 1, 'product-categories': 1,
+            branches: 1, 'branch-dashboard': 1, 'branch-financial': 1, 'branch-transfers': 1,
+            'inventory-batches': 1, 'inventory-audits': 1, 'inventory-forecast': 1,
+            'supplier-comms': 1, 'supplier-classifications': 1, 'supplier-kpi': 1,
+            'contract-renewals': 1, tenders: 1, 'asset-maintenance': 1, 'asset-assignments': 1,
+            'asset-depreciation': 1, 'device-maintenance': 1, 'device-spare-parts': 1,
+            'device-warranty': 1, documents: 1, profile: 1, pos: 1,
+            'access-control': 1, users: 1, roles: 1, permissions: 1,
+            'audit-logs': 1, 'support-tickets': 1, 'email-templates': 1, 'sms-templates': 1
+        };
+        // Enterprise packs not in lean ops sidebar — skip to avoid 404/500 storms.
+        var SKIP_LOGICAL = /^(recruitment|crm|projects|eam|eproc|mfg|qms|dms|bi|payroll|hrm)(\/|$)/i;
         return root.fetch(url, {
             credentials: 'same-origin',
             cache: 'no-cache',
@@ -314,14 +334,20 @@
             return res.json().then(function (data) {
                 var routes = (data && data.routes && typeof data.routes === 'object') ? data.routes : {};
                 Object.keys(routes).forEach(function (logical) {
+                    if (SKIP_LOGICAL.test(logical)) {
+                        return;
+                    }
                     var route = String(routes[logical] || '').replace(/^\/+|\/+$/g, '');
                     if (!route) {
                         return;
                     }
                     pushUrl(seen, out, root.location.origin + publicBase() + route);
-                    // Sidebar often uses /admin/ops/… while allowlist routes are /admin/…
-                    if (/^admin\//i.test(route) && !/^admin\/ops\//i.test(route)) {
+                    var rootKey = String(logical.split('/')[0] || '');
+                    if (OPS_ROOTS[rootKey] && /^admin\//i.test(route) && !/^admin\/ops\//i.test(route)) {
                         pushUrl(seen, out, root.location.origin + publicBase() + route.replace(/^admin\//i, 'admin/ops/'));
+                    }
+                    if (OPS_ROOTS[rootKey] && /^admin\/ops\//i.test(route)) {
+                        pushUrl(seen, out, root.location.origin + publicBase() + route.replace(/^admin\/ops\//i, 'admin/'));
                     }
                 });
                 return out;
@@ -375,6 +401,22 @@
             keys.push(u.origin + bare + '/');
             if (u.search) {
                 keys.push(u.origin + u.pathname + u.search);
+            }
+            // Dual-key admin ↔ admin/ops so matrix works under either URL.
+            if (/\/admin\/ops\//i.test(u.pathname)) {
+                var noOps = u.pathname.replace(/\/admin\/ops\//i, '/admin/');
+                keys.push(u.origin + noOps);
+                keys.push(u.origin + noOps.replace(/\/+$/, ''));
+                if (u.search) {
+                    keys.push(u.origin + noOps + u.search);
+                }
+            } else if (/\/admin\/(access-control|users|roles|permissions|accounting)(\/|$)/i.test(u.pathname)) {
+                var withOps = u.pathname.replace(/\/admin\//i, '/admin/ops/');
+                keys.push(u.origin + withOps);
+                keys.push(u.origin + withOps.replace(/\/+$/, ''));
+                if (u.search) {
+                    keys.push(u.origin + withOps + u.search);
+                }
             }
         } catch (e) { /* ignore */ }
         var uniq = [];
@@ -533,7 +575,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v29';
+        var build = '20260713-force-sw-v30';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -698,7 +740,11 @@
             var posFirst = [
                 root.location.origin + publicBase() + 'admin/ops/pos/register',
                 root.location.origin + publicBase() + 'pos/register',
-                root.location.origin + publicBase() + 'admin/ops/pos'
+                root.location.origin + publicBase() + 'admin/ops/pos',
+                root.location.origin + publicBase() + 'admin/ops/access-control/matrix',
+                root.location.origin + publicBase() + 'admin/access-control/matrix',
+                root.location.origin + publicBase() + 'admin/ops/access-control',
+                root.location.origin + publicBase() + 'admin/access-control'
             ];
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);

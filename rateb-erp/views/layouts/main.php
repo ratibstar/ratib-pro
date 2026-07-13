@@ -769,6 +769,67 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       }
     }
   } catch (eEsc) {}
+  // Offline safety net: if SW is not controlling, never let Chrome show the interstitial.
+  document.addEventListener('click', function (ev) {
+    try {
+      if (navigator.onLine !== false) return;
+      var controlled = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+      if (controlled) return;
+      var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+      if (!a) return;
+      var u = new URL(a.href, location.href);
+      if (u.origin !== location.origin) return;
+      if (!/\/admin(\/|$)/i.test(u.pathname) && !/\/pos(\/|$)/i.test(u.pathname)) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      var keys = [u.href, u.origin + u.pathname, u.origin + u.pathname.replace(/\/+$/, '')];
+      if (/\/admin\/ops\//i.test(u.pathname)) {
+        keys.push(u.origin + u.pathname.replace(/\/admin\/ops\//i, '/admin/'));
+      } else if (/\/admin\//i.test(u.pathname)) {
+        keys.push(u.origin + u.pathname.replace(/\/admin\//i, '/admin/ops/'));
+      }
+      var tryCaches = function () {
+        if (!window.caches) return Promise.resolve(null);
+        return caches.keys().then(function (names) {
+          var chain = Promise.resolve(null);
+          (names || []).forEach(function (name) {
+            if (!/^rateb-/i.test(String(name || ''))) return;
+            chain = chain.then(function (hit) {
+              if (hit) return hit;
+              return caches.open(name).then(function (c) {
+                var inner = Promise.resolve(null);
+                keys.forEach(function (k) {
+                  inner = inner.then(function (h) {
+                    return h || c.match(k).then(function (m) {
+                      return m || c.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                    });
+                  });
+                });
+                return inner;
+              });
+            });
+          });
+          return chain;
+        });
+      };
+      tryCaches().then(function (res) {
+        if (res) {
+          return res.text().then(function (html) {
+            if (html && html.length > 400) {
+              document.open();
+              document.write(html);
+              document.close();
+              return;
+            }
+            location.href = (cfg.serviceWorkerScope || '/rateb-erp/public/') + 'admin/';
+          });
+        }
+        alert('الصفحة غير محفوظة أوفلاين — وصّل النت وافتحها مرة، أو انتظر اكتمال تجهيز الأوفلاين.');
+      }).catch(function () {
+        alert('الصفحة غير محفوظة أوفلاين — وصّل النت ثم أعد المحاولة.');
+      });
+    } catch (eNav) { /* ignore */ }
+  }, true);
   var gate = window.__RATEB_SW_READY_GATE__ || Promise.resolve({ reload: false });
   gate.then(function (state) {
     try {

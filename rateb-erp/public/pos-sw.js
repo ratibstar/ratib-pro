@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v26';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v31';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v31';
-var SW_BUILD_ID = '20260713-force-sw-v29';
+var SW_BUILD_ID = '20260713-force-sw-v30';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -482,6 +482,23 @@ function matchAnyCachedAdminPage(request, url) {
             if (bare) {
                 keys.push(url.origin + bare);
                 keys.push(url.origin + bare + '/');
+            }
+            // admin/ops/access-control ↔ admin/access-control
+            var p = String(url.pathname || '');
+            if (/\/admin\/ops\//i.test(p)) {
+                var p2 = p.replace(/\/admin\/ops\//i, '/admin/');
+                keys.push(url.origin + p2);
+                keys.push(url.origin + p2.replace(/\/+$/, ''));
+                if (url.search) {
+                    keys.push(url.origin + p2 + url.search);
+                }
+            } else if (/\/admin\/(access-control|users|roles|permissions|accounting|purchase-|inventory|suppliers)/i.test(p)) {
+                var p3 = p.replace(/\/admin\//i, '/admin/ops/');
+                keys.push(url.origin + p3);
+                keys.push(url.origin + p3.replace(/\/+$/, ''));
+                if (url.search) {
+                    keys.push(url.origin + p3 + url.search);
+                }
             }
         }
     } catch (e1) { /* ignore */ }
