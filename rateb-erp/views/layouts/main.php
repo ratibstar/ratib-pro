@@ -773,6 +773,36 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 ?>
 <script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
 <?php if (!$ratebLocalAppliance) { ?>
+<script>
+/* Kill stale offline nav-guard that blocked Create/Edit with toast (cached HTML + old ?v=). */
+(function () {
+  document.addEventListener('click', function (ev) {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+        var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+        if (!badge || badge.classList.contains('is-online')) {
+          return;
+        }
+      }
+    } catch (e0) { /* continue offline path */ }
+    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+    if (!a) {
+      return;
+    }
+    var href = a.getAttribute('href') || '';
+    if (!href || href === '#') {
+      return;
+    }
+    if (/\/(delete|destroy|export|pdf|excel|csv|json|regenerate)(\/|$|\?)/i.test(href)) {
+      return;
+    }
+    /* Create / edit / normal browse: do not let legacy guard preventDefault + toast. */
+    if (/\/(create|edit|new)(\/|$|\?)/i.test(href) || /\/admin\//i.test(href) || /\/pos\//i.test(href)) {
+      ev.stopImmediatePropagation();
+    }
+  }, true);
+})();
+</script>
 <script src="<?php echo rateb_asset('offline/erp-offline-full-warm.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('offline/erp-offline-nav-guard.js'); ?>" defer></script>
 <?php } ?>

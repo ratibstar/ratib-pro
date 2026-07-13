@@ -807,8 +807,15 @@ function matchErpOfflineCached(request, url) {
     } catch (e0) {
         pathnameKey = '';
     }
+    // Stale HTML often requests erp-offline-nav-guard.js?v=OLD — that pinned the
+    // create/edit blocker toast. Always prefer the plain pathname entry (latest warm).
+    var forcePlain = /\/assets\/offline\/(erp-offline-nav-guard|erp-offline-full-warm|rateb-offline(\.min)?)\.js$/i
+        .test(String(url.pathname || ''));
     function matchInCache(cache) {
-        return cache.match(request).then(function (hit) {
+        var start = forcePlain && pathnameKey
+            ? cache.match(pathnameKey)
+            : cache.match(request);
+        return start.then(function (hit) {
             if (hit) {
                 return hit;
             }
@@ -819,21 +826,26 @@ function matchErpOfflineCached(request, url) {
                 if (hit2) {
                     return hit2;
                 }
-                return cache.match(pathnameKey, { ignoreSearch: true }).then(function (hit3) {
-                    if (hit3) {
-                        return hit3;
+                return cache.match(request).then(function (hitExact) {
+                    if (hitExact) {
+                        return hitExact;
                     }
-                    return cache.keys().then(function (keys) {
-                        for (var i = 0; i < keys.length; i++) {
-                            try {
-                                var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
-                                var ku = new URL(href);
-                                if (ku.pathname === url.pathname) {
-                                    return cache.match(keys[i]);
-                                }
-                            } catch (e1) { /* ignore */ }
+                    return cache.match(pathnameKey, { ignoreSearch: true }).then(function (hit3) {
+                        if (hit3) {
+                            return hit3;
                         }
-                        return null;
+                        return cache.keys().then(function (keys) {
+                            for (var i = 0; i < keys.length; i++) {
+                                try {
+                                    var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
+                                    var ku = new URL(href);
+                                    if (ku.pathname === url.pathname) {
+                                        return cache.match(keys[i]);
+                                    }
+                                } catch (e1) { /* ignore */ }
+                            }
+                            return null;
+                        });
                     });
                 });
             });
@@ -846,7 +858,8 @@ function matchErpOfflineCached(request, url) {
         return caches.keys().then(function (names) {
             var erpCaches = (names || []).filter(function (n) {
                 return String(n).indexOf('rateb-erp-coexist-') === 0
-                    || String(n).indexOf('rateb-erp-assets-') === 0;
+                    || String(n).indexOf('rateb-erp-assets-') === 0
+                    || String(n).indexOf('rateb-erp-ops-pages-') === 0;
             });
             return erpCaches.reduce(function (chain, name) {
                 return chain.then(function (found) {
