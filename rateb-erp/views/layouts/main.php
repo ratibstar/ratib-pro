@@ -462,6 +462,10 @@ if (!$ratebLocalAppliance) {
     localStorage.removeItem('rateb_erp_full_warm_ok_v3');
     localStorage.removeItem('rateb_erp_full_warm_at_v4');
     localStorage.removeItem('rateb_erp_full_warm_ok_v4');
+    localStorage.removeItem('rateb_erp_full_warm_at_v5');
+    localStorage.removeItem('rateb_erp_full_warm_ok_v5');
+    localStorage.removeItem('rateb_erp_full_warm_at_v6');
+    localStorage.removeItem('rateb_erp_full_warm_ok_v6');
     sessionStorage.removeItem('rateb_sw_reloaded');
   } catch (e1) {}
   if (!('serviceWorker' in navigator)) {

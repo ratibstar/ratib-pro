@@ -13,10 +13,20 @@
     var CACHE_NAME = 'rateb-erp-ops-pages-v31';
     var COEXIST = 'rateb-erp-coexist-v26';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v5';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v5';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v6';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v6';
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
+    var abortWarm = false;
+
+    function isBrowserOffline() {
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                return true;
+            }
+        } catch (e) { /* ignore */ }
+        return false;
+    }
 
     function publicBase() {
         try {
@@ -90,17 +100,18 @@
     }
 
     function stopWarmBannerIfOffline() {
+        if (!isBrowserOffline() && !abortWarm) {
+            return false;
+        }
+        abortWarm = true;
         try {
-            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                var box = root.document.getElementById('rateb-offline-warm-progress');
-                if (box) {
-                    box.textContent = 'التسخين يحتاج اتصال — وصّل النت لإكمال الحفظ';
-                    box.style.background = '#7f1d1d';
-                }
-                return true;
+            var box = root.document.getElementById('rateb-offline-warm-progress');
+            if (box) {
+                box.textContent = 'توقف التسخين — وصّل النت لإكمال حفظ الأوفلاين';
+                box.style.background = '#7f1d1d';
             }
         } catch (e) { /* ignore */ }
-        return false;
+        return true;
     }
 
     function markWarmed(okCount) {
@@ -324,12 +335,12 @@
     }
 
     function putIntoCaches(href, response) {
-        if (!root.caches) {
+        if (!root.caches || !response) {
             return Promise.resolve(false);
         }
         var keys = [href];
         try {
-            var u = new URL(href);
+            var u = new URL(href, root.location.origin);
             keys.push(u.origin + u.pathname);
             var bare = u.pathname.replace(/\/+$/, '');
             keys.push(u.origin + bare);
@@ -350,34 +361,51 @@
             var pp = String(pu.pathname || '').replace(/\/+$/, '');
             isPosRegister = /\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pp);
         } catch (ePos) { /* ignore */ }
-        return Promise.all([
-            root.caches.open(CACHE_NAME),
-            root.caches.open(COEXIST)
-        ]).then(function (pair) {
-            var ops = pair[0];
-            var co = pair[1];
-            var tasks = uniq.map(function (k) {
-                return Promise.all([
-                    ops.put(k, response.clone()).catch(function () { return null; }),
-                    co.put(k, response.clone()).catch(function () { return null; })
-                ]);
-            });
-            return Promise.all(tasks).then(function () {
-                if (!isPosRegister) {
-                    return true;
-                }
-                return response.clone().text().then(function (html) {
+        var status = response.status || 200;
+        var statusText = response.statusText || '';
+        var headers = new Headers();
+        try {
+            response.headers.forEach(function (v, k) { headers.set(k, v); });
+        } catch (eH) { /* ignore */ }
+        // Materialize once — never clone a consumed Response stream.
+        return response.arrayBuffer().then(function (buf) {
+            function makeRes() {
+                return new Response(buf.slice(0), {
+                    status: status,
+                    statusText: statusText,
+                    headers: new Headers(headers)
+                });
+            }
+            return Promise.all([
+                root.caches.open(CACHE_NAME),
+                root.caches.open(COEXIST)
+            ]).then(function (pair) {
+                var ops = pair[0];
+                var co = pair[1];
+                var tasks = [];
+                uniq.forEach(function (k) {
+                    tasks.push(ops.put(k, makeRes()).catch(function () { return null; }));
+                    tasks.push(co.put(k, makeRes()).catch(function () { return null; }));
+                });
+                return Promise.all(tasks).then(function () {
+                    if (!isPosRegister) {
+                        return true;
+                    }
+                    var html = '';
+                    try {
+                        html = new TextDecoder('utf-8').decode(buf);
+                    } catch (eDec) { /* ignore */ }
                     if (!html || html.indexOf('data-pos-register') < 0) {
                         return true;
                     }
                     return root.caches.open(POS_SHELL).then(function (shell) {
                         var shellTasks = uniq.map(function (k) {
-                            return shell.put(k, response.clone()).catch(function () { return null; });
+                            return shell.put(k, makeRes()).catch(function () { return null; });
                         });
                         try {
                             shellTasks.push(shell.put(
                                 new URL('__rateb_pos_register_shell__', root.location.origin + publicBase()).href,
-                                response.clone()
+                                makeRes()
                             ).catch(function () { return null; }));
                         } catch (eKey) { /* ignore */ }
                         return Promise.all(shellTasks).then(function () { return true; });
@@ -411,7 +439,7 @@
     }
 
     function fetchAndCache(href) {
-        if (stopWarmBannerIfOffline()) {
+        if (abortWarm || stopWarmBannerIfOffline()) {
             return Promise.resolve(false);
         }
         return root.fetch(href, {
@@ -419,6 +447,9 @@
             cache: 'no-cache',
             headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
         }).then(function (res) {
+            if (abortWarm || stopWarmBannerIfOffline()) {
+                return false;
+            }
             if (!res || res.status !== 200) {
                 return false;
             }
@@ -447,16 +478,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-design-offline';
-        try {
-            var links = root.document.querySelectorAll('link[rel="stylesheet"][href*="/assets/"]');
-            Array.prototype.forEach.call(links, function (link) {
-                var href = link.getAttribute('href');
-                if (href) {
-                    /* collected below via files + live DOM */
-                }
-            });
-        } catch (eDom) { /* ignore */ }
+        var build = '20260713-force-sw-v27';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -504,23 +526,21 @@
             seen[u] = true;
             out.push(u);
         }
-        files.forEach(function (f) {
-            push(base + f);
-            push(base + f + '?v=' + build);
-            push(base + f + '?v=20260713-err-failed-fix');
-            push(base + f + '?v=20260713-no-dash-fallback');
-            push(base + f + '?v=20260713-offline-nav-guard');
-        });
+        // Exact hrefs from this page first (correct ?v=) — design must match online even if warm aborts later.
         try {
             root.document.querySelectorAll('link[rel="stylesheet"][href], script[src]').forEach(function (node) {
                 var href = node.getAttribute('href') || node.getAttribute('src') || '';
-                if (/\/assets\/(css|js|vendor|offline)\//i.test(href)) {
+                if (/\/assets\/(css|js|vendor|offline)\//i.test(href) || /\/connectivity-probe\.json/i.test(href)) {
                     try {
                         push(new URL(href, root.location.href).href);
                     } catch (eU) { /* ignore */ }
                 }
             });
         } catch (eLive) { /* ignore */ }
+        files.forEach(function (f) {
+            push(base + f);
+            push(base + f + '?v=' + build);
+        });
         return out;
     }
 
@@ -531,11 +551,17 @@
         var ok = 0;
         return new Promise(function (resolve) {
             function pump() {
+                if (abortWarm || stopWarmBannerIfOffline()) {
+                    if (active === 0) {
+                        resolve({ total: urls.length, ok: ok, aborted: true });
+                    }
+                    return;
+                }
                 if (finished >= urls.length && active === 0) {
                     resolve({ total: urls.length, ok: ok });
                     return;
                 }
-                while (active < CONCURRENCY && i < urls.length) {
+                while (!abortWarm && active < CONCURRENCY && i < urls.length) {
                     (function (href) {
                         active += 1;
                         fetchAndCache(href).then(function (saved) {
@@ -568,10 +594,14 @@
         if (!root.fetch || !root.caches) {
             return Promise.resolve({ skipped: true, reason: 'no_cache_api' });
         }
+        if (isBrowserOffline()) {
+            return Promise.resolve({ skipped: true, reason: 'offline' });
+        }
         running = true;
+        abortWarm = false;
         var seen = {};
         var urls = [];
-        // Identity / CSS first — required for offline-shell unlock.
+        // Identity / CSS first — required for offline design + shell unlock.
         criticalAssetUrls().forEach(function (u) {
             if (urls.indexOf(u) === -1) {
                 urls.push(u);
@@ -601,7 +631,9 @@
             return runQueue(list).then(function (stats) {
                 warmQueueSeen = null;
                 warmQueueList = null;
-                markWarmed(stats.ok || 0);
+                if (!stats.aborted) {
+                    markWarmed(stats.ok || 0);
+                }
                 try {
                     if (root.RatebOfflineNavGuard && typeof root.RatebOfflineNavGuard.scan === 'function') {
                         root.RatebOfflineNavGuard.scan();
@@ -610,11 +642,16 @@
                 try {
                     var box2 = root.document.getElementById('rateb-offline-warm-progress');
                     if (box2) {
-                        box2.textContent = 'أوفلاين جاهز: ' + (stats.ok || 0) + '/' + (stats.total || 0);
-                        box2.style.background = (stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
-                        setTimeout(function () {
-                            try { box2.remove(); } catch (eR) { /* ignore */ }
-                        }, 8000);
+                        if (stats.aborted) {
+                            box2.textContent = 'توقف التسخين: ' + (stats.ok || 0) + '/' + (stats.total || 0) + ' — وصّل النت وأعد المحاولة';
+                            box2.style.background = '#7f1d1d';
+                        } else {
+                            box2.textContent = 'أوفلاين جاهز: ' + (stats.ok || 0) + '/' + (stats.total || 0);
+                            box2.style.background = (stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
+                            setTimeout(function () {
+                                try { box2.remove(); } catch (eR) { /* ignore */ }
+                            }, 8000);
+                        }
                     }
                     console.info('[RATIB OFFLINE] full warm done', stats);
                 } catch (e2) { /* ignore */ }
@@ -629,6 +666,12 @@
         var run = function () {
             startFullWarm({ force: forceWarmRequested() });
         };
+        try {
+            root.addEventListener('offline', function () {
+                abortWarm = true;
+                stopWarmBannerIfOffline();
+            });
+        } catch (eOff) { /* ignore */ }
         if (root.document && root.document.readyState === 'complete') {
             setTimeout(run, 600);
         } else if (root.addEventListener) {
