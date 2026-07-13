@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v24';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v25';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v30';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v30';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -182,10 +182,15 @@ function erpOfflineShellUrl() {
 }
 
 function erpInlineShellResponse() {
-    var adminHref = 'admin/';
+    var base = '/rateb-erp/public/';
     try {
-        adminHref = new URL('admin/', self.registration.scope).pathname;
-    } catch (e) { /* ignore */ }
+        base = self.registration.scope;
+    } catch (e2) { /* ignore */ }
+    if (base.slice(-1) !== '/') {
+        base += '/';
+    }
+    // Always absolute under SW scope — never stack pathname onto origin+scope.
+    var adminHome = base + 'admin/';
     var links = [
         ['لوحة التحكم', 'admin/'],
         ['الشركات', 'admin/companies'],
@@ -197,18 +202,12 @@ function erpInlineShellResponse() {
         ['حركات المخزون', 'admin/ops/stock-movements'],
         ['المستودعات', 'admin/ops/warehouses'],
         ['الموردون', 'admin/ops/suppliers'],
+        ['نقطة البيع', 'admin/ops/pos/register'],
         ['الحضور', 'admin/hr/attendance'],
         ['الإجازات', 'admin/hr/leaves'],
         ['الإشعارات', 'admin/notifications'],
         ['الملف', 'admin/profile']
     ];
-    var base = '/rateb-erp/public/';
-    try {
-        base = self.registration.scope;
-    } catch (e2) { /* ignore */ }
-    if (base.slice(-1) !== '/') {
-        base += '/';
-    }
     var list = links.map(function (row) {
         return '<a class="item" href="' + base + row[1].replace(/^\//, '') + '">' + row[0] + '</a>';
     }).join('');
@@ -227,7 +226,7 @@ function erpInlineShellResponse() {
         + '<h1>وضع عدم الاتصال</h1>'
         + '<p>القائمة متاحة. افتح النظام مرة وأنت متصل ليكتمل حفظ كل الصفحات.</p>'
         + '<div class="nav">' + list + '</div>'
-        + '<p><a href="' + base + adminHref.replace(/^\//, '') + '" style="color:#8ab4ff">تحديث لوحة التحكم</a></p>'
+        + '<p><a href="' + adminHome + '" style="color:#8ab4ff">تحديث لوحة التحكم</a></p>'
         + '</body></html>';
     return new Response(body, {
         status: 200,
@@ -1041,24 +1040,60 @@ function putShell(request, response) {
     if (!isRegisterShellPath(url.pathname) && !isPosNavigation(url)) {
         return Promise.resolve();
     }
-    return caches.open(SHELL_CACHE).then(function (cache) {
-        var shellKey = registerShellUrl();
-        var bare = url.origin + url.pathname;
-        var withQuery = url.origin + url.pathname + url.search;
-        var altRegister = /\/register$/i.test(url.pathname)
-            ? url.origin + url.pathname.replace(/\/register$/i, '')
-            : url.origin + url.pathname.replace(/\/?$/, '') + '/register';
-        var tasks = [
-            cache.put(bare, response.clone()),
-            cache.put(withQuery, response.clone()),
-            cache.put(shellKey, response.clone())
-        ];
-        if (isRegisterShellPath(url.pathname)) {
+    return response.clone().text().then(function (html) {
+        var isRegisterHtml = isRegisterShellPath(url.pathname)
+            || (html && html.indexOf('data-pos-register') !== -1);
+        // Never pin dashboard/reports HTML as the offline register shell.
+        if (!isRegisterHtml && !isRegisterShellPath(url.pathname)) {
+            return caches.open(SHELL_CACHE).then(function (cache) {
+                return Promise.all([
+                    cache.put(url.origin + url.pathname, response.clone()),
+                    cache.put(url.origin + url.pathname + url.search, response.clone())
+                ]);
+            });
+        }
+        return caches.open(SHELL_CACHE).then(function (cache) {
+            var shellKey = registerShellUrl();
+            var bare = url.origin + url.pathname;
+            var withQuery = url.origin + url.pathname + url.search;
+            var altRegister = /\/register$/i.test(url.pathname)
+                ? url.origin + url.pathname.replace(/\/register$/i, '')
+                : url.origin + url.pathname.replace(/\/?$/, '') + '/register';
+            var tasks = [
+                cache.put(bare, response.clone()),
+                cache.put(withQuery, response.clone()),
+                cache.put(shellKey, response.clone())
+            ];
             tasks.push(cache.put(altRegister, response.clone()));
             tasks.push(cache.put(altRegister + url.search, response.clone()));
-        }
-        return Promise.all(tasks);
+            // Also alias admin/ops/pos ↔ pos when both exist under public/.
+            try {
+                var opsReg = new URL('admin/ops/pos/register', self.registration.scope).href;
+                var opsBare = new URL('admin/ops/pos', self.registration.scope).href;
+                tasks.push(cache.put(opsReg, response.clone()));
+                tasks.push(cache.put(opsBare, response.clone()));
+            } catch (eAlias) { /* ignore */ }
+            return Promise.all(tasks);
+        });
     }).catch(function () { /* ignore quota */ });
+}
+
+/** Offline POS: dashboard/reports → prefer cached register shell. */
+function posOfflineRegisterUrl(url) {
+    try {
+        var u = new URL(url.href || url);
+        u.pathname = String(u.pathname || '')
+            .replace(/\/+$/, '')
+            .replace(/\/(reports|settings|dashboard|shifts|terminals)(\/.*)?$/i, '/register');
+        if (!/\/register$/i.test(u.pathname)) {
+            if (/\/pos$/i.test(u.pathname)) {
+                u.pathname = u.pathname + '/register';
+            }
+        }
+        return u;
+    } catch (e) {
+        return url;
+    }
 }
 
 /** Prefer HTML shell when falling back from a document navigation. */
@@ -1311,6 +1346,10 @@ self.addEventListener('fetch', function (event) {
                 if (isBiometricGatePath(url.pathname)) {
                     var regUrl = registerPathFromBiometric(url);
                     return shellFallback(shellLookupRequest(regUrl.href, event.request));
+                }
+                if (/\/pos\/(dashboard|reports|settings|shifts|terminals)(\/|$)/i.test(url.pathname)) {
+                    var regFromDash = posOfflineRegisterUrl(url);
+                    return shellFallback(shellLookupRequest(regFromDash.href, event.request));
                 }
                 return shellFallback(event.request);
             })

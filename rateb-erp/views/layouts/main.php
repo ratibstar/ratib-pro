@@ -770,6 +770,7 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 <script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
 <?php if (!$ratebLocalAppliance) { ?>
 <script src="<?php echo rateb_asset('offline/erp-offline-full-warm.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('offline/erp-offline-nav-guard.js'); ?>" defer></script>
 <?php } ?>
 
 </body>

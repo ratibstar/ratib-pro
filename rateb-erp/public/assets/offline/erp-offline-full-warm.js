@@ -88,6 +88,20 @@
         return false;
     }
 
+    function stopWarmBannerIfOffline() {
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                var box = root.document.getElementById('rateb-offline-warm-progress');
+                if (box) {
+                    box.textContent = 'التسخين يحتاج اتصال — وصّل النت لإكمال الحفظ';
+                    box.style.background = '#7f1d1d';
+                }
+                return true;
+            }
+        } catch (e) { /* ignore */ }
+        return false;
+    }
+
     function markWarmed(okCount) {
         try {
             root.localStorage.setItem(STORAGE_KEY, String(Date.now()));
@@ -165,7 +179,9 @@
             'admin/ops/warehouses', 'admin/ops/stock-movements',
             'admin/ops/product-categories', 'admin/ops/suppliers',
             'admin/hr/attendance', 'admin/hr/leaves',
-            'admin/ops/goods-receipts', 'admin/ops/warehouse-transfers'
+            'admin/ops/goods-receipts', 'admin/ops/warehouse-transfers',
+            'admin/ops/pos', 'admin/ops/pos/dashboard', 'admin/ops/pos/register',
+            'pos', 'pos/register', 'pos/dashboard'
         ];
         core.forEach(function (rel) {
             pushUrl(seen, out, origin + base + rel.replace(/^\//, ''));
@@ -281,6 +297,9 @@
     }
 
     function fetchAndCache(href) {
+        if (stopWarmBannerIfOffline()) {
+            return Promise.resolve(false);
+        }
         return root.fetch(href, {
             credentials: 'same-origin',
             cache: 'no-cache',
@@ -313,6 +332,7 @@
             'assets/offline/erp-offline-shell-rbac.js',
             'assets/offline/erp-shell-bootstrap.js',
             'assets/offline/erp-offline-full-warm.js',
+            'assets/offline/erp-offline-nav-guard.js',
             'assets/offline/ops-page-allowlist.json',
             'offline-shell.html',
             'assets/css/variables.css',
@@ -324,8 +344,10 @@
         var out = [];
         files.forEach(function (f) {
             out.push(base + f);
+            out.push(base + f + '?v=20260713-offline-nav-guard');
             out.push(base + f + '?v=20260713-inline-shell-v30');
             out.push(base + f + '?v=oid-20260713-lean');
+            out.push(base + f + '?v=20260713-probe-warm-fix');
         });
         return out;
     }
@@ -383,6 +405,15 @@
                 urls.push(u);
             }
         });
+        // POS register early — dashboard alone must not be the offline shell.
+        var posFirst = [
+            root.location.origin + publicBase() + 'admin/ops/pos/register',
+            root.location.origin + publicBase() + 'pos/register',
+            root.location.origin + publicBase() + 'admin/ops/pos'
+        ];
+        posFirst.forEach(function (u) {
+            pushUrl(seen, urls, u);
+        });
         seedCoreUrls(seen, urls);
         collectSidebarUrls(seen, urls);
         return loadAllowlistUrls(seen, urls).then(function (list) {
@@ -392,6 +423,11 @@
             } catch (eLog) { /* ignore */ }
             return runQueue(list).then(function (stats) {
                 markWarmed(stats.ok || 0);
+                try {
+                    if (root.RatebOfflineNavGuard && typeof root.RatebOfflineNavGuard.scan === 'function') {
+                        root.RatebOfflineNavGuard.scan();
+                    }
+                } catch (eNav) { /* ignore */ }
                 try {
                     var box2 = root.document.getElementById('rateb-offline-warm-progress');
                     if (box2) {
