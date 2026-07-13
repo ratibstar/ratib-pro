@@ -2,8 +2,11 @@
  * RATEB ERP — topbar Online / Offline indicator.
  * Uses navigator.onLine + optional RatebOfflineConnectivity probe events.
  * Branch / local appliance: auto-switch admin URL with connection state.
- *   Offline (red)  → http://127.0.0.1:8088/admin  (only if local server responds)
+ *   Offline (red)  → http://127.0.0.1:8088/admin
  *   Online  (green) → https://rateb.sa/rateb-erp/public/admin/
+ *
+ * Cross-origin handoff: local → cloud adds ?rateb_branch=1 so rateb.sa can
+ * remember branch mode in localStorage (sessionStorage does not cross origins).
  */
 (function () {
     'use strict';
@@ -11,6 +14,7 @@
     var DEFAULT_LOCAL = 'http://127.0.0.1:8088/admin';
     var DEFAULT_CLOUD = 'https://rateb.sa/rateb-erp/public/admin/';
     var FLAG = 'rateb-branch-url-switch';
+    var HANDOFF = 'rateb_branch';
     var redirectTimer = null;
     var lastApplied = null;
 
@@ -42,6 +46,52 @@
         return fallback;
     }
 
+    function storageGet() {
+        try {
+            if (localStorage.getItem(FLAG) === '1') {
+                return true;
+            }
+        } catch (e1) { /* ignore */ }
+        try {
+            if (sessionStorage.getItem(FLAG) === '1') {
+                return true;
+            }
+        } catch (e2) { /* ignore */ }
+        return false;
+    }
+
+    function storageSet() {
+        try {
+            localStorage.setItem(FLAG, '1');
+        } catch (e1) { /* ignore */ }
+        try {
+            sessionStorage.setItem(FLAG, '1');
+        } catch (e2) { /* ignore */ }
+    }
+
+    /** Capture ?rateb_branch=1 from local→cloud redirect (per-origin localStorage). */
+    function captureHandoff() {
+        try {
+            var params = new URLSearchParams(location.search || '');
+            if (params.get(HANDOFF) !== '1') {
+                return;
+            }
+            storageSet();
+            params.delete(HANDOFF);
+            var q = params.toString();
+            var clean = location.pathname + (q ? '?' + q : '') + (location.hash || '');
+            if (typeof history !== 'undefined' && history.replaceState) {
+                history.replaceState(null, '', clean);
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    function rememberIfBranchHost() {
+        if (isLocalHost() || cfg('data-rateb-url-switch', '') === '1') {
+            storageSet();
+        }
+    }
+
     function urlSwitchEnabled() {
         if (cfg('data-rateb-url-switch', '') === '1') {
             return true;
@@ -49,11 +99,7 @@
         if (isLocalHost()) {
             return true;
         }
-        try {
-            return sessionStorage.getItem(FLAG) === '1';
-        } catch (e) {
-            return false;
-        }
+        return storageGet();
     }
 
     function adminSuffix() {
@@ -65,9 +111,31 @@
         return path.slice(idx + '/admin'.length);
     }
 
+    function stripHandoffSearch(search) {
+        try {
+            var params = new URLSearchParams(search || '');
+            params.delete(HANDOFF);
+            var q = params.toString();
+            return q ? '?' + q : '';
+        } catch (e) {
+            return search || '';
+        }
+    }
+
     function buildTarget(base) {
         var clean = String(base || '').replace(/\/+$/, '');
-        return clean + adminSuffix() + (location.search || '') + (location.hash || '');
+        return clean + adminSuffix() + stripHandoffSearch(location.search || '') + (location.hash || '');
+    }
+
+    function withHandoff(url) {
+        try {
+            var u = new URL(url, location.href);
+            u.searchParams.set(HANDOFF, '1');
+            return u.toString();
+        } catch (e) {
+            var join = url.indexOf('?') >= 0 ? '&' : '?';
+            return url + join + HANDOFF + '=1';
+        }
     }
 
     function alreadyOnTarget(online) {
@@ -77,10 +145,9 @@
         return isLocalHost();
     }
 
-    /** Probe local branch HTTP (same-origin or opaque). Returns Promise<boolean>. */
     function localServerUp(localAdminUrl) {
         var url = String(localAdminUrl || DEFAULT_LOCAL).replace(/\/admin\/?.*$/, '/') || 'http://127.0.0.1:8088/';
-        // From https://rateb.sa, http://127.0.0.1 is mixed-content — cannot probe; allow navigate.
+        // Mixed content: cannot probe http://127.0.0.1 from https://rateb.sa — navigate anyway.
         if (location.protocol === 'https:' && /^http:/i.test(url)) {
             return Promise.resolve(true);
         }
@@ -107,11 +174,33 @@
         });
     }
 
-    function go(target) {
-        try {
-            sessionStorage.setItem(FLAG, '1');
-        } catch (e) { /* ignore */ }
+    function go(target, toOnline) {
+        storageSet();
+        if (toOnline && isLocalHost()) {
+            target = withHandoff(target);
+        }
         location.assign(target);
+    }
+
+    function connectionStillMatches(wantOnline) {
+        if (wantOnline) {
+            var still = typeof navigator === 'undefined' || navigator.onLine !== false;
+            var conn = window.RatebOfflineConnectivity;
+            if (conn && typeof conn.isOnline === 'function') {
+                still = !!conn.isOnline();
+            }
+            return still;
+        }
+        // Offline → local: prefer navigator.offLine so a stale connectivity probe
+        // cannot block returning to the branch appliance.
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            return true;
+        }
+        var c = window.RatebOfflineConnectivity;
+        if (c && typeof c.isOnline === 'function') {
+            return !c.isOnline();
+        }
+        return typeof navigator === 'undefined' || navigator.onLine === false;
     }
 
     function maybeRedirect(online) {
@@ -131,34 +220,30 @@
             redirectTimer = null;
         }
 
-        // Debounce so brief flaps do not bounce the tab.
-        var delay = online ? 1600 : 600;
+        var delay = online ? 1600 : 500;
         redirectTimer = setTimeout(function () {
             redirectTimer = null;
-            var still = typeof navigator === 'undefined' || navigator.onLine !== false;
-            var conn = window.RatebOfflineConnectivity;
-            if (conn && typeof conn.isOnline === 'function') {
-                still = !!conn.isOnline();
-            }
-            if (!!still !== !!online) {
+            if (!connectionStillMatches(online)) {
                 return;
             }
             if (alreadyOnTarget(online)) {
                 return;
             }
             if (online) {
-                go(target);
+                go(target, true);
                 return;
             }
-            // Offline → local only when branch HTTP is actually up (avoids dead SW shell).
             localServerUp(localBase).then(function (up) {
                 if (!up) {
+                    return;
+                }
+                if (!connectionStillMatches(false)) {
                     return;
                 }
                 if (alreadyOnTarget(false)) {
                     return;
                 }
-                go(target);
+                go(target, false);
             });
         }, delay);
     }
@@ -192,6 +277,9 @@
     }
 
     function boot() {
+        captureHandoff();
+        rememberIfBranchHost();
+
         apply(fromNavigator());
 
         window.addEventListener('online', function () { apply(true); });
