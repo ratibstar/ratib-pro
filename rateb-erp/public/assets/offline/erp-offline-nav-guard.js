@@ -22,23 +22,29 @@
     var WRITE_TEXT_RE = /(إضافة|انشاء|إنشاء|تعديل|حفظ|حذف|إنشاء|Create|Edit|Save|Delete|Add\b)/i;
 
     function isOffline() {
+        // Prefer connection badge — do not gray-out nav while UI says «متصل».
+        try {
+            var badge = root.document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (badge) {
+                if (badge.classList.contains('is-online')) {
+                    return false;
+                }
+                if (badge.classList.contains('is-offline')) {
+                    return true;
+                }
+            }
+        } catch (e2) { /* ignore */ }
+        try {
+            var conn = root.RatebOfflineConnectivity;
+            if (conn && typeof conn.isOnline === 'function') {
+                return conn.isOnline() === false;
+            }
+        } catch (e1) { /* ignore */ }
         try {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                 return true;
             }
         } catch (e0) { /* ignore */ }
-        try {
-            var conn = root.RatebOfflineConnectivity;
-            if (conn && typeof conn.isOnline === 'function' && conn.isOnline() === false) {
-                return true;
-            }
-        } catch (e1) { /* ignore */ }
-        try {
-            var badge = root.document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-            if (badge && badge.classList.contains('is-offline')) {
-                return true;
-            }
-        } catch (e2) { /* ignore */ }
         return false;
     }
 

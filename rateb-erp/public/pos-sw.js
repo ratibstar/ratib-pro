@@ -435,7 +435,27 @@ function erpAdminOfflineFallback(request, url) {
                 return matchOfflineShellOrInline(request);
             }
         } catch (eC) { /* ignore */ }
-        return uncachedAdminBrowseResponse(url);
+        try {
+            return uncachedAdminBrowseResponse(url);
+        } catch (eU) {
+            return erpInlineShellResponse();
+        }
+    });
+}
+
+/** Last-resort — must never reject (Chrome ERR_FAILED if respondWith promise rejects). */
+function neverFailNavigate(request, url) {
+    return erpAdminOfflineFallback(request, url).catch(function () {
+        try {
+            return erpInlineShellResponse();
+        } catch (e) {
+            return new Response(
+                '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>Offline</title></head>'
+                + '<body style="font-family:system-ui;background:#0f1117;color:#e8eaed;padding:2rem;text-align:center">'
+                + '<h1>وضع عدم الاتصال</h1><p>أعد فتح Admin وأنت متصل مرة واحدة.</p></body></html>',
+                { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
+            );
+        }
     });
 }
 
@@ -581,38 +601,40 @@ function matchCachedAdminDashboard(url) {
 }
 
 function matchOfflineShellOrInline(request) {
-        var key = erpOfflineShellUrl();
-        return caches.match(key).then(function (hit) {
-            if (hit) {
-                return hit;
-            }
-            return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                return cache.match(key).then(function (cached) {
-                    if (cached) {
-                        return cached;
-                    }
-                    return caches.keys().then(function (names) {
-                        var erpCaches = (names || []).filter(function (n) {
-                            return String(n).indexOf('rateb-erp-assets-') === 0
-                                || String(n) === ERP_COEXIST_CACHE
-                                || String(n) === ERP_OPS_PAGE_CACHE;
-                        });
-                        return erpCaches.reduce(function (chain, name) {
-                            return chain.then(function (found) {
-                                if (found) {
-                                    return found;
-                                }
-                                return caches.open(name).then(function (c) {
-                                    return c.match(key);
-                                });
+    var key = erpOfflineShellUrl();
+    return caches.match(key).then(function (hit) {
+        if (hit) {
+            return hit;
+        }
+        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+            return cache.match(key).then(function (cached) {
+                if (cached) {
+                    return cached;
+                }
+                return caches.keys().then(function (names) {
+                    var erpCaches = (names || []).filter(function (n) {
+                        return String(n).indexOf('rateb-erp-assets-') === 0
+                            || String(n) === ERP_COEXIST_CACHE
+                            || String(n) === ERP_OPS_PAGE_CACHE;
+                    });
+                    return erpCaches.reduce(function (chain, name) {
+                        return chain.then(function (found) {
+                            if (found) {
+                                return found;
+                            }
+                            return caches.open(name).then(function (c) {
+                                return c.match(key);
                             });
-                        }, Promise.resolve(null)).then(function (found) {
-                            return found || erpInlineShellResponse();
                         });
+                    }, Promise.resolve(null)).then(function (found) {
+                        return found || erpInlineShellResponse();
                     });
                 });
             });
         });
+    }).catch(function () {
+        return erpInlineShellResponse();
+    });
 }
 
 function warmErpOfflineShell() {
@@ -1372,21 +1394,33 @@ self.addEventListener('fetch', function (event) {
                 } catch (eAdmin) {
                     adminUrl = new URL(url.origin + '/rateb-erp/public/admin/');
                 }
-                return erpAdminOfflineFallback(event.request, adminUrl);
+                return neverFailNavigate(event.request, adminUrl);
             })
         );
         return;
     }
 
     // Smart coexist: try network first; on ANY failure serve cached Admin (never Chrome ERR_FAILED).
-    // navigator.onLine is unreliable (adapter up / no internet) — do not gate fallback on it.
+    // When browser reports offline → cache/shell immediately (no hung fetch).
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
-            fetchNavigateNetwork(event.request, 12000).catch(function () {
-                return erpAdminOfflineFallback(event.request, url);
+            (isCloudBrowserOffline()
+                ? neverFailNavigate(event.request, url)
+                : fetchNavigateNetwork(event.request, 4000).catch(function () {
+                    return neverFailNavigate(event.request, url);
+                })
+            ).catch(function () {
+                try {
+                    return erpInlineShellResponse();
+                } catch (eFinal) {
+                    return new Response('Offline', {
+                        status: 200,
+                        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                    });
+                }
             })
         );
         return;

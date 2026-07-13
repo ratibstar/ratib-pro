@@ -9,11 +9,11 @@
     var SUCCESS_KEY = 'rateb_erp_full_warm_ok';
     var WARM_TTL_MS = 4 * 60 * 60 * 1000;
     var MAX_URLS = 200;
-    var CONCURRENCY = 3;
-    var GAP_MS = 350;
+    var CONCURRENCY = 2;
+    var GAP_MS = 500;
     var MIN_OK = 8;
     var CACHE_NAME = 'rateb-erp-ops-pages-v30';
-    var COEXIST = 'rateb-erp-coexist-v24';
+    var COEXIST = 'rateb-erp-coexist-v25';
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
 

@@ -738,6 +738,10 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
           window.__ratebSwReloadBound = true;
           navigator.serviceWorker.addEventListener('controllerchange', function () {
             if (sessionStorage.getItem('rateb_sw_reloaded') === '1') return;
+            // Reloading while offline often yields Chrome ERR_FAILED before SW answers.
+            try {
+              if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+            } catch (eOff) {}
             sessionStorage.setItem('rateb_sw_reloaded', '1');
             location.reload();
           });
