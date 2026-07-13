@@ -443,40 +443,16 @@ if (!$ratebLocalAppliance) {
     ?>
 <script>
 (function () {
-  /* Force one-time SW/cache reset so browsers drop stale offline builds. */
+  /* Soft upgrade: re-register versioned SW. Do NOT wipe caches (that caused empty offline). */
   var NEED = <?php echo json_encode(defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1'); ?>;
   var KEY = 'rateb_sw_build';
   try {
     if (localStorage.getItem(KEY) === NEED) return;
-    if (!('serviceWorker' in navigator)) {
-      try { localStorage.setItem(KEY, NEED); } catch (e0) {}
-      return;
-    }
-    var jobs = [];
-    jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
-      return Promise.all((regs || []).map(function (r) { return r.unregister().catch(function () { return false; }); }));
-    }));
-    if (window.caches && caches.keys) {
-      jobs.push(caches.keys().then(function (keys) {
-        return Promise.all((keys || []).map(function (k) {
-          return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
-        }));
-      }));
-    }
-    Promise.all(jobs).then(function () {
-      try {
-        localStorage.setItem(KEY, NEED);
-        localStorage.removeItem('rateb_erp_full_warm_at');
-        localStorage.removeItem('rateb_erp_full_warm_ok');
-      } catch (e1) {}
-      var u = new URL(location.href);
-      if (!u.searchParams.get('rateb_sw_reset')) {
-        u.searchParams.set('rateb_sw_reset', '1');
-        location.replace(u.href);
-      }
-    }).catch(function () {
-      try { localStorage.setItem(KEY, NEED); } catch (e2) {}
-    });
+    try {
+      localStorage.setItem(KEY, NEED);
+      localStorage.removeItem('rateb_erp_full_warm_at');
+      localStorage.removeItem('rateb_erp_full_warm_ok');
+    } catch (e1) {}
   } catch (e) {}
 })();
 </script>
@@ -682,7 +658,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       if (html.length < 500 || html.length > 2500000) return;
       var cacheName = (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName)
-        || 'rateb-erp-ops-pages-v29';
+        || 'rateb-erp-ops-pages-v30';
       var keys = [location.href, location.origin + location.pathname];
       var bare = location.pathname.replace(/\/+$/, '');
       keys.push(location.origin + bare);

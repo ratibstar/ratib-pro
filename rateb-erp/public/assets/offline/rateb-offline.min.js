@@ -4030,7 +4030,7 @@
 
     var SNAPSHOT_PREFIX = 'erp_shell_chrome';
     var OPS_PAGE_PREFIX = 'erp_ops_page';
-    var OPS_CACHE = 'rateb-erp-ops-pages-v29';
+    var OPS_CACHE = 'rateb-erp-ops-pages-v30';
 
     function flags() {
         if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {

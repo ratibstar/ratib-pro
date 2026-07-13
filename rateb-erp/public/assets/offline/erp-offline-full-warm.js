@@ -12,7 +12,7 @@
     var CONCURRENCY = 3;
     var GAP_MS = 400;
     var MIN_OK = 12;
-    var CACHE_NAME = 'rateb-erp-ops-pages-v29';
+    var CACHE_NAME = 'rateb-erp-ops-pages-v30';
     var running = false;
 
     function publicBase() {

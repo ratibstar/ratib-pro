@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v23';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v29';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v29';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v24';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v30';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v30';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -182,22 +182,74 @@ function erpOfflineShellUrl() {
 }
 
 function erpInlineShellResponse() {
+    var adminHref = 'admin/';
+    try {
+        adminHref = new URL('admin/', self.registration.scope).pathname;
+    } catch (e) { /* ignore */ }
+    var links = [
+        ['لوحة التحكم', 'admin/'],
+        ['الشركات', 'admin/companies'],
+        ['تحديثات الوكالات', 'admin/agency-updates'],
+        ['لوحة الفرع', 'admin/ops/branch-dashboard'],
+        ['طلبات الشراء', 'admin/ops/purchase-requests'],
+        ['أوامر الشراء', 'admin/ops/purchase-orders'],
+        ['المخزون', 'admin/ops/inventory'],
+        ['حركات المخزون', 'admin/ops/stock-movements'],
+        ['المستودعات', 'admin/ops/warehouses'],
+        ['الموردون', 'admin/ops/suppliers'],
+        ['الحضور', 'admin/hr/attendance'],
+        ['الإجازات', 'admin/hr/leaves'],
+        ['الإشعارات', 'admin/notifications'],
+        ['الملف', 'admin/profile']
+    ];
+    var base = '/rateb-erp/public/';
+    try {
+        base = self.registration.scope;
+    } catch (e2) { /* ignore */ }
+    if (base.slice(-1) !== '/') {
+        base += '/';
+    }
+    var list = links.map(function (row) {
+        return '<a class="item" href="' + base + row[1].replace(/^\//, '') + '">' + row[0] + '</a>';
+    }).join('');
     var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
         + '<title>RATEB ERP — Offline</title>'
-        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}</style>'
-        + '</head><body>'
+        + '<style>'
+        + 'body{font-family:system-ui,sans-serif;margin:0;padding:1.25rem;background:#0f1117;color:#e8eaed}'
+        + 'h1{font-size:1.2rem;margin:0 0 .5rem;text-align:center}'
+        + 'p{opacity:.85;line-height:1.5;max-width:28rem;margin:.5rem auto;text-align:center}'
+        + '.nav{max-width:22rem;margin:1.25rem auto;display:flex;flex-direction:column;gap:.35rem}'
+        + 'a.item{display:block;padding:.65rem .85rem;border-radius:8px;background:#1a1d24;color:#e8eaed;'
+        + 'text-decoration:none;border:1px solid #2a2f3a}'
+        + 'a.item:hover{border-color:#3d4654}'
+        + '</style></head><body>'
         + '<h1>وضع عدم الاتصال</h1>'
-        + '<p>Cached ERP shell unavailable. Reconnect and open Admin once.</p>'
+        + '<p>القائمة متاحة. افتح النظام مرة وأنت متصل ليكتمل حفظ كل الصفحات.</p>'
+        + '<div class="nav">' + list + '</div>'
+        + '<p><a href="' + base + adminHref.replace(/^\//, '') + '" style="color:#8ab4ff">تحديث لوحة التحكم</a></p>'
         + '</body></html>';
     return new Response(body, {
         status: 200,
         headers: {
             'Content-Type': 'text/html; charset=utf-8',
             'X-Rateb-Offline': '1',
-            'X-Rateb-Coexist': 'pos-sw'
+            'X-Rateb-Coexist': 'pos-sw',
+            'Cache-Control': 'no-store'
         }
     });
+}
+
+/** Always seed offline-shell into Cache API (no network required). */
+function seedInlineOfflineShell() {
+    var key = erpOfflineShellUrl();
+    var res = erpInlineShellResponse();
+    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+        return Promise.all([
+            cache.put(key, res.clone()),
+            cache.put(ERP_OFFLINE_SHELL, res.clone()).catch(function () { return null; })
+        ]);
+    }).catch(function () { return null; });
 }
 
 function matchErpOpsPath(pathname) {
@@ -433,7 +485,26 @@ function matchAnyCachedAdminPage(request, url) {
             if (hit) {
                 return hit;
             }
-            return caches.open(ERP_COEXIST_CACHE).then(matchKeysIn);
+            return caches.open(ERP_COEXIST_CACHE).then(matchKeysIn).then(function (hit2) {
+                if (hit2) {
+                    return hit2;
+                }
+                // Also search previous ops-page cache versions (avoid empty after cache rename).
+                return caches.keys().then(function (names) {
+                    var opsNames = (names || []).filter(function (n) {
+                        return String(n).indexOf('rateb-erp-ops-pages-') === 0
+                            && String(n) !== ERP_OPS_PAGE_CACHE;
+                    });
+                    return opsNames.reduce(function (chain, name) {
+                        return chain.then(function (found) {
+                            if (found) {
+                                return found;
+                            }
+                            return caches.open(name).then(matchKeysIn);
+                        });
+                    }, Promise.resolve(null));
+                });
+            });
         });
     }).catch(function () {
         return null;
@@ -1090,11 +1161,13 @@ function shellFallback(request) {
 self.addEventListener('install', function (event) {
     self.skipWaiting();
     event.waitUntil(
-        Promise.all([
-            caches.open(ASSET_CACHE),
-            loadErpOpsAllowlist(),
-            warmErpOfflineShell()
-        ]).catch(function () { /* ignore */ })
+        seedInlineOfflineShell().then(function () {
+            return Promise.all([
+                caches.open(ASSET_CACHE),
+                loadErpOpsAllowlist(),
+                warmErpOfflineShell()
+            ]);
+        }).catch(function () { /* ignore */ })
     );
 });
 
