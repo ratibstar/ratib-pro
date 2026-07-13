@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v17';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v23';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v23';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v18';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v24';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v24';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -368,29 +368,115 @@ function erpAdminOfflineFallback(request, url) {
             { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
         ));
     }
-    // Captures are allowlist-gated at write time; always try Cache API first so
-    // ?company_id= and allowlist-load races still hit real module HTML.
+    // 1) Allowlisted ops captures  2) any cached admin HTML for this URL  3) path-aware miss page
+    // Never serve generic offline-shell home under a deep URL (companies, inventory, …).
     var tryOps = erpOpsPageFallback(request, url);
     return tryOps.then(function (opsHit) {
         if (opsHit) {
             return opsHit;
         }
-        // Dashboard (/admin): prefer any cached admin HTML over generic offline-shell home.
-        var pathNorm = '';
-        try {
-            pathNorm = String((url && url.pathname) || '').replace(/\/+$/, '');
-        } catch (eP) { /* ignore */ }
-        if (/(^|\/)admin$/i.test(pathNorm)) {
-            return matchCachedAdminDashboard(url).then(function (dash) {
-                if (dash) {
-                    return dash;
-                }
-                return matchOfflineShellOrInline(request);
-            });
-        }
-        return matchOfflineShellOrInline(request);
+        return matchAnyCachedAdminPage(request, url).then(function (any) {
+            if (any) {
+                return any;
+            }
+            var pathNorm = '';
+            try {
+                pathNorm = String((url && url.pathname) || '').replace(/\/+$/, '');
+            } catch (eP) { /* ignore */ }
+            // Only the bare dashboard may use the classic offline shell home.
+            if (/(^|\/)admin$/i.test(pathNorm)) {
+                return matchCachedAdminDashboard(url).then(function (dash) {
+                    return dash || matchOfflineShellOrInline(request);
+                });
+            }
+            return uncachedAdminBrowseResponse(url);
+        });
     }).catch(function () {
-        return erpInlineShellResponse();
+        return uncachedAdminBrowseResponse(url);
+    });
+}
+
+/** Search ops + coexist caches for this admin URL (any previously visited page). */
+function matchAnyCachedAdminPage(request, url) {
+    var keys = [];
+    try {
+        if (request && request.url) {
+            keys.push(request.url);
+        }
+    } catch (e0) { /* ignore */ }
+    try {
+        if (url) {
+            keys.push(url.href);
+            keys.push(url.origin + url.pathname);
+            var bare = String(url.pathname || '').replace(/\/+$/, '');
+            if (bare) {
+                keys.push(url.origin + bare);
+                keys.push(url.origin + bare + '/');
+            }
+        }
+    } catch (e1) { /* ignore */ }
+    var uniq = [];
+    keys.forEach(function (k) {
+        if (k && uniq.indexOf(k) === -1) {
+            uniq.push(k);
+        }
+    });
+    function matchKeysIn(cache) {
+        var chain = Promise.resolve(null);
+        uniq.forEach(function (key) {
+            chain = chain.then(function (found) {
+                if (found) {
+                    return found;
+                }
+                return cache.match(key).then(function (hit) {
+                    if (hit) {
+                        return hit;
+                    }
+                    return cache.match(key, { ignoreSearch: true }).catch(function () { return null; });
+                });
+            });
+        });
+        return chain;
+    }
+    return caches.open(ERP_OPS_PAGE_CACHE).then(function (ops) {
+        return matchKeysIn(ops).then(function (hit) {
+            if (hit) {
+                return hit;
+            }
+            return caches.open(ERP_COEXIST_CACHE).then(matchKeysIn);
+        });
+    }).catch(function () {
+        return null;
+    });
+}
+
+/** Deep admin URL with no cache — do not fake stock-movements / offline-home under wrong path. */
+function uncachedAdminBrowseResponse(url) {
+    var path = '/admin/';
+    var adminHref = '/rateb-erp/public/admin/';
+    try {
+        path = String((url && url.pathname) || path);
+        adminHref = new URL('admin/', self.registration.scope).href;
+    } catch (e) { /* ignore */ }
+    var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>RATEB ERP — أوفلاين</title>'
+        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}'
+        + 'a{color:#8ab4ff}p{opacity:.9;line-height:1.5;max-width:28rem;margin:.75rem auto}</style></head>'
+        + '<body data-rateb-uncached-page="1">'
+        + '<h1>الصفحة غير محفوظة أوفلاين</h1>'
+        + '<p>افتح هذه الصفحة مرة وأنت متصل ليتم حفظها، ثم يمكن تصفحها بدون إنترنت.</p>'
+        + '<p dir="ltr" style="opacity:.6;font-size:.85rem">' + String(path).replace(/</g, '') + '</p>'
+        + '<p><a href="' + String(adminHref).replace(/"/g, '') + '">لوحة التحكم</a></p>'
+        + '</body></html>';
+    return new Response(body, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'X-Rateb-Offline': '1',
+            'X-Rateb-Uncached-Page': '1'
+        }
     });
 }
 
@@ -487,10 +573,11 @@ function warmErpOfflineShell() {
         base + 'assets/css/dark.css',
         base + 'assets/css/rtl.css'
     ];
-    // Stage lean ops + Admin dashboard (لوحة التحكم) so offline nav keeps the same UI.
+    // Stage common Admin pages so offline nav keeps real module UI (not offline-home).
     var leanOps = [
         'admin',
         'admin/',
+        'admin/companies',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
         'admin/ops/rfq',
@@ -498,8 +585,12 @@ function warmErpOfflineShell() {
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/stock-movements',
+        'admin/ops/product-categories',
         'admin/ops/suppliers',
         'admin/ops/hr/attendance',
+        'admin/ops/hr/leaves',
+        'admin/hr/attendance',
+        'admin/hr/leaves',
         'admin/notifications',
         'admin/profile'
     ];

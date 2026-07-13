@@ -598,35 +598,41 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       window.addEventListener('load', function () { setTimeout(run, 3000); }, { once: true });
     }
   }
-  function isAdminDashboardPath(pathname) {
-    return /(^|\/)admin$/i.test(String(pathname || '').replace(/\/+$/, ''));
+  function isAdminPath(pathname) {
+    return /\/admin(\/|$)/i.test(String(pathname || ''));
+  }
+  function pathKey(pathname) {
+    return String(pathname || '').replace(/\/+$/, '').toLowerCase();
   }
   function isOfflineShellUi() {
-    return !!(document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-offline-ops-banner]'));
+    return !!(document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-uncached-page]'));
   }
-  // Offline + already on live لوحة التحكم: do not reload into offline-shell home.
+  // Offline + already on a live page: same-link click must not reload into offline-shell.
   document.addEventListener('click', function (ev) {
     try {
       if (navigator.onLine !== false) return;
       if (isOfflineShellUi()) return;
-      if (!isAdminDashboardPath(location.pathname)) return;
+      if (!isAdminPath(location.pathname)) return;
       var a = ev.target && ev.target.closest ? ev.target.closest('a') : null;
       if (!a || !a.href) return;
       var u = new URL(a.href, location.href);
       if (u.origin !== location.origin) return;
-      if (!isAdminDashboardPath(u.pathname)) return;
+      if (!isAdminPath(u.pathname)) return;
+      if (pathKey(u.pathname) !== pathKey(location.pathname)) return;
       ev.preventDefault();
       ev.stopPropagation();
       try { window.scrollTo(0, 0); } catch (eScroll) {}
     } catch (eClick) { /* ignore */ }
   }, true);
-  // Cache live dashboard HTML so offline "لوحة التحكم" keeps the same page.
-  function cacheLiveDashboard() {
+  // Cache every live Admin page so offline navigation keeps the same UI.
+  function cacheLiveAdminPage() {
     try {
-      if (!isAdminDashboardPath(location.pathname)) return;
+      if (!isAdminPath(location.pathname)) return;
       if (isOfflineShellUi()) return;
+      if (/\/login|\/logout|\/password\//i.test(location.pathname)) return;
       if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      if (html.length < 500 || html.length > 2500000) return;
       navigator.serviceWorker.controller.postMessage({
         type: 'CACHE_ERP_OPS_PAGE',
         url: location.href,
@@ -636,9 +642,9 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     } catch (eCache) { /* ignore */ }
   }
   if (document.readyState === 'complete') {
-    setTimeout(cacheLiveDashboard, 1500);
+    setTimeout(cacheLiveAdminPage, 1500);
   } else {
-    window.addEventListener('load', function () { setTimeout(cacheLiveDashboard, 1500); }, { once: true });
+    window.addEventListener('load', function () { setTimeout(cacheLiveAdminPage, 1500); }, { once: true });
   }
   // Escape hatch: stale SW offline shell while Wi‑Fi is up.
   try {

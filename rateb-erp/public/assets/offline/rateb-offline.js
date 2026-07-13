@@ -4511,13 +4511,14 @@
 
     function captureOpsPage() {
         var pathEarly = (root.location && root.location.pathname) || '';
-        var isDash = /(^|\/)admin$/i.test(String(pathEarly).replace(/\/+$/, ''));
-        if (!isOpsPagesActive() && !isDash) {
+        var isAdmin = /\/admin(\/|$)/i.test(String(pathEarly));
+        // Capture any Admin page when visited online (not only allowlisted ops).
+        if (!isOpsPagesActive() && !isAdmin) {
             return Promise.resolve({ skipped: true, disabled: true });
         }
         return ensureOpsAllowlist().then(function () {
         var path = (root.location && root.location.pathname) || '';
-        if (!matchOpsPath(path)) {
+        if (!matchOpsPath(path) && !/\/admin(\/|$)/i.test(path)) {
             return Promise.resolve({ skipped: true, reason: 'path_not_allowlisted' });
         }
         if (isHttpErrorDocument()) {
@@ -4729,21 +4730,20 @@
                     console.info('[RATIB OFFLINE] captureChrome', res || {});
                 } catch (e0) { /* ignore */ }
             }).catch(function () { /* ignore */ });
-            // Always cache لوحة التحكم when visiting /admin (even if pilot.ops_pages is off).
+            // Always cache current Admin page when visiting (every module, not only ops pilot).
             var pathNow = (root.location && root.location.pathname) || '';
-            if (/(^|\/)admin$/i.test(String(pathNow).replace(/\/+$/, ''))) {
-                captureOpsPage().catch(function () { /* ignore */ });
-            }
-            if (isOpsPagesActive()) {
+            if (/\/admin(\/|$)/i.test(pathNow) || isOpsPagesActive()) {
                 captureOpsPage().then(function (res) {
                     try {
                         console.info('[RATIB OFFLINE] captureOpsPage', res || {});
                     } catch (e1) { /* ignore */ }
                 }).catch(function () { /* ignore */ });
+            }
+            if (isOpsPagesActive()) {
                 prefetchAllowlistedLinks();
             } else {
                 try {
-                    console.info('[RATIB OFFLINE] captureOpsPage skipped (pilot.ops_pages off)');
+                    console.info('[RATIB OFFLINE] ops prefetch skipped (pilot.ops_pages off)');
                 } catch (e2) { /* ignore */ }
             }
         };

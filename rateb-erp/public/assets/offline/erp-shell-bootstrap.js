@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v17').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v18').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v17 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v18 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v17');
+                                'offline-shell.html present in rateb-erp-coexist-v18');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);
@@ -847,7 +847,7 @@
             });
         }
         bindSyncBadge();
-        // Offline: clicking لوحة التحكم while already on live /admin must not open offline-shell.
+        // Offline: same-URL nav click on any live Admin page must not open offline-shell.
         try {
             if (root.document && !root.document.__ratebDashClickGuard) {
                 root.document.__ratebDashClickGuard = true;
@@ -859,8 +859,8 @@
                         if (isOfflineShellDocument()) {
                             return;
                         }
-                        var here = String(root.location.pathname || '').replace(/\/+$/, '');
-                        if (!/(^|\/)admin$/i.test(here)) {
+                        var here = String(root.location.pathname || '').replace(/\/+$/, '').toLowerCase();
+                        if (!/\/admin(\/|$)/i.test(here)) {
                             return;
                         }
                         var a = ev.target && ev.target.closest ? ev.target.closest('a') : null;
@@ -871,7 +871,8 @@
                         if (u.origin !== root.location.origin) {
                             return;
                         }
-                        if (!/(^|\/)admin$/i.test(String(u.pathname || '').replace(/\/+$/, ''))) {
+                        var there = String(u.pathname || '').replace(/\/+$/, '').toLowerCase();
+                        if (there !== here) {
                             return;
                         }
                         ev.preventDefault();
