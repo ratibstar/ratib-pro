@@ -404,9 +404,9 @@ function putErpOpsPageFromMessage(data) {
  * @param {URL} [url]
  */
 function erpAdminOfflineFallback(request, url) {
-    // Always serve cached Admin HTML after a failed network navigation.
-    // Do NOT trust navigator.onLine here — Chrome often reports online with no internet,
-    // and a 503+refresh loop causes ERR_FAILED instead of the offline app.
+    // Always serve *something* after a failed network navigation (never Chrome ERR_FAILED).
+    // CRITICAL: never return dashboard HTML under a different path — that made create/edit
+    // and sidebar clicks look like "everything goes back to لوحة التحكم".
     var tryOps = erpOpsPageFallback(request, url);
     return tryOps.then(function (opsHit) {
         if (opsHit) {
@@ -420,20 +420,22 @@ function erpAdminOfflineFallback(request, url) {
             try {
                 pathNorm = String((url && url.pathname) || '').replace(/\/+$/, '');
             } catch (eP) { /* ignore */ }
-            // Prefer any warmed Admin page (dashboard/companies) over a dead-end miss page.
-            return matchCachedAdminDashboard(url).then(function (dash) {
-                if (dash) {
-                    return dash;
-                }
-                if (/(^|\/)admin$/i.test(pathNorm)) {
-                    return matchOfflineShellOrInline(request);
-                }
-                // Last resort: offline shell home (still opens the product offline).
-                return matchOfflineShellOrInline(request);
-            });
+            // Dashboard only when the navigation IS the admin home.
+            if (/(^|\/)admin$/i.test(pathNorm)) {
+                return matchCachedAdminDashboard(url).then(function (dash) {
+                    return dash || matchOfflineShellOrInline(request);
+                });
+            }
+            return uncachedAdminBrowseResponse(url);
         });
     }).catch(function () {
-        return matchOfflineShellOrInline(request);
+        try {
+            var pathNorm2 = String((url && url.pathname) || '').replace(/\/+$/, '');
+            if (/(^|\/)admin$/i.test(pathNorm2)) {
+                return matchOfflineShellOrInline(request);
+            }
+        } catch (eC) { /* ignore */ }
+        return uncachedAdminBrowseResponse(url);
     });
 }
 
@@ -520,15 +522,18 @@ function uncachedAdminBrowseResponse(url) {
     } catch (e) { /* ignore */ }
     var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        + '<title>RATEB ERP — أوفلاين</title>'
+        + '<title>RATEB ERP — الصفحة غير محفوظة</title>'
         + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}'
-        + 'a{color:#8ab4ff}p{opacity:.9;line-height:1.5;max-width:28rem;margin:.75rem auto}</style></head>'
+        + 'a{color:#8ab4ff;display:inline-block;margin:.4rem}p{opacity:.9;line-height:1.55;max-width:28rem;margin:.75rem auto}'
+        + '.box{max-width:28rem;margin:10vh auto;padding:1.5rem;border-radius:12px;background:#1a1d24;border:1px solid #2a3344}</style></head>'
         + '<body data-rateb-uncached-page="1">'
+        + '<div class="box">'
         + '<h1>الصفحة غير محفوظة أوفلاين</h1>'
-        + '<p>افتح هذه الصفحة مرة وأنت متصل ليتم حفظها، ثم يمكن تصفحها بدون إنترنت.</p>'
-        + '<p dir="ltr" style="opacity:.6;font-size:.85rem">' + String(path).replace(/</g, '') + '</p>'
-        + '<p><a href="' + String(adminHref).replace(/"/g, '') + '">لوحة التحكم</a></p>'
-        + '</body></html>';
+        + '<p>الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت <strong>متصل</strong> ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين».</p>'
+        + '<p>الحفظ/الإرسال لا يعمل بدون إنترنت.</p>'
+        + '<p dir="ltr" style="opacity:.55;font-size:.8rem;word-break:break-all">' + String(path).replace(/</g, '') + '</p>'
+        + '<p><a href="' + String(adminHref).replace(/"/g, '') + '">العودة للوحة التحكم</a></p>'
+        + '</div></body></html>';
     return new Response(body, {
         status: 200,
         headers: {

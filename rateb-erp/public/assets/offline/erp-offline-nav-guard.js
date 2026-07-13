@@ -1,7 +1,8 @@
 /**
- * RATEB ERP — Offline nav guard.
- * While offline, only sidebar links that exist in Cache API stay clickable.
- * Uncached links looked "wrong" because every miss opened the same offline shell.
+ * RATEB ERP — Offline nav + action guard.
+ * - Sidebar / in-page links: only cached URLs navigate.
+ * - Create / edit / save / POST: blocked offline with a clear toast
+ *   (previously SW served dashboard HTML under the wrong URL).
  */
 (function (root) {
     'use strict';
@@ -17,6 +18,8 @@
     ];
     var STYLE_ID = 'rateb-offline-nav-guard-css';
     var scanning = false;
+    var WRITE_RE = /\/(create|edit|new|delete|destroy|store|update|clone|duplicate)(\/|$|\?)/i;
+    var WRITE_TEXT_RE = /(إضافة|انشاء|إنشاء|تعديل|حفظ|حذف|إنشاء|Create|Edit|Save|Delete|Add\b)/i;
 
     function isOffline() {
         try {
@@ -47,7 +50,8 @@
         css.id = STYLE_ID;
         css.textContent = ''
             + 'a.rateb-nav-link.rateb-offline-missing,'
-            + 'a.rateb-offline-rbac-link.rateb-offline-missing{'
+            + 'a.rateb-offline-rbac-link.rateb-offline-missing,'
+            + 'a.rateb-offline-missing{'
             + 'opacity:.38;pointer-events:auto;cursor:not-allowed;}'
             + 'a.rateb-nav-link.rateb-offline-missing span::after,'
             + 'a.rateb-offline-rbac-link.rateb-offline-missing span::after{'
@@ -55,7 +59,10 @@
             + '#rateb-offline-nav-toast{'
             + 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;'
             + 'background:#7f1d1d;color:#fff;padding:.65rem 1rem;border-radius:8px;'
-            + 'font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center;}';
+            + 'font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center;}'
+            + '#rateb-offline-wrong-shell{'
+            + 'position:sticky;top:0;z-index:99980;background:#7f1d1d;color:#fff;'
+            + 'padding:.55rem 1rem;text-align:center;font:13px/1.4 system-ui,sans-serif;}';
         root.document.head.appendChild(css);
     }
 
@@ -73,8 +80,41 @@
             clearTimeout(el.__hide);
             el.__hide = setTimeout(function () {
                 try { el.hidden = true; } catch (e) { /* ignore */ }
-            }, 3200);
+            }, 3600);
         } catch (e2) { /* ignore */ }
+    }
+
+    function publicAdminBase() {
+        try {
+            var p = String(root.location.pathname || '');
+            var m = p.match(/^(.*\/public\/)/i);
+            if (m && m[1]) {
+                return m[1] + 'admin';
+            }
+        } catch (e) { /* ignore */ }
+        return '/rateb-erp/public/admin';
+    }
+
+    function isAdminAppHref(href) {
+        try {
+            var u = new URL(href, root.location.href);
+            if (u.origin !== root.location.origin) {
+                return false;
+            }
+            return /\/admin(\/|$)/i.test(u.pathname) || /\/pos(\/|$)/i.test(u.pathname);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function isWriteHref(href) {
+        try {
+            var u = new URL(href, root.location.href);
+            if (WRITE_RE.test(u.pathname) || WRITE_RE.test(u.search)) {
+                return true;
+            }
+        } catch (e) { /* ignore */ }
+        return false;
     }
 
     function candidateKeys(href) {
@@ -120,12 +160,12 @@
                                     return true;
                                 }
                                 return cache.match(key).then(function (res) {
-                                    if (res) {
-                                        return true;
+                                    if (!res) {
+                                        return cache.match(key, { ignoreSearch: true }).then(function (res2) {
+                                            return looksLikeRealPage(res2);
+                                        }).catch(function () { return false; });
                                     }
-                                    return cache.match(key, { ignoreSearch: true }).then(function (res2) {
-                                        return !!res2;
-                                    }).catch(function () { return false; });
+                                    return looksLikeRealPage(res);
                                 });
                             });
                         }, Promise.resolve(false));
@@ -137,13 +177,26 @@
         });
     }
 
+    function looksLikeRealPage(res) {
+        if (!res) {
+            return Promise.resolve(false);
+        }
+        try {
+            if (String(res.headers.get('X-Rateb-Uncached-Page') || '') === '1') {
+                return Promise.resolve(false);
+            }
+        } catch (e) { /* ignore */ }
+        return Promise.resolve(true);
+    }
+
     function sidebarLinks() {
         if (!root.document) {
             return [];
         }
         return Array.prototype.slice.call(root.document.querySelectorAll(
             'aside.rateb-sidebar a.rateb-nav-link[href], #rateb-sidebar a.rateb-nav-link[href],'
-            + ' a.rateb-offline-rbac-link[href], aside a.rateb-nav-link[href]'
+            + ' a.rateb-offline-rbac-link[href], aside a.rateb-nav-link[href],'
+            + ' main a[href], .rateb-main a[href], .rateb-content a[href]'
         ));
     }
 
@@ -176,6 +229,42 @@
             if (t) {
                 t.hidden = true;
             }
+            var w = root.document.getElementById('rateb-offline-wrong-shell');
+            if (w) {
+                w.remove();
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    function warnWrongShell() {
+        try {
+            if (!isOffline() || !root.document || !root.document.body) {
+                return;
+            }
+            if (root.document.body.getAttribute('data-rateb-uncached-page') === '1') {
+                return;
+            }
+            var path = String(root.location.pathname || '').replace(/\/+$/, '');
+            if (/(^|\/)admin$/i.test(path)) {
+                return;
+            }
+            var titleEl = root.document.querySelector('h1, .rateb-page-title, .page-title');
+            var title = titleEl ? String(titleEl.textContent || '').trim() : '';
+            if (title.indexOf('لوحة التحكم') === -1) {
+                return;
+            }
+            ensureCss();
+            var existing = root.document.getElementById('rateb-offline-wrong-shell');
+            if (existing) {
+                return;
+            }
+            var bar = root.document.createElement('div');
+            bar.id = 'rateb-offline-wrong-shell';
+            bar.setAttribute('role', 'alert');
+            bar.innerHTML = 'هذه الشاشة غير محفوظة أوفلاين — عُرضت لوحة التحكم بالخطأ سابقاً. '
+                + '<a href="' + publicAdminBase() + '/" style="color:#fff;text-decoration:underline">افتح اللوحة</a>'
+                + ' وأنت متصل ثم أعد المحاولة.';
+            root.document.body.insertBefore(bar, root.document.body.firstChild);
         } catch (e) { /* ignore */ }
     }
 
@@ -188,24 +277,21 @@
             return Promise.resolve();
         }
         ensureCss();
+        warnWrongShell();
         scanning = true;
         var links = sidebarLinks();
         return Promise.all(links.map(function (a) {
             var href = a.getAttribute('href') || '';
             if (!href || href === '#' || /^javascript:/i.test(href)) {
+                return null;
+            }
+            if (!isAdminAppHref(href)) {
+                return null;
+            }
+            if (isWriteHref(href)) {
                 markLink(a, false);
                 return null;
             }
-            // Same-page dashboard link always OK while viewing a live/cached shell.
-            try {
-                var u = new URL(href, root.location.href);
-                var here = String(root.location.pathname || '').replace(/\/+$/, '');
-                var there = String(u.pathname || '').replace(/\/+$/, '');
-                if (there === here) {
-                    markLink(a, true);
-                    return null;
-                }
-            } catch (eU) { /* ignore */ }
             return matchInCaches(href).then(function (ok) {
                 markLink(a, ok);
             });
@@ -214,27 +300,70 @@
         });
     }
 
+    function blockWrite(ev, reason) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        toast(reason || 'الإنشاء والتعديل والحفظ تحتاج اتصال بالإنترنت.');
+    }
+
     function onClick(ev) {
         if (!isOffline()) {
             return;
         }
-        var a = ev.target && ev.target.closest
-            ? ev.target.closest('aside.rateb-sidebar a[href], #rateb-sidebar a[href], a.rateb-nav-link[href], a.rateb-offline-rbac-link[href]')
-            : null;
+        var target = ev.target;
+        if (!target || !target.closest) {
+            return;
+        }
+
+        var submitBtn = target.closest('button[type="submit"], input[type="submit"], button:not([type]), [data-rateb-save], .btn-save');
+        if (submitBtn) {
+            var form = submitBtn.closest('form');
+            if (form) {
+                var method = String(form.getAttribute('method') || 'get').toLowerCase();
+                if (method === 'post') {
+                    blockWrite(ev, 'الحفظ غير متاح أوفلاين. وصّل النت ثم أعد المحاولة.');
+                    return;
+                }
+            }
+            var label = String(submitBtn.textContent || submitBtn.value || '');
+            if (WRITE_TEXT_RE.test(label)) {
+                blockWrite(ev, 'هذا الإجراء يحتاج اتصال بالإنترنت.');
+                return;
+            }
+        }
+
+        var a = target.closest('a[href]');
         if (!a) {
             return;
         }
+        var href = a.getAttribute('href') || '';
+        if (!href || href === '#' || /^javascript:/i.test(href)) {
+            return;
+        }
+        if (!isAdminAppHref(href)) {
+            // Block leaving ERP to other apps (e.g. platform-catalog) while offline.
+            try {
+                var u = new URL(href, root.location.href);
+                if (u.origin === root.location.origin && /rateb-platform-catalog/i.test(u.pathname)) {
+                    blockWrite(ev, 'كتالوج المنصة غير متاح أوفلاين من هنا. استخدم ERP المحفوظ فقط.');
+                }
+            } catch (eCat) { /* ignore */ }
+            return;
+        }
+
+        if (isWriteHref(href)) {
+            blockWrite(ev, 'الإنشاء/التعديل يحتاج اتصال. أوفلاين للتصفح فقط بعد حفظ الصفحة.');
+            return;
+        }
+
         if (a.classList.contains('rateb-offline-cached')) {
             return;
         }
         if (a.classList.contains('rateb-offline-missing')) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            toast('هذا الرابط غير محفوظ أوفلاين. وصّل النت وافتح الصفحة مرة، أو انتظر اكتمال «تجهيز الأوفلاين».');
+            blockWrite(ev, 'هذا الرابط غير محفوظ أوفلاين. وصّل النت وافتح الصفحة مرة، أو انتظر «تجهيز الأوفلاين».');
             return;
         }
-        // Not scanned yet — check sync-ish then decide.
-        var href = a.getAttribute('href') || '';
+
         ev.preventDefault();
         ev.stopPropagation();
         matchInCaches(href).then(function (ok) {
@@ -242,9 +371,23 @@
             if (ok) {
                 root.location.href = href;
             } else {
-                toast('هذا الرابط غير محفوظ أوفلاين. وصّل النت وافتح الصفحة مرة ثم أعد المحاولة.');
+                toast('الصفحة غير محفوظة أوفلاين. لن نفتح لوحة التحكم مكانها — وصّل النت وافتح الرابط مرة.');
             }
         });
+    }
+
+    function onSubmit(ev) {
+        if (!isOffline()) {
+            return;
+        }
+        var form = ev.target;
+        if (!form || !form.getAttribute) {
+            return;
+        }
+        var method = String(form.getAttribute('method') || 'get').toLowerCase();
+        if (method === 'post') {
+            blockWrite(ev, 'الحفظ والإرسال غير متاحين أوفلاين.');
+        }
     }
 
     function boot() {
@@ -252,6 +395,7 @@
             return;
         }
         root.document.addEventListener('click', onClick, true);
+        root.document.addEventListener('submit', onSubmit, true);
         var run = function () { scan(); };
         if (root.document.readyState === 'loading') {
             root.document.addEventListener('DOMContentLoaded', run, { once: true });
@@ -272,7 +416,6 @@
                 setTimeout(scan, 200);
             }
         });
-        // Re-scan after warm progress updates cache.
         setInterval(function () {
             if (isOffline()) {
                 scan();
