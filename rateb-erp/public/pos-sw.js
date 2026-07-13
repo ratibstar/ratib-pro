@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v18';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v24';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v24';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v19';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v25';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v25';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -353,23 +353,9 @@ function putErpOpsPageFromMessage(data) {
  * @param {URL} [url]
  */
 function erpAdminOfflineFallback(request, url) {
-    // Hard guard: never paint PIN/offline-shell while the browser reports online.
-    if (!isCloudBrowserOffline()) {
-        var href = '/';
-        try {
-            href = String((url && url.href) || (request && request.url) || '/');
-        } catch (eHref) { /* ignore */ }
-        return Promise.resolve(new Response(
-            '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
-            + '<meta http-equiv="refresh" content="1;url=' + href.replace(/"/g, '') + '">'
-            + '<title>RATEB ERP</title></head><body style="font-family:system-ui;padding:2rem;text-align:center">'
-            + '<p>الاتصال متاح — جاري فتح النسخة الحية…</p>'
-            + '</body></html>',
-            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
-        ));
-    }
-    // 1) Allowlisted ops captures  2) any cached admin HTML for this URL  3) path-aware miss page
-    // Never serve generic offline-shell home under a deep URL (companies, inventory, …).
+    // Always serve cached Admin HTML after a failed network navigation.
+    // Do NOT trust navigator.onLine here — Chrome often reports online with no internet,
+    // and a 503+refresh loop causes ERR_FAILED instead of the offline app.
     var tryOps = erpOpsPageFallback(request, url);
     return tryOps.then(function (opsHit) {
         if (opsHit) {
@@ -1224,21 +1210,15 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: non-POS admin HTML → network while online; offline → ERP shell.
-    // Never trap an online browser in offline-shell/PIN when Wi‑Fi is up.
+    // Smart coexist: try network first; on ANY failure serve cached Admin (never Chrome ERR_FAILED).
+    // navigator.onLine is unreliable (adapter up / no internet) — do not gate fallback on it.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
             fetchNavigateNetwork(event.request, 12000).catch(function () {
-                if (isCloudBrowserOffline()) {
-                    return erpAdminOfflineFallback(event.request, url);
-                }
-                // Browser still reports online — retry once; do not serve offline shell.
-                return fetch(event.request, { credentials: 'same-origin', cache: 'no-store' }).catch(function () {
-                    return erpAdminOfflineFallback(event.request, url);
-                });
+                return erpAdminOfflineFallback(event.request, url);
             })
         );
         return;

@@ -55,39 +55,51 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     });
   }
 
-  // If Wi‑Fi is up, never stay on offline-shell — jump to live Admin.
+  // Jump to live Admin only after a real network probe (navigator.onLine is unreliable).
   try {
-    if (navigator.onLine !== false) {
+    if (navigator.onLine === false) {
+      /* continue offline unlock */
+    } else {
       var base = (function () {
         var p = String(location.pathname || '');
         var m = p.match(/^(.*\/public\/)/i);
         if (m && m[1]) return m[1];
         return '/rateb-erp/public/';
       })();
-      var q = location.search || '';
-      var already = /[?&]rateb_live=/.test(q) || /[?&]rateb_force_live=/.test(q);
-      if (already) {
-        var finish = function () {
-          location.replace(location.origin + base + 'admin/?rateb_force_live=' + Date.now());
-        };
-        var jobs = [];
-        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
-          jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
-            return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
-          }));
+      var probe = base + 'api/v1/offline/status?_rateb_probe=' + Date.now();
+      fetch(probe, {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
+      }).then(function (res) {
+        if (!res || !(res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
+          return;
         }
-        if (window.caches && caches.keys) {
-          jobs.push(caches.keys().then(function (keys) {
-            return Promise.all((keys || []).map(function (k) {
-              return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
+        var q = location.search || '';
+        var already = /[?&]rateb_live=/.test(q) || /[?&]rateb_force_live=/.test(q);
+        if (already) {
+          var finish = function () {
+            location.replace(location.origin + base + 'admin/?rateb_force_live=' + Date.now());
+          };
+          var jobs = [];
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
             }));
-          }));
+          }
+          if (window.caches && caches.keys) {
+            jobs.push(caches.keys().then(function (keys) {
+              return Promise.all((keys || []).map(function (k) {
+                return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
+              }));
+            }));
+          }
+          Promise.all(jobs).then(finish).catch(finish);
+          return;
         }
-        Promise.all(jobs).then(finish).catch(finish);
-        return;
-      }
-      location.replace(location.origin + base + 'admin/?rateb_live=' + Date.now());
-      return;
+        location.replace(location.origin + base + 'admin/?rateb_live=' + Date.now());
+      }).catch(function () { /* stay offline */ });
     }
   } catch (eOnline) { /* continue offline unlock */ }
 

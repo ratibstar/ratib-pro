@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v18').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v19').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v18 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v19 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v18');
+                                'offline-shell.html present in rateb-erp-coexist-v19');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);
@@ -400,7 +400,7 @@
     var LIVE_RELOAD_KEY = 'rateb_erp_live_reload_at';
     var lastConnectivityOnline = null;
 
-    /** If offline shell is painted while Wi‑Fi is up, escape to live Admin immediately. */
+    /** If offline shell is painted, escape only after a real network probe succeeds. */
     function escapeOfflineShellIfOnline() {
         try {
             if (root.navigator && root.navigator.onLine === false) {
@@ -409,15 +409,45 @@
             if (!isOfflineShellDocument()) {
                 return false;
             }
+            // navigator.onLine alone is not enough — probe before leaving cached UI.
+            var probeUrl = (cfg && cfg.probeUrl) ? String(cfg.probeUrl) : '';
+            if (!probeUrl) {
+                try {
+                    var p = String(root.location.pathname || '');
+                    var m = p.match(/^(.*\/public\/)/i);
+                    probeUrl = (m && m[1] ? m[1] : '/rateb-erp/public/') + 'api/v1/offline/status';
+                } catch (ePu) {
+                    probeUrl = '/rateb-erp/public/api/v1/offline/status';
+                }
+            }
+            var url = probeUrl + (probeUrl.indexOf('?') >= 0 ? '&' : '?') + '_rateb_probe=' + Date.now();
+            root.fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
+            }).then(function (res) {
+                if (!res || !(res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
+                    return;
+                }
+                doEscapeOfflineShell();
+            }).catch(function () { /* stay on cached UI */ });
+            return false;
+        } catch (eEsc) {
+            return false;
+        }
+    }
+
+    function doEscapeOfflineShell() {
+        try {
             var path = String(root.location.pathname || '');
             var hadLive = false;
             try {
                 hadLive = !!(new URL(root.location.href).searchParams.get('rateb_live'));
             } catch (eHad) { /* ignore */ }
-            // Second escape: previous rateb_live still showed shell → purge SW/caches.
             if (hadLive) {
                 purgeStaleOfflineAndReload();
-                return true;
+                return;
             }
             var target;
             if (/offline-shell\.html$/i.test(path)) {
@@ -429,10 +459,7 @@
                 target = u.href;
             }
             root.location.replace(target);
-            return true;
-        } catch (eEsc) {
-            return false;
-        }
+        } catch (eDo) { /* ignore */ }
     }
 
     function purgeStaleOfflineAndReload() {

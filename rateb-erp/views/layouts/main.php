@@ -646,38 +646,50 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   } else {
     window.addEventListener('load', function () { setTimeout(cacheLiveAdminPage, 1500); }, { once: true });
   }
-  // Escape hatch: stale SW offline shell while Wi‑Fi is up.
+  // Escape hatch: only leave offline UI after a real probe succeeds.
   try {
-    if (navigator.onLine !== false
-        && document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-offline-ops-banner]')) {
-      var u = new URL(location.href);
-      var already = u.searchParams.get('rateb_live') || u.searchParams.get('rateb_force_live');
-      if (already) {
-        // Still offline shell after rateb_live → nuke SW/caches then reload live.
-        var done = function () {
-          u.searchParams.delete('rateb_live');
-          u.searchParams.set('rateb_force_live', String(Date.now()));
+    if (document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-offline-ops-banner]')) {
+      if (navigator.onLine !== false) {
+        var probeBase = (function () {
+          var p = String(location.pathname || '');
+          var m = p.match(/^(.*\/public\/)/i);
+          return (m && m[1]) ? m[1] : '/rateb-erp/public/';
+        })();
+        fetch(probeBase + 'api/v1/offline/status?_rateb_probe=' + Date.now(), {
+          method: 'GET',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
+        }).then(function (res) {
+          if (!res || !(res.ok || res.status === 401 || res.status === 403 || res.status === 419)) return;
+          var u = new URL(location.href);
+          var already = u.searchParams.get('rateb_live') || u.searchParams.get('rateb_force_live');
+          if (already) {
+            var done = function () {
+              u.searchParams.delete('rateb_live');
+              u.searchParams.set('rateb_force_live', String(Date.now()));
+              location.replace(u.href);
+            };
+            var jobs = [];
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+                return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
+              }));
+            }
+            if (window.caches && caches.keys) {
+              jobs.push(caches.keys().then(function (keys) {
+                return Promise.all((keys || []).map(function (k) {
+                  return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
+                }));
+              }));
+            }
+            Promise.all(jobs).then(done).catch(done);
+            return;
+          }
+          u.searchParams.set('rateb_live', String(Date.now()));
           location.replace(u.href);
-        };
-        var jobs = [];
-        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
-          jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
-            return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
-          }));
-        }
-        if (window.caches && caches.keys) {
-          jobs.push(caches.keys().then(function (keys) {
-            return Promise.all((keys || []).map(function (k) {
-              return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
-            }));
-          }));
-        }
-        Promise.all(jobs).then(done).catch(done);
-        return;
+        }).catch(function () { /* stay on cached UI */ });
       }
-      u.searchParams.set('rateb_live', String(Date.now()));
-      location.replace(u.href);
-      return;
     }
   } catch (eEsc) {}
   navigator.serviceWorker.register(swUrl, scope

@@ -356,17 +356,15 @@
                 setOnline(true);
                 return true;
             }
-            // Soft-fail on cloud: do not force offline when Wi‑Fi is up (status API may 404).
-            if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
-                return online;
+            // Got an HTTP response → network works; keep prior state if status API is odd.
+            if (res) {
+                setOnline(true);
+                return true;
             }
             setOnline(false);
             return false;
         }).catch(function () {
-            // Soft-fail on cloud: aborted/probe errors must not flip Wi‑Fi-up → offline shell.
-            if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
-                return online;
-            }
+            // Failed fetch = no real internet (do not trust navigator.onLine soft-fail).
             setOnline(false);
             return false;
         }).finally(function () {

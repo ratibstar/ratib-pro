@@ -109,15 +109,10 @@
                 apply(true);
                 return;
             }
-            // Soft-fail: a live admin page must not flip to "غير متصل" just because
-            // /api/v1/offline/status is missing or slow on production.
-            if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
-                apply(true);
-                return;
-            }
+            // Probe failed = no reachable origin (navigator.onLine alone is unreliable).
             apply(false);
             var c1 = window.RatebOfflineConnectivity;
-            if (c1 && typeof c1.setOnline === 'function' && c1.isOnline && c1.isOnline() !== false) {
+            if (c1 && typeof c1.setOnline === 'function') {
                 c1.setOnline(false);
             }
         }).finally(function () {
