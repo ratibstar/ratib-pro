@@ -5,7 +5,8 @@
     'use strict';
 
     var listeners = [];
-    var online = typeof navigator !== 'undefined' ? navigator.onLine !== false : true;
+    // Never optimistic-online: Chrome + Service Worker often report onLine while Wi‑Fi is off.
+    var online = false;
     var probeTimer = null;
     var probing = false;
     var probeUrl = null;
@@ -27,6 +28,11 @@
 
     function setOnline(next) {
         next = !!next;
+        try {
+            if (next && typeof navigator !== 'undefined' && navigator.onLine === false) {
+                next = false;
+            }
+        } catch (eNav) { /* ignore */ }
         if (online === next) {
             return;
         }
@@ -75,11 +81,24 @@
                     return false;
                 }
             } catch (eLocal) { /* ignore */ }
+            try {
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    setOnline(false);
+                    return false;
+                }
+            } catch (eOff) { /* ignore */ }
             if (res && res.headers && String(res.headers.get('X-Rateb-Connectivity-Echo') || '') === '1') {
                 setOnline(true);
                 return true;
             }
             // Any HTTP response (incl. 404 on status) proves the origin is reachable.
+            // Reject SW/cache ghost responses: probes must not be served from Cache API.
+            try {
+                if (res && res.headers && String(res.headers.get('X-Rateb-Offline') || '') === '1') {
+                    setOnline(false);
+                    return false;
+                }
+            } catch (eHdr) { /* ignore */ }
             if (res) {
                 setOnline(true);
                 return true;

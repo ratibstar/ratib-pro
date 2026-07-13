@@ -422,11 +422,21 @@
                 setTimeout(scan, 200);
             }
         });
+        root.document.addEventListener('rateb-connection-badge', function (ev) {
+            var online = ev && ev.detail && ev.detail.online;
+            if (online) {
+                clearMarks();
+            } else {
+                setTimeout(scan, 200);
+            }
+        });
         setInterval(function () {
             if (isOffline()) {
                 scan();
+            } else {
+                clearMarks();
             }
-        }, 15000);
+        }, 8000);
     }
 
     root.RatebOfflineNavGuard = { scan: scan, isOffline: isOffline };

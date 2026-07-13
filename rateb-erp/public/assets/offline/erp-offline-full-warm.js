@@ -325,6 +325,16 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
+        var build = '20260713-design-offline';
+        try {
+            var links = root.document.querySelectorAll('link[rel="stylesheet"][href*="/assets/"]');
+            Array.prototype.forEach.call(links, function (link) {
+                var href = link.getAttribute('href');
+                if (href) {
+                    /* collected below via files + live DOM */
+                }
+            });
+        } catch (eDom) { /* ignore */ }
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -339,16 +349,53 @@
             'assets/css/main.css',
             'assets/css/components.css',
             'assets/css/dark.css',
-            'assets/css/rtl.css'
+            'assets/css/light.css',
+            'assets/css/rtl.css',
+            'assets/css/dashboard.css',
+            'assets/css/ar-typography.css',
+            'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
+            'assets/vendor/bootstrap/5.3.3/bootstrap.min.css',
+            'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
+            'assets/vendor/fontawesome/6.5.2/css/all.min.css',
+            'assets/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2',
+            'assets/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2',
+            'assets/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2',
+            'assets/vendor/fonts/tajawal/tajawal.css',
+            'assets/vendor/chartjs/4.4.3/chart.umd.min.js',
+            'assets/js/theme.js',
+            'assets/js/app.js',
+            'assets/js/connectivity-indicator.js',
+            'assets/js/charts.js',
+            'assets/js/lang.js',
+            'assets/js/dashboard-tabs.js',
+            'assets/js/module-page-stats.js'
         ];
         var out = [];
+        var seen = {};
+        function push(u) {
+            if (!u || seen[u]) {
+                return;
+            }
+            seen[u] = true;
+            out.push(u);
+        }
         files.forEach(function (f) {
-            out.push(base + f);
-            out.push(base + f + '?v=20260713-offline-nav-guard');
-            out.push(base + f + '?v=20260713-inline-shell-v30');
-            out.push(base + f + '?v=oid-20260713-lean');
-            out.push(base + f + '?v=20260713-probe-warm-fix');
+            push(base + f);
+            push(base + f + '?v=' + build);
+            push(base + f + '?v=20260713-err-failed-fix');
+            push(base + f + '?v=20260713-no-dash-fallback');
+            push(base + f + '?v=20260713-offline-nav-guard');
         });
+        try {
+            root.document.querySelectorAll('link[rel="stylesheet"][href], script[src]').forEach(function (node) {
+                var href = node.getAttribute('href') || node.getAttribute('src') || '';
+                if (/\/assets\/(css|js|vendor|offline)\//i.test(href)) {
+                    try {
+                        push(new URL(href, root.location.href).href);
+                    } catch (eU) { /* ignore */ }
+                }
+            });
+        } catch (eLive) { /* ignore */ }
         return out;
     }
 

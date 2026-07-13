@@ -33,7 +33,13 @@
         if (!node) {
             return;
         }
+        // Chrome + SW often claim online while Wi‑Fi is still off.
         var on = !!online;
+        try {
+            if (on && typeof navigator !== 'undefined' && navigator.onLine === false) {
+                on = false;
+            }
+        } catch (eNav) { /* ignore */ }
         var labelOn = node.getAttribute('data-label-online') || 'Online';
         var labelOff = node.getAttribute('data-label-offline') || 'Offline';
         var label = on ? labelOn : labelOff;
@@ -45,6 +51,11 @@
         if (text) {
             text.textContent = label;
         }
+        try {
+            document.dispatchEvent(new CustomEvent('rateb-connection-badge', {
+                detail: { online: on }
+            }));
+        } catch (eEmit) { /* ignore */ }
     }
 
     function probeUrlFallback() {
@@ -83,6 +94,16 @@
             headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
             signal: ctrl ? ctrl.signal : undefined
         }).then(function (res) {
+            try {
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    return false;
+                }
+            } catch (eOff) { /* ignore */ }
+            try {
+                if (res && res.headers && String(res.headers.get('X-Rateb-Offline') || '') === '1') {
+                    return false;
+                }
+            } catch (eHdr) { /* ignore */ }
             // Any HTTP response from origin means the network path works (status may 404).
             return !!res;
         }).catch(function () {
@@ -173,16 +194,34 @@
 
         document.addEventListener('rateb-offline-connectivity', function (ev) {
             var detail = ev && ev.detail ? ev.detail : null;
-            if (detail && typeof detail.online === 'boolean') {
-                apply(detail.online);
+            if (!detail || typeof detail.online !== 'boolean') {
+                return;
             }
+            if (detail.online && typeof navigator !== 'undefined' && navigator.onLine === false) {
+                apply(false);
+                return;
+            }
+            // «متصل» only after a real probe path — ignore optimistic true.
+            if (detail.online) {
+                scheduleVerify(0);
+                return;
+            }
+            apply(false);
         });
 
         var conn = window.RatebOfflineConnectivity;
         if (conn && typeof conn.subscribe === 'function') {
-            conn.subscribe(function (online) { apply(online); });
-        } else if (conn && typeof conn.isOnline === 'function') {
-            apply(conn.isOnline());
+            conn.subscribe(function (online) {
+                if (online && typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    apply(false);
+                    return;
+                }
+                if (online) {
+                    scheduleVerify(0);
+                    return;
+                }
+                apply(false);
+            });
         }
 
         document.addEventListener('click', function () {

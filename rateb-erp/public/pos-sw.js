@@ -658,7 +658,21 @@ function warmErpOfflineShell() {
         base + 'assets/css/main.css',
         base + 'assets/css/components.css',
         base + 'assets/css/dark.css',
-        base + 'assets/css/rtl.css'
+        base + 'assets/css/light.css',
+        base + 'assets/css/rtl.css',
+        base + 'assets/css/dashboard.css',
+        base + 'assets/css/ar-typography.css',
+        base + 'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
+        base + 'assets/vendor/bootstrap/5.3.3/bootstrap.min.css',
+        base + 'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
+        base + 'assets/vendor/fontawesome/6.5.2/css/all.min.css',
+        base + 'assets/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2',
+        base + 'assets/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2',
+        base + 'assets/vendor/fonts/tajawal/tajawal.css',
+        base + 'assets/js/theme.js',
+        base + 'assets/js/app.js',
+        base + 'assets/js/connectivity-indicator.js',
+        base + 'assets/js/charts.js'
     ];
     // Stage common Admin pages so offline nav keeps real module UI (not offline-home).
     var leanOps = [
@@ -959,9 +973,15 @@ function isErpOfflineAsset(url) {
     if (p.indexOf('/assets/offline/') !== -1 || /\/offline-shell\.html$/i.test(p)) {
         return true;
     }
-    // Cloud offline only: serve warmed ERP CSS from coexist cache (avoid online paint delay).
-    // Local appliance must keep fetching CSS from PHP even when Wi‑Fi is off.
-    if (isCloudBrowserOffline() && /\/assets\/css\/.+\.css$/i.test(p)) {
+    // Always manage design assets (not only when navigator.onLine is false) so
+    // offline Admin matches online layout: CSS, Bootstrap, fonts, icons, shell JS.
+    if (/\/assets\/css\/.+\.css$/i.test(p)) {
+        return true;
+    }
+    if (/\/assets\/vendor\/(bootstrap|fontawesome|fonts|chartjs)\//i.test(p)) {
+        return true;
+    }
+    if (/\/assets\/js\/(theme|app|connectivity-indicator|charts|lang|dashboard-tabs|module-page-stats)\.js$/i.test(p)) {
         return true;
     }
     return false;
@@ -1012,8 +1032,15 @@ function emptyAssetResponse(request) {
         body = '/* rateb-pos offline stub */';
         type = 'application/javascript; charset=utf-8';
     } else if (/\.css$/i.test(path)) {
-        body = '/* rateb-pos offline stub */';
-        type = 'text/css; charset=utf-8';
+        // Never claim success with an empty stylesheet — that strips the online design.
+        return new Response('/* rateb offline: stylesheet missing from cache */', {
+            status: 503,
+            headers: {
+                'Content-Type': 'text/css; charset=utf-8',
+                'X-Rateb-Offline': '1',
+                'Cache-Control': 'no-store'
+            }
+        });
     } else if (/\.(png|jpe?g|gif|webp|svg|ico)$/i.test(path)) {
         // 1x1 transparent GIF
         var bin = atob('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
@@ -1479,7 +1506,7 @@ self.addEventListener('fetch', function (event) {
                 return matchErpOfflineCached(event.request, url).then(function (cached) {
                     if (cached) {
                         event.waitUntil(
-                            fetchErpAssetNetwork(event.request, 2000).then(function (fresh) {
+                            fetchErpAssetNetwork(event.request, 4000).then(function (fresh) {
                                 if (!fresh) {
                                     return null;
                                 }
@@ -1490,15 +1517,17 @@ self.addEventListener('fetch', function (event) {
                         );
                         return cached;
                     }
-                    return fetchErpAssetNetwork(event.request, 2000).then(function (response) {
-                        if (response) {
+                    // Design CSS/vendor: never substitute empty 503 while online — wait for PHP/CDN.
+                    return fetch(event.request, { credentials: 'same-origin' }).then(function (response) {
+                        if (response && response.ok) {
                             event.waitUntil(
                                 caches.open(ERP_COEXIST_CACHE).then(function (cache) {
                                     return putBoth(cache, response);
                                 })
                             );
-                            return response;
                         }
+                        return response;
+                    }).catch(function () {
                         return emptyAssetResponse(event.request);
                     });
                 });
