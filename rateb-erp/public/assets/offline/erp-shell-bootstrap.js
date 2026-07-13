@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v11').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v12').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v11 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v12 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v11');
+                                'offline-shell.html present in rateb-erp-coexist-v12');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);

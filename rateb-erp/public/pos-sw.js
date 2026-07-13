@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v11';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v17';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v17';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v12';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v18';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v18';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -575,11 +575,39 @@ function matchErpOfflineCached(request, url) {
     });
 }
 
+/** Branch appliance (127.0.0.1) keeps working with Wi‑Fi off — do not treat as "no network". */
+function isLocalApplianceOrigin() {
+    try {
+        var h = String(self.location.hostname || '');
+        return h === '127.0.0.1' || h === 'localhost' || h === '[::1]';
+    } catch (eHost) {
+        return false;
+    }
+}
+
+/**
+ * Cloud tab with no internet — use cache/shell fail-fast.
+ * Never true on local appliance (PHP built-in server is still up).
+ */
+function isCloudBrowserOffline() {
+    if (isLocalApplianceOrigin()) {
+        return false;
+    }
+    return !!(self.navigator && self.navigator.onLine === false);
+}
+
 /** Offline must not wait on hanging fetch(); online uses a short race timeout. */
 function fetchErpAssetNetwork(request, timeoutMs) {
-    var offline = self.navigator && self.navigator.onLine === false;
-    if (offline) {
+    if (isCloudBrowserOffline()) {
         return Promise.resolve(null);
+    }
+    // Local appliance: always hit PHP — no abort race (pages can be slow once).
+    if (isLocalApplianceOrigin()) {
+        return fetch(request, { credentials: 'same-origin' }).then(function (response) {
+            return response && response.ok ? response : null;
+        }).catch(function () {
+            return null;
+        });
     }
     var ms = typeof timeoutMs === 'number' ? timeoutMs : 2500;
     var network = fetch(request, { credentials: 'same-origin' }).then(function (response) {
@@ -594,12 +622,15 @@ function fetchErpAssetNetwork(request, timeoutMs) {
 }
 
 /**
- * Admin/HTML navigations: fail fast when offline or after a short network race.
- * Avoids 20–75s Chrome spinner while TCP times out before SW cache fallback.
+ * Admin/HTML navigations.
+ * Local: pass through to PHP (Wi‑Fi off must still load instantly).
+ * Cloud: short network race then cache/shell — avoids long Chrome spinner.
  */
 function fetchNavigateNetwork(request, timeoutMs) {
-    var offline = self.navigator && self.navigator.onLine === false;
-    if (offline) {
+    if (isLocalApplianceOrigin()) {
+        return fetch(request, { credentials: 'same-origin' });
+    }
+    if (isCloudBrowserOffline()) {
         return Promise.reject(new Error('offline'));
     }
     var ms = typeof timeoutMs === 'number' ? timeoutMs : 2500;
@@ -667,9 +698,9 @@ function isErpOfflineAsset(url) {
     if (p.indexOf('/assets/offline/') !== -1 || /\/offline-shell\.html$/i.test(p)) {
         return true;
     }
-    // Offline only: serve warmed ERP CSS from coexist cache (avoid online paint delay).
-    var offline = self.navigator && self.navigator.onLine === false;
-    if (offline && /\/assets\/css\/.+\.css$/i.test(p)) {
+    // Cloud offline only: serve warmed ERP CSS from coexist cache (avoid online paint delay).
+    // Local appliance must keep fetching CSS from PHP even when Wi‑Fi is off.
+    if (isCloudBrowserOffline() && /\/assets\/css\/.+\.css$/i.test(p)) {
         return true;
     }
     return false;
@@ -1117,7 +1148,7 @@ self.addEventListener('fetch', function (event) {
     // Offline: cache-first with fail-fast (no hanging fetch).
     if (isErpOfflineAsset(url)) {
         event.respondWith((function () {
-            var offline = self.navigator && self.navigator.onLine === false;
+            var offline = isCloudBrowserOffline();
             function putBoth(cache, response) {
                 var copy = response.clone();
                 return cache.put(event.request, copy.clone()).then(function () {
