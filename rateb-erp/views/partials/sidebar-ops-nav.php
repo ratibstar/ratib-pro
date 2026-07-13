@@ -4,10 +4,12 @@ declare(strict_types=1);
 /**
  * Company operations nav — full CRUD routes under unified /admin shell.
  * Shown for company users and super admins (permissions + plan modules apply).
+ * Branch appliance: lean nav matching current rateb.sa online set (no enterprise extras).
  */
 if (function_exists('rateb_bootstrap_ops_tenant')) {
     rateb_bootstrap_ops_tenant();
 }
+$branchLeanNav = function_exists('rateb_is_branch_appliance_runtime') && rateb_is_branch_appliance_runtime();
 if (!rateb_is_super_admin() && rateb_company_branches_nav_enabled()) {
     $opsSection(__('branches'), [
         ['branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branches', 'branch.dashboard.view'],
@@ -31,6 +33,7 @@ $opsSection(__('procurement'), [
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
 ], 'fa-cart-shopping');
+if (!$branchLeanNav) {
 $opsSection(__('recruitment'), [
     ['recruitment', 'recruitment', 'fa-briefcase', 'recruitment'],
     ['recruitment/candidates', 'recruitment_candidates', 'fa-user-plus', 'recruitment'],
@@ -64,6 +67,7 @@ $opsSection(__('projects'), [
     ['projects/timeline', 'project_timeline', 'fa-timeline', 'projects', 'projects.view'],
     ['projects/reports', 'project_reports', 'fa-chart-pie', 'projects', 'projects.reports'],
 ], 'fa-diagram-project');
+} // end !$branchLeanNav (recruitment/crm/projects)
 $opsSection(__('inventory'), [
     ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
     ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],
@@ -74,6 +78,7 @@ $opsSection(__('inventory'), [
     ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
     ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
 ], 'fa-boxes-stacked');
+if (!$branchLeanNav) {
 $opsSection(__('manufacturing_platform'), [
     ['mfg', 'manufacturing_platform', 'fa-industry', 'manufacturing', 'manufacturing.view'],
     ['mfg/products', 'mfg_products', 'fa-cube', 'manufacturing', 'manufacturing.view'],
@@ -161,6 +166,7 @@ $opsSection(__('bi_platform'), [
     ['bi/scopes', 'bi_scopes', 'fa-layer-group', 'bi', 'bi.view'],
     ['bi/timeline', 'bi_timeline', 'fa-timeline', 'bi', 'bi.view'],
 ], 'fa-chart-line');
+} // end !$branchLeanNav (mfg/hrm/payroll/qms/dms/bi)
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }
@@ -195,6 +201,7 @@ $opsSection(__('accounting_module'), [
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
 ], 'fa-calculator');
+if (!$branchLeanNav) {
 $opsSection(__('eam_platform'), [
     ['eam', 'eam_platform', 'fa-cubes', 'assets', 'assets.view'],
     ['eam/assets', 'eam_assets', 'fa-toolbox', 'assets', 'assets.view'],
@@ -217,6 +224,7 @@ $opsSection(__('approval_platform'), [
     ['approvals/history', 'approval_history', 'fa-clock-rotate-left', 'approval', 'approval.view'],
     ['approvals/reports', 'approval_reports', 'fa-chart-pie', 'approval', 'approval.view'],
 ], 'fa-clipboard-check');
+} // end !$branchLeanNav (eam/approvals)
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
     ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
@@ -252,8 +260,10 @@ if (function_exists('rateb_company_access_routes_enabled') && rateb_company_acce
     ]);
     $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
 }
+if (!$branchLeanNav) {
 $opsSection(__('security'), [
     ['security/offline-devices', 'offline_devices', 'fa-mobile-screen', '', 'offline.devices.view'],
 ], 'fa-shield-halved');
+}
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');

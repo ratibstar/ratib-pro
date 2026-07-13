@@ -2689,6 +2689,16 @@ if (!function_exists('rateb_ops_nav_pending_badge')) {
     }
 }
 
+if (!function_exists('rateb_is_branch_appliance_runtime')) {
+    /** Local Branch Appliance (SQLite) — not cloud MySQL. */
+    function rateb_is_branch_appliance_runtime(): bool
+    {
+        $runtime = strtolower(trim((string) (getenv('RATEB_RUNTIME') ?: ($_ENV['RATEB_RUNTIME'] ?? ''))));
+
+        return $runtime === 'branch';
+    }
+}
+
 if (!function_exists('rateb_nav_can')) {
     function rateb_nav_can(string $permission = '', string $module = ''): bool
     {
@@ -2699,7 +2709,21 @@ if (!function_exists('rateb_nav_can')) {
             return true;
         }
         if (rateb_is_super_admin()) {
-            return $permission === '' || rateb_can($permission);
+            if ($permission !== '' && !rateb_can($permission)) {
+                return false;
+            }
+            // Branch offline: match plan modules (same lean nav as configured online).
+            if (rateb_is_branch_appliance_runtime() && $module !== '') {
+                $companyId = (int) ($_SESSION['rateb_company_id'] ?? 0);
+                if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                    $companyId = (int) rateb_resolve_ops_company_id();
+                }
+                if ($companyId > 0) {
+                    return (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $module);
+                }
+            }
+
+            return true;
         }
         if ($permission !== '' && !rateb_can($permission)) {
             return false;
