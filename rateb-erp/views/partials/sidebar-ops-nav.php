@@ -2,14 +2,12 @@
 declare(strict_types=1);
 
 /**
- * Company operations nav — full CRUD routes under unified /admin shell.
- * Shown for company users and super admins (permissions + plan modules apply).
- * Branch appliance: lean nav matching current rateb.sa online set (no enterprise extras).
+ * Company operations nav — unified lean product set (online = offline / branch).
+ * No eproc enterprise pack, no CRM/recruitment/projects/mfg/… platform sidebars.
  */
 if (function_exists('rateb_bootstrap_ops_tenant')) {
     rateb_bootstrap_ops_tenant();
 }
-$branchLeanNav = function_exists('rateb_is_branch_appliance_runtime') && rateb_is_branch_appliance_runtime();
 if (!rateb_is_super_admin() && rateb_company_branches_nav_enabled()) {
     $opsSection(__('branches'), [
         ['branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branches', 'branch.dashboard.view'],
@@ -19,65 +17,12 @@ if (!rateb_is_super_admin() && rateb_company_branches_nav_enabled()) {
         ['branch-transfers', 'branch_transfers', 'fa-shuffle', 'branches', 'branch.transfers.view'],
     ], 'fa-code-branch');
 }
-if ($branchLeanNav) {
-    // Match current rateb.sa online procurement submenu only
-    $opsSection(__('procurement'), [
-        ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
-        ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
-        ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
-        ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
-    ], 'fa-cart-shopping');
-} else {
 $opsSection(__('procurement'), [
-    ['eproc', 'procurement_platform', 'fa-building-columns', 'procurement', 'procurement.view'],
-    ['eproc/suppliers', 'eproc_suppliers', 'fa-truck', 'procurement', 'procurement.supplier'],
-    ['eproc/tenders', 'eproc_tenders', 'fa-gavel', 'procurement', 'procurement.tender'],
-    ['eproc/contracts', 'eproc_contracts', 'fa-file-contract', 'procurement', 'procurement.contract'],
-    ['eproc/calendar', 'eproc_calendar', 'fa-calendar-days', 'procurement', 'procurement.view'],
-    ['eproc/spend', 'eproc_spend', 'fa-chart-pie', 'procurement', 'procurement.view'],
-    ['eproc/portal', 'eproc_portal', 'fa-globe', 'procurement', 'procurement.portal'],
-    ['eproc/reports', 'eproc_reports', 'fa-chart-line', 'procurement', 'procurement.view'],
     ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
     ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
 ], 'fa-cart-shopping');
-}
-if (!$branchLeanNav) {
-$opsSection(__('recruitment'), [
-    ['recruitment', 'recruitment', 'fa-briefcase', 'recruitment'],
-    ['recruitment/candidates', 'recruitment_candidates', 'fa-user-plus', 'recruitment'],
-    ['recruitment/agencies', 'recruitment_agencies', 'fa-building', 'recruitment'],
-], 'fa-user-tie');
-$opsSection(__('crm'), [
-    ['crm', 'crm', 'fa-handshake', 'crm', 'crm.view'],
-    ['crm/leads', 'crm_leads', 'fa-user-tag', 'crm', 'crm.view'],
-    ['crm/leads/board', 'crm_lead_board', 'fa-columns', 'crm', 'crm.view'],
-    ['crm/pipeline', 'crm_pipeline', 'fa-filter', 'crm', 'crm.pipeline'],
-    ['crm/opportunities', 'crm_opportunities', 'fa-bullseye', 'crm', 'crm.view'],
-    ['crm/meetings', 'crm_meetings', 'fa-calendar', 'crm', 'crm.activities'],
-    ['crm/tasks', 'crm_tasks', 'fa-list-check', 'crm', 'crm.activities'],
-    ['crm/campaigns', 'crm_campaigns', 'fa-bullhorn', 'crm', 'crm.campaign'],
-    ['crm/contacts', 'crm_contacts', 'fa-address-book', 'crm', 'crm.view'],
-    ['crm/companies', 'crm_companies', 'fa-building-user', 'crm', 'crm.view'],
-], 'fa-handshake');
-$opsSection(__('projects'), [
-    ['projects', 'projects', 'fa-diagram-project', 'projects', 'projects.view'],
-    ['projects/list', 'projects_list', 'fa-folder-open', 'projects', 'projects.view'],
-    ['projects/tasks', 'project_tasks', 'fa-list-check', 'projects', 'projects.tasks'],
-    ['projects/tasks/kanban', 'project_kanban', 'fa-columns', 'projects', 'projects.tasks'],
-    ['projects/tasks/gantt', 'project_gantt', 'fa-chart-gantt', 'projects', 'projects.tasks'],
-    ['projects/tasks/calendar', 'project_calendar', 'fa-calendar-days', 'projects', 'projects.tasks'],
-    ['projects/milestones', 'project_milestones', 'fa-flag', 'projects', 'projects.view'],
-    ['projects/issues', 'project_issues', 'fa-bug', 'projects', 'projects.view'],
-    ['projects/risks', 'project_risks', 'fa-triangle-exclamation', 'projects', 'projects.view'],
-    ['projects/timesheets', 'project_timesheets', 'fa-clock', 'projects', 'projects.timesheets'],
-    ['projects/resources', 'project_resources', 'fa-users-gear', 'projects', 'projects.view'],
-    ['projects/budget', 'project_budget', 'fa-coins', 'projects', 'projects.budget'],
-    ['projects/timeline', 'project_timeline', 'fa-timeline', 'projects', 'projects.view'],
-    ['projects/reports', 'project_reports', 'fa-chart-pie', 'projects', 'projects.reports'],
-], 'fa-diagram-project');
-} // end !$branchLeanNav (recruitment/crm/projects)
 $opsSection(__('inventory'), [
     ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
     ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],
@@ -88,95 +33,6 @@ $opsSection(__('inventory'), [
     ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
     ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
 ], 'fa-boxes-stacked');
-if (!$branchLeanNav) {
-$opsSection(__('manufacturing_platform'), [
-    ['mfg', 'manufacturing_platform', 'fa-industry', 'manufacturing', 'manufacturing.view'],
-    ['mfg/products', 'mfg_products', 'fa-cube', 'manufacturing', 'manufacturing.view'],
-    ['mfg/boms', 'mfg_boms', 'fa-sitemap', 'manufacturing', 'manufacturing.bom'],
-    ['mfg/production-orders', 'mfg_production_orders', 'fa-clipboard-list', 'manufacturing', 'manufacturing.shopfloor'],
-    ['mfg/work-orders', 'mfg_work_orders', 'fa-hammer', 'manufacturing', 'manufacturing.shopfloor'],
-    ['mfg/work-centers', 'mfg_work_centers', 'fa-warehouse', 'manufacturing', 'manufacturing.planning'],
-    ['mfg/routings', 'mfg_routings', 'fa-route', 'manufacturing', 'manufacturing.bom'],
-    ['mfg/capacity', 'mfg_capacity', 'fa-gauge-high', 'manufacturing', 'manufacturing.planning'],
-    ['mfg/calendar', 'mfg_calendar', 'fa-calendar-days', 'manufacturing', 'manufacturing.planning'],
-    ['mfg/schedules', 'mfg_schedules', 'fa-timeline', 'manufacturing', 'manufacturing.planning'],
-    ['mfg/quality', 'mfg_quality', 'fa-clipboard-check', 'manufacturing', 'manufacturing.quality'],
-    ['mfg/reports', 'mfg_reports', 'fa-chart-line', 'manufacturing', 'manufacturing.view'],
-], 'fa-industry');
-$opsSection(__('hr_platform'), [
-    ['hrm', 'hr_platform', 'fa-id-card-clip', 'hr', 'hr.view'],
-    ['hrm/employees', 'hrm_employees', 'fa-user-tie', 'hr', 'hr.view'],
-    ['hrm/departments', 'hrm_departments', 'fa-building', 'hr', 'hr.view'],
-    ['hrm/positions', 'hrm_positions', 'fa-briefcase', 'hr', 'hr.view'],
-    ['hrm/organization', 'hrm_organization', 'fa-sitemap', 'hr', 'hr.view'],
-    ['hrm/training', 'hrm_training', 'fa-chalkboard-user', 'hr', 'hr.training'],
-    ['hrm/performance', 'hrm_performance', 'fa-chart-simple', 'hr', 'hr.performance'],
-    ['hrm/goals', 'hrm_goals', 'fa-bullseye', 'hr', 'hr.performance'],
-    ['hrm/competencies', 'hrm_competencies', 'fa-layer-group', 'hr', 'hr.performance'],
-    ['hrm/promotions', 'hrm_promotions', 'fa-arrow-up', 'hr', 'hr.promotions'],
-    ['hrm/transfers', 'hrm_transfers', 'fa-right-left', 'hr', 'hr.transfers'],
-    ['hrm/timeline', 'hrm_timeline', 'fa-timeline', 'hr', 'hr.view'],
-    ['hrm/reports', 'hrm_reports', 'fa-chart-pie', 'hr', 'hr.view'],
-], 'fa-id-card-clip');
-$opsSection(__('payroll_platform'), [
-    ['payroll/dashboard', 'payroll_platform', 'fa-gauge-high', 'payroll', 'payroll.view'],
-    ['payroll/batches', 'payroll_batches', 'fa-layer-group', 'payroll', 'payroll.view'],
-    ['payroll/cycles', 'payroll_cycles', 'fa-calendar-days', 'payroll', 'payroll.view'],
-    ['payroll/payslips', 'payroll_payslips', 'fa-file-invoice', 'payroll', 'payroll.view'],
-    ['payroll/salary-structures', 'payroll_salary_structures', 'fa-table-list', 'payroll', 'payroll.view'],
-    ['payroll/loans', 'payroll_loans', 'fa-hand-holding-dollar', 'payroll', 'payroll.view'],
-    ['payroll/advances', 'payroll_advances', 'fa-money-bill-transfer', 'payroll', 'payroll.view'],
-    ['payroll/overtime', 'payroll_overtime', 'fa-clock', 'payroll', 'payroll.view'],
-    ['payroll/timeline', 'payroll_timeline', 'fa-timeline', 'payroll', 'payroll.view'],
-    ['payroll/reports', 'payroll_reports', 'fa-chart-pie', 'payroll', 'payroll.view'],
-], 'fa-money-check-dollar');
-$opsSection(__('quality_platform'), [
-    ['qms/dashboard', 'quality_platform', 'fa-clipboard-check', 'quality', 'quality.view'],
-    ['qms/plans', 'quality_plans', 'fa-map', 'quality', 'quality.view'],
-    ['qms/standards', 'quality_standards', 'fa-certificate', 'quality', 'quality.view'],
-    ['qms/checklists', 'quality_checklists', 'fa-list-check', 'quality', 'quality.view'],
-    ['qms/inspections', 'quality_inspections', 'fa-magnifying-glass', 'quality', 'quality.view'],
-    ['qms/defects', 'quality_defects', 'fa-bug', 'quality', 'quality.view'],
-    ['qms/nonconformities', 'quality_nonconformities', 'fa-triangle-exclamation', 'quality', 'quality.view'],
-    ['qms/corrective-actions', 'quality_corrective_actions', 'fa-wrench', 'quality', 'quality.view'],
-    ['qms/preventive-actions', 'quality_preventive_actions', 'fa-shield-halved', 'quality', 'quality.view'],
-    ['qms/audits', 'quality_audits', 'fa-file-circle-check', 'quality', 'quality.view'],
-    ['qms/complaints', 'quality_complaints', 'fa-comment-dots', 'quality', 'quality.view'],
-    ['qms/supplier-quality', 'quality_supplier_quality', 'fa-truck', 'quality', 'quality.view'],
-    ['qms/timeline', 'quality_timeline', 'fa-timeline', 'quality', 'quality.view'],
-    ['qms/reports', 'quality_reports', 'fa-chart-pie', 'quality', 'quality.view'],
-], 'fa-shield-halved');
-$opsSection(__('dms_platform'), [
-    ['dms/dashboard', 'dms_platform', 'fa-folder-tree', 'documents', 'documents.view'],
-    ['dms/repositories', 'dms_repositories', 'fa-database', 'documents', 'documents.view'],
-    ['dms/folders', 'dms_folders', 'fa-folder', 'documents', 'documents.view'],
-    ['dms/documents', 'dms_documents', 'fa-file-lines', 'documents', 'documents.view'],
-    ['dms/search', 'dms_search', 'fa-magnifying-glass', 'documents', 'documents.view'],
-    ['dms/favorites', 'dms_favorites', 'fa-star', 'documents', 'documents.view'],
-    ['dms/shares', 'dms_shares', 'fa-share-nodes', 'documents', 'documents.view'],
-    ['dms/retention', 'dms_retention', 'fa-clock-rotate-left', 'documents', 'documents.retention'],
-    ['dms/legal-holds', 'dms_legal_holds', 'fa-gavel', 'documents', 'documents.retention'],
-    ['dms/permissions', 'dms_permissions', 'fa-key', 'documents', 'documents.admin'],
-    ['dms/timeline', 'dms_timeline', 'fa-timeline', 'documents', 'documents.view'],
-    ['dms/reports', 'dms_reports', 'fa-chart-pie', 'documents', 'documents.view'],
-], 'fa-folder-tree');
-$opsSection(__('bi_platform'), [
-    ['bi/dashboard', 'bi_platform', 'fa-chart-line', 'bi', 'bi.view'],
-    ['bi/dashboards', 'bi_dashboards', 'fa-table-columns', 'bi', 'bi.view'],
-    ['bi/kpis', 'bi_kpis', 'fa-bullseye', 'bi', 'bi.view'],
-    ['bi/reports', 'bi_reports', 'fa-file-invoice', 'bi', 'bi.view'],
-    ['bi/widgets', 'bi_widgets', 'fa-puzzle-piece', 'bi', 'bi.view'],
-    ['bi/datasets', 'bi_datasets', 'fa-database', 'bi', 'bi.view'],
-    ['bi/analytics', 'bi_analytics', 'fa-chart-area', 'bi', 'bi.view'],
-    ['bi/alerts', 'bi_alerts', 'fa-bell', 'bi', 'bi.view'],
-    ['bi/schedules', 'bi_schedules', 'fa-clock', 'bi', 'bi.view'],
-    ['bi/exports', 'bi_exports', 'fa-download', 'bi', 'bi.export'],
-    ['bi/trends', 'bi_trends', 'fa-arrow-trend-up', 'bi', 'bi.view'],
-    ['bi/forecasts', 'bi_forecasts', 'fa-chart-simple', 'bi', 'bi.view'],
-    ['bi/scopes', 'bi_scopes', 'fa-layer-group', 'bi', 'bi.view'],
-    ['bi/timeline', 'bi_timeline', 'fa-timeline', 'bi', 'bi.view'],
-], 'fa-chart-line');
-} // end !$branchLeanNav (mfg/hrm/payroll/qms/dms/bi)
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }
@@ -211,30 +67,6 @@ $opsSection(__('accounting_module'), [
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
 ], 'fa-calculator');
-if (!$branchLeanNav) {
-$opsSection(__('eam_platform'), [
-    ['eam', 'eam_platform', 'fa-cubes', 'assets', 'assets.view'],
-    ['eam/assets', 'eam_assets', 'fa-toolbox', 'assets', 'assets.view'],
-    ['eam/maintenance', 'eam_maintenance', 'fa-wrench', 'assets', 'assets.maintenance'],
-    ['eam/work-orders', 'eam_work_orders', 'fa-clipboard-list', 'assets', 'assets.maintenance'],
-    ['eam/requests', 'eam_requests', 'fa-inbox', 'assets', 'assets.maintenance'],
-    ['eam/calendar', 'eam_calendar', 'fa-calendar-days', 'assets', 'assets.maintenance'],
-    ['eam/assignments', 'eam_assignments', 'fa-user-check', 'assets', 'assets.assign'],
-    ['eam/inspections', 'eam_inspections', 'fa-clipboard-check', 'assets', 'assets.inspection'],
-    ['eam/timeline', 'eam_timeline', 'fa-timeline', 'assets', 'assets.view'],
-    ['eam/reports', 'eam_reports', 'fa-chart-pie', 'assets', 'assets.view'],
-], 'fa-cubes');
-$opsSection(__('approval_platform'), [
-    ['approvals', 'approval_platform', 'fa-clipboard-check', 'approval', 'approval.view'],
-    ['approvals/requests', 'approval_requests', 'fa-inbox', 'approval', 'approval.view'],
-    ['approvals/pending', 'approval_pending', 'fa-hourglass-half', 'approval', 'approval.approve'],
-    ['approvals/templates', 'approval_templates', 'fa-file-lines', 'approval', 'approval.view'],
-    ['approvals/chains', 'approval_chains', 'fa-link', 'approval', 'approval.view'],
-    ['approvals/rules', 'approval_rules', 'fa-scale-balanced', 'approval', 'approval.view'],
-    ['approvals/history', 'approval_history', 'fa-clock-rotate-left', 'approval', 'approval.view'],
-    ['approvals/reports', 'approval_reports', 'fa-chart-pie', 'approval', 'approval.view'],
-], 'fa-clipboard-check');
-} // end !$branchLeanNav (eam/approvals)
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
     ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
@@ -269,11 +101,6 @@ if (function_exists('rateb_company_access_routes_enabled') && rateb_company_acce
         ['sms-templates', 'sms_templates', 'fa-sms', '', 'settings.manage'],
     ]);
     $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
-}
-if (!$branchLeanNav) {
-$opsSection(__('security'), [
-    ['security/offline-devices', 'offline_devices', 'fa-mobile-screen', '', 'offline.devices.view'],
-], 'fa-shield-halved');
 }
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');

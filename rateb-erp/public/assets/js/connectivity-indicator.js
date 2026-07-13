@@ -207,30 +207,29 @@
         if (!urlSwitchEnabled()) {
             return;
         }
-        if (alreadyOnTarget(online)) {
+        // Stay on local branch when internet returns — sync in background.
+        // Only auto-navigate cloud → local when offline (so work continues on appliance).
+        if (online) {
+            return;
+        }
+        if (alreadyOnTarget(false)) {
             return;
         }
 
         var localBase = cfg('data-rateb-local-admin', DEFAULT_LOCAL);
-        var cloudBase = cfg('data-rateb-cloud-admin', DEFAULT_CLOUD);
-        var target = buildTarget(online ? cloudBase : localBase);
+        var target = buildTarget(localBase);
 
         if (redirectTimer) {
             clearTimeout(redirectTimer);
             redirectTimer = null;
         }
 
-        var delay = online ? 1600 : 500;
         redirectTimer = setTimeout(function () {
             redirectTimer = null;
-            if (!connectionStillMatches(online)) {
+            if (!connectionStillMatches(false)) {
                 return;
             }
-            if (alreadyOnTarget(online)) {
-                return;
-            }
-            if (online) {
-                go(target, true);
+            if (alreadyOnTarget(false)) {
                 return;
             }
             localServerUp(localBase).then(function (up) {
@@ -245,7 +244,7 @@
                 }
                 go(target, false);
             });
-        }, delay);
+        }, 500);
     }
 
     function apply(online) {

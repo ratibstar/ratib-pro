@@ -182,8 +182,8 @@ function d4_snapshot(string $root, string $localUrl, string $cloudUrl, string $c
         $emoji = "\u{1F7E2}"; // green
     }
 
-    // open_url follows indicator: green/syncing → cloud admin; red/starting → local admin.
-    $openUrl = in_array($state, ['online', 'syncing'], true) ? $cloudAdminUrl : $localUrl;
+    // open_url: always local appliance — sync runs in background when cloud is up.
+    $openUrl = $localUrl;
 
     return [
         'phase' => 'D.4',

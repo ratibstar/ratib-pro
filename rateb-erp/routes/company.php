@@ -399,7 +399,8 @@ $router->post($app('approvals/requests/{id}/transition'), [ApprovalRequestsContr
 $router->post($app('approvals/requests/{id}/comments'), [ApprovalRequestsController::class, 'storeComment'], rateb_erp_mw('approval', 'approval.view', 'approval'));
 $router->post($app('approvals/requests/{id}/delegate'), [ApprovalRequestsController::class, 'storeDelegation'], rateb_erp_mw('approval', 'approval.delegate', 'approval'));
 
-/** Phase 21A — Enterprise Procurement Platform ONLINE (eproc/*; legacy purchase-* / rfq / suppliers untouched). */
+/** Phase 21A eproc — retired. Lean procurement only (PR/PO/RFQ/quotations). Set RATEB_EPROC_ENABLED=1 to re-enable. */
+if (filter_var(getenv('RATEB_EPROC_ENABLED') ?: ($_ENV['RATEB_EPROC_ENABLED'] ?? ''), FILTER_VALIDATE_BOOLEAN)) {
 $eprocMw = rateb_erp_mw('procurement', 'procurement.view', 'procurement');
 $router->get($app('eproc'), [EprocDashboardController::class, 'index'], $eprocMw);
 $router->get($app('eproc/suppliers'), [EprocSuppliersController::class, 'index'], rateb_erp_mw('procurement', 'procurement.supplier', 'procurement'));
@@ -438,6 +439,7 @@ $router->get($app('eproc/collaboration/{id}'), [EprocCollaborationController::cl
 $router->post($app('eproc/collaboration/{id}/transition'), [EprocCollaborationController::class, 'transition'], rateb_erp_mw('procurement', 'procurement.submit', 'procurement'));
 $router->get($app('eproc/qualification/{id}'), [EprocQualificationController::class, 'show'], rateb_erp_mw('procurement', 'procurement.supplier', 'procurement'));
 $router->post($app('eproc/qualification/{id}/transition'), [EprocQualificationController::class, 'transition'], rateb_erp_mw('procurement', 'procurement.submit', 'procurement'));
+}
 
 /** Phase 22A — Enterprise Manufacturing (MRP) Platform ONLINE (mfg/*; additive; Offline deferred to 22B). */
 $mfgMw = rateb_erp_mw('manufacturing', 'manufacturing.view', 'manufacturing');
