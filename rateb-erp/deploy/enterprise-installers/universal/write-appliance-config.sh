@@ -19,8 +19,8 @@ fi
 SYNC_KEY_SET=0
 grep -q '^RATEB_HYBRID_SYNC_KEY=.' "${SERVE}" 2>/dev/null && SYNC_KEY_SET=1
 
-URL="http://127.0.0.1:${PORT}/"
-[[ "${PORT}" == "80" ]] && URL="http://127.0.0.1/"
+URL="http://127.0.0.1:${PORT}/admin"
+[[ "${PORT}" == "80" ]] && URL="http://127.0.0.1/admin"
 
 mkdir -p "${INSTALL_ROOT}/storage/branch"
 cat > "${INSTALL_ROOT}/storage/branch/appliance.env" <<EOF

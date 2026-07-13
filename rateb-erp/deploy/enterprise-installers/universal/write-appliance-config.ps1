@@ -13,7 +13,7 @@ if (Test-Path $vf) { $version = (Get-Content $vf -Raw).Trim() }
 $branchId = ''
 $uuidFile = Join-Path $branchDir 'identity\branch.uuid'
 if (Test-Path $uuidFile) { $branchId = (Get-Content $uuidFile -Raw).Trim() }
-$url = if ($Port -eq 80) { 'http://127.0.0.1/' } else { "http://127.0.0.1:$Port/" }
+$url = if ($Port -eq 80) { 'http://127.0.0.1/admin' } else { "http://127.0.0.1:$Port/admin" }
 $sqlite = Join-Path $branchDir 'rateb-branch.sqlite'
 $sync = 'unknown'
 try {

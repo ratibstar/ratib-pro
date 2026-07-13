@@ -317,6 +317,11 @@ if (!function_exists('rateb_is_platform_oversight_host')) {
     /** Platform SaaS admin (companies, billing, CMS, agency push) — rateb.sa only, not agency ERP hosts. */
     function rateb_is_platform_oversight_host(): bool
     {
+        // Branch Appliance local shell: same platform admin UX as rateb.sa (SQLite offline).
+        $runtime = strtolower(trim((string) (getenv('RATEB_RUNTIME') ?: ($_ENV['RATEB_RUNTIME'] ?? ''))));
+        if ($runtime === 'branch' && function_exists('rateb_is_local_appliance_host') && rateb_is_local_appliance_host()) {
+            return true;
+        }
         if (rateb_erp_is_dedicated_deployment()) {
             return false;
         }

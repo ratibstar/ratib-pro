@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="${RATEB_BRANCH_ROOT:-/opt/ratib-branch}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_ENV="${ROOT}/storage/branch/appliance.env"
-URL="http://127.0.0.1:8088/"
+URL="http://127.0.0.1:8088/admin"
 PHP_BIN="${RATEB_PHP_BIN:-$(command -v php || true)}"
 
 if [[ -f "${APP_ENV}" ]]; then
@@ -12,6 +12,13 @@ if [[ -f "${APP_ENV}" ]]; then
   set -a; . "${APP_ENV}"; set +a
   URL="${RATEB_BRANCH_HTTP_URL:-${URL}}"
   PHP_BIN="${RATEB_PHP_BIN:-${PHP_BIN}}"
+fi
+# Force ERP admin shell (match rateb.sa), never marketing /
+case "${URL}" in
+  *rateb.sa*|https://*) URL="http://127.0.0.1:8088/admin" ;;
+esac
+if [[ "${URL}" != */admin && "${URL}" != */admin/ ]]; then
+  URL="${URL%/}/admin"
 fi
 
 mkdir -p "${ROOT}/storage/branch"

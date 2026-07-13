@@ -29,7 +29,7 @@ function Test-LocalUp([string]$u) {
 }
 
 $appEnv = Join-Path $InstallRoot 'storage\branch\appliance.env'
-$url = 'http://127.0.0.1:8088/'
+$url = 'http://127.0.0.1:8088/admin'
 $phpPref = ''
 if (Test-Path $appEnv) {
   Get-Content $appEnv | ForEach-Object {
@@ -39,7 +39,13 @@ if (Test-Path $appEnv) {
 }
 # Never open cloud portal from this launcher
 if ($url -match 'rateb\.sa' -or $url -match '^https://') {
-  $url = 'http://127.0.0.1:8088/'
+  $url = 'http://127.0.0.1:8088/admin'
+}
+# Always land on ERP admin (same shell as rateb.sa), not marketing home
+if ($url -match '^https?://[^/]+/?$') {
+  $url = $url.TrimEnd('/') + '/admin'
+} elseif ($url -notmatch '/admin') {
+  $url = $url.TrimEnd('/') + '/admin'
 }
 
 $php = Resolve-Php $InstallRoot $phpPref

@@ -133,6 +133,7 @@ final class BranchApplianceInstaller
             'RATEB_ALLOW_RUNTIME_MARKER=1',
             'RATEB_SQLITE_PATH=' . $sqlitePath,
             'RATEB_DEPLOYMENT=',
+            'RATEB_ERP_PUBLIC_PREFIX=',
             'RATEB_HYBRID_SYNC_ENABLED=1',
             'RATEB_HYBRID_SYNC_SINK=' . $sink,
             'RATEB_HYBRID_SYNC_KEY=' . $syncKey,

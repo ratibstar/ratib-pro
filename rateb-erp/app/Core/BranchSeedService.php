@@ -146,7 +146,7 @@ final class BranchSeedService
             $branchId = (int) $pdo->lastInsertId();
         }
 
-        // Admin user (company portal — not super admin)
+        // Admin user — platform shell (same admin/dashboard UX as rateb.sa)
         $userId = self::scalarInt(
             $pdo,
             "SELECT id FROM rateb_users WHERE email = '" . self::DEFAULT_EMAIL . "' LIMIT 1"
@@ -154,7 +154,7 @@ final class BranchSeedService
         if ($userId < 1) {
             $pdo->prepare(
                 'INSERT INTO rateb_users (company_id, name, email, password, is_super_admin, status, locale, created_at)
-                 VALUES (:c, :n, :e, :p, 0, \'active\', \'ar\', :t)'
+                 VALUES (:c, :n, :e, :p, 1, \'active\', \'ar\', :t)'
             )->execute([
                 'c' => $companyId,
                 'n' => 'admin',
@@ -165,7 +165,7 @@ final class BranchSeedService
             $userId = (int) $pdo->lastInsertId();
         } else {
             $pdo->prepare(
-                'UPDATE rateb_users SET company_id = :c, password = :p, status = \'active\', is_super_admin = 0 WHERE id = :id'
+                'UPDATE rateb_users SET company_id = :c, password = :p, status = \'active\', is_super_admin = 1 WHERE id = :id'
             )->execute(['c' => $companyId, 'p' => $hash, 'id' => $userId]);
         }
 

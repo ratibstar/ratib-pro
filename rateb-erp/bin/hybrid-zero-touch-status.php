@@ -46,7 +46,7 @@ foreach ($argv as $a) {
 
 $appEnv = $root . '/storage/branch/appliance.env';
 $cloudUrl = 'https://rateb.sa';
-$localUrl = 'http://127.0.0.1:8088/';
+$localUrl = 'http://127.0.0.1:8088/admin';
 if (is_readable($appEnv)) {
     foreach (file($appEnv, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
         $line = trim($line);
@@ -63,6 +63,9 @@ if (is_readable($appEnv)) {
             $cloudUrl = $v;
         }
     }
+}
+if (!str_contains($localUrl, '/admin')) {
+    $localUrl = rtrim($localUrl, '/') . '/admin';
 }
 
 function d4_probe_https(string $url, int $timeoutSec = 3): array
