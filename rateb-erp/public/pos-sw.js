@@ -622,6 +622,17 @@ function emptyAssetResponse(request) {
     var body = '';
     var type = 'text/plain; charset=utf-8';
     if (/\.js$/i.test(path)) {
+        // Never fake-load ERP offline identity / SDK — empty stubs break offline-shell unlock.
+        if (/\/assets\/offline\/(rateb-offline|erp-offline-shell|erp-shell-bootstrap)/i.test(path)) {
+            return new Response('/* rateb offline identity missing from cache */', {
+                status: 503,
+                headers: {
+                    'Content-Type': 'application/javascript; charset=utf-8',
+                    'X-Rateb-Offline': '1',
+                    'Cache-Control': 'no-store'
+                }
+            });
+        }
         body = '/* rateb-pos offline stub */';
         type = 'application/javascript; charset=utf-8';
     } else if (/\.css$/i.test(path)) {

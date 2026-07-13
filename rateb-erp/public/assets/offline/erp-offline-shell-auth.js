@@ -20,6 +20,13 @@
             if (m && m[1]) {
                 return m[1];
             }
+            var host = String(root.location.hostname || '');
+            if (host === '127.0.0.1' || host === 'localhost' || host === '[::1]') {
+                return '/';
+            }
+            if (/^\/(admin|login|offline-shell\.html|pos)(\/|$)/i.test(p) || p === '/' || p === '') {
+                return '/';
+            }
         } catch (e) { /* ignore */ }
         return '/rateb-erp/public/';
     }

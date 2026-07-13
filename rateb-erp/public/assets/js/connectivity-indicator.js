@@ -2,7 +2,7 @@
  * RATEB ERP — topbar Online / Offline indicator.
  * Uses navigator.onLine + optional RatebOfflineConnectivity probe events.
  * Branch / local appliance: auto-switch admin URL with connection state.
- *   Offline (red)  → http://127.0.0.1:8088/admin
+ *   Offline (red)  → http://127.0.0.1:8088/admin  (only if local server responds)
  *   Online  (green) → https://rateb.sa/rateb-erp/public/admin/
  */
 (function () {
@@ -77,6 +77,43 @@
         return isLocalHost();
     }
 
+    /** Probe local branch HTTP (same-origin or opaque). Returns Promise<boolean>. */
+    function localServerUp(localAdminUrl) {
+        var url = String(localAdminUrl || DEFAULT_LOCAL).replace(/\/admin\/?.*$/, '/') || 'http://127.0.0.1:8088/';
+        // From https://rateb.sa, http://127.0.0.1 is mixed-content — cannot probe; allow navigate.
+        if (location.protocol === 'https:' && /^http:/i.test(url)) {
+            return Promise.resolve(true);
+        }
+        return new Promise(function (resolve) {
+            var done = false;
+            var timer = setTimeout(function () {
+                if (done) return;
+                done = true;
+                resolve(false);
+            }, 1800);
+            fetch(url, { method: 'GET', cache: 'no-store', credentials: 'omit', mode: 'cors' })
+                .then(function (res) {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(timer);
+                    resolve(!!(res && (res.ok || res.status === 401 || res.status === 302 || res.status === 301)));
+                })
+                .catch(function () {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(timer);
+                    resolve(false);
+                });
+        });
+    }
+
+    function go(target) {
+        try {
+            sessionStorage.setItem(FLAG, '1');
+        } catch (e) { /* ignore */ }
+        location.assign(target);
+    }
+
     function maybeRedirect(online) {
         if (!urlSwitchEnabled()) {
             return;
@@ -109,10 +146,20 @@
             if (alreadyOnTarget(online)) {
                 return;
             }
-            try {
-                sessionStorage.setItem(FLAG, '1');
-            } catch (e) { /* ignore */ }
-            location.assign(target);
+            if (online) {
+                go(target);
+                return;
+            }
+            // Offline → local only when branch HTTP is actually up (avoids dead SW shell).
+            localServerUp(localBase).then(function (up) {
+                if (!up) {
+                    return;
+                }
+                if (alreadyOnTarget(false)) {
+                    return;
+                }
+                go(target);
+            });
         }, delay);
     }
 

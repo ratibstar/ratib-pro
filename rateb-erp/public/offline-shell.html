@@ -62,6 +62,14 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
       if (m && m[1]) {
         return m[1];
       }
+      // Branch appliance / PHP built-in server: public/ is the web root.
+      var host = String(location.hostname || '');
+      if (host === '127.0.0.1' || host === 'localhost' || host === '[::1]') {
+        return '/';
+      }
+      if (/^\/(admin|login|offline-shell\.html|pos)(\/|$)/i.test(p) || p === '/' || p === '') {
+        return '/';
+      }
     } catch (e) { /* ignore */ }
     return '/rateb-erp/public/';
   }
@@ -124,17 +132,25 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     .then(function () {
       clearTimeout(slow);
       if (!(window.RatebOfflineAuthLock && typeof window.RatebOfflineAuthLock.requireUnlockIfNeeded === 'function')) {
+        var host = String(location.hostname || '');
+        var localHint = (host === '127.0.0.1' || host === 'localhost' || host === '[::1]')
+          ? ' On this PC: start RATIB ERP (local server on port 8088), then Retry.'
+          : ' Reconnect, open Admin once (online), then retry offline.';
         setStatus(
           'Offline shell error',
-          'Offline identity scripts are missing from cache. Reconnect, open Admin once (online), then retry offline.'
+          'Offline identity scripts are missing from cache.' + localHint
         );
       }
     })
     .catch(function (err) {
       clearTimeout(slow);
+      var host = String(location.hostname || '');
+      var localHint = (host === '127.0.0.1' || host === 'localhost' || host === '[::1]')
+        ? ' Start RATIB ERP local server (port 8088), then Retry.'
+        : ' Reconnect, hard-refresh Admin once, then retry offline.';
       setStatus(
         'Offline shell error',
-        'Unable to load offline identity scripts (' + String(err && err.message ? err.message : err) + '). Reconnect, hard-refresh Admin once, then retry offline.'
+        'Unable to load offline identity scripts (' + String(err && err.message ? err.message : err) + ').' + localHint
       );
     });
 })();
