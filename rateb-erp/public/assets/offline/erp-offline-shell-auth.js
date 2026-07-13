@@ -185,6 +185,7 @@
             { href: ops + 'inventory', label: 'المخزون' },
             { href: ops + 'warehouses', label: 'المستودعات' },
             { href: ops + 'stock-movements', label: 'حركات المخزون' },
+            { href: ops + 'product-categories', label: 'تصنيفات المنتجات' },
             { href: ops + 'suppliers', label: 'الموردون' },
             { href: ops + 'hr/attendance', label: 'الحضور' },
             { href: ops + 'hr/leaves', label: 'الإجازات' },

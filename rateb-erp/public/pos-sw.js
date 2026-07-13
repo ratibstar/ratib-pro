@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v9';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v15';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v15';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v10';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v16';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v16';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -156,11 +156,10 @@ function isApiRequest(url) {
     return url.pathname.indexOf('/api/') !== -1;
 }
 
-/** Auth / login — never intercept (same contract as ERP SW). */
+/** Login / password — never intercept. Logout is handled so offline does not show Chrome interstitial. */
 function isAuthPath(pathname) {
     var p = String(pathname || '');
     return /\/login(\/|$)/i.test(p)
-        || /\/logout(\/|$)/i.test(p)
         || /\/password\//i.test(p)
         || /\/api\/login/i.test(p)
         || /\/api\/qr-login/i.test(p)
@@ -168,6 +167,10 @@ function isAuthPath(pathname) {
         || /\/login\/barcode/i.test(p)
         || /\/login\/scan/i.test(p)
         || /\/login\/badge/i.test(p);
+}
+
+function isLogoutPath(pathname) {
+    return /\/logout(\/|$)/i.test(String(pathname || ''));
 }
 
 function erpOfflineShellUrl() {
@@ -427,6 +430,7 @@ function warmErpOfflineShell() {
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/stock-movements',
+        'admin/ops/product-categories',
         'admin/ops/suppliers',
         'admin/ops/hr/attendance',
         'admin/ops/hr/leaves',
@@ -992,6 +996,22 @@ self.addEventListener('fetch', function (event) {
                     return shellFallback(shellLookupRequest(regUrl.href, event.request));
                 }
                 return shellFallback(event.request);
+            })
+        );
+        return;
+    }
+
+    // Logout offline: never let Chrome show "لا يتوفر اتصال" interstitial.
+    if (event.request.mode === 'navigate' && isLogoutPath(url.pathname)) {
+        event.respondWith(
+            fetch(event.request).catch(function () {
+                var adminUrl;
+                try {
+                    adminUrl = new URL('admin/', self.registration.scope);
+                } catch (eAdmin) {
+                    adminUrl = new URL(url.origin + '/rateb-erp/public/admin/');
+                }
+                return erpAdminOfflineFallback(event.request, adminUrl);
             })
         );
         return;
