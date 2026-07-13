@@ -5,15 +5,16 @@
 (function (root) {
     'use strict';
 
-    var STORAGE_KEY = 'rateb_erp_full_warm_at';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok';
-    var WARM_TTL_MS = 4 * 60 * 60 * 1000;
-    var MAX_URLS = 200;
+    var MAX_URLS = 400;
     var CONCURRENCY = 2;
-    var GAP_MS = 500;
+    var GAP_MS = 400;
     var MIN_OK = 8;
+    var WARM_TTL_MS = 4 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v30';
     var COEXIST = 'rateb-erp-coexist-v25';
+    var POS_SHELL = 'rateb-pos-shell-v8';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v3';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v3';
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
 
@@ -116,16 +117,18 @@
                 return false;
             }
             var p = String(u.pathname || '');
-            if (!/\/admin(\/|$)/i.test(p)) {
+            if (!/\/admin(\/|$)/i.test(p) && !/\/pos(\/|$)/i.test(p)) {
                 return false;
             }
             if (/\/(login|logout|password|api)\b/i.test(p)) {
                 return false;
             }
-            if (/\/(create|edit|delete|export|pdf|excel|csv|json|tinymce)(\/|$)/i.test(p)) {
+            // Skip destructive / binary exports — keep create/edit forms.
+            if (/\/(delete|destroy|export|pdf|excel|csv|json|tinymce|regenerate)(\/|$)/i.test(p)) {
                 return false;
             }
-            if (/\/\d+(\/|$)/.test(p)) {
+            // Skip bare numeric show/update targets unless …/edit.
+            if (/\/\d+(\/|$)/.test(p) && !/\/(edit|create|new)(\/|$)/i.test(p) && !/\/\d+\/edit(\/|$)/i.test(p)) {
                 return false;
             }
             return true;
@@ -135,12 +138,19 @@
     }
 
     function looksLikeLoginHtml(html) {
-        var head = String(html || '').slice(0, 2500);
-        // Do NOT use /login/i — it matches "logout".
-        if (/\/login(\/|"|'|\?|#)/i.test(head) && /name=["']password["']/i.test(head)) {
+        var head = String(html || '').slice(0, 4000);
+        // Real login pages only — user create forms also have password + email.
+        if (/data-rateb-login|id=["']login-form["']|class=["'][^"']*login-form/i.test(head)) {
             return true;
         }
-        if (/name=["']password["']/i.test(head) && /name=["'](email|username)["']/i.test(head)) {
+        if (/action=["'][^"']*\/login(\/|"|'|\?|#)/i.test(head) && /name=["']password["']/i.test(head)) {
+            return true;
+        }
+        if (/(تسجيل الدخول|Sign in|Log in)/i.test(head)
+            && /name=["']password["']/i.test(head)
+            && /name=["'](email|username)["']/i.test(head)
+            && !/\/admin\/users/i.test(head)
+            && !/إنشاء مستخدم|Create user|add_user/i.test(head)) {
             return true;
         }
         return false;
@@ -166,22 +176,33 @@
         var base = publicBase();
         var origin = root.location.origin;
         var core = [
-            'admin', 'admin/', 'admin/companies', 'admin/agency-updates',
+            'admin', 'admin/', 'admin/companies', 'admin/companies/create',
+            'admin/users', 'admin/users/create', 'admin/ops/users/create',
+            'admin/agency-updates',
             'admin/executive-dashboard', 'admin/notifications', 'admin/profile',
+            'admin/settings',
             'admin/ops/branch-dashboard', 'admin/ops/branch-dashboard/compare',
             'admin/ops/branch-dashboard/reports',
             'admin/oversight/companies-approvals', 'admin/oversight/approvals',
             'admin/oversight/procurement', 'admin/oversight/rfq',
             'admin/oversight/inventory', 'admin/oversight/supplier-evaluations',
             'admin/oversight/workflows',
-            'admin/ops/purchase-requests', 'admin/ops/purchase-orders',
-            'admin/ops/rfq', 'admin/ops/quotations', 'admin/ops/inventory',
-            'admin/ops/warehouses', 'admin/ops/stock-movements',
-            'admin/ops/product-categories', 'admin/ops/suppliers',
+            'admin/ops/purchase-requests', 'admin/ops/purchase-requests/create',
+            'admin/ops/purchase-orders', 'admin/ops/purchase-orders/create',
+            'admin/ops/rfq', 'admin/ops/rfq/create',
+            'admin/ops/quotations', 'admin/ops/quotations/create',
+            'admin/ops/inventory', 'admin/ops/warehouses', 'admin/ops/warehouses/create',
+            'admin/ops/stock-movements', 'admin/ops/stock-movements/create',
+            'admin/ops/product-categories', 'admin/ops/product-categories/create',
+            'admin/ops/suppliers', 'admin/ops/suppliers/create',
             'admin/hr/attendance', 'admin/hr/leaves',
+            'admin/hr/employees', 'admin/hr/employees/create',
             'admin/ops/goods-receipts', 'admin/ops/warehouse-transfers',
             'admin/ops/pos', 'admin/ops/pos/dashboard', 'admin/ops/pos/register',
-            'pos', 'pos/register', 'pos/dashboard'
+            'pos', 'pos/register', 'pos/dashboard',
+            'admin/roles', 'admin/roles/create',
+            'admin/permissions', 'admin/plans',
+            'admin/cms/pages', 'admin/cms/pages/create'
         ];
         core.forEach(function (rel) {
             pushUrl(seen, out, origin + base + rel.replace(/^\//, ''));
@@ -201,6 +222,47 @@
                 return;
             }
             pushUrl(seen, out, raw);
+        });
+    }
+
+    /** Table "+ Create" / edit pencil links — warm without visiting each row online. */
+    function collectActionUrls(seen, out) {
+        if (!root.document) {
+            return;
+        }
+        var links = root.document.querySelectorAll(
+            'main a[href], .rateb-main a[href], .rateb-content a[href], table a[href],'
+            + ' a.btn[href], a.btn-primary[href], a.btn-outline-primary[href],'
+            + ' a[href*="/create"], a[href*="/edit"], a[href*="/new"]'
+        );
+        Array.prototype.forEach.call(links, function (a) {
+            var raw = String(a.getAttribute('href') || '').trim();
+            if (!raw || raw === '#' || /^javascript:/i.test(raw)) {
+                return;
+            }
+            pushUrl(seen, out, raw);
+        });
+    }
+
+    /** From every list URL, also warm …/create (and ops/users ↔ users aliases). */
+    function deriveCreateUrls(seen, out) {
+        var snapshot = out.slice();
+        snapshot.forEach(function (href) {
+            try {
+                var u = new URL(href, root.location.origin);
+                var p = String(u.pathname || '').replace(/\/+$/, '');
+                if (/\/(create|edit|new)(\/|$)/i.test(p)) {
+                    return;
+                }
+                if (/\/\d+$/i.test(p)) {
+                    return;
+                }
+                pushUrl(seen, out, u.origin + p + '/create' + (u.search || ''));
+                // Alias mistakenly used by some buttons.
+                if (/\/admin\/users$/i.test(p)) {
+                    pushUrl(seen, out, u.origin + p.replace(/\/admin\/users$/i, '/admin/ops/users') + '/create' + (u.search || ''));
+                }
+            } catch (e) { /* ignore */ }
         });
     }
 
@@ -232,6 +294,9 @@
 
     function updateProgressUi() {
         try {
+            if (warmQueueList && warmQueueList.length > progress.total) {
+                progress.total = warmQueueList.length;
+            }
             var box = root.document.getElementById('rateb-offline-warm-progress');
             if (!box) {
                 return;
@@ -279,21 +344,70 @@
                 uniq.push(k);
             }
         });
+        var isPosRegister = false;
+        try {
+            var pu = new URL(href, root.location.origin);
+            var pp = String(pu.pathname || '').replace(/\/+$/, '');
+            isPosRegister = /\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pp);
+        } catch (ePos) { /* ignore */ }
         return Promise.all([
             root.caches.open(CACHE_NAME),
             root.caches.open(COEXIST)
         ]).then(function (pair) {
             var ops = pair[0];
             var co = pair[1];
-            return Promise.all(uniq.map(function (k) {
+            var tasks = uniq.map(function (k) {
                 return Promise.all([
                     ops.put(k, response.clone()).catch(function () { return null; }),
                     co.put(k, response.clone()).catch(function () { return null; })
                 ]);
-            })).then(function () { return true; });
+            });
+            return Promise.all(tasks).then(function () {
+                if (!isPosRegister) {
+                    return true;
+                }
+                return response.clone().text().then(function (html) {
+                    if (!html || html.indexOf('data-pos-register') < 0) {
+                        return true;
+                    }
+                    return root.caches.open(POS_SHELL).then(function (shell) {
+                        var shellTasks = uniq.map(function (k) {
+                            return shell.put(k, response.clone()).catch(function () { return null; });
+                        });
+                        try {
+                            shellTasks.push(shell.put(
+                                new URL('__rateb_pos_register_shell__', root.location.origin + publicBase()).href,
+                                response.clone()
+                            ).catch(function () { return null; }));
+                        } catch (eKey) { /* ignore */ }
+                        return Promise.all(shellTasks).then(function () { return true; });
+                    });
+                });
+            });
         }).catch(function () {
             return false;
         });
+    }
+
+    function harvestLinksFromHtml(html, seen, out) {
+        if (!html || out.length >= MAX_URLS) {
+            return;
+        }
+        var re = /href=["']([^"']+)["']/gi;
+        var m;
+        while ((m = re.exec(html)) && out.length < MAX_URLS) {
+            var raw = String(m[1] || '').trim();
+            if (!raw || raw.charAt(0) === '#' || /^javascript:/i.test(raw)) {
+                continue;
+            }
+            if (!/\/(create|edit|new|register)(\/|$|\?)/i.test(raw)
+                && !/\/pos(\/|$)/i.test(raw)) {
+                continue;
+            }
+            try {
+                pushUrl(seen, out, new URL(raw, root.location.origin + publicBase()).href);
+            } catch (e) { /* ignore */ }
+        }
     }
 
     function fetchAndCache(href) {
@@ -309,12 +423,17 @@
                 return false;
             }
             var ct = String(res.headers.get('Content-Type') || '');
-            if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href)) {
+            if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href) || /\/pos(\/|$)/i.test(href)) {
                 return res.clone().text().then(function (html) {
                     if (!html || html.length < 400 || looksLikeLoginHtml(html)) {
                         return false;
                     }
-                    return putIntoCaches(href, res);
+                    return putIntoCaches(href, res).then(function (ok) {
+                        if (ok && warmQueueSeen && warmQueueList) {
+                            harvestLinksFromHtml(html, warmQueueSeen, warmQueueList);
+                        }
+                        return ok;
+                    });
                 });
             }
             return putIntoCaches(href, res);
@@ -322,6 +441,9 @@
             return false;
         });
     }
+
+    var warmQueueSeen = null;
+    var warmQueueList = null;
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
@@ -463,12 +585,19 @@
         });
         seedCoreUrls(seen, urls);
         collectSidebarUrls(seen, urls);
+        collectActionUrls(seen, urls);
         return loadAllowlistUrls(seen, urls).then(function (list) {
+            deriveCreateUrls(seen, list);
+            collectActionUrls(seen, list);
+            warmQueueSeen = seen;
+            warmQueueList = list;
             ensureProgressUi(list.length);
             try {
                 console.info('[RATIB OFFLINE] full warm start', list.length, 'urls');
             } catch (eLog) { /* ignore */ }
             return runQueue(list).then(function (stats) {
+                warmQueueSeen = null;
+                warmQueueList = null;
                 markWarmed(stats.ok || 0);
                 try {
                     if (root.RatebOfflineNavGuard && typeof root.RatebOfflineNavGuard.scan === 'function') {

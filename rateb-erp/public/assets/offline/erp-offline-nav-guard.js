@@ -1,8 +1,7 @@
 /**
  * RATEB ERP — Offline nav + action guard.
- * - Sidebar / in-page links: only cached URLs navigate.
- * - Create / edit / save / POST: blocked offline with a clear toast
- *   (previously SW served dashboard HTML under the wrong URL).
+ * - Sidebar / in-page / table links: navigate when cached (including create/edit forms).
+ * - POST save / delete: blocked offline (needs server).
  */
 (function (root) {
     'use strict';
@@ -18,8 +17,8 @@
     ];
     var STYLE_ID = 'rateb-offline-nav-guard-css';
     var scanning = false;
-    var WRITE_RE = /\/(create|edit|new|delete|destroy|store|update|clone|duplicate)(\/|$|\?)/i;
-    var WRITE_TEXT_RE = /(إضافة|انشاء|إنشاء|تعديل|حفظ|حذف|إنشاء|Create|Edit|Save|Delete|Add\b)/i;
+    var MUTE_NAV_RE = /\/(delete|destroy|export|pdf|excel|csv|json|regenerate)(\/|$|\?)/i;
+    var WRITE_TEXT_RE = /(حفظ|حذف|Save|Delete)\b/i;
 
     function isOffline() {
         // Prefer connection badge — do not gray-out nav while UI says «متصل».
@@ -113,10 +112,10 @@
         }
     }
 
-    function isWriteHref(href) {
+    function isMuteHref(href) {
         try {
             var u = new URL(href, root.location.href);
-            if (WRITE_RE.test(u.pathname) || WRITE_RE.test(u.search)) {
+            if (MUTE_NAV_RE.test(u.pathname) || MUTE_NAV_RE.test(u.search)) {
                 return true;
             }
         } catch (e) { /* ignore */ }
@@ -294,7 +293,7 @@
             if (!isAdminAppHref(href)) {
                 return null;
             }
-            if (isWriteHref(href)) {
+            if (isMuteHref(href)) {
                 markLink(a, false);
                 return null;
             }
@@ -309,7 +308,7 @@
     function blockWrite(ev, reason) {
         ev.preventDefault();
         ev.stopPropagation();
-        toast(reason || 'الإنشاء والتعديل والحفظ تحتاج اتصال بالإنترنت.');
+        toast(reason || 'الحفظ والحذف يحتاجان اتصال بالإنترنت.');
     }
 
     function onClick(ev) {
@@ -321,19 +320,19 @@
             return;
         }
 
-        var submitBtn = target.closest('button[type="submit"], input[type="submit"], button:not([type]), [data-rateb-save], .btn-save');
+        var submitBtn = target.closest('button[type="submit"], input[type="submit"], [data-rateb-save], .btn-save');
         if (submitBtn) {
             var form = submitBtn.closest('form');
             if (form) {
                 var method = String(form.getAttribute('method') || 'get').toLowerCase();
                 if (method === 'post') {
-                    blockWrite(ev, 'الحفظ غير متاح أوفلاين. وصّل النت ثم أعد المحاولة.');
+                    blockWrite(ev, 'الحفظ غير متاح أوفلاين. افتح النموذج وتصفّحه، ثم وصّل النت للحفظ.');
                     return;
                 }
             }
             var label = String(submitBtn.textContent || submitBtn.value || '');
             if (WRITE_TEXT_RE.test(label)) {
-                blockWrite(ev, 'هذا الإجراء يحتاج اتصال بالإنترنت.');
+                blockWrite(ev, 'الحفظ/الحذف يحتاج اتصال بالإنترنت.');
                 return;
             }
         }
@@ -347,18 +346,17 @@
             return;
         }
         if (!isAdminAppHref(href)) {
-            // Block leaving ERP to other apps (e.g. platform-catalog) while offline.
             try {
                 var u = new URL(href, root.location.href);
                 if (u.origin === root.location.origin && /rateb-platform-catalog/i.test(u.pathname)) {
-                    blockWrite(ev, 'كتالوج المنصة غير متاح أوفلاين من هنا. استخدم ERP المحفوظ فقط.');
+                    blockWrite(ev, 'كتالوج المنصة غير متاح أوفلاين من هنا.');
                 }
             } catch (eCat) { /* ignore */ }
             return;
         }
 
-        if (isWriteHref(href)) {
-            blockWrite(ev, 'الإنشاء/التعديل يحتاج اتصال. أوفلاين للتصفح فقط بعد حفظ الصفحة.');
+        if (isMuteHref(href)) {
+            blockWrite(ev, 'الحذف/التصدير يحتاج اتصال بالإنترنت.');
             return;
         }
 
@@ -366,7 +364,7 @@
             return;
         }
         if (a.classList.contains('rateb-offline-missing')) {
-            blockWrite(ev, 'هذا الرابط غير محفوظ أوفلاين. وصّل النت وافتح الصفحة مرة، أو انتظر «تجهيز الأوفلاين».');
+            blockWrite(ev, 'هذا الرابط غير محفوظ أوفلاين. وصّل النت وانتظر «تجهيز الأوفلاين».');
             return;
         }
 
@@ -377,7 +375,7 @@
             if (ok) {
                 root.location.href = href;
             } else {
-                toast('الصفحة غير محفوظة أوفلاين. لن نفتح لوحة التحكم مكانها — وصّل النت وافتح الرابط مرة.');
+                toast('الصفحة غير محفوظة أوفلاين بعد. وصّل النت وانتظر اكتمال التجهيز ثم أعد المحاولة.');
             }
         });
     }
