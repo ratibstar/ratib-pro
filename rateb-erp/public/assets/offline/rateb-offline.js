@@ -363,6 +363,10 @@
             setOnline(false);
             return false;
         }).catch(function () {
+            // Soft-fail on cloud: aborted/probe errors must not flip Wi‑Fi-up → offline shell.
+            if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+                return online;
+            }
             setOnline(false);
             return false;
         }).finally(function () {
@@ -4188,7 +4192,8 @@
                 base = m[1];
             }
         } catch (e2) { /* ignore */ }
-        return '<script>window.__RATEB_ERP_SHELL_OFFLINE__=' + json
+        return '<script>(function(){try{if(navigator.onLine===false)return;var m=document.querySelector(".rateb-offline-home,#rateb-offline-shell-main,[data-rateb-offline-ops-banner]");if(!m)return;var u=new URL(location.href);if(u.searchParams.get("rateb_live")||u.searchParams.get("rateb_force_live")){Promise.all([(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations?navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all((r||[]).map(function(x){return x.unregister()}))}):Promise.resolve()),(caches&&caches.keys?caches.keys().then(function(k){return Promise.all((k||[]).map(function(n){return/^rateb-/i.test(n)?caches.delete(n):null}))}):Promise.resolve())]).then(function(){u.searchParams.delete("rateb_live");u.searchParams.set("rateb_force_live",String(Date.now()));location.replace(u.href)}).catch(function(){location.reload()});return}u.searchParams.set("rateb_live",String(Date.now()));location.replace(u.href)}catch(e){}})();</script>\n'
+            + '<script>window.__RATEB_ERP_SHELL_OFFLINE__=' + json
             + ';window.__RATEB_ERP_MASTER_DATA__=window.__RATEB_ERP_SHELL_OFFLINE__;</script>\n'
             + '<script src="' + base + 'assets/offline/rateb-offline.js" defer></script>\n'
             + '<script src="' + base + 'assets/offline/erp-shell-bootstrap.js" defer></script>\n'

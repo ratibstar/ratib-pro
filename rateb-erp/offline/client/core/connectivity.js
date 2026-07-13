@@ -90,6 +90,10 @@
             setOnline(false);
             return false;
         }).catch(function () {
+            // Soft-fail on cloud: aborted/probe errors must not flip Wi‑Fi-up → offline shell.
+            if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+                return online;
+            }
             setOnline(false);
             return false;
         }).finally(function () {

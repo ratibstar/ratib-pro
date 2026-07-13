@@ -64,6 +64,28 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
         if (m && m[1]) return m[1];
         return '/rateb-erp/public/';
       })();
+      var q = location.search || '';
+      var already = /[?&]rateb_live=/.test(q) || /[?&]rateb_force_live=/.test(q);
+      if (already) {
+        var finish = function () {
+          location.replace(location.origin + base + 'admin/?rateb_force_live=' + Date.now());
+        };
+        var jobs = [];
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
+          }));
+        }
+        if (window.caches && caches.keys) {
+          jobs.push(caches.keys().then(function (keys) {
+            return Promise.all((keys || []).map(function (k) {
+              return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
+            }));
+          }));
+        }
+        Promise.all(jobs).then(finish).catch(finish);
+        return;
+      }
       location.replace(location.origin + base + 'admin/?rateb_live=' + Date.now());
       return;
     }

@@ -601,17 +601,45 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   // Escape hatch: stale SW offline shell while Wi‑Fi is up.
   try {
     if (navigator.onLine !== false
-        && document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status')) {
+        && document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-offline-ops-banner]')) {
       var u = new URL(location.href);
-      if (!u.searchParams.get('rateb_live')) {
-        u.searchParams.set('rateb_live', String(Date.now()));
-        location.replace(u.href);
+      var already = u.searchParams.get('rateb_live') || u.searchParams.get('rateb_force_live');
+      if (already) {
+        // Still offline shell after rateb_live → nuke SW/caches then reload live.
+        var done = function () {
+          u.searchParams.delete('rateb_live');
+          u.searchParams.set('rateb_force_live', String(Date.now()));
+          location.replace(u.href);
+        };
+        var jobs = [];
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
+          }));
+        }
+        if (window.caches && caches.keys) {
+          jobs.push(caches.keys().then(function (keys) {
+            return Promise.all((keys || []).map(function (k) {
+              return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
+            }));
+          }));
+        }
+        Promise.all(jobs).then(done).catch(done);
         return;
       }
+      u.searchParams.set('rateb_live', String(Date.now()));
+      location.replace(u.href);
+      return;
     }
   } catch (eEsc) {}
-  navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined)
+  navigator.serviceWorker.register(swUrl, scope
+      ? { scope: scope, updateViaCache: 'none' }
+      : { updateViaCache: 'none' })
     .then(function (reg) {
+      try {
+        if (reg && typeof reg.update === 'function') reg.update();
+        if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      } catch (eUp) {}
       scheduleWarm(reg);
       return navigator.serviceWorker.ready.then(function (ready) { scheduleWarm(ready); });
     })

@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v15').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v16').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v15 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v16 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v15');
+                                'offline-shell.html present in rateb-erp-coexist-v16');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);
@@ -266,6 +266,14 @@
                 }
             });
             if (posReg) {
+                try {
+                    if (typeof posReg.update === 'function') {
+                        posReg.update();
+                    }
+                    if (posReg.waiting) {
+                        posReg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                } catch (ePosUp) { /* ignore */ }
                 var ctrl = (posReg.active)
                     || (root.navigator.serviceWorker && root.navigator.serviceWorker.controller)
                     || null;
@@ -290,11 +298,21 @@
                 upgrade = legacyErpReg.unregister().catch(function () { return false; });
             }
             return upgrade.then(function () {
-                return root.navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined);
+                return root.navigator.serviceWorker.register(swUrl, scope
+                    ? { scope: scope, updateViaCache: 'none' }
+                    : { updateViaCache: 'none' });
             }).then(function (reg) {
                     if (tStopped()) {
                         return null;
                     }
+                    try {
+                        if (reg && typeof reg.update === 'function') {
+                            reg.update();
+                        }
+                        if (reg && reg.waiting) {
+                            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    } catch (eUp) { /* ignore */ }
                     tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker',
                         'SW registered scope=' + ((reg && reg.scope) || scope || '')
                         + ' script=' + swUrl);
@@ -392,7 +410,15 @@
                 return false;
             }
             var path = String(root.location.pathname || '');
-            // Already on offline-shell.html → go to admin; else bust cache on same URL.
+            var hadLive = false;
+            try {
+                hadLive = !!(new URL(root.location.href).searchParams.get('rateb_live'));
+            } catch (eHad) { /* ignore */ }
+            // Second escape: previous rateb_live still showed shell → purge SW/caches.
+            if (hadLive) {
+                purgeStaleOfflineAndReload();
+                return true;
+            }
             var target;
             if (/offline-shell\.html$/i.test(path)) {
                 var base = path.replace(/offline-shell\.html$/i, '');
@@ -407,6 +433,43 @@
         } catch (eEsc) {
             return false;
         }
+    }
+
+    function purgeStaleOfflineAndReload() {
+        var finish = function () {
+            try {
+                var u = new URL(root.location.href);
+                u.searchParams.delete('rateb_live');
+                u.searchParams.set('rateb_force_live', String(Date.now()));
+                root.location.replace(u.href);
+            } catch (eFin) {
+                try { root.location.reload(); } catch (eRel) { /* ignore */ }
+            }
+        };
+        var tasks = [];
+        try {
+            if (root.navigator && root.navigator.serviceWorker
+                && typeof root.navigator.serviceWorker.getRegistrations === 'function') {
+                tasks.push(root.navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all((regs || []).map(function (reg) {
+                        return reg.unregister().catch(function () { return false; });
+                    }));
+                }));
+            }
+        } catch (eSw) { /* ignore */ }
+        try {
+            if (root.caches && typeof root.caches.keys === 'function') {
+                tasks.push(root.caches.keys().then(function (keys) {
+                    return Promise.all((keys || []).map(function (k) {
+                        if (/^rateb-/i.test(String(k || ''))) {
+                            return root.caches.delete(k);
+                        }
+                        return null;
+                    }));
+                }));
+            }
+        } catch (eCache) { /* ignore */ }
+        Promise.all(tasks).then(finish).catch(finish);
     }
 
     function isOfflineShellDocument() {
