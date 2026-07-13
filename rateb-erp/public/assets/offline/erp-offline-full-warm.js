@@ -490,7 +490,10 @@
             'assets/js/charts.js',
             'assets/js/lang.js',
             'assets/js/dashboard-tabs.js',
-            'assets/js/module-page-stats.js'
+            'assets/js/module-page-stats.js',
+            'assets/js/table-tools.js',
+            'assets/js/rateb-modal.js',
+            'assets/js/rateb-confirm.js'
         ];
         var out = [];
         var seen = {};

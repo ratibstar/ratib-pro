@@ -445,7 +445,11 @@ function erpAdminOfflineFallback(request, url) {
 
 /** Last-resort — must never reject (Chrome ERR_FAILED if respondWith promise rejects). */
 function neverFailNavigate(request, url) {
-    return erpAdminOfflineFallback(request, url).catch(function () {
+    return erpAdminOfflineFallback(request, url).then(function (res) {
+        return asNonRedirectedResponse(res).then(function (clean) {
+            return clean || res || erpInlineShellResponse();
+        });
+    }).catch(function () {
         try {
             return erpInlineShellResponse();
         } catch (e) {
@@ -925,27 +929,77 @@ function fetchErpAssetNetwork(request, timeoutMs) {
  * Admin/HTML navigations.
  * Local: pass through to PHP (Wi‑Fi off must still load instantly).
  * Cloud: race fetch vs timeout — hung fetch with false navigator.onLine caused ERR_FAILED.
+ *
+ * Navigate FetchEvents use redirect:"manual". Returning a Response with redirected:true
+ * makes Chrome fail the whole event with ERR_FAILED — always rebuild via asNonRedirectedResponse.
  */
+function navigateFetchInput(request) {
+    try {
+        return new Request(String(request.url || request), {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            redirect: 'follow',
+            headers: { Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+        });
+    } catch (e) {
+        try {
+            return String(request.url || request);
+        } catch (e2) {
+            return request;
+        }
+    }
+}
+
+/** Strip redirected bit so respondWith / Cache.put never throws ERR_FAILED. */
+function asNonRedirectedResponse(response) {
+    if (!response) {
+        return Promise.resolve(null);
+    }
+    try {
+        if (!response.redirected) {
+            return Promise.resolve(response);
+        }
+    } catch (eR) { /* rebuild anyway */ }
+    return response.blob().then(function (blob) {
+        var headers = new Headers();
+        try {
+            response.headers.forEach(function (v, k) {
+                headers.set(k, v);
+            });
+        } catch (eH) { /* ignore */ }
+        return new Response(blob, {
+            status: response.status || 200,
+            statusText: response.statusText || '',
+            headers: headers
+        });
+    }).catch(function () {
+        return null;
+    });
+}
+
 function fetchNavigateNetwork(request, timeoutMs) {
     if (isLocalApplianceOrigin()) {
-        return fetch(request, { credentials: 'same-origin' });
+        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+            return res || Promise.reject(new Error('empty-response'));
+        });
     }
     if (isCloudBrowserOffline()) {
         return Promise.reject(new Error('offline'));
     }
     var ms = typeof timeoutMs === 'number' ? timeoutMs : 8000;
-    var network = fetch(request, { credentials: 'same-origin', cache: 'no-store' });
-    var timed = new Promise(function (_resolve, reject) {
-        setTimeout(function () {
-            reject(new Error('navigate-timeout'));
-        }, ms);
-    });
-    return Promise.race([network, timed]).then(function (response) {
+    var network = fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (response) {
         if (!response) {
             return Promise.reject(new Error('empty-response'));
         }
         return response;
     });
+    var timed = new Promise(function (_resolve, reject) {
+        setTimeout(function () {
+            reject(new Error('navigate-timeout'));
+        }, ms);
+    });
+    return Promise.race([network, timed]);
 }
 
 function migrateErpCoexistCaches(keys) {
@@ -994,7 +1048,7 @@ function isErpOfflineAsset(url) {
     if (/\/assets\/vendor\/(bootstrap|fontawesome|fonts|chartjs)\//i.test(p)) {
         return true;
     }
-    if (/\/assets\/js\/(theme|app|connectivity-indicator|charts|lang|dashboard-tabs|module-page-stats)\.js$/i.test(p)) {
+    if (/\/assets\/js\/(theme|app|connectivity-indicator|charts|lang|dashboard-tabs|module-page-stats|table-tools|rateb-modal|rateb-confirm)\.js$/i.test(p)) {
         return true;
     }
     return false;
@@ -1405,8 +1459,9 @@ self.addEventListener('fetch', function (event) {
         event.respondWith(
             fetchNavigateNetwork(event.request, 2500).then(function (response) {
                 // Do not pin biometric gate HTML as the offline shell — register + lock is the offline entry.
-                if (!isBiometricGatePath(url.pathname)) {
-                    event.waitUntil(putShell(event.request, response.clone()));
+                if (!isBiometricGatePath(url.pathname) && response) {
+                    var forShell = response.clone();
+                    event.waitUntil(putShell(event.request, forShell).catch(function () { return null; }));
                 }
                 return response;
             }).catch(function () {
@@ -1469,9 +1524,14 @@ self.addEventListener('fetch', function (event) {
     if (isRegisterShellPath(url.pathname)
         && (event.request.headers.get('accept') || '').indexOf('text/html') !== -1) {
         event.respondWith(
-            fetch(event.request).then(function (response) {
-                event.waitUntil(putShell(event.request, response.clone()));
-                return response;
+            fetch(navigateFetchInput(event.request)).then(function (response) {
+                if (response) {
+                    var forShell = response.clone();
+                    event.waitUntil(putShell(event.request, forShell).catch(function () { return null; }));
+                }
+                return asNonRedirectedResponse(response).then(function (clean) {
+                    return clean || response;
+                });
             }).catch(function () {
                 return shellFallback(event.request);
             })
@@ -1481,19 +1541,26 @@ self.addEventListener('fetch', function (event) {
 
     if (isPosAsset(url)) {
         event.respondWith(
-            fetch(event.request).then(function (response) {
+            fetch(navigateFetchInput(event.request)).then(function (response) {
                 if (response && response.ok) {
                     var clone = response.clone();
                     event.waitUntil(
                         caches.open(ASSET_CACHE).then(function (cache) {
-                            return Promise.all([
-                                cache.put(event.request, clone.clone()),
-                                cache.put(url.origin + url.pathname, clone)
-                            ]);
-                        })
+                            return asNonRedirectedResponse(clone).then(function (clean) {
+                                if (!clean) {
+                                    return null;
+                                }
+                                return Promise.all([
+                                    cache.put(url.origin + url.pathname, clean.clone()).catch(function () { return null; }),
+                                    cache.put(url.origin + url.pathname + (url.search || ''), clean.clone()).catch(function () { return null; })
+                                ]);
+                            });
+                        }).catch(function () { return null; })
                     );
                 }
-                return response;
+                return asNonRedirectedResponse(response).then(function (clean) {
+                    return clean || response;
+                });
             }).catch(function () {
                 return matchAsset(event.request).then(function (cached) {
                     return cached || emptyAssetResponse(event.request);
@@ -1508,10 +1575,18 @@ self.addEventListener('fetch', function (event) {
     if (isErpOfflineAsset(url)) {
         event.respondWith((function () {
             var offline = isCloudBrowserOffline();
-            function putBoth(cache, response) {
-                var copy = response.clone();
-                return cache.put(event.request, copy.clone()).then(function () {
-                    return cache.put(url.origin + url.pathname, copy);
+            function putBoth(cache, responseForCache) {
+                // responseForCache must be a dedicated clone — never the Response returned to the page.
+                return asNonRedirectedResponse(responseForCache).then(function (clean) {
+                    if (!clean) {
+                        return null;
+                    }
+                    var bare = url.origin + url.pathname;
+                    var withQ = url.origin + url.pathname + (url.search || '');
+                    return Promise.all([
+                        cache.put(bare, clean.clone()).catch(function () { return null; }),
+                        cache.put(withQ, clean.clone()).catch(function () { return null; })
+                    ]);
                 }).catch(function () { return null; });
             }
             if (!offline) {
@@ -1523,30 +1598,41 @@ self.addEventListener('fetch', function (event) {
                                 if (!fresh) {
                                     return null;
                                 }
+                                var forCache = fresh.clone();
                                 return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                                    return putBoth(cache, fresh);
+                                    return putBoth(cache, forCache);
                                 });
-                            })
+                            }).catch(function () { return null; })
                         );
-                        return cached;
+                        return asNonRedirectedResponse(cached).then(function (c) {
+                            return c || cached;
+                        });
                     }
                     // Design CSS/vendor: never substitute empty 503 while online — wait for PHP/CDN.
-                    return fetch(event.request, { credentials: 'same-origin' }).then(function (response) {
+                    return fetch(navigateFetchInput(event.request)).then(function (response) {
                         if (response && response.ok) {
+                            var forCache = response.clone();
                             event.waitUntil(
                                 caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                                    return putBoth(cache, response);
-                                })
+                                    return putBoth(cache, forCache);
+                                }).catch(function () { return null; })
                             );
                         }
-                        return response;
+                        return asNonRedirectedResponse(response).then(function (clean) {
+                            return clean || response;
+                        });
                     }).catch(function () {
                         return emptyAssetResponse(event.request);
                     });
                 });
             }
             return matchErpOfflineCached(event.request, url).then(function (cached) {
-                return cached || emptyAssetResponse(event.request);
+                if (!cached) {
+                    return emptyAssetResponse(event.request);
+                }
+                return asNonRedirectedResponse(cached).then(function (clean) {
+                    return clean || cached;
+                });
             });
         })());
         return;
