@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v13';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v19';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v19';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v14';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v20';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v20';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -606,7 +606,8 @@ function fetchErpAssetNetwork(request, timeoutMs) {
 /**
  * Admin/HTML navigations.
  * Local: pass through to PHP (Wi‑Fi off must still load instantly).
- * Cloud: short network race then cache/shell — avoids long Chrome spinner.
+ * Cloud online: long network wait — never abort into offline shell while Wi‑Fi is up.
+ * Cloud offline (navigator.onLine=false): cache/shell immediately.
  */
 function fetchNavigateNetwork(request, timeoutMs) {
     if (isLocalApplianceOrigin()) {
@@ -615,31 +616,11 @@ function fetchNavigateNetwork(request, timeoutMs) {
     if (isCloudBrowserOffline()) {
         return Promise.reject(new Error('offline'));
     }
-    var ms = typeof timeoutMs === 'number' ? timeoutMs : 2500;
-    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var timer = null;
-    if (ctrl) {
-        timer = setTimeout(function () {
-            try { ctrl.abort(); } catch (eAbort) { /* ignore */ }
-        }, ms);
-    }
-    var network = fetch(request, {
-        credentials: 'same-origin',
-        signal: ctrl ? ctrl.signal : undefined
-    }).finally(function () {
-        if (timer) {
-            clearTimeout(timer);
-        }
+    // Live cloud must not fall to PIN/offline-shell after 2.5s — that caused false offline UX.
+    var ms = typeof timeoutMs === 'number' ? timeoutMs : 12000;
+    return fetch(request, { credentials: 'same-origin' }).catch(function (err) {
+        return Promise.reject(err || new Error('network'));
     });
-    if (ctrl) {
-        return network;
-    }
-    return Promise.race([
-        network,
-        new Promise(function (_, reject) {
-            setTimeout(function () { reject(new Error('timeout')); }, ms);
-        })
-    ]);
 }
 
 function migrateErpCoexistCaches(keys) {
@@ -1075,14 +1056,13 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: non-POS admin HTML → short network race; on failure → ERP offline shell.
-    // Do not wait for full TCP timeout (causes long tab spinner when Wi‑Fi is off).
+    // Smart coexist: non-POS admin HTML → network while online; offline → ERP shell.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
-            fetchNavigateNetwork(event.request, 2500).catch(function () {
+            fetchNavigateNetwork(event.request, 12000).catch(function () {
                 return erpAdminOfflineFallback(event.request, url);
             })
         );

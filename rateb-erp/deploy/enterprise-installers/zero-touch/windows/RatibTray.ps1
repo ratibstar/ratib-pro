@@ -7,21 +7,23 @@ $ErrorActionPreference = 'SilentlyContinue'
 
 $appEnv = Join-Path $InstallRoot 'storage\branch\appliance.env'
 $php = 'php.exe'
-$url = 'http://127.0.0.1:8088/'
+$cloudAdmin = 'https://rateb.sa/rateb-erp/public/admin/'
+$url = $cloudAdmin
 if (Test-Path $appEnv) {
   Get-Content $appEnv | ForEach-Object {
-    if ($_ -match '^RATEB_BRANCH_HTTP_URL=(.+)$') { $url = $Matches[1].Trim() }
+    if ($_ -match '^RATEB_CLOUD_ADMIN_URL=(.+)$' -and $Matches[1].Trim() -ne '') { $url = $Matches[1].Trim(); $cloudAdmin = $url }
     if ($_ -match '^RATEB_PHP_BIN=(.+)$' -and (Test-Path $Matches[1].Trim())) { $php = $Matches[1].Trim() }
   }
 }
+if ($url -notmatch 'rateb\.sa') { $url = $cloudAdmin }
 $statusFile = Join-Path $InstallRoot 'storage\branch\status.json'
 
 function Get-RatibStatus {
   if (-not (Test-Path $statusFile)) {
-    return @{ display = '🔵 STARTING'; state = 'starting'; pending_records = 0; last_sync = $null; cloud_connected = $false; sqlite_connected = $false; open_url = $url }
+    return @{ display = '🔵 STARTING'; state = 'starting'; pending_records = 0; last_sync = $null; cloud_connected = $false; sqlite_connected = $false; open_url = $cloudAdmin }
   }
   try { return Get-Content $statusFile -Raw | ConvertFrom-Json } catch {
-    return @{ display = '⚪ MAINTENANCE'; state = 'maintenance'; open_url = $url }
+    return @{ display = '⚪ MAINTENANCE'; state = 'maintenance'; open_url = $cloudAdmin }
   }
 }
 
@@ -77,7 +79,9 @@ $notify.ContextMenuStrip = $menu
 
 $miOpen.add_Click({
   $s = Get-RatibStatus
-  $u = if ($s.open_url) { $s.open_url } else { $url }
+  $u = $cloudAdmin
+  if ($s.open_url -and ([string]$s.open_url -match 'rateb\.sa')) { $u = [string]$s.open_url }
+  elseif ($s.cloud_admin_url) { $u = [string]$s.cloud_admin_url }
   Start-Process $u
 })
 $miBackup.add_Click({

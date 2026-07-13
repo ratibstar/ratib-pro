@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v13').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v14').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v13 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v14 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v13');
+                                'offline-shell.html present in rateb-erp-coexist-v14');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);
@@ -562,18 +562,13 @@
             var conn = root.RatebOfflineConnectivity;
             if (conn && typeof conn.probe === 'function') {
                 conn.probe().then(function (ok) {
-                    onConnectivityChange(!!ok);
+                    // Soft-fail: stay online if browser says online and probe is flaky.
+                    onConnectivityChange(!!ok || !(root.navigator && root.navigator.onLine === false));
                 }).catch(function () {
-                    onConnectivityChange(false);
+                    onConnectivityChange(!(root.navigator && root.navigator.onLine === false));
                 });
             } else {
-                // Do not trust the browser event alone — wait for a real probe elsewhere.
-                onConnectivityChange(false);
-                try {
-                    if (conn && typeof conn.probe === 'function') {
-                        conn.probe();
-                    }
-                } catch (eOnline) { /* ignore */ }
+                onConnectivityChange(!(root.navigator && root.navigator.onLine === false));
             }
         });
         root.addEventListener('offline', function () {

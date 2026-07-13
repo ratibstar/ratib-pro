@@ -456,6 +456,28 @@ if ($ratebLocalAppliance) {
   }
 })();
 </script>
+<script>
+(function () {
+  /* Customer UX: same URL as cloud. Local appliance is sync-only when online. */
+  try {
+    if (/[?&]stay_local=1(?:&|$)/.test(String(location.search || ''))) return;
+    if (navigator.onLine === false) return;
+    var cloud = 'https://rateb.sa/rateb-erp/public/admin/';
+    var path = String(location.pathname || '');
+    var rest = path.replace(/^\/admin\/?/, '');
+    var target = cloud;
+    if (rest && rest !== 'admin') {
+      target = cloud.replace(/\/?$/, '/') + rest.replace(/^\//, '');
+    }
+    if (location.search) {
+      target += (target.indexOf('?') >= 0 ? '&' : '?') + String(location.search).replace(/^\?/, '');
+    }
+    if (String(location.href).indexOf('rateb.sa') === -1) {
+      location.replace(target);
+    }
+  } catch (eRedir) { /* ignore */ }
+})();
+</script>
 <?php
 }$ratebOfflineApiBase = rateb_url('api/v1/offline');
 $ratebOfflineCompanyId = 0;

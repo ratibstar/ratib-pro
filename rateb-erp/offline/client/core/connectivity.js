@@ -83,6 +83,10 @@
                 setOnline(true);
                 return true;
             }
+            // Soft-fail on cloud: do not force offline when Wi‑Fi is up (status API may 404).
+            if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+                return online;
+            }
             setOnline(false);
             return false;
         }).catch(function () {

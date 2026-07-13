@@ -17,11 +17,18 @@ SCRIPT = Path(__file__).resolve().parent
 
 
 def load_url() -> str:
-    url = "http://127.0.0.1:8088/"
+    url = "https://rateb.sa/rateb-erp/public/admin/"
     if APP_ENV.is_file():
         for line in APP_ENV.read_text(encoding="utf-8", errors="ignore").splitlines():
-            if line.startswith("RATEB_BRANCH_HTTP_URL="):
-                url = line.split("=", 1)[1].strip() or url
+            if line.startswith("RATEB_CLOUD_ADMIN_URL="):
+                cand = line.split("=", 1)[1].strip()
+                if cand:
+                    url = cand
+            elif line.startswith("RATEB_BRANCH_HTTP_URL=") and "rateb.sa" not in url:
+                # Prefer cloud; local appliance URL is sync-only.
+                pass
+    if "rateb.sa" not in url:
+        url = "https://rateb.sa/rateb-erp/public/admin/"
     return url
 
 
