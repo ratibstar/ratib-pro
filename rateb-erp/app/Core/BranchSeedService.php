@@ -18,6 +18,28 @@ final class BranchSeedService
     public const DEFAULT_PASSWORD = '123456';
     public const DEFAULT_COMPANY = 'Branch Appliance';
 
+    /** @return list<string> */
+    public static function applianceModules(): array
+    {
+        return [
+            'dashboard',
+            'notifications',
+            'pos',
+            'inventory',
+            'procurement',
+            'suppliers',
+            'hr',
+            'accounting',
+            'reports',
+            'branches',
+            'warehouses',
+            'assets',
+            'contracts',
+            'documents',
+            'workflows',
+        ];
+    }
+
     /**
      * Seed minimal tenant so company login works offline.
      *
@@ -27,6 +49,7 @@ final class BranchSeedService
     {
         $now = gmdate('Y-m-d H:i:s');
         $hash = password_hash(self::DEFAULT_PASSWORD, PASSWORD_BCRYPT);
+        $modulesJson = json_encode(self::applianceModules(), JSON_UNESCAPED_UNICODE);
 
         // Plan
         $planId = self::scalarInt($pdo, "SELECT id FROM rateb_plans WHERE slug = 'professional' LIMIT 1");
@@ -38,10 +61,13 @@ final class BranchSeedService
                 'n' => 'Professional',
                 's' => 'professional',
                 'd' => 'Branch appliance plan',
-                'm' => json_encode(['pos' => true, 'inventory' => true, 'hr' => true, 'accounting' => true], JSON_UNESCAPED_UNICODE),
+                'm' => $modulesJson,
                 't' => $now,
             ]);
             $planId = (int) $pdo->lastInsertId();
+        } else {
+            $pdo->prepare('UPDATE rateb_plans SET modules = :m, is_active = 1 WHERE id = :id')
+                ->execute(['m' => $modulesJson, 'id' => $planId]);
         }
 
         // Company
@@ -55,13 +81,14 @@ final class BranchSeedService
                 's' => 'branch-appliance',
                 'e' => 'branch@local',
                 'p' => $planId,
-                'm' => json_encode(['pos' => true, 'inventory' => true], JSON_UNESCAPED_UNICODE),
+                'm' => $modulesJson,
                 't' => $now,
             ]);
             $companyId = (int) $pdo->lastInsertId();
         } else {
-            $pdo->prepare('UPDATE rateb_companies SET status = \'active\', name = :n WHERE id = :id')
-                ->execute(['n' => $companyName, 'id' => $companyId]);
+            $pdo->prepare(
+                'UPDATE rateb_companies SET status = \'active\', name = :n, plan_id = :p, modules = :m WHERE id = :id'
+            )->execute(['n' => $companyName, 'p' => $planId, 'm' => $modulesJson, 'id' => $companyId]);
         }
 
         // Subscription
@@ -79,6 +106,14 @@ final class BranchSeedService
                 's' => gmdate('Y-m-d'),
                 'e' => gmdate('Y-m-d', strtotime('+10 years')),
                 't' => $now,
+            ]);
+        } else {
+            $pdo->prepare(
+                "UPDATE rateb_subscriptions SET status = 'active', plan_id = :p, ends_at = :e WHERE id = :id"
+            )->execute([
+                'p' => $planId,
+                'e' => gmdate('Y-m-d', strtotime('+10 years')),
+                'id' => $subId,
             ]);
         }
 
@@ -154,7 +189,7 @@ final class BranchSeedService
             $roleId = (int) $pdo->lastInsertId();
         }
 
-        // Ensure at least a few core permissions exist and attach all permissions to role
+        // Ensure module + entity permissions exist and attach all to role
         self::ensureCorePermissions($pdo, $now);
         $pdo->exec(
             'INSERT OR IGNORE INTO rateb_role_permissions (role_id, permission_id)
@@ -185,23 +220,107 @@ final class BranchSeedService
 
     private static function ensureCorePermissions(PDO $pdo, string $now): void
     {
-        $count = self::scalarInt($pdo, 'SELECT COUNT(*) FROM rateb_permissions');
-        if ($count > 0) {
-            return;
+        $slugs = [];
+        $root = defined('RATEB_ROOT') ? (string) RATEB_ROOT : dirname(__DIR__, 2);
+        $modMap = $root . '/config/module-permissions.php';
+        if (is_file($modMap)) {
+            $map = require $modMap;
+            if (is_array($map)) {
+                foreach ($map as $slug) {
+                    if (is_string($slug) && $slug !== '') {
+                        $slugs[$slug] = true;
+                    }
+                }
+            }
         }
-        $core = [
-            ['Dashboard', 'dashboard.view', 'core'],
-            ['POS', 'pos.view', 'pos'],
-            ['POS Manage', 'pos.manage', 'pos'],
-            ['Inventory', 'inventory.view', 'inventory'],
-            ['Settings', 'settings.manage', 'settings'],
-        ];
+        $entityFile = $root . '/config/entity-permissions.php';
+        if (is_file($entityFile)) {
+            $entities = require $entityFile;
+            if (is_array($entities)) {
+                foreach ($entities as $meta) {
+                    if (!is_array($meta)) {
+                        continue;
+                    }
+                    foreach (['view', 'manage', 'create', 'update', 'delete'] as $k) {
+                        $s = (string) ($meta[$k] ?? '');
+                        if ($s !== '') {
+                            $slugs[$s] = true;
+                        }
+                    }
+                }
+            }
+        }
+        foreach ([
+            'dashboard.view',
+            'pos.view',
+            'pos.manage',
+            'pos.register',
+            'pos.shift.open',
+            'pos.shift.close',
+            'pos.orders.view',
+            'pos.reports.view',
+            'pos.cash_drawer.manage',
+            'pos.terminals.manage',
+            'pos.settings.manage',
+            'pos.devices.manage',
+            'pos.sync.manage',
+            'pos.discount.manage',
+            'pos.returns.manage',
+            'pos.supervisor.approve',
+            'pos.payment.record',
+            'pos.inventory.adjust',
+            'pos.terminal.manage',
+            'inventory.view',
+            'inventory.manage',
+            'procurement.view',
+            'procurement.manage',
+            'hr.view',
+            'hr.create',
+            'hr.update',
+            'accounting.view',
+            'accounting.create',
+            'accounting.approve',
+            'reports.view',
+            'reports.export',
+            'settings.manage',
+            'branches.view',
+            'documents.view',
+            'workflows.view',
+        ] as $extra) {
+            $slugs[$extra] = true;
+        }
+
+        $posEntity = $root . '/modules/pos/config/entity-permissions.php';
+        if (is_file($posEntity)) {
+            $entities = require $posEntity;
+            if (is_array($entities)) {
+                foreach ($entities as $meta) {
+                    if (!is_array($meta)) {
+                        continue;
+                    }
+                    foreach (['view', 'manage', 'create', 'update', 'delete', 'post', 'export'] as $k) {
+                        $s = (string) ($meta[$k] ?? '');
+                        if ($s !== '') {
+                            $slugs[$s] = true;
+                        }
+                    }
+                }
+            }
+        }
+
         $ins = $pdo->prepare(
-            'INSERT INTO rateb_permissions (name, slug, module, description, created_at)
+            'INSERT OR IGNORE INTO rateb_permissions (name, slug, module, description, created_at)
              VALUES (:n, :s, :m, :d, :t)'
         );
-        foreach ($core as [$name, $slug, $module]) {
-            $ins->execute(['n' => $name, 's' => $slug, 'm' => $module, 'd' => $name, 't' => $now]);
+        foreach (array_keys($slugs) as $slug) {
+            $module = explode('.', $slug)[0] ?: 'core';
+            $ins->execute([
+                'n' => $slug,
+                's' => $slug,
+                'm' => $module,
+                'd' => $slug,
+                't' => $now,
+            ]);
         }
     }
 
